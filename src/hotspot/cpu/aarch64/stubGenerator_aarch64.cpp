@@ -1929,7 +1929,7 @@ class StubGenerator: public StubCodeGenerator {
     bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1);
 
     __ leave();
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     address end = __ pc();
@@ -2131,7 +2131,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1);
     __ leave();
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     assert(entries.length() == expected_entry_count - 1,
@@ -5045,7 +5045,8 @@ class StubGenerator: public StubCodeGenerator {
     __ ldpd(v8, v9, __ post(sp, 64));
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -5970,7 +5971,7 @@ class StubGenerator: public StubCodeGenerator {
     vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 384, offsets4);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -6262,7 +6263,7 @@ class StubGenerator: public StubCodeGenerator {
     store64shorts(vs2, tmpAddr);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -6407,7 +6408,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::NE, kyberNttMult_loop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -6499,7 +6500,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -6606,7 +6607,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -6763,7 +6764,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::GT, L_loop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // bind label and generate constant data used by this stub
@@ -6869,7 +6870,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -7156,8 +7157,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     __ leave(); // required for proper stackwalking of RuntimeStub frame
 
-    // Intrinsics returns 0, whereas Java callees return 1. Caller ignores the return value.
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -7357,7 +7357,7 @@ class StubGenerator: public StubCodeGenerator {
     dilithiumInverseNttLevel3_7(dilithiumConsts, coeffs, zetas);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -7431,7 +7431,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::GE, L_loop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -7500,7 +7500,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::GE, L_loop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -7666,7 +7666,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ldpd(v8, v9, __ post(sp, 64));
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
