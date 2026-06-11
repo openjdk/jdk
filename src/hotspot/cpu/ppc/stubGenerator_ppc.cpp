@@ -689,11 +689,6 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
-
-  
-
-
-
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
   //
   // The code is implemented(ported from sparc) as we believe it benefits JVM98, however
@@ -3202,33 +3197,23 @@ class StubGenerator: public StubCodeGenerator {
      return start;
   }
 
-
-// ==========================================================================
+  // ==========================================================================
   // AES helper functions for PPC64
   //
-  // These emit the AES round machine instructions. They are C++ functions
-  // that run at JVM startup (code generation time), NOT at runtime.
+  // These emit the AES round machine instructions.
   // Each call to these helpers emits a sequence of vcipher/vncipher
-  // instructions into the generated code buffer.
+  // instructions.
   //
-  // Used by: encryptBlock, decryptBlock, CBC encrypt, CBC decrypt,
-  //          and any future AES modes (CTR, GCM, etc.)
-  //
-  // Place these inside the StubGenerator class, BEFORE the stubs that use them.
   // ==========================================================================
-
   // Emit AES encrypt rounds.
   //
   // vRet:    in/out — the AES state (plaintext in, ciphertext out)
   // key:     register holding pointer to expanded key array
   // keypos:  scratch register for key offset
-  // keylen:  register holding key length (44/52/60)
+  // keylen:  register holding key length
   // keyPerm: vector register holding key alignment permutation
   // vKey1-vKey4: scratch vector registers for round keys
   // vTmp1:   scratch vector register (carries raw key data between loads)
-  //
-  // L_doLast: label for the final two rounds (caller must bind after return
-  //           if they have custom post-processing, OR pass a fresh label)
   //
   void aes_encrypt_rounds(VectorRegister vRet,
                            Register key, Register keypos, Register keylen,
@@ -3390,8 +3375,6 @@ class StubGenerator: public StubCodeGenerator {
     __ li              (keypos, 160);
     __ lvx             (vTmp1, keypos, key);
     __ vec_perm        (vKey5, vTmp1, vKey5, keyPerm);
-
-    // rounds 1-5
     __ vxor            (vRet, vRet, vKey1);
     __ vncipher        (vRet, vRet, vKey2);
     __ vncipher        (vRet, vRet, vKey3);
@@ -3417,7 +3400,6 @@ class StubGenerator: public StubCodeGenerator {
     __ lvx             (vTmp1, keypos, key);
     __ vec_perm        (vKey3, vTmp1, vKey3, keyPerm);
 
-    // rounds 1-3
     __ vxor            (vRet, vRet, vKey1);
     __ vncipher        (vRet, vRet, vKey2);
     __ vncipher        (vRet, vRet, vKey3);
@@ -3433,7 +3415,6 @@ class StubGenerator: public StubCodeGenerator {
     __ lvx             (vTmp1, keypos, key);
     __ vec_perm        (vKey1, vTmp1, vKey1, keyPerm);
 
-    // round 1
     __ vxor            (vRet, vRet, vKey1);
 
     // ---- Common rounds 10-1 (all key sizes) ----
@@ -3487,7 +3468,6 @@ class StubGenerator: public StubCodeGenerator {
     __ lvx             (vTmp1, key);
     __ vec_perm        (vKey5, vTmp1, vKey5, keyPerm);
 
-    // rounds 5-2 + final round
     __ vncipher        (vRet, vRet, vKey1);
     __ vncipher        (vRet, vRet, vKey2);
     __ vncipher        (vRet, vRet, vKey3);
@@ -3539,6 +3519,10 @@ class StubGenerator: public StubCodeGenerator {
 
   // ==========================================================================
   // CBC Encrypt stub — using helper functions
+  // Arguments for generated stub:
+  //  R3_ARG1   - source byte array address
+  //  R4_ARG2   - destination byte array address
+  //  R5_ARG3   - round key array
   // ==========================================================================
 
   address generate_cipherBlockChaining_encryptAESCrypt() {
@@ -3650,7 +3634,11 @@ class StubGenerator: public StubCodeGenerator {
 
 
   // ==========================================================================
-  // CBC Decrypt stub — using helper functions
+  //  CBC Decrypt stub — using helper functions
+  //  Arguments for generated stub:
+  //   R3_ARG1   - source byte array address
+  //   R4_ARG2   - destination byte array address
+  //   R5_ARG3   - round key array
   // ==========================================================================
 
   address generate_cipherBlockChaining_decryptAESCrypt() {
