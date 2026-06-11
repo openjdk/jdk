@@ -1139,10 +1139,10 @@ public class JShellTool implements MessageHandler {
                         Path sourceCandidate = Path.of(sourceCandidatePath);
 
                         if (Files.exists(sourceCandidate)) {
-                            return List.of(sourceCandidate);
+                            return List.of(sourceCandidate, binary);
                         }
                     }
-                    return null;
+                    return List.of(binary);
                 });
         if (executionControlSpec != null) {
             builder.executionEngine(executionControlSpec);

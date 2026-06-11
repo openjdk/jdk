@@ -38,6 +38,7 @@
  */
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,6 +52,8 @@ import jdk.internal.jshell.tool.ConsoleIOContextTestSupport;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class ToolTabSnippetTest extends UITesting {
 
@@ -58,9 +61,10 @@ public class ToolTabSnippetTest extends UITesting {
         super(true);
     }
 
-    @Test
-    public void testExpression() throws Exception {
-        Path classes = prepareZip();
+    @ParameterizedTest
+    @ValueSource(booleans={false, true})
+    public void testExpression(boolean createCombinedJar) throws Exception {
+        Path classes = prepareZip(createCombinedJar);
         doRunTest((inputSink, out) -> {
             inputSink.write("/env -class-path " + classes.toString() + "\n");
             waitOutput(out, resource("jshell.msg.set.restore") + "\n\\u001B\\[\\?2004h" + PROMPT);
@@ -280,7 +284,7 @@ public class ToolTabSnippetTest extends UITesting {
         });
     }
 
-    private Path prepareZip() {
+    private Path prepareZip(boolean createCombinedJar) {
         String clazz1 =
                 "package jshelltest;\n" +
                 "/**JShellTest 0" +
@@ -310,23 +314,48 @@ public class ToolTabSnippetTest extends UITesting {
                 "    public JShellTestAux(String str, int i) { }\n" +
                 "}\n";
 
-        Path srcZip = Paths.get("test-sources.jar");
+        if (createCombinedJar) {
+            Path combinedJar = Paths.get("combined.jar");
 
-        try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(srcZip))) {
-            out.putNextEntry(new JarEntry("jshelltest/JShellTest.java"));
-            out.write(clazz1.getBytes());
-            out.putNextEntry(new JarEntry("jshelltest/JShellTestAux.java"));
-            out.write(clazz2.getBytes());
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
+            try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(combinedJar))) {
+                out.putNextEntry(new JarEntry("jshelltest/JShellTest.java"));
+                out.write(clazz1.getBytes());
+                out.putNextEntry(new JarEntry("jshelltest/JShellTestAux.java"));
+                out.write(clazz2.getBytes());
+
+                compiler.compile(clazz1, clazz2);
+
+                for (String clazz : new String[] {"jshelltest/JShellTest.class", "jshelltest/JShellTestAux.class"}) {
+                    out.putNextEntry(new JarEntry(clazz));
+
+                    try (InputStream in = Files.newInputStream(compiler.getClassDir().resolve(clazz))) {
+                        in.transferTo(out);
+                    }
+                }
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+
+            return combinedJar;
+        } else {
+            Path srcZip = Paths.get("test-sources.jar");
+
+            try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(srcZip))) {
+                out.putNextEntry(new JarEntry("jshelltest/JShellTest.java"));
+                out.write(clazz1.getBytes());
+                out.putNextEntry(new JarEntry("jshelltest/JShellTestAux.java"));
+                out.write(clazz2.getBytes());
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+
+            compiler.compile(clazz1, clazz2);
+
+            Path binaryJar = Paths.get("test.jar");
+            compiler.jar(compiler.getClassDir(), binaryJar, "jshelltest/JShellTest.class", "jshelltest/JShellTestAux.class");
+
+            return binaryJar;
         }
-
-        compiler.compile(clazz1, clazz2);
-
-        Path binaryJar = Paths.get("test.jar");
-        compiler.jar(compiler.getClassDir(), binaryJar, "jshelltest/JShellTest.class", "jshelltest/JShellTestAux.class");
-
-        return binaryJar;
     }
     //where:
         private final Compiler compiler = new Compiler();
