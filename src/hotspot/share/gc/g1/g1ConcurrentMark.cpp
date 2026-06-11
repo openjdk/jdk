@@ -524,7 +524,10 @@ void G1ConcurrentMark::fully_initialize() {
 
   uint max_num_regions = _g1h->max_num_regions();
   ::new (_region_mark_stats) G1RegionMarkStats[max_num_regions]{};
-  ::new (_top_at_mark_starts) Atomic<HeapWord*>[max_num_regions]{};
+  for (uint i = 0; i < max_num_regions; i++) {
+    ::new (&_top_at_mark_starts[i]) Atomic<HeapWord*>(_g1h->bottom_addr_for_region(i));
+  }
+  // Contrary to TAMS, the default value of _top_at_rebuild_starts needs to be null.
   ::new (_top_at_rebuild_starts) Atomic<HeapWord*>[max_num_regions]{};
 
   reset_at_marking_complete();
@@ -711,6 +714,11 @@ private:
     }
 
     HeapWord* region_clear_limit(G1HeapRegion* r) {
+      // A garbage collection might have made the region unavailable after a yield during
+      // clearing. Just return bottom as the limit, causing the clearing for this region to end.
+      if (G1CollectedHeap::heap()->region_at_or_null(r->hrm_index()) == nullptr) {
+        return r->bottom();
+      }
       // During a Concurrent Undo Mark cycle, the per region top_at_mark_start and
       // live_words data are current wrt to the _mark_bitmap. We use this information
       // to only clear ranges of the bitmap that require clearing.
@@ -740,7 +748,7 @@ private:
       }
 
       HeapWord* cur = r->bottom();
-      HeapWord* const end = region_clear_limit(r);
+      HeapWord* end = region_clear_limit(r);
 
       size_t const chunk_size_in_words = G1ClearBitMapTask::chunk_size() / HeapWordSize;
 
@@ -758,8 +766,12 @@ private:
         assert(!suspendible() || _cm->is_in_reset_for_next_cycle(), "invariant");
 
         // Abort iteration if necessary.
-        if (has_aborted()) {
-          return true;
+        if (suspendible() && _cm->do_yield_check()) {
+          if (_cm->has_aborted()) {
+            return true;
+          }
+          // Re-read end. The region might have been uncommitted.
+          end = region_clear_limit(r);
         }
       }
       assert(cur >= end, "Must have completed iteration over the bitmap for region %u.", r->hrm_index());
@@ -1146,7 +1158,6 @@ bool G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent
     // completing this work during GC.
     const uint num_workers = MIN2(num_remaining,
                                   _max_concurrent_workers);
-    assert(num_workers > 0, "no more remaining root regions to process");
 
     G1CMRootRegionScanTask task(this, concurrent);
     log_debug(gc, ergo)("Running %s using %u workers for %u work units.",

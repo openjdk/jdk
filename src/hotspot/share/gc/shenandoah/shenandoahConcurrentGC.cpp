@@ -854,8 +854,6 @@ public:
   }
 
   void work(uint worker_id) override {
-    // ShenandoahEvacOOMScope has to be setup by ShenandoahContextEvacuateUpdateRootsClosure.
-    // Otherwise, may deadlock with watermark lock
     ShenandoahContextEvacuateUpdateRootsClosure oops_cl;
     ShenandoahConcurrentEvacThreadClosure thr_cl(&oops_cl);
     _java_threads.threads_do(&thr_cl, worker_id);
@@ -969,9 +967,8 @@ public:
 
   void work(uint worker_id) override {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    ShenandoahSuspendibleThreadSetJoiner sts_join;
+    SuspendibleThreadSetJoiner sts_join;
     {
-      ShenandoahEvacOOMScope oom;
       // jni_roots and weak_roots are OopStorage backed roots, concurrent iteration
       // may race against OopStorage::release() calls.
       ShenandoahEvacUpdateCleanupOopStorageRootsClosure cl(_generation);
@@ -994,7 +991,7 @@ public:
       // state is cached, therefore, during concurrent class unloading phase,
       // we will not touch the metadata of unloading nmethods
       {
-        ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+        ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCache, worker_id);
         ShenandoahIsNMethodAliveClosure is_nmethod_alive;
         _nmethod_itr.nmethods_do(&is_nmethod_alive);
       }
@@ -1007,9 +1004,8 @@ void ShenandoahConcurrentGC::op_weak_roots() {
   assert(heap->is_concurrent_weak_root_in_progress(), "Only during this phase");
   {
     // Concurrent weak root processing
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_work);
-    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
-    ShenandoahConcurrentWeakRootsEvacUpdateTask task(_generation, ShenandoahPhaseTimings::conc_weak_roots_work);
+    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots);
+    ShenandoahConcurrentWeakRootsEvacUpdateTask task(_generation, ShenandoahPhaseTimings::conc_weak_roots);
     heap->workers()->run_task(&task);
   }
 
@@ -1044,9 +1040,6 @@ public:
   void do_nmethod(nmethod* n) {
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(n);
     ShenandoahNMethodLocker locker(data->lock());
-    // Setup EvacOOM scope below reentrant lock to avoid deadlock with
-    // nmethod_entry_barrier
-    ShenandoahEvacOOMScope oom;
     data->oops_do(&_cl, /* fix_relocations = */ true);
     ShenandoahNMethod::disarm_nmethod(n);
   }
@@ -1071,7 +1064,6 @@ public:
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     {
-      ShenandoahEvacOOMScope oom;
       {
         // vm_roots and weak_roots are OopStorage backed roots, concurrent iteration
         // may race against OopStorage::release() calls.
@@ -1086,9 +1078,8 @@ public:
       }
     }
 
-    // Cannot setup ShenandoahEvacOOMScope here, due to potential deadlock with nmethod_entry_barrier.
     if (!ShenandoahHeap::heap()->unload_classes()) {
-      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCache, worker_id);
       ShenandoahEvacUpdateCodeCacheClosure cl;
       _nmethod_itr.nmethods_do(&cl);
     }
@@ -1212,18 +1203,12 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
     heap->verifier()->verify_roots_in_to_space(_generation);
   }
 
-  // If we are running in generational mode and this is an aging cycle, this will also age active
-  // regions that haven't been used for allocation.
+  // If we are running in generational mode, this will also age active regions that
+  // haven't been used for allocation.
   heap->update_heap_region_states(true /*concurrent*/);
 
   heap->set_update_refs_in_progress(false);
   heap->set_has_forwarded_objects(false);
-
-  if (heap->mode()->is_generational() && heap->is_concurrent_old_mark_in_progress()) {
-    // Aging_cycle is only relevant during evacuation cycle for individual objects and during final mark for
-    // entire regions.  Both of these relevant operations occur before final update refs.
-    ShenandoahGenerationalHeap::heap()->set_aging_cycle(false);
-  }
 
   if (ShenandoahVerify) {
     ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_update_refs_verify);

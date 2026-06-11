@@ -640,7 +640,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VI, IRNode.VECTOR_SIZE_ANY, " 1 ",
                    IRNode.MAX_VI, IRNode.VECTOR_SIZE_ANY, " 0 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testIntMaskedMinIdealSameMask(int index) {
         IntVector v1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector v2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -669,7 +669,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VI, IRNode.VECTOR_SIZE_ANY, " 0 ",
                    IRNode.MAX_VI, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testIntMaskedMaxIdealSameMask(int index) {
         IntVector v1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector v2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -698,7 +698,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VI, IRNode.VECTOR_SIZE_ANY, " 0 ",
                    IRNode.MAX_VI, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testIntMaskedMaxIdealFlippedInputs(int index) {
         IntVector v1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector v2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -727,7 +727,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VI, IRNode.VECTOR_SIZE_ANY, " 1 ",
                    IRNode.MAX_VI, IRNode.VECTOR_SIZE_ANY, " 0 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testIntMaskedMinIdealFlippedInputs(int index) {
         IntVector v1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector v2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -756,7 +756,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VI, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VI, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testIntMaskedMinIdealDiffMaskMinMax(int index) {
         IntVector v1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector v2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -786,7 +786,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VI, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VI, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testIntMaskedMinIdealDiffMaskMinMaxSwapped(int index) {
         IntVector v1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector v2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -814,7 +814,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VI, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VI, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testIntMaskedMinIdealDiffMaskOuter(int index) {
         IntVector v1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector v2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -843,7 +843,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VI, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VI, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testIntMaskedMinIdealAllDiffMask(int index) {
         IntVector v1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector v2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -873,7 +873,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VB, IRNode.VECTOR_SIZE_ANY, " 1 ",
                    IRNode.MAX_VB, IRNode.VECTOR_SIZE_ANY, " 0 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testByteMaskedMinIdealSameMask(int index) {
         ByteVector v1 = ByteVector.fromArray(B_SPECIES, ba, index);
         ByteVector v2 = ByteVector.fromArray(B_SPECIES, bb, index);
@@ -902,7 +902,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VB, IRNode.VECTOR_SIZE_ANY, " 0 ",
                    IRNode.MAX_VB, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testByteMaskedMaxIdealSameMask(int index) {
         ByteVector v1 = ByteVector.fromArray(B_SPECIES, ba, index);
         ByteVector v2 = ByteVector.fromArray(B_SPECIES, bb, index);
@@ -931,7 +931,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VB, IRNode.VECTOR_SIZE_ANY, " 0 ",
                    IRNode.MAX_VB, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testByteMaskedMaxIdealFlippedInputs(int index) {
         ByteVector v1 = ByteVector.fromArray(B_SPECIES, ba, index);
         ByteVector v2 = ByteVector.fromArray(B_SPECIES, bb, index);
@@ -960,7 +960,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VB, IRNode.VECTOR_SIZE_ANY, " 1 ",
                    IRNode.MAX_VB, IRNode.VECTOR_SIZE_ANY, " 0 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testByteMaskedMinIdealFlippedInputs(int index) {
         ByteVector v1 = ByteVector.fromArray(B_SPECIES, ba, index);
         ByteVector v2 = ByteVector.fromArray(B_SPECIES, bb, index);
@@ -989,7 +989,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VB, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VB, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testByteMaskedMinIdealDiffMaskMinMax(int index) {
         ByteVector v1 = ByteVector.fromArray(B_SPECIES, ba, index);
         ByteVector v2 = ByteVector.fromArray(B_SPECIES, bb, index);
@@ -1018,7 +1018,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VB, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VB, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testByteMaskedMinIdealDiffMaskMinMaxSwapped(int index) {
         ByteVector v1 = ByteVector.fromArray(B_SPECIES, ba, index);
         ByteVector v2 = ByteVector.fromArray(B_SPECIES, bb, index);
@@ -1047,7 +1047,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VB, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VB, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testByteMaskedMinIdealDiffMaskOuter(int index) {
         ByteVector v1 = ByteVector.fromArray(B_SPECIES, ba, index);
         ByteVector v2 = ByteVector.fromArray(B_SPECIES, bb, index);
@@ -1076,7 +1076,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VB, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VB, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testByteMaskedMinIdealAllDiffMask(int index) {
         ByteVector v1 = ByteVector.fromArray(B_SPECIES, ba, index);
         ByteVector v2 = ByteVector.fromArray(B_SPECIES, bb, index);
@@ -1106,7 +1106,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VS, IRNode.VECTOR_SIZE_ANY, " 1 ",
                    IRNode.MAX_VS, IRNode.VECTOR_SIZE_ANY, " 0 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testShortMaskedMinIdealSameMask(int index) {
         ShortVector v1 = ShortVector.fromArray(S_SPECIES, sa, index);
         ShortVector v2 = ShortVector.fromArray(S_SPECIES, sb, index);
@@ -1135,7 +1135,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VS, IRNode.VECTOR_SIZE_ANY, " 0 ",
                    IRNode.MAX_VS, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testShortMaskedMaxIdealSameMask(int index) {
         ShortVector v1 = ShortVector.fromArray(S_SPECIES, sa, index);
         ShortVector v2 = ShortVector.fromArray(S_SPECIES, sb, index);
@@ -1164,7 +1164,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VS, IRNode.VECTOR_SIZE_ANY, " 0 ",
                    IRNode.MAX_VS, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testShortMaskedMaxIdealFlippedInputs(int index) {
         ShortVector v1 = ShortVector.fromArray(S_SPECIES, sa, index);
         ShortVector v2 = ShortVector.fromArray(S_SPECIES, sb, index);
@@ -1193,7 +1193,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VS, IRNode.VECTOR_SIZE_ANY, " 1 ",
                    IRNode.MAX_VS, IRNode.VECTOR_SIZE_ANY, " 0 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testShortMaskedMinIdealFlippedInputs(int index) {
         ShortVector v1 = ShortVector.fromArray(S_SPECIES, sa, index);
         ShortVector v2 = ShortVector.fromArray(S_SPECIES, sb, index);
@@ -1222,7 +1222,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VS, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VS, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testShortMaskedMinIdealDiffMaskMinMax(int index) {
         ShortVector v1 = ShortVector.fromArray(S_SPECIES, sa, index);
         ShortVector v2 = ShortVector.fromArray(S_SPECIES, sb, index);
@@ -1251,7 +1251,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VS, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VS, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testShortMaskedMinIdealDiffMaskMinMaxSwapped(int index) {
         ShortVector v1 = ShortVector.fromArray(S_SPECIES, sa, index);
         ShortVector v2 = ShortVector.fromArray(S_SPECIES, sb, index);
@@ -1280,7 +1280,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VS, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VS, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testShortMaskedMinIdealDiffMaskOuter(int index) {
         ShortVector v1 = ShortVector.fromArray(S_SPECIES, sa, index);
         ShortVector v2 = ShortVector.fromArray(S_SPECIES, sb, index);
@@ -1309,7 +1309,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VS, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VS, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true", "rvv", "true"})
     public void testShortMaskedMinIdealAllDiffMask(int index) {
         ShortVector v1 = ShortVector.fromArray(S_SPECIES, sa, index);
         ShortVector v2 = ShortVector.fromArray(S_SPECIES, sb, index);
@@ -1339,7 +1339,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VL, IRNode.VECTOR_SIZE_ANY, " 1 ",
                    IRNode.MAX_VL, IRNode.VECTOR_SIZE_ANY, " 0 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testLongMaskedMinIdealSameMask(int index) {
         LongVector v1 = LongVector.fromArray(L_SPECIES, la, index);
         LongVector v2 = LongVector.fromArray(L_SPECIES, lb, index);
@@ -1368,7 +1368,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VL, IRNode.VECTOR_SIZE_ANY, " 0 ",
                    IRNode.MAX_VL, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testLongMaskedMaxIdealSameMask(int index) {
         LongVector v1 = LongVector.fromArray(L_SPECIES, la, index);
         LongVector v2 = LongVector.fromArray(L_SPECIES, lb, index);
@@ -1397,7 +1397,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VL, IRNode.VECTOR_SIZE_ANY, " 0 ",
                    IRNode.MAX_VL, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testLongMaskedMaxIdealFlippedInputs(int index) {
         LongVector v1 = LongVector.fromArray(L_SPECIES, la, index);
         LongVector v2 = LongVector.fromArray(L_SPECIES, lb, index);
@@ -1426,7 +1426,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VL, IRNode.VECTOR_SIZE_ANY, " 1 ",
                    IRNode.MAX_VL, IRNode.VECTOR_SIZE_ANY, " 0 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testLongMaskedMinIdealFlippedInputs(int index) {
         LongVector v1 = LongVector.fromArray(L_SPECIES, la, index);
         LongVector v2 = LongVector.fromArray(L_SPECIES, lb, index);
@@ -1455,7 +1455,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VL, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VL, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testLongMaskedMinIdealDiffMaskMinMax(int index) {
         LongVector v1 = LongVector.fromArray(L_SPECIES, la, index);
         LongVector v2 = LongVector.fromArray(L_SPECIES, lb, index);
@@ -1484,7 +1484,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VL, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VL, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testLongMaskedMinIdealDiffMaskMinMaxSwapped(int index) {
         LongVector v1 = LongVector.fromArray(L_SPECIES, la, index);
         LongVector v2 = LongVector.fromArray(L_SPECIES, lb, index);
@@ -1513,7 +1513,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VL, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VL, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testLongMaskedMinIdealDiffMaskOuter(int index) {
         LongVector v1 = LongVector.fromArray(L_SPECIES, la, index);
         LongVector v2 = LongVector.fromArray(L_SPECIES, lb, index);
@@ -1542,7 +1542,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VL, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VL, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     public void testLongMaskedMinIdealAllDiffMask(int index) {
         LongVector v1 = LongVector.fromArray(L_SPECIES, la, index);
         LongVector v2 = LongVector.fromArray(L_SPECIES, lb, index);
@@ -1572,7 +1572,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VF, IRNode.VECTOR_SIZE_ANY, " 1 ",
                    IRNode.MAX_VF, IRNode.VECTOR_SIZE_ANY, " 0 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testFloatMaskedMinIdealSameMask(int index) {
         FloatVector v1 = FloatVector.fromArray(F_SPECIES, fa, index);
         FloatVector v2 = FloatVector.fromArray(F_SPECIES, fb, index);
@@ -1601,7 +1601,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VF, IRNode.VECTOR_SIZE_ANY, " 0 ",
                    IRNode.MAX_VF, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testFloatMaskedMaxIdealSameMask(int index) {
         FloatVector v1 = FloatVector.fromArray(F_SPECIES, fa, index);
         FloatVector v2 = FloatVector.fromArray(F_SPECIES, fb, index);
@@ -1630,7 +1630,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VF, IRNode.VECTOR_SIZE_ANY, " 0 ",
                    IRNode.MAX_VF, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testFloatMaskedMaxIdealFlippedInputs(int index) {
         FloatVector v1 = FloatVector.fromArray(F_SPECIES, fa, index);
         FloatVector v2 = FloatVector.fromArray(F_SPECIES, fb, index);
@@ -1659,7 +1659,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VF, IRNode.VECTOR_SIZE_ANY, " 1 ",
                    IRNode.MAX_VF, IRNode.VECTOR_SIZE_ANY, " 0 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testFloatMaskedMinIdealFlippedInputs(int index) {
         FloatVector v1 = FloatVector.fromArray(F_SPECIES, fa, index);
         FloatVector v2 = FloatVector.fromArray(F_SPECIES, fb, index);
@@ -1688,7 +1688,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VF, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VF, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testFloatMaskedMinIdealDiffMaskMinMax(int index) {
         FloatVector v1 = FloatVector.fromArray(F_SPECIES, fa, index);
         FloatVector v2 = FloatVector.fromArray(F_SPECIES, fb, index);
@@ -1717,7 +1717,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VF, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VF, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testFloatMaskedMinIdealDiffMaskMinMaxSwapped(int index) {
         FloatVector v1 = FloatVector.fromArray(F_SPECIES, fa, index);
         FloatVector v2 = FloatVector.fromArray(F_SPECIES, fb, index);
@@ -1746,7 +1746,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VF, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VF, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testFloatMaskedMinIdealDiffMaskOuter(int index) {
         FloatVector v1 = FloatVector.fromArray(F_SPECIES, fa, index);
         FloatVector v2 = FloatVector.fromArray(F_SPECIES, fb, index);
@@ -1775,7 +1775,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VF, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VF, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testFloatMaskedMinIdealAllDiffMask(int index) {
         FloatVector v1 = FloatVector.fromArray(F_SPECIES, fa, index);
         FloatVector v2 = FloatVector.fromArray(F_SPECIES, fb, index);
@@ -1805,7 +1805,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VD, IRNode.VECTOR_SIZE_ANY, " 1 ",
                    IRNode.MAX_VD, IRNode.VECTOR_SIZE_ANY, " 0 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testDoubleMaskedMinIdealSameMask(int index) {
         DoubleVector v1 = DoubleVector.fromArray(D_SPECIES, da, index);
         DoubleVector v2 = DoubleVector.fromArray(D_SPECIES, db, index);
@@ -1834,7 +1834,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VD, IRNode.VECTOR_SIZE_ANY, " 0 ",
                    IRNode.MAX_VD, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testDoubleMaskedMaxIdealSameMask(int index) {
         DoubleVector v1 = DoubleVector.fromArray(D_SPECIES, da, index);
         DoubleVector v2 = DoubleVector.fromArray(D_SPECIES, db, index);
@@ -1863,7 +1863,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VD, IRNode.VECTOR_SIZE_ANY, " 0 ",
                    IRNode.MAX_VD, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testDoubleMaskedMaxIdealFlippedInputs(int index) {
         DoubleVector v1 = DoubleVector.fromArray(D_SPECIES, da, index);
         DoubleVector v2 = DoubleVector.fromArray(D_SPECIES, db, index);
@@ -1892,7 +1892,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VD, IRNode.VECTOR_SIZE_ANY, " 1 ",
                    IRNode.MAX_VD, IRNode.VECTOR_SIZE_ANY, " 0 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testDoubleMaskedMinIdealFlippedInputs(int index) {
         DoubleVector v1 = DoubleVector.fromArray(D_SPECIES, da, index);
         DoubleVector v2 = DoubleVector.fromArray(D_SPECIES, db, index);
@@ -1921,7 +1921,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VD, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VD, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testDoubleMaskedMinIdealDiffMaskMinMax(int index) {
         DoubleVector v1 = DoubleVector.fromArray(D_SPECIES, da, index);
         DoubleVector v2 = DoubleVector.fromArray(D_SPECIES, db, index);
@@ -1950,7 +1950,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VD, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VD, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testDoubleMaskedMinIdealDiffMaskMinMaxSwapped(int index) {
         DoubleVector v1 = DoubleVector.fromArray(D_SPECIES, da, index);
         DoubleVector v2 = DoubleVector.fromArray(D_SPECIES, db, index);
@@ -1979,7 +1979,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VD, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VD, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testDoubleMaskedMinIdealDiffMaskOuter(int index) {
         DoubleVector v1 = DoubleVector.fromArray(D_SPECIES, da, index);
         DoubleVector v2 = DoubleVector.fromArray(D_SPECIES, db, index);
@@ -2008,7 +2008,7 @@ public class VectorMinMaxTransforms {
     @Test
     @IR(counts = { IRNode.MIN_VD, IRNode.VECTOR_SIZE_ANY, " 2 ",
                    IRNode.MAX_VD, IRNode.VECTOR_SIZE_ANY, " 1 " },
-        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true", "rvv", "true"})
     public void testDoubleMaskedMinIdealAllDiffMask(int index) {
         DoubleVector v1 = DoubleVector.fromArray(D_SPECIES, da, index);
         DoubleVector v2 = DoubleVector.fromArray(D_SPECIES, db, index);

@@ -895,7 +895,7 @@ public class Attr extends JCTree.Visitor {
             tree.type :
             attribType(tree, env);
         try {
-            return checkBase(t, tree, env, classExpected, interfaceExpected, checkExtensible);
+            return tree.type = checkBase(t, tree, env, classExpected, interfaceExpected, checkExtensible);
         } catch (CompletionFailure ex) {
             chk.completionError(tree.pos(), ex);
             return t;
@@ -1342,9 +1342,9 @@ public class Attr extends JCTree.Visitor {
 
     private void doQueueScanTreeAndTypeAnnotateForVarInit(JCVariableDecl tree, Env<AttrContext> env) {
         if (tree.init != null &&
-            (tree.mods.flags & Flags.FIELD_INIT_TYPE_ANNOTATIONS_QUEUED) == 0 &&
+            (tree.sym.flags_field & Flags.FIELD_INIT_TYPE_ANNOTATIONS_QUEUED) == 0 &&
             env.info.scope.owner.kind != MTH && env.info.scope.owner.kind != VAR) {
-            tree.mods.flags |= Flags.FIELD_INIT_TYPE_ANNOTATIONS_QUEUED;
+            tree.sym.flags_field |= Flags.FIELD_INIT_TYPE_ANNOTATIONS_QUEUED;
             // Field initializer expression need to be entered.
             annotate.queueScanTreeAndTypeAnnotate(tree.init, env, tree.sym);
             annotate.flush();
@@ -5273,7 +5273,7 @@ public class Attr extends JCTree.Visitor {
     public void visitAnnotatedType(JCAnnotatedType tree) {
         attribAnnotationTypes(tree.annotations, env);
         Type underlyingType = attribTree(tree.underlyingType, env, resultInfo);
-        if (underlyingType.getTag() == PACKAGE) {
+        if (underlyingType.getTag() == PACKAGE || underlyingType.getTag() == VOID) {
             result = tree.type = underlyingType;
         } else {
             Type annotatedType = underlyingType.preannotatedType();

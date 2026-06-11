@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -541,8 +541,10 @@ enum SignatureScheme {
                         NamedGroupSpec.NAMED_GROUP_ECDHE)) {
                     ECParameterSpec params =
                             x509Possession.getECParameterSpec();
-                    if (params != null &&
-                            ss.namedGroup == NamedGroup.valueOf(params)) {
+                    // RFC 8446 Section 4.2.3: TLS 1.2 signature scheme curve
+                    // doesn't have to match the signing curve.
+                    if (params != null && (!version.useTLS13PlusSpec()
+                            || ss.namedGroup == NamedGroup.valueOf(params))) {
                         Signature signer = ss.getSigner(signingKey);
                         if (signer != null) {
                             return new SimpleImmutableEntry<>(ss, signer);

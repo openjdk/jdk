@@ -294,8 +294,20 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     ShenandoahHeapLocker locker(heap->lock());
     heap->assert_pinned_region_status(this);
     _heuristics->choose_collection_set(collection_set);
-  }
 
+    if (is_generational && is_global()) {
+      // We have finished marking the entire heap. The mark bitmap covering old regions is complete, so
+      // the remembered set scan can use that to avoid walking into garbage. When the next old mark begins, we will
+      // use the mark bitmap to make the old regions parsable by coalescing and filling any unmarked objects. Thus,
+      // we prepare for old collections by remembering which regions are old at this time. Note that any objects
+      // promoted into old regions will be above TAMS, and so will be considered marked. However, free regions that
+      // become old after this point will not be covered correctly by the mark bitmap, so we must be careful not to
+      // coalesce those regions. Only the old regions which are not part of the collection set at this point are
+      // eligible for coalescing. As implemented now, this has the side effect of possibly initiating mixed-evacuations
+      // after a global cycle for old regions that were not included in this collection set.
+      heap->old_generation()->transition_old_generation_after_global_gc();
+    }
+  }
 
   {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :

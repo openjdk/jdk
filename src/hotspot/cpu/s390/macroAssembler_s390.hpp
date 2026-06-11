@@ -484,6 +484,10 @@ class MacroAssembler: public Assembler {
   // Pop current C frame and restore return PC register (Z_R14).
   void pop_frame_restore_retPC(int frame_size_in_bytes);
 
+#ifdef ASSERT
+  void clobber_volatile_registers(Register excluded_register[], int n);
+#endif // ASSERT
+
   //
   // Calls
   //
@@ -885,8 +889,7 @@ class MacroAssembler: public Assembler {
   void oop_decoder(Register Rdst, Register Rsrc, bool maybenull,
                    Register Rbase = Z_R1, int pow2_offset = -1);
 
-  void resolve_oop_handle(Register result);
-  void load_mirror_from_const_method(Register mirror, Register const_method);
+  void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
   void load_method_holder(Register holder, Register method);
 
   //--------------------------

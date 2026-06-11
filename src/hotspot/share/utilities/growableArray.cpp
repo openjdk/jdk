@@ -57,7 +57,7 @@ void* GrowableArrayCHeapAllocator::allocate(int max, int element_size, MemTag me
 }
 
 void GrowableArrayCHeapAllocator::deallocate(void* elements) {
-  if (!AOTMetaspace::in_aot_cache(elements)) {
+  if (!MetaspaceObj::is_pointer_in_aot_cache(elements)) {
     FreeHeap(elements);
   }
 }

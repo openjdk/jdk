@@ -38,8 +38,6 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestRegionSizeArgs {
     public static void main(String[] args) throws Exception {
         testInvalidRegionSizes();
-        testMinRegionSize();
-        testMaxRegionSize();
     }
 
     private static void testInvalidRegionSizes() throws Exception {
@@ -143,90 +141,6 @@ public class TestRegionSizeArgs {
                     "-XX:ShenandoahRegionSize=128K",
                     "-version");
             output.shouldMatch("Invalid -XX:ShenandoahRegionSize option");
-            output.shouldHaveExitValue(1);
-        }
-    }
-
-    private static void testMinRegionSize() throws Exception {
-
-        {
-            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-Xms100m",
-                    "-Xmx1g",
-                    "-XX:ShenandoahMinRegionSize=255K",
-                    "-version");
-            output.shouldMatch("Invalid -XX:ShenandoahMinRegionSize option");
-            output.shouldHaveExitValue(1);
-        }
-
-        {
-            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-Xms100m",
-                    "-Xmx1g",
-                    "-XX:ShenandoahMinRegionSize=1M",
-                    "-XX:ShenandoahMaxRegionSize=260K",
-                    "-version");
-            output.shouldMatch("Invalid -XX:ShenandoahMinRegionSize or -XX:ShenandoahMaxRegionSize");
-            output.shouldHaveExitValue(1);
-        }
-        {
-            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-Xms100m",
-                    "-Xmx1g",
-                    "-XX:ShenandoahMinRegionSize=200m",
-                    "-version");
-            output.shouldMatch("Invalid -XX:ShenandoahMinRegionSize option");
-            output.shouldHaveExitValue(1);
-        }
-
-        {
-            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-Xms100m",
-                    "-Xmx1g",
-                    "-XX:ShenandoahMinRegionSize=9m",
-                    "-version");
-            output.shouldHaveExitValue(0);
-        }
-
-        // This used to assert that _conservative_max_heap_alignment is not a power-of-2.
-        {
-            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-Xms100m",
-                    "-Xmx1g",
-                    "-XX:ShenandoahMaxRegionSize=33m",
-                    "-version");
-            output.shouldHaveExitValue(0);
-        }
-
-    }
-
-    private static void testMaxRegionSize() throws Exception {
-
-        {
-            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-Xms100m",
-                    "-Xmx1g",
-                    "-XX:ShenandoahMaxRegionSize=255K",
-                    "-version");
-            output.shouldMatch("Invalid -XX:ShenandoahMaxRegionSize option");
-            output.shouldHaveExitValue(1);
-        }
-
-        {
-            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-Xms100m",
-                    "-Xmx1g",
-                    "-XX:ShenandoahMinRegionSize=1M",
-                    "-XX:ShenandoahMaxRegionSize=260K",
-                    "-version");
-            output.shouldMatch("Invalid -XX:ShenandoahMinRegionSize or -XX:ShenandoahMaxRegionSize");
             output.shouldHaveExitValue(1);
         }
     }

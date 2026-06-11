@@ -45,17 +45,27 @@ inline bool ZIterator::is_invisible_object(oop obj) {
 }
 
 inline bool ZIterator::is_invisible_object_array(oop obj) {
-  return obj->klass()->is_objArray_klass() && is_invisible_object(obj);
+  return is_invisible_object_array(obj, obj->klass());
 }
 
-// This iterator skips invisible object arrays
+inline bool ZIterator::is_invisible_object_array(oop obj, Klass* klass) {
+  return klass->is_objArray_klass() && is_invisible_object(obj);
+}
+
+// These iterators skips invisible object arrays
+
 template <typename OopClosureT>
 void ZIterator::oop_iterate_safe(oop obj, OopClosureT* cl) {
+  oop_iterate_safe(obj, obj->klass(), cl);
+}
+
+template <typename OopClosureT>
+void ZIterator::oop_iterate_safe(oop obj, Klass* klass, OopClosureT* cl) {
   // Skip invisible object arrays - we only filter out *object* arrays,
   // because that check is arguably faster than the is_invisible_object
   // check, and primitive arrays are cheap to call oop_iterate on.
-  if (!is_invisible_object_array(obj)) {
-    obj->oop_iterate(cl);
+  if (!is_invisible_object_array(obj, klass)) {
+    OopIteratorClosureDispatch::oop_oop_iterate(cl, obj, klass);
   }
 }
 
@@ -89,11 +99,17 @@ public:
   }
 };
 
-// This function skips invisible roots
+// These functions skip invisible roots
+
 template <typename Function>
 void ZIterator::basic_oop_iterate_safe(oop obj, Function function) {
+  basic_oop_iterate_safe(obj, obj->klass(), function);
+}
+
+template <typename Function>
+void ZIterator::basic_oop_iterate_safe(oop obj, Klass* klass, Function function) {
   ZBasicOopIterateClosure<Function> cl(function);
-  oop_iterate_safe(obj, &cl);
+  oop_iterate_safe(obj, klass, &cl);
 }
 
 template <typename Function>

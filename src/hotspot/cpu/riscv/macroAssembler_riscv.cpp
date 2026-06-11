@@ -593,7 +593,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   Register offset = t1;
 
   Label L_loop_search_receiver, L_loop_search_empty;
-  Label L_restart, L_found_recv, L_found_empty, L_polymorphic, L_count_update;
+  Label L_restart, L_found_recv, L_found_empty, L_count_update;
 
   // The code here recognizes three major cases:
   //   A. Fastest: receiver found in the table
@@ -623,20 +623,19 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   //     if (receiver(i) == recv) goto found_recv(i);
   //   }
   //
-  //   // Fast: no receiver, but profile is full
+  //   // Fast: no receiver, but profile is not full
   //   for (i = 0; i < receiver_count(); i++) {
   //     if (receiver(i) == null) goto found_null(i);
   //   }
-  //   goto polymorphic
+  //
+  //   // Slow: profile is full, polymorphic case
+  //   count++;
+  //   return
   //
   //   // Slow: try to install receiver
   // found_null(i):
   //   CAS(&receiver(i), null, recv);
   //   goto restart
-  //
-  // polymorphic:
-  //   count++;
-  //   return
   //
   // found_recv(i):
   //   *receiver_count(i)++
@@ -654,7 +653,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   sub(t0, offset, end_receiver_offset);
   bnez(t0, L_loop_search_receiver);
 
-  // Fast: no receiver, but profile is full
+  // Fast: no receiver, but profile is not full
   mv(offset, base_receiver_offset);
   bind(L_loop_search_empty);
     add(t0, mdp, offset);
@@ -663,9 +662,13 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   add(offset, offset, receiver_step);
   sub(t0, offset, end_receiver_offset);
   bnez(t0, L_loop_search_empty);
-  j(L_polymorphic);
 
-  // Slow: try to install receiver
+  // Slow: Receiver is not found and table is full.
+  // Increment polymorphic counter instead of receiver slot.
+  mv(offset, poly_count_offset);
+  j(L_count_update);
+
+  // Slowest: try to install receiver
   bind(L_found_empty);
 
   // Atomically swing receiver slot: null -> recv.
@@ -683,16 +686,11 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // and just restart the search from the beginning.
   j(L_restart);
 
-  // Counter updates:
-  // Increment polymorphic counter instead of receiver slot.
-  bind(L_polymorphic);
-  mv(offset, poly_count_offset);
-  j(L_count_update);
-
   // Found a receiver, convert its slot offset to corresponding count offset.
   bind(L_found_recv);
   add(offset, offset, receiver_to_count_step);
 
+  // Finally, update the counter
   bind(L_count_update);
   add(t1, mdp, offset);
   increment(Address(t1), DataLayout::counter_increment);
@@ -4117,7 +4115,7 @@ void MacroAssembler::membar(uint32_t order_constraint) {
   }
 
   address prev = pc() - MacroAssembler::instruction_size;
-  address last = code()->last_insn();
+  address last = code()->last_merge_candidate();
 
   if (last != nullptr && is_membar(last) && prev == last) {
     // We are merging two memory barrier instructions.  On RISCV we
@@ -4127,7 +4125,7 @@ void MacroAssembler::membar(uint32_t order_constraint) {
     return;
   }
 
-  code()->set_last_insn(pc());
+  code()->set_last_merge_candidate(pc());
   uint32_t predecessor = 0;
   uint32_t successor = 0;
   membar_mask_to_pred_succ(order_constraint, predecessor, successor);
@@ -4176,50 +4174,6 @@ void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nm
     test_bit(tmp_reg, tmp_reg, exact_log2(SafepointMechanism::poll_bit()));
     bnez(tmp_reg, slow_path, /* is_far */ true);
   }
-}
-
-void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
-                                Label &succeed, Label *fail) {
-  assert_different_registers(addr, tmp, t0);
-  assert_different_registers(newv, tmp, t0);
-  assert_different_registers(oldv, tmp, t0);
-
-  // oldv holds comparison value
-  // newv holds value to write in exchange
-  // addr identifies memory word to compare against/update
-  if (UseZacas) {
-    mv(tmp, oldv);
-    atomic_cas(tmp, newv, addr, Assembler::int64, Assembler::aq, Assembler::rl);
-    beq(tmp, oldv, succeed);
-  } else {
-    Label retry_load, nope;
-    bind(retry_load);
-    // Load reserved from the memory location
-    load_reserved(tmp, addr, int64, Assembler::aqrl);
-    // Fail and exit if it is not what we expect
-    bne(tmp, oldv, nope);
-    // If the store conditional succeeds, tmp will be zero
-    store_conditional(tmp, newv, addr, int64, Assembler::rl);
-    beqz(tmp, succeed);
-    // Retry only when the store conditional failed
-    j(retry_load);
-
-    bind(nope);
-  }
-
-  // neither amocas nor lr/sc have an implied barrier in the failing case
-  membar(AnyAny);
-
-  mv(oldv, tmp);
-  if (fail != nullptr) {
-    j(*fail);
-  }
-}
-
-void MacroAssembler::cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
-                                        Label &succeed, Label *fail) {
-  assert(oopDesc::mark_offset_in_bytes() == 0, "assumption");
-  cmpxchgptr(oldv, newv, obj, tmp, succeed, fail);
 }
 
 void MacroAssembler::load_reserved(Register dst,
