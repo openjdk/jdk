@@ -29,20 +29,21 @@
  *          scanline.
  */
 
-import javax.imageio.IIOImage;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.awt.image.IndexColorModel;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
+
 public class RLE4PaddingTest {
-    static int width = 5;
-    static int height = 2;
+    private static final int width = 5;
+    private static final int height = 2;
     private static BufferedImage getTestImage() {
         // create BufferedImage with width 5 and all distinct pixels,
         // so that it uses absolute mode for RLE.
