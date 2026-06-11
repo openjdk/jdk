@@ -53,7 +53,6 @@ public class TestDoneBeforeDoInBackground {
             @Override
             protected String doInBackground() throws Exception {
                 try {
-                    workerStarted.countDown();
                     while (true) {
                         System.out.println("Working...");
                         Thread.sleep(WAIT_TIME);
@@ -90,6 +89,12 @@ public class TestDoneBeforeDoInBackground {
         worker.addPropertyChangeListener(
             new PropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent evt) {
+                    if (worker.getState() == SwingWorker.StateValue.STARTED) {
+                        // Now the worker has started and we got a STARTED
+                        // notification. It should be save to cancel now.
+                        workerStarted.countDown();
+                    }
+
                     System.out.println("doInBackgroundStarted: " +
                                         doInBackgroundStarted.get() +
                                         " doInBackgroundFinished: " +
