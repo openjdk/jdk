@@ -211,9 +211,19 @@ public class PriorityQueueTest extends JSR166TestCase {
     }
 
     /**
-     * Initializing from PriorityQueue and its comparator
+     * Initializing from Collection of null elements throws NPE
      */
     public void testConstructor11() {
+        try {
+            new PriorityQueue<Item>(Arrays.asList(new Item[SIZE]), new MyReverseComparator());
+            shouldThrow();
+        } catch (NullPointerException success) {}
+    }
+
+    /**
+     * Initializing from PriorityQueue and its comparator
+     */
+    public void testConstructor12() {
         Item[] items = seqItems(SIZE);
         MyReverseComparator cmp = new MyReverseComparator();
         @SuppressWarnings("unchecked")
@@ -228,7 +238,7 @@ public class PriorityQueueTest extends JSR166TestCase {
     /**
      * Initializing from SortedSet and its comparator
      */
-    public void testConstructor12() {
+    public void testConstructor13() {
         Item[] items = seqItems(SIZE);
         MyReverseComparator cmp = new MyReverseComparator();
         @SuppressWarnings("unchecked")
@@ -243,7 +253,7 @@ public class PriorityQueueTest extends JSR166TestCase {
     /**
      * Initializing with null comparator
      */
-    public void testConstructor13() {
+    public void testConstructor14() {
         Item[] items = seqItems(SIZE);
         @SuppressWarnings("unchecked")
         PriorityQueue<Item> q1 = new PriorityQueue<>((Comparator<Item>) null);
