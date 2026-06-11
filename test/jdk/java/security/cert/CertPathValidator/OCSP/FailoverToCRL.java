@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,13 +136,11 @@
  */
 
 import java.io.*;
-import java.net.SocketException;
-import java.security.DEREncodable;
+import java.security.BinaryEncodable;
 import java.security.PEMDecoder;
 import java.util.*;
 import java.security.Security;
 import java.security.cert.*;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.cert.CertPathValidatorException.BasicReason;
 import java.util.Collections;
 
@@ -232,7 +230,7 @@ public class FailoverToCRL {
                     new ByteArrayInputStream(crlStr.getBytes());
 
         // generate a cert store
-        Collection<DEREncodable> crls = new HashSet<>();
+        Collection<BinaryEncodable> crls = new HashSet<>();
 
         crls.add(PEM_DECODER.decode(crlStr, X509CRL.class));
 

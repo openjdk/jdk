@@ -86,7 +86,7 @@ public class TestGCLogMessages {
         }
 
         public boolean isAvailable() {
-            return Compiler.isC2Enabled();
+            return Compiler.isC2Included();
         }
     }
 

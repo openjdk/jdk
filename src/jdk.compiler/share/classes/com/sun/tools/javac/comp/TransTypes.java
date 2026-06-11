@@ -248,9 +248,6 @@ public class TransTypes extends TreeTranslator {
                                                meth.name,
                                                bridgeType,
                                                origin);
-        /* once JDK-6996415 is solved it should be checked if this approach can
-         * be applied to method addOverrideBridgesIfNeeded
-         */
         bridge.params = createBridgeParams(impl, bridge, bridgeType);
         bridge.setAttributes(impl);
 

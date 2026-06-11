@@ -1745,8 +1745,8 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
     for (idx_t i = beg; i <= end; i++) {
       ShenandoahHeapRegion* r = _heap->get_region(i);
       assert(i == beg || _heap->get_region(i - 1)->index() + 1 == r->index(), "Should be contiguous");
-      assert(r->is_empty(), "Should be empty");
       r->try_recycle_under_lock();
+      assert(r->is_empty(), "Should be empty");
       r->set_affiliation(req.affiliation());
       r->make_regular_allocation(req.affiliation());
       if ((i == end) && (used_words_in_last_region > 0)) {
