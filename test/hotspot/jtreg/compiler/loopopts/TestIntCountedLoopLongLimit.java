@@ -23,23 +23,24 @@
 
 package compiler.loopopts;
 
+import compiler.lib.compile_framework.CompileFramework;
 import compiler.lib.generators.Generator;
 import compiler.lib.ir_framework.*;
+import compiler.lib.template_framework.*;
+import compiler.lib.template_framework.library.TestFrameworkClass;
 import compiler.whitebox.CompilerWhiteBoxTest;
-import jdk.test.lib.Asserts;
+import jdk.test.lib.*;
 import jdk.test.whitebox.WhiteBox;
 import jtreg.SkippedException;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.*;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.net.*;
 import java.nio.file.Paths;
+import java.util.*;
 
 import static compiler.lib.generators.Generators.*;
+import static compiler.lib.template_framework.Template.*;
 
 /**
  * @test
@@ -54,55 +55,58 @@ import static compiler.lib.generators.Generators.*;
  * ${test.main.class} testIr
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-BackgroundCompilation
  * ${test.main.class} testDeoptimizations
+ * @run driver/timeout=600 ${test.main.class} testTemplated
+ * @run driver/timeout=600 ${test.main.class} testTemplatedStress
  */
 public class TestIntCountedLoopLongLimit {
-    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     // Random longs within int range. Choose small numbers to avoid tests taking too long
     private static final Generator<Long> SMALL_UNIFORMS = G.uniformLongs(0, 1024 * 1024 - 1);
-
-    // Random longs outside the int range. Choose numbers close to the int limits to avoid tests taking too long.
-    private static final Generator<Long> LARGE_UNIFORMS = G.uniformLongs((long) Integer.MAX_VALUE + 1, (long) Integer.MAX_VALUE + (1024 * 1024));
 
     // Use a larger stride to avoid tests taking too long
     private static final int LARGE_STRIDE = Integer.MAX_VALUE / 1024 / 1024;
     private static volatile long SOME_LONG = 42;
 
     public static void main(String[] args) throws Exception {
-        if ((long) WHITE_BOX.getVMFlag("StressLongCountedLoop") != 0 ||
-                (long) WHITE_BOX.getVMFlag("PerMethodTrapLimit") < 5) {
-            throw new SkippedException("Must disable StressLongCountedLoop and have at least 5 PerMethodTrapLimit");
-        }
-
         switch (args.length > 0 ? args[0] : "") {
             case "testIr":
+                checkWhiteBoxPreconditions();
                 TestFramework.run();
                 break;
             case "testDeoptimizations":
+                checkWhiteBoxPreconditions();
                 testDeoptimizations();
+                break;
+            case "testTemplated":
+                testTemplated(new String[]{});
+                break;
+            case "testTemplatedStress":
+                if (!Platform.isDebugBuild()) {
+                    throw new SkippedException("Stress flags used here are debug-only");
+                }
+                testTemplated(new String[]{
+                        "-XX:StressLongCountedLoop=1",
+                        "-XX:+StressCountedLoop",
+                        "-XX:+StressShortRunningLongLoop"
+                });
                 break;
             default:
                 throw new IllegalArgumentException("Unknown test selection. Check @run commands");
         }
     }
 
+    private static void checkWhiteBoxPreconditions() {
+        if ((long) WhiteBox.getWhiteBox().getVMFlag("StressLongCountedLoop") != 0 ||
+                (long) WhiteBox.getWhiteBox().getVMFlag("PerMethodTrapLimit") < 5) {
+            throw new SkippedException("Must disable StressLongCountedLoop and have at least 5 PerMethodTrapLimit");
+        }
+    }
+
     /* Since fuzzers are unlikely to generate int loops with long limits to trigger this optimization, we need to be
-     * careful when writing test cases. Currently, these test cases cover:
-     *   1. Correctness vs baseline: same trip count as a pure int limit using random small long limits
-     *   2. Compare shape and operand order: `limit > i` vs. `i < limit`
-     *   3. Other loop opts: combined with loops that are IV-replaced
-     *   4. Out-of-int range: using large strides to tests overflow/underflow without excessive test time
-     *   5. Negative case: limit reassigned in the loop so the limit is not loop invariant
-     *   6. Function call as limit: MemorySegment#byteSize() which is a real-world pattern that could occur
-     *   7. Edge values for limits: Integer.MAX_VALUE, Integer.MAX_VALUE + 1L, Integer.MIN_VALUE, Integer.MIN_VALUE - 1L
-     *   8. Compilation assertion on deoptimization with the WhiteBox API that traps are working
-     *
-     * What more to consider:
-     *   1. More loop exit patterns: !=, <=, >= (however, should be irrelevant to the optimization code)
-     *   2. Large limit with small stride: will lead to unreason loop running time when not C2 compiled
-     *
-     * Since JDK-8336759 only adds additional traps outside the loops and does little graph modification on the loop
-     * itself, these should be sufficient to catch any regression without testing on more complex loop structures.
+     * careful when writing test cases. The hand-written tests below cover IR shape verification and deoptimization
+     * traps. The templated tests (testTemplated, testTemplatedStress) cover correctness across all comparison
+     * operators (<, <=, >, >=), swapped operands, multiple strides, random init values, boundary limits
+     * (Integer.MAX_VALUE, MIN_VALUE, and slightly out-of-range), and zero/one-iteration edge cases.
      */
     @Test
     @IR(counts = { IRNode.COUNTED_LOOP, "2" }) // Make sure IR tests can pick up counted loops.
@@ -212,10 +216,12 @@ public class TestIntCountedLoopLongLimit {
 
     @Run(test = { "testCountedLoopWithOverflow", "testCountedLoopWithUnderflow" })
     public static void runTestCountedLoopWithOverflow() {
-        long limit = SMALL_UNIFORMS.next() * LARGE_STRIDE; // within int range, no over/underflow
+        long trips = SMALL_UNIFORMS.next();
+        int init = G.uniformInts(0, 10).next() * LARGE_STRIDE;
+        long limit = init + trips * LARGE_STRIDE; // within int range, no over/underflow
 
-        Asserts.assertEQ((int) limit, testCountedLoopWithOverflow(0, limit));
-        Asserts.assertEQ((int) -limit, testCountedLoopWithUnderflow(0, -limit));
+        Asserts.assertEQ((int) (trips * LARGE_STRIDE), testCountedLoopWithOverflow(init, limit));
+        Asserts.assertEQ((int) -(trips * LARGE_STRIDE), testCountedLoopWithUnderflow(-init, -limit));
 
         // See testDeoptimizations for traps on slow path with over/underflows
     }
@@ -266,19 +272,19 @@ public class TestIntCountedLoopLongLimit {
     }
 
     private static void assertIsCompiled(Method m) {
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
+        if (!WhiteBox.getWhiteBox().isMethodCompiled(m) || WhiteBox.getWhiteBox().getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
             throw new AssertionError("should still be compiled");
         }
     }
 
     private static void assertIsNotCompiled(Method m) {
-        if (WHITE_BOX.isMethodCompiled(m) && WHITE_BOX.getMethodCompilationLevel(m) == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
+        if (WhiteBox.getWhiteBox().isMethodCompiled(m) && WhiteBox.getWhiteBox().getMethodCompilationLevel(m) == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
             throw new AssertionError("should have been deoptimized");
         }
     }
 
     private static void compile(Method m) {
-        WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+        WhiteBox.getWhiteBox().enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
         assertIsCompiled(m);
     }
 
@@ -319,17 +325,244 @@ public class TestIntCountedLoopLongLimit {
     }
 
     private static void testDeoptimizations() throws Exception {
-        long compileArg = SMALL_UNIFORMS.next() * LARGE_STRIDE; // compile with a known "good" value that doesn't trap
+        long compileArg = (SMALL_UNIFORMS.next() + 1) * LARGE_STRIDE; // compile with a known "good" value that doesn't trap
+        int init = G.uniformInts(0, 10).next();
 
         Method testCountedLoopWithOverflow = TestIntCountedLoopLongLimit.class.getDeclaredMethod("testCountedLoopWithOverflow", int.class, long.class);
-        assertShouldTrap(testCountedLoopWithOverflow, new Object[]{ 0, compileArg }, new Object[]{ 0, (long) Integer.MAX_VALUE }, (int) compileArg, -1);
-        assertShouldTrap(testCountedLoopWithOverflow, new Object[]{ 0, compileArg }, new Object[]{ 0, (long) Integer.MAX_VALUE + 1L }, (int) compileArg, -1);
-        assertShouldTrap(testCountedLoopWithOverflow, new Object[]{ 0, compileArg }, new Object[]{ 0, (long) Integer.MAX_VALUE + compileArg }, (int) compileArg, -1);
+        // Although Integer.MAX_VALUE is within int range, it still always traps. LARGE_STRIDE causes the IV to overflow past it.
+        assertShouldTrap(testCountedLoopWithOverflow, new Object[]{ init, compileArg }, new Object[]{ init, (long) Integer.MAX_VALUE }, (int) compileArg, -1);
+        assertShouldTrap(testCountedLoopWithOverflow, new Object[]{ init, compileArg }, new Object[]{ init, (long) Integer.MAX_VALUE + 1L }, (int) compileArg, -1);
+        assertShouldTrap(testCountedLoopWithOverflow, new Object[]{ init, compileArg }, new Object[]{ init, (long) Integer.MAX_VALUE + compileArg }, (int) compileArg, -1);
 
         Method testCountedLoopWithUnderflow = TestIntCountedLoopLongLimit.class.getDeclaredMethod("testCountedLoopWithUnderflow", int.class, long.class);
-        assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ 0, -compileArg }, new Object[]{ 0, (long) Integer.MIN_VALUE }, (int) -compileArg, 1);
-        assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ 0, -compileArg }, new Object[]{ 0, (long) Integer.MIN_VALUE - 1L }, (int) -compileArg, 1);
-        assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ 0, -compileArg }, new Object[]{ 0, (long) Integer.MIN_VALUE - compileArg }, (int) -compileArg, 1);
+        // Similar, Integer.MIN_VALUE always traps with IV underflow.
+        assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ -init, -compileArg }, new Object[]{ -init, (long) Integer.MIN_VALUE }, (int) -compileArg, 1);
+        assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ -init, -compileArg }, new Object[]{ -init, (long) Integer.MIN_VALUE - 1L }, (int) -compileArg, 1);
+        assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ -init, -compileArg }, new Object[]{ -init, (long) Integer.MIN_VALUE - compileArg }, (int) -compileArg, 1);
+    }
 
+    // Templated and randomized tests cover the following:
+    //   - All comparison operators: <, <=, >, >=
+    //   - Swapped operands: (long) i < limit vs. limit > (long) i
+    //   - Multiple strides: 1, 3, and a random
+    //   - Random init values
+    //   - Boundary limits: Integer.MAX_VALUE, MIN_VALUE, and slightly out-of-range
+    //   - Zero-iteration and one-iteration edge cases
+    //   - StressLongCountedLoop=1 stress testing (testTemplatedStress)
+    //
+    // Comparison operator != is excluded: with a long limit outside int range, int i can never equal it, so the loop
+    // runs until MAX_ITERATIONS is triggered; in which case, the test would not be meaningful since it only tests the
+    // guard. For limits within int range, != behaves like < or > and is already covered.
+    //
+    // In total, 24 generated tests are per run: 4 ops x 2 swaps x 3 strides.
+    enum CmpOp {
+        LT("<", ">", true),
+        LE("<=", ">=", true),
+        GT(">", "<", false),
+        GE(">=", "<=", false);
+
+        final String symbol;
+        final String mirror;
+        final boolean countingUp;
+
+        CmpOp(String symbol, String mirror, boolean countingUp) {
+            this.symbol = symbol;
+            this.mirror = mirror;
+            this.countingUp = countingUp;
+        }
+    }
+
+    private static void testTemplated(String[] vmFlags) {
+        CompileFramework comp = new CompileFramework();
+        comp.addJavaSourceCode("compiler.loopopts.templated.IntCountedLoopLongLimit", generate(comp));
+        comp.compile();
+        comp.invoke("compiler.loopopts.templated.IntCountedLoopLongLimit", "main", new Object[]{vmFlags});
+    }
+
+    private static String generate(CompileFramework comp) {
+        List<TemplateToken> tests = new ArrayList<>();
+
+        var sharedFields = Template.make(() -> scope(
+                """
+                private static final Generators G = Generators.G;
+                """));
+        tests.add(sharedFields.asToken());
+
+        int randomStride = G.uniformInts(2, 100).next();
+        for (CmpOp op : CmpOp.values()) {
+            for (boolean swap : new boolean[]{false, true}) {
+                for (int stride : new int[]{1, 3, randomStride}) {
+                    tests.add(generateLoopTest(op, swap, stride));
+                }
+            }
+        }
+
+        return TestFrameworkClass.render(
+                "compiler.loopopts.templated", "IntCountedLoopLongLimit",
+                Set.of("java.util.Arrays",
+                        "compiler.lib.generators.Generators"),
+                comp.getEscapedClassPathOfCompiledClasses(),
+                tests);
+    }
+
+    private static TemplateToken generateLoopTest(CmpOp op, boolean swap, int stride) {
+        int actualStride = op.countingUp ? stride : -stride;
+        String cmp = swap
+                ? "limit " + op.mirror + " (long) i"
+                : "(long) i " + op.symbol + " limit";
+
+        var template = Template.make(() -> {
+            String test = $("test");
+            String ref = $("ref");
+            String run = $("run");
+            return scope(
+                    let("cmp", cmp),
+                    let("stride", actualStride),
+                    let("test", test),
+                    let("ref", ref),
+                    let("run", run),
+                    generateTestMethod(test, cmp, actualStride, false),
+                    generateTestMethod(ref, cmp, actualStride, true),
+                    generateRunMethod(op, run, test, ref));
+        });
+        return template.asToken();
+    }
+
+    private static final int MAX_ITERATIONS = 10_000;
+
+    private static TemplateToken generateTestMethod(String methodName, String cmp, int stride, boolean dontCompile) {
+        var template = Template.make(() -> scope(
+                let("methodName", methodName),
+                let("cmp", cmp),
+                let("stride", stride),
+                let("maxIter", MAX_ITERATIONS),
+                dontCompile
+                        ? "@DontCompile\n"
+                        : "",
+                !dontCompile
+                        ? "@Test\n"
+                        : "",
+                """
+                public static long[] #methodName(int init, long limit) {
+                    long sum = 0;
+                    int count = 0;
+                    for (int i = init; #cmp; i += #stride) {
+                        sum += i;
+                        count++;
+                        if (count > #maxIter) break;
+                    }
+                    return new long[] { count, sum };
+                }
+                """));
+        return template.asToken();
+    }
+
+    private static TemplateToken generateRunMethod(CmpOp op, String run, String test, String ref) {
+        var template = Template.make(() -> scope(
+                let("run", run),
+                let("test", test),
+                let("ref", ref),
+                """
+                @Run(test = "#test")
+                @Warmup(100)
+                public static void #run() {
+                    int init;
+                    long limit;
+                """,
+                op.countingUp
+                        ? generateRunBodyCountingUp()
+                        : generateRunBodyCountingDown(),
+                """
+                    long[] actual = #test(init, limit);
+                    long[] expected = #ref(init, limit);
+                    if (!Arrays.equals(actual, expected)) {
+                        throw new RuntimeException("#test(init=" + init + ", limit=" + limit + "): " +
+                            "expected " + Arrays.toString(expected) + " but got " + Arrays.toString(actual));
+                    }
+                }
+                """));
+        return template.asToken();
+    }
+
+    private static TemplateToken generateRunBodyCountingUp() {
+        var template = Template.make(() -> scope(
+                """
+                    switch (G.uniformInts(0, 7).next()) {
+                        case 0 -> {
+                            init = G.uniformInts(-1000, 999).next();
+                            limit = G.uniformLongs(-1000, 999).next();
+                        }
+                        case 1 -> {
+                            init = Integer.MAX_VALUE - G.uniformInts(1, 999).next();
+                            limit = (long) Integer.MAX_VALUE;
+                        }
+                        case 2 -> {
+                            init = Integer.MAX_VALUE - G.uniformInts(1, 999).next();
+                            limit = (long) Integer.MAX_VALUE + 1L;
+                        }
+                        case 3 -> {
+                            init = Integer.MAX_VALUE - G.uniformInts(1, 999).next();
+                            limit = (long) Integer.MAX_VALUE + G.uniformInts(1, 99).next();
+                        }
+                        case 4 -> {
+                            init = Integer.MIN_VALUE + G.uniformInts(0, 999).next();
+                            limit = (long) Integer.MIN_VALUE;
+                        }
+                        case 5 -> {
+                            init = Integer.MIN_VALUE + G.uniformInts(0, 999).next();
+                            limit = (long) Integer.MIN_VALUE - 1L;
+                        }
+                        case 6 -> {
+                            init = G.uniformInts(0, 999).next();
+                            limit = G.uniformInts(-1000, init - 1).next();
+                        }
+                        default -> {
+                            init = G.uniformInts(0, 999).next();
+                            limit = init + G.uniformInts(0, 1).next();
+                        }
+                    }
+                """));
+        return template.asToken();
+    }
+
+    private static TemplateToken generateRunBodyCountingDown() {
+        var template = Template.make(() -> scope(
+                """
+                    switch (G.uniformInts(0, 7).next()) {
+                        case 0 -> {
+                            init = G.uniformInts(-1000, 999).next();
+                            limit = G.uniformLongs(-1000, 999).next();
+                        }
+                        case 1 -> {
+                            init = Integer.MIN_VALUE + G.uniformInts(1, 999).next();
+                            limit = (long) Integer.MIN_VALUE;
+                        }
+                        case 2 -> {
+                            init = Integer.MIN_VALUE + G.uniformInts(1, 999).next();
+                            limit = (long) Integer.MIN_VALUE - 1L;
+                        }
+                        case 3 -> {
+                            init = Integer.MIN_VALUE + G.uniformInts(1, 999).next();
+                            limit = (long) Integer.MIN_VALUE - G.uniformInts(1, 99).next();
+                        }
+                        case 4 -> {
+                            init = Integer.MAX_VALUE - G.uniformInts(0, 999).next();
+                            limit = (long) Integer.MAX_VALUE;
+                        }
+                        case 5 -> {
+                            init = Integer.MAX_VALUE - G.uniformInts(0, 999).next();
+                            limit = (long) Integer.MAX_VALUE + 1L;
+                        }
+                        case 6 -> {
+                            init = G.uniformInts(-1000, -1).next();
+                            limit = G.uniformInts(init + 1, 999).next();
+                        }
+                        default -> {
+                            init = G.uniformInts(-1000, -1).next();
+                            limit = init - G.uniformInts(0, 1).next();
+                        }
+                    }
+                """));
+        return template.asToken();
     }
 }
