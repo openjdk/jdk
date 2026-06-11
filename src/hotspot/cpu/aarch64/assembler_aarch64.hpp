@@ -3513,6 +3513,18 @@ public:
   INSN(sve_uminv, 0b00000100, 0b001011001); // unsigned minimum reduction to scalar
 #undef INSN
 
+// SVE integer divide - predicate
+// SDIV/UDIV are only defined for 32-bit (S) and 64-bit (D) element sizes.
+#define INSN(NAME, op1, op2)                                                                           \
+  void NAME(FloatRegister Zdn, SIMD_RegVariant T, PRegister Pg, FloatRegister Zm) {                    \
+    assert(T == S || T == D, "invalid register variant");                                              \
+    sve_predicate_reg_insn(op1, op2, Zdn, T, Pg, Zm);                                                  \
+  }
+
+  INSN(sve_sdiv, 0b00000100, 0b010100000); // signed divide
+  INSN(sve_udiv, 0b00000100, 0b010101000); // unsigned divide
+#undef INSN
+
 // SVE floating-point arithmetic - predicate
 #define INSN(NAME, op1, op2)                                                                          \
   void NAME(FloatRegister Zd_or_Zdn_or_Vd, SIMD_RegVariant T, PRegister Pg, FloatRegister Zn_or_Zm) { \
