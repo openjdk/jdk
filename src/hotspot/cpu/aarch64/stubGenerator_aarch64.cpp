@@ -5955,7 +5955,6 @@ class StubGenerator: public StubCodeGenerator {
     kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
     vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 0, offsets4);
     vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 128, offsets4);
-    // __ ldpq(v18, v19, __ post(zetas, 32));
     load32shorts(vs_front(vs2), zetas);
     kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
     vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 128, offsets4);
