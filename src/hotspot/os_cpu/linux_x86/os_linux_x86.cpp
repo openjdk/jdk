@@ -385,6 +385,7 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 #define XSAVE_HDR_OFFSET 512
 #define XFEATURE_APX     (1ULL << 19)
 #define XFEATURE_YMM     (1ULL << 2)
+#define XFEATURE_OPMASK  (1ULL << 5)
 #define XFEATURE_ZMM_HI256 (1ULL << 6)
 #define XFEATURE_HI16_ZMM (1ULL << 7)
 
@@ -491,6 +492,21 @@ static void print_zmm_registers(outputStream* st, const struct _xstate* xstate, 
   }
 }
 
+static void print_kmm_registers(outputStream* st, const struct _xstate* xstate, bool has_opmask) {
+  const uint32_t opmask_offset = VM_Version::opmask_xstate_offset();
+  if (!has_opmask || opmask_offset == 0) {
+    return;
+  }
+
+  const char* xsave = (const char*)xstate;
+  const uint64_t* kmask = (const uint64_t*)(xsave + opmask_offset);
+
+  for (int i = 0; i < 8; ++i) {
+    st->print_cr("KMM[%d]=" INTPTR_FORMAT, i, kmask[i]);
+  }
+  st->cr();
+}
+
 static void print_vector_registers(outputStream* st, const ucontext_t* uc) {
   if (uc->uc_mcontext.fpregs == nullptr) {
     return;
@@ -511,6 +527,7 @@ static void print_vector_registers(outputStream* st, const ucontext_t* uc) {
 
   const uint64_t xsave_state_bitmap = xstate->xstate_hdr.xstate_bv;
   const bool has_ymm_hi128 = (xsave_state_bitmap & XFEATURE_YMM) != 0;
+  const bool has_opmask = (xsave_state_bitmap & XFEATURE_OPMASK) != 0;
   const bool has_zmm_hi256 = (xsave_state_bitmap & XFEATURE_ZMM_HI256) != 0;
   const bool has_hi16_zmm = (xsave_state_bitmap & XFEATURE_HI16_ZMM) != 0;
   const bool should_print_zmm_registers = (UseAVX > 2) && (has_zmm_hi256 || has_hi16_zmm);
@@ -519,6 +536,7 @@ static void print_vector_registers(outputStream* st, const ucontext_t* uc) {
     return print_ymm_registers(st, xstate, has_ymm_hi128);
   }
 
+  print_kmm_registers(st, xstate, has_opmask);
   print_zmm_registers(st, xstate, has_ymm_hi128, has_zmm_hi256, has_hi16_zmm);
 }
 
