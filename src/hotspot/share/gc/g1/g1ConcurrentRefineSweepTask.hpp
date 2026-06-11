@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_G1_G1CONCURRENTREFINESWEEPTASK_HPP
 #define SHARE_GC_G1_G1CONCURRENTREFINESWEEPTASK_HPP
 
-#include "runtime/atomic.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "runtime/atomic.hpp"
 
 class G1CardTableClaimTable;
 class G1ConcurrentRefineStats;
