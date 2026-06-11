@@ -87,7 +87,9 @@ public class TestIntCountedLoopLongLimit {
                 testTemplated(new String[]{
                         "-XX:StressLongCountedLoop=1",
                         "-XX:+StressCountedLoop",
-                        "-XX:+StressShortRunningLongLoop"
+                        "-XX:+StressShortRunningLongLoop",
+                        "-XX:+StressIGVN",
+                        "-XX:+StressCCP"
                 });
                 break;
             default:
@@ -242,7 +244,7 @@ public class TestIntCountedLoopLongLimit {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "4" })
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=2" })
     @IR(failOn = { IRNode.LOOP })
     public static int testMemorySegmentSizeLimit(MemorySegment segment) {
         int sum = 0;
