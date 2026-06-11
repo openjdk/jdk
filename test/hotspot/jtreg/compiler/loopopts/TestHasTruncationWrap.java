@@ -1085,6 +1085,8 @@ public class TestHasTruncationWrap {
     // Note2: the range argument seems a bit strange here, but it turns out that
     //        TruncatedIncrement::build maps shift=8 to BYTE, which just shows that
     //        the implementation confused the shift=24 with shift=8.
+    //        Since we map to BYTE, 1_000 would be out of bounds, that's why this
+    //        is still a bad bounds example.
     public static int testIRShift8BadBounds_gold = testIRShift8BadBounds();
 
     @Run(test = "testIRShift8BadBounds")

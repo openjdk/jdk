@@ -86,7 +86,7 @@ public class TestTruncationWrapFuzzer {
 
         long t0 = System.nanoTime();
         // Add a java source file.
-        comp.addJavaSourceCode("compiler.rangecheck.templated.Generated", generate(comp));
+        comp.addJavaSourceCode("compiler.loopopts.templated.Generated", generate(comp));
 
         long t1 = System.nanoTime();
         // Compile the source file.
@@ -95,7 +95,7 @@ public class TestTruncationWrapFuzzer {
         long t2 = System.nanoTime();
 
         // Run the tests without any additional VM flags.
-        comp.invoke("compiler.rangecheck.templated.Generated", "main", new Object[] {new String[] {}});
+        comp.invoke("compiler.loopopts.templated.Generated", "main", new Object[] {new String[] {}});
         long t3 = System.nanoTime();
 
         System.out.println("Code Generation:  " + (t1-t0) * 1e-9f);
@@ -144,7 +144,7 @@ public class TestTruncationWrapFuzzer {
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
             // package and class name.
-            "compiler.rangecheck.templated", "Generated",
+            "compiler.loopopts.templated", "Generated",
             // List of imports.
             Set.of("compiler.lib.generators.*",
                    "java.util.Random",
