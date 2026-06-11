@@ -349,7 +349,7 @@ void AttachListener::vm_start() {
   int n = os::snprintf(fn, UNIX_PATH_MAX, "%s/.java_pid%d",
                        os::get_temp_directory(), os::current_process_id());
   if (n > (int)UNIX_PATH_MAX) {
-    log_warning(attach)("Failed to create temporary file for attach %s/.java_pid%d file name too long",
+    log_warning(attach)("Failed to create temporary file for attach %s/.java_pid%d: file name too long",
                         os::get_temp_directory(), os::current_process_id());
     return;
   }
