@@ -33,7 +33,7 @@
  * @run driver ${test.main.class}
  */
 
-package compiler.rangechecks;
+package compiler.loopopts;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -68,7 +68,7 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * - Exit checks: random Comparison, see Comparator and Comparison (signed and unsigned).
  * - For endless loops / loops that would take too long: early exit via opaqueCheck,
  *   Note: it is verified that this does not hinder optimization, see:
- *   TestHasTruncationWrap.java -> testIR7.
+ *   TestHasTruncationWrap.java -> testIRShort7.
  * - Interesting loop bounds: init/limit
  *   - constant
  *   - variable, sampled (see getInputTemplate), and modified (no-op, truncate, clamp).

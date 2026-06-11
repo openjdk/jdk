@@ -1073,7 +1073,7 @@ public class TestHasTruncationWrap {
         // -> init < limit <= 100
         // -> filtered_int_type return [min_int..99]
         // -> and intersected with its previous type [0..max_int]
-        //    we get init in [0..99], which is in 24-bit range.
+        //    we get init in [0..99], which is in 24-bit (and byte) range.
         for (int i = init; i < limit; i = ((i+1) << 8) >> 8) { // explicit shift instead of cast
             sum = opaqueSum(sum); // work to keep loop alive
         }
@@ -1103,11 +1103,11 @@ public class TestHasTruncationWrap {
         // -> init < limit <= 1_000
         // -> filtered_int_type return [min_int..999]
         // -> and intersected with its previous type [0..max_int]
-        //    we get init in [0..999], which is NOT in 24-bit range.
+        //    we get init in [0..999], which is NOT in byte range.
         for (int i = init; i < limit; i = ((i+1) << 8) >> 8) { // explicit shift instead of cast
             sum = opaqueSum(sum); // work to keep loop alive
             // Also: the backedge range is not good because
-            // the exit check is not strong enough for 24-bit:
+            // the exit check is not strong enough for byte:
             //   i < limit <= 1_000
         }
         return sum;
