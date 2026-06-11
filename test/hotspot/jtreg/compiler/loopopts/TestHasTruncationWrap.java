@@ -193,18 +193,18 @@ public class TestHasTruncationWrap {
     public static int lo = 11;
     public static int hi = 33;
 
-    // testIR0: just a regular int loop
-    public static int testIR0_gold = testIR0();
+    // testIRShort0: just a regular int loop
+    public static int testIRShort0_gold = testIRShort0();
 
-    @Run(test = "testIR0")
-    private static void runIR0() {
-        int val = testIR0();
-        if (val != testIR0_gold) { throw new RuntimeException("wrong value: " + testIR0_gold + " vs " + val); }
+    @Run(test = "testIRShort0")
+    private static void runIRShort0() {
+        int val = testIRShort0();
+        if (val != testIRShort0_gold) { throw new RuntimeException("wrong value: " + testIRShort0_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
-    static int testIR0() {
+    static int testIRShort0() {
         int init  = lo;
         int limit = hi;
         int sum = 0;
@@ -214,18 +214,18 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR0b: just a regular int loop, but with NEQ exit check.
-    public static int testIR0b_gold = testIR0b();
+    // testIRShort0b: just a regular int loop, but with NEQ exit check.
+    public static int testIRShort0b_gold = testIRShort0b();
 
-    @Run(test = "testIR0b")
-    private static void runIR0b() {
-        int val = testIR0b();
-        if (val != testIR0b_gold) { throw new RuntimeException("wrong value: " + testIR0b_gold + " vs " + val); }
+    @Run(test = "testIRShort0b")
+    private static void runIRShort0b() {
+        int val = testIRShort0b();
+        if (val != testIRShort0b_gold) { throw new RuntimeException("wrong value: " + testIRShort0b_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
-    static int testIR0b() {
+    static int testIRShort0b() {
         int init  = lo;
         int limit = hi;
         int sum = 0;
@@ -235,18 +235,18 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR1: short loop, but values are trivially in short range.
-    public static int testIR1_gold = testIR1();
+    // testIRShort1: short loop, but values are trivially in short range.
+    public static int testIRShort1_gold = testIRShort1();
 
-    @Run(test = "testIR1")
-    private static void runIR1() {
-        int val = testIR1();
-        if (val != testIR1_gold) { throw new RuntimeException("wrong value: " + testIR1_gold + " vs " + val); }
+    @Run(test = "testIRShort1")
+    private static void runIRShort1() {
+        int val = testIRShort1();
+        if (val != testIRShort1_gold) { throw new RuntimeException("wrong value: " + testIRShort1_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
-    static int testIR1() {
+    static int testIRShort1() {
         short init  = (short)lo;
         short limit = (short)hi;
         int sum = 0;
@@ -256,18 +256,18 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR1b: short loop, but values are trivially in short range. Decrement iv.
-    public static int testIR1b_gold = testIR1b();
+    // testIRShort1b: short loop, but values are trivially in short range. Decrement iv.
+    public static int testIRShort1b_gold = testIRShort1b();
 
-    @Run(test = "testIR1b")
-    private static void runIR1b() {
-        int val = testIR1b();
-        if (val != testIR1b_gold) { throw new RuntimeException("wrong value: " + testIR1b_gold + " vs " + val); }
+    @Run(test = "testIRShort1b")
+    private static void runIRShort1b() {
+        int val = testIRShort1b();
+        if (val != testIRShort1b_gold) { throw new RuntimeException("wrong value: " + testIRShort1b_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
-    static int testIR1b() {
+    static int testIRShort1b() {
         short init  = (short)hi;
         short limit = (short)lo;
         int sum = 0;
@@ -277,19 +277,19 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR1c: short loop, but values are trivially in short range. Incr by 2.
+    // testIRShort1c: short loop, but values are trivially in short range. Incr by 2.
     // Not safe: lo=32766+2 would wrap past short_max.
-    public static int testIR1c_gold = testIR1c();
+    public static int testIRShort1c_gold = testIRShort1c();
 
-    @Run(test = "testIR1c")
-    private static void runIR1c() {
-        int val = testIR1c();
-        if (val != testIR1c_gold) { throw new RuntimeException("wrong value: " + testIR1c_gold + " vs " + val); }
+    @Run(test = "testIRShort1c")
+    private static void runIRShort1c() {
+        int val = testIRShort1c();
+        if (val != testIRShort1c_gold) { throw new RuntimeException("wrong value: " + testIRShort1c_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
-    static int testIR1c() {
+    static int testIRShort1c() {
         short init  = (short)lo;
         short limit = (short)hi;
         int sum = 0;
@@ -299,19 +299,19 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR1d: short loop, but values are trivially in short range. Decrement iv by 2.
+    // testIRShort1d: short loop, but values are trivially in short range. Decrement iv by 2.
     // Not safe: lo=-32767-2 would wrap past short_min.
-    public static int testIR1d_gold = testIR1d();
+    public static int testIRShort1d_gold = testIRShort1d();
 
-    @Run(test = "testIR1d")
-    private static void runIR1d() {
-        int val = testIR1d();
-        if (val != testIR1d_gold) { throw new RuntimeException("wrong value: " + testIR1d_gold + " vs " + val); }
+    @Run(test = "testIRShort1d")
+    private static void runIRShort1d() {
+        int val = testIRShort1d();
+        if (val != testIRShort1d_gold) { throw new RuntimeException("wrong value: " + testIRShort1d_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
-    static int testIR1d() {
+    static int testIRShort1d() {
         short init  = (short)hi;
         short limit = (short)lo;
         int sum = 0;
@@ -321,18 +321,18 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR2: short loop, ranges proved in short range via CmpI before loop.
-    public static int testIR2_gold = testIR2();
+    // testIRShort2: short loop, ranges proved in short range via CmpI before loop.
+    public static int testIRShort2_gold = testIRShort2();
 
-    @Run(test = "testIR2")
-    private static void runIR2() {
-        int val = testIR2();
-        if (val != testIR2_gold) { throw new RuntimeException("wrong value: " + testIR2_gold + " vs " + val); }
+    @Run(test = "testIRShort2")
+    private static void runIRShort2() {
+        int val = testIRShort2();
+        if (val != testIRShort2_gold) { throw new RuntimeException("wrong value: " + testIRShort2_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
-    static int testIR2() {
+    static int testIRShort2() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
         if (init >= limit) { return -1; } // CmpI before loop
@@ -351,19 +351,19 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR2b: short loop, ranges proved in short range via CmpI before loop.
-    // Compared to testIR2, the check in the loop is an NEQ.
-    public static int testIR2b_gold = testIR2b();
+    // testIRShort2b: short loop, ranges proved in short range via CmpI before loop.
+    // Compared to testIRShort2, the check in the loop is an NEQ.
+    public static int testIRShort2b_gold = testIRShort2b();
 
-    @Run(test = "testIR2b")
-    private static void runIR2b() {
-        int val = testIR2b();
-        if (val != testIR2b_gold) { throw new RuntimeException("wrong value: " + testIR2b_gold + " vs " + val); }
+    @Run(test = "testIRShort2b")
+    private static void runIRShort2b() {
+        int val = testIRShort2b();
+        if (val != testIRShort2b_gold) { throw new RuntimeException("wrong value: " + testIRShort2b_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
-    static int testIR2b() {
+    static int testIRShort2b() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
         if (init >= limit) { return -1; } // CmpI before loop
@@ -382,18 +382,18 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR3: short loop, and range in short range via CmpI before loop (for loop limit).
-    public static int testIR3_gold = testIR3();
+    // testIRShort3: short loop, and range in short range via CmpI before loop (for loop limit).
+    public static int testIRShort3_gold = testIRShort3();
 
-    @Run(test = "testIR3")
-    private static void runIR3() {
-        int val = testIR3();
-        if (val != testIR3_gold) { throw new RuntimeException("wrong value: " + testIR3_gold + " vs " + val); }
+    @Run(test = "testIRShort3")
+    private static void runIRShort3() {
+        int val = testIRShort3();
+        if (val != testIRShort3_gold) { throw new RuntimeException("wrong value: " + testIRShort3_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
-    static int testIR3() {
+    static int testIRShort3() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
         int sum = 0;
@@ -411,7 +411,7 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR3b: short loop, and range in short range via CmpI before loop (for loop limit).
+    // testIRShort3b: short loop, and range in short range via CmpI before loop (for loop limit).
     // Decr iv.
     // Missed optimization opportunity:
     //   CountedLoopConverter::LoopStructure::is_infinite_loop
@@ -421,17 +421,17 @@ public class TestHasTruncationWrap {
     // I don't think this is intentional, because we have handling for positive and
     // negative stride in CountedLoopConverter::has_truncation_wrap.
     // TODO: file RFE
-    public static int testIR3b_gold = testIR3b();
+    public static int testIRShort3b_gold = testIRShort3b();
 
-    @Run(test = "testIR3b")
-    private static void runIR3b() {
-        int val = testIR3b();
-        if (val != testIR3b_gold) { throw new RuntimeException("wrong value: " + testIR3b_gold + " vs " + val); }
+    @Run(test = "testIRShort3b")
+    private static void runIRShort3b() {
+        int val = testIRShort3b();
+        if (val != testIRShort3b_gold) { throw new RuntimeException("wrong value: " + testIRShort3b_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
-    static int testIR3b() {
+    static int testIRShort3b() {
         int limit = Math.max(lo, 0);   // limit in [0..max_int]
         int init  = Math.min(hi, 100); // init  in [min_int..100]
         int sum = 0;
@@ -441,19 +441,19 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR3x: short loop, fails to be recognized as CountedLoop.
-    // Compared to testIR3, the check in the loop is an NEQ.
-    public static int testIR3x_gold = testIR3x();
+    // testIRShort3x: short loop, fails to be recognized as CountedLoop.
+    // Compared to testIRShort3, the check in the loop is an NEQ.
+    public static int testIRShort3x_gold = testIRShort3x();
 
-    @Run(test = "testIR3x")
-    private static void runIR3x() {
-        int val = testIR3x();
-        if (val != testIR3x_gold) { throw new RuntimeException("wrong value: " + testIR3x_gold + " vs " + val); }
+    @Run(test = "testIRShort3x")
+    private static void runIRShort3x() {
+        int val = testIRShort3x();
+        if (val != testIRShort3x_gold) { throw new RuntimeException("wrong value: " + testIRShort3x_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
-    static int testIR3x() {
+    static int testIRShort3x() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
         int sum = 0;
@@ -465,18 +465,18 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR4: short loop, with a CmpI, but the limit ranges are bad.
-    public static int testIR4_gold = testIR4();
+    // testIRShort4: short loop, with a CmpI, but the limit ranges are bad.
+    public static int testIRShort4_gold = testIRShort4();
 
-    @Run(test = "testIR4")
-    private static void runIR4() {
-        int val = testIR4();
-        if (val != testIR4_gold) { throw new RuntimeException("wrong value: " + testIR4_gold + " vs " + val); }
+    @Run(test = "testIRShort4")
+    private static void runIRShort4() {
+        int val = testIRShort4();
+        if (val != testIRShort4_gold) { throw new RuntimeException("wrong value: " + testIRShort4_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
-    static int testIR4() {
+    static int testIRShort4() {
         int init  = Math.max(lo, 0);       // init  in [0..max_int]
         int limit = Math.min(hi, 100_000); // limit in [min_int..100_000]
         int sum = 0;
@@ -494,18 +494,18 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR5: short do-while-loop, and range in short range via CmpI before loop (for loop limit).
-    public static int testIR5_gold = testIR5();
+    // testIRShort5: short do-while-loop, and range in short range via CmpI before loop (for loop limit).
+    public static int testIRShort5_gold = testIRShort5();
 
-    @Run(test = "testIR5")
-    private static void runIR5() {
-        int val = testIR5();
-        if (val != testIR5_gold) { throw new RuntimeException("wrong value: " + testIR5_gold + " vs " + val); }
+    @Run(test = "testIRShort5")
+    private static void runIRShort5() {
+        int val = testIRShort5();
+        if (val != testIRShort5_gold) { throw new RuntimeException("wrong value: " + testIRShort5_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
-    static int testIR5() {
+    static int testIRShort5() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
         if (init >= limit) { return -1; } // CmpI before loop
@@ -522,19 +522,19 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR5b: short do-while-loop, but the backedge check with NEQ is not strong enough to prevent wrapping.
-    // Compared to testIR5, the check in the loop is an NEQ.
-    public static int testIR5b_gold = testIR5b();
+    // testIRShort5b: short do-while-loop, but the backedge check with NEQ is not strong enough to prevent wrapping.
+    // Compared to testIRShort5, the check in the loop is an NEQ.
+    public static int testIRShort5b_gold = testIRShort5b();
 
-    @Run(test = "testIR5b")
-    private static void runIR5b() {
-        int val = testIR5b();
-        if (val != testIR5b_gold) { throw new RuntimeException("wrong value: " + testIR5b_gold + " vs " + val); }
+    @Run(test = "testIRShort5b")
+    private static void runIRShort5b() {
+        int val = testIRShort5b();
+        if (val != testIRShort5b_gold) { throw new RuntimeException("wrong value: " + testIRShort5b_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
-    static int testIR5b() {
+    static int testIRShort5b() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
         if (init >= limit) { return -1; } // CmpI before loop
@@ -551,8 +551,8 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR5c: short do-while-loop.
-    // While the code shape looks very close to testIR2b, it does not behave the same.
+    // testIRShort5c: short do-while-loop.
+    // While the code shape looks very close to testIRShort2b, it does not behave the same.
     // The while loop below is peeled once. The additional "exit check" is eliminated,
     // because redundant after "init >= limit" check.
     // From peeling, the new initial value is a truncated short value, and not init, so
@@ -561,17 +561,17 @@ public class TestHasTruncationWrap {
     // guarantee that there is no short-overflow (wrap): we do not manage to
     // prove that i could never be short_max, and then overflow the short range at
     // the next increment.
-    public static int testIR5c_gold = testIR5c();
+    public static int testIRShort5c_gold = testIRShort5c();
 
-    @Run(test = "testIR5c")
-    private static void runIR5c() {
-        int val = testIR5c();
-        if (val != testIR5c_gold) { throw new RuntimeException("wrong value: " + testIR5c_gold + " vs " + val); }
+    @Run(test = "testIRShort5c")
+    private static void runIRShort5c() {
+        int val = testIRShort5c();
+        if (val != testIRShort5c_gold) { throw new RuntimeException("wrong value: " + testIRShort5c_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
-    static int testIR5c() {
+    static int testIRShort5c() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
         if (init >= limit) { return -1; } // CmpI before loop
@@ -589,20 +589,20 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR5d: short while-loop, again similar to testIR2b and testIR5c, but with while-loop form.
+    // testIRShort5d: short while-loop, again similar to testIRShort2b and testIRShort5c, but with while-loop form.
     // No peeling, and so the entry value is init, and so the "init >= limit" check is useful,
     // and used by has_truncation_wrap. With it, C2 manages to prove no short-overflow.
-    public static int testIR5d_gold = testIR5d();
+    public static int testIRShort5d_gold = testIRShort5d();
 
-    @Run(test = "testIR5d")
-    private static void runIR5d() {
-        int val = testIR5d();
-        if (val != testIR5d_gold) { throw new RuntimeException("wrong value: " + testIR5d_gold + " vs " + val); }
+    @Run(test = "testIRShort5d")
+    private static void runIRShort5d() {
+        int val = testIRShort5d();
+        if (val != testIRShort5d_gold) { throw new RuntimeException("wrong value: " + testIRShort5d_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
-    static int testIR5d() {
+    static int testIRShort5d() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
         if (init >= limit) { return -1; } // CmpI before loop
@@ -619,18 +619,18 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR6: short do-while-loop, missing the CmpI before the loop.
-    public static int testIR6_gold = testIR6();
+    // testIRShort6: short do-while-loop, missing the CmpI before the loop.
+    public static int testIRShort6_gold = testIRShort6();
 
-    @Run(test = "testIR6")
-    private static void runIR6() {
-        int val = testIR6();
-        if (val != testIR6_gold) { throw new RuntimeException("wrong value: " + testIR6_gold + " vs " + val); }
+    @Run(test = "testIRShort6")
+    private static void runIRShort6() {
+        int val = testIRShort6();
+        if (val != testIRShort6_gold) { throw new RuntimeException("wrong value: " + testIRShort6_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
-    static int testIR6() {
+    static int testIRShort6() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
         // No CmpI before the loop!
@@ -644,19 +644,19 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR6b: short do-while-loop, missing the CmpI before the loop.
-    // Compared to testIR6, the check in the loop is an NEQ.
-    public static int testIR6b_gold = testIR6b();
+    // testIRShort6b: short do-while-loop, missing the CmpI before the loop.
+    // Compared to testIRShort6, the check in the loop is an NEQ.
+    public static int testIRShort6b_gold = testIRShort6b();
 
-    @Run(test = "testIR6b")
-    private static void runIR6b() {
-        int val = testIR6b();
-        if (val != testIR6b_gold) { throw new RuntimeException("wrong value: " + testIR6b_gold + " vs " + val); }
+    @Run(test = "testIRShort6b")
+    private static void runIRShort6b() {
+        int val = testIRShort6b();
+        if (val != testIRShort6b_gold) { throw new RuntimeException("wrong value: " + testIRShort6b_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
-    static int testIR6b() {
+    static int testIRShort6b() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
         // No CmpI before the loop!
@@ -682,21 +682,21 @@ public class TestHasTruncationWrap {
         return (opaqueCounter++) >= 100_000;
     }
 
-    // testIR7: with additional opaque exit check.
+    // testIRShort7: with additional opaque exit check.
     // Useful to verify that TestTruncationWrapFuzzer.java opaque exit checks
     // do not prohibit CountedLoop detection.
-    // We start from testIR3 and testIR4, but add the additional opaque exit.
-    public static int testIR7_gold = testIR7();
+    // We start from testIRShort3 and testIRShort4, but add the additional opaque exit.
+    public static int testIRShort7_gold = testIRShort7();
 
-    @Run(test = "testIR7")
-    private static void runIR7() {
-        int val = testIR7();
-        if (val != testIR7_gold) { throw new RuntimeException("wrong value: " + testIR7_gold + " vs " + val); }
+    @Run(test = "testIRShort7")
+    private static void runIRShort7() {
+        int val = testIRShort7();
+        if (val != testIRShort7_gold) { throw new RuntimeException("wrong value: " + testIRShort7_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
-    static int testIR7() {
+    static int testIRShort7() {
         opaqueReset();
         int init  = Math.max(lo, 0);
         int limit = Math.min(hi, 100); // good bounds
@@ -708,18 +708,18 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // testIR7b
-    public static int testIR7b_gold = testIR7b();
+    // testIRShort7b
+    public static int testIRShort7b_gold = testIRShort7b();
 
-    @Run(test = "testIR7b")
-    private static void runIR7b() {
-        int val = testIR7b();
-        if (val != testIR7b_gold) { throw new RuntimeException("wrong value: " + testIR7b_gold + " vs " + val); }
+    @Run(test = "testIRShort7b")
+    private static void runIRShort7b() {
+        int val = testIRShort7b();
+        if (val != testIRShort7b_gold) { throw new RuntimeException("wrong value: " + testIRShort7b_gold + " vs " + val); }
     }
 
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
-    static int testIR7b() {
+    static int testIRShort7b() {
         opaqueReset();
         int init  = Math.max(lo, 0);
         int limit = Math.min(hi, 100_000); // bad bounds
@@ -731,10 +731,255 @@ public class TestHasTruncationWrap {
         return sum;
     }
 
-    // TODO: ensure coverage
-    // - char, byte and short truncation
-    // - check for IRNode.COUNTED_LOOP
-    // - opaqueSum call to prevent empty loop
-    // - increment and decrement cases, non-unit stride
-    // - Cases with and without compare before loop: positive and negative tests
+    // testIRByte1: byte loop, but values are trivially in byte range.
+    // TODO: why not recognized?
+    public static int testIRByte1_gold = testIRByte1();
+
+    @Run(test = "testIRByte1")
+    private static void runIRByte1() {
+        int val = testIRByte1();
+        if (val != testIRByte1_gold) { throw new RuntimeException("wrong value: " + testIRByte1_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIRByte1() {
+        byte init  = (byte)lo;
+        byte limit = (byte)hi;
+        int sum = 0;
+        for (byte i = init; i < limit; i++) {
+            sum = opaqueSum(sum); // work to keep loop alive
+        }
+        return sum;
+    }
+
+    // testIRByte2: byte loop, ranges proved in byte range via CmpI before loop.
+    // TODO: why not recognized?
+    public static int testIRByte2_gold = testIRByte2();
+
+    @Run(test = "testIRByte2")
+    private static void runIRByte2() {
+        int val = testIRByte2();
+        if (val != testIRByte2_gold) { throw new RuntimeException("wrong value: " + testIRByte2_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIRByte2() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        if (init >= limit) { return -1; } // CmpI before loop
+        // -> init < limit <= 100
+        // -> filtered_int_type return [min_int..99]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99], which is in byte range.
+        int sum = 0;
+        for (int i = init; i < limit; i = (byte)(i+1)) {
+            sum = opaqueSum(sum); // work to keep loop alive
+            // The backedge value of i is also far
+            // enough from byte boundaries, because of
+            // the loop exit check:
+            //   i < limit <= 100
+        }
+        return sum;
+    }
+
+    // testIRByte4: byte loop, with a CmpI, but the limit ranges are bad.
+    public static int testIRByte4_gold = testIRByte4();
+
+    @Run(test = "testIRByte4")
+    private static void runIRByte4() {
+        int val = testIRByte4();
+        if (val != testIRByte4_gold) { throw new RuntimeException("wrong value: " + testIRByte4_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    static int testIRByte4() {
+        int init  = Math.max(lo, 0);       // init  in [0..max_int]
+        int limit = Math.min(hi, 1_000); // limit in [min_int..1_000]
+        int sum = 0;
+        // Now, the check is not good enough:
+        // -> init < limit <= 1_000
+        // -> filtered_int_type return [min_int..999]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..999], which is NOT in byte range.
+        for (int i = init; i < limit; i = (byte)(i+1)) {
+            sum = opaqueSum(sum); // work to keep loop alive
+            // Also: the backedge range is not good because
+            // the exit check is not strong enough for byte:
+            //   i < limit <= 1_000
+        }
+        return sum;
+    }
+
+    // testIRChar1: char loop, but values are trivially in char range.
+    // TODO: why not recognized?
+    public static int testIRChar1_gold = testIRChar1();
+
+    @Run(test = "testIRChar1")
+    private static void runIRChar1() {
+        int val = testIRChar1();
+        if (val != testIRChar1_gold) { throw new RuntimeException("wrong value: " + testIRChar1_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIRChar1() {
+        char init  = (char)lo;
+        char limit = (char)hi;
+        int sum = 0;
+        for (char i = init; i < limit; i++) {
+            sum = opaqueSum(sum); // work to keep loop alive
+        }
+        return sum;
+    }
+
+    // testIRChar2: char loop, ranges proved in char range via CmpI before loop.
+    // TODO: why not recognized?
+    public static int testIRChar2_gold = testIRChar2();
+
+    @Run(test = "testIRChar2")
+    private static void runIRChar2() {
+        int val = testIRChar2();
+        if (val != testIRChar2_gold) { throw new RuntimeException("wrong value: " + testIRChar2_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIRChar2() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        if (init >= limit) { return -1; } // CmpI before loop
+        // -> init < limit <= 100
+        // -> filtered_int_type return [min_int..99]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99], which is in char range.
+        int sum = 0;
+        for (int i = init; i < limit; i = (char)(i+1)) {
+            sum = opaqueSum(sum); // work to keep loop alive
+            // The backedge value of i is also far
+            // enough from char boundaries, because of
+            // the loop exit check:
+            //   i < limit <= 100
+        }
+        return sum;
+    }
+
+    // testIRChar3: char loop, and range in char range via CmpI before loop (for loop limit).
+    // TODO: why not recognized?
+    public static int testIRChar3_gold = testIRChar3();
+
+    @Run(test = "testIRChar3")
+    private static void runIRChar3() {
+        int val = testIRChar3();
+        if (val != testIRChar3_gold) { throw new RuntimeException("wrong value: " + testIRChar3_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIRChar3() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        int sum = 0;
+        // While there is no explicit CmpI before the loop, we
+        // actually have "i < limit" in the for loop check, which
+        // is also checked before entering the loop.
+        // So also here, we have:
+        // -> init < limit <= 100
+        // -> filtered_int_type return [min_int..99]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99], which is in char range.
+        for (int i = init; i < limit; i = (char)(i+1)) {
+            sum = opaqueSum(sum); // work to keep loop alive
+        }
+        return sum;
+    }
+
+    // testIRChar3Mask: char loop, and range in char range via CmpI before loop (for loop limit).
+    public static int testIRChar3Mask_gold = testIRChar3Mask();
+
+    @Run(test = "testIRChar3Mask")
+    private static void runIRChar3Mask() {
+        int val = testIRChar3Mask();
+        if (val != testIRChar3Mask_gold) { throw new RuntimeException("wrong value: " + testIRChar3Mask_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIRChar3Mask() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        int sum = 0;
+        // While there is no explicit CmpI before the loop, we
+        // actually have "i < limit" in the for loop check, which
+        // is also checked before entering the loop.
+        // So also here, we have:
+        // -> init < limit <= 100
+        // -> filtered_int_type return [min_int..99]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99], which is in char range.
+        for (int i = init; i < limit; i = (i+1) & 0x7fff) { // mask instead of cast
+            sum = opaqueSum(sum); // work to keep loop alive
+        }
+        return sum;
+    }
+
+    // testIRChar4: char loop, with a CmpI, but the limit ranges are bad.
+    public static int testIRChar4_gold = testIRChar4();
+
+    @Run(test = "testIRChar4")
+    private static void runIRChar4() {
+        int val = testIRChar4();
+        if (val != testIRChar4_gold) { throw new RuntimeException("wrong value: " + testIRChar4_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    static int testIRChar4() {
+        int init  = Math.max(lo, 0);       // init  in [0..max_int]
+        int limit = Math.min(hi, 100_000); // limit in [min_int..100_000]
+        int sum = 0;
+        // Now, the check is not good enough:
+        // -> init < limit <= 100_000
+        // -> filtered_int_type return [min_int..99_999]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99_999], which is NOT in char range.
+        for (int i = init; i < limit; i = (char)(i+1)) {
+            sum = opaqueSum(sum); // work to keep loop alive
+            // Also: the backedge range is not good because
+            // the exit check is not strong enough for char:
+            //   i < limit <= 100_000
+        }
+        return sum;
+    }
+
+    // testIRChar4Mask: char loop, with a CmpI, but the limit ranges are bad.
+    public static int testIRChar4Mask_gold = testIRChar4Mask();
+
+    @Run(test = "testIRChar4Mask")
+    private static void runIRChar4Mask() {
+        int val = testIRChar4Mask();
+        if (val != testIRChar4Mask_gold) { throw new RuntimeException("wrong value: " + testIRChar4Mask_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    static int testIRChar4Mask() {
+        int init  = Math.max(lo, 0);       // init  in [0..max_int]
+        int limit = Math.min(hi, 100_000); // limit in [min_int..100_000]
+        int sum = 0;
+        // Now, the check is not good enough:
+        // -> init < limit <= 100_000
+        // -> filtered_int_type return [min_int..99_999]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99_999], which is NOT in char range.
+        for (int i = init; i < limit; i = (i+1) & 0x7fff) { // mask instead of cast
+            sum = opaqueSum(sum); // work to keep loop alive
+            // Also: the backedge range is not good because
+            // the exit check is not strong enough for char:
+            //   i < limit <= 100_000
+        }
+        return sum;
+    }
 }
