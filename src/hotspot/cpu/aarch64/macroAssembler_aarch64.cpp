@@ -2317,7 +2317,7 @@ void MacroAssembler::profile_array_type_at_load(Register recv, Register mdp, int
 
   Label L_found_recv;
   // Corner case: no profile table. Increment poly counter and exit.
-  if (ReceiverTypeData::row_limit() == 0) {
+  if (ReceiverTypeData::row_limit() != 0) {
     profile_receiver_type_helper(recv, mdp, L_found_recv, mdp_offset, ArrayLoadData::base_of_megamorphic_type_data(), ArrayLoadData::row_limit());
   }
 
