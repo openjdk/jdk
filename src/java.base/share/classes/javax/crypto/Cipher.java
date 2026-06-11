@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import javax.crypto.spec.*;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import sun.security.util.Debug;
 import sun.security.jca.*;
 import sun.security.util.KnownOIDs;
@@ -518,6 +520,13 @@ public class Cipher {
      * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
      * the security property value.
      * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * whether the specified algorithm is considered legacy. If so, the
+     * JDK emits a warning when the algorithm is requested. If the
+     * {@systemProperty jdk.crypto.legacyAlgorithms} is set, it supersedes
+     * the security property value.
+     * </li>
      * </ul>
      *
      * @param transformation the name of the transformation, e.g.,
@@ -541,6 +550,7 @@ public class Cipher {
      *
      * @see java.security.Provider
      */
+    @CallerSensitive
     public static final Cipher getInstance(String transformation)
             throws NoSuchAlgorithmException, NoSuchPaddingException
     {
@@ -553,6 +563,9 @@ public class Cipher {
             throw new NoSuchAlgorithmException(transformation +
                     " is disabled");
         }
+
+        CryptoAlgorithmConstraints.warn("Cipher", transformation,
+                Reflection.getCallerClass());
 
         List<Transform> transforms = getTransforms(transformation);
         List<ServiceId> cipherServices = new ArrayList<>(transforms.size());
@@ -629,6 +642,14 @@ public class Cipher {
      * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
      * the security property value.
      *
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * whether the specified algorithm is considered legacy. If so, it emits
+     * a warning when the algorithm is requested. If the
+     * {@systemProperty jdk.crypto.legacyAlgorithms} is set, it supersedes
+     * the security property value.
+     *
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
@@ -660,6 +681,7 @@ public class Cipher {
      *
      * @see java.security.Provider
      */
+    @CallerSensitive
     public static final Cipher getInstance(String transformation,
                                            String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException,
@@ -676,7 +698,7 @@ public class Cipher {
             throw new NoSuchProviderException("No such provider: " +
                                               provider);
         }
-        return getInstance(transformation, p);
+        return getInstance(transformation, p, Reflection.getCallerClass());
     }
 
     private String getProviderName() {
@@ -711,6 +733,14 @@ public class Cipher {
      * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
      * the security property value.
      *
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * whether the specified algorithm is considered legacy. If so, it emits
+     * a warning when the algorithm is requested. If the
+     * {@systemProperty jdk.crypto.legacyAlgorithms} is set, it supersedes
+     * the security property value.
+     *
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
@@ -739,6 +769,7 @@ public class Cipher {
      *
      * @see java.security.Provider
      */
+    @CallerSensitive
     public static final Cipher getInstance(String transformation,
                                            Provider provider)
             throws NoSuchAlgorithmException, NoSuchPaddingException
@@ -750,11 +781,23 @@ public class Cipher {
             throw new IllegalArgumentException("Missing provider");
         }
 
+        return getInstance(transformation, provider, Reflection.getCallerClass());
+    }
+
+    private static Cipher getInstance(String transformation, Provider provider,
+            Class<?> callerClass)
+            throws NoSuchAlgorithmException, NoSuchPaddingException {
+        if (provider == null) {
+            throw new IllegalArgumentException("Missing provider");
+        }
+
         // throws NoSuchAlgorithmException if java.security disables it
         if (!CryptoAlgorithmConstraints.permits("Cipher", transformation)) {
             throw new NoSuchAlgorithmException(transformation +
                     " is disabled");
         }
+
+        CryptoAlgorithmConstraints.warn("Cipher", transformation, callerClass);
 
         Exception failure = null;
         List<Transform> transforms = getTransforms(transformation);

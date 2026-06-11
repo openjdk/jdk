@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import java.security.Provider.Service;
 
 import jdk.internal.access.JavaSecuritySignatureAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 
 import sun.security.util.Debug;
 import sun.security.util.CryptoAlgorithmConstraints;
@@ -240,6 +242,13 @@ public abstract class Signature extends SignatureSpi {
      * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
      * the security property value.
      * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * whether the specified algorithm is considered legacy. If so, the
+     * JDK emits a warning when the algorithm is requested. If the
+     * {@systemProperty jdk.crypto.legacyAlgorithms} is set, it supersedes
+     * the security property value.
+     * </li>
      * </ul>
      *
      * @param algorithm the standard name of the algorithm requested.
@@ -259,6 +268,7 @@ public abstract class Signature extends SignatureSpi {
      *
      * @see Provider
      */
+    @CallerSensitive
     public static Signature getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
@@ -266,6 +276,9 @@ public abstract class Signature extends SignatureSpi {
         if (!CryptoAlgorithmConstraints.permits("Signature", algorithm)) {
             throw new NoSuchAlgorithmException(algorithm + " is disabled");
         }
+
+        CryptoAlgorithmConstraints.warn("Signature", algorithm,
+                Reflection.getCallerClass());
 
         Iterator<Service> t = GetInstance.getServices("Signature", algorithm);
         if (!t.hasNext()) {
@@ -368,6 +381,14 @@ public abstract class Signature extends SignatureSpi {
      * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
      * the security property value.
      *
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * whether the specified algorithm is considered legacy. If so, it emits
+     * a warning when the algorithm is requested. If the
+     * {@systemProperty jdk.crypto.legacyAlgorithms} is set, it supersedes
+     * the security property value.
+     *
      * @param algorithm the name of the algorithm requested.
      * See the Signature section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">
@@ -393,6 +414,7 @@ public abstract class Signature extends SignatureSpi {
      *
      * @see Provider
      */
+    @CallerSensitive
     public static Signature getInstance(String algorithm, String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException {
         Objects.requireNonNull(algorithm, "null algorithm name");
@@ -400,6 +422,9 @@ public abstract class Signature extends SignatureSpi {
         if (!CryptoAlgorithmConstraints.permits("Signature", algorithm)) {
             throw new NoSuchAlgorithmException(algorithm + " is disabled");
         }
+
+        CryptoAlgorithmConstraints.warn("Signature", algorithm,
+                Reflection.getCallerClass());
 
         Instance instance = GetInstance.getInstance
                 ("Signature", SignatureSpi.class, algorithm, provider);
@@ -421,6 +446,14 @@ public abstract class Signature extends SignatureSpi {
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified algorithm is allowed. If the
      * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
+     *
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * whether the specified algorithm is considered legacy. If so, it emits
+     * a warning when the algorithm is requested. If the
+     * {@systemProperty jdk.crypto.legacyAlgorithms} is set, it supersedes
      * the security property value.
      *
      * @param algorithm the name of the algorithm requested.
@@ -446,6 +479,7 @@ public abstract class Signature extends SignatureSpi {
      *
      * @since 1.4
      */
+    @CallerSensitive
     public static Signature getInstance(String algorithm, Provider provider)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
@@ -453,6 +487,9 @@ public abstract class Signature extends SignatureSpi {
         if (!CryptoAlgorithmConstraints.permits("Signature", algorithm)) {
             throw new NoSuchAlgorithmException(algorithm + " is disabled");
         }
+
+        CryptoAlgorithmConstraints.warn("Signature", algorithm,
+                Reflection.getCallerClass());
 
         Instance instance = GetInstance.getInstance
                 ("Signature", SignatureSpi.class, algorithm, provider);
