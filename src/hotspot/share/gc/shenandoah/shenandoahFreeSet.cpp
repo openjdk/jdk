@@ -2777,7 +2777,7 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
         regions_to_collector++;
         if (ac != region_size_bytes) {
           young_used_regions++;
-          young_used_bytes = region_size_bytes - ac;
+          young_used_bytes += region_size_bytes - ac;
         }
 
         log_trace(gc, free)("  Shifting region %zu from mutator_free to collector_free", idx);
@@ -2818,7 +2818,7 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
       if (p == ShenandoahFreeSetPartitionId::OldCollector) {
         assert(!r->is_empty(), "Empty regions should be in Mutator partition at entry to reserve_regions");
         old_used_regions++;
-        old_used_bytes = region_size_bytes - ac;
+        old_used_bytes += region_size_bytes - ac;
         // This region is within the range for OldCollector partition, as established by find_regions_with_alloc_capacity()
         assert((_partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector) <= idx) &&
                (_partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector) >= idx),
