@@ -124,8 +124,12 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
   }
 
-  if (UseVectorizedMismatchIntrinsic) {
-    warning("VectorizedMismatch intrinsic is not available on this CPU.");
+  if (UseRVV && UseZbb) {
+    if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+      FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, true);
+    }
+  } else if (UseVectorizedMismatchIntrinsic) {
+    warning("VectorizedMismatch intrinsic requires RVV and Zbb (not available on this CPU).");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
