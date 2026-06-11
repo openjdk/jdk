@@ -734,7 +734,6 @@ public class TestHasTruncationWrap {
     // testIRByte1: byte loop, but values are trivially in byte range.
     // But: "byte i++" goes through "<< 24 >> 24" truncation with signed extension,
     //      and that's not recognized by TruncatedIncrement::build.
-    // TODO: can we get masking or shift with 8 to work?
     public static int testIRByte1_gold = testIRByte1();
 
     @Run(test = "testIRByte1")
@@ -758,7 +757,6 @@ public class TestHasTruncationWrap {
     // testIRByte2: byte loop, ranges proved in byte range via CmpI before loop.
     // But: "byte i++" goes through "<< 24 >> 24" truncation with signed extension,
     //      and that's not recognized by TruncatedIncrement::build.
-    // TODO: can we get masking or shift with 8 to work?
     public static int testIRByte2_gold = testIRByte2();
 
     @Run(test = "testIRByte2")
@@ -791,7 +789,6 @@ public class TestHasTruncationWrap {
     // testIRByte4: byte loop, with a CmpI, but the limit ranges are bad.
     // And: "byte i++" goes through "<< 24 >> 24" truncation with signed extension,
     //      and that's not recognized by TruncatedIncrement::build.
-    // TODO: alternative case that fails for the right reason?
     public static int testIRByte4_gold = testIRByte4();
 
     @Run(test = "testIRByte4")
@@ -822,7 +819,6 @@ public class TestHasTruncationWrap {
 
     // testIRChar1: char loop, but values are trivially in char range.
     // But: "char i++" lowers through mask "& 0xffff", not recognized by TruncatedIncrement::build.
-    // TODO: alternative that could work?
     public static int testIRChar1_gold = testIRChar1();
 
     @Run(test = "testIRChar1")
@@ -845,7 +841,6 @@ public class TestHasTruncationWrap {
 
     // testIRChar2: char loop, ranges proved in char range via CmpI before loop.
     // But: "char i++" lowers through mask "& 0xffff", not recognized by TruncatedIncrement::build.
-    // TODO: alternative that could work?
     public static int testIRChar2_gold = testIRChar2();
 
     @Run(test = "testIRChar2")
@@ -877,7 +872,6 @@ public class TestHasTruncationWrap {
 
     // testIRChar3: char loop, and range in char range via CmpI before loop (for loop limit).
     // But: "char i++" lowers through mask "& 0xffff", not recognized by TruncatedIncrement::build.
-    // TODO: alternative that could work?
     public static int testIRChar3_gold = testIRChar3();
 
     @Run(test = "testIRChar3")
@@ -937,7 +931,6 @@ public class TestHasTruncationWrap {
 
     // testIRChar4: char loop, with a CmpI, but the limit ranges are bad.
     // And: "char i++" lowers through mask "& 0xffff", not recognized by TruncatedIncrement::build.
-    // TODO: alternative case that fails for the right reason?
     public static int testIRChar4_gold = testIRChar4();
 
     @Run(test = "testIRChar4")
@@ -991,6 +984,128 @@ public class TestHasTruncationWrap {
             // Also: the backedge range is not good because
             // the exit check is not strong enough for char:
             //   i < limit <= 100_000
+        }
+        return sum;
+    }
+
+    // testIRShift16: short loop, and range in short range via CmpI before loop (for loop limit).
+    public static int testIRShift16_gold = testIRShift16();
+
+    @Run(test = "testIRShift16")
+    private static void runIRShift16() {
+        int val = testIRShift16();
+        if (val != testIRShift16_gold) { throw new RuntimeException("wrong value: " + testIRShift16_gold + " vs " + val); }
+    }
+
+    // TODO: why does this fail to compile?
+    @Test(allowNotCompilable = true)
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIRShift16() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        int sum = 0;
+        // While there is no explicit CmpI before the loop, we
+        // actually have "i < limit" in the for loop check, which
+        // is also checked before entering the loop.
+        // So also here, we have:
+        // -> init < limit <= 100
+        // -> filtered_int_type return [min_int..99]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99], which is in short range.
+        for (int i = init; i < limit; i = ((i+1) << 16) >> 16) { // explicit shift instead of cast
+            sum = opaqueSum(sum); // work to keep loop alive
+        }
+        return sum;
+    }
+
+    // testIRShift16BadBounds: short loop, with a CmpI, but the limit ranges are bad.
+    public static int testIRShift16BadBounds_gold = testIRShift16BadBounds();
+
+    @Run(test = "testIRShift16BadBounds")
+    private static void runIRShift16BadBounds() {
+        int val = testIRShift16BadBounds();
+        if (val != testIRShift16BadBounds_gold) { throw new RuntimeException("wrong value: " + testIRShift16BadBounds_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    static int testIRShift16BadBounds() {
+        int init  = Math.max(lo, 0);       // init  in [0..max_int]
+        int limit = Math.min(hi, 100_000); // limit in [min_int..100_000]
+        int sum = 0;
+        // Now, the check is not good enough:
+        // -> init < limit <= 100_000
+        // -> filtered_int_type return [min_int..99_999]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99_999], which is NOT in short range.
+        for (int i = init; i < limit; i = ((i+1) << 16) >> 16) { // explicit shift instead of cast
+            sum = opaqueSum(sum); // work to keep loop alive
+            // Also: the backedge range is not good because
+            // the exit check is not strong enough for short:
+            //   i < limit <= 100_000
+        }
+        return sum;
+    }
+
+    // testIRShift8: 24-bit loop, and range in 24-bit range via CmpI before loop (for loop limit).
+    // Note: this shift value is strange, we probably wanted to implement byte truncation
+    //       with shift=24, but instead we have 24-bit signed truncation.
+    // TODO: why does this not work?
+    public static int testIRShift8_gold = testIRShift8();
+
+    @Run(test = "testIRShift8")
+    private static void runIRShift8() {
+        int val = testIRShift8();
+        if (val != testIRShift8_gold) { throw new RuntimeException("wrong value: " + testIRShift8_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    static int testIRShift8() {
+        int init  = Math.max(lo, 0);   // init  in [0..max_int]
+        int limit = Math.min(hi, 100); // limit in [min_int..100]
+        int sum = 0;
+        // While there is no explicit CmpI before the loop, we
+        // actually have "i < limit" in the for loop check, which
+        // is also checked before entering the loop.
+        // So also here, we have:
+        // -> init < limit <= 100
+        // -> filtered_int_type return [min_int..99]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..99], which is in 24-bit range.
+        for (int i = init; i < limit; i = ((i+1) << 8) >> 8) { // explicit shift instead of cast
+            sum = opaqueSum(sum); // work to keep loop alive
+        }
+        return sum;
+    }
+
+    // testIRShift8BadBounds: 24-bit loop, with a CmpI, but the limit ranges are bad.
+    // TODO: I'm not so sure about the bad bounds argument here...
+    // Why can't 1_000 fit in 24-bit?
+    public static int testIRShift8BadBounds_gold = testIRShift8BadBounds();
+
+    @Run(test = "testIRShift8BadBounds")
+    private static void runIRShift8BadBounds() {
+        int val = testIRShift8BadBounds();
+        if (val != testIRShift8BadBounds_gold) { throw new RuntimeException("wrong value: " + testIRShift8BadBounds_gold + " vs " + val); }
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    static int testIRShift8BadBounds() {
+        int init  = Math.max(lo, 0);       // init  in [0..max_int]
+        int limit = Math.min(hi, 1_000); // limit in [min_int..1_000]
+        int sum = 0;
+        // Now, the check is not good enough:
+        // -> init < limit <= 1_000
+        // -> filtered_int_type return [min_int..999]
+        // -> and intersected with its previous type [0..max_int]
+        //    we get init in [0..999], which is NOT in 24-bit range.
+        for (int i = init; i < limit; i = ((i+1) << 8) >> 8) { // explicit shift instead of cast
+            sum = opaqueSum(sum); // work to keep loop alive
+            // Also: the backedge range is not good because
+            // the exit check is not strong enough for 24-bit:
+            //   i < limit <= 1_000
         }
         return sum;
     }
