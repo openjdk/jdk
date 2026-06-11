@@ -7155,6 +7155,8 @@ class StubGenerator: public StubCodeGenerator {
       vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, i, offsets);
     }
     __ leave(); // required for proper stackwalking of RuntimeStub frame
+
+    // Intrinsics returns 0, whereas Java callees return 1. Caller ignores the return value.
     __ mov(r0, zr); // return 0
     __ ret(lr);
 
