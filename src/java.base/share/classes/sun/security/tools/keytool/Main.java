@@ -4305,11 +4305,9 @@ public final class Main {
     private static Date getStartDate(String s) throws IOException {
         Calendar c = new GregorianCalendar();
         if (s != null) {
-            IOException ioe = new IOException(
-                    rb.getString("Illegal.startdate.value"));
             int len = s.length();
             if (len == 0) {
-                throw ioe;
+                throw new IOException(rb.getString("Illegal.startdate.value"));
             }
             if (s.charAt(0) == '-' || s.charAt(0) == '+') {
                 // Form 1: ([+-]nnn[ymdHMS])+
@@ -4319,16 +4317,16 @@ public final class Main {
                     switch (s.charAt(start)) {
                         case '+': sign = 1; break;
                         case '-': sign = -1; break;
-                        default: throw ioe;
+                        default: throw new IOException(rb.getString("Illegal.startdate.value"));
                     }
                     int i = start+1;
                     for (; i<len; i++) {
                         char ch = s.charAt(i);
                         if (ch < '0' || ch > '9') break;
                     }
-                    if (i == start+1) throw ioe;
+                    if (i == start+1) throw new IOException(rb.getString("Illegal.startdate.value"));
                     int number = Integer.parseInt(s.substring(start+1, i));
-                    if (i >= len) throw ioe;
+                    if (i >= len) throw new IOException(rb.getString("Illegal.startdate.value"));
                     int unit;
                     switch (s.charAt(i)) {
                         case 'y': unit = Calendar.YEAR; break;
@@ -4337,7 +4335,7 @@ public final class Main {
                         case 'H': unit = Calendar.HOUR; break;
                         case 'M': unit = Calendar.MINUTE; break;
                         case 'S': unit = Calendar.SECOND; break;
-                        default: throw ioe;
+                        default: throw new IOException(rb.getString("Illegal.startdate.value"));
                     }
                     c.add(unit, sign * number);
                     start = i + 1;
@@ -4349,13 +4347,13 @@ public final class Main {
                     date = s.substring(0, 10);
                     time = s.substring(11);
                     if (s.charAt(10) != ' ')
-                        throw ioe;
+                        throw new IOException(rb.getString("Illegal.startdate.value"));
                 } else if (len == 10) {
                     date = s;
                 } else if (len == 8) {
                     time = s;
                 } else {
-                    throw ioe;
+                    throw new IOException(rb.getString("Illegal.startdate.value"));
                 }
                 if (date != null) {
                     if (date.matches("\\d\\d\\d\\d/\\d\\d/\\d\\d")) {
@@ -4363,7 +4361,7 @@ public final class Main {
                                 Integer.parseInt(date.substring(5, 7))-1,
                                 Integer.parseInt(date.substring(8, 10)));
                     } else {
-                        throw ioe;
+                        throw new IOException(rb.getString("Illegal.startdate.value"));
                     }
                 }
                 if (time != null) {
@@ -4373,7 +4371,7 @@ public final class Main {
                         c.set(Calendar.SECOND, Integer.parseInt(time.substring(6, 8)));
                         c.set(Calendar.MILLISECOND, 0);
                     } else {
-                        throw ioe;
+                        throw new IOException(rb.getString("Illegal.startdate.value"));
                     }
                 }
             }
