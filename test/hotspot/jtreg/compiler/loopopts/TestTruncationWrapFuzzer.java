@@ -57,6 +57,9 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  *
  * So far, this test does not have IR verification, only result verification.
  *
+ * This test generates a wide range of patterns, and will require a lot of
+ * runs to find a specific code shape.
+ *
  * Features:
  * - Truncation patterns, see TRUNCATIONS and randomIVMutation.
  * - Stride: positive, negative, small and large, see ivMutationWithRandomStride.

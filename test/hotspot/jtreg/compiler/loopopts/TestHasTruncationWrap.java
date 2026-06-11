@@ -416,7 +416,7 @@ public class TestHasTruncationWrap {
     // Missed optimization opportunity:
     //   CountedLoopConverter::LoopStructure::is_infinite_loop
     // It wrongly fires, and prevents CountedLoop detection.
-    // This check is increment-specific, and fails to accound for decrement:
+    // This check is increment-specific, and fails to acocunt for decrement:
     //   if (limit_t->hi_as_long() > incr_t->hi_as_long()) {
     // I don't think this is intentional, because we have handling for positive and
     // negative stride in CountedLoopConverter::has_truncation_wrap.
@@ -432,8 +432,8 @@ public class TestHasTruncationWrap {
     @Test
     @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
     static int testIR3b() {
-        int limit = Math.max(lo, 0);   // init  in [0..max_int]
-        int init  = Math.min(hi, 100); // limit in [min_int..100]
+        int limit = Math.max(lo, 0);   // limit in [0..max_int]
+        int init  = Math.min(hi, 100); // init  in [min_int..100]
         int sum = 0;
         for (int i = init; i > limit; i = (short)(i-1)) {
             sum = opaqueSum(sum); // work to keep loop alive
@@ -457,8 +457,8 @@ public class TestHasTruncationWrap {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
         int sum = 0;
-	// No useful CmpI before the loop.
-	// And the CmpI of the for limit is NEQ, so not useful either.
+        // No useful CmpI before the loop.
+        // And the CmpI of the for limit is NEQ, so not useful either.
         for (int i = init; i != limit; i = (short)(i+1)) {
             sum = opaqueSum(sum); // work to keep loop alive
         }
