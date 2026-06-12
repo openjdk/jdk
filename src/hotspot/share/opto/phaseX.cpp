@@ -2238,17 +2238,16 @@ void PhaseIterGVN::maybe_make_dependent_paths(Node* k, const Type* t) {
         // Find out through which of the Phi's input, we reached that Phi and mark the corresponding CFG path dead
         for (uint j = 1; j < n->req(); j++) {
           Node* in = n->in(j);
-          // We don't follow uses beyond Phis so if in is a Phi, we couldn't reach this Phithrough it
+          // We don't follow uses beyond Phis so if in is a Phi, we couldn't reach this Phi through it
           if (in != nullptr && !in->is_Phi() && wq.member(in)) {
-            if (n->in(0)->is_top() || n->in(0)->in(j) == nullptr || n->in(0)->in(j)->is_top()) {
-              continue;
+            if (!n->in(0)->is_top() && n->in(0)->in(j) != nullptr && !n->in(0)->in(j)->is_top()) {
+              // We reached this CFG path through data nodes, record it in dead path to later insert an Halt node, if it
+              // doesn't die in the meantime
+              dead_path()->add_req(n->in(0)->in(j));
+              _worklist.push(dead_path());
+              replace_input_of(n->in(0), j, C->top());
             }
-            // We reached this CFG path through data nodes, record it in dead path to later insert an Halt node, if it
-            // doesn't die in the meantime
-            dead_path()->add_req(n->in(0)->in(j));
-            _worklist.push(dead_path());
             replace_input_of(n, j, C->top());
-            replace_input_of(n->in(0), j, C->top());
             if (in->outcnt() == 0) {
               remove_dead_node(in, NodeOrigin::Graph);
             }
@@ -2257,15 +2256,18 @@ void PhaseIterGVN::maybe_make_dependent_paths(Node* k, const Type* t) {
         continue;
       }
       // If we reached this CFG node through a data input...
-      if (n->is_CFG() && n->in(0) != nullptr && !(!n->in(0)->is_Region() && wq.member(n->in(0)))) {
-        if (n->in(0)->is_top()) {
-          continue;
+      if (n->is_CFG()) {
+        if (n->in(0) != nullptr && !n->in(0)->is_top()) {
+          // record it in dead path to later insert an Halt node, if it doesn't die in the meantime
+          dead_path()->add_req(n->in(0));
+          _worklist.push(dead_path());
+          replace_input_of(n, 0, C->top());
         }
-        // record it in dead path to later insert an Halt node, if it doesn't die in the meantime
-        dead_path()->add_req(n->in(0));
-        _worklist.push(dead_path());
-        replace_input_of(n, 0, C->top());
         n->remove_dead_region(this, true);
+        continue;
+      }
+      if (n->outcnt() == 0) {
+        remove_dead_node(n, NodeOrigin::Graph);
         continue;
       }
     }
@@ -2274,6 +2276,12 @@ void PhaseIterGVN::maybe_make_dependent_paths(Node* k, const Type* t) {
       wq.push(u);
     }
   }
+#ifdef ASSERT
+  for (uint i = 0; i < wq.size(); i++) {
+    Node* n = wq.at(i);
+    assert(n->is_Region() || n->is_Phi() || n->is_CFG() || n->outcnt() == 0, "");
+  }
+#endif
 }
 
 Node *PhaseIterGVN::transform_old(Node* n) {
