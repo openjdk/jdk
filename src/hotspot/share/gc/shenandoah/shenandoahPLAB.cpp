@@ -28,8 +28,6 @@
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPLAB.hpp"
 #include "logging/log.hpp"
-#include "runtime/globals.hpp"
-#include "runtime/javaThread.hpp"
 #include "utilities/copy.hpp"
 
 ShenandoahPLAB::ShenandoahPLAB() :
@@ -46,9 +44,7 @@ ShenandoahPLAB::ShenandoahPLAB() :
 }
 
 ShenandoahPLAB::~ShenandoahPLAB() {
-  if (_plab != nullptr) {
-    delete _plab;
-  }
+  delete _plab;
 }
 
 void ShenandoahPLAB::subtract_from_promoted(size_t increment) {
@@ -119,7 +115,7 @@ HeapWord* ShenandoahPLAB::allocate_slow(size_t size, bool is_promotion) {
   }
 
   if (_plab->words_remaining() < plab_min_size) {
-    // Retire current PLAB. This takes care of any PLAB book-keeping.
+    // Retire current PLAB. This takes care of any PLAB bookkeeping.
     retire();
 
     size_t actual_size = 0;
@@ -197,6 +193,6 @@ void ShenandoahPLAB::retire() {
   // be created are covered by a subsequent phase in the cycle. For the concurrent and degenerated cycles, all PLABs
   // are retired in preparation for update-references. All objects in these PLABs will be registered by update-card-tables.
   // For a full GC, the entire remembered set will be rebuilt in the final phase. Note also that an empty TLAB will _not_
-  // create a filler object when it is retired. 
+  // create a filler object when it is retired.
   _plab->retire();
 }
