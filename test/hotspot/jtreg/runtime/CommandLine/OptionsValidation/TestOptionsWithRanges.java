@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,12 +222,6 @@ public class TestOptionsWithRanges {
          * Exclude CICompilerCount from testing because currently it can hang system
          */
         excludeTestMaxRange("CICompilerCount");
-
-        /*
-         * Exclude JVMCI threads counts from testing similar to other threads counts.
-         */
-        excludeTestMaxRange("JVMCIThreads");
-        excludeTestMaxRange("JVMCIHostThreads");
 
         /*
          * Exclude below options as their maximum value would consume too much memory
