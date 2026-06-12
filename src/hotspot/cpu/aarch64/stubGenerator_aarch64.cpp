@@ -1929,7 +1929,7 @@ class StubGenerator: public StubCodeGenerator {
     bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1);
 
     __ leave();
-    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
+    __ mov(r0, zr); // return 0
     __ ret(lr);
 
     address end = __ pc();
@@ -2131,7 +2131,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1);
     __ leave();
-    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
+    __ mov(r0, zr); // return 0
     __ ret(lr);
 
     assert(entries.length() == expected_entry_count - 1,
@@ -4977,7 +4977,7 @@ class StubGenerator: public StubCodeGenerator {
       return start;
     }
     // Implements the double_keccak() method of the
-    // sun.secyrity.provider.SHA3Parallel class
+    // sun.security.provider.SHA3Parallel class
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     start = __ pc();
@@ -5777,7 +5777,7 @@ class StubGenerator: public StubCodeGenerator {
     // registers.
     // 3. In the seilerNTT() method we use R = 2^20 for the Montgomery
     // multiplications (this is because that way there should not be any
-    // overflow during the inverse NTT computation), here we usr R = 2^16 so
+    // overflow during the inverse NTT computation), here we use R = 2^16 so
     // that we can use the 16-bit arithmetic in the vector unit.
     //
     // On each level, we fill up the vector registers in such a way that the
@@ -5899,7 +5899,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // level 4
     // At level 4 coefficients occur in 8 discrete blocks of size 16
-    // so they are loaded using employing an ldr at 8 distinct offsets.
+    // so they are loaded by employing an ldr at 8 distinct offsets.
 
     vs_ldpq(vq, kyberConsts);
     int offsets3[8] = { 0, 32, 64, 96, 128, 160, 192, 224 };
@@ -6067,7 +6067,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // level 2
     // At level 2 coefficients occur in 8 discrete blocks of size 16
-    // so they are loaded using employing an ldr at 8 distinct offsets.
+    // so they are loaded by employing an ldr at 8 distinct offsets.
 
     int offsets3[8] = { 0, 32, 64, 96, 128, 160, 192, 224 };
     vs_ldr_indexed(vs1, __ Q, coeffs, 0, offsets3);
@@ -6943,7 +6943,7 @@ class StubGenerator: public StubCodeGenerator {
     vs_addv(va0, __ T4S, va0, vc);
   }
 
-  // Perform combined add/sub then montul on 4x4S vectors.
+  // Perform combined add/sub then montmul on 4x4S vectors.
   void dilithium_sub_add_montmul16(
           const VSeq<4>& va0, const VSeq<4>& va1, const VSeq<4>& vb,
           const VSeq<4>& vtmp1, const VSeq<4>& vtmp2, const VSeq<2>& vq) {
@@ -7079,7 +7079,7 @@ class StubGenerator: public StubCodeGenerator {
     // coefficients we load 4 adjacent values at 8 different offsets
     // using an indexed ldr with register variant Q and multiply them
     // in sequence order by the next set of inputs. Likewise we store
-    // the resuls using an indexed str with register variant Q.
+    // the results using an indexed str with register variant Q.
     for (int i = 0; i < 1024; i += 256) {
       // reload constants q, qinv each iteration as they get clobbered later
       vs_ldpq(vq, dilithiumConsts); // qInv, q
@@ -7129,11 +7129,11 @@ class StubGenerator: public StubCodeGenerator {
 
     // level 7
     // At level 7 the coefficients we need to combine with the zetas
-    // occur singly with montmul inputs alterating with add/sub
+    // occur singly with montmul inputs alternating with add/sub
     // inputs. Once again we can use 4-way parallelism to combine 16
     // zetas at a time. However, we have to load 8 adjacent values at
     // 4 different offsets using an ld2 load with arrangement 4S. That
-    // interleaves the the odd words of each pair into one
+    // interleaves the odd words of each pair into one
     // coefficients vector register and the even words of the pair
     // into the next register. We then need to montmul the 4 even
     // elements of the coefficients register sequence by the zetas in
@@ -7368,8 +7368,8 @@ class StubGenerator: public StubCodeGenerator {
   // Dilithium multiply polynomials in the NTT domain.
   // Straightforward implementation of the method
   // static int implDilithiumNttMult(
-  //              int[] result, int[] ntta, int[] nttb {} of
-  // the sun.security.provider.ML_DSA class.
+  //              int[] product, int[] coeffs1, int[] coeffs2) {}
+  // of the sun.security.provider.ML_DSA class.
   //
   // result (int[256]) = c_rarg0
   // poly1 (int[256]) = c_rarg1
@@ -7439,10 +7439,10 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Dilithium Motgomery multiply an array by a constant.
+  // Dilithium Montgomery multiply an array by a constant.
   // A straightforward implementation of the method
   // static int implDilithiumMontMulByConstant(int[] coeffs, int constant) {}
-  // of the sun.security.provider.MLDSA class
+  // of the sun.security.provider.ML_DSA class
   //
   // coeffs (int[256]) = c_rarg0
   // constant (int) = c_rarg1
@@ -7648,7 +7648,7 @@ class StubGenerator: public StubCodeGenerator {
     // r1 = r1 & quotient;
     vs_andr(vs1, vs2, vs1);
 
-    // store results inteleaved
+    // store results interleaved
     // lowPart[m] = r0;
     // highPart[m] = r1;
     __ st4(vs3[0], vs3[1], vs3[2], vs3[3], __ T4S, __ post(lowPart, 64));
