@@ -564,8 +564,10 @@ public class Cipher {
                     " is disabled");
         }
 
-        CryptoAlgorithmConstraints.warn("Cipher", transformation,
-                Reflection.getCallerClass());
+        if (CryptoAlgorithmConstraints.isLegacy("Cipher", transformation)) {
+            CryptoAlgorithmConstraints.warn("Cipher", transformation,
+                    Reflection.getCallerClass());
+        }
 
         List<Transform> transforms = getTransforms(transformation);
         List<ServiceId> cipherServices = new ArrayList<>(transforms.size());
@@ -797,7 +799,10 @@ public class Cipher {
                     " is disabled");
         }
 
-        CryptoAlgorithmConstraints.warn("Cipher", transformation, callerClass);
+        if (CryptoAlgorithmConstraints.isLegacy("Cipher", transformation)) {
+            CryptoAlgorithmConstraints.warn("Cipher", transformation,
+                    callerClass);
+        }
 
         Exception failure = null;
         List<Transform> transforms = getTransforms(transformation);

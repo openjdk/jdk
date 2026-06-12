@@ -211,8 +211,10 @@ public abstract class MessageDigest extends MessageDigestSpi {
             throw new NoSuchAlgorithmException(algorithm + " is disabled");
         }
 
-        CryptoAlgorithmConstraints.warn("MessageDigest", algorithm,
-                Reflection.getCallerClass());
+        if (CryptoAlgorithmConstraints.isLegacy("MessageDigest", algorithm)) {
+            CryptoAlgorithmConstraints.warn("MessageDigest", algorithm,
+                    Reflection.getCallerClass());
+        }
 
         GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
                 MessageDigestSpi.class, algorithm);
@@ -301,8 +303,10 @@ public abstract class MessageDigest extends MessageDigestSpi {
             throw new NoSuchAlgorithmException(algorithm + " is disabled");
         }
 
-        CryptoAlgorithmConstraints.warn("MessageDigest", algorithm,
-                Reflection.getCallerClass());
+        if (CryptoAlgorithmConstraints.isLegacy("MessageDigest", algorithm)) {
+            CryptoAlgorithmConstraints.warn("MessageDigest", algorithm,
+                    Reflection.getCallerClass());
+        }
 
         GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
                 MessageDigestSpi.class, algorithm, provider);
@@ -382,8 +386,10 @@ public abstract class MessageDigest extends MessageDigestSpi {
             throw new NoSuchAlgorithmException(algorithm + " is disabled");
         }
 
-        CryptoAlgorithmConstraints.warn("MessageDigest", algorithm,
-                Reflection.getCallerClass());
+        if (CryptoAlgorithmConstraints.isLegacy("MessageDigest", algorithm)) {
+            CryptoAlgorithmConstraints.warn("MessageDigest", algorithm,
+                    Reflection.getCallerClass());
+        }
 
         Object[] objs = Security.getImpl(algorithm, "MessageDigest", provider);
         if (objs[0] instanceof MessageDigest md) {

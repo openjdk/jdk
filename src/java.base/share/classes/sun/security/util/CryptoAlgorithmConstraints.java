@@ -59,12 +59,12 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
             "jdk.crypto.legacyAlgorithms";
 
     private static class DisabledHolder {
-        static final CryptoAlgorithmConstraints DISABLED_CONSTRAINTS =
+        private static final CryptoAlgorithmConstraints DISABLED_CONSTRAINTS =
                 new CryptoAlgorithmConstraints(PROPERTY_CRYPTO_DISABLED_ALGS);
     }
 
     private static class LegacyHolder {
-        static final CryptoAlgorithmConstraints LEGACY_CONSTRAINTS =
+        private static final CryptoAlgorithmConstraints LEGACY_CONSTRAINTS =
                 new CryptoAlgorithmConstraints(PROPERTY_CRYPTO_LEGACY_ALGS);
     }
 
@@ -77,6 +77,11 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
     public static boolean permits(String service, String algo) {
         return DisabledHolder.DISABLED_CONSTRAINTS.cachedCheckAlgorithm(
                 service + "." + algo);
+    }
+
+    public static boolean isLegacy(String service, String alg) {
+        return !LegacyHolder.LEGACY_CONSTRAINTS.cachedCheckAlgorithm(
+                service + "." + alg);
     }
 
     private static class CallersHolder {
@@ -94,8 +99,7 @@ public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
         String serviceAndAlg = service + "." + alg;
         Set<String> warnedAlgorithms = CallersHolder.callers.get(callerClass);
-        if (!LegacyHolder.LEGACY_CONSTRAINTS.cachedCheckAlgorithm(
-                serviceAndAlg) && warnedAlgorithms.add(serviceAndAlg)) {
+        if (warnedAlgorithms.add(serviceAndAlg)) {
             URL url = codeSource(callerClass);
             String source = (url == null) ? callerClass.getName() :
                     callerClass.getName() + " (" + url + ")";

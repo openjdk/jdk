@@ -896,8 +896,10 @@ public class KeyStore {
             throw new KeyStoreException(type + " is disabled");
         }
 
-        CryptoAlgorithmConstraints.warn("KeyStore", type,
-                Reflection.getCallerClass());
+        if (CryptoAlgorithmConstraints.isLegacy("KeyStore", type)) {
+            CryptoAlgorithmConstraints.warn("KeyStore", type,
+                    Reflection.getCallerClass());
+        }
 
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", (String)null);
@@ -973,8 +975,10 @@ public class KeyStore {
             throw new KeyStoreException(type + " is disabled");
         }
 
-        CryptoAlgorithmConstraints.warn("KeyStore", type,
-                Reflection.getCallerClass());
+        if (CryptoAlgorithmConstraints.isLegacy("KeyStore", type)) {
+            CryptoAlgorithmConstraints.warn("KeyStore", type,
+                    Reflection.getCallerClass());
+        }
 
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", provider);
@@ -1046,8 +1050,10 @@ public class KeyStore {
             throw new KeyStoreException(type + " is disabled");
         }
 
-        CryptoAlgorithmConstraints.warn("KeyStore", type,
-                Reflection.getCallerClass());
+        if (CryptoAlgorithmConstraints.isLegacy("KeyStore", type)) {
+            CryptoAlgorithmConstraints.warn("KeyStore", type,
+                    Reflection.getCallerClass());
+        }
 
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", provider);
@@ -1951,8 +1957,11 @@ public class KeyStore {
                                 String ksAlgo = s.getAlgorithm();
                                 if (CryptoAlgorithmConstraints.permits(
                                         "KEYSTORE", ksAlgo)) {
-                                    CryptoAlgorithmConstraints.warn("KeyStore",
-                                            ksAlgo, callerClass);
+                                    if (CryptoAlgorithmConstraints.isLegacy(
+                                            "KeyStore", ksAlgo)) {
+                                        CryptoAlgorithmConstraints.warn(
+                                                "KeyStore", ksAlgo, callerClass);
+                                    }
                                     keystore = new KeyStore(impl, p, ksAlgo);
                                 } else {
                                     matched = ksAlgo;

@@ -277,8 +277,10 @@ public abstract class Signature extends SignatureSpi {
             throw new NoSuchAlgorithmException(algorithm + " is disabled");
         }
 
-        CryptoAlgorithmConstraints.warn("Signature", algorithm,
-                Reflection.getCallerClass());
+        if (CryptoAlgorithmConstraints.isLegacy("Signature", algorithm)) {
+            CryptoAlgorithmConstraints.warn("Signature", algorithm,
+                    Reflection.getCallerClass());
+        }
 
         Iterator<Service> t = GetInstance.getServices("Signature", algorithm);
         if (!t.hasNext()) {
@@ -423,8 +425,10 @@ public abstract class Signature extends SignatureSpi {
             throw new NoSuchAlgorithmException(algorithm + " is disabled");
         }
 
-        CryptoAlgorithmConstraints.warn("Signature", algorithm,
-                Reflection.getCallerClass());
+        if (CryptoAlgorithmConstraints.isLegacy("Signature", algorithm)) {
+            CryptoAlgorithmConstraints.warn("Signature", algorithm,
+                    Reflection.getCallerClass());
+        }
 
         Instance instance = GetInstance.getInstance
                 ("Signature", SignatureSpi.class, algorithm, provider);
@@ -488,8 +492,10 @@ public abstract class Signature extends SignatureSpi {
             throw new NoSuchAlgorithmException(algorithm + " is disabled");
         }
 
-        CryptoAlgorithmConstraints.warn("Signature", algorithm,
-                Reflection.getCallerClass());
+        if (CryptoAlgorithmConstraints.isLegacy("Signature", algorithm)) {
+            CryptoAlgorithmConstraints.warn("Signature", algorithm,
+                    Reflection.getCallerClass());
+        }
 
         Instance instance = GetInstance.getInstance
                 ("Signature", SignatureSpi.class, algorithm, provider);
