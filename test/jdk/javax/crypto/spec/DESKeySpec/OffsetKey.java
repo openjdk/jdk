@@ -23,14 +23,8 @@
 
 /*
  * @test
- * @bug 8364121
- * @summary DESKeySpec.isWeak should throw aiobe exception if the offset is
- * negative.
- *
- * @test
- * @bug 8386473
- * @summary DESKeySpec and DESedeKeySpec may throw InvalidKeyException instead
- * of ArrayIndexOutOfBoundsException for Integer.MIN_VALUE offset
+ * @bug 8364121 8386473
+ * @summary Test DES[ede]KeySpec for negative and integer overflow offsets
  */
 import java.security.InvalidKeyException;
 import javax.crypto.spec.DESedeKeySpec;
