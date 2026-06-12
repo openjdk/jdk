@@ -5459,7 +5459,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // load N/2 pairs of quadword values from memory into N vector
   // registers via the address supplied in base with each pair indexed
-  // using the the start offset plus the corresponding entry in the
+  // using the start offset plus the corresponding entry in the
   // offsets array
   template<int N>
   void vs_ldpq_indexed(const VSeq<N>& v, Register base, int start, int (&offsets)[N/2]) {
@@ -5470,7 +5470,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // store N vector registers into N/2 pairs of quadword memory
   // locations via the address supplied in base with each pair indexed
-  // using the the start offset plus the corresponding entry in the
+  // using the start offset plus the corresponding entry in the
   // offsets array
   template<int N>
   void vs_stpq_indexed(const VSeq<N>& v, Register base, int start, int offsets[N/2]) {
@@ -5481,7 +5481,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // load N single quadword values from memory into N vector registers
   // via the address supplied in base with each value indexed using
-  // the the start offset plus the corresponding entry in the offsets
+  // the start offset plus the corresponding entry in the offsets
   // array
   template<int N>
   void vs_ldr_indexed(const VSeq<N>& v, Assembler::SIMD_RegVariant T, Register base,
@@ -5493,7 +5493,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // store N vector registers into N single quadword memory locations
   // via the address supplied in base with each value indexed using
-  // the the start offset plus the corresponding entry in the offsets
+  // the start offset plus the corresponding entry in the offsets
   // array
   template<int N>
   void vs_str_indexed(const VSeq<N>& v, Assembler::SIMD_RegVariant T, Register base,
@@ -5505,7 +5505,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // load N/2 pairs of quadword values from memory de-interleaved into
   // N vector registers 2 at a time via the address supplied in base
-  // with each pair indexed using the the start offset plus the
+  // with each pair indexed using the start offset plus the
   // corresponding entry in the offsets array
   template<int N>
   void vs_ld2_indexed(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base,
@@ -5518,7 +5518,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // store N vector registers 2 at a time interleaved into N/2 pairs
   // of quadword memory locations via the address supplied in base
-  // with each pair indexed using the the start offset plus the
+  // with each pair indexed using the start offset plus the
   // corresponding entry in the offsets array
   template<int N>
   void vs_st2_indexed(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base,
@@ -6692,7 +6692,7 @@ class StubGenerator: public StubCodeGenerator {
     // twice, one copy manipulated to provide the lower 4 bits
     // belonging to the first short in a pair and another copy
     // manipulated to provide the higher 4 bits belonging to the
-    // second short in a pair. This is why the the vector sequences va
+    // second short in a pair. This is why the vector sequences va
     // and vb used to hold the expanded 8H elements are of length 8.
 
     // Expand vin[0] into va[0:1], and vin[1] into va[2:3] and va[4:5]
@@ -7155,7 +7155,6 @@ class StubGenerator: public StubCodeGenerator {
       vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, i, offsets);
     }
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-
     __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
@@ -7335,7 +7334,7 @@ class StubGenerator: public StubCodeGenerator {
       // c0 load 32 (8x4S) coefficients via first offsets
       vs_ldr_indexed(vs1, __ Q, coeffs, i, offsets1);
       // c1 load 32 (8x4S) coefficients via second offsets
-      vs_ldr_indexed(vs2, __ Q,coeffs, i, offsets2);
+      vs_ldr_indexed(vs2, __ Q, coeffs, i, offsets2);
       // a0 = c0 + c1  n.b. clobbers vq which overlaps vs3
       vs_addv(vs3, __ T4S, vs1, vs2);
       // c = c0 - c1
@@ -7510,7 +7509,8 @@ class StubGenerator: public StubCodeGenerator {
 
   // Dilithium decompose poly.
   // Implements the method
-  // static int implDilithiumDecomposePoly(int[] coeffs, int constant) {}
+  //    static int implDilithiumDecomposePoly(int[] input, int[] lowPart, int[] highPart,
+  //                                          int twoGamma2, int multiplier) {
   // of the sun.security.provider.ML_DSA class
   //
   // input (int[256]) = c_rarg0
@@ -7614,7 +7614,7 @@ class StubGenerator: public StubCodeGenerator {
     vs_andr(vtmp, vs4, twog2);
     vs_subv(vs3, __ T4S, vs3, vtmp);
 
-    //  quotient += (mask & 1);
+    // quotient += (mask & 1);
     vs_andr(vtmp, vs4, one);
     vs_addv(vs2, __ T4S, vs2, vtmp);
 
