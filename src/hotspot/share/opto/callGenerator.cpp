@@ -732,10 +732,10 @@ void CallGenerator::do_late_inline_helper() {
     // If the specific field accessed by a memory operation is discovered after
     // inlining a method incrementally, request a cleanup so that the
     // corresponding IGVN-recorded address type is updated. This is not just an
-    // optimization: failure update the address type can lead to a slice
+    // optimization: failure to update the address type can lead to a slice
     // mismatch when parsing subsequent accesses to the address, because the
-    // memory slice corresponding to *any* field of a class C is not the same as
-    // the slice corresponding to a specific field of C. This mismatch can in
+    // memory slice corresponding to *any* field of a class K is not the same as
+    // the slice corresponding to a specific field of K. This mismatch can in
     // its turn lead to e.g. incorrect memory graphs.
     if (C->inlining_incrementally() &&
         !result->is_top() && result->is_Con() && result->bottom_type()->isa_intptr_t()) {
