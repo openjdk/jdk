@@ -141,7 +141,7 @@ public class Test {
         doTest("224.80.80.80");
 
         // If IPv6 is enabled perform multicast tests with various scopes
-        if (nc.hasTestableIPv6Address()) {
+        if (nc.ip6MulticastInterfaces().findAny().isPresent()) {
             doTest("ff01::a");
         }
 
