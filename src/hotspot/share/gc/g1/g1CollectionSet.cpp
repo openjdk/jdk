@@ -62,9 +62,9 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _max_regions(0),
   _num_regions(0),
   _groups(),
-  _eden_region_count(0),
-  _survivor_region_count(0),
-  _initial_old_region_count(0),
+  _eden_regions_count(0),
+  _survivor_regions_count(0),
+  _initial_old_regions_count(0),
   _optional_groups(),
   DEBUG_ONLY(_inc_build_state(CSetBuildType::Inactive) COMMA)
   _regions_inc_part_start(0),
@@ -76,17 +76,17 @@ G1CollectionSet::~G1CollectionSet() {
   abandon_all_candidates();
 }
 
-void G1CollectionSet::init_region_counts(uint eden_cset_region_count,
-                                         uint survivor_cset_region_count) {
+void G1CollectionSet::init_regions_counts(uint eden_cset_regions_count,
+                                         uint survivor_cset_regions_count) {
   assert_at_safepoint_on_vm_thread();
 
-  _eden_region_count     = eden_cset_region_count;
-  _survivor_region_count = survivor_cset_region_count;
+  _eden_regions_count     = eden_cset_regions_count;
+  _survivor_regions_count = survivor_cset_regions_count;
 
-  assert(young_region_count() == num_regions(),
-         "Young region count %u should match collection set region count %u", young_region_count(), num_regions());
+  assert(young_regions_count() == num_regions(),
+         "Young region count %u should match collection set region count %u", young_regions_count(), num_regions());
 
-  _initial_old_region_count = 0;
+  _initial_old_regions_count = 0;
   assert(_optional_groups.length() == 0, "Should not have any optional groups yet");
   _optional_groups.clear();
 }
@@ -109,7 +109,7 @@ void G1CollectionSet::abandon() {
 
 void G1CollectionSet::abandon_all_candidates() {
   _candidates.clear();
-  _initial_old_region_count = 0;
+  _initial_old_regions_count = 0;
 }
 
 void G1CollectionSet::prepare_for_scan () {
@@ -130,7 +130,7 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 
   assert(num_regions() < _max_regions, "Collection set now larger than maximum size.");
   _regions[_num_regions++] = hr->hrm_index();
-  _initial_old_region_count++;
+  _initial_old_regions_count++;
 
   _g1h->old_set_remove(hr);
 }
@@ -335,9 +335,9 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   // pause are appended to the RHS of the young list, i.e.
   //   [Newly Young Regions ++ Survivors from last pause].
 
-  uint eden_region_count = _g1h->eden_regions_count();
-  uint survivor_region_count = survivors->length();
-  init_region_counts(eden_region_count, survivor_region_count);
+  uint eden_regions_count = _g1h->eden_regions_count();
+  uint survivor_regions_count = survivors->length();
+  init_regions_counts(eden_regions_count, survivor_regions_count);
 
   verify_young_cset_indices();
 
@@ -345,13 +345,13 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   double predicted_base_time_ms = _policy->predict_base_time_ms(pending_cards, card_rs_length);
   // Base time already includes the whole remembered set related time, so do not add that here
   // again.
-  double predicted_eden_time = _policy->predict_young_region_other_time_ms(eden_region_count) +
-                               _policy->predict_eden_copy_time_ms(eden_region_count);
+  double predicted_eden_time = _policy->predict_young_region_other_time_ms(eden_regions_count) +
+                               _policy->predict_eden_copy_time_ms(eden_regions_count);
   double remaining_time_ms = MAX2(target_pause_time_ms - (predicted_base_time_ms + predicted_eden_time), 0.0);
 
   log_trace(gc, ergo, cset)("Added young regions to CSet. Eden: %u regions, Survivors: %u regions, "
                             "predicted eden time: %1.2fms, predicted base time: %1.2fms, target pause time: %1.2fms, remaining time: %1.2fms",
-                            eden_region_count, survivor_region_count,
+                            eden_regions_count, survivor_regions_count,
                             predicted_eden_time, predicted_base_time_ms, target_pause_time_ms, remaining_time_ms);
 
   // Clear the fields that point to the survivor list - they are all young now.

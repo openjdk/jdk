@@ -855,7 +855,7 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
     // given that humongous object allocations do not really affect
     // either the pause's duration nor when the next pause will take
     // place we can safely ignore them here.
-    uint regions_allocated = _collection_set->eden_region_count();
+    uint regions_allocated = _collection_set->eden_regions_count();
     double alloc_rate_ms = (double) regions_allocated / app_time_ms;
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
 
@@ -919,14 +919,14 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
       _analytics->report_cost_per_byte_ms(cost_per_byte_ms, is_young_only_pause);
     }
 
-    if (_collection_set->young_region_count() > 0) {
+    if (_collection_set->young_regions_count() > 0) {
       _analytics->report_young_other_cost_per_region_ms(young_other_time_ms() /
-                                                        _collection_set->young_region_count());
+                                                        _collection_set->young_regions_count());
     }
 
-    if (_collection_set->initial_old_region_count() > 0) {
+    if (_collection_set->initial_old_regions_count() > 0) {
       _analytics->report_non_young_other_cost_per_region_ms(non_young_other_time_ms() /
-                                                            _collection_set->initial_old_region_count());
+                                                            _collection_set->initial_old_regions_count());
     }
 
     _analytics->report_constant_other_time_ms(constant_other_time_ms(pause_time_ms));
