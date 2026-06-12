@@ -236,7 +236,7 @@ class ModuleReferences {
         static JarFile newJarFile(String path) {
             try {
                 return new JarFile(new File(path),
-                                   true,                       // verify
+                                   false,                       // verify
                                    ZipFile.OPEN_READ,
                                    JarFile.runtimeVersion());
             } catch (IOException ioe) {

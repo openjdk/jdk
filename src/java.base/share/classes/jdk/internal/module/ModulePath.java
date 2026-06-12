@@ -631,7 +631,7 @@ public class ModulePath implements ModuleFinder {
      */
     private ModuleReference readJar(Path file) throws IOException {
         try (JarFile jf = new JarFile(file.toFile(),
-                                      true,               // verify
+                                      false,               // verify
                                       ZipFile.OPEN_READ,
                                       releaseVersion))
         {
