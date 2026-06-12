@@ -3155,6 +3155,13 @@ void CountedLoopConverter::TruncatedIncrement::build(Node* expr) {
       n1 = t1->in(1);
       n1op = n1->Opcode();
       trunc_t = TypeInt::CHAR;
+      // TODO: fix bug
+      // Problem: we accept mask 0x7fff which produces range [0..32767].
+      // But we return CHAR, which will check for wrap in [0..65535].
+      // This leads to wrong results, because we ignore wrap.
+      // Matching 0x7fff is also a bit silly. I would assume users are
+      // more likely to want to use "(char)" cast truncation, which
+      // would lead to a 0xffff mask, with range [0..65535].
     } else if (n1op == Op_RShiftI &&
                n1->in(1) != nullptr &&
                n1->in(1)->Opcode() == Op_LShiftI &&
@@ -3171,6 +3178,15 @@ void CountedLoopConverter::TruncatedIncrement::build(Node* expr) {
           trunc_t = TypeInt::SHORT;
         } else if (shift == 8) {
           trunc_t = TypeInt::BYTE;
+          // TODO: maybe fix missing optimization
+          // shift == 8 means this pattern:
+          // ((x << 8) >> 8), which only removes the uppermost
+          // 8 bits, so leaves a 24-bit value. But we probably
+          // wanted to match ((x << 24) >> 24), which would be
+          // 8-bit signed truncation. Since we return BYTE, we
+          // will apply strict signed-bit overflow checks, so
+          // this just means we get missing optimizations, we
+          // don't actually manage to allow "(byte)" cast truncation.
         }
       }
     }
