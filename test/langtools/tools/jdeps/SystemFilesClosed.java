@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8357249
+ * @bug 8386334
  * @summary Check that `lib/jrt-fs.jar` and `lib/modules` are properly closed while
  *          jdeps is invoked with `--system` option.
  * @requires os.family == "mac" | os.family == "linux"
