@@ -738,8 +738,7 @@ void CallGenerator::do_late_inline_helper() {
     // the slice corresponding to a specific field of C. This mismatch can in
     // its turn lead to e.g. incorrect memory graphs.
     if (C->inlining_incrementally() &&
-        !result->is_top() && result->is_Con() && result->bottom_type()->isa_intptr_t() &&
-        UseNewCode) {
+        !result->is_top() && result->is_Con() && result->bottom_type()->isa_intptr_t()) {
       Node* result_proj = call->proj_out_or_null(TypeFunc::Parms);
       if (result_proj != nullptr) {
         for (DUIterator_Fast imax, i = result_proj->fast_outs(imax); i < imax; i++) {
