@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -778,6 +778,13 @@ JShell.
     Tab key a second time displays the description of the method and the
     parameters for the first signature. Continue pressing the Tab key for a
     description of any additional signatures.
+
+    The method or other element description is based on the javadoc comment
+    for the given element, when sources for the given element are available.
+    The sources for the JDK classes are looked up in the JDK's `src.zip`.
+    For elements provided on the class or module path, both the binary path entry,
+    and, for `.jar` files, its sibling file named `-sources.jar` are searched for
+    the sources.
 
 **Shift+\<Tab\> V**
 :   After entering a complete expression, use this key sequence to convert the
