@@ -26,6 +26,11 @@
  * @bug 8364121
  * @summary DESKeySpec.isWeak should throw aiobe exception if the offset is
  * negative.
+ *
+ * @test
+ * @bug 8386473
+ * @summary DESKeySpec and DESedeKeySpec may throw InvalidKeyException instead
+ * of ArrayIndexOutOfBoundsException for Integer.MIN_VALUE offset
  */
 import java.security.InvalidKeyException;
 import javax.crypto.spec.DESedeKeySpec;
@@ -57,6 +62,20 @@ public class OffsetKey {
             throw new Exception("expected ArrayIndexOutOfBoundsException");
         } catch (ArrayIndexOutOfBoundsException aiobe) {}
 
+        try {
+            DESKeySpec desKey = new DESKeySpec(strongKey, Integer.MIN_VALUE);
+            throw new Exception("expected ArrayIndexOutOfBoundsException");
+        } catch (ArrayIndexOutOfBoundsException aiobe) {}
+        try {
+            boolean weak = DESKeySpec.isWeak(strongKey, Integer.MIN_VALUE);
+            throw new Exception("expected ArrayIndexOutOfBoundsException");
+        } catch (ArrayIndexOutOfBoundsException aiobe) {}
+        try{
+            boolean parityAdjusted = DESKeySpec.isParityAdjusted(strongKey,
+                    Integer.MIN_VALUE);
+            throw new Exception("expected ArrayIndexOutOfBoundsException");
+        } catch (ArrayIndexOutOfBoundsException aiobe) {}
+
         // Test triple-DES
         try{
             DESedeKeySpec desEdeKey = new DESedeKeySpec(strongKey, -1);
@@ -65,6 +84,17 @@ public class OffsetKey {
         try{
             boolean parityAdjusted = DESedeKeySpec.isParityAdjusted(strongKey,
                     -1);
+            throw new Exception("expected ArrayIndexOutOfBoundsException");
+        } catch (ArrayIndexOutOfBoundsException aiobe) {}
+
+        try{
+            DESedeKeySpec desEdeKey = new DESedeKeySpec(strongKey,
+                    Integer.MIN_VALUE);
+            throw new Exception("expected ArrayIndexOutOfBoundsException");
+        } catch (ArrayIndexOutOfBoundsException aiobe) {}
+        try{
+            boolean parityAdjusted = DESedeKeySpec.isParityAdjusted(strongKey,
+                    Integer.MIN_VALUE);
             throw new Exception("expected ArrayIndexOutOfBoundsException");
         } catch (ArrayIndexOutOfBoundsException aiobe) {}
     }
