@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Kinds.KindSelector;
@@ -3604,14 +3605,18 @@ public class Lower extends TreeTranslator {
             Type elemtype = types.elemtype(tree.expr.type);
             JCExpression loopvarinit = make.Indexed(make.Ident(arraycache),
                                                     make.Ident(index)).setType(elemtype);
-            loopvarinit = transTypes.coerce(attrEnv, loopvarinit, tree.var.type);
-            JCVariableDecl loopvardef = (JCVariableDecl)make.VarDef(tree.var.mods,
-                                                  tree.var.name,
-                                                  tree.var.vartype,
-                                                  loopvarinit).setType(tree.var.type);
-            loopvardef.sym = tree.var.sym;
+
+            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
+            JCVariableDecl jcVariableDecl = (JCVariableDecl) tree.varOrRecordPattern;
+
+            loopvarinit = transTypes.coerce(attrEnv, loopvarinit, jcVariableDecl.type);
+            JCVariableDecl loopvardef = (JCVariableDecl)make.VarDef(jcVariableDecl.mods,
+                                                  jcVariableDecl.name,
+                                                  jcVariableDecl.vartype,
+                                                  loopvarinit).setType(jcVariableDecl.type);
+            loopvardef.sym = jcVariableDecl.sym;
             JCBlock body = make.
-                Block(0, List.of(loopvardef, tree.body));
+                    Block(0, List.of(loopvardef, tree.body));
 
             result = translate(make.
                                ForLoop(loopinit,
@@ -3690,16 +3695,20 @@ public class Lower extends TreeTranslator {
                                        itvar.type,
                                        List.nil());
             JCExpression vardefinit = make.App(make.Select(make.Ident(itvar), next));
-            if (tree.var.type.isPrimitive())
+
+            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
+
+            JCVariableDecl var = (JCVariableDecl) tree.varOrRecordPattern;
+            if (var.type.isPrimitive())
                 vardefinit = make.TypeCast(types.cvarUpperBound(iteratorTarget), vardefinit);
             else
-                vardefinit = transTypes.coerce(attrEnv, vardefinit, tree.var.type);
-            JCVariableDecl indexDef = (JCVariableDecl)make.VarDef(tree.var.mods,
-                                                  tree.var.name,
-                                                  tree.var.vartype,
+                vardefinit = transTypes.coerce(attrEnv, vardefinit, var.type);
+            JCVariableDecl indexDef = (JCVariableDecl)make.VarDef(var.mods,
+                                                  var.name,
+                                                  var.vartype,
                                                   vardefinit,
-                                                  tree.var.declKind).setType(tree.var.type);
-            indexDef.sym = tree.var.sym;
+                                                  var.declKind).setType(var.type);
+            indexDef.sym = var.sym;
             JCBlock body = make.Block(0, List.of(indexDef, tree.body));
             body.bracePos = TreeInfo.endPos(tree.body);
             result = translate(make.
@@ -3723,7 +3732,10 @@ public class Lower extends TreeTranslator {
                                  currentClass);
         }
         try {
-            if (tree.init != null) tree.init = translate(tree.init, tree.type);
+            if (tree.init != null) {
+                tree.init = translate(tree.init, tree.type);
+            }
+
             result = tree;
         } finally {
             currentMethodSym = oldMethodSym;

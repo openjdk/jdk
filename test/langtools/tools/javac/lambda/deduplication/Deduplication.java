@@ -191,6 +191,11 @@ public class Deduplication {
                });
 
         groupNotEquals((Function<Object, Integer>) x -> {class C {} new C(); return 42; }, (Function<Object, Integer>) x -> {class C {} new C(); return 42; });
+
+        R r = new R(1, 2);
+        groupEquals(
+                (Runnable) () -> { R(Integer i1, int i2) = r; },
+                (Runnable) () -> { R(Integer i1, int i2) = r; });
     }
 
     void f() {}

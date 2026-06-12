@@ -1083,6 +1083,7 @@ public class KullaTesting {
             case METHOD_SUBKIND:
                 MethodSnippet method = (MethodSnippet) key;
                 return new MemberInfo(method.signature(), method.name());
+            case VAR_BINDING_SUBKIND:
             case VAR_DECLARATION_SUBKIND:
             case VAR_DECLARATION_WITH_INITIALIZER_SUBKIND:
             case TEMP_VAR_EXPRESSION_SUBKIND:

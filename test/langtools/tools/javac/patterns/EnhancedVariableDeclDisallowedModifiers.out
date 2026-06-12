@@ -1,0 +1,13 @@
+EnhancedVariableDeclDisallowedModifiers.java:39:9: compiler.err.final.in.enhanced.declarations.not.allowed
+EnhancedVariableDeclDisallowedModifiers.java:43:9: compiler.err.annotations.in.enhanced.declarations.not.allowed
+EnhancedVariableDeclDisallowedModifiers.java:47:9: compiler.err.illegal.start.of.expr
+EnhancedVariableDeclDisallowedModifiers.java:47:16: compiler.err.invalid.meth.decl.ret.type.req
+EnhancedVariableDeclDisallowedModifiers.java:47:39: compiler.err.expected2: '{', ';'
+EnhancedVariableDeclDisallowedModifiers.java:47:42: compiler.err.not.stmt
+EnhancedVariableDeclDisallowedModifiers.java:47:43: compiler.err.expected: token.identifier
+EnhancedVariableDeclDisallowedModifiers.java:51:9: compiler.err.illegal.start.of.expr
+EnhancedVariableDeclDisallowedModifiers.java:51:16: compiler.err.invalid.meth.decl.ret.type.req
+EnhancedVariableDeclDisallowedModifiers.java:51:42: compiler.err.not.stmt
+EnhancedVariableDeclDisallowedModifiers.java:51:39: compiler.err.expected2: '{', ';'
+EnhancedVariableDeclDisallowedModifiers.java:52:5: compiler.err.class.method.or.field.expected
+12 errors

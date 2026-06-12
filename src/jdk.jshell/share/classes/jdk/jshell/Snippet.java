@@ -277,14 +277,21 @@ public abstract class Snippet {
          * {@code SubKind} of {@link Kind#VAR}.
          * @jls 8.3 Field Declarations
          */
-        VAR_DECLARATION_WITH_INITIALIZER_SUBKIND(Kind.VAR, true, true),
+        VAR_DECLARATION_WITH_INITIALIZER_SUBKIND(Kind.VAR, true, true, true),
+
+        /**
+         * An binding variable.
+         * {@code SubKind} of {@link Kind#VAR}.
+         * @since 27
+         */
+        VAR_BINDING_SUBKIND(Kind.VAR, true, true, true),
 
         /**
          * An expression whose value has been stored in a temporary variable. A
          * {@code SubKind} of {@link Kind#VAR}.
          * @jls 15 Expressions
          */
-        TEMP_VAR_EXPRESSION_SUBKIND(Kind.VAR, true, true),
+        TEMP_VAR_EXPRESSION_SUBKIND(Kind.VAR, true, true, true),
 
         /**
          * A simple variable reference expression. A {@code SubKind} of
@@ -320,18 +327,25 @@ public abstract class Snippet {
 
         private final boolean isExecutable;
         private final boolean hasValue;
+        private final boolean supportsEnhancedTypes;
         private final Kind kind;
 
         SubKind(Kind kind) {
             this.kind = kind;
             this.isExecutable = false;
             this.hasValue = false;
+            this.supportsEnhancedTypes = false;
         }
 
         SubKind(Kind kind, boolean isExecutable, boolean hasValue) {
+            this(kind, isExecutable, hasValue, false);
+        }
+
+        SubKind(Kind kind, boolean isExecutable, boolean hasValue, boolean supportsEnhancedTypes) {
             this.kind = kind;
             this.isExecutable = isExecutable;
             this.hasValue = hasValue;
+            this.supportsEnhancedTypes = supportsEnhancedTypes;
         }
 
         /**
@@ -362,6 +376,10 @@ public abstract class Snippet {
          */
         public Kind kind() {
             return kind;
+        }
+
+        boolean supportsEnhancedTypes() {
+            return supportsEnhancedTypes;
         }
     }
 
@@ -768,4 +786,9 @@ public abstract class Snippet {
         return subkind.isExecutable();
     }
 
+    List<ExtraImport> getExtraImports() {
+        return List.of();
+    }
+
+    record ExtraImport(Snippet from, String name) {}
 }

@@ -1170,6 +1170,140 @@ public class TransPatterns extends TreeTranslator {
         }
     }
 
+    private List<JCStatement> makeEnhancedVariableMatchChecks(int pos,
+                                                              VarSymbol candidate,
+                                                              JCPattern pattern) {
+        // null check logic
+        JCExpression candidateRef =
+                make.at(pos).Ident(candidate).setType(candidate.type);
+
+        JCStatement nullCheck =
+                make.at(pos).Exec(attr.makeNullCheck(candidateRef));
+
+        // pattern matching check logic and remainder check
+        List<JCExpression> matchExParams = List.of(makeNull(), makeNull());
+        JCTree.JCThrow thr =
+                make.Throw(makeNewClass(syms.matchExceptionType, matchExParams));
+
+        JCInstanceOf instanceOfTree =
+                make.TypeTest(make.Ident(candidate).setType(candidate.type), pattern);
+        instanceOfTree.allowNull = true;
+
+        JCIf matchCheck =
+                make.If(makeUnary(Tag.NOT, translate(instanceOfTree)).setType(syms.booleanType), thr, null);
+
+        return List.of(nullCheck, matchCheck);
+    }
+
+    @Override
+    public void visitEnhancedVariableDeclaration(JCTree.JCEnhancedVariableDeclaration tree) {
+        /**
+         * A statement of the form
+         *
+         * <pre>
+         *     <pattern> = <expression> ;
+         * </pre>
+         *
+         * (where <pattern> is a record pattern) is translated to:
+         *
+         * <pre>{@code
+         *     <binding variable declarations>
+         *     {
+         *          final <expr-type-or-Object> N$temp = <expression>;
+         *          <null check of N$temp>;
+         *          if (!(<translated match check for N$temp against pattern>)) {
+         *              throw new MatchException(null, null);
+         *          }
+         *     }
+         * }</pre>
+         *
+         */
+        bindingContext = new BasicBindingContext();
+        try {
+            JCExpression expr = translate(tree.expr);
+            Type tempType = expr.type.hasTag(BOT) ? syms.objectType : expr.type;
+
+            // synthetic temp to hold RHS
+            VarSymbol letBoundCandidate = new VarSymbol(Flags.FINAL | Flags.SYNTHETIC,
+                    names.fromString(tree.pos + target.syntheticNameChar() + "temp"),
+                    tempType,
+                    currentMethodSym);
+            JCStatement letBoundCandidateRef =
+                    make.at(tree.pos).VarDef(letBoundCandidate, expr).setType(tempType);
+
+            List<JCStatement> checks =
+                    makeEnhancedVariableMatchChecks(tree.pos, letBoundCandidate, tree.pattern);
+
+            // concatenate all
+            result = make.Block(0,
+                    List.of(letBoundCandidateRef,
+                            checks.head,
+                            bindingContext.decorateStatement(checks.tail.head)));
+        } finally {
+            bindingContext.pop();
+        }
+    }
+
+    @Override
+    public void visitForeachLoop(JCTree.JCEnhancedForLoop tree) {
+        bindingContext = new BasicBindingContext();
+        VarSymbol prevCurrentValue = currentValue;
+        try {
+            if (tree.varOrRecordPattern instanceof JCRecordPattern jcRecordPattern) {
+                /**
+                 * A statement of the form
+                 *
+                 * <pre>
+                 *     for ( <pattern> : coll ) stmt ;
+                 * </pre>
+                 *
+                 * (where coll implements {@code Iterable<R>}) gets translated to
+                 *
+                 * <pre>{@code
+                 *     for (<class-bound element type> N$temp : coll) {
+                 *          < binding variable declarations >
+                 *          <null check of N$temp>;
+                 *          if (!(<translated match check for N$temp against pattern>)) {
+                 *              throw new MatchException(null, null);
+                 *          }
+                 *          <translated stmt>
+                 * }</pre>
+                 *
+                 */
+                tree.expr = translate(tree.expr);
+
+                currentValue = new VarSymbol(Flags.FINAL | Flags.SYNTHETIC,
+                        names.fromString(tree.pos + target.syntheticNameChar() + "temp"),
+                        types.classBound(tree.elementType),
+                        currentMethodSym);
+
+                tree.varOrRecordPattern = make.at(tree.pos)
+                        .VarDef(currentValue, null)
+                        .setType(currentValue.type);
+
+                JCStatement originalBody = tree.body;
+
+                List<JCStatement> checks =
+                        makeEnhancedVariableMatchChecks(tree.pos, currentValue, jcRecordPattern);
+
+                JCStatement translatedBody = translate(originalBody);
+
+                tree.body = make.at(originalBody.pos).Block(0,
+                        bindingContext.bindingVars(tree.pos)
+                                .appendList(checks)
+                                .append(translatedBody));
+
+                result = tree;
+            } else {
+                super.visitForeachLoop(tree);
+                result = bindingContext.decorateStatement(tree);
+            }
+        } finally {
+            currentValue = prevCurrentValue;
+            bindingContext.pop();
+        }
+    }
+
     @Override
     public void visitWhileLoop(JCWhileLoop tree) {
         bindingContext = new BasicBindingContext();

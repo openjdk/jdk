@@ -25,6 +25,8 @@
 
 package com.sun.source.tree;
 
+import jdk.internal.javac.PreviewFeature;
+
 /**
  * Common interface for all nodes in an abstract syntax tree.
  *
@@ -77,6 +79,13 @@ public interface Tree {
          * Used for instances of {@link AssertTree}.
          */
         ASSERT(AssertTree.class),
+
+        /**
+         * Used for instances of {@link EnhancedVariableDeclarationTree}.
+         * @since 27
+         */
+        @PreviewFeature(feature=PreviewFeature.Feature.ENHANCED_LOCAL_VARIABLE_DECLARATIONS, reflective=true)
+        ENHANCED_VARIABLE_DECLARATION(EnhancedVariableDeclarationTree.class),
 
         /**
          * Used for instances of {@link AssignmentTree}.
