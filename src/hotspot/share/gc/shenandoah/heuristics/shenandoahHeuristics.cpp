@@ -268,7 +268,15 @@ void ShenandoahHeuristics::record_success_concurrent(bool abbreviated) {
   adjust_penalty(Concurrent_Adjust);
 }
 
-void ShenandoahHeuristics::record_degenerated(bool abbreviated) {
+void ShenandoahHeuristics::record_degenerated(bool abbreviated, bool is_generational_global) {
+
+  if (!is_generational_global) {
+    // We don't penalize generational GC heuristics for global GC because heuristics predict based on assumption of young GC.
+    _most_recent_declined_trigger_count = _declined_trigger_count;
+    _declined_trigger_count = 0;
+  } else {
+    _most_recent_declined_trigger_count = _declined_trigger_count = 0;
+  }
   adjust_penalty(Degenerated_Penalty);
 }
 

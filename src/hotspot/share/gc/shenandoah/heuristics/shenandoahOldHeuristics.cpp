@@ -856,10 +856,10 @@ void ShenandoahOldHeuristics::record_success_concurrent(bool abbreviated) {
   this->ShenandoahHeuristics::record_success_concurrent(abbreviated);
 }
 
-void ShenandoahOldHeuristics::record_degenerated(bool abbreviated) {
+void ShenandoahOldHeuristics::record_degenerated(bool abbreviated, bool is_generational_global) {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-  this->ShenandoahHeuristics::record_degenerated(abbreviated);
+  this->ShenandoahHeuristics::record_degenerated(abbreviated, is_generational_global);
 }
 
 void ShenandoahOldHeuristics::record_success_full() {

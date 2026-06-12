@@ -199,8 +199,6 @@ protected:
   virtual void adjust_penalty(intx step);
 
   inline void accept_trigger() {
-    _most_recent_declined_trigger_count = _declined_trigger_count;
-    _declined_trigger_count = 0;
     _start_gc_is_pending = true;
   }
 
@@ -258,7 +256,7 @@ public:
 
   virtual void record_success_concurrent(bool abbreviated);
 
-  virtual void record_degenerated(bool abbreviated);
+  virtual void record_degenerated(bool abbreviated, bool is_generational_global);
 
   virtual void record_success_full();
 

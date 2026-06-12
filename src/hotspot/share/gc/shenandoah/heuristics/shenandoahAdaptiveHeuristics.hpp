@@ -57,7 +57,7 @@ public:
   void start_idle_span() override;
 
   void record_success_concurrent(bool abbreviated) override;
-  void record_degenerated(bool abbreviated) override;
+  void record_degenerated(bool abbreviated, bool is_generational_global) override;
 
   bool should_start_gc() override;
 
