@@ -45,19 +45,19 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
-ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation) :
+ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
   ShenandoahGC(generation),
   _degen_point(degen_point),
-  _abbreviated(false) {
+  _abbreviated(false),
+  _do_old_gc_bootstrap(do_old_gc_bootstrap) {
 }
 
 bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
   vmop_degenerated();
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
-    bool is_bootstrap_gc = heap->young_generation()->is_bootstrap_cycle();
     FormatBuffer<32> buf("Degenerated %s GC", _generation->name());
-    const char* msg = is_bootstrap_gc ? "Degenerated Bootstrap Old GC" : buf.buffer();
+    const char* msg = _do_old_gc_bootstrap ? "Degenerated Bootstrap Old GC" : buf.buffer();
     heap->mmu_tracker()->record_degenerated(GCId::current(), msg);
     heap->log_heap_status(FormatBuffer<64>("At end of %s", msg));
   }

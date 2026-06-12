@@ -53,7 +53,8 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _requested_generation(nullptr),
   _gc_mode(none),
   _degen_point(ShenandoahGC::_degenerated_unset),
-  _heap(ShenandoahGenerationalHeap::heap()) {
+  _heap(ShenandoahGenerationalHeap::heap()),
+  _do_old_gc_bootstrap(false) {
   shenandoah_assert_generational();
   set_name("ShenControl");
   create_and_start();
@@ -529,12 +530,14 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
 
   assert(!generation->is_old(), "Old GC takes a different control path");
 
+  _do_old_gc_bootstrap = do_old_gc_bootstrap;
   ShenandoahConcurrentGC gc(generation, do_old_gc_bootstrap);
   _heap->increment_total_collections(false);
   if (gc.collect(cause)) {
     // Cycle is complete
     _heap->notify_gc_progress();
     generation->record_success_concurrent(gc.abbreviated());
+    _do_old_gc_bootstrap = false;
   } else {
     assert(_heap->cancelled_gc(), "Must have been cancelled");
     check_cancellation_or_degen(gc.degen_point());
@@ -613,9 +616,10 @@ void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const Sh
 
   ShenandoahGCSession session(request.cause, request.generation, true,
                               _degen_point == ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle);
-  ShenandoahDegenGC gc(_degen_point, request.generation);
+  ShenandoahDegenGC gc(_degen_point, request.generation, _do_old_gc_bootstrap);
   gc.collect(request.cause);
   _degen_point = ShenandoahGC::_degenerated_unset;
+  _do_old_gc_bootstrap = false;
 
   assert(_heap->young_generation()->task_queues()->is_empty(), "Unexpected young generation marking tasks");
   if (request.generation->is_global()) {

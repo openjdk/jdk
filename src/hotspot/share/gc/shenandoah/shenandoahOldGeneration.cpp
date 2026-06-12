@@ -596,7 +596,7 @@ bool ShenandoahOldGeneration::validate_idle() {
   assert(!heap->is_concurrent_old_mark_in_progress(), "Cannot be idle during old mark.");
   assert(heap->young_generation()->old_gen_task_queues() == nullptr, "Cannot be idle when still setup for bootstrapping.");
   assert(!is_concurrent_mark_in_progress(), "Cannot be marking in IDLE");
-  assert(!heap->young_generation()->is_bootstrap_cycle(), "Cannot have old mark queues if IDLE");
+  assert(!heap->young_generation()->is_old_marking_active(), "Cannot have old mark queues if IDLE");
   assert(!_old_heuristics->has_coalesce_and_fill_candidates(), "Cannot have coalesce and fill candidates in IDLE");
   assert(_old_heuristics->unprocessed_old_collection_candidates() == 0, "Cannot have mixed collection candidates in IDLE");
   return true;

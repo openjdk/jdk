@@ -57,6 +57,7 @@
   } while (0)
 
 class ShenandoahCollectionSet;
+class ShenandoahHeap;
 class ShenandoahHeapRegion;
 
 /*
@@ -81,6 +82,9 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
 private:
   double _most_recent_trigger_evaluation_time;
   double _most_recent_planned_sleep_interval;
+
+  // When we decide to do an abbreviated cycle, withdraw reserves so memory can be made available to mutators.
+  void adjust_reserves_for_abbreviated(ShenandoahHeap* heap);
 
 protected:
   static constexpr uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
