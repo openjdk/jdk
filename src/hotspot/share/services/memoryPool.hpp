@@ -61,7 +61,6 @@ class MemoryPool : public CHeapObj<mtInternal> {
   PoolType         _type;
   size_t           _initial_size;
   size_t           _max_size;
-  bool             _available_for_allocation; // Default is true
   MemoryManager*   _managers[max_num_managers];
   int              _num_managers;
   MemoryUsage      _peak_usage;               // Peak memory usage
@@ -97,13 +96,6 @@ class MemoryPool : public CHeapObj<mtInternal> {
   virtual size_t max_size()    const       { return _max_size; }
 
   bool is_pool(instanceHandle pool) const;
-
-  bool available_for_allocation()   { return _available_for_allocation; }
-  bool set_available_for_allocation(bool value) {
-    bool prev = _available_for_allocation;
-    _available_for_allocation = value;
-    return prev;
-  }
 
   MemoryManager* get_memory_manager(int index) {
     assert(index >= 0 && index < _num_managers, "Invalid index");
