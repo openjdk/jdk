@@ -191,10 +191,12 @@ void ShenandoahPLAB::retire() {
     log_debug(gc, plab)("Retire PLAB, unexpend unpromoted: %zu", not_promoted * HeapWordSize);
     _heap->old_generation()->unexpend_promoted(not_promoted);
   }
-  const size_t original_waste = _plab->waste();
-  HeapWord* const top = _plab->top();
 
   // plab->retire() overwrites unused memory between plab->top() and plab->hard_end() with a dummy object to make memory parsable.
-  // It adds the size of this unused memory, in words, to plab->waste().
+  // We do _not_ need to register this remnant object with the card table because all paths where a PLAB object would
+  // be created are covered by a subsequent phase in the cycle. For the concurrent and degenerated cycles, all PLABs
+  // are retired in preparation for update-references. All objects in these PLABs will be registered by update-card-tables.
+  // For a full GC, the entire remembered set will be rebuilt in the final phase. Note also that an empty TLAB will _not_
+  // create a filler object when it is retired. 
   _plab->retire();
 }
