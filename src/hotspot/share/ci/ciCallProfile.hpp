@@ -26,8 +26,8 @@
 #define SHARE_CI_CICALLPROFILE_HPP
 
 #include "ci/ciClassList.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "memory/allocation.hpp"
-#include "opto/c2_globals.hpp"
 
 // ciCallProfile
 //
