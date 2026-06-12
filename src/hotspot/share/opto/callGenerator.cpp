@@ -729,13 +729,25 @@ void CallGenerator::do_late_inline_helper() {
     }
     C->set_inlining_progress(true);
     C->set_do_cleanup(kit.stopped()); // path is dead; needs cleanup
-    Node* result_proj = call->proj_out_or_null(TypeFunc::Parms);
-    if (C->inlining_incrementally() && result_proj != nullptr && UseNewCode) {
-      for (DUIterator_Fast imax, i = result_proj->fast_outs(imax); i < imax; i++) {
-        Node* use = result_proj->fast_out(i);
-        if (use->is_AddP() && use->in(AddPNode::Offset) == result_proj) {
-          C->set_do_cleanup(true);
-          break;
+    // If the specific field accessed by a memory operation is discovered after
+    // inlining a method incrementally, request a cleanup so that the
+    // corresponding IGVN-recorded address type is updated. This is not just an
+    // optimization: failure update the address type can lead to a slice
+    // mismatch when parsing subsequent accesses to the address, because the
+    // memory slice corresponding to *any* field of a class C is not the same as
+    // the slice corresponding to a specific field of C. This mismatch can in
+    // its turn lead to e.g. incorrect memory graphs.
+    if (C->inlining_incrementally() &&
+        !result->is_top() && result->is_Con() && result->bottom_type()->isa_intptr_t() &&
+        UseNewCode) {
+      Node* result_proj = call->proj_out_or_null(TypeFunc::Parms);
+      if (result_proj != nullptr) {
+        for (DUIterator_Fast imax, i = result_proj->fast_outs(imax); i < imax; i++) {
+          Node* use = result_proj->fast_out(i);
+          if (use->is_AddP() && use->in(AddPNode::Offset) == result_proj) {
+            C->set_do_cleanup(true);
+            break;
+          }
         }
       }
     }
