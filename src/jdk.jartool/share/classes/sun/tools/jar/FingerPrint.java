@@ -181,22 +181,10 @@ final class FingerPrint {
                 cm.flags(),
                 cm.thisClass().asInternalName(),
                 cm.superclass().map(ClassEntry::asInternalName).orElse(null),
-                getInternalNamesOfInterfaces(cm),
+                cm.interfaces().stream().map(ClassEntry::asInternalName).collect(Collectors.toSet()),
                 cm.majorVersion());
         cm.forEach(attrs);
         return attrs;
-    }
-
-    private static Set<String> getInternalNamesOfInterfaces(ClassModel cm) {
-        boolean isInterface = cm.flags().has(AccessFlag.INTERFACE);
-        // only care for names of interfaces extended by an interface
-        if (isInterface) {
-            return cm.interfaces().stream().map(ClassEntry::asInternalName).collect(Collectors.toSet());
-        }
-        // keep existing behavior by ignoring names of interfaces implemented by classes
-        else {
-            return Set.of();
-        }
     }
 
     private static final class Field {
