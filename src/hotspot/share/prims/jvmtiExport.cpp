@@ -1771,11 +1771,12 @@ void JvmtiExport::continuation_yield_cleanup(JavaThread* thread, jint continuati
   if (state == nullptr) {
     return;
   }
+  state->invalidate_cur_stack_depth();
 
   // Clear frame_pop requests in frames popped by yield
   if (can_post_frame_pop()) {
     JvmtiEnvThreadStateIterator it(state);
-    int top_frame_num = state->count_frames() + continuation_frame_count;
+    int top_frame_num = state->cur_stack_depth() + continuation_frame_count;
 
     for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
       if (!ets->has_frame_pops()) {
@@ -1872,6 +1873,8 @@ void JvmtiExport::post_method_entry(JavaThread *thread, Method* method, frame cu
                      JvmtiTrace::safe_get_thread_name(thread),
                      (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                      (mh() == nullptr) ? "null" : mh()->name()->as_C_string() ));
+
+  state->incr_cur_stack_depth();
 
   if (state->is_enabled(JVMTI_EVENT_METHOD_ENTRY)) {
     JvmtiEnvThreadStateIterator it(state);
@@ -1986,7 +1989,7 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
   JvmtiEnvThreadStateIterator it(state);
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
     if (ets->has_frame_pops()) {
-      int cur_frame_number = state->count_frames();
+      int cur_frame_number = state->cur_stack_depth();
 
       if (ets->is_frame_pop(cur_frame_number)) {
         // we have a NotifyFramePop entry for this frame.
@@ -2019,6 +2022,7 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
     }
   }
 
+  state->decr_cur_stack_depth();
 }
 
 
@@ -2147,6 +2151,8 @@ void JvmtiExport::post_exception_throw(JavaThread *thread, Method* method, addre
     }
   }
 
+  // frames may get popped because of this throw, be safe - invalidate cached depth
+  state->invalidate_cur_stack_depth();
 }
 
 
@@ -2170,6 +2176,9 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
 
   if (state->is_exception_detected()) {
 
+    // The cached cur_stack_depth might have changed from the operations of frame pop or method exit.
+    // We are not 100% sure the cached cur_stack_depth is still valid depth so invalidate it.
+    state->invalidate_cur_stack_depth();
     if (!in_handler_frame) {
       // Not in exception handler.
       jvalue no_value;
@@ -2178,6 +2187,8 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
     } else {
       // In exception handler frame. Report exception catch.
       assert(location != nullptr, "must be a known location");
+      // Update cur_stack_depth - the frames above the current frame
+      // have been unwound due to this exception:
       assert(!state->is_exception_caught(), "exception must not be caught yet.");
       state->set_exception_caught();
 

@@ -1702,6 +1702,9 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, UseDebuggerErgo2, false,                                    \
           "Debugging Only: Limit the number of spawned JVM threads")        \
                                                                             \
+  develop(bool, EnableJVMTIStackDepthAsserts, true,                         \
+          "Enable JVMTI asserts related to stack depth checks")             \
+                                                                            \
   /* flags for performance data collection */                               \
                                                                             \
   product(bool, UsePerfData, true,                                          \

@@ -1662,6 +1662,13 @@ static int num_java_frames(ContinuationWrapper& cont) {
   return count;
 }
 
+static void invalidate_jvmti_stack(JavaThread* thread) {
+  JvmtiThreadState *state = thread->jvmti_thread_state();
+  if (state != nullptr) {
+    state->invalidate_cur_stack_depth();
+  }
+}
+
 static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
   if (!cont.entry()->is_virtual_thread()) {
     if (JvmtiExport::has_frame_pops(thread)) {
@@ -1670,6 +1677,7 @@ static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
       ContinuationWrapper::SafepointOp so(Thread::current(), cont);
       JvmtiExport::continuation_yield_cleanup(thread, num_frames);
     }
+    invalidate_jvmti_stack(thread);
   }
 }
 
@@ -2478,6 +2486,8 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
   _cont.write();
 
   assert(_cont.chunk_invariant(), "");
+
+  JVMTI_ONLY(if (!_cont.entry()->is_virtual_thread()) invalidate_jvmti_stack(_thread));
 
   _thread->set_cont_fastpath(_fastpath);
 
