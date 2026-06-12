@@ -38,6 +38,11 @@
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/vframe.hpp"
 
+// marker for when the stack depth has been reset and is now unknown.
+// any negative number would work but small ones might obscure an
+// underrun error.
+static const int UNKNOWN_STACK_DEPTH = -99;
+
 ///////////////////////////////////////////////////////////////
 //
 // class JvmtiThreadState
