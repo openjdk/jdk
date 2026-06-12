@@ -2003,9 +2003,22 @@ void InterpreterMacroAssembler::notify_method_exit(bool native_method,
   // depth. If it is possible to enter interp_only_mode we add
   // the code to check if the event should be sent.
   if (mode == NotifyJVMTI && (JvmtiExport::can_post_interpreter_events() || JvmtiExport::can_post_frame_pop())) {
+    NearLabel jvmti_post_done;
+
+    // if (thread->jvmti_thread_state() == nullptr) exit;
+    z_ltg(Z_R1_scratch, Address(Z_thread, JavaThread::jvmti_thread_state_offset()));
+    z_brz(jvmti_post_done);
+
+    // if (interp_only_mode() == false && frame_pop_cnt() == 0) exit;
+    z_lgf(Z_R1_scratch, Address(Z_R1_scratch, JvmtiThreadState::frame_pop_cnt_offset()));
+    z_o(Z_R1_scratch, Address(Z_thread, JavaThread::interp_only_mode_offset()));
+    z_brz(jvmti_post_done);
+
     if (!native_method) push(state); // see frame::interpreter_frame_result()
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit));
     if (!native_method) pop(state);
+
+    bind(jvmti_post_done);
   }
 }
 

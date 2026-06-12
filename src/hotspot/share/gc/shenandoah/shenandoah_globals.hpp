@@ -500,9 +500,6 @@
           "Turn on/off card-marking post-write barrier in Shenandoah: "     \
           " true when ShenandoahGCMode is generational, false otherwise")   \
                                                                             \
-  product(bool, ShenandoahCASBarrier, true, DIAGNOSTIC,                     \
-          "Turn on/off CAS barriers in Shenandoah")                         \
-                                                                            \
   product(bool, ShenandoahCloneBarrier, true, DIAGNOSTIC,                   \
           "Turn on/off clone barriers in Shenandoah")                       \
                                                                             \
@@ -531,10 +528,6 @@
   product(bool, ShenandoahAllowOldMarkingPreemption, true, DIAGNOSTIC,      \
           "Allow young generation collections to suspend concurrent"        \
           " marking in the old generation.")                                \
-                                                                            \
-  product(uintx, ShenandoahAgingCyclePeriod, 1, EXPERIMENTAL,               \
-          "With generational mode, increment the age of objects and"        \
-          "regions each time this many young-gen GC cycles are completed.") \
                                                                             \
   develop(bool, ShenandoahEnableCardStats, false,                           \
           "Enable statistics collection related to clean & dirty cards")    \

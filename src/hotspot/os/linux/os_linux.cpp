@@ -2183,6 +2183,10 @@ void os::print_os_info(outputStream* st) {
     st->cr();
   }
 
+  if (os::Linux::print_numa_info(st)) {
+    st->cr();
+  }
+
   VM_Version::print_platform_virtualization_info(st);
 
   os::Linux::print_steal_info(st);
@@ -2622,6 +2626,97 @@ bool os::Linux::print_container_info(outputStream* st) {
   return true;
 }
 
+#define SYS_DEVICES_NODE "/sys/devices/system/node"
+
+static size_t read_sysfs_file(const char* path, char* buf, size_t sz) {
+  FILE* f = os::fopen(path, "r");
+  if (f == nullptr) return 0;
+  size_t n = fread(buf, 1, sz - 1, f);
+  fclose(f);
+  buf[n] = '\0';
+  while (n > 0 && (buf[n-1] == '\n' || buf[n-1] == '\r')) buf[--n] = '\0';
+  return n;
+}
+
+static void print_numa_memory_info(outputStream* st, int node) {
+  char path[256];
+  char line[256];
+  long long mem_total = -1;
+  long long mem_free = -1;
+  os::snprintf_checked(path, sizeof(path), SYS_DEVICES_NODE "/node%d/meminfo", node);
+  FILE* f = os::fopen(path, "r");
+  if (f == nullptr) {
+    return;
+  }
+
+  while (fgets(line, sizeof(line), f) != nullptr) {
+    long long mval;
+    if (sscanf(line, "Node %*d MemTotal: %lld kB", &mval) == 1) mem_total = mval;
+    if (sscanf(line, "Node %*d MemFree: %lld kB",  &mval) == 1) mem_free  = mval;
+  }
+  fclose(f);
+
+  if (mem_total >= 0) { st->print_cr("mem size: %lld kB", mem_total); }
+  if (mem_free >= 0) { st->print_cr("mem free: %lld kB", mem_free); }
+}
+
+static void print_numa_cpu_list(outputStream* st, int node) {
+  char path[256];
+  char buf[1024];
+  os::snprintf_checked(path, sizeof(path), SYS_DEVICES_NODE "/node%d/cpulist", node);
+  if (read_sysfs_file(path, buf, sizeof(buf)) > 0) {
+    st->print_cr("cpus: %s", buf);
+  } else {
+    st->print_cr("cpus: (unavailable)");
+  }
+}
+
+bool os::Linux::print_numa_info(outputStream* st) {
+  if (!UseNUMA) {
+    // If NUMA optimizations are not enabled we don't print anything
+    return false;
+  }
+
+  char buf[1024];
+  if (read_sysfs_file("/sys/devices/system/node/online", buf, sizeof(buf)) > 0) {
+    st->print_cr("NUMA nodes online: %s", buf);
+  } else {
+    return false;
+  }
+
+  bool first = true;
+  int node_count = 0;
+
+  if (nindex_to_node() == nullptr) {
+    return false;
+  }
+
+  for (int node: *nindex_to_node()) {
+    char nodepath[256];
+    os::snprintf_checked(nodepath, sizeof(nodepath), SYS_DEVICES_NODE "/node%d", node);
+    DIR* currd = os::opendir(nodepath);
+    if (currd == nullptr) continue;
+    if (first) {
+      st->cr();
+      first = false;
+    }
+    os::closedir(currd);
+
+    st->print_cr("NUMA node %d", node);
+    StreamIndentor si(st);
+    print_numa_cpu_list(st, node);
+    print_numa_memory_info(st, node);
+    node_count++;
+  }
+
+  if (node_count == 0) {
+    return false;
+  }
+
+  st->print_cr("Total NUMA node count: %d", node_count);
+  return true;
+}
+
 void os::Linux::print_steal_info(outputStream* st) {
   if (has_initial_tick_info) {
     CPUPerfTicks pticks;
@@ -2765,14 +2860,39 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 
 #if INCLUDE_JFR
 
+// hwm (high water mark) in K for the VM RSS
+static long jfr_rss_hwm_k = -1;
+
+static void send_resident_set_size_event(ssize_t size, ssize_t peak) {
+  EventResidentSetSize event;
+  event.set_size(size * K);
+  event.set_peak(peak * K);
+  event.commit();
+}
+
 void os::jfr_report_memory_info() {
+  os::Linux::accurate_meminfo_t accurate_info;
+  if (os::Linux::query_accurate_process_memory_info(&accurate_info) && accurate_info.rss != -1) {
+    // unfortunately the smaps_rollup/accurate_info contains no hwm (high water mark) for RSS
+    struct rusage ru;
+    if (getrusage(RUSAGE_SELF, &ru) == 0) {
+      if (ru.ru_maxrss > jfr_rss_hwm_k) {
+        jfr_rss_hwm_k = ru.ru_maxrss;
+      }
+    }
+
+    // do not allow larger current RSS than hwm
+    if (accurate_info.rss > jfr_rss_hwm_k) {
+      jfr_rss_hwm_k = accurate_info.rss;
+    }
+
+    send_resident_set_size_event(accurate_info.rss, jfr_rss_hwm_k);
+    return;
+  }
+
   os::Linux::meminfo_t info;
   if (os::Linux::query_process_memory_info(&info)) {
-    // Send the RSS JFR event
-    EventResidentSetSize event;
-    event.set_size(info.vmrss * K);
-    event.set_peak(info.vmhwm * K);
-    event.commit();
+    send_resident_set_size_event(info.vmrss, info.vmhwm);
   } else {
     // Log a warning
     static bool first_warning = true;
