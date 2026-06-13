@@ -410,7 +410,7 @@ int JvmtiThreadState::cur_stack_depth() {
             "must be current thread or direct handshake");
 
   if (!is_interp_only_mode() || _cur_stack_depth == UNKNOWN_STACK_DEPTH
-      || is_pending_step_for_popframe() || is_pending_step_for_popframe()) {
+      || is_pending_step_for_earlyret() || is_pending_step_for_popframe()) {
     _cur_stack_depth = count_frames();
   } else {
 #ifdef ASSERT
