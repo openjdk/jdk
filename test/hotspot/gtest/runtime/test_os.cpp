@@ -125,28 +125,26 @@ TEST_VM(os, page_size_for_region_unaligned) {
 }
 
 TEST_VM(os, test_print_markword) {
-  JavaThread* THREAD = JavaThread::current();
-  ThreadInVMfromNative invm(THREAD);
-  oop obj = vmClasses::Byte_klass()->allocate_instance(THREAD);
-  markWord m0 = obj->mark();
-  static markWord markWords[] = { markWord(0), m0, m0.set_age(2), m0.copy_set_hash(0x12345) };
-
-  static const char* expected[] = { "is null", "mark(is_unlocked no_hash age=0) java.lang.Byte", "age=2", "is an unknown value" };
-  outputStream* out = fdStream::stdout_stream();
-  int nmark = sizeof(markWords) / sizeof(int64_t);
-  int nresult = sizeof(expected) / sizeof(const char*);
-  assert(nmark == nresult, "misconfigured test/result arrays; sizes differ");
-  #ifdef _LP64
+#ifdef _LP64
   if (UseCompactObjectHeaders) {
+    JavaThread* THREAD = JavaThread::current();
+    ThreadInVMfromNative invm(THREAD);
+    markWord m0 = vmClasses::Byte_klass()->prototype_header();
+    const struct { markWord mw; const char* expected; } patterns[] = {
+      { markWord(0), "is null"},
+      { m0, "mark(is_unlocked no_hash age=0) java.lang.Byte" },
+      { m0.set_age(2), "age=2" },
+      { m0.copy_set_hash(0x12345), "is an unknown value" }
+    };
+    constexpr int nmark = sizeof(patterns) / sizeof(patterns[0]);
     for (int i = 0; i < nmark; i++) {
       stringStream st;
       MutexLocker lock(ClassLoaderDataGraph_lock);
-      os::print_location(&st, (intptr_t) markWords[i].to_pointer(), true);
-      out->print("\n====================\nword 0x%p, '%s' result:\n%s\n", markWords[i].to_pointer(), expected[i], st.base());
-      ASSERT_THAT(st.base(), testing::HasSubstr(expected[i]));
+      os::print_location(&st, (intptr_t) patterns[i].mw.to_pointer(), true);
+      ASSERT_THAT(st.base(), testing::HasSubstr(patterns[i].expected));
     }
   }
-  #endif
+#endif
 }
 
 static void assert_test_pattern(oop& obj, const char* pattern, bool is_present=true) {
