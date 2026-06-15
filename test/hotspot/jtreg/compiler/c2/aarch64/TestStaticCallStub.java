@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, 2026, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -48,191 +47,53 @@ import jdk.test.lib.process.ProcessTools;
  */
 public class TestStaticCallStub {
 
-    private static class InstructionList extends ArrayList<Instruction> {
-        public InstructionList(List<Instruction> instructions) {
-            super(instructions);
-        }
-
-        public boolean matches(List<String> codes) {
-            if (size() != codes.size()) {
-                return false;
-            }
-
-            return IntStream.range(0, size()).allMatch(i -> get(i).matches(codes.get(i)));
-        }
+    record Instruction(String mnemonic, int mask, int value) {
     }
 
-    private static abstract class Instruction {
-        private static final List<Instruction> registry = new ArrayList<>();
-
-        protected static void register(Instruction inst) {
-            registry.add(inst);
-        }
-
-        private static String reverseEndian(String encoding) {
-            if (encoding.length() != 8) {
-                throw new IllegalArgumentException("Input must be 8 hex characters long.");
-            }
-
-            return new StringBuilder()
-                    .append(encoding, 6, 8)
-                    .append(encoding, 4, 6)
-                    .append(encoding, 2, 4)
-                    .append(encoding, 0, 2)
-                    .toString();
-        }
-
-        public final boolean matches(int encoding) {
-            return (encoding & mask()) == value();
-        }
-
-        public final boolean matches(String encoding) {
-            String cleaned = encoding.replaceAll("\\s+", "");
-
-            if (cleaned.matches("^[0-9a-fA-F]{8}$")) {
-                return matches((int) Long.parseLong(reverseEndian(cleaned), 16));
-            }
-
-            return cleaned.equals(opcode());
-        }
-
-        protected abstract int mask();
-
-        protected abstract int value();
-
-        protected abstract String opcode();
-    }
-
-    private static class B extends Instruction {
-        public static final B INSTANCE = new B();
-
-        static {
-            Instruction.register(INSTANCE);
-        }
-
-        public static final B get() {
-            return INSTANCE;
-        }
-
-        protected final int mask() {
-            return 0b1111_1100_0000_0000_0000_0000_0000_0000;
-        }
-
-        protected final int value() {
-            return 0b0001_0100_0000_0000_0000_0000_0000_0000;
-        }
-
-        protected final String opcode() {
-            return "b";
-        }
-    }
-
-    private static class BR extends Instruction {
-        public static final BR INSTANCE = new BR();
-
-        public static final BR get() {
-            return INSTANCE;
-        }
-
-        protected final int mask() {
-            return 0b1111_1111_1111_1111_1111_1100_0001_1111;
-        }
-
-        protected final int value() {
-            return 0b1101_0110_0001_1111_0000_0000_0000_0000;
-        }
-
-        protected final String opcode() {
-            return "br";
-        }
+    private static final Instruction[] nearStaticCallInsts = {
+        new Instruction("isb",  0xFFFFF0FF, 0xD50330DF), // ISB
+        new Instruction("mov",  0xFF800000, 0xD2800000), // MOVZ
+        new Instruction("movk", 0xFF800000, 0xF2800000), // MOVK
+        new Instruction("movk", 0xFF800000, 0xF2800000), // MOVK
+        new Instruction("b",    0xFC000000, 0x14000000)  // B
+    };
+    private static final Instruction[] farStaticCallInsts = {
+        new Instruction("isb",  0xFFFFF0FF, 0xD50330DF), // ISB
+        new Instruction("mov",  0xFF800000, 0xD2800000), // MOVZ
+        new Instruction("movk", 0xFF800000, 0xF2800000), // MOVK
+        new Instruction("movk", 0xFF800000, 0xF2800000), // MOVK
+        new Instruction("mov",  0xFF800000, 0xD2800000), // MOVZ
+        new Instruction("movk", 0xFF800000, 0xF2800000), // MOVK
+        new Instruction("movk", 0xFF800000, 0xF2800000), // MOVK
+        new Instruction("br",   0xFFFFFC1F, 0xD61F0000)  // BR
     };
 
-    private static class ISB extends Instruction {
-        public static final ISB INSTANCE = new ISB();
-
-        static {
-            Instruction.register(INSTANCE);
+    static String extractMnemonic(String line) {
+        int colonIndex = line.indexOf(':');
+        if (colonIndex != -1) {
+            line = line.substring(colonIndex + 1).trim();
         }
 
-        public static final ISB get() {
-            return INSTANCE;
+        int semicolonIndex = line.indexOf(';');
+        if (semicolonIndex != -1) {
+            line = line.substring(0, semicolonIndex).trim();
         }
 
-        protected final int mask() {
-            return 0b1111_1111_1111_1111_1111_0000_1111_1111;
+        if (line.isBlank()) {
+            return "";
         }
 
-        protected final int value() {
-            return 0b1101_0101_0000_0011_0011_0000_1101_1111;
+        String[] words = line.split("\\s+");
+        if (words.length > 0) {
+            return words[0].trim();
         }
 
-        protected final String opcode() {
-            return "isb";
-        }
+        return "";
     }
 
-    private static class MOVK extends Instruction {
-        public static final MOVK INSTANCE = new MOVK();
+    static List<Integer> extractOpcodes(String line) {
+        List<Integer> opcodes = new ArrayList<>();
 
-        static {
-            Instruction.register(INSTANCE);
-        }
-
-        public static final MOVK get() {
-            return INSTANCE;
-        }
-
-        protected final int mask() {
-            return 0b1111_1111_1000_0000_0000_0000_0000_0000;
-        }
-
-        protected final int value() {
-            return 0b1111_0010_1000_0000_0000_0000_0000_0000;
-        }
-
-        protected final String opcode() {
-            return "movk";
-        }
-    }
-
-    private static class MOVZ extends Instruction {
-        public static final MOVZ INSTANCE = new MOVZ();
-
-        static {
-            Instruction.register(INSTANCE);
-        }
-
-        public static final MOVZ get() {
-            return INSTANCE;
-        }
-
-        protected final int mask() {
-            return 0b1111_1111_1000_0000_0000_0000_0000_0000;
-        }
-
-        protected final int value() {
-            return 0b1101_0010_1000_0000_0000_0000_0000_0000;
-        }
-
-        protected final String opcode() {
-            return "mov"; // this is not a typo
-        }
-    }
-
-    public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
-            // Main VM: fork VM with options
-            runVM(true);
-            runVM(false);
-            return;
-        }
-        if (args.length > 0) {
-            // We are in a forked VM. Just exit
-            System.out.println("Ok");
-        }
-    }
-
-    static List<String> extractOpcodeOrBytecodes(String line) {
         int colonIndex = line.indexOf(':');
         if (colonIndex != -1) {
             line = line.substring(colonIndex + 1).trim();
@@ -247,40 +108,64 @@ public class TestStaticCallStub {
             return Collections.emptyList();
         }
 
-        String[] words = line.split("\\s+");
-        if (words.length > 0) {
-            String opcode = words[0];
-            // Does this look like a bytecode instead?
-            if (opcode.matches("^[0-9a-fA-F]{4}$")) {
-                List<String> retval = Arrays.stream(line.split("\\|"))
-                        .map(String::trim)
-                        .collect(Collectors.toList());
-                return retval;
-            }
-
-            return new ArrayList<>(Arrays.asList(opcode));
+        String[] words = line.split("\\|");
+        for (String word : words) {
+            String[] halfwords = word.trim().split("\\s+");
+            int value = (Integer.parseUnsignedInt(halfwords[0].trim(), 16) << 16)
+                    + Integer.parseUnsignedInt(halfwords[1].trim(), 16);
+            value = Integer.reverseBytes(value);
+            opcodes.add(value);
         }
 
-        return Collections.emptyList();
+        return opcodes;
     }
 
-    static List<String> extractCodesN(ListIterator<String> itr, int n) {
+    static List<String> extractMnemonicsN(ListIterator<String> iter, int n) {
         List<String> extracted = new ArrayList<>();
 
-        while (itr.hasNext() && extracted.size() < n) {
-            int left = n - extracted.size();
-            extractOpcodeOrBytecodes(itr.next()).stream().limit(left).forEach(extracted::add);
+        while (iter.hasNext() && extracted.size() < n) {
+            String mnemonic = extractMnemonic(iter.next());
+            if (!mnemonic.isEmpty()) {
+                extracted.add(mnemonic);
+            }
         }
 
         return extracted;
     }
 
-    static void verifyNearStaticCall(ListIterator<String> itr) {
-        InstructionList nearStaticCallInstList = new InstructionList(
-                Arrays.asList(ISB.get(), MOVZ.get(), MOVK.get(), MOVK.get(), B.get()));
-        List<String> codes = extractCodesN(itr, nearStaticCallInstList.size());
+    static List<Integer> extractOpcodesN(ListIterator<String> iter, int n) {
+        List<Integer> extracted = new ArrayList<>();
 
-        if (!nearStaticCallInstList.matches(codes)) {
+        while (iter.hasNext() && extracted.size() < n) {
+            int left = n - extracted.size();
+            extractOpcodes(iter.next()).stream().limit(left).forEach(extracted::add);
+        }
+
+        return extracted;
+    }
+
+    static boolean opcodesMatch(List<Integer> opcodes, Instruction[] insts) {
+        return opcodes.size() == insts.length && IntStream.range(0, opcodes.size())
+                .allMatch(i -> (opcodes.get(i) & insts[i].mask) == insts[i].value);
+    }
+
+    static boolean staticCallMatches(ListIterator<String> iter, Instruction[] insts,
+            boolean disassembled) {
+        boolean matches;
+
+        if (disassembled) {
+            List<String> extracted = extractMnemonicsN(iter, insts.length);
+            matches = extracted.equals(Arrays.stream(insts).map(Instruction::mnemonic).toList());
+        } else {
+            List<Integer> extracted = extractOpcodesN(iter, insts.length);
+            matches = opcodesMatch(extracted, insts);
+        }
+
+        return matches;
+    }
+
+    static void verifyNearStaticCall(ListIterator<String> iter, boolean disassembled) {
+        if (!staticCallMatches(iter, nearStaticCallInsts, disassembled)) {
             throw new RuntimeException(
                     "for code cache < 250MB the static call stub is expected to be implemented using near branch");
         }
@@ -288,12 +173,8 @@ public class TestStaticCallStub {
         return;
     }
 
-    static void verifyFarStaticCall(ListIterator<String> itr) {
-        InstructionList farStaticCallInstList = new InstructionList(Arrays.asList(ISB.get(), MOVZ.get(), MOVK.get(),
-                MOVK.get(), MOVZ.get(), MOVK.get(), MOVK.get(), BR.get()));
-        List<String> codes = extractCodesN(itr, farStaticCallInstList.size());
-
-        if (!farStaticCallInstList.matches(codes)) {
+    static void verifyFarStaticCall(ListIterator<String> iter, boolean disassembled) {
+        if (!staticCallMatches(iter, farStaticCallInsts, disassembled)) {
             throw new RuntimeException(
                     "for code cache > 250MB the static call stub is expected to be implemented using far branch");
         }
@@ -304,34 +185,62 @@ public class TestStaticCallStub {
     static void runVM(boolean bigCodeCache) throws Exception {
         String className = TestStaticCallStub.class.getName();
         String[] procArgs = {
-                "-XX:-Inline",
-                "-Xcomp",
-                "-Xbatch",
-                "-XX:+TieredCompilation",
-                "-XX:+SegmentedCodeCache",
-                "-XX:ReservedCodeCacheSize=" + (bigCodeCache ? "256M" : "200M"),
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:CompileCommand=option," + className + "::main,bool,PrintAssembly,true",
-                className };
+            "-XX:-Inline", "-Xcomp", "-Xbatch", "-XX:+TieredCompilation", "-XX:+SegmentedCodeCache",
+            "-XX:ReservedCodeCacheSize=" + (bigCodeCache ? "256M" : "200M"),
+            "-XX:+UnlockDiagnosticVMOptions", "-XX:PrintAssemblyOptions=",
+            "-XX:CompileCommand=option," + className + "::main,bool,PrintAssembly,true", className,
+            "child"
+        };
 
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        System.out.println(output.getOutput());
-        List<String> lines = output.asLines();
+        output.shouldHaveExitValue(0);
+        ListIterator<String> iter = output.asLines().listIterator();
 
-        ListIterator<String> itr = lines.listIterator();
-        while (itr.hasNext()) {
-            String line = itr.next();
-            if (line.contains("{static_stub}")) {
-                itr.previous();
-                if (bigCodeCache) {
-                    verifyFarStaticCall(itr);
-                } else {
-                    verifyNearStaticCall(itr);
+        try {
+            // 1. Check whether printed instructions are disassembled
+            boolean disassembled = false;
+            while (iter.hasNext()) {
+                String line = iter.next();
+                if (line.contains("[Disassembly]")) {
+                    disassembled = true;
+                    break;
                 }
-                return;
+                if (line.contains("[MachCode]")) {
+                    break;
+                }
             }
+
+            // 2. Look for the block comment
+            while (iter.hasNext()) {
+                String line = iter.next();
+                if (line.contains("{static_stub}")) {
+                    iter.previous();
+                    if (bigCodeCache) {
+                        verifyFarStaticCall(iter, disassembled);
+                    } else {
+                        verifyNearStaticCall(iter, disassembled);
+                    }
+                    return;
+                }
+            }
+            throw new RuntimeException("Assembly output: static call stub is not found");
+        } catch (RuntimeException ex) {
+            System.out.println(output.getOutput());
+            throw ex;
         }
-        throw new RuntimeException("Assembly output: static call stub is not found");
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            // Main VM: fork VM with options
+            runVM(true);
+            runVM(false);
+            return;
+        }
+        if (args.length > 0) {
+            // We are in a forked VM. Just exit
+            System.out.println("Ok");
+        }
     }
 }
