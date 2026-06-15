@@ -280,6 +280,7 @@ private:
   // clears the self_fwd bits. Safety-net reset on region recycle.
   ShenandoahSharedFlag _has_self_forwards;
 
+  // This is only read/written by a gc worker to avoid unnecessary bitmap resets
   bool _needs_bitmap_reset;
 
 public:
