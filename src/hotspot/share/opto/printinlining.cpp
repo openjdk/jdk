@@ -36,7 +36,6 @@ outputStream* InlinePrinter::record(ciMethod* callee, JVMState* state, InliningR
     return &_nullStream;
   }
   if (is_suspended()) {
-    locate(state, callee);
     return &_nullStream;
   }
   outputStream* stream = locate(state, callee)->add(result);

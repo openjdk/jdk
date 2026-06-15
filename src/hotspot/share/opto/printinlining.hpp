@@ -114,7 +114,7 @@ private:
 
   Compile* C;
 
-  int _suspend_depth;
+  uint _suspend_depth;
 
   // In case print inline is disabled, this null stream is returned from ::record()
   nullStream _nullStream;
