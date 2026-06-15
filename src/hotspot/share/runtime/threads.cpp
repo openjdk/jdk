@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -107,10 +107,6 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#include "jvmci/jvmciEnv.hpp"
-#endif
 #ifdef COMPILER2
 #include "opto/idealGraphPrinter.hpp"
 #include "runtime/hotCodeCollector.hpp"
@@ -555,15 +551,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize global data structures and create system classes in heap
   vm_init_globals();
 
-#if INCLUDE_JVMCI
-  if (JVMCICounterSize > 0) {
-    JavaThread::_jvmci_old_thread_counters = NEW_C_HEAP_ARRAY(jlong, JVMCICounterSize, mtJVMCI);
-    memset(JavaThread::_jvmci_old_thread_counters, 0, sizeof(jlong) * JVMCICounterSize);
-  } else {
-    JavaThread::_jvmci_old_thread_counters = nullptr;
-  }
-#endif // INCLUDE_JVMCI
-
   // Initialize OopStorage for threadObj
   JavaThread::_thread_oop_storage = OopStorageSet::create_strong("Thread OopStorage", mtThread);
 
@@ -763,31 +750,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   MonitorDeflationThread::initialize();
 
   // initialize compiler(s)
-#if defined(COMPILER1) || COMPILER2_OR_JVMCI
-  bool init_compilation = true;
-#if INCLUDE_JVMCI
-  bool force_JVMCI_initialization = false;
-  if (EnableJVMCI) {
-    // Initialize JVMCI eagerly when it is explicitly requested.
-    // Or when JVMCILibDumpJNIConfig or JVMCIPrintProperties is enabled.
-    force_JVMCI_initialization = EagerJVMCI || JVMCIPrintProperties || JVMCILibDumpJNIConfig;
-    if (!force_JVMCI_initialization && UseJVMCICompiler && !UseJVMCINativeLibrary && (!UseInterpreter || !BackgroundCompilation)) {
-      // Force initialization of jarjvmci otherwise requests for blocking
-      // compilations will not actually block until jarjvmci is initialized.
-      force_JVMCI_initialization = true;
-    }
-    if (JVMCIPrintProperties || JVMCILibDumpJNIConfig) {
-      // Both JVMCILibDumpJNIConfig and JVMCIPrintProperties exit the VM
-      // so compilation should be disabled. This prevents dumping or
-      // printing from happening more than once.
-      init_compilation = false;
-    }
-  }
-#endif
-  if (init_compilation) {
-    CompileBroker::compilation_init(CHECK_JNI_ERR);
-  }
-#endif
+#if COMPILER1_OR_COMPILER2
+  CompileBroker::compilation_init(CHECK_JNI_ERR);
+#endif // COMPILER1_OR_COMPILER2
 
   if (CDSConfig::is_using_aot_linked_classes()) {
     SystemDictionary::restore_archived_method_handle_intrinsics();
@@ -862,12 +827,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Notify JVMTI agents that VM initialization is complete - nop if no agents.
   JvmtiExport::post_vm_initialized();
-
-#if INCLUDE_JVMCI
-  if (force_JVMCI_initialization) {
-    JVMCI::initialize_compiler_in_create_vm(CHECK_JNI_ERR);
-  }
-#endif
 
   JFR_ONLY(Jfr::on_create_vm_3();)
 
@@ -1059,12 +1018,6 @@ void Threads::destroy_vm() {
   // Deleting the shutdown thread here is safe. See comment on
   // wait_until_not_protected() above.
   delete thread;
-
-#if INCLUDE_JVMCI
-  if (JVMCICounterSize > 0) {
-    FREE_C_HEAP_ARRAY(JavaThread::_jvmci_old_thread_counters);
-  }
-#endif
 
   LogConfiguration::finalize();
 }

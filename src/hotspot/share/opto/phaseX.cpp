@@ -2096,15 +2096,6 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
     // Not investigated yet.
     case Op_AbsI:
       return;
-
-    // ShenandoahLoadReferenceBarrierNode::Identity
-    // Not investigated yet.
-    //
-    // Found with:
-    //   gc/shenandoah/mxbeans/TestChurnNotifications.java#aggressive
-    //   -ea -esa -XX:CompileThreshold=100 -XX:-TieredCompilation -XX:VerifyIterativeGVN=1110
-    case Op_ShenandoahLoadReferenceBarrier:
-      return;
   }
 
   if (n->is_Load()) {

@@ -65,12 +65,11 @@ protected:
 };
 
 size_t ShenandoahGenerationalHeap::calculate_min_plab() {
-  return align_up(PLAB::min_size(), CardTable::card_size_in_words());
+  return PLAB::min_size();
 }
 
 size_t ShenandoahGenerationalHeap::calculate_max_plab() {
-  size_t MaxTLABSizeWords = ShenandoahHeapRegion::max_tlab_size_words();
-  return align_down(MaxTLABSizeWords, CardTable::card_size_in_words());
+  return ShenandoahHeapRegion::max_tlab_size_words();
 }
 
 // Returns size in bytes
@@ -86,8 +85,6 @@ ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy
   _regulator_thread(nullptr),
   _young_gen_memory_pool(nullptr),
   _old_gen_memory_pool(nullptr) {
-  assert(is_aligned(_min_plab_size, CardTable::card_size_in_words()), "min_plab_size must be aligned");
-  assert(is_aligned(_max_plab_size, CardTable::card_size_in_words()), "max_plab_size must be aligned");
 }
 
 void ShenandoahGenerationalHeap::initialize_generations() {
@@ -350,7 +347,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
   oop copy_val = cast_to_oop(copy);
 
   // Update the age of the evacuated object
-  if (TO_GENERATION == YOUNG_GENERATION && is_aging_cycle()) {
+  if (TO_GENERATION == YOUNG_GENERATION) {
     increase_object_age(copy_val, from_region_age + 1);
   }
 
@@ -672,7 +669,7 @@ void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) 
 
     void work(uint worker_id) override {
       ShenandoahWorkerTimingsTracker timer(_phase,
-                                           ShenandoahPhaseTimings::ScanClusters,
+                                           ShenandoahPhaseTimings::Work,
                                            worker_id, true);
       ShenandoahHeapRegion* region;
       while ((region = _regions.next()) != nullptr) {
@@ -978,7 +975,7 @@ public:
         // There have been allocations in this region since the start of the cycle.
         // Any objects new to this region must not assimilate elevated age.
         r->reset_age();
-      } else if (ShenandoahGenerationalHeap::heap()->is_aging_cycle()) {
+      } else {
         r->increment_age();
       }
     }
