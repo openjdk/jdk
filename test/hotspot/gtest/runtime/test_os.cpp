@@ -1105,7 +1105,7 @@ TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
     const size_t lpsz = os::large_page_size();
     char* p1 = os::reserve_memory_aligned(lpsz, lpsz, mtTest);
     ASSERT_NE(p1, nullptr);
-    char* p2 = os::reserve_memory_special(lpsz, lpsz, lpsz, p1, false);
+    char* p2 = os::reserve_memory_special(lpsz, lpsz, lpsz, p1, mtTest, false);
     ASSERT_EQ(p2, nullptr); // should have failed
     os::release_memory(p1, M);
   } else {
