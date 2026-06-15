@@ -120,10 +120,10 @@ void G1ConcurrentMarkThread::run_service() {
 
     concurrent_cycle_start();
 
-    if (_state == FullCycleMarking) {
+    if (state() == FullCycleMarking) {
       concurrent_mark_cycle_do();
     } else {
-      assert(_state == UndoCycleResetForNextCycle, "Must do undo mark but is %d", _state);
+      assert(state() == UndoCycleResetForNextCycle, "Must do undo mark but is %d", state());
       concurrent_undo_cycle_do();
     }
 
