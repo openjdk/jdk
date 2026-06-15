@@ -544,8 +544,8 @@ final class VirtualThread extends BaseVirtualThread {
      */
     @Hidden
     private boolean yieldContinuation() {
-        startTransition(/*mount*/false);
         try {
+            startTransition(/*mount*/false);
             return Continuation.yield(VTHREAD_SCOPE);
         } finally {
             endTransition(/*mount*/true);

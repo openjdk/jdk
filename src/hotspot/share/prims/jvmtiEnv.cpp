@@ -1224,6 +1224,13 @@ JvmtiEnv::StopThread(jthread thread, jobject exception) {
       return JVMTI_ERROR_OPAQUE_FRAME;
     }
   }
+
+  if (is_virtual && java_thread->on_monitor_waited_event()) {
+    // The exception might end up been thrown in the carrier
+    // so skip this case.
+    return JVMTI_ERROR_OPAQUE_FRAME;
+  }
+
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
