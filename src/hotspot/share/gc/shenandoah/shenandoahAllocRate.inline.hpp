@@ -114,7 +114,7 @@ void ShenandoahAllocRate<Clock>::force_update() {
 
 template<typename Clock>
 void ShenandoahAllocRate<Clock>::take_sample(jlong now, jlong elapsed, size_t unsampled) {
-  assert(_sample_lock.is_locked(), "Caller must hold lock");
+  assert(_sample_lock.owned_by_self(), "Caller must hold lock");
 
   _last_sample_time = now;
 
