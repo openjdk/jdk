@@ -209,7 +209,8 @@ inline void G1ConcurrentMark::assert_top_at_mark_start_is_bottom(G1HeapRegion* r
   }
   HeapWord* local_top_at_mark_start = top_at_mark_start(r);
   assert(local_top_at_mark_start == r->bottom(),
-         "must be, but tams for r %u (%s) is" PTR_FORMAT, r->hrm_index(), r->get_short_type_str(), p2i(local_top_at_mark_start));
+         "must be, but tams for r %u (%s) is" PTR_FORMAT,
+         r->hrm_index(), r->get_short_type_str(), p2i(local_top_at_mark_start));
 }
 
 inline HeapWord* G1ConcurrentMark::top_at_mark_start_or_bottom(const G1HeapRegion* r) const {
@@ -219,7 +220,8 @@ inline HeapWord* G1ConcurrentMark::top_at_mark_start_or_bottom(const G1HeapRegio
   return top_at_mark_start(r);
 }
 
-inline HeapWord* G1ConcurrentMark::top_at_mark_start_for_verification(const G1HeapRegion* r, bool concurrent_cycle_aborted) const {
+inline HeapWord* G1ConcurrentMark::top_at_mark_start_for_verification(const G1HeapRegion* r,
+                                                                      bool concurrent_cycle_aborted) const {
   if (!is_fully_initialized()) {
     // We do not have TAMS data yet.
     return r->bottom();
@@ -230,7 +232,8 @@ inline HeapWord* G1ConcurrentMark::top_at_mark_start_for_verification(const G1He
   }
   if (concurrent_cycle_aborted) {
     assert(_g1h->collector_state()->is_in_full_gc(), "Must be in Full GC if concurrent cycle has aborted");
-    assert(r->hrm_index() < _g1h->max_num_regions(), "Tried to access TAMS for region %u out of bounds", r->hrm_index());
+    assert(r->hrm_index() < _g1h->max_num_regions(),
+           "Tried to access TAMS for region %u out of bounds", r->hrm_index());
     return _top_at_mark_starts[r->hrm_index()].load_relaxed();
   }
   return r->bottom();
@@ -238,7 +241,9 @@ inline HeapWord* G1ConcurrentMark::top_at_mark_start_for_verification(const G1He
 
 inline bool G1ConcurrentMark::tams_may_be_read() const {
   // We need the TAMS to be valid even outside of actual marking for e.g. clearing the bitmap.
-  return is_fully_initialized() && (_g1h->collector_state()->is_in_concurrent_cycle() || _g1h->collector_state()->is_in_concurrent_start_gc());
+  G1CollectorState* state = _g1h->collector_state();
+  return is_fully_initialized() &&
+         (state->is_in_concurrent_cycle() || state->is_in_concurrent_start_gc());
 }
 
 inline HeapWord* G1ConcurrentMark::top_at_mark_start(const G1HeapRegion* r) const {
@@ -285,6 +290,26 @@ inline void G1CMTask::inc_incoming_refs(oop const obj) {
 
 inline void G1ConcurrentMark::add_to_liveness(uint worker_id, oop const obj, size_t size) {
   task(worker_id)->update_liveness(obj, size);
+}
+
+inline bool G1ConcurrentMark::contains_live_object(uint region) const {
+  assert_fully_initialized();
+  return _region_mark_stats[region].live_words() != 0;
+}
+
+inline size_t G1ConcurrentMark::live_bytes(uint region) const {
+  assert_fully_initialized();
+  return _region_mark_stats[region].live_words() * HeapWordSize;
+}
+
+inline void G1ConcurrentMark::set_live_bytes(uint region, size_t live_bytes) {
+  assert_fully_initialized();
+  _region_mark_stats[region]._live_words.store_relaxed(live_bytes / HeapWordSize);
+}
+
+inline size_t G1ConcurrentMark::incoming_refs(uint region) const {
+  assert_fully_initialized();
+  return _region_mark_stats[region].incoming_refs();
 }
 
 inline void G1CMTask::abort_marking_if_regular_check_fail() {

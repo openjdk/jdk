@@ -381,7 +381,8 @@ class G1PrepareEvacuationTask : public WorkerTask {
         // top_at_mark_start() will assert outside of marking, so check first.
         if (mark_in_progress) {
           // All regions that were allocated before marking have a TAMS != bottom.
-          bool allocated_before_mark_start = region->bottom() != _g1h->concurrent_mark()->top_at_mark_start(region);
+          G1ConcurrentMark* cm = _g1h->concurrent_mark();
+          bool allocated_before_mark_start = region->bottom() != cm->top_at_mark_start(region);
           if (allocated_before_mark_start) {
             return false;
           }

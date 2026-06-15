@@ -180,7 +180,10 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       assert(should_rebuild_or_scrub(hr), "must be");
 
       log_trace(gc, marking)("Scrub and rebuild region: " HR_FORMAT " pb: " PTR_FORMAT " TARS: " PTR_FORMAT " TAMS: " PTR_FORMAT,
-                             HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr)), p2i(_cm->top_at_mark_start_or_bottom(hr)));
+                             HR_FORMAT_PARAMS(hr),
+                             p2i(pb),
+                             p2i(_cm->top_at_rebuild_start(hr)),
+                             p2i(_cm->top_at_mark_start_or_bottom(hr)));
 
       {
         // Step 1: Scan the given region from bottom to parsable_bottom.

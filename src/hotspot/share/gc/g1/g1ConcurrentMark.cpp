@@ -1925,7 +1925,8 @@ G1HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
         return curr_region;
       } else {
         assert(limit == bottom,
-               "The scan limit for region %u (%s) should be bottom but is " PTR_FORMAT, curr_region->hrm_index(), curr_region->get_short_type_str(), p2i(limit));
+               "The scan limit for region %u (%s) should be bottom but is " PTR_FORMAT,
+               curr_region->hrm_index(), curr_region->get_short_type_str(), p2i(limit));
         // We return null and the caller should try calling
         // claim_region() again.
         return nullptr;
@@ -1933,7 +1934,9 @@ G1HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
     } else {
       // Read the finger again.
       HeapWord* next_finger = finger();
-      assert(next_finger > local_finger, "The finger should have moved forward " PTR_FORMAT " " PTR_FORMAT, p2i(local_finger), p2i(next_finger));
+      assert(next_finger > local_finger,
+             "The finger should have moved forward " PTR_FORMAT " " PTR_FORMAT,
+             p2i(local_finger), p2i(next_finger));
       local_finger = next_finger;
     }
   }

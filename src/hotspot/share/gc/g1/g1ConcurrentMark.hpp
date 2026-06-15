@@ -532,32 +532,30 @@ public:
   // mark_in_bitmap call. Updates various statistics data.
   void add_to_liveness(uint worker_id, oop const obj, size_t size);
   // Did the last marking find a live object between bottom and TAMS?
-  bool contains_live_object(uint region) const {
-    assert_fully_initialized();
-    return _region_mark_stats[region].live_words() != 0;
-  }
+  bool contains_live_object(uint region) const;
   // Live bytes in the given region as determined by concurrent marking, i.e. the amount of
   // live bytes between bottom and TAMS.
-  size_t live_bytes(uint region) const { assert_fully_initialized(); return _region_mark_stats[region].live_words() * HeapWordSize; }
+  size_t live_bytes(uint region) const;
   // Set live bytes for concurrent marking.
-  void set_live_bytes(uint region, size_t live_bytes) { assert_fully_initialized(); _region_mark_stats[region]._live_words.store_relaxed(live_bytes / HeapWordSize); }
+  void set_live_bytes(uint region, size_t live_bytes);
   // Approximate number of incoming references found during marking.
-  size_t incoming_refs(uint region) const { assert_fully_initialized(); return _region_mark_stats[region].incoming_refs(); }
+  size_t incoming_refs(uint region) const;
 
   void note_start_of_mark_for_region(G1HeapRegion* r);
   inline void assert_top_at_mark_start_is_bottom(G1HeapRegion* r);
 
-  // Returns the TAMS for the given region; outside of the concurrent cycle or Concurrent Start pause, always
-  // returns r->bottom().
-  // Intended to be used for queries that are not allowed to fail at any time, but give a reasonable value,
-  // e.g. for logging to avoid having to do lots of check at every call site.
+  // Returns the TAMS for the given region; outside of the concurrent cycle or Concurrent Start
+  // pause, always returns r->bottom().
+  // Intended to be used for queries that are not allowed to fail at any time, but give a
+  // reasonable value, e.g. for logging to avoid having to do lots of check at every call site.
   // Do not use for logic.
   inline HeapWord* top_at_mark_start_or_bottom(const G1HeapRegion* r) const;
-  // Special method to return TAMS for verification purposes. During verification, if Full GC aborted a concurrent
-  // cycle, we need to use the TAMS data because the bitmap < TAMS may legitimately contain marks, however since
-  // we are in a Full GC tams_may_be_read() returns false. The other methods would return bottom(), which is
-  // wrong for verification.
-  inline HeapWord* top_at_mark_start_for_verification(const G1HeapRegion* r, bool concurrent_cycle_aborted) const;
+  // Special method to return TAMS for verification purposes. During verification, if Full GC
+  // aborted a concurrent cycle, we need to use the TAMS data because the bitmap < TAMS may
+  // legitimately contain marks, however since we are in a Full GC tams_may_be_read() returns
+  // false. The other methods would return bottom(), which is wrong for verification.
+  inline HeapWord* top_at_mark_start_for_verification(const G1HeapRegion* r,
+                                                      bool concurrent_cycle_aborted) const;
 
   inline HeapWord* top_at_mark_start(const G1HeapRegion* r) const;
   inline HeapWord* top_at_mark_start(uint region) const;

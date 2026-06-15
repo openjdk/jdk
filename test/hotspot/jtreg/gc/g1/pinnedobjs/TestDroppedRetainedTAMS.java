@@ -30,9 +30,10 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
-                     -XX:+WhiteBoxAPI -Xbootclasspath/a:. -Xmx32m -XX:G1NumCollectionsKeepPinned=1
-                     -XX:+VerifyBeforeGC -XX:+VerifyAfterGC -XX:+VerifyDuringGC -XX:+G1VerifyBitmaps -XX:G1MixedGCLiveThresholdPercent=100
-                     -XX:G1HeapWastePercent=0 -Xlog:gc,gc+ergo+cset=trace gc.g1.pinnedobjs.TestDroppedRetainedTAMS
+ *                   -XX:+WhiteBoxAPI -Xbootclasspath/a:. -Xmx32m -XX:G1NumCollectionsKeepPinned=1
+ *                   -XX:+VerifyBeforeGC -XX:+VerifyAfterGC -XX:+VerifyDuringGC -XX:+G1VerifyBitmaps
+ *                   -XX:G1MixedGCLiveThresholdPercent=100 -XX:G1HeapWastePercent=0
+ *                   -Xlog:gc,gc+ergo+cset=trace gc.g1.pinnedobjs.TestDroppedRetainedTAMS
  */
 
 package gc.g1.pinnedobjs;

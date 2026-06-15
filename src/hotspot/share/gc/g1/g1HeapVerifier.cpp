@@ -551,7 +551,9 @@ void G1HeapVerifier::verify_bitmap_clear(bool from_tams, bool concurrent_cycle_a
       G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
       G1CMBitMap* bitmap = cm->mark_bitmap();
 
-      HeapWord* start = _from_tams ? cm->top_at_mark_start_for_verification(r, _concurrent_cycle_aborted) : r->bottom();
+      HeapWord* start = _from_tams
+                        ? cm->top_at_mark_start_for_verification(r, _concurrent_cycle_aborted)
+                        : r->bottom();
 
       HeapWord* mark = bitmap->get_next_marked_addr(start, r->end());
       guarantee(mark == r->end(), "Found mark at " PTR_FORMAT " in region %u from start " PTR_FORMAT, p2i(mark), r->hrm_index(), p2i(start));
