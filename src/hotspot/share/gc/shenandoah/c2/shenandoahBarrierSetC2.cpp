@@ -880,7 +880,7 @@ void ShenandoahBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
         skipped_after, skipped_before, skipped_after - skipped_before);
 #endif
 
-  masm.invalidate_icache();
+  // Code will be copied. No ICache sync required.
 }
 
 void ShenandoahBarrierStubC2::register_stub(ShenandoahBarrierStubC2* stub) {
