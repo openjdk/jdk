@@ -144,7 +144,7 @@ void ShenandoahGenerationalFullGC::account_for_region(ShenandoahHeapRegion* r, s
 void ShenandoahGenerationalFullGC::maybe_coalesce_and_fill_region(ShenandoahHeapRegion* r) {
   if (r->is_pinned() && r->is_old() && r->is_active() && !r->is_humongous()) {
     r->begin_preemptible_coalesce_and_fill();
-    r->oop_coalesce_and_fill(false);
+    r->oop_coalesce_and_fill(/* cancellable = */ false, /* do_card_table_updates = */ false);
   }
 }
 
