@@ -1210,12 +1210,9 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
     if (c_rarg0 == _obj) {
       __ addi(c_rarg1, _addr.base(), _addr.disp());
     } else if (c_rarg1 == _obj) {
-      // Set up arguments in reverse, and then flip them
-      __ addi(c_rarg0, _addr.base(), _addr.disp());
-      // flip them
-      __ mr(_tmp1, c_rarg0);
-      __ mr(c_rarg0, c_rarg1);
-      __ mr(c_rarg1, _tmp1);
+      __ mr(_tmp1, c_rarg1);
+      __ addi(c_rarg1, _addr.base(), _addr.disp());
+      __ mr(c_rarg0, _tmp1);
     } else {
       assert_different_registers(c_rarg1, _obj);
       __ addi(c_rarg1, _addr.base(), _addr.disp());

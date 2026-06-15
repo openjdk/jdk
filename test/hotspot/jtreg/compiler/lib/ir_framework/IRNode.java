@@ -2847,6 +2847,16 @@ public class IRNode {
         machOnlyNameRegex(VSTOREMASK_TRUECOUNT, "vstoremask_truecount_neon");
     }
 
+    public static final String X86_VMULUDQ_REG = PREFIX + "X86_VMULUDQ_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VMULUDQ_REG, "vmuludq_reg");
+    }
+
+    public static final String X86_VMULDQ_REG = PREFIX + "X86_VMULDQ_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VMULDQ_REG, "vmuldq_reg");
+    }
+
     public static final String X86_SCONV_D2I = PREFIX + "X86_SCONV_D2I" + POSTFIX;
     static {
         machOnlyNameRegex(X86_SCONV_D2I, "convD2I_reg_reg");

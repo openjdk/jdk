@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1CONCURRENTMARKTHREAD_HPP
 
 #include "gc/shared/concurrentGCThread.hpp"
+#include "runtime/atomic.hpp"
 
 class G1ConcurrentMark;
 class G1Policy;
@@ -47,7 +48,9 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
     UndoCycleResetForNextCycle
   };
 
-  volatile ServiceState _state;
+  Atomic<ServiceState> _state;
+
+  ServiceState state() const { return _state.load_relaxed(); }
 
   // Returns whether we are in a "Full" cycle.
   bool is_in_full_concurrent_cycle() const;
