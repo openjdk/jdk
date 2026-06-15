@@ -175,6 +175,7 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
             IOUtils.copyFile(licenseFile, destFile);
 
             RtfConverter.createSimple(licenseFile).ifPresent(toConsumer(rtfConverter -> {
+                Log.trace("Convert a copy of the license file [%s] to RTF", licenseFile);
                 destFile.toFile().setWritable(true);
                 rtfConverter.convert(destFile);
             }));
@@ -187,7 +188,7 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
 
         final var msiOut = outputDir.resolve(pkg.packageFileNameWithSuffix());
 
-        Log.verbose(I18N.format("message.preparing-msi-config", msiOut.toAbsolutePath()));
+        Log.progress(I18N.format("message.preparing-msi-config", msiOut.toAbsolutePath()));
 
         final var wixVars = createWixVars();
 
@@ -249,7 +250,7 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
                 .filter(custom -> primaryWxlFiles.stream().noneMatch(primary ->
                         primary.getFileName().toString().equalsIgnoreCase(
                                 custom.getFileName().toString())))
-                .peek(custom -> Log.verbose(I18N.format(
+                .peek(custom -> Log.useResource(I18N.format(
                         "message.using-custom-resource", String.format("[%s]",
                                 I18N.getString("resource.wxl-file")),
                         custom.getFileName()))).toList();
@@ -316,9 +317,6 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
 
         wixVars.put("JpProductCode", pkg.productCode().toString());
         wixVars.put("JpProductUpgradeCode", pkg.upgradeCode().toString());
-
-        Log.verbose(I18N.format("message.product-code", pkg.productCode()));
-        Log.verbose(I18N.format("message.upgrade-code", pkg.upgradeCode()));
 
         wixVars.define("JpAllowUpgrades");
         if (!pkg.isRuntimeInstaller()) {

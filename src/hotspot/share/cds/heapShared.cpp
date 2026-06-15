@@ -630,9 +630,7 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
     } else if (java_lang_invoke_ResolvedMethodName::is_instance(obj)) {
       Method* m = java_lang_invoke_ResolvedMethodName::vmtarget(obj);
       if (m != nullptr) {
-        if (RegeneratedClasses::has_been_regenerated(m)) {
-          m = RegeneratedClasses::get_regenerated_object(m);
-        }
+        m = RegeneratedClasses::maybe_get_regenerated_object(m);
         InstanceKlass* method_holder = m->method_holder();
         AOTArtifactFinder::add_cached_class(method_holder);
       }
@@ -1753,10 +1751,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
   }
 
   if (java_lang_Class::is_instance(orig_obj)) {
-    Klass* k = java_lang_Class::as_Klass(orig_obj);
-    if (RegeneratedClasses::has_been_regenerated(k)) {
-      orig_obj = RegeneratedClasses::get_regenerated_object(k)->java_mirror();
-    }
+    orig_obj = RegeneratedClasses::maybe_get_regenerated_mirror(orig_obj);
   }
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
@@ -1961,11 +1956,7 @@ void HeapShared::verify_subgraph_from(oop orig_obj) {
 void HeapShared::verify_reachable_objects_from(oop obj) {
   _num_total_verifications ++;
   if (java_lang_Class::is_instance(obj)) {
-    Klass* k = java_lang_Class::as_Klass(obj);
-    if (RegeneratedClasses::has_been_regenerated(k)) {
-      k = RegeneratedClasses::get_regenerated_object(k);
-      obj = k->java_mirror();
-    }
+    obj = RegeneratedClasses::maybe_get_regenerated_mirror(obj);
     obj = scratch_java_mirror(obj);
     assert(obj != nullptr, "must be");
   }
@@ -2460,9 +2451,7 @@ void HeapShared::remap_dumped_metadata(oop src_obj, address archived_object) {
       return;
     }
 
-    if (RegeneratedClasses::has_been_regenerated(native_ptr)) {
-      native_ptr = RegeneratedClasses::get_regenerated_object(native_ptr);
-    }
+    native_ptr = RegeneratedClasses::maybe_get_regenerated_object(native_ptr);
 
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
     address requested_native_ptr = ArchiveBuilder::current()->to_requested(buffered_native_ptr);

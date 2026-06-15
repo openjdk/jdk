@@ -241,8 +241,7 @@ JDKEXPORT void HBDisposeFace(hb_face_t* face) {
 
 hb_font_t* jdk_font_create_hbp(
                hb_face_t* face,
-               float ptSize, float devScale,
-               hb_destroy_func_t destroy,
+               float xPtSize, float yPtSize,
                hb_font_funcs_t *font_funcs) {
 
     hb_font_t *font;
@@ -253,8 +252,8 @@ hb_font_t* jdk_font_create_hbp(
                       NULL,
                       (hb_destroy_func_t)_do_nothing);
     hb_font_set_scale(font,
-                      HBFloatToFixed(ptSize*devScale),
-                      HBFloatToFixed(ptSize*devScale));
+                      HBFloatToFixed(xPtSize),
+                      HBFloatToFixed(yPtSize));
     return font;
 }
 

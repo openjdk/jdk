@@ -80,8 +80,6 @@ class PSPromotionManager {
 
   PSScannerTasksQueue                 _claimed_stack_depth;
 
-  uint                                _target_stack_size;
-
   static PartialArrayStateManager*    _partial_array_state_manager;
   PartialArraySplitter                _partial_array_splitter;
   uint                                _min_array_size_for_chunking;
@@ -96,6 +94,8 @@ class PSPromotionManager {
   static MutableSpace* young_space() { return _young_space; }
 
   inline static PSPromotionManager* manager_array(uint index);
+
+  void trim_stacks_to_threshold(uint threshold);
 
   void process_array_chunk(PartialArrayState* state, bool stolen);
   void process_array_chunk(objArrayOop obj, size_t start, size_t end);
@@ -147,12 +147,8 @@ class PSPromotionManager {
   void flush_labs();
   void flush_string_dedup_requests() { _string_dedup_requests.flush(); }
 
-  void drain_stacks_cond_depth() {
-    if (claimed_stack_depth()->size() > _target_stack_size) {
-      drain_stacks(false);
-    }
-  }
-  void drain_stacks(bool totally_drain);
+  void trim_stacks();
+  void drain_stacks();
 
   bool stacks_empty() {
     return claimed_stack_depth()->is_empty();

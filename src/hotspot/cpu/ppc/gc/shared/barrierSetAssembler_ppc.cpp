@@ -179,9 +179,10 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
   __ ld(dst, 0, dst);         // Resolve (untagged) jobject.
 }
 
-void BarrierSetAssembler::try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
-  // Load the oop from the weak handle.
-  __ ld(obj, 0, obj);
+void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                                          Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle without barriers.
+  __ ld(obj, 0, weak_handle);
 }
 
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register tmp) {

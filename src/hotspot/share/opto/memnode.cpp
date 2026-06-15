@@ -53,6 +53,7 @@
 #include "opto/vectornode.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
@@ -562,7 +563,7 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
   // TypePtr::NULL_PTR, so we exclude that case.
   const Type* p1_type = p1->bottom_type();
   const Type* p2_type = p2->bottom_type();
-  if (p1_type->isa_oopptr() && p2_type->isa_oopptr() &&
+  if (p1_type != p2_type && p1_type->isa_oopptr() && p2_type->isa_oopptr() &&
       (!p1_type->maybe_null() || !p2_type->maybe_null()) &&
       p1_type->join(p2_type)->empty()) {
     return true;
@@ -578,9 +579,9 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
     return (a1 != a2);
   } else if (a1 != nullptr) {                  // one allocation a1
     // (Note:  p2->is_Con implies p2->in(0)->is_Root, which dominates.)
-    return all_controls_dominate(p2, a1, phase);
+    return all_controls_dominate(p2->uncast(), a1, phase);
   } else { //(a2 != null)                   // one allocation a2
-    return all_controls_dominate(p1, a2, phase);
+    return all_controls_dominate(p1->uncast(), a2, phase);
   }
   return false;
 }
@@ -886,14 +887,14 @@ AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(No
       known_identical = true;
     } else if (_alloc != nullptr) {
       known_independent = true;
-    } else if (MemNode::all_controls_dominate(_n, st_alloc, _phase)) {
+    } else if (MemNode::all_controls_dominate(_base->uncast(), st_alloc, _phase)) {
       known_independent = true;
     }
 
     if (known_independent) {
       // The bases are provably independent: Either they are
       // manifestly distinct allocations, or else the control
-      // of _n dominates the store's allocation.
+      // of _base dominates the store's allocation.
       if (_alias_idx == Compile::AliasIdxRaw) {
         other = st_alloc->in(TypeFunc::Memory);
       } else {
@@ -1217,7 +1218,9 @@ Node* LoadNode::can_see_stored_value_through_membars(Node* st, PhaseValues* phas
     }
   }
 
-  return can_see_stored_value(st, phase);
+  Node* res = can_see_stored_value(st, phase);
+  assert(res == nullptr || is_java_primitive(value_basic_type()) || res->bottom_type()->higher_equal(type()), "the fold is unsafe");
+  return res;
 }
 
 // If st is a store to the same location as this, return the stored value
@@ -1273,7 +1276,22 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
           return nullptr;
         }
       }
-      return st->in(MemNode::ValueIn);
+
+      // Even if we can see the store, we cannot fold the load if the store is not type safe (e.g.
+      // store a j.l.Object into an array of j.l.String) because folding makes the compiler lose the
+      // type information that the uses of this node may need. This is only necessary for pointers, we
+      // can see the stored value of a LoadS even if it is an int because LoadSNode::Ideal will do the
+      // necessary truncation.
+      // The same phenomenon is not an issue for StoreNodes because they don't use res.
+      Node* res = st->in(MemNode::ValueIn);
+      if (is_Store() || is_java_primitive(value_basic_type()) || res->bottom_type()->higher_equal(bottom_type())) {
+        return res;
+      }
+
+      // Type-unsafe stores must be due to array polymorphism
+      const TypePtr* adr_type = this->adr_type();
+      assert(adr_type == nullptr || adr_type->isa_aryptr() != nullptr, "unexpected type-unsafe store");
+      return nullptr;
     }
 
     // A load from a freshly-created object always returns zero.

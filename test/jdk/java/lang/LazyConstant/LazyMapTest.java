@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,21 +32,26 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
 import java.io.Serializable;
-import java.util.AbstractMap;
+import java.util.*;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
@@ -89,6 +94,9 @@ final class LazyMapTest {
 
     private static final Value KEY = Value.FORTY_TWO;
     private static final Integer VALUE = MAPPER.apply(KEY);
+
+    private static final long TIME_OUT_S = 5;
+    private static final long OVERLAP_TIME_MS = 100;
 
     @ParameterizedTest
     @MethodSource("allSets")
@@ -134,17 +142,56 @@ final class LazyMapTest {
 
     @ParameterizedTest
     @MethodSource("nonEmptySets")
+    void getOrDefault(Set<Value> set) {
+        LazyConstantTestUtil.CountingFunction<Value, Integer> cf = new LazyConstantTestUtil.CountingFunction<>(MAPPER);
+        var lazy = Map.ofLazy(set, cf);
+        int cnt = 1;
+        for (Value v : set) {
+            assertEquals(MAPPER.apply(v), lazy.getOrDefault(v, Integer.MIN_VALUE));
+            assertEquals(cnt, cf.cnt());
+            assertEquals(MAPPER.apply(v), lazy.getOrDefault(v, Integer.MIN_VALUE));
+            assertEquals(cnt++, cf.cnt());
+        }
+        assertEquals(Integer.MIN_VALUE, lazy.getOrDefault(Value.ILLEGAL_BETWEEN, Integer.MIN_VALUE));
+        assertEquals(Integer.MIN_VALUE, lazy.getOrDefault("a", Integer.MIN_VALUE));
+        assertThrows(NullPointerException.class, () -> lazy.getOrDefault(null, Integer.MIN_VALUE));
+    }
+
+    @ParameterizedTest
+    @MethodSource("nonEmptySets")
     void exception(Set<Value> set) {
-        LazyConstantTestUtil.CountingFunction<Value, Integer> cif = new LazyConstantTestUtil.CountingFunction<>(_ -> {
-            throw new UnsupportedOperationException();
-        });
-        var lazy = Map.ofLazy(set, cif);
-        assertThrows(UnsupportedOperationException.class, () -> lazy.get(KEY));
-        assertEquals(1, cif.cnt());
-        assertThrows(UnsupportedOperationException.class, () -> lazy.get(KEY));
-        assertEquals(2, cif.cnt());
-        assertThrows(UnsupportedOperationException.class, lazy::toString);
-        assertEquals(3, cif.cnt());
+        // Test different Throwable categories
+        for (LazyConstantTestUtil.Thrower thrower : LazyConstantTestUtil.throwers()) {
+            AtomicReference<Throwable> exceptionThrown = new AtomicReference<>();
+            LazyConstantTestUtil.CountingFunction<Value, Integer> cif = new LazyConstantTestUtil.CountingFunction<>(_ -> {
+                Throwable t = thrower.supplier().get();
+                exceptionThrown.set(t);
+                LazyConstantTestUtil.sneakyThrow(t);
+                return 42; // Unreachable
+            });
+            var lazy = Map.ofLazy(set, cif);
+            var x = assertThrows(NoSuchElementException.class, () -> lazy.get(KEY));
+            assertEquals(LazyConstantTestUtil.expectedMessage(exceptionThrown.get().getClass(), KEY), x.getMessage());
+            assertEquals(exceptionThrown.get().getClass(), x.getCause().getClass());
+            assertEquals(thrower.message(), x.getCause().getMessage());
+            assertEquals(1, cif.cnt());
+
+            var x2 = assertThrows(NoSuchElementException.class, () -> lazy.get(KEY));
+            assertEquals(1, cif.cnt());
+            assertEquals(LazyConstantTestUtil.expectedMessage(exceptionThrown.get().getClass(), KEY), x2.getMessage());
+            // The initial cause should only be present on the _first_ unchecked exception
+            assertNull(x2.getCause());
+
+            for (Value v : set) {
+                // Make sure all values are touched
+                assertThrows(Exception.class, () -> lazy.get(v));
+            }
+
+            var xToString = assertThrows(NoSuchElementException.class, lazy::toString);
+            var xMessage = xToString.getMessage();
+            assertTrue(xMessage.startsWith(LazyConstantTestUtil.expectedMessage(exceptionThrown.get().getClass(), 0).substring(0, xMessage.indexOf("'"))));
+            assertEquals(set.size(), cif.cnt());
+        }
     }
 
     @ParameterizedTest
@@ -155,6 +202,8 @@ final class LazyMapTest {
             assertTrue(lazy.containsKey(v));
         }
         assertFalse(lazy.containsKey(Value.ILLEGAL_BETWEEN));
+        assertThrows(NullPointerException.class, () -> lazy.containsKey(null));
+        assertFalse(lazy.containsKey("a"));
     }
 
     @ParameterizedTest
@@ -240,8 +289,36 @@ final class LazyMapTest {
         @SuppressWarnings("unchecked")
         Map<Value, Map<Value, Object>> lazy = Map.ofLazy(set, k -> (Map<Value, Object>) ref.get().get(k));
         ref.set(lazy);
-        var x = assertThrows(IllegalStateException.class, () -> lazy.get(KEY));
-        assertEquals("Recursive initialization of a lazy collection is illegal", x.getMessage());
+        var x = assertThrows(NoSuchElementException.class, () -> lazy.get(KEY));
+        assertEquals(LazyConstantTestUtil.expectedMessage(IllegalStateException.class, KEY), x.getMessage());
+        assertEquals("Recursive initialization of a lazy collection is illegal: " + KEY, x.getCause().getMessage());
+        assertEquals(IllegalStateException.class, x.getCause().getClass());
+    }
+
+    @Test
+    void recursiveCallWithKeysToStringThrowing() {
+        AtomicInteger cnt = new AtomicInteger();
+
+        final class NaughtyKey {
+
+            @Override
+            public String toString() {
+                cnt.incrementAndGet();
+                throw new UnsupportedOperationException("I should never be seen");
+            }
+        }
+
+        final NaughtyKey key = new NaughtyKey();
+        final Set<NaughtyKey> set = Set.of(key);
+
+        final AtomicReference<Map<NaughtyKey, ?>> ref = new AtomicReference<>();
+        @SuppressWarnings("unchecked")
+        Map<NaughtyKey, Map<Value, Object>> lazy = Map.ofLazy(set, k -> (Map<Value, Object>) ref.get().get(k));
+        ref.set(lazy);
+        var x = assertThrows(NoSuchElementException.class, () -> lazy.get(key));
+        // We recurse here so `NaughtyKey.toString` is called twice before reentry is prevented
+        assertEquals(2, cnt.get());
+        assertTrue(x.getCause().getMessage().contains(NaughtyKey.class.getName()));
     }
 
     @ParameterizedTest
@@ -252,6 +329,31 @@ final class LazyMapTest {
         assertTrue(regular.equals(lazy));
         assertTrue(lazy.equals(regular));
         assertTrue(regular.equals(lazy));
+        assertEquals(lazy.hashCode(), regular.hashCode());
+    }
+
+    @ParameterizedTest
+    @MethodSource("allSets")
+    void entrySetHashCode(Set<Value> set) {
+        assertEquals(newRegularMap(set).entrySet().hashCode(),
+                newLazyMap(set).entrySet().hashCode());
+    }
+
+    @ParameterizedTest
+    @MethodSource("nonEmptySets")
+    void keySet(Set<Value> set) {
+        var lazy = newLazyMap(set);
+        var keySet = lazy.keySet();
+        assertEquals(set, keySet);
+        assertThrows(UnsupportedOperationException.class, () -> lazy.remove(KEY));
+    }
+
+    @ParameterizedTest
+    @MethodSource("nonEmptySets")
+    void entrySetValue(Set<Value> set) {
+        var entry = newLazyMap(set).entrySet().iterator().next();
+        assertThrows(UnsupportedOperationException.class, () -> entry.setValue(null));
+        assertThrows(UnsupportedOperationException.class, () -> entry.setValue(1));
     }
 
     @ParameterizedTest
@@ -268,6 +370,15 @@ final class LazyMapTest {
     }
 
     @ParameterizedTest
+    @MethodSource("emptySets")
+    void emptyValues(Set<Value> set) {
+        var lazy = newLazyMap(set);
+        var lazyValues = lazy.values();
+        assertEquals(0, lazyValues.size());
+        assertTrue(lazyValues.isEmpty());
+    }
+
+    @ParameterizedTest
     @MethodSource("nonEmptySets")
     void values(Set<Value> set) {
         var lazy = newLazyMap(set);
@@ -275,6 +386,10 @@ final class LazyMapTest {
         // Look at one of the elements
         var val = lazyValues.stream().iterator().next();
         assertEquals(lazy.size() - 1, functionCounter(lazy));
+
+        assertEquals(set.size(), lazyValues.size());
+        assertFalse(lazyValues.isEmpty());
+        assertTrue(lazyValues.contains(VALUE));
 
         // Mod ops
         assertThrows(UnsupportedOperationException.class, () -> lazyValues.remove(val));
@@ -395,7 +510,9 @@ final class LazyMapTest {
     @Test
     void nullResult() {
         var lazy = Map.ofLazy(Set.of(0), _ -> null);
-        assertThrows(NullPointerException.class, () -> lazy.getOrDefault(0, 1));;
+        var x = assertThrows(NoSuchElementException.class, () -> lazy.getOrDefault(0, 1));
+        assertEquals(LazyConstantTestUtil.expectedMessage(NullPointerException.class, 0), x.getMessage());
+        assertEquals(NullPointerException.class, x.getCause().getClass());
         assertTrue(lazy.containsKey(0));
     }
 
@@ -440,6 +557,129 @@ final class LazyMapTest {
     }
 
     @ParameterizedTest
+    @MethodSource("nonEmptySets")
+    void atMostOnceComputationUnderContention(Set<Value> set) throws Exception {
+        // Mitigate thread starvation via a dedicated thread pool != FJP
+        try (var testExecutor = Executors.newFixedThreadPool(3)) {
+            AtomicInteger calls = new AtomicInteger();
+            CountDownLatch entered = new CountDownLatch(1);
+            CountDownLatch release = new CountDownLatch(1);
+            CountDownLatch competing = new CountDownLatch(2);
+
+            Map<Value, Integer> constant = Map.ofLazy(set, i -> {
+                calls.incrementAndGet();
+                entered.countDown();
+                try {
+                    assertTrue(release.await(TIME_OUT_S, TimeUnit.SECONDS));
+                } catch (InterruptedException e) {
+                    throw new AssertionError(e);
+                }
+                return MAPPER.apply(i);
+            });
+
+            var f1 = CompletableFuture.supplyAsync(() -> constant.get(KEY), testExecutor);
+            assertTrue(entered.await(5, TimeUnit.SECONDS));
+
+            var f2 = CompletableFuture.supplyAsync(() -> {
+                competing.countDown();
+                return constant.get(KEY);
+            }, testExecutor);
+            var f3 = CompletableFuture.supplyAsync(() -> {
+                competing.countDown();
+                return constant.get(KEY);
+            }, testExecutor);
+
+            assertTrue(competing.await(TIME_OUT_S, TimeUnit.SECONDS));
+            // While computation is blocked, only one thread should have entered supplier
+            Thread.sleep(OVERLAP_TIME_MS);
+            assertEquals(1, calls.get());
+
+            release.countDown();
+
+            assertEquals(VALUE, f1.get(TIME_OUT_S, TimeUnit.SECONDS));
+            assertEquals(VALUE, f2.get(TIME_OUT_S, TimeUnit.SECONDS));
+            assertEquals(VALUE, f3.get(TIME_OUT_S, TimeUnit.SECONDS));
+            assertEquals(1, calls.get());
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("nonEmptySets")
+    void competingThreadsBlockUntilInitializationCompletes(Set<Value> set) throws Exception {
+        // Mitigate thread starvation via a dedicated thread pool != FJP
+        try (var testExecutor = Executors.newFixedThreadPool(2)) {
+            CountDownLatch entered = new CountDownLatch(1);
+            CountDownLatch release = new CountDownLatch(1);
+            CountDownLatch waiting = new CountDownLatch(1);
+
+            Map<Value, Integer> constant = Map.ofLazy(set, i -> {
+                entered.countDown();
+                try {
+                    assertTrue(release.await(TIME_OUT_S, TimeUnit.SECONDS));
+                } catch (InterruptedException e) {
+                    throw new AssertionError(e);
+                }
+                return MAPPER.apply(i);
+            });
+
+            var computingThread = CompletableFuture.supplyAsync(() -> constant.get(KEY), testExecutor);
+            assertTrue(entered.await(TIME_OUT_S, TimeUnit.SECONDS));
+
+            var waitingThread = CompletableFuture.supplyAsync(() -> {
+                waiting.countDown();
+                return constant.get(KEY);
+            }, testExecutor);
+
+            assertTrue(waiting.await(TIME_OUT_S, TimeUnit.SECONDS));
+            Thread.sleep(OVERLAP_TIME_MS);
+            assertFalse(waitingThread.isDone(), "contending thread should be be blocked");
+
+            release.countDown();
+
+            assertEquals(VALUE, computingThread.get(TIME_OUT_S, TimeUnit.SECONDS));
+            assertEquals(VALUE, waitingThread.get(TIME_OUT_S, TimeUnit.SECONDS));
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("nonEmptySets")
+    void interruptStatusIsPreservedForComputingThread(Set<Value> set) throws Exception {
+        int unset = -1;
+        int notInterrupted = 0;
+        int interrupted = 1;
+        AtomicInteger observedInterrupted = new AtomicInteger(unset);
+        CountDownLatch supplierRunning = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+
+        Map<Value, Integer> constant = Map.ofLazy(set, i -> {
+            supplierRunning.countDown();
+            try {
+                assertTrue(release.await(TIME_OUT_S, TimeUnit.SECONDS));
+            } catch (InterruptedException e) {
+                observedInterrupted.set(Thread.currentThread().isInterrupted() ? interrupted : notInterrupted);
+                Thread.currentThread().interrupt(); // restore if await cleared it
+            }
+            return MAPPER.apply(i);
+        });
+
+        AtomicInteger interruptedAfterGet = new AtomicInteger(unset);
+
+        Thread t = Thread.ofPlatform().start(() -> {
+            assertEquals(VALUE, constant.get(KEY));
+            interruptedAfterGet.set(Thread.currentThread().isInterrupted() ? interrupted : notInterrupted);
+        });
+
+        assertTrue(supplierRunning.await(TIME_OUT_S, TimeUnit.SECONDS));
+        Thread.sleep(OVERLAP_TIME_MS);
+        t.interrupt();
+        release.countDown();
+        t.join();
+
+        assertEquals(notInterrupted, observedInterrupted.get()); // Observed before restoration of the status
+        assertEquals(interrupted, interruptedAfterGet.get(), "get() cleared interrupt status");
+    }
+
+    @ParameterizedTest
     @MethodSource("allSets")
     void underlyingRefViaEntrySetForEach(Set<Value> set) {
         LazyConstantTestUtil.CountingFunction<Value, Integer> cif = new LazyConstantTestUtil.CountingFunction<>(MAPPER);
@@ -461,6 +701,7 @@ final class LazyMapTest {
 
     @Test
     void usesOptimizedVersion() {
+        // This test is using name magic but we are in control of the naming.
         Map<Value, Integer> enumMap = Map.ofLazy(EnumSet.of(KEY), Value::asInt);
         assertTrue(enumMap.getClass().getName().contains("Enum"), enumMap.getClass().getName());
         Map<Value, Integer> emptyMap = Map.ofLazy(EnumSet.noneOf(Value.class), Value::asInt);
@@ -498,7 +739,8 @@ final class LazyMapTest {
 
     static Stream<Operation> nullAverseOperations() {
         return Stream.of(
-            new Operation("forEach",     m -> m.forEach(null))
+            new Operation("forEach",       m -> m.forEach(null)),
+            new Operation("containsValue", m -> m.containsValue(null))
         );
     }
 
@@ -569,6 +811,32 @@ final class LazyMapTest {
     private static int functionCounter(Map<?, ?> lazy) {
         final Object holder = LazyConstantTestUtil.functionHolder(lazy);
         return LazyConstantTestUtil.functionHolderCounter(holder);
+    }
+
+    // Javadoc equivalent
+    class LazyMap<K, V> extends AbstractMap<K, V> {
+
+        private final Map<K, LazyConstant<V>> backingMap;
+
+        public LazyMap(Set<K> keys, Function<K, V> computingFunction) {
+            this.backingMap = keys.stream()
+                    .collect(Collectors.toUnmodifiableMap(
+                            Function.identity(),
+                            k -> LazyConstant.of(() -> computingFunction.apply(k))));
+        }
+
+        @Override
+        public V get(Object key) {
+            var lazyConstant = backingMap.get(key);
+            return lazyConstant == null
+                    ? null
+                    : lazyConstant.get();
+        }
+
+        @Override
+        public Set<Entry<K, V>> entrySet() {
+            return Set.of();
+        }
     }
 
 }
