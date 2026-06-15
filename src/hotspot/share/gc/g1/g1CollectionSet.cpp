@@ -77,7 +77,7 @@ G1CollectionSet::~G1CollectionSet() {
 }
 
 void G1CollectionSet::init_regions_counts(uint eden_cset_regions_count,
-                                         uint survivor_cset_regions_count) {
+                                          uint survivor_cset_regions_count) {
   assert_at_safepoint_on_vm_thread();
 
   _eden_regions_count     = eden_cset_regions_count;
