@@ -40,13 +40,9 @@ typedef ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::OldCollector>
 class ShenandoahAllocator : public CHeapObj<mtGC> {
 private:
   ShenandoahFreeSet*                  _free_set;
-  shenandoah_padding(0);
   ShenandoahMutatorAllocator          _mutator_alloc;
-  shenandoah_padding(1);
   ShenandoahCollectorAllocator        _collector_alloc;
-  shenandoah_padding(2);
   ShenandoahOldCollectorAllocator     _old_collector_alloc;
-  shenandoah_padding(3);
 
 public:
   ShenandoahAllocator(ShenandoahFreeSet* free_set);
