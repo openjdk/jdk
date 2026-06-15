@@ -24,8 +24,6 @@
  */
 package sun.security.ssl;
 
-import sun.security.util.RawKeySpec;
-
 import javax.crypto.DecapsulateException;
 import javax.crypto.KDF;
 import javax.crypto.KEM;
@@ -185,7 +183,8 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             KeyFactory kf = (provider != null) ?
                     KeyFactory.getInstance(algorithmName, provider) :
                     KeyFactory.getInstance(algorithmName);
-            var pk = kf.generatePublic(new RawKeySpec(keyshare));
+            PublicKey pk = (PublicKey) kf.translateKey(
+                    KeyUtil.newRawPublicKey(algorithmName, keyshare));
 
             KEM kem = (provider != null) ?
                     KEM.getInstance(algorithmName, provider) :

@@ -589,5 +589,65 @@ public final class KeyUtil {
             }
         }
     }
+
+    public static PublicKey newRawPublicKey(String algorithm, byte[] key) {
+        return newRawPublicKey(algorithm, null, key);
+    }
+
+    public static PublicKey newRawPublicKey(String algorithm,
+            AlgorithmParameterSpec params, byte[] key) {
+        return new PublicKey() {
+
+            @Override
+            public String getAlgorithm() {
+                return algorithm;
+            }
+
+            @Override
+            public String getFormat() {
+                return "RAW";
+            }
+
+            @Override
+            public byte[] getEncoded() {
+                return key.clone();
+            }
+
+            @Override
+            public AlgorithmParameterSpec getParams() {
+                return params;
+            }
+        };
+    }
+
+    public static PrivateKey newRawPrivateKey(String algorithm, byte[] key) {
+        return newRawPrivateKey(algorithm, null, key);
+    }
+
+    public static PrivateKey newRawPrivateKey(String algorithm,
+            AlgorithmParameterSpec params, byte[] key) {
+        return new PrivateKey() {
+
+            @Override
+            public String getAlgorithm() {
+                return algorithm;
+            }
+
+            @Override
+            public String getFormat() {
+                return "RAW";
+            }
+
+            @Override
+            public byte[] getEncoded() {
+                return key.clone();
+            }
+
+            @Override
+            public AlgorithmParameterSpec getParams() {
+                return params;
+            }
+        };
+    }
 }
 
