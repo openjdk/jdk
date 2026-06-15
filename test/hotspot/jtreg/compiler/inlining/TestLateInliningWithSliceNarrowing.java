@@ -53,6 +53,7 @@ public class TestLateInliningWithSliceNarrowing {
 
     private static Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final long F_OFFSET;
+    private static final long INT_ARRAY_OFFSET;
 
     static {
         try {
@@ -61,6 +62,7 @@ public class TestLateInliningWithSliceNarrowing {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        INT_ARRAY_OFFSET = UNSAFE.arrayBaseOffset(int[].class);
     }
 
     static A notInlinedId(A a) {
@@ -79,8 +81,16 @@ public class TestLateInliningWithSliceNarrowing {
         return F_OFFSET / 2;
     }
 
+    static long lateArrayOffset() {
+        return INT_ARRAY_OFFSET;
+    }
+
     static void lateStore(A a) {
         a.f = 42;
+    }
+
+    static void lateArrayStore(int[] a) {
+        a[0] = 42;
     }
 
     static int lateLoad(A a) {
@@ -162,6 +172,17 @@ public class TestLateInliningWithSliceNarrowing {
         return val;
     }
 
+    // Test a variation of the first test using an array instead of a class
+    // instance. No slice mismatch occurs because the address types for both
+    // memory accesses lead to the same slice, regardless of whether the offset
+    // is compiler-known.
+    static int testArrayLoadFromLateDiscoveredOffsetThenStoreAtConstOffset(int[] a) {
+        long o = lateArrayOffset();
+        int val = UNSAFE.getInt(a, o);
+        lateArrayStore(a);
+        return val;
+    }
+
     public static void main(String[] args) {
         for (int i = 0; i < 10_000; i++) {
             {
@@ -192,6 +213,11 @@ public class TestLateInliningWithSliceNarrowing {
             {
                 A a = new A();
                 int result = testLoadFromLateDiscoveredBaseThenLoadFromKnownBase(a);
+                Asserts.assertEquals(0, result);
+            }
+            {
+                int[] a = new int[1];
+                int result = testArrayLoadFromLateDiscoveredOffsetThenStoreAtConstOffset(a);
                 Asserts.assertEquals(0, result);
             }
         }
