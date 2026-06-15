@@ -29,8 +29,9 @@ import compiler.lib.generators.Generator;
 import compiler.lib.template_framework.DataName;
 
 /**
- * The {@link Float16VectorType} is the {@link VectorElementType} that describes
- * the lane type of a {@code Float16Vector}.
+ * The {@link ShortCarriesFloat16} is the {@link VectorElementType} that describes
+ * the lane type of a {@code Float16Vector}. Its name makes the semantics
+ * explicit: a {@code Float16} value carried in a {@code short}.
  *
  * <p>Float16 is <strong>not</strong> a Java primitive type and therefore does
  * not appear in any of the scalar {@link PrimitiveType} lists. As a
@@ -39,36 +40,44 @@ import compiler.lib.template_framework.DataName;
  * {@link CodeGenerationDataNameType#FLOATING_VECTOR_ELEMENT_TYPES}, which are
  * consumed by vector-only generators (e.g. {@code Operations.VECTOR_OPERATIONS}).
  *
- * <p>The carrier type for a {@code Float16Vector} lane is {@code short}; the
- * element type token used in {@code VectorOperators.Conversion.of*} expressions
- * and {@code Float16Vector.SPECIES_*} is {@code Float16}.
+ * <p>The carrier type for a {@code Float16Vector} lane is {@code short}, so
+ * {@link #name()} (the code-usable type, per the {@code name()} contract)
+ * returns {@code "short"}. The logical lane element type token used in
+ * {@code VectorOperators.Conversion.of*} expressions and
+ * {@code Float16Vector.SPECIES_*} is {@code Float16}, returned by
+ * {@link #vectorElementClass()}.
  *
  * <p>NaN handling note: there are multiple bit representations for NaN within
  * {@code short}/{@code Float16}. Consumers comparing {@code short[]} carrier
  * arrays should canonicalize via {@code Float.float16ToFloat} (which returns a
  * canonical NaN) before structural comparison.
  */
-public final class Float16VectorType implements VectorElementType {
+public final class ShortCarriesFloat16 implements VectorElementType {
     private static final Generator<Short> GEN_FLOAT16 = Generators.G.float16s();
 
     /** The singleton instance. */
-    public static final Float16VectorType FLOAT16 = new Float16VectorType();
+    public static final ShortCarriesFloat16 FLOAT16 = new ShortCarriesFloat16();
 
-    private Float16VectorType() {}
+    private ShortCarriesFloat16() {}
 
     @Override
     public boolean isSubtypeOf(DataName.Type other) {
-        return other instanceof Float16VectorType;
+        return other instanceof ShortCarriesFloat16;
     }
 
     @Override
     public String name() {
-        return "Float16";
+        return "short";
     }
 
     @Override
     public String carrierTypeName() {
         return "short";
+    }
+
+    @Override
+    public String vectorElementClass() {
+        return "Float16";
     }
 
     @Override
@@ -88,11 +97,7 @@ public final class Float16VectorType implements VectorElementType {
 
     @Override
     public String toString() {
-        // Used by Template `let(...)` hashtag substitution as a Java scalar
-        // type for a single lane. Float16 has no Java keyword, so we return
-        // the carrier ("short"), which is what Float16Vector.lane(int) returns
-        // and what Float16Vector.broadcast(SPECIES, ...) accepts.
-        return carrierTypeName();
+        return name();
     }
 
     @Override

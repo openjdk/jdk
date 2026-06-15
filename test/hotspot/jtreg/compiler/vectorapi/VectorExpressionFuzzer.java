@@ -66,7 +66,7 @@ import compiler.lib.template_framework.library.Expression.Nesting;
 import compiler.lib.template_framework.library.Operations;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 import compiler.lib.template_framework.library.PrimitiveType;
-import compiler.lib.template_framework.library.Float16VectorType;
+import compiler.lib.template_framework.library.ShortCarriesFloat16;
 import compiler.lib.template_framework.library.VectorElementType;
 import compiler.lib.template_framework.library.VectorType;
 
@@ -171,7 +171,7 @@ public class VectorExpressionFuzzer {
         // via {@link Float#float16ToFloat}, which returns a canonical NaN for any NaN input.
         var template2Body = Template.make("expression", "arguments", (Expression expression, List<Object> arguments) -> {
             VectorType.Vector retType = (VectorType.Vector) expression.returnType;
-            boolean float16Result = retType.elementType instanceof Float16VectorType;
+            boolean float16Result = retType.elementType instanceof ShortCarriesFloat16;
             return scope(
                 let("carrierType", retType.elementType.carrierTypeName()),
                 """
@@ -243,7 +243,7 @@ public class VectorExpressionFuzzer {
                             ));
                         } else if (argumentType instanceof VectorType.Vector t) {
                             VectorElementType et = t.elementType;
-                            String fillMethod = (et instanceof Float16VectorType) ? "fill_float16" : "fill";
+                            String fillMethod = (et instanceof ShortCarriesFloat16) ? "fill_float16" : "fill";
                             arguments.add(new TestArgument(
                                 List.of(et.carrierTypeName(), "[] ", name, " = new ", et.carrierTypeName(), "[1000];\n",
                                         "LibraryRNG.", fillMethod, "(", name,");\n"),

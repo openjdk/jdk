@@ -49,7 +49,7 @@ import static compiler.lib.template_framework.Template.let;
  *
  * <p>Non-primitive lane types, such as the {@code Float16Vector} lane, are
  * modeled by separate {@link VectorElementType} implementations (see
- * {@link Float16VectorType}). They do <strong>not</strong> appear in any of
+ * {@link ShortCarriesFloat16}). They do <strong>not</strong> appear in any of
  * the scalar {@code PRIMITIVE_TYPES}/{@code FLOATING_TYPES} lists.
  */
 public final class PrimitiveType implements VectorElementType {
@@ -120,6 +120,13 @@ public final class PrimitiveType implements VectorElementType {
 
     @Override
     public String carrierTypeName() {
+        return name();
+    }
+
+    @Override
+    public String vectorElementClass() {
+        // For primitive lanes the code-usable name and the lane element class
+        // token coincide (e.g. "int" -> int.class).
         return name();
     }
 
@@ -254,7 +261,7 @@ public final class PrimitiveType implements VectorElementType {
      * <p>In addition to the Java primitive generators, this also emits
      * helpers for {@code Float16Vector}'s {@code short} carrier
      * ({@code nextFloat16()} / {@code fill_float16(short[])}) so that
-     * {@link Float16VectorType#callLibraryRNG()} can be used with vector
+     * {@link ShortCarriesFloat16#callLibraryRNG()} can be used with vector
      * fuzzers without depending on this class importing Float16Vector itself.
      *
      * Note: you must ensure that all required imports are performed:
