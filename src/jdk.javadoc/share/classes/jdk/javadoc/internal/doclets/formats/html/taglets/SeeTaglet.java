@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,14 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.TextTree;
 
+import jdk.internal.org.commonmark.node.Link;
+import jdk.internal.org.commonmark.node.Node;
+import jdk.internal.org.commonmark.node.Paragraph;
+import jdk.internal.org.commonmark.parser.Parser;
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.ClassWriter;
 import jdk.javadoc.internal.doclets.formats.html.Contents;
@@ -158,10 +163,29 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         assert !ref.isEmpty();
         DocTree ref0 = ref.get(0);
         switch (ref0.getKind()) {
-            case TEXT, MARKDOWN, START_ELEMENT -> {
+            case TEXT, START_ELEMENT -> {
                 // @see "Reference"
                 // @see <a href="...">...</a>
                 return htmlWriter.commentTagsToContent(element, ref, false, false);
+            }
+
+            case MARKDOWN -> {
+                // @see [label](url)
+                if (ref.size() != 1 || !(ref.getFirst() instanceof RawTextTree raw)) {
+                    return htmlWriter.commentTagsToContent(element, ref, false, false);
+                }
+                String source = raw.getContent().strip();
+                if (!source.startsWith("[")) {
+                    return htmlWriter.commentTagsToContent(element, ref, false, false);
+                }
+                return isSingleMarkdownLink(source)
+                        ? htmlWriter.commentTagsToContent(element, ref, false, false)
+                        : invalidSeeTagOutput(element, seeTag);
+            }
+
+            case LINK, LINK_PLAIN -> {
+                // Markdown reference links to program elements are covered by @see reference label form.
+                return invalidSeeTagOutput(element, seeTag);
             }
 
             case REFERENCE -> {
@@ -190,6 +214,35 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
 
             default -> throw new IllegalStateException(ref0.getKind().toString());
         }
+    }
+
+    private boolean isSingleMarkdownLink(String source) {
+        Node document = Parser.builder().build().parse(source);
+        Node paragraph = document.getFirstChild();
+        if (!(paragraph instanceof Paragraph) || paragraph.getNext() != null) {
+            return false;
+        }
+
+        Node link = paragraph.getFirstChild();
+        if (!(link instanceof Link l) || link.getNext() != null
+                || l.getDestination() == null || l.getDestination().isBlank()) {
+            return false;
+        }
+
+        String title = l.getTitle();
+        return title == null || title.isEmpty();
+    }
+
+    private Content invalidSeeTagOutput(Element element, SeeTree seeTag) {
+        CommentHelper ch = utils.getCommentHelper(element);
+        var path = ch.getDocTreePath(seeTag);
+        if (path != null) {
+            messages.error(path, "doclet.tag.invalid_usage", "@see");
+        } else {
+            messages.error("doclet.tag.invalid_usage", "@see");
+        }
+        return tagletWriter.invalidTagOutput(resources.getText("doclet.tag.invalid", "see"),
+                Optional.of(seeTag.toString()));
     }
 
     /**
