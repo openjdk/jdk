@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,38 +27,41 @@ import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.List;
+
 import jdk.test.lib.NetworkConfiguration;
-import jdk.test.lib.net.IPSupport;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
 import static java.lang.String.format;
 import static java.lang.System.out;
 import static java.net.StandardSocketOptions.IP_MULTICAST_IF;
 import static java.util.stream.Collectors.toList;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @test
  * @bug 8236441
  * @summary Bound MulticastSocket fails when setting outbound interface on Windows
  * @library /test/lib
- * @run testng IPMulticastIF
- * @run testng/othervm -Djava.net.preferIPv4Stack=true IPMulticastIF
- * @run testng/othervm -Djava.net.preferIPv6Addresses=true IPMulticastIF
- * @run testng/othervm -Djava.net.preferIPv6Addresses=true -Djava.net.preferIPv4Stack=true IPMulticastIF
+ * @run junit ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=true -Djava.net.preferIPv4Stack=true ${test.main.class}
  */
 public class IPMulticastIF {
 
-    @BeforeTest
-    public void sanity() {
-        IPSupport.throwSkippedExceptionIfNonOperational();
+    @BeforeAll
+    public static void sanity() {
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
         NetworkConfiguration.printSystemConfiguration(out);
     }
 
-    @DataProvider(name = "scenarios")
-    public Object[][] positive() throws Exception {
+    public static Object[][] positive() throws Exception {
         List<InetAddress> addrs = List.of(InetAddress.getLocalHost(),
                                           InetAddress.getLoopbackAddress());
         List<Object[]> list = new ArrayList<>();
@@ -75,8 +78,7 @@ public class IPMulticastIF {
         return list.stream().toArray(Object[][]::new);
     }
 
-    @DataProvider(name = "interfaces")
-    public Object[][] interfaces() throws Exception {
+    public static Object[][] interfaces() throws Exception {
         List<Object[]> list = new ArrayList<>();
         NetworkConfiguration nc = NetworkConfiguration.probe();
         nc.multicastInterfaces(true)
@@ -86,7 +88,8 @@ public class IPMulticastIF {
         return list.stream().toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "scenarios")
+    @ParameterizedTest
+    @MethodSource("positive")
     public void testSetGetInterfaceBound(InetSocketAddress bindAddr, NetworkInterface nif)
         throws Exception
     {
@@ -94,11 +97,12 @@ public class IPMulticastIF {
         try (MulticastSocket ms = new MulticastSocket(bindAddr)) {
             ms.setNetworkInterface(nif);
             NetworkInterface msNetIf = ms.getNetworkInterface();
-            assertEquals(msNetIf, nif);
+            assertEquals(nif, msNetIf);
         }
     }
 
-    @Test(dataProvider = "interfaces")
+    @ParameterizedTest
+    @MethodSource("interfaces")
     public void testSetGetInterfaceUnbound(NetworkInterface nif)
         throws Exception
     {
@@ -106,11 +110,12 @@ public class IPMulticastIF {
         try (MulticastSocket ms = new MulticastSocket()) {
             ms.setNetworkInterface(nif);
             NetworkInterface msNetIf = ms.getNetworkInterface();
-            assertEquals(msNetIf, nif);
+            assertEquals(nif, msNetIf);
         }
     }
 
-    @Test(dataProvider = "scenarios")
+    @ParameterizedTest
+    @MethodSource("positive")
     public void testSetGetOptionBound(InetSocketAddress bindAddr, NetworkInterface nif)
         throws Exception
     {
@@ -118,11 +123,12 @@ public class IPMulticastIF {
         try (MulticastSocket ms = new MulticastSocket(bindAddr)) {
             ms.setOption(IP_MULTICAST_IF, nif);
             NetworkInterface msNetIf = ms.getOption(IP_MULTICAST_IF);
-            assertEquals(msNetIf, nif);
+            assertEquals(nif, msNetIf);
         }
     }
 
-    @Test(dataProvider = "interfaces")
+    @ParameterizedTest
+    @MethodSource("interfaces")
     public void testSetGetOptionUnbound(NetworkInterface nif)
         throws Exception
     {
@@ -130,21 +136,21 @@ public class IPMulticastIF {
         try (MulticastSocket ms = new MulticastSocket()) {
             ms.setOption(IP_MULTICAST_IF, nif);
             NetworkInterface msNetIf = ms.getOption(IP_MULTICAST_IF);
-            assertEquals(msNetIf, nif);
+            assertEquals(nif, msNetIf);
         }
     }
 
     // -- get without set
 
-    @DataProvider(name = "bindAddresses")
-    public Object[][] bindAddresses() throws Exception {
+    public static Object[][] bindAddresses() throws Exception {
         return new Object[][] {
             { new InetSocketAddress(InetAddress.getLocalHost(), 0)       },
             { new InetSocketAddress(InetAddress.getLoopbackAddress(), 0) },
         };
     }
 
-    @Test(dataProvider = "bindAddresses")
+    @ParameterizedTest
+    @MethodSource("bindAddresses")
     public void testGetInterfaceBound(InetSocketAddress bindAddr)
         throws Exception
     {
@@ -162,13 +168,14 @@ public class IPMulticastIF {
         }
     }
 
-    @Test(dataProvider = "bindAddresses")
+    @ParameterizedTest
+    @MethodSource("bindAddresses")
     public void testGetOptionBound(InetSocketAddress bindAddr)
         throws Exception
     {
         out.println(format("\n\n--- testGetOptionBound bindAddr=[%s]", bindAddr));
         try (MulticastSocket ms = new MulticastSocket(bindAddr)) {
-            assertEquals(ms.getOption(IP_MULTICAST_IF), null);
+            assertEquals(null, ms.getOption(IP_MULTICAST_IF));
         }
     }
 
@@ -176,7 +183,7 @@ public class IPMulticastIF {
     public void testGetOptionUnbound() throws Exception {
         out.println("\n\n--- testGetOptionUnbound ");
         try (MulticastSocket ms = new MulticastSocket()) {
-            assertEquals(ms.getOption(IP_MULTICAST_IF), null);
+            assertEquals(null, ms.getOption(IP_MULTICAST_IF));
         }
     }
 
@@ -184,7 +191,7 @@ public class IPMulticastIF {
     // that represent any local address.
     static void assertPlaceHolder(NetworkInterface nif) {
         List<InetAddress> addrs = nif.inetAddresses().collect(toList());
-        assertEquals(addrs.size(), 1);
+        assertEquals(1, addrs.size());
         assertTrue(addrs.get(0).isAnyLocalAddress());
     }
 }

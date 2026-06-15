@@ -32,7 +32,7 @@
  *       -Djdk.http.auth.tunneling.disabledSchemes
  *       -Djdk.httpclient.HttpClient.log=headers,requests
  *       -Djdk.internal.httpclient.debug=true
- *       ForbiddenHeadTest
+ *       ${test.main.class}
  */
 
 import jdk.test.lib.net.SimpleSSLContext;

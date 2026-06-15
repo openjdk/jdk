@@ -124,7 +124,7 @@ class AsyncLogWriter : public NonJavaThread {
     }
 
     ~Buffer() {
-      FREE_C_HEAP_ARRAY(char, _buf);
+      FREE_C_HEAP_ARRAY(_buf);
     }
 
     void push_flush_token();

@@ -33,12 +33,8 @@
  *          No need to run it with -Xcomp. It takes a lot of time to complete all
  *          subtests with this flag.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeCompressedOopsTest JavacBenchApp
- * @run driver/timeout=480 jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *             JavacBenchApp
- *             JavacBenchApp$ClassFile
- *             JavacBenchApp$FileManager
- *             JavacBenchApp$SourceFile
+ * @build AOTCodeCompressedOopsTest HelloWorld
+ * @run driver/timeout=480 jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloWorld
  * @run driver/timeout=480 AOTCodeCompressedOopsTest
  */
 
@@ -138,6 +134,7 @@ public class AOTCodeCompressedOopsTest {
             case RunMode.PRODUCTION: {
                     List<String> args = getVMArgsForHeapConfig(zeroBaseInProdPhase, zeroShiftInProdPhase);
                     args.addAll(List.of("-XX:+UnlockDiagnosticVMOptions",
+                                        "-XX:-AbortVMOnAOTCodeFailure",
                                         "-Xlog:aot=info", // we need this to parse CompressedOops settings
                                         "-Xlog:aot+codecache+init=debug",
                                         "-Xlog:aot+codecache+exit=debug"));
@@ -149,9 +146,7 @@ public class AOTCodeCompressedOopsTest {
 
         @Override
         public String[] appCommandLine(RunMode runMode) {
-            return new String[] {
-                "JavacBenchApp", "10"
-            };
+            return new String[] { "HelloWorld" };
         }
 
         @Override
@@ -170,10 +165,12 @@ public class AOTCodeCompressedOopsTest {
                   *    [0.022s][info][cds] CDS archive was created with max heap size = 1024M, and the following configuration:
                   *    [0.022s][info][cds]     narrow_klass_base at mapping start address, narrow_klass_pointer_bits = 32, narrow_klass_shift = 0
                   *    [0.022s][info][cds]     narrow_oop_mode = 1, narrow_oop_base = 0x0000000000000000, narrow_oop_shift = 3
+                  *    [0.022s][info][cds]     AOTCompatibleOopCompression = false
                   *    [0.022s][info][cds] The current max heap size = 31744M, G1HeapRegion::GrainBytes = 16777216
                   *    [0.022s][info][cds]     narrow_klass_base = 0x000007fc00000000, arrow_klass_pointer_bits = 32, narrow_klass_shift = 0
                   *    [0.022s][info][cds]     narrow_oop_mode = 3, narrow_oop_base = 0x0000000300000000, narrow_oop_shift = 3
                   *    [0.022s][info][cds]     heap range = [0x0000000301000000 - 0x0000000ac1000000]
+                  *    [0.022s][info][cds]     AOTCompatibleOopCompression = false
                   */
                  Pattern p = Pattern.compile("narrow_oop_base = 0x([0-9a-fA-F]+), narrow_oop_shift = (\\d)");
                  for (int i = 0; i < list.size(); i++) {
@@ -188,7 +185,7 @@ public class AOTCodeCompressedOopsTest {
                          aotCacheBase = Long.valueOf(m.group(1), 16);
                          aotCacheShift = Integer.valueOf(m.group(2));
                          // Parse current CompressedOops settings
-                         line = list.get(i+5);
+                         line = list.get(i+6);
                          m = p.matcher(line);
                          if (!m.find()) {
                              throw new RuntimeException("Pattern \"" + p + "\" not found in the output");

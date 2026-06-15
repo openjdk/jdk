@@ -548,7 +548,7 @@ public:
 #endif
 
 #ifndef PRODUCT
-  void trace_PhaseIterGVN(Node* n, Node* nn, const Type* old_type);
+  void trace_PhaseIterGVN(Node* n, Node* nn, const Type* old_type, bool progress);
   void init_verifyPhaseIterGVN();
   void verify_PhaseIterGVN(bool deep_revisit_converged);
 #endif

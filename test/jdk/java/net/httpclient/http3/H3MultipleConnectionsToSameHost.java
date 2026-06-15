@@ -44,7 +44,7 @@
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
  *                     -Dsimpleget.requests=100
- *                     H3MultipleConnectionsToSameHost
+ *                     ${test.main.class}
  * @summary test multiple connections and concurrent requests with blocking IO and virtual threads
  */
 /*
@@ -71,7 +71,7 @@
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
  *                     -Dsimpleget.requests=100
- *                     H3MultipleConnectionsToSameHost
+ *                     ${test.main.class}
  * @summary test multiple connections and concurrent requests with blocking IO and virtual threads
  *          on windows 10 and windows 2016 - but with -XX:-VMContinuations
  */
@@ -95,7 +95,7 @@
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:hs:retransmit
  *                     -Dsimpleget.requests=100
- *                     H3MultipleConnectionsToSameHost
+ *                     ${test.main.class}
  * @summary Send 100 large concurrent requests, with connections whose max stream
  *          limit is artificially low, in order to cause concurrent connections
  *          to the same host to be created, with non-blocking IO and selector
@@ -120,7 +120,7 @@
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:hs:retransmit
  *                     -Dsimpleget.requests=100
  *                     -Djdk.internal.httpclient.quic.congestionController=reno
- *                     H3MultipleConnectionsToSameHost
+ *                     ${test.main.class}
  * @summary Send 100 large concurrent requests, with connections whose max stream
  *          limit is artificially low, in order to cause concurrent connections
  *          to the same host to be created, with Reno congestion controller

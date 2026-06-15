@@ -214,7 +214,7 @@ G1CollectionSetCandidates::G1CollectionSetCandidates() :
 { }
 
 G1CollectionSetCandidates::~G1CollectionSetCandidates() {
-  FREE_C_HEAP_ARRAY(CandidateOrigin, _contains_map);
+  FREE_C_HEAP_ARRAY(_contains_map);
   _from_marking_groups.clear();
   _retained_groups.clear();
 }
@@ -413,7 +413,7 @@ void G1CollectionSetCandidates::verify() {
            static_cast<std::underlying_type<CandidateOrigin>::type>(verify_map[i]));
   }
 
-  FREE_C_HEAP_ARRAY(CandidateOrigin, verify_map);
+  FREE_C_HEAP_ARRAY(verify_map);
 }
 #endif
 

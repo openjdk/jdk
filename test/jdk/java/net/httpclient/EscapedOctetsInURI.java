@@ -29,7 +29,7 @@
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run junit/othervm
  *       -Djdk.httpclient.HttpClient.log=reqeusts,headers
- *       EscapedOctetsInURI
+ *       ${test.main.class}
  */
 
 import java.io.Closeable;

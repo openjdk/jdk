@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,6 @@
 #ifdef COMPILER2
 #include "opto/c2_globals.hpp"
 #endif
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci_globals.hpp"
-#endif
 
 #define __ _masm->
 
@@ -59,7 +56,7 @@ static void inc_counter_np(MacroAssembler* _masm, uint& counter, Register rscrat
   __ incrementl(ExternalAddress((address)&counter), rscratch);
 }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 static uint& get_profile_ctr(int shift) {
   if (shift == 0) {
     return SharedRuntime::_jbyte_array_copy_ctr;
@@ -72,7 +69,7 @@ static uint& get_profile_ctr(int shift) {
     return SharedRuntime::_jlong_array_copy_ctr;
   }
 }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 #endif // !PRODUCT
 
 void StubGenerator::generate_arraycopy_stubs() {
@@ -505,7 +502,7 @@ void StubGenerator::copy_bytes_backward(Register from, Register dest,
   __ jcc(Assembler::greater, L_copy_8_bytes); // Copy trailing qwords
 }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
 // Note: Following rules apply to AVX3 optimized arraycopy stubs:-
 // - If target supports AVX3 features (BW+VL+F) then implementation uses 32 byte vectors (YMMs)
@@ -570,10 +567,45 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
   default:
     ShouldNotReachHere();
   }
+  GrowableArray<address> entries;
+  GrowableArray<address> extras;
+  bool add_handlers = !is_oop && !aligned;
+  bool add_relocs = UseZGC && is_oop;
+  bool add_extras = add_handlers || add_relocs;
+  // The stub employs one unsafe handler region by default but has two
+  // when MaxVectorSize == 64 So we may expect 0, 3 or 6 extras.
+  int handlers_count = (MaxVectorSize == 64 ? 2 : 1);
+  int expected_entry_count = (entry != nullptr ? 2 : 1);
+  int expected_extra_count = (add_handlers ? handlers_count : 0) * UnsafeMemoryAccess::COLUMN_COUNT; // 0/1/2 x UMAM {start,end,handler}
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == expected_entry_count, "sanity check");
+  GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
+  GrowableArray<address>* extras_ptr = (add_extras ? &extras : nullptr);
+  address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+  if (start != nullptr) {
+    assert(entries.length() == expected_entry_count - 1,
+           "unexpected entry count %d", entries.length());
+    assert(!add_handlers || extras.length() == expected_extra_count,
+           "unexpected handler addresses count %d", extras.length());
+    if (entry != nullptr) {
+      *entry = entries.at(0);
+    }
+    if (add_handlers) {
+      // restore 1/2 x UMAM {start,end,handler} addresses from extras
+      register_unsafe_access_handlers(extras, 0, handlers_count);
+    }
+#if INCLUDE_ZGC
+    // register addresses at which ZGC does colour patching
+    if (add_relocs)  {
+      register_reloc_addresses(extras, 0, extras.length());
+    }
+#endif // INCLUDE_ZGC
+    return start;
+  }
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   bool use64byteVector = (MaxVectorSize > 32) && (CopyAVX3Threshold == 0);
   const int large_threshold = 2621440; // 2.5 MB
@@ -595,6 +627,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
 
   if (entry != nullptr) {
     *entry = __ pc();
+    entries.append(*entry);
      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
   }
@@ -620,7 +653,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
     int threshold[]        = { 4096,    2048,     1024,    512};
 
     // UnsafeMemoryAccess page error: continue after unsafe access
-    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
+    UnsafeMemoryAccessMark umam(this, add_handlers, true);
     // 'from', 'to' and 'count' are now valid
 
     // temp1 holds remaining count and temp4 holds running count used to compute
@@ -789,10 +822,28 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
 
   if (MaxVectorSize == 64) {
     __ BIND(L_copy_large);
-      UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, false, ucme_exit_pc);
+      UnsafeMemoryAccessMark umam(this, add_handlers, false, ucme_exit_pc);
       arraycopy_avx3_large(to, from, temp1, temp2, temp3, temp4, count, xmm1, xmm2, xmm3, xmm4, shift);
     __ jmp(L_finish);
   }
+  // retrieve the registered handler addresses
+  address end = __ pc();
+  if (add_handlers) {
+    retrieve_unsafe_access_handlers(start, end, extras);
+  }
+  assert(extras.length() == expected_extra_count,
+         "unexpected handler addresses count %d", extras.length());
+#if INCLUDE_ZGC
+  // retrieve addresses at which ZGC does colour patching
+  if (add_relocs) {
+    retrieve_reloc_addresses(start, end, extras);
+  }
+#endif // INCLUDE_ZGC
+
+  // record the stub entry and end plus the no_push entry and any
+  // extra handler addresses
+  store_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
+
   return start;
 }
 
@@ -907,10 +958,41 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
   default:
     ShouldNotReachHere();
   }
-
+  GrowableArray<address> entries;
+  GrowableArray<address> extras;
+  bool add_handlers = !is_oop && !aligned;
+  bool add_relocs = UseZGC && is_oop;
+  bool add_extras = add_handlers || add_relocs;
+  int expected_entry_count = (entry != nullptr ? 2 : 1);
+  int expected_handler_count = (add_handlers ? 1 : 0) * UnsafeMemoryAccess::COLUMN_COUNT; // 0/1 x UMAM {start,end,handler}
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == expected_entry_count, "sanity check");
+  GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
+  GrowableArray<address>* extras_ptr = (add_extras ? &extras : nullptr);
+  address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+  if (start != nullptr) {
+    assert(entries.length() == expected_entry_count - 1,
+           "unexpected entry count %d", entries.length());
+    assert(!add_handlers || extras.length() == expected_handler_count,
+           "unexpected handler addresses count %d", extras.length());
+    if (entry != nullptr) {
+      *entry = entries.at(0);
+    }
+    if (add_handlers) {
+      // restore 1 x UMAM {start,end,handler} addresses from extras
+      register_unsafe_access_handlers(extras, 0, 1);
+    }
+#if INCLUDE_ZGC
+    if (add_relocs)  {
+      // register addresses at which ZGC does colour patching
+      register_reloc_addresses(extras, 0, extras.length());
+    }
+#endif // INCLUDE_ZGC
+    return start;
+  }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   bool use64byteVector = (MaxVectorSize > 32) && (CopyAVX3Threshold == 0);
 
@@ -931,6 +1013,7 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
 
   if (entry != nullptr) {
     *entry = __ pc();
+    entries.append(*entry);
      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
   }
@@ -957,7 +1040,7 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
     int threshold[]   = { 4096,    2048,     1024,    512};
 
     // UnsafeMemoryAccess page error: continue after unsafe access
-    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
+    UnsafeMemoryAccessMark umam(this, add_handlers, true);
     // 'from', 'to' and 'count' are now valid
 
     // temp1 holds remaining count.
@@ -1070,6 +1153,23 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
   __ vzeroupper();
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
+
+  // retrieve the registered handler addresses
+  address end = __ pc();
+  if (add_handlers) {
+    retrieve_unsafe_access_handlers(start, end, extras);
+  }
+  assert(extras.length() == expected_handler_count,
+         "unexpected handler addresses count %d", extras.length());
+#if INCLUDE_ZGC
+  // retrieve addresses at which ZGC does colour patching
+  if (add_relocs) {
+    retrieve_reloc_addresses(start, end, extras);
+  }
+#endif // INCLUDE_ZGC
+  // record the stub entry and end plus the no_push entry and any
+  // extra handler addresses
+  store_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
 
   return start;
 }
@@ -1356,7 +1456,7 @@ void StubGenerator::copy64_avx(Register dst, Register src, Register index, XMMRe
   }
 }
 
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
 
 // Arguments:
@@ -1380,14 +1480,34 @@ address StubGenerator::generate_disjoint_byte_copy(address* entry) {
   StubId stub_id = StubId::stubgen_jbyte_disjoint_arraycopy_id;
   // aligned is always false -- x86_64 always uses the unaligned code
   const bool aligned = false;
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
     return generate_disjoint_copy_avx3_masked(stub_id, entry);
   }
-#endif
+#endif // COMPILER2
+  GrowableArray<address> entries;
+  GrowableArray<address> extras;
+  int expected_entry_count = (entry != nullptr ? 2 : 1);
+  int expected_handler_count = (2 * UnsafeMemoryAccess::COLUMN_COUNT); // 2 x UMAM {start,end,handler}
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == expected_entry_count, "sanity check");
+  GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
+  address start = load_archive_data(stub_id, entries_ptr, &extras);
+  if (start != nullptr) {
+    assert(entries.length() == expected_entry_count - 1,
+           "unexpected entry count %d", entries.length());
+    assert(extras.length() == expected_handler_count,
+           "unexpected handler addresses count %d", extras.length());
+    if (entry != nullptr) {
+      *entry = entries.at(0);
+    }
+    // restore 2 UMAM {start,end,handler} addresses from extras
+    register_unsafe_access_handlers(extras, 0, 2);
+    return start;
+  }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_DISJOINT;
 
   Label L_copy_bytes, L_copy_8_bytes, L_copy_4_bytes, L_copy_2_bytes;
@@ -1407,6 +1527,7 @@ address StubGenerator::generate_disjoint_byte_copy(address* entry) {
 
   if (entry != nullptr) {
     *entry = __ pc();
+    entries.append(*entry);
      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
   }
@@ -1476,6 +1597,17 @@ __ BIND(L_exit);
     copy_bytes_forward(end_from, end_to, qword_count, rax, r10, L_copy_bytes, L_copy_8_bytes, decorators, T_BYTE);
     __ jmp(L_copy_4_bytes);
   }
+
+  // retrieve the registered handler addresses
+  address end = __ pc();
+  retrieve_unsafe_access_handlers(start, end, extras);
+  assert(extras.length() == expected_handler_count,
+         "unexpected handler addresses count %d", extras.length());
+
+  // record the stub entry and end plus the no_push entry and any
+  // extra handler addresses
+  store_archive_data(stub_id, start, end, entries_ptr, &extras);
+
   return start;
 }
 
@@ -1498,14 +1630,34 @@ address StubGenerator::generate_conjoint_byte_copy(address nooverlap_target, add
   StubId stub_id = StubId::stubgen_jbyte_arraycopy_id;
   // aligned is always false -- x86_64 always uses the unaligned code
   const bool aligned = false;
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
     return generate_conjoint_copy_avx3_masked(stub_id, entry, nooverlap_target);
   }
-#endif
+#endif // COMPILER2
+  GrowableArray<address> entries;
+  GrowableArray<address> extras;
+  int expected_entry_count = (entry != nullptr ? 2 : 1);
+  int expected_handler_count = (2 * UnsafeMemoryAccess::COLUMN_COUNT); // 2 x UMAM {start,end,handler}
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == expected_entry_count, "sanity check");
+  GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
+  address start = load_archive_data(stub_id, entries_ptr, &extras);
+  if (start != nullptr) {
+    assert(entries.length() == expected_entry_count - 1,
+           "unexpected entry count %d", entries.length());
+    assert(extras.length() == expected_handler_count,
+           "unexpected handler addresses count %d", extras.length());
+    if (entry != nullptr) {
+      *entry = entries.at(0);
+    }
+    // restore 2 UMAM {start,end,handler} addresses from extras
+    register_unsafe_access_handlers(extras, 0, 2);
+    return start;
+  }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   DecoratorSet decorators = IN_HEAP | IS_ARRAY;
 
   Label L_copy_bytes, L_copy_8_bytes, L_copy_4_bytes, L_copy_2_bytes;
@@ -1520,6 +1672,7 @@ address StubGenerator::generate_conjoint_byte_copy(address nooverlap_target, add
 
   if (entry != nullptr) {
     *entry = __ pc();
+    entries.append(*entry);
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
   }
@@ -1586,6 +1739,16 @@ address StubGenerator::generate_conjoint_byte_copy(address nooverlap_target, add
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // retrieve the registered handler addresses
+  address end = __ pc();
+  retrieve_unsafe_access_handlers(start, end, extras);
+  assert(extras.length() == expected_handler_count,
+         "unexpected handler addresses count %d", extras.length());
+
+  // record the stub entry and end plus the no_push entry and any
+  // extra handler addresses
+  store_archive_data(stub_id, start, end, entries_ptr, &extras);
+
   return start;
 }
 
@@ -1611,15 +1774,34 @@ address StubGenerator::generate_disjoint_short_copy(address *entry) {
   StubId stub_id = StubId::stubgen_jshort_disjoint_arraycopy_id;
   // aligned is always false -- x86_64 always uses the unaligned code
   const bool aligned = false;
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
     return generate_disjoint_copy_avx3_masked(stub_id, entry);
   }
-#endif
-
+#endif // COMPILER2
+  GrowableArray<address> entries;
+  GrowableArray<address> extras;
+  int expected_entry_count = (entry != nullptr ? 2 : 1);
+  int expected_handler_count = (2 * UnsafeMemoryAccess::COLUMN_COUNT); // 2 x UMAM {start,end,handler}
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == expected_entry_count, "sanity check");
+  GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
+  address start = load_archive_data(stub_id, entries_ptr, &extras);
+  if (start != nullptr) {
+    assert(entries.length() == expected_entry_count - 1,
+           "unexpected entry count %d", entries.length());
+    assert(extras.length() == expected_handler_count,
+           "unexpected handler addresses count %d", extras.length());
+    if (entry != nullptr) {
+      *entry = entries.at(0);
+    }
+    // restore 2 UMAM {start,end,handler} addresses from extras
+    register_unsafe_access_handlers(extras, 0, 2);
+    return start;
+  }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_DISJOINT;
 
   Label L_copy_bytes, L_copy_8_bytes, L_copy_4_bytes,L_copy_2_bytes,L_exit;
@@ -1638,6 +1820,7 @@ address StubGenerator::generate_disjoint_short_copy(address *entry) {
 
   if (entry != nullptr) {
     *entry = __ pc();
+    entries.append(*entry);
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
   }
@@ -1701,6 +1884,16 @@ __ BIND(L_exit);
     __ jmp(L_copy_4_bytes);
   }
 
+  // retrieve the registered handler addresses
+  address end = __ pc();
+  retrieve_unsafe_access_handlers(start, end, extras);
+  assert(extras.length() == expected_handler_count,
+         "unexpected handler addresses count %d", extras.length());
+
+  // record the stub entry and end plus the no_push entry and any
+  // extra handler addresses
+  store_archive_data(stub_id, start, end, entries_ptr, &extras);
+
   return start;
 }
 
@@ -1708,7 +1901,6 @@ __ BIND(L_exit);
 address StubGenerator::generate_fill(StubId stub_id) {
   BasicType t;
   bool aligned;
-
   switch (stub_id) {
   case StubId::stubgen_jbyte_fill_id:
     t = T_BYTE;
@@ -1737,10 +1929,27 @@ address StubGenerator::generate_fill(StubId stub_id) {
   default:
     ShouldNotReachHere();
   }
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  GrowableArray<address> extras;
+  bool add_handlers = ((t == T_BYTE) && !aligned);
+  int handlers_count = (add_handlers ? 1 : 0);
+  int expected_extras_count = (handlers_count * UnsafeMemoryAccess::COLUMN_COUNT); // 0/1 x UMAM {start,end,handler}
+  GrowableArray<address>* extras_ptr = (add_handlers ? &extras : nullptr);
+  address start = load_archive_data(stub_id, nullptr, extras_ptr);
+  if (start != nullptr) {
+    assert(extras.length() == expected_extras_count,
+           "unexpected handler addresses count %d", extras.length());
+    if (add_handlers) {
+      // restore 1 x UMAM {start,end,handler} addresses from extras
+      register_unsafe_access_handlers(extras, 0, 1);
+    }
+    return start;
+  }
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   BLOCK_COMMENT("Entry:");
 
@@ -1753,13 +1962,22 @@ address StubGenerator::generate_fill(StubId stub_id) {
 
   {
     // Add set memory mark to protect against unsafe accesses faulting
-    UnsafeMemoryAccessMark umam(this, ((t == T_BYTE) && !aligned), true);
+    UnsafeMemoryAccessMark umam(this, add_handlers, true);
     __ generate_fill(t, aligned, to, value, r11, rax, xmm0);
   }
 
   __ vzeroupper();
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
+
+  address end = __ pc();
+  if (add_handlers) {
+    retrieve_unsafe_access_handlers(start, end, extras);
+  }
+  assert(extras.length() == expected_extras_count,
+         "unexpected handler addresses count %d", extras.length());
+  // record the stub entry and end
+  store_archive_data(stub_id, start, end, nullptr, extras_ptr);
 
   return start;
 }
@@ -1783,15 +2001,34 @@ address StubGenerator::generate_conjoint_short_copy(address nooverlap_target, ad
   StubId stub_id = StubId::stubgen_jshort_arraycopy_id;
   // aligned is always false -- x86_64 always uses the unaligned code
   const bool aligned = false;
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if (VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
     return generate_conjoint_copy_avx3_masked(stub_id, entry, nooverlap_target);
   }
-#endif
-
+#endif // COMPILER2
+  GrowableArray<address> entries;
+  GrowableArray<address> extras;
+  int expected_entry_count = (entry != nullptr ? 2 : 1);
+  int expected_handler_count = (2 * UnsafeMemoryAccess::COLUMN_COUNT); // 2 x UMAM {start,end,handler}
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == expected_entry_count, "sanity check");
+  GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
+  address start = load_archive_data(stub_id, entries_ptr, &extras);
+  if (start != nullptr) {
+    assert(entries.length() == expected_entry_count - 1,
+           "unexpected entry count %d", entries.length());
+    assert(extras.length() == expected_handler_count,
+           "unexpected handler addresses count %d", extras.length());
+    if (entry != nullptr) {
+      *entry = entries.at(0);
+    }
+    // restore 2 UMAM {start,end,handler} addresses from extras
+    register_unsafe_access_handlers(extras, 0, 2);
+    return start;
+  }
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   DecoratorSet decorators = IN_HEAP | IS_ARRAY;
 
   Label L_copy_bytes, L_copy_8_bytes, L_copy_4_bytes;
@@ -1806,6 +2043,7 @@ address StubGenerator::generate_conjoint_short_copy(address nooverlap_target, ad
 
   if (entry != nullptr) {
     *entry = __ pc();
+    entries.append(*entry);
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
   }
@@ -1864,6 +2102,16 @@ address StubGenerator::generate_conjoint_short_copy(address nooverlap_target, ad
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // retrieve the registered handler addresses
+  address end = __ pc();
+  retrieve_unsafe_access_handlers(start, end, extras);
+  assert(extras.length() == expected_handler_count,
+         "unexpected handler addresses count %d", extras.length());
+
+  // record the stub entry and end plus the no_push entry and any
+  // extra handler addresses
+  store_archive_data(stub_id, start, end, entries_ptr, &extras);
+
   return start;
 }
 
@@ -1911,15 +2159,47 @@ address StubGenerator::generate_disjoint_int_oop_copy(StubId stub_id, address* e
   }
 
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if ((!is_oop || bs->supports_avx3_masked_arraycopy()) && VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
     return generate_disjoint_copy_avx3_masked(stub_id, entry);
   }
-#endif
+#endif // COMPILER2
+  GrowableArray<address> entries;
+  GrowableArray<address> extras;
+  bool add_handlers = !is_oop && !aligned;
+  bool add_relocs = UseZGC && is_oop;
+  bool add_extras = add_handlers || add_relocs;
+  int expected_entry_count = (entry != nullptr ? 2 : 1);
+  int expected_handler_count = (add_handlers ? 2 : 0) * UnsafeMemoryAccess::COLUMN_COUNT; // 0/2 x UMAM {start,end,handler}
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == expected_entry_count, "sanity check");
+  GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
+  GrowableArray<address>* extras_ptr = (add_extras ? &extras : nullptr);
+  address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+  if (start != nullptr) {
+    assert(entries.length() == expected_entry_count - 1,
+           "unexpected entry count %d", entries.length());
+    assert(!add_handlers || extras.length() == expected_handler_count,
+           "unexpected handler addresses count %d", extras.length());
+    if (entry != nullptr) {
+      *entry = entries.at(0);
+    }
+    if (add_handlers) {
+      // restore 2 UMAM {start,end,handler} addresses from extras
+      register_unsafe_access_handlers(extras, 0, 2);
+    }
+#if INCLUDE_ZGC
+    // register addresses at which ZGC does colour patching
+    if (add_relocs)  {
+      register_reloc_addresses(extras, 0, extras.length());
+    }
+#endif // INCLUDE_ZGC
+    return start;
+  }
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_copy_bytes, L_copy_8_bytes, L_copy_4_bytes, L_exit;
   const Register from        = rdi;  // source array address
@@ -1937,6 +2217,7 @@ address StubGenerator::generate_disjoint_int_oop_copy(StubId stub_id, address* e
 
   if (entry != nullptr) {
     *entry = __ pc();
+    entries.append(*entry);
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
   }
@@ -1957,7 +2238,7 @@ address StubGenerator::generate_disjoint_int_oop_copy(StubId stub_id, address* e
 
   {
     // UnsafeMemoryAccess page error: continue after unsafe access
-    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
+    UnsafeMemoryAccessMark umam(this, add_handlers, true);
     // 'from', 'to' and 'count' are now valid
     __ movptr(dword_count, count);
     __ shrptr(count, 1); // count => qword_count
@@ -1969,20 +2250,20 @@ address StubGenerator::generate_disjoint_int_oop_copy(StubId stub_id, address* e
     __ jmp(L_copy_bytes);
 
     // Copy trailing qwords
-  __ BIND(L_copy_8_bytes);
+    __ BIND(L_copy_8_bytes);
     __ movq(rax, Address(end_from, qword_count, Address::times_8, 8));
     __ movq(Address(end_to, qword_count, Address::times_8, 8), rax);
     __ increment(qword_count);
     __ jcc(Assembler::notZero, L_copy_8_bytes);
 
     // Check for and copy trailing dword
-  __ BIND(L_copy_4_bytes);
+    __ BIND(L_copy_4_bytes);
     __ testl(dword_count, 1); // Only byte test since the value is 0 or 1
     __ jccb(Assembler::zero, L_exit);
     __ movl(rax, Address(end_from, 8));
     __ movl(Address(end_to, 8), rax);
   }
-__ BIND(L_exit);
+  __ BIND(L_exit);
   address ucme_exit_pc = __ pc();
   bs->arraycopy_epilogue(_masm, decorators, type, from, to, dword_count);
   restore_arg_regs_using_thread();
@@ -1993,11 +2274,29 @@ __ BIND(L_exit);
   __ ret(0);
 
   {
-    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, false, ucme_exit_pc);
+    UnsafeMemoryAccessMark umam(this, add_handlers, false, ucme_exit_pc);
     // Copy in multi-bytes chunks
     copy_bytes_forward(end_from, end_to, qword_count, rax, r10, L_copy_bytes, L_copy_8_bytes, decorators, is_oop ? T_OBJECT : T_INT);
     __ jmp(L_copy_4_bytes);
   }
+
+  // retrieve the registered handler addresses
+  address end = __ pc();
+  if (add_handlers) {
+    retrieve_unsafe_access_handlers(start, end, extras);
+  }
+  assert(extras.length() == expected_handler_count,
+         "unexpected handler addresses count %d", extras.length());
+#if INCLUDE_ZGC
+  // retrieve addresses at which ZGC does colour patching
+  if (add_relocs) {
+    retrieve_reloc_addresses(start, end, extras);
+  }
+#endif // INCLUDE_ZGC
+
+  // record the stub entry and end plus the no_push entry and any
+  // extra handler addresses
+  store_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
 
   return start;
 }
@@ -2042,15 +2341,47 @@ address StubGenerator::generate_conjoint_int_oop_copy(StubId stub_id, address no
   }
 
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if ((!is_oop || bs->supports_avx3_masked_arraycopy()) && VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
     return generate_conjoint_copy_avx3_masked(stub_id, entry, nooverlap_target);
   }
-#endif
+#endif // COMPILER2
+  bool add_handlers = !is_oop && !aligned;
+  bool add_relocs = UseZGC && is_oop;
+  bool add_extras = add_handlers || add_relocs;
+  GrowableArray<address> entries;
+  GrowableArray<address> extras;
+  int expected_entry_count = (entry != nullptr ? 2 : 1);
+  int expected_handler_count = (add_handlers ? 2 : 0) * UnsafeMemoryAccess::COLUMN_COUNT; // 0/2 x UMAM {start,end,handler}
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == expected_entry_count, "sanity check");
+  GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
+  GrowableArray<address>* extras_ptr = (add_extras ? &extras : nullptr);
+  address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+  if (start != nullptr) {
+    assert(entries.length() == expected_entry_count - 1,
+           "unexpected entry count %d", entries.length());
+    assert(!add_handlers || extras.length() == expected_handler_count,
+           "unexpected handler addresses count %d", extras.length());
+    if (entry != nullptr) {
+      *entry = entries.at(0);
+    }
+    if (add_handlers) {
+      // restore 2 UMAM {start,end,handler} addresses from extras
+      register_unsafe_access_handlers(extras, 0, 2);
+    }
+#if INCLUDE_ZGC
+    // register addresses at which ZGC does colour patching
+    if (add_relocs)  {
+      register_reloc_addresses(extras, 6, extras.length());
+    }
+#endif // INCLUDE_ZGC
+    return start;
+  }
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_copy_bytes, L_copy_8_bytes, L_exit;
   const Register from        = rdi;  // source array address
@@ -2064,7 +2395,8 @@ address StubGenerator::generate_conjoint_int_oop_copy(StubId stub_id, address no
 
   if (entry != nullptr) {
     *entry = __ pc();
-     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+    entries.append(*entry);
+    // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
   }
 
@@ -2087,7 +2419,7 @@ address StubGenerator::generate_conjoint_int_oop_copy(StubId stub_id, address no
   assert_clean_int(count, rax); // Make sure 'count' is clean int.
   {
     // UnsafeMemoryAccess page error: continue after unsafe access
-    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
+    UnsafeMemoryAccessMark umam(this, add_handlers, true);
     // 'from', 'to' and 'count' are now valid
     __ movptr(dword_count, count);
     __ shrptr(count, 1); // count => qword_count
@@ -2102,7 +2434,7 @@ address StubGenerator::generate_conjoint_int_oop_copy(StubId stub_id, address no
     __ jmp(L_copy_bytes);
 
     // Copy trailing qwords
-  __ BIND(L_copy_8_bytes);
+    __ BIND(L_copy_8_bytes);
     __ movq(rax, Address(from, qword_count, Address::times_8, -8));
     __ movq(Address(to, qword_count, Address::times_8, -8), rax);
     __ decrement(qword_count);
@@ -2120,12 +2452,12 @@ address StubGenerator::generate_conjoint_int_oop_copy(StubId stub_id, address no
 
   {
     // UnsafeMemoryAccess page error: continue after unsafe access
-    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
+    UnsafeMemoryAccessMark umam(this, add_handlers, true);
     // Copy in multi-bytes chunks
     copy_bytes_backward(from, to, qword_count, rax, r10, L_copy_bytes, L_copy_8_bytes, decorators, is_oop ? T_OBJECT : T_INT);
   }
 
-__ BIND(L_exit);
+  __ BIND(L_exit);
   bs->arraycopy_epilogue(_masm, decorators, type, from, to, dword_count);
   restore_arg_regs_using_thread();
   INC_COUNTER_NP(SharedRuntime::_jint_array_copy_ctr, rscratch1); // Update counter after rscratch1 is free
@@ -2133,6 +2465,23 @@ __ BIND(L_exit);
   __ vzeroupper();
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
+
+  // retrieve the registered handler addresses
+  address end = __ pc();
+  if (add_handlers) {
+    retrieve_unsafe_access_handlers(start, end, extras);
+  }
+  assert(extras.length() == expected_handler_count,
+         "unexpected handler addresses count %d", extras.length());
+#if INCLUDE_ZGC
+  // retrieve addresses at which ZGC does colour patching
+  if (add_relocs) {
+    retrieve_reloc_addresses(start, end, extras);
+  }
+#endif // INCLUDE_ZGC
+  // record the stub entry and end plus the no_push entry and any
+  // extra handler addresses
+  store_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
 
   return start;
 }
@@ -2175,15 +2524,47 @@ address StubGenerator::generate_disjoint_long_oop_copy(StubId stub_id, address *
   }
 
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if ((!is_oop || bs->supports_avx3_masked_arraycopy()) && VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize >= 32) {
     return generate_disjoint_copy_avx3_masked(stub_id, entry);
   }
-#endif
+#endif // COMPILER2
+  bool add_handlers = !is_oop && !aligned;
+  bool add_relocs = UseZGC && is_oop;
+  bool add_extras = add_handlers || add_relocs;
+  GrowableArray<address> entries;
+  GrowableArray<address> extras;
+  int expected_entry_count = (entry != nullptr ? 2 : 1);
+  int expected_handler_count = (add_handlers ? 2 : 0) * UnsafeMemoryAccess::COLUMN_COUNT; // 0/2 x UMAM {start,end,handler}
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == expected_entry_count, "sanity check");
+  GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
+  GrowableArray<address>* extras_ptr = (add_extras ? &extras : nullptr);
+  address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+  if (start != nullptr) {
+    assert(entries.length() == expected_entry_count - 1,
+           "unexpected entry count %d", entries.length());
+    assert(!add_handlers || extras.length() == expected_handler_count,
+           "unexpected handler addresses count %d", extras.length());
+    if (entry != nullptr) {
+      *entry = entries.at(0);
+    }
+    if (add_handlers) {
+      // restore 2 UMAM {start,end,handler} addresses from extras
+      register_unsafe_access_handlers(extras, 0, 2);
+    }
+#if INCLUDE_ZGC
+    // register addresses at which ZGC does colour patching
+    if (add_relocs)  {
+      register_reloc_addresses(extras, 0, extras.length());
+    }
+#endif // INCLUDE_ZGC
+    return start;
+  }
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_copy_bytes, L_copy_8_bytes, L_exit;
   const Register from        = rdi;  // source array address
@@ -2201,6 +2582,7 @@ address StubGenerator::generate_disjoint_long_oop_copy(StubId stub_id, address *
 
   if (entry != nullptr) {
     *entry = __ pc();
+    entries.append(*entry);
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
   }
@@ -2221,7 +2603,7 @@ address StubGenerator::generate_disjoint_long_oop_copy(StubId stub_id, address *
   bs->arraycopy_prologue(_masm, decorators, type, from, to, qword_count);
   {
     // UnsafeMemoryAccess page error: continue after unsafe access
-    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
+    UnsafeMemoryAccessMark umam(this, add_handlers, true);
 
     // Copy from low to high addresses.  Use 'to' as scratch.
     __ lea(end_from, Address(from, qword_count, Address::times_8, -8));
@@ -2253,7 +2635,7 @@ address StubGenerator::generate_disjoint_long_oop_copy(StubId stub_id, address *
 
   {
     // UnsafeMemoryAccess page error: continue after unsafe access
-    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
+    UnsafeMemoryAccessMark umam(this, add_handlers, true);
     // Copy in multi-bytes chunks
     copy_bytes_forward(end_from, end_to, qword_count, rax, r10, L_copy_bytes, L_copy_8_bytes, decorators, is_oop ? T_OBJECT : T_LONG);
   }
@@ -2268,6 +2650,23 @@ address StubGenerator::generate_disjoint_long_oop_copy(StubId stub_id, address *
   __ xorptr(rax, rax); // return 0
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
+
+  // retrieve the registered handler addresses
+  address end = __ pc();
+  if (add_handlers) {
+    retrieve_unsafe_access_handlers(start, end, extras);
+  }
+  assert(extras.length() == expected_handler_count,
+         "unexpected handler addresses count %d", extras.length());
+#if INCLUDE_ZGC
+  // retrieve addresses at which ZGC does colour patching
+  if (add_relocs) {
+    retrieve_reloc_addresses(start, end, extras);
+  }
+#endif // INCLUDE_ZGC
+  // record the stub entry and end plus the no_push entry and any
+  // extra handler addresses
+  store_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
 
   return start;
 }
@@ -2308,15 +2707,47 @@ address StubGenerator::generate_conjoint_long_oop_copy(StubId stub_id, address n
   }
 
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if ((!is_oop || bs->supports_avx3_masked_arraycopy()) && VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2() && MaxVectorSize  >= 32) {
     return generate_conjoint_copy_avx3_masked(stub_id, entry, nooverlap_target);
   }
-#endif
+#endif // COMPILER2
+  bool add_handlers = !is_oop && !aligned;
+  bool add_relocs = UseZGC && is_oop;
+  bool add_extras = add_handlers || add_relocs;
+  GrowableArray<address> entries;
+  GrowableArray<address> extras;
+  int expected_entry_count = (entry != nullptr ? 2 : 1);
+  int expected_handler_count = (add_handlers ? 2 : 0) * UnsafeMemoryAccess::COLUMN_COUNT; // 0/2 x UMAM {start,end,handler}
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == expected_entry_count, "sanity check");
+  GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
+  GrowableArray<address>* extras_ptr = (add_extras ? &extras : nullptr);
+  address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+  if (start != nullptr) {
+    assert(entries.length() == expected_entry_count - 1,
+           "unexpected entry count %d", entries.length());
+    assert(!add_handlers || extras.length() == expected_handler_count,
+           "unexpected handler addresses count %d", extras.length());
+    if (entry != nullptr) {
+      *entry = entries.at(0);
+    }
+    if (add_handlers) {
+      // restore 2 UMAM {start,end,handler} addresses from extras
+      register_unsafe_access_handlers(extras, 0, 2);
+    }
+#if INCLUDE_ZGC
+    // register addresses at which ZGC does colour patching
+    if (add_relocs)  {
+      register_reloc_addresses(extras, 0, extras.length());
+    }
+#endif // INCLUDE_ZGC
+    return start;
+  }
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_copy_bytes, L_copy_8_bytes, L_exit;
   const Register from        = rdi;  // source array address
@@ -2329,6 +2760,7 @@ address StubGenerator::generate_conjoint_long_oop_copy(StubId stub_id, address n
 
   if (entry != nullptr) {
     *entry = __ pc();
+    entries.append(*entry);
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
   }
@@ -2350,7 +2782,7 @@ address StubGenerator::generate_conjoint_long_oop_copy(StubId stub_id, address n
   bs->arraycopy_prologue(_masm, decorators, type, from, to, qword_count);
   {
     // UnsafeMemoryAccess page error: continue after unsafe access
-    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
+    UnsafeMemoryAccessMark umam(this, add_handlers, true);
 
     __ jmp(L_copy_bytes);
 
@@ -2377,7 +2809,7 @@ address StubGenerator::generate_conjoint_long_oop_copy(StubId stub_id, address n
   }
   {
     // UnsafeMemoryAccess page error: continue after unsafe access
-    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
+    UnsafeMemoryAccessMark umam(this, add_handlers, true);
 
     // Copy in multi-bytes chunks
     copy_bytes_backward(from, to, qword_count, rax, r10, L_copy_bytes, L_copy_8_bytes, decorators, is_oop ? T_OBJECT : T_LONG);
@@ -2392,6 +2824,24 @@ address StubGenerator::generate_conjoint_long_oop_copy(StubId stub_id, address n
   __ xorptr(rax, rax); // return 0
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
+
+
+  // retrieve the registered handler addresses
+  address end = __ pc();
+  if (add_handlers) {
+    retrieve_unsafe_access_handlers(start, end, extras);
+  }
+  assert(extras.length() == expected_handler_count,
+         "unexpected handler addresses count %d", extras.length());
+#if INCLUDE_ZGC
+  // retrieve addresses at which ZGC does colour patching
+  if ((UseZGC && is_oop)) {
+    retrieve_reloc_addresses(start, end, extras);
+  }
+#endif // INCLUDE_ZGC
+  // record the stub entry and end plus the no_push entry and any
+  // extra handler addresses
+  store_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
 
   return start;
 }
@@ -2448,6 +2898,28 @@ address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
     ShouldNotReachHere();
   }
 
+  GrowableArray<address> entries;
+  GrowableArray<address> extras;
+  int expected_entry_count = (entry != nullptr ? 2 : 1);
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == expected_entry_count, "sanity check");
+  GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
+  GrowableArray<address>* extras_ptr = (UseZGC ? &extras : nullptr);
+  address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+  if (start != nullptr) {
+    assert(entries.length() == expected_entry_count - 1,
+           "unexpected addresses count %d", entries.length());
+    if (entry != nullptr) {
+      *entry = entries.at(0);
+    }
+#if INCLUDE_ZGC
+    if (UseZGC)  {
+      register_reloc_addresses(extras, 0, extras.length());
+    }
+#endif // INCLUDE_ZGC
+    return start;
+  }
+
   Label L_load_element, L_store_element, L_do_card_marks, L_done;
 
   // Input registers (after setup_arg_regs)
@@ -2477,7 +2949,7 @@ address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -2502,6 +2974,7 @@ address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
   // Caller of this entry point must set up the argument registers.
   if (entry != nullptr) {
     *entry = __ pc();
+    entries.append(*entry);
     BLOCK_COMMENT("Entry:");
   }
 
@@ -2636,6 +3109,16 @@ address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  address end = __ pc();
+#if INCLUDE_ZGC
+  // retrieve addresses at which ZGC does colour patching
+  if (UseZGC) {
+    retrieve_reloc_addresses(start, end, extras);
+  }
+#endif // INCLUDE_ZGC
+  // record the stub entry and end plus the no_push entry
+    store_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
+
   return start;
 }
 
@@ -2655,6 +3138,14 @@ address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
 address StubGenerator::generate_unsafe_copy(address byte_copy_entry, address short_copy_entry,
                                             address int_copy_entry, address long_copy_entry) {
 
+  StubId stub_id = StubId::stubgen_unsafe_arraycopy_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+
   Label L_long_aligned, L_int_aligned, L_short_aligned;
 
   // Input registers (before setup_arg_regs)
@@ -2666,9 +3157,8 @@ address StubGenerator::generate_unsafe_copy(address byte_copy_entry, address sho
   const Register bits        = rax;      // test copy of low bits
 
   __ align(CodeEntryAlignment);
-  StubId stub_id = StubId::stubgen_unsafe_arraycopy_id;
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -2699,6 +3189,9 @@ address StubGenerator::generate_unsafe_copy(address byte_copy_entry, address sho
   __ BIND(L_long_aligned);
   __ shrptr(size, LogBytesPerLong); // size => qword_count
   __ jump(RuntimeAddress(long_copy_entry));
+
+  // record the stub entry and end plus
+  store_archive_data(stub_id, start, __ pc());
 
   return start;
 }
@@ -2801,10 +3294,23 @@ static void do_setmemory_atomic_loop(USM_TYPE type, Register dest,
 // to an int, short, or byte fill loop.
 //
 address StubGenerator::generate_unsafe_setmemory(address unsafe_byte_fill) {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_unsafe_setmemory_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  // we expect three set of extra unsafememory access handler entries
+  GrowableArray<address> extras;
+  int expected_handler_count = 3 * UnsafeMemoryAccess::COLUMN_COUNT;
+  address start = load_archive_data(stub_id, nullptr, &extras);
+  if (start != nullptr) {
+    assert(extras.length() == expected_handler_count,
+           "unexpected handler addresses count %d", extras.length());
+    register_unsafe_access_handlers(extras, 0, 3);
+    return start;
+  }
+
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();   // required for proper stackwalking of RuntimeStub frame
 
   assert(unsafe_byte_fill != nullptr, "Invalid call");
@@ -2894,6 +3400,16 @@ address StubGenerator::generate_unsafe_setmemory(address unsafe_byte_fill) {
     __ jump(RuntimeAddress(unsafe_byte_fill));
   }
 
+  // retrieve the registered handler addresses
+  address end = __ pc();
+  retrieve_unsafe_access_handlers(start, end, extras);
+  assert(extras.length() == expected_handler_count,
+         "unexpected handler addresses count %d", extras.length());
+
+  // record the stub entry and end plus the no_push entry and any
+  // extra handler addresses
+  store_archive_data(stub_id, start, end, nullptr, &extras);
+
   return start;
 }
 
@@ -2950,7 +3466,15 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
                                              address int_copy_entry, address oop_copy_entry,
                                              address long_copy_entry, address checkcast_copy_entry) {
 
-  Label L_failed, L_failed_0, L_objArray;
+  StubId stub_id = StubId::stubgen_generic_arraycopy_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+
+  Label L_failed, L_failed_0, L_skip_failed_0, L_objArray;
   Label L_copy_shorts, L_copy_ints, L_copy_longs;
 
   // Input registers
@@ -2966,22 +3490,9 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   const Register rklass_tmp = rdi;  // load_klass
 #endif
 
-  { int modulus = CodeEntryAlignment;
-    int target  = modulus - 5; // 5 = sizeof jmp(L_failed)
-    int advance = target - (__ offset() % modulus);
-    if (advance < 0)  advance += modulus;
-    if (advance > 0)  __ nop(advance);
-  }
-  StubId stub_id = StubId::stubgen_generic_arraycopy_id;
   StubCodeMark mark(this, stub_id);
-
-  // Short-hop target to L_failed.  Makes for denser prologue code.
-  __ BIND(L_failed_0);
-  __ jmp(L_failed);
-  assert(__ offset() % CodeEntryAlignment == 0, "no further alignment needed");
-
   __ align(CodeEntryAlignment);
-  address start = __ pc();
+  start = __ pc();
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -3022,7 +3533,8 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   //  if (dst_pos < 0) return -1;
   __ testl(dst_pos, dst_pos); // dst_pos (32-bits)
   size_t j4off = __ offset();
-  __ jccb(Assembler::negative, L_failed_0);
+  // skip over the failure trampoline
+  __ jccb(Assembler::positive, L_skip_failed_0);
 
   // The first four tests are very dense code,
   // but not quite dense enough to put four
@@ -3031,6 +3543,13 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   // do not like jumps so close together.
   // Make sure of this.
   guarantee(((j1off ^ j4off) & ~15) != 0, "I$ line of 1st & 4th jumps");
+
+  // Short-hop target to L_failed.  Makes for denser prologue code.
+  __ BIND(L_failed_0);
+  __ jmp(L_failed);
+
+  // continue here if first 4 checks pass
+  __ bind(L_skip_failed_0);
 
   // registers used as temp
   const Register r11_length    = r11; // elements count to copy
@@ -3253,6 +3772,9 @@ __ BIND(L_failed);
   __ notptr(rax); // return -1
   __ leave();   // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
 
   return start;
 }

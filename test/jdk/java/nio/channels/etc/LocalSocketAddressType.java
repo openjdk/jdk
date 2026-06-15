@@ -42,9 +42,9 @@ import java.util.Iterator;
 import java.util.stream.Stream;
 
 import static java.lang.System.out;
+
 import static jdk.test.lib.net.IPSupport.*;
 
-import jtreg.SkippedException;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -56,12 +56,7 @@ public class LocalSocketAddressType {
     @BeforeAll()
     public static void setup() {
         IPSupport.printPlatformSupport(out);
-        try {
-            throwSkippedExceptionIfNonOperational();
-        } catch (SkippedException skippedException) {
-            // jtreg.SkippedException would cause a JUnit test to fail
-            Assumptions.assumeTrue(false, skippedException.getMessage());
-        }
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
     }
 
     public static Iterator<Object[]> addresses() throws Exception {

@@ -37,6 +37,7 @@
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "interpreter/bytecodeTracer.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
@@ -102,10 +103,6 @@
 #include "utilities/preserveException.hpp"
 #include "utilities/spinYield.hpp"
 #include "utilities/vmError.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#include "jvmci/jvmciEnv.hpp"
-#endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -270,102 +267,6 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
 
 // ======= JavaThread ========
 
-#if INCLUDE_JVMCI
-
-jlong* JavaThread::_jvmci_old_thread_counters;
-
-static bool jvmci_counters_include(JavaThread* thread) {
-  return !JVMCICountersExcludeCompiler || !thread->is_Compiler_thread();
-}
-
-void JavaThread::collect_counters(jlong* array, int length) {
-  assert(length == JVMCICounterSize, "wrong value");
-  for (int i = 0; i < length; i++) {
-    array[i] = _jvmci_old_thread_counters[i];
-  }
-  for (JavaThread* tp : ThreadsListHandle()) {
-    if (jvmci_counters_include(tp)) {
-      for (int i = 0; i < length; i++) {
-        array[i] += tp->_jvmci_counters[i];
-      }
-    }
-  }
-}
-
-// Attempt to enlarge the array for per thread counters.
-static jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
-  jlong* new_counters = NEW_C_HEAP_ARRAY_RETURN_NULL(jlong, new_size, mtJVMCI);
-  if (new_counters == nullptr) {
-    return nullptr;
-  }
-  if (old_counters == nullptr) {
-    old_counters = new_counters;
-    memset(old_counters, 0, sizeof(jlong) * new_size);
-  } else {
-    for (int i = 0; i < MIN2((int) current_size, new_size); i++) {
-      new_counters[i] = old_counters[i];
-    }
-    if (new_size > current_size) {
-      memset(new_counters + current_size, 0, sizeof(jlong) * (new_size - current_size));
-    }
-    FREE_C_HEAP_ARRAY(jlong, old_counters);
-  }
-  return new_counters;
-}
-
-// Attempt to enlarge the array for per thread counters.
-bool JavaThread::resize_counters(int current_size, int new_size) {
-  jlong* new_counters = resize_counters_array(_jvmci_counters, current_size, new_size);
-  if (new_counters == nullptr) {
-    return false;
-  } else {
-    _jvmci_counters = new_counters;
-    return true;
-  }
-}
-
-class VM_JVMCIResizeCounters : public VM_Operation {
- private:
-  int _new_size;
-  bool _failed;
-
- public:
-  VM_JVMCIResizeCounters(int new_size) : _new_size(new_size), _failed(false) { }
-  VMOp_Type type()                  const        { return VMOp_JVMCIResizeCounters; }
-  bool allow_nested_vm_operations() const        { return true; }
-  void doit() {
-    // Resize the old thread counters array
-    jlong* new_counters = resize_counters_array(JavaThread::_jvmci_old_thread_counters, JVMCICounterSize, _new_size);
-    if (new_counters == nullptr) {
-      _failed = true;
-      return;
-    } else {
-      JavaThread::_jvmci_old_thread_counters = new_counters;
-    }
-
-    // Now resize each threads array
-    for (JavaThread* tp : ThreadsListHandle()) {
-      if (!tp->resize_counters(JVMCICounterSize, _new_size)) {
-        _failed = true;
-        break;
-      }
-    }
-    if (!_failed) {
-      JVMCICounterSize = _new_size;
-    }
-  }
-
-  bool failed() { return _failed; }
-};
-
-bool JavaThread::resize_all_jvmci_counters(int new_size) {
-  VM_JVMCIResizeCounters op(new_size);
-  VMThread::execute(&op);
-  return !op.failed();
-}
-
-#endif // INCLUDE_JVMCI
-
 #ifdef ASSERT
 // Checks safepoint allowed and clears unhandled oops at potential safepoints.
 void JavaThread::check_possible_safepoint() {
@@ -432,6 +333,8 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _visited_for_critical_count(false),
 #endif
 
+  NOT_PRODUCT(_bytecode_tracer_data{} COMMA)
+
   _terminated(_not_terminated),
   _in_deopt_handler(0),
   _doing_unsafe_access(false),
@@ -447,25 +350,13 @@ JavaThread::JavaThread(MemTag mem_tag) :
 #endif
   _jni_attach_state(_not_attaching_via_jni),
   _is_in_internal_oome_mark(false),
-#if INCLUDE_JVMCI
-  _pending_deoptimization(-1),
-  _pending_monitorenter(false),
-  _pending_transfer_to_interpreter(false),
-  _pending_failed_speculation(0),
-  _jvmci{nullptr},
-  _libjvmci_runtime(nullptr),
-  _jvmci_counters(nullptr),
-  _jvmci_reserved0(0),
-  _jvmci_reserved1(0),
-  _jvmci_reserved_oop0(nullptr),
-  _live_nmethod(nullptr),
-#endif // INCLUDE_JVMCI
 
   _exception_oop(oop()),
   _exception_pc(nullptr),
   _exception_handler_pc(nullptr),
 
   _jni_active_critical(0),
+  _jni_deferred_suspension_count(0),
   _pending_jni_exception_check_fn(nullptr),
   _depth_first_number(0),
 
@@ -520,13 +411,6 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _lock_stack(this),
   _om_cache(this) {
   set_jni_functions(jni_functions());
-
-#if INCLUDE_JVMCI
-  assert(_jvmci._implicit_exception_pc == nullptr, "must be");
-  if (JVMCICounterSize > 0) {
-    resize_counters(0, (int) JVMCICounterSize);
-  }
-#endif // INCLUDE_JVMCI
 
   // Setup safepoint state info for this thread
   ThreadSafepointState::create(this);
@@ -698,11 +582,6 @@ JavaThread::~JavaThread() {
   ThreadSafepointState::destroy(this);
   if (_thread_stat != nullptr) delete _thread_stat;
 
-#if INCLUDE_JVMCI
-  if (JVMCICounterSize > 0) {
-    FREE_C_HEAP_ARRAY(jlong, _jvmci_counters);
-  }
-#endif // INCLUDE_JVMCI
 }
 
 
@@ -973,16 +852,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     _timer_exit_phase3.stop();
     _timer_exit_phase4.start();
   }
-
-#if INCLUDE_JVMCI
-  if (JVMCICounterSize > 0) {
-    if (jvmci_counters_include(this)) {
-      for (int i = 0; i < JVMCICounterSize; i++) {
-        _jvmci_old_thread_counters[i] += _jvmci_counters[i];
-      }
-    }
-  }
-#endif // INCLUDE_JVMCI
 
   // Remove from list of active threads list, and notify VM thread if we are the last non-daemon thread.
   // We call BarrierSet::barrier_set()->on_thread_detach() here so no touching of oops after this point.
@@ -1396,13 +1265,6 @@ void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   // around using this function
   f->do_oop((oop*) &_vm_result_oop);
   f->do_oop((oop*) &_exception_oop);
-#if INCLUDE_JVMCI
-  f->do_oop((oop*) &_jvmci_reserved_oop0);
-
-  if (_live_nmethod != nullptr && cf != nullptr) {
-    cf->do_nmethod(_live_nmethod);
-  }
-#endif
 
   if (jvmti_thread_state() != nullptr) {
     jvmti_thread_state()->oops_do(f, cf);
@@ -1456,12 +1318,6 @@ void JavaThread::nmethods_do(NMethodClosure* cf) {
   if (jvmti_thread_state() != nullptr) {
     jvmti_thread_state()->nmethods_do(cf);
   }
-
-#if INCLUDE_JVMCI
-  if (_live_nmethod != nullptr) {
-    cf->do_nmethod(_live_nmethod);
-  }
-#endif
 }
 
 void JavaThread::metadata_do(MetadataClosure* f) {
@@ -1884,7 +1740,7 @@ WordSize JavaThread::popframe_preserved_args_size_in_words() {
 
 void JavaThread::popframe_free_preserved_args() {
   assert(_popframe_preserved_args != nullptr, "should not free PopFrame preserved arguments twice");
-  FREE_C_HEAP_ARRAY(char, (char*)_popframe_preserved_args);
+  FREE_C_HEAP_ARRAY((char*)_popframe_preserved_args);
   _popframe_preserved_args = nullptr;
   _popframe_preserved_args_size = 0;
 }

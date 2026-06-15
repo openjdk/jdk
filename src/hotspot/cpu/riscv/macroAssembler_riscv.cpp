@@ -49,6 +49,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
 #include "opto/compile.hpp"
@@ -592,7 +593,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   Register offset = t1;
 
   Label L_loop_search_receiver, L_loop_search_empty;
-  Label L_restart, L_found_recv, L_found_empty, L_polymorphic, L_count_update;
+  Label L_restart, L_found_recv, L_found_empty, L_count_update;
 
   // The code here recognizes three major cases:
   //   A. Fastest: receiver found in the table
@@ -622,20 +623,19 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   //     if (receiver(i) == recv) goto found_recv(i);
   //   }
   //
-  //   // Fast: no receiver, but profile is full
+  //   // Fast: no receiver, but profile is not full
   //   for (i = 0; i < receiver_count(); i++) {
   //     if (receiver(i) == null) goto found_null(i);
   //   }
-  //   goto polymorphic
+  //
+  //   // Slow: profile is full, polymorphic case
+  //   count++;
+  //   return
   //
   //   // Slow: try to install receiver
   // found_null(i):
   //   CAS(&receiver(i), null, recv);
   //   goto restart
-  //
-  // polymorphic:
-  //   count++;
-  //   return
   //
   // found_recv(i):
   //   *receiver_count(i)++
@@ -653,7 +653,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   sub(t0, offset, end_receiver_offset);
   bnez(t0, L_loop_search_receiver);
 
-  // Fast: no receiver, but profile is full
+  // Fast: no receiver, but profile is not full
   mv(offset, base_receiver_offset);
   bind(L_loop_search_empty);
     add(t0, mdp, offset);
@@ -662,9 +662,13 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   add(offset, offset, receiver_step);
   sub(t0, offset, end_receiver_offset);
   bnez(t0, L_loop_search_empty);
-  j(L_polymorphic);
 
-  // Slow: try to install receiver
+  // Slow: Receiver is not found and table is full.
+  // Increment polymorphic counter instead of receiver slot.
+  mv(offset, poly_count_offset);
+  j(L_count_update);
+
+  // Slowest: try to install receiver
   bind(L_found_empty);
 
   // Atomically swing receiver slot: null -> recv.
@@ -682,16 +686,11 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // and just restart the search from the beginning.
   j(L_restart);
 
-  // Counter updates:
-  // Increment polymorphic counter instead of receiver slot.
-  bind(L_polymorphic);
-  mv(offset, poly_count_offset);
-  j(L_count_update);
-
   // Found a receiver, convert its slot offset to corresponding count offset.
   bind(L_found_recv);
   add(offset, offset, receiver_to_count_step);
 
+  // Finally, update the counter
   bind(L_count_update);
   add(t1, mdp, offset);
   increment(Address(t1), DataLayout::counter_increment);
@@ -1947,14 +1946,12 @@ void MacroAssembler::restore_cpu_control_state_after_jni(Register tmp) {
   }
 }
 
-void MacroAssembler::push_reg(Register Rs)
-{
+void MacroAssembler::push_reg(Register Rs) {
   subi(esp, esp, wordSize);
   sd(Rs, Address(esp, 0));
 }
 
-void MacroAssembler::pop_reg(Register Rd)
-{
+void MacroAssembler::pop_reg(Register Rd) {
   ld(Rd, Address(esp, 0));
   addi(esp, esp, wordSize);
 }
@@ -1973,7 +1970,11 @@ int MacroAssembler::bitset_to_regs(unsigned int bitset, unsigned char* regs) {
 
 // Push integer registers in the bitset supplied. Don't push sp.
 // Return the number of words pushed
-int MacroAssembler::push_reg(unsigned int bitset, Register stack) {
+int MacroAssembler::push_reg(RegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   DEBUG_ONLY(int words_pushed = 0;)
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
@@ -1993,7 +1994,11 @@ int MacroAssembler::push_reg(unsigned int bitset, Register stack) {
   return count;
 }
 
-int MacroAssembler::pop_reg(unsigned int bitset, Register stack) {
+int MacroAssembler::pop_reg(RegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   DEBUG_ONLY(int words_popped = 0;)
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
@@ -2015,7 +2020,11 @@ int MacroAssembler::pop_reg(unsigned int bitset, Register stack) {
 
 // Push floating-point registers in the bitset supplied.
 // Return the number of words pushed
-int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
+int MacroAssembler::push_fp(FloatRegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   DEBUG_ONLY(int words_pushed = 0;)
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
@@ -2035,7 +2044,11 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
   return count;
 }
 
-int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
+int MacroAssembler::pop_fp(FloatRegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   DEBUG_ONLY(int words_popped = 0;)
   unsigned char regs[32];
   int count = bitset_to_regs(bitset, regs);
@@ -2721,7 +2734,11 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 #ifdef COMPILER2
 // Push vector registers in the bitset supplied.
 // Return the number of words pushed
-int MacroAssembler::push_v(unsigned int bitset, Register stack) {
+int MacroAssembler::push_v(VectorRegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
 
   // Scan bitset to accumulate register pairs
@@ -2736,7 +2753,11 @@ int MacroAssembler::push_v(unsigned int bitset, Register stack) {
   return count * vector_size_in_bytes / wordSize;
 }
 
-int MacroAssembler::pop_v(unsigned int bitset, Register stack) {
+int MacroAssembler::pop_v(VectorRegSet regset, Register stack) {
+  if (regset.bits() == 0) {
+    return 0;
+  }
+  auto bitset = integer_cast<unsigned int>(regset.bits());
   int vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
 
   // Scan bitset to accumulate register pairs
@@ -4094,7 +4115,7 @@ void MacroAssembler::membar(uint32_t order_constraint) {
   }
 
   address prev = pc() - MacroAssembler::instruction_size;
-  address last = code()->last_insn();
+  address last = code()->last_merge_candidate();
 
   if (last != nullptr && is_membar(last) && prev == last) {
     // We are merging two memory barrier instructions.  On RISCV we
@@ -4104,7 +4125,7 @@ void MacroAssembler::membar(uint32_t order_constraint) {
     return;
   }
 
-  code()->set_last_insn(pc());
+  code()->set_last_merge_candidate(pc());
   uint32_t predecessor = 0;
   uint32_t successor = 0;
   membar_mask_to_pred_succ(order_constraint, predecessor, successor);
@@ -4153,50 +4174,6 @@ void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nm
     test_bit(tmp_reg, tmp_reg, exact_log2(SafepointMechanism::poll_bit()));
     bnez(tmp_reg, slow_path, /* is_far */ true);
   }
-}
-
-void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
-                                Label &succeed, Label *fail) {
-  assert_different_registers(addr, tmp, t0);
-  assert_different_registers(newv, tmp, t0);
-  assert_different_registers(oldv, tmp, t0);
-
-  // oldv holds comparison value
-  // newv holds value to write in exchange
-  // addr identifies memory word to compare against/update
-  if (UseZacas) {
-    mv(tmp, oldv);
-    atomic_cas(tmp, newv, addr, Assembler::int64, Assembler::aq, Assembler::rl);
-    beq(tmp, oldv, succeed);
-  } else {
-    Label retry_load, nope;
-    bind(retry_load);
-    // Load reserved from the memory location
-    load_reserved(tmp, addr, int64, Assembler::aqrl);
-    // Fail and exit if it is not what we expect
-    bne(tmp, oldv, nope);
-    // If the store conditional succeeds, tmp will be zero
-    store_conditional(tmp, newv, addr, int64, Assembler::rl);
-    beqz(tmp, succeed);
-    // Retry only when the store conditional failed
-    j(retry_load);
-
-    bind(nope);
-  }
-
-  // neither amocas nor lr/sc have an implied barrier in the failing case
-  membar(AnyAny);
-
-  mv(oldv, tmp);
-  if (fail != nullptr) {
-    j(*fail);
-  }
-}
-
-void MacroAssembler::cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
-                                        Label &succeed, Label *fail) {
-  assert(oopDesc::mark_offset_in_bytes() == 0, "assumption");
-  cmpxchgptr(oldv, newv, obj, tmp, succeed, fail);
 }
 
 void MacroAssembler::load_reserved(Register dst,
@@ -5538,13 +5515,6 @@ void MacroAssembler::decrementw(const Address dst, int32_t value, Register tmp1,
   lwu(tmp1, adr);
   subw(tmp1, tmp1, value, tmp2);
   sw(tmp1, adr);
-}
-
-void MacroAssembler::cmpptr(Register src1, const Address &src2, Label& equal, Register tmp) {
-  assert_different_registers(src1, tmp);
-  assert(src2.getMode() == Address::literal, "must be applied to a literal address");
-  ld(tmp, src2);
-  beq(src1, tmp, equal);
 }
 
 void MacroAssembler::load_method_holder_cld(Register result, Register method) {
