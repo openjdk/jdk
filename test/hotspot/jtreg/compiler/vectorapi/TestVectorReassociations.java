@@ -609,8 +609,6 @@ public class TestVectorReassociations {
 
     private static final Generators RD = Generators.G;
 
-    // Random, non-final broadcast values: runtime (non-constant) so the UMaxV/UMinV
-    // nodes are not folded away and survive for the IR checks below.
     static int uA, uB, uC;
 
     static {
@@ -623,7 +621,7 @@ public class TestVectorReassociations {
 
     // UMAX(UMAX(bcast(uA), bcast(uB)), bcast(uC)).
     @Test
-    @IR(counts = { IRNode.UMAX_VI, IRNode.VECTOR_SIZE_ANY, " >0 " },
+    @IR(counts = { IRNode.UMAX_VI, " >0 " },
         applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @Warmup(value = 10000)
     static void test_int_umax_all_broadcast() {
@@ -643,7 +641,7 @@ public class TestVectorReassociations {
 
     // UMIN(UMIN(bcast(uA), bcast(uB)), bcast(uC)).
     @Test
-    @IR(counts = { IRNode.UMIN_VI, IRNode.VECTOR_SIZE_ANY, " >0 " },
+    @IR(counts = { IRNode.UMIN_VI, " >0 " },
         applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @Warmup(value = 10000)
     static void test_int_umin_all_broadcast() {
