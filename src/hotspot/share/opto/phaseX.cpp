@@ -2203,6 +2203,11 @@ DeadPathNode* PhaseIterGVN::dead_path() {
   if (dead_path_node->in(0) != dead_path_node) {
     assert(C->root()->find_edge(dead_path_node) < 0, "");
     dead_path_node->set_req(0, dead_path_node);
+    while (dead_path_node->req() > 1) {
+      uint last = dead_path_node->req() - 1;
+      assert(dead_path_node->in(last) == nullptr || dead_path_node->in(last)->is_top(), "");
+      dead_path_node->del_req(last);
+    }
     C->root()->add_req(dead_path_node);
     _worklist.push(C->root());
     set_type(dead_path_node, dead_path_node->bottom_type());
@@ -2221,59 +2226,66 @@ void PhaseIterGVN::maybe_make_dependent_paths(Node* k, const Type* t) {
   wq.push(k);
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
-    if (n != k) {
-      if (n->is_Region()) {
-        // Find out through which of the Region's input, we reached that Region and mark it dead
-        for (uint j = 1; j < n->req(); j++) {
-          Node* in = n->in(j);
-          // We don't follow uses beyond Regions so if in is a Region, we couldn't reach this Region through it
-          if (in != nullptr && !in->is_Region() && wq.member(in)) {
-            replace_input_of(n, j, C->top());
-            in->remove_dead_region(this, true);
-          }
-        }
-        continue;
-      }
-      if (n->is_Phi()) {
-        // Find out through which of the Phi's input, we reached that Phi and mark the corresponding CFG path dead
-        for (uint j = 1; j < n->req(); j++) {
-          Node* in = n->in(j);
-          // We don't follow uses beyond Phis so if in is a Phi, we couldn't reach this Phi through it
-          if (in != nullptr && !in->is_Phi() && wq.member(in)) {
-            if (!n->in(0)->is_top() && n->in(0)->in(j) != nullptr && !n->in(0)->in(j)->is_top()) {
-              // We reached this CFG path through data nodes, record it in dead path to later insert an Halt node, if it
-              // doesn't die in the meantime
-              dead_path()->add_req(n->in(0)->in(j));
-              _worklist.push(dead_path());
-              replace_input_of(n->in(0), j, C->top());
-            }
-            replace_input_of(n, j, C->top());
-            if (in->outcnt() == 0) {
-              remove_dead_node(in, NodeOrigin::Graph);
-            }
-          }
-        }
-        continue;
-      }
-      // If we reached this CFG node through a data input...
-      if (n->is_CFG()) {
-        if (n->in(0) != nullptr && !n->in(0)->is_top()) {
-          // record it in dead path to later insert an Halt node, if it doesn't die in the meantime
-          dead_path()->add_req(n->in(0));
-          _worklist.push(dead_path());
-          replace_input_of(n, 0, C->top());
-        }
-        n->remove_dead_region(this, true);
-        continue;
-      }
-      if (n->outcnt() == 0) {
-        remove_dead_node(n, NodeOrigin::Graph);
-        continue;
-      }
+    if (n != k && (n->is_Phi() || n->is_CFG())) {
+      continue;
     }
     for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
       Node* u = n->fast_out(k);
       wq.push(u);
+    }
+  }
+  for (uint i = 0; i < wq.size(); i++) {
+    Node* n = wq.at(i);
+    if (n->is_Phi()) {
+      // Find out through which of the Phi's input, we reached that Phi and mark the corresponding CFG path dead
+      for (uint j = 1; j < n->req(); j++) {
+        Node* in = n->in(j);
+        // We don't follow uses beyond Phis so if in is a Phi, we couldn't reach this Phi through it
+        if (in != nullptr && !in->is_Phi() && wq.member(in)) {
+          if (!n->in(0)->is_top() && n->in(0)->in(j) != nullptr && !n->in(0)->in(j)->is_top()) {
+            // We reached this CFG path through data nodes, record it in dead path to later insert an Halt node, if it
+            // doesn't die in the meantime
+            dead_path()->add_req(n->in(0)->in(j));
+            _worklist.push(dead_path());
+            replace_input_of(n->in(0), j, C->top());
+          }
+          replace_input_of(n, j, C->top());
+          if (in->outcnt() == 0) {
+            remove_dead_node(in, NodeOrigin::Graph);
+          }
+        }
+      }
+      continue;
+    }
+    if (n == k) {
+      continue;
+    }
+    if (n->is_Region()) {
+      // Find out through which of the Region's input, we reached that Region and mark it dead
+      for (uint j = 1; j < n->req(); j++) {
+        Node* in = n->in(j);
+        // We don't follow uses beyond Regions so if in is a Region, we couldn't reach this Region through it
+        if (in != nullptr && !in->is_Region() && wq.member(in)) {
+          replace_input_of(n, j, C->top());
+          in->remove_dead_region(this, true);
+        }
+      }
+      continue;
+    }
+    // If we reached this CFG node through a data input...
+    if (n->is_CFG()) {
+      if (n->in(0) != nullptr && !n->in(0)->is_top()) {
+        // record it in dead path to later insert an Halt node, if it doesn't die in the meantime
+        dead_path()->add_req(n->in(0));
+        _worklist.push(dead_path());
+        replace_input_of(n, 0, C->top());
+      }
+      n->remove_dead_region(this, true);
+      continue;
+    }
+    if (n->outcnt() == 0) {
+      remove_dead_node(n, NodeOrigin::Graph);
+      continue;
     }
   }
 #ifdef ASSERT
