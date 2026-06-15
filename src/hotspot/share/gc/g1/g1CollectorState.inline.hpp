@@ -85,7 +85,7 @@ inline bool G1CollectorState::is_in_marking() const {
 }
 inline bool G1CollectorState::is_in_mark_or_rebuild() const {
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  return is_in_marking() || cm->is_in_rebuild_or_scrub();
+  return cm->is_in_mark_or_rebuild();
 }
 inline bool G1CollectorState::is_in_reset_for_next_cycle() const {
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();

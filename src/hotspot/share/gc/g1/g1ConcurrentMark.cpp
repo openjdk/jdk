@@ -547,8 +547,8 @@ bool G1ConcurrentMark::is_in_marking() const {
   return is_fully_initialized() ? cm_thread()->is_in_marking() : false;
 }
 
-bool G1ConcurrentMark::is_in_rebuild_or_scrub() const {
-  return is_fully_initialized() ? _cm_thread->is_in_rebuild_or_scrub() : false;
+bool G1ConcurrentMark::is_in_mark_or_rebuild() const {
+  return is_fully_initialized() ? _cm_thread->is_in_mark_or_rebuild() : false;
 }
 
 bool G1ConcurrentMark::is_in_reset_for_next_cycle() const {

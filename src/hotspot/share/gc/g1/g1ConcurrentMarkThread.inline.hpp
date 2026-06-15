@@ -79,8 +79,9 @@ inline bool G1ConcurrentMarkThread::is_in_marking() const {
   return _state == FullCycleMarking;
 }
 
-inline bool G1ConcurrentMarkThread::is_in_rebuild_or_scrub() const {
-  return _state == FullCycleRebuildOrScrub;
+inline bool G1ConcurrentMarkThread::is_in_mark_or_rebuild() const {
+  ServiceState st = _state;
+  return st == FullCycleMarking || st == FullCycleRebuildOrScrub;
 }
 
 inline bool G1ConcurrentMarkThread::is_in_reset_for_next_cycle() const {
