@@ -5185,6 +5185,8 @@ const TypeAryPtr* TypeAryPtr::cast_to_null_free(bool null_free) const {
   if (speculative != nullptr && speculative->isa_aryptr()) {
     if (null_free && speculative->is_aryptr()->is_not_null_free()) {
       speculative = nullptr;
+    } else {
+      speculative = speculative->is_aryptr()->cast_to_null_free(null_free);
     }
   }
   new_elem = elem->isa_narrowoop() ? new_elem->make_narrowoop() : new_elem;

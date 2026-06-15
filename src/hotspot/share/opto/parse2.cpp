@@ -123,6 +123,8 @@ private:
 
     // ary = create_speculative_inline_type_array_checks(ary, arytype, elemtype);
 
+    cast_to_speculative_array_type(arytype);
+
     if (_parse.needs_range_check(sizetype, _array_index)) {
       _parse.create_range_check(_array_index, _array, sizetype);
     } else if (_parse.C->log() != nullptr) {
@@ -535,9 +537,6 @@ public:
     if (_parse.stopped())  return true; //top();
 
     const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr();
-
-    cast_to_speculative_array_type(array_type);
-
     const TypeOopPtr* element_ptr = _elemtype->make_oopptr();
 
     if (array_type->is_not_flat()) {
