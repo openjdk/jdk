@@ -36,18 +36,16 @@ inline void G1CollectionSet::merge_cardsets_for_collection_groups(CardOrRangeVis
     G1HeapRegionRemSet::iterate_for_merge(_g1h->young_regions_cset_group()->card_set(), cl);
   }
 
-  uint next_group_increment = num_groups_in_increment();
+  const uint next_group_increment = num_groups_in_increment();
   if (next_group_increment == 0) {
     return;
   }
 
   uint start_pos = (worker_id * next_group_increment) / num_workers;
   uint cur_pos = start_pos;
-  uint count = 0;
   do {
     G1HeapRegionRemSet::iterate_for_merge(_groups.at(offset + cur_pos)->card_set(), cl);
     cur_pos++;
-    count++;
     if (cur_pos == next_group_increment) {
       cur_pos = 0;
     }

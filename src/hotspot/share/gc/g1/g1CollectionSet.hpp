@@ -245,8 +245,8 @@ public:
 
   void prepare_for_scan();
 
-  void init_regions_counts(uint eden_cset_regions_count,
-                           uint survivor_cset_regions_count);
+  void init_region_counts(uint eden_cset_regions_count,
+                          uint survivor_cset_regions_count);
 
   // Total number of regions in the initial collection set.
   uint initial_regions_count() const { return young_regions_count() +

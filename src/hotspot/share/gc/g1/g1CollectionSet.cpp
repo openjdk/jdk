@@ -76,8 +76,8 @@ G1CollectionSet::~G1CollectionSet() {
   abandon_all_candidates();
 }
 
-void G1CollectionSet::init_regions_counts(uint eden_cset_regions_count,
-                                          uint survivor_cset_regions_count) {
+void G1CollectionSet::init_region_counts(uint eden_cset_regions_count,
+                                         uint survivor_cset_regions_count) {
   assert_at_safepoint_on_vm_thread();
 
   _eden_regions_count     = eden_cset_regions_count;
@@ -138,7 +138,8 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 void G1CollectionSet::start() {
   assert(num_regions() == 0, "Collection set must be empty before starting a new collection set.");
   assert(num_groups() == 0, "Collection set groups must be empty before starting a new collection set.");
-  assert(_optional_groups.length() == 0, "Collection set optional group must be empty before starting a new collection set.");
+  assert(_optional_groups.length() == 0,
+         "Collection set optional groups must be empty before starting a new collection set.");
 
   continue_incremental_building();
 
@@ -229,7 +230,7 @@ void G1CollectionSet::add_young_region_common(G1HeapRegion* hr) {
   hr->set_young_index_in_cset(index + 1);
 
   assert(index < _max_regions, "Collection set larger than maximum allowed.");
-  _regions[index++] = hr->hrm_index();
+  _regions[index] = hr->hrm_index();
   // Concurrent readers must observe the store of the value in the array before an
   // update to the _num_regions field.
   OrderAccess::storestore();
@@ -337,7 +338,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 
   uint eden_regions_count = _g1h->eden_regions_count();
   uint survivor_regions_count = survivors->length();
-  init_regions_counts(eden_regions_count, survivor_regions_count);
+  init_region_counts(eden_regions_count, survivor_regions_count);
 
   verify_young_cset_indices();
 
