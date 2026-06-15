@@ -696,6 +696,10 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
     notify_control_thread(cause, generation);
     ml.wait();
     current_gc_id = get_gc_id();
+    if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
+      // exit early to retry the allocation
+      break;
+    }
   }
 }
 
