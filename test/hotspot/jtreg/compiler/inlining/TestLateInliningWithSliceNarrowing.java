@@ -87,6 +87,10 @@ public class TestLateInliningWithSliceNarrowing {
         return a.f;
     }
 
+    static Object lateBase(A a) {
+        return a;
+    }
+
     // Test that when lateStore() is inlined, the IGVN-recorded type of the
     // accessed memory address (captured by an AddP) has been updated to reflect
     // the compiler-known offset discovered by inlining lateOffset(). Failure to
@@ -141,6 +145,23 @@ public class TestLateInliningWithSliceNarrowing {
         return a2.f + val;
     }
 
+    // Test a variation of the first test where the offset is compiler-known
+    // from the beginning, but the unsafe base address is only discovered by
+    // inlining lateBase(). This variation does not require a cleanup between
+    // the late inlining of lateBase() and lateLoad() for correctness: a slice
+    // mismatch cannot occur because the memory access within lateLoad() does
+    // not reuse the same address node (AddP) as the unsafe load. The unsafe
+    // load address node is not reusable by the lateLoad() access because it is
+    // obscured by casts by the time lateLoad() is late inlined. Making the
+    // address node reusable by both loads would require a cleanup round, which
+    // would prevent the mismatch from happening in the first place.
+    static int testLoadFromLateDiscoveredBaseThenLoadFromKnownBase(A a) {
+        Object obj = lateBase(a);
+        int val = UNSAFE.getInt(obj, F_OFFSET);
+        lateLoad(a);
+        return val;
+    }
+
     public static void main(String[] args) {
         for (int i = 0; i < 10_000; i++) {
             {
@@ -167,6 +188,11 @@ public class TestLateInliningWithSliceNarrowing {
                 A a = new A();
                 int result = testLoadFromLateDiscoveredOffsetThenStoreAtConstOffsetThenReloadFromConstOffset(a);
                 Asserts.assertEquals(42, result);
+            }
+            {
+                A a = new A();
+                int result = testLoadFromLateDiscoveredBaseThenLoadFromKnownBase(a);
+                Asserts.assertEquals(0, result);
             }
         }
     }
