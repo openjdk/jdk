@@ -34,12 +34,14 @@
  */
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -50,6 +52,17 @@ public class SystemFilesClosed {
 
     @Test
     void testSystemFilesClosed() throws Exception {
+        // Probe lsof availability before doing the jlink/jdeps work
+        try {
+            Process process = new ProcessBuilder("lsof", "-v")
+                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .redirectError(ProcessBuilder.Redirect.DISCARD)
+                    .start();
+            process.waitFor();
+        } catch (IOException ex) {
+            Assumptions.abort("lsof is not available on this system");
+        }
+
         String targetSystem = base.toString();
         int ret = java.util.spi.ToolProvider.findFirst("jlink")
                 .orElseThrow()
