@@ -1804,7 +1804,7 @@ void G1CollectedHeap::increment_old_marking_cycles_started() {
          "Wrong marking cycle count (started: %u, completed: %u)",
          old_marking_cycles_started(), old_marking_cycles_completed());
 
-  _old_marking_cycles_started.store_relaxed(old_marking_cycles_started() + 1);
+  _old_marking_cycles_started.add_then_fetch(1u, memory_order_relaxed);
 }
 
 void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
