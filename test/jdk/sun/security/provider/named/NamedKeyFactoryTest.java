@@ -125,8 +125,6 @@ public class NamedKeyFactoryTest {
 
         Asserts.assertEqualsByteArray(kf2.generatePublic(prk).getEncoded(), pk.getEncoded());
         Utils.runAndCheckException(() -> kf.generatePublic(prk), InvalidKeySpecException.class); // no pname
-        Asserts.assertEqualsByteArray(kf2.generatePublic(prk).getEncoded(), pk.getEncoded());
-        Utils.runAndCheckException(() -> kf.generatePublic(prk), InvalidKeySpecException.class); // no pname
 
         var srk = kf.getKeySpec(sk, EncodedKeySpec.class);
         Asserts.assertEquals("RAW", srk.getFormat());

@@ -202,7 +202,8 @@ public class Hybrid {
                 throw new InvalidKeyException("key must not be null");
             }
 
-            if ("RAW".equalsIgnoreCase(inKey.getFormat())) {
+            if (inKey instanceof PublicKey
+                    && "RAW".equalsIgnoreCase(inKey.getFormat())) {
                 byte[] key = inKey.getEncoded();
                 if (key == null) {
                     throw new InvalidKeyException(
@@ -255,7 +256,9 @@ public class Hybrid {
                             "hybrid key", e);
                 }
             } else {
-                throw new InvalidKeyException("Unknow key format " + inKey.getFormat());
+                throw new InvalidKeyException("Unknown key "
+                        + inKey.getClass().getName() + " in "
+                        + inKey.getFormat());
             }
         }
     }

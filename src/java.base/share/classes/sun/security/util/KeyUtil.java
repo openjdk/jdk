@@ -596,58 +596,35 @@ public final class KeyUtil {
 
     public static PublicKey newRawPublicKey(String algorithm,
             AlgorithmParameterSpec params, byte[] key) {
-        return new PublicKey() {
-
-            @Override
-            public String getAlgorithm() {
-                return algorithm;
-            }
-
-            @Override
-            public String getFormat() {
-                return "RAW";
-            }
-
-            @Override
-            public byte[] getEncoded() {
-                return key.clone();
-            }
-
-            @Override
-            public AlgorithmParameterSpec getParams() {
-                return params;
-            }
-        };
+        return new RawPublicKey(algorithm, params, key);
     }
 
-    public static PrivateKey newRawPrivateKey(String algorithm, byte[] key) {
-        return newRawPrivateKey(algorithm, null, key);
-    }
+    private record RawPublicKey(String algorithm, AlgorithmParameterSpec params,
+            byte[] data) implements PublicKey {
 
-    public static PrivateKey newRawPrivateKey(String algorithm,
-            AlgorithmParameterSpec params, byte[] key) {
-        return new PrivateKey() {
+        RawPublicKey {
+            data = data.clone();
+        }
 
-            @Override
-            public String getAlgorithm() {
-                return algorithm;
-            }
+        @Override
+        public String getAlgorithm() {
+            return algorithm;
+        }
 
-            @Override
-            public String getFormat() {
-                return "RAW";
-            }
+        @Override
+        public String getFormat() {
+            return "RAW";
+        }
 
-            @Override
-            public byte[] getEncoded() {
-                return key.clone();
-            }
+        @Override
+        public byte[] getEncoded() {
+            return data.clone();
+        }
 
-            @Override
-            public AlgorithmParameterSpec getParams() {
-                return params;
-            }
-        };
+        @Override
+        public AlgorithmParameterSpec getParams() {
+            return params;
+        }
     }
 }
 
