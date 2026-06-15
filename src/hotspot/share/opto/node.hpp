@@ -1062,7 +1062,7 @@ public:
 
    void mark_not_dead_loop_safe() {
      assert(is_dead_loop_safe(), "shouldn't be cleared yet");
-     clear_flag(Node::Flag_is_dead_loop_safe);
+     remove_flag(Node::Flag_is_dead_loop_safe);
   }
 
   // is_Copy() returns copied edge index (0 or 1)
