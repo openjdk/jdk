@@ -45,7 +45,6 @@ import jdk.test.whitebox.WhiteBox;
  * @summary C2: investigate intrinsification of Preconditions.checkFromToIndex() and Preconditions.checkFromIndexSize()
  * @requires vm.compiler2.enabled
  * @library /test/lib /
- * @modules java.base/jdk.internal.util
  * @build jdk.test.whitebox.WhiteBox
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -342,7 +341,7 @@ public class TestCheckIndexIntrinsics {
 
     private static void assertIsNotCompiled(Method m) {
         if (WHITE_BOX.isMethodCompiled(m) && WHITE_BOX.getMethodCompilationLevel(m) == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new AssertionError("should have been deoptimized");
+            throw new AssertionError("should have been deoptimized: " + m);
         }
     }
 
@@ -358,6 +357,67 @@ public class TestCheckIndexIntrinsics {
             }, null);
         } catch (MalformedURLException e) {
             throw new RuntimeException("Unexpected URL conversion failure", e);
+        }
+    }
+
+    // Objects.checkFromToIndex/checkFromIndexSize lack @ForceInline and exceed MaxTrivialSize,
+    // so C2 won't inline them without sufficient call site profiling data. Use WhiteBox to set
+    // force-inline so C2 always inlines through to the @IntrinsicCandidate on Preconditions.
+    private static final Method[] OBJECTS_NEEDS_FORCE_INLINE;
+    static {
+        try {
+            OBJECTS_NEEDS_FORCE_INLINE = new Method[] {
+                Objects.class.getDeclaredMethod("checkFromToIndex", int.class, int.class, int.class),
+                Objects.class.getDeclaredMethod("checkFromIndexSize", int.class, int.class, int.class),
+                Objects.class.getDeclaredMethod("checkFromToIndex", long.class, long.class, long.class),
+                Objects.class.getDeclaredMethod("checkFromIndexSize", long.class, long.class, long.class),
+            };
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+    private static void testShouldDeopt(Method method, Object[] args) throws Exception {
+        Class<?> c = newClassLoader().loadClass(TestCheckIndexIntrinsics.class.getName());
+        String methodName = method.getName();
+        Class<?> type = method.getReturnType();
+
+        Method m = method.getParameterCount() == 2
+                ? c.getDeclaredMethod(methodName, type, type)
+                : c.getDeclaredMethod(methodName, type, type, type);
+        Object[] compileArgs = method.getParameterCount() == 2
+                ? new Object[]{1, 2}
+                : new Object[]{1, 2, 3};
+
+        if (type == long.class) {
+            compileArgs = Stream.of(compileArgs).map(i -> ((Integer) i).longValue()).toArray(Object[]::new);
+        }
+
+        assertIsNotCompiled(m);
+
+        for (Method fm : OBJECTS_NEEDS_FORCE_INLINE) {
+            WHITE_BOX.testSetForceInlineMethod(fm, true);
+        }
+        // Prevent the reflection LambdaForm from inlining our method so the
+        // uncommon trap fires in our C2 nmethod, not the LambdaForm's code.
+        WHITE_BOX.testSetDontInlineMethod(m, true);
+
+        m.invoke(null, compileArgs);
+        compile(m);
+
+        try {
+            m.invoke(null, args);
+            throw new AssertionError(String.format("%s(%s): should have thrown", method, Arrays.toString(args)));
+        } catch (InvocationTargetException e) {
+            if (!(e.getCause() instanceof IndexOutOfBoundsException)) {
+                throw new AssertionError("unexpected exception", e);
+            }
+        }
+        assertIsNotCompiled(m);
+
+        WHITE_BOX.testSetDontInlineMethod(m, false);
+        for (Method fm : OBJECTS_NEEDS_FORCE_INLINE) {
+            WHITE_BOX.testSetForceInlineMethod(fm, false);
         }
     }
 
@@ -379,8 +439,7 @@ public class TestCheckIndexIntrinsics {
 
         assertIsNotCompiled(m);
 
-        // run and compile with known "good" values
-        m.invoke(null, compileArgs); // run once so all classes are loaded
+        m.invoke(null, compileArgs);
         compile(m);
 
         m.invoke(null, compileArgs);
@@ -441,6 +500,15 @@ public class TestCheckIndexIntrinsics {
         Method unintrinsifiedCheckIndexL = TestCheckIndexIntrinsics.class.getDeclaredMethod("unintrinsifiedCheckIndexL", long.class, long.class);
         Method unintrinsifiedCheckFromToIndexL = TestCheckIndexIntrinsics.class.getDeclaredMethod("unintrinsifiedCheckFromToIndexL", long.class, long.class, long.class);
         Method unintrinsifiedCheckFromIndexSizeL = TestCheckIndexIntrinsics.class.getDeclaredMethod("unintrinsifiedCheckFromIndexSizeL", long.class, long.class, long.class);
+
+        // Test that OOB triggers deoptimization from compiled intrinsic (one per method, before
+        // trap data accumulates in the inline chain and prevents subsequent intrinsifications)
+        testShouldDeopt(checkIndex, new Object[]{-1, 5});
+        testShouldDeopt(checkFromToIndex, new Object[]{-1, 5, 10});
+        testShouldDeopt(checkFromIndexSize, new Object[]{-1, 2, 5});
+        testShouldDeopt(checkIndexL, new Object[]{-1L, 5L});
+        testShouldDeopt(checkFromToIndexL, new Object[]{-1L, 5L, 10L});
+        testShouldDeopt(checkFromIndexSizeL, new Object[]{-1L, 2L, 5L});
 
         checkIndex.invoke(null, 0, 42);
         checkFromToIndex.invoke(null, 1, 16, 42);
