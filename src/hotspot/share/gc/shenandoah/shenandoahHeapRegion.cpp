@@ -496,7 +496,7 @@ bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable, bool do_card_
         // jump straight to a full GC. If this region is pinned when the full GC cycle starts, it will
         // not be compacted. Therefore, if the region is old, we must fill in any unmarked objects. However,
         // promoted objects will not have been registered yet, so we cannot use the card table here.
-        assert(ShenandoahHeap::heap()->is_full_gc_in_progress(), "Can only skip card table updates during a full GC");
+        assert(heap->is_full_gc_in_progress(), "Can only skip card table updates during a full GC");
       }
 
       obj_addr = next_marked_obj;
