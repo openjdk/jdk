@@ -80,6 +80,17 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
 
   // Ask FreeSet to find a suitable region.
   ShenandoahHeapRegion* r = _free_set->find_region_for_alloc<PARTITION>(min_req_words, in_new_region);
+  // Collector partitions can overflow into Mutator partition.
+  if constexpr (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
+    if (r == nullptr && ShenandoahEvacReserveOverflow) {
+      r = _free_set->steal_from_mutator(PARTITION, req);
+      if (r != nullptr) {
+        assert(r->is_empty(), "Stolen region must be empty");
+        in_new_region = true;
+      }
+    }
+  }
+
   if (r != nullptr) {
     HeapWord* result = allocate_in(r, req, boundary_changed);
     if (in_new_region) {
@@ -88,23 +99,6 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
     }
     _free_set->notify_allocation(PARTITION, in_new_region, boundary_changed);
     return result;
-  }
-
-  // Collector partitions can overflow into Mutator partition.
-  if constexpr (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
-    if (ShenandoahEvacReserveOverflow) {
-      ShenandoahHeapRegion* stolen = _free_set->steal_from_mutator(PARTITION, req);
-      if (stolen != nullptr) {
-        assert(stolen->is_empty(), "Stolen region must be empty");
-        HeapWord* result = allocate_in(stolen, req, boundary_changed);
-        _free_set->mark_region_used(PARTITION);
-        in_new_region = true;
-        boundary_changed = true;
-        // Stealing always produces a new region, which implies a boundary change.
-        _free_set->notify_allocation(PARTITION, in_new_region, in_new_region);
-        return result;
-      }
-    }
   }
 
   // Every path that mutates a partition boundary (allocate_in retire, new region, steal) returns
