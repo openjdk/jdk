@@ -1839,7 +1839,7 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
          "is inconsistent with old_marking_cycles_completed = %u",
          old_marking_cycles_started(), old_marking_cycles_completed());
 
-  _old_marking_cycles_completed.store_relaxed(old_marking_cycles_completed() + 1);
+  _old_marking_cycles_completed.add_then_fetch(1u, memory_order_relaxed);
   if (whole_heap_examined) {
     // Signal that we have completed a visit to all live objects.
     record_whole_heap_examined_timestamp();
