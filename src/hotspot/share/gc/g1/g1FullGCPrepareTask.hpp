@@ -28,6 +28,7 @@
 #include "gc/g1/g1FullGCTask.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 class G1CollectedHeap;
 class G1CMBitMap;
@@ -61,7 +62,7 @@ public:
 };
 
 class G1FullGCPrepareTask : public G1FullGCTask {
-  volatile bool     _has_free_compaction_targets;
+  Atomic<bool> _has_free_compaction_targets;
   G1HeapRegionClaimer _hrclaimer;
 
   void set_has_free_compaction_targets();
