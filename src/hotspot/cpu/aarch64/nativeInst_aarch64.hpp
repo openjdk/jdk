@@ -113,6 +113,12 @@ public:
     return is_ldr_literal_at(addr_at(0));
   }
 
+  static bool is_ldrw_literal_at(address instr);
+
+  bool is_ldrw_literal() {
+    return is_ldrw_literal_at(addr_at(0));
+  }
+
   static bool is_ldrw_to_zr(address instr);
 
   static bool is_call_at(address instr) {
