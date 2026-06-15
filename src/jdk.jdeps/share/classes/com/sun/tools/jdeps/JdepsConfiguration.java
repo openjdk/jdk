@@ -327,8 +327,7 @@ public class JdepsConfiguration implements AutoCloseable {
                 this.fileSystem = FileSystems.newFileSystem(URI.create("jrt:/"), env);
                 closeables.add(fileSystem);
                 ClassLoader cl = fileSystem.provider().getClass().getClassLoader();
-                if (cl != JdepsConfiguration.class.getClassLoader()
-                        && cl instanceof URLClassLoader urlcl) {
+                if (cl instanceof URLClassLoader urlcl) {
                     closeables.add(urlcl);
                 }
                 this.root = fileSystem.getPath("/modules");
@@ -432,19 +431,20 @@ public class JdepsConfiguration implements AutoCloseable {
         }
 
         public void close() throws IOException {
-            List<IOException> list = new ArrayList<>();
-            closeables.forEach(closeable -> {
+            IOException ioe = null;
+            for (Closeable closeable : closeables) {
                 try {
                     closeable.close();
                 } catch (IOException ex) {
-                    list.add(ex);
+                    if (ioe == null) {
+                        ioe = ex;
+                    } else {
+                        ioe.addSuppressed(ex);
+                    }
                 }
-            });
-            if (!list.isEmpty()) {
-                IOException ex = new IOException();
-                for (IOException e: list)
-                    ex.addSuppressed(e);
-                throw ex;
+            }
+            if (ioe != null) {
+                throw ioe;
             }
         }
     }
