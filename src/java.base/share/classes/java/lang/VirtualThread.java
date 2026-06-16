@@ -1499,8 +1499,21 @@ final class VirtualThread extends BaseVirtualThread {
         // Raw memory pointer to the pool. The pool is then
         // sliced into separate segments each of which as a size
         // of PoolConfigHolder.POOLED_MEMORY_SIZE.
-        private static final long POOL = allocatePool();
-        private static final long FLAGS = allocateFLags();
+        private static final long POOL;
+        private static final long FLAGS;
+
+        static {
+            final long pool = allocatePool();
+            final long flags = allocateFLags();
+            if (pool == NO_POOLING || flags == NO_POOLING) {
+                // We were unable to allocate memory
+                POOL = NO_POOLING;
+                FLAGS = NO_POOLING;
+            } else {
+                POOL = pool;
+                FLAGS = flags;
+            }
+        }
 
         @ForceInline
         static long acquirePooledMemory(VirtualThread thread) {
@@ -1559,9 +1572,13 @@ final class VirtualThread extends BaseVirtualThread {
                 // Pooling disabled
                 return NO_POOLING;
             }
-            final long pool = U.allocateMemory(size);
-            U.setMemory(pool, size, (byte) 0);
-            return pool;
+            try {
+                final long pool = U.allocateMemory(size);
+                U.setMemory(pool, size, (byte) 0);
+                return pool;
+            } catch (OutOfMemoryError e) {
+                return NO_POOLING;
+            }
         }
 
     }
