@@ -84,7 +84,7 @@ void G1CollectionSet::init_region_counts(uint eden_cset_regions_count,
   _survivor_regions_count = survivor_cset_regions_count;
 
   assert(young_regions_count() == num_regions(),
-         "Young region count %u should match collection set region count %u", young_regions_count(), num_regions());
+         "Young regions count %u should match collection set regions count %u", young_regions_count(), num_regions());
 
   _initial_old_regions_count = 0;
   assert(_optional_groups.length() == 0, "Should not have any optional groups yet");
