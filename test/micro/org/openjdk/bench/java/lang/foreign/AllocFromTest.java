@@ -75,9 +75,9 @@ public class AllocFromTest extends CLayouts {
 
     @Fork(jvmArgsAppend = {"-Djava.lang.foreign.native.confined.pool.power.size=0"})
     @Benchmark
-    public long alloc_confined_no_pool() {
+    public MemorySegment alloc_confined_no_pool() {
         try (Arena arena = Arena.ofConfined()) {
-            return arena.allocate(size).address();
+            return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
         }
     }
 

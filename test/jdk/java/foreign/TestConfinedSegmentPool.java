@@ -414,7 +414,7 @@ final class TestConfinedSegmentPool {
             Thread thread = threadBuilder.factory().newThread(() -> {
                 boolean acquiredCountedDown = false;
                 try {
-                    // Deliberately keep this arena open until the thred completes
+                    // Deliberately keep this arena open until the thread completes
                     Arena arena = Arena.ofConfined();
                     arena.allocate(ValueLayout.JAVA_BYTE);
                     assertNotEquals(0, confinedMemoryPool(Thread.currentThread()));

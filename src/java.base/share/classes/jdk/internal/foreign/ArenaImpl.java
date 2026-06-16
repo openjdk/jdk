@@ -25,6 +25,8 @@
 
 package jdk.internal.foreign;
 
+import jdk.internal.vm.annotation.ForceInline;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment.Scope;
 
@@ -46,11 +48,14 @@ public final class ArenaImpl implements Arena {
         session.close();
     }
 
+    @ForceInline
     public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
         return session.allocateLowLevel(byteSize, byteAlignment, false);
     }
 
+
     @Override
+    @ForceInline
     public NativeMemorySegmentImpl allocate(long byteSize, long byteAlignment) {
         return session.allocateLowLevel(byteSize, byteAlignment, true);
     }
