@@ -70,11 +70,16 @@ import jdk.internal.perf.PerfCounter;
 
 /**
  * A {@code ModuleFinder} that locates modules on the file system by searching
- * a sequence of directories or packaged modules. The ModuleFinder can be
- * created to work in either the run-time or link-time phases. In both cases it
- * locates modular JAR and exploded modules. When created for link-time then it
- * additionally locates modules in JMOD files. The ModuleFinder can also
- * optionally patch any modules that it locates with a ModulePatcher.
+ * a sequence of directories or packaged modules.
+ *
+ * <p> A ModulePath can be created to locate modules on a module path at run-time or
+ * link-time. In both cases it supports modular JARs and exploded modules. At link-time
+ * it additionally locates modules in JMOD files. The ModuleFinder can also optionally
+ * patch the modules that it locates with a ModulePatcher.
+ *
+ * <p> A ModulePath can also be created to locate modules in a JDK exploded image. It
+ * can optionally patch any modules that it locates with a ModulePatcher, and it can
+ * support preview classes in META-INF/preview when running with preview features enabled.
  */
 
 public class ModulePath implements ModuleFinder {
@@ -85,46 +90,34 @@ public class ModulePath implements ModuleFinder {
 
     // true for the link phase (supports modules packaged in JMOD format)
     private final boolean isLinkPhase;
-    // true if the found modules should return preview versions of resources
-    // (this must only be set for system modules).
-    private final boolean previewMode;
 
     // for patching modules, can be null
     private final ModulePatcher patcher;
+
+    // true for a module path to a JDK exploded image and preview features are enabled
+    private final boolean previewMode;
 
     // the entries on this module path
     private final Path[] entries;
     private int next;
 
-    // map of module name to module reference map for modules already located
+    // map of module name to module reference for modules already located
     private final Map<String, ModuleReference> cachedModules = new HashMap<>();
 
 
     private ModulePath(Runtime.Version version,
                        boolean isLinkPhase,
-                       boolean previewMode,
                        ModulePatcher patcher,
+                       boolean previewMode,
                        Path... entries) {
         this.releaseVersion = version;
         this.isLinkPhase = isLinkPhase;
-        this.previewMode = previewMode;
         this.patcher = patcher;
+        this.previewMode = previewMode;
         this.entries = entries.clone();
         for (Path entry : this.entries) {
             Objects.requireNonNull(entry);
         }
-    }
-
-    /**
-     * Returns a ModuleFinder for an exploded JDK build where {@code moduleDir}
-     * is the $JAVA_HOME/modules directory. The modules may be patched by the
-     * given ModulePatcher.
-     *
-     * <p>Preview mode is only permitted for system modules, and this method
-     * should only be called from {@link SystemModuleFinders#ofSystem()}.
-     */
-    public static ModuleFinder of(ModulePatcher patcher, boolean previewMode, Path moduleDir) {
-        return new ModulePath(JarFile.runtimeVersion(), false, previewMode, patcher, moduleDir);
     }
 
     /**
@@ -133,7 +126,7 @@ public class ModulePath implements ModuleFinder {
      * may be patched by the given ModulePatcher.
      */
     public static ModuleFinder of(ModulePatcher patcher, Path... entries) {
-        return new ModulePath(JarFile.runtimeVersion(), false, false, patcher, entries);
+        return new ModulePath(JarFile.runtimeVersion(), false, patcher, false, entries);
     }
 
     /**
@@ -141,7 +134,7 @@ public class ModulePath implements ModuleFinder {
      * searching a sequence of directories and/or packaged modules.
      */
     public static ModuleFinder of(Path... entries) {
-        return of((ModulePatcher)null, entries);
+        return of(null, entries);
     }
 
     /**
@@ -154,9 +147,24 @@ public class ModulePath implements ModuleFinder {
     public static ModuleFinder of(Runtime.Version version,
                                   boolean isLinkPhase,
                                   Path... entries) {
-        return new ModulePath(version, isLinkPhase, false, null, entries);
+        return new ModulePath(version, isLinkPhase, null, false, entries);
     }
 
+    /**
+     * Returns a ModuleFinder that locates modules in a JDK exploded image.
+     * @param modulesDir the modules directory ($JAVA_HOME/modules)
+     * @param patcher the ModulePatcher or null
+     * @param previewMode true if preview features are enabled
+     */
+    public static ModuleFinder ofExplodedImage(Path modulesDir,
+                                               ModulePatcher patcher,
+                                               boolean previewMode) {
+        return new ModulePath(JarFile.runtimeVersion(), // not used for exploded image
+                              false,
+                              patcher,
+                              previewMode,
+                              modulesDir);
+    }
 
     @Override
     public Optional<ModuleReference> find(String name) {

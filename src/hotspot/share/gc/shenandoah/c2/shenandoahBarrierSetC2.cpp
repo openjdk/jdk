@@ -557,8 +557,10 @@ bool ShenandoahBarrierSetC2::clone_needs_barrier(const TypeOopPtr* src_type, boo
   } else if (src_type->isa_aryptr() != nullptr) {
     // Array: need barrier only if array is oop-bearing.
     BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
-    if (is_reference_type(src_elem, true)) {
+    if (is_reference_type(src_elem, true) && src_type->is_not_flat()) {
       is_oop_array = true;
+    } else if (!src_type->is_not_flat()) {
+      // Maybe flat, assume the worst.
     } else {
       return false;
     }
@@ -636,6 +638,12 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
   const jlong offset = src_offset->get_long();
   const TypeAryPtr* const ary_ptr = src->get_ptr_type()->isa_aryptr();
   BasicType bt = ary_ptr->elem()->array_element_basic_type();
+  if (offset != arrayOopDesc::base_offset_in_bytes(bt)) {
+    // Something is off with flat arrays. Go to runtime instead.
+    // TODO: Figure this out.
+    clone_in_runtime(phase, ac, ShenandoahRuntime::clone_addr(), "ShenandoahRuntime::clone");
+    return;
+  }
   assert(offset == arrayOopDesc::base_offset_in_bytes(bt), "should match");
 
   const char*   copyfunc_name = "arraycopy";

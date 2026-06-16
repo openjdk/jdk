@@ -170,7 +170,7 @@ public enum AccessFlag {
      * <code>{@value "0x%04x" ClassFile#ACC_IDENTITY}</code>.
      *
      * @jvms value-objects-4.1 Class access and property modifiers
-     * @since Valhalla
+     * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective=true)
     IDENTITY(ACC_IDENTITY, false,
@@ -281,7 +281,7 @@ public enum AccessFlag {
      * <code>{@value "0x%04x" ClassFile#ACC_STRICT_INIT}</code>.
      *
      * @jvms strict-fields-4.5 Field access and property flags
-     * @since Valhalla
+     * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STRICT_FIELDS, reflective=true)
     STRICT_INIT(ACC_STRICT_INIT, false,

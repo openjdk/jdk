@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,8 +267,7 @@ class relocInfo {
     runtime_call_w_cp_type  = 14, // Runtime call which may load its target from the constant pool
     data_prefix_tag         = 15, // tag for a prefix (carries data arguments)
     post_call_nop_type      = 16, // A tag for post call nop relocations
-    entry_guard_type        = 17, // A tag for an nmethod entry barrier guard value
-    barrier_type            = 18, // GC barrier data
+    barrier_type            = 17, // GC barrier data
     type_mask               = 31  // A mask which selects only the above values
   };
 
@@ -309,7 +308,6 @@ class relocInfo {
     visitor(section_word) \
     visitor(trampoline_stub) \
     visitor(post_call_nop) \
-    visitor(entry_guard) \
     visitor(barrier) \
 
 
@@ -919,19 +917,6 @@ public:
 
   static RelocationHolder spec() {
     return RelocationHolder::construct<post_call_nop_Relocation>();
-  }
-
-  void copy_into(RelocationHolder& holder) const override;
-};
-
-class entry_guard_Relocation : public Relocation {
-  friend class RelocationHolder;
-
-public:
-  entry_guard_Relocation() : Relocation(relocInfo::entry_guard_type) { }
-
-  static RelocationHolder spec() {
-    return RelocationHolder::construct<entry_guard_Relocation>();
   }
 
   void copy_into(RelocationHolder& holder) const override;

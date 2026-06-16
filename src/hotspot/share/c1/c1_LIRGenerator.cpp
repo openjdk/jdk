@@ -1869,6 +1869,11 @@ void LIRGenerator::check_null_free_array(LIRItem& array, LIRItem& value, CodeEmi
   LabelObj* L_end = new LabelObj();
   LIR_Opr tmp = new_register(T_METADATA);
   __ check_null_free_array(array.result(), tmp);
+#ifdef RISCV
+  // tmp is used to hold the result of null free array check on riscv
+  // See LIR_Assembler::emit_opNullFreeArrayCheck
+  __ cmp(lir_cond_equal, tmp, LIR_OprFact::metadataConst(nullptr));
+#endif
   __ branch(lir_cond_equal, L_end->label());
   __ null_check(value.result(), info);
   __ branch_destination(L_end->label());
@@ -3010,7 +3015,11 @@ void LIRGenerator::profile_null_free_array(LIRItem array, ciMethodData* md, ciPr
   LabelObj* L_end = new LabelObj();
   LIR_Opr tmp = new_register(T_METADATA);
   __ check_null_free_array(array.result(), tmp);
-
+#ifdef RISCV
+  // tmp is used to hold the result of null free array check on riscv
+  // See LIR_Assembler::emit_opNullFreeArrayCheck
+  __ cmp(lir_cond_equal, tmp, LIR_OprFact::metadataConst(nullptr));
+#endif
   profile_flags(md, data, ArrayStoreData::null_free_array_byte_constant(), lir_cond_equal);
 }
 
@@ -3707,7 +3716,7 @@ void LIRGenerator::do_ProfileACmpTypes(ProfileACmpTypes* x) {
     __ metadata2reg(md->constant_encoding(), mdp);
     LIRItem value(x->right(), this);
     value.load_item();
-    __ profile_inline_type(new LIR_Address(mdp, flags_offset, T_INT), value.result(), ACmpData::right_inline_type_byte_constant(), new_register(T_INT), !x->left_maybe_null());
+    __ profile_inline_type(new LIR_Address(mdp, flags_offset, T_INT), value.result(), ACmpData::right_inline_type_byte_constant(), new_register(T_INT), !x->right_maybe_null());
   }
 }
 

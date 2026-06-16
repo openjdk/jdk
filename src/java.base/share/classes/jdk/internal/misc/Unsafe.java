@@ -1528,7 +1528,6 @@ public final class Unsafe {
      * Return the size of the object in the heap.
      * @param o an object
      * @return the objects's size
-     * @since Valhalla
      */
     public long getObjectSize(Object o) {
         if (o == null)

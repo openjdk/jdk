@@ -108,7 +108,10 @@ oop_arraycopy_partial_barrier(BarrierSetT *bs, T* dst_raw, T* p) {
   // pointer delta is scaled to number of elements (length field in
   // objArrayOop) which we assume is 32 bit.
   assert(pd == (size_t)(int)pd, "length field overflow");
-  bs->write_ref_array((HeapWord*)dst_raw, pd);
+  if (pd > 0) {
+    // Copied at least one element; call the barrier.
+    bs->write_ref_array((HeapWord*)dst_raw, pd);
+  }
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>

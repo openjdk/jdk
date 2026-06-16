@@ -47,7 +47,7 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL;
  * @key randomness
  * @summary Test method handle support for inline types
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires vm.opt.AbortVMOnCompilationFailure != true
  * @requires vm.compMode != "Xcomp"
  * @enablePreview
@@ -61,7 +61,7 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL;
  * @key randomness
  * @summary Test method handle support for inline types
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires vm.opt.AbortVMOnCompilationFailure != true
  * @requires vm.compMode != "Xcomp"
  * @enablePreview
@@ -75,7 +75,7 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL;
  * @key randomness
  * @summary Test method handle support for inline types
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires vm.opt.AbortVMOnCompilationFailure != true
  * @requires vm.compMode != "Xcomp"
  * @enablePreview
@@ -89,7 +89,7 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL;
  * @key randomness
  * @summary Test method handle support for inline types
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires vm.opt.AbortVMOnCompilationFailure != true
  * @requires vm.compMode != "Xcomp"
  * @enablePreview
@@ -103,7 +103,7 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL;
  * @key randomness
  * @summary Test method handle support for inline types
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires vm.opt.AbortVMOnCompilationFailure != true
  * @requires vm.compMode != "Xcomp"
  * @enablePreview
@@ -117,7 +117,7 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL;
  * @key randomness
  * @summary Test method handle support for inline types
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires vm.opt.AbortVMOnCompilationFailure != true
  * @requires vm.compMode != "Xcomp"
  * @enablePreview
@@ -131,7 +131,7 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL;
  * @key randomness
  * @summary Test method handle support for inline types
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires vm.opt.AbortVMOnCompilationFailure != true
  * @requires vm.compMode != "Xcomp"
  * @enablePreview

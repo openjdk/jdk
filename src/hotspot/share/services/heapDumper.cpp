@@ -1264,8 +1264,8 @@ void DumperSupport::dump_static_fields(AbstractDumpWriter* writer, Klass* k) {
 }
 
 // dump the raw values of the instance fields of the given object, fills flat_fields
-void DumperSupport:: dump_instance_fields(AbstractDumpWriter* writer, oop o, int offset,
-                                          DumperClassCacheTableEntry* class_cache_entry, DumperFlatObjectList* flat_fields) {
+void DumperSupport::dump_instance_fields(AbstractDumpWriter* writer, oop o, int offset,
+                                         DumperClassCacheTableEntry* class_cache_entry, DumperFlatObjectList* flat_fields) {
   assert(class_cache_entry != nullptr, "Pre-condition: must be provided");
   for (int idx = 0; idx < class_cache_entry->field_count(); idx++) {
     const DumperClassCacheTableEntry::FieldDescriptor& field = class_cache_entry->field(idx);

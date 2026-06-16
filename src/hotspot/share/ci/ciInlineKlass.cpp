@@ -166,3 +166,7 @@ ciConstant ciInlineKlass::get_null_reset_value() {
   oop null_reset_value = vk->null_reset_value();
   return ciConstant(T_OBJECT, CURRENT_ENV->get_object(null_reset_value));
 }
+
+ArrayDescription ciInlineKlass::array_description_of_array_properties(const ArrayProperties& requested_properties) {
+  GUARDED_VM_ENTRY(return ObjArrayKlass::array_layout_selection(get_InlineKlass(), requested_properties);)
+}

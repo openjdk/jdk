@@ -717,5 +717,7 @@ tools/sincechecker/modules/jdk.management.jfr/JdkManagementJfrCheckSince.java 83
 
 java/awt/image/multiresolution/MultiResolutionToolkitImageTest.java 8375778 macosx-aarch64
 
-sun/tools/jhsdb/JStackStressTest.java 8247940 macosx-aarch64
+java/util/Arrays/ArraysEqCmpTest.java 8386499 generic-all
+java/util/Arrays/largeMemory/ParallelPrefix.java 8386501 generic-all
 
+sun/tools/jhsdb/JStackStressTest.java 8247940 macosx-aarch64

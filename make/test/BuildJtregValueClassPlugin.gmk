@@ -28,12 +28,10 @@ include MakeFileStart.gmk
 ################################################################################
 # Builds one JAR used by jtreg to test value classes (JEP 401):
 #
-#  valueClassPlugin.jar      -- contains ValueClassPlugin (a javac Plugin that
-#                               rewrites @AsValueClass classes to value classes
-#                               at parse time) together with @AsValueClass and
-#                               the META-INF service descriptor, compiled WITH
-#                               --enable-preview and the required internal-API
-#                               exports.
+#  valueClassPlugin.jar -- Contains ValueClassPlugin (a javac Plugin that
+#    rewrites @AsValueClass classes to value classes at parse time) together
+#    with @AsValueClass and the META-INF service descriptor, compiled WITH
+#    --enable-preview and the required internal-API exports.
 #
 # Usage in test runs (via RunTests.gmk):
 #   make test TEST=... JTREG=VALUE_CLASS_PLUGIN=true

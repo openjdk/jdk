@@ -769,7 +769,8 @@ static Handle new_type(Symbol* signature, Klass* k, TRAPS) {
 
 oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_access, TRAPS) {
   // Allow jdk.internal.reflect.ConstantPool to refer to <clinit> methods as java.lang.reflect.Methods.
-  assert(!method()->name()->starts_with('<') || for_constant_pool_access,
+  assert(!method()->is_object_constructor() ||
+         (for_constant_pool_access || !method()->is_class_initializer()),
          "should call new_constructor instead");
   InstanceKlass* holder = method->method_holder();
   int slot = method->method_idnum();
@@ -1171,6 +1172,7 @@ oop Reflection::invoke_constructor(oop constructor_mirror, objArrayHandle args, 
     THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "invoke");
   }
   methodHandle method(THREAD, m);
+  assert(method->name() == vmSymbols::object_initializer_name(), "invalid constructor");
 
   // Make sure klass gets initialize
   klass->initialize(CHECK_NULL);

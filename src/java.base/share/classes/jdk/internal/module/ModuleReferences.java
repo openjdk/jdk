@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -367,6 +368,8 @@ class ModuleReferences {
      * A ModuleReader for an exploded module.
      */
     static class ExplodedModuleReader implements ModuleReader {
+        private static final String PREVIEW_PREFIX = "META-INF/preview";
+
         private final Path dir;
         private final Path previewDir;
         private volatile boolean closed;
@@ -378,19 +381,22 @@ class ModuleReferences {
         }
 
         /**
-         * Throws IOException if the module reader is closed;
+         * Throws IOException if the module reader is closed.
          */
         private void ensureOpen() throws IOException {
             if (closed) throw new IOException("ModuleReader is closed");
         }
 
+        /**
+         * Returns a file path to a resource in the module or null if not found.
+         */
         private Path toFilePath(String name) throws IOException {
             if (previewDir != null) {
                 if (isPreviewEntry(name)) {
                     return null;
                 }
                 Path previewPath = Resources.toFilePath(previewDir, name);
-                if (previewPath != null && Files.exists(previewPath)) {
+                if (previewPath != null) {
                     return previewPath;
                 }
             }
@@ -437,21 +443,19 @@ class ModuleReferences {
         @Override
         public Stream<String> list() throws IOException {
             ensureOpen();
-            LinkedHashSet<String> names = new LinkedHashSet<>();
-            collectNames(dir, names);
-            if (previewDir != null) {
-                collectNames(previewDir, names);
-            }
-            return names.stream();
-        }
 
-        private void collectNames(Path dir, Set<String> dest) throws IOException {
-            try (Stream<Path> files = Files.walk(dir, Integer.MAX_VALUE)) {
-                files.map(f -> Resources.toResourceName(dir, f))
-                        .filter(s -> !s.isEmpty())
-                        .filter(s -> previewDir == null || !isPreviewEntry(s))
-                        .forEach(dest::add);
+            // not an exploded image, preview features not enabled, or no META-INF/preview
+            if (previewDir == null) {
+                return Files.walk(dir, Integer.MAX_VALUE)
+                        .skip(1) // skip root
+                        .map(f -> Resources.toResourceName(dir, f));
             }
+
+            // combine resources from file tree with resources from META-INF/preview
+            var names = new LinkedHashSet<String>();
+            walkAndCollect(dir, rn -> !isPreviewEntry(rn), names);
+            walkAndCollect(previewDir, _ -> true, names);
+            return names.stream();
         }
 
         @Override
@@ -459,9 +463,24 @@ class ModuleReferences {
             closed = true;
         }
 
-        // Names do not have a leading '/'.
-        private static final String PREVIEW_PREFIX = "META-INF/preview";
+        /**
+         * Adds the names of resources in the given tree to a collection if the names
+         * are matched by a given predicate.
+         */
+        private static void walkAndCollect(Path root,
+                                           Predicate<String> matcher,
+                                           Set<String> names) throws IOException {
+            try (Stream<Path> files = Files.walk(root, Integer.MAX_VALUE)) {
+                files.skip(1) // skip root
+                        .map(f -> Resources.toResourceName(root, f))
+                        .filter(matcher)
+                        .forEach(names::add);
+            }
+        }
 
+        /**
+         * Returns true if a resource is in the META-INF/preview tree.
+         */
         private static boolean isPreviewEntry(String name) {
             return name.startsWith(PREVIEW_PREFIX) &&
                     (name.length() == PREVIEW_PREFIX.length()

@@ -1917,6 +1917,12 @@ const TypeInt* TypeInt::make(jint lo, jint hi, int widen) {
   return make_or_top(TypeIntPrototype<jint, juint>{{lo, hi}, {0, max_juint}, {0, 0}}, widen)->is_int();
 }
 
+const TypeInt* TypeInt::make_unsigned(juint ulo, juint uhi, int widen) {
+  assert(ulo <= uhi, "must be legal bounds");
+  // By creating the TypeInt with the full signed range and the given unsigned range, the signed bounds are inferred from the unsigned bounds.
+  return make_or_top(TypeIntPrototype<jint, juint>{{min_jint, max_jint}, {ulo, uhi}, {0, 0}}, widen)->is_int();
+}
+
 const Type* TypeInt::make_or_top(const TypeIntPrototype<jint, juint>& t, int widen) {
   return make_or_top(t, widen, false);
 }
@@ -2050,6 +2056,12 @@ const TypeLong* TypeLong::make(jlong con) {
 const TypeLong* TypeLong::make(jlong lo, jlong hi, int widen) {
   assert(lo <= hi, "must be legal bounds");
   return make_or_top(TypeIntPrototype<jlong, julong>{{lo, hi}, {0, max_julong}, {0, 0}}, widen)->is_long();
+}
+
+const TypeLong* TypeLong::make_unsigned(julong ulo, julong uhi, int widen) {
+  assert(ulo <= uhi, "must be legal bounds");
+  // By creating the TypeLong with the full signed range and the given unsigned range, the signed bounds are inferred from the unsigned bounds.
+  return make_or_top(TypeIntPrototype<jlong, julong>{{min_jlong, max_jlong}, {ulo, uhi}, {0, 0}}, widen)->is_long();
 }
 
 const Type* TypeLong::make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen) {
@@ -5723,7 +5735,53 @@ void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 #endif
 
 bool TypeAryPtr::empty(void) const {
-  if (_ary->empty())       return true;
+  if (_ary->empty()) {
+    return true;
+  }
+
+  // Reference array is always possible. Only flat array with non-flattenable content can be an issue.
+  if (const TypeOopPtr* elem_ptr = elem()->make_oopptr(); _ary->_flat && elem_ptr != nullptr && elem_ptr->is_inlinetypeptr()) {
+    auto impossible_layout_with_null_freeness = [this](bool null_free, bool atomic) -> bool {
+      ArrayDescription description = elem()->inline_klass()->array_description_of_array_properties(ArrayProperties::Default().with_null_restricted(null_free).with_non_atomic(!atomic));
+      return !LayoutKindHelper::is_flat(description._layout_kind);  // We get a contradiction between _ary->_flat and array_layout_selection
+    };
+    auto impossible_layout = [&](bool atomic) -> bool {
+      if (is_null_free()) {
+        // Surely null-free
+        if (impossible_layout_with_null_freeness(true, atomic)) {
+          return true;
+        }
+      } else if (is_not_null_free()) {
+        // Surely nullable
+        if (impossible_layout_with_null_freeness(false, atomic)) {
+          return true;
+        }
+      } else {
+        // Not sure...
+        if (impossible_layout_with_null_freeness(false, atomic) && impossible_layout_with_null_freeness(true, atomic)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    if (_ary->_atomic) {
+      // Surely atomic
+      if (impossible_layout(true)) {
+        return true;
+      }
+    } else if (klass_is_exact()) {
+      // Surely non-atomic
+      if (impossible_layout(false)) {
+        return true;
+      }
+    } else {
+      // Not sure...
+      if (impossible_layout(true) && impossible_layout(false)) {
+        return true;
+      }
+    }
+  }
+
   return TypeOopPtr::empty();
 }
 

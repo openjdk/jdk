@@ -25,7 +25,7 @@
  * @test
  * @summary Test acmp fast path with value classes
  * @requires vm.flagless
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @run main/othervm/timeout=30 -Xbatch
  *                              -XX:CompileCommand=CompileOnly,${test.main.class}::test

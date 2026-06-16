@@ -142,10 +142,10 @@ PREVIEW_PATH := META-INF/preview
 MODULE_PREVIEW_SRC_DIRS := $(call FindModulePreviewSrcDirs, $(MODULE))
 MODULE_PREVIEW_SOURCEPATH := $(call GetModulePreviewSrcPath)
 ifneq ($(MODULE_PREVIEW_SRC_DIRS),)
-  # Temporarily compile preview classes into a separate directory, and then
-  # copy into the correct output path location.
-  # We cannot compile directly into the desired directory because it's the
-  # compiler which creates the original '<module>/<classpath>/...' hierarchy.
+  # Compile preview classes into a separate directory, and then copy into the
+  # correct output path location. We cannot compile directly into the desired
+  # directory because it's the compiler which creates the original
+  # '<module>/<classpath>/...' hierarchy.
   PREVIEW_OUTPUTDIR := $(SUPPORT_OUTPUTDIR)/$(PREVIEW_CLASSES_LABEL)
   PATCH_COMMAND := $(MODULE)=$(call strip, $(COMPILATION_OUTPUTDIR)/$(MODULE))
 

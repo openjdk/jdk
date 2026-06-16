@@ -48,7 +48,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -57,7 +56,6 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 
 import jdk.internal.module.ModulePath;
-import jdk.test.lib.Utils;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.util.JarUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -70,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ModuleReaderTest {
-    private static final Path MODS_DIR = Paths.get("mods");
+    private static final Path MODS_DIR = Path.of("mods");
 
     // the module name of the base module
     private static final String BASE_MODULE = "java.base";
@@ -117,11 +115,11 @@ public class ModuleReaderTest {
         "java\\lang\\Object.class"
     };
 
-    // Resources in test module (can't use module-info.class as a test
+    // resources in test module (can't use module-info.class as a test
     // resource as it will be modified by the jmod tool)
     private static final String[] TEST_RESOURCES = {
-            "p/Main.class",
-            "p/test.txt"
+        "p/Main.class",
+        "p/test.txt"
     };
 
     // (directory) resources that may be in the test module
@@ -153,12 +151,12 @@ public class ModuleReaderTest {
 
     @BeforeAll
     public static void compileTestModules() throws Exception {
-        // Write simplest module-info class.
+        // create a simple module-info.java
         Path srcDir = Path.of("src", TEST_MODULE);
         Files.createDirectories(srcDir);
         Files.writeString(srcDir.resolve("module-info.java"), "module " + TEST_MODULE + " {}");
 
-        // Write and compile test class "p.Main".
+        // write and compile test class "p.Main"
         Path pkgPath = Path.of("p");
         Path javaSrc = srcDir.resolve(pkgPath).resolve("Main.java");
         Files.createDirectories(javaSrc.getParent());
@@ -175,8 +173,8 @@ public class ModuleReaderTest {
         boolean compiled = CompilerUtils.compile(srcDir, outDir);
         assertTrue(compiled, "test module did not compile");
 
-        // Add two versions of a resource for preview mode testing.
-        Files.writeString(outDir.resolve(pkgPath).resolve("test.txt"), "Normal Version");
+        // add two versions of a resource to allow for preview mode testing
+        Files.writeString(outDir.resolve(pkgPath).resolve("test.txt"), "Original");
         Path previewDir = outDir.resolve("META-INF", "preview").resolve(pkgPath);
         Files.createDirectories(previewDir);
         Files.writeString(previewDir.resolve("test.txt"), "Preview Version");
@@ -245,47 +243,60 @@ public class ModuleReaderTest {
     }
 
     /**
-     * Test equivalent of the system ModuleReader with preview mode. This differs
-     * in behavior to other "exploded modules" because it supports preview mode.
-     * It also hides preview resources when preview mode is enabled.
-     *
-     * <p>Note: When preview mode is not enabled, preview resources are visible
-     * via their un-mapped path. This is not the same behavior as things like
-     * the JRT filesystem or non-exploded module readers, in which preview paths
-     * are always hidden.
+     * Test the ModuleReader used for the JDK exploded image. A module finder for
+     * a JDK exploded image can be created to locate resources in META-INF/preview
+     * when running with preview feature enabled. This test exercises the ModuleReader
+     * obtained when the module finder is created with preview features enabled and
+     * disabled.
      */
     @Test
-    public void testExplodedSystemModule() throws IOException {
-        ModuleFinder normalFinder = ModulePath.of(/* modulePatcher */ null, /* previewMode */ false, MODS_DIR);
-        try (ModuleReader reader = normalFinder.find(TEST_MODULE).get().open()) {
-            assertEquals("Normal Version", assertUtf8Resource(reader, "p/test.txt"));
-            // This file is not visible in an exploded image when using JRT filesystem.
-            assertEquals("Preview Version", assertUtf8Resource(reader, "META-INF/preview/p/test.txt"));
+    public void testExplodedImage() throws IOException {
+        // preview features disabled
+        ModuleFinder finder = ModulePath.ofExplodedImage(MODS_DIR, null, false);
+        try (ModuleReader reader = finder.find(TEST_MODULE).get().open()) {
+            testReader(reader, "p/test.txt", "Original");
+            testReader(reader, "META-INF/preview/p/test.txt", "Preview Version");
         }
-        ModuleFinder previewFinder = ModulePath.of(/* modulePatcher */ null, /* previewMode */ true, MODS_DIR);
+
+        // preview features enabled
+        ModuleFinder previewFinder = ModulePath.ofExplodedImage(MODS_DIR, null, true);
         try (ModuleReader reader = previewFinder.find(TEST_MODULE).get().open()) {
-            assertEquals("Preview Version", assertUtf8Resource(reader, "p/test.txt"));
+            testReader(reader, "p/test.txt", "Preview Version");
             assertFalse(reader.find("META-INF/preview/p/test.txt").isPresent(), "unexpected preview resource");
         }
     }
 
-    private static String assertUtf8Resource(ModuleReader reader, String name) throws IOException {
-        // Check the resource can be found with the expected URI.
-        Optional<URI> uri = reader.find(name);
-        assertTrue(uri.isPresent(), "resource not found: " + name);
-        assertTrue(uri.get().getPath().endsWith(name), "unexpected path: " + uri.get());
+    /**
+     * Test that a ModuleReader locates, opens and reads a resource.
+     */
+    private void testReader(ModuleReader reader, String name, String expectedContent) throws IOException {
+        // check resource is found and that the URI locates the resource
+        Optional<URI> ouri = reader.find(name);
+        assertTrue(ouri.isPresent(), "resource not found: " + name);
+        URI uri = ouri.get();
+        assertTrue(uri.getPath().endsWith(name), "unexpected URI path component: " + uri);
 
-        // Open and read all resource bytes.
-        Optional<InputStream> is = reader.open(name);
-        assertTrue(is.isPresent(), "resource cannot be opened: " + name);
-        byte[] bytes = is.get().readAllBytes();
+        // read resource bytes with input stream
+        Optional<InputStream> oin = reader.open(name);
+        assertTrue(oin.isPresent(), "resource cannot be opened: " + name);
+        byte[] bytes;
+        try (InputStream in = oin.get()) {
+            bytes = in.readAllBytes();
+        }
 
-        // Cross-check that read() returns the same bytes as open().
-        Optional<ByteBuffer> buffer = reader.read(name);
-        assertTrue(buffer.isPresent(), "resource cannot be read: " + name);
-        assertArrayEquals(buffer.get().array(), bytes, "resource bytes differ: " + name);
-        // Return the string of the UTF-8 bytes for checking the actual content.
-        return new String(bytes, StandardCharsets.UTF_8);
+        // read resource bytes into byte buffer
+        Optional<ByteBuffer> obb = reader.read(name);
+        assertTrue(obb.isPresent(), "resource cannot be read: " + name);
+        ByteBuffer bb = obb.get();
+        try {
+            assertEquals(ByteBuffer.wrap(bytes), bb, "resource bytes differ: " + name);
+        } finally {
+            reader.release(bb);
+        }
+
+        // test that resource has the expected contents
+        byte[] expectedBytes = expectedContent.getBytes(StandardCharsets.UTF_8);
+        assertArrayEquals(expectedBytes, bytes, "unexpected content");
     }
 
     /**
@@ -293,11 +304,11 @@ public class ModuleReaderTest {
      */
     @Test
     public void testModularJar() throws IOException {
-        Path dir = Utils.createTempDirectory("mlib");
+        Path dir = Files.createTempDirectory(Path.of("."), "mlib");
 
         // jar cf mlib/${TESTMODULE}.jar -C mods .
         JarUtils.createJarFile(dir.resolve(TEST_MODULE + ".jar"),
-                MODS_DIR.resolve(TEST_MODULE));
+                               MODS_DIR.resolve(TEST_MODULE));
 
         test(dir);
     }
@@ -307,12 +318,12 @@ public class ModuleReaderTest {
      */
     @Test
     public void testJMod() throws IOException {
-        Path dir = Utils.createTempDirectory("mlib");
+        Path dir = Files.createTempDirectory(Path.of("."), "mlib");
 
         // jmod create --class-path mods/${TESTMODULE}  mlib/${TESTMODULE}.jmod
         String cp = MODS_DIR.resolve(TEST_MODULE).toString();
         String jmod = dir.resolve(TEST_MODULE + ".jmod").toString();
-        String[] args = {"create", "--class-path", cp, jmod};
+        String[] args = { "create", "--class-path", cp, jmod };
         ToolProvider jmodTool = ToolProvider.findFirst("jmod")
                 .orElseThrow(() ->
                         new RuntimeException("jmod tool not found")

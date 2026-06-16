@@ -634,7 +634,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @jls value-objects-8.1.1.5 {@code value} Classes
      * @see AccessFlag#IDENTITY
-     * @since Valhalla
+     * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective=true)
     public boolean isValue() {
@@ -1398,7 +1398,6 @@ public final class Class<T> implements java.io.Serializable,
     /**
      * {@return an unmodifiable set of the {@linkplain AccessFlag access
      * flags} for this class, possibly empty}
-     * The {@code AccessFlags} may depend on the class file format version of the class.
      *
      * <p> If the underlying class is an array class:
      * <ul>
