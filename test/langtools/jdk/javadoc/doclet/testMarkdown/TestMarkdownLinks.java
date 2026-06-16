@@ -411,7 +411,10 @@ public class TestMarkdownLinks extends JavadocTester {
         checkExit(Exit.ERROR);
 
         checkOutput(Output.OUT, true,
-                "error: invalid usage of tag @see");
+                "error: invalid usage of tag @see",
+                "/// @see [Example](https://example.com) trailing text",
+                "/// @see [One](https://a) [Two](https://b)",
+                "/// @see [String]");
         checkOutput(Output.OUT, false,
                 "IllegalStateException: LINK");
         checkOutput("p/C.html", false,
