@@ -403,6 +403,60 @@ final class TestConfinedSegmentPool {
         VThreadRunner.run(this::uniqueZeroAddresses);
     }
 
+    @ParameterizedTest
+    @MethodSource("threadFactories")
+    void acquiredPoolIsCleanedUpOnThreadExit(String name, Thread.Builder threadBuilder) throws Throwable {
+        if (isPoolEnabled()) {
+            CountDownLatch acquired = new CountDownLatch(1);
+            CountDownLatch exit = new CountDownLatch(1);
+            AtomicReference<Throwable> failureRef = new AtomicReference<>();
+
+            Thread thread = threadBuilder.factory().newThread(() -> {
+                boolean acquiredCountedDown = false;
+                try {
+                    // Deliberately keep this arena open until the thred completes
+                    Arena arena = Arena.ofConfined();
+                    arena.allocate(ValueLayout.JAVA_BYTE);
+                    assertNotEquals(0, confinedMemoryPool(Thread.currentThread()));
+
+                    acquired.countDown();
+                    acquiredCountedDown = true;
+                    assertTrue("timed out waiting to exit",
+                            exit.await(10, TimeUnit.SECONDS));
+
+                    Reference.reachabilityFence(arena);
+                } catch (Throwable ex) {
+                    failureRef.compareAndSet(null, ex);
+                    if (!acquiredCountedDown) {
+                        acquired.countDown();
+                    }
+                }
+            });
+
+            thread.start();
+            try {
+                assertTrue("timed out waiting for " + name + " thread to acquire pool",
+                        acquired.await(10, TimeUnit.SECONDS));
+                if (failureRef.get() != null) {
+                    throw failureRef.get();
+                }
+                assertTrue(name + " thread did not acquire pool",
+                        confinedMemoryPool(thread) != 0);
+            } finally {
+                exit.countDown();
+                thread.join(TimeUnit.SECONDS.toMillis(10));
+            }
+
+            assertFalse(name + " thread did not terminate", thread.isAlive());
+            awaitConfinedMemoryPoolCleared(thread);
+
+            if (failureRef.get() != null) {
+                throw failureRef.get();
+            }
+            assertEquals(name, 0, confinedMemoryPool(thread));
+        }
+    }
+
     @Test
     void virtualThreadSlotContentionFallsBack() throws Throwable {
         if (isPoolEnabled()) {
@@ -509,6 +563,16 @@ final class TestConfinedSegmentPool {
 
     static boolean isPoolEnabled() {
         return POOLED_MEMORY_SIZE > 0;
+    }
+
+    static void awaitConfinedMemoryPoolCleared(Thread thread) {
+        long timeOut = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
+        while (System.nanoTime() < timeOut) {
+            if (confinedMemoryPool(thread) == 0) {
+                return;
+            }
+            LockSupport.parkNanos(1_000_000L);
+        }
     }
 
     static int confinedSegmentPoolSlots() {
