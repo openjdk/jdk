@@ -39,6 +39,7 @@
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/methodData.hpp"
 #include "prims/methodHandles.hpp"
 #include "registerSaver_s390.hpp"
 #include "runtime/icache.hpp"
@@ -6765,4 +6766,157 @@ void MacroAssembler::load_on_condition_imm_64(Register dst, int64_t i2, branch_c
     z_lghi(dst, i2);
     bind(done);
   }
+}
+
+// Handle the receiver type profile update given the "recv" klass.
+//
+// Normally updates the ReceiverData (RD) that starts at "mdp" + "mdp_offset".
+// If there are no matching or claimable receiver entries in RD, updates
+// the polymorphic counter.
+//
+// This code expected to run by either the interpreter or JIT-ed code, without
+// extra synchronization. For safety, receiver cells are claimed atomically, which
+// avoids grossly misrepresenting the profiles under concurrent updates. For speed,
+// counter updates are not atomic.
+//
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register scratch) {
+  Register r0_tmp = Z_R0_scratch;  // cannot be used in address calculation
+  assert_different_registers(recv, mdp, scratch, r0_tmp);
+
+  int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
+  int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
+  int poly_count_offset      = in_bytes(CounterData::count_offset());
+  int receiver_step          = in_bytes(ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
+  int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+
+  // Adjust for MDP offsets.
+  base_receiver_offset += mdp_offset;
+  end_receiver_offset  += mdp_offset;
+  poly_count_offset    += mdp_offset;
+
+#ifdef ASSERT
+  // We are about to walk the MDO slots without asking for offsets.
+  // Check that our math hits all the right spots.
+  for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
+    int real_recv_offset  = mdp_offset + in_bytes(ReceiverTypeData::receiver_offset(c));
+    int real_count_offset = mdp_offset + in_bytes(ReceiverTypeData::receiver_count_offset(c));
+    int offset = base_receiver_offset + receiver_step*c;
+    int count_offset = offset + receiver_to_count_step;
+    assert(offset == real_recv_offset, "receiver slot math");
+    assert(count_offset == real_count_offset, "receiver count math");
+  }
+  int real_poly_count_offset = mdp_offset + in_bytes(CounterData::count_offset());
+  assert(poly_count_offset == real_poly_count_offset, "poly counter math");
+#endif
+
+  // Corner case: no profile table. Increment poly counter and exit.
+  if (ReceiverTypeData::row_limit() == 0) {
+    add2mem_64(Address(mdp, poly_count_offset), DataLayout::counter_increment, scratch);
+    return;
+  }
+
+  NearLabel L_loop_search_receiver, L_loop_search_empty;
+  NearLabel L_restart, L_found_recv, L_found_empty, L_count_update;
+  Register offset = scratch;
+
+  // The code here recognizes three major cases:
+  //   A. Fastest: receiver found in the table
+  //   B. Fast: no receiver in the table, and the table is full
+  //   C. Slow: no receiver in the table, free slots in the table
+  //
+  // The case A performance is most important, as perfectly-behaved code would end up
+  // there, especially with larger TypeProfileWidth. The case B performance is
+  // important as well, this is where bulk of code would land for normally megamorphic
+  // cases. The case C performance is not essential, its job is to deal with installation
+  // races, we optimize for code density instead. Case C needs to make sure that receiver
+  // rows are only claimed once. This makes sure we never overwrite a row for another
+  // receiver and never duplicate the receivers in the list, making profile type-accurate.
+  //
+  // It is very tempting to handle these cases in a single loop, and claim the first slot
+  // without checking the rest of the table. But, profiling code should tolerate free slots
+  // in the table, as class unloading can clear them. After such cleanup, the receiver
+  // we need might be _after_ the free slot. Therefore, we need to let at least full scan
+  // to complete, before trying to install new slots. Splitting the code in several tight
+  // loops also helpfully optimizes for cases A and B.
+  //
+  // This code is effectively:
+  //
+  // restart:
+  //   // Fastest: receiver is already installed
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == recv) goto found_recv(i);
+  //   }
+  //
+  //   // Fast: no receiver, but profile is not full
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == null) goto found_null(i);
+  //   }
+  //   goto polymorphic
+  //
+  //   // Slow: try to install receiver
+  // found_null(i):
+  //   CAS(&receiver(i), null, recv);
+  //   goto restart
+  //
+  // polymorphic:
+  //   count++;
+  //   return
+  //
+  // found_recv(i):
+  //   *receiver_count(i)++
+  //
+
+  bind(L_restart);
+
+  // Fastest: receiver is already installed
+  load_const_optimized(offset, base_receiver_offset);
+
+  bind(L_loop_search_receiver);
+    z_cg(recv, Address(mdp, offset));
+    z_bre(L_found_recv);
+    add2reg(offset, receiver_step);
+    compare64_and_branch(offset, end_receiver_offset, bcondNotEqual, L_loop_search_receiver);
+
+  // Fast: no receiver, but profile is not full
+  load_const_optimized(offset, base_receiver_offset);
+
+  bind(L_loop_search_empty);
+    z_ltg(r0_tmp, Address(mdp, offset));
+    z_brz(L_found_empty);
+    add2reg(offset, receiver_step);
+    compare64_and_branch(offset, end_receiver_offset, bcondNotEqual, L_loop_search_empty);
+
+  // Slow: Receiver is not found and table is full.
+  // Increment polymorphic counter instead of receiver slot.
+  load_const_optimized(offset, poly_count_offset);
+  z_bru(L_count_update);
+
+  // Slowest: try to install receiver
+  bind(L_found_empty);
+
+  {
+    // Atomically swing receiver slot: null -> recv.
+    // Use compare-and-swap to claim the slot.
+    Register receiver_addr = offset;
+    z_agr(receiver_addr, mdp); // receiver_addr = mdp + offset
+
+    // r0_tmp is used as expected value (0), recv is the new value
+    z_lghi(r0_tmp, 0);
+    z_csg(r0_tmp, recv, 0, receiver_addr);
+  }
+
+  // CAS success means the slot now has the receiver we want. CAS failure means
+  // something had claimed the slot concurrently: it can be the same receiver we want,
+  // or something else. Since this is a slow path, we can optimize for code density,
+  // and just restart the search from the beginning.
+  z_bru(L_restart);
+
+  // Found a receiver, convert its slot offset to corresponding count offset.
+  bind(L_found_recv);
+  add2reg(offset, receiver_to_count_step);
+
+  // Finally, update the counter
+  bind(L_count_update);
+  z_agr(offset, mdp);
+  add2mem_64(Address(offset), DataLayout::counter_increment, r0_tmp);
 }

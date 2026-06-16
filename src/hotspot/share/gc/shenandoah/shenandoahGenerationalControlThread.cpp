@@ -52,8 +52,7 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _requested_gc_cause(GCCause::_no_gc),
   _requested_generation(nullptr),
   _gc_mode(none),
-  _heap(ShenandoahGenerationalHeap::heap()),
-  _age_period(0) {
+  _heap(ShenandoahGenerationalHeap::heap()) {
   shenandoah_assert_generational();
   set_name("ShenControl");
   create_and_start();
@@ -201,15 +200,6 @@ void ShenandoahGenerationalControlThread::maybe_print_young_region_ages() const 
   }
 }
 
-void ShenandoahGenerationalControlThread::maybe_set_aging_cycle() {
-  if (_age_period-- == 0) {
-    _heap->set_aging_cycle(true);
-    _age_period = ShenandoahAgingCyclePeriod - 1;
-  } else {
-    _heap->set_aging_cycle(false);
-  }
-}
-
 void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest& request) {
 
   log_debug(gc, thread)("Starting GC (%s): %s, %s", gc_mode_name(gc_mode()), GCCause::to_string(request.cause), request.generation->name());
@@ -240,7 +230,7 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     // Cannot uncommit bitmap slices during concurrent reset
     ShenandoahNoUncommitMark forbid_region_uncommit(_heap);
 
-    // When a whitebox full GC is requested, set the tenuring threshold to zero
+    // When a whitebox full GC is requested, set the age census to always tenure
     // so that all young objects are promoted to old. This ensures that tests
     // using WB.fullGC() to promote objects to old gen will not loop forever.
     ShenandoahTenuringOverride tenuring_override(request.cause == GCCause::_wb_full_gc,
@@ -473,9 +463,6 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
   // At this point:
   //  if (generation == YOUNG), this is a normal young cycle or a bootstrap cycle
   //  if (generation == GLOBAL), this is a GLOBAL cycle
-  // In either case, we want to age old objects if this is an aging cycle
-  maybe_set_aging_cycle();
-
   ShenandoahGCSession session(cause, generation);
   TraceCollectorStats tcs(_heap->monitoring_support()->concurrent_collection_counters());
 
@@ -542,7 +529,6 @@ bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(Shenandoah
 void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   _heap->increment_total_collections(true);
   ShenandoahGCSession session(cause, _heap->global_generation());
-  maybe_set_aging_cycle();
   ShenandoahFullGC gc;
   gc.collect(cause);
 }

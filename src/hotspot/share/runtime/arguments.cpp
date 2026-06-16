@@ -544,25 +544,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
 #endif
 
-  { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "MaxRAM",                       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "NewSizeThreadIncrease",        JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "NeverActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "AlwaysActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "UseXMMForArrayCopy",           JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "UseNewLongLShift",             JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-
-  {"ShenandoahAccelerationSamplePeriod",   JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  {"ShenandoahRateAccelerationSampleSize", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  {"ShenandoahMomentaryAllocationRateSpikeSampleSize", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  {"ShenandoahAdaptiveSampleFrequencyHz", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  {"ShenandoahAdaptiveSampleSizeSeconds", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  {"ShenandoahAdaptiveInitialSpikeThreshold",JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  {"ShenandoahAdaptiveDecayFactor",       JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -2195,11 +2176,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       if (FLAG_SET_CMDLINE(ThreadStackSize, value) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
-    } else if (match_option(option, "-Xmaxjitcodesize", &tail) ||
-               match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
-      if (match_option(option, "-Xmaxjitcodesize", &tail)) {
-        warning("Option -Xmaxjitcodesize was deprecated in JDK 26 and will likely be removed in a future release.");
-      }
+    } else if (match_option(option, "-Xmaxjitcodesize", &tail)) {
+      warning("Ignoring option %s; support was removed in JDK 27", option->optionString);
+    } else if (match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
       julong long_ReservedCodeCacheSize = 0;
 
       ArgsRange errcode = parse_memory_size(tail, &long_ReservedCodeCacheSize, 1);

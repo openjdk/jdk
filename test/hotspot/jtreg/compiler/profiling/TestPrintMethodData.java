@@ -64,7 +64,7 @@ public class TestPrintMethodData {
         private static final Generator<Long> GEN_LONG = Generators.G.longs();
         private static final int SIZE = 1024;
 
-        static void main(String[] args) throws Exception {
+        public static void main(String[] args) throws Exception {
             long[] longs = new long[SIZE];
             Generators.G.fill(GEN_LONG, longs);
 
