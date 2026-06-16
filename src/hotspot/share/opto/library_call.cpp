@@ -1349,26 +1349,96 @@ bool LibraryCallKit::inline_preconditions_checkFromToIndex_helper(Node* from, No
   return true;
 }
 
+// checkFromIndexSize(from, size, length): !((length | from | size) < 0 || size > length - from)
+//                                      => from >= 0 && size >= 0 && from + size <= length
+//                                      => size >= 0 && from u< length + 1 && (from + size) u< length + 1
+// Note: `from u< length + 1` is logically redundant (implied by size >= 0 and from + size <= length),
+// but encoding `from >= 0` as a range check against loop-invariant `length + 1` allows RCE to hoist it.
 bool LibraryCallKit::inline_preconditions_checkFromIndexSize(BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "");
+
+  if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
+    return false;
+  }
+
   // (IIILjava/util/function/BiFunction;)I]: (0: from),   (1: size),   (2: length),   (3: biFunction)
   // (JJJLjava/util/function/BiFunction;)J]: (0-1: from), (2-3: size), (4-5: length), (6: biFunction)
   Node* from = argument(0);
   Node* size = bt == T_INT ? argument(1) : argument(2);
   Node* length = bt == T_INT ? argument(2) : argument(4);
 
-  // Node* to = _gvn.transform(AddNode::make(from, size, bt));
+  // 1) size >= 0 — non-negative check (loop-invariant, computed once)
+  Node* casted_size = insert_non_negative_check(*this, size, BoolTest::ge, bt);
 
-  return inline_preconditions_checkFromToIndex_helper(from, nullptr, size, length, bt);
+  // 2) length + 1 > 0 — guard ensuring length >= 0 and producing [1, MAX] type for RCE.
+  //    Limitation: deopts when length = MAX_VALUE (length + 1 overflows).
+  Node* length_plus_one = _gvn.transform(AddNode::make(length, _gvn.integercon(1, bt), bt));
+  Node* casted_length_plus_one = insert_non_negative_check(*this, length_plus_one, BoolTest::gt, bt);
+
+  if (stopped()) {
+    return true;
+  }
+
+  // 3) from u< length + 1 — range check (RCE-hoistable, encodes from >= 0 && from <= length)
+  Node* casted_from = insert_unsigned_range_check(*this, from, casted_length_plus_one, bt);
+  if (casted_from == nullptr) {
+    return true;
+  }
+
+  // 4) (from + size) u< length + 1 — range check (RCE-hoistable, encodes from + size <= length)
+  Node* from_plus_size = _gvn.transform(AddNode::make(from, size, bt));
+  Node* casted_from_plus_size = insert_unsigned_range_check(*this, from_plus_size, casted_length_plus_one, bt);
+  if (casted_from_plus_size == nullptr) {
+    return true;
+  }
+
+  replace_in_map(from, casted_from);
+  replace_in_map(size, casted_size);
+
+  set_result(casted_from);
+  return true;
 }
 
+
+// checkFromToIndex(from, to, length): !(from < 0 || from > to || to > length)
+//                                  -> from >= 0 && from <= to && to <= length
+//                                  -> from >= 0 && to - from >= 0 && to u< length + 1
 bool LibraryCallKit::inline_preconditions_checkFromToIndex(BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "");
+
+  if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
+    return false;
+  }
+
   // (IIILjava/util/function/BiFunction;)I]: (0: from),   (1: to),   (2: length),   (3: biFunction)
   // (JJJLjava/util/function/BiFunction;)J]: (0-1: from), (2-3: to), (4-5: length), (6: biFunction)
   Node* from = argument(0);
   Node* to = bt == T_INT ? argument(1) : argument(2);
   Node* length = bt == T_INT ? argument(2) : argument(4);
 
-  return inline_preconditions_checkFromToIndex_helper(from, to, nullptr, length, bt);
+  Node* casted_from = insert_non_negative_check(*this, from, BoolTest::ge, bt);
+
+  Node* subtracted_size = _gvn.transform(SubNode::make(to, from, bt));
+  insert_non_negative_check(*this, subtracted_size, BoolTest::ge, bt);
+
+  Node* length_plus_one = _gvn.transform(AddNode::make(length, _gvn.integercon(1, bt), bt));
+  Node* casted_length_plus_one = insert_non_negative_check(*this, length_plus_one, BoolTest::gt, bt);
+
+  if (stopped()) {
+    // At least one argument is known to be always negative during compilation
+    return true;
+  }
+
+  Node* casted_to = insert_unsigned_range_check(*this, to, casted_length_plus_one, bt);
+  if (casted_to == nullptr) {
+    return true; // to <= length is always false
+  }
+
+  replace_in_map(from, casted_from);
+  replace_in_map(to, casted_to);
+
+  set_result(casted_from);
+  return true;
 }
 
 bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
