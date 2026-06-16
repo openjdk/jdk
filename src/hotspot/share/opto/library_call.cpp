@@ -1186,26 +1186,15 @@ Node* insert_non_negative_check(LibraryCallKit& kit, Node* target, BoolTest::mas
   return gvn.transform(casted);
 }
 
-// Helper function for inserting an uncommon trap for range check (lhs </<= rhs). Returns a casted lhs node with improved
-// upper bond if can be deduced from rhs, or nullptr if the check is known to always fail at compile time and the caller
-// should stop inlining. Requires rhs known to be a signed positive.
-Node* insert_unsigned_range_check(LibraryCallKit& kit, Node* lhs, Node* rhs, BoolTest::mask mask, BasicType bt) {
-  assert(mask == BoolTest::lt || mask == BoolTest::le, "");
+// Helper function for inserting an unsigned range check: lhs u< rhs. Uses strict less-than (not <=)
+// because range check elimination only recognizes BoolTest::lt comparisons. Callers that need a <=
+// semantic should pre-transform the bound (e.g., check lhs u< rhs+1 instead of lhs u<= rhs).
+// Returns a casted lhs node with improved upper bound if can be deduced from rhs, or nullptr if
+// the check is known to always fail at compile time and the caller should stop inlining.
+// Requires rhs known to be a signed positive.
+Node* insert_unsigned_range_check(LibraryCallKit& kit, Node* lhs, Node* rhs, BasicType bt) {
   PhaseGVN& gvn = kit.gvn();
 
-  // Range check elimination only works with strict < (BoolTest::lt), not <= (BoolTest::le); therefore, we preform the
-  // logical equivalent:
-  //     lhs <= rhs ---> lhs < (rhs + 1)
-  //
-  // Since we already know `rhs` is a signed positive, that is, it necessarily satisfies:
-  //     0 <= rhs <= (signed) MAX_VALUE
-  //
-  // When interpreted as unsigned, `rhs` won't overflow.
-  if (mask == BoolTest::le) {
-    rhs = gvn.transform(AddNode::make(rhs, gvn.integercon(1, bt), bt));
-  }
-
-  // Unsigned comparison itself
   Node* rc_cmp = gvn.transform(CmpNode::make(lhs, rhs, bt, true));
   Node* rc_bool = gvn.transform(new BoolNode(rc_cmp, BoolTest::lt));
   RangeCheckNode* rc = new RangeCheckNode(kit.control(), rc_bool, PROB_MAX, COUNT_UNKNOWN);
@@ -1230,7 +1219,7 @@ Node* insert_unsigned_range_check(LibraryCallKit& kit, Node* lhs, Node* rhs, Boo
     return nullptr;
   }
 
-  // 'lhs' is now known to be < or <= 'rhs', so cast its type to be more specific.
+  // 'lhs' is now known to be u< 'rhs', so cast its type to be more specific.
   jlong lo_lhs = 0; // implied from unsigned comparisons
   jlong hi_rhs = gvn.type(rhs)->is_integer(bt)->hi_as_long();
   assert(lo_lhs <= hi_rhs, "");
@@ -1268,6 +1257,13 @@ bool LibraryCallKit::inline_preconditions_checkFromToIndex_helper(Node* from, No
     casted_size = insert_non_negative_check(*this, size, BoolTest::ge, bt);
   }
 
+  // Compute length + 1 to transform <= comparisons into < (which RCE recognizes — see is_range_check_if()
+  // in loopPredicate.cpp). The non-negative check (length + 1 > 0) ensures length >= 0 and produces a CastII
+  // with positive type ([1, MAX]) that RCE requires for the bound (lo_as_long() >= 0).
+  // Limitation: when length = signed MAX_VALUE, length + 1 overflows to MIN_VALUE and this guard deopts.
+  // The unsigned range checks would still be correct (MIN_VALUE unsigned > any valid index), but without
+  // a positive type on the bound, RCE cannot hoist them. Deopt-and-fallback to Java is acceptable since
+  // MAX_VALUE lengths are extremely rare in practice.
   Node* length_plus_one = _gvn.transform(AddNode::make(length, _gvn.integercon(1, bt), bt));
   casted_length_plus_one = insert_non_negative_check(*this, length_plus_one, BoolTest::gt, bt);
 
@@ -1297,7 +1293,7 @@ bool LibraryCallKit::inline_preconditions_checkFromToIndex_helper(Node* from, No
 
   // We don't want to use `casted_length` for range checks since range check elimination cannot pick up this pattern.
   // Instead, we transform `from <= length` --> `from < (length + 1)`
-  casted_from = insert_unsigned_range_check(*this, from, casted_length_plus_one, BoolTest::lt, bt);
+  casted_from = insert_unsigned_range_check(*this, from, casted_length_plus_one, bt);
   if (casted_from == nullptr) {
     return true; // `from` is known always greater than `length` during compilation.
   }
@@ -1308,10 +1304,15 @@ bool LibraryCallKit::inline_preconditions_checkFromToIndex_helper(Node* from, No
       return false;
     }
 
-    // Instead of range checking `from <= to`, we range check `0 <= from - to` or `-1 < from - to` since it's more
-    // likely to be constant propagated with common code pattern `to = from + size`
+    // Check `from <= to` by verifying `(to - from) u< length + 1`. This works because:
+    // - If from <= to: to - from is in [0, length] (non-negative, bounded by checks 1a/1c),
+    //   so the unsigned check passes.
+    // - If from > to: to - from is negative, wrapping to an unsigned value >= 2^(bits-1),
+    //   which exceeds length + 1, so the check correctly fails.
+    // Using `to - from` (instead of comparing from and to directly) produces a loop-invariant
+    // bound when to = from + size, enabling range check elimination.
     Node* subtracted_size = _gvn.transform(SubNode::make(to, from, bt));
-    insert_unsigned_range_check(*this, _gvn.zerocon(bt), subtracted_size, BoolTest::le, bt);
+    insert_unsigned_range_check(*this, subtracted_size, casted_length_plus_one, bt);
     if (stopped()) {
       return true; // `to` is always less than ``from`
     }
@@ -1328,7 +1329,7 @@ bool LibraryCallKit::inline_preconditions_checkFromToIndex_helper(Node* from, No
   }
 
   // Similarly, use the original, uncasted `to` and `length` for range checks.
-  casted_to = insert_unsigned_range_check(*this, to, casted_length_plus_one, BoolTest::lt, bt);
+  casted_to = insert_unsigned_range_check(*this, to, casted_length_plus_one, bt);
   if  (casted_to == nullptr) {
     return true; // `to` is always greater than `length`.
   }
@@ -1390,7 +1391,7 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   replace_in_map(length, casted_length);
 
   // Use an unsigned comparison for the range check itself
-  Node* casted_index = insert_unsigned_range_check(*this, index, casted_length, BoolTest::lt, bt);
+  Node* casted_index = insert_unsigned_range_check(*this, index, casted_length, bt);
   if (casted_length == nullptr) {
     // Range check is known to always fail during compilation and the IR graph so far constructed is good so return
     // success
