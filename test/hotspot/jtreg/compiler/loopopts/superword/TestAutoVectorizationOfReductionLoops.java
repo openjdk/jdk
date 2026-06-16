@@ -92,7 +92,7 @@ public class TestAutoVectorizationOfReductionLoops {
 
     @Run(test = "testMulReductionVF")
     void runMulReductionVF() {
-        float expected = 0.0f;
+        float expected = 1.0f;
         for (int i = 0; i < SIZE; i++) {
             expected *= (fx[i] + fy[i]);
         }
