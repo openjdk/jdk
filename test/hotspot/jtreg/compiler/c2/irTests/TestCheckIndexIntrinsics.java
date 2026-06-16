@@ -229,9 +229,8 @@ public class TestCheckIndexIntrinsics {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "2" }) // range check in main loop hoisted and main loop is eliminated
     @IR(counts = { IRNode.RANGE_CHECK_TRAP, "3" }, phase = CompilePhase.AFTER_PARSING)
-    @IR(failOn = { IRNode.RANGE_CHECK_TRAP })
+    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.LOOP, IRNode.RANGE_CHECK_TRAP })
     public static void testCheckFromToIndex(int start, int stop, int length, int offset, int size) {
         final int scale = 2;
         final int stride = 1;
@@ -245,9 +244,8 @@ public class TestCheckIndexIntrinsics {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "1" }) // inner counted loop of the strip mined
     @IR(counts = { IRNode.RANGE_CHECK_TRAP, "3" }, phase = CompilePhase.AFTER_PARSING)
-    @IR(failOn = { IRNode.RANGE_CHECK_TRAP })
+    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.LOOP, IRNode.RANGE_CHECK_TRAP })
     public static void testCheckFromToIndexL(long start, long stop, long length, long offset, long size) {
         final long scale = 2;
         final long stride = 1;
@@ -288,7 +286,7 @@ public class TestCheckIndexIntrinsics {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "1" }) // pre/main/post loops
+    @IR(counts = { IRNode.COUNTED_LOOP, "1" })
     @IR(failOn = { IRNode.RANGE_CHECK_TRAP })
     public static void testUnintrinsifiedFromIndexSizeL(long start, long stop, long length, long offset, long size) {
         final long scale = 2;

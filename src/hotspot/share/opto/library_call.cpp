@@ -1230,130 +1230,65 @@ Node* insert_unsigned_range_check(LibraryCallKit& kit, Node* lhs, Node* rhs, Bas
   return gvn.transform(result);
 }
 
-// checkFromToIndex  (from, to,   length, ...): !(from < 0 || from > to || to > length)
-//                                           => from >= 0 && from <= to && to <= length
-bool LibraryCallKit::inline_preconditions_checkFromToIndex_helper(Node* from, Node* to, Node* size, Node* length, BasicType bt) {
-  assert((to == nullptr) ^ (size == nullptr), "must set one and one only");
-  assert(bt == T_INT || bt == T_LONG, "");
+// checkIndex(index, length): !(index < 0 || index >= length)
+//                         => index >= 0 && index < length
+bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
+  // (IILjava/util/function/BiFunction;)I]: (0: index),   (1: length),   (3: biFunction)
+  // (JJLjava/util/function/BiFunction;)J]: (0-1: index), (2-3: length), (6: biFunction)
+  Node* index = argument(0);
+  Node* length = bt == T_INT ? argument(1) : argument(2);
 
   if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
     return false;
   }
 
-  // Save type improved nodes without replacing in state map just yet, as they interfere with range check eliminations.
-  Node* casted_from = nullptr;
-  Node* casted_to = nullptr;
-  Node* casted_size = nullptr;
-  Node* casted_length_plus_one = nullptr;
-
-  // Check that all arguments are positive. Note that even the following are logically equivalent to
-  // (from|to|length) >= 0 or (from|size|length) >= 0, we're checking them separately to allow branch elimination in
-  // case only one or two of them can be deduced.
-  // Note: we don't need to explicitly check `from >= 0` is positive since `from u<= length` later implies it.
-  if (to != nullptr) {
-    casted_to = insert_non_negative_check(*this, to, BoolTest::ge, bt);
-  }
-  if (size != nullptr) {
-    casted_size = insert_non_negative_check(*this, size, BoolTest::ge, bt);
-  }
-
-  // Compute length + 1 to transform <= comparisons into < (which RCE recognizes — see is_range_check_if()
-  // in loopPredicate.cpp). The non-negative check (length + 1 > 0) ensures length >= 0 and produces a CastII
-  // with positive type ([1, MAX]) that RCE requires for the bound (lo_as_long() >= 0).
-  // Limitation: when length = signed MAX_VALUE, length + 1 overflows to MIN_VALUE and this guard deopts.
-  // The unsigned range checks would still be correct (MIN_VALUE unsigned > any valid index), but without
-  // a positive type on the bound, RCE cannot hoist them. Deopt-and-fallback to Java is acceptable since
-  // MAX_VALUE lengths are extremely rare in practice.
-  Node* length_plus_one = _gvn.transform(AddNode::make(length, _gvn.integercon(1, bt), bt));
-  casted_length_plus_one = insert_non_negative_check(*this, length_plus_one, BoolTest::gt, bt);
-
-  if (stopped()) {
-    // At least one argument is known to be always negative during compilation and the IR graph so far constructed is
-    // good so return success.
+  // Check that length is positive
+  Node* casted_length = insert_non_negative_check(*this, length, BoolTest::ge, bt);
+  if (casted_length == nullptr) {
+    // Length is known to be always negative during compilation and the IR graph so far constructed is good so return
+    // success
     return true;
   }
 
-  // Since `length` is likely the loop invariant. We want to compare likely variants to it as much as possible so
-  // comparisons can be hoisted outside the loop or to pre/post loops.
-
-  // 1) for checkFromToIndex(from, to, length)
-  //    a) from u<= length
-  //    b) from u<= to
-  //    c) to   u<= length
-
-  // `from <= size + from` skip for checkFromIndexSize
-
-  // 2) for checkFromIndexSize(from, size, length)
-  //    a) from        u<= length
-  //    b) size        >=0 (known from positive checks above)
-  //    c) from + size u<= length
-
-  // (1a) (2a): from u<= length
-  // We have checked there could be at least one more range check trap
-
-  // We don't want to use `casted_length` for range checks since range check elimination cannot pick up this pattern.
-  // Instead, we transform `from <= length` --> `from < (length + 1)`
-  casted_from = insert_unsigned_range_check(*this, from, casted_length_plus_one, bt);
-  if (casted_from == nullptr) {
-    return true; // `from` is known always greater than `length` during compilation.
+  // Use an unsigned comparison for the range check itself
+  Node* casted_index = insert_unsigned_range_check(*this, index, casted_length, bt);
+  if (casted_index == nullptr) {
+    // Range check is known to always fail during compilation and the IR graph so far constructed is good so return
+    // success
+    return true;
   }
 
-  // (1b): from u<= to
-  if (to != nullptr) {
-    if (too_many_traps(Deoptimization::Reason_range_check)) { // We can insert a second trap?
-      return false;
-    }
+  replace_in_map(length, casted_length);
+  replace_in_map(index, casted_index);
 
-    // Check `from <= to` by verifying `(to - from) u< length + 1`. This works because:
-    // - If from <= to: to - from is in [0, length] (non-negative, bounded by checks 1a/1c),
-    //   so the unsigned check passes.
-    // - If from > to: to - from is negative, wrapping to an unsigned value >= 2^(bits-1),
-    //   which exceeds length + 1, so the check correctly fails.
-    // Using `to - from` (instead of comparing from and to directly) produces a loop-invariant
-    // bound when to = from + size, enabling range check elimination.
-    Node* subtracted_size = _gvn.transform(SubNode::make(to, from, bt));
-    insert_unsigned_range_check(*this, subtracted_size, casted_length_plus_one, bt);
-    if (stopped()) {
-      return true; // `to` is always less than ``from`
-    }
-  }
-
-
-  // (1c) (2c): `to u<= length` or `from + size u<= length`
-  if (too_many_traps(Deoptimization::Reason_range_check)) { // We can insert the one more trap?
-    return false;
-  }
-
-  if (to == nullptr) {
-    to = _gvn.transform(AddNode::make(from, size, bt));
-  }
-
-  // Similarly, use the original, uncasted `to` and `length` for range checks.
-  casted_to = insert_unsigned_range_check(*this, to, casted_length_plus_one, bt);
-  if  (casted_to == nullptr) {
-    return true; // `to` is always greater than `length`.
-  }
-
-  set_result(casted_from); // Finally, set return value.
-
-  // Now we've completed range check eliminations, we can safely replace nodes in state map with the casted nodes and
-  // improved types.
-  replace_in_map(from, casted_from);
-  if (casted_to != nullptr) {
-    replace_in_map(to, casted_to);
-  }
-  if (casted_size != nullptr) {
-    replace_in_map(size, casted_size);
-  }
-
+  set_result(casted_index);
   return true;
 }
 
 // checkFromIndexSize(from, size, length): !((length | from | size) < 0 || size > length - from)
 //                                      => from >= 0 && size >= 0 && from + size <= length
-//                                      => size >= 0 && from u< length + 1 && (from + size) u< length + 1
-// Note: `from u< length + 1` is logically redundant (implied by size >= 0 and from + size <= length),
-// but encoding `from >= 0` as a range check against loop-invariant `length + 1` allows RCE to hoist it.
+//                                      => size >= 0 && from u< length + 1 && (from + size) u<= length
+//
+// In total, we have 4 checks: 2 non-negative guards + 2 range checks
+//    1) size        >=  0            (non-negative guard)
+//    2) length      >=  0            (non-negative guard)
+//    3) from        u<= length       (range check, RCE-hoistable)
+//    4) from + size u<= length       (range check, RCE-hoistable)
+//
+// Although `from u<= length` is logically redundant (implied by `size >= 0` and `from + size <= length`),
+// encoding `from >= 0` as a range check against loop-invariant `length` allows RCE to hoist it.
+// Therefore, this 4-check approach is preferred over the more apparent 3-check alternative.
+//
+// Additionally, due to current RCE limitation on only recognizing strict < (not <=), we workaround
+// this issue by transforming `a u<= b` to `a u< b+1`. Therefore, the updated checks are
+//    1) size        >=  0            (non-negative guard)
+//    2) length + 1  >   0            (non-negative guard)
+//    3) from        u< length + 1    (range check, RCE-hoistable)
+//    4) from + size u< length + 1    (range check, RCE-hoistable)
+//
+// This introduces an limitation where a is max_jint or max_jlong: overflow to min_jint or min_jlong
+// will cause guard to de-opt. Falling back to bytecode is acceptable since `lengths = MAX_VALUE`
+// are extremely rare in practice.
 bool LibraryCallKit::inline_preconditions_checkFromIndexSize(BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "");
 
@@ -1401,8 +1336,29 @@ bool LibraryCallKit::inline_preconditions_checkFromIndexSize(BasicType bt) {
 
 
 // checkFromToIndex(from, to, length): !(from < 0 || from > to || to > length)
-//                                  -> from >= 0 && from <= to && to <= length
-//                                  -> from >= 0 && to - from >= 0 && to u< length + 1
+//                                  => from >= 0 && from <= to && to <= length
+//                                  => from u< length + 1 && (to - from) u< length + 1 && to u< length + 1
+//
+// In total, we have 4 checks:
+//     1) length     >=  0            (non-negative guard)
+//     2) from      u<= length        (range check, RCE-hoistable)
+//     3) to - from u<= length        (range check, RCE-hoistable)
+//     4) to        u<= length        (range check, RCE-hoistable)
+//
+// Similar to checkFromIndexSize(), `from u<= length` is logically redundant (implied by `to - from >= 0`
+// and `to <= length`), but encoding `from >= 0` as a range check against the likely loop-invariant
+// `length` allows RCE to hoist it. Similarly `(to - from) u< length + 1` is redundant in its bound,
+// but encodes `to - from >= 0`.
+// Therefore, this 4-check approach is preferred over the more apparent 3-check alternative.
+//
+// As explained in inline_preconditions_checkFromIndexSize(), the limitation on RCE forces us to
+// transform above checks to:
+//     1) length + 1  >  0            (non-negative guard)
+//     2) from       u< length + 1    (range check, RCE-hoistable)
+//     3) to - from  u< length + 1    (range check, RCE-hoistable)
+//     4) to         u< length + 1    (range check, RCE-hoistable)
+//
+// `length` being max_jint or max_jlong will also cause de-opt, but it rarely happens in practice.
 bool LibraryCallKit::inline_preconditions_checkFromToIndex(BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "");
 
@@ -1416,60 +1372,38 @@ bool LibraryCallKit::inline_preconditions_checkFromToIndex(BasicType bt) {
   Node* to = bt == T_INT ? argument(1) : argument(2);
   Node* length = bt == T_INT ? argument(2) : argument(4);
 
-  Node* casted_from = insert_non_negative_check(*this, from, BoolTest::ge, bt);
-
-  Node* subtracted_size = _gvn.transform(SubNode::make(to, from, bt));
-  insert_non_negative_check(*this, subtracted_size, BoolTest::ge, bt);
-
+  // 1) length + 1 > 0 — guard ensuring length >= 0 and producing [1, MAX] type for RCE.
+  //    Limitation: deopts when length = MAX_VALUE (length + 1 overflows).
   Node* length_plus_one = _gvn.transform(AddNode::make(length, _gvn.integercon(1, bt), bt));
   Node* casted_length_plus_one = insert_non_negative_check(*this, length_plus_one, BoolTest::gt, bt);
 
   if (stopped()) {
-    // At least one argument is known to be always negative during compilation
     return true;
   }
 
+  // 2) from u< length + 1 — range check (RCE-hoistable, encodes from >= 0 && from <= length)
+  Node* casted_from = insert_unsigned_range_check(*this, from, casted_length_plus_one, bt);
+  if (casted_from == nullptr) {
+    return true;
+  }
+
+  // 3) (to - from) u< length + 1 — range check (RCE-hoistable, encodes from <= to)
+  Node* subtracted_size = _gvn.transform(SubNode::make(to, from, bt));
+  insert_unsigned_range_check(*this, subtracted_size, casted_length_plus_one, bt);
+  if (stopped()) {
+    return true;
+  }
+
+  // 4) to u< length + 1 — range check (RCE-hoistable, encodes to <= length)
   Node* casted_to = insert_unsigned_range_check(*this, to, casted_length_plus_one, bt);
   if (casted_to == nullptr) {
-    return true; // to <= length is always false
+    return true;
   }
 
   replace_in_map(from, casted_from);
   replace_in_map(to, casted_to);
 
   set_result(casted_from);
-  return true;
-}
-
-bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
-  // (IILjava/util/function/BiFunction;)I]: (0: index),   (1: length),   (3: biFunction)
-  // (JJLjava/util/function/BiFunction;)J]: (0-1: index), (2-3: length), (6: biFunction)
-  Node* index = argument(0);
-  Node* length = bt == T_INT ? argument(1) : argument(2);
-
-  if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
-    return false;
-  }
-
-  // Check that length is positive
-  Node* casted_length = insert_non_negative_check(*this, length, BoolTest::ge, bt);
-  if (casted_length == nullptr) {
-    // Length is known to be always negative during compilation and the IR graph so far constructed is good so return
-    // success
-    return true;
-  }
-  replace_in_map(length, casted_length);
-
-  // Use an unsigned comparison for the range check itself
-  Node* casted_index = insert_unsigned_range_check(*this, index, casted_length, bt);
-  if (casted_length == nullptr) {
-    // Range check is known to always fail during compilation and the IR graph so far constructed is good so return
-    // success
-    return true;
-  }
-  replace_in_map(index, casted_index);
-
-  set_result(casted_index);
   return true;
 }
 
