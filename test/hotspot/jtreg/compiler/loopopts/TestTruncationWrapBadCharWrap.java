@@ -74,7 +74,7 @@ public class TestTruncationWrapBadCharWrap {
         while (32 < i) {
             sum++;
             // Ignoring truncation would require values to be in range [0..32767].
-            // But unfortunately, we classify this as CHAR, and check for [0..65535].
+            // But unfortunately, we classified this as CHAR, and checked for [0..65535].
             i = (i - 4) & 0x7fff;
         }
         return sum;
@@ -83,8 +83,8 @@ public class TestTruncationWrapBadCharWrap {
     static int test2() {
         int sum = 0;
         // We have 32767 - 32758 = 9 < 48, so the limit is too close to the wrap
-        // limit, and wrap is possible. But since 0x7fff gets mapped to CHAR,
-        // we accidentally check 65535 - 32758 < 48, and conclude wrap is not
+        // limit, and wrap is possible. But since 0x7fff got mapped to CHAR,
+        // we accidentally checked 65535 - 32758 < 48, and conclude wrap is not
         // possible.
         for (int i = 519; i < 32758; i = (i + 48) & 0x7fff) {
             sum++;
@@ -104,8 +104,8 @@ public class TestTruncationWrapBadCharWrap {
         int i;
         // Similar as with test2:
         // We should check 32767 - 32766 = 1 < 50, so wrap possible. But we
-        // wrongly classify it as CHAR and check 65535 - 32766 < 50, and
-        // conclude there is no wrap.
+        // wrongly classified it as CHAR and checked 65535 - 32766 < 50, and
+        // concluded there is no wrap.
         for (i = 2046; i <= 32766; i = (i + 50) & 0x7fff) {
             sum += i + 1;
             if (opaqueCheck()) { break; }
