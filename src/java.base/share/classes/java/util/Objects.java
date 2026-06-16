@@ -206,7 +206,7 @@ public final class Objects {
      *     }
      * }
      * @param obj an object or {@code null}
-     * @since Valhalla
+     * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective=true)
     public static boolean hasIdentity(Object obj) {
@@ -221,7 +221,7 @@ public final class Objects {
      * @return {@code obj} if {@code obj} is an identity object
      * @throws NullPointerException if {@code obj} is {@code null}
      * @throws IdentityException if {@code obj} is not an identity object
-     * @since Valhalla
+     * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS)
     @ForceInline
@@ -242,7 +242,7 @@ public final class Objects {
      * @return {@code obj} if {@code obj} is an identity object
      * @throws NullPointerException if {@code obj} is {@code null}
      * @throws IdentityException if {@code obj} is not an identity object
-     * @since Valhalla
+     * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS)
     @ForceInline
@@ -263,7 +263,7 @@ public final class Objects {
      * @return {@code obj} if {@code obj} is an identity object
      * @throws NullPointerException if {@code obj} is {@code null}
      * @throws IdentityException if {@code obj} is not an identity object
-     * @since Valhalla
+     * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS)
     @ForceInline

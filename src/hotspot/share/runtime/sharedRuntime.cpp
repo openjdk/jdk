@@ -3309,10 +3309,10 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
 
   if (ces.has_scalarized_args()) {
     // Save a C heap allocated version of the scalarized signature and store it in the adapter
-    GrowableArray<SigEntry>* heap_sig = new (mtInternal) GrowableArray<SigEntry>(ces.sig_cc()->length(), mtInternal);
+    GrowableArray<SigEntry>* heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc()->length(), mtCode);
     heap_sig->appendAll(ces.sig_cc());
     handler->set_sig_cc(heap_sig);
-    heap_sig = new (mtInternal) GrowableArray<SigEntry>(ces.sig_cc_ro()->length(), mtInternal);
+    heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc_ro()->length(), mtCode);
     heap_sig->appendAll(ces.sig_cc_ro());
     handler->set_sig_cc_ro(heap_sig);
   }
@@ -3473,10 +3473,10 @@ void AdapterHandlerEntry::link() {
       ces.initialize_from_fingerprint(_fingerprint);
       if (ces.has_scalarized_args()) {
         // Save a C heap allocated version of the scalarized signature and store it in the adapter
-        GrowableArray<SigEntry>* heap_sig = new (mtInternal) GrowableArray<SigEntry>(ces.sig_cc()->length(), mtInternal);
+        GrowableArray<SigEntry>* heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc()->length(), mtCode);
         heap_sig->appendAll(ces.sig_cc());
         set_sig_cc(heap_sig);
-        heap_sig = new (mtInternal) GrowableArray<SigEntry>(ces.sig_cc_ro()->length(), mtInternal);
+        heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc_ro()->length(), mtCode);
         heap_sig->appendAll(ces.sig_cc_ro());
         set_sig_cc_ro(heap_sig);
       }

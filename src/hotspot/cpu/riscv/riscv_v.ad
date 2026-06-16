@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
 // Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
 // Copyright (c) 2023, 2025, Rivos Inc. All rights reserved.
@@ -4344,14 +4344,15 @@ instruct vstringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
 %}
 
 // clearing of an array
-instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, Universe dummy,
-                             vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7)
+instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, immL0 zero,
+                             vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
+                             Universe dummy)
 %{
   predicate(!UseBlockZeroing && UseRVV);
-  match(Set dummy (ClearArray cnt base));
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, TEMP v4, TEMP v5, TEMP v6, TEMP v7);
 
-  format %{ "ClearArray $cnt, $base\t#@clearArray_reg_reg" %}
+  format %{ "ClearArray $cnt, $base\t#@vclearArray_reg_reg" %}
 
   ins_encode %{
     __ clear_array_v($base$$Register, $cnt$$Register);

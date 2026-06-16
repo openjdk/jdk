@@ -3183,8 +3183,14 @@ void PhaseOutput::init_scratch_buffer_blob(int const_size) {
     if (C->has_scalarized_args()) {
       // Inline type entry points (MachVEPNodes) require lots of space for GC barriers and oop verification
       // when loading object fields from the buffered argument. Increase scratch buffer size accordingly.
+      int barrier_size = 7;
+      DEBUG_ONLY(barrier_size += 37;)
+      if (UseShenandoahGC) {
+        barrier_size += 700;
+      } else if (UseZGC) {
+        barrier_size += 200;
+      }
       ciMethod* method = C->method();
-      int barrier_size = UseZGC ? 200 : (7 DEBUG_ONLY(+ 37));
       int arg_num = 0;
       if (!method->is_static()) {
         if (method->is_scalarized_arg(arg_num)) {

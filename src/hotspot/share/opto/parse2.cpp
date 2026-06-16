@@ -76,7 +76,7 @@ Node* Parse::record_profile_for_speculation_at_array_load(Node* ld) {
 //---------------------------------array_load----------------------------------
 void Parse::array_load(BasicType bt) {
   const Type* elemtype = Type::TOP;
-  Node* adr = array_addressing(bt, 0, elemtype);
+  Node* prep_array = prepare_array_addressing(bt, 0, elemtype);
   if (stopped())  return;     // guaranteed null or range check
 
   Node* array_index = pop();
@@ -98,15 +98,20 @@ void Parse::array_load(BasicType bt) {
       sync_kit(ideal);
       if (!array_type->is_flat()) {
         assert(array_type->is_flat() || control()->in(0)->as_If()->is_flat_array_check(&_gvn), "Should be found");
+        // Loading from a non-flat array, casting array to not flat.
+        const TypeAryPtr* ary_type = _gvn.type(prep_array)->is_aryptr();
+        ary_type = ary_type->cast_to_not_flat();
+        Node* not_flat_ary = _gvn.transform(new CheckCastPPNode(control(), prep_array, ary_type));
+        Node* adr = get_ptr_to_array_element(not_flat_ary, array_index, bt, ary_type->size(), control());
         const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
         DecoratorSet decorator_set = IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD;
-        if (needs_range_check(array_type->size(), array_index)) {
+        if (needs_range_check(ary_type->size(), array_index)) {
           // We've emitted a RangeCheck but now insert an additional check between the range check and the actual load.
           // We cannot pin the load to two separate nodes. Instead, we pin it conservatively here such that it cannot
           // possibly float above the range check at any point.
           decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
         }
-        Node* ld = access_load_at(array, adr, adr_type, element_ptr, bt, decorator_set);
+        Node* ld = access_load_at(not_flat_ary, adr, adr_type, element_ptr, bt, decorator_set);
         if (element_ptr->is_inlinetypeptr()) {
           ld = InlineTypeNode::make_from_oop(this, ld, element_ptr->inline_klass());
         }
@@ -147,6 +152,7 @@ void Parse::array_load(BasicType bt) {
     bt = T_BOOLEAN;
   }
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
+  Node* adr = get_ptr_to_array_element(prep_array, array_index, bt, array_type->size(), control());
   Node* ld = access_load_at(array, adr, adr_type, elemtype, bt,
                             IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD);
   ld = record_profile_for_speculation_at_array_load(ld);
@@ -190,8 +196,12 @@ Node* Parse::load_from_unknown_flat_array(Node* array, Node* array_index, const 
 //--------------------------------array_store----------------------------------
 void Parse::array_store(BasicType bt) {
   const Type* elemtype = Type::TOP;
-  Node* adr = array_addressing(bt, type2size[bt], elemtype);
+  Node* prep_array = prepare_array_addressing(bt, type2size[bt], elemtype);
   if (stopped())  return;     // guaranteed null or range check
+
+  Node* adr = get_ptr_to_array_element(prep_array, /* index */peek(0+type2size[bt]), bt,
+    _gvn.type(prep_array)->is_aryptr()->size(), control());
+
   Node* stored_value_casted = nullptr;
   if (bt == T_OBJECT) {
     stored_value_casted = array_store_check(adr, elemtype);
@@ -332,7 +342,7 @@ void Parse::store_to_unknown_flat_array(Node* array, Node* const idx, Node* non_
 
 //------------------------------array_addressing-------------------------------
 // Pull array and index from the stack.  Compute pointer-to-element.
-Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
+Node* Parse::prepare_array_addressing(BasicType type, int vals, const Type*& elemtype) {
   Node *idx   = peek(0+vals);   // Get from stack without popping
   Node *ary   = peek(1+vals);   // in case of exception
 
@@ -379,9 +389,13 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
   // Check for always knowing you are throwing a range-check exception
   if (stopped())  return top();
 
+  return ary;
+}
+
+Node* Parse::get_ptr_to_array_element(Node* array, Node* idx, BasicType elembt, const TypeInt* sizetype, Node* control) {
   // Make array address computation control dependent to prevent it
   // from floating above the range check during loop optimizations.
-  Node* ptr = array_element_address(ary, idx, type, sizetype, control());
+  Node* ptr = array_element_address(array, idx, elembt, sizetype, control);
   assert(ptr != top(), "top should go hand-in-hand with stopped");
 
   return ptr;

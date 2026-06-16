@@ -39,9 +39,14 @@ VARHANDLE_OBJECT_TYPES := Reference FlatValue NonAtomicReference NonAtomicFlatVa
 # arg $1: type for this varhandle
 define GenerateVarHandle
   # Underlying erased signature type, Object or a primitive type
-  VARHANDLE_$1_type := $$(strip $$(if $$(filter $(VARHANDLE_OBJECT_TYPES), $1), Object, $1))
-  VARHANDLE_$1_InputType := $$(strip $$(if $$(filter $(VARHANDLE_OBJECT_TYPES), $1), $1, $$(call Conv, $1, Type)))
-  VARHANDLE_$1_Type := $$(strip $$(subst NonAtomicReference, Reference, $$(subst NonAtomicFlatValue, FlatValue, $$(VARHANDLE_$1_InputType))))
+  VARHANDLE_$1_type := \
+      $$(strip $$(if $$(filter $(VARHANDLE_OBJECT_TYPES), $1), Object, $1))
+  VARHANDLE_$1_InputType := \
+      $$(strip $$(if $$(filter $(VARHANDLE_OBJECT_TYPES), $1), $1, \
+      $$(call Conv, $1, Type)))
+  VARHANDLE_$1_Type := \
+      $$(strip $$(subst NonAtomicReference, Reference, \
+      $$(subst NonAtomicFlatValue, FlatValue, $$(VARHANDLE_$1_InputType))))
 
   $1_KEYS := $$(VARHANDLE_$1_type) CAS
   ifneq ($$(filter $(PRIMITIVE_TYPES), $1),)

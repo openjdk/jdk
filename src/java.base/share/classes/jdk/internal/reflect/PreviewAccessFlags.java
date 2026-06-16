@@ -43,7 +43,7 @@ import static java.lang.reflect.AccessFlag.*;
 /// These preview features appear when VM is running with --enable-preview, or
 /// in x.65535 class files.  Tools must handle x.65535 class files when their
 /// own VM is not running in preview, so this class may be used by tools when
-///  preview features are not enabled,
+/// preview features are not enabled,
 public final class PreviewAccessFlags {
 
     public static final @Stable AccessFlag[]

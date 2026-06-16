@@ -29,10 +29,12 @@ import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Objects;
 
 import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.classfile.ClassFile.ACC_STRICT_INIT;
@@ -78,6 +80,33 @@ public final class ValueClass {
         return JLRA.isNullRestrictedField(f);
     }
 
+    @ForceInline
+    private static void validateArrayArguments(Class<?> componentType,
+                                               int length) {
+        if (componentType == null) {
+            throw new NullPointerException("Component type is null");
+        }
+        if (!isConcreteValueClass(componentType)) {
+            throw new IllegalArgumentException("Component type is not a concrete value class");
+        }
+        if (length < 0) {
+            throw new NegativeArraySizeException(Integer.toString(length));
+        }
+    }
+
+    @ForceInline
+    private static void validateArrayArguments(Class<?> componentType,
+                                               int length, Object initVal) {
+        validateArrayArguments(componentType, length);
+        if (initVal == null) {
+            throw new NullPointerException("Initial value is null");
+        }
+        // Special arrays are monomorphic, Java mirror can be compared directly
+        if (initVal.getClass() != componentType) {
+            throw new IllegalArgumentException("Type mismatch between array and initial value");
+        }
+    }
+
     /**
      * Allocate an array of a value class type with components that behave in
      * the same way as a {@link jdk.internal.vm.annotation.NullRestricted}
@@ -90,26 +119,58 @@ public final class ValueClass {
      * @throws IllegalArgumentException if {@code componentType} is not a
      *                                  value class type.
      */
-    @IntrinsicCandidate
-    public static native Object[] newNullRestrictedAtomicArray(Class<?> componentType,
-                                                               int length, Object initVal);
+    @ForceInline
+    public static Object[] newNullRestrictedAtomicArray(Class<?> componentType,
+                                                         int length, Object initVal) {
+        validateArrayArguments(componentType, length, initVal);
+        return newNullRestrictedAtomicArray0(componentType, length, initVal);
+    }
 
     @IntrinsicCandidate
-    public static native Object[] newNullRestrictedNonAtomicArray(Class<?> componentType,
-                                                                  int length, Object initVal);
+    private static native Object[] newNullRestrictedAtomicArray0(Class<?> componentType,
+                                                                int length, Object initVal);
+
+    @ForceInline
+    public static Object[] newNullRestrictedNonAtomicArray(Class<?> componentType,
+                                                           int length, Object initVal) {
+        validateArrayArguments(componentType, length, initVal);
+        return newNullRestrictedNonAtomicArray0(componentType, length, initVal);
+    }
 
     @IntrinsicCandidate
-    public static native Object[] newNullableAtomicArray(Class<?> componentType,
-                                                         int length);
+    private static native Object[] newNullRestrictedNonAtomicArray0(Class<?> componentType,
+                                                                    int length, Object initVal);
 
-    public static native Object[] newReferenceArray(Class<?> componentType,
-                                                    int length);
+    @ForceInline
+    public static Object[] newNullableAtomicArray(Class<?> componentType,
+                                                  int length) {
+        validateArrayArguments(componentType, length);
+        return newNullableAtomicArray0(componentType, length);
+    }
+
+    @IntrinsicCandidate
+    private static native Object[] newNullableAtomicArray0(Class<?> componentType,
+                                                          int length);
+
+    public static Object[] newReferenceArray(Class<?> componentType,
+                                             int length) {
+        validateArrayArguments(componentType, length);
+        return newReferenceArray0(componentType, length);
+    }
+
+    private static native Object[] newReferenceArray0(Class<?> componentType,
+                                                      int length);
 
     /**
      * {@return true if the given array is a flat array}
      */
+    @ForceInline
+    public static boolean isFlatArray(Object[] array) {
+        return isFlatArray0(Objects.requireNonNull(array));
+    }
+
     @IntrinsicCandidate
-    public static native boolean isFlatArray(Object[] array);
+    private static native boolean isFlatArray0(Object[] array);
 
     public static Object[] copyOfSpecialArray(Object[] array, int newLength) {
         if (newLength < 0) {
@@ -134,14 +195,24 @@ public final class ValueClass {
     /**
      * {@return true if the given array is a null-restricted array}
      */
+    @ForceInline
+    public static boolean isNullRestrictedArray(Object[] array) {
+        return isNullRestrictedArray0(Objects.requireNonNull(array));
+    }
+
     @IntrinsicCandidate
-    public static native boolean isNullRestrictedArray(Object[] array);
+    private static native boolean isNullRestrictedArray0(Object[] array);
 
     /**
      * {@return true if the given array uses a layout designed for atomic accesses }
      */
+    @ForceInline
+    public static boolean isAtomicArray(Object[] array) {
+        return isAtomicArray0(Objects.requireNonNull(array));
+    }
+
     @IntrinsicCandidate
-    public static native boolean isAtomicArray(Object[] array);
+    private static native boolean isAtomicArray0(Object[] array);
 
     // This class also serves as a lazy holder of its singleton instance
     private static final class StrictInstanceFieldClassValue extends ClassValue<Boolean> {

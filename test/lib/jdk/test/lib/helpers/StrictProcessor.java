@@ -139,10 +139,11 @@ public final class StrictProcessor {
                 if (cle instanceof InnerClassesAttribute ica) {
                     // VM needs identity bit fixed
                     List<InnerClassInfo> fixedInfos = ica.classes().stream()
-                            .map(info -> InnerClassInfo.of(info.innerClass(),
-                                    info.outerClass(),
-                                    info.innerName(),
-                                    info.flagsMask() | ACC_IDENTITY))
+                            .map(info -> info.has(AccessFlag.INTERFACE) ? info :
+                                    InnerClassInfo.of(info.innerClass(),
+                                            info.outerClass(),
+                                            info.innerName(),
+                                            info.flagsMask() | ACC_IDENTITY))
                             .toList();
                     clb.with(InnerClassesAttribute.of(fixedInfos));
                 } else if (cle instanceof ClassFileVersion cfv) {

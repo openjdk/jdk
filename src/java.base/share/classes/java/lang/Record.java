@@ -97,7 +97,6 @@ package java.lang;
  * @jls 8.10 Record Classes
  * @since 16
  */
-@jdk.internal.MigratedValueClass
 public abstract /*value*/ class Record {
     /**
      * Constructor for record classes to call.

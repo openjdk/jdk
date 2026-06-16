@@ -83,8 +83,8 @@ public class ReflectionFactory {
 
     /**
      * Returns an accessible no-arg constructor for a class.
-    * The no-arg constructor is found searching the class and its supertypes,
-    * and must ensure that all strictly-initialized fields
+     * The no-arg constructor is found searching the class and its supertypes,
+     * and must ensure that all strictly-initialized fields
      * declared in the class and its supertypes are properly initialized.
      *
      * @param cl the class to instantiate

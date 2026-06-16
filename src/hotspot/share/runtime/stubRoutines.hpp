@@ -366,6 +366,7 @@ public:
   static void arrayof_jlong_copy     (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy       (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy_uninit(HeapWord* src, HeapWord* dest, size_t count);
+
 };
 
 #endif // SHARE_RUNTIME_STUBROUTINES_HPP

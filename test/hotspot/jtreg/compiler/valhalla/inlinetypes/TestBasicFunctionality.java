@@ -49,7 +49,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @bug 8327695
  * @summary Test the basic value class implementation in C2.
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -62,7 +62,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @bug 8327695
  * @summary Test the basic value class implementation in C2.
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -75,7 +75,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @bug 8327695
  * @summary Test the basic value class implementation in C2.
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -88,7 +88,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @bug 8327695
  * @summary Test the basic value class implementation in C2.
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -101,7 +101,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @bug 8327695
  * @summary Test the basic value class implementation in C2.
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -114,7 +114,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @bug 8327695
  * @summary Test the basic value class implementation in C2.
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -127,7 +127,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @key randomness
  * @bug 8327695
  * @summary Test the basic value class implementation in C2.
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -854,6 +854,7 @@ static MyValue1 tmp = null;
         return copy;
     }
 
+    @Warmup(value=10000)
     @Run(test = "test32")
     public void test32_verifier() {
         MyValue3 vt = MyValue3.create();

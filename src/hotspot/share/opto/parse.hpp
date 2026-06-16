@@ -497,7 +497,8 @@ class Parse : public GraphKit {
   void array_store(BasicType etype);
   void store_to_unknown_flat_array(Node* array, Node* idx, Node* non_null_stored_value);
   // Helper function to compute array addressing
-  Node* array_addressing(BasicType type, int vals, const Type*& elemtype);
+  Node* prepare_array_addressing(BasicType type, int vals, const Type*& elemtype);
+  Node* get_ptr_to_array_element(Node* array, Node* idx, BasicType elembt, const TypeInt* sizetype, Node* control);
   bool needs_range_check(const TypeInt* size_type, const Node* index) const;
   Node* create_speculative_inline_type_array_checks(Node* array, const TypeAryPtr* array_type, const Type*& element_type);
   Node* cast_to_speculative_array_type(Node* array, const TypeAryPtr*& array_type, const Type*& element_type);

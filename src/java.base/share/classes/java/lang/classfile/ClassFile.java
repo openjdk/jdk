@@ -809,7 +809,7 @@ public sealed interface ClassFile
     /**
      * The bit mask of {@link AccessFlag#IDENTITY} access and property modifier.
      *
-     * @since Valhalla
+     * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective = true)
     int ACC_IDENTITY = 0x0020;
@@ -850,7 +850,7 @@ public sealed interface ClassFile
     /**
      * The bit mask of {@link AccessFlag#STRICT_INIT} access and property modifier.
      *
-     * @since Valhalla
+     * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STRICT_FIELDS, reflective = true)
     int ACC_STRICT_INIT = 0x0800;

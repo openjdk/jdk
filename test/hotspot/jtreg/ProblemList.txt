@@ -103,7 +103,6 @@ runtime/os/TestTracePageSizes.java#compiler-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
-runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
 runtime/Thread/TestAlwaysPreTouchStacks.java 8383372 macosx-aarch64
@@ -138,6 +137,8 @@ serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
 serviceability/sa/ClhsdbThreadContext.java        8356704 windows-x64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
+
+serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8385679 generic-all
 
 #############################################################################
 
@@ -198,16 +199,14 @@ vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find006/Test
 
 # Valhalla failures start here:
 compiler/codegen/TestRedundantLea.java#Spill              8361089 generic-all
-compiler/valhalla/inlinetypes/TestArrayNullMarkers.java#NVF-nAVF 8384262 generic-all
 compiler/valhalla/inlinetypes/TestIntrinsics.java#id4 8386160 generic-all
+compiler/valhalla/inlinetypes/TestIntrinsics.java#id0 8386237 generic-all
+compiler/valhalla/inlinetypes/TestIntrinsics.java#id1 8386237 generic-all
+compiler/valhalla/inlinetypes/TestIntrinsics.java#id5 8386237 generic-all
+compiler/valhalla/inlinetypes/TestIntrinsics.java#id6 8386237 generic-all
 
-vmTestbase/nsk/jdb/exclude/exclude001/exclude001.java 8375062 windows-x64
-vmTestbase/nsk/jdi/Scenarios/invokeMethod/popframes001/TestDescription.java 8375076 windows-x64
 vmTestbase/nsk/jvmti/IterateOverReachableObjects/iterreachobj002/TestDescription.java 8384882 linux-all
 
 # The following test failures DID NOT reproduce during Tier[1-8] testing
 # done for 8377828. Further analysis is being done with 8376235:
 compiler/codegen/TestRedundantLea.java#RegexFind          8361089 generic-all
-
-# I'm disabling this entry to determine frequency of failure:
-# vmTestbase/nsk/jdi/BScenarios/multithrd/tc04x001/TestDescription.java 8375076 windows-x64

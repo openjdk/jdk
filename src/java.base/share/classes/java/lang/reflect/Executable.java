@@ -203,7 +203,6 @@ public abstract sealed class Executable extends AccessibleObject
      * {@return an unmodifiable set of the {@linkplain AccessFlag
      * access flags} for the executable represented by this object,
      * possibly empty}
-     * The {@code AccessFlags} may depend on the class file format version of the class.
      *
      * @see #getModifiers()
      * @jvms 4.6 Methods

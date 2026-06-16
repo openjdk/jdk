@@ -7361,23 +7361,39 @@ class C2 extends C1 implements I2 {
     <function id="GetClassModifiers" phase="start" num="51">
       <synopsis>Get Class Modifiers</synopsis>
       <description>
-        For the class indicated by <code>klass</code>, return the access
-        flags
-        via <code>modifiers_ptr</code>.
-        Access flags are defined in <vmspec chapter="4"/>.
+        For the class indicated by <code>klass</code>, return the Java language
+        modifiers and class/interface properties of the corresponding
+        <code>java.lang.Class</code> object, via <code>modifiers_ptr</code>.
         <p/>
-        If the class is an array class, then its public, private, and protected
-        modifiers are the same as those of its component type. For arrays of
+        The modifiers are encoded as a mask of access-flag bit values defined in
+        <vmspec chapter="4"/>. The returned value is not necessarily the value of the
+        access_flags item in the class file of <code>klass</code>.
+        In particular, for member, local, or anonymous classes and interfaces, the result
+        may include modifiers represented by access flags from the <code>InnerClasses</code>
+        attribute, such as <code>ACC_STATIC</code>.
+        <p/>
+        The modifiers include, as applicable, the Java Virtual Machine constants for
+        public, private, protected, final, static, abstract, and interface, as well as
+        access-flag bit values for other class/interface properties encoded in the
+        result of invoking <code>java.lang.Class.getModifiers()</code> on the
+        corresponding <code>java.lang.Class</code> object.
+        <p/>
+        If <code>klass</code> is an array class, then its public, private, and
+        protected modifiers are the same as those of its component type. For arrays of
         primitives, this component type is represented by one of the primitive
-        classes (for example, <code>java.lang.Integer.TYPE</code>).
+        classes, such as <code>java.lang.Integer.TYPE</code>. For array classes, the
+        abstract and final modifiers are set, and the interface modifier is not set.
         <p/>
-        If the class is a primitive class, its public modifier is always true,
-        and its protected and private modifiers are always false.
+        If <code>klass</code> is a primitive type or void, then its public, abstract,
+        and final modifiers are always set, and its protected, private, and interface
+        modifiers are never set.
         <p/>
-        If the class is an array class or a primitive class then its final
-        modifier is always true and its interface modifier is always false.
-        The values of its other modifiers are not determined by this specification.
-
+        When preview features are enabled, the <code>ACC_IDENTITY</code> access flag
+        is set if and only if <code>klass</code> is an identity class or an array class.
+        <p/>
+        When preview features are disabled, the <code>ACC_SUPER</code> access flag may be
+        set only if <code>klass</code> is not a primitive type or void. The flag has no
+        effective meaning.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -7392,7 +7408,7 @@ class C2 extends C1 implements I2 {
         <param id="modifiers_ptr">
           <outptr><jint/></outptr>
           <description>
-            On return, points to the current access flags of this class.
+            On return, points to the modifiers of this class.
 
           </description>
         </param>

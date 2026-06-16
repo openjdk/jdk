@@ -24,7 +24,7 @@
 /**
  * @test
  * @enablePreview
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @run main/othervm -XX:-BackgroundCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline ${test.main.class}
  */
 

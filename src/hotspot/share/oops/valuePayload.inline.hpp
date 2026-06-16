@@ -692,7 +692,7 @@ inline void FlatArrayPayload::set_index(int index) {
 }
 
 inline void FlatArrayPayload::advance_index(int delta) {
-  set_offset(this->offset() + delta * _storage._element_size);
+  set_offset(this->offset() + (ptrdiff_t)delta * (ptrdiff_t)_storage._element_size);
 }
 
 inline void FlatArrayPayload::next_element() {

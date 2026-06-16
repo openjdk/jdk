@@ -201,11 +201,11 @@ public final class SystemModuleFinders {
 
         }
 
-        // exploded build (do not cache module finder)
+        // exploded build
         Path dir = Path.of(home, "modules");
         if (!Files.isDirectory(dir))
             throw new InternalError("Unable to detect the run-time image");
-        return ModulePath.of(ModuleBootstrap.patcher(), PreviewFeatures.isEnabled(), dir);
+        return ModulePath.ofExplodedImage(dir, ModuleBootstrap.patcher(), PreviewFeatures.isEnabled());
     }
 
     /**
