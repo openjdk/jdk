@@ -2591,10 +2591,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ bind(done);
   }
 
-# if 0
-  // DTrace method exit
-# endif
-
   // Clear "last Java frame" SP and PC.
   // --------------------------------------------------------------------------
 
