@@ -2800,18 +2800,20 @@ static bool is_replicate_uint_constant(const Node* n) {
   return n->Opcode() == Op_Replicate &&
          n->in(1)->is_Con() &&
          n->in(1)->bottom_type()->isa_long() &&
-         n->in(1)->bottom_type()->is_long()->get_con() <= 0xFFFFFFFFL;
+         (julong)n->in(1)->bottom_type()->is_long()->get_con() <= 0xFFFFFFFFUL;
 }
 
 static bool has_vector_elements_fit_uint(Node* n) {
   auto is_lower_doubleword_mask_pattern = [](const Node* n) {
     return n->Opcode() == Op_AndV &&
+           !n->is_predicated_vector() &&
            (is_replicate_uint_constant(n->in(1)) ||
             is_replicate_uint_constant(n->in(2)));
   };
 
   auto is_clear_upper_doubleword_uright_shift_pattern = [](const Node* n) {
     return n->Opcode() == Op_URShiftVL &&
+           !n->is_predicated_vector() &&
            n->in(2)->Opcode() == Op_RShiftCntV && n->in(2)->in(1)->is_Con() &&
            n->in(2)->in(1)->bottom_type()->isa_int() &&
            n->in(2)->in(1)->bottom_type()->is_int()->get_con() >= 32;
@@ -2827,6 +2829,7 @@ static bool has_vector_elements_fit_int(Node* n) {
 
   auto is_clear_upper_doubleword_right_shift_pattern = [](const Node* n) {
     return n->Opcode() == Op_RShiftVL &&
+           !n->is_predicated_vector() &&
            n->in(2)->Opcode() == Op_RShiftCntV && n->in(2)->in(1)->is_Con() &&
            n->in(2)->in(1)->bottom_type()->isa_int() &&
            n->in(2)->in(1)->bottom_type()->is_int()->get_con() >= 32;
