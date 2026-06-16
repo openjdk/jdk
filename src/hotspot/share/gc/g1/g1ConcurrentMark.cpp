@@ -476,7 +476,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _num_concurrent_workers(0),
   _max_concurrent_workers(0),
 
-  _region_mark_stats_cache_may_contain_entries(false),
+  _is_region_mark_stats_cache_in_use(false),
   _region_mark_stats(nullptr),
   _top_at_mark_starts(nullptr),
   _top_at_rebuild_starts(nullptr),
@@ -540,15 +540,15 @@ void G1ConcurrentMark::fully_initialize() {
 }
 
 bool G1ConcurrentMark::is_in_concurrent_cycle() const {
-  return is_fully_initialized() ? _cm_thread->is_in_progress() : false;
+  return _cm_thread->is_in_progress();
 }
 
 bool G1ConcurrentMark::is_in_marking() const {
-  return is_fully_initialized() ? cm_thread()->is_in_marking() : false;
+  return _cm_thread->is_in_marking();
 }
 
-bool G1ConcurrentMark::is_in_mark_or_rebuild() const {
-  return is_fully_initialized() ? _cm_thread->is_in_mark_or_rebuild() : false;
+bool G1ConcurrentMark::is_in_marking_or_rebuild() const {
+  return _cm_thread->is_in_marking_or_rebuild();
 }
 
 bool G1ConcurrentMark::is_in_reset_for_next_cycle() const {
@@ -569,7 +569,7 @@ void G1ConcurrentMark::reset() {
 
   _has_aborted.store_relaxed(false);
 
-  _region_mark_stats_cache_may_contain_entries = true;
+  _is_region_mark_stats_cache_in_use = true;
   reset_marking_for_restart();
 
   // Reset all tasks, since different phases will use different number of active
@@ -636,7 +636,7 @@ void G1ConcurrentMark::reset_region_marking_state(G1HeapRegion* r) {
   }
   uint region_idx = r->hrm_index();
   // Only need to clear the stats cache for the given region if we are using the cache.
-  if (_region_mark_stats_cache_may_contain_entries) {
+  if (_is_region_mark_stats_cache_in_use) {
     for (uint j = 0; j < _max_num_tasks; ++j) {
       _tasks[j]->clear_mark_stats_cache(region_idx);
     }
@@ -1886,7 +1886,7 @@ void G1ConcurrentMark::flush_all_task_caches(bool ends_use_of_mark_cache) {
   log_debug(gc, stats)("Mark stats cache hits %zu misses %zu ratio %1.3lf",
                        hits, misses, percent_of(hits, sum));
   if (ends_use_of_mark_cache) {
-    _region_mark_stats_cache_may_contain_entries = false;
+    _is_region_mark_stats_cache_in_use = false;
   }
 }
 

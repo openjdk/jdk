@@ -496,7 +496,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   // Records whether the region mark stats cache may contain entries due to marking activity,
   // and the cache for freed regions needs to be cleared for those.
-  bool _region_mark_stats_cache_may_contain_entries;
+  bool _is_region_mark_stats_cache_in_use;
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;
   // Top pointer for each region at the start of marking. Must be valid, i.e. be within
@@ -515,7 +515,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // Concurrent cycle state queries.
   bool is_in_concurrent_cycle() const;
   bool is_in_marking() const;
-  bool is_in_mark_or_rebuild() const;
+  bool is_in_marking_or_rebuild() const;
   bool is_in_reset_for_next_cycle() const;
 
   void assert_fully_initialized() const { assert(is_fully_initialized(), "must be"); }

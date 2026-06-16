@@ -84,12 +84,6 @@ static inline bool requires_marking(const void* entry, G1CollectedHeap* g1h) {
   assert(g1h->is_in_reserved(entry),
          "Non-heap pointer in SATB buffer: " PTR_FORMAT, p2i(entry));
 
-  // is_in_marking() covers both the concurrent marking and the Remark pause. Outside
-  // of that, there can be no entry that requires SATB marking.
-  if (!g1h->collector_state()->is_in_marking()) {
-    return false;
-  }
-
   G1ConcurrentMark* cm = g1h->concurrent_mark();
   if (cm->obj_allocated_since_mark_start(cast_to_oop(entry))) {
     return false;
@@ -120,5 +114,12 @@ public:
 };
 
 void G1SATBMarkQueueSet::filter(SATBMarkQueue& queue) {
-  apply_filter(G1SATBMarkQueueFilterFn(), queue);
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  if (g1h->collector_state()->is_in_marking()) {
+    apply_filter(G1SATBMarkQueueFilterFn(), queue);
+  } else {
+    // is_in_marking() covers both the concurrent marking and the Remark pause. Outside
+    // of that, there can be no entry that requires SATB marking.
+    queue.set_empty();
+  }
 }
