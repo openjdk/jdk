@@ -31,7 +31,7 @@
 
 template <class CardOrRangeVisitor>
 inline void G1CollectionSet::merge_cardsets_for_collection_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
-  uint offset =  _groups_inc_part_start;
+  uint offset = _groups_inc_part_start;
   if (offset == 0) {
     G1HeapRegionRemSet::iterate_for_merge(_g1h->young_regions_cset_group()->card_set(), cl);
   }
