@@ -860,6 +860,9 @@ public final class HSS extends SignatureSpi {
             if (key == null) {
                 throw new InvalidKeyException("key cannot be null");
             }
+            if (!(key instanceof PublicKey)) {
+                throw new InvalidKeyException("Only support public key");
+            }
             PublicKey pKey;
             try {
                 // Check if key originates from this factory
