@@ -369,13 +369,13 @@ public class Thread implements Runnable {
     }
 
     // Lazily load the POOLED_MEMORY_SIZE to avoid bootstrap issues
-    private static final class PoolConfigHolder {
+    static final class PoolConfigHolder {
 
         // Providing "0" as a value for this property disables confined pooling
-        static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
+        private static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
 
         // The following values can be observed {-1 (disabled), 8, 16, 32 or 64} bytes
-        private static final long POOLED_MEMORY_SIZE = clampedPowerOfPropertyOr(POOLED_MEMORY_PROPERTY, 6);
+        static final long POOLED_MEMORY_SIZE = clampedPowerOfPropertyOr(POOLED_MEMORY_PROPERTY, 6);
 
         private static int clampedPowerOfPropertyOr(String name, int defaultPower) {
             if (VM.isDirectMemoryPageAligned()) {
@@ -401,7 +401,7 @@ public class Thread implements Runnable {
      * PTRDIFF_MAX (usually 2<sup>63</sup>-1) allows us to use the sign bit
      * as a flag for acquire state whithout conflicting with malloc() return values.
      */
-    private long confinedMemoryPool;
+    protected long confinedMemoryPool;
 
     static long pooledMemorySize() {
         return PoolConfigHolder.POOLED_MEMORY_SIZE;
@@ -453,23 +453,29 @@ public class Thread implements Runnable {
         if (confinedMemoryPool <= 0) {
             throw new IllegalStateException("Cannot release pooled memory: " + confinedMemoryPool);
         }
+        zeroOutMemory(confinedMemoryPool, size);
+        // Mark the pool as released
+        this.confinedMemoryPool = confinedMemoryPool;
+    }
+
+    @SuppressWarnings("fallthrough")
+    @ForceInline
+    static void zeroOutMemory(long address, long size) {
         // Clear complete 8-byte buckets in bulk. It is safe to clear beyond `size`
         // as long as we stay inside the pool which is at least 8 and at most 64 bytes.
         switch ((int) ((size + Long.BYTES - 1) >>> 3)) {
-            case 8: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x38, 0);
-            case 7: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x30, 0);
-            case 6: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x28, 0);
-            case 5: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x20, 0);
-            case 4: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x18, 0);
-            case 3: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x10, 0);
-            case 2: ThreadIdentifiers.U.putLong(confinedMemoryPool + 0x08, 0);
-            case 1: ThreadIdentifiers.U.putLong(confinedMemoryPool, 0);
+            case 8: ThreadIdentifiers.U.putLong(address + 0x38, 0L);
+            case 7: ThreadIdentifiers.U.putLong(address + 0x30, 0L);
+            case 6: ThreadIdentifiers.U.putLong(address + 0x28, 0L);
+            case 5: ThreadIdentifiers.U.putLong(address + 0x20, 0L);
+            case 4: ThreadIdentifiers.U.putLong(address + 0x18, 0L);
+            case 3: ThreadIdentifiers.U.putLong(address + 0x10, 0L);
+            case 2: ThreadIdentifiers.U.putLong(address + 0x08, 0L);
+            case 1: ThreadIdentifiers.U.putLong(address, 0L);
             case 0: break;
             default: throw new AssertionError(size);
         }
 
-        // Mark the pool as released
-        this.confinedMemoryPool = confinedMemoryPool;
     }
 
     /**
@@ -1649,11 +1655,6 @@ public class Thread implements Runnable {
      * Null out reference after Thread termination.
      */
     void clearReferences() {
-        final long confinedMemoryPool = this.confinedMemoryPool;
-        if (confinedMemoryPool != 0) {
-            ThreadIdentifiers.U.freeMemory(Math.abs(confinedMemoryPool));
-        }
-        this.confinedMemoryPool = 0;
         threadLocals = null;
         inheritableThreadLocals = null;
         if (uncaughtExceptionHandler != null)
@@ -1685,6 +1686,11 @@ public class Thread implements Runnable {
                 TerminatingThreadLocal.threadTerminated();
             }
         } finally {
+            final long confinedMemoryPool = this.confinedMemoryPool;
+            if (confinedMemoryPool != 0) {
+                ThreadIdentifiers.U.freeMemory(Math.abs(confinedMemoryPool));
+            }
+            this.confinedMemoryPool = 0;
             clearReferences();
         }
     }

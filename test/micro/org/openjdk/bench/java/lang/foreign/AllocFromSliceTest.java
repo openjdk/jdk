@@ -76,4 +76,7 @@ public class AllocFromSliceTest extends CLayouts {
             return arena.allocateFrom(C_CHAR, MemorySegment.ofArray(arr), C_CHAR, start, size);
         }
     }
+
+    @Fork(value = 3, jvmArgsAppend = "-Djmh.executor=VIRTUAL")
+    public static class OfVirtual extends AllocFromSliceTest {}
 }

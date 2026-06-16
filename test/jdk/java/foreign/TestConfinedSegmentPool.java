@@ -24,6 +24,7 @@
 /*
  * @test
  * @modules java.base/jdk.internal.access java.base/jdk.internal.foreign
+ * @library /test/lib
  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
  *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
  *                    -Djava.lang.foreign.native.confined.pool.power.size=0
@@ -52,10 +53,22 @@
  *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
  *                    -Djava.lang.foreign.native.confined.pool.power.size=6
  *                    TestConfinedSegmentPool
+ *
+ * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
+ *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
+ *                    -DthreadFactory=virtual
+ *                    TestConfinedSegmentPool
+ * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
+ *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
+ *                    -Djava.lang.foreign.native.confined.pool.power.size=0
+ *                    -DthreadFactory=virtual
+ *                    TestConfinedSegmentPool
+
  */
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.test.lib.thread.VThreadRunner;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

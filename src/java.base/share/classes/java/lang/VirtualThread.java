@@ -47,12 +47,7 @@ import jdk.internal.vm.ContinuationScope;
 import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.ThreadContainers;
-import jdk.internal.vm.annotation.ChangesCurrentThread;
-import jdk.internal.vm.annotation.Hidden;
-import jdk.internal.vm.annotation.IntrinsicCandidate;
-import jdk.internal.vm.annotation.JvmtiHideEvents;
-import jdk.internal.vm.annotation.JvmtiMountTransition;
-import jdk.internal.vm.annotation.ReservedStackAccess;
+import jdk.internal.vm.annotation.*;
 import sun.nio.ch.Interruptible;
 import static java.util.concurrent.TimeUnit.*;
 
@@ -687,6 +682,11 @@ final class VirtualThread extends BaseVirtualThread {
             threadContainer().remove(this);
         }
 
+        if (confinedMemoryPool != 0) {
+            // Make sure we are releasing and zeroing out the pooled memory
+            // (if any).
+            releasePooledMemory(PoolConfigHolder.POOLED_MEMORY_SIZE);
+        }
         // clear references to thread locals
         clearReferences();
     }
@@ -1430,6 +1430,22 @@ final class VirtualThread extends BaseVirtualThread {
         }
     }
 
+    @Override
+    long acquirePooledMemory() {
+        return confinedMemoryPool == 0
+                ? confinedMemoryPool = ConfinedSegmentPool.acquirePooledMemory(this)
+                // Nested arenas never gets pooling
+                : 0L;
+    }
+
+    @Override
+    void releasePooledMemory(long size) {
+        if (confinedMemoryPool > 0) {
+            ConfinedSegmentPool.releasePooledMemory(this, confinedMemoryPool, size);
+            confinedMemoryPool = 0;
+        }
+    }
+
     /**
      * Retrieves the list of virtual threads that are waiting to be unblocked, waiting
      * if necessary until a list of one or more threads becomes available.
@@ -1442,4 +1458,127 @@ final class VirtualThread extends BaseVirtualThread {
         unblocker.setDaemon(true);
         unblocker.start();
     }
+
+    /**
+     * A shared confined segment pool shared by all VirtualThread instances.
+     * <p>
+     * This prevents separate segments pools being created for each virtual thread
+     * which might not scale in applications with a significant number of virtual
+     * threads.
+     * <p>
+     * A virtual thread attempts to acquire a pool based on its dedicated slot number
+     * which is computed from the virtual thread's thread id.
+     * <p>
+     * The ConfinedSegmentPool class operates directly on native memory and pointers via
+     * Unsafe to provide optimum performance. Once allocated, the allocated native memory
+     * will only be returned to the system once the JVM process dies
+     * <p>
+     * By not attaching segment pools to the underlying carrier thread, the solution
+     * can be greatly simplified and we do not have to consider migrating virtual threads.
+     * <p>
+     * Deployment scenarios in 2026:
+     *
+     * A Mac M5 has a cache line size of 128 bytes and might have 18 CPU cores resulting in
+     * the following configuration by default:
+     *   SLOTS = 18 * 2 = 36;
+     *   SLOT_OFFSET = 128; // Cahce line size
+     *   sizeof(POOL) = PoolConfigHolder.POOLED_MEMORY_SIZE * SLOTS = 64 * 36 = 1,152 bytes
+     *   sizeof(FLAGS) = SLOTS * SLOT_OFFSET = 36 * 128 = 4,608 bytes;
+     *
+     * An Ampere Altra Arm Neoverse N1 processor in a virtual instance configured with 32
+     * CPUs will result in the following configuration by default:
+     *   SLOTS = 32 * 2 = 64;
+     *   SLOT_OFFSET = 64; // Cahce line size
+     *   sizeof(POOL) = PoolConfigHolder.POOLED_MEMORY_SIZE * SLOTS = 64 * 64 = 4,096 bytes
+     *   sizeof(FLAGS) = SLOTS * SLOT_OFFSET = 64 * 64 = 4,096 bytes;
+     */
+    static final class ConfinedSegmentPool {
+
+        private ConfinedSegmentPool() {}
+
+        // We create an over-provisioned number of slots to reduce the
+        // probability that two virtual threads compete for the same
+        // slot.
+        private static final int SLOTS = DEFAULT_SCHEDULER.getParallelism() * 2;
+        // The distance between each slot. This is usually larger than 1 to
+        // reduce contention.
+        private static final long SLOT_OFFSET = slotOffset();
+        // Flag states:
+        private static final byte RELEASED = 0;
+        private static final byte ACQUIRED = 1;
+
+        // Sentinel value for no pooling.
+        // Selecting -1 rather than zero allows constant folding.
+        private static final long NO_POOLING = -1;
+
+        // Raw memory pointer to the pool. The pool is then
+        // sliced into separate segments each of which as a size
+        // of PoolConfigHolder.POOLED_MEMORY_SIZE.
+        private static final long POOL = allocatePool();
+        private static final long FLAGS = allocateFLags();
+
+        @ForceInline
+        static long acquirePooledMemory(VirtualThread thread) {
+            // Do not acquire if pooling is disabled
+            if (POOL == NO_POOLING) {
+                return 0;
+            }
+            final long slot = slotFor(thread);
+            return U.compareAndSetByte(null, flagAddress(slot), RELEASED, ACQUIRED)
+                    ? POOL + slot * PoolConfigHolder.POOLED_MEMORY_SIZE
+                    : 0;
+        }
+
+        @ForceInline
+        static void releasePooledMemory(VirtualThread thread,
+                                        long address,
+                                        long size) {
+            // Zero out memory _before_ releasing the slot
+            zeroOutMemory(address, size);
+            final long slot = slotFor(thread);
+            if (!U.compareAndSetByte(null, flagAddress(slot), ACQUIRED, RELEASED)) {
+                throw new IllegalStateException("Cannot release pooled memory: " + thread);
+            }
+        }
+
+        @ForceInline
+        static long slotFor(VirtualThread thread) {
+            // The thread id is always positive so it is safe to do a modulo operation
+            return thread.threadId() % SLOTS;
+        }
+
+        @ForceInline
+        static long flagAddress(long slot) {
+            return FLAGS + slot * SLOT_OFFSET;
+        }
+
+        private static final long slotOffset() {
+            // By placing the allocation flags on separate cache lines
+            // we can reduce contention imposed by CAS operations.
+            final int cacheLineSize = U.dataCacheLineFlushSize();
+            return cacheLineSize > 0
+                    ? cacheLineSize
+                    : 1; // No cache line support
+        }
+
+        private static long allocatePool() {
+            return mallocAndZero(PoolConfigHolder.POOLED_MEMORY_SIZE * SLOTS);
+        }
+
+        private static long allocateFLags() {
+            return mallocAndZero(SLOTS * SLOT_OFFSET);
+        }
+
+        private static long mallocAndZero(long size) {
+            if (PoolConfigHolder.POOLED_MEMORY_SIZE <= 0) {
+                // Pooling disabled
+                return NO_POOLING;
+            }
+            final long pool = U.allocateMemory(size);
+            U.setMemory(pool, size, (byte) 0);
+            return pool;
+        }
+
+    }
+
 }

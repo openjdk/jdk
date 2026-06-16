@@ -102,6 +102,9 @@ public class AllocFromTest extends CLayouts {
         }
     }
 
+    @Fork(value = 3, jvmArgsAppend = "-Djmh.executor=VIRTUAL")
+    public static class OfVirtual extends AllocFromTest {}
+
     static class SlicingPool {
         final MemorySegment pool = Arena.ofAuto().allocate(1024);
         boolean isAcquired = false;

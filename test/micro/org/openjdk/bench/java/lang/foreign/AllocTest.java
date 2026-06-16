@@ -82,6 +82,9 @@ public class AllocTest extends CLayouts {
         }
     }
 
+    @Fork(value = 3, jvmArgsAppend = "-Djmh.executor=VIRTUAL")
+    public static class OfVirtual extends AllocTest {}
+
     private static class CallocArena implements Arena {
 
         static final MethodHandle CALLOC = Linker.nativeLinker()
