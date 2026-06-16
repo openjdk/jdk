@@ -123,7 +123,7 @@ void NativeCall::insert(address code_pos, address entry) { Unimplemented(); }
 void NativeMovConstReg::verify() {
   if (! (nativeInstruction_at(instruction_address())->is_movz() ||
         is_adrp_at(instruction_address()) ||
-        is_ldr_literal_at(instruction_address())) ) {
+        is_load_literal_at(instruction_address())) ) {
     fatal("should be MOVZ or ADRP or LDR (literal)");
   }
 }
@@ -301,13 +301,12 @@ bool NativeInstruction::is_adrp_at(address instr) {
   return (Instruction_aarch64::extract(insn, 31, 24) & 0b10011111) == 0b10010000;
 }
 
-bool NativeInstruction::is_ldr_literal_at(address instr) {
+bool NativeInstruction::is_load_literal_at(address instr) {
   unsigned insn = *(unsigned*)instr;
-  // We only check for GPR literal loads (bit 26, VR bit == 0). SIMD/FP literal loads have VR == 1.
-  return Instruction_aarch64::extract(insn, 31, 24) == 0b01011000;
+  return (Instruction_aarch64::extract(insn, 29, 24) & 0b011011) == 0b00011000;
 }
 
-bool NativeInstruction::is_ldrw_literal_at(address instr) {
+bool NativeInstruction::is_ldrw_gpr_literal_at(address instr) {
   unsigned insn = *(unsigned*)instr;
   // We only check for GPR literal loads (bit 26, VR bit == 0). SIMD/FP literal loads have VR == 1.
   return Instruction_aarch64::extract(insn, 31, 24) == 0b00011000;
