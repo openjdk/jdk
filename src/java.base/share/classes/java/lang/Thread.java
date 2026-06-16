@@ -419,14 +419,14 @@ public class Thread implements Runnable {
             return confinedMemoryPool;
         } else if (confinedMemoryPool == 0) {
             // Lazily allocate native memory
-            return allocateAndAquirePooledMemory();
+            return allocateAndAcquirePooledMemory();
         }
         // The pool is already acquired, or pooling is disabled.
         return 0;
     }
 
     // This only happens at most once per thread instance
-    private long allocateAndAquirePooledMemory() {
+    private long allocateAndAcquirePooledMemory() {
         final long confinedMemoryPool;
         try {
             this.confinedMemoryPool = confinedMemoryPool = ThreadIdentifiers.U.allocateMemory(PoolConfigHolder.POOLED_MEMORY_SIZE);
@@ -451,11 +451,15 @@ public class Thread implements Runnable {
         final long confinedMemoryPool = -this.confinedMemoryPool;
         // zero adds an extra safety net for release on a pool that was never allocated.
         if (confinedMemoryPool <= 0) {
-            throw new IllegalStateException("Cannot release pooled memory: " + confinedMemoryPool);
+            throw cannotReleasePooledMemory();
         }
         zeroOutMemory(confinedMemoryPool, size);
         // Mark the pool as released
         this.confinedMemoryPool = confinedMemoryPool;
+    }
+
+    IllegalStateException cannotReleasePooledMemory() {
+        return new IllegalStateException("Cannot release pooled memory: " + confinedMemoryPool);
     }
 
     @SuppressWarnings("fallthrough")

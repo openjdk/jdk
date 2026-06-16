@@ -68,26 +68,8 @@
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
-import java.lang.IllegalStateException;
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
-import java.lang.ref.Cleaner;
-import java.lang.ref.Reference;
-import java.lang.reflect.Field;
-import java.util.OptionalInt;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.LockSupport;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 final class TestConfinedSegmentPoolConfig {
 

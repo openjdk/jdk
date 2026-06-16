@@ -24,6 +24,7 @@
 /*
  * @test
  * @modules java.base/jdk.internal.access
+ * @library /test/lib
  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
  *                    TestConfinedSegmentPoolDefensiveRelease
  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
@@ -67,9 +68,15 @@
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.test.lib.thread.VThreadRunner;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.lang.foreign.Arena;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
@@ -78,12 +85,31 @@ final class TestConfinedSegmentPoolDefensiveRelease {
 
     static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     static final long SIZE = 42;
-    static final long OUT_OF_SIZE = 1024;
+    static final long OUT_OF_SIZE = 1_024;
 
-    @Test
-    void releaseWithNoPreviousAcquire() {
-        Thread untouchedThread = new Thread(() -> {});
-        assertThrows(IllegalStateException.class, () -> JLA.releaseAndZeroOutPooledMemory(untouchedThread, SIZE));
+    @ParameterizedTest
+    @MethodSource("threadFactories")
+    void releaseWithNoPreviousAcquire(String name, Thread.Builder threadBuilder) throws Exception {
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        Thread untouchedThread = new Thread(() -> {
+            try {
+                assertThrows(IllegalStateException.class, () -> JLA.releaseAndZeroOutPooledMemory(Thread.currentThread(), SIZE));
+            } catch (Throwable throwable) {
+                failure.set(throwable);
+            }
+        });
+        untouchedThread.start();
+        untouchedThread.join();
+        if (failure.get() != null) {
+            // Expose any exception from the thread.
+            throw new AssertionError(name, failure.get());
+        }
+    }
+
+    static Stream<Arguments> threadFactories() {
+        return Stream.of(
+                Arguments.of("platform", Thread.ofPlatform()),
+                Arguments.of("virtual", Thread.ofVirtual()));
     }
 
     @Test
@@ -95,6 +121,11 @@ final class TestConfinedSegmentPoolDefensiveRelease {
     }
 
     @Test
+    void releaseAfterReleaseVt() {
+        VThreadRunner.run(this::releaseAfterRelease);
+    }
+
+    @Test
     void releaseIllegalSize() {
         // Only test with pooling enabled
         if (JLA.pooledMemorySize() > 0) {
@@ -103,6 +134,11 @@ final class TestConfinedSegmentPoolDefensiveRelease {
                 assertThrows(AssertionError.class, () -> JLA.releaseAndZeroOutPooledMemory(Thread.currentThread(), OUT_OF_SIZE));
             }
         }
+    }
+
+    @Test
+    void releaseIllegalSizeVt() {
+        VThreadRunner.run(this::releaseIllegalSize);
     }
 
 }

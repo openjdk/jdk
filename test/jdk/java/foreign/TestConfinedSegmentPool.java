@@ -53,17 +53,6 @@
  *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
  *                    -Djava.lang.foreign.native.confined.pool.power.size=6
  *                    TestConfinedSegmentPool
- *
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -DthreadFactory=virtual
- *                    TestConfinedSegmentPool
- * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
- *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
- *                    -Djava.lang.foreign.native.confined.pool.power.size=0
- *                    -DthreadFactory=virtual
- *                    TestConfinedSegmentPool
-
  */
 
 import jdk.internal.access.JavaLangAccess;
@@ -175,13 +164,17 @@ final class TestConfinedSegmentPool {
                 Arguments.of("virtual", Thread.ofVirtual()));
     }
 
-
     @Test
     void cachedSegmentScope() {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(ValueLayout.JAVA_LONG);
             assertSame(arena.scope(), segment.scope());
         }
+    }
+
+    @Test
+    void cachedSegmentScopeVt() {
+       VThreadRunner.run(this::cachedSegmentScope);
     }
 
     @Test
@@ -197,6 +190,11 @@ final class TestConfinedSegmentPool {
                 () -> segment.get(ValueLayout.JAVA_LONG, 0));
         assertThrows(IllegalStateException.class,
                 () -> segment.set(ValueLayout.JAVA_LONG, 0, -1L));
+    }
+
+    @Test
+    void cachedSegmentIsClosedWithArenaVt() {
+        VThreadRunner.run(this::cachedSegmentIsClosedWithArena);
     }
 
     @Test
@@ -220,6 +218,11 @@ final class TestConfinedSegmentPool {
                         () -> firstSegment.set(ValueLayout.JAVA_LONG, 0, 0L));
             }
         }
+    }
+
+    @Test
+    void closedCachedSegmentCannotAccessReusedSlotVt() {
+        VThreadRunner.run(this::closedCachedSegmentCannotAccessReusedSlot);
     }
 
     @Test
@@ -248,6 +251,11 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
+    void outOfOrderCloseVt() {
+        VThreadRunner.run(this::outOfOrderClose);
+    }
+
+    @Test
     void scopesAreUnique() {
         Arena firstArena = Arena.ofConfined();
         Arena secondArena = Arena.ofConfined();
@@ -259,6 +267,11 @@ final class TestConfinedSegmentPool {
             assertEquals(3, scopes.size());
         }
         secondArena.close();
+    }
+
+    @Test
+    void scopesAreUniqueVt() {
+        VThreadRunner.run(this::scopesAreUnique);
     }
 
     @Test
@@ -275,6 +288,11 @@ final class TestConfinedSegmentPool {
                 }
             }
         }
+    }
+
+    @Test
+    void zeroingVt() {
+        VThreadRunner.run(this::zeroing);
     }
 
     @Test
@@ -323,6 +341,11 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
+    void cleanerThreadCannotCloseCachedArenaVt() throws Exception {
+        VThreadRunner.run(this::cleanerThreadCannotCloseCachedArena);
+    }
+
+    @Test
     void noPoolAllocated() {
         if (!isPoolEnabled()) {
             try (Arena arena = Arena.ofConfined()) {
@@ -332,6 +355,11 @@ final class TestConfinedSegmentPool {
             // allocation or any other allocation in another test.
             assertEquals(0L, confinedMemoryPool(Thread.currentThread()));
         }
+    }
+
+    @Test
+    void noPoolAllocatedVt() {
+        VThreadRunner.run(this::noPoolAllocated);
     }
 
     @Test
@@ -350,6 +378,11 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
+    void fallbackAfterAcquirePoolVt() {
+        VThreadRunner.run(this::fallbackAfterAcquirePool);
+    }
+
+    @Test
     void uniqueZeroAddresses() {
         if (isPoolEnabled()) {
             try (Arena arena = Arena.ofConfined()) {
@@ -360,6 +393,11 @@ final class TestConfinedSegmentPool {
                 assertNotEquals(first.address(), second.address());
             }
         }
+    }
+
+    @Test
+    void uniqueZeroAddressesVt() {
+        VThreadRunner.run(this::uniqueZeroAddresses);
     }
 
     static long confinedMemoryPool(Thread thread) {

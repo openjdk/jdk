@@ -1440,10 +1440,11 @@ final class VirtualThread extends BaseVirtualThread {
 
     @Override
     void releasePooledMemory(long size) {
-        if (confinedMemoryPool > 0) {
-            ConfinedSegmentPool.releasePooledMemory(this, confinedMemoryPool, size);
-            confinedMemoryPool = 0;
+        if (confinedMemoryPool <= 0) {
+            throw cannotReleasePooledMemory();
         }
+        ConfinedSegmentPool.releasePooledMemory(this, confinedMemoryPool, size);
+        confinedMemoryPool = 0;
     }
 
     /**
@@ -1475,22 +1476,6 @@ final class VirtualThread extends BaseVirtualThread {
      * <p>
      * By not attaching segment pools to the underlying carrier thread, the solution
      * can be greatly simplified and we do not have to consider migrating virtual threads.
-     * <p>
-     * Deployment scenarios in 2026:
-     *
-     * A Mac M5 has a cache line size of 128 bytes and might have 18 CPU cores resulting in
-     * the following configuration by default:
-     *   SLOTS = 18 * 2 = 36;
-     *   SLOT_OFFSET = 128; // Cahce line size
-     *   sizeof(POOL) = PoolConfigHolder.POOLED_MEMORY_SIZE * SLOTS = 64 * 36 = 1,152 bytes
-     *   sizeof(FLAGS) = SLOTS * SLOT_OFFSET = 36 * 128 = 4,608 bytes;
-     *
-     * An Ampere Altra Arm Neoverse N1 processor in a virtual instance configured with 32
-     * CPUs will result in the following configuration by default:
-     *   SLOTS = 32 * 2 = 64;
-     *   SLOT_OFFSET = 64; // Cahce line size
-     *   sizeof(POOL) = PoolConfigHolder.POOLED_MEMORY_SIZE * SLOTS = 64 * 64 = 4,096 bytes
-     *   sizeof(FLAGS) = SLOTS * SLOT_OFFSET = 64 * 64 = 4,096 bytes;
      */
     static final class ConfinedSegmentPool {
 
