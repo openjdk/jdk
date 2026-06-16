@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,43 @@
 
 template <typename T>
 void G1NMethodClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
+  T old_oop_or_narrowoop = RawAccess<>::oop_load(p);
+
   _work->do_oop(p);
   T oop_or_narrowoop = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(oop_or_narrowoop)) {
+  // If the oop moved, we need to update the code root set at the new location. Otherwise
+  // it must still be in the current one. In this case the nmethod need not be added to the
+  // code roots again.
+  if (oop_or_narrowoop != old_oop_or_narrowoop) {
+    // If the oop moved, it must not have been null.
+    assert(!CompressedOops::is_null(oop_or_narrowoop), "must be");
     oop o = CompressedOops::decode_not_null(oop_or_narrowoop);
+    assert(!_g1h->is_in_cset(o), "must be");
+
     G1HeapRegion* hr = _g1h->heap_region_containing(o);
-    assert(!_g1h->is_in_cset(o) || hr->rem_set()->code_roots_list_contains(_nm), "if o still in collection set then evacuation failed and nm must already be in the remset");
-    hr->add_code_root(_nm);
+
+    _affected_regions.append_if_missing(hr);
+  } else {
+#ifdef ASSERT
+    // Either the oop did not move or was not in the collection set in the first place. Must still be
+    // recorded in the current region's code root set either way.
+    oop o = CompressedOops::decode(oop_or_narrowoop);
+    assert(o == nullptr || _g1h->heap_region_containing(o)->rem_set()->code_roots_list_contains(_nm), "must be");
+#endif
+  }
+}
+
+G1NMethodClosure::HeapRegionGatheringOopClosure::HeapRegionGatheringOopClosure(OopClosure* oc, G1ParScanThreadState* pss) :
+  _g1h(G1CollectedHeap::heap()),
+  _work(oc),
+  _pss(pss),
+  _nm(nullptr),
+  _affected_regions(5) {
+}
+
+void G1NMethodClosure::HeapRegionGatheringOopClosure::add_to_remsets() {
+  while (!_affected_regions.is_empty()) {
+    _pss->remember_nmethod_into_region(_affected_regions.pop(), _nm);
   }
 }
 
@@ -74,10 +104,12 @@ void G1NMethodClosure::MarkingOopClosure::do_oop(narrowOop* o) {
 }
 
 void G1NMethodClosure::do_evacuation_and_fixup(nmethod* nm) {
-  _oc.set_nm(nm);
+  _oc.set_nmethod(nm);
 
   // Evacuate objects pointed to by the nmethod
   nm->oops_do(&_oc);
+
+  _oc.add_to_remsets();
 
   if (_strong) {
     // CodeCache unloading support
