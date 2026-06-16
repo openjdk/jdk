@@ -88,6 +88,15 @@ public class TestMultiArrayAlloc {
         } catch (NegativeArraySizeException e) { /* expected */ }
     }
 
+    static void testLargeOuterDimension() {
+        int n1 = 100_000, n2 = 2;
+        int[][] ints = allocInt(n1, n2);
+        check(ints.length == n1, "large outer: length");
+        for (int i = 0; i < n1; i++) {
+            check(ints[i] != null && ints[i].length == n2, "large outer: inner at " + i);
+        }
+    }
+
     static void testRefsAfterGC() {
         int count = 5000, n1 = 4, n2 = 4;
         int[][][] refs = new int[count][][];
@@ -110,6 +119,7 @@ public class TestMultiArrayAlloc {
     public static void main(String[] args) {
         testArrayContents();
         testExceptions();
+        testLargeOuterDimension();
         testRefsAfterGC();
     }
 }
