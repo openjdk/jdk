@@ -23,6 +23,7 @@
 
 package compiler.valhalla.inlinetypes;
 
+import java.lang.reflect.Method;
 import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.LooselyConsistentValue;
 
@@ -33,7 +34,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=default
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -47,7 +48,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=no-flattening
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -63,7 +64,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=nAVF
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -79,7 +80,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=AVF
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -95,7 +96,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=AVF-nAVF
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -111,7 +112,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=NVF
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -127,7 +128,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=NVF-nAVF
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -143,7 +144,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=NVF-AVF
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -159,7 +160,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=all-flattening
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -175,7 +176,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=all-flattening-di
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -192,7 +193,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=all-flattening-restrict-profiling
  * @summary Test support for null markers in (flat) arrays.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
@@ -213,6 +214,22 @@ public class TestArrayNullMarkers {
     private static final boolean UseNullFreeNonAtomicValueFlattening = WHITEBOX.getBooleanVMFlag("UseNullFreeNonAtomicValueFlattening");
     private static final boolean UseNullFreeAtomicValueFlattening = WHITEBOX.getBooleanVMFlag("UseNullFreeAtomicValueFlattening");
     private static final boolean ForceNonTearable = !WHITEBOX.getStringVMFlag("ForceNonTearable").equals("");
+    private static final boolean AbortVMOnCompilationFailure = WHITEBOX.getBooleanVMFlag("AbortVMOnCompilationFailure");
+
+
+    // The main is huge by-design (it has been made that way to make sure that C2 sees all the type info from the array factories)
+    // but its size causes compilation failures with tier 3 C1 because of it runs out of virtual registers in linear scan, which
+    // triggers a test failure when AbortVMOnCompilationFailure is set.
+    // Because this method will bail out from C1 compilation anyway, let's exclude it to prevent noise when running valhalla-comp-stress.
+    static {
+        if (AbortVMOnCompilationFailure) {
+            Class<?> c = TestArrayNullMarkers.class;
+            try {
+                Method main = c.getMethod("main", String[].class);
+                WHITEBOX.makeMethodNotCompilable(main, 3);
+            } catch (NoSuchMethodException e) { }
+        }
+    }
 
     // Is naturally atomic and has null-free, non-atomic, flat (1 bytes), null-free, atomic, flat (1 bytes) and nullable, atomic, flat (4 bytes) layouts
     @LooselyConsistentValue

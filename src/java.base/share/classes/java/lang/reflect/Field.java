@@ -243,8 +243,6 @@ class Field extends AccessibleObject implements Member {
     /**
      * {@return an unmodifiable set of the {@linkplain AccessFlag
      * access flags} for this field, possibly empty}
-     * The {@code AccessFlags} may depend on the class file format version of the class.
-     *
      * @see #getModifiers()
      * @jvms 4.5 Fields
      * @since 20
@@ -289,7 +287,7 @@ class Field extends AccessibleObject implements Member {
      * @return true if and only if this field is a strictly
      * initialized field as defined by the Java Virtual Machine Specification
      * @jvms strict-fields-4.5 Field access and property flags
-     * @since Valhalla
+     * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STRICT_FIELDS, reflective = true)
     public boolean isStrictInit() {

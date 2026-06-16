@@ -110,7 +110,6 @@ jobs:
           --with-gtest=${{ steps.gtest.outputs.path }}
           --with-zlib=system
           --with-jmod-compress=zip-1
-          --disable-jvm-feature-shenandoahgc
           --with-external-symbols-in-bundles=none
           --with-native-debug-symbols-level=1
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (

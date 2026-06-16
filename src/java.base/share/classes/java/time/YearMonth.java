@@ -140,7 +140,6 @@ import jdk.internal.util.DecimalDigits;
  * @since 1.8
  */
 @jdk.internal.ValueBased
-@jdk.internal.MigratedValueClass
 public final /*value*/ class YearMonth
         implements Temporal, TemporalAdjuster, Comparable<YearMonth>, Serializable {
 

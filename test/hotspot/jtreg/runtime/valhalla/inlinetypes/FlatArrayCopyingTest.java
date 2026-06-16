@@ -29,6 +29,7 @@
  * @bug 8370479
  * @enablePreview
  * @requires vm.flagless
+ * @requires vm.gc.Serial
  * @library /test/lib /
  * @modules java.base/jdk.internal.value
             java.management
@@ -47,6 +48,7 @@
  * @bug 8370479
  * @enablePreview
  * @requires vm.flagless
+ * @requires vm.gc.Parallel
  * @library /test/lib /
  * @modules java.base/jdk.internal.value
             java.management
@@ -65,6 +67,7 @@
  * @bug 8370479
  * @enablePreview
  * @requires vm.flagless
+ * @requires vm.gc.G1
  * @library /test/lib /
  * @modules java.base/jdk.internal.value
             java.management
@@ -74,6 +77,27 @@
                                   -Xint -XX:+UseG1GC -XX:+UseCompressedOops -Xlog:gc*=info
                                   -XX:ParallelGCThreads=1 -XX:ConcGCThreads=1 -XX:-UseDynamicNumberOfGCThreads
                                   -XX:-G1UseConcRefinement -XX:+UseCompressedClassPointers
+                                  -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+                                  runtime.valhalla.inlinetypes.FlatArrayCopyingTest
+ */
+
+/*
+ * @test id=shenandoah
+ * @summary Ensures that value arrays can get arraycopied properly with Shenandoah.
+ *          This test will likely crash if that is not the case.
+ * @bug 8370479
+ * @enablePreview
+ * @requires vm.flagless
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.value
+            java.management
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run junit/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions
+                                  -Xint -XX:+UseShenandoahGC -XX:+UseCompressedOops -Xlog:gc*=info
+                                  -XX:ParallelGCThreads=1 -XX:ConcGCThreads=1 -XX:-UseDynamicNumberOfGCThreads
+                                  -XX:+UseCompressedClassPointers
                                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
                                   runtime.valhalla.inlinetypes.FlatArrayCopyingTest
  */

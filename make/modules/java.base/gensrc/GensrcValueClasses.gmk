@@ -26,7 +26,7 @@
 ################################################################################
 # Generate the value class replacements for selected java.base source files
 
-java.base-VALUE_CLASS-REPLACEMENTS := \
+JAVA_BASE_VALUE_CLASS_REPLACEMENTS := \
     java/lang/Byte.java \
     java/lang/Short.java \
     java/lang/Integer.java \
@@ -60,11 +60,11 @@ java.base-VALUE_CLASS-REPLACEMENTS := \
     java/time/chrono/ThaiBuddhistDate.java \
     #
 
-java.base-VALUE-CLASS-FILES := \
-    $(foreach f, $(java.base-VALUE_CLASS-REPLACEMENTS), $(addprefix $(TOPDIR)/src/java.base/share/classes/, $(f)))
+JAVA_BASE_VALUE_CLASS_SRC_PATHS := \
+    $(foreach f, $(JAVA_BASE_VALUE_CLASS_REPLACEMENTS), $(addprefix $(TOPDIR)/src/java.base/share/classes/, $(f)))
 
-$(eval $(call SetupTextFileProcessing, JAVA_BASE_VALUECLASS_REPLACEMENTS, \
-    SOURCE_FILES := $(java.base-VALUE-CLASS-FILES), \
+$(eval $(call SetupTextFileProcessing, JAVA_BASE_VALUE_CLASS_TARGETS, \
+    SOURCE_FILES := $(JAVA_BASE_VALUE_CLASS_SRC_PATHS), \
     SOURCE_BASE_DIR := $(TOPDIR)/src/java.base/share/classes, \
     OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/gensrc-valueclasses/java.base/, \
     REPLACEMENTS := \
@@ -72,4 +72,4 @@ $(eval $(call SetupTextFileProcessing, JAVA_BASE_VALUECLASS_REPLACEMENTS, \
         /\*value\*/ record => value record ; \
 ))
 
-TARGETS += $(JAVA_BASE_VALUECLASS_REPLACEMENTS)
+TARGETS += $(JAVA_BASE_VALUE_CLASS_TARGETS)

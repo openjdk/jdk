@@ -740,7 +740,8 @@ Node* LoadNode::find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node
     // This is a load from a cloned array. The corresponding arraycopy ac must
     // have set the value for the load and we can return ac but only if the load
     // is known to be within bounds. This is checked below.
-    if (ary_t != nullptr && ld_addp->is_AddP()) {
+    // TODO 8350865: Support flat arrays in LoadNode::find_previous_arraycopy
+    if (ary_t != nullptr && ary_t->is_not_flat() && ld_addp->is_AddP()) {
       Node* ld_offs = ld_addp->in(AddPNode::Offset);
       BasicType ary_elem = ary_t->elem()->array_element_basic_type();
       jlong header = arrayOopDesc::base_offset_in_bytes(ary_elem);

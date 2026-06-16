@@ -81,7 +81,6 @@ import static java.lang.String.COMPACT_STRINGS;
  *
  * @since 1.0
  */
-@jdk.internal.MigratedValueClass
 @jdk.internal.ValueBased
 public final /*value*/ class Integer extends Number
         implements Comparable<Integer>, Constable, ConstantDesc {

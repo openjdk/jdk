@@ -131,9 +131,6 @@ public final class Modifier {
      * Return {@code true} if the integer argument includes the
      * {@code synchronized} modifier, {@code false} otherwise.
      *
-     * @apiNote {@code isSynchronized} should only be called with the modifiers
-     * of a {@linkplain Method#getModifiers() method}.
-     *
      * @param   mod a set of modifiers
      * @return {@code true} if {@code mod} includes the
      * {@code synchronized} modifier; {@code false} otherwise.
@@ -218,7 +215,7 @@ public final class Modifier {
      * Return a string describing the access modifier flags in
      * the specified modifier. For example:
      * <blockquote><pre>
-     *    public final synchronized
+     *    public final synchronized strictfp
      * </pre></blockquote>
      * The modifier names are returned in an order consistent with the
      * suggested modifier orderings given in sections 8.1.1, 8.3.1, 8.4.3, 8.8.3, and 9.1.1 of

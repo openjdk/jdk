@@ -365,7 +365,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * @since 1.0
  */
-@jdk.internal.MigratedValueClass
 @jdk.internal.ValueBased
 public final /*value*/ class Double extends Number
         implements Comparable<Double>, Constable, ConstantDesc {

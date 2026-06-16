@@ -85,7 +85,7 @@ public final class Attributes {
     /**
      * LoadableDescriptors
      *
-     * @since Valhalla
+     * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective = true)
     public static final String NAME_LOADABLE_DESCRIPTORS = "LoadableDescriptors";
@@ -257,7 +257,7 @@ public final class Attributes {
     /**
      * {@return the mapper for the {@code LoadableDescriptors} attribute}
      *
-     * @since Valhalla
+     * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective = true)
     public static AttributeMapper<LoadableDescriptorsAttribute> loadableDescriptors() {

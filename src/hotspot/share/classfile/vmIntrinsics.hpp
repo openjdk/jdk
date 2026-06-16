@@ -327,19 +327,19 @@ class methodHandle;
    do_name(     newArray_name,                                    "newArray")                                           \
    do_signature(newArray_signature,                               "(Ljava/lang/Class;I)Ljava/lang/Object;")             \
   do_intrinsic(_newNullRestrictedAtomicArray, jdk_internal_value_ValueClass, newNullRestrictedAtomicArray_name, newArray_signature3, F_SN) \
-   do_name(     newNullRestrictedAtomicArray_name,                "newNullRestrictedAtomicArray")                       \
+   do_name(     newNullRestrictedAtomicArray_name,                "newNullRestrictedAtomicArray0")                      \
   do_intrinsic(_newNullRestrictedNonAtomicArray, jdk_internal_value_ValueClass, newNullRestrictedNonAtomicArray_name, newArray_signature3, F_SN) \
-   do_name(     newNullRestrictedNonAtomicArray_name,             "newNullRestrictedNonAtomicArray")                    \
+   do_name(     newNullRestrictedNonAtomicArray_name,             "newNullRestrictedNonAtomicArray0")                   \
   do_intrinsic(_newNullableAtomicArray, jdk_internal_value_ValueClass, newNullableAtomicArray_name, newArray_signature2, F_SN) \
-   do_name(     newNullableAtomicArray_name,                      "newNullableAtomicArray")                             \
+   do_name(     newNullableAtomicArray_name,                      "newNullableAtomicArray0")                            \
    do_signature(newArray_signature2,                              "(Ljava/lang/Class;I)[Ljava/lang/Object;")            \
    do_signature(newArray_signature3,                              "(Ljava/lang/Class;ILjava/lang/Object;)[Ljava/lang/Object;") \
   do_intrinsic(_isFlatArray, jdk_internal_value_ValueClass, isFlatArray_name, object_array_boolean_signature, F_SN)     \
-   do_name(     isFlatArray_name,                                 "isFlatArray")                                        \
+   do_name(     isFlatArray_name,                                 "isFlatArray0")                                       \
   do_intrinsic(_isNullRestrictedArray, jdk_internal_value_ValueClass, isNullRestrictedArray_name, object_array_boolean_signature, F_SN) \
-   do_name(     isNullRestrictedArray_name,                       "isNullRestrictedArray")                              \
+   do_name(     isNullRestrictedArray_name,                       "isNullRestrictedArray0")                             \
   do_intrinsic(_isAtomicArray, jdk_internal_value_ValueClass, isAtomicArray_name, object_array_boolean_signature, F_SN) \
-   do_name(     isAtomicArray_name,                               "isAtomicArray")                                      \
+   do_name(     isAtomicArray_name,                               "isAtomicArray0")                                     \
                                                                                                                         \
   do_intrinsic(_onSpinWait,               java_lang_Thread,       onSpinWait_name, onSpinWait_signature,         F_S)   \
    do_name(     onSpinWait_name,                                  "onSpinWait")                                         \
@@ -563,6 +563,13 @@ class methodHandle;
    do_name(intPolyAssign_name, "conditionalAssign")                                                                     \
    do_signature(intPolyAssign_signature, "(I[J[J)V")                                                                    \
                                                                                                                         \
+  /* support for sun.security.util.math.intpoly.IntegerPolynomial25519 */                                               \
+  do_class(sun_security_util_math_intpoly_IntegerPolynomial25519, "sun/security/util/math/intpoly/IntegerPolynomial25519") \
+  do_intrinsic(_intpoly_mult_25519, sun_security_util_math_intpoly_IntegerPolynomial25519, intPolyMult_name, intPolyMult_signature, F_R) \
+  do_intrinsic(_intpoly_square_25519, sun_security_util_math_intpoly_IntegerPolynomial25519, intPolySquare_name, intPolySquare_signature, F_R) \
+  do_name(intPolySquare_name, "square")                                                                                  \
+  do_signature(intPolySquare_signature, "([J[J)V")                                                                       \
+                                                                                                                         \
   /* support for java.util.Base64.Encoder*/                                                                             \
   do_class(java_util_Base64_Encoder, "java/util/Base64$Encoder")                                                        \
   do_intrinsic(_base64_encodeBlock, java_util_Base64_Encoder, encodeBlock_name, encodeBlock_signature, F_R)             \

@@ -84,7 +84,7 @@ public sealed interface StackMapFrameInfo
      * {@return the expanded unset fields}
      *
      * @jvms strict-fields-4.7.4 The {@code StackMapTable} Attribute
-     * @since Valhalla
+     * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STRICT_FIELDS, reflective = true)
     List<NameAndTypeEntry> unsetFields();
@@ -116,7 +116,7 @@ public sealed interface StackMapFrameInfo
      *         {@link java.lang.classfile##u2 u2}; or if unset fields has
      *         elements, but no {@link SimpleVerificationTypeInfo#UNINITIALIZED_THIS
      *         uninitializedThis} is present in {@code locals}
-     * @since Valhalla
+     * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STRICT_FIELDS, reflective = true)
     public static StackMapFrameInfo of(Label target,

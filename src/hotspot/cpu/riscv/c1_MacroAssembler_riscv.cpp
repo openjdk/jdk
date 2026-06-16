@@ -28,11 +28,13 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -85,14 +87,22 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register tmp1, Register tmp2) {
   assert_different_registers(obj, klass, len, tmp1, tmp2);
-  if (UseCompactObjectHeaders) {
+  if (UseCompactObjectHeaders || Arguments::is_valhalla_enabled()) {
+    // COH: Markword contains class pointer which is only known at runtime.
+    // Valhalla: Could have value class which has a different prototype header to a normal object.
+    // In both cases, we need to fetch dynamically.
     ld(tmp1, Address(klass, Klass::prototype_header_offset()));
     sd(tmp1, Address(obj, oopDesc::mark_offset_in_bytes()));
   } else {
-    // This assumes that all prototype bits fitr in an int32_t
+    // Otherwise: Can use the statically computed prototype header which is the same for every object.
     mv(tmp1, checked_cast<int32_t>(markWord::prototype().value()));
     sd(tmp1, Address(obj, oopDesc::mark_offset_in_bytes()));
-    encode_klass_not_null(tmp1, klass, tmp2);
+  }
+
+  if (!UseCompactObjectHeaders) {
+    // COH: Markword already contains class pointer. Nothing else to do.
+    // Otherwise: Fetch klass pointer following the markword
+    encode_klass_not_null(tmp1, klass, tmp2); // Take care not to kill klass
     sw(tmp1, Address(obj, oopDesc::klass_offset_in_bytes()));
   }
 
@@ -243,19 +253,27 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1
   verify_oop(obj);
 }
 
-void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes,
+void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes,
                                     int sp_offset_for_orig_pc,
                                     bool needs_stack_repair, bool has_scalarized_args,
                                     Label* verified_inline_entry_label) {
-  assert(bang_size_in_bytes >= framesize, "stack bang size incorrect");
+  assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
+
+  assert(!needs_stack_repair && !has_scalarized_args, "");
+
   // Make sure there is enough stack space for this method's activation.
   // Note that we do this before creating a frame.
   generate_stack_overflow_check(bang_size_in_bytes);
-  MacroAssembler::build_frame(framesize);
+  MacroAssembler::build_frame(frame_size_in_bytes);
 
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */, nullptr /* guard */);
+
+  if (verified_inline_entry_label != nullptr) {
+    // Jump here from the scalarized entry points that already created the frame.
+    bind(*verified_inline_entry_label);
+  }
 }
 
 void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
@@ -266,6 +284,12 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   IncompressibleScope scope(this); // keep the nop as 4 bytes for patching.
   assert_alignment(pc());
   nop();  // 4 bytes
+}
+
+int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes,
+                                        int sp_offset_for_orig_pc, Label& verified_inline_entry_label, bool is_inline_ro_entry) {
+  Unimplemented();
+  return 0;
 }
 
 void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
@@ -371,8 +395,3 @@ void C1_MacroAssembler::c1_float_cmp_branch(int cmpFlag, FloatRegister op1, Floa
          "invalid c1 float conditional branch index");
   (this->*c1_float_cond_branch[cmpFlag])(op1, op2, label, is_far, is_unordered);
 }
-
-int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_inline_entry_label, bool is_inline_ro_entry) {
-  Unimplemented();
-}
-

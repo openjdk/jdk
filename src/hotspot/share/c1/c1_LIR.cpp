@@ -867,7 +867,13 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       LIR_OpNullFreeArrayCheck* opNullFreeArrayCheck = (LIR_OpNullFreeArrayCheck*)op;
 
       if (opNullFreeArrayCheck->_array->is_valid()) do_input(opNullFreeArrayCheck->_array);
+#ifdef RISCV
+      // tmp is used to hold the result of null free array check on riscv
+      // See LIR_Assembler::emit_opNullFreeArrayCheck
+      if (opNullFreeArrayCheck->_tmp->is_valid())   do_output(opNullFreeArrayCheck->_tmp);
+#else
       if (opNullFreeArrayCheck->_tmp->is_valid())   do_temp(opNullFreeArrayCheck->_tmp);
+#endif
       break;
     }
 

@@ -25,6 +25,7 @@
  * @test
  * @bug 8330467
  * @modules jdk.compiler
+ *          java.base/jdk.internal.misc
  * @library /test/lib
  * @compile BadClassFile.jcod
  *          BadClassFile2.jcod
@@ -49,6 +50,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import jdk.internal.misc.PreviewFeatures;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.Utils;
 
@@ -306,8 +308,11 @@ public class BasicTest {
                 throw new IllegalArgumentException("unexpected access flag: " + accessFlags);
         }
         assertTrue(hc.isHidden());
-        // ACC_SUPER bit may appear spuriously if preview is enabled
-        assertEquals(hc.getModifiers() & (~ACC_SUPER), (ACC_PUBLIC | accessFlags));
+        int expectedAccessFlags = ACC_PUBLIC | accessFlags;
+        if ((accessFlags & ACC_INTERFACE) == 0 && PreviewFeatures.isEnabled()) {
+            expectedAccessFlags |= ACC_IDENTITY;
+        }
+        assertEquals(hc.getModifiers(), expectedAccessFlags);
         assertFalse(hc.isLocalClass());
         assertFalse(hc.isMemberClass());
         assertFalse(hc.isAnonymousClass());

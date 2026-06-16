@@ -86,11 +86,11 @@ public class NullRestrictedArrayTest {
       Throwable exception = null;
       try {
         ValueClass.newNullRestrictedNonAtomicArray(ValueClass1.class, -1, new ValueClass1());
-      } catch (IllegalArgumentException e) {
+      } catch (NegativeArraySizeException e) {
         System.out.println("Received: " + e);
         exception = e;
       }
-      Asserts.assertNotNull(exception, "Expected IllegalArgumentException not received");
+      Asserts.assertNotNull(exception, "Expected NegativeArraySizeException not received");
   }
 
   // Test valid creation of a flat array

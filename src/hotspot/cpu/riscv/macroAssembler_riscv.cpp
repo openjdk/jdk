@@ -26,6 +26,7 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "ci/ciInlineKlass.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -43,6 +44,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -943,6 +945,10 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0,
   pass_arg1(this, arg_1);
   pass_arg2(this, arg_2);
   call_VM_leaf_base(entry_point, 3);
+}
+
+void MacroAssembler::super_call_VM_leaf(address entry_point) {
+  MacroAssembler::call_VM_leaf_base(entry_point, 1);
 }
 
 void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0) {
@@ -3595,6 +3601,46 @@ void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
   movptr(dst, Address((address)obj, rspec));
 }
 
+void MacroAssembler::inline_layout_info(Register holder_klass, Register index, Register layout_info) {
+  assert_different_registers(holder_klass, index, layout_info);
+  InlineLayoutInfo array[2];
+  int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
+  if (is_power_of_2(size)) {
+    slli(index, index, log2i_exact(size)); // Scale index by power of 2
+  } else {
+    mv(layout_info, size);
+    mul(index, index, layout_info); // Scale the index to be the entry index * array_element_size
+  }
+  ld(layout_info, Address(holder_klass, InstanceKlass::inline_layout_info_array_offset()));
+  add(layout_info, layout_info, Array<InlineLayoutInfo>::base_offset_in_bytes());
+  add(layout_info, layout_info, index);
+  la(layout_info, Address(layout_info));
+}
+
+void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
+                                     Register inline_layout_info) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->flat_field_copy(this, decorators, src, dst, inline_layout_info);
+}
+
+void MacroAssembler::payload_offset(Register inline_klass, Register offset) {
+  ld(offset, Address(inline_klass, InlineKlass::adr_members_offset()));
+  lwu(offset, Address(offset, InlineKlass::payload_offset_offset()));
+}
+
+void MacroAssembler::payload_address(Register oop, Register data, Register inline_klass) {
+  assert_different_registers(data, t0);
+  // ((address) (void*) o) + vk->payload_offset();
+  Register offset = (data == oop) ? t0 : data;
+  payload_offset(inline_klass, offset);
+  if (data == oop) {
+    add(data, data, offset);
+  } else {
+    add(data, oop, offset);
+    la(data, Address(data));
+  }
+}
+
 // Writes to stack successive pages until offset reached to check for
 // stack overflow + shadow pages.  This clobbers tmp.
 void MacroAssembler::bang_stack_size(Register size, Register tmp) {
@@ -3678,6 +3724,82 @@ void MacroAssembler::null_check(Register reg, int offset) {
     // nothing to do, (later) access of M[reg + offset]
     // will provoke OS null exception if reg is null
   }
+}
+
+void MacroAssembler::test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free_inline_type) {
+  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
+  bnez(temp_reg, is_null_free_inline_type);
+}
+
+void MacroAssembler::test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free_inline_type) {
+  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
+  beqz(temp_reg, not_null_free_inline_type);
+}
+
+void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label& is_flat) {
+  test_bit(temp_reg, flags, ResolvedFieldEntry::is_flat_shift);
+  bnez(temp_reg, is_flat);
+}
+
+void MacroAssembler::test_markword_is_inline_type(Register markword, Label& is_inline_type) {
+  assert_different_registers(markword, t1);
+  mv(t1, markWord::inline_type_pattern_mask);
+  andr(markword, markword, t1);
+  mv(t1, markWord::inline_type_pattern);
+  beq(markword, t1, is_inline_type);
+}
+
+void MacroAssembler::test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null) {
+  assert_different_registers(tmp, t0);
+  if (can_be_null) {
+    beqz(object, not_inline_type);
+  }
+  const int is_inline_type_mask = markWord::inline_type_pattern;
+  ld(tmp, Address(object, oopDesc::mark_offset_in_bytes()));
+  mv(t0, is_inline_type_mask);
+  andr(tmp, tmp, t0);
+  bne(tmp, t0, not_inline_type);
+}
+
+void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int32_t tst_bit, bool jmp_set, Label& jmp_label) {
+  assert_different_registers(temp_reg, t0);
+  Label test_mark_word;
+  // load mark word
+  ld(temp_reg, Address(oop, oopDesc::mark_offset_in_bytes()));
+  // check displaced
+  test_bit(t0, temp_reg, exact_log2(markWord::unlocked_value));
+  bnez(t0, test_mark_word);
+  // slow path use klass prototype
+  load_prototype_header(temp_reg, oop);
+
+  bind(test_mark_word);
+  andi(temp_reg, temp_reg, tst_bit);
+  if (jmp_set) {
+    bnez(temp_reg, jmp_label, /* is_far */ true);
+  } else {
+    beqz(temp_reg, jmp_label, /* is_far */ true);
+  }
+}
+
+void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array);
+}
+
+void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array);
+}
+
+void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg, Label&is_non_flat_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
+}
+
+void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
+}
+
+void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
+  test_bit(t0, lh, exact_log2(Klass::_lh_array_tag_flat_value_bit_inplace));
+  bnez(t0, is_flat_array);
 }
 
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
@@ -3777,6 +3899,11 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
     lwu(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     decode_klass_not_null(dst, tmp);
   }
+}
+
+void MacroAssembler::load_prototype_header(Register dst, Register src, Register tmp) {
+  load_klass(dst, src, tmp);
+  ld(dst, Address(dst, Klass::prototype_header_offset()));
 }
 
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
@@ -5243,6 +5370,8 @@ void MacroAssembler::get_thread(Register thread) {
 
 void MacroAssembler::load_byte_map_base(Register reg) {
   CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
+  // Strictly speaking the card table base isn't an address at all, and it might
+  // even be negative. It is thus materialised as a constant.
   mv(reg, (uint64_t)ctbs->card_table_base_const());
 }
 
@@ -5261,6 +5390,74 @@ void MacroAssembler::remove_frame(int framesize) {
   ld(fp, Address(sp, framesize - 2 * wordSize));
   ld(ra, Address(sp, framesize - wordSize));
   add(sp, sp, framesize);
+}
+
+void MacroAssembler::remove_frame(int initial_framesize, bool needs_stack_repair) {
+  assert(!needs_stack_repair, "unimplemented");
+  remove_frame(initial_framesize);
+}
+
+#ifdef COMPILER2
+// C2 compiled method's prolog code
+// Moved here from riscv.ad to support Valhalla code belows
+void MacroAssembler::verified_entry(Compile* C, int sp_inc) {
+  if (C->clinit_barrier_on_entry()) {
+    assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
+
+    Label L_skip_barrier;
+
+    mov_metadata(t1, C->method()->holder()->constant_encoding());
+    clinit_barrier(t1, t0, &L_skip_barrier);
+    far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
+    bind(L_skip_barrier);
+  }
+
+  int bangsize = C->output()->bang_size_in_bytes();
+  if (C->output()->need_stack_bang(bangsize)) {
+    generate_stack_overflow_check(bangsize);
+  }
+
+  // n.b. frame size includes space for return pc and fp
+  const long framesize = C->output()->frame_size_in_bytes();
+  build_frame(framesize);
+
+  assert(!C->needs_stack_repair(), "unimplemented");
+}
+#endif // COMPILER2
+
+// Move a value between registers/stack slots and update the reg_state
+bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]) {
+  Unimplemented();
+  return false;
+}
+
+// Read all fields from an inline type oop and store the values in registers/stack slots
+bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+                                          VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
+                                          RegState reg_state[]) {
+
+  Unimplemented();
+  return false;
+}
+
+// Pack fields back into an inline type oop
+bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+                                        VMRegPair* from, int from_count, int& from_index, VMReg to,
+                                        RegState reg_state[], Register val_array) {
+  Unimplemented();
+  return false;
+}
+
+// Calculate the extra stack space required for packing or unpacking inline
+// args and adjust the stack pointer
+int MacroAssembler::extend_stack_for_inline_args(int args_on_stack) {
+  Unimplemented();
+  return false;
+}
+
+VMReg MacroAssembler::spill_reg_for(VMReg reg) {
+  Unimplemented();
+  return reg;
 }
 
 void MacroAssembler::reserved_stack_check() {
@@ -5526,6 +5723,14 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   ld(holder, Address(method, Method::const_offset()));                      // ConstMethod*
   ld(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*
   ld(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
+}
+
+void MacroAssembler::load_metadata(Register dst, Register src) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(dst, src);
+  } else {
+    lwu(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+  }
 }
 
 // string indexof
@@ -6854,6 +7059,8 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
   // Try to lock. Transition lock-bits 0b01 => 0b00
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
   ori(mark, mark, markWord::unlocked_value);
+  // Mask inline_type bit such that we go to the slow path if object is an inline type
+  andi(mark, mark, ~((int) markWord::inline_type_bit_in_place));
   xori(t, mark, markWord::unlocked_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
           /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t);
@@ -6939,33 +7146,4 @@ void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Reg
   j(slow);
 
   bind(unlocked);
-}
-
-// Unimplemented methods for inline types.
-int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter) {
-   Unimplemented();
-}
-
-bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]) {
-  Unimplemented();
-}
-
-bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
-                            VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
-                            RegState reg_state[]) {
-  Unimplemented();
-}
-
-bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
-                          VMRegPair* from, int from_count, int& from_index, VMReg to,
-                          RegState reg_state[], Register val_array) {
-  Unimplemented();
-}
-
-int MacroAssembler::extend_stack_for_inline_args(int args_on_stack) {
-  Unimplemented();
-}
-
-VMReg MacroAssembler::spill_reg_for(VMReg reg) {
-  Unimplemented();
 }

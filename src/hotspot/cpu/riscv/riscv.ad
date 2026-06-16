@@ -1228,6 +1228,9 @@ int MachCallRuntimeNode::ret_addr_offset() {
   //   jalr(t1, offset)                                            ->  jalr
   if (CodeCache::contains(_entry_point)) {
     return 2 * NativeInstruction::instruction_size;
+  } else if (_entry_point == nullptr) {
+    // See CallLeafNoFPIndirect
+    return 1 * NativeInstruction::instruction_size;
   } else {
     return 8 * NativeInstruction::instruction_size;
   }
@@ -1271,6 +1274,11 @@ int CallLeafDirectNode::compute_padding(int current_offset) const
 }
 
 int CallLeafDirectVectorNode::compute_padding(int current_offset) const
+{
+  return align_up(current_offset, alignment_required()) - current_offset;
+}
+
+int CallLeafNoFPIndirectNode::compute_padding(int current_offset) const
 {
   return align_up(current_offset, alignment_required()) - current_offset;
 }
@@ -1381,53 +1389,21 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   assert_cond(ra_ != nullptr);
   Compile* C = ra_->C;
 
-  // n.b. frame size includes space for return pc and fp
-  const int framesize = C->output()->frame_size_in_bytes();
-
-  assert_cond(C != nullptr);
-
-  if (C->clinit_barrier_on_entry()) {
-    assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
-
-    Label L_skip_barrier;
-
-    __ mov_metadata(t1, C->method()->holder()->constant_encoding());
-    __ clinit_barrier(t1, t0, &L_skip_barrier);
-    __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
-    __ bind(L_skip_barrier);
-  }
-
-  int bangsize = C->output()->bang_size_in_bytes();
-  if (C->output()->need_stack_bang(bangsize)) {
-    __ generate_stack_overflow_check(bangsize);
-  }
-
-  __ build_frame(framesize);
+  __ verified_entry(C, 0);
 
   if (VerifyStackAtCalls) {
+    // n.b. frame size includes space for return pc and fp
+    const long framesize = C->output()->frame_size_in_bytes();
     __ mv(t2, MAJIK_DWORD);
     __ sd(t2, Address(sp, framesize - 3 * wordSize));
   }
 
   if (C->stub_function() == nullptr) {
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    // Dummy labels for just measuring the code size
-    Label dummy_slow_path;
-    Label dummy_continuation;
-    Label dummy_guard;
-    Label* slow_path = &dummy_slow_path;
-    Label* continuation = &dummy_continuation;
-    Label* guard = &dummy_guard;
-    if (!Compile::current()->output()->in_scratch_emit_size()) {
-      // Use real labels from actual stub when not emitting code for purpose of measuring its size
-      C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
-      Compile::current()->output()->add_stub(stub);
-      slow_path = &stub->entry();
-      continuation = &stub->continuation();
-      guard = &stub->guard();
-    }
-    // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
-    bs->nmethod_entry_barrier(masm, slow_path, continuation, guard);
+    __ entry_barrier();
+  }
+
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    __ bind(*_verified_entry);
   }
 
   C->output()->set_frame_complete(__ offset());
@@ -1788,6 +1764,8 @@ void MachVEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const
 {
   Unimplemented();
 }
+
+//=============================================================================
 
 #ifndef PRODUCT
 void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
@@ -2668,6 +2646,16 @@ operand uimmI6_ge32() %{
 operand immI_le_4()
 %{
   predicate(n->get_int() <= 4);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_4()
+%{
+  predicate(n->get_int() == 4);
   match(ConI);
 
   op_cost(0);
@@ -8338,6 +8326,34 @@ instruct spin_wait() %{
 // ============================================================================
 // Cast Instructions (Java-level type cast)
 
+instruct castI2N(iRegNNoSp dst, iRegI src) %{
+  match(Set dst (CastI2N src));
+
+  ins_cost(ALU_COST);
+  format %{ "zext $dst, $src, 32\t# int -> narrow ptr" %}
+
+  ins_encode %{
+    __ zext(as_Register($dst$$reg), as_Register($src$$reg), 32);
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
+instruct castN2X(iRegLNoSp dst, iRegN src) %{
+  match(Set dst (CastP2X src));
+
+  ins_cost(ALU_COST);
+  format %{ "mv $dst, $src\t# ptr -> long" %}
+
+  ins_encode %{
+    if ($dst$$reg != $src$$reg) {
+      __ mv(as_Register($dst$$reg), as_Register($src$$reg));
+    }
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
 instruct castX2P(iRegPNoSp dst, iRegL src) %{
   match(Set dst (CastX2P src));
 
@@ -10875,8 +10891,31 @@ instruct CallLeafDirectVector(method meth)
 
 // Call Runtime Instruction
 
+// entry point is null, target holds the address to call
+instruct CallLeafNoFPIndirect(iRegP target)
+%{
+  predicate(n->as_Call()->entry_point() == nullptr);
+
+  match(CallLeafNoFP target);
+
+  ins_cost(BRANCH_COST);
+
+  format %{ "CALL, runtime leaf nofp indirect $target" %}
+
+  ins_encode %{
+    Assembler::IncompressibleScope scope(masm); // Fixed length: see ret_addr_offset
+    __ jalr($target$$Register);
+    __ post_call_nop();
+  %}
+
+  ins_pipe(pipe_class_call);
+  ins_alignment(4);
+%}
+
 instruct CallLeafNoFPDirect(method meth)
 %{
+  predicate(n->as_Call()->entry_point() != nullptr);
+
   match(CallLeafNoFP);
 
   effect(USE meth);
@@ -11206,17 +11245,20 @@ instruct stringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
   ins_pipe(pipe_class_memory);
 %}
 
+// ============================================================================
 // clearing of an array
-instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, iRegP_R30 tmp1,
-                            iRegP_R31 tmp2, rFlagsReg cr, Universe dummy)
+
+instruct clearArray_reg_reg_immL0(iRegL_R29 cnt, iRegP_R28 base, immL0 zero,
+                                  iRegP_R30 tmp1, iRegP_R31 tmp2, rFlagsReg cr,
+                                  Universe dummy)
 %{
   // temp registers must match the one used in StubGenerator::generate_zero_blocks()
   predicate(UseBlockZeroing || !UseRVV);
-  match(Set dummy (ClearArray cnt base));
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2, KILL cr);
 
   ins_cost(4 * DEFAULT_COST);
-  format %{ "ClearArray $cnt, $base\t#@clearArray_reg_reg" %}
+  format %{ "ClearArray $cnt, $base\t#@clearArray_reg_reg_immL0" %}
 
   ins_encode %{
     address tpc = __ zero_words($base$$Register, $cnt$$Register);
@@ -11229,11 +11271,32 @@ instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, iRegP_R30 tmp1,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct clearArray_imm_reg(immL cnt, iRegP_R28 base, Universe dummy, rFlagsReg cr)
+instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, iRegL val,
+                            iRegP_R30 tmp1, iRegP_R31 tmp2, rFlagsReg cr,
+                            Universe dummy)
 %{
-  predicate(!UseRVV && (uint64_t)n->in(2)->get_long()
-            < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord));
-  match(Set dummy (ClearArray cnt base));
+  // temp registers must match the one used in StubGenerator::generate_zero_blocks()
+  predicate(((ClearArrayNode*)n)->word_copy_only());
+  match(Set dummy (ClearArray (Binary cnt base) val));
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  ins_cost(4 * DEFAULT_COST);
+  format %{ "ClearArray $cnt, $base, $val\t#@clearArray_reg_reg" %}
+
+  ins_encode %{
+    __ fill_words($base$$Register, $cnt$$Register, $val$$Register);
+  %}
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct clearArray_imm_reg(immL cnt, iRegP_R28 base, immL0 zero, Universe dummy, rFlagsReg cr)
+%{
+  predicate(!UseRVV
+            && (uint64_t)n->in(2)->in(1)->get_long()
+               < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord)
+            && !((ClearArrayNode*)n)->word_copy_only());
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL base, KILL cr);
 
   ins_cost(4 * DEFAULT_COST);

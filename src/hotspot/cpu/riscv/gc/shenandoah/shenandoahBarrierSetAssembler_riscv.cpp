@@ -522,7 +522,7 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
     __ srli(tmp1, res, ShenandoahHeapRegion::region_size_bytes_shift_jint());
     __ add(tmp2, tmp2, tmp1);
     __ lbu(tmp2, Address(tmp2));
-    __ beqz(tmp2, *stub->continuation(), true /* is_far */);
+    __ beqz(tmp2, *stub->continuation(), /* is_far */ true);
   }
 
   ce->store_parameter(res, 0);
@@ -912,12 +912,9 @@ void ShenandoahBarrierStubC2::lrb(MacroAssembler& masm) {
     if (c_rarg0 == _obj) {
       __ la(c_rarg1, _addr);
     } else if (c_rarg1 == _obj) {
-      // Set up arguments in reverse, and then flip them
-      __ la(c_rarg0, _addr);
-      // flip them
-      __ mv(_tmp1, c_rarg0);
-      __ mv(c_rarg0, c_rarg1);
-      __ mv(c_rarg1, _tmp1);
+      __ mv(_tmp1, c_rarg1);
+      __ la(c_rarg1, _addr);
+      __ mv(c_rarg0, _tmp1);
     } else {
       assert_different_registers(c_rarg1, _obj);
       __ la(c_rarg1, _addr);

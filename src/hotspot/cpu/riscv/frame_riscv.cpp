@@ -620,6 +620,21 @@ frame::frame(void* ptr_sp, void* ptr_fp, void* pc) : _on_heap(false) {
 
 #endif
 
+// Check for a method with scalarized inline type arguments that needs
+// a stack repair and return the repaired sender stack pointer.
+
+intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr) {
+  Unimplemented();
+  return nullptr;
+}
+
+bool frame::was_augmented_on_entry(int& real_size) const {
+  assert(is_compiled_frame(), "");
+  assert(!_cb->as_nmethod_or_null()->needs_stack_repair(), "unimplemented");
+  real_size = _cb->frame_size();
+  return false;
+}
+
 void JavaFrameAnchor::make_walkable() {
   // last frame set?
   if (last_Java_sp() == nullptr) { return; }
@@ -628,19 +643,4 @@ void JavaFrameAnchor::make_walkable() {
   vmassert(last_Java_sp() != nullptr, "not called from Java code?");
   _last_Java_pc = (address)_last_Java_sp[-1];
   vmassert(walkable(), "something went wrong");
-}
-
-intptr_t* frame::repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const {
-  Unimplemented();
-  return nullptr;
-}
-
-intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr) {
-  Unimplemented();
-  return nullptr;
-}
-
-bool frame::was_augmented_on_entry(int& real_size) const {
-  Unimplemented();
-  return false;
 }
