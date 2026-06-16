@@ -63,6 +63,10 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
   int       slop_bytes = 0;
   int       slop_delta = 0;
 
+  ByteSize  entry_offset = caller_is_c1
+                           ? Method::from_compiled_inline_offset()
+                           : Method::from_compiled_inline_ro_offset();
+
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
@@ -119,7 +123,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
   if (DebugVtables) {
     Label L;
     __ beqz(xmethod, L);
-    __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
+    __ ld(t0, Address(xmethod, entry_offset));
     __ bnez(t0, L);
     __ stop("Vtable entry is null");
     __ bind(L);
@@ -130,7 +134,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
   // xmethod: Method*
   // x12: receiver
   address ame_addr = __ pc();
-  __ ld(t1, Address(xmethod, Method::from_compiled_offset()));
+  __ ld(t1, Address(xmethod, entry_offset));
   __ jr(t1);
 
   masm->flush();
@@ -153,6 +157,10 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1)
   address   start_pc = nullptr;
   int       slop_bytes = 0;
   int       slop_delta = 0;
+
+  ByteSize  entry_offset = caller_is_c1
+                           ? Method::from_compiled_inline_offset()
+                           : Method::from_compiled_inline_ro_offset();
 
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
@@ -216,7 +224,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1)
   if (DebugVtables) {
     Label L2;
     __ beqz(xmethod, L2);
-    __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
+    __ ld(t0, Address(xmethod, entry_offset));
     __ bnez(t0, L2);
     __ stop("compiler entrypoint is null");
     __ bind(L2);
@@ -226,7 +234,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1)
   // xmethod: Method*
   // j_rarg0: receiver
   address ame_addr = __ pc();
-  __ ld(t1, Address(xmethod, Method::from_compiled_offset()));
+  __ ld(t1, Address(xmethod, entry_offset));
   __ jr(t1);
 
   __ bind(L_no_such_interface);

@@ -25,7 +25,6 @@
 
 package java.lang.ref;
 
-
 import java.util.Objects;
 
 /**

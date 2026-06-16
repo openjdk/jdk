@@ -427,19 +427,6 @@ JVM_ENTRY(jstring, JVM_GetTemporaryDirectory(JNIEnv *env))
   return (jstring) JNIHandles::make_local(THREAD, h());
 JVM_END
 
-static void validate_array_arguments(Klass* elmClass, jint len, TRAPS) {
-  if (len < 0) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "Array length is negative");
-  }
-  elmClass->initialize(CHECK);
-  if (elmClass->is_array_klass() || elmClass->is_identity_class()) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "Element class is not a value class");
-  }
-  if (elmClass->is_abstract()) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "Element class is abstract");
-  }
-}
-
 JVM_ENTRY(jarray, JVM_CopyOfSpecialArray(JNIEnv *env, jarray orig, jint from, jint to))
   oop o = JNIHandles::resolve_non_null(orig);
   assert(o->is_array(), "Must be");
@@ -495,22 +482,26 @@ JVM_ENTRY(jarray, JVM_CopyOfSpecialArray(JNIEnv *env, jarray orig, jint from, ji
   return (jarray) JNIHandles::make_local(THREAD, array);
 JVM_END
 
-JVM_ENTRY(jarray, JVM_NewNullRestrictedNonAtomicArray(JNIEnv *env, jclass elmClass, jint len, jobject initVal))
+#ifdef ASSERT
+static void verify_array_arguments(jclass elmClass, jint len) {
+  assert(len >= 0, "Negative array length");
+  assert(elmClass != nullptr, "Null element class");
   oop mirror = JNIHandles::resolve_non_null(elmClass);
-  oop init = JNIHandles::resolve(initVal);
-  if (init == nullptr) {
-    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Initial value cannot be null");
-  }
-  Handle init_h(THREAD, init);
   Klass* klass = java_lang_Class::as_Klass(mirror);
-  if (klass != init_h()->klass()) {
-    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Type mismatch between array and initial value");
-  }
-  validate_array_arguments(klass, len, CHECK_NULL);
+  assert(klass->is_inline_klass(), "Element class must be an inline class");
+}
+#endif // ASSERT
+
+JVM_ENTRY(jarray, JVM_NewNullRestrictedNonAtomicArray(JNIEnv *env, jclass elmClass, jint len, jobject initVal))
+  DEBUG_ONLY(verify_array_arguments(elmClass, len));
+  oop mirror = JNIHandles::resolve_non_null(elmClass);
+  Klass* klass = java_lang_Class::as_Klass(mirror);
+  oop init = JNIHandles::resolve_non_null(initVal);
+  Handle init_h(THREAD, init);
+  assert(klass == init_h()->klass(), "Type mismatch between array and initial value");
   const ArrayProperties props = ArrayProperties::Default()
     .with_null_restricted()
     .with_non_atomic();
-
   objArrayOop array = oopFactory::new_objArray(klass, len, props, CHECK_NULL);
   for (int i = 0; i < len; i++) {
     array->obj_at_put(i, init_h() /*, CHECK_NULL*/ );
@@ -519,17 +510,12 @@ JVM_ENTRY(jarray, JVM_NewNullRestrictedNonAtomicArray(JNIEnv *env, jclass elmCla
 JVM_END
 
 JVM_ENTRY(jarray, JVM_NewNullRestrictedAtomicArray(JNIEnv *env, jclass elmClass, jint len, jobject initVal))
+  DEBUG_ONLY(verify_array_arguments(elmClass, len);)
   oop mirror = JNIHandles::resolve_non_null(elmClass);
-  oop init = JNIHandles::resolve(initVal);
-  if (init == nullptr) {
-    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Initial value cannot be null");
-  }
-  Handle init_h(THREAD, init);
   Klass* klass = java_lang_Class::as_Klass(mirror);
-  if (klass != init_h()->klass()) {
-    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Type mismatch between array and initial value");
-  }
-  validate_array_arguments(klass, len, CHECK_NULL);
+  oop init = JNIHandles::resolve_non_null(initVal);
+  Handle init_h(THREAD, init);
+  assert(klass == init_h()->klass(), "Type mismatch between array and initial value");
   const ArrayProperties props = ArrayProperties::Default().with_null_restricted();
   objArrayOop array = oopFactory::new_objArray(klass, len, props, CHECK_NULL);
   for (int i = 0; i < len; i++) {
@@ -539,18 +525,17 @@ JVM_ENTRY(jarray, JVM_NewNullRestrictedAtomicArray(JNIEnv *env, jclass elmClass,
 JVM_END
 
 JVM_ENTRY(jarray, JVM_NewNullableAtomicArray(JNIEnv *env, jclass elmClass, jint len))
+  DEBUG_ONLY(verify_array_arguments(elmClass, len);)
   oop mirror = JNIHandles::resolve_non_null(elmClass);
   Klass* klass = java_lang_Class::as_Klass(mirror);
-  klass->initialize(CHECK_NULL);
-  validate_array_arguments(klass, len, CHECK_NULL);
   objArrayOop array = oopFactory::new_objArray(klass, len, ArrayProperties::Default(), CHECK_NULL);
   return (jarray) JNIHandles::make_local(THREAD, array);
 JVM_END
 
 JVM_ENTRY(jarray, JVM_NewReferenceArray(JNIEnv *env, jclass elmClass, jint len))
+  DEBUG_ONLY(verify_array_arguments(elmClass, len);)
   oop mirror = JNIHandles::resolve_non_null(elmClass);
   Klass* klass = java_lang_Class::as_Klass(mirror);
-  validate_array_arguments(klass, len, CHECK_NULL);
   refArrayOop array = oopFactory::new_refArray(klass, len, ArrayProperties::Default(), CHECK_NULL);
   return (jarray) JNIHandles::make_local(THREAD, array);
 JVM_END
@@ -558,6 +543,8 @@ JVM_END
 JVM_ENTRY(jboolean, JVM_IsFlatArray(JNIEnv *env, jarray array))
   oop o = JNIHandles::resolve_non_null(array);
   Klass* klass = o->klass();
+
+  assert(klass->is_objArray_klass(), "Expects an object array");
 
   return klass->is_flatArray_klass();
 JVM_END

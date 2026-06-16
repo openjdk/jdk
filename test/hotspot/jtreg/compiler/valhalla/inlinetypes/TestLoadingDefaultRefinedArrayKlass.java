@@ -35,7 +35,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test
  * @summary Make sure that the correct default refined klass is loaded by intrinsics.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation

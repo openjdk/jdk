@@ -37,7 +37,7 @@ import static java.lang.annotation.ElementType.METHOD;
  * This is a temporary measure for legacy serialization migration compatibility;
  * future value object persistence would be handled by other mechanisms.
  *
- * @since Valhalla
+ * @since 28
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(value={CONSTRUCTOR, METHOD})

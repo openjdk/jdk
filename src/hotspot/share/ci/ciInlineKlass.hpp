@@ -83,6 +83,7 @@ public:
   int field_map_offset() const;
   ciConstant get_field_map() const;
   ciConstant get_null_reset_value();
+  ArrayDescription array_description_of_array_properties(const ArrayProperties&);
 };
 
 #endif // SHARE_VM_CI_CIINLINEKLASS_HPP

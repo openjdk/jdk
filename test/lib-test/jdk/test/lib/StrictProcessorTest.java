@@ -43,6 +43,7 @@ class StrictProcessorTest {
         for (var field : StrictTarget.class.getDeclaredFields()) {
             assertEquals(ACC_STRICT_INIT | ACC_FINAL, field.getModifiers(), () -> field.getName());
         }
+        StrictTarget.class.getClasses();
     }
 
     static final class StrictTarget {
@@ -56,5 +57,9 @@ class StrictProcessorTest {
             this.b = 2392352234L;
             super();
         }
+
+        // This one should not be represented as ACC_IDENTITY in
+        // InnerClasses attirbute
+        interface AnotherInterface {}
     }
 }

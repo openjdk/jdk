@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,21 +20,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import static java.lang.annotation.ElementType.TYPE;
 
 /**
- * Indicates the annotated class would become a value class when preview
- * features are enabled.
- *
- * @since Valhalla
+ * Defines a method to invoke JVMTI GetClassModifiers.
  */
-@Retention(RetentionPolicy.SOURCE)
-@Target(value={TYPE})
-public @interface MigratedValueClass {
+
+class GetClassModifiers {
+    private GetClassModifiers() {}
+
+    private static native void init();
+
+    static native int getClassModifiers(Class<?> clazz);
+
+    static {
+        System.loadLibrary("GetClassModifiers");
+        init();
+    }
 }

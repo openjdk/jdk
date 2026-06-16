@@ -336,8 +336,11 @@ tier1_gc_shenandoah = \
   gc/shenandoah/oom/
 
 tier2_gc_shenandoah = \
+  compiler/valhalla/inlinetypes/TestWrongFlatArrayCopyStubWithShenandoah.java \
   runtime/MemberName/MemberNameLeak.java \
   runtime/CompressedOops/UseCompressedOops.java \
+  runtime/valhalla/inlinetypes/FlatArrayCopyingTest.java \
+  runtime/valhalla/inlinetypes/InlineOops.java \
   gc/TestHumongousReferenceObject.java \
   gc/TestSystemGC.java \
   gc/arguments/TestDisableDefaultGC.java \
@@ -538,6 +541,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/aotCode \
  -runtime/cds/appcds/aotFlags \
  -runtime/cds/appcds/aotProfile \
+ -runtime/cds/appcds/ArchivedFieldMetadataMismatchTest.java \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/cacheObject/ArchivedFlatArrayTest.java \
  -runtime/cds/appcds/cacheObject/ArchiveHeapTestClass.java \

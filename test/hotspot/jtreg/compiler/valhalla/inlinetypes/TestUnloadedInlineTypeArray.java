@@ -500,7 +500,8 @@ public class TestUnloadedInlineTypeArray {
         Asserts.assertEQ(MyValue8_inited, false);
 
         MyValue8UnloadedInlineTypeArray b[] = (MyValue8UnloadedInlineTypeArray[])ValueClass.newNullableAtomicArray(MyValue8UnloadedInlineTypeArray.class, 0);
-        Asserts.assertEQ(MyValue8_inited, true);
+        Asserts.assertEQ(MyValue8_inited, false); // creation of a nullable array doesn't trigger the initialization
+                                                  // of the element's class (same behavior as anewarray and Array.newInstance())
     }
 
     static void test9() {
@@ -508,7 +509,8 @@ public class TestUnloadedInlineTypeArray {
         Asserts.assertEQ(MyValue9_inited, false);
 
         a[0] = (MyValue9UnloadedInlineTypeArray[])ValueClass.newNullableAtomicArray(MyValue9UnloadedInlineTypeArray.class, 0);
-        Asserts.assertEQ(MyValue9_inited, true);
+        Asserts.assertEQ(MyValue9_inited, false); // creation of a nullable array doesn't trigger the initialization
+                                                  // of the element's class (same behavior as anewarray and Array.newInstance())
     }
 
     static void test10(MyValue10UnloadedInlineTypeArray dummy) {

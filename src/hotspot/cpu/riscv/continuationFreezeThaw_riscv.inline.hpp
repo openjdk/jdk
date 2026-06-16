@@ -74,7 +74,8 @@ inline frame FreezeBase::sender(const frame& f) {
     : frame(sender_sp, sender_sp, *link_addr, sender_pc);
 }
 
-template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& caller, int size_adjust) {
+template<typename FKind>
+frame FreezeBase::new_heap_frame(frame& f, frame& caller, int size_adjust) {
   assert(FKind::is_instance(f), "");
   assert(!caller.is_interpreted_frame()
     || caller.unextended_sp() == (intptr_t*)caller.at(frame::interpreter_frame_last_sp_offset), "");
@@ -104,14 +105,14 @@ template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& calle
     fp = *(intptr_t**)(f.sp() - 2);
 
     int fsize = FKind::size(f);
-    sp = caller.unextended_sp() - fsize;
-    if (caller.is_interpreted_frame()) {
+    sp = caller.unextended_sp() - fsize - size_adjust;
+    if (caller.is_interpreted_frame() && size_adjust == 0) {
       // If the caller is interpreted, our stackargs are not supposed to overlap with it
       // so we make more room by moving sp down by argsize
       int argsize = FKind::stack_argsize(f);
       sp -= argsize;
+      caller.set_sp(sp + fsize);
     }
-    caller.set_sp(sp + fsize);
 
     assert(_cont.tail()->is_in_chunk(sp), "");
 
@@ -186,7 +187,8 @@ inline void FreezeBase::patch_pd(frame& hf, const frame& caller, bool is_bottom_
   if (caller.is_interpreted_frame()) {
     assert(!caller.is_empty(), "");
     patch_callee_link_relative(caller, caller.fp());
-  } else {
+  } else if (is_bottom_frame && caller.pc() != nullptr) {
+    assert(caller.is_compiled_frame(), "");
     // If we're the bottom-most frame frozen in this freeze, the caller might have stayed frozen in the chunk,
     // and its oop-containing fp fixed. We've now just overwritten it, so we must patch it back to its value
     // as read from the chunk.
@@ -256,7 +258,8 @@ inline frame ThawBase::new_entry_frame() {
   return frame(sp, sp, _cont.entryFP(), _cont.entryPC());
 }
 
-template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame& caller, bool bottom, int size_adjust) {
+template<typename FKind>
+frame ThawBase::new_stack_frame(const frame& hf, frame& caller, bool bottom, int size_adjust) {
   assert(FKind::is_instance(hf), "");
   // The values in the returned frame object will be written into the callee's stack in patch.
 
@@ -284,24 +287,23 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     return f;
   } else {
     int fsize = FKind::size(hf);
-    intptr_t* frame_sp = caller.unextended_sp() - fsize;
+    intptr_t* frame_sp = caller.unextended_sp() - fsize - size_adjust;
     if (bottom || caller.is_interpreted_frame()) {
-      int argsize = FKind::stack_argsize(hf);
-
-      fsize += argsize;
-      frame_sp -= argsize;
-      caller.set_sp(caller.sp() - argsize);
-      assert(caller.sp() == frame_sp + (fsize-argsize), "");
-
+      if (size_adjust == 0) {
+        int argsize = FKind::stack_argsize(hf);
+        frame_sp -= argsize;
+      }
       frame_sp = align(hf, frame_sp, caller, bottom);
+      caller.set_sp(frame_sp + fsize + size_adjust);
     }
+    assert(is_aligned(frame_sp, frame::frame_alignment), "");
 
     assert(hf.cb() != nullptr, "");
     assert(hf.oop_map() != nullptr, "");
     intptr_t* fp;
     if (PreserveFramePointer) {
       // we need to recreate a "real" frame pointer, pointing into the stack
-      fp = frame_sp + FKind::size(hf) - frame::sender_sp_offset;
+      fp = frame_sp + fsize - frame::sender_sp_offset;
     } else {
       fp = FKind::stub || FKind::native
         // fp always points to the address above the pushed return pc. We need correct address.
@@ -319,16 +321,16 @@ inline intptr_t* ThawBase::align(const frame& hf, intptr_t* frame_sp, frame& cal
   if (((intptr_t)frame_sp & 0xf) != 0) {
     assert(caller.is_interpreted_frame() || (bottom && hf.compiled_frame_stack_argsize() % 2 != 0), "");
     frame_sp--;
-    caller.set_sp(caller.sp() - 1);
   }
   assert(is_aligned(frame_sp, frame::frame_alignment), "");
 #endif
-
   return frame_sp;
 }
 
 inline void ThawBase::patch_pd(frame& f, const frame& caller) {
-  patch_callee_link(caller, caller.fp());
+  if (caller.is_interpreted_frame() || PreserveFramePointer) {
+    patch_callee_link(caller, caller.fp());
+  }
 }
 
 inline void ThawBase::patch_pd(frame& f, intptr_t* caller_sp) {

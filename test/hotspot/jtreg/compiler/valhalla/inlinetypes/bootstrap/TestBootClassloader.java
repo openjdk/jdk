@@ -37,7 +37,7 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @summary Test that field flattening works as expected if value classes of
  *          holder and field were loaded by different class loaders (bootstrap + app).
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
