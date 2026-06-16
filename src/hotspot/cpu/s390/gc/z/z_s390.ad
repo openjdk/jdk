@@ -43,9 +43,11 @@ static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Re
   assert_different_registers(src, dst);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
   __ z_llill(dst, barrier_Relocation::unpatched);
-  __ z_sllg(src, src, ZPointerLoadShift);
-  __ z_ogr(dst, src);
-  __ z_srlg(src, src, ZPointerLoadShift);
+  if (src != noreg) {
+    __ z_sllg(src, src, ZPointerLoadShift);
+    __ z_ogr(dst, src);
+    __ z_srlg(src, src, ZPointerLoadShift);
+  }
 }
 
 static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) {
