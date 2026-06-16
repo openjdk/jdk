@@ -145,10 +145,11 @@ public class TestOnSpinWaitPPC64 {
             }
             if (isDisassembled) {
                 // hsdis output: look for `or r1,r1,r1` and `or r2,r2,r2`.
+                // Also the mnemonic mr rx,rx needs to be matched.
                 String norm = line.replaceAll("\\s+", " ");
-                if (norm.contains("or r1,r1,r1"))
+                if (norm.contains("or r1,r1,r1") || norm.contains("mr r1,r1"))
                     sawLow = true;
-                if (norm.contains("or r2,r2,r2"))
+                if (norm.contains("or r2,r2,r2") || norm.contains("mr r2,r2"))
                     sawMed = true;
             } else {
                 // without hsdis output: raw 4-byte instruction words.
