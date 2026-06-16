@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-package preview;
 
-import jdk.internal.javac.PreviewFeature;
-import jdk.internal.javac.PreviewFeature.Feature;
+/*
+ * @test
+ * @bug 8385651
+ * @summary Verify the HotCodeSampler and JFR do not attempt to suspend the same JavaThread and crash
+ * @requires vm.compiler2.enabled & vm.hasJFR
+ * @run main/othervm -XX:StartFlightRecording -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:+NMethodRelocation -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:HotCodeIntervalSeconds=0 -XX:HotCodeStartupDelaySeconds=0 -XX:HotCodeStablePercent=-1 -Xlog:hotcode=debug
+ *                   compiler.hotcode.HotCodeCollectorJFR
+ */
 
-public class NoPreview {
+package compiler.hotcode;
 
-    @PreviewFeature(feature=Feature.TEST)
-    public T get() {
-        return null;
+public class HotCodeCollectorJFR {
+
+    private static final int FUNC_RUN_MILLIS = 10_000;
+
+    public static void main(String[] args) throws Exception {
+        long start = System.currentTimeMillis();
+        while (System.currentTimeMillis() - start < FUNC_RUN_MILLIS) {}
     }
 
-    @PreviewFeature(feature=Feature.TEST)
-    public static class T {}
-
-    // Preview support feature without JEP should not be listed
-    @PreviewFeature(feature=Feature.PREVIEW_SUPPORT)
-    public void supportMethod() {}
 }
