@@ -115,6 +115,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private int                 negotiatedMaxFragLen = -1;
     private int                 maximumPacketSize;
 
+    private volatile byte[] clientFinishedVerifyData;
+
     private final Queue<SSLSessionImpl> childSessions =
                                         new ConcurrentLinkedQueue<>();
 
@@ -1683,6 +1685,25 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     public byte[] exportKeyingMaterialData(
             String label, byte[] context, int length) throws SSLKeyException {
         return (byte[])exportKeyingMaterial(null, label, context, length);
+    }
+
+    void setClientFinishedVerifyData(byte[] verifyData) {
+        this.clientFinishedVerifyData = (verifyData != null)
+                ? verifyData.clone()
+                : null;
+    }
+
+    @Override
+    public byte[] getTlsUniqueChannelBinding() {
+        if (protocolVersion.useTLS13PlusSpec()) {
+            return null;
+        }
+        if (!useExtendedMasterSecret) {
+            return null;
+        }
+        return (clientFinishedVerifyData != null)
+                ? clientFinishedVerifyData.clone()
+                : null;
     }
 
     /** Returns a string representation of this SSL session */
