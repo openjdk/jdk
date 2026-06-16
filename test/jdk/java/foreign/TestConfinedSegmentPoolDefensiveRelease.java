@@ -74,11 +74,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.lang.IllegalStateException;
 import java.lang.foreign.Arena;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
 final class TestConfinedSegmentPoolDefensiveRelease {
@@ -91,7 +91,7 @@ final class TestConfinedSegmentPoolDefensiveRelease {
     @MethodSource("threadFactories")
     void releaseWithNoPreviousAcquire(String name, Thread.Builder threadBuilder) throws Exception {
         AtomicReference<Throwable> failure = new AtomicReference<>();
-        Thread untouchedThread = new Thread(() -> {
+        Thread untouchedThread = threadBuilder.factory().newThread(() -> {
             try {
                 assertThrows(IllegalStateException.class, () -> JLA.releaseAndZeroOutPooledMemory(Thread.currentThread(), SIZE));
             } catch (Throwable throwable) {
