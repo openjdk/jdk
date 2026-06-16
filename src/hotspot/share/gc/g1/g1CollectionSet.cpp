@@ -77,7 +77,7 @@ G1CollectionSet::~G1CollectionSet() {
 }
 
 void G1CollectionSet::prepare_for_collection(uint num_eden_cset_regions,
-                            uint num_survivor_cset_regions) {
+                                             uint num_survivor_cset_regions) {
   assert_at_safepoint_on_vm_thread();
 
   _num_eden_regions     = num_eden_cset_regions;
