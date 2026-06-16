@@ -53,13 +53,13 @@
  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
  *                    -Djava.lang.foreign.native.confined.pool.power.size=-1
  *                    TestConfinedSegmentPoolConfig
- *  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
+ * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
  *                    -Djava.lang.foreign.native.confined.pool.power.size=23847682736221
  *                    TestConfinedSegmentPoolConfig
- *  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
+ * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
  *                    -Djava.lang.foreign.native.confined.pool.power.size=TEXT
  *                    TestConfinedSegmentPoolConfig
- *  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
+ * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
  *                    -Dsun.nio.PageAlignDirectMemory=true
  *                    -Djava.lang.foreign.native.confined.pool.power.size=PAGE_ALIGN
  *                    TestConfinedSegmentPoolConfig

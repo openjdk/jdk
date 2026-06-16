@@ -401,7 +401,7 @@ public class Thread implements Runnable {
      * PTRDIFF_MAX (usually 2<sup>63</sup>-1) allows us to use the sign bit
      * as a flag for acquire state whithout conflicting with malloc() return values.
      */
-    protected long confinedMemoryPool;
+    long confinedMemoryPool;
 
     static long pooledMemorySize() {
         return PoolConfigHolder.POOLED_MEMORY_SIZE;
