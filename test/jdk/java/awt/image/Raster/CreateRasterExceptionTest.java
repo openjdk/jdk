@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8255800 8369129 8376297
+ * @bug 8255800 8369129 8376297 8386671
  * @summary verify Raster + SampleModel creation vs spec.
  */
 
