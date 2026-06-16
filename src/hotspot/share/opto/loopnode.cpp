@@ -3187,7 +3187,7 @@ void CountedLoopConverter::TruncatedIncrement::build(Node* expr) {
       jint shift = n1->in(2)->bottom_type()->is_int()->get_con();
       switch (shift) {
         case 16: // Signed 16-bit truncation. Short cast.
-        case 24: // Signed 8-bit trunction. Byte cast.
+        case 24: // Signed 8-bit truncation. Byte cast.
           t1 = n1;
           t2 = t1->in(1);
           n1 = t2->in(1);

@@ -23,7 +23,7 @@
 
 /*
  * @test id=vanilla
- * @bug 8385855
+ * @bug 8385855 8386591
  * @summary Test CountedLoopConverter::has_truncation_wrap logic that checks if
  *          a truncated iv (e.g. byte or char iv) is still a valid counted loop.
  * @library /test/lib /
@@ -32,7 +32,7 @@
 
 /*
  * @test id=Xcomp
- * @bug 8385855
+ * @bug 8385855 8386591
  * @library /test/lib /
  * @run main ${test.main.class} -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,${test.main.class}::test*
  */
@@ -784,8 +784,8 @@ public class TestHasTruncationWrap {
     }
 
     // testIRByte4: byte loop, with a CmpI, but the limit ranges are bad.
-    // And: "byte i++" goes through "<< 24 >> 24" truncation with signed extension,
-    //      and that's not recognized by TruncatedIncrement::build.
+    // Byte cast -> "<< 24 >> 24" 8-bit signed truncation.
+    // But: we could have wrap, because 1_000 is outside byte type.
     public static int testIRByte4_gold = testIRByte4();
 
     @Run(test = "testIRByte4")
@@ -927,7 +927,8 @@ public class TestHasTruncationWrap {
     }
 
     // testIRChar4: char loop, with a CmpI, but the limit ranges are bad.
-    // And: "char i++" lowers through mask "& 0xffff", not recognized by TruncatedIncrement::build.
+    // Char cast -> "& 0xffff"
+    // But: 100_000 outside char range.
     public static int testIRChar4_gold = testIRChar4();
 
     @Run(test = "testIRChar4")
@@ -1044,9 +1045,8 @@ public class TestHasTruncationWrap {
     }
 
     // testIRShift8: 24-bit loop, and range in 24-bit range via CmpI before loop (for loop limit).
-    // Note: this shift value is strange, we probably wanted to implement byte truncation
-    //       with shift=24, but instead we have 24-bit signed truncation.
-    // Note2: this pattern would have been supported by TruncatedIncrement::build, but it gets
+    // Note: before JDK-8386591, we used to confuxe 24-bit truncation with byte truncation,
+    //       but it didn't produce a CountedLoop anyway, because of some idealization.
     //        modified by LShiftINode::Ideal:
     //          RShiftI(AddI(LShiftI(Phi, 8), 256), 8)
     //        The same is explicitly excluded for shift 16, to preserve short/byte idioms.
@@ -1080,11 +1080,6 @@ public class TestHasTruncationWrap {
 
     // testIRShift8BadBounds: 24-bit loop, with a CmpI, but the limit ranges are bad.
     // Note: same issues as for testIRShift8.
-    // Note2: the range argument seems a bit strange here, but it turns out that
-    //        TruncatedIncrement::build maps shift=8 to BYTE, which just shows that
-    //        the implementation confused the shift=24 with shift=8.
-    //        Since we map to BYTE, 1_000 would be out of bounds, that's why this
-    //        is still a bad bounds example.
     public static int testIRShift8BadBounds_gold = testIRShift8BadBounds();
 
     @Run(test = "testIRShift8BadBounds")
