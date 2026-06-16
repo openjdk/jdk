@@ -31,6 +31,8 @@
 #include "opto/type.hpp"
 #include "runtime/deoptimization.hpp"
 
+class GraphKit;
+
 //---------------------------CallGenerator-------------------------------------
 // The subclasses of this class handle generation of ideal nodes for
 // call sites and method entry points.
@@ -42,6 +44,9 @@ class CallGenerator : public ArenaObj {
  protected:
   CallGenerator(ciMethod* method) : _method(method) {}
 
+  // Whether a round of cleanup (see Compile::inline_incrementally_cleanup()) is
+  // required after a late inlining step.
+  bool needs_cleanup(const GraphKit* kit, const CallNode* call, const Node* result) const;
   void do_late_inline_helper();
 
   virtual bool           do_late_inline_check(Compile* C, JVMState* jvms) { ShouldNotReachHere(); return false;  }

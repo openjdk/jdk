@@ -192,7 +192,7 @@ class GraphKit : public Phase {
   void stop_and_kill_map();
 
   // Tell if _map is null, or control is top.
-  bool stopped();
+  bool stopped() const;
 
   // Tell if this method or any caller method has exception handlers.
   bool has_exception_handler();
