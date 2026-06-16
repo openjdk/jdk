@@ -731,8 +731,7 @@ public class TestHasTruncationWrap {
     }
 
     // testIRByte1: byte loop, but values are trivially in byte range.
-    // But: "byte i++" goes through "<< 24 >> 24" truncation with signed extension,
-    //      and that's not recognized by TruncatedIncrement::build.
+    // Byte cast -> "<< 24 >> 24" 8-bit signed truncation.
     public static int testIRByte1_gold = testIRByte1();
 
     @Run(test = "testIRByte1")
@@ -742,7 +741,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
     static int testIRByte1() {
         byte init  = (byte)lo;
         byte limit = (byte)hi;
@@ -754,8 +753,7 @@ public class TestHasTruncationWrap {
     }
 
     // testIRByte2: byte loop, ranges proved in byte range via CmpI before loop.
-    // But: "byte i++" goes through "<< 24 >> 24" truncation with signed extension,
-    //      and that's not recognized by TruncatedIncrement::build.
+    // Byte cast -> "<< 24 >> 24" 8-bit signed truncation.
     public static int testIRByte2_gold = testIRByte2();
 
     @Run(test = "testIRByte2")
@@ -765,7 +763,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
     static int testIRByte2() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
@@ -817,7 +815,7 @@ public class TestHasTruncationWrap {
     }
 
     // testIRChar1: char loop, but values are trivially in char range.
-    // But: "char i++" lowers through mask "& 0xffff", not recognized by TruncatedIncrement::build.
+    // Char cast -> "& 0xffff"
     public static int testIRChar1_gold = testIRChar1();
 
     @Run(test = "testIRChar1")
@@ -827,7 +825,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
     static int testIRChar1() {
         char init  = (char)lo;
         char limit = (char)hi;
@@ -839,7 +837,7 @@ public class TestHasTruncationWrap {
     }
 
     // testIRChar2: char loop, ranges proved in char range via CmpI before loop.
-    // But: "char i++" lowers through mask "& 0xffff", not recognized by TruncatedIncrement::build.
+    // Char cast -> "& 0xffff"
     public static int testIRChar2_gold = testIRChar2();
 
     @Run(test = "testIRChar2")
@@ -849,7 +847,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
     static int testIRChar2() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
@@ -870,7 +868,7 @@ public class TestHasTruncationWrap {
     }
 
     // testIRChar3: char loop, and range in char range via CmpI before loop (for loop limit).
-    // But: "char i++" lowers through mask "& 0xffff", not recognized by TruncatedIncrement::build.
+    // Char cast -> "& 0xffff"
     public static int testIRChar3_gold = testIRChar3();
 
     @Run(test = "testIRChar3")
@@ -880,7 +878,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
     static int testIRChar3() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
