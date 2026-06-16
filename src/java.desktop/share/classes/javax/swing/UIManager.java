@@ -193,7 +193,7 @@ import sun.swing.SwingAccessor;
  * These caveats must not be construed as an excuse to arbitrarily ignore these properties.
  * They are intended to support the requirement that the platform Look and Feel be as
  * faithful to the native rendering as is practical.
- * 
+ *
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with
