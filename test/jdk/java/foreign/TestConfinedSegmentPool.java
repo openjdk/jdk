@@ -69,8 +69,11 @@ import java.lang.foreign.ValueLayout;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
@@ -400,6 +403,75 @@ final class TestConfinedSegmentPool {
         VThreadRunner.run(this::uniqueZeroAddresses);
     }
 
+    @Test
+    void virtualThreadSlotContentionFallsBack() throws Throwable {
+        if (isPoolEnabled()) {
+            int slots = confinedSegmentPoolSlots();
+            int numberOfThreads = slots + 1;
+            CountDownLatch ready = new CountDownLatch(numberOfThreads);
+            CountDownLatch release = new CountDownLatch(1);
+            AtomicInteger pooledAllocations = new AtomicInteger();
+            AtomicInteger fallbackAllocations = new AtomicInteger();
+            AtomicReference<Throwable> failureRef = new AtomicReference<>();
+            List<Thread> threads = new ArrayList<>(numberOfThreads);
+
+            for (int i = 0; i < numberOfThreads; i++) {
+                Thread thread = Thread.ofVirtual().start(() -> {
+                    boolean readyCountedDown = false;
+                    try (Arena arena = Arena.ofConfined()) {
+                        MemorySegment segment = arena.allocate(ValueLayout.JAVA_BYTE);
+                        segment.set(ValueLayout.JAVA_BYTE, 0, (byte) 0x5A);
+
+                        if (confinedMemoryPool(Thread.currentThread()) == 0) {
+                            fallbackAllocations.incrementAndGet();
+                        } else {
+                            pooledAllocations.incrementAndGet();
+                        }
+
+                        ready.countDown();
+                        readyCountedDown = true;
+                        assertTrue("timed out waiting for release",
+                                release.await(10, TimeUnit.SECONDS));
+                    } catch (Throwable ex) {
+                        failureRef.compareAndSet(null, ex);
+                        if (!readyCountedDown) {
+                            ready.countDown();
+                        }
+                    }
+                });
+                threads.add(thread);
+            }
+
+            try {
+                assertTrue("timed out waiting for virtual threads to allocate",
+                        ready.await(10, TimeUnit.SECONDS));
+                if (failureRef.get() != null) {
+                    throw failureRef.get();
+                }
+                assertEquals(numberOfThreads,
+                        pooledAllocations.get() + fallbackAllocations.get());
+                assertTrue("expected at least one allocation to fall back under slot contention",
+                        fallbackAllocations.get() > 0);
+                assertTrue("pooled allocations exceeded available virtual-thread slots",
+                        pooledAllocations.get() <= slots);
+            } finally {
+                release.countDown();
+                for (Thread thread : threads) {
+                    thread.join(TimeUnit.SECONDS.toMillis(10));
+                    assertFalse("virtual thread did not terminate: " + thread,
+                            thread.isAlive());
+                }
+            }
+
+            if (failureRef.get() != null) {
+                throw failureRef.get();
+            }
+            for (Thread thread : threads) {
+                assertEquals(0, confinedMemoryPool(thread));
+            }
+        }
+    }
+
     static long confinedMemoryPool(Thread thread) {
         try {
             return (long) THREAD_CONFINED_MEMORY_POOL.get(thread);
@@ -437,6 +509,17 @@ final class TestConfinedSegmentPool {
 
     static boolean isPoolEnabled() {
         return POOLED_MEMORY_SIZE > 0;
+    }
+
+    static int confinedSegmentPoolSlots() {
+        try {
+            Class<?> poolClass = Class.forName("java.lang.VirtualThread$ConfinedSegmentPool");
+            Field slotsField = poolClass.getDeclaredField("SLOTS");
+            slotsField.setAccessible(true);
+            return slotsField.getInt(null);
+        } catch (ReflectiveOperationException ex) {
+            throw new AssertionError(ex);
+        }
     }
 
     static void awaitCleaner(CountDownLatch latch) throws InterruptedException {
