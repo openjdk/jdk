@@ -124,8 +124,7 @@ final class ConfinedSession extends MemorySessionImpl {
     private NativeMemorySegmentImpl trySlice(long pool, long byteSize, long byteAlignment) {
         final long start = Utils.alignUp(pool + poolSp, byteAlignment) - pool;
         if (start + byteSize <= POOL_SIZE) {
-            // We know the backing memory is zeroed out since the initial slab of memory
-            // is cleared and upon each recycle we zero out upon closing the arena.
+            // The backing memory is zeroed on initial allocation and on each pool release.
             final NativeMemorySegmentImpl slice = SegmentFactories.makeNativeSegmentUnchecked(pool + start, byteSize, this);
             poolSp = start + byteSize;
             return slice;

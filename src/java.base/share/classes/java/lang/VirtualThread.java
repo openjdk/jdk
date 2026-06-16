@@ -1434,7 +1434,7 @@ final class VirtualThread extends BaseVirtualThread {
     long acquirePooledMemory() {
         return confinedMemoryPool == 0
                 ? confinedMemoryPool = ConfinedSegmentPool.acquirePooledMemory(this)
-                // Nested arenas never gets pooling
+                // Nested arenas do not use pooling.
                 : 0L;
     }
 
@@ -1460,18 +1460,18 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     /**
-     * A shared confined segment pool shared by all VirtualThread instances.
+     * A shared confined segment pool for virtual threads.
      * <p>
-     * This prevents separate segments pools being created for each virtual thread
-     * which might not scale in applications with a significant number of virtual
-     * threads.
+     * Virtual threads use a fixed number of native-memory slots instead of one
+     * native allocation per virtual thread. A virtual thread maps to a candidate
+     * slot from its thread id and acquires the slot with a CAS operation. If the slot is
+     * already acquired, allocation falls back to the regular native allocator.
      * <p>
-     * A virtual thread attempts to acquire a pool based on its dedicated slot number
-     * which is computed from the virtual thread's thread id.
+     * Slots are padded to reduce contention on the acquisition flags. The shared
+     * native memory is intentionally process-lifetime memory.
      * <p>
-     * The ConfinedSegmentPool class operates directly on native memory and pointers via
-     * Unsafe to provide optimum performance. Once allocated, the allocated native memory
-     * will only be returned to the system once the JVM process dies
+     * For performance reasons, this class operates directly on native memory and pointers
+     * via Unsafe.
      * <p>
      * By not attaching segment pools to the underlying carrier thread, the solution
      * can be greatly simplified and we do not have to consider migrating virtual threads.
@@ -1533,7 +1533,7 @@ final class VirtualThread extends BaseVirtualThread {
         static void releasePooledMemory(VirtualThread thread,
                                         long address,
                                         long size) {
-            // Zero out memory _before_ releasing the slot
+            // Zero out memory before releasing the slot.
             zeroOutMemory(address, size);
             final long slot = slotFor(thread);
             if (!U.compareAndSetByte(null, flagAddress(slot), ACQUIRED, RELEASED)) {

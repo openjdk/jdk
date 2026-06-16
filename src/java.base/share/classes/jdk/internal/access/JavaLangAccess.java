@@ -661,18 +661,18 @@ public interface JavaLangAccess {
     void finishInit(StackTraceElement[] stackTrace);
 
     /**
-     * Acquires and returns a pointer to the thread-local native memory pool, or returns
-     * zero if the pool cannot be allocated.
+     * Acquires and returns a pointer to pooled native memory available to the given
+     * thread, or returns zero if pooled memory cannot be acquired.
      */
     long acquirePooledMemory(Thread thread);
 
     /**
-     * Zeros out and releases the thread-local native memory pool
+     * Zeros out and releases pooled native memory held by the given thread.
      */
     void releaseAndZeroOutPooledMemory(Thread thread, long size);
 
     /**
-     * Returns the size of the thread-local native memory pool
+     * Returns the size of the native memory pool (per thread or per slot).
      */
     long pooledMemorySize();
 }

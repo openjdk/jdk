@@ -399,7 +399,7 @@ public class Thread implements Runnable {
      * Negative -> Pool acquired (not available)
      *
      * PTRDIFF_MAX (usually 2<sup>63</sup>-1) allows us to use the sign bit
-     * as a flag for acquire state whithout conflicting with malloc() return values.
+     * as a flag for acquire state without conflicting with malloc() return values.
      */
     long confinedMemoryPool;
 
@@ -421,7 +421,7 @@ public class Thread implements Runnable {
             // Lazily allocate native memory
             return allocateAndAquirePooledMemory();
         }
-        // No pool today ...
+        // The pool is already acquired, or pooling is disabled.
         return 0;
     }
 
@@ -461,8 +461,8 @@ public class Thread implements Runnable {
     @SuppressWarnings("fallthrough")
     @ForceInline
     static void zeroOutMemory(long address, long size) {
-        // Clear complete 8-byte buckets in bulk. It is safe to clear beyond `size`
-        // as long as we stay inside the pool which is at least 8 and at most 64 bytes.
+        // Clear the 8-byte buckets covering the used range. It is safe to clear
+        // beyond `size` as long as we stay inside the pool.
         switch ((int) ((size + Long.BYTES - 1) >>> 3)) {
             case 8: ThreadIdentifiers.U.putLong(address + 0x38, 0L);
             case 7: ThreadIdentifiers.U.putLong(address + 0x30, 0L);
