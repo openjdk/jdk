@@ -412,6 +412,11 @@ public class Thread implements Runnable {
      */
     @ForceInline
     long acquirePooledMemory() {
+        // Extra check if an internal caller uses this method directly while pooling
+        // is disabled.
+        if (PoolConfigHolder.POOLED_MEMORY_SIZE <= 0) {
+            return 0;
+        }
         final long confinedMemoryPool = this.confinedMemoryPool;
         if (confinedMemoryPool > 0) {
             // Mark the pool as acquired
@@ -427,22 +432,22 @@ public class Thread implements Runnable {
 
     // This only happens at most once per thread instance
     private long allocateAndAcquirePooledMemory() {
-        final long confinedMemoryPool;
+        final long address;
         try {
-            this.confinedMemoryPool = confinedMemoryPool = ThreadIdentifiers.U.allocateMemory(PoolConfigHolder.POOLED_MEMORY_SIZE);
-            if (confinedMemoryPool < 0) {
+            address = ThreadIdentifiers.U.allocateMemory(PoolConfigHolder.POOLED_MEMORY_SIZE);
+            if (address < 0) {
                 throw new InternalError("Allocated memory pool is negative contrary to" +
-                        " the non-negative pointer invariant: 0x" + Long.toHexString(confinedMemoryPool));
+                        " the non-negative pointer invariant: 0x" + Long.toHexString(address));
             }
         } catch (OutOfMemoryError _) {
             // Failed to allocate a pool
             return 0;
         }
         // Zero out memory in a non-performance sensitive way
-        ThreadIdentifiers.U.setMemory(confinedMemoryPool, pooledMemorySize(), (byte) 0);
+        ThreadIdentifiers.U.setMemory(address, pooledMemorySize(), (byte) 0);
         // Mark the pool as acquired
-        this.confinedMemoryPool = -confinedMemoryPool;
-        return confinedMemoryPool;
+        this.confinedMemoryPool = -address;
+        return address;
     }
 
     @SuppressWarnings("fallthrough")
