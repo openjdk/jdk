@@ -1045,7 +1045,7 @@ public class TestHasTruncationWrap {
     }
 
     // testIRShift8: 24-bit loop, and range in 24-bit range via CmpI before loop (for loop limit).
-    // Note: before JDK-8386591, we used to confuxe 24-bit truncation with byte truncation,
+    // Note: before JDK-8386591, we used to confuse 24-bit truncation with byte truncation,
     //       but it didn't produce a CountedLoop anyway, because of some idealization.
     //        modified by LShiftINode::Ideal:
     //          RShiftI(AddI(LShiftI(Phi, 8), 256), 8)
