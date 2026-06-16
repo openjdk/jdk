@@ -497,15 +497,18 @@ TEST_VM(AssemblerAArch64, native_instruction_load_predicates) {
 
   NativeInstruction* ni_ldr = nativeInstruction_at(&insns[0]);
   EXPECT_TRUE(ni_ldr->is_load_literal());
-  EXPECT_FALSE(ni_ldr->is_ldrw_literal());
+  EXPECT_TRUE(ni_ldr->is_ldr_gpr_literal());
+  EXPECT_FALSE(ni_ldr->is_ldrw_gpr_literal());
 
   NativeInstruction* ni_ldrw = nativeInstruction_at(&insns[1]);
-  EXPECT_TRUE(ni_ldrw->is_ldrw_literal());
-  EXPECT_FALSE(ni_ldrw->is_load_literal());
+  EXPECT_TRUE(ni_ldrw->is_load_literal());
+  EXPECT_FALSE(ni_ldrw->is_ldr_gpr_literal());
+  EXPECT_TRUE(ni_ldrw->is_ldrw_gpr_literal());
 
   NativeInstruction* ni_ldrs = nativeInstruction_at(&insns[2]);
-  EXPECT_FALSE(ni_ldrs->is_ldrw_literal());
-  EXPECT_FALSE(ni_ldrs->is_load_literal());
+  EXPECT_TRUE(ni_ldrs->is_load_literal());
+  EXPECT_FALSE(ni_ldrs->is_ldr_gpr_literal());
+  EXPECT_FALSE(ni_ldrs->is_ldrw_gpr_literal());
 }
 
 #endif  // AARCH64

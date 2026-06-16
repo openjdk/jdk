@@ -128,7 +128,7 @@ public:
 // instruction. Verify that it's really there, so the offsets are not skewed.
 bool NativeNMethodBarrier::check_barrier(err_msg& msg) const {
   NativeInstruction* ni = nativeInstruction_at(instruction_address());
-  if (!ni->is_ldrw_literal()) {
+  if (!ni->is_ldrw_gpr_literal()) {
     msg.print("Nmethod entry barrier did not start with ldrw (literal) as expected. "
               "Addr: " PTR_FORMAT " Code: " UINT32_FORMAT, p2i(instruction_address()), ni->encoding());
     return false;
