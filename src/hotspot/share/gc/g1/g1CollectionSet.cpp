@@ -76,8 +76,8 @@ G1CollectionSet::~G1CollectionSet() {
   abandon_all_candidates();
 }
 
-void G1CollectionSet::init_regions_nums(uint num_eden_cset_regions,
-                                        uint num_survivor_cset_regions) {
+void G1CollectionSet::prepare_for_collection(uint num_eden_cset_regions,
+                            uint num_survivor_cset_regions) {
   assert_at_safepoint_on_vm_thread();
 
   _num_eden_regions     = num_eden_cset_regions;
@@ -338,7 +338,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 
   uint num_eden_regions = _g1h->eden_regions_count();
   uint num_survivor_regions = survivors->length();
-  init_regions_nums(num_eden_regions, num_survivor_regions);
+  prepare_for_collection(num_eden_regions, num_survivor_regions);
 
   verify_young_cset_indices();
 
@@ -670,7 +670,7 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
 }
 
 uint G1CollectionSet::select_optional_groups(double time_remaining_ms) {
-  uint total_optional_regions = total_optional_regions();
+  uint total_optional_regions = num_optional_regions();
   assert(total_optional_regions > 0,
          "Should only be called when there are optional regions");
 

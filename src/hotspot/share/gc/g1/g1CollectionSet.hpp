@@ -188,6 +188,9 @@ class G1CollectionSet {
   // Add the given old region to the current collection set.
   void add_old_region(G1HeapRegion* hr);
 
+  void prepare_for_collection(uint num_eden_cset_regions,
+                              uint num_survivor_cset_regions);
+
   void prepare_optional_group(G1CSetCandidateGroup* gr, uint cur_index);
 
   void add_group_to_collection_set(G1CSetCandidateGroup* gr);
@@ -244,9 +247,6 @@ public:
   const G1CollectionSetCandidates* candidates() const { return &_candidates; }
 
   void prepare_for_scan();
-
-  void init_regions_nums(uint num_eden_cset_regions,
-                        uint num_survivor_cset_regions);
 
   // Total number of regions in the initial collection set.
   uint num_initial_regions() const { return num_young_regions() +
