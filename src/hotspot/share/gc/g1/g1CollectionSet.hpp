@@ -156,9 +156,9 @@ class G1CollectionSet {
 
   uint num_groups() const;
 
-  uint _eden_region_count;
-  uint _survivor_region_count;
-  uint _initial_old_region_count;
+  uint _num_eden_regions;
+  uint _num_survivor_regions;
+  uint _num_initial_old_regions;
 
   // When doing mixed collections we can add old regions to the collection set, which
   // will be collected only if there is enough time. We call these optional (old)
@@ -245,21 +245,21 @@ public:
 
   void prepare_for_scan();
 
-  void init_region_counts(uint eden_cset_region_count,
-                          uint survivor_cset_region_count);
+  void init_regions_nums(uint num_eden_cset_regions,
+                        uint num_survivor_cset_regions);
 
   // Total number of regions in the initial collection set.
-  uint initial_region_count() const { return young_region_count() +
-                                             initial_old_region_count(); }
-  uint young_region_count() const { return eden_region_count() +
-                                           survivor_region_count(); }
+  uint num_initial_regions() const { return num_young_regions() +
+                                            num_initial_old_regions(); }
+  uint num_young_regions() const { return num_eden_regions() +
+                                          num_survivor_regions(); }
 
-  uint eden_region_count() const { return _eden_region_count; }
-  uint survivor_region_count() const { return _survivor_region_count; }
-  uint initial_old_region_count() const { return _initial_old_region_count; }
+  uint num_eden_regions() const { return _num_eden_regions; }
+  uint num_survivor_regions() const { return _num_survivor_regions; }
+  uint num_initial_old_regions() const { return _num_initial_old_regions; }
   uint num_optional_regions() const { return _optional_groups.num_regions(); }
 
-  bool only_contains_young_regions() const { return (initial_old_region_count() + num_optional_regions()) == 0; }
+  bool only_contains_young_regions() const { return (num_initial_old_regions() + num_optional_regions()) == 0; }
 
   template <class CardOrRangeVisitor>
   inline void merge_cardsets_for_collection_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers);
