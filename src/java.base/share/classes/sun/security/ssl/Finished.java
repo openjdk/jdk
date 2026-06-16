@@ -26,6 +26,7 @@
 package sun.security.ssl;
 
 import java.io.IOException;
+import java.net.Authenticator;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -41,6 +42,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.swing.text.Utilities;
 
 import jdk.internal.event.EventHelper;
 import jdk.internal.event.TLSHandshakeEvent;
@@ -406,6 +408,11 @@ final class Finished {
                 chc.conContext.clientVerifyData = fm.verifyData;
             }
 
+            // Store client's Finished verify_data for tls-unique (RFC 5929)
+            if (chc.handshakeSession != null) {
+                chc.handshakeSession.setClientFinishedVerifyData(fm.verifyData);
+            }
+
             if (chc.statelessResumption) {
                 chc.handshakeConsumers.put(
                         SSLHandshake.NEW_SESSION_TICKET.id, SSLHandshake.NEW_SESSION_TICKET);
@@ -467,6 +474,11 @@ final class Finished {
              */
             if (shc.conContext.secureRenegotiation) {
                 shc.conContext.serverVerifyData = fm.verifyData;
+            }
+
+            // Store client's Finished verify_data for tls-unique (RFC 5929)
+            if (chc.handshakeSession != null) {
+                chc.handshakeSession.setClientFinishedVerifyData(fm.verifyData);
             }
 
             // update the consumers and producers
@@ -551,6 +563,11 @@ final class Finished {
                 chc.conContext.serverVerifyData = fm.verifyData;
             }
 
+            // Store client's Finished verify_data for tls-unique (RFC 5929)
+            if (chc.handshakeSession != null) {
+                chc.handshakeSession.setClientFinishedVerifyData(fm.verifyData);
+            }
+
             if (!chc.isResumption) {
                 if (chc.handshakeSession.isRejoinable()) {
                     ((SSLSessionContextImpl)chc.sslContext.
@@ -609,6 +626,11 @@ final class Finished {
 
             if (shc.conContext.secureRenegotiation) {
                 shc.conContext.clientVerifyData = fm.verifyData;
+            }
+
+            // Store client's Finished verify_data for tls-unique (RFC 5929)
+            if (chc.handshakeSession != null) {
+                chc.handshakeSession.setClientFinishedVerifyData(fm.verifyData);
             }
 
             if (shc.isResumption) {

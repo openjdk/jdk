@@ -115,6 +115,13 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private int                 negotiatedMaxFragLen = -1;
     private int                 maximumPacketSize;
 
+    private static final boolean tlsUniqueChannelBindingEnabled = Utilities.getBooleanProperty(
+            "sun.security.ssl.enableTlsUniqueChannelBinding", false);
+    private static final String tlsUniqueChannelBindingMode = System.getProperty(
+            "sun.security.ssl.tlsUniqueChannelBindingMode", "rfc5929");
+    private volatile byte[] clientFinishedVerifyData;
+    private volatile byte[] serverFinishedVerifyData;
+
     private final Queue<SSLSessionImpl> childSessions =
                                         new ConcurrentLinkedQueue<>();
 
@@ -1683,6 +1690,70 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     public byte[] exportKeyingMaterialData(
             String label, byte[] context, int length) throws SSLKeyException {
         return (byte[])exportKeyingMaterial(null, label, context, length);
+    }
+
+    void setClientFinishedVerifyData(byte[] verifyData) {
+        if (!tlsUniqueChannelBindingEnabled) {
+            return;
+        }
+        this.clientFinishedVerifyData = (verifyData != null)
+                ? verifyData.clone()
+                : null;
+    }
+
+    void setServerFinishedVerifyData(byte[] verifyData) {
+        if (!tlsUniqueChannelBindingEnabled) {
+            return;
+        }
+        this.serverFinishedVerifyData = (verifyData != null)
+                ? verifyData.clone()
+                : null;
+    }
+
+    @Override
+    public byte[] getTlsUniqueChannelBinding() {
+        if (!tlsUniqueChannelBindingEnabled) {
+            return null;
+        }
+
+        // Not applicable for TLS 1.3+ (use TLS Exporter / RFC 9266 instead)
+        if (protocolVersion.useTLS13PlusSpec()) {
+            return null;
+        }
+
+        // Require Extended Master Secret (RFC 7627) to prevent renegotiation-based MITM
+        // attacks
+        if (!useExtendedMasterSecret) {
+            return null;
+        }
+
+        byte[] result;
+        if ("client".equalsIgnoreCase(tlsUniqueChannelBindingMode)) {
+            result = getClientFinishedData();
+        } else {
+            result = getFirstFinishedData();
+        }
+
+        return (result != null) ? result.clone() : null;
+    }
+
+    /**
+     * Returns the client's Finished verify_data. Used by authentication protocols
+     * that specifically require the client's Finished message.
+     */
+    private byte[] getClientFinishedData() {
+        return clientFinishedVerifyData;
+    }
+
+    /**
+     * Returns the first Finished verify_data sent per RFC 5929. In a full handshake
+     * the client sends Finished first. In a resumed session the server sends
+     * Finished first.
+     */
+    private byte[] getFirstFinishedData() {
+        return (serverFinishedVerifyData != null && clientFinishedVerifyData == null)
+                ? serverFinishedVerifyData
+                : clientFinishedVerifyData;
     }
 
     /** Returns a string representation of this SSL session */

@@ -273,4 +273,23 @@ public abstract class ExtendedSSLSession implements SSLSession {
         throw new UnsupportedOperationException(
                 "Underlying provider does not implement the method");
     }
+
+    /**
+     * Returns the tls-unique channel binding value for this session, as defined in
+     * RFC 5929.
+     * <P>
+     * Returns null if: Feature not enabled via
+     * sun.security.ssl.enableTlsUniqueChannelBinding, Session uses TLS 1.3+ (use
+     * exportKeyingMaterialData instead), Extended Master Secret (RFC 7627) not
+     * active, Handshake not yet completed.
+     * 
+     * @implSpec The default implementation returns null.
+     * 
+     * @return channel binding bytes (typically 12 bytes for TLS 1.2), or null if
+     *         unavailable
+     * @since 27
+     */
+    public byte[] getTlsUniqueChannelBinding() {
+        return null;
+    }
 }
