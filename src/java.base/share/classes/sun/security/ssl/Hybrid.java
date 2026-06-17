@@ -171,19 +171,19 @@ public class Hybrid {
         @Override
         protected PublicKey engineGeneratePublic(KeySpec keySpec)
                 throws InvalidKeySpecException {
-            throw new UnsupportedOperationException();
+            throw new InvalidKeySpecException("Not supported");
         }
 
         @Override
         protected PrivateKey engineGeneratePrivate(KeySpec keySpec) throws
                 InvalidKeySpecException {
-            throw new UnsupportedOperationException();
+            throw new InvalidKeySpecException("Not supported");
         }
 
         @Override
         protected <T extends KeySpec> T engineGetKeySpec(Key key,
                 Class<T> keySpec) throws InvalidKeySpecException {
-            throw new UnsupportedOperationException();
+            throw new InvalidKeySpecException("Not supported");
         }
 
         private static int leftPublicLength(String name) {
@@ -229,8 +229,15 @@ public class Hybrid {
                                         curve.getCurve()), curve);
                         leftKey = left.generatePublic(ecSpec);
                     } else if (leftname.startsWith("ML-KEM")) {
-                        leftKey = (PublicKey) left.translateKey(KeyUtil
-                                .newRawPublicKey(leftname, leftKeyBytes));
+                        try {
+                            leftKey = (PublicKey) left.translateKey(KeyUtil
+                                    .newRawPublicKey(leftname, leftKeyBytes));
+                        } catch (InvalidKeyException e) {
+                            // Fallback to X.509 encoding if ML-KEM impl
+                            // does not support translating from RAW
+                            leftKey = left.generatePublic(new X509EncodedKeySpec(
+                                    KeyUtil.rawToX509(leftname, leftKeyBytes)));
+                        }
                     } else {
                         throw new InvalidKeySpecException("Unsupported left" +
                                 " algorithm" + leftname);
@@ -243,8 +250,15 @@ public class Hybrid {
                                 new BigInteger(1, rightKeyBytes));
                         rightKey = right.generatePublic(xecSpec);
                     } else if (rightname.startsWith("ML-KEM")) {
-                        rightKey = (PublicKey) right.translateKey(KeyUtil
-                                .newRawPublicKey(rightname, rightKeyBytes));
+                        try {
+                            rightKey = (PublicKey) right.translateKey(KeyUtil
+                                    .newRawPublicKey(rightname, rightKeyBytes));
+                        } catch (InvalidKeyException e) {
+                            // Fallback to X.509 encoding if ML-KEM impl
+                            // does not support translating from RAW
+                            rightKey = right.generatePublic(new X509EncodedKeySpec(
+                                    KeyUtil.rawToX509(rightname, rightKeyBytes)));
+                        }
                     } else {
                         throw new InvalidKeySpecException("Unsupported right" +
                                 " algorithm: " + rightname);

@@ -40,6 +40,8 @@ import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.spec.X509EncodedKeySpec;
+
 import sun.security.util.KeyUtil;
 
 /**
@@ -183,8 +185,21 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             KeyFactory kf = (provider != null) ?
                     KeyFactory.getInstance(algorithmName, provider) :
                     KeyFactory.getInstance(algorithmName);
-            PublicKey pk = (PublicKey) kf.translateKey(
-                    KeyUtil.newRawPublicKey(algorithmName, keyshare));
+            PublicKey pk;
+            try {
+                pk = (PublicKey) kf.translateKey(
+                        KeyUtil.newRawPublicKey(algorithmName, keyshare));
+            } catch (InvalidKeyException e) {
+                // Fallback to X.509 encoding if ML-KEM impl
+                // does not support translating from RAW
+                try {
+                    pk = kf.generatePublic(new X509EncodedKeySpec(
+                            KeyUtil.rawToX509(algorithmName, keyshare)));
+                } catch (GeneralSecurityException e2) {
+                    e2.addSuppressed(e);
+                    throw new InvalidKeyException(e2);
+                }
+            }
 
             KEM kem = (provider != null) ?
                     KEM.getInstance(algorithmName, provider) :
