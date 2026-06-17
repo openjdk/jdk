@@ -24,10 +24,10 @@
 /**
  * @test
  * @bug 8358592
- * @summary Regression test for -XX:+UseSSE42Intrinsics -XX:UseSSE=1 crash
+ * @summary Regression test for -XX:+UseSSE42Intrinsics -XX:UseSSE=2 crash
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @requires vm.debug
- * @run main/othervm -XX:+UseSSE42Intrinsics -XX:UseSSE=1 compiler.arguments.TestUseSSE42IntrinsicsWithLowLevelSSE
+ * @run main/othervm -XX:+UseSSE42Intrinsics -XX:UseSSE=2 compiler.arguments.TestUseSSE42IntrinsicsWithLowLevelSSE
  */
 package compiler.arguments;
 

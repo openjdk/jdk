@@ -234,7 +234,7 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     return false;
   }
 
-  if (C->directive()->should_not_inline(callee_method)) {
+  if (C->directive()->should_not_inline(callee_method, CompLevel_full_optimization)) {
     set_msg("disallowed by CompileCommand");
     return true;
   }

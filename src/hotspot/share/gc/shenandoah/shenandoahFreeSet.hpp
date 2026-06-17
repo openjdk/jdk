@@ -302,9 +302,13 @@ public:
 
   inline void increase_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
   inline void decrease_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
-  inline size_t get_capacity(ShenandoahFreeSetPartitionId which_partition) {
+  inline size_t get_capacity(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "Partition must be valid");
     return _capacity[int(which_partition)];
+  }
+
+  inline size_t get_capacity_region_count(ShenandoahFreeSetPartitionId which_partition) const {
+    return get_capacity(which_partition) / ShenandoahHeapRegion::region_size_bytes();
   }
 
   inline void increase_available(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
@@ -437,9 +441,6 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
 
-  size_t _total_bytes_previously_allocated;
-  size_t _mutator_bytes_at_last_sample;
-
   // Temporarily holds mutator_Free allocatable bytes between prepare_to_rebuild() and finish_rebuild()
   size_t _prepare_to_rebuild_mutator_free;
 
@@ -452,7 +453,6 @@ private:
   // locks will acquire them in the same order: first the global heap lock and then the rebuild lock.
   ShenandoahRebuildLock _rebuild_lock;
 
-  HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
   size_t _total_humongous_waste;
 
@@ -514,8 +514,6 @@ private:
 
   size_t _total_young_regions;
   size_t _total_global_regions;
-
-  size_t _mutator_bytes_allocated_since_gc_start;
 
   // If only affiliation changes are promote-in-place and generation sizes have not changed,
   //    we have AffiliatedChangesAreGlobalNeutral
@@ -640,7 +638,6 @@ private:
 
   // Determine whether we prefer to allocate from left to right or from right to left within the OldCollector free-set.
   void establish_old_collector_alloc_bias();
-  size_t get_usable_free_words(size_t free_bytes) const;
 
   void reduce_young_reserve(size_t adjusted_young_reserve, size_t requested_young_reserve);
   void reduce_old_reserve(size_t adjusted_old_reserve, size_t requested_old_reserve);
@@ -662,37 +659,6 @@ public:
   inline void shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId partition,
                                                                 idx_t low_idx, idx_t high_idx, size_t num_regions) {
     return _partitions.shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx, num_regions);
-  }
-
-  void reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated);
-
-  void increase_bytes_allocated(size_t bytes);
-
-  // Return an approximation of the bytes allocated since GC start.  The value returned is monotonically non-decreasing
-  // in time within each GC cycle.  For certain GC cycles, the value returned may include some bytes allocated before
-  // the start of the current GC cycle.
-  inline size_t get_bytes_allocated_since_gc_start() const {
-    return _mutator_bytes_allocated_since_gc_start;
-  }
-
-  inline size_t get_total_bytes_allocated() {
-    return  _mutator_bytes_allocated_since_gc_start + _total_bytes_previously_allocated;
-  }
-
-  inline size_t get_bytes_allocated_since_previous_sample() {
-    const size_t total_bytes_allocated = get_total_bytes_allocated();
-    // total_bytes_allocated could overflow (wraps around) size_t in rare condition, we are relying on
-    // wrap-around arithmetic of size_t type to produce meaningful result when total_bytes_allocated overflows
-    // its 64-bit counter. The expression below is equivalent to code:
-    // if (total_bytes < _mutator_bytes_at_last_sample) {
-    //   // overflow
-    //   return total_bytes + (SIZE_T_MAX - _mutator_bytes_at_last_sample) + 1;
-    // } else {
-    //   return total_bytes - _mutator_bytes_at_last_sample;
-    // }
-    const size_t result = total_bytes_allocated - _mutator_bytes_at_last_sample;
-    _mutator_bytes_at_last_sample = total_bytes_allocated;
-    return result;
   }
 
   // Public because ShenandoahRegionPartitions assertions require access.
@@ -760,7 +726,7 @@ public:
   }
 
   inline size_t total_old_regions() {
-    return _partitions.get_capacity(ShenandoahFreeSetPartitionId::OldCollector) / ShenandoahHeapRegion::region_size_bytes();
+    return _partitions.get_capacity_region_count(ShenandoahFreeSetPartitionId::OldCollector);
   }
 
   size_t total_global_regions() {
@@ -851,6 +817,10 @@ public:
 
   inline size_t collector_available_locked() const {
     return _partitions.available_in(ShenandoahFreeSetPartitionId::Collector);
+  }
+
+  inline size_t old_collector_available_locked() const {
+    return _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector);
   }
 
   inline size_t total_humongous_waste() const      { return _total_humongous_waste; }

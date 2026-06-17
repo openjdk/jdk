@@ -642,7 +642,7 @@ private:
     const zaddress to_addr = _forwarding->insert(from_addr, allocated_addr, &cursor);
     if (to_addr != allocated_addr) {
       // Already relocated, undo allocation
-      _allocator->undo_alloc_object(to_page, to_addr, size);
+      _allocator->undo_alloc_object(to_page, allocated_addr, size);
       increase_other_forwarded(size);
     }
 
@@ -1272,7 +1272,7 @@ public:
     for (ZPage* page; _iter.next(&page);) {
       page->object_iterate([&](oop obj) {
         // Remap oops and add remset if needed
-        ZIterator::basic_oop_iterate_safe(obj, remap_and_maybe_add_remset);
+        ZIterator::basic_oop_iterate_safe(obj, obj->klass(), remap_and_maybe_add_remset);
 
         // String dedup
         string_dedup_context.request(obj);

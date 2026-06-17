@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ ifeq ($(INCLUDE), true)
 
 ifeq ($(TOOLCHAIN_TYPE), gcc)
   BUILD_LIBJVM_vmStructs.cpp_CXXFLAGS := -fno-var-tracking-assignments
-  BUILD_LIBJVM_jvmciCompilerToVM.cpp_CXXFLAGS := -fno-var-tracking-assignments
-  BUILD_LIBJVM_jvmciCompilerToVMInit.cpp_CXXFLAGS := -fno-var-tracking-assignments
   ifeq ($(DEBUG_LEVEL), release)
     # Need extra inlining to collapse shared marking code into the hot marking loop
     BUILD_LIBJVM_shenandoahMark.cpp_CXXFLAGS := --param inline-unit-growth=1000
@@ -104,7 +102,6 @@ else ifeq ($(call isTargetOs, macosx), true)
         sharedRuntimeTrig.cpp \
         sharedRuntimeTrans.cpp \
         loopTransform.cpp \
-        jvmciCompilerToVM.cpp \
         $(OPT_SPEED_SRC) \
         #
   endif
@@ -140,12 +137,8 @@ else ifeq ($(call isTargetOs, windows), true)
       os_windows.cpp \
       os_windows_x86.cpp \
       osThread_windows.cpp \
-      jvmciCompilerToVMInit.cpp \
       $(OPT_SPEED_SRC) \
       #
-
-  # Workaround for jvmciCompilerToVM.cpp long compilation time
-  BUILD_LIBJVM_jvmciCompilerToVMInit.cpp_OPTIMIZATION := NONE
 
 endif
 
