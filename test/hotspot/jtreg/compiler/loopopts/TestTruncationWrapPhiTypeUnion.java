@@ -38,8 +38,6 @@ package compiler.loopopts;
  */
 public class TestTruncationWrapPhiTypeUnion {
 
-    static final int EXPECTED = 11111;
-
     interface TestMethod {
         int call();
     }
@@ -47,9 +45,10 @@ public class TestTruncationWrapPhiTypeUnion {
     public static void main(String[] args) {
         int failures = 0;
 
-        failures += run("test1", () -> test1(-1), EXPECTED);
-        failures += run("test2", () -> test2(-1), EXPECTED);
-        failures += run("test3", () -> test3(-1), -87065049);
+        failures += run("test1", () -> test1(-1),       11111);
+        failures += run("test2", () -> test2(-1),       11111);
+        failures += run("test3", () -> test3(-100_000), -87065049);
+        failures += run("test4", () -> test4(32770),    10330);
 
         if (failures > 0) {
             throw new RuntimeException("failures: " + failures);
@@ -81,7 +80,7 @@ public class TestTruncationWrapPhiTypeUnion {
             sum++;
 
             // Secondary exit check, to make sure we exit eventually.
-            if (++x >= EXPECTED) {
+            if (++x >= 11111) {
                 break;
             }
 
@@ -175,6 +174,7 @@ public class TestTruncationWrapPhiTypeUnion {
     }
 
     // Another fuzzer find, this one with short truncation.
+    // TODO: not ok
     static int test3(int limit) {
         int x = 0;
         int sum = 0;
@@ -189,5 +189,19 @@ public class TestTruncationWrapPhiTypeUnion {
             }
         }
         return sum + i;
+    }
+
+    // Another fuzzer find, this one with short truncation.
+    static int test4(int limit) {
+        int sum = 0;
+        int x = 0;
+        limit = (short) limit;
+        for (int i = -1025; limit <= i; i = (short) (i + -7)) {
+            sum = sum + 1;
+            if (x++ > 10328) {
+                break;
+            }
+        }
+        return sum;
     }
 }
