@@ -393,11 +393,10 @@ public:
   };
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
-    if (r->is_cset() || r->is_trash() || r->is_atomic_alloc_region()) {
-      // Count the entire cset, trashed (formerly cset), or active CAS alloc region as used.
-      // An active alloc region has its full free capacity pre-charged to partition used
-      // (see ShenandoahPartitionAllocator::allocate), so account for it as fully used here
-      // to keep regions-used consistent with heap-used.
+    if (r->is_cset() || r->is_trash()) {
+      // Count the entire cset or trashed (formerly cset) region as used.
+      // Note: an active CAS alloc region is counted by actual occupancy in the regular branch
+      // below (region_size - free()), which matches the read-time-corrected _heap->used().
       // Note: Immediate garbage trash regions were never in the cset.
       _used += _region_size_bytes;
       _garbage += _region_size_bytes - r->get_live_data_bytes();

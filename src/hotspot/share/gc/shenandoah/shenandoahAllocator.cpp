@@ -72,3 +72,14 @@ void ShenandoahAllocator::release_collector_alloc_regions() {
   _collector_alloc.release_alloc_region();
   _old_collector_alloc.release_alloc_region();
 }
+
+size_t ShenandoahAllocator::active_alloc_region_free(ShenandoahFreeSetPartitionId partition) const {
+  switch (partition) {
+    case ShenandoahFreeSetPartitionId::Mutator:      return _mutator_alloc.active_alloc_region_free();
+    case ShenandoahFreeSetPartitionId::Collector:    return _collector_alloc.active_alloc_region_free();
+    case ShenandoahFreeSetPartitionId::OldCollector: return _old_collector_alloc.active_alloc_region_free();
+    default:
+      ShouldNotReachHere();
+      return 0;
+  }
+}

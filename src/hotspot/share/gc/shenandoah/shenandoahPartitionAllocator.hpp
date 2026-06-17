@@ -63,6 +63,19 @@ public:
   // Drop the cached alloc region. Must be called before the free set is rebuilt,
   // since rebuild can change region affiliation/membership and invalidate the cache.
   void release_alloc_region();
+
+  // Read-time accounting correction for the cached alloc region.
+  //
+  // When a region is reserved as the cached alloc region, retire_region() pre-charges its
+  // entire remaining capacity to the partition's used bytes (and drops it from the free-region
+  // count). Subsequent CAS allocations consume that capacity without touching any partition
+  // counter, so while the region is active the partition's used is over-counted, and available
+  // under-counted, by exactly the region's current free(). This returns that correction term
+  // (0 when no region is cached) so accounting readers can compensate.
+  size_t active_alloc_region_free() const {
+    ShenandoahHeapRegion* r = _alloc_region.load_acquire();
+    return r == nullptr ? 0 : r->free();
+  }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPARTITIONALLOCATOR_HPP

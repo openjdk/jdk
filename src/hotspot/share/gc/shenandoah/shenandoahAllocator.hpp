@@ -64,6 +64,12 @@ public:
   // so that regions holding evacuated objects sync their _atomic_top to _top and advance their
   // update watermark before update-refs iterates the heap, while mutators keep allocating.
   void release_collector_alloc_regions();
+
+  // Read-time accounting correction term for the given partition's cached alloc region: the
+  // bytes that were pre-charged to the partition's used at reserve time but are not yet
+  // actually consumed (the region's current free()). Returns 0 if no region is cached.
+  // See ShenandoahPartitionAllocator::active_alloc_region_free.
+  size_t active_alloc_region_free(ShenandoahFreeSetPartitionId partition) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP

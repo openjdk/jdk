@@ -348,6 +348,82 @@ size_t ShenandoahFreeSet::retire_region(ShenandoahFreeSetPartitionId partition, 
   return _partitions.retire_from_partition(partition, idx, used_bytes);
 }
 
+size_t ShenandoahFreeSet::alloc_region_correction(ShenandoahFreeSetPartitionId partition) const {
+  // The allocator does not exist yet during early freeset construction; no region is cached.
+  ShenandoahAllocator* allocator = _heap->allocator();
+  return allocator == nullptr ? 0 : allocator->active_alloc_region_free(partition);
+}
+
+// Used/available accessors below compensate for the CAS alloc-region pre-charge. retire_region()
+// charges a reserved region's entire free capacity to the partition's used (and drops it from the
+// free-region count) before any CAS allocation actually consumes it. So the partition's stored
+// used is over-counted, and available under-counted, by exactly the cached region's current free().
+// We correct that here at read time, leaving the stored partition counters (and their rebuild
+// invariants) untouched. At GC phase boundaries and rebuild the alloc regions are released first,
+// so the correction term is 0 there and these accessors equal the raw stored values.
+//
+// The subtraction is saturating because these accessors may run concurrently (off heap lock):
+// the stored used is a snapshot from the last under-lock recompute, while the correction term is
+// read live, so a region swap between the two reads can momentarily make the correction exceed the
+// snapshot. The stored used always covers the correction of the region that was cached when it was
+// computed, so any excess is a transient artifact of a stale snapshot, not an accounting error.
+size_t ShenandoahFreeSet::corrected_used(size_t stored_used, size_t correction) {
+  return stored_used > correction ? stored_used - correction : 0;
+}
+
+size_t ShenandoahFreeSet::young_used() {
+  return corrected_used(_total_young_used,
+                        alloc_region_correction(ShenandoahFreeSetPartitionId::Mutator) +
+                        alloc_region_correction(ShenandoahFreeSetPartitionId::Collector));
+}
+
+size_t ShenandoahFreeSet::old_used() {
+  return corrected_used(_total_old_used,
+                        alloc_region_correction(ShenandoahFreeSetPartitionId::OldCollector));
+}
+
+size_t ShenandoahFreeSet::global_used() {
+  return corrected_used(_total_global_used,
+                        alloc_region_correction(ShenandoahFreeSetPartitionId::Mutator) +
+                        alloc_region_correction(ShenandoahFreeSetPartitionId::Collector) +
+                        alloc_region_correction(ShenandoahFreeSetPartitionId::OldCollector));
+}
+
+size_t ShenandoahFreeSet::used_holding_lock() const {
+  shenandoah_assert_heaplocked();
+  return corrected_used(_partitions.used_by(ShenandoahFreeSetPartitionId::Mutator),
+                        alloc_region_correction(ShenandoahFreeSetPartitionId::Mutator));
+}
+
+size_t ShenandoahFreeSet::used_not_holding_lock() {
+  shenandoah_assert_not_heaplocked();
+  ShenandoahRebuildLocker locker(rebuild_lock());
+  return corrected_used(_partitions.used_by(ShenandoahFreeSetPartitionId::Mutator),
+                        alloc_region_correction(ShenandoahFreeSetPartitionId::Mutator));
+}
+
+size_t ShenandoahFreeSet::available() {
+  shenandoah_assert_not_heaplocked();
+  ShenandoahRebuildLocker locker(rebuild_lock());
+  return _partitions.available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId::Mutator) +
+         alloc_region_correction(ShenandoahFreeSetPartitionId::Mutator);
+}
+
+size_t ShenandoahFreeSet::available_locked() const {
+  return _partitions.available_in(ShenandoahFreeSetPartitionId::Mutator) +
+         alloc_region_correction(ShenandoahFreeSetPartitionId::Mutator);
+}
+
+size_t ShenandoahFreeSet::collector_available_locked() const {
+  return _partitions.available_in(ShenandoahFreeSetPartitionId::Collector) +
+         alloc_region_correction(ShenandoahFreeSetPartitionId::Collector);
+}
+
+size_t ShenandoahFreeSet::old_collector_available_locked() const {
+  return _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector) +
+         alloc_region_correction(ShenandoahFreeSetPartitionId::OldCollector);
+}
+
 void ShenandoahFreeSet::unretire_alloc_region(ShenandoahFreeSetPartitionId partition, ShenandoahHeapRegion* r) {
   shenandoah_assert_heaplocked();
   // Reverse the accounting performed by retire_region() when this region was reserved as
