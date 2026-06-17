@@ -23,6 +23,7 @@
  */
 
 #include "gc/shared/plab.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -30,38 +31,102 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPartitionAllocator.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "logging/log.hpp"
+#include "runtime/os.hpp"
 
 template<ShenandoahFreeSetPartitionId PARTITION>
-ShenandoahPartitionAllocator<PARTITION>::ShenandoahPartitionAllocator(ShenandoahFreeSet* free_set)
+ShenandoahPartitionAllocator<PARTITION>::ShenandoahPartitionAllocator(ShenandoahFreeSet* free_set, uint alloc_region_count)
   : _free_set(free_set),
-    _alloc_region(nullptr) {}
+    _alloc_region_count(MIN2(MAX2(alloc_region_count, 1u), MAX_ALLOC_REGIONS)) {
+  for (uint i = 0; i < MAX_ALLOC_REGIONS; i++) {
+    _alloc_regions[i].store_relaxed(nullptr);
+  }
+}
+
+template<ShenandoahFreeSetPartitionId PARTITION>
+uint ShenandoahPartitionAllocator<PARTITION>::alloc_region_start_index() {
+  if (_alloc_region_count <= 1u) {
+    return 0u;
+  }
+  // Mutator and (old-)collector partitions keep separate per-thread start slots. The collector
+  // and old-collector partitions share one slot since a given worker only allocates in one of them.
+  uint index = (PARTITION == ShenandoahFreeSetPartitionId::Mutator)
+                 ? ShenandoahThreadLocalData::mutator_alloc_region_start_index()
+                 : ShenandoahThreadLocalData::collector_alloc_region_start_index();
+  if (index == UINT_MAX) {
+    // Assign a stable per-thread start slot. GC workers stripe by worker id; other threads by a
+    // pseudo-random value. (Math/Date intrinsics are unavailable here, os::random is fine.)
+    Thread* current = Thread::current();
+    if (PARTITION != ShenandoahFreeSetPartitionId::Mutator && current->is_Worker_thread()) {
+      index = WorkerThread::worker_id() % _alloc_region_count;
+    } else {
+      index = (uint)(os::random() & 0x7fffffff) % _alloc_region_count;
+    }
+    if (PARTITION == ShenandoahFreeSetPartitionId::Mutator) {
+      ShenandoahThreadLocalData::set_mutator_alloc_region_start_index(index);
+    } else {
+      ShenandoahThreadLocalData::set_collector_alloc_region_start_index(index);
+    }
+  }
+  assert(index < _alloc_region_count, "start index in range");
+  return index;
+}
+
+template<ShenandoahFreeSetPartitionId PARTITION>
+HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in_alloc_regions(ShenandoahAllocRequest& req,
+                                                                                 bool& in_new_region,
+                                                                                 uint start_index) {
+  uint i = start_index;
+  do {
+    ShenandoahHeapRegion* r = _alloc_regions[i].load_acquire();
+    if (r != nullptr) {
+      HeapWord* obj = try_atomic_allocate_in(i, r, req);
+      if (obj != nullptr) {
+        in_new_region = false;
+        return obj;
+      }
+    }
+    if (++i == _alloc_region_count) {
+      i = 0u;
+    }
+  } while (i != start_index);
+  return nullptr;
+}
+
+template<ShenandoahFreeSetPartitionId PARTITION>
+void ShenandoahPartitionAllocator<PARTITION>::install_alloc_region(uint index, ShenandoahHeapRegion* r) {
+  shenandoah_assert_heaplocked();
+  assert(_alloc_regions[index].load_relaxed() == nullptr, "Slot must be empty before install");
+  size_t remnant_bytes = _free_set->retire_region(PARTITION, r->index(), r->used());
+  assert(remnant_bytes == _free_set->alloc_capacity(r), "Sanity check");
+  // The flag must be set BEFORE the region becomes an active alloc region, so any
+  // thread that can observe the region via _atomic_top also observes the flag as true.
+  if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
+    r->set_collector_allocator_reserved(true);
+  }
+  r->set_active_alloc_region();
+  _alloc_regions[index].release_store(r);
+}
 
 template<ShenandoahFreeSetPartitionId PARTITION>
 HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
-  ShenandoahHeapRegion* cas_alloc_region = _alloc_region.load_acquire();
-  HeapWord* obj = nullptr;
-  if (cas_alloc_region != nullptr) {
-    // Fast-path: try CAS allocation using the cached alloc region
-    obj = try_atomic_allocate_in(cas_alloc_region, req);
-    if (obj != nullptr) {
-      in_new_region = false;
-      return obj;
-    }
+  uint start_index = alloc_region_start_index();
+
+  // Fast path: lock-free CAS allocation across the stripe slots.
+  HeapWord* obj = try_allocate_in_alloc_regions(req, in_new_region, start_index);
+  if (obj != nullptr) {
+    return obj;
   }
 
   // Slow-path with heap lock
   {
     // Mutator allocations may yield to safepoint; GC allocations cannot
     ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), req.is_mutator_alloc());
-    // First check whether the cached alloc region has changed
-    ShenandoahHeapRegion* r = _alloc_region.load_acquire();
-    if (r != nullptr && r != cas_alloc_region) {
-      obj = try_atomic_allocate_in(r, req);
-      if (obj != nullptr) {
-        in_new_region = false;
-        return obj;
-      }
+    // Re-try the stripe slots: another thread may have replenished one while we waited for the lock.
+    obj = try_allocate_in_alloc_regions(req, in_new_region, start_index);
+    if (obj != nullptr) {
+      return obj;
     }
 
     // OldCollector: verify old generation has room before attempting allocation
@@ -74,7 +139,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
     bool boundary_changed = false;
     size_t min_req_words = req.is_lab_alloc() ? req.min_size() : req.size();
     // Ask FreeSet to find a suitable region
-     r = _free_set->find_region_for_alloc<PARTITION>(min_req_words, in_new_region);
+    ShenandoahHeapRegion* r = _free_set->find_region_for_alloc<PARTITION>(min_req_words, in_new_region);
     // Collector partitions can overflow into Mutator partition
     if constexpr (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
       if (r == nullptr && ShenandoahEvacReserveOverflow) {
@@ -93,16 +158,12 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
         _free_set->mark_region_used(PARTITION);
         boundary_changed = true;
       }
-      if (_alloc_region.load_acquire() == nullptr && _free_set->alloc_capacity(r) >> LogHeapWordSize >= PLAB::min_size()) {
-        size_t remnant_bytes = _free_set->retire_region(PARTITION, r->index(), r->used());
-        assert(remnant_bytes == _free_set->alloc_capacity(r), "Sanity check");
-        // The flag must be set BEFORE the region becomes an active alloc region, so any
-        // thread that can observe the region via _atomic_top also observes the flag as true.
-        if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
-          r->set_collector_allocator_reserved(true);
-        }
-        r->set_active_alloc_region();
-        _alloc_region.release_store(r);
+      // If the region still has usable capacity, install it into an empty stripe slot (if any) as
+      // an active alloc region so subsequent allocations can use the lock-free fast path. Lazy,
+      // single-slot replenish: we only fill the slot this thread's scan started at, when empty.
+      if (_free_set->alloc_capacity(r) >> LogHeapWordSize >= PLAB::min_size() &&
+          _alloc_regions[start_index].load_acquire() == nullptr) {
+        install_alloc_region(start_index, r);
         boundary_changed = true;
       }
       _free_set->notify_allocation(PARTITION, in_new_region, boundary_changed);
@@ -166,7 +227,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate_in(ShenandoahHeapReg
 }
 
 template<ShenandoahFreeSetPartitionId PARTITION>
-HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_atomic_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req) {
+HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_atomic_allocate_in(uint index, ShenandoahHeapRegion* r, ShenandoahAllocRequest& req) {
   size_t actual_size;
   bool ready_for_replenish = false;
   HeapWord* obj = nullptr;
@@ -180,11 +241,11 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_atomic_allocate_in(Shenan
   if (obj != nullptr) {
     req.set_actual_size(actual_size);
     if (ready_for_replenish) {
-      // Claim the region for retirement with a CAS on _alloc_region. Multiple threads may
+      // Claim the slot for retirement with a CAS on its stripe entry. Multiple threads may
       // observe ready_for_replenish concurrently on this lock-free path, but only the thread
       // that wins this CAS may retire it: unset_active_alloc_region() is not safe to run
       // concurrently on the same region (two unsetters can clobber each other's _top sync).
-      if (_alloc_region.compare_exchange(r, (ShenandoahHeapRegion*) nullptr) == r) {
+      if (_alloc_regions[index].compare_exchange(r, (ShenandoahHeapRegion*) nullptr) == r) {
         bool unset = r->unset_active_alloc_region();
         assert(unset, "Winner of the retire CAS must deactivate the region");
         if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
@@ -202,9 +263,17 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_atomic_allocate_in(Shenan
 }
 
 template<ShenandoahFreeSetPartitionId PARTITION>
-void ShenandoahPartitionAllocator<PARTITION>::release_alloc_region() {
+void ShenandoahPartitionAllocator<PARTITION>::release_alloc_regions() {
   shenandoah_assert_heaplocked();
-  ShenandoahHeapRegion* alloc_region = _alloc_region.load_acquire();
+  for (uint i = 0; i < _alloc_region_count; i++) {
+    release_alloc_region(i);
+  }
+}
+
+template<ShenandoahFreeSetPartitionId PARTITION>
+void ShenandoahPartitionAllocator<PARTITION>::release_alloc_region(uint index) {
+  shenandoah_assert_heaplocked();
+  ShenandoahHeapRegion* alloc_region = _alloc_regions[index].load_acquire();
   if (alloc_region == nullptr) {
     return;
   }
@@ -212,7 +281,7 @@ void ShenandoahPartitionAllocator<PARTITION>::release_alloc_region() {
   // lock-free fast path (try_atomic_allocate_in) may concurrently retire the cached region;
   // only the thread that wins this CAS may call unset_active_alloc_region(), which is not
   // safe to run concurrently on the same region.
-  if (_alloc_region.compare_exchange(alloc_region, (ShenandoahHeapRegion*) nullptr) != alloc_region) {
+  if (_alloc_regions[index].compare_exchange(alloc_region, (ShenandoahHeapRegion*) nullptr) != alloc_region) {
     return;
   }
   // Sync _atomic_top back to _top and deactivate CAS allocation. unset_active_alloc_region()

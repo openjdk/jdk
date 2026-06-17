@@ -30,20 +30,39 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "memory/allocation.hpp"
 
-// ShenandoahPartitionAllocator is the serial (lock-based) partition allocator.
-// It uses ShenandoahFreeSet APIs to find regions and performs allocation within them
-// under the heap lock. Templated on partition ID so that partition-specific behavior
-// (overflow stealing for Collector/OldCollector) is resolved at compile time.
+// ShenandoahPartitionAllocator allocates memory for one free-set partition. The fast path is
+// lock-free: it caches a small set of "alloc regions" (a stripe array) and bump-allocates within
+// them using CAS on the region's atomic top. To spread CAS contention, each thread starts its scan
+// of the stripe array at a per-thread slot (stored in thread-local data). When the fast path fails,
+// it falls back to a heap-locked slow path that reserves a fresh region from the free set.
+// Templated on partition ID so partition-specific behavior is resolved at compile time.
 template<ShenandoahFreeSetPartitionId PARTITION>
 class ShenandoahPartitionAllocator : public CHeapObj<mtGC> {
+
+public:
+  static constexpr uint MAX_ALLOC_REGIONS = 128;
 
 private:
   ShenandoahFreeSet* const _free_set;
 
-  // Cached allocation region with remaining capacity from the last allocation in
-  // this partition. Checked first on the next request to skip a FreeSet scan.
-  // Cleared when retired by allocate_in or by release_alloc_region.
-  Atomic<ShenandoahHeapRegion*> _alloc_region;
+  // Number of alloc-region stripe slots for this partition (>= 1). Fixed for the allocator's life.
+  const uint _alloc_region_count;
+
+  // Stripe array of cached alloc regions. Each slot holds a region with remaining capacity that is
+  // bump-allocated lock-free via CAS, or nullptr when the slot is empty. A slot is cleared when its
+  // region is retired (by try_atomic_allocate_in when it fills, or by release_alloc_region).
+  Atomic<ShenandoahHeapRegion*> _alloc_regions[MAX_ALLOC_REGIONS];
+
+  // Return this thread's start slot for the stripe scan, assigning a stable per-thread slot on
+  // first use so different threads begin at different alloc regions.
+  uint alloc_region_start_index();
+
+  // Try the lock-free CAS fast path across all stripe slots, starting at start_index and wrapping.
+  // Returns the allocation, or nullptr if no slot could satisfy the request.
+  HeapWord* try_allocate_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, uint start_index);
+
+  // Install r into stripe slot at index as an active alloc region (heap lock held).
+  void install_alloc_region(uint index, ShenandoahHeapRegion* r);
 
   // Allocate within a single region; the caller must guarantee the region has enough free
   // capacity for the request. Handles LAB sizing, updates partition accounting via
@@ -52,29 +71,39 @@ private:
   // boundary; it is never reset to false.
   HeapWord* allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& boundary_changed);
 
-  HeapWord* try_atomic_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req);
+  // Try the lock-free CAS allocation in slot `index`'s region r; retires the slot if it fills.
+  HeapWord* try_atomic_allocate_in(uint index, ShenandoahHeapRegion* r, ShenandoahAllocRequest& req);
+
+  // Retire (deactivate + reconcile) the region in stripe slot `index`; heap lock held.
+  void release_alloc_region(uint index);
 
 public:
-  ShenandoahPartitionAllocator(ShenandoahFreeSet* free_set);
+  ShenandoahPartitionAllocator(ShenandoahFreeSet* free_set, uint alloc_region_count);
 
   // Allocate from this partition. Returns nullptr if partition cannot satisfy the request.
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // Drop the cached alloc region. Must be called before the free set is rebuilt,
+  // Drop all cached alloc regions. Must be called before the free set is rebuilt,
   // since rebuild can change region affiliation/membership and invalidate the cache.
-  void release_alloc_region();
+  void release_alloc_regions();
 
-  // Read-time accounting correction for the cached alloc region.
+  // Read-time accounting correction for the cached alloc regions.
   //
-  // When a region is reserved as the cached alloc region, retire_region() pre-charges its
-  // entire remaining capacity to the partition's used bytes (and drops it from the free-region
-  // count). Subsequent CAS allocations consume that capacity without touching any partition
-  // counter, so while the region is active the partition's used is over-counted, and available
-  // under-counted, by exactly the region's current free(). This returns that correction term
-  // (0 when no region is cached) so accounting readers can compensate.
+  // When a region is reserved as an alloc region, retire_region() pre-charges its entire remaining
+  // capacity to the partition's used bytes (and drops it from the free-region count). Subsequent CAS
+  // allocations consume that capacity without touching any partition counter, so while a region is
+  // active the partition's used is over-counted, and available under-counted, by exactly that
+  // region's current free(). This returns the sum of that correction term across all stripe slots
+  // so accounting readers can compensate.
   size_t active_alloc_region_free() const {
-    ShenandoahHeapRegion* r = _alloc_region.load_acquire();
-    return r == nullptr ? 0 : r->free();
+    size_t total = 0;
+    for (uint i = 0; i < _alloc_region_count; i++) {
+      ShenandoahHeapRegion* r = _alloc_regions[i].load_acquire();
+      if (r != nullptr) {
+        total += r->free();
+      }
+    }
+    return total;
   }
 };
 

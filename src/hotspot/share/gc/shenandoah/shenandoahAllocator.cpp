@@ -29,10 +29,9 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 
 ShenandoahAllocator::ShenandoahAllocator(ShenandoahFreeSet* free_set)
-  : _free_set(free_set),
-    _mutator_alloc(free_set),
-    _collector_alloc(free_set),
-    _old_collector_alloc(free_set) {}
+  : _free_set(free_set),_mutator_alloc(free_set, ShenandoahMutatorAllocRegions),
+    _collector_alloc(free_set, ShenandoahCollectorAllocRegions),
+    _old_collector_alloc(free_set, ShenandoahCollectorAllocRegions) {}
 
 HeapWord* ShenandoahAllocator::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
   if (ShenandoahHeapRegion::requires_humongous(req.size())) {
@@ -63,14 +62,14 @@ HeapWord* ShenandoahAllocator::allocate(ShenandoahAllocRequest& req, bool& in_ne
 }
 
 void ShenandoahAllocator::release_alloc_regions() {
-  _mutator_alloc.release_alloc_region();
-  _collector_alloc.release_alloc_region();
-  _old_collector_alloc.release_alloc_region();
+  _mutator_alloc.release_alloc_regions();
+  _collector_alloc.release_alloc_regions();
+  _old_collector_alloc.release_alloc_regions();
 }
 
 void ShenandoahAllocator::release_collector_alloc_regions() {
-  _collector_alloc.release_alloc_region();
-  _old_collector_alloc.release_alloc_region();
+  _collector_alloc.release_alloc_regions();
+  _old_collector_alloc.release_alloc_regions();
 }
 
 size_t ShenandoahAllocator::active_alloc_region_free(ShenandoahFreeSetPartitionId partition) const {

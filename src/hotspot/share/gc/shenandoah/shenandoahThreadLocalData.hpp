@@ -93,6 +93,12 @@ private:
   Atomic<HeapWord*> _invisible_root;
   Atomic<size_t> _invisible_root_word_size;
 
+  // Per-thread start slot for the striped CAS alloc-region scan, one per striped partition.
+  // Initialized lazily to UINT_MAX, then assigned a stable per-thread slot so different threads
+  // begin their lock-free allocation scan at different alloc regions, spreading CAS contention.
+  uint _mutator_alloc_region_start_index;
+  uint _collector_alloc_region_start_index;
+
   ShenandoahThreadLocalData();
   ~ShenandoahThreadLocalData();
 
@@ -185,6 +191,22 @@ public:
 
   static void set_gclab_size(Thread* thread, size_t v) {
     data(thread)->_gclab_size = v;
+  }
+
+  static uint mutator_alloc_region_start_index() {
+    return data(Thread::current())->_mutator_alloc_region_start_index;
+  }
+
+  static void set_mutator_alloc_region_start_index(uint index) {
+    data(Thread::current())->_mutator_alloc_region_start_index = index;
+  }
+
+  static uint collector_alloc_region_start_index() {
+    return data(Thread::current())->_collector_alloc_region_start_index;
+  }
+
+  static void set_collector_alloc_region_start_index(uint index) {
+    data(Thread::current())->_collector_alloc_region_start_index = index;
   }
 
   static void begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {
