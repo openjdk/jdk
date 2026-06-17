@@ -369,7 +369,7 @@ public class TestCheckIndexIntrinsics {
         }
     }
 
-    private static void testShouldDeoptAndThrow(Method method, Object[] args) throws Exception {
+    private static Method loadAndCompileCopyOfMethod(Method method) throws Exception {
         Class<?> clazz = newClassLoader().loadClass(TestCheckIndexIntrinsics.class.getName());
         String name = method.getName();
         Class<?> type = method.getReturnType();
@@ -382,8 +382,16 @@ public class TestCheckIndexIntrinsics {
                 : (type == long.class ? new Object[] { 1L, 2L, 3L } : new Object[] { 1, 2, 3 });
 
         assertIsNotCompiled(m);
+
+        // Invoke once with "good" args (no deopt) to make sure classes are fully loaded and linked
         m.invoke(null, compileArgs);
         compile(m);
+
+        return m;
+    }
+
+    private static void testShouldDeoptAndThrow(Method method, Object[] args) throws Exception {
+        Method m = loadAndCompileCopyOfMethod(method);
 
         try {
             m.invoke(null, args);
@@ -404,8 +412,9 @@ public class TestCheckIndexIntrinsics {
             if (!(e.getCause() instanceof IndexOutOfBoundsException)) {
                 throw new AssertionError("unexpected exception", e);
             }
+
+            assertIsCompiled(m); // no more de-opt
         }
-        assertIsCompiled(m); // no more de-opt
     }
 
     private static void assertEqual(Method groundTruth, Method intrinsified, Object[] args)
@@ -430,9 +439,20 @@ public class TestCheckIndexIntrinsics {
                 return;
             }
 
-            assertIsCompiled(intrinsified);
+            // load a new copy with clean method states
+            intrinsified = loadAndCompileCopyOfMethod(intrinsified);
             Object observed = intrinsified.invoke(null, args);
-            assertIsCompiled(intrinsified);
+
+            // FIXME: for checkFromToIndex(from, to, length) and checkFromIndexSize(from, size, length),
+            //        length = Integer/Long.MAX_VALUE is an edge case that will trigger de-opt. We
+            //        still want to make sure they produce correct results.
+            if (args.length == 3 && (args[2].equals(Long.MAX_VALUE) || args[2].equals(Integer.MAX_VALUE))) {
+                assertIsNotCompiled(intrinsified);
+                System.err.printf("Warning: edge case de-opt observed on %s(%s)\n",
+                        intrinsified.getName(), Arrays.toString(args));
+            } else {
+                assertIsCompiled(intrinsified);
+            }
 
             if (!expected.equals(observed)) {
                 throw new AssertionError(String.format("expected %s, got %s", expected, observed));
@@ -443,49 +463,23 @@ public class TestCheckIndexIntrinsics {
     }
 
     private static void testCorrectness() throws Exception {
+        // intrinsified method
         Method checkIndex = TestCheckIndexIntrinsics.class.getDeclaredMethod("checkIndex", int.class, int.class);
-        Method checkFromToIndex = TestCheckIndexIntrinsics.class.getDeclaredMethod("checkFromToIndex", int.class,
-                int.class, int.class);
-        Method checkFromIndexSize = TestCheckIndexIntrinsics.class.getDeclaredMethod("checkFromIndexSize", int.class,
-                int.class, int.class);
+        Method checkFromToIndex = TestCheckIndexIntrinsics.class.getDeclaredMethod("checkFromToIndex", int.class, int.class, int.class);
+        Method checkFromIndexSize = TestCheckIndexIntrinsics.class.getDeclaredMethod("checkFromIndexSize", int.class, int.class, int.class);
 
         Method checkIndexL = TestCheckIndexIntrinsics.class.getDeclaredMethod("checkIndexL", long.class, long.class);
-        Method checkFromToIndexL = TestCheckIndexIntrinsics.class.getDeclaredMethod("checkFromToIndexL", long.class,
-                long.class, long.class);
-        Method checkFromIndexSizeL = TestCheckIndexIntrinsics.class.getDeclaredMethod("checkFromIndexSizeL", long.class,
-                long.class, long.class);
+        Method checkFromToIndexL = TestCheckIndexIntrinsics.class.getDeclaredMethod("checkFromToIndexL", long.class, long.class, long.class);
+        Method checkFromIndexSizeL = TestCheckIndexIntrinsics.class.getDeclaredMethod("checkFromIndexSizeL", long.class, long.class, long.class);
 
-        Method unintrinsifiedCheckIndex = TestCheckIndexIntrinsics.class.getDeclaredMethod("unintrinsifiedCheckIndex",
-                int.class, int.class);
-        Method unintrinsifiedCheckFromToIndex = TestCheckIndexIntrinsics.class
-                .getDeclaredMethod("unintrinsifiedCheckFromToIndex", int.class, int.class, int.class);
-        Method unintrinsifiedCheckFromIndexSize = TestCheckIndexIntrinsics.class
-                .getDeclaredMethod("unintrinsifiedCheckFromIndexSize", int.class, int.class, int.class);
+        // unintrinsified ground truth
+        Method unintrinsifiedCheckIndex = TestCheckIndexIntrinsics.class.getDeclaredMethod("unintrinsifiedCheckIndex", int.class, int.class);
+        Method unintrinsifiedCheckFromToIndex = TestCheckIndexIntrinsics.class.getDeclaredMethod("unintrinsifiedCheckFromToIndex", int.class, int.class, int.class);
+        Method unintrinsifiedCheckFromIndexSize = TestCheckIndexIntrinsics.class.getDeclaredMethod("unintrinsifiedCheckFromIndexSize", int.class, int.class, int.class);
 
-        Method unintrinsifiedCheckIndexL = TestCheckIndexIntrinsics.class.getDeclaredMethod("unintrinsifiedCheckIndexL",
-                long.class, long.class);
-        Method unintrinsifiedCheckFromToIndexL = TestCheckIndexIntrinsics.class
-                .getDeclaredMethod("unintrinsifiedCheckFromToIndexL", long.class, long.class, long.class);
-        Method unintrinsifiedCheckFromIndexSizeL = TestCheckIndexIntrinsics.class
-                .getDeclaredMethod("unintrinsifiedCheckFromIndexSizeL", long.class, long.class, long.class);
-
-        // Invoke once to make sure classes are fully loaded and linked
-        checkIndex.invoke(null, 0, 42);
-        checkFromToIndex.invoke(null, 1, 16, 42);
-        checkFromIndexSize.invoke(null, 32, 42, 123);
-
-        checkIndexL.invoke(null, 0, 42);
-        checkFromToIndexL.invoke(null, 1, 16, 42);
-        checkFromIndexSizeL.invoke(null, 32, 42, 123);
-
-        // Make sure we're running C2 generated code
-        compile(checkIndex);
-        compile(checkFromToIndex);
-        compile(checkFromIndexSize);
-
-        compile(checkIndexL);
-        compile(checkFromToIndexL);
-        compile(checkFromIndexSizeL);
+        Method unintrinsifiedCheckIndexL = TestCheckIndexIntrinsics.class.getDeclaredMethod("unintrinsifiedCheckIndexL", long.class, long.class);
+        Method unintrinsifiedCheckFromToIndexL = TestCheckIndexIntrinsics.class.getDeclaredMethod("unintrinsifiedCheckFromToIndexL", long.class, long.class, long.class);
+        Method unintrinsifiedCheckFromIndexSizeL = TestCheckIndexIntrinsics.class.getDeclaredMethod("unintrinsifiedCheckFromIndexSizeL", long.class, long.class, long.class);
 
         testCheckIndexCorrectness(unintrinsifiedCheckIndex, checkIndex);
         testCheckIndexCorrectness(unintrinsifiedCheckIndexL, checkIndexL);
@@ -511,9 +505,9 @@ public class TestCheckIndexIntrinsics {
 
                 // should throw:
                 { -1, 5 }, // index < 0
-                { 5, 5 }, // index == length
-                { 6, 5 }, // index > length
-                { 0, 0 }, // length = 0, no valid index
+                { 5, 5 },  // index == length
+                { 6, 5 },  // index > length
+                { 0, 0 },  // length = 0, no valid index
                 { 2, -1 }, // length < 0
                 { min, 5 },
                 { 5, min },
@@ -545,16 +539,16 @@ public class TestCheckIndexIntrinsics {
                 { 2, 4, 5 },
                 { 5, 5, 5 },
                 { 0, 0, 0 },
-                // { 0, max, max },
-                // { max, max, max },
-                // { max - 1, max, max },
+                { 0, max, max },
+                { max, max, max },
+                { max - 1, max, max },
 
                 // should throw:
                 { -1, 2, 5 }, // fromIndex < 0
-                { 3, 2, 5 }, // fromIndex > toIndex (range inverted)
-                { 2, 6, 5 }, // toIndex > length (out of bounds)
+                { 3, 2, 5 },  // fromIndex > toIndex (range inverted)
+                { 2, 6, 5 },  // toIndex > length (out of bounds)
                 { 2, 4, -1 }, // length < 0
-                { 1, 0, 0 }, // Out of bounds for zero length
+                { 1, 0, 0 },  // Out of bounds for zero length
                 { min, 5, 10 },
                 { max, 0, max }
         };
@@ -584,18 +578,18 @@ public class TestCheckIndexIntrinsics {
                 { 2, 2, 5 },
                 { 5, 0, 5 },
                 { 0, 0, 0 },
-                // { 0, max, max },
-                // { max, 0, max },
-                // { max - 1, 1, max },
+                { 0, max, max },
+                { max, 0, max },
+                { max - 1, 1, max },
 
                 // should throw:
                 { -1, 2, 5 }, // fromIndex < 0
                 { 2, -1, 5 }, // size < 0
-                { 2, 4, 5 }, // fromIndex + size > length (2 + 4 = 6 > 5)
-                { 6, 0, 5 }, // fromIndex > length
+                { 2, 4, 5 },  // fromIndex + size > length (2 + 4 = 6 > 5)
+                { 6, 0, 5 },  // fromIndex > length
                 { 2, 2, -1 }, // length < 0
-                { min, 0, 0},
-                { 0, min, min},
+                { min, 0, 0 },
+                { 0, min, min },
                 { 1, max, max },
                 { max, 1, max },
                 { max, max, max },

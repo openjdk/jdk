@@ -1286,9 +1286,9 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
 //    3) from        u< length + 1    (range check, RCE-hoistable)
 //    4) from + size u< length + 1    (range check, RCE-hoistable)
 //
-// This introduces an limitation where a is max_jint or max_jlong: overflow to min_jint or min_jlong
-// will cause guard to de-opt. Falling back to bytecode is acceptable since `lengths = MAX_VALUE`
-// are extremely rare in practice.
+// This introduces a limitation where a is max_jint or max_jlong: overflow to min_jint or min_jlong
+// will cause guard to de-opt. Falling back to bytecode is acceptable since `lengths = MAX_VALUE` is
+// extremely rare in practice.
 bool LibraryCallKit::inline_preconditions_checkFromIndexSize(BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "");
 
@@ -1306,7 +1306,10 @@ bool LibraryCallKit::inline_preconditions_checkFromIndexSize(BasicType bt) {
   Node* casted_size = insert_non_negative_check(*this, size, BoolTest::ge, bt);
 
   // 2) length + 1 > 0 — guard ensuring length >= 0 and producing [1, MAX] type for RCE.
-  //    Limitation: deopts when length = MAX_VALUE (length + 1 overflows).
+  // FIXME: RCE only recognizes patterns with strict <. We implement <= by incrementing RHS. This
+  //        will cause type widening / runtime overflow when length is max_jint or max_jlong. This
+  //        is caught by next non-negative check and will cause de-opt. This is acceptable since it
+  //        rarely happens and de-opt still produces correct result.
   Node* length_plus_one = _gvn.transform(AddNode::make(length, _gvn.integercon(1, bt), bt));
   Node* casted_length_plus_one = insert_non_negative_check(*this, length_plus_one, BoolTest::gt, bt);
 
@@ -1333,7 +1336,6 @@ bool LibraryCallKit::inline_preconditions_checkFromIndexSize(BasicType bt) {
   set_result(casted_from);
   return true;
 }
-
 
 // checkFromToIndex(from, to, length): !(from < 0 || from > to || to > length)
 //                                  => from >= 0 && from <= to && to <= length
@@ -1373,7 +1375,10 @@ bool LibraryCallKit::inline_preconditions_checkFromToIndex(BasicType bt) {
   Node* length = bt == T_INT ? argument(2) : argument(4);
 
   // 1) length + 1 > 0 — guard ensuring length >= 0 and producing [1, MAX] type for RCE.
-  //    Limitation: deopts when length = MAX_VALUE (length + 1 overflows).
+  // FIXME: RCE only recognizes patterns with strict <. We implement <= by incrementing RHS. This
+  //        will cause type widening / runtime overflow when length is max_jint or max_jlong. This
+  //        is caught by next non-negative check and will cause de-opt. This is acceptable since it
+  //        rarely happens and de-opt still produces correct result.
   Node* length_plus_one = _gvn.transform(AddNode::make(length, _gvn.integercon(1, bt), bt));
   Node* casted_length_plus_one = insert_non_negative_check(*this, length_plus_one, BoolTest::gt, bt);
 
