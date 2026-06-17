@@ -55,7 +55,7 @@ public class TestXEmbedServerJava extends TestXEmbedServer {
             "  - Drag the text in the client text field and drop it to the left or right of the existing text within the same text field.\n" +
             "  - Drag the text from the client text field to the server text field.\n" +
             "  - Drag the text from the server text field to the client text field.\n";
-	Frame f = new Frame("Instructions");
+	    Frame f = new Frame("Instructions");
         f.setLayout(new BorderLayout());
         f.add(new TextArea(instruction), BorderLayout.CENTER);
         f.pack();
