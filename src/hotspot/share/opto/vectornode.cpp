@@ -874,6 +874,7 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, Node* n3, const TypeV
   case Op_SignumVD: return new SignumVDNode(n1, n2, n3, vt);
   case Op_SignumVF: return new SignumVFNode(n1, n2, n3, vt);
   case Op_VectorBlend: return new VectorBlendNode(n1, n2, n3);
+  case Op_VectorBitwiseBlend: return new VectorBitwiseBlendNode(n1, n2, n3, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return nullptr;
@@ -2768,6 +2769,70 @@ Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
   return res;
 }
 
+// XorV(a, AndV(sel, XorV(a, b)))       => VectorBitwiseBlend(a, b, sel)
+// XorV(a, AndV(sel, XorV(a, b)), mask) =>
+//   VectorBlend(a, VectorBitwiseBlend(a, b, sel), mask)
+Node* XorVNode::Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_reshape) {
+  const TypeVect* vt = vect_type();
+  BasicType bt = vt->element_basic_type();
+  uint vlen = vt->length();
+  if (!Matcher::match_rule_supported_vector(Op_VectorBitwiseBlend, vlen, bt)) {
+    return nullptr;
+  }
+
+  bool is_masked = is_predicated_vector();
+  if (is_masked &&
+      !Matcher::match_rule_supported_vector(Op_VectorBlend, vlen, bt)) {
+    return nullptr;
+  }
+
+  // For the predicated case in(1) is fixed as the merge source. Otherwise the
+  // outer XorV is commutative.
+  Node* a = nullptr;
+  Node* andv = nullptr;
+  if (is_masked || in(2)->Opcode() == Op_AndV) {
+    andv = in(2);
+    a = in(1);
+  } else {
+    andv = in(1);
+    a = in(2);
+  }
+  if (andv->Opcode() != Op_AndV || andv->is_predicated_vector()) {
+    return nullptr;
+  }
+
+  Node* sel = nullptr;
+  Node* inner_xor = nullptr;
+  if (andv->in(2)->Opcode() == Op_XorV) {
+    inner_xor = andv->in(2);
+    sel = andv->in(1);
+  } else if (andv->in(1)->Opcode() == Op_XorV) {
+    inner_xor = andv->in(1);
+    sel = andv->in(2);
+  } else {
+    return nullptr;
+  }
+  if (inner_xor->is_predicated_vector()) {
+    return nullptr;
+  }
+
+  Node* b = nullptr;
+  if (inner_xor->in(1) == a) {
+    b = inner_xor->in(2);
+  } else if (inner_xor->in(2) == a) {
+    b = inner_xor->in(1);
+  } else {
+    return nullptr;
+  }
+
+  Node* blend = new VectorBitwiseBlendNode(a, b, sel, vt);
+  if (!is_masked) {
+    return blend;
+  }
+  blend = phase->transform(blend);
+  return new VectorBlendNode(a, blend, in(3));
+}
+
 Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // (XorV src src)      => (Replicate zero)
   // (XorVMask src src)  => (MaskAll zero)
@@ -2783,6 +2848,11 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   Node* res = Ideal_XorV_VectorMaskCmp(phase, can_reshape);
+  if (res != nullptr) {
+    return res;
+  }
+
+  res = Ideal_XorV_to_VectorBitwiseBlend(phase, can_reshape);
   if (res != nullptr) {
     return res;
   }
