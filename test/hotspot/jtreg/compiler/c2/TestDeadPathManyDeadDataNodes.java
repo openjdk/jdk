@@ -682,7 +682,7 @@ public class TestDeadPathManyDeadDataNodes {
     static int lastInlined() {
         return -1;
     }
-    
+
     static int inlined1(boolean boolParam, int intParam,  int arrayLength, int count) {
         int res = 0;
         switch (intParam) {
