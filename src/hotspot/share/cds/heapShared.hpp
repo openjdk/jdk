@@ -66,21 +66,12 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   // For each entry field, it is a tuple of field_offset, field_value
   GrowableArray<int>* _subgraph_entry_fields;
 
-  // Does this KlassSubGraphInfo belong to the archived full module graph
-  bool _is_full_module_graph;
-
-  // Does this KlassSubGraphInfo references any classes that were loaded while
-  // JvmtiExport::is_early_phase()!=true. If so, this KlassSubGraphInfo cannot be
-  // used at runtime if JVMTI ClassFileLoadHook is enabled.
-  bool _has_non_early_klasses;
   static bool is_non_early_klass(Klass* k);
   static void check_allowed_klass(InstanceKlass* ik);
  public:
-  KlassSubGraphInfo(Klass* k, bool is_full_module_graph) :
+  KlassSubGraphInfo(Klass* k) :
     _k(k),  _subgraph_object_klasses(nullptr),
-    _subgraph_entry_fields(nullptr),
-    _is_full_module_graph(is_full_module_graph),
-    _has_non_early_klasses(false) {}
+    _subgraph_entry_fields(nullptr) {}
 
   ~KlassSubGraphInfo() {
     if (_subgraph_object_klasses != nullptr) {
@@ -104,8 +95,6 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
     return _subgraph_object_klasses == nullptr ? 0 :
            _subgraph_object_klasses->length();
   }
-  bool is_full_module_graph() const { return _is_full_module_graph; }
-  bool has_non_early_klasses() const { return _has_non_early_klasses; }
 };
 
 // An archived record of object sub-graphs reachable from static
@@ -114,7 +103,6 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
 class ArchivedKlassSubGraphInfoRecord {
  private:
   Klass* _k;
-  bool _is_full_module_graph;
   bool _has_non_early_klasses;
 
   // contains pairs of field offset and value for each subgraph entry field
@@ -130,7 +118,6 @@ class ArchivedKlassSubGraphInfoRecord {
   Klass* klass() const { return _k; }
   Array<int>* entry_field_records() const { return _entry_field_records; }
   Array<Klass*>* subgraph_object_klasses() const { return _subgraph_object_klasses; }
-  bool is_full_module_graph() const { return _is_full_module_graph; }
   bool has_non_early_klasses() const { return _has_non_early_klasses; }
 };
 #endif // INCLUDE_CDS_JAVA_HEAP
@@ -270,8 +257,7 @@ private:
 
   static CachedOopInfo make_cached_oop_info(oop obj, oop referrer);
   static ArchivedKlassSubGraphInfoRecord* archive_subgraph_info(KlassSubGraphInfo* info);
-  static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
-                                       bool is_full_module_graph);
+  static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[]);
 
   // Archive object sub-graph starting from the given static field
   // in Klass k's mirror.
@@ -285,7 +271,7 @@ private:
   static void verify_subgraph_from(oop orig_obj) PRODUCT_RETURN;
   static void check_special_subgraph_classes();
 
-  static KlassSubGraphInfo* init_subgraph_info(Klass *k, bool is_full_module_graph);
+  static KlassSubGraphInfo* init_subgraph_info(Klass *k);
   static KlassSubGraphInfo* get_subgraph_info(Klass *k);
 
   static void init_subgraph_entry_fields(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
@@ -340,8 +326,7 @@ private:
   static size_t _num_total_recorded_klasses;
   static size_t _num_total_verifications;
 
-  static void start_recording_subgraph(InstanceKlass *k, const char* klass_name,
-                                       bool is_full_module_graph);
+  static void start_recording_subgraph(InstanceKlass *k, const char* klass_name);
   static void done_recording_subgraph(InstanceKlass *k, const char* klass_name);
 
   static bool has_been_seen_during_subgraph_recording(oop obj);
@@ -466,6 +451,7 @@ private:
   static void write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info) NOT_CDS_JAVA_HEAP_RETURN;
   static objArrayOop scratch_resolved_references(ConstantPool* src);
   static void add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) NOT_CDS_JAVA_HEAP_RETURN;
+  static void remove_scratch_resolved_references(ConstantPool* src) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_dumping() NOT_CDS_JAVA_HEAP_RETURN;
   static void init_scratch_objects_for_basic_type_mirrors(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_box_classes(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;

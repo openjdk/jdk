@@ -23,7 +23,6 @@
  */
 
 #include "cds/aotClassLocation.hpp"
-#include "cds/aotGrowableArray.inline.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -168,7 +167,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
   } else {
     if (reads() == nullptr) {
       // Lazily create a module's reads list
-      AOTGrowableArray<ModuleEntry*>* new_reads = new (mtModule) AOTGrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
+      GrowableArray<ModuleEntry*>* new_reads = new (mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
       set_reads(new_reads);
     }
 

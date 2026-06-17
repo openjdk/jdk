@@ -276,9 +276,6 @@ void VM_ThreadDump::doit_epilogue() {
 }
 
 // Hash table of int64_t to a list of ObjectMonitor* owned by the JavaThread.
-// The JavaThread's owner key is either a JavaThread* or a stack lock
-// address in the JavaThread so we use "int64_t".
-//
 class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
  private:
   static unsigned int ptr_hash(int64_t const& s1) {
@@ -512,20 +509,7 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
       if (thr!=thr_cur && thr->thread_state() == _thread_in_native) {
         num_active++;
         if (thr->is_Compiler_thread()) {
-#if INCLUDE_JVMCI
-          CompilerThread* ct = (CompilerThread*) thr;
-          if (ct->compiler() == nullptr || !ct->compiler()->is_jvmci()) {
-            num_active_compiler_thread++;
-          } else {
-            // A JVMCI compiler thread never accesses VM data structures
-            // while in _thread_in_native state so there's no need to wait
-            // for it and potentially add a 300 millisecond delay to VM
-            // shutdown.
-            num_active--;
-          }
-#else
           num_active_compiler_thread++;
-#endif
         }
       }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2251,9 +2251,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // but not necessarily exactly of type default_type.
     NearLabel known_ok, halt;
     metadata2reg(default_type->constant_encoding(), tmp);
-    if (UseCompressedClassPointers) {
-      __ encode_klass_not_null(tmp);
-    }
+    __ encode_klass_not_null(tmp);
 
     if (basic_type != T_OBJECT) {
       __ cmp_klass(tmp, dst, Z_R1_scratch);
@@ -2415,32 +2413,9 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
 }
 
 void LIR_Assembler::type_profile_helper(Register mdo, ciMethodData *md, ciProfileData *data,
-                                        Register recv, Register tmp1, Label* update_done) {
-  uint i;
-  for (i = 0; i < VirtualCallData::row_limit(); i++) {
-    Label next_test;
-    // See if the receiver is receiver[n].
-    Address receiver_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i)));
-    __ z_cg(recv, receiver_addr);
-    __ z_brne(next_test);
-    Address data_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)));
-    __ add2mem_64(data_addr, DataLayout::counter_increment, tmp1);
-    __ branch_optimized(Assembler::bcondAlways, *update_done);
-    __ bind(next_test);
-  }
-
-  // Didn't find receiver; find next empty slot and fill it in.
-  for (i = 0; i < VirtualCallData::row_limit(); i++) {
-    Label next_test;
-    Address recv_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i)));
-    __ z_ltg(Z_R0_scratch, recv_addr);
-    __ z_brne(next_test);
-    __ z_stg(recv, recv_addr);
-    __ load_const_optimized(tmp1, DataLayout::counter_increment);
-    __ z_stg(tmp1, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)), mdo);
-    __ branch_optimized(Assembler::bcondAlways, *update_done);
-    __ bind(next_test);
-  }
+                                        Register recv, Register tmp1) {
+  int mdp_offset = md->byte_offset_of_slot(data, in_ByteSize(0));
+  __ profile_receiver_type(recv, mdo, mdp_offset, tmp1);
 }
 
 void LIR_Assembler::setup_md_access(ciMethod* method, int bci,
@@ -2512,13 +2487,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ branch_optimized(Assembler::bcondAlways, *obj_is_null);
     __ bind(not_null);
 
-    NearLabel update_done;
     Register recv = k_RInfo;
     __ load_klass(recv, obj);
-    type_profile_helper(mdo, md, data, recv, Rtmp1, &update_done);
-    Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-    __ add2mem_64(counter_addr, DataLayout::counter_increment, Rtmp1);
-    __ bind(update_done);
+    type_profile_helper(mdo, md, data, recv, Rtmp1);
   } else {
     __ compareU64_and_branch(obj, (intptr_t) 0, Assembler::bcondEqual, *obj_is_null);
   }
@@ -2540,13 +2511,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   // Get object class.
   // Not a safepoint as obj null check happens earlier.
   if (op->fast_check()) {
-    if (UseCompressedClassPointers) {
-      __ load_klass(klass_RInfo, obj);
-      __ compareU64_and_branch(k_RInfo, klass_RInfo, Assembler::bcondNotEqual, *failure_target);
-    } else {
-      __ z_cg(k_RInfo, Address(obj, oopDesc::klass_offset_in_bytes()));
-      __ branch_optimized(Assembler::bcondNotEqual, *failure_target);
-    }
+    __ load_klass(klass_RInfo, obj);
+    __ compareU64_and_branch(k_RInfo, klass_RInfo, Assembler::bcondNotEqual, *failure_target);
     // Successful cast, fall through to profile or jump.
   } else {
     bool need_slow_path = !k->is_loaded() ||
@@ -2613,13 +2579,9 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ branch_optimized(Assembler::bcondAlways, done);
       __ bind(not_null);
 
-      NearLabel update_done;
       Register recv = k_RInfo;
       __ load_klass(recv, value);
-      type_profile_helper(mdo, md, data, recv, Rtmp1, &update_done);
-      Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-      __ add2mem_64(counter_addr, DataLayout::counter_increment, Rtmp1);
-      __ bind(update_done);
+      type_profile_helper(mdo, md, data, recv, Rtmp1);
     } else {
       __ compareU64_and_branch(value, (intptr_t) 0, Assembler::bcondEqual, done);
     }
@@ -2779,11 +2741,8 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
       // statically update the MethodData* rather than needing to do
       // dynamic tests on the receiver type.
 
-      // NOTE: we should probably put a lock around this search to
-      // avoid collisions by concurrent compilations.
       ciVirtualCallData* vc_data = (ciVirtualCallData*) data;
-      uint i;
-      for (i = 0; i < VirtualCallData::row_limit(); i++) {
+      for (uint i = 0; i < VirtualCallData::row_limit(); i++) {
         ciKlass* receiver = vc_data->receiver(i);
         if (known_klass->equals(receiver)) {
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
@@ -2791,32 +2750,13 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
           return;
         }
       }
-
-      // Receiver type not found in profile data. Select an empty slot.
-
-      // Note that this is less efficient than it should be because it
-      // always does a write to the receiver part of the
-      // VirtualCallData rather than just the first time.
-      for (i = 0; i < VirtualCallData::row_limit(); i++) {
-        ciKlass* receiver = vc_data->receiver(i);
-        if (receiver == nullptr) {
-          Address recv_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)));
-          metadata2reg(known_klass->constant_encoding(), tmp1);
-          __ z_stg(tmp1, recv_addr);
-          Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          __ add2mem_64(data_addr, DataLayout::counter_increment, tmp1);
-          return;
-        }
-      }
+      // Receiver type is not found in profile data.
+      // Fall back to runtime helper to handle the rest at runtime.
+      metadata2reg(known_klass->constant_encoding(), recv);
     } else {
       __ load_klass(recv, recv);
-      NearLabel update_done;
-      type_profile_helper(mdo, md, data, recv, tmp1, &update_done);
-      // Receiver did not match any saved receiver and there is no empty row for it.
-      // Increment total counter to indicate polymorphic case.
-      __ add2mem_64(counter_addr, DataLayout::counter_increment, tmp1);
-      __ bind(update_done);
     }
+    type_profile_helper(mdo, md, data, recv, tmp1);
   } else {
     // static call
     __ add2mem_64(counter_addr, DataLayout::counter_increment, tmp1);
@@ -2891,10 +2831,23 @@ void LIR_Assembler::on_spin_wait() {
 }
 
 void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest, LIR_PatchCode patch_code, CodeEmitInfo* info) {
-  assert(patch_code == lir_patch_none, "Patch code not supported");
+  assert(addr_opr->is_address(), "must be an address");
+  assert(dest->is_register(), "must be a register");
+
   LIR_Address* addr = addr_opr->as_address_ptr();
+  Register reg = dest->as_pointer_register();
   assert(addr->scale() == LIR_Address::times_1, "scaling unsupported");
-  __ load_address(dest->as_pointer_register(), as_Address(addr));
+
+  if (addr->index()->is_illegal() && patch_code != lir_patch_none) {
+    PatchingStub* patch = new PatchingStub(_masm, PatchingStub::access_field_id);
+
+    // TODO: Use load_const_32to64 here by extending NativeMovRegMem to support both instruction patterns.
+    __ load_const(Z_R0_scratch, (intptr_t)0);
+    __ z_agrk(reg, addr->base()->as_pointer_register(), Z_R0_scratch);
+    patching_epilog(patch, patch_code, addr->base()->as_register(), info);
+  } else {
+    __ load_address(reg, as_Address(addr));
+  }
 }
 
 void LIR_Assembler::get_thread(LIR_Opr result_reg) {

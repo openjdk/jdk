@@ -466,6 +466,17 @@ void ShenandoahAsserts::assert_not_in_cset_loc(void* interior_loc, const char* f
   }
 }
 
+void ShenandoahAsserts::assert_in_young(void* interior_loc, oop obj, const char* file, int line) {
+  assert_correct(interior_loc, obj, file, line);
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->heap_region_containing(obj)->is_young()) {
+    print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_in_young failed",
+                  "Object should be in young region",
+                  file, line);
+  }
+}
+
 void ShenandoahAsserts::print_rp_failure(const char *label, BoolObjectClosure* actual,
                                          const char *file, int line) {
   ShenandoahMessageBuffer msg("%s\n", label);
@@ -559,26 +570,24 @@ bool ShenandoahAsserts::extract_klass_safely(oop obj, narrowKlass& nk, const Kla
   if (!os::is_readable_pointer(obj)) {
     return false;
   }
-  if (UseCompressedClassPointers) {
-    if (UseCompactObjectHeaders) { // look in forwardee
-      markWord mark = obj->mark();
-      if (mark.is_marked()) {
-        oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
-        if (!os::is_readable_pointer(fwd)) {
-          return false;
-        }
-        mark = fwd->mark();
+
+  if (UseCompactObjectHeaders) { // look in forwardee
+    markWord mark = obj->mark();
+    if (mark.is_marked()) {
+      oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
+      if (!os::is_readable_pointer(fwd)) {
+        return false;
       }
-      nk = mark.narrow_klass();
-    } else {
-      nk = obj->narrow_klass();
+      mark = fwd->mark();
     }
-    if (!CompressedKlassPointers::is_valid_narrow_klass_id(nk)) {
-      return false;
-    }
-    k = CompressedKlassPointers::decode_not_null_without_asserts(nk);
+    nk = mark.narrow_klass();
   } else {
-    k = obj->klass();
+    nk = obj->narrow_klass();
   }
+  if (!CompressedKlassPointers::is_valid_narrow_klass_id(nk)) {
+    return false;
+  }
+  k = CompressedKlassPointers::decode_not_null_without_asserts(nk);
+
   return k != nullptr;
 }

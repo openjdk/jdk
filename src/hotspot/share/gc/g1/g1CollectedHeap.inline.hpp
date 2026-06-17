@@ -28,7 +28,6 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 
 #include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"

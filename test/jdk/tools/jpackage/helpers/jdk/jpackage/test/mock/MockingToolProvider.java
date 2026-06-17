@@ -160,5 +160,5 @@ abstract sealed class MockingToolProvider implements ToolProviderCommandMock {
     private final String name;
     private final Iterator<CommandAction> actionIter;
 
-    static ToolProviderCommandMock UNREACHABLE = new MockingToolProvider.NonCompletable("<unreachable>", List.of());
+    static final ToolProviderCommandMock UNREACHABLE = new MockingToolProvider.NonCompletable("<unreachable>", List.of());
 }

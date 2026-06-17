@@ -60,6 +60,10 @@ abstract public class CDSAppTester {
     private boolean generateBaseArchive = false;
     private String[] baseArchiveOptions = new String[0];
 
+    public String aotCacheFile() {
+        return this.aotCacheFile;
+    }
+
     /**
      * All files created in the CDS/AOT workflow will be name + extension. E.g.
      * - name.aot
@@ -480,10 +484,19 @@ abstract public class CDSAppTester {
     // See JEP 483
     public void runAOTWorkflow(String... args) throws Exception {
         this.workflow = Workflow.AOT;
-        boolean oneStepTraining = true; // by default use onestep trainning
+
+        // By default use twostep training -- tests are much easier to write this way, as
+        // the stdout/stderr of the training run is clearly separated from the assembly phase.
+        //
+        // Many older test cases written before JEP 514 were not aware of one step treaining
+        // and may not check the stdout/stderr correctly.
+        boolean oneStepTraining = false;
 
         if (System.getProperty("CDSAppTester.two.step.training") != null) {
             oneStepTraining = false;
+        }
+        if (System.getProperty("CDSAppTester.one.step.training") != null) {
+            oneStepTraining = true;
         }
 
         if (args.length > 1) {

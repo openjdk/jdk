@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,7 @@ public class WindowsTreeUI extends BasicTreeUI {
      * The plus sign button icon
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public static final class CollapsedIcon extends ExpandedIcon {
+    public static class CollapsedIcon extends ExpandedIcon {
         public static Icon createCollapsedIcon() {
             return new CollapsedIcon();
         }
@@ -185,7 +185,7 @@ public class WindowsTreeUI extends BasicTreeUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public final class WindowsTreeCellRenderer extends DefaultTreeCellRenderer {
+    public class WindowsTreeCellRenderer extends DefaultTreeCellRenderer {
 
         /**
          * Configures the renderer based on the passed in components.

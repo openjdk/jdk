@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,8 +241,15 @@ typedef struct jzfile {   /* Zip file */
  */
 #define ZIP_ENDCHAIN ((jint)-1)
 
+/*
+ * Returns the ZIP entry corresponding to the given (NULL terminated)
+ * entry name. Returns NULL if no entry is found by that name.
+ * If the entry is found, then the value of the given sizeP will be
+ * updated to the ZIP entry's size and the value of nameLenP will be
+ * updated to the ZIP entry name's length.
+ */
 JNIEXPORT jzentry *
-ZIP_FindEntry(jzfile *zip, char *name, jint *sizeP, jint *nameLenP);
+ZIP_FindEntry(jzfile *zip, const char *name, jint *sizeP, jint *nameLenP);
 
 JNIEXPORT jboolean
 ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entrynm);
@@ -268,8 +275,12 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified, 
 JNIEXPORT void
 ZIP_Close(jzfile *zip);
 
+/*
+ * Returns the ZIP entry corresponding to the given (NULL terminated)
+ * entry name. Returns NULL if no entry is found by that name.
+ */
 jzentry *
-ZIP_GetEntry(jzfile *zip, char *name, jint ulen);
+ZIP_GetEntry(jzfile *zip, const char *name);
 void
 ZIP_Lock(jzfile *zip);
 void
@@ -279,7 +290,6 @@ ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len);
 JNIEXPORT void
 ZIP_FreeEntry(jzfile *zip, jzentry *ze);
 jlong ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry);
-jzentry * ZIP_GetEntry2(jzfile *zip, char *name, jint ulen, jboolean addSlash);
 
 JNIEXPORT jboolean
 ZIP_InflateFully(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pmsg);

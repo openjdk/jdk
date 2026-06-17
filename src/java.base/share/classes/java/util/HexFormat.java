@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,7 @@
 
 package java.util;
 
+import jdk.internal.ValueBased;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.HexDigits;
@@ -134,7 +135,7 @@ import java.nio.CharBuffer;
  * @since 17
  */
 
-
+@ValueBased
 public final class HexFormat {
 
     // Access to create strings from a byte array.

@@ -194,6 +194,7 @@ void CardTable::resize_covered_region(MemRegion new_region) {
 // Note that these versions are precise!  The scanning code has to handle the
 // fact that the write barrier may be either precise or imprecise.
 void CardTable::dirty_MemRegion(MemRegion mr) {
+  assert(!mr.is_empty(), "precondition");
   assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
   assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
   assert(_covered[0].contains(mr) || _covered[1].contains(mr), "precondition");
@@ -203,6 +204,7 @@ void CardTable::dirty_MemRegion(MemRegion mr) {
 }
 
 void CardTable::clear_MemRegion(MemRegion mr) {
+  assert(!mr.is_empty(), "precondition");
   // Be conservative: only clean cards entirely contained within the
   // region.
   CardValue* cur;

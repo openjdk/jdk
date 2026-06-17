@@ -320,6 +320,13 @@ class GraphKit : public Phase {
   }
   Node* basic_plus_adr(Node* base, Node* ptr, Node* offset);
 
+  Node* off_heap_plus_addr(Node* ptr, intptr_t offset) {
+    return basic_plus_adr(top(), ptr, MakeConX(offset));
+  }
+
+  Node* off_heap_plus_addr(Node* ptr, Node* offset) {
+    return basic_plus_adr(top(), ptr, offset);
+  }
 
   // Some convenient shortcuts for common nodes
   Node* IfTrue(IfNode* iff)                   { return _gvn.transform(new IfTrueNode(iff));      }
@@ -346,7 +353,7 @@ class GraphKit : public Phase {
   Node* CmpP(Node* l, Node* r)                { return _gvn.transform(new CmpPNode(l, r));       }
   Node* Bool(Node* cmp, BoolTest::mask relop) { return _gvn.transform(new BoolNode(cmp, relop)); }
 
-  Node* AddP(Node* b, Node* a, Node* o)       { return _gvn.transform(new AddPNode(b, a, o));    }
+  Node* AddP(Node* b, Node* a, Node* o)       { return _gvn.transform(AddPNode::make_with_base(b, a, o)); }
 
   // Convert between int and long, and size_t.
   // (See macros ConvI2X, etc., in type.hpp for ConvI2X, etc.)
@@ -798,6 +805,7 @@ class GraphKit : public Phase {
   int next_monitor();
   Node* insert_mem_bar(int opcode, Node* precedent = nullptr);
   Node* insert_mem_bar_volatile(int opcode, int alias_idx, Node* precedent = nullptr);
+  Node* insert_reachability_fence(Node* referent);
   // Optional 'precedent' is appended as an extra edge, to force ordering.
   FastLockNode* shared_lock(Node* obj);
   void shared_unlock(Node* box, Node* obj);
@@ -845,7 +853,8 @@ class GraphKit : public Phase {
   Node* load_String_coder(Node* str, bool set_ctrl);
   void store_String_value(Node* str, Node* value);
   void store_String_coder(Node* str, Node* value);
-  Node* capture_memory(const TypePtr* src_type, const TypePtr* dst_type);
+  Node* capture_memory(const TypePtr*& combined_type, const TypePtr* src_type, const TypePtr* dst_type);
+  void memory_effect(Node* res_mem, const TypePtr* src_type, const TypePtr* dst_type);
   Node* compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count);
   void inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, Node* count);
   void inflate_string_slow(Node* src, Node* dst, Node* start, Node* count);

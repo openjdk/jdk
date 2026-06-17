@@ -57,6 +57,8 @@ import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.sasl.SaslException;
 
+import jdk.internal.misc.InnocuousThread;
+
 /**
   * A thread that creates a connection to an LDAP server.
   * After the connection, the thread reads from the connection.
@@ -112,9 +114,6 @@ import javax.security.sasl.SaslException;
   * for v2.
   * %%% made public for access by LdapSasl %%%
   *
-  * @author Vincent Ryan
-  * @author Rosanna Lee
-  * @author Jagane Sundar
   */
 public final class Connection implements Runnable {
 
@@ -254,7 +253,7 @@ public final class Connection implements Runnable {
             throw ce;
         }
 
-        worker = new Thread(this);
+        worker = InnocuousThread.newSystemThread("LDAP Connection", this);
         worker.setDaemon(true);
         worker.start();
     }
@@ -912,7 +911,7 @@ public final class Connection implements Runnable {
     //
     ////////////////////////////////////////////////////////////////////////////
 
-
+    @Override
     public void run() {
         byte inbuf[];   // Buffer for reading incoming bytes
         int inMsgId;    // Message id of incoming response

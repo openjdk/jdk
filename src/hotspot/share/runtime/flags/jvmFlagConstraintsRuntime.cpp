@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,11 @@ JVMFlag::Error AOTModeConstraintFunc(ccstr value, bool verbose) {
       strcmp(value, "record") != 0 &&
       strcmp(value, "create") != 0 &&
       strcmp(value, "auto") != 0 &&
+      strcmp(value, "required") != 0 &&
       strcmp(value, "on") != 0) {
     JVMFlag::printError(verbose,
                         "Unrecognized value %s for AOTMode. Must be one of the following: "
-                        "off, record, create, auto, on\n",
+                        "off, record, create, auto, on, required\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -153,6 +154,20 @@ JVMFlag::Error OnSpinWaitInstNameConstraintFunc(ccstr value, bool verbose) {
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
+#ifdef LINUX
+  if (strcmp(value, "wfet") == 0) {
+    if (UnlockExperimentalVMOptions) {
+      return JVMFlag::SUCCESS;
+    } else {
+      JVMFlag::printError(verbose,
+                          "'wfet' value for OnSpinWaitInst is experimental and "
+                          "must be enabled via -XX:+UnlockExperimentalVMOptions.\n"
+                          "Error: The unlock option must precede 'OnSpinWaitInst'.\n");
+      return JVMFlag::VIOLATES_CONSTRAINT;
+    }
+  }
+#endif
+
   if (strcmp(value, "nop")   != 0 &&
       strcmp(value, "isb")   != 0 &&
       strcmp(value, "yield") != 0 &&
@@ -160,7 +175,7 @@ JVMFlag::Error OnSpinWaitInstNameConstraintFunc(ccstr value, bool verbose) {
       strcmp(value, "none")  != 0) {
     JVMFlag::printError(verbose,
                         "Unrecognized value %s for OnSpinWaitInst. Must be one of the following: "
-                        "nop, isb, yield, sb, none\n",
+                        "nop, isb, yield, sb," LINUX_ONLY(" wfet,") " none\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }

@@ -39,6 +39,7 @@
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/methodData.hpp"
 #include "prims/methodHandles.hpp"
 #include "registerSaver_s390.hpp"
 #include "runtime/icache.hpp"
@@ -1237,7 +1238,6 @@ void MacroAssembler::load_narrow_oop(Register t, narrowOop a) {
 
 // Load narrow klass constant, compression required.
 void MacroAssembler::load_narrow_klass(Register t, Klass* k) {
-  assert(UseCompressedClassPointers, "must be on to call this method");
   narrowKlass encoded_k = CompressedKlassPointers::encode(k);
   load_const_32to64(t, encoded_k, false /*sign_extend*/);
 }
@@ -1255,7 +1255,6 @@ void MacroAssembler::compare_immediate_narrow_oop(Register oop1, narrowOop oop2)
 
 // Compare narrow oop in reg with narrow oop constant, no decompression.
 void MacroAssembler::compare_immediate_narrow_klass(Register klass1, Klass* klass2) {
-  assert(UseCompressedClassPointers, "must be on to call this method");
   narrowKlass encoded_k = CompressedKlassPointers::encode(klass2);
 
   Assembler::z_clfi(klass1, encoded_k);
@@ -1348,8 +1347,6 @@ int MacroAssembler::patch_load_narrow_oop(address pos, oop o) {
 // Patching the immediate value of CPU version dependent load_narrow_klass sequence.
 // The passed ptr must NOT be in compressed format!
 int MacroAssembler::patch_load_narrow_klass(address pos, Klass* k) {
-  assert(UseCompressedClassPointers, "Can only patch compressed klass pointers");
-
   narrowKlass nk = CompressedKlassPointers::encode(k);
   return patch_load_const_32to64(pos, nk);
 }
@@ -1364,8 +1361,6 @@ int MacroAssembler::patch_compare_immediate_narrow_oop(address pos, oop o) {
 // Patching the immediate value of CPU version dependent compare_immediate_narrow_klass sequence.
 // The passed ptr must NOT be in compressed format!
 int MacroAssembler::patch_compare_immediate_narrow_klass(address pos, Klass* k) {
-  assert(UseCompressedClassPointers, "Can only patch compressed klass pointers");
-
   narrowKlass nk = CompressedKlassPointers::encode(k);
   return patch_compare_immediate_32(pos, nk);
 }
@@ -2235,10 +2230,8 @@ int MacroAssembler::ic_check(int end_alignment) {
 
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(R1_scratch, R2_receiver);
-  } else if (UseCompressedClassPointers) {
-    z_llgf(R1_scratch, Address(R2_receiver, oopDesc::klass_offset_in_bytes()));
   } else {
-    z_lg(R1_scratch, Address(R2_receiver, oopDesc::klass_offset_in_bytes()));
+    z_llgf(R1_scratch, Address(R2_receiver, oopDesc::klass_offset_in_bytes()));
   }
   z_cg(R1_scratch, Address(R9_data, in_bytes(CompiledICData::speculated_klass_offset())));
   z_bre(success);
@@ -3916,7 +3909,6 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   address  base    = CompressedKlassPointers::base();
   int      shift   = CompressedKlassPointers::shift();
   bool     need_zero_extend = base != nullptr;
-  assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
   BLOCK_COMMENT("cKlass encoder {");
 
@@ -4013,7 +4005,6 @@ int MacroAssembler::instr_size_for_decode_klass_not_null() {
   address  base    = CompressedKlassPointers::base();
   int shift_size   = CompressedKlassPointers::shift() == 0 ? 0 : 6; /* sllg */
   int addbase_size = 0;
-  assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
   if (base != nullptr) {
     unsigned int base_h = ((unsigned long)base)>>32;
@@ -4043,7 +4034,6 @@ void MacroAssembler::decode_klass_not_null(Register dst) {
   address  base    = CompressedKlassPointers::base();
   int      shift   = CompressedKlassPointers::shift();
   int      beg_off = offset();
-  assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
   BLOCK_COMMENT("cKlass decoder (const size) {");
 
@@ -4085,7 +4075,6 @@ void MacroAssembler::decode_klass_not_null(Register dst) {
 void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   address base  = CompressedKlassPointers::base();
   int     shift = CompressedKlassPointers::shift();
-  assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
   BLOCK_COMMENT("cKlass decoder {");
 
@@ -4125,13 +4114,9 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
 }
 
 void MacroAssembler::load_klass(Register klass, Address mem) {
-  if (UseCompressedClassPointers) {
-    z_llgf(klass, mem);
-    // Attention: no null check here!
-    decode_klass_not_null(klass);
-  } else {
-    z_lg(klass, mem);
-  }
+  z_llgf(klass, mem);
+  // Attention: no null check here!
+  decode_klass_not_null(klass);
 }
 
 // Loads the obj's Klass* into dst.
@@ -4154,10 +4139,8 @@ void MacroAssembler::cmp_klass(Register klass, Register obj, Register tmp) {
     assert_different_registers(klass, obj, tmp);
     load_narrow_klass_compact(tmp, obj);
     z_cr(klass, tmp);
-  } else if (UseCompressedClassPointers) {
-    z_c(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
   } else {
-    z_cg(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
+    z_c(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
   }
   BLOCK_COMMENT("} cmp_klass");
 }
@@ -4170,12 +4153,9 @@ void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Regi
     load_narrow_klass_compact(tmp1, obj1);
     load_narrow_klass_compact(tmp2, obj2);
     z_cr(tmp1, tmp2);
-  } else if (UseCompressedClassPointers) {
+  } else {
     z_l(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
     z_c(tmp1, Address(obj2, oopDesc::klass_offset_in_bytes()));
-  } else {
-    z_lg(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
-    z_cg(tmp1, Address(obj2, oopDesc::klass_offset_in_bytes()));
   }
   BLOCK_COMMENT("} cmp_klasses_from_objects");
 }
@@ -4184,36 +4164,28 @@ void MacroAssembler::load_klass(Register klass, Register src_oop) {
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(klass, src_oop);
     decode_klass_not_null(klass);
-  } else if (UseCompressedClassPointers) {
+  } else {
     z_llgf(klass, oopDesc::klass_offset_in_bytes(), src_oop);
     decode_klass_not_null(klass);
-  } else {
-    z_lg(klass, oopDesc::klass_offset_in_bytes(), src_oop);
   }
 }
 
 void MacroAssembler::store_klass(Register klass, Register dst_oop, Register ck) {
   assert(!UseCompactObjectHeaders, "Don't use with compact headers");
-  if (UseCompressedClassPointers) {
-    assert_different_registers(dst_oop, klass, Z_R0);
-    if (ck == noreg) ck = klass;
-    encode_klass_not_null(ck, klass);
-    z_st(ck, Address(dst_oop, oopDesc::klass_offset_in_bytes()));
-  } else {
-    z_stg(klass, Address(dst_oop, oopDesc::klass_offset_in_bytes()));
-  }
+  assert_different_registers(dst_oop, klass, Z_R0);
+  if (ck == noreg) ck = klass;
+  encode_klass_not_null(ck, klass);
+  z_st(ck, Address(dst_oop, oopDesc::klass_offset_in_bytes()));
 }
 
 void MacroAssembler::store_klass_gap(Register s, Register d) {
   assert(!UseCompactObjectHeaders, "Don't use with compact headers");
-  if (UseCompressedClassPointers) {
-    assert(s != d, "not enough registers");
-    // Support s = noreg.
-    if (s != noreg) {
-      z_st(s, Address(d, oopDesc::klass_gap_offset_in_bytes()));
-    } else {
-      z_mvhi(Address(d, oopDesc::klass_gap_offset_in_bytes()), 0);
-    }
+  assert(s != d, "not enough registers");
+  // Support s = noreg.
+  if (s != noreg) {
+    z_st(s, Address(d, oopDesc::klass_gap_offset_in_bytes()));
+  } else {
+    z_mvhi(Address(d, oopDesc::klass_gap_offset_in_bytes()), 0);
   }
 }
 
@@ -4227,67 +4199,64 @@ void MacroAssembler::compare_klass_ptr(Register Rop1, int64_t disp, Register Rba
 
   BLOCK_COMMENT("compare klass ptr {");
 
-  if (UseCompressedClassPointers) {
-    const int shift = CompressedKlassPointers::shift();
-    address   base  = CompressedKlassPointers::base();
+  const int shift = CompressedKlassPointers::shift();
+  address   base  = CompressedKlassPointers::base();
 
-    if (UseCompactObjectHeaders) {
-      assert(shift >= 3, "cKlass encoder detected bad shift");
-    } else {
-      assert((shift == 0) || (shift == 3), "cKlass encoder detected bad shift");
-    }
-    assert_different_registers(Rop1, Z_R0);
-    assert_different_registers(Rop1, Rbase, Z_R1);
-
-    // First encode register oop and then compare with cOop in memory.
-    // This sequence saves an unnecessary cOop load and decode.
-    if (base == nullptr) {
-      if (shift == 0) {
-        z_cl(Rop1, disp, Rbase);     // Unscaled
-      } else {
-        z_srlg(Z_R0, Rop1, shift);   // ZeroBased
-        z_cl(Z_R0, disp, Rbase);
-      }
-    } else {                         // HeapBased
-#ifdef ASSERT
-      bool     used_R0 = true;
-      bool     used_R1 = true;
-#endif
-      Register current = Rop1;
-      Label    done;
-
-      if (maybenull) {       // null pointer must be preserved!
-        z_ltgr(Z_R0, current);
-        z_bre(done);
-        current = Z_R0;
-      }
-
-      unsigned int base_h = ((unsigned long)base)>>32;
-      unsigned int base_l = (unsigned int)((unsigned long)base);
-      if ((base_h != 0) && (base_l == 0) && VM_Version::has_HighWordInstr()) {
-        lgr_if_needed(Z_R0, current);
-        z_aih(Z_R0, -((int)base_h));     // Base has no set bits in lower half.
-      } else if ((base_h == 0) && (base_l != 0)) {
-        lgr_if_needed(Z_R0, current);
-        z_agfi(Z_R0, -(int)base_l);
-      } else {
-        int pow2_offset = get_oop_base_complement(Z_R1, ((uint64_t)(intptr_t)base));
-        add2reg_with_index(Z_R0, pow2_offset, Z_R1, Rop1); // Subtract base by adding complement.
-      }
-
-      if (shift != 0) {
-        z_srlg(Z_R0, Z_R0, shift);
-      }
-      bind(done);
-      z_cl(Z_R0, disp, Rbase);
-#ifdef ASSERT
-      if (used_R0) preset_reg(Z_R0, 0xb05bUL, 2);
-      if (used_R1) preset_reg(Z_R1, 0xb06bUL, 2);
-#endif
-    }
+  if (UseCompactObjectHeaders) {
+    assert(shift >= 3, "cKlass encoder detected bad shift");
   } else {
-    z_clg(Rop1, disp, Z_R0, Rbase);
+    assert((shift == 0) || (shift == 3), "cKlass encoder detected bad shift");
   }
+  assert_different_registers(Rop1, Z_R0);
+  assert_different_registers(Rop1, Rbase, Z_R1);
+
+  // First encode register oop and then compare with cOop in memory.
+  // This sequence saves an unnecessary cOop load and decode.
+  if (base == nullptr) {
+    if (shift == 0) {
+      z_cl(Rop1, disp, Rbase);     // Unscaled
+    } else {
+      z_srlg(Z_R0, Rop1, shift);   // ZeroBased
+      z_cl(Z_R0, disp, Rbase);
+    }
+  } else {                         // HeapBased
+#ifdef ASSERT
+    bool     used_R0 = true;
+    bool     used_R1 = true;
+#endif
+    Register current = Rop1;
+    Label    done;
+
+    if (maybenull) {       // null pointer must be preserved!
+      z_ltgr(Z_R0, current);
+      z_bre(done);
+      current = Z_R0;
+    }
+
+    unsigned int base_h = ((unsigned long)base)>>32;
+    unsigned int base_l = (unsigned int)((unsigned long)base);
+    if ((base_h != 0) && (base_l == 0) && VM_Version::has_HighWordInstr()) {
+      lgr_if_needed(Z_R0, current);
+      z_aih(Z_R0, -((int)base_h));     // Base has no set bits in lower half.
+    } else if ((base_h == 0) && (base_l != 0)) {
+      lgr_if_needed(Z_R0, current);
+      z_agfi(Z_R0, -(int)base_l);
+    } else {
+      int pow2_offset = get_oop_base_complement(Z_R1, ((uint64_t)(intptr_t)base));
+      add2reg_with_index(Z_R0, pow2_offset, Z_R1, Rop1); // Subtract base by adding complement.
+    }
+
+    if (shift != 0) {
+      z_srlg(Z_R0, Z_R0, shift);
+    }
+    bind(done);
+    z_cl(Z_R0, disp, Rbase);
+#ifdef ASSERT
+    if (used_R0) preset_reg(Z_R0, 0xb05bUL, 2);
+    if (used_R1) preset_reg(Z_R1, 0xb06bUL, 2);
+#endif
+  }
+
   BLOCK_COMMENT("} compare klass ptr");
 }
 
@@ -4737,16 +4706,8 @@ void MacroAssembler::oop_decoder(Register Rdst, Register Rsrc, bool maybenull, R
 }
 
 // ((OopHandle)result).resolve();
-void MacroAssembler::resolve_oop_handle(Register result) {
-  // OopHandle::resolve is an indirection.
-  z_lg(result, 0, result);
-}
-
-void MacroAssembler::load_mirror_from_const_method(Register mirror, Register const_method) {
-  mem2reg_opt(mirror, Address(const_method, ConstMethod::constants_offset()));
-  mem2reg_opt(mirror, Address(mirror, ConstantPool::pool_holder_offset()));
-  mem2reg_opt(mirror, Address(mirror, Klass::java_mirror_offset()));
-  resolve_oop_handle(mirror);
+void MacroAssembler::resolve_oop_handle(Register result, Register tmp1, Register tmp2) {
+  access_load_at(T_OBJECT, IN_NATIVE, Address(result, 0), result, tmp1, tmp2);
 }
 
 void MacroAssembler::load_method_holder(Register holder, Register method) {
@@ -5918,6 +5879,28 @@ void MacroAssembler::asm_assert_frame_size(Register expected_size, Register tmp,
 #endif // ASSERT
 }
 
+#ifdef ASSERT
+bool is_excluded(Register excluded_register[], Register reg, int n) {
+  for (int i = 0; i < n; i++) {
+    if (excluded_register[i] == reg) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void MacroAssembler::clobber_volatile_registers(Register excluded_register[], int n) {
+  const int magic_number = 0x82;
+
+  for (int i = 0; i < 6 /* R0 to R5 */; i++) {
+    Register reg = as_Register(i);
+    if (!is_excluded(excluded_register, reg, n)) {
+      load_const_optimized(reg, magic_number);
+    }
+  }
+}
+#endif // ASSERT
+
 // Save and restore functions: Exclude Z_R0.
 void MacroAssembler::save_volatile_regs(Register dst, int offset, bool include_fp, bool include_flags) {
   z_stmg(Z_R1, Z_R5, offset, dst); offset += 5 * BytesPerWord;
@@ -6413,7 +6396,7 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
       // Check if object matches.
       z_lg(tmp2, Address(tmp1_monitor, ObjectMonitor::object_offset()));
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_resolve_weak_handle(this, tmp2, Z_R0_scratch, slow_path);
+      bs_asm->try_peek_weak_handle_in_nmethod(this, tmp2, tmp2, Z_R0_scratch, slow_path);
       z_cgr(obj, tmp2);
       z_brne(slow_path);
 
@@ -6783,4 +6766,157 @@ void MacroAssembler::load_on_condition_imm_64(Register dst, int64_t i2, branch_c
     z_lghi(dst, i2);
     bind(done);
   }
+}
+
+// Handle the receiver type profile update given the "recv" klass.
+//
+// Normally updates the ReceiverData (RD) that starts at "mdp" + "mdp_offset".
+// If there are no matching or claimable receiver entries in RD, updates
+// the polymorphic counter.
+//
+// This code expected to run by either the interpreter or JIT-ed code, without
+// extra synchronization. For safety, receiver cells are claimed atomically, which
+// avoids grossly misrepresenting the profiles under concurrent updates. For speed,
+// counter updates are not atomic.
+//
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register scratch) {
+  Register r0_tmp = Z_R0_scratch;  // cannot be used in address calculation
+  assert_different_registers(recv, mdp, scratch, r0_tmp);
+
+  int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
+  int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
+  int poly_count_offset      = in_bytes(CounterData::count_offset());
+  int receiver_step          = in_bytes(ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
+  int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+
+  // Adjust for MDP offsets.
+  base_receiver_offset += mdp_offset;
+  end_receiver_offset  += mdp_offset;
+  poly_count_offset    += mdp_offset;
+
+#ifdef ASSERT
+  // We are about to walk the MDO slots without asking for offsets.
+  // Check that our math hits all the right spots.
+  for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
+    int real_recv_offset  = mdp_offset + in_bytes(ReceiverTypeData::receiver_offset(c));
+    int real_count_offset = mdp_offset + in_bytes(ReceiverTypeData::receiver_count_offset(c));
+    int offset = base_receiver_offset + receiver_step*c;
+    int count_offset = offset + receiver_to_count_step;
+    assert(offset == real_recv_offset, "receiver slot math");
+    assert(count_offset == real_count_offset, "receiver count math");
+  }
+  int real_poly_count_offset = mdp_offset + in_bytes(CounterData::count_offset());
+  assert(poly_count_offset == real_poly_count_offset, "poly counter math");
+#endif
+
+  // Corner case: no profile table. Increment poly counter and exit.
+  if (ReceiverTypeData::row_limit() == 0) {
+    add2mem_64(Address(mdp, poly_count_offset), DataLayout::counter_increment, scratch);
+    return;
+  }
+
+  NearLabel L_loop_search_receiver, L_loop_search_empty;
+  NearLabel L_restart, L_found_recv, L_found_empty, L_count_update;
+  Register offset = scratch;
+
+  // The code here recognizes three major cases:
+  //   A. Fastest: receiver found in the table
+  //   B. Fast: no receiver in the table, and the table is full
+  //   C. Slow: no receiver in the table, free slots in the table
+  //
+  // The case A performance is most important, as perfectly-behaved code would end up
+  // there, especially with larger TypeProfileWidth. The case B performance is
+  // important as well, this is where bulk of code would land for normally megamorphic
+  // cases. The case C performance is not essential, its job is to deal with installation
+  // races, we optimize for code density instead. Case C needs to make sure that receiver
+  // rows are only claimed once. This makes sure we never overwrite a row for another
+  // receiver and never duplicate the receivers in the list, making profile type-accurate.
+  //
+  // It is very tempting to handle these cases in a single loop, and claim the first slot
+  // without checking the rest of the table. But, profiling code should tolerate free slots
+  // in the table, as class unloading can clear them. After such cleanup, the receiver
+  // we need might be _after_ the free slot. Therefore, we need to let at least full scan
+  // to complete, before trying to install new slots. Splitting the code in several tight
+  // loops also helpfully optimizes for cases A and B.
+  //
+  // This code is effectively:
+  //
+  // restart:
+  //   // Fastest: receiver is already installed
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == recv) goto found_recv(i);
+  //   }
+  //
+  //   // Fast: no receiver, but profile is not full
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == null) goto found_null(i);
+  //   }
+  //   goto polymorphic
+  //
+  //   // Slow: try to install receiver
+  // found_null(i):
+  //   CAS(&receiver(i), null, recv);
+  //   goto restart
+  //
+  // polymorphic:
+  //   count++;
+  //   return
+  //
+  // found_recv(i):
+  //   *receiver_count(i)++
+  //
+
+  bind(L_restart);
+
+  // Fastest: receiver is already installed
+  load_const_optimized(offset, base_receiver_offset);
+
+  bind(L_loop_search_receiver);
+    z_cg(recv, Address(mdp, offset));
+    z_bre(L_found_recv);
+    add2reg(offset, receiver_step);
+    compare64_and_branch(offset, end_receiver_offset, bcondNotEqual, L_loop_search_receiver);
+
+  // Fast: no receiver, but profile is not full
+  load_const_optimized(offset, base_receiver_offset);
+
+  bind(L_loop_search_empty);
+    z_ltg(r0_tmp, Address(mdp, offset));
+    z_brz(L_found_empty);
+    add2reg(offset, receiver_step);
+    compare64_and_branch(offset, end_receiver_offset, bcondNotEqual, L_loop_search_empty);
+
+  // Slow: Receiver is not found and table is full.
+  // Increment polymorphic counter instead of receiver slot.
+  load_const_optimized(offset, poly_count_offset);
+  z_bru(L_count_update);
+
+  // Slowest: try to install receiver
+  bind(L_found_empty);
+
+  {
+    // Atomically swing receiver slot: null -> recv.
+    // Use compare-and-swap to claim the slot.
+    Register receiver_addr = offset;
+    z_agr(receiver_addr, mdp); // receiver_addr = mdp + offset
+
+    // r0_tmp is used as expected value (0), recv is the new value
+    z_lghi(r0_tmp, 0);
+    z_csg(r0_tmp, recv, 0, receiver_addr);
+  }
+
+  // CAS success means the slot now has the receiver we want. CAS failure means
+  // something had claimed the slot concurrently: it can be the same receiver we want,
+  // or something else. Since this is a slow path, we can optimize for code density,
+  // and just restart the search from the beginning.
+  z_bru(L_restart);
+
+  // Found a receiver, convert its slot offset to corresponding count offset.
+  bind(L_found_recv);
+  add2reg(offset, receiver_to_count_step);
+
+  // Finally, update the counter
+  bind(L_count_update);
+  z_agr(offset, mdp);
+  add2mem_64(Address(offset), DataLayout::counter_increment, r0_tmp);
 }

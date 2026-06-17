@@ -543,9 +543,9 @@ public abstract class JavadocHelper implements AutoCloseable {
 
                         for (DocTree t : inheritedText.get(0)) {
                             start = Math.min(start,
-                                             sp.getStartPosition(null, inheritedDocTree, t) - offset);
+                                             sp.getStartPosition(inheritedDocTree, t) - offset);
                             end   = Math.max(end,
-                                             sp.getEndPosition(null, inheritedDocTree, t) - offset);
+                                             sp.getEndPosition(inheritedDocTree, t) - offset);
                         }
                         String text = end >= 0 ? inherited.substring((int) start, (int) end) : "";
 
@@ -559,8 +559,8 @@ public abstract class JavadocHelper implements AutoCloseable {
                         } else {
                             //replace the {@inheritDoc} with the full text from
                             //the overridden method:
-                            long inheritedStart = sp.getStartPosition(null, dcTree, node);
-                            long inheritedEnd   = sp.getEndPosition(null, dcTree, node);
+                            long inheritedStart = sp.getStartPosition(dcTree, node);
+                            long inheritedEnd   = sp.getEndPosition(dcTree, node);
                             int[] span = new int[] {(int) inheritedStart, (int) inheritedEnd};
 
                             replace.computeIfAbsent(span, s -> new ArrayList<>())
@@ -571,11 +571,11 @@ public abstract class JavadocHelper implements AutoCloseable {
                 }
                 @Override
                 public Void visitLink(LinkTree node, Void p) {
-                    if (sp.isRewrittenTree(null, dcTree, node)) {
+                    if (sp.isRewrittenTree(dcTree, node)) {
                         //this link is a synthetic rewritten link, replace
                         //the original span with the new link:
-                        int start = (int) sp.getStartPosition(null, dcTree, node);
-                        int end   = (int) sp.getEndPosition(null, dcTree, node);
+                        int start = (int) sp.getStartPosition(dcTree, node);
+                        int end   = (int) sp.getEndPosition(dcTree, node);
 
                         replace.computeIfAbsent(new int[] {start, end}, _ -> new ArrayList<>())
                                .add(node.toString());
@@ -601,7 +601,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                             //this tree)
                             //if there is a newline immediately behind this tree, insert behind
                             //the newline:
-                            long endPos = sp.getEndPosition(null, dcTree, tree);
+                            long endPos = sp.getEndPosition(dcTree, tree);
                             if (endPos >= offset) {
                                 if (endPos - offset + 1 < docComment.length() &&
                                     docComment.charAt((int) (endPos - offset + 1)) == '\n') {
@@ -744,7 +744,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                         }
                     };
                 DocCommentTree tree = trees.getDocCommentTree(fo);
-                offset += (int) trees.getSourcePositions().getStartPosition(null, tree, tree);
+                offset += (int) trees.getSourcePositions().getStartPosition(tree, tree);
                 return Pair.of(tree, offset);
             } catch (URISyntaxException ex) {
                 throw new IllegalStateException(ex);
@@ -939,7 +939,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                                                    Iterable<? extends DocTree> trees) {
             StringBuilder sourceBuilder = new StringBuilder();
             List<int[]> replaceSpans = new ArrayList<>();
-            int currentSpanStart = (int) sp.getStartPosition(null, comment, trees.iterator().next());
+            int currentSpanStart = (int) sp.getStartPosition(comment, trees.iterator().next());
             DocTree lastTree = null;
 
             for (DocTree tree : trees) {
@@ -958,8 +958,8 @@ public abstract class JavadocHelper implements AutoCloseable {
                     }
                     sourceBuilder.append(code);
                 } else {
-                    int treeStart = (int) sp.getStartPosition(null, comment, tree);
-                    int treeEnd = (int) sp.getEndPosition(null, comment, tree);
+                    int treeStart = (int) sp.getStartPosition(comment, tree);
+                    int treeEnd = (int) sp.getEndPosition(comment, tree);
                     replaceSpans.add(new int[] {currentSpanStart, treeStart});
                     currentSpanStart = treeEnd;
                     sourceBuilder.append(PLACEHOLDER);
@@ -967,7 +967,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                 lastTree = tree;
             }
 
-            int end = (int) sp.getEndPosition(null, comment, lastTree);
+            int end = (int) sp.getEndPosition(comment, lastTree);
 
             replaceSpans.add(new int[] {currentSpanStart, end});
 
@@ -1006,8 +1006,8 @@ public abstract class JavadocHelper implements AutoCloseable {
             }
 
             @Override
-            public long getStartPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
-                ensureAdjustedSpansFilled(file, comment, tree);
+            public long getStartPosition(DocCommentTree comment, DocTree tree) {
+                ensureAdjustedSpansFilled(comment, tree);
 
                 long[] adjusted = adjustedSpan.get(tree);
 
@@ -1015,12 +1015,12 @@ public abstract class JavadocHelper implements AutoCloseable {
                     return adjusted[0];
                 }
 
-                return delegate.getStartPosition(file, comment, tree);
+                return delegate.getStartPosition(comment, tree);
             }
 
             @Override
-            public long getEndPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
-                ensureAdjustedSpansFilled(file, comment, tree);
+            public long getEndPosition(DocCommentTree comment, DocTree tree) {
+                ensureAdjustedSpansFilled(comment, tree);
 
                 long[] adjusted = adjustedSpan.get(tree);
 
@@ -1028,28 +1028,26 @@ public abstract class JavadocHelper implements AutoCloseable {
                     return adjusted[1];
                 }
 
-                return delegate.getEndPosition(file, comment, tree);
+                return delegate.getEndPosition(comment, tree);
             }
 
             @Override
-            public long getStartPosition(CompilationUnitTree file, Tree tree) {
-                return delegate.getStartPosition(file, tree);
+            public long getStartPosition(Tree tree) {
+                return delegate.getStartPosition(tree);
             }
 
             @Override
-            public long getEndPosition(CompilationUnitTree file, Tree tree) {
-                return delegate.getEndPosition(file, tree);
+            public long getEndPosition(Tree tree) {
+                return delegate.getEndPosition(tree);
             }
 
-            boolean isRewrittenTree(CompilationUnitTree file,
-                                    DocCommentTree comment,
+            boolean isRewrittenTree(DocCommentTree comment,
                                     DocTree tree) {
-                ensureAdjustedSpansFilled(file, comment, tree);
+                ensureAdjustedSpansFilled(comment, tree);
                 return rewrittenTrees.contains(tree);
             }
 
-            private void ensureAdjustedSpansFilled(CompilationUnitTree file,
-                                                   DocCommentTree comment,
+            private void ensureAdjustedSpansFilled(DocCommentTree comment,
                                                    DocTree tree) {
                 if (tree.getKind() != DocTree.Kind.LINK &&
                     tree.getKind() != DocTree.Kind.LINK_PLAIN) {
@@ -1057,7 +1055,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                 }
 
                 long[] span;
-                long treeStart = delegate.getStartPosition(file, comment, tree);
+                long treeStart = delegate.getStartPosition(comment, tree);
 
                 if (treeStart == (-1)) {
                     LinkTree link = (LinkTree) tree;
@@ -1069,15 +1067,15 @@ public abstract class JavadocHelper implements AutoCloseable {
 
                     for (DocTree t : nested) {
                         start = Math.min(start,
-                                         delegate.getStartPosition(file, comment, t));
+                                         delegate.getStartPosition(comment, t));
                         end   = Math.max(end,
-                                         delegate.getEndPosition(file, comment, t));
+                                         delegate.getEndPosition(comment, t));
                     }
 
                     span = new long[] {(int) start - 1, (int) end + 1};
                     rewrittenTrees.add(tree);
                 } else {
-                    long treeEnd = delegate.getEndPosition(file, comment, tree);
+                    long treeEnd = delegate.getEndPosition(comment, tree);
                     span = new long[] {treeStart, treeEnd};
                 }
 

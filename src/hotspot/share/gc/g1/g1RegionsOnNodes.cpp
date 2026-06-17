@@ -32,7 +32,7 @@ G1RegionsOnNodes::G1RegionsOnNodes() : _count_per_node(nullptr), _numa(G1NUMA::n
 }
 
 G1RegionsOnNodes::~G1RegionsOnNodes() {
-  FREE_C_HEAP_ARRAY(uint, _count_per_node);
+  FREE_C_HEAP_ARRAY(_count_per_node);
 }
 
 void G1RegionsOnNodes::add(G1HeapRegion* hr) {

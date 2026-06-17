@@ -168,6 +168,7 @@ class Pipeline;
 class PopulateIndexNode;
 class ProjNode;
 class RangeCheckNode;
+class ReachabilityFenceNode;
 class ReductionNode;
 class RegMask;
 class RegionNode;
@@ -451,6 +452,9 @@ public:
 #endif
   // Check whether node has become unreachable
   bool is_unreachable(PhaseIterGVN &igvn) const;
+
+  // Does the node have any immediate non-debug uses?
+  bool has_non_debug_uses() const;
 
   // Set a required input edge, also updates corresponding output edge
   void add_req( Node *n ); // Append a NEW required input
@@ -824,6 +828,7 @@ public:
     DEFINE_CLASS_ID(Move,     Node, 20)
     DEFINE_CLASS_ID(LShift,   Node, 21)
     DEFINE_CLASS_ID(Neg,      Node, 22)
+    DEFINE_CLASS_ID(ReachabilityFence, Node, 23)
 
     _max_classes  = ClassMask_Neg
   };
@@ -1013,6 +1018,7 @@ public:
   DEFINE_CLASS_QUERY(PCTable)
   DEFINE_CLASS_QUERY(Phi)
   DEFINE_CLASS_QUERY(Proj)
+  DEFINE_CLASS_QUERY(ReachabilityFence)
   DEFINE_CLASS_QUERY(Reduction)
   DEFINE_CLASS_QUERY(Region)
   DEFINE_CLASS_QUERY(Root)
@@ -1053,6 +1059,11 @@ public:
   bool is_Con () const { return (_flags & Flag_is_Con) != 0; }
   // The data node which is safe to leave in dead loop during IGVN optimization.
   bool is_dead_loop_safe() const;
+
+  void mark_not_dead_loop_safe() {
+    assert(is_dead_loop_safe(), "shouldn't be cleared yet");
+    remove_flag(Node::Flag_is_dead_loop_safe);
+  }
 
   // is_Copy() returns copied edge index (0 or 1)
   uint is_Copy() const { return (_flags & Flag_is_Copy); }
@@ -1180,6 +1191,7 @@ public:
       return nullptr;
     }
     assert(!res->depends_only_on_test(), "the result must not depends_only_on_test");
+    assert(Opcode() == res->Opcode(), "pinning must result in the same kind of node %s - %s", Name(), res->Name());
     return res;
   }
 

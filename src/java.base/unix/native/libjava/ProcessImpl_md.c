@@ -60,51 +60,33 @@
  *   changing paths...
  * - then exec(2) the target binary
  *
- * There are three ways to fork off:
+ * On the OS-side are three ways to fork off, but we only use two of them:
  *
- * A) fork(2). Portable and safe (no side effects) but may fail with ENOMEM on
- *    all Unices when invoked from a VM with a high memory footprint. On Unices
- *    with strict no-overcommit policy this problem is most visible.
+ * A) fork(2). Portable and safe (no side effects) but could fail on very ancient
+ *    Unices that don't employ COW on fork(2). The modern platforms we support
+ *    (Linux, MacOS, AIX) all do. It may have a small performance penalty compared
+ *    to modern posix_spawn(3) implementations - see below.
+ *    fork(2) can be used by specifying -Djdk.lang.Process.launchMechanism=FORK when starting
+ *    the (parent process) JVM.
  *
- *    This is because forking the VM will first create a child process with
- *    theoretically the same memory footprint as the parent - even if you plan
- *    to follow up with exec'ing a tiny binary. In reality techniques like
- *    copy-on-write etc mitigate the problem somewhat but we still run the risk
- *    of hitting system limits.
+ * B) vfork(2): Portable and fast but very unsafe. For details, see JDK-8357090.
+ *    We supported this mode in older releases but removed support for it in JDK 27.
+ *    Modern posix_spawn(3) implementations use techniques similar to vfork(2), but
+ *    in a much safer way
  *
- *    For a Linux centric description of this problem, see the documentation on
- *    /proc/sys/vm/overcommit_memory in Linux proc(5).
- *
- * B) vfork(2): Portable and fast but very unsafe. It bypasses the memory
- *    problems related to fork(2) by starting the child in the memory image of
- *    the parent. Things that can go wrong include:
- *    - Programming errors in the child process before the exec(2) call may
- *      trash memory in the parent process, most commonly the stack of the
- *      thread invoking vfork.
- *    - Signals received by the child before the exec(2) call may be at best
- *      misdirected to the parent, at worst immediately kill child and parent.
- *
- *    This is mitigated by very strict rules about what one is allowed to do in
- *    the child process between vfork(2) and exec(2), which is basically nothing.
- *    However, we always broke this rule by doing the pre-exec work between
- *    vfork(2) and exec(2).
- *
- *    Also note that vfork(2) has been deprecated by the OpenGroup, presumably
- *    because of its many dangers.
- *
- * C) clone(2): This is a Linux specific call which gives the caller fine
- *    grained control about how exactly the process fork is executed. It is
- *    powerful, but Linux-specific.
- *
- * Aside from these three possibilities there is a forth option:  posix_spawn(3).
- * Where fork/vfork/clone all fork off the process and leave pre-exec work and
- * calling exec(2) to the user, posix_spawn(3) offers the user fork+exec-like
- * functionality in one package, similar to CreateProcess() on Windows.
- *
- * It is not a system call in itself, but usually a wrapper implemented within
- * the libc in terms of one of (fork|vfork|clone)+exec - so whether or not it
- * has advantages over calling the naked (fork|vfork|clone) functions depends
- * on how posix_spawn(3) is implemented.
+ * C) posix_spawn(3): Where fork/vfork/clone all fork off the process and leave
+ *    pre-exec work and calling exec(2) to the user, posix_spawn(3) offers the user
+ *    fork+exec-like functionality in one package, similar to CreateProcess() on Windows.
+ *    It is not a system call, but a wrapper implemented in user-space libc in terms
+ *    of one of (fork|vfork|clone)+exec - so whether or not it has advantages over calling
+ *    the naked (fork|vfork|clone) functions depends on how posix_spawn(3) is implemented.
+ *    Modern posix_spawn(3) implementations, on Linux, use clone(2) with CLONE_VM | CLONE_VFORK,
+ *    giving us the best ratio between performance and safety.
+ *    Note however, that posix_spawn(3) can be buggy, depending on the libc implementation.
+ *    E.g., on MacOS, it is still fully not POSIX-compliant. Therefore, we need to retain the
+ *    FORK mode as a backup.
+ *    Posix_spawn mode is used by default, but can be explicitly enabled using
+ *    -Djdk.lang.Process.launchMechanism=POSIX_SPAWN when starting the (parent process) JVM.
  *
  * Note that when using posix_spawn(3), we exec twice: first a tiny binary called
  * the jspawnhelper, then in the jspawnhelper we do the pre-exec work and exec a
@@ -117,58 +99,14 @@
  * --- Linux-specific ---
  *
  * How does glibc implement posix_spawn?
- * (see: sysdeps/posix/spawni.c for glibc < 2.24,
- *       sysdeps/unix/sysv/linux/spawni.c for glibc >= 2.24):
  *
- * 1) Before glibc 2.4 (released 2006), posix_spawn(3) used just fork(2)/exec(2).
- *    This would be bad for the JDK since we would risk the known memory issues with
- *    fork(2). But since this only affects glibc variants which have long been
- *    phased out by modern distributions, this is irrelevant.
+ * Before glibc 2.4 (released 2006), posix_spawn(3) used just fork(2)/exec(2). From
+ * glibc 2.4 up to and including 2.23, it used either fork(2) or vfork(2). None of these
+ * versions still matter.
  *
- * 2) Between glibc 2.4 and glibc 2.23, posix_spawn uses either fork(2) or
- *    vfork(2) depending on how exactly the user called posix_spawn(3):
- *
- * <quote>
- *       The child process is created using vfork(2) instead of fork(2) when
- *       either of the following is true:
- *
- *       * the spawn-flags element of the attributes object pointed to by
- *          attrp contains the GNU-specific flag POSIX_SPAWN_USEVFORK; or
- *
- *       * file_actions is NULL and the spawn-flags element of the attributes
- *          object pointed to by attrp does not contain
- *          POSIX_SPAWN_SETSIGMASK, POSIX_SPAWN_SETSIGDEF,
- *          POSIX_SPAWN_SETSCHEDPARAM, POSIX_SPAWN_SETSCHEDULER,
- *          POSIX_SPAWN_SETPGROUP, or POSIX_SPAWN_RESETIDS.
- * </quote>
- *
- * Due to the way the JDK calls posix_spawn(3), it would therefore call vfork(2).
- * So we would avoid the fork(2) memory problems. However, there still remains the
- * risk associated with vfork(2). But it is smaller than were we to call vfork(2)
- * directly since we use the jspawnhelper, moving all pre-exec work off to after
- * the first exec, thereby reducing the vulnerable time window.
- *
- * 3) Since glibc >= 2.24, glibc uses clone+exec:
- *
- *    new_pid = CLONE (__spawni_child, STACK (stack, stack_size), stack_size,
- *                     CLONE_VM | CLONE_VFORK | SIGCHLD, &args);
- *
- * This is even better than (2):
- *
- * CLONE_VM means we run in the parent's memory image, as with (2)
- * CLONE_VFORK means parent waits until we exec, as with (2)
- *
- * However, error possibilities are further reduced since:
- * - posix_spawn(3) passes a separate stack for the child to run on, eliminating
- *   the danger of trashing the forking thread's stack in the parent process.
- * - posix_spawn(3) takes care to temporarily block all incoming signals to the
- *   child process until the first exec(2) has been called,
- *
- * TL;DR
- * Calling posix_spawn(3) for glibc
- * (2) < 2.24 is not perfect but still better than using plain vfork(2), since
- *     the chance of an error happening is greatly reduced
- * (3) >= 2.24 is the best option - portable, fast and as safe as possible.
+ * Since glibc >= 2.24, glibc uses clone+exec with CLONE_VM | CLONE_VFORK to emulate vfork
+ * performance but without the inherent dangers (we run inside the parent's memory image
+ * and stop the parent for as long as it takes the child process to exec).
  *
  * ---
  *
@@ -179,7 +117,6 @@
  * version.
  *
  * </Linux-specific>
- *
  *
  * Based on the above analysis, we are currently defaulting to posix_spawn()
  * on all Unices including Linux.
@@ -489,28 +426,6 @@ static int copystrings(char *buf, int offset, const char * const *arg) {
 __attribute_noinline__
 #endif
 
-/* vfork(2) is deprecated on Darwin */
-#ifndef __APPLE__
-static pid_t
-vforkChild(ChildStuff *c) {
-    volatile pid_t resultPid;
-
-    /*
-     * We separate the call to vfork into a separate function to make
-     * very sure to keep stack of child from corrupting stack of parent,
-     * as suggested by the scary gcc warning:
-     *  warning: variable 'foo' might be clobbered by 'longjmp' or 'vfork'
-     */
-    resultPid = vfork();
-
-    if (resultPid == 0) {
-        childProcess(c);
-    }
-    assert(resultPid != 0);  /* childProcess never returns */
-    return resultPid;
-}
-#endif
-
 static pid_t
 forkChild(ChildStuff *c) {
     pid_t resultPid;
@@ -734,11 +649,6 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
 static pid_t
 startChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) {
     switch (c->mode) {
-/* vfork(2) is deprecated on Darwin*/
-      #ifndef __APPLE__
-      case MODE_VFORK:
-        return vforkChild(c);
-      #endif
       case MODE_FORK:
         return forkChild(c);
       case MODE_POSIX_SPAWN:
@@ -872,9 +782,6 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     if (resultPid < 0) {
         char * failMessage = "unknown";
         switch (c->mode) {
-          case MODE_VFORK:
-            failMessage = "vfork failed";
-            break;
           case MODE_FORK:
             failMessage = "fork failed";
             break;

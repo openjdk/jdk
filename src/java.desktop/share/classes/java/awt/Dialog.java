@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
 
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.util.IdentityArrayList;
 
@@ -1013,30 +1012,12 @@ public class Dialog extends Window {
         if (!isModal()) {
             conditionalShow(null, null);
         } else {
-            AppContext showAppContext = AppContext.getAppContext();
-
             AtomicLong time = new AtomicLong();
             Component predictedFocusOwner = null;
             try {
                 predictedFocusOwner = getMostRecentFocusOwner();
                 if (conditionalShow(predictedFocusOwner, time)) {
                     modalFilter = ModalEventFilter.createFilterForDialog(this);
-                    // if this dialog is toolkit-modal, the filter should be added
-                    // to all EDTs (for all AppContexts)
-                    if (modalityType == ModalityType.TOOLKIT_MODAL) {
-                        for (AppContext appContext : AppContext.getAppContexts()) {
-                            if (appContext == showAppContext) {
-                                continue;
-                            }
-                            EventQueue eventQueue = (EventQueue)appContext.get(AppContext.EVENT_QUEUE_KEY);
-                            // it may occur that EDT for appContext hasn't been started yet, so
-                            // we post an empty invocation event to trigger EDT initialization
-                            eventQueue.postEvent(new InvocationEvent(this, () -> {}));
-                            EventDispatchThread edt = eventQueue.getDispatchThread();
-                            edt.addEventFilter(modalFilter);
-                        }
-                    }
-
                     modalityPushed();
                     try {
                         EventQueue eventQueue = Toolkit.getDefaultToolkit().getSystemEventQueue();
@@ -1046,19 +1027,6 @@ public class Dialog extends Window {
                         }
                     } finally {
                         modalityPopped();
-                    }
-
-                    // if this dialog is toolkit-modal, its filter must be removed
-                    // from all EDTs (for all AppContexts)
-                    if (modalityType == ModalityType.TOOLKIT_MODAL) {
-                        for (AppContext appContext : AppContext.getAppContexts()) {
-                            if (appContext == showAppContext) {
-                                continue;
-                            }
-                            EventQueue eventQueue = (EventQueue)appContext.get(AppContext.EVENT_QUEUE_KEY);
-                            EventDispatchThread edt = eventQueue.getDispatchThread();
-                            edt.removeEventFilter(modalFilter);
-                        }
                     }
                 }
             } finally {
@@ -1482,8 +1450,7 @@ public class Dialog extends Window {
                     return getDocumentRoot() == w.getDocumentRoot();
                 }
             case APPLICATION_MODAL:
-                return !w.isModalExcluded(ModalExclusionType.APPLICATION_EXCLUDE) &&
-                    (appContext == w.appContext);
+                return !w.isModalExcluded(ModalExclusionType.APPLICATION_EXCLUDE);
             case TOOLKIT_MODAL:
                 return !w.isModalExcluded(ModalExclusionType.TOOLKIT_EXCLUDE);
         }

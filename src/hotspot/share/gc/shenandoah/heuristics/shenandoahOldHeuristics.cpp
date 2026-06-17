@@ -369,7 +369,6 @@ bool ShenandoahOldHeuristics::top_off_collection_set(ShenandoahCollectionSet* co
 
     assert(consumed_from_young_cset <= max_young_cset, "sanity");
     assert(max_young_cset <= young_unaffiliated_regions * region_size_bytes, "sanity");
-
     size_t regions_for_old_expansion;
     if (consumed_from_young_cset < max_young_cset) {
       size_t excess_young_reserves = max_young_cset - consumed_from_young_cset;
@@ -392,7 +391,10 @@ bool ShenandoahOldHeuristics::top_off_collection_set(ShenandoahCollectionSet* co
       _unspent_unfragmented_old_budget += supplement_without_waste;
       _old_generation->augment_evacuation_reserve(budget_supplement);
       young_generation->set_evacuation_reserve(max_young_cset - budget_supplement);
-
+      assert(young_generation->get_evacuation_reserve() >=
+             collection_set->get_live_bytes_in_untenurable_regions() * ShenandoahEvacWaste,
+             "adjusted evac reserve (%zu) must be large enough for planned evacuation (%zu)",
+             young_generation->get_evacuation_reserve(), collection_set->get_live_bytes_in_untenurable_regions());
       return add_old_regions_to_cset(collection_set);
     } else {
       add_regions_to_old = 0;
@@ -426,7 +428,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     }
     // else, regions that were promoted in place had 0 old live data at mark start
 
-    if (region->is_regular() || region->is_regular_pinned()) {
+    if (region->is_regular_or_regular_pinned()) {
       // Only place regular or pinned regions with live data into the candidate set.
       // Pinned regions cannot be evacuated, but we are not actually choosing candidates
       // for the collection set here. That happens later during the next young GC cycle,
@@ -537,7 +539,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     while ((defrag_count < bound_on_additional_regions) &&
            (total_uncollected_old_regions < 7 * span_of_uncollected_regions / 8)) {
       ShenandoahHeapRegion* r = candidates[_last_old_collection_candidate].get_region();
-      assert(r->is_regular() || r->is_regular_pinned(), "Region %zu has wrong state for collection: %s",
+      assert(r->is_regular_or_regular_pinned(), "Region %zu has wrong state for collection: %s",
              r->index(), ShenandoahHeapRegion::region_state_to_string(r->state()));
       const size_t region_garbage = r->garbage();
       const size_t region_free = r->free();
@@ -574,7 +576,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   } else if (has_coalesce_and_fill_candidates()) {
     _old_generation->transition_to(ShenandoahOldGeneration::FILLING);
   } else {
-    _old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
+    _old_generation->transition_to(ShenandoahOldGeneration::IDLE);
   }
 }
 
@@ -854,10 +856,10 @@ void ShenandoahOldHeuristics::record_success_concurrent() {
   this->ShenandoahHeuristics::record_success_concurrent();
 }
 
-void ShenandoahOldHeuristics::record_degenerated() {
+void ShenandoahOldHeuristics::record_degenerated(bool is_generational_global) {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-  this->ShenandoahHeuristics::record_degenerated();
+  this->ShenandoahHeuristics::record_degenerated(is_generational_global);
 }
 
 void ShenandoahOldHeuristics::record_success_full() {

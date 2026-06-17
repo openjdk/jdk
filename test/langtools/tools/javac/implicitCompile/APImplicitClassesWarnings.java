@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8378740
+ * @bug 8378740 8378950
  * @summary Verify warnings are properly suppressed for the combination of
  *          annotation processing and implicit compilation
  * @library /tools/lib
@@ -96,9 +96,7 @@ public class APImplicitClassesWarnings {
 
         List<String> expected = List.of(
             "Use.java:4:5: compiler.warn.has.been.deprecated.for.removal: test.Depr, test",
-            "Use.java:4:5: compiler.warn.has.been.deprecated.for.removal: test.Depr, test",
-            "Use.java:4:5: compiler.warn.has.been.deprecated.for.removal: test.Depr, test",
-            "3 warnings"
+            "1 warning"
         );
 
         tb.checkEqual(expected, log);
@@ -141,6 +139,53 @@ public class APImplicitClassesWarnings {
                 .processors(new ProcessorImpl())
                 .run()
                 .writeAll();
+    }
+
+    @Test
+    public void testCorrectImport() throws Exception {
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+
+                          @Deprecated(forRemoval=true)
+                          public class Depr {
+                              public static class Nested {}
+                          }
+                          """,
+                          """
+                          package test;
+                          import test.Depr.Nested;
+                          public class Use {
+                              Implicit implicit;
+                              Nested nest;
+                          }
+                          """,
+                          """
+                          package test;
+                          public interface Implicit {}
+                          """);
+        Files.createDirectories(classes);
+
+        List<String> log = new JavacTask(tb)
+            .options("-d", classes.toString(),
+                     "-XDrawDiagnostics",
+                     "-implicit:class",
+                     "-sourcepath", src.toString())
+            .files(src.resolve("test").resolve("Depr.java"),
+                    src.resolve("test").resolve("Use.java"))
+            .processors(new ProcessorImpl())
+            .run()
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+            "Use.java:2:12: compiler.warn.has.been.deprecated.for.removal: test.Depr, test",
+            "1 warning"
+        );
+
+        tb.checkEqual(expected, log);
     }
 
     @SupportedAnnotationTypes("*")

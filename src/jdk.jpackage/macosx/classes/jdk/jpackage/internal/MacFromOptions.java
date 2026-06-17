@@ -27,8 +27,6 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.FromOptions.buildApplicationBuilder;
 import static jdk.jpackage.internal.FromOptions.createPackageBuilder;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
-import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib;
-import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
 import static jdk.jpackage.internal.OptionUtils.isBundlingOperation;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_MAC_PKG;
 import static jdk.jpackage.internal.cli.StandardOption.APPCLASS;
@@ -188,7 +186,7 @@ final class MacFromOptions {
 
         pkgSigningIdentityBuilder.ifPresent(pkgBuilder::signingBuilder);
 
-        return pkgBuilder.create();
+        return pkgBuilder.summary(OptionUtils.summary(options)).create();
     }
 
     private record ApplicationWithDetails(MacApplication app, Optional<ExternalApplication> externalApp) {
@@ -203,12 +201,14 @@ final class MacFromOptions {
         final var predefinedRuntimeLayout = PREDEFINED_RUNTIME_IMAGE.findIn(options)
                 .map(MacPackage::guessRuntimeLayout);
 
-        predefinedRuntimeLayout.ifPresent(layout -> {
-            validateRuntimeHasJliLib(layout);
-            if (MAC_APP_STORE.containsIn(options)) {
-                validateRuntimeHasNoBinDir(layout);
-            }
-        });
+        predefinedRuntimeLayout.ifPresent(MacRuntimeValidator::validateRuntimeHasJliLib);
+
+        if (MAC_APP_STORE.containsIn(options)) {
+            PREDEFINED_APP_IMAGE.findIn(options)
+                    .map(APPLICATION_LAYOUT::resolveAt)
+                    .ifPresent(MacRuntimeValidator::validateRuntimeHasNoBinDir);
+            predefinedRuntimeLayout.ifPresent(MacRuntimeValidator::validateRuntimeHasNoBinDir);
+        }
 
         final var launcherFromOptions = new LauncherFromOptions().faMapper(MacFromOptions::createMacFa);
 
@@ -243,6 +243,8 @@ final class MacFromOptions {
 
         final var appBuilder = new MacApplicationBuilder(createApplicationBuilder(options));
 
+        appBuilder.summary(OptionUtils.summary(options));
+
         if (OptionUtils.isRuntimeInstaller(options)) {
             // Predefined runtime image, if specified, can be a macOS bundle or regular directory.
             // Notify application builder with the path to the plist file in the predefined runtime image only if the file exists.
@@ -269,11 +271,13 @@ final class MacFromOptions {
         final boolean sign = MAC_SIGN.getFrom(options);
         final boolean appStore;
 
-        if (PREDEFINED_APP_IMAGE.containsIn(options)) {
+        if (MAC_APP_STORE.containsIn(options)) {
+            appStore = MAC_APP_STORE.getFrom(options);
+        } else if (PREDEFINED_APP_IMAGE.containsIn(options)) {
             final var appImageFileOptions = appBuilder.externalApplication().orElseThrow().extra();
             appStore = MAC_APP_STORE.getFrom(appImageFileOptions);
         } else {
-            appStore = MAC_APP_STORE.getFrom(options);
+            appStore = false;
         }
 
         appBuilder.appStore(appStore);
@@ -341,6 +345,8 @@ final class MacFromOptions {
                     .map(MacPackagingPipeline::isSigned)
                     .ifPresent(builder::predefinedAppImageSigned);
         }
+
+        builder.summary(OptionUtils.summary(options));
 
         return builder;
     }

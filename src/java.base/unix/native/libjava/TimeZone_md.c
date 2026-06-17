@@ -95,7 +95,7 @@ getZoneName(char *str)
 {
     static const char *zidir = "zoneinfo/";
 
-    char *pos = strstr((const char *)str, zidir);
+    char* pos = strstr(str, zidir);
     if (pos == NULL) {
         return NULL;
     }
@@ -431,6 +431,10 @@ mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
      * This restriction has been removed from AIX7. */
 
     tz_buf = strdup(tz);
+    if (tz_buf == NULL) {
+        jio_fprintf(stderr, "Failed to allocate timezone buffer\n");
+        goto tzerr;
+    }
     tz_len = strlen(tz_buf);
 
     /* Open tzmappings file, with buffer overrun check */
@@ -450,6 +454,10 @@ mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
         tz_len = (temp_tz == NULL) ? strlen(tz) : temp_tz - tz;
         free((void *) tz_buf);
         tz_buf = (char *)malloc(tz_len + 1);
+        if (tz_buf == NULL) {
+            jio_fprintf(stderr, "Failed to allocate timezone buffer\n");
+            goto tzerr;
+        }
         memcpy(tz_buf, tz, tz_len);
         tz_buf[tz_len] = '\0';
         javatz = getJavaTimezoneFromPlatform(tz_buf, tz_len, mapfilename);

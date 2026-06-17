@@ -25,22 +25,22 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class ShortVector128 extends ShortVector {
     static final ShortSpecies VSPECIES =
         (ShortSpecies) ShortVector.SPECIES_128;
@@ -371,7 +371,7 @@ final class ShortVector128 extends ShortVector {
     @Override
     @ForceInline
     public final ShortShuffle128 toShuffle() {
-        return (ShortShuffle128) toShuffle(vspecies(), false);
+        return (ShortShuffle128) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -582,7 +582,7 @@ final class ShortVector128 extends ShortVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class ShortMask128 extends AbstractMask<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -630,7 +630,7 @@ final class ShortVector128 extends ShortVector {
 
         @Override
         ShortMask128 uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -640,7 +640,7 @@ final class ShortVector128 extends ShortVector {
 
         @Override
         ShortMask128 bOp(VectorMask<Short> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((ShortMask128)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -790,16 +790,16 @@ final class ShortVector128 extends ShortVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, ShortMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((ShortMask128)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((ShortMask128)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, ShortMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((ShortMask128)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((ShortMask128)m).getBits()));
         }
 
         @ForceInline
@@ -807,7 +807,7 @@ final class ShortVector128 extends ShortVector {
         static ShortMask128 maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(ShortMask128.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final ShortMask128  TRUE_MASK = new ShortMask128(true);
         private static final ShortMask128 FALSE_MASK = new ShortMask128(false);
@@ -815,7 +815,7 @@ final class ShortVector128 extends ShortVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class ShortShuffle128 extends AbstractShuffle<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -867,7 +867,7 @@ final class ShortVector128 extends ShortVector {
 
         @Override
         ShortVector128 toBitsVector0() {
-            return ((ShortVector128) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((ShortVector128) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -906,7 +906,7 @@ final class ShortVector128 extends ShortVector {
         @ForceInline
         public final ShortMask128 laneIsValid() {
             return (ShortMask128) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -914,7 +914,7 @@ final class ShortVector128 extends ShortVector {
         public final ShortShuffle128 rearrange(VectorShuffle<Short> shuffle) {
             ShortShuffle128 concreteShuffle = (ShortShuffle128) shuffle;
             return (ShortShuffle128) toBitsVector().rearrange(concreteShuffle)
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -927,7 +927,7 @@ final class ShortVector128 extends ShortVector {
                 v = (ShortVector128) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (ShortShuffle128) v.toShuffle(vspecies(), false);
+            return (ShortShuffle128) v.toShuffle(VSPECIES, false);
         }
 
         private static short[] prepare(int[] indices, int offset) {

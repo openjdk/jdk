@@ -48,6 +48,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/array.hpp"
+#include "oops/bsmAttribute.inline.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
@@ -564,7 +565,7 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
   }
 
   LogStreamHandle(Trace, aot, resolve) log;
-  if (log.is_enabled() && !CDSConfig::is_dumping_preimage_static_archive()) {
+  if (log.is_enabled()) {
     ResourceMark rm;
     log.print("%s klass  CP entry [%3d]: %s %s",
               (can_archive ? "archived" : "reverted"),

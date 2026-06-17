@@ -33,16 +33,6 @@
  */
 
 /*
- * @test id=VFORK
- * @bug 8377907
- * @summary Check that we don't open pipes without CLOEXCEC
- * @requires os.family == "linux"
- * @requires vm.flagless
- * @library /test/lib
- * @run main/othervm/native -Djdk.lang.Process.launchMechanism=VFORK PipesCloseOnExecTest
- */
-
-/*
  * @test id=POSIX_SPAWN
  * @bug 8377907
  * @summary Check that we don't open pipes without CLOEXCEC
