@@ -25,7 +25,6 @@
  * @test
  * @bug 8173155
  * @summary Cannot release resources after partial compilation
- * @requires os.family == "mac" | os.family == "linux"
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -33,25 +32,21 @@
  * @run junit ${test.main.class}
  */
 
-import java.io.BufferedReader;
-import java.io.File;
+import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URI;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
+import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -66,25 +61,18 @@ public class TestJavacTask_Close {
 
     @Test
     void testClose() throws Exception {
-        if (!lsofCommand().isPresent()) {
-            Assumptions.abort("lsof command is not available on this system");
-        }
-
         Path jar = createJar();
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        SimpleJavaFileObject compilationUnit = new SimpleJavaFileObject(URI.create("string:///Test.java"), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-                return """
-                       public class Test {
-                           private Lib lib;
-                       }
-                       """;
-            }
-        };
+        JavaFileObject compilationUnit = SimpleJavaFileObject.forSource(URI.create("string:///Test.java"),
+                """
+                public class Test {
+                    private Lib lib;
+                }
+                """);
 
-        try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
+        boolean[] state = new boolean[] {false, false};
+        try (FM fm = new FM(compiler.getStandardFileManager(null, null, null), state)) {
             com.sun.source.util.JavacTask task = (com.sun.source.util.JavacTask) compiler.getTask(
                     null, fm, null, List.of("-classpath", jar.toString()), null, List.of(compilationUnit));
             Assertions.assertNotNull(task.parse(), "parse() failed");
@@ -92,60 +80,31 @@ public class TestJavacTask_Close {
             Assertions.assertThrows(IllegalStateException.class, () -> task.analyze(), "analyze() on closed task");
         }
 
-        Process process = new ProcessBuilder()
-                .command(lsofCommand().orElseThrow(() -> new RuntimeException("lsof command is not available on this system")),
-                        "-p", String.valueOf(ProcessHandle.current().pid()))
-                .redirectOutput(ProcessBuilder.Redirect.PIPE)
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
-                .start();
-        List<String> lines;
-        String realPath = jar.toRealPath().toString();
-        try (InputStream stdout = process.getInputStream(); BufferedReader reader = new BufferedReader(new InputStreamReader(stdout))) {
-            lines = reader.lines().filter(line -> line.contains(realPath)).toList();
-        }
-        process.waitFor();
-        Assertions.assertEquals(0, lines.size(), "File(s) remain opened: " + lines);
+        Assertions.assertTrue(state[0], "URLClassLoader not created");
+        Assertions.assertTrue(state[1], "URLClassLoader not closed");
     }
 
     @Test
     void testRepeatedClose() throws Exception {
-        if (!lsofCommand().isPresent()) {
-            Assumptions.abort("lsof command is not available on this system");
-        }
-
         Path jar = createJar();
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        SimpleJavaFileObject compilationUnit = new SimpleJavaFileObject(URI.create("string:///Test.java"), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-                return """
-                       public class Test {
-                           private Lib lib;
-                       }
-                       """;
-            }
-        };
+        JavaFileObject compilationUnit = SimpleJavaFileObject.forSource(URI.create("string:///Test.java"),
+                """
+                public class Test {
+                    private Lib lib;
+                }
+                """);
 
-        try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
+        boolean[] state = new boolean[] {false, false};
+        try (FM fm = new FM(compiler.getStandardFileManager(null, null, null), state);
              com.sun.source.util.JavacTask task = (com.sun.source.util.JavacTask) compiler.getTask(
                      null, fm, null, List.of("-classpath", jar.toString()), null, List.of(compilationUnit))) {
             Assertions.assertEquals(true, task.call(), "Compilation task failed");
         }
 
-        Process process = new ProcessBuilder()
-                .command(lsofCommand().orElseThrow(() -> new RuntimeException("lsof command is not available on this system")),
-                        "-p", String.valueOf(ProcessHandle.current().pid()))
-                .redirectOutput(ProcessBuilder.Redirect.PIPE)
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
-                .start();
-        List<String> lines;
-        String realPath = jar.toRealPath().toString();
-        try (InputStream stdout = process.getInputStream(); BufferedReader reader = new BufferedReader(new InputStreamReader(stdout))) {
-            lines = reader.lines().filter(line -> line.contains(realPath)).toList();
-        }
-        process.waitFor();
-        Assertions.assertEquals(0, lines.size(), "File(s) remain opened: " + lines);
+        Assertions.assertTrue(state[0], "URLClassLoader not created");
+        Assertions.assertTrue(state[1], "URLClassLoader not closed");
     }
 
     @BeforeEach
@@ -176,16 +135,37 @@ public class TestJavacTask_Close {
         return jar;
     }
 
-    static Optional<String> lsofCommandCache = Arrays.stream(new String[] {
-            "/usr/bin/lsof",
-            "/usr/sbin/lsof",
-            "/bin/lsof",
-            "/sbin/lsof",
-            "/usr/local/bin/lsof"})
-        .filter(args -> new File(args).exists())
-        .findFirst();
+    private static class FM extends ForwardingJavaFileManager {
 
-    static Optional<String> lsofCommand() {
-        return lsofCommandCache;
+        private final boolean[] state;
+
+        private FM(JavaFileManager fileManager, boolean[] state) {
+            super(fileManager);
+            this.state = state;
+        }
+
+        @Override
+        public ClassLoader getClassLoader(Location location) {
+            ClassLoader cl = super.getClassLoader(location);
+            return cl instanceof URLClassLoader urlCl ? new CL(urlCl, state) : cl;
+        }
+    }
+
+    private static class CL extends ClassLoader implements Closeable {
+
+        private final URLClassLoader urlCl;
+        private final boolean[] state;
+
+        private CL(URLClassLoader urlCl, boolean[] state) {
+            this.urlCl = urlCl;
+            this.state = state;
+            this.state[0] = true;
+        }
+
+        @Override
+        public void close() throws IOException {
+            state[1] = true;
+            urlCl.close();
+        }
     }
 }

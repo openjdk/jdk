@@ -102,6 +102,19 @@ public abstract class JavacTask implements CompilationTask, AutoCloseable {
     public abstract Iterable<? extends JavaFileObject> generate() throws IOException;
 
     /**
+     * Releases any resources opened by this task, either directly or
+     * indirectly. After this method is called, the task becomes unusable,
+     * and subsequent calls to its methods may throw an {@code IllegalStateException}.
+     * Closing a task that has already been closed has no effect.
+     *
+     * @throws IOException if an error occurs while releasing resources.
+     * @throws IllegalStateException if the operation cannot be performed at this time.
+     * @since 28
+     */
+    @Override
+    public abstract void close() throws IOException;
+
+    /**
      * Sets a specified listener to receive notification of events
      * describing the progress of this compilation task.
      *
