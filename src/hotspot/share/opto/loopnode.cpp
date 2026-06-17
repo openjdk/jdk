@@ -3880,6 +3880,8 @@ const TypeInt* CountedLoopConverter::filtered_type(Node* n, Node* n_ctrl) {
 
 //------------------------------filtered_type_from_dominators--------------------------------
 // Return a possibly more restrictive type for val based on condition control flow of dominators
+// Note: we can also return "nullptr", which means "no constraint", and should be interpreted
+//       as if we returned TypeInt::INT.
 const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, Node* use_ctrl) {
   if (val->is_Con()) {
      return val->bottom_type()->is_int();
