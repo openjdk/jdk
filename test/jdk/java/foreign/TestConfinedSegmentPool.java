@@ -577,7 +577,7 @@ final class TestConfinedSegmentPool {
 
     static int confinedSegmentPoolSlots() {
         try {
-            Class<?> poolClass = Class.forName("java.lang.VirtualThread$ConfinedSegmentPool");
+            Class<?> poolClass = Class.forName("java.lang.ConfinedSegmentPool");
             Field slotsField = poolClass.getDeclaredField("SLOTS");
             slotsField.setAccessible(true);
             return slotsField.getInt(null);

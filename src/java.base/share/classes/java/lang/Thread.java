@@ -254,6 +254,12 @@ public class Thread implements Runnable {
         registerNatives();
     }
 
+    // Delay the loading of Unsafe to prevent circular bootstrap
+    // dependencies.
+    private static final class UnsafeHolder {
+        private static final Unsafe U = Unsafe.getUnsafe();
+    }
+
     /*
      * Reserved for exclusive use by the JVM. Cannot be moved to the FieldHolder
      * as it needs to be set by the VM for JNI attaching threads, before executing
@@ -371,6 +377,8 @@ public class Thread implements Runnable {
     // Lazily load the POOLED_MEMORY_SIZE to avoid bootstrap issues
     static final class PoolConfigHolder {
 
+        private PoolConfigHolder() { }
+
         // Providing "0" as a value for this property disables confined pooling
         private static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
 
@@ -434,7 +442,7 @@ public class Thread implements Runnable {
     private long allocateAndAcquirePooledMemory() {
         final long address;
         try {
-            address = ThreadIdentifiers.U.allocateMemory(PoolConfigHolder.POOLED_MEMORY_SIZE);
+            address = UnsafeHolder.U.allocateMemory(PoolConfigHolder.POOLED_MEMORY_SIZE);
             if (address < 0) {
                 throw new InternalError("Allocated memory pool is negative contrary to" +
                         " the non-negative pointer invariant: 0x" + Long.toHexString(address));
@@ -444,7 +452,7 @@ public class Thread implements Runnable {
             return 0;
         }
         // Zero out memory in a non-performance sensitive way
-        ThreadIdentifiers.U.setMemory(address, pooledMemorySize(), (byte) 0);
+        UnsafeHolder.U.setMemory(address, pooledMemorySize(), (byte) 0);
         // Mark the pool as acquired
         this.confinedMemoryPool = -address;
         return address;
@@ -473,14 +481,14 @@ public class Thread implements Runnable {
         // Clear the 8-byte buckets covering the used range. It is safe to clear
         // beyond `size` as long as we stay inside the pool.
         switch ((int) ((size + Long.BYTES - 1) >>> 3)) {
-            case 8: ThreadIdentifiers.U.putLong(address + 0x38, 0L);
-            case 7: ThreadIdentifiers.U.putLong(address + 0x30, 0L);
-            case 6: ThreadIdentifiers.U.putLong(address + 0x28, 0L);
-            case 5: ThreadIdentifiers.U.putLong(address + 0x20, 0L);
-            case 4: ThreadIdentifiers.U.putLong(address + 0x18, 0L);
-            case 3: ThreadIdentifiers.U.putLong(address + 0x10, 0L);
-            case 2: ThreadIdentifiers.U.putLong(address + 0x08, 0L);
-            case 1: ThreadIdentifiers.U.putLong(address, 0L);
+            case 8: UnsafeHolder.U.putLong(address + 0x38, 0L);
+            case 7: UnsafeHolder.U.putLong(address + 0x30, 0L);
+            case 6: UnsafeHolder.U.putLong(address + 0x28, 0L);
+            case 5: UnsafeHolder.U.putLong(address + 0x20, 0L);
+            case 4: UnsafeHolder.U.putLong(address + 0x18, 0L);
+            case 3: UnsafeHolder.U.putLong(address + 0x10, 0L);
+            case 2: UnsafeHolder.U.putLong(address + 0x08, 0L);
+            case 1: UnsafeHolder.U.putLong(address, 0L);
             case 0: break;
             default: throw new AssertionError(size);
         }
@@ -1697,7 +1705,7 @@ public class Thread implements Runnable {
         } finally {
             final long confinedMemoryPool = this.confinedMemoryPool;
             if (confinedMemoryPool != 0) {
-                ThreadIdentifiers.U.freeMemory(Math.abs(confinedMemoryPool));
+                UnsafeHolder.U.freeMemory(Math.abs(confinedMemoryPool));
             }
             this.confinedMemoryPool = 0;
             clearReferences();
