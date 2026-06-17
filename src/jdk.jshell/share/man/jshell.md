@@ -772,19 +772,28 @@ JShell.
     item can't be determined from what was entered, then possible options are
     provided.
 
+    Use the Tab key after entering the name of a class, interface, method, or
+    field to see the description of the class, interface, method, or field.
+    The description is based on the javadoc comment for the declaration of the
+    class, interface, method, or field, when sources for the declaration are
+    available.
+
+    The sources for the JDK classes are looked up in the JDK's sources, if they
+    can be found in the JDK installation. The sources may need to be added to
+    the JDK installation separately. For the sources of classes, interfaces, methods,
+    and fields declared on the class or module path, the entry on the class path or
+    module path which contains the declaration is searched for sources.
+    In addition to that, if the entry is a .jar file, and a file exists with
+    the same path and name but with .jar replaced with -sources.jar, this file
+    is searched as well. As an example, for `<directory>/lib.jar`,
+    `<directory>/lib-source.jar` will be searched as well.
+
     When entering a method call, use the Tab key after the method call's
     opening parenthesis to see the parameters for the method. If the method has
     more than one signature, then all signatures are displayed. Pressing the
     Tab key a second time displays the description of the method and the
     parameters for the first signature. Continue pressing the Tab key for a
     description of any additional signatures.
-
-    The method or other element description is based on the javadoc comment
-    for the given element, when sources for the given element are available.
-    The sources for the JDK classes are looked up in the JDK's `src.zip`.
-    For elements provided on the class or module path, both the binary path entry,
-    and, for `.jar` files, its sibling file named `-sources.jar` are searched for
-    the sources.
 
 **Shift+\<Tab\> V**
 :   After entering a complete expression, use this key sequence to convert the
