@@ -23,7 +23,7 @@
 
 /*
  * @test id=vanilla
- * @bug 8385855 8386591
+ * @bug 8385855
  * @summary Test CountedLoopConverter::has_truncation_wrap logic that checks if
  *          a truncated iv (e.g. byte or char iv) is still a valid counted loop.
  * @library /test/lib /
@@ -32,7 +32,7 @@
 
 /*
  * @test id=Xcomp
- * @bug 8385855 8386591
+ * @bug 8385855
  * @library /test/lib /
  * @run main ${test.main.class} -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,${test.main.class}::test*
  */
@@ -731,7 +731,8 @@ public class TestHasTruncationWrap {
     }
 
     // testIRByte1: byte loop, but values are trivially in byte range.
-    // Byte cast -> "<< 24 >> 24" 8-bit signed truncation.
+    // But: "byte i++" goes through "<< 24 >> 24" truncation with signed extension,
+    //      and that's not recognized by TruncatedIncrement::build.
     public static int testIRByte1_gold = testIRByte1();
 
     @Run(test = "testIRByte1")
@@ -741,7 +742,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
     static int testIRByte1() {
         byte init  = (byte)lo;
         byte limit = (byte)hi;
@@ -753,7 +754,8 @@ public class TestHasTruncationWrap {
     }
 
     // testIRByte2: byte loop, ranges proved in byte range via CmpI before loop.
-    // Byte cast -> "<< 24 >> 24" 8-bit signed truncation.
+    // But: "byte i++" goes through "<< 24 >> 24" truncation with signed extension,
+    //      and that's not recognized by TruncatedIncrement::build.
     public static int testIRByte2_gold = testIRByte2();
 
     @Run(test = "testIRByte2")
@@ -763,7 +765,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
     static int testIRByte2() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
@@ -784,8 +786,8 @@ public class TestHasTruncationWrap {
     }
 
     // testIRByte4: byte loop, with a CmpI, but the limit ranges are bad.
-    // Byte cast -> "<< 24 >> 24" 8-bit signed truncation.
-    // But: we could have wrap, because 1_000 is outside byte type.
+    // And: "byte i++" goes through "<< 24 >> 24" truncation with signed extension,
+    //      and that's not recognized by TruncatedIncrement::build.
     public static int testIRByte4_gold = testIRByte4();
 
     @Run(test = "testIRByte4")
@@ -815,7 +817,7 @@ public class TestHasTruncationWrap {
     }
 
     // testIRChar1: char loop, but values are trivially in char range.
-    // Char cast -> "& 0xffff"
+    // But: "char i++" lowers through mask "& 0xffff", not recognized by TruncatedIncrement::build.
     public static int testIRChar1_gold = testIRChar1();
 
     @Run(test = "testIRChar1")
@@ -825,7 +827,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
     static int testIRChar1() {
         char init  = (char)lo;
         char limit = (char)hi;
@@ -837,7 +839,7 @@ public class TestHasTruncationWrap {
     }
 
     // testIRChar2: char loop, ranges proved in char range via CmpI before loop.
-    // Char cast -> "& 0xffff"
+    // But: "char i++" lowers through mask "& 0xffff", not recognized by TruncatedIncrement::build.
     public static int testIRChar2_gold = testIRChar2();
 
     @Run(test = "testIRChar2")
@@ -847,7 +849,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
     static int testIRChar2() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
@@ -868,7 +870,7 @@ public class TestHasTruncationWrap {
     }
 
     // testIRChar3: char loop, and range in char range via CmpI before loop (for loop limit).
-    // Char cast -> "& 0xffff"
+    // But: "char i++" lowers through mask "& 0xffff", not recognized by TruncatedIncrement::build.
     public static int testIRChar3_gold = testIRChar3();
 
     @Run(test = "testIRChar3")
@@ -878,7 +880,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
     static int testIRChar3() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
@@ -927,8 +929,7 @@ public class TestHasTruncationWrap {
     }
 
     // testIRChar4: char loop, with a CmpI, but the limit ranges are bad.
-    // Char cast -> "& 0xffff"
-    // But: 100_000 outside char range.
+    // And: "char i++" lowers through mask "& 0xffff", not recognized by TruncatedIncrement::build.
     public static int testIRChar4_gold = testIRChar4();
 
     @Run(test = "testIRChar4")
@@ -1045,8 +1046,9 @@ public class TestHasTruncationWrap {
     }
 
     // testIRShift8: 24-bit loop, and range in 24-bit range via CmpI before loop (for loop limit).
-    // Note: before JDK-8386591, we used to confuse 24-bit truncation with byte truncation,
-    //       but it didn't produce a CountedLoop anyway, because of some idealization.
+    // Note: this shift value is strange, we probably wanted to implement byte truncation
+    //       with shift=24, but instead we have 24-bit signed truncation.
+    // Note2: this pattern would have been supported by TruncatedIncrement::build, but it gets
     //        modified by LShiftINode::Ideal:
     //          RShiftI(AddI(LShiftI(Phi, 8), 256), 8)
     //        The same is explicitly excluded for shift 16, to preserve short/byte idioms.
@@ -1080,6 +1082,11 @@ public class TestHasTruncationWrap {
 
     // testIRShift8BadBounds: 24-bit loop, with a CmpI, but the limit ranges are bad.
     // Note: same issues as for testIRShift8.
+    // Note2: the range argument seems a bit strange here, but it turns out that
+    //        TruncatedIncrement::build maps shift=8 to BYTE, which just shows that
+    //        the implementation confused the shift=24 with shift=8.
+    //        Since we map to BYTE, 1_000 would be out of bounds, that's why this
+    //        is still a bad bounds example.
     public static int testIRShift8BadBounds_gold = testIRShift8BadBounds();
 
     @Run(test = "testIRShift8BadBounds")
