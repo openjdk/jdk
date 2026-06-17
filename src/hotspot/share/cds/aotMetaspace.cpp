@@ -1985,17 +1985,22 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
   const size_t total_range_size =
       archive_space_size + gap_size + class_space_size;
 
-  // Test that class space base address plus shift can be decoded by aarch64, when restored.
-  const int precomputed_narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
-  if (!CompressedKlassPointers::check_klass_decode_mode(base_address, precomputed_narrow_klass_shift,
-                                                        total_range_size)) {
-    aot_log_info(aot)("CDS initialization: Cannot use SharedBaseAddress " PTR_FORMAT
-                  " with precomputed shift %d, will try an alternative address.",
-                  p2i(base_address), precomputed_narrow_klass_shift);
-    // The requested base cannot be used with the archive's precomputed Klass
-    // encoding.  Fail this attempt and let the caller retry at an alternative
-    // address.
-    return nullptr;
+  if (use_archive_base_addr) {
+    const int precomputed_narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
+    if (!CompressedKlassPointers::check_klass_decode_mode(base_address, precomputed_narrow_klass_shift,
+                                                            total_range_size)) {
+      aot_log_info(aot)("CDS initialization: Cannot use SharedBaseAddress " PTR_FORMAT
+                    " with precomputed shift %d, will try an alternative address.",
+                    p2i(base_address), precomputed_narrow_klass_shift);
+      // The requested base cannot be used with the archive's precomputed Klass
+      // encoding.  Fail this attempt and let the caller retry at an alternative
+      // address.
+      return nullptr;
+    }
+  } else {
+    precond(base_address == nullptr);
+    // We will reserve an OS-picked address, which is guaranteed to return an address compatible
+    // with the the archive's precomputed Klass encoding.
   }
 
   assert(total_range_size > ccs_begin_offset, "must be");
