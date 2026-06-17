@@ -1746,7 +1746,7 @@ public class VectorMaskCompareNotTest {
 
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
-        testFramework.setDefaultWarmup(5000)
+        testFramework.setDefaultWarmup(10000)
                      .addFlags("--add-modules=jdk.incubator.vector",
                                "-XX:-IncrementalInlineVector")
                      .start();
