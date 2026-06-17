@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2026, the original author(s).
+ * Copyright (c) 2002-2019, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -160,7 +160,7 @@ public abstract class AbstractPty implements Pty {
             String str =
                     System.getProperty(PROP_FILE_DESCRIPTOR_CREATION_MODE, PROP_FILE_DESCRIPTOR_CREATION_MODE_DEFAULT);
             String[] modes = str.split(",");
-            IllegalStateException ise = null;
+            IllegalStateException ise = new IllegalStateException("Unable to create FileDescriptor");
             for (String mode : modes) {
                 try {
                     switch (mode) {
@@ -173,9 +173,6 @@ public abstract class AbstractPty implements Pty {
                     }
                 } catch (Throwable t) {
                     // ignore
-                    if (ise == null) {
-                        ise = new IllegalStateException("Unable to create FileDescriptor");
-                    }
                     ise.addSuppressed(t);
                 }
                 if (fileDescriptorCreator != null) {
@@ -183,7 +180,7 @@ public abstract class AbstractPty implements Pty {
                 }
             }
             if (fileDescriptorCreator == null) {
-                throw ise != null ? ise : new IllegalStateException("Unable to create FileDescriptor");
+                throw ise;
             }
         }
         return fileDescriptorCreator.newDescriptor(fd);

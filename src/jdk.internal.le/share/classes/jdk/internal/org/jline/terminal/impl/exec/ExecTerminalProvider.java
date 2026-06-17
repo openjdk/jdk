@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, the original author(s).
+ * Copyright (c) 2022, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -188,7 +188,7 @@ public class ExecTerminalProvider implements TerminalProvider {
         if (redirectPipeCreator == null) {
             String str = System.getProperty(PROP_REDIRECT_PIPE_CREATION_MODE, PROP_REDIRECT_PIPE_CREATION_MODE_DEFAULT);
             String[] modes = str.split(",");
-            IllegalStateException ise = null;
+            IllegalStateException ise = new IllegalStateException("Unable to create RedirectPipe");
             for (String mode : modes) {
                 try {
                     switch (mode) {
@@ -201,9 +201,6 @@ public class ExecTerminalProvider implements TerminalProvider {
                     }
                 } catch (Throwable t) {
                     // ignore
-                    if (ise == null) {
-                        ise = new IllegalStateException("Unable to create RedirectPipe");
-                    }
                     ise.addSuppressed(t);
                 }
                 if (redirectPipeCreator != null) {
@@ -211,7 +208,7 @@ public class ExecTerminalProvider implements TerminalProvider {
                 }
             }
             if (redirectPipeCreator == null) {
-                throw ise != null ? ise : new IllegalStateException("Unable to create RedirectPipe");
+                throw ise;
             }
         }
         return redirectPipeCreator.newRedirectPipe(fd);
