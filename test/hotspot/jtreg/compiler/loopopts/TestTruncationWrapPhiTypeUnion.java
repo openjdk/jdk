@@ -174,7 +174,6 @@ public class TestTruncationWrapPhiTypeUnion {
     }
 
     // Another fuzzer find, this one with short truncation.
-    // TODO: not ok
     static int test3(int limit) {
         int x = 0;
         int sum = 0;
