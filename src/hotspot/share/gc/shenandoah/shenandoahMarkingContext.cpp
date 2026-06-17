@@ -91,6 +91,8 @@ void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
 
   if (top_bitmap > bottom) {
     _mark_bit_map.clear_range_large(MemRegion(bottom, top_bitmap));
+    // All bitmap writes must complete before we update top at bitmap. If these writes were reordered,
+    // other threads could see stale marks above top, which is not valid.
     OrderAccess::storestore();
     _top_bitmaps[r->index()] = bottom;
   }

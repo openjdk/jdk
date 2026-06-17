@@ -1510,13 +1510,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       // coalesce-and-fill processing.
       r->end_preemptible_coalesce_and_fill();
     }
-#ifdef ASSERT
-    ShenandoahMarkingContext* const ctx = _heap->marking_context();
-    assert(ctx->top_at_mark_start(r) == r->bottom(), "Newly established allocation region starts with TAMS equal to bottom");
-    HeapWord* top_bitmap = ctx->top_bitmap(r);
-    OrderAccess::loadload();
-    assert(ctx->is_bitmap_range_within_region_clear(top_bitmap, r->end()), "Bitmap above top_bitmap() must be clear");
-#endif
+    shenandoah_assert_clear_above_top(r);
     log_debug(gc, free)("Using new region (%zu) for %s (" PTR_FORMAT ").",
                         r->index(), req.type_string(), p2i(&req));
   } else {
