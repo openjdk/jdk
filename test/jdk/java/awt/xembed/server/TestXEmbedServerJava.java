@@ -48,9 +48,14 @@ public class TestXEmbedServerJava extends TestXEmbedServer {
             "You may start XEmbed client by pressing 'Add client' button.\n" +
             "Check that focus transfer with mouse works, that focus traversal with Tab/Shift-Tab works.\n" +
             "Check that XEmbed server client's growing and shrinking.\n" +
-            "Check that Drag&Drop works in all combinations.\n" +
-            "Check the keyboard input works in both text fields.\n";
-        Frame f = new Frame("Instructions");
+            "Check the keyboard input works in both text fields.\n" +
+            "  - Input some sample text into the server text field.\n" +
+            "  - Drag the text in the server text field and drop it to the left or right of the existing text within the same text field.\n" +
+            "  - Input some sample text into the client text field.\n" +
+            "  - Drag the text in the client text field and drop it to the left or right of the existing text within the same text field.\n" +
+            "  - Drag the text from the client text field to the server text field.\n" +
+            "  - Drag the text from the server text field to the client text field.\n";
+	Frame f = new Frame("Instructions");
         f.setLayout(new BorderLayout());
         f.add(new TextArea(instruction), BorderLayout.CENTER);
         f.pack();
