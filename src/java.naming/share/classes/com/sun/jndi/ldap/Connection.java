@@ -1174,8 +1174,7 @@ public final class Connection implements Runnable {
             } catch (SSLPeerUnverifiedException ex) {
                 CommunicationException ce = new CommunicationException();
                 ce.setRootCause(closureReason);
-                ce.addSuppressed(ex);
-                tlsHandshakeCompleted.completeExceptionally(ce);
+                tlsHandshakeCompleted.completeExceptionally(ex);
             }
         }
     }
