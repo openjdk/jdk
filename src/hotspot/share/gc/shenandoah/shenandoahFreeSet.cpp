@@ -1509,6 +1509,9 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       // coalesce-and-fill processing.
       r->end_preemptible_coalesce_and_fill();
     }
+
+    assert(_heap->marking_context()->top_at_mark_start(r) == r->bottom(),
+      "Newly established allocation region (%zu) must start with TAMS equal to bottom", r->index());
     shenandoah_assert_clear_above_top(r);
     log_debug(gc, free)("Using new region (%zu) for %s (" PTR_FORMAT ").",
                         r->index(), req.type_string(), p2i(&req));
