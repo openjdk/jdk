@@ -132,6 +132,32 @@ void LIR_Assembler::push(LIR_Opr opr) { Unimplemented(); }
 void LIR_Assembler::pop(LIR_Opr opr) { Unimplemented(); }
 
 bool LIR_Assembler::is_literal_address(LIR_Address* addr) { Unimplemented(); return false; }
+
+bool LIR_Assembler::is_null_or_non_fp_zero_constant(BasicType type, LIR_Opr opr) {
+  if (!opr->is_constant()) {
+    return false;
+  }
+
+  LIR_Const* c = opr->as_constant_ptr();
+
+  switch (type) {
+  case T_ADDRESS: // fall through
+  case T_INT:     // fall through
+  case T_CHAR:    // fall through
+  case T_SHORT:   // fall through
+  case T_BOOLEAN: // fall through
+  case T_BYTE:
+    return (c->as_jint() == 0);
+    break;
+  case T_LONG:
+    return (c->as_jlong() == 0);
+  case T_OBJECT:  // fall through
+  case T_ARRAY:
+    return (c->as_jobject() == nullptr);
+  default:
+    return false;
+  }
+}
 //-------------------------------------------
 
 static Register as_reg(LIR_Opr op) {
@@ -633,36 +659,15 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
 }
 
 void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info, bool wide, bool is_volatile) {
-  assert(src->is_constant(), "should not call otherwise");
-  LIR_Const* c = src->as_constant_ptr();
+  assert(is_null_or_non_fp_zero_constant(type, src), "should be");
   LIR_Address* to_addr = dest->as_address_ptr();
   Address addr = as_Address(to_addr, rscratch1);
 
-  switch (type) {
-  case T_ADDRESS: // fall through
-  case T_INT:     // fall through
-  case T_CHAR:    // fall through
-  case T_SHORT:   // fall through
-  case T_BOOLEAN: // fall through
-  case T_BYTE:
-    assert(c->as_jint() == 0, "should be");
-    break;
-  case T_LONG:
-    assert(c->as_jlong() == 0, "should be");
-    break;
-  case T_OBJECT:  // fall through
-  case T_ARRAY:
-    assert(c->as_jobject() == nullptr, "should be");
-    break;
-  default:
-    ShouldNotReachHere();
-  }
-
   if (is_volatile) {
     assert(!wide, "unexpected for volatile_move_op");
-    store_volatile</*is_store_zero=*/true>(addr, LIR_Opr::illegalOpr(), type, info);
+    store_volatile(addr, src, type, info);
   } else {
-    store_unordered</*is_store_zero=*/true>(addr, LIR_Opr::illegalOpr(), type, wide, info);
+    store_unordered(addr, src, type, wide, info);
   }
 }
 
@@ -774,9 +779,9 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
 
   if (is_volatile) {
     assert(!wide, "unexpected for volatile_move_op");
-    store_volatile</*is_store_zero=*/false>(addr, src_maybe_compressed_oop, type, info);
+    store_volatile(addr, src_maybe_compressed_oop, type, info);
   } else {
-    store_unordered</*is_store_zero=*/false>(addr, src_maybe_compressed_oop, type, wide, info);
+    store_unordered(addr, src_maybe_compressed_oop, type, wide, info);
   }
 }
 
@@ -959,7 +964,6 @@ void LIR_Assembler::load_unordered(Address addr, LIR_Opr dest,
   }
 }
 
-template<bool is_store_zero>
 void LIR_Assembler::store_unordered(Address addr, LIR_Opr src,
                                     BasicType type, bool wide, CodeEmitInfo* info) {
   if (info != nullptr) {
@@ -972,8 +976,7 @@ void LIR_Assembler::store_unordered(Address addr, LIR_Opr src,
     __ strd(src->as_double_reg(), addr);
   } else {
     Register src_reg;
-    if (is_store_zero) {
-      assert(src == LIR_Opr::illegalOpr(), "no operand expected");
+    if (is_null_or_non_fp_zero_constant(type, src)) {
       src_reg = zr;
     } else if (type == T_LONG) {
       src_reg = src->as_register_lo();
@@ -1058,14 +1061,12 @@ void LIR_Assembler::load_volatile(Address addr, LIR_Opr dest,
   }
 }
 
-template<bool is_store_zero>
 void LIR_Assembler::store_volatile(Address addr, LIR_Opr src,
                                    BasicType type, CodeEmitInfo* info) {
   Register addr_reg;
   Register src_reg;
 
-  if (is_store_zero) {
-    assert(src == LIR_Opr::illegalOpr(), "no operand expected");
+  if (is_null_or_non_fp_zero_constant(type, src)) {
     src_reg = zr;
   } else {
     // Need to move from FPR to GPR before STLR with FMOV for floating types

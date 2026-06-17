@@ -42,6 +42,7 @@ friend class ArrayCopyStub;
   address int_constant(jlong n);
 
   bool is_literal_address(LIR_Address* addr);
+  bool is_null_or_non_fp_zero_constant(BasicType type, LIR_Opr opr);
 
   // When we need to use something other than rscratch1 use this method.
   Address as_Address(LIR_Address* addr, Register tmp);
@@ -66,10 +67,8 @@ friend class ArrayCopyStub;
   void const2mem(LIR_Opr src, LIR_Opr dest, BasicType type,
                  CodeEmitInfo* info, bool wide, bool is_volatile);
   void load_unordered(Address addr, LIR_Opr dest, BasicType type, bool wide, CodeEmitInfo* info);
-  template<bool is_store_zero>
   void store_unordered(Address addr, LIR_Opr src, BasicType type, bool wide, CodeEmitInfo* info);
   void load_volatile(Address addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info);
-  template<bool is_store_zero>
   void store_volatile(Address addr, LIR_Opr src, BasicType type, CodeEmitInfo* info);
 
   static const int max_tableswitches = 20;
