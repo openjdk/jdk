@@ -49,6 +49,7 @@ public class TestTruncationWrapPhiTypeUnion {
 
         failures += run("test1", () -> test1(-1), EXPECTED);
         failures += run("test2", () -> test2(-1), EXPECTED);
+        failures += run("test3", () -> test3(-1), -87065049);
 
         if (failures > 0) {
             throw new RuntimeException("failures: " + failures);
@@ -171,5 +172,22 @@ public class TestTruncationWrapPhiTypeUnion {
         }
 
         return sum;
+    }
+
+    // Another fuzzer find, this one with short truncation.
+    static int test3(int limit) {
+        int x = 0;
+        int sum = 0;
+
+        // Range: [min_int..8192], at runtime: -100_000
+        limit = Math.min(limit, 8192);
+        int i;
+        for (i = 128; limit <= i; i = (short)(i - 16384)) {
+            sum = sum + i + 1;
+            if (x++ > 10789) {
+                break;
+            }
+        }
+        return sum + i;
     }
 }
