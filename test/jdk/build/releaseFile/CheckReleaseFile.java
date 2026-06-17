@@ -112,13 +112,17 @@ public class CheckReleaseFile {
         }
         String valueString = valueMatcher.group(1);
 
+        if (valueString == "") {
+            throw new RuntimeException("The test failed, SOURCE value was empty." +
+                " JDK Repository used for building might not have .git directory." + 
+                " Verify that .git was removed from the repository intentionally.");
+        }
 
         String[] values = valueString.split(" ");
 
-        // First value should start with ".:" or SOURCE value should be empty,
-        // regardless of Oracle or OpenJDK.
+        // First value MUST start with ".:" regardless of Oracle or OpenJDK
         String rootRegexp = "\\." + SRC_HASH_REGEXP;
-        if (values[0] != "" && !values[0].matches(rootRegexp)) {
+        if (!values[0].matches(rootRegexp)) {
             throw new RuntimeException("The test failed, first element did not match regexp: " + rootRegexp);
         }
 
@@ -128,7 +132,7 @@ public class CheckReleaseFile {
         String vendor = System.getProperty("java.vendor");
         if (runtime.contains("OpenJDK") && vendor.contains("Oracle Corporation")) {
             System.out.println("Oracle built OpenJDK, verifying SOURCE format");
-            if (values.length != 1 || values[0] == "") {
+            if (values.length != 1) {
                 throw new RuntimeException("The test failed, wrong number of elements in SOURCE list." +
                                            " Should be 1 for Oracle built OpenJDK.");
             }
