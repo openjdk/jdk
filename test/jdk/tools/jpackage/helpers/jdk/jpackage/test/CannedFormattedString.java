@@ -73,15 +73,45 @@ public record CannedFormattedString(BiFunction<String, Object[], String> formatt
         String format();
         List<Object> modelArgs();
 
+        public enum Formatter {
+            JPACKAGE_MAIN_STRING_BUNDLE,
+            MESSAGE_FORMAT,
+            ;
+        }
+
+        default Formatter formatter() {
+            return Formatter.JPACKAGE_MAIN_STRING_BUNDLE;
+        }
+
         default CannedFormattedString asCannedFormattedString(Object ... args) {
             if (args.length != modelArgs().size()) {
                 throw new IllegalArgumentException();
             }
-            return JPackageStringBundle.MAIN.cannedFormattedString(format(), args);
+
+            var format = Objects.requireNonNull(format());
+
+            return switch (Objects.requireNonNull(formatter())) {
+                case JPACKAGE_MAIN_STRING_BUNDLE -> {
+                    yield JPackageStringBundle.MAIN.cannedFormattedString(format, args);
+                }
+                case MESSAGE_FORMAT -> {
+                    yield CannedFormattedString.createFromMessageFormat(format, args);
+                }
+            };
         }
 
         default Pattern asPattern() {
-            return JPackageStringBundle.MAIN.cannedFormattedStringAsPattern(format(), modelArgs().toArray());
+            var format = Objects.requireNonNull(format());
+            var args = Objects.requireNonNull(modelArgs()).toArray();
+
+            return switch (Objects.requireNonNull(formatter())) {
+                case JPACKAGE_MAIN_STRING_BUNDLE -> {
+                    yield JPackageStringBundle.MAIN.cannedFormattedStringAsPattern(format, args);
+                }
+                case MESSAGE_FORMAT -> {
+                    yield CannedMessageFormat.create(format, args).toPattern();
+                }
+            };
         }
     }
 

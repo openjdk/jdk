@@ -420,6 +420,12 @@ ATTRIBUTE_ALIGNED(64) const julong StubRoutines::x86::_k512_W[] =
     0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL,
 };
 
+ATTRIBUTE_ALIGNED(64)
+address StubRoutines::x86::small_jump_table[STRING_INDEXOF_TABLE_COUNT * STRING_INDEXOF_NUMBER_OF_CASES] = { nullptr, };
+
+ATTRIBUTE_ALIGNED(64)
+address StubRoutines::x86::big_jump_table[STRING_INDEXOF_TABLE_COUNT * STRING_INDEXOF_NUMBER_OF_CASES] = { nullptr, };
+
 #if INCLUDE_CDS
 
 void StubRoutines::init_AOTAddressTable() {
@@ -459,6 +465,12 @@ void StubRoutines::x86::init_AOTAddressTable(GrowableArray<address>& external_ad
   ADD(_k256);
   ADD(_k256_W);
   ADD(_k512_W);
+  for (int i = 0; i < STRING_INDEXOF_TABLE_COUNT; i++) {
+    address a = (address)StubRoutines::x86::small_jump_table_base(i);
+    ADD(a);
+    a = (address)StubRoutines::x86::big_jump_table_base(i);
+    ADD(a);
+  }
 #undef ADD
 }
 #endif // INCLUDE_CDS
