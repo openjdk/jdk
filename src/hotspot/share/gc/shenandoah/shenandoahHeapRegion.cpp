@@ -43,7 +43,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/powerOfTwo.hpp"
 
