@@ -173,6 +173,10 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call, false, _separate_io_proj);
   Node* ret = kit.set_results_for_java_call(call, _separate_io_proj);
+  if (is_late_inline() && !call->is_boxing_method() && ret->is_Proj()) {
+    // If late inlining for this call happens in a dead part of the graph it can leave a dead loop behind
+    ret->mark_not_dead_loop_safe();
+  }
   kit.push_node(method()->return_type()->basic_type(), ret);
   return kit.transfer_exceptions_into_jvms();
 }
@@ -271,6 +275,10 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call, false /*must_throw*/, _separate_io_proj);
   Node* ret = kit.set_results_for_java_call(call, _separate_io_proj);
+  if (is_late_inline() && ret->is_Proj()) {
+    // If late inlining for this call happens in a dead part of the graph it can leave a dead loop behind
+    ret->mark_not_dead_loop_safe();
+  }
   kit.push_node(method()->return_type()->basic_type(), ret);
 
   // Represent the effect of an implicit receiver null_check
