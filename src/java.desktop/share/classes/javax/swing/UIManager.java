@@ -184,7 +184,7 @@ import sun.swing.SwingAccessor;
  * <ul>
  * <li>specified rendering of painted borders may be ignored
  * <li>specified rendering of highlighting effects may be ignored
- * <li>specified rendering of painted backgrounds and foreground may be ignored
+ * <li>specified rendering of painted backgrounds and foregrounds may be ignored
  * <li>specified rendering of selected vs unselected components may be ignored
  * <li>specified rendering of enabled vs disabled components may be ignored
  * </ul>
@@ -192,7 +192,7 @@ import sun.swing.SwingAccessor;
  * <p>
  * These caveats must not be construed as an excuse to arbitrarily ignore these properties.
  * They are intended to support the requirement that the platform Look and Feel be as
- * faithful to the native rendering as is practical.
+ * consistent with the native rendering as is practical.
  *
  * <p>
  * <strong>Warning:</strong>
