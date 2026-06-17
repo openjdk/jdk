@@ -114,8 +114,8 @@ public class CheckReleaseFile {
 
         if ("".equals(valueString)) {
             throw new RuntimeException("The test failed, SOURCE value was empty." +
-                " JDK Repository used for building might not have .git directory." +
-                " Verify that .git was removed from the repository intentionally.");
+                " The JDK workspace used for building might not have a .git directory or generated .src-rev file." +
+                " Verify that either .git was removed intentionally or generating .src-rev was intentionally omitted");
         }
 
         String[] values = valueString.split(" ");
