@@ -3521,6 +3521,8 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
       cbnzw(rscratch1, retry_load);
     }
     bind(done);
+    // Prevent memory accesses from floating into the CAS's critical section
+    dmb(ISH);
   }
   BLOCK_COMMENT("} cmpxchg");
 }
