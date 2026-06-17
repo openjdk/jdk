@@ -681,6 +681,8 @@ public:
   void increase_partition_used(ShenandoahFreeSetPartitionId partition, size_t bytes);
   void mark_region_used(ShenandoahFreeSetPartitionId partition);
   size_t retire_region(ShenandoahFreeSetPartitionId partition, size_t idx, size_t used_bytes);
+  void unretire_alloc_region(ShenandoahFreeSetPartitionId partition, ShenandoahHeapRegion* r);
+  void decrease_region_counts(ShenandoahFreeSetPartitionId partition, size_t regions);
 
   // Public because ShenandoahRegionPartitions assertions require access.
   size_t alloc_capacity(ShenandoahHeapRegion *r) const;
@@ -796,6 +798,13 @@ public:
 
   // Acquire heap lock and log status, assuming heap lock is not acquired by the caller.
   void log_status_under_lock();
+
+  // Acquire heap lock and release the cached CAS alloc region of every partition allocator.
+  // Called at GC phase boundaries (before choosing the collection set, before update-refs,
+  // and in degenerated/full/old GC) so that active alloc regions are deactivated, their
+  // accounting is reconciled, and their _atomic_top is synced back to _top before the heap
+  // is iterated or regions are recycled.
+  void release_alloc_regions_under_lock();
 
   // All four of the following functions may produce stale data if called without owning the global heap lock.
   // Changes to the values of these variables are performed with a lock.  A change to capacity or used "atomically"

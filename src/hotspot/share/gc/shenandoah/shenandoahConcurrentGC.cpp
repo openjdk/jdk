@@ -780,6 +780,11 @@ void ShenandoahConcurrentGC::op_final_mark() {
     // Notify JVMTI that the tagmap table will need cleaning.
     JvmtiTagMap::set_needs_cleaning();
 
+    // Release all cached CAS alloc regions before choosing the collection set, so that no
+    // region remains an active alloc region (its _atomic_top is synced back to _top and its
+    // accounting is reconciled) while cset selection and recycling iterate the heap.
+    heap->free_set()->release_alloc_regions_under_lock();
+
     // The collection set is chosen by prepare_regions_and_collection_set(). Additionally, certain parameters have been
     // established to govern the evacuation efforts that are about to begin.  Refer to comments on reserve members in
     // ShenandoahGeneration and ShenandoahOldGeneration for more detail.

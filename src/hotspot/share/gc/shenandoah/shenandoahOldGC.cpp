@@ -64,6 +64,10 @@ void ShenandoahOldGC::op_final_mark() {
     // We need to do this because weak root cleaning reports the number of dead handles
     JvmtiTagMap::set_needs_cleaning();
 
+    // Release all cached CAS alloc regions before choosing the collection set, so that no
+    // region remains an active alloc region while cset selection iterates the heap.
+    heap->free_set()->release_alloc_regions_under_lock();
+
     _generation->prepare_regions_and_collection_set(true);
 
     heap->set_unload_classes(false);

@@ -25,6 +25,7 @@
 
 
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
@@ -366,6 +367,10 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   // STW cleanup weak roots and unload classes
   heap->parallel_cleaning(_generation, false /*full gc*/);
 
+  // Release all cached CAS alloc regions before choosing the collection set, so that no
+  // region remains an active alloc region while cset selection and recycling iterate the heap.
+  heap->free_set()->release_alloc_regions_under_lock();
+
   // Prepare regions and collection set
   _generation->prepare_regions_and_collection_set(false /*concurrent*/);
 
@@ -417,6 +422,13 @@ void ShenandoahDegenGC::op_evacuate() {
 void ShenandoahDegenGC::op_init_update_refs() {
   // Evacuation has completed
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  // Release the collector alloc regions reserved during evacuation before update-refs, so
+  // that regions holding evacuated objects sync their _atomic_top to _top and advance their
+  // update watermark before the heap is iterated.
+  {
+    ShenandoahHeapLocker locker(heap->lock());
+    heap->allocator()->release_collector_alloc_regions();
+  }
   heap->prepare_update_heap_references();
   heap->set_update_refs_in_progress(true);
 }

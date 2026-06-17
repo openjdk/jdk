@@ -348,6 +348,40 @@ size_t ShenandoahFreeSet::retire_region(ShenandoahFreeSetPartitionId partition, 
   return _partitions.retire_from_partition(partition, idx, used_bytes);
 }
 
+void ShenandoahFreeSet::unretire_alloc_region(ShenandoahFreeSetPartitionId partition, ShenandoahHeapRegion* r) {
+  shenandoah_assert_heaplocked();
+  // Reverse the accounting performed by retire_region() when this region was reserved as
+  // a CAS alloc region: that pre-charged the region's entire free capacity as used and
+  // decremented the partition region count. The CAS allocations performed while the region
+  // was active consumed part of that free capacity, so the remnant we give back is the
+  // current free capacity.
+  size_t free_bytes = r->free();
+  assert(free_bytes >= PLAB::min_size() * HeapWordSize, "Only unretire regions still worth allocating from");
+  _partitions.decrease_used(partition, free_bytes);
+  _partitions.increase_region_counts(partition, 1);
+  _partitions.unretire_to_partition(r, partition);
+  switch (partition) {
+    case ShenandoahFreeSetPartitionId::Mutator:
+      recompute_total_used</* UsedByMutatorChanged */ true,
+                           /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ false>();
+      break;
+    case ShenandoahFreeSetPartitionId::Collector:
+      recompute_total_used</* UsedByMutatorChanged */ false,
+                           /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ false>();
+      break;
+    case ShenandoahFreeSetPartitionId::OldCollector:
+      recompute_total_used</* UsedByMutatorChanged */ false,
+                           /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+void ShenandoahFreeSet::decrease_region_counts(ShenandoahFreeSetPartitionId partition, size_t regions) {
+  _partitions.decrease_region_counts(partition, regions);
+}
+
 template<ShenandoahFreeSetPartitionId PARTITION>
 ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc(size_t min_size_words, bool& in_new_region) {
   shenandoah_assert_heaplocked();
@@ -830,7 +864,7 @@ void ShenandoahRegionPartitions::retire_range_from_partition(
 size_t ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartitionId partition,
                                                          idx_t idx, size_t used_bytes) {
 
-  size_t waste_bytes = 0;
+  size_t remnant_bytes = 0;
   // Note: we may remove from free partition even if region is not entirely full, such as when available < PLAB::min_size()
   assert (idx < _max, "index is sane: %zu < %zu", idx, _max);
   assert (partition < NumPartitions, "Cannot remove from free partitions if not already free");
@@ -838,18 +872,14 @@ size_t ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartit
 
   if (used_bytes < _region_size_bytes) {
     // Count the alignment pad remnant of memory as used when we retire this region
-    size_t fill_padding = _region_size_bytes - used_bytes;
-    waste_bytes = fill_padding;
-    increase_used(partition, fill_padding);
+    remnant_bytes = _region_size_bytes - used_bytes;
+    decrease_region_counts(partition, 1);
+    increase_used(partition, remnant_bytes);
   }
   _membership[int(partition)].clear_bit(idx);
-  decrease_region_counts(partition, 1);
   shrink_interval_if_boundary_modified(partition, idx);
 
-  // This region is fully used, whether or not top() equals end().  It
-  // is retired and no more memory will be allocated from within it.
-
-  return waste_bytes;
+  return remnant_bytes;
 }
 
 void ShenandoahRegionPartitions::unretire_to_partition(ShenandoahHeapRegion* r, ShenandoahFreeSetPartitionId which_partition) {
@@ -1106,12 +1136,21 @@ void ShenandoahRegionPartitions::assert_bounds() {
 
   for (idx_t i = 0; i < _max; i++) {
     ShenandoahFreeSetPartitionId partition = membership(i);
+    ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(i);
+    // Snapshot the active-alloc-region flag BEFORE reading capacity. assert_bounds() runs
+    // under the heap lock, but the lock-free allocation fast path (try_atomic_allocate_in)
+    // can retire the active alloc region concurrently (atomic_top non-null -> null). Reading
+    // the flag first (an acquire load) gives a consistent view: if it reads active we account
+    // for the whole region; otherwise the acquire load has also made the retiring thread's
+    // synced _top visible, so the capacity read below is the final retired remnant. Reading
+    // capacity first would race: a large (active) capacity could be paired with a flag that
+    // has since flipped to retired, tripping the asserts below for a region that is fine.
+    const bool is_atomic_alloc_region = r->is_atomic_alloc_region();
     size_t capacity = _free_set->alloc_capacity(i);
     switch (partition) {
       case ShenandoahFreeSetPartitionId::NotFree:
       {
-        assert(capacity != _region_size_bytes, "Should not be retired if empty");
-        ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(i);
+        assert(is_atomic_alloc_region || (capacity != _region_size_bytes), "Should not be retired if empty");
         if (r->is_humongous()) {
           if (r->is_old()) {
             regions[int(ShenandoahFreeSetPartitionId::OldCollector)]++;
@@ -1127,7 +1166,7 @@ void ShenandoahRegionPartitions::assert_bounds() {
             young_humongous_waste += capacity;
           }
         } else {
-          assert(r->is_cset() || (capacity < PLAB::min_size() * HeapWordSize),
+          assert(r->is_cset() || is_atomic_alloc_region || (capacity < PLAB::min_size() * HeapWordSize),
                  "Expect retired remnant size to be smaller than min plab size");
           // This region has been retired already or it is in the cset.  In either case, we set capacity to zero
           // so that the entire region will be counted as used.  We count young cset regions as "retired".
@@ -1150,7 +1189,6 @@ void ShenandoahRegionPartitions::assert_bounds() {
       case ShenandoahFreeSetPartitionId::Collector:
       case ShenandoahFreeSetPartitionId::OldCollector:
       {
-        ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(i);
         assert(capacity > 0, "free regions must have allocation capacity");
         bool is_empty = (capacity == _region_size_bytes);
         regions[int(partition)]++;
@@ -3088,6 +3126,12 @@ void ShenandoahFreeSet::log_status_under_lock() {
     ShenandoahHeapLocker locker(_heap->lock());
     log_status();
   }
+}
+
+void ShenandoahFreeSet::release_alloc_regions_under_lock() {
+  shenandoah_assert_not_heaplocked();
+  ShenandoahHeapLocker locker(_heap->lock());
+  _heap->allocator()->release_alloc_regions();
 }
 
 void ShenandoahFreeSet::log_freeset_stats(ShenandoahFreeSetPartitionId partition_id, LogStream& ls) {

@@ -226,6 +226,10 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     heap->tlabs_retire(ResizeTLAB);
   }
 
+  // Release all cached CAS alloc regions before Full GC walks the heap, so that no region
+  // remains an active alloc region while marking, address calculation, and compaction run.
+  heap->free_set()->release_alloc_regions_under_lock();
+
   OrderAccess::fence();
 
   phase1_mark_heap();

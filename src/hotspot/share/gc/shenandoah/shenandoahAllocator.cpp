@@ -67,3 +67,8 @@ void ShenandoahAllocator::release_alloc_regions() {
   _collector_alloc.release_alloc_region();
   _old_collector_alloc.release_alloc_region();
 }
+
+void ShenandoahAllocator::release_collector_alloc_regions() {
+  _collector_alloc.release_alloc_region();
+  _old_collector_alloc.release_alloc_region();
+}

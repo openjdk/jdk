@@ -70,6 +70,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _top_at_evac_start(start),
   _state(committed ? _empty_committed : _empty_uncommitted),
   _top(start),
+  _atomic_top(nullptr),
   _tlab_allocs(0),
   _gclab_allocs(0),
   _plab_allocs(0),
@@ -326,6 +327,10 @@ void ShenandoahHeapRegion::make_empty() {
   reset_age();
   CENSUS_NOISE(clear_youth();)
   switch (state()) {
+    case _regular:
+      if (free() != region_size_bytes()) {
+        report_illegal_transition("emptying");
+      }
     case _trash:
       set_state(_empty_committed);
       _empty_time = os::elapsedTime();
@@ -362,25 +367,25 @@ void ShenandoahHeapRegion::make_committed_bypass() {
 }
 
 void ShenandoahHeapRegion::reset_alloc_metadata() {
-  _tlab_allocs = 0;
-  _gclab_allocs = 0;
-  _plab_allocs = 0;
+  _tlab_allocs.store_relaxed(0);
+  _gclab_allocs.store_relaxed(0);
+  _plab_allocs.store_relaxed(0);
 }
 
 size_t ShenandoahHeapRegion::get_shared_allocs() const {
-  return used() - (_tlab_allocs + _gclab_allocs + _plab_allocs) * HeapWordSize;
+  return used() - (_tlab_allocs.load_relaxed() + _gclab_allocs.load_relaxed() + _plab_allocs.load_relaxed()) * HeapWordSize;
 }
 
 size_t ShenandoahHeapRegion::get_tlab_allocs() const {
-  return _tlab_allocs * HeapWordSize;
+  return _tlab_allocs.load_relaxed() * HeapWordSize;
 }
 
 size_t ShenandoahHeapRegion::get_gclab_allocs() const {
-  return _gclab_allocs * HeapWordSize;
+  return _gclab_allocs.load_relaxed() * HeapWordSize;
 }
 
 size_t ShenandoahHeapRegion::get_plab_allocs() const {
-  return _plab_allocs * HeapWordSize;
+  return _plab_allocs.load_relaxed() * HeapWordSize;
 }
 
 void ShenandoahHeapRegion::set_live_data(size_t s) {
@@ -574,6 +579,8 @@ ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
 
 void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
+  assert(!is_atomic_alloc_region(), "Must not be atomic alloc region");
+  assert(atomic_top() == nullptr, "Must be");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   _top_at_evac_start = _bottom;

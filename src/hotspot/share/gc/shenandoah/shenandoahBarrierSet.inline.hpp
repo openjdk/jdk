@@ -598,7 +598,14 @@ void ShenandoahBarrierSet::arraycopy_marking(T* dst, size_t count) {
 }
 
 inline bool ShenandoahBarrierSet::need_bulk_update(HeapWord* ary) {
-  return ary < _heap->heap_region_containing(ary)->get_update_watermark();
+  ShenandoahHeapRegion* r = _heap->heap_region_containing(ary);
+  // A region reserved as an active collector CAS alloc region may receive
+  // evacuation-copy writes past its update watermark before it is released,
+  // so always force the bulk update while it is reserved.
+  if (r->is_collector_allocator_reserved()) {
+    return true;
+  }
+  return ary < r->get_update_watermark();
 }
 
 template <class T>

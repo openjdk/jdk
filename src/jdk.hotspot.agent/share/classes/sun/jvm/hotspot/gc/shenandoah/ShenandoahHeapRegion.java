@@ -62,6 +62,7 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
 
     private static AddressField BottomField;
     private static AddressField TopField;
+    private static AddressField AtomicTopField;
     private static AddressField EndField;
 
     private ShenandoahHeap heap;
@@ -81,6 +82,7 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
         RegionIndexField = type.getCIntegerField("_index");
         BottomField = type.getAddressField("_bottom");
         TopField = type.getAddressField("_top");
+        AtomicTopField = type.getAddressField("_atomic_top");
         EndField = type.getAddressField("_end");
 
         RegionSizeBytesShiftField = type.getCIntegerField("RegionSizeBytesShift");
@@ -118,7 +120,11 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
     }
 
     public Address top() {
-        return TopField.getValue(addr);
+        // Mirrors the C++ ShenandoahHeapRegion::top(): _atomic_top is the
+        // authoritative top while the region is an active CAS alloc region,
+        // otherwise _top is authoritative.
+        Address atomicTop = AtomicTopField.getValue(addr);
+        return atomicTop != null ? atomicTop : TopField.getValue(addr);
     }
 
     public Address end() {

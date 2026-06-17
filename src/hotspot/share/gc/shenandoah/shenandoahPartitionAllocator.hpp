@@ -43,7 +43,7 @@ private:
   // Cached allocation region with remaining capacity from the last allocation in
   // this partition. Checked first on the next request to skip a FreeSet scan.
   // Cleared when retired by allocate_in or by release_alloc_region.
-  ShenandoahHeapRegion* _alloc_region;
+  Atomic<ShenandoahHeapRegion*> _alloc_region;
 
   // Allocate within a single region; the caller must guarantee the region has enough free
   // capacity for the request. Handles LAB sizing, updates partition accounting via
@@ -51,6 +51,8 @@ private:
   // boundary_changed is set to true if the region is retired or otherwise mutates the partition
   // boundary; it is never reset to false.
   HeapWord* allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& boundary_changed);
+
+  HeapWord* try_atomic_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req);
 
 public:
   ShenandoahPartitionAllocator(ShenandoahFreeSet* free_set);
@@ -60,7 +62,7 @@ public:
 
   // Drop the cached alloc region. Must be called before the free set is rebuilt,
   // since rebuild can change region affiliation/membership and invalidate the cache.
-  void release_alloc_region() { _alloc_region = nullptr; }
+  void release_alloc_region();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPARTITIONALLOCATOR_HPP

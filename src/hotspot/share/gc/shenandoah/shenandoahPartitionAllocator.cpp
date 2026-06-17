@@ -39,79 +39,85 @@ ShenandoahPartitionAllocator<PARTITION>::ShenandoahPartitionAllocator(Shenandoah
 
 template<ShenandoahFreeSetPartitionId PARTITION>
 HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
-  // Mutator allocations may yield to safepoint; GC allocations cannot.
-  ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), req.is_mutator_alloc());
-
-  // OldCollector: verify old generation has room before attempting allocation.
-  if constexpr (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) {
-    if (!req.is_promotion() && !ShenandoahHeap::heap()->old_generation()->can_allocate(req)) {
-      return nullptr;
-    }
-  }
-
-  bool boundary_changed = false;
-  size_t min_req_words = req.is_lab_alloc() ? req.min_size() : req.size();
-  // Fast path: try the cached alloc region first.
-  if (_alloc_region != nullptr) {
-    constexpr ShenandoahAffiliation affiliation =
-      (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) ? OLD_GENERATION : YOUNG_GENERATION;
-    assert(!_alloc_region->is_trash() && _alloc_region->affiliation() == affiliation &&
-           _free_set->membership(_alloc_region->index()) == PARTITION,
-           "Cached alloc region %zu must remain a non-trash member of this partition until the free set is rebuilt",
-           _alloc_region->index());
-    HeapWord* result = nullptr;
-    size_t ac_words = _alloc_region->free() >> LogHeapWordSize;
-    // A region is only ever cached while it has at least PLAB::min_size of capacity, and its
-    // free space shrinks only via allocate_in (which retires and clears it below that threshold).
-    // So the cached alloc region always has usable capacity here: use it when it can satisfy this
-    // request, otherwise keep it cached for a smaller future request and fall through.
-    assert(ac_words >= PLAB::min_size(),
-           "Cached alloc region %zu must keep at least PLAB::min_size capacity, has %zu words",
-           _alloc_region->index(), ac_words);
-    if (ac_words >= min_req_words) {
-      result = allocate_in(_alloc_region, req, boundary_changed);
-    }
-    if (result != nullptr) {
+  ShenandoahHeapRegion* cas_alloc_region = _alloc_region.load_acquire();
+  HeapWord* obj = nullptr;
+  if (cas_alloc_region != nullptr) {
+    // Fast-path: try CAS allocation using the cached alloc region
+    obj = try_atomic_allocate_in(cas_alloc_region, req);
+    if (obj != nullptr) {
       in_new_region = false;
-      _free_set->notify_allocation(PARTITION, false, boundary_changed);
-      return result;
+      return obj;
     }
   }
 
-  // Ask FreeSet to find a suitable region.
-  ShenandoahHeapRegion* r = _free_set->find_region_for_alloc<PARTITION>(min_req_words, in_new_region);
-  // Collector partitions can overflow into Mutator partition.
-  if constexpr (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
-    if (r == nullptr && ShenandoahEvacReserveOverflow) {
-      r = _free_set->steal_from_mutator(PARTITION, req);
-      if (r != nullptr) {
-        assert(r->is_empty(), "Stolen region must be empty");
-        in_new_region = true;
+  // Slow-path with heap lock
+  {
+    // Mutator allocations may yield to safepoint; GC allocations cannot
+    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), req.is_mutator_alloc());
+    // First check whether the cached alloc region has changed
+    ShenandoahHeapRegion* r = _alloc_region.load_acquire();
+    if (r != nullptr && r != cas_alloc_region) {
+      obj = try_atomic_allocate_in(r, req);
+      if (obj != nullptr) {
+        in_new_region = false;
+        return obj;
       }
     }
-  }
 
-  if (r != nullptr) {
-    HeapWord* result = allocate_in(r, req, boundary_changed);
-    if (in_new_region) {
-      _free_set->mark_region_used(PARTITION);
-      boundary_changed = true;
+    // OldCollector: verify old generation has room before attempting allocation
+    if constexpr (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) {
+      if (!req.is_promotion() && !ShenandoahHeap::heap()->old_generation()->can_allocate(req)) {
+        return nullptr;
+      }
     }
-    _free_set->notify_allocation(PARTITION, in_new_region, boundary_changed);
-    return result;
-  }
 
-  // Every path that mutates a partition boundary (allocate_in retire, new region, steal) returns
-  // above, so reaching here means no allocation and no boundary change.
-  return nullptr;
+    bool boundary_changed = false;
+    size_t min_req_words = req.is_lab_alloc() ? req.min_size() : req.size();
+    // Ask FreeSet to find a suitable region
+     r = _free_set->find_region_for_alloc<PARTITION>(min_req_words, in_new_region);
+    // Collector partitions can overflow into Mutator partition
+    if constexpr (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
+      if (r == nullptr && ShenandoahEvacReserveOverflow) {
+        r = _free_set->steal_from_mutator(PARTITION, req);
+        if (r != nullptr) {
+          assert(r->is_empty(), "Stolen region must be empty");
+          in_new_region = true;
+        }
+      }
+    }
+
+    if (r != nullptr) {
+      HeapWord* result = allocate_in(r, req, boundary_changed);
+      assert(result != nullptr, "Sanity check - allocate_in should always succeed");
+      if (in_new_region) {
+        _free_set->mark_region_used(PARTITION);
+        boundary_changed = true;
+      }
+      if (_alloc_region.load_acquire() == nullptr && _free_set->alloc_capacity(r) >> LogHeapWordSize >= PLAB::min_size()) {
+        size_t remnant_bytes = _free_set->retire_region(PARTITION, r->index(), r->used());
+        assert(remnant_bytes == _free_set->alloc_capacity(r), "Sanity check");
+        // The flag must be set BEFORE the region becomes an active alloc region, so any
+        // thread that can observe the region via _atomic_top also observes the flag as true.
+        if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
+          r->set_collector_allocator_reserved(true);
+        }
+        r->set_active_alloc_region();
+        _alloc_region.release_store(r);
+        boundary_changed = true;
+      }
+      _free_set->notify_allocation(PARTITION, in_new_region, boundary_changed);
+      return result;
+    }
+
+    return nullptr;
+  }
 }
 
 template<ShenandoahFreeSetPartitionId PARTITION>
 HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& boundary_changed) {
-  assert(_free_set->alloc_capacity(r) > 0, "Performance: should avoid full regions on this path: %zu", r->index());
+  assert(!r->is_atomic_alloc_region(), "Must not be an atomic alloc region.");
 
   HeapWord* result = nullptr;
-
   // Perform the actual allocation: LABs may be shrunk to fit.
   if (req.is_lab_alloc()) {
     size_t adjusted_size = req.size();
@@ -155,15 +161,77 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate_in(ShenandoahHeapReg
         req.set_waste(waste_bytes / HeapWordSize);
       }
     }
-    if (_alloc_region == r) {
-      _alloc_region = nullptr;
-    }
-  } else if (_alloc_region == nullptr) {
-    // Region still has usable capacity — cache it for next allocation.
-    _alloc_region = r;
+  }
+  return result;
+}
+
+template<ShenandoahFreeSetPartitionId PARTITION>
+HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_atomic_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req) {
+  size_t actual_size;
+  bool ready_for_replenish = false;
+  HeapWord* obj = nullptr;
+  if (req.is_lab_alloc()) {
+    obj = r->allocate_lab_atomic(req, actual_size, ready_for_replenish);
+  } else {
+    actual_size = req.size();
+    obj = r->allocate_atomic(req, ready_for_replenish);
   }
 
-  return result;
+  if (obj != nullptr) {
+    req.set_actual_size(actual_size);
+    if (ready_for_replenish) {
+      // Claim the region for retirement with a CAS on _alloc_region. Multiple threads may
+      // observe ready_for_replenish concurrently on this lock-free path, but only the thread
+      // that wins this CAS may retire it: unset_active_alloc_region() is not safe to run
+      // concurrently on the same region (two unsetters can clobber each other's _top sync).
+      if (_alloc_region.compare_exchange(r, (ShenandoahHeapRegion*) nullptr) == r) {
+        bool unset = r->unset_active_alloc_region();
+        assert(unset, "Winner of the retire CAS must deactivate the region");
+        if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
+          // The region is now full of evacuated objects. Advance the update watermark to its
+          // final top so update-refs covers them, and clear the reserved flag so the barrier
+          // stops forcing bulk updates over the region. unset_active_alloc_region() has already
+          // synced _atomic_top to _top, so stable_top() is the authoritative final top.
+          r->set_update_watermark(r->stable_top());
+          r->set_collector_allocator_reserved(false);
+        }
+      }
+    }
+  }
+  return obj;
+}
+
+template<ShenandoahFreeSetPartitionId PARTITION>
+void ShenandoahPartitionAllocator<PARTITION>::release_alloc_region() {
+  shenandoah_assert_heaplocked();
+  ShenandoahHeapRegion* alloc_region = _alloc_region.load_acquire();
+  if (alloc_region == nullptr) {
+    return;
+  }
+  // Claim the region for retirement with a CAS. Even while holding the heap lock, the
+  // lock-free fast path (try_atomic_allocate_in) may concurrently retire the cached region;
+  // only the thread that wins this CAS may call unset_active_alloc_region(), which is not
+  // safe to run concurrently on the same region.
+  if (_alloc_region.compare_exchange(alloc_region, (ShenandoahHeapRegion*) nullptr) != alloc_region) {
+    return;
+  }
+  // Sync _atomic_top back to _top and deactivate CAS allocation. unset_active_alloc_region()
+  // also resets the region age if it received any allocation while active.
+  if (!alloc_region->unset_active_alloc_region()) {
+    return;
+  }
+  if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
+    // Cover the objects evacuated into this region so update-refs processes them, then
+    // clear the reserved flag so the barrier stops forcing bulk updates over the region.
+    alloc_region->set_update_watermark(alloc_region->stable_top());
+    alloc_region->set_collector_allocator_reserved(false);
+  }
+  if (alloc_region->free() >> LogHeapWordSize >= PLAB::min_size()) {
+    // Region is still allocatable: return its unconsumed remnant to the partition and
+    // make it a free-set member again.
+    _free_set->unretire_alloc_region(PARTITION, alloc_region);
+  }
+  // Otherwise the region is effectively full; it stays retired and remains fully charged as used.
 }
 
 // Explicit template instantiations for all partitions.

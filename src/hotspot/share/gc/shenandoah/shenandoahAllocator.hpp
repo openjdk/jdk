@@ -58,6 +58,12 @@ public:
   // Release the cached alloc region in every partition allocator. Call before the
   // free set is rebuilt, since rebuild may reclassify region affiliation/membership.
   void release_alloc_regions();
+
+  // Release the cached alloc region of the collector and old-collector partition allocators
+  // only, leaving the mutator allocator untouched. Call at the evacuation/update-refs boundary
+  // so that regions holding evacuated objects sync their _atomic_top to _top and advance their
+  // update watermark before update-refs iterates the heap, while mutators keep allocating.
+  void release_collector_alloc_regions();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP
