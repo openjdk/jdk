@@ -374,33 +374,6 @@ public class Thread implements Runnable {
         currentThread().scopedValueBindings = bindings;
     }
 
-    // Lazily load the POOLED_MEMORY_SIZE to avoid bootstrap issues
-    static final class PoolConfigHolder {
-
-        private PoolConfigHolder() { }
-
-        // Providing "0" as a value for this property disables confined pooling
-        private static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
-
-        // The following values can be observed {-1 (disabled), 8, 16, 32 or 64} bytes
-        static final long POOLED_MEMORY_SIZE = clampedPowerOfPropertyOr(POOLED_MEMORY_PROPERTY, 6);
-
-        private static int clampedPowerOfPropertyOr(String name, int defaultPower) {
-            if (VM.isDirectMemoryPageAligned()) {
-                // Disable pooling regardless of the system property
-                return -1;
-            }
-            final int power = Integer.getInteger(name, defaultPower);
-
-            return power <= 0
-                    // -1 means it is disabled (i.e., it will never be allocated)
-                    ? -1
-                    // Min at 2^3 = Long.BYTES in order to use an optimized zero-out scheme
-                    // Max at 2^6 = 64 bytes in order to use an optimized zero-out scheme
-                    : 1 << Math.clamp(power, 3, 6);
-        }
-    }
-
     /**
      * Zero -> no pool allocated yet
      * Positive -> Pool released (available)
@@ -412,7 +385,7 @@ public class Thread implements Runnable {
     long confinedMemoryPool;
 
     static long pooledMemorySize() {
-        return PoolConfigHolder.POOLED_MEMORY_SIZE;
+        return ConfinedSegmentPool.POOLED_MEMORY_SIZE;
     }
 
     /**
@@ -422,7 +395,7 @@ public class Thread implements Runnable {
     long acquirePooledMemory() {
         // Extra check if an internal caller uses this method directly while pooling
         // is disabled.
-        if (PoolConfigHolder.POOLED_MEMORY_SIZE <= 0) {
+        if (ConfinedSegmentPool.POOLED_MEMORY_SIZE <= 0) {
             return 0;
         }
         final long confinedMemoryPool = this.confinedMemoryPool;
@@ -442,7 +415,7 @@ public class Thread implements Runnable {
     private long allocateAndAcquirePooledMemory() {
         final long address;
         try {
-            address = UnsafeHolder.U.allocateMemory(PoolConfigHolder.POOLED_MEMORY_SIZE);
+            address = UnsafeHolder.U.allocateMemory(ConfinedSegmentPool.POOLED_MEMORY_SIZE);
             if (address < 0) {
                 throw new InternalError("Allocated memory pool is negative contrary to" +
                         " the non-negative pointer invariant: 0x" + Long.toHexString(address));

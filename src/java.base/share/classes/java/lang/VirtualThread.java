@@ -685,7 +685,7 @@ final class VirtualThread extends BaseVirtualThread {
         if (confinedMemoryPool != 0) {
             // Make sure we are releasing and zeroing out the pooled memory
             // (if any).
-            releasePooledMemory(PoolConfigHolder.POOLED_MEMORY_SIZE);
+            releasePooledMemory(ConfinedSegmentPool.POOLED_MEMORY_SIZE);
         }
         // clear references to thread locals
         clearReferences();

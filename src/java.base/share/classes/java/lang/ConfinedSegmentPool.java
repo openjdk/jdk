@@ -1,6 +1,7 @@
 package java.lang;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -22,10 +23,15 @@ import jdk.internal.vm.annotation.ForceInline;
  */
 final class ConfinedSegmentPool {
 
-    private ConfinedSegmentPool() {
-    }
+    private ConfinedSegmentPool() { }
 
     private static final Unsafe U = Unsafe.getUnsafe();
+
+    // Providing "0" as a value for this property disables confined pooling
+    private static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
+
+    // The following values can be observed {-1 (disabled), 8, 16, 32 or 64} bytes
+    static final long POOLED_MEMORY_SIZE = clampedPowerOfPropertyOr(POOLED_MEMORY_PROPERTY, 6);
 
     // We create an over-provisioned number of slots to reduce the
     // probability that two virtual threads compete for the same
@@ -69,7 +75,7 @@ final class ConfinedSegmentPool {
         }
         final long slot = slotFor(thread);
         return U.compareAndSetByte(null, flagAddress(slot), RELEASED, ACQUIRED)
-                ? POOL + slot * Thread.PoolConfigHolder.POOLED_MEMORY_SIZE
+                ? POOL + slot * POOLED_MEMORY_SIZE
                 : 0;
     }
 
@@ -106,7 +112,7 @@ final class ConfinedSegmentPool {
     }
 
     private static long allocatePool() {
-        return mallocAndZero(Thread.PoolConfigHolder.POOLED_MEMORY_SIZE * SLOTS);
+        return mallocAndZero(POOLED_MEMORY_SIZE * SLOTS);
     }
 
     private static long allocateFLags() {
@@ -114,7 +120,7 @@ final class ConfinedSegmentPool {
     }
 
     private static long mallocAndZero(long size) {
-        if (Thread.PoolConfigHolder.POOLED_MEMORY_SIZE <= 0) {
+        if (POOLED_MEMORY_SIZE <= 0) {
             // Pooling disabled
             return NO_POOLING;
         }
@@ -125,6 +131,21 @@ final class ConfinedSegmentPool {
         } catch (OutOfMemoryError e) {
             return NO_POOLING;
         }
+    }
+
+    private static int clampedPowerOfPropertyOr(String name, int defaultPower) {
+        if (VM.isDirectMemoryPageAligned()) {
+            // Disable pooling regardless of the system property
+            return -1;
+        }
+        final int power = Integer.getInteger(name, defaultPower);
+
+        return power <= 0
+                // -1 means it is disabled (i.e., it will never be allocated)
+                ? -1
+                // Min at 2^3 = Long.BYTES in order to use an optimized zero-out scheme
+                // Max at 2^6 = 64 bytes in order to use an optimized zero-out scheme
+                : 1 << Math.clamp(power, 3, 6);
     }
 
 }
