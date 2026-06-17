@@ -49,6 +49,7 @@ public class TestTruncationWrapPhiTypeUnion {
         failures += run("test2", () -> test2(-1),       11111);
         failures += run("test3", () -> test3(-100_000), -87065049);
         failures += run("test4", () -> test4(32770),    10330);
+        failures += run("test5", () -> test5(-63),      10340);
 
         if (failures > 0) {
             throw new RuntimeException("failures: " + failures);
@@ -198,6 +199,20 @@ public class TestTruncationWrapPhiTypeUnion {
         for (int i = -1025; limit <= i; i = (short) (i + -7)) {
             sum = sum + 1;
             if (x++ > 10328) {
+                break;
+            }
+        }
+        return sum;
+    }
+
+    // Another fuzzer find, again with 0x7fff mask.
+    static int test5(int limit) {
+        int x = 0;
+        int sum = 0;
+        limit = (byte)limit;
+        for (int i = 8192; limit < i; i = ((i + -8) & 0x7fff)) {
+            sum++;
+            if (x++ > 10338) {
                 break;
             }
         }
