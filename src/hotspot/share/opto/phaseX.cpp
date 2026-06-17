@@ -2291,7 +2291,7 @@ void PhaseIterGVN::maybe_make_dependent_paths(Node* k, const Type* t) {
 #ifdef ASSERT
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
-    assert(n->is_Region() || n->is_Phi() || n->is_CFG() || n->outcnt() == 0, "");
+    assert(n->is_Region() || n->is_Phi() || n->is_CFG() || n->outcnt() == 0, "node should be dead now");
   }
 #endif
 }

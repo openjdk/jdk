@@ -92,8 +92,8 @@ const RegMask &HaltNode::out_RegMask() const {
 }
 
 Node* DeadPathNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  assert(unique_ctrl_out() == phase->C->root(), "");
-  assert(can_reshape, "");
+  assert(unique_ctrl_out() == phase->C->root(), "only referenced from root");
+  assert(can_reshape, "only used once igvn executes");
   bool modified = false;
   for( uint i = 1; i < req(); i++ ) { // For all inputs
     // Check for and remove dead inputs
@@ -103,7 +103,7 @@ Node* DeadPathNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
   if (req() == 1 && in(0) == this) {
-    assert(modified, "");
+    assert(modified, "only if some inputs were removed");
     set_req(0, nullptr);
   }
   return modified ? this : nullptr;
