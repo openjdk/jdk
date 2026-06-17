@@ -112,7 +112,7 @@ public class CheckReleaseFile {
         }
         String valueString = valueMatcher.group(1);
 
-        if (valueString == "") {
+        if ("".equals(valueString)) {
             throw new RuntimeException("The test failed, SOURCE value was empty." +
                 " JDK Repository used for building might not have .git directory." +
                 " Verify that .git was removed from the repository intentionally.");
