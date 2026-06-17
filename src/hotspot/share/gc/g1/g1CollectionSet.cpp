@@ -59,7 +59,7 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _policy(policy),
   _candidates(),
   _regions(nullptr),
-  _max_regions(0),
+  _max_num_regions(0),
   _num_regions(0),
   _groups(),
   _num_eden_regions(0),
@@ -91,12 +91,12 @@ void G1CollectionSet::prepare_for_collection(uint num_eden_cset_regions,
   _optional_groups.clear();
 }
 
-void G1CollectionSet::initialize(uint max_regions) {
+void G1CollectionSet::initialize(uint max_num_regions) {
   guarantee(_regions == nullptr, "Must only initialize once.");
-  _max_regions = max_regions;
-  _regions = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
+  _max_num_regions = max_num_regions;
+  _regions = NEW_C_HEAP_ARRAY(uint, max_num_regions, mtGC);
 
-  _candidates.initialize(max_regions);
+  _candidates.initialize(max_num_regions);
 }
 
 void G1CollectionSet::abandon() {
@@ -128,7 +128,7 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 
   _g1h->register_old_collection_set_region_with_region_attr(hr);
 
-  assert(num_regions() < _max_regions, "Collection set now larger than maximum size.");
+  assert(num_regions() < _max_num_regions, "Collection set now larger than maximum size.");
   _regions[_num_regions++] = hr->hrm_index();
   _num_initial_old_regions++;
 
@@ -229,7 +229,7 @@ void G1CollectionSet::add_young_region_common(G1HeapRegion* hr) {
   assert(index < (UINT_MAX - 1), "Collection set is too large with %u entries", index);
   hr->set_young_index_in_cset(index + 1);
 
-  assert(index < _max_regions, "Collection set larger than maximum allowed.");
+  assert(index < _max_num_regions, "Collection set larger than maximum allowed.");
   _regions[index] = hr->hrm_index();
   // Concurrent readers must observe the store of the value in the array before an
   // update to the _num_regions field.

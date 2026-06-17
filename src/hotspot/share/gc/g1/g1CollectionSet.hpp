@@ -147,7 +147,7 @@ class G1CollectionSet {
   //
   // This corresponds to the regions referenced by the candidate groups further below.
   uint* _regions;
-  uint _max_regions;
+  uint _max_num_regions;
 
   volatile uint _num_regions;
 
@@ -236,7 +236,7 @@ public:
   ~G1CollectionSet();
 
   // Initializes the collection set giving the maximum possible number of regions in the collection set.
-  void initialize(uint max_regions);
+  void initialize(uint max_num_regions);
 
   // Drop the collection set and collection set candidates.
   void abandon();
