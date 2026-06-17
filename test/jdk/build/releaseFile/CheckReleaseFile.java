@@ -114,7 +114,7 @@ public class CheckReleaseFile {
 
         if (valueString == "") {
             throw new RuntimeException("The test failed, SOURCE value was empty." +
-                " JDK Repository used for building might not have .git directory." + 
+                " JDK Repository used for building might not have .git directory." +
                 " Verify that .git was removed from the repository intentionally.");
         }
 
