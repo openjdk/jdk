@@ -157,7 +157,7 @@ class VirtualMachineImpl extends MirrorImpl
 
     private Object initMonitor = new Object();
     private boolean initComplete = false;
-    private boolean shutdown = false;
+    private volatile boolean shutdown = false;
 
     private void notifyInitCompletion() {
         synchronized(initMonitor) {
