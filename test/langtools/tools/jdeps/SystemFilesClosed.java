@@ -23,10 +23,13 @@
 
 /*
  * @test
- * @bug 8357249
+ * @bug 8386334
  * @summary Check that `lib/jrt-fs.jar` and `lib/modules` are properly closed while
- *          javac is invoked with `--system` option.
+ *          jdeps is invoked with `--system` option.
  * @requires os.family == "mac" | os.family == "linux"
+ * @modules jdk.jdeps
+ * @library lib
+ * @build JdepsRunner
  * @run junit ${test.main.class}
  */
 
@@ -34,17 +37,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +54,7 @@ public class SystemFilesClosed {
 
     @Test
     void testSystemFilesClosed() throws Exception {
-        // Probe lsof availability before doing the jlink/compile work
+        // Probe lsof availability before doing the jlink/jdeps work
         if (!lsofCommand().isPresent()) {
             Assumptions.abort("lsof command is not available on this system");
         }
@@ -71,25 +68,8 @@ public class SystemFilesClosed {
             return;
         }
 
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        SimpleJavaFileObject compilationUnit = new SimpleJavaFileObject(URI.create("string:///Test.java"), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-                return """
-               public class Test {
-                    public static void main(String[] args) {
-                        System.out.println("Hello, World!");
-                    }
-               }
-               """;
-            }
-        };
-
-        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null)) {
-            Assertions.assertEquals(true,
-                    compiler.getTask(null, fileManager, null, List.of("--system", targetSystem), null, List.of(compilationUnit)).call(),
-                    "Compilation task failed");
-        }
+        JdepsRunner jdeps = new JdepsRunner("--check", "java.base", "--system", targetSystem);
+        Assertions.assertEquals(0, jdeps.run(true), "Jdeps task failed");
 
         Process process = new ProcessBuilder()
                 .command(lsofCommand().orElseThrow(() -> new RuntimeException("lsof command is not available on this system")),
