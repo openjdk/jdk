@@ -339,6 +339,7 @@ public:
   do_var(bool,  UseSIMDForMemoryOps)                    /* array copy stubs and nmethods */ \
   do_var(bool,  UseSIMDForSHA3Intrinsic)                /* SHA3 stubs */  \
   do_var(bool,  UseSimpleArrayEquals) \
+  do_var(bool,  UseIntPolyIntrinsics) \
   // END
 #else
 #define AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun)
