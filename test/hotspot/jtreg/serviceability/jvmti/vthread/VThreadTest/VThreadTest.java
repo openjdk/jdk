@@ -40,6 +40,8 @@ public class VThreadTest {
 
     static native boolean check();
 
+    static void log(String msg) { System.out.println(msg); }
+
     static void producer(String msg) throws InterruptedException {
         int ii = 1;
         long ll = 2*(long)ii;
@@ -54,7 +56,10 @@ public class VThreadTest {
             for (int i = 0; i < MSG_COUNT; i++) {
                 producer("msg: ");
             }
-        } catch (InterruptedException e) { }
+        } catch (Throwable t) {
+            log("Failed: PRODUCER caught a trowable: " + t);
+            t.printStackTrace(System.out);
+        }
     };
 
     static final Runnable CONSUMER = () -> {
@@ -62,7 +67,10 @@ public class VThreadTest {
             for (int i = 0; i < MSG_COUNT; i++) {
                 String s = QUEUE.take();
             }
-        } catch (InterruptedException e) { }
+        } catch (Throwable t) {
+            log("Failed: CONSUMER caught a trowable: " + t);
+            t.printStackTrace(System.out);
+        }
     };
 
     public static void test1() throws Exception {
@@ -80,14 +88,6 @@ public class VThreadTest {
     }
 
     public static void main(String[] args) throws Exception {
-        try {
-            System.loadLibrary(agentLib);
-        } catch (UnsatisfiedLinkError ex) {
-            System.err.println("Failed to load " + agentLib + " lib");
-            System.err.println("java.library.path: " + System.getProperty("java.library.path"));
-            throw ex;
-        }
-
         VThreadTest obj = new VThreadTest();
         obj.runTest();
     }
