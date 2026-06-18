@@ -3892,7 +3892,16 @@ const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, No
           if (rtn_t == nullptr) {
             rtn_t = if_t;
           } else {
-            rtn_t = rtn_t->join(if_t)->is_int();
+            const Type* join_t = rtn_t->join(if_t);
+            if (!join_t->isa_int()) {
+              // We may have encountered multiple if conditions, that have no
+              // overlap, and produce an empty/top type. Returning nullptr
+              // is conservative, it means we do not constrain the type, which
+              // will just prevent further optimiziations.
+              assert(join_t->empty(), "top");
+              return nullptr;
+            }
+            rtn_t = join_t->is_int();
           }
         }
       }
