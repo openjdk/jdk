@@ -244,10 +244,10 @@ public abstract class Signature extends SignatureSpi {
      * </li>
      * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * whether the specified algorithm is considered legacy. If so, the
-     * JDK emits a warning when the algorithm is requested. If the
-     * {@systemProperty jdk.crypto.legacyAlgorithms} is set, it supersedes
-     * the security property value.
+     * if the specified algorithm is considered legacy. If so, it
+     * emits a warning when the algorithm is requested.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
+     * it supersedes the security property value.
      * </li>
      * </ul>
      *
@@ -377,19 +377,21 @@ public abstract class Signature extends SignatureSpi {
      *
      * @implNote
      * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.disabledAlgorithms}
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified algorithm is allowed. If the
      * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
      * the security property value.
-     *
-     * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.legacyAlgorithms}
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * whether the specified algorithm is considered legacy. If so, it emits
-     * a warning when the algorithm is requested. If the
-     * {@systemProperty jdk.crypto.legacyAlgorithms} is set, it supersedes
-     * the security property value.
+     * if the specified algorithm is considered legacy. If so, it
+     * emits a warning when the algorithm is requested.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
+     * it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param algorithm the name of the algorithm requested.
      * See the Signature section in the <a href=
@@ -446,19 +448,21 @@ public abstract class Signature extends SignatureSpi {
      *
      * @implNote
      * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.disabledAlgorithms}
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified algorithm is allowed. If the
      * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
      * the security property value.
-     *
-     * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.legacyAlgorithms}
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * whether the specified algorithm is considered legacy. If so, it emits
-     * a warning when the algorithm is requested. If the
-     * {@systemProperty jdk.crypto.legacyAlgorithms} is set, it supersedes
-     * the security property value.
+     * if the specified algorithm is considered legacy. If so, it
+     * emits a warning when the algorithm is requested.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
+     * it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param algorithm the name of the algorithm requested.
      * See the Signature section in the <a href=

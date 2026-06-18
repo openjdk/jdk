@@ -862,9 +862,9 @@ public class KeyStore {
      * </li>
      * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * whether the specified keystore type is considered legacy. If so, the
-     * JDK Reference Implementation emits a warning when the keystore type is
-     * requested. If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
+     * if the specified keystore type is considered legacy. If so, it
+     * emits a warning when the keystore type is requested.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
      * it supersedes the security property value.
      * </li>
      * </ul>
@@ -922,19 +922,21 @@ public class KeyStore {
      *
      * @implNote
      * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.disabledAlgorithms}
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified keystore type is allowed. If the
      * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
      * the security property value.
-     *
-     * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.legacyAlgorithms}
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * whether the specified keystore type is considered legacy. If so, it
-     * emits a warning when the keystore type is requested. If the
-     * {@systemProperty jdk.crypto.legacyAlgorithms} is set, it supersedes the
-     * security property value.
+     * if the specified keystore type is considered legacy. If so, it
+     * emits a warning when the keystore type is requested.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
+     * it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
@@ -998,19 +1000,21 @@ public class KeyStore {
      *
      * @implNote
      * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.disabledAlgorithms}
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified keystore type is allowed. If the
      * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
      * the security property value.
-     *
-     * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.legacyAlgorithms}
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * whether the specified keystore type is considered legacy. If so, it
-     * emits a warning when the keystore type is requested. If the
-     * {@systemProperty jdk.crypto.legacyAlgorithms} is set, it supersedes the
-     * security property value.
+     * if the specified keystore type is considered legacy. If so, it
+     * emits a warning when the keystore type is requested.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
+     * it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
@@ -1798,19 +1802,21 @@ public class KeyStore {
      *
      * @implNote
      * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.disabledAlgorithms}
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified keystore type is allowed. If the
      * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
      * the security property value. Disallowed type will be skipped.
-     *
-     * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.legacyAlgorithms}
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * whether the specified keystore type is considered legacy. If so, it
-     * emits a warning when the keystore type is requested. If the
-     * {@systemProperty jdk.crypto.legacyAlgorithms} is set, it supersedes the
-     * security property value.
+     * if the specified keystore type is considered legacy. If so, it
+     * emits a warning when the keystore type is requested.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
+     * it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param  file the keystore file
      * @param  password the keystore password, which may be {@code null}
@@ -1869,19 +1875,21 @@ public class KeyStore {
      *
      * @implNote
      * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.disabledAlgorithms}
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified keystore type is allowed. If the
      * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
      * the security property value. Disallowed type will be skipped.
-     *
-     * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.legacyAlgorithms}
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * whether the specified keystore type is considered legacy. If so, it
-     * emits a warning when the keystore type is requested. If the
-     * {@systemProperty jdk.crypto.legacyAlgorithms} is set, it supersedes the
-     * security property value.
+     * if the specified keystore type is considered legacy. If so, it
+     * emits a warning when the keystore type is requested.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
+     * it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param  file the keystore file
      * @param  param the {@code LoadStoreParameter} that specifies how to load
