@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8386656 
+ * @bug 8386656
  * @summary Verify no assertions when running with -XX:-UseCountTrailingZerosInstruction
  * @requires vm.cpu.features ~= ".*avx512.*"
  * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,jdk.internal.util.ArraysSupport::mismatch -XX:-UseCountTrailingZerosInstruction compiler.cpuflags.Test8386656
