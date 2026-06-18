@@ -258,6 +258,15 @@ class GZIPOverBlockingStreams {
             t.start();
         }
 
+        private synchronized void recordServerFailure(final Throwable t) {
+            Throwable previous = this.failure;
+            if (previous != null && previous != t) {
+                previous.addSuppressed(t);
+                return;
+            }
+            this.failure = t;
+        }
+
         @Override
         public void run() {
             System.err.println("server started accepting requests at " + this.serverSocket);
@@ -265,7 +274,7 @@ class GZIPOverBlockingStreams {
                 doRun();
             } catch (Throwable t) {
                 if (!stop) { // ignore failures if the server is stopped
-                    this.failure = t;
+                    recordServerFailure(t);
                     System.err.println("server ran into error: " + t);
                     t.printStackTrace();
                 }
@@ -289,22 +298,55 @@ class GZIPOverBlockingStreams {
                 // but doesn't have any more data to send (and thus read() blocks)
                 final Socket socket = this.serverSocket.accept();
                 System.err.println("accepted connection from " + socket);
-                sendGZIPResponse(socket);
+                // handle the request on a separate thread
+                final Thread handler = new Thread(() -> {
+                    try {
+                        handleRequest(socket);
+                    } catch (Throwable t) {
+                        // keep track of the failure
+                        recordServerFailure(t);
+                        System.err.println("failure when handling request on socket "
+                                + socket + ", exception: " + t);
+                        t.printStackTrace();
+                    }
+                });
+                handler.setName("request-handler-" + socket.getRemoteSocketAddress());
+                handler.setDaemon(true);
+                handler.start();
             }
+        }
+
+        private static void handleRequest(final Socket socket) throws IOException {
+            final int numMembers;
+            final boolean shouldCloseSocket;
+            try {
+                final InputStream in = socket.getInputStream();
+                final DataInputStream dis = new DataInputStream(in);
+                // read the socket's inputstream to determine how many GZIP members are
+                // expected in the response stream, by the client
+                numMembers = dis.readInt();
+                // whether the socket should be closed after writing out the response
+                shouldCloseSocket = dis.readBoolean();
+            } catch (IOException ioe) {
+                // could be a socket connection from an unexpected client, so ignore any
+                // failure when reading the request
+                System.err.println("Ignoring exception that happened when reading" +
+                        " request from client socket " + socket + ", exception: " + ioe);
+                ioe.printStackTrace();
+                // close the unexpected client connection
+                socket.close();
+                return;
+            }
+            // valid request, respond to it with a GZIP response
+            sendGZIPResponse(socket, numMembers, shouldCloseSocket);
         }
 
         /*
          * Sends GZIP content over the socket's OutputStream. This method closes the socket
          * only if the test request (read over the socket's InputStream) instructs it to do so.
          */
-        private void sendGZIPResponse(final Socket socket) throws IOException {
-            final InputStream in = socket.getInputStream();
-            final DataInputStream dis = new DataInputStream(in);
-            // read the socket's inputstream to determine how many GZIP members are
-            // expected in the response stream, by the client
-            final int numMembers = dis.readInt();
-            // whether the socket should be closed after writing out the response
-            final boolean shouldCloseSocket = dis.readBoolean();
+        private static void sendGZIPResponse(final Socket socket, final int numMembers,
+                                             final boolean shouldCloseSocket) throws IOException {
             // respond back with a GZIP output, containing the expected number of members
             final byte[] gzipResponse = createGZIPStream(numMembers);
             System.err.println("responding to " + socket + " with a GZIP stream of size "
