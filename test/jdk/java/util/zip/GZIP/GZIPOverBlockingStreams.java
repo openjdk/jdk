@@ -36,6 +36,8 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -66,6 +68,7 @@ class GZIPOverBlockingStreams {
 
     private static final Random random = RandomFactory.getRandom();
     private static final String MEMBER_CONTENT_FORMAT = "Hello member %d, foo bar hello world\n";
+    private static final ExecutorService httpServerExecutor = Executors.newCachedThreadPool();
 
     private static Server nonHttpServer;
     private static HttpServer httpServer;
@@ -82,6 +85,7 @@ class GZIPOverBlockingStreams {
         final InetAddress loopback = InetAddress.getLoopbackAddress();
         final InetSocketAddress serverAddr = new InetSocketAddress(loopback, 0);
         httpServer = HttpServer.create(serverAddr, 0);
+        httpServer.setExecutor(httpServerExecutor);
         httpServer.createContext("/", new HttpReqHandler());
         httpServer.start();
         System.err.println("started HTTP server at " + httpServer.getAddress());
@@ -98,6 +102,7 @@ class GZIPOverBlockingStreams {
             System.err.println("stopping HTTP server " + httpServer.getAddress());
             httpServer.stop(0);
         }
+        httpServerExecutor.shutdownNow();
     }
 
     static List<Integer> numGZIPMembers() {
