@@ -452,7 +452,7 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
 }
 
 // oop_iterate without closure, return true if completed without cancellation
-bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable) {
+bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable, bool do_card_table_updates) {
 
   assert(!is_humongous(), "No need to fill or coalesce humongous regions");
   if (!is_active()) {
@@ -489,7 +489,16 @@ bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable) {
       size_t fill_size = next_marked_obj - obj_addr;
       assert(fill_size >= ShenandoahHeap::min_fill_size(), "previously allocated object known to be larger than min_size");
       ShenandoahHeap::fill_with_object(obj_addr, fill_size);
-      heap->old_generation()->card_scan()->coalesce_objects(obj_addr, fill_size);
+      if (do_card_table_updates) {
+        heap->old_generation()->card_scan()->coalesce_objects(obj_addr, fill_size);
+      } else {
+        // A humongous object allocation failure during evacuation will skip the degenerated cycle and
+        // jump straight to a full GC. If this region is pinned when the full GC cycle starts, it will
+        // not be compacted. Therefore, if the region is old, we must fill in any unmarked objects. However,
+        // promoted objects will not have been registered yet, so we cannot use the card table here.
+        assert(heap->is_full_gc_in_progress(), "Can only skip card table updates during a full GC");
+      }
+
       obj_addr = next_marked_obj;
     }
     if (cancellable && heap->cancelled_gc()) {
