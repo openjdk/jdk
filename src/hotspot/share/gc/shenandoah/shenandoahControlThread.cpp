@@ -361,9 +361,17 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   size_t current_gc_id = get_gc_id();
   size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
+    if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
+      _alloc_waiters_count.add_then_fetch(1UL);
+    }
+
     notify_control_thread(cause);
     ml.wait();
     current_gc_id = get_gc_id();
+    if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
+      _alloc_waiters_count.sub_then_fetch(1UL);
+      break;
+    }
   }
 }
 

@@ -67,6 +67,9 @@ public:
 
   // Calculate workers for concurrent cleanup
   static uint calc_workers_for_conc_cleanup();
+
+private:
+  static uint alloc_waiters_count();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHWORKERPOLICY_HPP

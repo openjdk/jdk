@@ -28,7 +28,7 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
-#include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "runtime/atomic.hpp"
 
 /**
@@ -52,6 +52,8 @@ protected:
   Monitor _alloc_failure_waiters_lock;
   Monitor _gc_waiters_lock;
 
+  Atomic<size_t> _alloc_waiters_count;
+
   // Increments the internal GC count.
   void update_gc_id();
 
@@ -59,7 +61,8 @@ public:
   ShenandoahController():
     _gc_id(0),
     _alloc_failure_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahAllocFailureWaiters_lock", true),
-    _gc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahGCWaiters_lock", true)
+    _gc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahGCWaiters_lock", true),
+    _alloc_waiters_count(0)
   { }
 
   // Request a collection cycle. This handles "explicit" gc requests
@@ -69,6 +72,11 @@ public:
   // This cancels the collection cycle and has an option to block
   // until another cycle completes successfully.
   void handle_alloc_failure(const ShenandoahAllocRequest &req);
+
+  // Return number of threads blocked on allocation
+  size_t alloc_waiters_count() const {
+    return _alloc_waiters_count.load_relaxed();
+  }
 
   // Notify threads waiting for GC to complete.
   void notify_alloc_failure_waiters();

@@ -25,7 +25,6 @@
 
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -53,4 +52,5 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
 void ShenandoahController::notify_alloc_failure_waiters() {
   MonitorLocker ml(&_alloc_failure_waiters_lock);
   ml.notify_all();
+  log_debug(gc, thread)("Notified %zu threads waiting because of allocation failure", alloc_waiters_count());
 }
