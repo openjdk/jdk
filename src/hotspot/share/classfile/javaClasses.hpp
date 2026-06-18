@@ -132,6 +132,7 @@ class java_lang_String : AllStatic {
   static inline bool is_latin1(oop java_string);
   static inline bool deduplication_forbidden(oop java_string);
   static inline bool deduplication_requested(oop java_string);
+  static inline bool deduplication_requested_or_forbidden(oop java_string);
   static inline int length(oop java_string);
   static inline int length(oop java_string, typeArrayOop string_value);
   static size_t utf8_length(oop java_string);

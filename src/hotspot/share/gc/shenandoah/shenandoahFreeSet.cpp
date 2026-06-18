@@ -1478,55 +1478,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_from_mutator(ShenandoahAllocRequest& r
   return nullptr;
 }
 
-// This work method takes an argument corresponding to the number of bytes
-// free in a region, and returns the largest amount in heapwords that can be allocated
-// such that both of the following conditions are satisfied:
-//
-// 1. it is a multiple of card size
-// 2. any remaining shard may be filled with a filler object
-//
-// The idea is that the allocation starts and ends at card boundaries. Because
-// a region ('s end) is card-aligned, the remainder shard that must be filled is
-// at the start of the free space.
-//
-// This is merely a helper method to use for the purpose of such a calculation.
-size_t ShenandoahFreeSet::get_usable_free_words(size_t free_bytes) const {
-  // e.g. card_size is 512, card_shift is 9, min_fill_size() is 8
-  //      free is 514
-  //      usable_free is 512, which is decreased to 0
-  size_t usable_free = (free_bytes / CardTable::card_size()) << CardTable::card_shift();
-  assert(usable_free <= free_bytes, "Sanity check");
-  if ((free_bytes != usable_free) && (free_bytes - usable_free < ShenandoahHeap::min_fill_size() * HeapWordSize)) {
-    // After aligning to card multiples, the remainder would be smaller than
-    // the minimum filler object, so we'll need to take away another card's
-    // worth to construct a filler object.
-    if (usable_free >= CardTable::card_size()) {
-      usable_free -= CardTable::card_size();
-    } else {
-      assert(usable_free == 0, "usable_free is a multiple of card_size and card_size > min_fill_size");
-    }
-  }
-
-  return usable_free / HeapWordSize;
-}
-
-// Given a size argument, which is a multiple of card size, a request struct
-// for a PLAB, and an old region, return a pointer to the allocated space for
-// a PLAB which is card-aligned and where any remaining shard in the region
-// has been suitably filled by a filler object.
-// It is assumed (and assertion-checked) that such an allocation is always possible.
-HeapWord* ShenandoahFreeSet::allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r) {
-  assert(_heap->mode()->is_generational(), "PLABs are only for generational mode");
-  assert(r->is_old(), "All PLABs reside in old-gen");
-  assert(!req.is_mutator_alloc(), "PLABs should not be allocated by mutators.");
-  assert(is_aligned(size, CardTable::card_size_in_words()), "Align by design");
-
-  HeapWord* result = r->allocate_aligned(size, req, CardTable::card_size());
-  assert(result != nullptr, "Allocation cannot fail");
-  assert(r->top() <= r->end(), "Allocation cannot span end of region");
-  assert(is_aligned(result, CardTable::card_size_in_words()), "Align by design");
-  return result;
-}
 
 HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& in_new_region) {
   assert (has_alloc_capacity(r), "Performance: should avoid full regions on this path: %zu", r->index());
@@ -1578,44 +1529,17 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   // req.size() is in words, r->free() is in bytes.
   if (req.is_lab_alloc()) {
     size_t adjusted_size = req.size();
-    size_t free = r->free();    // free represents bytes available within region r
-    if (req.is_old()) {
-      // This is a PLAB allocation(lab alloc in old gen)
-      assert(_heap->mode()->is_generational(), "PLABs are only for generational mode");
-      assert(_partitions.in_free_set(ShenandoahFreeSetPartitionId::OldCollector, r->index()),
-             "PLABS must be allocated in old_collector_free regions");
-
-      // Need to assure that plabs are aligned on multiple of card region
-      // Convert free from unaligned bytes to aligned number of words
-      size_t usable_free = get_usable_free_words(free);
-      if (adjusted_size > usable_free) {
-        adjusted_size = usable_free;
-      }
-      adjusted_size = align_down(adjusted_size, CardTable::card_size_in_words());
-      if (adjusted_size >= req.min_size()) {
-        result = allocate_aligned_plab(adjusted_size, req, r);
-        assert(result != nullptr, "allocate must succeed");
-        req.set_actual_size(adjusted_size);
-      } else {
-        // Otherwise, leave result == nullptr because the adjusted size is smaller than min size.
-        log_trace(gc, free)("Failed to shrink PLAB request (%zu) in region %zu to %zu"
-                            " because min_size() is %zu", req.size(), r->index(), adjusted_size, req.min_size());
-      }
+    size_t free = align_down(r->free() >> LogHeapWordSize, MinObjAlignment);
+    if (adjusted_size > free) {
+      adjusted_size = free;
+    }
+    if (adjusted_size >= req.min_size()) {
+      result = r->allocate(adjusted_size, req);
+      assert (result != nullptr, "Allocation must succeed: free %zu, actual %zu", free, adjusted_size);
+      req.set_actual_size(adjusted_size);
     } else {
-      // This is a GCLAB or a TLAB allocation
-      // Convert free from unaligned bytes to aligned number of words
-      free = align_down(free >> LogHeapWordSize, MinObjAlignment);
-      if (adjusted_size > free) {
-        adjusted_size = free;
-      }
-      if (adjusted_size >= req.min_size()) {
-        result = r->allocate(adjusted_size, req);
-        assert (result != nullptr, "Allocation must succeed: free %zu, actual %zu", free, adjusted_size);
-        req.set_actual_size(adjusted_size);
-      } else {
-        log_trace(gc, free)("Failed to shrink TLAB or GCLAB request (%zu) in region %zu to %zu"
-                            " because min_size() is %zu", req.size(), r->index(), adjusted_size, req.min_size());
-      }
+      log_trace(gc, free)("Failed to shrink LAB request (%zu) in region %zu to %zu"
+                          " because min_size() is %zu", req.size(), r->index(), adjusted_size, req.min_size());
     }
   } else {
     size_t size = req.size();
@@ -1821,8 +1745,8 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
     for (idx_t i = beg; i <= end; i++) {
       ShenandoahHeapRegion* r = _heap->get_region(i);
       assert(i == beg || _heap->get_region(i - 1)->index() + 1 == r->index(), "Should be contiguous");
-      assert(r->is_empty(), "Should be empty");
       r->try_recycle_under_lock();
+      assert(r->is_empty(), "Should be empty");
       r->set_affiliation(req.affiliation());
       r->make_regular_allocation(req.affiliation());
       if ((i == end) && (used_words_in_last_region > 0)) {
@@ -2588,9 +2512,7 @@ void ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t old_
 
   // Move some of the mutator regions into the Collector and OldCollector partitions in order to satisfy
   // young_reserve and old_reserve.
-  size_t young_used_regions, old_used_regions, young_used_bytes, old_used_bytes;
-  reserve_regions(young_reserve, old_reserve, old_region_count, young_used_regions, old_used_regions,
-                  young_used_bytes, old_used_bytes);
+  reserve_regions(young_reserve, old_reserve, old_region_count);
   _total_young_regions = _heap->num_regions() - old_region_count;
   _total_global_regions = _heap->num_regions();
   establish_old_collector_alloc_bias();
@@ -2734,16 +2656,9 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
 // is at least to_reserve_old.
 //
 // Returns total mutator alloc capacity, in words.
-size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old, size_t &old_region_count,
-                                          size_t &young_used_regions, size_t &old_used_regions,
-                                          size_t &young_used_bytes, size_t &old_used_bytes) {
+size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old, size_t &old_region_count) {
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   size_t mutator_allocatable_words = _prepare_to_rebuild_mutator_free;
-
-  young_used_regions = 0;
-  old_used_regions = 0;
-  young_used_bytes = 0;
-  old_used_bytes = 0;
 
   idx_t mutator_low_idx = _partitions.max();
   idx_t mutator_high_idx = -1;
@@ -2851,10 +2766,6 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
                                                                                 ShenandoahFreeSetPartitionId::Collector, ac);
         collector_available += ac;
         regions_to_collector++;
-        if (ac != region_size_bytes) {
-          young_used_regions++;
-          young_used_bytes = region_size_bytes - ac;
-        }
 
         log_trace(gc, free)("  Shifting region %zu from mutator_free to collector_free", idx);
         log_trace(gc, free)("  Shifted Mutator range [%zd, %zd],"
@@ -2881,10 +2792,6 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
       if ((ac == region_size_bytes) && (idx > mutator_empty_high_idx)) {
         mutator_empty_high_idx = idx;
       }
-      if (ac != region_size_bytes) {
-        young_used_regions++;
-        young_used_bytes += region_size_bytes - ac;
-      }
     } else {
       // Region is not in Mutator partition. Do the accounting.
       ShenandoahFreeSetPartitionId p = _partitions.membership(idx);
@@ -2893,23 +2800,12 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
       assert(p != ShenandoahFreeSetPartitionId::Collector, "Collector regions must be converted from Mutator regions");
       if (p == ShenandoahFreeSetPartitionId::OldCollector) {
         assert(!r->is_empty(), "Empty regions should be in Mutator partition at entry to reserve_regions");
-        old_used_regions++;
-        old_used_bytes = region_size_bytes - ac;
         // This region is within the range for OldCollector partition, as established by find_regions_with_alloc_capacity()
         assert((_partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector) <= idx) &&
                (_partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector) >= idx),
                "find_regions_with_alloc_capacity() should have established this is in range");
       } else {
         assert(p == ShenandoahFreeSetPartitionId::NotFree, "sanity");
-        // This region has been retired
-        if (r->is_old()) {
-          old_used_regions++;
-          old_used_bytes += region_size_bytes - ac;
-        } else {
-          assert(r->is_young(), "Retired region should be old or young");
-          young_used_regions++;
-          young_used_bytes += region_size_bytes - ac;
-        }
       }
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,19 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
+package jdk.jfr.startupargs;
 
-#include "gc/shared/stringdedup/stringDedup.hpp"
+import jdk.test.lib.Asserts;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
-class ShenandoahStringDedup : public StringDedup {
-public:
-  static inline bool is_string_candidate(oop obj);
-  static inline bool is_candidate(oop obj);
-  static inline bool dedup_requested(oop obj);
-};
+/**
+ * @test
+ * @requires vm.flagless
+ * @requires vm.hasJFR
+ * @library /test/lib /test/jdk
+ * @run main jdk.jfr.startupargs.TestOptionsHelp
+ */
+public class TestOptionsHelp {
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTRINGDEDUP_HPP
+    public static void main(String... args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-XX:FlightRecorderOptions:help");
+        OutputAnalyzer out = ProcessTools.executeProcess(pb);
+        out.shouldContain("Syntax : -XX:FlightRecorderOptions:[options]");
+        out.shouldContain("numglobalbuffers");
+        out.shouldContain("Multiple options are separated");
+        out.shouldHaveExitValue(0);
+    }
+}

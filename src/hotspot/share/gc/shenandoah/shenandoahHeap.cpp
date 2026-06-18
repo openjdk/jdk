@@ -1035,7 +1035,6 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
   // memory.
   HeapWord* result = _free_set->allocate(req, in_new_region);
 
-  // Record the plab configuration for this result and register the object.
   if (result != nullptr) {
     if (req.is_mutator_alloc()) {
       _alloc_rate.allocated((req.actual_size() + req.waste()) * HeapWordSize);
@@ -1044,33 +1043,10 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
     if (req.is_old()) {
       if (req.is_lab_alloc()) {
         old_generation()->configure_plab_for_current_thread(req);
-      } else {
-        // Register the newly allocated object while we're holding the global lock since there's no synchronization
-        // built in to the implementation of register_object().  There are potential races when multiple independent
-        // threads are allocating objects, some of which might span the same card region.  For example, consider
-        // a card table's memory region within which three objects are being allocated by three different threads:
-        //
-        // objects being "concurrently" allocated:
-        //    [-----a------][-----b-----][--------------c------------------]
-        //            [---- card table memory range --------------]
-        //
-        // Before any objects are allocated, this card's memory range holds no objects.  Note that allocation of object a
-        // wants to set the starts-object, first-start, and last-start attributes of the preceding card region.
-        // Allocation of object b wants to set the starts-object, first-start, and last-start attributes of this card region.
-        // Allocation of object c also wants to set the starts-object, first-start, and last-start attributes of this
-        // card region.
-        //
-        // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as
-        // last-start representing object b while first-start represents object c.  This is why we need to require all
-        // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
-        old_generation()->card_scan()->register_object(result);
-
-        if (req.is_promotion()) {
-          // Shared promotion.
-          const size_t actual_size = req.actual_size() * HeapWordSize;
-          log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
-          old_generation()->expend_promoted(actual_size);
-        }
+      } else if (req.is_promotion()) {
+        const size_t actual_size = req.actual_size() * HeapWordSize;
+        log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
+        old_generation()->expend_promoted(actual_size);
       }
     }
   }

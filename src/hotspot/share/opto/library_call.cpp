@@ -666,6 +666,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_intpoly_montgomeryMult_P256();
   case vmIntrinsics::_intpoly_assign:
     return inline_intpoly_assign();
+  case vmIntrinsics::_intpoly_mult_25519:
+    return inline_intpoly_mult_25519();
+  case vmIntrinsics::_intpoly_square_25519:
+    return inline_intpoly_square_25519();
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
     return inline_encodeISOArray(false);
@@ -2403,7 +2407,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   Node* adr = make_unsafe_address(base, offset, type, kind == Relaxed);
   assert(!stopped(), "Inlining of unsafe access failed: address construction stopped unexpectedly");
 
-  if (_gvn.type(base->uncast())->isa_ptr() == TypePtr::NULL_PTR) {
+  bool is_non_heap_access = (_gvn.type(base->uncast())->isa_ptr() == TypePtr::NULL_PTR);
+  if (is_non_heap_access) {
     if (type != T_OBJECT) {
       decorators |= IN_NATIVE; // off-heap primitive access
     } else {
@@ -2415,6 +2420,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
   // Can base be null? Otherwise, always on-heap access.
   bool can_access_non_heap = TypePtr::NULL_PTR->higher_equal(_gvn.type(base));
+
+  assert(!is_non_heap_access || can_access_non_heap, "sanity"); // is_non_heap_access implies can_access_non_heap
 
   if (!can_access_non_heap) {
     decorators |= IN_HEAP;
@@ -2430,6 +2437,9 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   // Try to categorize the address.
   Compile::AliasType* alias_type = C->alias_type(adr_type);
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
+
+  assert((alias_type->index() == Compile::AliasIdxRaw) ==
+         (is_non_heap_access || (can_access_non_heap && alias_type->field() == nullptr)), "wrong alias");
 
   if (alias_type->adr_type() == TypeInstPtr::KLASS ||
       alias_type->adr_type() == TypeAryPtr::RANGE) {
@@ -2471,10 +2481,16 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   // Figure out the memory ordering.
   decorators |= mo_decorator_for_access_kind(kind);
 
-  if (!is_store && type == T_OBJECT) {
-    const TypeOopPtr* tjp = sharpen_unsafe_type(alias_type, adr_type);
-    if (tjp != nullptr) {
-      value_type = tjp;
+  if (!is_store) {
+    if (type == T_OBJECT) {
+      const TypeOopPtr* tjp = sharpen_unsafe_type(alias_type, adr_type);
+      if (tjp != nullptr) {
+        value_type = tjp;
+      }
+    } else if (type == T_BOOLEAN) {
+      if (mismatched || alias_type->index() == Compile::AliasIdxRaw) {
+        value_type = TypeInt::UBYTE;
+      }
     }
   }
 
@@ -2498,31 +2514,13 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
     if (p == nullptr) { // Could not constant fold the load
       p = access_load_at(heap_base_oop, adr, adr_type, value_type, type, decorators);
-      // Normalize the value returned by getBoolean in the following cases
-      if (type == T_BOOLEAN &&
-          (mismatched ||
-           heap_base_oop == top() ||                  // - heap_base_oop is null or
-           (can_access_non_heap && field == nullptr)) // - heap_base_oop is potentially null
-                                                      //   and the unsafe access is made to large offset
-                                                      //   (i.e., larger than the maximum offset necessary for any
-                                                      //   field access)
-            ) {
-          IdealKit ideal = IdealKit(this);
-#define __ ideal.
-          IdealVariable normalized_result(ideal);
-          __ declarations_done();
-          __ set(normalized_result, p);
-          __ if_then(p, BoolTest::ne, ideal.ConI(0));
-          __ set(normalized_result, ideal.ConI(1));
-          ideal.end_if();
-          final_sync(ideal);
-          p = __ value(normalized_result);
-#undef __
-      }
     }
     if (type == T_ADDRESS) {
       p = gvn().transform(new CastP2XNode(nullptr, p));
       p = ConvX2UL(p);
+    } else if (type == T_BOOLEAN) {
+      // Truncate boolean values returned by unsafe operations.
+      p = gvn().transform(new AndINode(p, gvn().intcon(0x1)));
     }
     // The load node has the control of the preceding MemBarCPUOrder.  All
     // following nodes will have the control of the MemBarCPUOrder inserted at
@@ -8370,6 +8368,70 @@ bool LibraryCallKit::inline_intpoly_assign() {
                                  OptoRuntime::intpoly_assign_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  set, a_start, b_start, arr_length);
+  return true;
+}
+
+bool LibraryCallKit::inline_intpoly_mult_25519() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseIntPoly25519Intrinsics, "need intpoly25519 intrinsics support");
+  assert(callee()->signature()->size() == 3, "intpoly_mult_25519 has %d parameters", callee()->signature()->size());
+  stubAddr = StubRoutines::intpoly_mult_25519();
+  stubName = "intpoly_mult_25519";
+
+  if (!stubAddr) return false;
+  null_check_receiver();  // null-check receiver
+  if (stopped())  return true;
+
+  Node* a = argument(1);
+  Node* b = argument(2);
+  Node* r = argument(3);
+
+  a = must_be_not_null(a, true);
+  b = must_be_not_null(b, true);
+  r = must_be_not_null(r, true);
+
+  Node* a_start = array_element_address(a, intcon(0), T_LONG);
+  assert(a_start, "a array is null");
+  Node* b_start = array_element_address(b, intcon(0), T_LONG);
+  assert(b_start, "b array is null");
+  Node* r_start = array_element_address(r, intcon(0), T_LONG);
+  assert(r_start, "r array is null");
+
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+                                 OptoRuntime::intpoly_mult_25519_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 a_start, b_start, r_start);
+  return true;
+}
+
+bool LibraryCallKit::inline_intpoly_square_25519() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseIntPoly25519Intrinsics, "need intpoly25519 intrinsics support");
+  assert(callee()->signature()->size() == 2, "intpoly_mult_25519 has %d parameters", callee()->signature()->size());
+  stubAddr = StubRoutines::intpoly_square_25519();
+  stubName = "intpoly_square_25519";
+
+  if (!stubAddr) return false;
+  null_check_receiver();  // null-check receiver
+  if (stopped())  return true;
+
+  Node* a = argument(1);
+  Node* r = argument(2);
+
+  a = must_be_not_null(a, true);
+  r = must_be_not_null(r, true);
+
+  Node* a_start = array_element_address(a, intcon(0), T_LONG);
+  assert(a_start, "a array is null");
+  Node* r_start = array_element_address(r, intcon(0), T_LONG);
+  assert(r_start, "r array is null");
+
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+                                 OptoRuntime::intpoly_square_25519_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 a_start, r_start);
   return true;
 }
 
