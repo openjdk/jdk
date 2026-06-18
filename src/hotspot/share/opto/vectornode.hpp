@@ -146,12 +146,20 @@ class VectorNode : public TypeNode {
   static bool is_minmax_opcode(int opc);
 
   bool should_swap_inputs_to_help_global_value_numbering();
+  Node* reassociate_vector_operation(PhaseGVN* phase);
+  static Node* create_reassociated_node(Node* parent, Node* child, Node* cinput1, Node* cinput2,
+                                        Node* pinput2, PhaseGVN* phase);
 
   static bool is_vshift_cnt_opcode(int opc);
 
   static bool is_rotate_opcode(int opc);
 
   static int opcode(int sopc, BasicType bt);         // scalar_opc -> vector_opc
+  static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc, 0 if not handled
+  static Node* make_scalar(Compile* c, int vopc, BasicType bt, Node* control, Node* in1, Node* in2, Node* in3);
+
+  bool can_push_through_replicate(BasicType bt);
+  Node* push_through_replicate(PhaseGVN* phase);
 
   static int shift_count_opcode(int opc);
 
@@ -174,6 +182,7 @@ class VectorNode : public TypeNode {
   // Return true if every bit in this vector is 0.
   static bool is_all_zeros_vector(Node* n);
   static bool is_vector_bitwise_not_pattern(Node* n);
+  static bool is_vectormask_bitwise_not_pattern(Node* n);
   static Node* degenerate_vector_rotate(Node* n1, Node* n2, bool is_rotate_left, int vlen,
                                         BasicType bt, PhaseGVN* phase);
 
@@ -1066,6 +1075,7 @@ class XorVNode : public VectorNode {
   virtual int Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   Node* Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape);
+  Node* Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_reshape);
 };
 
 // Vector xor byte, short, int, long as a reduction
@@ -1791,6 +1801,24 @@ class VectorBlendNode : public VectorNode {
   Node* vec1() const { return in(1); }
   Node* vec2() const { return in(2); }
   Node* vec_mask() const { return in(3); }
+};
+
+// Vector bitwise blend (bit-select): (sel & vec_true) | (~sel & vec_false).
+class VectorBitwiseBlendNode : public VectorNode {
+ public:
+  VectorBitwiseBlendNode(Node* vec_false, Node* vec_true, Node* sel, const TypeVect* vt)
+    : VectorNode(vec_false, vec_true, sel, vt) {
+    assert(vec_false->bottom_type()->isa_vect() != nullptr &&
+           vec_true->bottom_type()->isa_vect() != nullptr &&
+           sel->bottom_type()->isa_vect() != nullptr,
+           "inputs must all be vectors");
+    uint vlen = vt->length();
+    assert(vec_false->bottom_type()->is_vect()->length() == vlen &&
+           vec_true->bottom_type()->is_vect()->length() == vlen &&
+           sel->bottom_type()->is_vect()->length() == vlen,
+           "mismatched vector length");
+  }
+  virtual int Opcode() const;
 };
 
 // Rearrange lane elements from a source vector under the control of a shuffle

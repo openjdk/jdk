@@ -1584,9 +1584,6 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         fprintf(fp, "  ((MachIfNode*)n%d)->_fcnt = _fcnt;\n", cnt);
       }
 
-      // Fill in the bottom_type
-      fprintf(fp, "  n%d->_bottom_type = bottom_type();\n", cnt);
-
       const char *resultOper = new_inst->reduce_result();
       fprintf(fp,"  n%d->set_opnd_array(0, state->MachOperGenerator(%s));\n",
               cnt, machOperEnum(resultOper));
@@ -1850,6 +1847,8 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
 
   fprintf(fp, "\n");
   if (node->expands()) {
+    // Fill in the bottom_type, only for result
+    fprintf(fp, "  result->_bottom_type = bottom_type();\n");
     fprintf(fp, "  return result;\n");
   } else {
     fprintf(fp, "  return this;\n");

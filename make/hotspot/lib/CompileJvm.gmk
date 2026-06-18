@@ -204,7 +204,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_gcc_jfrChunkWriter.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_jfrMemorySizer.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_jfrTraceIdKlassQueue.cpp := unused-const-variable, \
-    DISABLED_WARNINGS_gcc_jvmciCodeInstaller.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_jvmFlag.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_jvmtiTagMap.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_macroAssembler_ppc_sha.cpp := unused-const-variable, \

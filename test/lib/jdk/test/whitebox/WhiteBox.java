@@ -336,10 +336,7 @@ public class WhiteBox {
 
   // Compiler
 
-  // Determines if the libgraal shared library file is present.
-  public native boolean hasLibgraal();
-  public native boolean isC2OrJVMCIIncluded();
-  public native boolean isJVMCISupportedByGC();
+  public native boolean isC2Included();
 
   public native int     matchesMethod(Executable method, String pattern);
   public native int     matchesInline(Executable method, String pattern);
@@ -564,7 +561,6 @@ public class WhiteBox {
   // Don't use these methods directly
   // Use jdk.test.whitebox.gc.GC class instead.
   public native boolean isGCSupported(int name);
-  public native boolean isGCSupportedByJVMCICompiler(int name);
   public native boolean isGCSelected(int name);
   public native boolean isGCSelectedErgonomically();
 

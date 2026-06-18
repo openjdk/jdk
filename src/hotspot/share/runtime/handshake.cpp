@@ -718,7 +718,8 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
   // It is possible that since we claimed the handshake the op has
   // transitioned to a disabled state and so won't be returned by get_op.
   if (op == nullptr) {
-      return HandshakeState::_no_operation;
+    _lock.unlock();
+    return HandshakeState::_no_operation;
   }
 
   assert(op->is_enabled(), "Should not reach here with a disabled op");

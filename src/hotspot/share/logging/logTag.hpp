@@ -111,7 +111,6 @@ class outputStream;
   LOG_TAG(jit) \
   LOG_TAG(jmethod) \
   LOG_TAG(jni) \
-  LOG_TAG(jvmci) \
   LOG_TAG(jvmti) \
   LOG_TAG(lambda) \
   LOG_TAG(library) \
@@ -170,6 +169,7 @@ class outputStream;
   LOG_TAG(ptrqueue) \
   LOG_TAG(purge) \
   LOG_TAG(record) \
+  LOG_TAG(redact) \
   LOG_TAG(redefine) \
   LOG_TAG(ref) \
   LOG_TAG(refine) \
