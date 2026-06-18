@@ -27,16 +27,6 @@
 #
 #############################################################################
 
-# Quiet all SA tests
-
-sun/tools/jhsdb/HeapDumpTest.java                  8307393   generic-all
-sun/tools/jhsdb/BasicLauncherTest.java             8307393   generic-all
-sun/tools/jhsdb/JStackStressTest.java              8307393   generic-all
-sun/tools/jhsdb/JShellHeapDumpTest.java            8307393   generic-all
-sun/tools/jhsdb/SAGetoptTest.java                  8307393   generic-all
-sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java 8307393   generic-all
-sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java 8307393   generic-all
-
 com/sun/jdi/ThreadMemoryLeakTest.java              8307402   generic-all
 
 #############################################################################
@@ -44,10 +34,14 @@ com/sun/jdi/ThreadMemoryLeakTest.java              8307402   generic-all
 # Preview project specific failures go here at the end of the file.
 #
 # These are NOT failures that occur with the '--enable-preview' option
-# specified; those go in the appropriate ProblemList-enable-preview.txt file.
+# specified in the task definition; those go in the appropriate
+# ProblemList-enable-preview.txt file.
+#
 # These are failures that occur WITHOUT the '--enable-preview' option
-# specified AND occur because of some issue with preview project code,
-# in either implementation or test code.
+# specified in the task definition OR the '--enable-preview' option
+# MAY BE specified in the test itself. In either case, the failure
+# occurs because of some issue with preview project code, in either
+# implementation or test code.
 
 #############################################################################
 

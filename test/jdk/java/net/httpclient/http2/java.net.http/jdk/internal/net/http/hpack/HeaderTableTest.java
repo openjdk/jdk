@@ -29,9 +29,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.jupiter.api.Assertions;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class HeaderTableTest extends SimpleHeaderTableTest {
 
@@ -76,7 +76,7 @@ public class HeaderTableTest extends SimpleHeaderTableTest {
             Set<Integer> expectedIndexes = indexes.get(hName);
             int actualMinimalIndex = table.indexOf(hName, "blah-blah");
 
-            Assertions.assertTrue(expectedIndexes.contains(-actualMinimalIndex));
+            assertTrue(expectedIndexes.contains(-actualMinimalIndex));
         });
     }
 

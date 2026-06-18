@@ -96,7 +96,7 @@ class KeepAliveObjectsTable : public HashTable<oop, bool,
     36137, // prime number
     AnyObj::C_HEAP,
     mtClassShared,
-    HeapShared::oop_hash> {};
+    HeapShared::oop_address_hash> {};
 
 static KeepAliveObjectsTable* _keep_alive_objs_table;
 static OopHandle _keep_alive_objs_array;

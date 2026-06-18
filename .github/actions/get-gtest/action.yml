@@ -40,7 +40,7 @@ runs:
         var: GTEST_VERSION
 
     - name: 'Checkout GTest source'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: google/googletest
         ref: 'v${{ steps.version.outputs.value }}'

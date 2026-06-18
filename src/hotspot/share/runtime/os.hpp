@@ -173,7 +173,6 @@ public:
 };
 
 class os: AllStatic {
-  friend class JVMCIVMStructs;
   friend class MallocTracker;
 
 #ifdef ASSERT
@@ -441,9 +440,9 @@ class os: AllStatic {
  public:
   // get allowed minimum java stack size
   static jlong get_minimum_java_stack_size();
-  // Find committed memory region within specified range (start, start + size),
-  // return true if found any
-  static bool committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size);
+  // Find the first resident memory region within the specified range (start, start + size) beginning at the start address.
+  // Returns true if successful or false if none are found.
+  static bool first_resident_in_range(address start, size_t size, address& resident_start, size_t& resident_size);
 
   // OS interface to Virtual Memory
 
@@ -454,7 +453,7 @@ class os: AllStatic {
   static size_t align_down_vm_page_size(size_t size) { return align_down(size, os::vm_page_size()); }
 
   // The set of page sizes which the VM is allowed to use (may be a subset of
-  //  the page sizes actually available on the platform).
+  // the page sizes actually available on the platform).
   static const PageSizes& page_sizes() { return _page_sizes; }
 
   // Returns the page size to use for a region of memory.
@@ -602,7 +601,7 @@ class os: AllStatic {
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
   static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
-                                       char* addr, bool executable);
+                                       char* addr, MemTag mem_tag, bool executable);
   static void   large_page_init();
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();
@@ -721,6 +720,8 @@ class os: AllStatic {
   static int open(const char *path, int oflag, int mode);
   static FILE* fdopen(int fd, const char* mode);
   static FILE* fopen(const char* path, const char* mode);
+  static int64_t ftell(FILE* file);
+  static int fseek(FILE* file, int64_t offset, int whence);
   static jlong lseek(int fd, jlong offset, int whence);
   static bool file_exists(const char* file);
 
@@ -892,6 +893,9 @@ class os: AllStatic {
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
   static void print_elapsed_time(outputStream* st, double time);
+
+  // Prints the number of open file descriptors for the current process
+  static void print_open_file_descriptors(outputStream* st);
 
   static void print_user_info(outputStream* st);
   static void print_active_locale(outputStream* st);

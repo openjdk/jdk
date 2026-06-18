@@ -29,8 +29,3 @@ requiredVersion=8.2.1+1
 # does not need ../../ notation to reach them
 external.lib.roots = ../../
 
-# Use new module options
-useNewOptions=true
-
-# Use --patch-module instead of -Xmodule:
-useNewPatchModule=true

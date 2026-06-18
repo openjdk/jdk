@@ -40,6 +40,7 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @modules java.base/jdk.internal.vm
+ * @modules java.management
  * @requires vm.flagless
  * @requires vm.gc == "Serial" | vm.gc == null
  * @requires vm.hasJFR

@@ -198,7 +198,7 @@ void JvmtiExtensions::register_extensions() {
   static jvmtiExtensionFunctionInfo ext_func0 = {
     (jvmtiExtensionFunction)IsClassUnloadingEnabled,
     (char*)"com.sun.hotspot.functions.IsClassUnloadingEnabled",
-    (char*)"Tell if class unloading is enabled (-noclassgc)",
+    (char*)"Tell if class unloading is enabled (-Xnoclassgc)",
     sizeof(func_params0)/sizeof(func_params0[0]),
     func_params0,
     0,              // no non-universal errors

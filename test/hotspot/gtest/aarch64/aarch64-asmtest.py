@@ -391,6 +391,11 @@ class SystemRegOp(Instruction):
             self.CRn = 0b0100
             self.CRm = 0b0010
             self.op2 = 0b000
+        elif self.system_reg == 'cntvctss_el0':
+            self.op1 = 0b011
+            self.CRn = 0b1110
+            self.CRm = 0b0000
+            self.op2 = 0b110
 
     def generate(self):
         self.reg = [GeneralRegister().generate()]
@@ -1116,7 +1121,7 @@ class SVEVectorOp(Instruction):
         self._bitwiseop = False
         if name[0] == 'f':
             self._width = RegVariant(2, 3)
-        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic", "eor3"]):
+        elif not self._isPredicated and (name in ["and", "bic", "bsl", "eor", "eor3", "orr"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
         elif name == "revb":
@@ -1145,7 +1150,7 @@ class SVEVectorOp(Instruction):
                         width +
                         [str(self.reg[i]) for i in range(1, self.numRegs)]))
     def astr(self):
-        firstArg = 0 if self._name == "eor3" else 1
+        firstArg = 0 if self._name in ["bsl", "eor3"] else 1
         formatStr = "%s%s" + ''.join([", %s" for i in range(firstArg, self.numRegs)])
         if self._dnm == 'dn':
             formatStr += ", %s"
@@ -1607,6 +1612,8 @@ generate (Op, ["nop", "yield", "wfe", "sev", "sevl",
                "pacia1716", "paciasp", "paciaz", "pacib1716", "pacibsp", "pacibz",
                "eret", "drps", "isb", "sb",])
 
+generate (OneRegOp, ["wfet"])
+
 # Ensure the "i" is not stripped off the end of the instruction
 generate (PostfixExceptionOp, ["wfi", "xpaclri"])
 
@@ -1623,7 +1630,7 @@ generate (OneRegOp, ["br", "blr",
 for system_reg in ["fpsr", "nzcv"]:
     generate (SystemOneRegOp, [ ["msr", system_reg] ])
 
-for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0"]:
+for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0", "cntvctss_el0"]:
     generate (OneRegSystemOp, [ ["mrs", system_reg] ])
 
 # Ensure the "i" is not stripped off the end of the instruction
@@ -2251,6 +2258,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        # SVE2 instructions
                        ["bext", "ZZZ"],
                        ["bdep", "ZZZ"],
+                       ["bsl", "ZZZ"],
                        ["eor3", "ZZZ"],
                        ["sqadd", "ZPZ", "m", "dn"],
                        ["sqsub", "ZPZ", "m", "dn"],
@@ -2275,9 +2283,9 @@ outfile.write("forth:\n")
 
 outfile.close()
 
-# compile for sve with armv9-a+sha3+sve2-bitperm because of SHA3 crypto extension and SVE2 bitperm instructions.
+# compile for sve with armv9.2-a+sha3+sve2-bitperm because of SHA3 crypto extension and SVE2 bitperm instructions.
 # armv9-a enables sve and sve2 by default.
-subprocess.check_call([AARCH64_AS, "-march=armv9-a+sha3+sve2-bitperm", "aarch64ops.s", "-o", "aarch64ops.o"])
+subprocess.check_call([AARCH64_AS, "-march=armv9.2-a+sha3+sve2-bitperm", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
 print "/*"

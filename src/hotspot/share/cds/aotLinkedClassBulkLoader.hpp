@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ class AOTLinkedClassBulkLoader :  AllStatic {
   static void link_classes_impl(TRAPS);
   static void link_classes_in_table(Array<InstanceKlass*>* classes, TRAPS);
   static void init_non_javabase_classes_impl(TRAPS);
-  static void init_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
+  static void init_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, bool early_only, TRAPS);
   static void replay_training_at_init(Array<InstanceKlass*>* classes, TRAPS) NOT_CDS_RETURN;
 
 #ifdef ASSERT
@@ -73,8 +73,9 @@ public:
   static void init_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void init_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void exit_on_exception(JavaThread* current);
-
   static void replay_training_at_init_for_preloaded_classes(TRAPS) NOT_CDS_RETURN;
+
+  static bool is_initializing_classes_early() NOT_DEBUG({return false;});
 };
 
 #endif // SHARE_CDS_AOTLINKEDCLASSBULKLOADER_HPP

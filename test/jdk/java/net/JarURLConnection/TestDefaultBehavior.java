@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8225037
  * @library /test/lib
  * @summary Basic test for java.net.JarURLConnection default behavior
- * @run testng/othervm TestDefaultBehavior
+ * @run junit/othervm ${test.main.class}
  */
 
 import java.io.IOException;
@@ -39,10 +39,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.jar.JarFile;
 import jdk.test.lib.util.JarUtils;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class TestDefaultBehavior {
 
@@ -50,8 +53,8 @@ public class TestDefaultBehavior {
     //   1. jar without a manifest
     //   2. jar with a manifest
     //   3. jar with manifest that includes an entry attribute
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         URLConnection.setDefaultUseCaches("jar", false);
         URLConnection.setDefaultUseCaches("file", false);
 
@@ -76,14 +79,14 @@ public class TestDefaultBehavior {
         URL jarFileURL = URI.create("jar:" + fileURI + "!/").toURL();
         JarURLConnection jarURLConnection = new CustomJarURLConnection(jarFileURL);
 
-        assertEquals(jarURLConnection.getAttributes(), null);
-        assertEquals(jarURLConnection.getCertificates(), null);
-        assertEquals(jarURLConnection.getEntryName(), null);
-        assertEquals(jarURLConnection.getJarEntry(), null);
+        assertNull(jarURLConnection.getAttributes());
+        assertNull(jarURLConnection.getCertificates());
+        assertNull(jarURLConnection.getEntryName());
+        assertNull(jarURLConnection.getJarEntry());
         assertNotNull(jarURLConnection.getJarFile());
-        assertEquals(jarURLConnection.getJarFileURL(), fileURI.toURL());
-        assertEquals(jarURLConnection.getMainAttributes(), null);
-        assertEquals(jarURLConnection.getManifest(), null);
+        assertEquals(fileURI.toURL(), jarURLConnection.getJarFileURL());
+        assertNull(jarURLConnection.getMainAttributes());
+        assertNull(jarURLConnection.getManifest());
     }
 
     @Test
@@ -92,14 +95,14 @@ public class TestDefaultBehavior {
         URL jarFileURL = URI.create("jar:" + fileURI + "!/foo.txt").toURL();
         JarURLConnection jarURLConnection = new CustomJarURLConnection(jarFileURL);
 
-        assertEquals(jarURLConnection.getAttributes(), null);
-        assertEquals(jarURLConnection.getCertificates(), null);
-        assertEquals(jarURLConnection.getEntryName(), "foo.txt");
-        assertEquals(jarURLConnection.getJarEntry().getName(), "foo.txt");
+        assertNull(jarURLConnection.getAttributes());
+        assertNull(jarURLConnection.getCertificates());
+        assertEquals("foo.txt", jarURLConnection.getEntryName());
+        assertEquals("foo.txt", jarURLConnection.getJarEntry().getName());
         assertNotNull(jarURLConnection.getJarFile());
-        assertEquals(jarURLConnection.getJarFileURL(), fileURI.toURL());
-        assertEquals(jarURLConnection.getMainAttributes(), null);
-        assertEquals(jarURLConnection.getManifest(), null);
+        assertEquals(fileURI.toURL(), jarURLConnection.getJarFileURL());
+        assertNull(jarURLConnection.getMainAttributes());
+        assertNull(jarURLConnection.getManifest());
     }
 
     @Test
@@ -108,13 +111,13 @@ public class TestDefaultBehavior {
         URL jarFileURL = URI.create("jar:" + fileURI + "!/").toURL();
         JarURLConnection jarURLConnection = new CustomJarURLConnection(jarFileURL);
 
-        assertEquals(jarURLConnection.getAttributes(), null);
-        assertEquals(jarURLConnection.getCertificates(), null);
-        assertEquals(jarURLConnection.getEntryName(), null);
-        assertEquals(jarURLConnection.getJarEntry(), null);
+        assertNull(jarURLConnection.getAttributes());
+        assertNull(jarURLConnection.getCertificates());
+        assertNull(jarURLConnection.getEntryName());
+        assertNull(jarURLConnection.getJarEntry());
         assertNotNull(jarURLConnection.getJarFile());
-        assertEquals(jarURLConnection.getJarFileURL(), fileURI.toURL());
-        assertEquals(jarURLConnection.getMainAttributes().getValue("Manifest-Version"), "5.5");
+        assertEquals(fileURI.toURL(), jarURLConnection.getJarFileURL());
+        assertEquals("5.5", jarURLConnection.getMainAttributes().getValue("Manifest-Version"));
         assertNotNull(jarURLConnection.getManifest());
     }
 
@@ -124,13 +127,13 @@ public class TestDefaultBehavior {
         URL jarFileURL = URI.create("jar:" + fileURI + "!/foo.txt").toURL();
         JarURLConnection jarURLConnection = new CustomJarURLConnection(jarFileURL);
 
-        assertEquals(jarURLConnection.getAttributes(), null);
-        assertEquals(jarURLConnection.getCertificates(), null);
-        assertEquals(jarURLConnection.getEntryName(), "foo.txt");
-        assertEquals(jarURLConnection.getJarEntry().getName(), "foo.txt");
+        assertNull(jarURLConnection.getAttributes());
+        assertNull(jarURLConnection.getCertificates());
+        assertEquals("foo.txt", jarURLConnection.getEntryName());
+        assertEquals("foo.txt", jarURLConnection.getJarEntry().getName());
         assertNotNull(jarURLConnection.getJarFile());
-        assertEquals(jarURLConnection.getJarFileURL(), fileURI.toURL());
-        assertEquals(jarURLConnection.getMainAttributes().getValue("Manifest-Version"), "5.5");
+        assertEquals(fileURI.toURL(), jarURLConnection.getJarFileURL());
+        assertEquals("5.5", jarURLConnection.getMainAttributes().getValue("Manifest-Version"));
         assertNotNull(jarURLConnection.getManifest());
     }
 
@@ -140,13 +143,13 @@ public class TestDefaultBehavior {
         URL jarFileURL = URI.create("jar:" + fileURI + "!/").toURL();
         JarURLConnection jarURLConnection = new CustomJarURLConnection(jarFileURL);
 
-        assertEquals(jarURLConnection.getAttributes(), null);
-        assertEquals(jarURLConnection.getCertificates(), null);
-        assertEquals(jarURLConnection.getEntryName(), null);
-        assertEquals(jarURLConnection.getJarEntry(), null);
+        assertNull(jarURLConnection.getAttributes());
+        assertNull(jarURLConnection.getCertificates());
+        assertNull(jarURLConnection.getEntryName());
+        assertNull(jarURLConnection.getJarEntry());
         assertNotNull(jarURLConnection.getJarFile());
-        assertEquals(jarURLConnection.getJarFileURL(), fileURI.toURL());
-        assertEquals(jarURLConnection.getMainAttributes().getValue("Manifest-Version"), "7.7");
+        assertEquals(fileURI.toURL(), jarURLConnection.getJarFileURL());
+        assertEquals("7.7", jarURLConnection.getMainAttributes().getValue("Manifest-Version"));
         assertNotNull(jarURLConnection.getManifest());
     }
 
@@ -156,13 +159,13 @@ public class TestDefaultBehavior {
         URL jarFileURL = URI.create("jar:" + fileURI + "!/foo.txt").toURL();
         JarURLConnection jarURLConnection = new CustomJarURLConnection(jarFileURL);
 
-        assertEquals(jarURLConnection.getAttributes().getValue("Greeting"), "true");
-        assertEquals(jarURLConnection.getCertificates(), null);
-        assertEquals(jarURLConnection.getEntryName(), "foo.txt");
-        assertEquals(jarURLConnection.getJarEntry().getName(), "foo.txt");
+        assertEquals("true", jarURLConnection.getAttributes().getValue("Greeting"));
+        assertNull(jarURLConnection.getCertificates());
+        assertEquals("foo.txt", jarURLConnection.getEntryName());
+        assertEquals("foo.txt", jarURLConnection.getJarEntry().getName());
         assertNotNull(jarURLConnection.getJarFile());
-        assertEquals(jarURLConnection.getJarFileURL(), fileURI.toURL());
-        assertEquals(jarURLConnection.getMainAttributes().getValue("Manifest-Version"), "7.7");
+        assertEquals(fileURI.toURL(), jarURLConnection.getJarFileURL());
+        assertEquals("7.7", jarURLConnection.getMainAttributes().getValue("Manifest-Version"));
         assertNotNull(jarURLConnection.getManifest());
     }
 

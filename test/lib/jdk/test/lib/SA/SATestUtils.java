@@ -333,7 +333,7 @@ public class SATestUtils {
                                          .get();
                     String dir = buildID.substring(0, 2);
                     String file = buildID.substring(2);
-                    debuginfoPath = Path.of("/usr/lib/debug/.build_id", dir, file + ".debug");
+                    debuginfoPath = Path.of("/usr/lib/debug/.build-id", dir, file + ".debug");
                     exists = Files.exists(debuginfoPath);
                 } catch (NoSuchElementException _) {
                     // return null if vDSO not found.

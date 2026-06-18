@@ -26,7 +26,7 @@
  * @bug 8347938
  * @library /test/lib
  * @summary ensure ML-KEM and ML-DSA encodings consistent with
- *      draft-ietf-lamps-kyber-certificates-11 and RFC 9881
+ *      RFC 9935 and RFC 9881
  * @modules java.base/com.sun.crypto.provider
  *          java.base/sun.security.pkcs
  *          java.base/sun.security.provider
@@ -62,17 +62,17 @@ import java.util.stream.Collectors;
 public class PrivateKeyEncodings {
 
     public static void main(String[] args) throws Exception {
-        // Example keys and certificates draft-ietf-lamps-kyber-certificates-11, Appendix B
-        // (https://datatracker.ietf.org/doc/html/draft-ietf-lamps-kyber-certificates-11#autoid-17)
-        // and RFC 9881, Appendix C.3
-        // (https://datatracker.ietf.org/doc/html/rfc9881#name-example-certificates)
+        // Example keys and certificates in RFC 9935, Appendix C
+        // (https://datatracker.ietf.org/doc/html/rfc9935#name-examples)
+        // and RFC 9881, Appendix C
+        // (https://datatracker.ietf.org/doc/html/rfc9881#name-examples)
         //
         // These data can be retrieved from the following GitHub releases:
         //   https://github.com/lamps-wg/kyber-certificates/releases/tag/draft-ietf-lamps-kyber-certificates-11
         //   https://github.com/lamps-wg/dilithium-certificates/releases/tag/draft-ietf-lamps-dilithium-certificates-13
         //
         // Although the release tags include "draft", these values are the
-        // same as those in the final RFC 9881.
+        // same as those in the final RFCs.
         try (var kemReader = RepositoryFileReader.of(RepositoryFileReader.KYBER_CERTIFICATES.class,
                     "kyber-certificates-draft-ietf-lamps-kyber-certificates-11/");
              var dsaReader = RepositoryFileReader.of(RepositoryFileReader.DILITHIUM_CERTIFICATES.class,

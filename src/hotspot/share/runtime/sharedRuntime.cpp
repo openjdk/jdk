@@ -82,6 +82,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
@@ -159,15 +160,15 @@ void SharedRuntime::generate_stubs() {
     generate_throw_exception(StubId::shared_throw_NullPointerException_at_call_id,
                              CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call));
 
-#if COMPILER2_OR_JVMCI
-  // Vectors are generated only by C2 and JVMCI.
+#ifdef COMPILER2
+  // Vectors are generated only by C2.
   bool support_wide = is_wide_vector(MaxVectorSize);
   if (support_wide) {
     _polling_page_vectors_safepoint_handler_blob =
       generate_handler_blob(StubId::shared_polling_page_vectors_safepoint_handler_id,
                             CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception));
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
   _polling_page_safepoint_handler_blob =
     generate_handler_blob(StubId::shared_polling_page_safepoint_handler_id,
                           CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception));
@@ -176,6 +177,11 @@ void SharedRuntime::generate_stubs() {
                           CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception));
 
   generate_deopt_blob();
+
+#if INCLUDE_CDS
+  // disallow any further generation of runtime stubs
+  AOTCodeCache::set_shared_stubs_complete();
+#endif // INCLUDE_CDS
 }
 
 void SharedRuntime::init_adapter_library() {
@@ -571,12 +577,6 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   assert(frame::verify_return_pc(return_address), "must be a return address: " INTPTR_FORMAT, p2i(return_address));
   assert(current->frames_to_pop_failed_realloc() == 0 || Interpreter::contains(return_address), "missed frames to pop?");
 
-#if INCLUDE_JVMCI
-  // JVMCI's ExceptionHandlerStub expects the thread local exception PC to be clear
-  // and other exception handler continuations do not read it
-  current->set_exception_pc(nullptr);
-#endif // INCLUDE_JVMCI
-
   if (Continuation::is_return_barrier_entry(return_address)) {
     return StubRoutines::cont_returnBarrierExc();
   }
@@ -706,31 +706,6 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Handle h
     JvmtiExport::post_exception_throw(current, method(), bcp, h_exception());
   }
 
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    vframeStream vfst(current, true);
-    methodHandle method = methodHandle(current, vfst.method());
-    int bci = vfst.bci();
-    MethodData* trap_mdo = method->method_data();
-    if (trap_mdo != nullptr) {
-      // Set exception_seen if the exceptional bytecode is an invoke
-      Bytecode_invoke call = Bytecode_invoke_check(method, bci);
-      if (call.is_valid()) {
-        ResourceMark rm(current);
-
-        // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-        MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
-
-        ProfileData* pdata = trap_mdo->allocate_bci_to_data(bci, nullptr);
-        if (pdata != nullptr && pdata->is_BitData()) {
-          BitData* bit_data = (BitData*) pdata;
-          bit_data->set_exception_seen();
-        }
-      }
-    }
-  }
-#endif
-
   Exceptions::_throw(current, __FILE__, __LINE__, h_exception);
 }
 
@@ -763,21 +738,6 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
                                                     bool force_unwind, bool top_frame_only, bool& recursive_exception_occurred) {
   assert(nm != nullptr, "must exist");
   ResourceMark rm;
-
-#if INCLUDE_JVMCI
-  if (nm->is_compiled_by_jvmci()) {
-    // lookup exception handler for this pc
-    int catch_pco = pointer_delta_as_int(ret_pc, nm->code_begin());
-    ExceptionHandlerTable table(nm);
-    HandlerTableEntry *t = table.entry_for(catch_pco, -1, 0);
-    if (t != nullptr) {
-      return nm->code_begin() + t->pco();
-    } else {
-      bool make_not_entrant = true;
-      return Deoptimization::deoptimize_for_missing_exception_handler(nm, make_not_entrant);
-    }
-  }
-#endif // INCLUDE_JVMCI
 
   ScopeDesc* sd = nm->scope_desc_at(ret_pc);
   // determine handler bci, if any
@@ -931,7 +891,7 @@ void SharedRuntime::throw_StackOverflowError_common(JavaThread* current, bool de
   // bindings.
   current->clear_scopedValueBindings();
   // Increment counter for hs_err file reporting
-  AtomicAccess::inc(&Exceptions::_stack_overflow_errors);
+  Exceptions::increment_stack_overflow_errors();
   throw_and_post_jvmti_exception(current, exception);
 }
 
@@ -1033,7 +993,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* current,
 #ifndef PRODUCT
           _implicit_null_throws++;
 #endif
-          target_pc = nm->continuation_for_implicit_null_exception(pc);
+          target_pc = nm->continuation_for_implicit_exception(pc);
           // If there's an unexpected fault, target_pc might be null,
           // in which case we want to fall through into the normal
           // error handling code.
@@ -1049,7 +1009,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* current,
 #ifndef PRODUCT
         _implicit_div0_throws++;
 #endif
-        target_pc = nm->continuation_for_implicit_div0_exception(pc);
+        target_pc = nm->continuation_for_implicit_exception(pc);
         // If there's an unexpected fault, target_pc might be null,
         // in which case we want to fall through into the normal
         // error handling code.
@@ -1107,11 +1067,6 @@ address SharedRuntime::native_method_throw_unsatisfied_link_error_entry() {
 }
 
 JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* current, oopDesc* obj))
-#if INCLUDE_JVMCI
-  if (!obj->klass()->has_finalizer()) {
-    return;
-  }
-#endif // INCLUDE_JVMCI
   assert(oopDesc::is_oop(obj), "must be a valid oop");
   assert(obj->klass()->has_finalizer(), "shouldn't be here otherwise");
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
@@ -3079,7 +3034,7 @@ AdapterHandlerEntry::~AdapterHandlerEntry() {
     _fingerprint = nullptr;
   }
 #ifdef ASSERT
-  FREE_C_HEAP_ARRAY(unsigned char, _saved_code);
+  FREE_C_HEAP_ARRAY(_saved_code);
 #endif
   FreeHeap(this);
 }
@@ -3188,11 +3143,10 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
           }
         }
 
-        DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, CompileBroker::compiler(CompLevel_simple));
-        if (directive->PrintAssemblyOption) {
+        CompilerDirectiveMatcher matcher(method, CompLevel_simple);
+        if (matcher.directive_set()->PrintAssemblyOption) {
           nm->print_code();
         }
-        DirectivesStack::release(directive);
       }
     }
   } // Unlock AdapterHandlerLibrary_lock
@@ -3370,7 +3324,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
 JRT_END
 
 JRT_LEAF(void, SharedRuntime::OSR_migration_end( intptr_t* buf) )
-  FREE_C_HEAP_ARRAY(intptr_t, buf);
+  FREE_C_HEAP_ARRAY(buf);
 JRT_END
 
 const char* AdapterHandlerLibrary::name(AdapterHandlerEntry* handler) {

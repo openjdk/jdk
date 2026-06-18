@@ -49,7 +49,6 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
   _live(0),
   _region_count(0),
   _old_garbage(0),
-  _preselected_regions(nullptr),
   _young_available_bytes_collected(0),
   _old_available_bytes_collected(0),
   _current_index(0) {
@@ -136,7 +135,7 @@ void ShenandoahCollectionSet::clear() {
   _live = 0;
 
   _region_count = 0;
-  _current_index = 0;
+  _current_index.store_relaxed(0);
 
   _young_bytes_to_evacuate = 0;
   _young_bytes_to_promote = 0;
@@ -154,11 +153,11 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::claim_next() {
   // before hitting the (potentially contended) atomic index.
 
   size_t max = _heap->num_regions();
-  size_t old = AtomicAccess::load(&_current_index);
+  size_t old = _current_index.load_relaxed();
 
   for (size_t index = old; index < max; index++) {
     if (is_in(index)) {
-      size_t cur = AtomicAccess::cmpxchg(&_current_index, old, index + 1, memory_order_relaxed);
+      size_t cur = _current_index.compare_exchange(old, index + 1, memory_order_relaxed);
       assert(cur >= old, "Always move forward");
       if (cur == old) {
         // Successfully moved the claim index, this is our region.
@@ -178,9 +177,9 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::next() {
   assert(Thread::current()->is_VM_thread(), "Must be VMThread");
 
   size_t max = _heap->num_regions();
-  for (size_t index = _current_index; index < max; index++) {
+  for (size_t index = _current_index.load_relaxed(); index < max; index++) {
     if (is_in(index)) {
-      _current_index = index + 1;
+      _current_index.store_relaxed(index + 1);
       return _heap->get_region(index);
     }
   }

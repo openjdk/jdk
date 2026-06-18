@@ -30,7 +30,7 @@
  * @run junit/othervm
  *       -Djdk.tls.acknowledgeCloseNotify=true
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
- *       CookieHeaderTest
+ *       ${test.main.class}
  */
 
 import jdk.test.lib.net.SimpleSSLContext;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1Trace.hpp"
@@ -84,8 +85,9 @@ void VM_G1TryInitiateConcMark::doit() {
 
   GCCauseSetter x(g1h, _gc_cause);
 
-  _mark_in_progress = g1h->collector_state()->mark_in_progress();
-  _cycle_already_in_progress = g1h->concurrent_mark()->in_progress();
+  G1CollectorState* state = g1h->collector_state();
+  _mark_in_progress = state->is_in_marking();
+  _cycle_already_in_progress =  state->is_in_concurrent_cycle();
 
   if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
     // Failure to force the next GC pause to be a concurrent start indicates
@@ -138,7 +140,7 @@ void VM_G1PauseConcurrent::doit() {
   GCTraceTimePauseTimer       timer(_message, g1h->concurrent_mark()->gc_timer_cm());
   GCTraceTimeDriver           t(&logger, &timer);
 
-  G1ConcGCMonitoringScope monitoring_scope(g1h->monitoring_support());
+  G1ConcGCMonitoringScope monitoring_scope(g1h->monitoring_support(), affects_memory_pools());
   SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
   IsSTWGCActiveMark x;
 
@@ -150,8 +152,9 @@ bool VM_G1PauseConcurrent::doit_prologue() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   if (g1h->is_shutting_down()) {
     Heap_lock->unlock();
-    // JVM shutdown has started. This ensures that any further operations will be properly aborted
-    // and will not interfere with the shutdown process.
+    // JVM shutdown has started. Abort concurrent marking to ensure that any further
+    // concurrent VM operations will not try to start and interfere with the shutdown
+    // process.
     g1h->concurrent_mark()->abort_marking_threads();
     return false;
   }
@@ -166,11 +169,11 @@ void VM_G1PauseConcurrent::doit_epilogue() {
 }
 
 void VM_G1PauseRemark::work() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  g1h->concurrent_mark()->remark();
+  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
+  cm->remark();
 }
 
 void VM_G1PauseCleanup::work() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  g1h->concurrent_mark()->cleanup();
+  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
+  cm->cleanup();
 }

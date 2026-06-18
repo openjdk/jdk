@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -416,7 +416,7 @@ static inline void log_circularity_error(Symbol* name, PlaceholderEntry* probe) 
 //
 // resolve_with_circularity_detection adds a DETECT_CIRCULARITY placeholder to the placeholder table before calling
 // resolve_instance_class_or_null. ClassCircularityError is detected when a DETECT_CIRCULARITY or LOAD_INSTANCE
-// placeholder for the same thread, class, classloader is found.
+// placeholder for the same thread, class, and classloader is found.
 // This can be seen with logging option: -Xlog:class+load+placeholders=debug.
 //
 InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* class_name,

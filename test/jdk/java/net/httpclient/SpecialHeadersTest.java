@@ -33,10 +33,10 @@
  * @requires (vm.compMode != "Xcomp")
  * @run junit/othervm/timeout=480
  *       -Djdk.httpclient.HttpClient.log=requests,headers,errors
- *       SpecialHeadersTest
+ *       ${test.main.class}
  * @run junit/othervm/timeout=480 -Djdk.httpclient.allowRestrictedHeaders=Host
  *       -Djdk.httpclient.HttpClient.log=requests,headers,errors
- *       SpecialHeadersTest
+ *       ${test.main.class}
  */
 
 import jdk.internal.net.http.common.OperationTrackers.Tracker;

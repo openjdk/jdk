@@ -59,10 +59,10 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.Launcher;
-import jdk.jpackage.internal.model.LauncherModularStartupInfo;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.util.RuntimeReleaseFile;
 
 final class FromOptions {
 
@@ -212,19 +212,6 @@ final class FromOptions {
 
                 runtimeBuilderBuilder.modulePath(ensureBaseModuleInModulePath(MODULE_PATH.findIn(options).orElseGet(List::of)));
 
-                if (!APP_VERSION.containsIn(options)) {
-                    // Version is not specified explicitly. Try to get it from the app's module.
-                    launchers.mainLauncher().startupInfo().ifPresent(startupInfo -> {
-                        if (startupInfo instanceof LauncherModularStartupInfo modularStartupInfo) {
-                            modularStartupInfo.moduleVersion().ifPresent(moduleVersion -> {
-                                appBuilder.version(moduleVersion);
-                                Log.verbose(I18N.format("message.module-version",
-                                        moduleVersion, modularStartupInfo.moduleName()));
-                            });
-                        }
-                    });
-                }
-
                 predefinedRuntimeDirectory.ifPresentOrElse(runtimeBuilderBuilder::forRuntime, () -> {
                     final var startupInfos = launchers.asList().stream()
                             .map(Launcher::startupInfo)
@@ -238,6 +225,8 @@ final class FromOptions {
                 appBuilder.runtimeBuilder(runtimeBuilderBuilder.create());
             }
         }
+
+        predefinedRuntimeDirectory.map(RuntimeReleaseFile::releaseFilePathInRuntime).ifPresent(appBuilder::runtimeReleaseFile);
 
         return appBuilder;
     }

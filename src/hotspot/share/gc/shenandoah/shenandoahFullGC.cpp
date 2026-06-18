@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,15 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
+  // A full GC may be entered directly, or as an upgrade from a failed
+  // degenerated GC. In the latter case, self-forwarded objects may be
+  // present from the failed evacuation. Drain those marks before any phase
+  // (verify, update_roots, phase1_mark_heap) walks headers.
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_un_self_forward);
+    heap->un_self_forward_cset_regions();
+  }
+
   if (heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::prepare();
   }
@@ -261,10 +270,12 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   for (uint i = 0; i < heap->max_workers(); i++) {
     delete worker_slices[i];
   }
-  FREE_C_HEAP_ARRAY(ShenandoahHeapRegionSet*, worker_slices);
+  FREE_C_HEAP_ARRAY(worker_slices);
 
   heap->set_full_gc_move_in_progress(false);
   heap->set_full_gc_in_progress(false);
+
+  DEBUG_ONLY(heap->assert_no_self_forwards());
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_after_fullgc(_generation);
@@ -688,7 +699,7 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
     }
   }
 
-  FREE_C_HEAP_ARRAY(size_t, live);
+  FREE_C_HEAP_ARRAY(live);
 
 #ifdef ASSERT
   ResourceBitMap map(n_regions);
@@ -844,15 +855,15 @@ void ShenandoahFullGC::phase3_update_references() {
   WorkerThreads* workers = heap->workers();
   uint nworkers = workers->active_workers();
   {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     DerivedPointerTable::clear();
-#endif
+#endif // COMPILER2
     ShenandoahRootAdjuster rp(nworkers, ShenandoahPhaseTimings::full_gc_adjust_roots);
     ShenandoahAdjustRootPointersTask task(&rp, _preserved_marks);
     workers->run_task(&task);
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     DerivedPointerTable::update_pointers();
-#endif
+#endif // COMPILER2
   }
 
   ShenandoahAdjustPointersTask adjust_pointers_task;
@@ -878,8 +889,11 @@ public:
       Copy::aligned_conjoint_words(compact_from, compact_to, size);
       oop new_obj = cast_to_oop(compact_to);
 
-      ContinuationGCSupport::relativize_stack_chunk(new_obj);
+      // Restore the mark word before relativizing the stack chunk. The copy's
+      // mark word contains the full GC forwarding encoding, which would cause
+      // is_stackChunk() to read garbage (especially with compact headers).
       new_obj->init_mark();
+      ContinuationGCSupport::relativize_stack_chunk(new_obj);
     }
   }
 };

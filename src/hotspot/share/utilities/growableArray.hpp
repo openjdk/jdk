@@ -116,12 +116,6 @@ protected:
 
   ~GrowableArrayView() {}
 
-protected:
-  // Used by AOTGrowableArray for MetaspaceClosure support.
-  E** data_addr() {
-    return &_data;
-  }
-
 public:
   bool operator==(const GrowableArrayView& rhs) const {
     if (_len != rhs._len)
@@ -302,6 +296,11 @@ public:
       tty->print(INTPTR_FORMAT " ", *(intptr_t*)&(_data[i]));
     }
     tty->print("}\n");
+  }
+
+  // MetaspaceClosure support
+  E** data_addr() {
+    return &_data;
   }
 };
 
@@ -821,6 +820,8 @@ public:
       this->clear_and_deallocate();
     }
   }
+
+  void assert_on_C_heap() { assert(on_C_heap(), "must be on C heap"); }
 };
 
 // Leaner GrowableArray for CHeap backed data arrays, with compile-time decided MemTag.

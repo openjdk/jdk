@@ -186,38 +186,31 @@ class ContextList {
          */
         PATH_PREFIX((contextPath, requestPath) -> {
 
-            // Fast-path for `/`
-            if ("/".equals(contextPath)) {
+            // Does the request path prefix match?
+            if (!requestPath.startsWith(contextPath)) {
+                return false;
+            }
+
+            // Is it an exact match?
+            int contextPathLength = contextPath.length();
+            if (requestPath.length() == contextPathLength) {
                 return true;
             }
 
-            // Does the request path prefix match?
-            if (requestPath.startsWith(contextPath)) {
-
-                // Is it an exact match?
-                int contextPathLength = contextPath.length();
-                if (requestPath.length() == contextPathLength) {
-                    return true;
-                }
-
-                // Is it a path-prefix match?
-                assert contextPathLength > 0;
-                return
-                        // Case 1: The request path starts with the context
-                        // path, but the context path has an extra path
-                        // separator suffix. For instance, the context path is
-                        // `/foo/` and the request path is `/foo/bar`.
-                        contextPath.charAt(contextPathLength - 1) == '/' ||
-                                // Case 2: The request path starts with the
-                                // context path, but the request path has an
-                                // extra path separator suffix. For instance,
-                                // context path is `/foo` and the request path
-                                // is `/foo/` or `/foo/bar`.
-                                requestPath.charAt(contextPathLength) == '/';
-
-            }
-
-            return false;
+            // Is it a path-prefix match?
+            assert contextPathLength > 0;
+            return
+                    // Case 1: The request path starts with the context
+                    // path, but the context path has an extra path
+                    // separator suffix. For instance, the context path is
+                    // `/foo/` and the request path is `/foo/bar`.
+                    contextPath.charAt(contextPathLength - 1) == '/' ||
+                            // Case 2: The request path starts with the
+                            // context path, but the request path has an
+                            // extra path separator suffix. For instance,
+                            // context path is `/foo` and the request path
+                            // is `/foo/` or `/foo/bar`.
+                            requestPath.charAt(contextPathLength) == '/';
 
         });
 

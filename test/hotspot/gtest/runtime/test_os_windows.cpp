@@ -28,6 +28,7 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
 
@@ -66,7 +67,7 @@ void TestReserveMemorySpecial_test() {
   FLAG_SET_CMDLINE(UseNUMAInterleaving, false);
 
   const size_t large_allocation_size = os::large_page_size() * 4;
-  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), nullptr, false);
+  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), nullptr, mtTest, false);
   if (result == nullptr) {
       // failed to allocate memory, skipping the test
       return;
@@ -76,12 +77,12 @@ void TestReserveMemorySpecial_test() {
   // Reserve another page within the recently allocated memory area. This should fail
   const size_t expected_allocation_size = os::large_page_size();
   char* expected_location = result + os::large_page_size();
-  char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
+  char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, mtTest, false);
   EXPECT_TRUE(actual_location == nullptr) << "Should not be allowed to reserve within present reservation";
 
   // Instead try reserving after the first reservation.
   expected_location = result + large_allocation_size;
-  actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
+  actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, mtTest, false);
   EXPECT_TRUE(actual_location != nullptr) << "Unexpected reservation failure, can't verify correct location";
   EXPECT_TRUE(actual_location == expected_location) << "Reservation must be at requested location";
   MemoryReleaser m2(actual_location, os::large_page_size());
@@ -89,7 +90,7 @@ void TestReserveMemorySpecial_test() {
   // Now try to do a reservation with a larger alignment.
   const size_t alignment = os::large_page_size() * 2;
   const size_t new_large_size = alignment * 4;
-  char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), nullptr, false);
+  char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), nullptr, mtTest, false);
   EXPECT_TRUE(aligned_request != nullptr) << "Unexpected reservation failure, can't verify correct alignment";
   EXPECT_TRUE(is_aligned(aligned_request, alignment)) << "Returned address must be aligned";
   MemoryReleaser m3(aligned_request, new_large_size);
@@ -838,6 +839,38 @@ TEST_VM(os_windows, reserve_memory_special_concurrent) {
   ReserveMemorySpecialRunnable runnable;
   ConcurrentTestRunner testRunner(&runnable, 30, 15000);
   testRunner.run();
+}
+
+TEST_VM(os_windows, SafeFetchN_with_page_guard_protection) {
+  const DWORD page_size = (DWORD)os::vm_page_size();
+
+  void* p = ::VirtualAlloc(nullptr, page_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  ASSERT_NE(p, nullptr) << "VirtualAlloc failed";
+
+  DWORD old_protect;
+  BOOL res = ::VirtualProtect(p, page_size, PAGE_READWRITE | PAGE_GUARD, &old_protect);
+  ASSERT_TRUE(res) << "VirtualProtect failed";
+
+  intptr_t result = SafeFetchN((intptr_t*)p, -1);
+  ASSERT_EQ((intptr_t)-1, result) << "SafeFetchN should return errValue for a page protected with PAGE_GUARD";
+
+  ::VirtualFree(p, 0, MEM_RELEASE);
+}
+
+TEST_VM(os_windows, SafeFetch32_with_page_guard_protection) {
+  const DWORD page_size = (DWORD)os::vm_page_size();
+
+  void* p = ::VirtualAlloc(nullptr, page_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  ASSERT_NE(p, nullptr) << "VirtualAlloc failed";
+
+  DWORD old_protect;
+  BOOL res = ::VirtualProtect(p, page_size, PAGE_READWRITE | PAGE_GUARD, &old_protect);
+  ASSERT_TRUE(res) << "VirtualProtect failed";
+
+  int result = SafeFetch32((int*)p, -1);
+  ASSERT_EQ(-1, result) << "SafeFetch32 should return errValue for a page protected with PAGE_GUARD";
+
+  ::VirtualFree(p, 0, MEM_RELEASE);
 }
 
 #endif

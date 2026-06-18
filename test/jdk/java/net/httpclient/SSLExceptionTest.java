@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
  * SSLcontext used by HttpClient are not available
  * @build SSLExceptionTest
  * @run junit/othervm -Djdk.tls.client.protocols="InvalidTLSv1.4"
- *                      SSLExceptionTest
+ *                      ${test.main.class}
  */
 
 public class SSLExceptionTest  {

@@ -975,7 +975,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         if (newFrame != frame) {
             // Use the invoker's frame so that events
             // are propagated properly
-            if (newFrame!=null) {
+            if (newFrame != null) {
                 this.frame = newFrame;
                 if(popup != null) {
                     setVisible(false);
@@ -1012,7 +1012,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      */
     JPopupMenu getRootPopupMenu() {
         JPopupMenu mp = this;
-        while((mp!=null) && (mp.isPopupMenu()!=true) &&
+        while((mp != null) && (mp.isPopupMenu()!=true) &&
               (mp.getInvoker() != null) &&
               (mp.getInvoker().getParent() instanceof JPopupMenu popupMenu)
               ) {
@@ -1182,7 +1182,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     private static Frame getFrame(Component c) {
         Component w = c;
 
-        while(!(w instanceof Frame) && (w!=null)) {
+        while(!(w instanceof Frame) && (w != null)) {
             w = w.getParent();
         }
         return (Frame)w;

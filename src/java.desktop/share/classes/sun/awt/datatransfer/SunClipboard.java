@@ -226,9 +226,6 @@ public abstract class SunClipboard extends Clipboard {
      * argument is not {@code null} and is not equal to the current
      * contents context.
      *
-     * @param disposedContext the AppContext that is disposed or
-     *        {@code null} if the ownership is lost because another
-     *        application acquired ownership.
      */
     protected void lostOwnershipLater() {
         SunToolkit.postEvent(new PeerEvent(this, () -> lostOwnershipNow(),

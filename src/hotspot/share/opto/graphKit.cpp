@@ -39,11 +39,15 @@
 #include "opto/intrinsicnode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/machnode.hpp"
+#include "opto/memnode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/parse.hpp"
+#include "opto/reachability.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subtypenode.hpp"
+#include "opto/type.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -508,7 +512,7 @@ void GraphKit::uncommon_trap_if_should_post_on_exceptions(Deoptimization::DeoptR
 
     // first must access the should_post_on_exceptions_flag in this thread's JavaThread
     Node* jthread = _gvn.transform(new ThreadLocalNode());
-    Node* adr = basic_plus_adr(top(), jthread, in_bytes(JavaThread::should_post_on_exceptions_flag_offset()));
+    Node* adr = off_heap_plus_addr(jthread, in_bytes(JavaThread::should_post_on_exceptions_flag_offset()));
     Node* should_post_flag = make_load(control(), adr, TypeInt::INT, T_INT, MemNode::unordered);
 
     // Test the should_post_on_exceptions_flag vs. 0
@@ -669,6 +673,48 @@ ciInstance* GraphKit::builtin_throw_exception(Deoptimization::DeoptReason reason
     return nullptr;
   }
 }
+
+GraphKit::SavedState::SavedState(GraphKit* kit) :
+  _kit(kit),
+  _sp(kit->sp()),
+  _jvms(kit->jvms()),
+  _map(kit->clone_map()),
+  _discarded(false)
+{
+  for (DUIterator_Fast imax, i = kit->control()->fast_outs(imax); i < imax; i++) {
+    Node* out = kit->control()->fast_out(i);
+    if (out->is_CFG()) {
+      _ctrl_succ.push(out);
+    }
+  }
+}
+
+GraphKit::SavedState::~SavedState() {
+  if (_discarded) {
+    _kit->destruct_map_clone(_map);
+    return;
+  }
+  _kit->jvms()->set_map(_map);
+  _kit->jvms()->set_sp(_sp);
+  _map->set_jvms(_kit->jvms());
+  _kit->set_map(_map);
+  _kit->set_sp(_sp);
+  for (DUIterator_Fast imax, i = _kit->control()->fast_outs(imax); i < imax; i++) {
+    Node* out = _kit->control()->fast_out(i);
+    if (out->is_CFG() && out->in(0) == _kit->control() && out != _kit->map() && !_ctrl_succ.member(out)) {
+      _kit->_gvn.hash_delete(out);
+      out->set_req(0, _kit->C->top());
+      _kit->C->record_for_igvn(out);
+      --i; --imax;
+      _kit->_gvn.hash_find_insert(out);
+    }
+  }
+}
+
+void GraphKit::SavedState::discard() {
+  _discarded = true;
+}
+
 
 //----------------------------PreserveJVMState---------------------------------
 PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map) {
@@ -1192,7 +1238,7 @@ Node* GraphKit::basic_plus_adr(Node* base, Node* ptr, Node* offset) {
            "Unexpected zero offset - should have matched MakeConX(0)");
   }
 #endif
-  return _gvn.transform( new AddPNode(base, ptr, offset) );
+  return _gvn.transform(AddPNode::make_with_base(base, ptr, offset));
 }
 
 Node* GraphKit::ConvI2L(Node* offset) {
@@ -1678,13 +1724,22 @@ Node* GraphKit::access_load_at(Node* obj,   // containing obj
     return top(); // Dead path ?
   }
 
+  SavedState old_state(this);
   C2AccessValuePtr addr(adr, adr_type);
   C2ParseAccess access(this, decorators | C2_READ_ACCESS, bt, obj, addr);
+  Node* load;
   if (access.is_raw()) {
-    return _barrier_set->BarrierSetC2::load_at(access, val_type);
+    load = _barrier_set->BarrierSetC2::load_at(access, val_type);
   } else {
-    return _barrier_set->load_at(access, val_type);
+    load = _barrier_set->load_at(access, val_type);
   }
+
+  // Restore the previous state only if the load got folded to a constant
+  // and we can discard any barriers that might have been added.
+  if (load == nullptr || !load->is_Con()) {
+    old_state.discard();
+  }
+  return load;
 }
 
 Node* GraphKit::access_load(Node* adr,   // actual address to load val at
@@ -1695,13 +1750,22 @@ Node* GraphKit::access_load(Node* adr,   // actual address to load val at
     return top(); // Dead path ?
   }
 
+  SavedState old_state(this);
   C2AccessValuePtr addr(adr, adr->bottom_type()->is_ptr());
   C2ParseAccess access(this, decorators | C2_READ_ACCESS, bt, nullptr, addr);
+  Node* load;
   if (access.is_raw()) {
-    return _barrier_set->BarrierSetC2::load_at(access, val_type);
+    load = _barrier_set->BarrierSetC2::load_at(access, val_type);
   } else {
-    return _barrier_set->load_at(access, val_type);
+    load = _barrier_set->load_at(access, val_type);
   }
+
+  // Restore the previous state only if the load got folded to a constant
+  // and we can discard any barriers that might have been added.
+  if (load == nullptr || !load->is_Con()) {
+    old_state.discard();
+  }
+  return load;
 }
 
 Node* GraphKit::access_atomic_cmpxchg_val_at(Node* obj,
@@ -2757,9 +2821,9 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   // will always succeed.  We could leave a dependency behind to ensure this.
 
   // First load the super-klass's check-offset
-  Node *p1 = gvn.transform(new AddPNode(C->top(), superklass, gvn.MakeConX(in_bytes(Klass::super_check_offset_offset()))));
+  Node* p1 = gvn.transform(AddPNode::make_off_heap(superklass, gvn.MakeConX(in_bytes(Klass::super_check_offset_offset()))));
   Node* m = C->immutable_memory();
-  Node *chk_off = gvn.transform(new LoadINode(nullptr, m, p1, gvn.type(p1)->is_ptr(), TypeInt::INT, MemNode::unordered));
+  Node* chk_off = gvn.transform(new LoadINode(nullptr, m, p1, gvn.type(p1)->is_ptr(), TypeInt::INT, MemNode::unordered));
   int cacheoff_con = in_bytes(Klass::secondary_super_cache_offset());
   const TypeInt* chk_off_t = chk_off->Value(&gvn)->isa_int();
   int chk_off_con = (chk_off_t != nullptr && chk_off_t->is_con()) ? chk_off_t->get_con() : cacheoff_con;
@@ -2775,11 +2839,11 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
 #ifdef _LP64
   chk_off_X = gvn.transform(new ConvI2LNode(chk_off_X));
 #endif
-  Node* p2 = gvn.transform(new AddPNode(C->top(), subklass, chk_off_X));
+  Node* p2 = gvn.transform(AddPNode::make_off_heap(subklass, chk_off_X));
   // For some types like interfaces the following loadKlass is from a 1-word
   // cache which is mutable so can't use immutable memory.  Other
   // types load from the super-class display table which is immutable.
-  Node *kmem = C->immutable_memory();
+  Node* kmem = C->immutable_memory();
   // secondary_super_cache is not immutable but can be treated as such because:
   // - no ideal node writes to it in a way that could cause an
   //   incorrect/missed optimization of the following Load.
@@ -2851,8 +2915,8 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
     *ctrl = iftrue1; // We need exactly the 1 test above
     PhaseIterGVN* igvn = gvn.is_IterGVN();
     if (igvn != nullptr) {
-      igvn->remove_globally_dead_node(r_ok_subtype);
-      igvn->remove_globally_dead_node(r_not_subtype);
+      igvn->remove_globally_dead_node(r_ok_subtype, PhaseIterGVN::NodeOrigin::Speculative);
+      igvn->remove_globally_dead_node(r_not_subtype, PhaseIterGVN::NodeOrigin::Speculative);
     }
     return not_subtype_ctrl;
   }
@@ -3016,7 +3080,7 @@ bool GraphKit::seems_never_null(Node* obj, ciProfileData* data, bool& speculatin
 
 void GraphKit::guard_klass_being_initialized(Node* klass) {
   int init_state_off = in_bytes(InstanceKlass::init_state_offset());
-  Node* adr = basic_plus_adr(top(), klass, init_state_off);
+  Node* adr = off_heap_plus_addr(klass, init_state_off);
   Node* init_state = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
                                     adr->bottom_type()->is_ptr(), TypeInt::BYTE,
                                     T_BYTE, MemNode::acquire);
@@ -3034,7 +3098,7 @@ void GraphKit::guard_klass_being_initialized(Node* klass) {
 
 void GraphKit::guard_init_thread(Node* klass) {
   int init_thread_off = in_bytes(InstanceKlass::init_thread_offset());
-  Node* adr = basic_plus_adr(top(), klass, init_thread_off);
+  Node* adr = off_heap_plus_addr(klass, init_thread_off);
 
   Node* init_thread = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
                                      adr->bottom_type()->is_ptr(), TypePtr::NOTNULL,
@@ -3337,7 +3401,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
 
   // Null check; get casted pointer; set region slot 3
   Node* null_ctl = top();
-  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null, safe_for_replace, speculative_not_null);
+  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null, false /*safe_for_replace*/, speculative_not_null);
 
   // If not_null_obj is dead, only null-path is taken
   if (stopped()) {              // Doing instance-of on a null?
@@ -3365,7 +3429,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
     // a speculative type use it to perform an exact cast.
     ciKlass* spec_obj_type = obj_type->speculative_type();
     if (spec_obj_type != nullptr || data != nullptr) {
-      cast_obj = maybe_cast_profiled_receiver(not_null_obj, improved_klass_ptr_type, spec_obj_type, safe_for_replace);
+      cast_obj = maybe_cast_profiled_receiver(not_null_obj, improved_klass_ptr_type, spec_obj_type, false /*safe_for_replace*/);
       if (cast_obj != nullptr) {
         if (failure_control != nullptr) // failure is now impossible
           (*failure_control) = top();
@@ -3403,24 +3467,17 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   region->init_req(_obj_path, control());
   phi   ->init_req(_obj_path, cast_obj);
 
-  // A merge of null or Casted-NotNull obj
-  Node* res = _gvn.transform(phi);
-
-  // Note I do NOT always 'replace_in_map(obj,result)' here.
-  //  if( tk->klass()->can_be_primary_super()  )
-    // This means that if I successfully store an Object into an array-of-String
-    // I 'forget' that the Object is really now known to be a String.  I have to
-    // do this because we don't have true union types for interfaces - if I store
-    // a Baz into an array-of-Interface and then tell the optimizer it's an
-    // Interface, I forget that it's also a Baz and cannot do Baz-like field
-    // references to it.  FIX THIS WHEN UNION TYPES APPEAR!
-  //  replace_in_map( obj, res );
-
   // Return final merged results
   set_control( _gvn.transform(region) );
   record_for_igvn(region);
 
-  return record_profiled_receiver_for_speculation(res);
+  // A merge of null or Casted-NotNull obj
+  Node* res = _gvn.transform(phi);
+  res = record_profiled_receiver_for_speculation(res);
+  if (safe_for_replace) {
+    replace_in_map(obj, res);
+  }
+  return res;
 }
 
 //------------------------------next_monitor-----------------------------------
@@ -3479,6 +3536,15 @@ Node* GraphKit::insert_mem_bar_volatile(int opcode, int alias_idx, Node* precede
     set_memory(_gvn.transform(new ProjNode(membar, TypeFunc::Memory)),alias_idx);
   }
   return membar;
+}
+
+//------------------------------insert_reachability_fence----------------------
+Node* GraphKit::insert_reachability_fence(Node* referent) {
+  assert(!referent->is_top(), "");
+  Node* rf = _gvn.transform(new ReachabilityFenceNode(C, control(), referent));
+  set_control(rf);
+  C->record_for_igvn(rf);
+  return rf;
 }
 
 //------------------------------shared_lock------------------------------------
@@ -3612,7 +3678,7 @@ Node* GraphKit::get_layout_helper(Node* klass_node, jint& constant_value) {
     }
   }
   constant_value = Klass::_lh_neutral_value;  // put in a known value
-  Node* lhp = basic_plus_adr(top(), klass_node, in_bytes(Klass::layout_helper_offset()));
+  Node* lhp = off_heap_plus_addr(klass_node, in_bytes(Klass::layout_helper_offset()));
   return make_load(nullptr, lhp, TypeInt::INT, T_INT, MemNode::unordered);
 }
 
@@ -4135,13 +4201,13 @@ Node* GraphKit::load_String_value(Node* str, bool set_ctrl) {
   const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
                                                      false, nullptr, 0);
   const TypePtr* value_field_type = string_type->add_offset(value_offset);
-  const TypeAryPtr* value_type = TypeAryPtr::make(TypePtr::NotNull,
+  const TypeAryPtr* value_type = TypeAryPtr::make(TypePtr::BotPTR,
                                                   TypeAry::make(TypeInt::BYTE, TypeInt::POS),
                                                   ciTypeArrayKlass::make(T_BYTE), true, 0);
   Node* p = basic_plus_adr(str, str, value_offset);
   Node* load = access_load_at(str, p, value_field_type, value_type, T_OBJECT,
                               IN_HEAP | (set_ctrl ? C2_CONTROL_DEPENDENT_LOAD : 0) | MO_UNORDERED);
-  return load;
+  return must_be_not_null(load, true);
 }
 
 Node* GraphKit::load_String_coder(Node* str, bool set_ctrl) {
@@ -4179,51 +4245,81 @@ void GraphKit::store_String_coder(Node* str, Node* value) {
                   value, TypeInt::BYTE, T_BYTE, IN_HEAP | MO_UNORDERED);
 }
 
-// Capture src and dst memory state with a MergeMemNode
-Node* GraphKit::capture_memory(const TypePtr* src_type, const TypePtr* dst_type) {
+// If input and output memory types differ, capture the whole memory to preserve
+// the dependency between preceding and subsequent loads/stores.
+// For example, the following program:
+//  StoreB
+//  compress_string
+//  LoadB
+// has this memory graph (use->def):
+//  LoadB -> compress_string -> CharMem
+//             ... -> StoreB -> ByteMem
+// The intrinsic hides the dependency between LoadB and StoreB, causing
+// the load to read from memory not containing the result of the StoreB.
+// The correct memory graph should look like this:
+//  LoadB -> compress_string -> MergeMem -> StoreB
+Node* GraphKit::capture_memory(const TypePtr*& combined_type, const TypePtr* src_type, const TypePtr* dst_type) {
   if (src_type == dst_type) {
     // Types are equal, we don't need a MergeMemNode
+    combined_type = src_type;
     return memory(src_type);
   }
-  MergeMemNode* merge = MergeMemNode::make(map()->memory());
-  record_for_igvn(merge); // fold it up later, if possible
-  int src_idx = C->get_alias_index(src_type);
-  int dst_idx = C->get_alias_index(dst_type);
-  merge->set_memory_at(src_idx, memory(src_idx));
-  merge->set_memory_at(dst_idx, memory(dst_idx));
-  return merge;
+  Node* mem = reset_memory();
+  set_all_memory(mem);
+  combined_type = TypePtr::BOTTOM;
+  return mem;
+}
+
+// If dst_type and src_type are different, str may have an anti-dependency with another node
+// consuming src_type.
+// For example:
+//  compress_string
+//  StoreC
+// has this memory graph (use->def):
+//  compress_string -> MergeMem -> CharMem
+//                       StoreC
+// The scheduler needs to ensure that compress_string is not executed after StoreC, or it will read
+// the wrong memory. For normal loads, the scheduler computes its anti-dependencies to ensure the
+// memory it reads from is not killed. Since we do not compute anti-dependencies for
+// StrCompressedCopyNode, manually insert a MemBar so the anti-dependency becomes use-def
+// dependency:
+//  StoreC -> MemBar -> MergeMem -> compress_string -> MergeMem -> CharMem
+//                               -------------------------------->
+void GraphKit::memory_effect(Node* res_mem, const TypePtr* src_type, const TypePtr* dst_type) {
+  set_memory(res_mem, dst_type);
+  if (src_type != dst_type) {
+    Node* all_mem = reset_memory();
+    set_all_memory(all_mem);
+    Node* membar = new MemBarCPUOrderNode(C, C->get_alias_index(src_type), nullptr);
+    membar->init_req(TypeFunc::Control, control());
+    membar->init_req(TypeFunc::Memory, all_mem);
+    membar = _gvn.transform(membar);
+    set_control(_gvn.transform(new ProjNode(membar, TypeFunc::Control)));
+    set_memory(_gvn.transform(new ProjNode(membar, TypeFunc::Memory)), src_type);
+  }
 }
 
 Node* GraphKit::compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count) {
   assert(Matcher::match_rule_supported(Op_StrCompressedCopy), "Intrinsic not supported");
   assert(src_type == TypeAryPtr::BYTES || src_type == TypeAryPtr::CHARS, "invalid source type");
-  // If input and output memory types differ, capture both states to preserve
-  // the dependency between preceding and subsequent loads/stores.
-  // For example, the following program:
-  //  StoreB
-  //  compress_string
-  //  LoadB
-  // has this memory graph (use->def):
-  //  LoadB -> compress_string -> CharMem
-  //             ... -> StoreB -> ByteMem
-  // The intrinsic hides the dependency between LoadB and StoreB, causing
-  // the load to read from memory not containing the result of the StoreB.
-  // The correct memory graph should look like this:
-  //  LoadB -> compress_string -> MergeMem(CharMem, StoreB(ByteMem))
-  Node* mem = capture_memory(src_type, TypeAryPtr::BYTES);
-  StrCompressedCopyNode* str = new StrCompressedCopyNode(control(), mem, src, dst, count);
+  const TypePtr* dst_type = TypeAryPtr::BYTES;
+  const TypePtr* adr_type;
+  Node* mem = capture_memory(adr_type, src_type, dst_type);
+  StrCompressedCopyNode* str = new StrCompressedCopyNode(control(), mem, adr_type, src, dst, count);
   Node* res_mem = _gvn.transform(new SCMemProjNode(_gvn.transform(str)));
-  set_memory(res_mem, TypeAryPtr::BYTES);
+  memory_effect(res_mem, src_type, dst_type);
   return str;
 }
 
 void GraphKit::inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, Node* count) {
   assert(Matcher::match_rule_supported(Op_StrInflatedCopy), "Intrinsic not supported");
   assert(dst_type == TypeAryPtr::BYTES || dst_type == TypeAryPtr::CHARS, "invalid dest type");
-  // Capture src and dst memory (see comment in 'compress_string').
-  Node* mem = capture_memory(TypeAryPtr::BYTES, dst_type);
-  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, src, dst, count);
-  set_memory(_gvn.transform(str), dst_type);
+  const TypePtr* src_type = TypeAryPtr::BYTES;
+  const TypePtr* adr_type;
+  Node* mem = capture_memory(adr_type, src_type, dst_type);
+  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, adr_type, src, dst, count);
+  Node* res_mem = _gvn.transform(str);
+  memory_effect(res_mem, src_type, dst_type);
 }
 
 void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* count) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
+import java.util.function.Function;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPublicKey;
@@ -444,15 +445,16 @@ public final class KeyUtil {
             // is the LMS public key for the top-level tree.
             // Section 5.3: LMS public key is u32str(type) || u32str(otstype) || I || T[1]
             // Section 8: type is the numeric identifier for an LMS specification.
-            // This RFC defines 5 SHA-256 based types, value from 5 to 9.
             if (rawKey.length < 8) {
                 throw new NoSuchAlgorithmException("Cannot decode public key");
             }
             int num = ((rawKey[4] & 0xff) << 24) + ((rawKey[5] & 0xff) << 16)
                     + ((rawKey[6] & 0xff) << 8) + (rawKey[7] & 0xff);
             return switch (num) {
-                // RFC 8554 only supports SHA_256 hash algorithm
+                // RFC 8554 only supports SHA_256 hash algorithms
                 case 5, 6, 7, 8, 9 -> AlgorithmId.SHA256_oid;
+                // RFC 9858 supports SHAKE_256 hash algorithms
+                case 15, 16, 17, 18, 19 -> AlgorithmId.SHAKE256_512_oid;
                 default -> throw new NoSuchAlgorithmException("Unknown LMS type: " + num);
             };
         } catch (IOException e) {
@@ -564,6 +566,26 @@ public final class KeyUtil {
                 default ->
                     throw new IllegalArgumentException(
                     o.getClass().getName() + " not defined in KeyUtil.clear()");
+            }
+        }
+    }
+
+    /**
+     * Executes {@code op} with {@code encoding} and then zeroes {@code encoding}
+     * in a {@code finally} block before returning or propagating an exception.
+     *
+     * {@code encoding} is temporary sensitive data and is always wiped.
+     *
+     * Usage constraint: {@code op} must not return {@code encoding} itself, or
+     * any value backed by the same array. Otherwise, the returned data will already
+     * be zeroed when this method returns.
+     */
+    public static <T> T clear(byte[] encoding, Function<byte[], T> op) {
+        try {
+            return op.apply(encoding);
+        } finally {
+            if (encoding != null) {
+                Arrays.fill(encoding, (byte)0);
             }
         }
     }

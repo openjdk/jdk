@@ -64,7 +64,6 @@ public class SigningAppImageTest {
 
         var testAL = new AdditionalLauncher("testAL");
         testAL.applyTo(cmd);
-        cmd.executeAndAssertHelloAppImageCreated();
 
         MacSign.withKeychain(keychain -> {
             sign.addTo(cmd);

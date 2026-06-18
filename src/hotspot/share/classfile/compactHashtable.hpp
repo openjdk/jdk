@@ -307,14 +307,9 @@ public:
   template <class ITER>
   inline void iterate(ITER* iter) const { iterate([&](V v) { iter->do_value(v); }); }
 
-  template<typename Function>
-  inline void iterate(const Function& function) const { // lambda enabled API
-    iterate(const_cast<Function&>(function));
-  }
-
   // Iterate through the values in the table, stopping when the lambda returns false.
   template<typename Function>
-  inline void iterate(Function& function) const { // lambda enabled API
+  inline void iterate(Function function) const { // lambda enabled API
     for (u4 i = 0; i < _bucket_count; i++) {
       u4 bucket_info = _buckets[i];
       u4 bucket_offset = BUCKET_OFFSET(bucket_info);

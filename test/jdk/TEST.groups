@@ -109,8 +109,7 @@ tier4 = \
     / \
    -:tier1 \
    -:tier2 \
-   -:tier3 \
-   :jdk_foreign_stress
+   -:tier3
 
 ###############################################################################
 #
@@ -391,11 +390,7 @@ jdk_svc = \
 jdk_foreign = \
     java/foreign \
     jdk/internal/reflect/CallerSensitive/CheckCSMs.java \
-    -java/foreign/TestMatrix.java \
-    -java/foreign/TestUpcallStress.java
-
-jdk_foreign_stress = \
-    java/foreign/TestUpcallStress.java
+    -java/foreign/TestMatrix.java
 
 jdk_vector = \
     jdk/incubator/vector
@@ -558,6 +553,7 @@ jdk_jfr_sanity = \
     jdk/jfr/event/gc/collection/TestGCWithFasttime.java \
     jdk/jfr/event/gc/configuration/TestGCConfigurationEvent.java \
     jdk/jfr/event/metadata/TestDefaultConfigurations.java \
+    jdk/jfr/event/oldobject/TestDFSWithSmallStack.java \
     jdk/jfr/startupargs/TestDumpOnExit.java \
     jdk/jfr/api/consumer/recordingstream/TestBasics.java
 

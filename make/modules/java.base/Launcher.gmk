@@ -95,7 +95,8 @@ ifeq ($(call isTargetOsType, unix), true)
       CFLAGS := $(VERSION_CFLAGS), \
       EXTRA_HEADER_DIRS := libjava, \
       EXTRA_OBJECT_FILES := \
-          $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc$(OBJ_SUFFIX), \
+          $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc$(OBJ_SUFFIX) \
+          $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc_errorcodes$(OBJ_SUFFIX), \
       LD_SET_ORIGIN := false, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
   ))

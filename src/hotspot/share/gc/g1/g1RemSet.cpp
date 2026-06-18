@@ -31,6 +31,7 @@
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineSweepTask.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
@@ -123,8 +124,8 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
     }
 
     ~G1DirtyRegions() {
-      FREE_C_HEAP_ARRAY(uint, _buffer);
-      FREE_C_HEAP_ARRAY(Atomic<bool>, _contains);
+      FREE_C_HEAP_ARRAY(_buffer);
+      FREE_C_HEAP_ARRAY(_contains);
     }
 
     void reset() {
@@ -244,7 +245,7 @@ public:
     _scan_top(nullptr) { }
 
   ~G1RemSetScanState() {
-    FREE_C_HEAP_ARRAY(HeapWord*, _scan_top);
+    FREE_C_HEAP_ARRAY(_scan_top);
   }
 
   void initialize(uint max_reserved_regions) {
@@ -1026,7 +1027,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // the pause occurs during the Concurrent Cleanup for Next Mark phase.
       // Only at that point the region's bitmap may contain marks while being in the collection
       // set at the same time.
-      return _g1h->collector_state()->clear_bitmap_in_progress() &&
+      return _g1h->collector_state()->is_in_reset_for_next_cycle() &&
              hr->is_old();
     }
 

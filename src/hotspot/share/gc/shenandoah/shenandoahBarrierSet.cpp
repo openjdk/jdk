@@ -25,7 +25,6 @@
 
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetStackChunk.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
@@ -100,7 +99,7 @@ bool ShenandoahBarrierSet::need_card_barrier(DecoratorSet decorators, BasicType 
 }
 
 void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if (ReduceInitialCardMarks && ShenandoahCardBarrier && !ShenandoahHeap::heap()->is_in_young(new_obj)) {
     log_debug(gc)("Newly allocated object (" PTR_FORMAT ") is not in the young generation", p2i(new_obj));
     // This can happen when an object is newly allocated, but we come to a safepoint before returning
@@ -114,7 +113,7 @@ void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop n
       cast_from_oop<HeapWord*>(new_obj), new_obj->size()
     );
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 }
 
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {
@@ -149,11 +148,9 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
     BarrierSetNMethod* bs_nm = barrier_set_nmethod();
     thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
 
-    if (ShenandoahStackWatermarkBarrier) {
-      JavaThread* const jt = JavaThread::cast(thread);
-      StackWatermark* const watermark = new ShenandoahStackWatermark(jt);
-      StackWatermarkSet::add_watermark(jt, watermark);
-    }
+    JavaThread* const jt = JavaThread::cast(thread);
+    StackWatermark* const watermark = new ShenandoahStackWatermark(jt);
+    StackWatermarkSet::add_watermark(jt, watermark);
   }
 }
 
@@ -166,28 +163,19 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
       gclab->retire();
     }
 
-    PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-    if (plab != nullptr) {
-      // This will assert if plab is not null in non-generational mode
-      ShenandoahGenerationalHeap::heap()->retire_plab(plab);
+    ShenandoahPLAB* shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+    if (shenandoah_plab != nullptr) {
+      shenandoah_plab->retire();
     }
 
     // SATB protocol requires to keep alive reachable oops from roots at the beginning of GC
-    if (ShenandoahStackWatermarkBarrier) {
-      if (_heap->is_concurrent_mark_in_progress()) {
-        ShenandoahKeepAliveClosure oops;
-        StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
-      } else if (_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) {
-        ShenandoahContextEvacuateUpdateRootsClosure oops;
-        StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
-      }
+    if (_heap->is_concurrent_mark_in_progress()) {
+      ShenandoahKeepAliveClosure oops;
+      StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
+    } else if (_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) {
+      ShenandoahContextEvacuateUpdateRootsClosure oops;
+      StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
     }
-  }
-}
-
-void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {
-  if (_heap->has_forwarded_objects()) {
-    clone_barrier(src);
   }
 }
 

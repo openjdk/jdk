@@ -1262,6 +1262,10 @@ relativeError));
                 return fill(s * BUFFER_REPS,
                             i -> (((float)(i + 1) == 0) ? 1 : (float)(i + 1)));
             }),
+            withToString("float[smallOddValue(i)]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (float)(i % 7 == 0 ? -3 : (i % 3 == 0 ? -1 : 1)));
+            }),
             withToString("float[0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (float)0.01 + ((float)i / (i + 1)));
@@ -1607,6 +1611,205 @@ relativeError));
         return Float.compare(a, (float) 0) != 0 ? a : b;
     }
 
+
+    static float scalar_add(float a, float b) {
+        return (float)(a + b);
+    }
+
+    static float scalar_sub(float a, float b) {
+        return (float)(a - b);
+    }
+
+    static float scalar_mul(float a, float b) {
+        return (float)(a * b);
+    }
+
+    static float scalar_min(float a, float b) {
+        return (float)(Math.min(a, b));
+    }
+
+    static float scalar_max(float a, float b) {
+        return (float)(Math.max(a, b));
+    }
+
+    static float scalar_div(float a, float b) {
+        return (float)(a / b);
+    }
+
+    static float scalar_fma(float a, float b, float c) {
+        return (float)(Math.fma(a, b, c));
+    }
+
+    static float scalar_abs(float a) {
+        return (float)(Math.abs(a));
+    }
+
+    static float scalar_neg(float a) {
+        return ((float)-a);
+    }
+
+    static float scalar_sin(float a) {
+        return (float)Math.sin((double)a);
+    }
+
+    static float scalar_exp(float a) {
+        return (float)Math.exp((double)a);
+    }
+
+    static float scalar_log1p(float a) {
+        return (float)Math.log1p((double)a);
+    }
+
+    static float scalar_log(float a) {
+        return (float)Math.log((double)a);
+    }
+
+    static float scalar_log10(float a) {
+        return (float)Math.log10((double)a);
+    }
+
+    static float scalar_expm1(float a) {
+        return (float)Math.expm1((double)a);
+    }
+
+    static float scalar_cos(float a) {
+        return (float)Math.cos((double)a);
+    }
+
+    static float scalar_tan(float a) {
+        return (float)Math.tan((double)a);
+    }
+
+    static float scalar_sinh(float a) {
+        return (float)Math.sinh((double)a);
+    }
+
+    static float scalar_cosh(float a) {
+        return (float)Math.cosh((double)a);
+    }
+
+    static float scalar_tanh(float a) {
+        return (float)Math.tanh((double)a);
+    }
+
+    static float scalar_asin(float a) {
+        return (float)Math.asin((double)a);
+    }
+
+    static float scalar_acos(float a) {
+        return (float)Math.acos((double)a);
+    }
+
+    static float scalar_atan(float a) {
+        return (float)Math.atan((double)a);
+    }
+
+    static float scalar_cbrt(float a) {
+        return (float)Math.cbrt((double)a);
+    }
+
+    static float scalar_sqrt(float a) {
+        return (float)Math.sqrt((double)a);
+    }
+
+    static float scalar_hypot(float a, float b) {
+        return (float)Math.hypot((double)a, (double)b);
+    }
+
+    static float scalar_pow(float a, float b) {
+        return (float)Math.pow((double)a, (double)b);
+    }
+
+    static float scalar_atan2(float a, float b) {
+        return (float)Math.atan2((double)a, (double)b);
+    }
+
+    static float strict_scalar_sin(float a) {
+        return (float)StrictMath.sin((double)a);
+    }
+
+    static float strict_scalar_exp(float a) {
+        return (float)StrictMath.exp((double)a);
+    }
+
+    static float strict_scalar_log1p(float a) {
+        return (float)StrictMath.log1p((double)a);
+    }
+
+    static float strict_scalar_log(float a) {
+        return (float)StrictMath.log((double)a);
+    }
+
+    static float strict_scalar_log10(float a) {
+        return (float)StrictMath.log10((double)a);
+    }
+
+    static float strict_scalar_expm1(float a) {
+        return (float)StrictMath.expm1((double)a);
+    }
+
+    static float strict_scalar_cos(float a) {
+        return (float)StrictMath.cos((double)a);
+    }
+
+    static float strict_scalar_tan(float a) {
+        return (float)StrictMath.tan((double)a);
+    }
+
+    static float strict_scalar_sinh(float a) {
+        return (float)StrictMath.sinh((double)a);
+    }
+
+    static float strict_scalar_cosh(float a) {
+        return (float)StrictMath.cosh((double)a);
+    }
+
+    static float strict_scalar_tanh(float a) {
+        return (float)StrictMath.tanh((double)a);
+    }
+
+    static float strict_scalar_asin(float a) {
+        return (float)StrictMath.asin((double)a);
+    }
+
+    static float strict_scalar_acos(float a) {
+        return (float)StrictMath.acos((double)a);
+    }
+
+    static float strict_scalar_atan(float a) {
+        return (float)StrictMath.atan((double)a);
+    }
+
+    static float strict_scalar_cbrt(float a) {
+        return (float)StrictMath.cbrt((double)a);
+    }
+
+    static float strict_scalar_sqrt(float a) {
+        return (float)StrictMath.sqrt((double)a);
+    }
+
+    static float strict_scalar_hypot(float a, float b) {
+        return (float)StrictMath.hypot((double)a, (double)b);
+    }
+
+    static float strict_scalar_pow(float a, float b) {
+        return (float)StrictMath.pow((double)a, (double)b);
+    }
+
+    static float strict_scalar_atan2(float a, float b) {
+        return (float)StrictMath.atan2((double)a, (double)b);
+    }
+
+    static boolean isNaN(float a) {
+        return Float.isNaN(a);
+    }
+    static boolean isFinite(float a) {
+        return Float.isFinite(a);
+    }
+    static boolean isInfinite(float a) {
+        return Float.isInfinite(a);
+    }
+
     @Test
     static void smokeTest1() {
         FloatVector three = FloatVector.broadcast(SPECIES, (byte)-3);
@@ -1700,7 +1903,7 @@ relativeError));
     }
 
     static float ADD(float a, float b) {
-        return (float)(a + b);
+        return (float)(scalar_add(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -1721,7 +1924,7 @@ relativeError));
     }
 
     static float add(float a, float b) {
-        return (float)(a + b);
+        return (float)(scalar_add(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -1778,7 +1981,7 @@ relativeError));
     }
 
     static float SUB(float a, float b) {
-        return (float)(a - b);
+        return (float)(scalar_sub(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -1799,7 +2002,7 @@ relativeError));
     }
 
     static float sub(float a, float b) {
-        return (float)(a - b);
+        return (float)(scalar_sub(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -1856,7 +2059,7 @@ relativeError));
     }
 
     static float MUL(float a, float b) {
-        return (float)(a * b);
+        return (float)(scalar_mul(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -1877,7 +2080,7 @@ relativeError));
     }
 
     static float mul(float a, float b) {
-        return (float)(a * b);
+        return (float)(scalar_mul(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -1934,7 +2137,7 @@ relativeError));
     }
 
     static float DIV(float a, float b) {
-        return (float)(a / b);
+        return (float)(scalar_div(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -1955,7 +2158,7 @@ relativeError));
     }
 
     static float div(float a, float b) {
-        return (float)(a / b);
+        return (float)(scalar_div(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -2012,7 +2215,7 @@ relativeError));
     }
 
     static float FIRST_NONZERO(float a, float b) {
-        return (float)(Double.doubleToLongBits(a)!=0?a:b);
+        return (float)(firstNonZero(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -2314,7 +2517,7 @@ relativeError));
     }
 
     static float MIN(float a, float b) {
-        return (float)(Math.min(a, b));
+        return (float)(scalar_min(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -2335,7 +2538,7 @@ relativeError));
     }
 
     static float min(float a, float b) {
-        return (float)(Math.min(a, b));
+        return (float)(scalar_min(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -2354,7 +2557,7 @@ relativeError));
     }
 
     static float MAX(float a, float b) {
-        return (float)(Math.max(a, b));
+        return (float)(scalar_max(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -2375,7 +2578,7 @@ relativeError));
     }
 
     static float max(float a, float b) {
-        return (float)(Math.max(a, b));
+        return (float)(scalar_max(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -2452,7 +2655,7 @@ relativeError));
     static float ADDReduce(float[] a, int idx) {
         float res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res += a[i];
+            res = scalar_add(res, a[i]);
         }
 
         return res;
@@ -2461,7 +2664,7 @@ relativeError));
     static float ADDReduceAll(float[] a) {
         float res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res += ADDReduce(a, i);
+            res = scalar_add(res, ADDReduce(a, i));
         }
 
         return res;
@@ -2479,7 +2682,7 @@ relativeError));
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 float v = av.reduceLanes(VectorOperators.ADD);
                 r[i] = v;
-                ra += v;
+                ra = scalar_add(ra, v);
             }
         }
 
@@ -2492,20 +2695,20 @@ relativeError));
         float[] a = fa.apply(SPECIES.length());
         float id = ADD_IDENTITY;
 
-        assertEquals((float) (id + id), id,
+        assertEquals((float) (scalar_add(id, id)), id,
                             "ADD(ADD_IDENTITY, ADD_IDENTITY) != ADD_IDENTITY");
 
         float x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                assertEquals((float) (id + x), x);
-                assertEquals((float) (x + id), x);
+                assertEquals((float) (scalar_add(id, x)), x);
+                assertEquals((float) (scalar_add(x, id)), x);
             }
         } catch (AssertionError e) {
-            assertEquals((float) (id + x), x,
+            assertEquals((float) (scalar_add(id, x)), x,
                                 "ADD(ADD_IDENTITY, " + x + ") != " + x);
-            assertEquals((float) (x + id), x,
+            assertEquals((float) (scalar_add(x, id)), x,
                                 "ADD(" + x + ", ADD_IDENTITY) != " + x);
         }
     }
@@ -2514,7 +2717,7 @@ relativeError));
         float res = ADD_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
-                res += a[i];
+                res = scalar_add(res, a[i]);
         }
 
         return res;
@@ -2523,7 +2726,7 @@ relativeError));
     static float ADDReduceAllMasked(float[] a, boolean[] mask) {
         float res = ADD_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res += ADDReduceMasked(a, i, mask);
+            res = scalar_add(res, ADDReduceMasked(a, i, mask));
         }
 
         return res;
@@ -2543,7 +2746,7 @@ relativeError));
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 float v = av.reduceLanes(VectorOperators.ADD, vmask);
                 r[i] = v;
-                ra += v;
+                ra = scalar_add(ra, v);
             }
         }
 
@@ -2554,7 +2757,7 @@ relativeError));
     static float MULReduce(float[] a, int idx) {
         float res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res *= a[i];
+            res = scalar_mul(res, a[i]);
         }
 
         return res;
@@ -2563,7 +2766,7 @@ relativeError));
     static float MULReduceAll(float[] a) {
         float res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res *= MULReduce(a, i);
+            res = scalar_mul(res, MULReduce(a, i));
         }
 
         return res;
@@ -2581,7 +2784,7 @@ relativeError));
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 float v = av.reduceLanes(VectorOperators.MUL);
                 r[i] = v;
-                ra *= v;
+                ra = scalar_mul(ra, v);
             }
         }
 
@@ -2594,20 +2797,20 @@ relativeError));
         float[] a = fa.apply(SPECIES.length());
         float id = MUL_IDENTITY;
 
-        assertEquals((float) (id * id), id,
+        assertEquals((float) (scalar_mul(id, id)), id,
                             "MUL(MUL_IDENTITY, MUL_IDENTITY) != MUL_IDENTITY");
 
         float x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                assertEquals((float) (id * x), x);
-                assertEquals((float) (x * id), x);
+                assertEquals((float) (scalar_mul(id, x)), x);
+                assertEquals((float) (scalar_mul(x, id)), x);
             }
         } catch (AssertionError e) {
-            assertEquals((float) (id * x), x,
+            assertEquals((float) (scalar_mul(id, x)), x,
                                 "MUL(MUL_IDENTITY, " + x + ") != " + x);
-            assertEquals((float) (x * id), x,
+            assertEquals((float) (scalar_mul(x, id)), x,
                                 "MUL(" + x + ", MUL_IDENTITY) != " + x);
         }
     }
@@ -2616,7 +2819,7 @@ relativeError));
         float res = MUL_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
-                res *= a[i];
+                res = scalar_mul(res, a[i]);
         }
 
         return res;
@@ -2625,7 +2828,7 @@ relativeError));
     static float MULReduceAllMasked(float[] a, boolean[] mask) {
         float res = MUL_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res *= MULReduceMasked(a, i, mask);
+            res = scalar_mul(res, MULReduceMasked(a, i, mask));
         }
 
         return res;
@@ -2645,7 +2848,7 @@ relativeError));
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 float v = av.reduceLanes(VectorOperators.MUL, vmask);
                 r[i] = v;
-                ra *= v;
+                ra = scalar_mul(ra, v);
             }
         }
 
@@ -2656,7 +2859,7 @@ relativeError));
     static float MINReduce(float[] a, int idx) {
         float res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res = (float) Math.min(res, a[i]);
+            res = scalar_min(res, a[i]);
         }
 
         return res;
@@ -2665,7 +2868,7 @@ relativeError));
     static float MINReduceAll(float[] a) {
         float res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res = (float) Math.min(res, MINReduce(a, i));
+            res = scalar_min(res, MINReduce(a, i));
         }
 
         return res;
@@ -2683,7 +2886,7 @@ relativeError));
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 float v = av.reduceLanes(VectorOperators.MIN);
                 r[i] = v;
-                ra = (float) Math.min(ra, v);
+                ra = scalar_min(ra, v);
             }
         }
 
@@ -2696,20 +2899,20 @@ relativeError));
         float[] a = fa.apply(SPECIES.length());
         float id = MIN_IDENTITY;
 
-        assertEquals((float) Math.min(id, id), id,
+        assertEquals(scalar_min(id, id), id,
                             "MIN(MIN_IDENTITY, MIN_IDENTITY) != MIN_IDENTITY");
 
         float x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                assertEquals((float) Math.min(id, x), x);
-                assertEquals((float) Math.min(x, id), x);
+                assertEquals(scalar_min(id, x), x);
+                assertEquals(scalar_min(x, id), x);
             }
         } catch (AssertionError e) {
-            assertEquals((float) Math.min(id, x), x,
+            assertEquals(scalar_min(id, x), x,
                                 "MIN(MIN_IDENTITY, " + x + ") != " + x);
-            assertEquals((float) Math.min(x, id), x,
+            assertEquals(scalar_min(x, id), x,
                                 "MIN(" + x + ", MIN_IDENTITY) != " + x);
         }
     }
@@ -2718,7 +2921,7 @@ relativeError));
         float res = MIN_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
-                res = (float) Math.min(res, a[i]);
+                res = scalar_min(res, a[i]);
         }
 
         return res;
@@ -2727,7 +2930,7 @@ relativeError));
     static float MINReduceAllMasked(float[] a, boolean[] mask) {
         float res = MIN_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res = (float) Math.min(res, MINReduceMasked(a, i, mask));
+            res = scalar_min(res, MINReduceMasked(a, i, mask));
         }
 
         return res;
@@ -2747,7 +2950,7 @@ relativeError));
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 float v = av.reduceLanes(VectorOperators.MIN, vmask);
                 r[i] = v;
-                ra = (float) Math.min(ra, v);
+                ra = scalar_min(ra, v);
             }
         }
 
@@ -2758,7 +2961,7 @@ relativeError));
     static float MAXReduce(float[] a, int idx) {
         float res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res = (float) Math.max(res, a[i]);
+            res = scalar_max(res, a[i]);
         }
 
         return res;
@@ -2767,7 +2970,7 @@ relativeError));
     static float MAXReduceAll(float[] a) {
         float res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res = (float) Math.max(res, MAXReduce(a, i));
+            res = scalar_max(res, MAXReduce(a, i));
         }
 
         return res;
@@ -2785,7 +2988,7 @@ relativeError));
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 float v = av.reduceLanes(VectorOperators.MAX);
                 r[i] = v;
-                ra = (float) Math.max(ra, v);
+                ra = scalar_max(ra, v);
             }
         }
 
@@ -2798,20 +3001,20 @@ relativeError));
         float[] a = fa.apply(SPECIES.length());
         float id = MAX_IDENTITY;
 
-        assertEquals((float) Math.max(id, id), id,
+        assertEquals(scalar_max(id, id), id,
                             "MAX(MAX_IDENTITY, MAX_IDENTITY) != MAX_IDENTITY");
 
         float x = 0;
         try {
             for (int i = 0; i < a.length; i++) {
                 x = a[i];
-                assertEquals((float) Math.max(id, x), x);
-                assertEquals((float) Math.max(x, id), x);
+                assertEquals(scalar_max(id, x), x);
+                assertEquals(scalar_max(x, id), x);
             }
         } catch (AssertionError e) {
-            assertEquals((float) Math.max(id, x), x,
+            assertEquals(scalar_max(id, x), x,
                                 "MAX(MAX_IDENTITY, " + x + ") != " + x);
-            assertEquals((float) Math.max(x, id), x,
+            assertEquals(scalar_max(x, id), x,
                                 "MAX(" + x + ", MAX_IDENTITY) != " + x);
         }
     }
@@ -2820,7 +3023,7 @@ relativeError));
         float res = MAX_IDENTITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if (mask[i % SPECIES.length()])
-                res = (float) Math.max(res, a[i]);
+                res = scalar_max(res, a[i]);
         }
 
         return res;
@@ -2829,7 +3032,7 @@ relativeError));
     static float MAXReduceAllMasked(float[] a, boolean[] mask) {
         float res = MAX_IDENTITY;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res = (float) Math.max(res, MAXReduceMasked(a, i, mask));
+            res = scalar_max(res, MAXReduceMasked(a, i, mask));
         }
 
         return res;
@@ -2849,7 +3052,7 @@ relativeError));
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
                 float v = av.reduceLanes(VectorOperators.MAX, vmask);
                 r[i] = v;
-                ra = (float) Math.max(ra, v);
+                ra = scalar_max(ra, v);
             }
         }
 
@@ -3061,7 +3264,7 @@ relativeError));
     }
 
     static boolean testIS_FINITE(float a) {
-        return Float.isFinite(a);
+        return isFinite(a);
     }
 
     @Test(dataProvider = "floatTestOpProvider")
@@ -3102,7 +3305,7 @@ relativeError));
     }
 
     static boolean testIS_NAN(float a) {
-        return Float.isNaN(a);
+        return isNaN(a);
     }
 
     @Test(dataProvider = "floatTestOpProvider")
@@ -3143,7 +3346,7 @@ relativeError));
     }
 
     static boolean testIS_INFINITE(float a) {
-        return Float.isInfinite(a);
+        return isInfinite(a);
     }
 
     @Test(dataProvider = "floatTestOpProvider")
@@ -3484,7 +3687,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), a[i + j] < b[i]);
+                assertEquals(mv.laneIsSet(j), lt(a[i + j], b[i]));
             }
         }
     }
@@ -3504,7 +3707,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (a[i + j] < b[i]));
+                assertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j], b[i])));
             }
         }
     }
@@ -3520,7 +3723,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), a[i + j] < (float)((long)b[i]));
+                assertEquals(mv.laneIsSet(j), lt(a[i + j], (float)((long)b[i])));
             }
         }
     }
@@ -3540,7 +3743,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (a[i + j] < (float)((long)b[i])));
+                assertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j], (float)((long)b[i]))));
             }
         }
     }
@@ -3556,7 +3759,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), a[i + j] == b[i]);
+                assertEquals(mv.laneIsSet(j), eq(a[i + j], b[i]));
             }
         }
     }
@@ -3576,7 +3779,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (a[i + j] == b[i]));
+                assertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j], b[i])));
             }
         }
     }
@@ -3592,7 +3795,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), a[i + j] == (float)((long)b[i]));
+                assertEquals(mv.laneIsSet(j), eq(a[i + j], (float)((long)b[i])));
             }
         }
     }
@@ -3612,7 +3815,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (a[i + j] == (float)((long)b[i])));
+                assertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j], (float)((long)b[i]))));
             }
         }
     }
@@ -4112,11 +4315,11 @@ relativeError));
     }
 
     static float SIN(float a) {
-        return (float)(Math.sin((double)a));
+        return (float)(scalar_sin(a));
     }
 
     static float strictSIN(float a) {
-        return (float)(StrictMath.sin((double)a));
+        return (float)(strict_scalar_sin(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4135,11 +4338,11 @@ relativeError));
     }
 
     static float EXP(float a) {
-        return (float)(Math.exp((double)a));
+        return (float)(scalar_exp(a));
     }
 
     static float strictEXP(float a) {
-        return (float)(StrictMath.exp((double)a));
+        return (float)(strict_scalar_exp(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4158,11 +4361,11 @@ relativeError));
     }
 
     static float LOG1P(float a) {
-        return (float)(Math.log1p((double)a));
+        return (float)(scalar_log1p(a));
     }
 
     static float strictLOG1P(float a) {
-        return (float)(StrictMath.log1p((double)a));
+        return (float)(strict_scalar_log1p(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4181,11 +4384,11 @@ relativeError));
     }
 
     static float LOG(float a) {
-        return (float)(Math.log((double)a));
+        return (float)(scalar_log(a));
     }
 
     static float strictLOG(float a) {
-        return (float)(StrictMath.log((double)a));
+        return (float)(strict_scalar_log(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4204,11 +4407,11 @@ relativeError));
     }
 
     static float LOG10(float a) {
-        return (float)(Math.log10((double)a));
+        return (float)(scalar_log10(a));
     }
 
     static float strictLOG10(float a) {
-        return (float)(StrictMath.log10((double)a));
+        return (float)(strict_scalar_log10(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4227,11 +4430,11 @@ relativeError));
     }
 
     static float EXPM1(float a) {
-        return (float)(Math.expm1((double)a));
+        return (float)(scalar_expm1(a));
     }
 
     static float strictEXPM1(float a) {
-        return (float)(StrictMath.expm1((double)a));
+        return (float)(strict_scalar_expm1(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4250,11 +4453,11 @@ relativeError));
     }
 
     static float COS(float a) {
-        return (float)(Math.cos((double)a));
+        return (float)(scalar_cos(a));
     }
 
     static float strictCOS(float a) {
-        return (float)(StrictMath.cos((double)a));
+        return (float)(strict_scalar_cos(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4273,11 +4476,11 @@ relativeError));
     }
 
     static float TAN(float a) {
-        return (float)(Math.tan((double)a));
+        return (float)(scalar_tan(a));
     }
 
     static float strictTAN(float a) {
-        return (float)(StrictMath.tan((double)a));
+        return (float)(strict_scalar_tan(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4296,11 +4499,11 @@ relativeError));
     }
 
     static float SINH(float a) {
-        return (float)(Math.sinh((double)a));
+        return (float)(scalar_sinh(a));
     }
 
     static float strictSINH(float a) {
-        return (float)(StrictMath.sinh((double)a));
+        return (float)(strict_scalar_sinh(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4319,11 +4522,11 @@ relativeError));
     }
 
     static float COSH(float a) {
-        return (float)(Math.cosh((double)a));
+        return (float)(scalar_cosh(a));
     }
 
     static float strictCOSH(float a) {
-        return (float)(StrictMath.cosh((double)a));
+        return (float)(strict_scalar_cosh(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4342,11 +4545,11 @@ relativeError));
     }
 
     static float TANH(float a) {
-        return (float)(Math.tanh((double)a));
+        return (float)(scalar_tanh(a));
     }
 
     static float strictTANH(float a) {
-        return (float)(StrictMath.tanh((double)a));
+        return (float)(strict_scalar_tanh(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4365,11 +4568,11 @@ relativeError));
     }
 
     static float ASIN(float a) {
-        return (float)(Math.asin((double)a));
+        return (float)(scalar_asin(a));
     }
 
     static float strictASIN(float a) {
-        return (float)(StrictMath.asin((double)a));
+        return (float)(strict_scalar_asin(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4388,11 +4591,11 @@ relativeError));
     }
 
     static float ACOS(float a) {
-        return (float)(Math.acos((double)a));
+        return (float)(scalar_acos(a));
     }
 
     static float strictACOS(float a) {
-        return (float)(StrictMath.acos((double)a));
+        return (float)(strict_scalar_acos(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4411,11 +4614,11 @@ relativeError));
     }
 
     static float ATAN(float a) {
-        return (float)(Math.atan((double)a));
+        return (float)(scalar_atan(a));
     }
 
     static float strictATAN(float a) {
-        return (float)(StrictMath.atan((double)a));
+        return (float)(strict_scalar_atan(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4434,11 +4637,11 @@ relativeError));
     }
 
     static float CBRT(float a) {
-        return (float)(Math.cbrt((double)a));
+        return (float)(scalar_cbrt(a));
     }
 
     static float strictCBRT(float a) {
-        return (float)(StrictMath.cbrt((double)a));
+        return (float)(strict_scalar_cbrt(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4457,11 +4660,11 @@ relativeError));
     }
 
     static float HYPOT(float a, float b) {
-        return (float)(Math.hypot((double)a, (double)b));
+        return (float)(scalar_hypot(a, b));
     }
 
     static float strictHYPOT(float a, float b) {
-        return (float)(StrictMath.hypot((double)a, (double)b));
+        return (float)(strict_scalar_hypot(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -4483,11 +4686,11 @@ relativeError));
 
 
     static float POW(float a, float b) {
-        return (float)(Math.pow((double)a, (double)b));
+        return (float)(scalar_pow(a, b));
     }
 
     static float strictPOW(float a, float b) {
-        return (float)(StrictMath.pow((double)a, (double)b));
+        return (float)(strict_scalar_pow(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -4509,11 +4712,11 @@ relativeError));
 
 
     static float pow(float a, float b) {
-        return (float)(Math.pow((double)a, (double)b));
+        return (float)(scalar_pow(a, b));
     }
 
     static float strictpow(float a, float b) {
-        return (float)(StrictMath.pow((double)a, (double)b));
+        return (float)(strict_scalar_pow(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -4535,11 +4738,11 @@ relativeError));
 
 
     static float ATAN2(float a, float b) {
-        return (float)(Math.atan2((double)a, (double)b));
+        return (float)(scalar_atan2(a, b));
     }
 
     static float strictATAN2(float a, float b) {
-        return (float)(StrictMath.atan2((double)a, (double)b));
+        return (float)(strict_scalar_atan2(a, b));
     }
 
     @Test(dataProvider = "floatBinaryOpProvider")
@@ -4591,11 +4794,11 @@ relativeError));
 
 
     static float FMA(float a, float b, float c) {
-        return (float)(Math.fma(a, b, c));
+        return (float)(scalar_fma(a, b, c));
     }
 
     static float fma(float a, float b, float c) {
-        return (float)(Math.fma(a, b, c));
+        return (float)(scalar_fma(a, b, c));
     }
 
     @Test(dataProvider = "floatTernaryOpProvider")
@@ -4773,11 +4976,11 @@ relativeError));
     }
 
     static float NEG(float a) {
-        return (float)(-((float)a));
+        return (float)(scalar_neg((float)a));
     }
 
     static float neg(float a) {
-        return (float)(-((float)a));
+        return (float)(scalar_neg((float)a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4829,11 +5032,11 @@ relativeError));
     }
 
     static float ABS(float a) {
-        return (float)(Math.abs((float)a));
+        return (float)(scalar_abs((float)a));
     }
 
     static float abs(float a) {
-        return (float)(Math.abs((float)a));
+        return (float)(scalar_abs((float)a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -4885,11 +5088,11 @@ relativeError));
     }
 
     static float SQRT(float a) {
-        return (float)(Math.sqrt((double)a));
+        return (float)(scalar_sqrt(a));
     }
 
     static float sqrt(float a) {
-        return (float)(Math.sqrt((double)a));
+        return (float)(scalar_sqrt(a));
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -5102,7 +5305,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), a[i + j] < b[i]);
+                assertEquals(mv.laneIsSet(j), lt(a[i + j], b[i]));
             }
         }
     }
@@ -5118,7 +5321,7 @@ relativeError));
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), a[i + j] == b[i]);
+                assertEquals(mv.laneIsSet(j), eq(a[i + j], b[i]));
             }
         }
     }
@@ -5187,7 +5390,7 @@ relativeError));
     static long ADDReduceLong(float[] a, int idx) {
         float res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res += a[i];
+            res = scalar_add(res, a[i]);
         }
 
         return (long)res;
@@ -5196,7 +5399,7 @@ relativeError));
     static long ADDReduceAllLong(float[] a) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res += ADDReduceLong(a, i);
+            res = (long)scalar_add((float)res, (float)ADDReduceLong(a, i));
         }
 
         return res;
@@ -5214,8 +5417,8 @@ relativeError));
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
-            ra += r[i];
+        for (int i = 0; i < a.length; i++) {
+            ra = (long)scalar_add((float)ra, (float)r[i]);
         }
 
         assertReductionLongArraysEquals(r, ra, a,
@@ -5225,8 +5428,9 @@ relativeError));
     static long ADDReduceLongMasked(float[] a, int idx, boolean[] mask) {
         float res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()])
-                res += a[i];
+            if (mask[i % SPECIES.length()]) {
+                res = scalar_add(res, a[i]);
+            }
         }
 
         return (long)res;
@@ -5235,7 +5439,7 @@ relativeError));
     static long ADDReduceAllLongMasked(float[] a, boolean[] mask) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res += ADDReduceLongMasked(a, i, mask);
+            res = (long)scalar_add((float)res, (float)ADDReduceLongMasked(a, i, mask));
         }
 
         return res;
@@ -5255,8 +5459,8 @@ relativeError));
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
-            ra += r[i];
+        for (int i = 0; i < a.length; i++) {
+            ra = (long)scalar_add((float)ra, (float)r[i]);
         }
 
         assertReductionLongArraysEqualsMasked(r, ra, a, mask,

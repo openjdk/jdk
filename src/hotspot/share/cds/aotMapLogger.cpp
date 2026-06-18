@@ -98,8 +98,8 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
   DumpRegion* rw_region = &builder->_rw_region;
   DumpRegion* ro_region = &builder->_ro_region;
 
-  dumptime_log_metaspace_region("rw region", rw_region, &builder->_rw_src_objs);
-  dumptime_log_metaspace_region("ro region", ro_region, &builder->_ro_src_objs);
+  dumptime_log_metaspace_region("rw region", rw_region, &builder->_rw_src_objs, &builder->_ro_src_objs);
+  dumptime_log_metaspace_region("ro region", ro_region, &builder->_rw_src_objs, &builder->_ro_src_objs);
 
   address bitmap_end = address(bitmap + bitmap_size_in_bytes);
   log_region_range("bitmap", address(bitmap), bitmap_end, nullptr);
@@ -122,17 +122,6 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
 class AOTMapLogger::RuntimeGatherArchivedMetaspaceObjs : public UniqueMetaspaceClosure {
   GrowableArrayCHeap<ArchivedObjInfo, mtClass> _objs;
 
-  static int compare_objs_by_addr(ArchivedObjInfo* a, ArchivedObjInfo* b) {
-    intx diff = a->_src_addr - b->_src_addr;
-    if (diff < 0) {
-      return -1;
-    } else if (diff == 0) {
-      return 0;
-    } else {
-      return 1;
-    }
-  }
-
 public:
   GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs() { return &_objs; }
 
@@ -152,7 +141,7 @@ public:
 
   void finish() {
     UniqueMetaspaceClosure::finish();
-    _objs.sort(compare_objs_by_addr);
+    _objs.sort(compare_by_address);
   }
 }; // AOTMapLogger::RuntimeGatherArchivedMetaspaceObjs
 
@@ -203,24 +192,47 @@ void AOTMapLogger::runtime_log(FileMapInfo* mapinfo, GrowableArrayCHeap<Archived
 }
 
 void AOTMapLogger::dumptime_log_metaspace_region(const char* name, DumpRegion* region,
-                                                 const ArchiveBuilder::SourceObjList* src_objs) {
+                                                 const ArchiveBuilder::SourceObjList* rw_objs,
+                                                 const ArchiveBuilder::SourceObjList* ro_objs) {
   address region_base = address(region->base());
   address region_top  = address(region->top());
   log_region_range(name, region_base, region_top, region_base + _buffer_to_requested_delta);
   if (log_is_enabled(Debug, aot, map)) {
     GrowableArrayCHeap<ArchivedObjInfo, mtClass> objs;
-    for (int i = 0; i < src_objs->objs()->length(); i++) {
-      ArchiveBuilder::SourceObjInfo* src_info = src_objs->at(i);
+    // With -XX:+UseCompactObjectHeaders, it's possible for small objects (including some from
+    // ro_objs) to be allocated in the gaps in the RW region.
+    collect_metaspace_objs(&objs, region_base, region_top, rw_objs);
+    collect_metaspace_objs(&objs, region_base, region_top, ro_objs);
+    objs.sort(compare_by_address);
+    log_metaspace_objects_impl(address(region->base()), address(region->end()), &objs, 0, objs.length());
+  }
+}
+
+void AOTMapLogger::collect_metaspace_objs(GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs,
+                                          address region_base, address region_top ,
+                                          const ArchiveBuilder::SourceObjList* src_objs) {
+  for (int i = 0; i < src_objs->objs()->length(); i++) {
+    ArchiveBuilder::SourceObjInfo* src_info = src_objs->at(i);
+    address buf_addr = src_info->buffered_addr();
+    if (region_base <= buf_addr && buf_addr < region_top) {
       ArchivedObjInfo info;
       info._src_addr = src_info->source_addr();
-      info._buffered_addr = src_info->buffered_addr();
+      info._buffered_addr = buf_addr;
       info._requested_addr = info._buffered_addr + _buffer_to_requested_delta;
       info._bytes = src_info->size_in_bytes();
       info._type = src_info->type();
-      objs.append(info);
+      objs->append(info);
     }
+  }
+}
 
-    log_metaspace_objects_impl(address(region->base()), address(region->end()), &objs, 0, objs.length());
+int AOTMapLogger::compare_by_address(ArchivedObjInfo* a, ArchivedObjInfo* b) {
+  if (a->_buffered_addr < b->_buffered_addr) {
+    return -1;
+  } else if (a->_buffered_addr > b->_buffered_addr) {
+    return 1;
+  } else {
+    return 0;
   }
 }
 
@@ -577,7 +589,6 @@ public:
   }
 
   Klass* real_klass() {
-    assert(UseCompressedClassPointers, "heap archiving requires UseCompressedClassPointers");
     return _data._klass;
   }
 
