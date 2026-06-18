@@ -196,16 +196,20 @@ public class TestStringCodingUTF8 {
             printStartIdx = 0;
         }
         for (int i = printStartIdx; i < firstMismatchIndex + 20; i++) {
+            if (i >= expected.length && i >= actual.length) {
+                // no more elements in either arrays, we are done
+                break;
+            }
             final StringBuilder sb = new StringBuilder();
             sb.append("Index=").append(i).append(", expected=");
-            if (i > expected.length) {
+            if (i >= expected.length) {
                 // "expected" array isn't that big
                 sb.append("<no element>");
             } else {
                 sb.append(expected[i]);
             }
             sb.append(", actual=");
-            if (i > actual.length) {
+            if (i >= actual.length) {
                 // "actual" array isn't that big
                 sb.append("<no element>");
             } else {
