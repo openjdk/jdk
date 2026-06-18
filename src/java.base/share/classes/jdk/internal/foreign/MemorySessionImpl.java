@@ -212,7 +212,6 @@ public abstract sealed class MemorySessionImpl
      * a confined session and this method is called outside the owner thread.
      */
 
-    @ForceInline
     public void checkValidState() {
         try {
             checkValidStateRaw();

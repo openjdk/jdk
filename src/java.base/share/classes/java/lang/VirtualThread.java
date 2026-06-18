@@ -48,7 +48,12 @@ import jdk.internal.vm.ContinuationScope;
 import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.ThreadContainers;
-import jdk.internal.vm.annotation.*;
+import jdk.internal.vm.annotation.ChangesCurrentThread;
+import jdk.internal.vm.annotation.Hidden;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.JvmtiHideEvents;
+import jdk.internal.vm.annotation.JvmtiMountTransition;
+import jdk.internal.vm.annotation.ReservedStackAccess;
 import sun.nio.ch.Interruptible;
 import static java.util.concurrent.TimeUnit.*;
 
@@ -1441,5 +1446,4 @@ final class VirtualThread extends BaseVirtualThread {
         unblocker.setDaemon(true);
         unblocker.start();
     }
-
 }
