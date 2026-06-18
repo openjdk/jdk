@@ -2512,9 +2512,7 @@ void ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t old_
 
   // Move some of the mutator regions into the Collector and OldCollector partitions in order to satisfy
   // young_reserve and old_reserve.
-  size_t young_used_regions, old_used_regions, young_used_bytes, old_used_bytes;
-  reserve_regions(young_reserve, old_reserve, old_region_count, young_used_regions, old_used_regions,
-                  young_used_bytes, old_used_bytes);
+  reserve_regions(young_reserve, old_reserve, old_region_count);
   _total_young_regions = _heap->num_regions() - old_region_count;
   _total_global_regions = _heap->num_regions();
   establish_old_collector_alloc_bias();
@@ -2658,16 +2656,9 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
 // is at least to_reserve_old.
 //
 // Returns total mutator alloc capacity, in words.
-size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old, size_t &old_region_count,
-                                          size_t &young_used_regions, size_t &old_used_regions,
-                                          size_t &young_used_bytes, size_t &old_used_bytes) {
+size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old, size_t &old_region_count) {
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   size_t mutator_allocatable_words = _prepare_to_rebuild_mutator_free;
-
-  young_used_regions = 0;
-  old_used_regions = 0;
-  young_used_bytes = 0;
-  old_used_bytes = 0;
 
   idx_t mutator_low_idx = _partitions.max();
   idx_t mutator_high_idx = -1;
@@ -2775,10 +2766,6 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
                                                                                 ShenandoahFreeSetPartitionId::Collector, ac);
         collector_available += ac;
         regions_to_collector++;
-        if (ac != region_size_bytes) {
-          young_used_regions++;
-          young_used_bytes = region_size_bytes - ac;
-        }
 
         log_trace(gc, free)("  Shifting region %zu from mutator_free to collector_free", idx);
         log_trace(gc, free)("  Shifted Mutator range [%zd, %zd],"
@@ -2805,10 +2792,6 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
       if ((ac == region_size_bytes) && (idx > mutator_empty_high_idx)) {
         mutator_empty_high_idx = idx;
       }
-      if (ac != region_size_bytes) {
-        young_used_regions++;
-        young_used_bytes += region_size_bytes - ac;
-      }
     } else {
       // Region is not in Mutator partition. Do the accounting.
       ShenandoahFreeSetPartitionId p = _partitions.membership(idx);
@@ -2817,23 +2800,12 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
       assert(p != ShenandoahFreeSetPartitionId::Collector, "Collector regions must be converted from Mutator regions");
       if (p == ShenandoahFreeSetPartitionId::OldCollector) {
         assert(!r->is_empty(), "Empty regions should be in Mutator partition at entry to reserve_regions");
-        old_used_regions++;
-        old_used_bytes = region_size_bytes - ac;
         // This region is within the range for OldCollector partition, as established by find_regions_with_alloc_capacity()
         assert((_partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector) <= idx) &&
                (_partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector) >= idx),
                "find_regions_with_alloc_capacity() should have established this is in range");
       } else {
         assert(p == ShenandoahFreeSetPartitionId::NotFree, "sanity");
-        // This region has been retired
-        if (r->is_old()) {
-          old_used_regions++;
-          old_used_bytes += region_size_bytes - ac;
-        } else {
-          assert(r->is_young(), "Retired region should be old or young");
-          young_used_regions++;
-          young_used_bytes += region_size_bytes - ac;
-        }
       }
     }
   }
