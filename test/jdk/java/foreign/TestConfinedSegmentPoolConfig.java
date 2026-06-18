@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.access
+ * @modules java.base/jdk.internal.foreign
  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
  *                    TestConfinedSegmentPoolConfig
  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
@@ -65,8 +65,7 @@
  *                    TestConfinedSegmentPoolConfig
  */
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.ConfinedSegmentPool;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -78,12 +77,11 @@ final class TestConfinedSegmentPoolConfig {
     static final long MIN = 8;
     static final long DISABLED = -1;
 
-    static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
 
     @Test
     void pooledMemorySize() {
-        final long actual = JLA.pooledMemorySize();
+        final long actual = ConfinedSegmentPool.pooledMemorySize();
         final String configParameter = System.getProperty(POOLED_MEMORY_PROPERTY);
         final long expected = switch (configParameter) {
             case null             -> DEFAULT;

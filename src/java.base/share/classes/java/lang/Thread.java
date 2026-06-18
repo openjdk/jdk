@@ -34,6 +34,7 @@ import java.util.Objects;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.StructureViolationException;
 import java.util.concurrent.locks.LockSupport;
+import jdk.internal.foreign.ConfinedSegmentPool;
 import jdk.internal.event.ThreadSleepEvent;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
@@ -254,12 +255,6 @@ public class Thread implements Runnable {
         registerNatives();
     }
 
-    // Delay the loading of Unsafe to prevent circular bootstrap
-    // dependencies.
-    private static final class UnsafeHolder {
-        private static final Unsafe U = Unsafe.getUnsafe();
-    }
-
     /*
      * Reserved for exclusive use by the JVM. Cannot be moved to the FieldHolder
      * as it needs to be set by the VM for JNI attaching threads, before executing
@@ -383,90 +378,6 @@ public class Thread implements Runnable {
      * as a flag for acquire state without conflicting with malloc() return values.
      */
     long confinedMemoryPool;
-
-    static long pooledMemorySize() {
-        return ConfinedSegmentPool.POOLED_MEMORY_SIZE;
-    }
-
-    /**
-     * Returns a pointer to the pooled memory or zero if the pool cannot be acquired.
-     */
-    @ForceInline
-    long acquirePooledMemory() {
-        // Extra check if an internal caller uses this method directly while pooling
-        // is disabled.
-        if (ConfinedSegmentPool.POOLED_MEMORY_SIZE <= 0) {
-            return 0;
-        }
-        final long confinedMemoryPool = this.confinedMemoryPool;
-        if (confinedMemoryPool > 0) {
-            // Mark the pool as acquired
-            this.confinedMemoryPool = -confinedMemoryPool;
-            return confinedMemoryPool;
-        } else if (confinedMemoryPool == 0) {
-            // Lazily allocate native memory
-            return allocateAndAcquirePooledMemory();
-        }
-        // The pool is already acquired, or pooling is disabled.
-        return 0;
-    }
-
-    // This only happens at most once per thread instance
-    private long allocateAndAcquirePooledMemory() {
-        final long address;
-        try {
-            address = UnsafeHolder.U.allocateMemory(ConfinedSegmentPool.POOLED_MEMORY_SIZE);
-            if (address < 0) {
-                throw new InternalError("Allocated memory pool is negative contrary to" +
-                        " the non-negative pointer invariant: 0x" + Long.toHexString(address));
-            }
-        } catch (OutOfMemoryError _) {
-            // Failed to allocate a pool
-            return 0;
-        }
-        // Zero out memory in a non-performance sensitive way
-        UnsafeHolder.U.setMemory(address, pooledMemorySize(), (byte) 0);
-        // Mark the pool as acquired
-        this.confinedMemoryPool = -address;
-        return address;
-    }
-
-    @SuppressWarnings("fallthrough")
-    @ForceInline
-    void releasePooledMemory(long size) {
-        final long confinedMemoryPool = -this.confinedMemoryPool;
-        // zero adds an extra safety net for release on a pool that was never allocated.
-        if (confinedMemoryPool <= 0) {
-            throw cannotReleasePooledMemory();
-        }
-        zeroOutMemory(confinedMemoryPool, size);
-        // Mark the pool as released
-        this.confinedMemoryPool = confinedMemoryPool;
-    }
-
-    IllegalStateException cannotReleasePooledMemory() {
-        return new IllegalStateException("Cannot release pooled memory: " + confinedMemoryPool);
-    }
-
-    @SuppressWarnings("fallthrough")
-    @ForceInline
-    static void zeroOutMemory(long address, long size) {
-        // Clear the 8-byte buckets covering the used range. It is safe to clear
-        // beyond `size` as long as we stay inside the pool.
-        switch ((int) ((size + Long.BYTES - 1) >>> 3)) {
-            case 8: UnsafeHolder.U.putLong(address + 0x38, 0L);
-            case 7: UnsafeHolder.U.putLong(address + 0x30, 0L);
-            case 6: UnsafeHolder.U.putLong(address + 0x28, 0L);
-            case 5: UnsafeHolder.U.putLong(address + 0x20, 0L);
-            case 4: UnsafeHolder.U.putLong(address + 0x18, 0L);
-            case 3: UnsafeHolder.U.putLong(address + 0x10, 0L);
-            case 2: UnsafeHolder.U.putLong(address + 0x08, 0L);
-            case 1: UnsafeHolder.U.putLong(address, 0L);
-            case 0: break;
-            default: throw new AssertionError(size);
-        }
-
-    }
 
     /**
      * Search the stack for the most recent scoped-value bindings.
@@ -1676,11 +1587,9 @@ public class Thread implements Runnable {
                 TerminatingThreadLocal.threadTerminated();
             }
         } finally {
-            final long confinedMemoryPool = this.confinedMemoryPool;
             if (confinedMemoryPool != 0) {
-                UnsafeHolder.U.freeMemory(Math.abs(confinedMemoryPool));
+                ConfinedSegmentPool.releaseOnThreadExit(this);
             }
-            this.confinedMemoryPool = 0;
             clearReferences();
         }
     }

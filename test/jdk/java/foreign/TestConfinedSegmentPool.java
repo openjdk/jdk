@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.access java.base/jdk.internal.foreign
+ * @modules java.base/jdk.internal.foreign
  * @library /test/lib
  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
  *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
@@ -55,8 +55,7 @@
  *                    TestConfinedSegmentPool
  */
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.ConfinedSegmentPool;
 import jdk.test.lib.thread.VThreadRunner;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -83,16 +82,13 @@ import static org.junit.Assert.*;
 
 final class TestConfinedSegmentPool {
 
-    static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-
     static final Field THREAD_CONFINED_MEMORY_POOL;
-    static final long POOLED_MEMORY_SIZE = JLA.pooledMemorySize();
+    static final long POOLED_MEMORY_SIZE = ConfinedSegmentPool.pooledMemorySize();
 
     static {
         try {
             THREAD_CONFINED_MEMORY_POOL = Thread.class.getDeclaredField("confinedMemoryPool");
             THREAD_CONFINED_MEMORY_POOL.setAccessible(true);
-            long pooledMemorySize = JLA.pooledMemorySize();
         } catch (ReflectiveOperationException ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -577,7 +573,7 @@ final class TestConfinedSegmentPool {
 
     static int confinedSegmentPoolSlots() {
         try {
-            Class<?> poolClass = Class.forName("java.lang.ConfinedSegmentPool");
+            Class<?> poolClass = Class.forName("jdk.internal.foreign.ConfinedSegmentPool$VirtualThreadPool");
             Field slotsField = poolClass.getDeclaredField("SLOTS");
             slotsField.setAccessible(true);
             return slotsField.getInt(null);

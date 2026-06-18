@@ -25,8 +25,6 @@
 
 package jdk.internal.foreign;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
@@ -42,8 +40,7 @@ import java.lang.invoke.VarHandle;
  */
 final class ConfinedSession extends MemorySessionImpl {
 
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-    private static final long POOL_SIZE = JLA.pooledMemorySize();
+    private static final long POOL_SIZE = ConfinedSegmentPool.pooledMemorySize();
 
     private int asyncReleaseCount = 0;
     @Stable
@@ -100,7 +97,7 @@ final class ConfinedSession extends MemorySessionImpl {
             checkValidState();
             long pool = this.pool;
             if (pool == 0) {
-                pool = JLA.acquirePooledMemory(owner);
+                pool = ConfinedSegmentPool.acquire(owner);
                 if (pool > 0) {
                     this.pool = pool;
                 }
@@ -135,7 +132,7 @@ final class ConfinedSession extends MemorySessionImpl {
     @ForceInline
     private void cleanupPool() {
         if (pool > 0) {
-            JLA.releaseAndZeroOutPooledMemory(owner, poolSp);
+            ConfinedSegmentPool.release(owner, poolSp);
         }
     }
 

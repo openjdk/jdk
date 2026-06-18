@@ -661,18 +661,12 @@ public interface JavaLangAccess {
     void finishInit(StackTraceElement[] stackTrace);
 
     /**
-     * Acquires and returns a pointer to pooled native memory available to the given
-     * thread, or returns zero if pooled memory cannot be acquired.
+     * Returns the raw confined native-memory pool state for the given thread.
      */
-    long acquirePooledMemory(Thread thread);
+    long getConfinedMemoryPool(Thread thread);
 
     /**
-     * Zeros out and releases pooled native memory held by the given thread.
+     * Sets the raw confined native-memory pool state for the given thread.
      */
-    void releaseAndZeroOutPooledMemory(Thread thread, long size);
-
-    /**
-     * Returns the size of the native memory pool (per thread or per slot).
-     */
-    long pooledMemorySize();
+    void setConfinedMemoryPool(Thread thread, long value);
 }

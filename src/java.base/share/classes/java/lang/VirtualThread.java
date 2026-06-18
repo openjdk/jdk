@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import jdk.internal.event.VirtualThreadEndEvent;
 import jdk.internal.event.VirtualThreadStartEvent;
 import jdk.internal.event.VirtualThreadSubmitFailedEvent;
+import jdk.internal.foreign.ConfinedSegmentPool;
 import jdk.internal.misc.CarrierThread;
 import jdk.internal.misc.InnocuousThread;
 import jdk.internal.misc.Unsafe;
@@ -683,9 +684,7 @@ final class VirtualThread extends BaseVirtualThread {
         }
 
         if (confinedMemoryPool != 0) {
-            // Make sure we are releasing and zeroing out the pooled memory
-            // (if any).
-            releasePooledMemory(ConfinedSegmentPool.POOLED_MEMORY_SIZE);
+            ConfinedSegmentPool.releaseOnThreadExit(this);
         }
         // clear references to thread locals
         clearReferences();
@@ -1428,23 +1427,6 @@ final class VirtualThread extends BaseVirtualThread {
                 vthread = nextThread;
             }
         }
-    }
-
-    @Override
-    long acquirePooledMemory() {
-        return confinedMemoryPool == 0
-                ? confinedMemoryPool = ConfinedSegmentPool.acquirePooledMemory(this)
-                // Nested arenas do not use pooling.
-                : 0L;
-    }
-
-    @Override
-    void releasePooledMemory(long size) {
-        if (confinedMemoryPool <= 0) {
-            throw cannotReleasePooledMemory();
-        }
-        ConfinedSegmentPool.releasePooledMemory(this, confinedMemoryPool, size);
-        confinedMemoryPool = 0;
     }
 
     /**

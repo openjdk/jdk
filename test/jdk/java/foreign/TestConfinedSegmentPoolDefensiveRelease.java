@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.access
+ * @modules java.base/jdk.internal.foreign
  * @library /test/lib
  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
  *                    TestConfinedSegmentPoolDefensiveRelease
@@ -66,8 +66,7 @@
  *                    TestConfinedSegmentPoolDefensiveRelease
  */
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.ConfinedSegmentPool;
 import jdk.test.lib.thread.VThreadRunner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -83,7 +82,6 @@ import static org.junit.Assert.assertThrows;
 
 final class TestConfinedSegmentPoolDefensiveRelease {
 
-    static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     static final long SIZE = 42;
     static final long OUT_OF_SIZE = 1_024;
 
@@ -93,7 +91,7 @@ final class TestConfinedSegmentPoolDefensiveRelease {
         AtomicReference<Throwable> failure = new AtomicReference<>();
         Thread untouchedThread = threadBuilder.factory().newThread(() -> {
             try {
-                assertThrows(IllegalStateException.class, () -> JLA.releaseAndZeroOutPooledMemory(Thread.currentThread(), SIZE));
+                assertThrows(IllegalStateException.class, () -> ConfinedSegmentPool.release(Thread.currentThread(), SIZE));
             } catch (Throwable throwable) {
                 failure.set(throwable);
             }
@@ -117,7 +115,7 @@ final class TestConfinedSegmentPoolDefensiveRelease {
         try (Arena arena = Arena.ofConfined()){
             arena.allocate(1);
         }
-        assertThrows(IllegalStateException.class, () -> JLA.releaseAndZeroOutPooledMemory(Thread.currentThread(), SIZE));
+        assertThrows(IllegalStateException.class, () -> ConfinedSegmentPool.release(Thread.currentThread(), SIZE));
     }
 
     @Test
@@ -128,10 +126,10 @@ final class TestConfinedSegmentPoolDefensiveRelease {
     @Test
     void releaseIllegalSize() {
         // Only test with pooling enabled
-        if (JLA.pooledMemorySize() > 0) {
+        if (ConfinedSegmentPool.pooledMemorySize() > 0) {
             try (Arena arena = Arena.ofConfined()) {
                 arena.allocate(1);
-                assertThrows(AssertionError.class, () -> JLA.releaseAndZeroOutPooledMemory(Thread.currentThread(), OUT_OF_SIZE));
+                assertThrows(AssertionError.class, () -> ConfinedSegmentPool.release(Thread.currentThread(), OUT_OF_SIZE));
             }
         }
     }

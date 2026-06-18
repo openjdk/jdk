@@ -2354,20 +2354,13 @@ public final class System {
             }
 
             @Override
-            @ForceInline
-            public long acquirePooledMemory(Thread thread) {
-                return thread.acquirePooledMemory();
+            public long getConfinedMemoryPool(Thread thread) {
+                return thread.confinedMemoryPool;
             }
 
             @Override
-            @ForceInline
-            public void releaseAndZeroOutPooledMemory(Thread thread, long size) {
-                thread.releasePooledMemory(size);
-            }
-
-            @Override
-            public long pooledMemorySize() {
-                return Thread.pooledMemorySize();
+            public void setConfinedMemoryPool(Thread thread, long value) {
+                thread.confinedMemoryPool = value;
             }
 
         });
