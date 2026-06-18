@@ -140,7 +140,7 @@ void VM_G1PauseConcurrent::doit() {
   GCTraceTimePauseTimer       timer(_message, g1h->concurrent_mark()->gc_timer_cm());
   GCTraceTimeDriver           t(&logger, &timer);
 
-  G1ConcGCMonitoringScope monitoring_scope(g1h->monitoring_support());
+  G1ConcGCMonitoringScope monitoring_scope(g1h->monitoring_support(), affects_memory_pools());
   SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
   IsSTWGCActiveMark x;
 

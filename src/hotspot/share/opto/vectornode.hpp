@@ -182,6 +182,7 @@ class VectorNode : public TypeNode {
   // Return true if every bit in this vector is 0.
   static bool is_all_zeros_vector(Node* n);
   static bool is_vector_bitwise_not_pattern(Node* n);
+  static bool is_vectormask_bitwise_not_pattern(Node* n);
   static Node* degenerate_vector_rotate(Node* n1, Node* n2, bool is_rotate_left, int vlen,
                                         BasicType bt, PhaseGVN* phase);
 
@@ -1074,6 +1075,7 @@ class XorVNode : public VectorNode {
   virtual int Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   Node* Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape);
+  Node* Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_reshape);
 };
 
 // Vector xor byte, short, int, long as a reduction
@@ -1799,6 +1801,24 @@ class VectorBlendNode : public VectorNode {
   Node* vec1() const { return in(1); }
   Node* vec2() const { return in(2); }
   Node* vec_mask() const { return in(3); }
+};
+
+// Vector bitwise blend (bit-select): (sel & vec_true) | (~sel & vec_false).
+class VectorBitwiseBlendNode : public VectorNode {
+ public:
+  VectorBitwiseBlendNode(Node* vec_false, Node* vec_true, Node* sel, const TypeVect* vt)
+    : VectorNode(vec_false, vec_true, sel, vt) {
+    assert(vec_false->bottom_type()->isa_vect() != nullptr &&
+           vec_true->bottom_type()->isa_vect() != nullptr &&
+           sel->bottom_type()->isa_vect() != nullptr,
+           "inputs must all be vectors");
+    uint vlen = vt->length();
+    assert(vec_false->bottom_type()->is_vect()->length() == vlen &&
+           vec_true->bottom_type()->is_vect()->length() == vlen &&
+           sel->bottom_type()->is_vect()->length() == vlen,
+           "mismatched vector length");
+  }
+  virtual int Opcode() const;
 };
 
 // Rearrange lane elements from a source vector under the control of a shuffle

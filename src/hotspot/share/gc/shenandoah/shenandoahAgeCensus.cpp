@@ -34,7 +34,7 @@ ShenandoahAgeCensus::ShenandoahAgeCensus()
 }
 
 ShenandoahAgeCensus::ShenandoahAgeCensus(uint max_workers)
-  : _max_workers(max_workers)
+  : _max_workers(max_workers), _always_tenure(false)
 {
   if (ShenandoahGenerationalMinTenuringAge > ShenandoahGenerationalMaxTenuringAge) {
     vm_exit_during_initialization(

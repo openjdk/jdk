@@ -142,7 +142,6 @@ java/awt/Focus/ToFrontFocusTest/ToFrontFocus.java 7156130 linux-all
 java/awt/Focus/WrongKeyTypedConsumedTest/WrongKeyTypedConsumedTest.java 8169096 macosx-all
 java/awt/Focus/TestDisabledAutoTransfer.java 8159871 macosx-all,windows-all
 java/awt/Focus/TestDisabledAutoTransferSwing.java 6962362 windows-all
-java/awt/Focus/ActivateOnProperAppContextTest.java 8136516 macosx-all
 java/awt/Focus/FocusPolicyTest.java 7160904 linux-all
 java/awt/Graphics/SmallPrimitives.java 8047070 macosx-all,linux-all
 java/awt/EventQueue/6980209/bug6980209.java 8198615 macosx-all
@@ -470,8 +469,8 @@ java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-
 java/nio/channels/DatagramChannel/BasicMulticastTests.java      8144003 macosx-all
 java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java 8144003 macosx-all
 java/nio/channels/DatagramChannel/Promiscuous.java              8144003 macosx-all
-java/nio/channels/SocketChannel/CloseDuringConnect.java         8375658 macosx-26.0,macosx-26.1,macosx-26.2,macosx-26.3
-java/nio/channels/SocketChannel/OpenLeak.java                   8375658 macosx-26.0,macosx-26.1,macosx-26.2,macosx-26.3
+java/nio/channels/SocketChannel/CloseDuringConnect.java         8375658 macosx-26.0,macosx-26.1,macosx-26.2,macosx-26.3,macosx-26.4,macosx-26.5
+java/nio/channels/SocketChannel/OpenLeak.java                   8375658 macosx-26.0,macosx-26.1,macosx-26.2,macosx-26.3,macosx-26.4,macosx-26.5
 
 ############################################################################
 

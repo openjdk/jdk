@@ -1232,14 +1232,14 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   {
     WorkerThreads* workers = g1h->workers();
 
-    size_t const increment_length = g1h->collection_set()->groups_increment_length();
+    uint const num_groups_in_increment = g1h->collection_set()->num_groups_in_increment();
 
     uint const num_workers = initial_evacuation ? workers->active_workers() :
-                                                  MIN2(workers->active_workers(), (uint)increment_length);
+                                                  MIN2(workers->active_workers(), num_groups_in_increment);
 
     G1MergeHeapRootsTask cl(_scan_state, num_workers, initial_evacuation);
-    log_debug(gc, ergo)("Running %s using %u workers for %zu regions",
-                        cl.name(), num_workers, increment_length);
+    log_debug(gc, ergo)("Running %s using %u workers for %u groups",
+                        cl.name(), num_workers, num_groups_in_increment);
     workers->run_task(&cl, num_workers);
   }
 
