@@ -112,15 +112,13 @@ public class TestStringCodingUTF8 {
 
         //getBytes(csn);
         byte[] baStr = str.getBytes(cs.name());
-        if (!Arrays.equals(ba, baStr))
-            throw new RuntimeException("getBytes(csn) failed for charset " + cs
-                    + ", character array length=" + ca.length + ", offset=" + off + ", len=" + len);
+        failIfMismatch(ba, baStr, "getBytes(csn) failed for charset " + cs
+                + ", character array length=" + ca.length + ", offset=" + off + ", len=" + len);
 
         //getBytes(cs);
         baStr = str.getBytes(cs);
-        if (!Arrays.equals(ba, baStr))
-            throw new RuntimeException("getBytes(cs) failed for charset " + cs
-                    + ", character array length=" + ca.length + ", offset=" + off + ", len=" + len);
+        failIfMismatch(ba, baStr, "getBytes(cs) failed for charset " + cs
+                + ", character array length=" + ca.length + ", offset=" + off + ", len=" + len);
 
         //new String(csn);
         if (!new String(ba, cs.name()).equals(new String(decode(cs, ba, 0, ba.length))))
@@ -182,5 +180,42 @@ public class TestStringCodingUTF8 {
             throw new Error(x);
         }
         return Arrays.copyOf(ba, bb.position());
+    }
+
+    private static void failIfMismatch(final byte[] expected, final byte[] actual,
+                                       final String failureMsg) {
+        final int firstMismatchIndex = Arrays.mismatch(expected, actual);
+        if (firstMismatchIndex == -1) {
+            // no mismatch
+            return;
+        }
+        System.err.println("Arrays mismatch starts at index: " + firstMismatchIndex);
+        System.err.println("Printing few indexes before and after the mismatch:");
+        int printStartIdx = firstMismatchIndex - 20;
+        if (printStartIdx < 0) {
+            printStartIdx = 0;
+        }
+        for (int i = printStartIdx; i < firstMismatchIndex + 20; i++) {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("Index=").append(i).append(", expected=");
+            if (i > expected.length) {
+                // "expected" array isn't that big
+                sb.append("<no element>");
+            } else {
+                sb.append(expected[i]);
+            }
+            sb.append(", actual=");
+            if (i > actual.length) {
+                // "actual" array isn't that big
+                sb.append("<no element>");
+            } else {
+                sb.append(actual[i]);
+            }
+            if (i == firstMismatchIndex) {
+                sb.append(" <--- first mismatch");
+            }
+            System.err.println(sb.toString());
+        }
+        throw new RuntimeException(failureMsg);
     }
 }
