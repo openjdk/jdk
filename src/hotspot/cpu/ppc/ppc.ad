@@ -2138,6 +2138,9 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_CacheWBPreSync:
     case Op_CacheWBPostSync:
       return VM_Version::supports_data_cache_line_flush();
+
+    case Op_OnSpinWait:
+      return VM_Version::supports_on_spin_wait();
   }
 
   return true; // Per default match rules are supported.
@@ -6928,6 +6931,21 @@ instruct membar_CPUOrder() %{
   format %{ " -- \t// MEMBAR-CPUOrder - empty: PPC64 processors are self-consistent." %}
   size(0);
   ins_encode( /*empty*/ );
+  ins_pipe(pipe_class_default);
+%}
+
+instruct onspinwait() %{
+  match(OnSpinWait);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "OnSpinWait (smt_prio_low ; smt_prio_medium)" %}
+  size(8);
+  ins_encode %{
+    __ block_comment("spin_wait {");
+    __ smt_prio_low();
+    __ smt_prio_medium();
+    __ block_comment("}");
+  %}
   ins_pipe(pipe_class_default);
 %}
 
