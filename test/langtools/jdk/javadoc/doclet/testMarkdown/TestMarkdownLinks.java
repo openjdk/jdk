@@ -358,7 +358,7 @@ public class TestMarkdownLinks extends JavadocTester {
                     /// text
                     /// @see [Example](https://example.com)
                     public void simple() { }
-                
+
                     /// text
                     /// @see [Example with *markup*](https://example.com/markup)
                     public void markup() { }
@@ -391,11 +391,11 @@ public class TestMarkdownLinks extends JavadocTester {
                     /// text
                     /// @see [Example](https://example.com) trailing text
                     public void trailing() { }
-                
+
                     /// text
                     /// @see [One](https://a) [Two](https://b)
                     public void multiple() { }
-                
+
                     /// text
                     /// @see [String]
                     public void shorthand() { }
