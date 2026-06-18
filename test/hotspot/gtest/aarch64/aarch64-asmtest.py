@@ -1121,7 +1121,7 @@ class SVEVectorOp(Instruction):
         self._bitwiseop = False
         if name[0] == 'f':
             self._width = RegVariant(2, 3)
-        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic", "eor3"]):
+        elif not self._isPredicated and (name in ["and", "bic", "bsl", "eor", "eor3", "orr"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
         elif name == "revb":
@@ -1150,7 +1150,7 @@ class SVEVectorOp(Instruction):
                         width +
                         [str(self.reg[i]) for i in range(1, self.numRegs)]))
     def astr(self):
-        firstArg = 0 if self._name == "eor3" else 1
+        firstArg = 0 if self._name in ["bsl", "eor3"] else 1
         formatStr = "%s%s" + ''.join([", %s" for i in range(firstArg, self.numRegs)])
         if self._dnm == 'dn':
             formatStr += ", %s"
@@ -2258,6 +2258,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        # SVE2 instructions
                        ["bext", "ZZZ"],
                        ["bdep", "ZZZ"],
+                       ["bsl", "ZZZ"],
                        ["eor3", "ZZZ"],
                        ["sqadd", "ZPZ", "m", "dn"],
                        ["sqsub", "ZPZ", "m", "dn"],

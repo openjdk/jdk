@@ -1,6 +1,5 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +21,26 @@
  * questions.
  *
  */
-package jdk.jfr.event.gc.detailed;
 
-/**
- * @test id=default
- * @key randomness
- * @requires vm.hasJFR
- * @requires vm.gc.Shenandoah
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseShenandoahGC -Xmx128m -XX:ActiveProcessorCount=1 jdk.jfr.event.gc.detailed.TestStressAllocationGCEventsWithShenandoah
+/*
+ * @test
+ * @bug 8385651
+ * @summary Verify the HotCodeSampler and JFR do not attempt to suspend the same JavaThread and crash
+ * @requires vm.compiler2.enabled & vm.hasJFR
+ * @run main/othervm -XX:StartFlightRecording -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:+NMethodRelocation -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:HotCodeIntervalSeconds=0 -XX:HotCodeStartupDelaySeconds=0 -XX:HotCodeStablePercent=-1 -Xlog:hotcode=debug
+ *                   compiler.hotcode.HotCodeCollectorJFR
  */
 
- /**
-  * @test id=generational
-  * @key randomness
-  * @requires vm.hasJFR
-  * @requires vm.gc.Shenandoah
-  * @library /test/lib /test/jdk
-  * @run main/othervm -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xmx128m -XX:ActiveProcessorCount=1 jdk.jfr.event.gc.detailed.TestStressAllocationGCEventsWithShenandoah
-  */
-public class TestStressAllocationGCEventsWithShenandoah {
+package compiler.hotcode;
+
+public class HotCodeCollectorJFR {
+
+    private static final int FUNC_RUN_MILLIS = 10_000;
 
     public static void main(String[] args) throws Exception {
-        new StressAllocationGCEvents().run(args);
+        long start = System.currentTimeMillis();
+        while (System.currentTimeMillis() - start < FUNC_RUN_MILLIS) {}
     }
+
 }
