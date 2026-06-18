@@ -53,16 +53,35 @@ private:
   // region is retired (by try_atomic_allocate_in when it fills, or by release_alloc_region).
   Atomic<ShenandoahHeapRegion*> _alloc_regions[MAX_ALLOC_REGIONS];
 
+  // Bumped (under heap lock) every time the stripe slots are replenished. The slow path records
+  // the epoch before taking the lock; if it changed by the time the lock is acquired, another
+  // thread already replenished, so we retry the fast path instead of reserving more regions.
+  Atomic<uint32_t> _epoch_id;
+
   // Return this thread's start slot for the stripe scan, assigning a stable per-thread slot on
   // first use so different threads begin at different alloc regions.
   uint alloc_region_start_index();
 
   // Try the lock-free CAS fast path across all stripe slots, starting at start_index and wrapping.
-  // Returns the allocation, or nullptr if no slot could satisfy the request.
-  HeapWord* try_allocate_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, uint start_index);
+  // Returns the allocation, or nullptr if no slot could satisfy the request. On failure, sets
+  // ready_for_replenish to the number of slots that are empty or whose region is ready to retire
+  // (free below PLAB::min_size), so the caller can decide whether to eagerly replenish.
+  HeapWord* try_allocate_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region,
+                                          uint start_index, uint& ready_for_replenish);
 
-  // Install r into stripe slot at index as an active alloc region (heap lock held).
+  // Eagerly retire any empty/ready stripe slots and refill them with fresh regions from the free
+  // set, optionally satisfying req from the first reserved region. Heap lock held. Returns the
+  // number of slots refilled and bumps _epoch_id when > 0. *obj (if non-null) receives an
+  // allocation from a freshly reserved region when possible.
+  int replenish_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, HeapWord** obj);
+
+  // Prepare r (make regular + retire from free-set partition) and publish it into stripe slot index
+  // as an active alloc region (heap lock held). Used by the single-region slow path.
   void install_alloc_region(uint index, ShenandoahHeapRegion* r);
+
+  // Publish an already-prepared region (made regular + retired from its partition by
+  // reserve_alloc_regions) into empty stripe slot index. Does not touch free-set accounting.
+  void publish_alloc_region(uint index, ShenandoahHeapRegion* r);
 
   // Allocate within a single region; the caller must guarantee the region has enough free
   // capacity for the request. Handles LAB sizing, updates partition accounting via
@@ -72,7 +91,10 @@ private:
   HeapWord* allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& boundary_changed);
 
   // Try the lock-free CAS allocation in slot `index`'s region r; retires the slot if it fills.
-  HeapWord* try_atomic_allocate_in(uint index, ShenandoahHeapRegion* r, ShenandoahAllocRequest& req);
+  // Sets ready_for_replenish true when, after this attempt, the slot's region is at/below the
+  // PLAB::min_size retire threshold (whether or not this thread retired it).
+  HeapWord* try_atomic_allocate_in(uint index, ShenandoahHeapRegion* r, ShenandoahAllocRequest& req,
+                                   bool& ready_for_replenish);
 
   // Retire (deactivate + reconcile) the region in stripe slot `index`; heap lock held.
   void release_alloc_region(uint index);
