@@ -610,7 +610,7 @@ public class TestHasTruncationWrap {
     // After JDK-8386830, we now see that the backedge type is not constrained,
     // and so don't allow CountedLoop detection.
     // However, we could be smarter in the future, and canonicalize NEQ
-    // to LE, because this is a unity-stride loop where the "i != limit"
+    // to LT, because this is a unity-stride loop where the "i != limit"
     // can provably not be skipped. For now, we just have to accept that
     // we cannot optimize this, and people would have to use "i < limit",
     // see testIRShort5.
