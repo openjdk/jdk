@@ -253,10 +253,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, TracePcPatching, false,                                     \
           "Trace usage of frame::patch_pc")                                 \
                                                                             \
-  develop(bool, TraceRelocator, false,                                      \
-          "Trace the bytecode relocator")                                   \
-                                                                            \
-                                                                            \
   product(bool, SafepointALot, false, DIAGNOSTIC,                           \
           "Generate a lot of safepoints. This works with "                  \
           "GuaranteedSafepointInterval")                                    \
