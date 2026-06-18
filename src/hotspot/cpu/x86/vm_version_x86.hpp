@@ -362,8 +362,6 @@ protected:
   static int _model;
   static int _stepping;
 
-  static bool _has_intel_jcc_erratum;
-
   static address   _cpuinfo_segv_addr;     // address of instruction which causes SEGV
   static address   _cpuinfo_cont_addr;     // address of instruction after the one which causes SEGV
   static address   _cpuinfo_segv_addr_apx; // address of instruction which causes APX specific SEGV
@@ -970,7 +968,7 @@ public:
   // that causes unpredictable behaviour when jcc crosses 64 byte boundaries. Its microcode
   // mitigation causes regressions when jumps or fused conditional branches cross or end at
   // 32 byte boundaries.
-  static bool has_intel_jcc_erratum() { return _has_intel_jcc_erratum; }
+  static bool has_intel_jcc_erratum() { return IntelJccErratumMitigation; }
 
   // AMD features
   static bool supports_3dnow_prefetch()    { return _features.supports_feature(CPU_3DNOW_PREFETCH); }

@@ -46,7 +46,6 @@
 int VM_Version::_cpu;
 int VM_Version::_model;
 int VM_Version::_stepping;
-bool VM_Version::_has_intel_jcc_erratum;
 VM_Version::CpuidInfo VM_Version::_cpuid_info = { 0, };
 
 #define DECLARE_CPU_FEATURE_NAME(id, name) XSTR(name),
@@ -853,13 +852,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 // Common VM configuration is handled here.
 // Note that it can be overridden by vendors in set_vendor_specific_vm_config().
 void VM_Version::set_vendor_agnostic_vm_config() {
-  if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
-    _has_intel_jcc_erratum = compute_has_intel_jcc_erratum();
-    FLAG_SET_ERGO(IntelJccErratumMitigation, _has_intel_jcc_erratum);
-  } else {
-    _has_intel_jcc_erratum = IntelJccErratumMitigation;
-  }
-
   if (X86ICacheSync == -1) {
     // Auto-detect, choosing the best performant one that still flushes
     // the cache. We could switch to CPUID/SERIALIZE ("4"/"5") going forward.
@@ -1120,6 +1112,10 @@ void VM_Version::amd_config() {
 }
 
 void VM_Version::intel_config() {
+  if (FLAG_IS_DEFAULT(IntelJccErratumMitigation) && is_intel_family_core()) {
+    FLAG_SET_ERGO(IntelJccErratumMitigation, compute_has_intel_jcc_erratum());
+  }
+
   // Settings applicable to all intel architectures
   if (FLAG_IS_DEFAULT(UseStoreImmI16)) {
     FLAG_SET_DEFAULT(UseStoreImmI16, false); // don't use it on Intel cpus
