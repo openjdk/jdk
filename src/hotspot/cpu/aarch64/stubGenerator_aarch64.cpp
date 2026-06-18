@@ -7763,6 +7763,13 @@ class StubGenerator: public StubCodeGenerator {
       __ umulh(hi, a, b);
       __ mul(lo, a, b);
       // combine 40 + 12 bits into hi result
+      // on certain implementations of aarch64 (e.g. apple M1) replacing extr()
+      // with the following equivalent instruction sequence the performance
+      // improves slightly (despite it is two instructions longer and needs
+      // an additional register)
+      //      __ lsl(hi, hi, montMulP256Shift1);
+      //      __ lsr(tmp, lo, montMulP256Shift2);
+      //      __ orr(hi, hi, tmp);
       __ extr(hi, hi, lo, montMulP256Shift2);
       // mask off 52 bits of lo result
       __ andr(lo, lo, mask);
@@ -8601,7 +8608,7 @@ class StubGenerator: public StubCodeGenerator {
       Register a_val = r6;
       Register b_val = r7;
 
-      __ mov(ctr, length);
+      __ mov(ctr, length); // length (the number of limbs) is never 0
 
       Label default_loop;
       __ BIND(default_loop);
