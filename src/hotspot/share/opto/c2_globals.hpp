@@ -510,7 +510,7 @@
           "If node count exceeds limit stop inlining")                      \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool, DelayAfterInliningCutoff, true, DIAGNOSTIC,                 \
+  product(bool, DelayAfterInliningCutoff, false, DIAGNOSTIC,                \
           "If node count exceeds limit during parsing, attempt inlining "   \
           "later instead of giving up completely")                          \
                                                                             \
@@ -788,6 +788,11 @@
           "The maximum bytecode size of a trivial method to be inlined by " \
           "high tier compiler")                                             \
           range(0, max_jint)                                                \
+                                                                            \
+  product(bool, InlineColdMethods, false, DIAGNOSTIC,                       \
+          "Inline cold methods that would otherwise be rejected due to "    \
+          "cold profile counters. Useful for compiler testing to expose "   \
+          "more code to compilers.")                                        \
                                                                             \
   product(bool, IncrementalInline, true,                                    \
           "do post parse inlining")                                         \

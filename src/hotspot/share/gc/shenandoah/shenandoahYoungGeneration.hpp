@@ -67,7 +67,7 @@ public:
 
   // Returns true if the young generation is configured to enqueue old
   // oops for the old generation mark queues.
-  bool is_bootstrap_cycle() const {
+  bool is_old_marking_active() const {
     return _old_gen_task_queues != nullptr;
   }
 
@@ -77,7 +77,6 @@ public:
   // Clear references to old gen marking
   void clear_bootstrap_configuration();
 
-  size_t bytes_allocated_since_gc_start() const override;
   size_t used() const override;
   size_t used_regions() const override;
   size_t used_regions_size() const override;

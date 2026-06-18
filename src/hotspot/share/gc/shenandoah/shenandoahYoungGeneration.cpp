@@ -40,7 +40,7 @@ ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues) :
 void ShenandoahYoungGeneration::set_concurrent_mark_in_progress(bool in_progress) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->set_concurrent_young_mark_in_progress(in_progress);
-  if (is_bootstrap_cycle() && in_progress) {
+  if (is_old_marking_active() && in_progress) {
     // The start of concurrent mark for young is also the start of the concurrent mark for old
     assert(!heap->is_prepare_for_old_mark_in_progress(), "Filling old regions must be complete before bootstrap");
     heap->set_concurrent_old_mark_in_progress(true);
@@ -96,7 +96,7 @@ bool ShenandoahYoungGeneration::is_concurrent_mark_in_progress() {
 
 void ShenandoahYoungGeneration::reserve_task_queues(uint workers) {
   ShenandoahGeneration::reserve_task_queues(workers);
-  if (is_bootstrap_cycle()) {
+  if (is_old_marking_active()) {
     _old_gen_task_queues->reserve(workers);
   }
 }
@@ -115,11 +115,6 @@ ShenandoahHeuristics* ShenandoahYoungGeneration::initialize_heuristics(Shenandoa
 
 size_t ShenandoahYoungGeneration::used() const {
   return _free_set->young_used();
-}
-
-size_t ShenandoahYoungGeneration::bytes_allocated_since_gc_start() const {
-  assert(ShenandoahHeap::heap()->mode()->is_generational(), "Young implies generational");
-  return _free_set->get_bytes_allocated_since_gc_start();
 }
 
 size_t ShenandoahYoungGeneration::get_affiliated_region_count() const {

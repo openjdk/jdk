@@ -180,11 +180,11 @@ void G1ConcurrentRefineSweepTask::work(uint worker_id) {
   _scan_state->heap_region_iterate_from_worker_offset(&sweep_cl, worker_id, _max_workers);
 
   if (!sweep_cl._completed) {
-    _sweep_completed = false;
+    _sweep_completed.store_relaxed(false);
   }
 
   _stats->inc_sweep_duration(os::elapsed_counter() - start);
   _stats->add_atomic(&sweep_cl._per_worker_refine_data);
 }
 
-bool G1ConcurrentRefineSweepTask::sweep_completed() const { return _sweep_completed; }
+bool G1ConcurrentRefineSweepTask::sweep_completed() const { return _sweep_completed.load_relaxed(); }

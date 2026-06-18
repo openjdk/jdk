@@ -183,11 +183,11 @@ public:
   virtual void work(uint worker_id) {
     if (_concurrent) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::WeakRefProc, worker_id, true);
+      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::Work, worker_id, true);
       do_work();
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::WeakRefProc, worker_id, true);
+      ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::Work, worker_id, true);
       do_work();
     }
   }

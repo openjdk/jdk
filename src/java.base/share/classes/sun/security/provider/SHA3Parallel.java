@@ -36,7 +36,7 @@ import static sun.security.provider.ByteArrayAccess.l2bLittle;
 import static sun.security.provider.SHA3.keccak;
 
 /*
- * This class is for making it possible that NRPAR (= 2) (rather restricted)
+ * This class is for making it possible that NRPAR (= 4) (rather restricted)
  * SHAKE computations execute in parallel.
  * The restrictions are:
  *  1. The messages processed should be such that the absorb phase should
@@ -54,7 +54,7 @@ public class SHA3Parallel {
     private static final int DM = 5; // dimension of lanesArr
     private byte[][] buffers;
     private long[][] lanesArr;
-    private static final int NRPAR = 2;
+    private static final int NRPAR = 4;
 
     private SHA3Parallel(byte[][] buffers, int blockSize) throws InvalidAlgorithmParameterException {
         if ((buffers.length != NRPAR) || (buffers[0].length < blockSize)) {
@@ -81,11 +81,18 @@ public class SHA3Parallel {
     }
 
     public int squeezeBlock() {
-        int retVal = doubleKeccak(lanesArr[0], lanesArr[1]);
+        int retVal = quadKeccak(lanesArr[0], lanesArr[1], lanesArr[2], lanesArr[3]);
         for (int i = 0; i < NRPAR; i++) {
             l2bLittle(lanesArr[i], 0, buffers[i], 0, blockSize);
         }
         return retVal;
+    }
+
+    @IntrinsicCandidate
+    private static int quadKeccak(long[] lanes0, long[] lanes1, long[] lanes2, long[] lanes3) {
+        doubleKeccak(lanes0, lanes1);
+        doubleKeccak(lanes2, lanes3);
+        return 1;
     }
 
     @IntrinsicCandidate
