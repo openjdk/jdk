@@ -247,7 +247,7 @@ public:
   void record_success_concurrent(bool abbreviated) override;
 
   void record_degenerated(bool abbreviated, bool is_generational_global) override;
-  
+
   void record_success_full() override;
 
   const char* name() override;
