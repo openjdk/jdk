@@ -85,7 +85,7 @@ public sealed class ArenaImpl implements Arena {
         public void close() {
             session.justClose();
             if (pool > 0) {
-                ConfinedSegmentPool.release(session.owner, poolSp);
+                ConfinedSegmentPool.releaseAcquired(session.owner, poolSp);
             }
             session.resourceList.cleanup();
         }
