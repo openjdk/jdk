@@ -293,6 +293,16 @@ public class Thread implements Runnable {
         // This map is maintained by the ThreadLocal class
         ThreadLocal.ThreadLocalMap terminatingThreadLocals;
 
+        /**
+         * Zero -> no pool allocated yet
+         * Positive -> Pool released (available)
+         * Negative -> Pool acquired (not available)
+         *
+         * PTRDIFF_MAX (usually 2<sup>63</sup>-1) allows us to use the sign bit
+         * as a flag for acquire state without conflicting with malloc() return values.
+         */
+        long confinedMemoryPool;
+
         FieldHolder(ThreadGroup group,
                     Runnable task,
                     long stackSize,
@@ -369,15 +379,21 @@ public class Thread implements Runnable {
         currentThread().scopedValueBindings = bindings;
     }
 
-    /**
-     * Zero -> no pool allocated yet
-     * Positive -> Pool released (available)
-     * Negative -> Pool acquired (not available)
-     *
-     * PTRDIFF_MAX (usually 2<sup>63</sup>-1) allows us to use the sign bit
-     * as a flag for acquire state without conflicting with malloc() return values.
-     */
-    long confinedMemoryPool;
+    long confinedMemoryPool() {
+        final FieldHolder holder = this.holder;
+        return holder != null
+                ? holder.confinedMemoryPool
+                : 0;
+    }
+
+    void setConfinedMemoryPool(long value) {
+        final FieldHolder holder = this.holder;
+        if (holder != null) {
+            holder.confinedMemoryPool = value;
+        } else if (value != 0) {
+            throw new UnsupportedOperationException("Virtual threads do not support a confined memory pool field");
+        }
+    }
 
     /**
      * Search the stack for the most recent scoped-value bindings.
@@ -1587,7 +1603,7 @@ public class Thread implements Runnable {
                 TerminatingThreadLocal.threadTerminated();
             }
         } finally {
-            if (confinedMemoryPool != 0) {
+            if (isVirtual() || holder.confinedMemoryPool != 0) {
                 ConfinedSegmentPool.releaseOnThreadExit(this);
             }
             clearReferences();

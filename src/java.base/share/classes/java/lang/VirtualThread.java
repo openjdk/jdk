@@ -688,9 +688,7 @@ final class VirtualThread extends BaseVirtualThread {
             threadContainer().remove(this);
         }
 
-        if (confinedMemoryPool != 0) {
-            ConfinedSegmentPool.releaseOnThreadExit(this);
-        }
+        ConfinedSegmentPool.releaseOnThreadExit(this);
         // clear references to thread locals
         clearReferences();
     }

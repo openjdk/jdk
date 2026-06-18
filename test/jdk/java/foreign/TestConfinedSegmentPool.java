@@ -82,17 +82,7 @@ import static org.junit.Assert.*;
 
 final class TestConfinedSegmentPool {
 
-    static final Field THREAD_CONFINED_MEMORY_POOL;
     static final long POOLED_MEMORY_SIZE = ConfinedSegmentPool.pooledMemorySize();
-
-    static {
-        try {
-            THREAD_CONFINED_MEMORY_POOL = Thread.class.getDeclaredField("confinedMemoryPool");
-            THREAD_CONFINED_MEMORY_POOL.setAccessible(true);
-        } catch (ReflectiveOperationException ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
-    }
 
     static final boolean IS_POOL_ACCOMMODATES_TWO_LONGS = POOLED_MEMORY_SIZE >= Long.BYTES * 2;
 
@@ -523,11 +513,7 @@ final class TestConfinedSegmentPool {
     }
 
     static long confinedMemoryPool(Thread thread) {
-        try {
-            return (long) THREAD_CONFINED_MEMORY_POOL.get(thread);
-        } catch (ReflectiveOperationException ex) {
-            throw new AssertionError(ex);
-        }
+        return ConfinedSegmentPool.currentPool(thread);
     }
 
     static long confinedSessionSp(Arena arena) {

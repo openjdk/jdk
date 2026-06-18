@@ -661,12 +661,14 @@ public interface JavaLangAccess {
     void finishInit(StackTraceElement[] stackTrace);
 
     /**
-     * Returns the raw confined native-memory pool state for the given thread.
+     * Returns the raw confined native-memory pool field state for the given
+     * platform thread.
      */
     long getConfinedMemoryPool(Thread thread);
 
     /**
-     * Sets the raw confined native-memory pool state for the given thread.
+     * Sets the raw confined native-memory pool field state for the given
+     * platform thread.
      */
     void setConfinedMemoryPool(Thread thread, long value);
 }

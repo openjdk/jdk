@@ -30,6 +30,9 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
+
+import java.lang.reflect.Field;
 
 /**
  * Native memory pool used by confined sessions.
@@ -49,11 +52,32 @@ public final class ConfinedSegmentPool {
 
     private static final Unsafe U = Unsafe.getUnsafe();
 
+    private static final Object VIRTUAL_POOL_ACQUIRED_BASE;
+    private static final long VIRTUAL_POOL_ACQUIRED_OFFSET;
+
+    static {
+        try {
+            Field f = ConfinedSegmentPool.class.getDeclaredField("virtualPoolAcquired");
+            VIRTUAL_POOL_ACQUIRED_BASE = U.staticFieldBase(f);
+            VIRTUAL_POOL_ACQUIRED_OFFSET = U.staticFieldOffset(f);
+        } catch (ReflectiveOperationException e) {
+            throw new InternalError(e);
+        }
+    }
     // Providing "0" as a value for this property disables confined pooling
     private static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
 
     // The following values can be observed {-1 (disabled), 8, 16, 32 or 64} bytes
     static final long POOLED_MEMORY_SIZE = clampedPowerOfPropertyOr(POOLED_MEMORY_PROPERTY, 6);
+
+    @Stable
+    private static boolean virtualPoolAcquired;
+
+    @ForceInline
+    public static boolean isVirtualPoolAcquired() {
+        // Try plain mode first
+        return virtualPoolAcquired || U.getBooleanVolatile(VIRTUAL_POOL_ACQUIRED_BASE, VIRTUAL_POOL_ACQUIRED_OFFSET);
+    }
 
     private static final class JavaLangAccessHolder {
         private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
@@ -64,6 +88,19 @@ public final class ConfinedSegmentPool {
      */
     public static long pooledMemorySize() {
         return POOLED_MEMORY_SIZE;
+    }
+
+    /**
+     * Returns the pooled memory owned by the given thread, or zero if the
+     * thread does not own pooled memory.
+     */
+    public static long currentPool(Thread thread) {
+        if (POOLED_MEMORY_SIZE <= 0) {
+            return 0;
+        }
+        return thread.isVirtual()
+                ? (isVirtualPoolAcquired() ? VirtualThreadPool.currentPool(thread) : 0)
+                : JavaLangAccessHolder.JLA.getConfinedMemoryPool(thread);
     }
 
     /**
@@ -96,12 +133,14 @@ public final class ConfinedSegmentPool {
      * Releases any pool still associated with a terminating thread.
      */
     public static void releaseOnThreadExit(Thread thread) {
-        final JavaLangAccess jla = JavaLangAccessHolder.JLA;
-        final long pool = jla.getConfinedMemoryPool(thread);
-        if (pool != 0) {
-            if (thread.isVirtual()) {
-                releaseVirtual(thread, POOLED_MEMORY_SIZE);
-            } else {
+        if (thread.isVirtual()) {
+            if (isVirtualPoolAcquired()) {
+                VirtualThreadPool.releaseIfOwned(thread, POOLED_MEMORY_SIZE);
+            }
+        } else {
+            final JavaLangAccess jla = JavaLangAccessHolder.JLA;
+            final long pool = jla.getConfinedMemoryPool(thread);
+            if (pool != 0) {
                 U.freeMemory(Math.abs(pool));
                 jla.setConfinedMemoryPool(thread, 0);
             }
@@ -150,31 +189,22 @@ public final class ConfinedSegmentPool {
 
     @ForceInline
     private static long acquireVirtual(Thread thread) {
-        final JavaLangAccess jla = JavaLangAccessHolder.JLA;
-        if (jla.getConfinedMemoryPool(thread) != 0) {
-            return 0;
-        }
         final long address = VirtualThreadPool.acquire(thread);
         if (address != 0) {
-            jla.setConfinedMemoryPool(thread, address);
+            virtualPoolAcquired = true;
         }
         return address;
     }
 
     @ForceInline
     private static void releaseVirtual(Thread thread, long size) {
-        final JavaLangAccess jla = JavaLangAccessHolder.JLA;
-        final long address = jla.getConfinedMemoryPool(thread);
-        if (address <= 0) {
+        if (!isVirtualPoolAcquired() || !VirtualThreadPool.release(thread, size)) {
             throw cannotReleasePooledMemory(thread);
         }
-        VirtualThreadPool.release(thread, address, size);
-        jla.setConfinedMemoryPool(thread, 0);
     }
 
     private static IllegalStateException cannotReleasePooledMemory(Thread thread) {
-        return new IllegalStateException("Cannot release pooled memory: " +
-                JavaLangAccessHolder.JLA.getConfinedMemoryPool(thread));
+        return new IllegalStateException("Cannot release pooled memory: " + currentPool(thread));
     }
 
     @SuppressWarnings("fallthrough")
@@ -221,9 +251,9 @@ public final class ConfinedSegmentPool {
         // The distance between each slot. This is usually larger than 1 to
         // reduce contention.
         private static final long SLOT_OFFSET = slotOffset();
-        // Flag states:
-        private static final byte RELEASED = 0;
-        private static final byte ACQUIRED = 1;
+        // Slot owner states: RELEASED -> Free to acquire
+        //                    positive -> Acquired, thread id of owner
+        private static final long RELEASED = 0;
 
         // Sentinel value for no pooling.
         // Selecting -1 rather than zero allows constant folding.
@@ -232,23 +262,23 @@ public final class ConfinedSegmentPool {
         // Raw memory pointer to the pool. The pool is then sliced into separate
         // segments, each of which has a size of POOLED_MEMORY_SIZE.
         private static final long POOL;
-        private static final long FLAGS;
+        private static final long OWNERS;
 
         static {
             final long pool = allocatePool();
-            final long flags = allocateFlags();
-            if (pool == NO_POOLING || flags == NO_POOLING) {
+            final long owners = allocateOwners();
+            if (pool == NO_POOLING || owners == NO_POOLING) {
                 if (pool > 0) {
                     U.freeMemory(pool);
                 }
-                if (flags > 0) {
-                    U.freeMemory(flags);
+                if (owners > 0) {
+                    U.freeMemory(owners);
                 }
                 POOL = NO_POOLING;
-                FLAGS = NO_POOLING;
+                OWNERS = NO_POOLING;
             } else {
                 POOL = pool;
-                FLAGS = flags;
+                OWNERS = owners;
             }
         }
 
@@ -258,18 +288,50 @@ public final class ConfinedSegmentPool {
                 return 0;
             }
             final long slot = slotFor(thread);
-            return U.compareAndSetByte(null, flagAddress(slot), RELEASED, ACQUIRED)
-                    ? POOL + slot * POOLED_MEMORY_SIZE
+            return U.compareAndSetLong(null, ownerAddress(slot), RELEASED, thread.threadId())
+                    ? poolAddress(slot)
                     : 0;
         }
 
         @ForceInline
-        static void release(Thread thread, long address, long size) {
-            zeroOutMemory(address, size);
+        static boolean release(Thread thread, long size) {
             final long slot = slotFor(thread);
-            if (!U.compareAndSetByte(null, flagAddress(slot), ACQUIRED, RELEASED)) {
+            final long ownerAddress = ownerAddress(slot);
+            final long owner = thread.threadId();
+            if (U.getLongVolatile(null, ownerAddress) != owner) {
+                return false;
+            }
+            final long address = poolAddress(slot);
+            zeroOutMemory(address, size);
+            if (!U.compareAndSetLong(null, ownerAddress, owner, RELEASED)) {
                 throw new IllegalStateException("Cannot release pooled memory: " + thread);
             }
+            return true;
+        }
+
+        @ForceInline
+        static void releaseIfOwned(Thread thread, long size) {
+            final long slot = slotFor(thread);
+            final long ownerAddress = ownerAddress(slot);
+            final long owner = thread.threadId();
+            if (U.getLongVolatile(null, ownerAddress) == owner) {
+                final long address = poolAddress(slot);
+                zeroOutMemory(address, size);
+                if (!U.compareAndSetLong(null, ownerAddress, owner, RELEASED)) {
+                    throw new IllegalStateException("Cannot release pooled memory: " + thread);
+                }
+            }
+        }
+
+        @ForceInline
+        static long currentPool(Thread thread) {
+            if (POOL == NO_POOLING) {
+                return 0;
+            }
+            final long slot = slotFor(thread);
+            return U.getLongVolatile(null, ownerAddress(slot)) == thread.threadId()
+                    ? poolAddress(slot)
+                    : 0;
         }
 
         @ForceInline
@@ -278,22 +340,27 @@ public final class ConfinedSegmentPool {
         }
 
         @ForceInline
-        private static long flagAddress(long slot) {
-            return FLAGS + slot * SLOT_OFFSET;
+        private static long poolAddress(long slot) {
+            return POOL + slot * POOLED_MEMORY_SIZE;
+        }
+
+        @ForceInline
+        private static long ownerAddress(long slot) {
+            return OWNERS + slot * SLOT_OFFSET;
         }
 
         private static long slotOffset() {
             final int cacheLineSize = U.dataCacheLineFlushSize();
             return cacheLineSize > 0
-                    ? cacheLineSize
-                    : 1; // No cache line support
+                    ? Math.max(cacheLineSize, Long.BYTES)
+                    : Long.BYTES; // No cache line support
         }
 
         private static long allocatePool() {
             return mallocAndZero(POOLED_MEMORY_SIZE * SLOTS);
         }
 
-        private static long allocateFlags() {
+        private static long allocateOwners() {
             return mallocAndZero(SLOTS * SLOT_OFFSET);
         }
 
