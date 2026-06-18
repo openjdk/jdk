@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2026, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
