@@ -1344,6 +1344,14 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
     return nullptr;
   }
 
+  // Reassociation is beneficial if transformed node with replicate inputs can
+  // subsequently be collapsed by push_through_replicate into Replicate(ScalarOp(..)).
+  // That folding needs a scalar opcode for this operation/element type.
+  // Safety check to ensure we skip useless/redundant reassociations.
+  if (scalar_opcode(Opcode(), vect_type()->element_basic_type()) == 0) {
+    return nullptr;
+  }
+
   Node* in1 = in(1);
   Node* in2 = in(2);
   if (in2->Opcode() == Op_Replicate && in1->Opcode() == Opcode()) {

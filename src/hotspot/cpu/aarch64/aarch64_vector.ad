@@ -251,9 +251,9 @@ source %{
           return false;
         }
         break;
-      // At the time of writing this, the Vector API has no half-float (FP16) species.
-      // Consequently, AddReductionVHF and MulReductionVHF are only produced by the
-      // auto-vectorizer, which requires strictly ordered semantics for FP reductions.
+      // AddReductionVHF and MulReductionVHF are currently only produced by the
+      // auto-vectorizer (the Vector API does not yet intrinsify Float16 reductions),
+      // which requires strictly ordered semantics for FP reductions.
       //
       // There is no direct Neon instruction that performs strictly ordered floating
       // point add reduction. Hence, on Neon only machines, the add reduction operation
@@ -372,9 +372,9 @@ source %{
         opcode = Op_StoreVectorScatterMasked;
         break;
       // Currently, the masked versions of the following 8 Float16 operations are disabled.
-      // When the support for Float16 vector classes is added in VectorAPI and the masked
-      // Float16 IR can be generated, these masked operations will be enabled and relevant
-      // backend support added.
+      // The Vector API does not yet emit predicated Float16 IR. When such masked IR can be
+      // generated, these masked operations will be enabled and the relevant backend support
+      // added.
       case Op_AddVHF:
       case Op_SubVHF:
       case Op_MulVHF:
