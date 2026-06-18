@@ -299,6 +299,7 @@ public:
   do_var(bool,  UseSHA256Intrinsics) \
   do_var(bool,  UseSHA3Intrinsics) \
   do_var(bool,  UseSHA512Intrinsics) \
+  do_var(bool,  UseIntPolyIntrinsics) \
   do_var(bool,  UseVectorizedMismatchIntrinsic) \
   do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \
   do_fun(bool,  JavaAssertions_systemClassDefault,      JavaAssertions::systemClassDefault()) \
@@ -332,7 +333,6 @@ public:
   do_var(bool,  UseSIMDForMemoryOps)                    /* array copy stubs and nmethods */ \
   do_var(bool,  UseSIMDForSHA3Intrinsic)                /* SHA3 stubs */  \
   do_var(bool,  UseSimpleArrayEquals) \
-  do_var(bool,  UseIntPolyIntrinsics) \
   // END
 #else
 #define AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun)
@@ -343,7 +343,6 @@ public:
   do_var(int,   AVX3Threshold)                          /* array copy stubs and nmethods */ \
   do_var(bool,  EnableX86ECoreOpts)                     /* nmethods */ \
   do_var(bool,  UseLibmIntrinsic) \
-  do_var(bool,  UseIntPolyIntrinsics) \
   // END
 #else
 #define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun)
