@@ -57,7 +57,9 @@ bool VM_Version::_cache_dic_enabled;
 bool VM_Version::_cache_idc_enabled;
 bool VM_Version::_ic_ivau_trapped;
 
-const char* VM_Version::_features_names[MAX_CPU_FEATURES] = { nullptr };
+#define DECLARE_CPU_FEATURE_NAME(id, name) XSTR(name),
+const char* VM_Version::_features_names[] = { CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_NAME)};
+#undef DECLARE_CPU_FEATURE_NAME
 
 static SpinWait get_spin_wait_desc() {
   SpinWait spin_wait(OnSpinWaitInst, OnSpinWaitInstCount, OnSpinWaitDelay);
@@ -104,11 +106,6 @@ static bool has_neoverse_n1_errata_1542419() {
 }
 
 void VM_Version::initialize() {
-#define SET_CPU_FEATURE_NAME(id, name, bit) \
-  _features_names[bit] = XSTR(name);
-  CPU_FEATURE_FLAGS(SET_CPU_FEATURE_NAME)
-#undef SET_CPU_FEATURE_NAME
-
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
@@ -305,9 +302,9 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  CHECK_CPU_FEATURE(UseCRC32, CRC32, supports_crc32(), MULTI_INST_WARNING_MSG);
-  CHECK_CPU_FEATURE(UseLSE, LSE, supports_lse(), MULTI_INST_WARNING_MSG);
-  CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseCRC32, CRC32, supports_crc32(), "CRC32" MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseLSE, LSE, supports_lse(), "LSE" MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), "AES" MULTI_INST_WARNING_MSG);
 
   if (_cpu == CPU_ARM &&
       model_is_in({ CPU_MODEL_ARM_NEOVERSE_V1, CPU_MODEL_ARM_NEOVERSE_V2,

@@ -30,7 +30,10 @@ public class kill003a {
     static NullPointerException exception = new NullPointerException();
 
     public static void main(String args[]) {
-        synchronized (args) {
+        try {
+            synchronized (args) {
+            }
+        } catch (NullPointerException npe) {
         }
         System.out.println("done");
         System.exit(JdbTest.JCK_STATUS_BASE);

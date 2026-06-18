@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -59,7 +59,12 @@ inline VectorRegister as_VectorRegister() {
 
 inline bool is_concrete() {
   assert(is_reg(), "must be");
-  return is_even(value());
+  if (is_Register() || is_FloatRegister()) return is_even(value());
+  if (is_VectorRegister()) {
+    int base = value() - ConcreteRegisterImpl::max_fpr;
+    return (base & 3) == 0;
+  }
+  return true;
 }
 
 #endif // CPU_S390_VMREG_S390_HPP

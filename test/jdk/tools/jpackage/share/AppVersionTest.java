@@ -29,7 +29,9 @@ import static jdk.jpackage.internal.util.PListWriter.writePList;
 import static jdk.jpackage.internal.util.XmlUtils.createXml;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 import static jdk.jpackage.test.JPackageCommand.DEFAULT_VERSION;
+import static jdk.jpackage.test.JPackageCommand.cannedArgument;
 import static jdk.jpackage.test.JPackageCommand.normalizeDerivedVersion;
+import static jdk.jpackage.test.JPackageCommand.MessageCategory.TRACE;
 import static jdk.jpackage.test.JPackageCommand.RuntimeImageType.RUNTIME_TYPE_FAKE;
 
 import java.io.IOException;
@@ -46,6 +48,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.MacBundle;
@@ -279,19 +282,19 @@ public final class AppVersionTest {
     }
 
     enum Message implements CannedFormattedString.Spec {
-        VERSION_FROM_MODULE("message.module-version", "version", "module"),
-        VERSION_FROM_RELEASE_FILE("message.release-version", "version"),
-        VERSION_NORMALIZED("message.version-normalized", "version", "version"),
+        VERSION_FROM_MODULE("TRACE: Derive bundle version [{0}] from [{1}] module", "version", "module"),
+        VERSION_FROM_FILE("TRACE: Derive bundle version [{0}] from [{1}] file", "version", "file"),
+        VERSION_NORMALIZED("TRACE: Normalize derived bundle version from [{0}] to [{1}]", "version", "version"),
         ;
 
-        Message(String key, Object ... args) {
-            this.key = Objects.requireNonNull(key);
+        Message(String format, Object ... args) {
+            this.format = Objects.requireNonNull(format);
             this.args = List.of(args);
         }
 
         @Override
         public String format() {
-            return key;
+            return format;
         }
 
         @Override
@@ -299,7 +302,12 @@ public final class AppVersionTest {
             return args;
         }
 
-        private final String key;
+        @Override
+        public CannedFormattedString.Spec.Formatter formatter() {
+            return CannedFormattedString.Spec.Formatter.MESSAGE_FORMAT;
+        }
+
+        private final String format;
         private final List<Object> args;
     }
 
@@ -386,6 +394,23 @@ public final class AppVersionTest {
         }
     }
 
+    record InheritPListVersionSource(String version) implements VersionSource {
+
+        InheritPListVersionSource {
+            Objects.requireNonNull(version);
+        }
+
+        @Override
+        public VersionSource copyWithVersion(String v) {
+            return new InheritPListVersionSource(v);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("plist=[%s]", version);
+        }
+    }
+
     record Expected(String version, List<CannedFormattedString> messages) {
 
         Expected {
@@ -468,6 +493,7 @@ public final class AppVersionTest {
 
         void applyTo(JPackageCommand cmd) {
             Objects.requireNonNull(cmd);
+            cmd.setEnabledMessageCategories(TRACE);
             findVersionSource(CmdlineVersionSource.class).ifPresent(ver -> {
                 cmd.setArgumentValue("--app-version", ver.version());
             });
@@ -717,7 +743,16 @@ public final class AppVersionTest {
                         expectedBuilder.message(Message.VERSION_FROM_MODULE, ver.version(), ver.moduleName());
                     }
                     case RuntimeReleaseFileVersionSource ver -> {
-                        expectedBuilder.message(Message.VERSION_FROM_RELEASE_FILE, ver.version());
+                        expectedBuilder.message(Message.VERSION_FROM_FILE, ver.version(), cannedArgument(cmd -> {
+                            var runtimeImage = Path.of(cmd.getArgumentValue("--runtime-image"));
+                            return RuntimeReleaseFile.releaseFilePathInRuntime(
+                                    MacBundle.fromPath(runtimeImage).map(MacBundle::homeDir).orElse(runtimeImage));
+                        }, "RUNTIME_RELEASE_FILE"));
+                    }
+                    case InheritPListVersionSource ver -> {
+                        expectedBuilder.message(Message.VERSION_FROM_FILE, ver.version(), cannedArgument(cmd -> {
+                            return new MacBundle(Path.of(cmd.getArgumentValue("--runtime-image"))).infoPlistFile();
+                        }, "INFO_PLIST_FILE"));
                     }
                     default -> {
                         // NOP
@@ -725,7 +760,7 @@ public final class AppVersionTest {
                 }
 
                 if (!versionSource.version().equals(expectedVersion.version())) {
-                    expectedBuilder.message(Message.VERSION_NORMALIZED, expectedVersion.version(), versionSource.version());
+                    expectedBuilder.message(Message.VERSION_NORMALIZED, versionSource.version(), expectedVersion.version());
                 }
 
                 var expectedValue = expectedBuilder.create();
@@ -937,23 +972,6 @@ public final class AppVersionTest {
             return new StringBuilder().append(type.name().toLowerCase()).append("; ").append(spec).toString();
         }
 
-        private record InheritPListVersionSource(String version) implements VersionSource {
-
-            InheritPListVersionSource {
-                Objects.requireNonNull(version);
-            }
-
-            @Override
-            public VersionSource copyWithVersion(String v) {
-                return new InheritPListVersionSource(v);
-            }
-
-            @Override
-            public String toString() {
-                return String.format("plist=[%s]", version);
-            }
-        }
-
         private Path createRuntime(RuntimeType type, Optional<String> releaseFileVersion) throws IOException {
             Objects.requireNonNull(type);
             Objects.requireNonNull(releaseFileVersion);
@@ -1029,5 +1047,11 @@ public final class AppVersionTest {
                 consumer.accept(spec);
             }
         };
+    }
+
+    static {
+        if (Stream.of(Message.values()).map(Message::format).distinct().count() != Message.values().length) {
+            throw new IllegalStateException(String.format("Multiple items of %s have the same format string", Message.class));
+        }
     }
 }
