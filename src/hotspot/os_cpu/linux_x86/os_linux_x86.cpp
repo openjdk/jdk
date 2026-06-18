@@ -386,7 +386,7 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 // Bytes 512-575: XSAVE Header (64 bytes)
 // Bytes 576-831: YMMH state (upper 128 bits of YMM0-15)
 //                YMMH[i] at: buffer + 576 + (i * 16)
-// Bytes 832+:    Extended state components (e.g., AVX-512, APX, etc.). 
+// Bytes 832+:    Extended state components (e.g., AVX-512, APX, etc.).
 //                Component offsets and sizes are
 //                enumerated by CPUID.(EAX=0xD, ECX=n).
 // XSAVE constants - from Intel SDM Vol. 1, Chapter 13
