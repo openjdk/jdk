@@ -315,8 +315,6 @@ public abstract sealed class MemorySessionImpl
         }
     }
 
-    abstract NativeMemorySegmentImpl allocateLowLevel(long byteSize, long byteAlignment, boolean init);
-
     // helper functions to centralize error handling
 
     static IllegalStateException tooManyAcquires() {

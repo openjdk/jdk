@@ -540,7 +540,7 @@ final class TestConfinedSegmentPool {
                 Field poolSpField = Holder.poolSpField;
                 if (poolSpField == null) {
                     try {
-                        Holder.poolSpField = poolSpField = arena.scope().getClass().getDeclaredField("poolSp");
+                        Holder.poolSpField = poolSpField = arena.getClass().getDeclaredField("poolSp");
                         poolSpField.setAccessible(true);
                     }  catch (ReflectiveOperationException ex) {
                         throw new AssertionError(ex);
@@ -551,7 +551,7 @@ final class TestConfinedSegmentPool {
         }
 
         try {
-            return Holder.getOrSet(arena).getLong(arena.scope());
+            return Holder.getOrSet(arena).getLong(arena);
         } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);
         }

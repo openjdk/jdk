@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,12 +90,6 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
 
         STATE.setVolatile(this, CLOSED);
         SCOPED_MEMORY_ACCESS.closeScope(this, ALREADY_CLOSED);
-    }
-
-    @Override
-    @ForceInline
-    NativeMemorySegmentImpl allocateLowLevel(long byteSize, long byteAlignment, boolean init) {
-        return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, this, false, init);
     }
 
     private IllegalStateException sharedSessionAlreadyClosed() {

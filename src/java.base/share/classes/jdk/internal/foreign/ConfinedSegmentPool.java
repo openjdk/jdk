@@ -182,6 +182,7 @@ public final class ConfinedSegmentPool {
     private static void zeroOutMemory(long address, long size) {
         // Clear the 8-byte buckets covering the used range. It is safe to clear
         // beyond `size` as long as we stay inside the pool.
+        // Note: we are using fallthrough here.
         switch ((int) ((size + Long.BYTES - 1) >>> 3)) {
             case 8: U.putLong(address + 0x38, 0L);
             case 7: U.putLong(address + 0x30, 0L);

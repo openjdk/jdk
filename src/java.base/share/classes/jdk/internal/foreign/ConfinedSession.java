@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.internal.foreign;
 
 import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -40,12 +39,7 @@ import java.lang.invoke.VarHandle;
  */
 final class ConfinedSession extends MemorySessionImpl {
 
-    private static final long POOL_SIZE = ConfinedSegmentPool.pooledMemorySize();
-
     private int asyncReleaseCount = 0;
-    @Stable
-    private long pool;
-    private long poolSp;
 
     static final VarHandle ASYNC_RELEASE_COUNT= MhUtil.findVarHandle(MethodHandles.lookup(), "asyncReleaseCount", int.class);
 
@@ -83,56 +77,8 @@ final class ConfinedSession extends MemorySessionImpl {
         int acquire = acquireCount - asyncCount;
         if (acquire == 0) {
             state = CLOSED;
-            cleanupPool();
         } else {
             throw alreadyAcquired(acquire);
-        }
-    }
-
-    @Override
-    @ForceInline
-    NativeMemorySegmentImpl allocateLowLevel(long byteSize, long byteAlignment, boolean init) {
-        if (byteSize <= POOL_SIZE) {
-            Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-            checkValidState();
-            long pool = this.pool;
-            if (pool == 0) {
-                pool = ConfinedSegmentPool.acquire(owner);
-                if (pool > 0) {
-                    this.pool = pool;
-                }
-            }
-            final boolean zeroLength = byteSize == 0;
-            final long allocationByteSize = Math.max(1, byteSize);
-            NativeMemorySegmentImpl segment;
-            if (pool > 0 && (segment = trySlice(pool, allocationByteSize, byteAlignment)) != null) {
-                // Preserve the invariant that zero-sized segments have unique addresses
-                // for any given Arena
-                return zeroLength
-                        ? (NativeMemorySegmentImpl) segment.asSlice(0, 0)
-                        : segment;
-            }
-        }
-        // Fall back to normal allocation
-        return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, this, false, init);
-    }
-
-    @ForceInline
-    private NativeMemorySegmentImpl trySlice(long pool, long byteSize, long byteAlignment) {
-        final long start = Utils.alignUp(pool + poolSp, byteAlignment) - pool;
-        if (start + byteSize <= POOL_SIZE) {
-            // The backing memory is zeroed on initial allocation and on each pool release.
-            final NativeMemorySegmentImpl slice = SegmentFactories.makeNativeSegmentUnchecked(pool + start, byteSize, this);
-            poolSp = start + byteSize;
-            return slice;
-        }
-        return null;
-    }
-
-    @ForceInline
-    private void cleanupPool() {
-        if (pool > 0) {
-            ConfinedSegmentPool.release(owner, poolSp);
         }
     }
 
