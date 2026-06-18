@@ -240,7 +240,7 @@ public final class Utils {
         Utils.checkNonNegativeArgument(byteSize, "allocation size");
         checkAlign(byteAlignment);
     }
-    
+
     public static void checkAlign(long byteAlignment) {
         // alignment should be > 0, and power of two
         if (byteAlignment <= 0 ||

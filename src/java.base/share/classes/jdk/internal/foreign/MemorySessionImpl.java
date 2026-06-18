@@ -211,7 +211,6 @@ public abstract sealed class MemorySessionImpl
      * @throws IllegalStateException if this session is already closed or if this is
      * a confined session and this method is called outside the owner thread.
      */
-
     public void checkValidState() {
         try {
             checkValidStateRaw();
