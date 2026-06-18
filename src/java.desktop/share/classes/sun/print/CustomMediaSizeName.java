@@ -206,11 +206,7 @@ class CustomMediaSizeName extends MediaSizeName {
             if (value.getStandardMedia() == null) {
                 // add this new custom media size name to MediaSize array
                 if ((width > 0.0) && (length > 0.0)) {
-                    try {
-                        new MediaSize(width, length, Size2DSyntax.INCH, value);
-                    } catch (IllegalArgumentException e) {
-                        // Should not happen, keep for safety
-                    }
+                    new MediaSize(width, length, Size2DSyntax.INCH, value);
                 }
             }
         }
