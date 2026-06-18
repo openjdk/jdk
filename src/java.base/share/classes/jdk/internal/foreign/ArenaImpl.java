@@ -31,50 +31,68 @@ import jdk.internal.vm.annotation.Stable;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment.Scope;
 
-public final class ArenaImpl implements Arena {
+public sealed class ArenaImpl implements Arena {
 
-    private final MemorySessionImpl session;
-    private final boolean confined;
+    final MemorySessionImpl session;
     private final boolean shouldReserve;
-    @Stable
-    private long pool;
-    private long poolSp;
 
     ArenaImpl(MemorySessionImpl session) {
         this.session = session;
-        this.confined = session instanceof ConfinedSession;
         this.shouldReserve = session instanceof ImplicitSession;
     }
 
-    private static final class ConfinedPoolHolder {
-        private static final long POOL_SIZE = ConfinedSegmentPool.pooledMemorySize();
-    }
-
     @Override
-    public Scope scope() {
+    public final Scope scope() {
         return session;
     }
 
     @Override
     public void close() {
         session.close();
-        cleanup();
     }
 
     @ForceInline
-    public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
+    public final NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
         return allocateLowLevel(byteSize, byteAlignment, false);
     }
 
     @Override
     @ForceInline
-    public NativeMemorySegmentImpl allocate(long byteSize, long byteAlignment) {
+    public final NativeMemorySegmentImpl allocate(long byteSize, long byteAlignment) {
         return allocateLowLevel(byteSize, byteAlignment, true);
     }
 
     @ForceInline
-    private NativeMemorySegmentImpl allocateLowLevel(long byteSize, long byteAlignment, boolean init) {
-        if (confined) {
+    NativeMemorySegmentImpl allocateLowLevel(long byteSize, long byteAlignment, boolean init) {
+        return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, session, shouldReserve, init);
+    }
+
+    static final class OfConfined extends ArenaImpl {
+
+        private static final class ConfinedPoolHolder {
+            private static final long POOL_SIZE = ConfinedSegmentPool.pooledMemorySize();
+        }
+
+        @Stable
+        private long pool;
+        private long poolSp;
+
+        OfConfined(ConfinedSession session) {
+            super(session);
+        }
+
+        @Override
+        public void close() {
+            session.justClose();
+            if (pool > 0) {
+                ConfinedSegmentPool.release(session.owner, poolSp);
+            }
+            session.resourceList.cleanup();
+        }
+
+        @Override
+        @ForceInline
+        NativeMemorySegmentImpl allocateLowLevel(long byteSize, long byteAlignment, boolean init) {
             final long poolSize = ConfinedPoolHolder.POOL_SIZE;
             if (byteSize <= poolSize) {
                 Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
@@ -97,27 +115,27 @@ public final class ArenaImpl implements Arena {
                             : segment;
                 }
             }
+            return super.allocateLowLevel(byteSize, byteAlignment, init);
         }
-        // Fall back to normal allocation
-        return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, session, shouldReserve, init);
+
+        @ForceInline
+        private NativeMemorySegmentImpl trySlice(long pool, long byteSize, long byteAlignment, long poolSize) {
+            final long start = Utils.alignUp(pool + poolSp, byteAlignment) - pool;
+            if (start + byteSize <= poolSize) {
+                // The backing memory is zeroed on initial allocation and on each pool release.
+                final NativeMemorySegmentImpl slice = SegmentFactories.makeNativeSegmentUnchecked(pool + start, byteSize, session);
+                poolSp = start + byteSize;
+                return slice;
+            }
+            return null;
+        }
+
     }
 
-    @ForceInline
-    private NativeMemorySegmentImpl trySlice(long pool, long byteSize, long byteAlignment, long poolSize) {
-        final long start = Utils.alignUp(pool + poolSp, byteAlignment) - pool;
-        if (start + byteSize <= poolSize) {
-            // The backing memory is zeroed on initial allocation and on each pool release.
-            final NativeMemorySegmentImpl slice = SegmentFactories.makeNativeSegmentUnchecked(pool + start, byteSize, session);
-            poolSp = start + byteSize;
-            return slice;
-        }
-        return null;
+    static ArenaImpl of(MemorySessionImpl session) {
+        return session instanceof ConfinedSession confinedSession
+                ? new OfConfined(confinedSession)
+                : new ArenaImpl(session);
     }
 
-    @ForceInline
-    void cleanup() {
-        if (pool > 0) {
-            ConfinedSegmentPool.release(session.owner, poolSp);
-        }
-    }
 }
