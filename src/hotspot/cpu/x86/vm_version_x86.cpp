@@ -1718,29 +1718,27 @@ void VM_Version::get_processor_features() {
     clear_feature(CPU_HT);
   }
 
-  if (is_intel()) { // Intel cpus specific settings
-    if (is_knights_family()) {
-      clear_feature(CPU_VZEROUPPER);
-      clear_feature(CPU_AVX512BW);
-      clear_feature(CPU_AVX512VL);
-      clear_feature(CPU_APX_F);
-      clear_feature(CPU_AVX512DQ);
-      clear_feature(CPU_AVX512_VNNI);
-      clear_feature(CPU_AVX512_VAES);
-      clear_feature(CPU_AVX512_VPOPCNTDQ);
-      clear_feature(CPU_AVX512_VPCLMULQDQ);
-      clear_feature(CPU_AVX512_VBMI);
-      clear_feature(CPU_AVX512_VBMI2);
-      clear_feature(CPU_CLWB);
-      clear_feature(CPU_FLUSHOPT);
-      clear_feature(CPU_GFNI);
-      clear_feature(CPU_AVX512_BITALG);
-      clear_feature(CPU_AVX512_IFMA);
-      clear_feature(CPU_AVX_IFMA);
-      clear_feature(CPU_AVX512_FP16);
-      clear_feature(CPU_AVX10_1);
-      clear_feature(CPU_AVX10_2);
-    }
+  if (is_intel() && is_knights_family()) { // Intel cpus specific settings
+    clear_feature(CPU_VZEROUPPER);
+    clear_feature(CPU_AVX512BW);
+    clear_feature(CPU_AVX512VL);
+    clear_feature(CPU_APX_F);
+    clear_feature(CPU_AVX512DQ);
+    clear_feature(CPU_AVX512_VNNI);
+    clear_feature(CPU_AVX512_VAES);
+    clear_feature(CPU_AVX512_VPOPCNTDQ);
+    clear_feature(CPU_AVX512_VPCLMULQDQ);
+    clear_feature(CPU_AVX512_VBMI);
+    clear_feature(CPU_AVX512_VBMI2);
+    clear_feature(CPU_CLWB);
+    clear_feature(CPU_FLUSHOPT);
+    clear_feature(CPU_GFNI);
+    clear_feature(CPU_AVX512_BITALG);
+    clear_feature(CPU_AVX512_IFMA);
+    clear_feature(CPU_AVX_IFMA);
+    clear_feature(CPU_AVX512_FP16);
+    clear_feature(CPU_AVX10_1);
+    clear_feature(CPU_AVX10_2);
   }
 
   // Currently APX support is only enabled for targets supporting AVX512VL feature.
