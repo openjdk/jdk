@@ -48,6 +48,7 @@
 
 class ConcurrentGCTimer;
 class ObjectIterateScanRootClosure;
+class ShenandoahAllocator;
 class ShenandoahCollectorPolicy;
 class ShenandoahGCSession;
 class ShenandoahGCStateResetter;
@@ -533,6 +534,7 @@ private:
   ShenandoahCollectorPolicy* _shenandoah_policy;
   ShenandoahMode*            _gc_mode;
   ShenandoahFreeSet*         _free_set;
+  ShenandoahAllocator*       _allocator;
   ShenandoahVerifier*        _verifier;
 
   ShenandoahPhaseTimings*       _phase_timings;
@@ -557,6 +559,7 @@ public:
   ShenandoahCollectorPolicy* shenandoah_policy() const { return _shenandoah_policy; }
   ShenandoahMode*            mode()              const { return _gc_mode;           }
   ShenandoahFreeSet*         free_set()          const { return _free_set;          }
+  ShenandoahAllocator*       allocator()         const { return _allocator;         }
 
   ShenandoahPhaseTimings*    phase_timings()     const { return _phase_timings;     }
 
@@ -699,7 +702,7 @@ protected:
   inline HeapWord* allocate_from_gclab(Thread* thread, size_t size);
 
 private:
-  HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region);
+  HeapWord* allocate_memory_work(ShenandoahAllocRequest& request, bool& in_new_region);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
 
