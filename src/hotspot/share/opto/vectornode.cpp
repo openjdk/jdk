@@ -1414,7 +1414,7 @@ Node* VectorNode::push_through_replicate(PhaseGVN* phase) {
   // Replicate is later disconnected by other transformations.
   int sopc = scalar_opcode(Opcode(), bt);
   if (is_subword_type(bt) && (sopc == Op_AddI || sopc == Op_SubI || sopc == Op_MulI)) {
-    sop = Compile::narrow_value(bt, sop, nullptr, phase, true);
+    sop = Compile::narrow_value(bt, sop, Type::get_const_basic_type(bt), phase, true);
   }
 
   return new ReplicateNode(sop, vect_type());
