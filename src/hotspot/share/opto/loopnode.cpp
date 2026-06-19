@@ -3130,7 +3130,24 @@ Node* LoopLimitNode::Identity(PhaseGVN* phase) {
 }
 
 // Match increment with optional truncation:
-// CHAR: (i+1)&0x7fff, BYTE: ((i+1)<<8)>>8, or SHORT: ((i+1)<<16)>>16
+// BYTE:
+//   signed 8-bit truncation
+//   ((i+1) << 24) >> 24
+// SHORT:
+//   signed 16-bit truncation
+//   ((i+1) << 16) >> 16
+// CHAR:
+//   unsigned 16-bit truncation
+//   (char)(i+1)
+//   ((i+1) & 0xffff)
+//
+// For historical reasons:
+//   unsigned 15-bit truncation
+//   ((i+1) & 0x7fff)
+// This pattern was previously wrongly categorized as
+// CHAR truncation, and we keep it to avoid performance
+// regressions.
+//
 void CountedLoopConverter::TruncatedIncrement::build(Node* expr) {
   _is_valid = false;
 
@@ -3146,32 +3163,41 @@ void CountedLoopConverter::TruncatedIncrement::build(Node* expr) {
   const TypeInteger* trunc_t = TypeInteger::bottom(_bt);
 
   if (_bt == T_INT) {
-    // Try to strip (n1 & M) or (n1 << N >> N) from n1.
     if (n1op == Op_AndI &&
-        n1->in(2)->is_Con() &&
-        n1->in(2)->bottom_type()->is_int()->get_con() == 0x7fff) {
-      // %%% This check should match any mask of 2**K-1.
-      t1 = n1;
-      n1 = t1->in(1);
-      n1op = n1->Opcode();
-      trunc_t = TypeInt::CHAR;
+        n1->in(2)->is_Con()) {
+      // Unsigned truncation.
+      // Pattern: ((i+1) & mask)
+      jint mask = n1->in(2)->bottom_type()->is_int()->get_con();
+      switch (mask) {
+        case 0x7fff: // Unsigned 15-bit truncation. For historical reasons.
+        case 0xffff: // Unsigned 16-bit truncation. Char cast.
+          t1 = n1;
+          n1 = t1->in(1);
+          n1op = n1->Opcode();
+          trunc_t = TypeInt::make_unsigned(0, mask, 0);
+          break;
+      }
     } else if (n1op == Op_RShiftI &&
                n1->in(1) != nullptr &&
                n1->in(1)->Opcode() == Op_LShiftI &&
                n1->in(2) == n1->in(1)->in(2) &&
                n1->in(2)->is_Con()) {
+      // Signed truncation.
+      // Pattern: ((i+1) << shift) >> shift
       jint shift = n1->in(2)->bottom_type()->is_int()->get_con();
-      // %%% This check should match any shift in [1..31].
-      if (shift == 16 || shift == 8) {
-        t1 = n1;
-        t2 = t1->in(1);
-        n1 = t2->in(1);
-        n1op = n1->Opcode();
-        if (shift == 16) {
-          trunc_t = TypeInt::SHORT;
-        } else if (shift == 8) {
-          trunc_t = TypeInt::BYTE;
-        }
+      switch (shift) {
+        case 16: // Signed 16-bit truncation. Short cast.
+        case 24: // Signed 8-bit truncation. Byte cast.
+          t1 = n1;
+          t2 = t1->in(1);
+          n1 = t2->in(1);
+          n1op = n1->Opcode();
+          // We remove "shift" bits, and a sign bit.
+          jint bits = 32 - shift - 1;
+          jint lo = - (1 << bits);
+          jint hi =   (1 << bits) - 1;
+          trunc_t = TypeInt::make(lo, hi, 0);
+          break;
       }
     }
   }
