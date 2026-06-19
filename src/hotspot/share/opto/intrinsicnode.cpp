@@ -230,16 +230,14 @@ Node* ExpandBitsNode::Identity(PhaseGVN* phase) {
   return compress_expand_identity(phase, this);
 }
 
+// Bit expansion is a reverse process of bit compression. It sequentially reads source bits
+// starting from LSB and places them at bit positions in result value where corresponding mask bits
+// are 1. Thus, bit expansion for non-negative mask value will always generate a +ve value, this is
+// because sign bit of result will never be set to 1 as corresponding mask bit is always 0.
 static const Type* expand_bits_value(const TypeInteger* mask_type, BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "unexpected BasicType %s", type2name(bt));
   jlong hi = bt == T_INT ? max_jint : max_jlong;
   jlong lo = bt == T_INT ? min_jint : min_jlong;
-
-  // Bit expansion is a reverse process, which sequentially reads source bits
-  // starting from LSB and places them at bit positions in result value where
-  // corresponding mask bits are 1. Thus, bit expansion for non-negative mask
-  // value will always generate a +ve value, this is because sign bit of result
-  // will never be set to 1 as corresponding mask bit is always 0.
 
   if (mask_type->is_con()) {
     // Case A) Constant mask
