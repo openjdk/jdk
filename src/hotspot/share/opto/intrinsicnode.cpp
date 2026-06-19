@@ -245,8 +245,8 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
   // value will always generate a +ve value, this is because sign bit of result
   // will never be set to 1 as corresponding mask bit is always 0.
 
-  // Case A) Constant mask
   if (mask_type->is_con()) {
+    // Case A) Constant mask
     jlong maskcon = mask_type->get_con_as_long(bt);
     if (maskcon >= 0L) {
       //   Case A.2.1 constant mask >= 0
@@ -279,10 +279,8 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
       // lo still retains MIN_INT/LONG.
       assert(lo == (bt == T_INT ? min_jint : min_jlong), "");
     }
-  }
-
-  // Case B) Non-constant mask.
-  if (!mask_type->is_con()) {
+  } else {
+    // Case B) Non-constant mask.
     jlong max_mask = mask_type->hi_as_long();
     jlong min_mask = mask_type->lo_as_long();
     // Since mask here a range and not a constant value, hence being
