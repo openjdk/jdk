@@ -5750,7 +5750,17 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     public final
     int hashCode() {
         // now that toArray is strongly typed, we can define this
+#if[FP16]
+        short[] a = toArray();
+        // Canonicalize NaN lane encodings so that all NaN representations,
+        // including signaling ones, contribute the same hash code.
+        for (int i = 0; i < a.length; i++) {
+            a[i] = Float16.float16ToShortBits(Float16.shortBitsToFloat16(a[i]));
+        }
+        return Objects.hash(species(), Arrays.hashCode(a));
+#else[FP16]
         return Objects.hash(species(), Arrays.hashCode(toArray()));
+#end[FP16]
     }
 
     // ================================================

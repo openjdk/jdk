@@ -100,10 +100,69 @@
             int hash = av.hashCode();
 
             $type$ subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
+#if[FP16]
+            // Float16Vector.hashCode canonicalizes NaN lane encodings, so the
+            // reference array must be canonicalized the same way.
+            for (int j = 0; j < subarr.length; j++) {
+                subarr[j] = float16ToShortBits(shortBitsToFloat16(subarr[j]));
+            }
+#end[FP16]
             int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
             Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
         }
     }
+
+#if[FP16]
+    @Test
+    static void hashCodeNaN$vectorteststype$SmokeTest() {
+        // Various non-canonical binary16 NaN encodings, including signaling NaNs
+        // (significand MSB clear) and NaNs with assorted payloads and signs.
+        short[] nanBits = {
+            (short) 0x7c01, (short) 0x7d55, (short) 0x7dff,
+            (short) 0x7e00, (short) 0x7fff,
+            (short) 0xfc01, (short) 0xfdaa, (short) 0xfe00, (short) 0xffff
+        };
+
+        $type$[] canon = new $type$[SPECIES.length()];
+        Arrays.fill(canon, float16ToShortBits(Float16.NaN));
+        int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(canon));
+
+        for (short bits : nanBits) {
+            Assert.assertTrue(Float16.isNaN(shortBitsToFloat16(bits)),
+                "0x" + Integer.toHexString(bits & 0xffff) + " is expected to be NaN");
+
+            $type$[] a = new $type$[SPECIES.length()];
+            Arrays.fill(a, bits);
+            $abstractvectortype$ av = $abstractvectortype$.fromArray(SPECIES, a, 0);
+            int hash = av.hashCode();
+            Assert.assertTrue(hash == expectedHash, "NaN encoding 0x" +
+                Integer.toHexString(bits & 0xffff) + " should hash to the canonical NaN hash = " +
+                expectedHash + ", but is = " + hash);
+        }
+    }
+
+    @Test
+    static void equalsNaN$vectorteststype$SmokeTest() {
+        // equals defers to VectorOperators.EQ (numeric ==), so any NaN lane is
+        // unequal regardless of its bit encoding, matching FloatVector/DoubleVector.
+        $type$[] sig = new $type$[SPECIES.length()];
+        $type$[] quiet = new $type$[SPECIES.length()];
+        Arrays.fill(sig, (short) 0x7c01);   // signaling NaN
+        Arrays.fill(quiet, (short) 0x7e00); // quiet NaN
+        $abstractvectortype$ sv = $abstractvectortype$.fromArray(SPECIES, sig, 0);
+        $abstractvectortype$ qv = $abstractvectortype$.fromArray(SPECIES, quiet, 0);
+
+        Assert.assertFalse(sv.equals(qv), "NaN vectors with different encodings must not be equal");
+        Assert.assertFalse(sv.equals(sv), "a vector with NaN lanes must not equal itself");
+
+        // Non-NaN vectors with identical lanes are equal.
+        $type$[] num = new $type$[SPECIES.length()];
+        Arrays.fill(num, float16ToRawShortBits(Float16.valueOf(1.0f)));
+        $abstractvectortype$ nv1 = $abstractvectortype$.fromArray(SPECIES, num, 0);
+        $abstractvectortype$ nv2 = $abstractvectortype$.fromArray(SPECIES, num, 0);
+        Assert.assertTrue(nv1.equals(nv2), "non-NaN vectors with identical lanes must be equal");
+    }
+#end[FP16]
 
 #if[byte]
     @Test(dataProvider = "$type$UnaryOpProvider")

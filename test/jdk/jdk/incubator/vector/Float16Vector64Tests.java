@@ -5423,9 +5423,64 @@ public class Float16Vector64Tests extends AbstractVectorTest {
             int hash = av.hashCode();
 
             short subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
+            // Float16Vector.hashCode canonicalizes NaN lane encodings, so the
+            // reference array must be canonicalized the same way.
+            for (int j = 0; j < subarr.length; j++) {
+                subarr[j] = float16ToShortBits(shortBitsToFloat16(subarr[j]));
+            }
             int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
             Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
         }
+    }
+
+    @Test
+    static void hashCodeNaNFloat16Vector64TestsSmokeTest() {
+        // Various non-canonical binary16 NaN encodings, including signaling NaNs
+        // (significand MSB clear) and NaNs with assorted payloads and signs.
+        short[] nanBits = {
+            (short) 0x7c01, (short) 0x7d55, (short) 0x7dff,
+            (short) 0x7e00, (short) 0x7fff,
+            (short) 0xfc01, (short) 0xfdaa, (short) 0xfe00, (short) 0xffff
+        };
+
+        short[] canon = new short[SPECIES.length()];
+        Arrays.fill(canon, float16ToShortBits(Float16.NaN));
+        int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(canon));
+
+        for (short bits : nanBits) {
+            Assert.assertTrue(Float16.isNaN(shortBitsToFloat16(bits)),
+                "0x" + Integer.toHexString(bits & 0xffff) + " is expected to be NaN");
+
+            short[] a = new short[SPECIES.length()];
+            Arrays.fill(a, bits);
+            Float16Vector av = Float16Vector.fromArray(SPECIES, a, 0);
+            int hash = av.hashCode();
+            Assert.assertTrue(hash == expectedHash, "NaN encoding 0x" +
+                Integer.toHexString(bits & 0xffff) + " should hash to the canonical NaN hash = " +
+                expectedHash + ", but is = " + hash);
+        }
+    }
+
+    @Test
+    static void equalsNaNFloat16Vector64TestsSmokeTest() {
+        // equals defers to VectorOperators.EQ (numeric ==), so any NaN lane is
+        // unequal regardless of its bit encoding, matching FloatVector/DoubleVector.
+        short[] sig = new short[SPECIES.length()];
+        short[] quiet = new short[SPECIES.length()];
+        Arrays.fill(sig, (short) 0x7c01);   // signaling NaN
+        Arrays.fill(quiet, (short) 0x7e00); // quiet NaN
+        Float16Vector sv = Float16Vector.fromArray(SPECIES, sig, 0);
+        Float16Vector qv = Float16Vector.fromArray(SPECIES, quiet, 0);
+
+        Assert.assertFalse(sv.equals(qv), "NaN vectors with different encodings must not be equal");
+        Assert.assertFalse(sv.equals(sv), "a vector with NaN lanes must not equal itself");
+
+        // Non-NaN vectors with identical lanes are equal.
+        short[] num = new short[SPECIES.length()];
+        Arrays.fill(num, float16ToRawShortBits(Float16.valueOf(1.0f)));
+        Float16Vector nv1 = Float16Vector.fromArray(SPECIES, num, 0);
+        Float16Vector nv2 = Float16Vector.fromArray(SPECIES, num, 0);
+        Assert.assertTrue(nv1.equals(nv2), "non-NaN vectors with identical lanes must be equal");
     }
 
 

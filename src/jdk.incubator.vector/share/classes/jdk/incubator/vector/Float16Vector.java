@@ -3735,7 +3735,13 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     public final
     int hashCode() {
         // now that toArray is strongly typed, we can define this
-        return Objects.hash(species(), Arrays.hashCode(toArray()));
+        short[] a = toArray();
+        // Canonicalize NaN lane encodings so that all NaN representations,
+        // including signaling ones, contribute the same hash code.
+        for (int i = 0; i < a.length; i++) {
+            a[i] = Float16.float16ToShortBits(Float16.shortBitsToFloat16(a[i]));
+        }
+        return Objects.hash(species(), Arrays.hashCode(a));
     }
 
     // ================================================
