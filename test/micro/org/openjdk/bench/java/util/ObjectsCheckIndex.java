@@ -31,9 +31,9 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 4, time = 2)
-@Measurement(iterations = 4, time = 2)
-@Fork(value = 3)
+@Warmup(iterations = 5, time = 3)
+@Measurement(iterations = 5, time = 3)
+@Fork(value = 5)
 public class ObjectsCheckIndex {
 
     @Param({"256", "1024", "4096"})
@@ -43,6 +43,24 @@ public class ObjectsCheckIndex {
     int from;
     int to;
     int subSize;
+
+    public static int unintrinsifiedCheckIndex(int index, int length) {
+        if (index < 0 || index >= length)
+            throw new IndexOutOfBoundsException("oob");
+        return index;
+    }
+
+    public static int unintrinsifiedCheckFromToIndex(int fromIndex, int toIndex, int length) {
+        if (fromIndex < 0 || fromIndex > toIndex || toIndex > length)
+            throw new IndexOutOfBoundsException("oob");
+        return fromIndex;
+    }
+
+    public static int unintrinsifiedCheckFromIndexSize(int fromIndex, int size, int length) {
+        if ((length | fromIndex | size) < 0 || size > length - fromIndex)
+            throw new IndexOutOfBoundsException("oob");
+        return fromIndex;
+    }
 
     @Setup
     public void setup() {
@@ -55,18 +73,19 @@ public class ObjectsCheckIndex {
         subSize = to - from;
     }
 
-    // No-check baseline: bare loop with no bounds validation before it. If RCE from the intrinsic works, the
-    // checkFromToIndex variants should match this speed.
+    // ==== sum_*(): one check outside the loop ====
+
+    // No-check baseline: bare loop with no bounds validation before it.
     @Benchmark
-    public void noCheck_sum(Blackhole bh) {
+    public void sum_noCheck(Blackhole bh) {
         for (int i = from; i < to; i++) {
             bh.consume(array[i]);
         }
     }
 
-    // ===== checkFromToIndex =====
+    // ---- checkFromToIndex ----
     @Benchmark
-    public void checkFromToIndex_sum(Blackhole bh) {
+    public void sum_checkFromToIndex(Blackhole bh) {
         Objects.checkFromToIndex(from, to, array.length);
         for (int i = from; i < to; i++) {
             bh.consume(array[i]);
@@ -74,19 +93,16 @@ public class ObjectsCheckIndex {
     }
 
     @Benchmark
-    public void manual_checkFromToIndex_sum(Blackhole bh) {
-        if (from < 0 || from > to || to > array.length) {
-            throw new IndexOutOfBoundsException();
-        }
+    public void sum_checkFromToIndex_unintrinsified(Blackhole bh) {
+        unintrinsifiedCheckFromToIndex(from, to, array.length);
         for (int i = from; i < to; i++) {
             bh.consume(array[i]);
         }
     }
 
-    // ===== checkFromIndexSize =====
-
+    // ---- checkFromIndexSize ----
     @Benchmark
-    public void checkFromIndexSize_sum(Blackhole bh) {
+    public void sum_checkFromIndexSize(Blackhole bh) {
         Objects.checkFromIndexSize(from, subSize, array.length);
         for (int i = from; i < from + subSize; i++) {
             bh.consume(array[i]);
@@ -94,31 +110,27 @@ public class ObjectsCheckIndex {
     }
 
     @Benchmark
-    public void manual_checkFromIndexSize_sum(Blackhole bh) {
-        if (from < 0 || subSize < 0 || from + subSize > array.length) {
-            throw new IndexOutOfBoundsException();
-        }
+    public void sum_checkFromIndexSize_unintrinsified(Blackhole bh) {
+        unintrinsifiedCheckFromIndexSize(from, subSize, array.length);
         for (int i = from; i < from + subSize; i++) {
             bh.consume(array[i]);
         }
     }
 
-    // ===== Per-iteration checks =====
+    // ===== perIteration_*(): check on every iteration inside a loop =====
 
-    public static int checkFromIndexSize(int fromIndex, int size, int length) {
-        if ((length | fromIndex | size) < 0 || size > length - fromIndex)
-            throw new IndexOutOfBoundsException();
-        return fromIndex;
-    }
-
-    public static int checkFromToIndex(int fromIndex, int toIndex, int length) {
-        if (fromIndex < 0 || fromIndex > toIndex || toIndex > length)
-            throw new IndexOutOfBoundsException();
-        return fromIndex;
-    }
-
+    // No-check baseline
     @Benchmark
-    public void checkIndex_loop(Blackhole bh) {
+    public void perIteration_noCheck(Blackhole bh) {
+        int len = array.length;
+        for (int i = from; i < to; i++) {
+            bh.consume(array[i]);
+        }
+    }
+
+    // ---- checkIndex ----
+    @Benchmark
+    public void perIteration_checkIndex(Blackhole bh) {
         int len = array.length;
         for (int i = from; i < to; i++) {
             Objects.checkIndex(i, len);
@@ -127,7 +139,17 @@ public class ObjectsCheckIndex {
     }
 
     @Benchmark
-    public void checkFromToIndex_perIteration(Blackhole bh) {
+    public void perIteration_checkIndex_unintrinsified(Blackhole bh) {
+        int len = array.length;
+        for (int i = from; i < to; i++) {
+            unintrinsifiedCheckIndex(i, len);
+            bh.consume(array[i]);
+        }
+    }
+
+    // ---- checkFromToIndex ----
+    @Benchmark
+    public void perIteration_checkFromToIndex(Blackhole bh) {
         int len = array.length;
         for (int i = from; i < to; i++) {
             Objects.checkFromToIndex(i, i + 1, len);
@@ -136,16 +158,17 @@ public class ObjectsCheckIndex {
     }
 
     @Benchmark
-    public void manual_checkFromToIndex_perIteration(Blackhole bh) {
+    public void perIteration_checkFromToIndex_unintrinsified(Blackhole bh) {
         int len = array.length;
         for (int i = from; i < to; i++) {
-            checkFromToIndex(i, i + 1, len);
+            unintrinsifiedCheckFromToIndex(i, i + 1, len);
             bh.consume(array[i]);
         }
     }
 
+    // ---- checkFromIndexSize ----
     @Benchmark
-    public void checkFromIndexSize_perIteration(Blackhole bh) {
+    public void perIteration_checkFromIndexSize(Blackhole bh) {
         int len = array.length;
         for (int i = from; i < to; i++) {
             Objects.checkFromIndexSize(i, 1, len);
@@ -154,10 +177,10 @@ public class ObjectsCheckIndex {
     }
 
     @Benchmark
-    public void manual_checkFromIndexSize_perIteration(Blackhole bh) {
+    public void perIteration_checkFromIndexSize_unintrinsified(Blackhole bh) {
         int len = array.length;
         for (int i = from; i < to; i++) {
-            checkFromIndexSize(i, 1, len);
+            unintrinsifiedCheckFromIndexSize(i, 1, len);
             bh.consume(array[i]);
         }
     }
@@ -171,10 +194,10 @@ public class ObjectsCheckIndex {
         dst = new int[size];
     }
 
+
+    // No-check baseline
     @Benchmark
-    public void checkFromToIndex_arrayCopy(Blackhole bh) {
-        Objects.checkFromToIndex(from, to, array.length);
-        Objects.checkFromToIndex(from, to, dst.length);
+    public void arrayCopy_noCheck(Blackhole bh) {
         for (int i = from; i < to; i++) {
             dst[i] = array[i];
         }
@@ -182,16 +205,42 @@ public class ObjectsCheckIndex {
     }
 
     @Benchmark
-    public void manual_arrayCopy(Blackhole bh) {
-        if (from < 0 || from > to || to > array.length) {
-            throw new IndexOutOfBoundsException();
-        }
-        if (from < 0 || from > to || to > dst.length) {
-            throw new IndexOutOfBoundsException();
-        }
+    public void arrayCopy_checkFromToIndex(Blackhole bh) {
+        Objects.checkFromToIndex(from, to, array.length);
+        Objects.checkFromToIndex(from, to, dst.length);
         for (int i = from; i < to; i++) {
             dst[i] = array[i];
         }
-        bh.consume(dst); // same
+        bh.consume(dst);
+    }
+
+    @Benchmark
+    public void arrayCopy_checkFromToIndex_unintrinsified(Blackhole bh) {
+        unintrinsifiedCheckFromToIndex(from, to, array.length);
+        unintrinsifiedCheckFromToIndex(from, to, dst.length);
+        for (int i = from; i < to; i++) {
+            dst[i] = array[i];
+        }
+        bh.consume(dst);
+    }
+
+    @Benchmark
+    public void arrayCopy_checkFromIndexSize(Blackhole bh) {
+        Objects.checkFromIndexSize(from, subSize, array.length);
+        Objects.checkFromIndexSize(from, subSize, dst.length);
+        for (int i = from; i < to; i++) {
+            dst[i] = array[i];
+        }
+        bh.consume(dst);
+    }
+
+    @Benchmark
+    public void arrayCopy_checkFromIndexSize_unintrinsified(Blackhole bh) {
+        unintrinsifiedCheckFromIndexSize(from, subSize, array.length);
+        unintrinsifiedCheckFromIndexSize(from, subSize, dst.length);
+        for (int i = from; i < to; i++) {
+            dst[i] = array[i];
+        }
+        bh.consume(dst);
     }
 }
