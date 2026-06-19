@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8386597 8385855 8386482 8386591
+ * @bug 8386597 8385855 8386482 8386591 8386830
  * @summary Fuzz patterns for CountedLoopConverter::has_truncation_wrap
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
@@ -56,6 +56,8 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * For more basic examples, see:
  * - TestHasTruncationWrap.java
  * - TestTruncationWrapEmptyType.java
+ * - TestTruncationWrapPhiTypeUnion.java
+ * - TestTruncationWrapBadCharWrap.java
  *
  * So far, this test does not have IR verification, only result verification.
  *
