@@ -207,6 +207,8 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     ShenandoahReferenceProcessor* rp = _generation->ref_processor();
     rp->abandon_partial_discovery();
 
+    heap->try_inject_pin();
+
     // e. Sync pinned region status from the CP marks
     heap->sync_pinned_region_status();
 

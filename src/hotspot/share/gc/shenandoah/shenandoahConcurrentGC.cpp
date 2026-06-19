@@ -412,6 +412,7 @@ void ShenandoahConcurrentGC::entry_final_verify() {
 
 void ShenandoahConcurrentGC::entry_reset() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  heap->release_injected_pins();
   heap->try_inject_alloc_failure();
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
@@ -779,6 +780,9 @@ void ShenandoahConcurrentGC::op_final_mark() {
 
     // Notify JVMTI that the tagmap table will need cleaning.
     JvmtiTagMap::set_needs_cleaning();
+
+    // Attempt to inject a pin before we synchronize pinned region states in prepare_regions_and_collection_set().
+    heap->try_inject_pin();
 
     // The collection set is chosen by prepare_regions_and_collection_set(). Additionally, certain parameters have been
     // established to govern the evacuation efforts that are about to begin.  Refer to comments on reserve members in

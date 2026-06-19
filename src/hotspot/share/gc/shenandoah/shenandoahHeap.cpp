@@ -591,7 +591,8 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _aux_bitmap_region_special(false),
   _liveness_cache(nullptr),
   _collection_set(nullptr),
-  _evac_tracker(new ShenandoahEvacuationTracker())
+  _evac_tracker(new ShenandoahEvacuationTracker()),
+  _injected_pin_count(0)
 {
   // Initialize GC mode early, many subsequent initialization procedures depend on it
   initialize_mode();
@@ -2605,6 +2606,7 @@ void ShenandoahHeap::update_heap_region_states(bool concurrent) {
                             ShenandoahPhaseTimings::final_update_refs_update_region_states :
                             ShenandoahPhaseTimings::degen_gc_final_update_refs_update_region_states);
 
+    try_inject_pin();
     final_update_refs_update_region_states();
 
     assert_pinned_region_status();
@@ -2764,6 +2766,37 @@ void ShenandoahHeap::try_inject_alloc_failure() {
 
 bool ShenandoahHeap::should_inject_alloc_failure() {
   return _inject_alloc_failure.is_set() && _inject_alloc_failure.try_unset();
+}
+
+void ShenandoahHeap::try_inject_pin() {
+  if (ShenandoahPinRegionRate && !cancelled_gc() && ((uintx)(os::random() % 1000) < ShenandoahPinRegionRate) &&
+    _injected_pin_count < MAX_INJECTED_PINS) {
+    const size_t idx = os::random() % num_regions();
+    ShenandoahHeapRegion* r = get_region(idx);
+    if (r->is_regular() && r->has_live()) {
+      r->record_pin();
+      log_debug(gc)("Region %zu was injected with a pin.", idx);
+      _injected_pin_indices[_injected_pin_count] = idx;
+      _injected_pin_count++;
+    }
+  }
+}
+
+void ShenandoahHeap::release_injected_pins() {
+  if (_injected_pin_count == 0) {
+    return;
+  }
+
+  assert(_injected_pin_count <= MAX_INJECTED_PINS,
+         "Injected pin count: %u exceeds max: %u.", _injected_pin_count, MAX_INJECTED_PINS);
+  log_debug(gc)("Releasing %u injected pins.", _injected_pin_count);
+  for (uint i = 0; i < _injected_pin_count; i++) {
+    const size_t idx = _injected_pin_indices[i];
+    ShenandoahHeapRegion* r = get_region(idx);
+    assert(r->pin_count() > 0, "Region %zu in tracker must contain a pin.", idx);
+    r->record_unpin();
+  }
+  _injected_pin_count = 0;
 }
 
 void ShenandoahHeap::initialize_serviceability() {

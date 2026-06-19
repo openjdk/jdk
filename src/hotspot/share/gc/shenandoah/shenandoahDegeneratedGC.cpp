@@ -251,6 +251,7 @@ void ShenandoahDegenGC::op_degenerated() {
         // it, we fail degeneration right away and slide into Full GC to recover.
 
         {
+          heap->try_inject_pin();
           heap->sync_pinned_region_status();
           heap->collection_set()->clear_current_index();
           ShenandoahHeapRegion* r;
@@ -365,6 +366,9 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
 
   // STW cleanup weak roots and unload classes
   heap->parallel_cleaning(_generation, false /*full gc*/);
+
+  // Attempt to inject a pin before we synchronize pinned region states in prepare_regions_and_collection_set().
+  heap->try_inject_pin();
 
   // Prepare regions and collection set
   _generation->prepare_regions_and_collection_set(false /*concurrent*/);
