@@ -106,7 +106,7 @@ public class DKSTest {
      * domain keystore: keystores with wrong passwords
      */
     @Test
-    public void keystoresWithWrongPasswordTest() throws Exception {
+    public void wrongPasswordTest() throws Exception {
             final URI config = new URI(CONFIG + "#keystores");
             final KeyStore ks = KeyStore.getInstance("DKS");
 
@@ -122,7 +122,7 @@ public class DKSTest {
      * domain keystore: system
      */
     @Test
-    public void keystoreSystemTest() throws Exception {
+    public void SystemTest() throws Exception {
         final URI config = new URI(CONFIG + "#system");
         final KeyStore keystore = KeyStore.getInstance("DKS");
         // load entries
@@ -137,7 +137,7 @@ public class DKSTest {
      * domain keystore: system_plus
      */
     @Test
-    public void keystoreSystemPlusTest() throws Exception {
+    public void SystemPlusTest() throws Exception {
         final URI config = new URI(CONFIG + "#system_plus");
         final KeyStore keystore = KeyStore.getInstance("DKS");
         // load entries
@@ -212,7 +212,7 @@ public class DKSTest {
     }
 
     @Test
-    public void keystoreGetKeyTest() throws Exception {
+    public void getKeyTest() throws Exception {
 
         final SecretKey expected = generateSecretKey();
         final SecretKey expected2 = generateSecretKey();
@@ -232,7 +232,7 @@ public class DKSTest {
     }
 
     @Test
-    public void keystoreContainsAliasTest() throws Exception {
+    public void containsAliasTest() throws Exception {
 
         final KeyStore dks = generateKeystores(
                 generateSecretKey(),
@@ -245,7 +245,7 @@ public class DKSTest {
     }
 
     @Test
-    public void keystoreIsKeyEntryTest() throws Exception {
+    public void isKeyEntryTest() throws Exception {
 
         final KeyStore dks = generateKeystores(
                 generateSecretKey(),
@@ -258,7 +258,7 @@ public class DKSTest {
     }
 
     @Test
-    public void keystoreIsCertificateEntryTest() throws Exception {
+    public void isCertificateEntryTest() throws Exception {
 
         final KeyStore dks = generateKeyStoreFromPKCS12(generateSecretKey(),
                 loadCertificate(CERT));
@@ -269,7 +269,7 @@ public class DKSTest {
     }
 
     @Test
-    public void keystoreGetCertificateAliasEntryTest() throws Exception {
+    public void getCertificateAliasEntryTest() throws Exception {
 
         final Certificate certificate = loadCertificate(CERT);
         final KeyStore dks = generateKeyStoreFromPKCS12(generateSecretKey(),
@@ -279,7 +279,7 @@ public class DKSTest {
     }
 
     @Test
-    public void keystoreGetCertificateTest() throws Exception {
+    public void getCertificateTest() throws Exception {
 
         final Certificate certificate = loadCertificate(CERT);
         final KeyStore dks = generateKeyStoreFromPKCS12(generateSecretKey(),
