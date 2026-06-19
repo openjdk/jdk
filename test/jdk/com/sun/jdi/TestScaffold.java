@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ abstract public class TestScaffold extends TargetAdapter {
 
     // Set true by tests that need the debug agent to be run with includevirtualthreads=y.
     private boolean includeVThreads = false;
+    // Set true by tests that need the debuggee to be run with WhiteBoxAPI enabled.
+    private boolean enableWhiteBoxAPI = false;
 
     ThreadReference mainThread;
     /**
@@ -89,6 +91,10 @@ abstract public class TestScaffold extends TargetAdapter {
 
     void enableIncludeVirtualthreads() {
         includeVThreads = true;
+    }
+
+    void enableWhiteBoxAPI() {
+        enableWhiteBoxAPI = true;
     }
 
     boolean getExceptionCaught() {
@@ -564,6 +570,10 @@ abstract public class TestScaffold extends TargetAdapter {
             // the test specified @enablePreview.
             argInfo.targetVMArgs += "--enable-preview ";
         }
+        if (enableWhiteBoxAPI) {
+            argInfo.targetVMArgs += "-XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:+WhiteBoxAPI ";
+        }
+
         return argInfo;
     }
 
@@ -594,6 +604,7 @@ abstract public class TestScaffold extends TargetAdapter {
         ArgInfo argInfo = parseArgs(args);
 
         argInfo.targetVMArgs = VMConnection.getDebuggeeVMOptions() + " " + argInfo.targetVMArgs;
+        println("targetVMArgs: " + argInfo.targetVMArgs);
         connection = new VMConnection(argInfo.connectorSpec,
                                       argInfo.traceFlags,
                                       includeVThreads);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package com.sun.tools.jdi;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -124,9 +124,8 @@ class VirtualMachineImpl extends MirrorImpl
     // "objectsByID" protected by "synchronized(this)".
     private final Map<Long, SoftObjectReference> objectsByID = new HashMap<>();
     private final ReferenceQueue<ObjectReferenceImpl> referenceQueue = new ReferenceQueue<>();
-    private static final int DISPOSE_THRESHOLD = 50;
     private final List<SoftObjectReference> batchedDisposeRequests =
-            Collections.synchronizedList(new ArrayList<>(DISPOSE_THRESHOLD + 10));
+            Collections.synchronizedList(new ArrayList<>(10));
 
     // These are cached once for the life of the VM
     private JDWP.VirtualMachine.Version versionInfo;
@@ -1321,7 +1320,7 @@ class VirtualMachineImpl extends MirrorImpl
         JDWP.VirtualMachine.DisposeObjects.Request[] requests = null;
         synchronized(batchedDisposeRequests) {
             int size = batchedDisposeRequests.size();
-            if (size >= DISPOSE_THRESHOLD) {
+            if (size >= 1) {
                 if ((traceFlags & TRACE_OBJREFS) != 0) {
                     printTrace("Dispose threshold reached. Will dispose "
                                + size + " object references...");
@@ -1541,7 +1540,7 @@ class VirtualMachineImpl extends MirrorImpl
         return threadGroupForJDI;
     }
 
-   private static class SoftObjectReference extends SoftReference<ObjectReferenceImpl> {
+   private static class SoftObjectReference extends WeakReference<ObjectReferenceImpl> {
        int count;
        Long key;
 
