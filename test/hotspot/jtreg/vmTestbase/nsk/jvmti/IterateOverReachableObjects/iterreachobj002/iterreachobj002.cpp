@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,9 @@ static jlong timeout = 0;
 
 /* ============================================================================= */
 
-static volatile long objectCount = 0, objectCountMax = 0;
+static volatile long objectCount = 0;
+static volatile long objectCountMax = 0;
+static volatile long objectTagCount = 0;
 static int userData = 0, callbackAborted = 0;
 static int numberOfDeallocatedFromCallbacksDescriptors = 0;
 
@@ -73,7 +75,8 @@ heapRootCallbackForFirstObjectsIteration(jvmtiHeapRootKind root_kind,
     if (*tag_ptr != 0) return JVMTI_ITERATION_CONTINUE;
 
     /* Set tag */
-    *tag_ptr = (jlong)++objectCount;
+    *tag_ptr = (jlong)++objectTagCount;
+    objectCount++;
 
     if (!NSK_JVMTI_VERIFY(jvmti->Allocate((sizeof(ObjectDesc)), (unsigned char**)&objectDescBuf))) {
         nsk_jvmti_setFailStatus();
@@ -108,7 +111,7 @@ heapRootCallbackForSecondObjectsIteration(jvmtiHeapRootKind root_kind,
     ObjectDesc *objectDesc = objectDescArr[ind];
     jlong tag = (*objectDesc).tag;
 */
-    if (ind < 0 || ind > objectCountMax) {
+    if (ind < 0 || ind >= objectCountMax) {
         NSK_COMPLAIN1("heapRootCallbackForSecondObjectsIteration: invalid object tag value: %d\n", (long)*tag_ptr);
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
@@ -151,7 +154,8 @@ stackReferenceCallbackForFirstObjectsIteration(jvmtiHeapRootKind root_kind,
     if (*tag_ptr != 0) return JVMTI_ITERATION_CONTINUE;
 
     /* Set tag */
-    *tag_ptr = (jlong)++objectCount;
+    *tag_ptr = (jlong)++objectTagCount;
+    objectCount++;
 
     if (!NSK_JVMTI_VERIFY(jvmti->Allocate((sizeof(ObjectDesc)), (unsigned char**)&objectDescBuf))) {
         nsk_jvmti_setFailStatus();
@@ -190,7 +194,7 @@ stackReferenceCallbackForSecondObjectsIteration(jvmtiHeapRootKind root_kind,
     ObjectDesc *objectDesc = objectDescArr[ind];
     jlong tag = (*objectDesc).tag;
 */
-    if (ind < 0 || ind > objectCountMax) {
+    if (ind < 0 || ind >= objectCountMax) {
         NSK_COMPLAIN1("stackReferenceCallbackForSecondObjectsIteration: invalid object tag value: %d\n", (long)*tag_ptr);
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
@@ -231,7 +235,8 @@ objectReferenceCallbackForFirstObjectsIteration(jvmtiObjectReferenceKind referen
     if (*tag_ptr != 0) return JVMTI_ITERATION_CONTINUE;
 
     /* Set tag */
-    *tag_ptr = (jlong)++objectCount;
+    *tag_ptr = (jlong)++objectTagCount;
+    objectCount++;
 
     if (!NSK_JVMTI_VERIFY(jvmti->Allocate((sizeof(ObjectDesc)), (unsigned char**)&objectDescBuf))) {
         nsk_jvmti_setFailStatus();
@@ -268,7 +273,7 @@ objectReferenceCallbackForSecondObjectsIteration(jvmtiObjectReferenceKind refere
     ObjectDesc *objectDesc = objectDescArr[ind];
     jlong tag = (*objectDesc).tag;
 */
-    if (ind < 0 || ind > objectCountMax) {
+    if (ind < 0 || ind >= objectCountMax) {
         NSK_COMPLAIN1("objectReferenceCallbackForSecondObjectsIteration: invalid object tag value: %d\n", (long)*tag_ptr);
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
@@ -342,7 +347,19 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             if (callbackAborted) break;
 
-            objectCountMax = objectCount;
+            objectCountMax = objectTagCount;
+
+            /* This fragment is needed to stress test execution with extra GC's. */
+            for (int gcCount = 0; gcCount < 5; gcCount++) {
+                NSK_DISPLAY1("Calling ForceGarbageCollection #%d before saving objectCountMax\n", gcCount + 1);
+                if (!NSK_JVMTI_VERIFY(jvmti->ForceGarbageCollection())) {
+                    nsk_jvmti_setFailStatus();
+                    break;
+                }
+            }
+            if (nsk_jvmti_getStatus() != NSK_STATUS_PASSED) {
+                break;
+            }
 
             /* Deallocate last unnecessary descriptor */
             if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)objectDescList))) {
@@ -352,7 +369,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             }
 
             /* Allocate memory for array to save pointers to ObjectDescList elements */
-            if (!NSK_JVMTI_VERIFY(jvmti->Allocate((objectCount * sizeof(ObjectDesc*)),
+            if (!NSK_JVMTI_VERIFY(jvmti->Allocate((objectCountMax * sizeof(ObjectDesc*)),
                                                   (unsigned char**)&objectDescArr))) {
                 nsk_jvmti_setFailStatus();
                 break;
@@ -372,7 +389,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             objectDescList = objectDescListStart;
             {
                 /* Save all pointers to ObjectDescList elements in objectDescArr */
-                for (ind = 0; ind < objectCount; ind++) {
+                for (ind = 0; ind < objectCountMax; ind++) {
                     objectDescArr[ind] = objectDescList;
                     objectDescList = (*objectDescList).next;
                 }
