@@ -48,9 +48,3 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
   AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(get_gc_id()));
   request_gc(cause);
 }
-
-void ShenandoahController::notify_alloc_failure_waiters() {
-  MonitorLocker ml(&_alloc_failure_waiters_lock);
-  ml.notify_all();
-  log_debug(gc, thread)("Notified %zu threads waiting because of allocation failure", alloc_waiters_count());
-}

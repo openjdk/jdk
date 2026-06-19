@@ -90,7 +90,6 @@ void ShenandoahGenerationalControlThread::run_service() {
 
   // In case any threads are waiting for a cycle to happen, notify them so they observe the shutdown.
   notify_gc_waiters();
-  notify_alloc_failure_waiters();
   set_gc_mode(stopped);
 }
 
@@ -256,9 +255,20 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     _heap->print_after_gc();
   }
 
+  if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
+    // If an allocation failure occurred during this cycle, we'll have threads waiting
+    // to reclaim memory. We'll wake them up, and they'll retry their allocation. We need
+    // to clear the _requested_gc_cause here because we are NOT going to start a degenerated
+    // cycle. If our waiters cannot allocate, they will signal the control thread again
+    // to start another cycle.
+    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+    _heap->clear_cancellation(_requested_gc_cause);
+    _requested_gc_cause = GCCause::_no_gc;
+  }
+
   // If this cycle completed successfully, notify threads waiting for gc
   notify_gc_waiters();
-  notify_alloc_failure_waiters();
+
 
   _heap->free_set()->log_status_under_lock();
 
@@ -680,6 +690,7 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
   while (current_gc_id < required_gc_id && !should_terminate()) {
     if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
       _alloc_waiters_count.add_then_fetch(1UL);
+      log_debug(gc, thread)("Alloc waiters count now: %zu", alloc_waiters_count());
     }
 
     // Make requests to run a cycle until at least one is completed

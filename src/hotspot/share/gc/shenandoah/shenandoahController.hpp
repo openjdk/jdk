@@ -46,10 +46,6 @@ protected:
   const Mutex::Rank WAITERS_LOCK_RANK = Mutex::safepoint - 5;
   const Mutex::Rank CONTROL_LOCK_RANK = Mutex::nosafepoint - 2;
 
-  // While we could have a single lock for these, it may risk unblocking
-  // GC waiters when alloc failure GC cycle finishes. We want instead
-  // to make complete explicit cycle for demanding customers.
-  Monitor _alloc_failure_waiters_lock;
   Monitor _gc_waiters_lock;
 
   Atomic<size_t> _alloc_waiters_count;
@@ -60,7 +56,6 @@ protected:
 public:
   ShenandoahController():
     _gc_id(0),
-    _alloc_failure_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahAllocFailureWaiters_lock", true),
     _gc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahGCWaiters_lock", true),
     _alloc_waiters_count(0)
   { }
@@ -77,9 +72,6 @@ public:
   size_t alloc_waiters_count() const {
     return _alloc_waiters_count.load_relaxed();
   }
-
-  // Notify threads waiting for GC to complete.
-  void notify_alloc_failure_waiters();
 
   // Return the value of a monotonic increasing GC count, maintained by the control thread.
   size_t get_gc_id();

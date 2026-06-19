@@ -147,15 +147,8 @@ void ShenandoahControlThread::run_service() {
       }
       heap->print_after_gc();
 
-      // If this was the requested GC cycle, notify waiters about it
-      if (is_gc_requested) {
-        notify_gc_waiters();
-      }
-
-      // If this cycle completed without being cancelled, notify waiters about it
-      if (!heap->cancelled_gc()) {
-        notify_alloc_failure_waiters();
-      }
+      // Notify waiters that a cycle is completed. They'll decide for themselves to continue waiting or not.
+      notify_gc_waiters();
 
       // Report current free set state at the end of cycle, whether
       // it is a normal completion, or the abort.
