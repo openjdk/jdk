@@ -463,8 +463,8 @@
                                                                             \
   product(uintx, ShenandoahPinRegionRate, 0, DIAGNOSTIC,                    \
           "Testing: rate at which to artificially pin regions. Expressed "  \
-          "as N in 1000 chances for a region to be randomly pinned during " \
-          "a GC cycle.")                                                    \
+          "as N in 1000 chances for a region to be randomly pinned per "    \
+          "injection attempt.")                                             \
           range(0, 1000)                                                    \
                                                                             \
   product(uintx, ShenandoahCoalesceChance, 0, DIAGNOSTIC,                   \
