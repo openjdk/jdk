@@ -42,6 +42,7 @@
 #include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
@@ -67,6 +68,7 @@
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
+#include "gc/shenandoah/shenandoahPartitionAllocator.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
@@ -434,6 +436,7 @@ jint ShenandoahHeap::initialize() {
     }
 
     _free_set = new ShenandoahFreeSet(this, _num_regions);
+    _allocator = new ShenandoahAllocator(_free_set);
     initialize_generations();
 
     // We are initializing free set.  We ignore cset region tallies.
@@ -575,6 +578,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _shenandoah_policy(policy),
   _gc_mode(nullptr),
   _free_set(nullptr),
+  _allocator(nullptr),
   _verifier(nullptr),
   _phase_timings(nullptr),
   _monitoring_support(nullptr),
@@ -941,7 +945,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   if (req.is_mutator_alloc()) {
 
     if (!ShenandoahAllocFailureALot || !should_inject_alloc_failure()) {
-      result = allocate_memory_under_lock(req, in_new_region);
+      result = allocate_memory_work(req, in_new_region);
     }
 
     // Check that gc overhead is not exceeded.
@@ -973,7 +977,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       const size_t original_count = shenandoah_policy()->full_gc_count();
       while (result == nullptr && should_retry_allocation(original_count)) {
         control_thread()->handle_alloc_failure(req, true);
-        result = allocate_memory_under_lock(req, in_new_region);
+        result = allocate_memory_work(req, in_new_region);
       }
       if (result != nullptr) {
         // If our allocation request has been satisfied after it initially failed, we count this as good gc progress
@@ -989,7 +993,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     }
   } else {
     assert(req.is_gc_alloc(), "Can only accept GC allocs here");
-    result = allocate_memory_under_lock(req, in_new_region);
+    result = allocate_memory_work(req, in_new_region);
     // Do not call handle_alloc_failure() here, because we cannot block.
     // The allocation failure would be handled by the LRB slowpath with handle_alloc_failure_evac().
   }
@@ -1019,21 +1023,15 @@ inline bool ShenandoahHeap::should_retry_allocation(size_t original_full_gc_coun
       && !shenandoah_policy()->is_at_shutdown();
 }
 
-HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req, bool& in_new_region) {
-  // If we are dealing with mutator allocation, then we may need to block for safepoint.
-  // We cannot block for safepoint for GC allocations, because there is a high chance
-  // we are already running at safepoint or from stack watermark machinery, and we cannot
-  // block again.
-  ShenandoahHeapLocker locker(lock(), req.is_mutator_alloc());
-
-  // Make sure the old generation has room for either evacuations or promotions before trying to allocate.
-  if (req.is_old() && !old_generation()->can_allocate(req)) {
+HeapWord* ShenandoahHeap::allocate_memory_work(ShenandoahAllocRequest& req, bool& in_new_region) {
+  // Reserve the promotion budget up front so it is enforced atomically without the heap lock.
+  // If the reserve is exhausted, deny the promotion rather than overshoot it; the reservation
+  // is refunded below if the allocation itself fails.
+  if (req.is_promotion() && !old_generation()->try_expend_promoted(req.size() << LogHeapWordSize)) {
     return nullptr;
   }
 
-  // If TLAB request size is greater than available, allocate() will attempt to downsize request to fit within available
-  // memory.
-  HeapWord* result = _free_set->allocate(req, in_new_region);
+  HeapWord* result = _allocator->allocate(req, in_new_region);
 
   if (result != nullptr) {
     if (req.is_mutator_alloc()) {
@@ -1044,13 +1042,13 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
       if (req.is_lab_alloc()) {
         old_generation()->configure_plab_for_current_thread(req);
       } else if (req.is_promotion()) {
-        const size_t actual_size = req.actual_size() * HeapWordSize;
-        log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
-        old_generation()->expend_promoted(actual_size);
+        log_debug(gc, plab)("Expend shared promotion of %zu bytes", req.actual_size() * HeapWordSize);
       }
     }
+  } else if (req.is_promotion()) {
+    // Allocation failed, so refund the promotion budget reserved above.
+    old_generation()->unexpend_promoted(req.size() << LogHeapWordSize);
   }
-
   return result;
 }
 

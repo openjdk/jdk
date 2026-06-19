@@ -1371,16 +1371,10 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
       return JVMTI_ERROR_OPAQUE_FRAME;
     }
 
-    if (state->is_virtual() && (thread == nullptr || !thread->is_vthread_mounted())) { // unmounted virtual thread
-      assert(fr.is_heap_frame(), "sanity check");
-      fr = jvf->stack_chunk()->derelativize(fr);
-      jvf->stack_chunk()->force_slow_path();
-      fr.deoptimize(nullptr);
-    } else { // platform thread or mounted virtual thread
-      if (fr.is_heap_frame()) {
-        fr = jvf->stack_chunk()->derelativize(fr);
-        jvf->stack_chunk()->force_slow_path();
-      }
+    if (fr.is_heap_frame()) {
+      assert(state->is_virtual(), "invariant");
+      fr.deoptimize(nullptr, jvf->stack_chunk());
+    } else {
       Deoptimization::deoptimize(thread, fr);
     }
   }
@@ -2318,6 +2312,7 @@ SetForceEarlyReturn::doit(Thread *target) {
   // Set pending step flag for this early return.
   // It is cleared when next step event is posted.
   _state->set_pending_step_for_earlyret();
+  _state->invalidate_cur_stack_depth();
 }
 
 void
