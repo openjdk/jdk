@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/orderAccess.hpp"
 
 static const char* partition_name(ShenandoahFreeSetPartitionId t) {
   switch (t) {
@@ -410,11 +409,9 @@ ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc(size_t min_size_w
     if constexpr (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) {
       result->end_preemptible_coalesce_and_fill();
     }
-#ifdef ASSERT
-    ShenandoahMarkingContext* const ctx = _heap->marking_context();
-    assert(ctx->top_at_mark_start(result) == result->bottom(), "TAMS must equal bottom for new region");
-    assert(ctx->is_bitmap_range_within_region_clear(ctx->top_bitmap(result), result->end()), "Bitmap must be clear");
-#endif
+    assert(_heap->marking_context()->top_at_mark_start(result) == result->bottom(),
+           "Newly established allocation region (%zu) must start with TAMS equal to bottom", result->index());
+    shenandoah_assert_clear_above_top(result);
   }
   return result;
 }
