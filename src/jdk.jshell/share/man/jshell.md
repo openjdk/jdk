@@ -781,12 +781,12 @@ JShell.
     The sources for the JDK classes are looked up in the JDK's sources, if they
     can be found in the JDK installation. The sources may need to be added to
     the JDK installation separately. For the sources of classes, interfaces, methods,
-    and fields declared on the class or module path, the entry on the class path or
+    and fields declared on the class path or module path, the entry on the class path or
     module path which contains the declaration is searched for sources.
     In addition to that, if the entry is a .jar file, and a file exists with
     the same path and name but with .jar replaced with -sources.jar, this file
     is searched as well. As an example, for `<directory>/lib.jar`,
-    `<directory>/lib-source.jar` will be searched as well.
+    `<directory>/lib-sources.jar` will be searched as well.
 
     When entering a method call, use the Tab key after the method call's
     opening parenthesis to see the parameters for the method. If the method has
