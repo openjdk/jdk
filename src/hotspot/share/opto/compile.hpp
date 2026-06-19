@@ -755,6 +755,8 @@ public:
     _reachability_fences.remove_if_existing(n);
   }
 
+  DEBUG_ONLY(void verify_reachability_fences() const;)
+
   void add_parse_predicate(ParsePredicateNode* n) {
     assert(!_parse_predicates.contains(n), "duplicate entry in Parse Predicate list");
     _parse_predicates.append(n);

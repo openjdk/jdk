@@ -510,3 +510,31 @@ void Compile::expand_reachability_edges(Unique_Node_List& safepoints) {
     }
   }
 }
+
+#ifdef ASSERT
+void Compile::verify_reachability_fences() const {
+  for (int i = 0; i < reachability_fences_count(); i++) {
+    ReachabilityFenceNode* rf = reachability_fence(i);
+
+    // RF node must have a control input.
+    Node* ctrl = rf->in(TypeFunc::Control);
+    assert(ctrl != nullptr, "ReachabilityFence N%d has null control", rf->_idx);
+    assert(ctrl->is_CFG(), "ReachabilityFence N%d control N%d is not CFG", rf->_idx, ctrl->_idx);
+
+    // RF node must have a referent.
+    Node* referent = rf->referent();
+    assert(referent != nullptr, "ReachabilityFence N%d has null referent", rf->_idx);
+
+    // Referent must be an oop type.
+    const Type* referent_t = referent->bottom_type();
+    assert(referent_t->isa_oopptr() != nullptr ||
+           referent_t->isa_narrowoop() != nullptr ||
+           referent_t == TypePtr::NULL_PTR,
+           "ReachabilityFence N%d referent N%d has non-oop type: %s",
+           rf->_idx, referent->_idx, Type::str(referent_t));
+
+    // RF node must have at least one use (its control output) to be live.
+    assert(rf->outcnt() > 0, "ReachabilityFence N%d is dead (no uses)", rf->_idx);
+  }
+}
+#endif
