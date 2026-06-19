@@ -25,15 +25,21 @@
  * @test
  * @bug 8386656
  * @summary Verify no assertions when running with -XX:-UseCountTrailingZerosInstruction
- * @requires vm.cpu.features ~= ".*avx512.*"
- * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,jdk.internal.util.ArraysSupport::mismatch -XX:-UseCountTrailingZerosInstruction compiler.cpuflags.Test8386656
+ * @run main/othervm -Xbatch -XX:-UseCountTrailingZerosInstruction compiler.cpuflags.TestUseCountTrailingZerosInstruction
+ */
+
+/**
+ * @test
+ * @bug 8386656
+ * @summary Verify no assertions when running with -XX:+UseCountTrailingZerosInstruction
+ * @run main/othervm -Xbatch -XX:+UseCountTrailingZerosInstruction compiler.cpuflags.TestUseCountTrailingZerosInstruction
  */
 
 package compiler.cpuflags;
 
 import java.util.Arrays;
 
-public class Test8386656 {
+public class TestUseCountTrailingZerosInstruction {
     public static void main(String[] args) {
         byte[] a = new byte[32];
         byte[] b = new byte[32];
