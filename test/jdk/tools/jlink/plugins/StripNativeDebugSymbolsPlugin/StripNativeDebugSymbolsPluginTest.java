@@ -223,20 +223,41 @@ public class StripNativeDebugSymbolsPluginTest {
         StripNativeDebugSymbolsPlugin plugin = createAndConfigPlugin(config, expectedObjCopy);
         String binFile = "mybin";
         String path = "/fib/bin/" + binFile;
+        // The build system names sidecars as NOSUFFIX.debuginfo (no .so in the middle).
+        // Both NATIVE_LIB and NATIVE_CMD entries can have .debuginfo sidecars.
+        String nativeLibDebuginfo = "/fib/lib/libFib.debuginfo";
+        String nativeCmdDebuginfo = "/fib/bin/mybin.debuginfo";
+        String dizPath             = "/fib/lib/libFib.diz";
         ResourcePoolEntry debugEntry = createMockEntry(path,
                                                        ResourcePoolEntry.Type.NATIVE_CMD);
         ResourcePoolManager inResources = new ResourcePoolManager();
         ResourcePoolManager outResources = new ResourcePoolManager();
         inResources.add(debugEntry);
+        inResources.add(createMockEntry(nativeLibDebuginfo, ResourcePoolEntry.Type.NATIVE_LIB));
+        inResources.add(createMockEntry(nativeCmdDebuginfo, ResourcePoolEntry.Type.NATIVE_CMD));
+        inResources.add(createMockEntry(dizPath,            ResourcePoolEntry.Type.NATIVE_LIB));
         ResourcePool output = plugin.transform(
                                         inResources.resourcePool(),
                                         outResources.resourcePoolBuilder());
-        // expect entry to be present
+        // expect binary entry to be present
         if (output.findEntry(path).isPresent()) {
             System.out.println("DEBUG: File " + path + " present as exptected.");
         } else {
             throw new AssertionError("Test failed. Binary " + path +
                                      " not present after stripping!");
+        }
+        // pre-existing debug sidecar files must be dropped regardless of type
+        if (output.findEntry(nativeLibDebuginfo).isPresent()) {
+            throw new AssertionError("Expected pre-existing NATIVE_LIB .debuginfo to be dropped: "
+                                     + nativeLibDebuginfo);
+        }
+        if (output.findEntry(nativeCmdDebuginfo).isPresent()) {
+            throw new AssertionError("Expected pre-existing NATIVE_CMD .debuginfo to be dropped: "
+                                     + nativeCmdDebuginfo);
+        }
+        if (output.findEntry(dizPath).isPresent()) {
+            throw new AssertionError("Expected pre-existing .diz to be dropped: "
+                                     + dizPath);
         }
         verifyFakeObjCopyCalled(binFile);
     }
@@ -258,15 +279,18 @@ public class StripNativeDebugSymbolsPluginTest {
         StripNativeDebugSymbolsPlugin plugin = createAndConfigPlugin(config, expectedObjCopy);
         String sharedLib = "myLib.so";
         String path = "/fib/lib/" + sharedLib;
+        // Pre-existing sidecar from the runtime image (NOSUFFIX.debuginfo form).
+        String preExistingDebuginfo = "/fib/lib/myLib.debuginfo";
         ResourcePoolEntry debugEntry = createMockEntry(path,
                                                        ResourcePoolEntry.Type.NATIVE_LIB);
         ResourcePoolManager inResources = new ResourcePoolManager();
         ResourcePoolManager outResources = new ResourcePoolManager();
         inResources.add(debugEntry);
+        inResources.add(createMockEntry(preExistingDebuginfo, ResourcePoolEntry.Type.NATIVE_LIB));
         ResourcePool output = plugin.transform(
                                         inResources.resourcePool(),
                                         outResources.resourcePoolBuilder());
-        // expect entry + debug info entry to be present
+        // expect entry + newly created debug info entry to be present
         String debugPath = path + "." + debugExt;
         if (output.findEntry(path).isPresent() &&
             output.findEntry(debugPath).isPresent()) {
@@ -276,6 +300,11 @@ public class StripNativeDebugSymbolsPluginTest {
             throw new AssertionError("Test failed. Binary files " + path +
                                      "{,." + debugExt +"} not present after " +
                                      "stripping!");
+        }
+        // pre-existing sidecar must be preserved when keep-debuginfo-files is set
+        if (!output.findEntry(preExistingDebuginfo).isPresent()) {
+            throw new AssertionError("Expected pre-existing .debuginfo to be kept: "
+                                     + preExistingDebuginfo);
         }
         verifyFakeObjCopyCalledMultiple(sharedLib, debugExt);
     }

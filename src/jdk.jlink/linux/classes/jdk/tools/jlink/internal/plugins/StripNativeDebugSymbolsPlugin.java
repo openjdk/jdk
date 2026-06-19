@@ -104,9 +104,13 @@ public final class StripNativeDebugSymbolsPlugin extends AbstractPlugin {
                                                         stripBin);
         in.transformAndCopy((resource) -> {
             ResourcePoolEntry res = resource;
-            if ((resource.type() == ResourcePoolEntry.Type.NATIVE_LIB &&
-                 resource.path().endsWith(SHARED_LIBS_EXT)) ||
-                resource.type() == ResourcePoolEntry.Type.NATIVE_CMD) {
+            if (!includeDebugSymbols &&
+                (resource.path().endsWith(".debuginfo") ||
+                 resource.path().endsWith(".diz"))) {
+                res = null; // drop pre-existing debug sidecar (NATIVE_LIB or NATIVE_CMD)
+            } else if ((resource.type() == ResourcePoolEntry.Type.NATIVE_LIB &&
+                        resource.path().endsWith(SHARED_LIBS_EXT)) ||
+                       resource.type() == ResourcePoolEntry.Type.NATIVE_CMD) {
                 Optional<StrippedDebugInfoBinary> strippedBin = builder.build(resource);
                 if (strippedBin.isPresent()) {
                     StrippedDebugInfoBinary sb = strippedBin.get();
