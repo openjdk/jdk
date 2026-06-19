@@ -193,10 +193,17 @@ void ShenandoahOldGeneration::maybe_log_promotion_failure_stats(bool concurrent)
   }
 }
 
-size_t ShenandoahOldGeneration::expend_promoted(size_t increment) {
-  shenandoah_assert_heaplocked_or_safepoint();
-  assert(get_promoted_expended() + increment <= get_promoted_reserve(), "Do not expend more promotion than budgeted");
-  return _promoted_expended.add_then_fetch(increment);
+bool ShenandoahOldGeneration::try_expend_promoted(size_t increment) {
+  const size_t reserve = get_promoted_reserve();
+  size_t cur = _promoted_expended.load_relaxed();
+  while (cur + increment <= reserve) {
+    size_t prev = _promoted_expended.compare_exchange(cur, cur + increment);
+    if (prev == cur) {
+      return true;
+    }
+    cur = prev;
+  }
+  return false;
 }
 
 size_t ShenandoahOldGeneration::unexpend_promoted(size_t decrement) {
@@ -245,12 +252,11 @@ ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAlloc
 
   // The actual size of the allocation may be larger than the requested bytes (due to alignment on card boundaries).
   // If this puts us over our promotion budget, we need to disable future PLAB promotions for this thread.
-  if (can_promote(actual_size)) {
+  if (try_expend_promoted(actual_size)) {
     // Assume the entirety of this PLAB will be used for promotion.  This prevents promotion from overreach.
     // When we retire this plab, we'll unexpend what we don't really use.
     log_debug(gc, plab)("Thread can promote using PLAB of %zu bytes. Expended: %zu, available: %zu",
                         actual_size, get_promoted_expended(), get_promoted_reserve());
-    expend_promoted(actual_size);
     shenandoah_plab->enable_promotions();
     shenandoah_plab->set_actual_size(actual_size);
   } else {
