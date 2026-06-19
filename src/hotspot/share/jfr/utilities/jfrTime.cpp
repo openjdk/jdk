@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #include "runtime/os.inline.hpp"
 #if defined(X86) && !defined(ZERO)
 #include "rdtsc_x86.hpp"
+#elif defined(AARCH64) && !defined(ZERO)
+#include "cntvctss_aarch64.hpp"
 #endif
 
 bool JfrTime::_ft_enabled = false;
@@ -35,6 +37,8 @@ bool JfrTime::initialize() {
   if (!initialized) {
 #if defined(X86) && !defined(ZERO)
     _ft_enabled = Rdtsc::enabled();
+#elif defined(AARCH64) && !defined(ZERO)
+    _ft_enabled = Cntvctss::enabled();
 #else
     _ft_enabled = false;
 #endif
@@ -46,6 +50,8 @@ bool JfrTime::initialize() {
 bool JfrTime::is_ft_supported() {
 #if defined(X86) && !defined(ZERO)
   return Rdtsc::is_supported();
+#elif defined(AARCH64) && !defined(ZERO)
+  return Cntvctss::is_supported();
 #else
   return false;
 #endif
@@ -55,6 +61,8 @@ bool JfrTime::is_ft_supported() {
 const void* JfrTime::time_function() {
 #if defined(X86) && !defined(ZERO)
   return _ft_enabled ? (const void*)Rdtsc::elapsed_counter : (const void*)os::elapsed_counter;
+#elif defined(AARCH64) && !defined(ZERO)
+  return _ft_enabled ? (const void*)Cntvctss::elapsed_counter : (const void*)os::elapsed_counter;
 #else
   return (const void*)os::elapsed_counter;
 #endif
@@ -63,6 +71,8 @@ const void* JfrTime::time_function() {
 jlong JfrTime::frequency() {
 #if defined(X86) && !defined(ZERO)
   return _ft_enabled ? Rdtsc::frequency() : os::elapsed_frequency();
+#elif defined(AARCH64) && !defined(ZERO)
+  return _ft_enabled ? Cntvctss::frequency() : os::elapsed_frequency();
 #else
   return os::elapsed_frequency();
 #endif
