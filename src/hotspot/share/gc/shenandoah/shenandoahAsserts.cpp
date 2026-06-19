@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/vmError.hpp"
 
@@ -423,6 +424,15 @@ void ShenandoahAsserts::assert_marked_strong(void *interior_loc, oop obj, const 
                   "Object should be marked strongly",
                   file, line);
   }
+}
+
+void ShenandoahAsserts::assert_bitmap_clear_above_top(ShenandoahHeapRegion* region) {
+  ShenandoahMarkingContext* const ctx = ShenandoahHeap::heap()->marking_context();
+  const HeapWord* top_bitmap = ctx->top_bitmap(region);
+  // Make sure that top is loaded before any of the marks from the bitmap are loaded. If another
+  // thread has cleared the bitmap we must not allow any stale reads.
+  OrderAccess::loadload();
+  assert(ctx->is_bitmap_range_within_region_clear(top_bitmap, region->end()), "Bitmap above top_bitmap() must be clear");
 }
 
 void ShenandoahAsserts::assert_mark_complete(HeapWord* obj, const char* file, int line) {
