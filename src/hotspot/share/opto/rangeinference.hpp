@@ -457,15 +457,12 @@ public:
   static CTP infer_compress_bits(CTP t1, CTP t2) {
     return infer_binary(t1, t2, [](const TypeIntMirror<S<CTP>, U<CTP>>& st1, const TypeIntMirror<S<CTP>, U<CTP>>& st2) {
       S<CTP> lo = std::numeric_limits<S<CTP>>::min();
-      S<CTP> hi = std::numeric_limits<S<CTP>>::max();
-      U<CTP> ulo = U<CTP>(0);
+      const S<CTP> hi = std::numeric_limits<S<CTP>>::max();
+      const U<CTP> ulo = U<CTP>(0);
       // Integer.compress(v, mask) == Integer.compress(v & mask, mask)
       // Integer.compress(v, mask) u<= v
       // So, Integer.compress(v, mask) u<= (v & mask)
-      U<CTP> uhi = infer_and_impl<CTP>(st1, st2)._uhi;
-      U<CTP> zeros = U<CTP>(0);
-      U<CTP> ones = U<CTP>(0);
-
+      const U<CTP> uhi = infer_and_impl<CTP>(st1, st2)._uhi;
       // If the mask has at least 1 unset bit, then the result must have its highest bit unset, and
       // since the only value with no unset bit is the maximum unsigned value, if st2 does not
       // contain that value, the result must be non-negative
@@ -473,6 +470,8 @@ public:
         lo = S<CTP>(0);
       }
 
+      U<CTP> zeros = U<CTP>(0);
+      U<CTP> ones = U<CTP>(0);
       // Firstly, try to collect known bits by traversing from the lowest to the highest bits, we
       // can collect bits up to the first position at which the corresponding bit in the second
       // operand is unknown.

@@ -25,10 +25,10 @@ package compiler.ccp;
 /*
  * @test
  * @bug 8379555
- * @summary Test that CompressBitsNode::Value does not violate atomicity
+ * @summary Test that CompressBitsNode::Value does not violate monotonicity
  * @run main/othervm -Xbatch -XX:CompileOnly=${test.main.class}::test* ${test.main.class}
  */
-public class TestCompressBitsAtomicity {
+public class TestCompressBitsMonotonicity {
     public static void main(String[] args) {
         for (int i = 0; i < 10000; i++) {
             testInt(0);

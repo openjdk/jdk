@@ -22,16 +22,13 @@
  *
  */
 
-#include "opto/addnode.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rangeinference.hpp"
-#include "utilities/count_leading_zeros.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/population_count.hpp"
 
 //=============================================================================
 // Do not match memory edge.
@@ -233,8 +230,7 @@ Node* ExpandBitsNode::Identity(PhaseGVN* phase) {
   return compress_expand_identity(phase, this);
 }
 
-static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteger* mask_type, int opc, BasicType bt) {
-  assert(opc == Op_ExpandBits, "unexpected opc %d", opc);
+static const Type* expand_bits_value(const TypeInteger* mask_type, BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "unexpected BasicType %s", type2name(bt));
   jlong hi = bt == T_INT ? max_jint : max_jlong;
   jlong lo = bt == T_INT ? min_jint : min_jlong;
@@ -371,5 +367,5 @@ const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
      return TypeInteger::zero(bt);
   }
 
-  return bitshuffle_value(src_type, mask_type, Op_ExpandBits, bt);
+  return expand_bits_value(mask_type, bt);
 }
