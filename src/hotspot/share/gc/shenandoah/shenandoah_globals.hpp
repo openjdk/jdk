@@ -398,11 +398,12 @@
           "reserve/waste is incorrect, at the risk that application "       \
           "runs out of memory too early.")                                  \
                                                                             \
-  product(uint, ShenandoahMutatorAllocRegions, 8, EXPERIMENTAL,             \
+  product(uint, ShenandoahMutatorAllocRegions, 0, EXPERIMENTAL,             \
           "Number of CAS alloc regions striped across the mutator "         \
-          "allocator. Threads start their lock-free allocation scan at a "  \
-          "per-thread slot to spread contention. 1 disables striping.")     \
-          range(1, 128)                                                     \
+          "allocator. Threads probe a per-thread slot for lock-free "       \
+          "allocation to spread contention. 0 (default) derives the value " \
+          "from CPU count and heap size; 1 disables striping.")             \
+          range(0, 128)                                                     \
                                                                             \
   product(uint, ShenandoahCollectorAllocRegions, 4, EXPERIMENTAL,           \
           "Number of CAS alloc regions striped across each collector "      \

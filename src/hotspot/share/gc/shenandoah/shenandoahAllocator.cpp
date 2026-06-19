@@ -27,9 +27,33 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "runtime/os.hpp"
+
+// Derive the number of CAS alloc-region stripe slots for the mutator allocator. Striping spreads
+// lock-free allocation contention, so it is bounded by the available parallelism (no benefit in
+// more slots than CPUs the process may run on). It is also bounded by heap size: each slot holds a
+// reserved region whose remaining capacity is pre-charged to used, so too many slots on a small
+// heap would pin most of the heap as partially-filled tails and starve whole-region consumers
+// (evacuation reserve, humongous/contiguous allocations). We scale the heap bound to ~1/128 of the
+// regions, which also mirrors the MAX_ALLOC_REGIONS (128) stripe-array size. The min of the two
+// bounds handles both edge cases (many cores + tiny heap, and few threads + many cores) without a
+// tuning flag. Always at least 1; capped at MAX_ALLOC_REGIONS. Collector allocators are sized
+// separately (ShenandoahCollectorAllocRegions): their regions come from the bounded evacuation
+// reserve, so neither bound applies to them.
+//
+// ShenandoahMutatorAllocRegions overrides the derived value when explicitly set (non-default); its
+// default of 0 means "derive". An explicit value is still capped at MAX_ALLOC_REGIONS.
+static uint mutator_alloc_regions() {
+  if (!FLAG_IS_DEFAULT(ShenandoahMutatorAllocRegions)) {
+    return MIN2((uint) ShenandoahMutatorAllocRegions, ShenandoahMutatorAllocator::MAX_ALLOC_REGIONS);
+  }
+  const uint cpu_bound = (uint) MAX2(os::initial_active_processor_count(), 1);
+  const uint heap_bound = (uint) MAX2(ShenandoahHeapRegion::region_count() / 128, (size_t) 1);
+  return MIN2(MIN2(cpu_bound, heap_bound), ShenandoahMutatorAllocator::MAX_ALLOC_REGIONS);
+}
 
 ShenandoahAllocator::ShenandoahAllocator(ShenandoahFreeSet* free_set)
-  : _free_set(free_set),_mutator_alloc(free_set, ShenandoahMutatorAllocRegions),
+  : _free_set(free_set),_mutator_alloc(free_set, mutator_alloc_regions()),
     _collector_alloc(free_set, ShenandoahCollectorAllocRegions),
     _old_collector_alloc(free_set, ShenandoahCollectorAllocRegions) {}
 
