@@ -26,6 +26,7 @@
 #include "opto/intrinsicnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rangeinference.hpp"
 #include "utilities/count_leading_zeros.hpp"
@@ -233,10 +234,10 @@ Node* ExpandBitsNode::Identity(PhaseGVN* phase) {
 }
 
 static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteger* mask_type, int opc, BasicType bt) {
-
+  assert(opc == Op_ExpandBits, "unexpected opc %d", opc);
+  assert(bt == T_INT || bt == T_LONG, "unexpected BasicType %s", type2name(bt));
   jlong hi = bt == T_INT ? max_jint : max_jlong;
   jlong lo = bt == T_INT ? min_jint : min_jlong;
-  assert(bt == T_INT || bt == T_LONG, "");
 
   // Bit expansion is a reverse process, which sequentially reads source bits
   // starting from LSB and places them at bit positions in result value where
@@ -247,8 +248,6 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
   // Case A) Constant mask
   if (mask_type->is_con()) {
     jlong maskcon = mask_type->get_con_as_long(bt);
-    // Case A.2 bit expansion:-
-    assert(opc == Op_ExpandBits, "");
     if (maskcon >= 0L) {
       //   Case A.2.1 constant mask >= 0
       //     Result.Hi = mask, optimistically assuming all source bits
@@ -284,7 +283,6 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
 
   // Case B) Non-constant mask.
   if (!mask_type->is_con()) {
-    assert(opc == Op_ExpandBits, "");
     jlong max_mask = mask_type->hi_as_long();
     jlong min_mask = mask_type->lo_as_long();
     // Since mask here a range and not a constant value, hence being
