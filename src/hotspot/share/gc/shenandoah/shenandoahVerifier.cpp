@@ -383,9 +383,15 @@ class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure
 private:
   size_t _used, _committed, _garbage, _regions, _humongous_waste, _trashed_regions, _trashed_used;
   size_t _region_size_bytes, _min_free_size;
+  // When true, count an active CAS alloc region as fully used (its entire capacity), matching the
+  // pre-charge in the partition's raw used. This avoids reading the live _atomic_top via free(),
+  // which is required when iterating off-safepoint (verify_before_rebuilding_free_set) where a
+  // concurrent mutator could bump _atomic_top between this read and the read of the recorded used.
+  bool _count_alloc_regions_as_full;
 public:
-  ShenandoahCalculateRegionStatsClosure() :
-     _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0)
+  explicit ShenandoahCalculateRegionStatsClosure(bool count_alloc_regions_as_full = false) :
+     _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0),
+     _count_alloc_regions_as_full(count_alloc_regions_as_full)
   {
     _region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
     // Retired regions are not necessarily filled, though their remnant memory is considered used.
@@ -393,11 +399,16 @@ public:
   };
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
-    if (r->is_cset() || r->is_trash()) {
+    if (_count_alloc_regions_as_full && r->is_atomic_alloc_region()) {
+      // Off-safepoint accounting: count the whole region as used (the raw partition used pre-charged
+      // it in full). Do not read free()/_atomic_top here -- it races with concurrent allocation.
+      _used += _region_size_bytes;
+      _garbage += _region_size_bytes - r->get_live_data_bytes();
+    } else if (r->is_cset() || r->is_trash()) {
       // Count the entire cset or trashed (formerly cset) region as used.
-      // Note: an active CAS alloc region is counted by actual occupancy in the regular branch
-      // below (region_size - free()), which matches the read-time-corrected _heap->used().
-      // Note: Immediate garbage trash regions were never in the cset.
+      // Note: at a safepoint an active CAS alloc region is counted by actual occupancy in the
+      // regular branch below (region_size - free()), which matches the read-time-corrected
+      // _heap->used(). Note: Immediate garbage trash regions were never in the cset.
       _used += _region_size_bytes;
       _garbage += _region_size_bytes - r->get_live_data_bytes();
       if (r->is_trash()) {
@@ -454,6 +465,11 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
   ShenandoahCalculateRegionStatsClosure _young;
   ShenandoahCalculateRegionStatsClosure _global;
 
+  explicit ShenandoahGenerationStatsClosure(bool count_alloc_regions_as_full = false) :
+    _old(count_alloc_regions_as_full),
+    _young(count_alloc_regions_as_full),
+    _global(count_alloc_regions_as_full) {}
+
   void heap_region_do(ShenandoahHeapRegion* r) override {
     switch (r->affiliation()) {
       case FREE:
@@ -478,10 +494,18 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
                   byte_size_in_proper_unit(stats.used()),       proper_unit_for_byte_size(stats.used()));
   }
 
+  // Safepoint callers: compare against the read-time-corrected generation->used().
   static void validate_usage(const bool adjust_for_padding, const bool adjust_for_trash,
                              const char* label, ShenandoahGeneration* generation, ShenandoahCalculateRegionStatsClosure& stats) {
+    validate_usage(adjust_for_padding, adjust_for_trash, label, generation, stats, generation->used());
+  }
+
+  // generation_used is supplied by the caller so that off-safepoint callers can pass the raw
+  // (uncorrected) used that matches a full-counted active alloc region; see validate_usage below.
+  static void validate_usage(const bool adjust_for_padding, const bool adjust_for_trash,
+                             const char* label, ShenandoahGeneration* generation,
+                             ShenandoahCalculateRegionStatsClosure& stats, size_t generation_used) {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
-    size_t generation_used = generation->used();
     size_t generation_used_regions = generation->used_regions();
 
     size_t stats_used = adjust_for_trash? stats.used_after_recycle(): stats.used();
@@ -1480,10 +1504,19 @@ void ShenandoahVerifier::verify_rem_set_before_update_ref() {
 }
 
 void ShenandoahVerifier::verify_before_rebuilding_free_set() {
-  ShenandoahGenerationStatsClosure cl;
+  // This verify runs under the heap lock but NOT at a safepoint (concurrent abbreviated cycle), so
+  // mutators may be concurrently bumping the _atomic_top of an active mutator CAS alloc region.
+  // Count such regions as fully used and compare against the raw (uncorrected) freeset used totals:
+  // both ignore the live _atomic_top, so neither side races with concurrent allocation. (The raw
+  // totals are stable here because the lock-free fast path never mutates partition used.)
+  ShenandoahFreeSet* free_set = _heap->free_set();
+  ShenandoahGenerationStatsClosure cl(true /* count_alloc_regions_as_full */);
   _heap->heap_region_iterate(&cl);
 
-  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->old_generation(), cl._old);
-  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->young_generation(), cl._young);
-  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->global_generation(), cl._global);
+  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->old_generation(),
+                                                   cl._old, free_set->old_used_raw());
+  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->young_generation(),
+                                                   cl._young, free_set->young_used_raw());
+  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->global_generation(),
+                                                   cl._global, free_set->global_used_raw());
 }

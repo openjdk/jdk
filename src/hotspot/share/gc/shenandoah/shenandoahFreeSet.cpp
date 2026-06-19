@@ -2483,7 +2483,20 @@ size_t ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed
       }
       last_old_region = idx;
     }
-    if (region->is_alloc_allowed() || region->is_trash()) {
+    if (region->is_atomic_alloc_region()) {
+      // An active mutator CAS alloc region is kept live across the rebuild (collector/old regions
+      // were already released before this scan). It must NOT rejoin the free partition: the
+      // allocator retains exclusive use of it via _atomic_top. Reproduce exactly the accounting
+      // that reserve_alloc_regions applied when it retired the region from the partition -- its
+      // entire capacity is pre-charged to used, it counts toward total and affiliated region
+      // counts, and it is left out of the free set (membership stays NotFree from clear()).
+      // Subsequent CAS allocations consume the pre-charge; read-time accessors correct for the
+      // still-free remnant via alloc_region_correction(). Mutator alloc regions are always young.
+      assert(region->is_young() && !region->is_trash(), "Active alloc region must be young and non-trash");
+      mutator_used += region_size_bytes;
+      total_mutator_regions++;
+      affiliated_mutator_regions++;
+    } else if (region->is_alloc_allowed() || region->is_trash()) {
       assert(!region->is_cset(), "Shouldn't be adding cset regions to the free set");
 
       // Do not add regions that would almost surely fail allocation
@@ -2950,9 +2963,12 @@ void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_trashed_regions, size_t
   shenandoah_assert_heaplocked();
   assert(rebuild_lock() != nullptr, "sanity");
   rebuild_lock()->lock(false);
-  // Drop cached alloc regions before clearing partition state — partition membership
-  // is about to change and would invalidate the cached regions.
-  _heap->allocator()->release_alloc_regions();
+  // Drop the collector/old-collector cached alloc regions before clearing partition state.
+  // Mutator alloc regions are intentionally kept active across the rebuild: find_regions_with_
+  // alloc_capacity() re-accounts them in place (reproducing the reserve-time pre-charge) rather
+  // than releasing them, so application threads keep their lock-free fast path. Full GC releases
+  // ALL regions (including mutator) earlier, before walking the heap, so nothing is kept there.
+  _heap->allocator()->release_collector_alloc_regions();
   // This resets all state information, removing all regions from all sets.
   clear();
   log_debug(gc, free)("Rebuilding FreeSet");
@@ -3154,6 +3170,14 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
   for (size_t i = _heap->num_regions(); i > 0; i--) {
     idx_t idx = i - 1;
     ShenandoahHeapRegion* r = _heap->get_region(idx);
+    if (r->is_atomic_alloc_region()) {
+      // Active mutator CAS alloc region kept live across the rebuild. It is NotFree (the allocator
+      // owns it exclusively) and must not be moved into Collector/OldCollector nor have its
+      // (already-settled, fully pre-charged) accounting re-touched here. Its full free capacity
+      // would otherwise trip the "empty regions should be in Mutator partition" assert below.
+      assert(_partitions.membership(idx) == ShenandoahFreeSetPartitionId::NotFree, "Active alloc region must be NotFree");
+      continue;
+    }
     if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, idx)) {
       // Note: trashed regions have region_size_bytes alloc capacity.
       size_t ac = alloc_capacity(r);
@@ -3382,6 +3406,12 @@ void ShenandoahFreeSet::release_alloc_regions_under_lock() {
   shenandoah_assert_not_heaplocked();
   ShenandoahHeapLocker locker(_heap->lock());
   _heap->allocator()->release_alloc_regions();
+}
+
+void ShenandoahFreeSet::release_collector_alloc_regions_under_lock() {
+  shenandoah_assert_not_heaplocked();
+  ShenandoahHeapLocker locker(_heap->lock());
+  _heap->allocator()->release_collector_alloc_regions();
 }
 
 void ShenandoahFreeSet::log_freeset_stats(ShenandoahFreeSetPartitionId partition_id, LogStream& ls) {

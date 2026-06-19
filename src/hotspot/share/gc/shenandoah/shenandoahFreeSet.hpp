@@ -710,6 +710,15 @@ public:
   // Saturating stored_used - correction; see the comment on the corrected accessors in the .cpp.
   static size_t corrected_used(size_t stored_used, size_t correction);
 
+  // Raw (uncorrected) used totals: the stored partition used including the full pre-charge of any
+  // active CAS alloc region, WITHOUT subtracting the still-unconsumed remnant. Unlike the corrected
+  // accessors (young_used/old_used/global_used) these do not read the live _atomic_top, so they are
+  // stable under the heap lock even while mutators allocate lock-free. Used by the concurrent
+  // verify_before_rebuilding_free_set, where the correction term would otherwise race.
+  size_t young_used_raw() const { return _total_young_used; }
+  size_t old_used_raw() const   { return _total_old_used; }
+  size_t global_used_raw() const { return _total_global_used; }
+
   // Return bytes used by old
   size_t old_used();
 
@@ -821,6 +830,15 @@ public:
   // accounting is reconciled, and their _atomic_top is synced back to _top before the heap
   // is iterated or regions are recycled.
   void release_alloc_regions_under_lock();
+
+  // Like release_alloc_regions_under_lock(), but only releases the Collector and OldCollector
+  // CAS alloc regions, leaving the Mutator alloc regions active. Used at the cset-selection
+  // boundaries (final mark, degen prepare-evac, old final mark): the collector regions hold
+  // evacuation copies and feed cset reserve computation so they must be quiesced, but mutator
+  // regions stay hot so application threads keep their lock-free allocation fast path across the
+  // GC cycle. The kept mutator regions are skipped by cset selection and re-accounted (not
+  // released) by the subsequent free-set rebuild.
+  void release_collector_alloc_regions_under_lock();
 
   // All four of the following functions may produce stale data if called without owning the global heap lock.
   // Changes to the values of these variables are performed with a lock.  A change to capacity or used "atomically"
