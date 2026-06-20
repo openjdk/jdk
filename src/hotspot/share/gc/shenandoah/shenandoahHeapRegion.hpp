@@ -509,6 +509,16 @@ public:
     return _atomic_top.load_acquire();
   }
 
+  // Relaxed read of _atomic_top for the lock-free allocation loops only. The value is used solely as
+  // the expected operand of the subsequent release compare_exchange, which is the authoritative
+  // check: if the region was retired (_atomic_top set to nullptr) the CAS fails and returns the true
+  // current value, so a stale read here cannot cause an incorrect allocation. Object publication is
+  // ordered by the release CAS, not by this read, so no acquire is needed. Other readers (top(),
+  // accounting) must use atomic_top()/top() with acquire semantics.
+  HeapWord* atomic_top_relaxed() const {
+    return _atomic_top.load_relaxed();
+  }
+
   // Default top(). Returns _atomic_top when the region is an active CAS alloc
   // region, else _top. Safe to call from any context. Inside an active alloc
   // region the returned value may advance concurrently; outside it is stable.
