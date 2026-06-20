@@ -58,8 +58,9 @@ private:
   Atomic<ShenandoahHeapRegion*> _alloc_regions[MAX_ALLOC_REGIONS];
 
   // Return this thread's stripe slot, assigning a stable per-thread slot on first use so different
-  // threads map to different alloc regions.
-  uint alloc_region_start_index();
+  // threads map to different alloc regions. `thread` is the already-resolved current thread, passed
+  // in to avoid a repeated Thread::current() on the allocation fast path.
+  uint alloc_region_start_index(Thread* thread);
 
   // Last-resort under-lock scan of ALL stripe slots starting at start_index and wrapping, used only
   // when the free set is exhausted: a sibling slot may still have room even though the free set has

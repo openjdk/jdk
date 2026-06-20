@@ -193,20 +193,22 @@ public:
     data(thread)->_gclab_size = v;
   }
 
-  static uint mutator_alloc_region_start_index() {
-    return data(Thread::current())->_mutator_alloc_region_start_index;
+  // Caller passes the already-resolved current thread to avoid a repeated Thread::current() on the
+  // allocation fast path.
+  static uint mutator_alloc_region_start_index(Thread* thread) {
+    return data(thread)->_mutator_alloc_region_start_index;
   }
 
-  static void set_mutator_alloc_region_start_index(uint index) {
-    data(Thread::current())->_mutator_alloc_region_start_index = index;
+  static void set_mutator_alloc_region_start_index(Thread* thread, uint index) {
+    data(thread)->_mutator_alloc_region_start_index = index;
   }
 
-  static uint collector_alloc_region_start_index() {
-    return data(Thread::current())->_collector_alloc_region_start_index;
+  static uint collector_alloc_region_start_index(Thread* thread) {
+    return data(thread)->_collector_alloc_region_start_index;
   }
 
-  static void set_collector_alloc_region_start_index(uint index) {
-    data(Thread::current())->_collector_alloc_region_start_index = index;
+  static void set_collector_alloc_region_start_index(Thread* thread, uint index) {
+    data(thread)->_collector_alloc_region_start_index = index;
   }
 
   static void begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {

@@ -45,28 +45,27 @@ ShenandoahPartitionAllocator<PARTITION>::ShenandoahPartitionAllocator(Shenandoah
 }
 
 template<ShenandoahFreeSetPartitionId PARTITION>
-uint ShenandoahPartitionAllocator<PARTITION>::alloc_region_start_index() {
+uint ShenandoahPartitionAllocator<PARTITION>::alloc_region_start_index(Thread* thread) {
   if (_alloc_region_count <= 1u) {
     return 0u;
   }
   // Mutator and (old-)collector partitions keep separate per-thread start slots. The collector
   // and old-collector partitions share one slot since a given worker only allocates in one of them.
   uint index = (PARTITION == ShenandoahFreeSetPartitionId::Mutator)
-                 ? ShenandoahThreadLocalData::mutator_alloc_region_start_index()
-                 : ShenandoahThreadLocalData::collector_alloc_region_start_index();
+                 ? ShenandoahThreadLocalData::mutator_alloc_region_start_index(thread)
+                 : ShenandoahThreadLocalData::collector_alloc_region_start_index(thread);
   if (index == UINT_MAX) {
     // Assign a stable per-thread start slot. GC workers stripe by worker id; other threads by a
     // pseudo-random value. (Math/Date intrinsics are unavailable here, os::random is fine.)
-    Thread* current = Thread::current();
-    if (PARTITION != ShenandoahFreeSetPartitionId::Mutator && current->is_Worker_thread()) {
+    if (PARTITION != ShenandoahFreeSetPartitionId::Mutator && thread->is_Worker_thread()) {
       index = WorkerThread::worker_id() % _alloc_region_count;
     } else {
       index = (uint)(os::random() & 0x7fffffff) % _alloc_region_count;
     }
     if (PARTITION == ShenandoahFreeSetPartitionId::Mutator) {
-      ShenandoahThreadLocalData::set_mutator_alloc_region_start_index(index);
+      ShenandoahThreadLocalData::set_mutator_alloc_region_start_index(thread, index);
     } else {
-      ShenandoahThreadLocalData::set_collector_alloc_region_start_index(index);
+      ShenandoahThreadLocalData::set_collector_alloc_region_start_index(thread, index);
     }
   }
   assert(index < _alloc_region_count, "start index in range");
@@ -162,7 +161,10 @@ bool ShenandoahPartitionAllocator<PARTITION>::install_alloc_region(uint index,
 
 template<ShenandoahFreeSetPartitionId PARTITION>
 HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
-  uint start_index = alloc_region_start_index();
+  // Resolve the current thread once and pass it to alloc_region_start_index() instead of having that
+  // helper call Thread::current() again on the hot path.
+  Thread* const thread = Thread::current();
+  uint start_index = alloc_region_start_index(thread);
 
   // Fast path: lock-free CAS allocation in THIS thread's stripe slot only (no cross-stripe scan).
   ShenandoahHeapRegion* shared_region = _alloc_regions[start_index].load_acquire();
