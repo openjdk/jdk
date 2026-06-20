@@ -4292,14 +4292,15 @@ public:
 #undef INSN
 
 // SVE2 bitwise ternary operations
-#define INSN(NAME, opc)                                               \
-  void NAME(FloatRegister Zdn, FloatRegister Zm, FloatRegister Zk) {  \
-    starti;                                                           \
-    f(0b00000100, 31, 24), f(opc, 23, 21), rf(Zm, 16);                \
-    f(0b001110, 15, 10), rf(Zk, 5), rf(Zdn, 0);                       \
+#define INSN(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Zdn, FloatRegister Zm, FloatRegister Zk) {   \
+    starti;                                                            \
+    f(0b00000100, 31, 24), f(op1, 23, 21), rf(Zm, 16);                 \
+    f(0b00111, 15, 11), f(op2, 10), rf(Zk, 5), rf(Zdn, 0);             \
   }
 
-  INSN(sve_eor3, 0b001); // Bitwise exclusive OR of three vectors
+  INSN(sve_eor3, 0b001, 0b0); // Bitwise exclusive OR of three vectors
+  INSN(sve_bsl,  0b001, 0b1); // Bitwise select
 #undef INSN
 
 // SVE2 saturating operations - predicate

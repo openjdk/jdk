@@ -649,9 +649,9 @@ class FreeCSetClosure : public G1HeapRegionClosure {
 
   void assert_tracks_surviving_words(G1HeapRegion* r) {
     assert(r->young_index_in_cset() != 0 &&
-           (uint)r->young_index_in_cset() <= _g1h->collection_set()->young_region_length(),
+           (uint)r->young_index_in_cset() <= _g1h->collection_set()->num_young_regions(),
            "Young index %u is wrong for region %u of type %s with %u young regions",
-           r->young_index_in_cset(), r->hrm_index(), r->get_type_str(), _g1h->collection_set()->young_region_length());
+           r->young_index_in_cset(), r->hrm_index(), r->get_type_str(), _g1h->collection_set()->num_young_regions());
   }
 
   void handle_evacuated_region(G1HeapRegion* r) {
@@ -810,7 +810,7 @@ public:
     p->record_serial_free_cset_time_ms((Ticks::now() - serial_time).seconds() * 1000.0);
   }
 
-  double worker_cost() const override { return G1CollectedHeap::heap()->collection_set()->initial_region_length(); }
+  double worker_cost() const override { return G1CollectedHeap::heap()->collection_set()->num_initial_regions(); }
 
   void set_max_workers(uint max_workers) override {
     _active_workers = max_workers;

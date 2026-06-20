@@ -1111,6 +1111,8 @@ class MacroAssembler: public Assembler {
 
   void load_on_condition_imm_32(Register dst, int64_t i2, branch_condition cc);
   void load_on_condition_imm_64(Register dst, int64_t i2, branch_condition cc);
+
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register tmp1);
 };
 
 #ifdef ASSERT
