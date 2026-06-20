@@ -1997,14 +1997,16 @@ public class ForkJoinPool extends AbstractExecutorService
     final void runWorker(WorkQueue w) {
         if (w != null) {
             int phase = w.phase, r = w.stackPred, src = UNSCANNED;
-            for (long e = runState; phase != 0 && (e & STOP) == 0L; ) {
+            for (long e = runState; (e & STOP) == 0L; ) {
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
                 long stat = scan(w, r, phase, src == EMPTY_SCAN ? UNSCANNED : src);
                 phase = (int)(stat & LMASK);
                 src = (int)(stat >>> 32);
                 if (e == (e = runState) && src == EMPTY_SCAN) {
-                    phase = (((phase & IDLE) == 0) ? tryDeactivate(w, phase):
-                             awaitWork(w, phase));
+                    if ((phase & IDLE) == 0)
+                        phase = tryDeactivate(w, phase);
+                    else if ((phase = awaitWork(w, phase)) == 0)
+                        break;
                     e = runState;
                 }
             }
@@ -2048,13 +2050,15 @@ public class ForkJoinPool extends AbstractExecutorService
                             Object u = U.compareAndExchangeReference(a, bp, t, null);
                             if (u == t) {
                                 q.base = pb = nb;
-                                U.putIntRelease(w, WorkQueue.SOURCE, src = qid);
+                                U.putIntRelease(w, WorkQueue.SOURCE, qid);
                                 if ((!taken || propagated != b) &&
+                                    (src != qid || (qid & 1) == 0) &&
                                     U.getReferenceAcquire(a, np) != null) {
                                     propagated = nb;  // don't re-signal if taken
                                     signalWork();
                                 }
                                 w.topLevelExec(t);
+                                src = qid;
                                 taken = true;
                             }
                             else if (u == null && (pb = b) == propagated && taken)
@@ -2128,36 +2132,32 @@ public class ForkJoinPool extends AbstractExecutorService
             long deadline = 0L;
             int activePhase = phase + IDLE, parking = 0;
             while ((phase = w.phase) != activePhase) {
+                Thread.interrupted();        // clear status
                 boolean trimmable = false;   // true if at ctl head and quiescent
-                long d = 0L, c; int qt;
-                if (((c = ctl) & RC_MASK) != 0L) {
-                    if ((runState & STOP) != 0L) {
-                        phase = 0;
-                        break;
-                    }
-                }
-                else if ((qt = quiescent()) > 0) {
+                long d = 0L, c = ctl, e; int qt;
+                if (((e = runState) & STOP) != 0L) {
                     phase = 0;
-                    break;                    // quiescent termination
-                }
-                else if (qt < 0) {            // rescan
-                    phase = w.phase;
                     break;
                 }
-                else if ((int)c == activePhase) {
-                    long now = System.currentTimeMillis();
-                    if (parking == 0)
-                        d = deadline = now + keepAlive;
-                    else if ((d = deadline) - now <= TIMEOUT_SLOP)
-                        trim = true;
-                    if (trim && tryTrim(w, c, activePhase)) {
-                        phase = 0;
+                if ((c & RC_MASK) == 0L) {
+                    if ((e & SHUTDOWN) != 0L && (qt = quiescent()) != 0) {
+                        phase = (qt > 0) ? 0 : w.phase;
                         break;
                     }
-                    trim = false;
-                    trimmable = true;
+                    if ((int)c == activePhase) {
+                        long now = System.currentTimeMillis();
+                        if (parking == 0)
+                            d = deadline = now + keepAlive;
+                        else if ((d = deadline) - now <= TIMEOUT_SLOP)
+                            trim = true;
+                        if (trim && tryTrim(w, c, activePhase)) {
+                            phase = 0;
+                            break;
+                        }
+                        trim = false;
+                        trimmable = true;
+                    }
                 }
-                Thread.interrupted();        // clear status
                 if (parking == 0) {          // enable unpark
                     if ((phase = w.phase) == activePhase)
                         break;
