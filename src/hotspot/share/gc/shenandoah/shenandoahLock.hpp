@@ -98,7 +98,7 @@ public:
   // Single non-blocking TTAS attempt to acquire the lock. Returns true iff this call won it. Does
   // not set _owner; the caller does that. Used by contended_lock to re-acquire after a safepoint.
   bool try_lock() {
-    bool acquired = _state.compare_exchange(unlocked, locked) == unlocked;
+    bool const acquired = _state.compare_exchange(unlocked, locked) == unlocked;
 #ifdef ASSERT
     if (acquired) {
       assert(_state.load_relaxed() == locked, "must be locked");
@@ -147,6 +147,17 @@ public:
   ShenandoahSimpleLock();
   void lock(bool allow_block_for_safepoint = false);
   void unlock();
+
+  bool try_lock() {
+    bool const acquired = _lock.try_lock();
+#ifdef ASSERT
+    if (acquired) {
+      assert(_owner.load_relaxed() == nullptr, "must not be owned");
+      DEBUG_ONLY(_owner.store_relaxed(Thread::current());)
+    }
+#endif
+    return acquired;
+  }
 
   bool owned_by_self() {
 #ifdef ASSERT
