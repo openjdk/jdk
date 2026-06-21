@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import jdk.test.lib.Asserts;
  * @key randomness
  * @library /test/lib /
  * @compile ReverseBytesConstantsHelper.jasm
- * @run driver compiler.c2.gvn.InvolutionIdentityTests
+ * @run driver ${test.main.class}
  */
 public class InvolutionIdentityTests {
 
@@ -208,13 +208,21 @@ public class InvolutionIdentityTests {
     }
 
     @Test
-    @IR(counts = {IRNode.REVERSE_BYTES_S, "2"})
+    @IR(counts = {IRNode.REVERSE_BYTES_S, "2"},
+        applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = { "zbb",  "true" })
+     @IR(counts = {IRNode.REVERSE_BYTES_S, "2"},
+        applyIfPlatform = {"riscv64", "false"})
     public int testS2(int x) {
         return Short.reverseBytes(ReverseBytesConstantsHelper.reverseBytesShort(x));
     }
 
     @Test
-    @IR(counts = {IRNode.REVERSE_BYTES_US, "2"})
+    @IR(counts = {IRNode.REVERSE_BYTES_US, "2"},
+        applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = { "zbb",  "true" })
+    @IR(counts = {IRNode.REVERSE_BYTES_US, "2"},
+        applyIfPlatform = {"riscv64", "false"})
     public int testUS2(int x) {
         return Character.reverseBytes(ReverseBytesConstantsHelper.reverseBytesChar(x));
     }

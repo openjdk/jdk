@@ -2066,7 +2066,7 @@ static Node* simplify_involution(PhaseGVN* phase, Node* involution) {
     // for example, a ReverseBytesS node with an input larger than short.
     // Make sure not to drop potential truncations.
     if (type == nullptr || involution->bottom_type()->is_int()->contains(type)) {
-      return involution->in(1)->in(1);
+      return original;
     }
   }
   return involution;
