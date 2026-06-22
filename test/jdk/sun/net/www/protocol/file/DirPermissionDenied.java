@@ -23,24 +23,34 @@
 
 /**
  * @test
- * @bug 6977851
+ * @bug 6977851 8385906
  * @summary NPE from FileURLConnection.connect
  * @library /test/lib
- * @build DirPermissionDenied jdk.test.lib.process.*
- *        jdk.test.lib.util.FileUtils
+ * @build DirPermissionDenied jdk.test.lib.util.FileUtils
  * @run junit ${test.main.class}
  */
 
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclEntryPermission;
+import java.nio.file.attribute.AclEntryType;
+import java.nio.file.attribute.AclFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.UserPrincipal;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -51,6 +61,8 @@ public class DirPermissionDenied {
     private static final Path TEST_DIR = Paths.get(
             "DirPermissionDeniedDirectory");
     private static URL url;
+    private static List<AclEntry> aclEntries;
+    private static Set<PosixFilePermission> posixPermissions;
 
     @Test
     public void connectTest() throws IOException {
@@ -73,21 +85,88 @@ public class DirPermissionDenied {
     @BeforeAll
     public static void setup() throws Throwable {
         url = new URL(TEST_DIR.toUri().toString());
-        // mkdir and chmod "333"
         Files.createDirectories(TEST_DIR);
-        ProcessTools.executeCommand("chmod", "333", TEST_DIR.toString())
-                    .outputTo(System.out)
-                    .errorTo(System.out)
-                    .shouldHaveExitValue(0);
+        try {
+            makeDirectoryUnreadable();
+            Assumptions.assumeTrue(TEST_DIR.toFile().list() == null,
+                    "Could not make directory inaccessible");
+        } catch (Throwable exception) {
+            restorePermissions();
+            throw exception;
+        }
     }
 
     @AfterAll
     public static void tearDown() throws Throwable {
-        // add read permission to ensure the dir removable
-        ProcessTools.executeCommand("chmod", "733", TEST_DIR.toString())
-                    .outputTo(System.out)
-                    .errorTo(System.out)
-                    .shouldHaveExitValue(0);
+        restorePermissions();
         FileUtils.deleteFileIfExistsWithRetry(TEST_DIR);
+    }
+
+    private static void makeDirectoryUnreadable() throws IOException {
+        FileStore store = Files.getFileStore(TEST_DIR);
+        if (store.supportsFileAttributeView("posix")) {
+            posixPermissions = Files.getPosixFilePermissions(TEST_DIR);
+            Set<PosixFilePermission> perms = EnumSet.of(
+                    PosixFilePermission.OWNER_WRITE,
+                    PosixFilePermission.OWNER_EXECUTE,
+                    PosixFilePermission.GROUP_WRITE,
+                    PosixFilePermission.GROUP_EXECUTE);
+            Files.setPosixFilePermissions(TEST_DIR, perms);
+        } else if (store.supportsFileAttributeView("acl")) {
+            AclFileAttributeView view = Files.getFileAttributeView(TEST_DIR,
+                    AclFileAttributeView.class);
+            if (view == null) {
+                throw new IOException("ACL view not available");
+            }
+            aclEntries = new ArrayList<>(view.getAcl());
+            List<AclEntry> entries = new ArrayList<>();
+            entries.add(AclEntry.newBuilder()
+                    .setType(AclEntryType.DENY)
+                    .setPrincipal(getCurrentUserPrincipal(view))
+                    .setPermissions(AclEntryPermission.READ_DATA,
+                            AclEntryPermission.LIST_DIRECTORY)
+                    .build());
+            entries.addAll(aclEntries);
+            view.setAcl(entries);
+        } else {
+            Assumptions.assumeTrue(false,
+                    "Required file attribute view not supported");
+        }
+    }
+
+    private static UserPrincipal getCurrentUserPrincipal(
+            AclFileAttributeView view) throws IOException {
+        String userName = System.getProperty("user.name");
+        try {
+            return TEST_DIR.getFileSystem().getUserPrincipalLookupService()
+                    .lookupPrincipalByName(userName);
+        } catch (IOException e) {
+            for (AclEntry entry : view.getAcl()) {
+                UserPrincipal principal = entry.principal();
+                String name = principal.getName();
+                if (name.equalsIgnoreCase(userName)
+                        || name.endsWith("\\" + userName)) {
+                    return principal;
+                }
+            }
+            throw e;
+        }
+    }
+
+    private static void restorePermissions() throws IOException {
+        if (Files.notExists(TEST_DIR)) {
+            return;
+        }
+
+        FileStore store = Files.getFileStore(TEST_DIR);
+        if (posixPermissions != null
+                && store.supportsFileAttributeView("posix")) {
+            Files.setPosixFilePermissions(TEST_DIR, posixPermissions);
+        } else if (aclEntries != null
+                && store.supportsFileAttributeView("acl")) {
+            AclFileAttributeView view = Files.getFileAttributeView(TEST_DIR,
+                    AclFileAttributeView.class);
+            view.setAcl(aclEntries);
+        }
     }
 }

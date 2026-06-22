@@ -84,9 +84,9 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * Note: these examples are from CLDR, there could be different results from other locale providers.
  * <p>
  * Alternatively, Locale, Type, and/or Style independent instances
- * can be created with {@link #getInstance(String[])}. The String array to the
- * method specifies the delimiting patterns for the start/middle/end portion of
- * the formatted string, as well as optional specialized patterns for two or three
+ * can be created with {@link #getInstance(String[])}. The String array passed to the
+ * method specifies the delimiting patterns for the {@code start}/{@code middle}/{@code end}
+ * portion of the formatted string, as well as optional specialized patterns for two or three
  * elements. Refer to the method description for more detail.
  * <p>
  * On parsing, if some ambiguity is found in the input string, such as delimiting
@@ -121,7 +121,8 @@ public final class ListFormat extends Format {
 
     /**
      * The array of five pattern Strings. Each element corresponds to the Unicode LDML's
-     * `listPatternsPart` type, i.e, start/middle/end/two/three.
+     * {@code listPatternPart} type, i.e,
+     * {@code start}/{@code middle}/{@code end}/{@code two}/{@code three}.
      * @serial
      */
     private final String[] patterns;
@@ -153,6 +154,7 @@ public final class ListFormat extends Format {
         var pattern = patterns[START];
         var placeholderPositions = findPlaceholders(pattern);
         if (placeholderPositions != null &&
+                placeholderPositions[2] == -1 &&
                 placeholderPositions[1] + PLACEHOLDER_LENGTH == pattern.length()) {
             startBefore = pattern.substring(0, placeholderPositions[0]);
             startBetween = pattern.substring(placeholderPositions[0] + PLACEHOLDER_LENGTH,
@@ -164,6 +166,7 @@ public final class ListFormat extends Format {
         pattern = patterns[MIDDLE];
         placeholderPositions = findPlaceholders(pattern);
         if (placeholderPositions != null &&
+                placeholderPositions[2] == -1 &&
                 placeholderPositions[0] == 0 &&
                 placeholderPositions[1] + PLACEHOLDER_LENGTH == pattern.length()) {
             middleBetween = pattern.substring(placeholderPositions[0] + PLACEHOLDER_LENGTH,
@@ -174,7 +177,9 @@ public final class ListFormat extends Format {
 
         pattern = patterns[END];
         placeholderPositions = findPlaceholders(pattern);
-        if (placeholderPositions != null && placeholderPositions[0] == 0) {
+        if (placeholderPositions != null &&
+                placeholderPositions[2] == -1 &&
+                placeholderPositions[0] == 0) {
             endBetween = pattern.substring(placeholderPositions[0] + PLACEHOLDER_LENGTH,
                     placeholderPositions[1]);
             endAfter = pattern.substring(placeholderPositions[1] + PLACEHOLDER_LENGTH);
@@ -185,7 +190,8 @@ public final class ListFormat extends Format {
         // Validate two/three patterns, if given. Otherwise, generate them
         pattern = patterns[TWO];
         if (!pattern.isEmpty()) {
-            if (findPlaceholders(pattern) == null) {
+            placeholderPositions = findPlaceholders(pattern);
+            if (placeholderPositions == null || placeholderPositions[2] >= 0) {
                 throw new IllegalArgumentException("pattern for two is incorrect: " + pattern);
             }
         } else {
@@ -245,36 +251,43 @@ public final class ListFormat extends Format {
      * instead of letting the runtime provide appropriate patterns for the {@code Locale},
      * {@code Type}, or {@code Style}.
      * <p>
-     * The patterns array should contain five String patterns, each corresponding to the Unicode LDML's
-     * {@code listPatternPart}, i.e., "start", "middle", "end", two element, and three element patterns
-     * in this order. Each pattern contains "{0}" and "{1}" (and "{2}" for the three element pattern)
-     * placeholders that are substituted with the passed input strings on formatting.
-     * If the length of the patterns array is not 5, an {@code IllegalArgumentException}
-     * is thrown.
+     * The patterns array should contain five String patterns, each corresponding
+     * to the Unicode LDML's {@code listPatternPart}, i.e., {@code start},
+     * {@code middle}, {@code end}, {@code two} element, and {@code three}
+     * element patterns in this order. Each pattern contains "{0}" and "{1}"
+     * (and "{2}" for the {@code three} element pattern) placeholders that are
+     * substituted with the passed input strings on formatting. If the length of
+     * the patterns array is not 5, an {@code IllegalArgumentException} is thrown.
      * <p>
      * Each pattern string is first parsed as follows. Literals in parentheses, such as
      * "start_before", are optional:
-     * <blockquote><pre>
+     * {@snippet :
      * start := (start_before){0}start_between{1}
      * middle := {0}middle_between{1}
      * end := {0}end_between{1}(end_after)
      * two := (two_before){0}two_between{1}(two_after)
      * three := (three_before){0}three_between1{1}three_between2{2}(three_after)
-     * </pre></blockquote>
-     * If two or three pattern string is empty, it falls back to
-     * {@code "(start_before){0}end_between{1}(end_after)"},
-     * {@code "(start_before){0}start_between{1}end_between{2}(end_after)"} respectively.
-     * If parsing of any pattern string for start, middle, end, two, or three fails,
+     * }
+     * If the {@code two} or {@code three} pattern string is empty, it falls back to
+     * {@snippet :
+     * (start_before){0}end_between{1}(end_after)
+     * (start_before){0}start_between{1}end_between{2}(end_after)
+     * }
+     * respectively.
+     * If parsing of any pattern string for {@code start}, {@code middle},
+     * {@code end}, {@code two}, or {@code three} fails, including duplicate
+     * placeholders, "{2}" in patterns other than the {@code three} element
+     * pattern, or any use of "{" or "}" other than "{0}", "{1}", or "{2}",
      * it throws an {@code IllegalArgumentException}.
      * <p>
      * On formatting, the input string list with {@code n} elements substitutes above
      * placeholders based on the number of elements:
-     * <blockquote><pre>
+     * {@snippet :
      * n = 1: {0}
      * n = 2: parsed pattern for "two"
      * n = 3: parsed pattern for "three"
      * n > 3: (start_before){0}start_between{1}middle_between{2} ... middle_between{m}end_between{n}(end_after)
-     * </pre></blockquote>
+     * }
      * As an example, the following table shows a pattern array which is equivalent to
      * {@code STANDARD} type, {@code FULL} style in US English:
      * <table class="striped">
@@ -485,15 +498,18 @@ public final class ListFormat extends Format {
                         midIndex += mbLength;
                     }
                 }
-                parsed = new MessageFormat(createMessageFormatString(count), locale).parseObject(source, parsePos);
+                parsed = new MessageFormat(listToMessageFormatPattern(createMessageFormatString(count)),
+                        locale).parseObject(source, parsePos);
             }
         }
 
         if (parsed == null) {
             // now try exact number patterns
-            parsed = new MessageFormat(patterns[TWO], locale).parseObject(source, parsePos);
+            parsed = new MessageFormat(listToMessageFormatPattern(patterns[TWO]),
+                    locale).parseObject(source, parsePos);
             if (parsed == null) {
-                parsed = new MessageFormat(patterns[THREE], locale).parseObject(source, parsePos);
+                parsed = new MessageFormat(listToMessageFormatPattern(patterns[THREE]),
+                        locale).parseObject(source, parsePos);
             }
         }
 
@@ -571,9 +587,9 @@ public final class ListFormat extends Format {
         var len = input.length;
         return switch (len) {
             case 0 -> throw new IllegalArgumentException("There should at least be one input string");
-            case 1 -> new MessageFormat("{0}", locale);
-            case 2, 3 -> new MessageFormat(patterns[len + 1], locale);
-            default -> new MessageFormat(createMessageFormatString(len), locale);
+            case 1 -> new MessageFormat(listToMessageFormatPattern("{0}"), locale);
+            case 2, 3 -> new MessageFormat(listToMessageFormatPattern(patterns[len + 1]), locale);
+            default -> new MessageFormat(listToMessageFormatPattern(createMessageFormatString(len)), locale);
         };
     }
 
@@ -664,15 +680,37 @@ public final class ListFormat extends Format {
     /**
      * {@return the positions of the "{0}", "{1}", and "{2}" placeholders in the
      * given pattern string, or null if the pattern is invalid}
+     * Only "{0}", "{1}", or "{2}" placeholders are allowed. Any other use of
+     * curly braces is not allowed.
      *
      * The returned array contains -1 for "{2}" if that placeholder is absent.
      *
      * @param pattern pattern string to parse
      */
     private static int[] findPlaceholders(String pattern) {
-        var positions = new int[3];
-        for (int i = 0; i < positions.length; i++) {
-            positions[i] = pattern.indexOf("{" + i + "}");
+        var positions = new int[] {-1, -1, -1};
+
+        for (int i = 0; i < pattern.length(); i++) {
+            var ch = pattern.charAt(i);
+            if (ch == '{') {
+                if (i + PLACEHOLDER_LENGTH > pattern.length() ||
+                    pattern.charAt(i + 1) < '0' ||
+                    pattern.charAt(i + 1) > '2' ||
+                    pattern.charAt(i + 2) != '}') {
+                    return null;
+                }
+
+                // Check for duplicate placeholders
+                var index = pattern.charAt(i + 1) - '0';
+                if (positions[index] != -1) {
+                    return null;
+                }
+
+                positions[index] = i;
+                i += PLACEHOLDER_LENGTH - 1;
+            } else if (ch == '}') {
+                return null;
+            }
         }
 
         // Check the existence and order of the placeholders
@@ -706,5 +744,19 @@ public final class ListFormat extends Format {
 
         return prefixPos < suffixPos ?
             new int[] {prefixPos, suffixPos + suffix.length()} : null;
+    }
+
+    /**
+     * {@return the MessageFormat pattern corresponding to the passed ListFormat pattern}
+     *
+     * Single quotes must be escaped so they are interpreted as literal text
+     * as opposed to escaping delimiters when passed to MessageFormat. Everything
+     * else remains the same; ListFormat already handles other validation on its own.
+     *
+     * @param pattern list pattern to use
+     */
+    private static String listToMessageFormatPattern(String pattern) {
+        return pattern.indexOf('\'') < 0 ? pattern :
+                pattern.replace("'", "''");
     }
 }
