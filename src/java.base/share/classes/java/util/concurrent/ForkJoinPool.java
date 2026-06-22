@@ -1287,23 +1287,21 @@ public class ForkJoinPool extends AbstractExecutorService
          * @throws RejectedExecutionException if array could not be resized
          */
         final void push(ForkJoinTask<?> task, ForkJoinPool pool, boolean internal) {
-            int s = top, b = base, m, cap; ForkJoinTask<?>[] a;
-            if ((a = array) != null && (cap = a.length) > 0) { // else disabled
-                if ((m = cap - 1) <= (s - b))
+            boolean signal = true;
+            int s = top, b = base, size, m; ForkJoinTask<?>[] a;
+            if ((a = array) != null && (m = a.length - 1) >= 0) { // else disabled
+                if (m == (size = s - b))
                     growAndPush(task, pool, internal);
                 else {
-                    long pos = slotOffset(m & s), pred = slotOffset(m & (s - 1));
+                    long k = slotOffset(m & s), pk = slotOffset(m & (s - 1));
                     top = s + 1;
-                    if (internal)
-                        U.getAndSetReference(a, pos, task);
-                    else {
-                        U.putReferenceRelease(a, pos, task);
+                    U.getAndSetReference(a, k, task);
+                    if (size != 0 && U.getReferenceAcquire(a, pk) != null)
+                        signal = false; // non-empty
+                    if (!internal)
                         U.getAndAddInt(this, PHASE, IDLE); // unlock
-                    }
-                    if (U.getReferenceAcquire(a, pred) != null)
-                        pool = null; // not empty
                 }
-                if (pool != null)
+                if (signal && pool != null)
                     pool.signalWork();
             }
         }
