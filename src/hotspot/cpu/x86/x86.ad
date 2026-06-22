@@ -3931,6 +3931,23 @@ uint Matcher::vector_ideal_reg(int size) {
   return 0;
 }
 
+static bool clone_conv(Node* conv, Matcher* matcher, Matcher::MStack& mstack, VectorSet& address_visited) {
+  if (conv->Opcode() == Op_ConvI2L &&
+      conv->as_Type()->type()->is_long()->_lo >= 0 &&
+      // Are there other uses besides address expressions?
+      !matcher->is_visited(conv)) {
+    if (UseNewCode) {
+      tty->print("[clone-conv] ConvI2L(%d)"
+                 " (outcnt=%d, is_visited=%d)\n",
+                 conv->_idx, conv->outcnt(), matcher->is_visited(conv));
+    }
+    address_visited.set(conv->_idx); // Flag as address_visited
+    mstack.push(conv->in(1), Matcher::Pre_Visit);
+    return true;
+  }
+  return false;
+}
+
 // Check for shift by small constant as well
 static bool clone_shift(Node* shift, Matcher* matcher, Matcher::MStack& mstack, VectorSet& address_visited) {
   if (shift->Opcode() == Op_LShiftX && shift->in(2)->is_Con() &&
@@ -4094,7 +4111,8 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
         !is_visited(adr)) {
       address_visited.set(adr->_idx); // Flag as address_visited
       Node *shift = adr->in(AddPNode::Offset);
-      if (!clone_shift(shift, this, mstack, address_visited)) {
+      if (!clone_shift(shift, this, mstack, address_visited) &&
+          !clone_conv(shift, this, mstack, address_visited)) {
         mstack.push(shift, Pre_Visit);
       }
       mstack.push(adr->in(AddPNode::Address), Pre_Visit);
@@ -4107,7 +4125,8 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
     mstack.push(off, Visit);
     mstack.push(m->in(AddPNode::Base), Pre_Visit);
     return true;
-  } else if (clone_shift(off, this, mstack, address_visited)) {
+  } else if (clone_shift(off, this, mstack, address_visited) ||
+             clone_conv(off, this, mstack, address_visited)) {
     address_visited.test_set(m->_idx); // Flag as address_visited
     mstack.push(m->in(AddPNode::Address), Pre_Visit);
     mstack.push(m->in(AddPNode::Base), Pre_Visit);
