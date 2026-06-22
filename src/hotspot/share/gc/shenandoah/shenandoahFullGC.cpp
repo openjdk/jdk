@@ -88,7 +88,6 @@ void ShenandoahFullGC::vmop_entry_full(GCCause::Cause cause) {
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_gross);
 
   heap->try_inject_alloc_failure();
-  heap->try_inject_pin();
   VM_ShenandoahFullGC op(cause, this);
   VMThread::execute(&op);
 }
