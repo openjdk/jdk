@@ -60,6 +60,9 @@ public final class ConfinedSegmentPool {
 
     private static final boolean DEBUG = !"release".equals(VM.getSavedProperty("jdk.debug"));
 
+    // Avoid initializing VirtualThreadPool from thread-exit cleanup unless it has
+    // already been initialized by a virtual-thread allocation. This flag is
+    // monotonic: false -> true and is not used on the critical hot allocation path.
     private static volatile boolean virtualPoolInitialized;
 
     /**
