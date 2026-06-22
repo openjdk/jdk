@@ -870,7 +870,7 @@ private:
   void release_injected_pins();
 
   // Maximum number of regions that can be injected with pins.
-  static const uint MAX_INJECTED_PINS = 16;
+  static const uint MAX_INJECTED_PINS = 32;
 
   // Tracker for injected pins added by try_inject_pin().
   size_t _injected_pin_indices[MAX_INJECTED_PINS];
