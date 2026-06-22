@@ -2628,6 +2628,7 @@ void Compile::Optimize() {
    }
  }
 
+  // Unique DeadPath node should not be used anymore
   _dead_path = nullptr;
 
  print_method(PHASE_OPTIMIZE_FINISHED, 2);

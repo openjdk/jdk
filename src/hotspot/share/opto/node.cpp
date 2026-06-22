@@ -736,11 +736,14 @@ void Node::out_grow(uint len) {
 //------------------------------is_dead----------------------------------------
 bool Node::is_dead() const {
   // Mach and pinch point nodes may look like dead.
-  if( is_top() || is_Mach() || (Opcode() == Op_Node && _outcnt > 0) || this == Compile::current()->dead_path())
+  if (is_top() || is_Mach() || (Opcode() == Op_Node && _outcnt > 0) || this == Compile::current()->dead_path()) {
     return false;
-  for( uint i = 0; i < _max; i++ )
-    if( _in[i] != nullptr )
+  }
+  for(uint i = 0; i < _max; i++) {
+    if(_in[i] != nullptr) {
       return false;
+    }
+  }
   return true;
 }
 
@@ -3206,8 +3209,4 @@ void Node::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, c
     loop->register_control(halt, loop->ltree_root(), c);
   }
   igvn->add_input_to(igvn->C->root(), halt);
-}
-
-Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return Node::Ideal(phase, can_reshape);
 }

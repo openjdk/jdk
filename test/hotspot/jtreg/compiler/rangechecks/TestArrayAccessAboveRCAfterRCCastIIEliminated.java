@@ -27,14 +27,14 @@
  * @summary [REDO] C2: crash in compiled code because of dependency on removed range check CastIIs
  *
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
- *                   -XX:CompileCommand=dontinline,compiler.rangechecks.TestArrayAccessAboveRCAfterRCCastIIEliminated::notInlined
- *                   compiler.rangechecks.TestArrayAccessAboveRCAfterRCCastIIEliminated
+ *                   -XX:CompileCommand=dontinline,${test.main.class}::notInlined
+ *                   ${test.main.class}
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
- *                   -XX:CompileCommand=dontinline,compiler.rangechecks.TestArrayAccessAboveRCAfterRCCastIIEliminated::notInlined
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM compiler.rangechecks.TestArrayAccessAboveRCAfterRCCastIIEliminated
- * @run main compiler.rangechecks.TestArrayAccessAboveRCAfterRCCastIIEliminated
- * @run main/othervm -XX:CompileCommand=dontinline,compiler.rangechecks.TestArrayAccessAboveRCAfterRCCastIIEliminated::notInlined
- *                   compiler.rangechecks.TestArrayAccessAboveRCAfterRCCastIIEliminated
+ *                   -XX:CompileCommand=dontinline,${test.main.class}::notInlined
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM ${test.main.class}
+ * @run main ${test.main.class}
+ * @run main/othervm -XX:CompileCommand=dontinline,${test.main.class}::notInlined
+ *                   ${test.main.class}
  *
  */
 

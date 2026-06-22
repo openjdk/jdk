@@ -2204,7 +2204,6 @@ public:
     init_class_id(Class_Type);
   }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type *bottom_type() const;
   virtual       uint  ideal_reg() const;
 
