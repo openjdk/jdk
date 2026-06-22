@@ -56,14 +56,9 @@ public final class ConfinedSegmentPool {
     private static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
 
     // The following values can be observed {-1 (disabled), 8, 16, 32 or 64} bytes
-    static final long POOLED_MEMORY_SIZE = clampedPowerOfPropertyOr(POOLED_MEMORY_PROPERTY, 6);
+    private static final long POOLED_MEMORY_SIZE = clampedPowerOfPropertyOr(POOLED_MEMORY_PROPERTY, 6);
 
     private static volatile boolean virtualPoolInitialized;
-
-    @ForceInline
-    public static boolean isVirtualPoolInitialized() {
-        return virtualPoolInitialized;
-    }
 
     /**
      * Returns the size of the native memory pool.
@@ -81,7 +76,7 @@ public final class ConfinedSegmentPool {
             return 0;
         }
         return thread.isVirtual()
-                ? (isVirtualPoolInitialized() ? VirtualThreadPool.currentPool(thread) : 0)
+                ? (virtualPoolInitialized ? VirtualThreadPool.currentPool(thread) : 0)
                 : JLA.getConfinedMemoryPool(thread);
     }
 
@@ -125,7 +120,7 @@ public final class ConfinedSegmentPool {
      */
     public static void releaseOnThreadExit(Thread thread) {
         if (thread.isVirtual()) {
-            if (isVirtualPoolInitialized()) {
+            if (virtualPoolInitialized) {
                 VirtualThreadPool.releaseIfOwned(thread, POOLED_MEMORY_SIZE);
             }
         } else {
@@ -185,7 +180,7 @@ public final class ConfinedSegmentPool {
 
     @ForceInline
     private static void releaseVirtual(Thread thread, long size) {
-        if (!isVirtualPoolInitialized() || !VirtualThreadPool.release(thread, size)) {
+        if (!virtualPoolInitialized || !VirtualThreadPool.release(thread, size)) {
             throw cannotReleasePooledMemory(thread);
         }
     }
@@ -251,7 +246,6 @@ public final class ConfinedSegmentPool {
         private static final long RELEASED = 0;
 
         // Sentinel value for no pooling.
-        // Selecting -1 rather than zero allows constant folding.
         private static final long NO_POOLING = -1;
 
         // Raw memory pointer to the pool. The pool is then sliced into separate
@@ -304,10 +298,7 @@ public final class ConfinedSegmentPool {
             }
             final long address = poolAddress(slot);
             zeroOutMemory(address, size);
-            if (!U.compareAndSetLong(null, ownerAddress, owner, RELEASED)) {
-                throw new IllegalStateException("Cannot release pooled memory: " + thread);
-            }
-            return true;
+            return U.compareAndSetLong(null, ownerAddress, owner, RELEASED);
         }
 
         @ForceInline
@@ -363,10 +354,9 @@ public final class ConfinedSegmentPool {
 
         // Always a power of two.
         private static int slotCount() {
-            final int target = Runtime.getRuntime().availableProcessors() * 2;
-            return target <= 1
-                    ? 1
-                    : Integer.highestOneBit(target - 1) << 1;
+            // Default carrier threads times two
+            final int target = Runtime.getRuntime().availableProcessors() << 1;
+            return Integer.highestOneBit(target - 1) << 1;
         }
 
         private static long allocatePool() {

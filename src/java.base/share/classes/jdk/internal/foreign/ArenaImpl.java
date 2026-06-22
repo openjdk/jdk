@@ -51,18 +51,15 @@ public sealed class ArenaImpl implements Arena {
         session.close();
     }
 
-    @ForceInline
     public final NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
         return allocateLowLevel(byteSize, byteAlignment, false);
     }
 
     @Override
-    @ForceInline
     public final NativeMemorySegmentImpl allocate(long byteSize, long byteAlignment) {
         return allocateLowLevel(byteSize, byteAlignment, true);
     }
 
-    @ForceInline
     NativeMemorySegmentImpl allocateLowLevel(long byteSize, long byteAlignment, boolean init) {
         return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, session, shouldReserve, init);
     }
@@ -84,6 +81,8 @@ public sealed class ArenaImpl implements Arena {
         @Override
         public void close() {
             session.justClose();
+            // The session cleanup at the end of this method may throw so, we
+            // need to release the acquired pooled memory first.
             if (pool > 0) {
                 ConfinedSegmentPool.releaseAcquired(session.owner, poolSp);
             }
@@ -105,11 +104,11 @@ public sealed class ArenaImpl implements Arena {
                     }
                 }
                 final boolean zeroLength = byteSize == 0;
+                // Preserve the invariant that zero-sized segments have unique addresses
+                // for any given Arena
                 final long allocationByteSize = Math.max(1, byteSize);
                 NativeMemorySegmentImpl segment;
                 if (pool > 0 && (segment = trySlice(pool, allocationByteSize, byteAlignment, poolSize)) != null) {
-                    // Preserve the invariant that zero-sized segments have unique addresses
-                    // for any given Arena
                     return zeroLength
                             ? (NativeMemorySegmentImpl) segment.asSlice(0, 0)
                             : segment;
