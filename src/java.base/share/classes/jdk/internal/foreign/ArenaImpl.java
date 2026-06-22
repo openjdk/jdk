@@ -66,9 +66,7 @@ public sealed class ArenaImpl implements Arena {
 
     static final class OfConfined extends ArenaImpl {
 
-        private static final class ConfinedPoolHolder {
-            private static final long POOL_SIZE = ConfinedSegmentPool.pooledMemorySize();
-        }
+        private static final long POOL_SIZE = ConfinedSegmentPool.pooledMemorySize();
 
         @Stable
         private long pool;
@@ -92,8 +90,7 @@ public sealed class ArenaImpl implements Arena {
         @Override
         @ForceInline
         NativeMemorySegmentImpl allocateLowLevel(long byteSize, long byteAlignment, boolean init) {
-            final long poolSize = ConfinedPoolHolder.POOL_SIZE;
-            if (byteSize <= poolSize) {
+            if (byteSize <= POOL_SIZE) {
                 Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
                 session.checkValidState();
                 long pool = this.pool;
@@ -103,30 +100,25 @@ public sealed class ArenaImpl implements Arena {
                         this.pool = pool;
                     }
                 }
-                final boolean zeroLength = byteSize == 0;
                 // Preserve the invariant that zero-sized segments have unique addresses
                 // for any given Arena
                 final long allocationByteSize = Math.max(1, byteSize);
-                NativeMemorySegmentImpl segment;
-                if (pool > 0 && (segment = trySlice(pool, allocationByteSize, byteAlignment, poolSize)) != null) {
-                    return zeroLength
-                            ? (NativeMemorySegmentImpl) segment.asSlice(0, 0)
-                            : segment;
+                final long address;
+                if (pool > 0 && (address = trySlice(pool, allocationByteSize, byteAlignment)) != 0) {
+                    return SegmentFactories.makeNativeSegmentUnchecked(address, byteSize, session);
                 }
             }
             return super.allocateLowLevel(byteSize, byteAlignment, init);
         }
 
-        @ForceInline
-        private NativeMemorySegmentImpl trySlice(long pool, long byteSize, long byteAlignment, long poolSize) {
+        private long trySlice(long pool, long byteSize, long byteAlignment) {
             final long start = Utils.alignUp(pool + poolSp, byteAlignment) - pool;
-            if (start + byteSize <= poolSize) {
+            if (start + byteSize <= POOL_SIZE) {
                 // The backing memory is zeroed on initial allocation and on each pool release.
-                final NativeMemorySegmentImpl slice = SegmentFactories.makeNativeSegmentUnchecked(pool + start, byteSize, session);
                 poolSp = start + byteSize;
-                return slice;
+                return pool + start;
             }
-            return null;
+            return 0;
         }
 
     }
