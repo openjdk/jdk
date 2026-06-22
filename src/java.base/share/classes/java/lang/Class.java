@@ -93,6 +93,8 @@ import sun.reflect.generics.repository.ClassRepository;
 import sun.reflect.generics.scope.ClassScope;
 import sun.reflect.annotation.*;
 
+import static jdk.internal.reflect.ReflectionFactory.getReflectionFactory;
+
 /**
  * Instances of the class {@code Class} represent classes and
  * interfaces in a running Java application. An enum class and a record
@@ -3387,11 +3389,6 @@ public final class Class<T> implements java.io.Serializable,
         return getSuperclass() == java.lang.Record.class &&
                 (this.getModifiers() & Modifier.FINAL) != 0 &&
                 isRecord0();
-    }
-
-    // Fetches the factory for reflective objects
-    private static ReflectionFactory getReflectionFactory() {
-        return ReflectionFactory.getReflectionFactory();
     }
 
     /**
