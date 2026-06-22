@@ -419,7 +419,6 @@ void ShenandoahConcurrentGC::entry_reset() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   heap->release_injected_pins();
   heap->try_inject_alloc_failure();
-  heap->try_inject_pin();
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
   {
