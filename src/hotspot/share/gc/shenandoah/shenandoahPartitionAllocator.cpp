@@ -180,13 +180,25 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
   uint start_index = alloc_region_start_index(thread);
 
   // Fast path: lock-free CAS allocation in THIS thread's stripe slot only (no cross-stripe scan).
+  // If the attempt fails but the slot has meanwhile been replaced with a DIFFERENT region (e.g. a
+  // slow-path thread installed a fresh region with more capacity), retry the lock-free path against
+  // the new region before falling back to the locked slow path. We stop retrying once the slot is
+  // unchanged (same region we just failed on -- its free only shrinks, so a retry would fail again)
+  // or empty. This cannot livelock: a retry requires the slot to have changed to a new non-null
+  // region, and slots are only filled under the heap lock, so retries are rate-limited by other
+  // threads' (rare) slow-path installs.
   ShenandoahHeapRegion* shared_region = _alloc_regions[start_index].load_acquire();
-  if (shared_region != nullptr) {
+  while (shared_region != nullptr) {
     HeapWord* obj = try_atomic_allocate_in(start_index, shared_region, req);
     if (obj != nullptr) {
       in_new_region = false;
       return obj;
     }
+    ShenandoahHeapRegion* const current = _alloc_regions[start_index].load_acquire();
+    if (current == shared_region) {
+      break;
+    }
+    shared_region = current;
   }
 
   // Slow-path with heap lock
