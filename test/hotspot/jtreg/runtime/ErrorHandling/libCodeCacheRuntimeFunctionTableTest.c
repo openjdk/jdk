@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2026, Microsoft and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_INLINE_HPP
-#define OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_INLINE_HPP
+#include <jni.h>
+#include <windows.h>
+#include <intrin.h>
 
-#include "runtime/os.hpp"
-#include "os_windows.hpp"
+#pragma intrinsic(_ReturnAddress)
 
-inline bool os::register_code_area(char *low, char *high) {
-  return os::win32::register_code_area(low, high);
+/*
+ * We use the fact that both the JNI function as well as the generated native
+ * wrapper both live in the code cache.  So by probing the Windows function
+ * table for an entry for the return address, we effectively check whether the
+ * code cache area is registered or not.
+ */
+
+JNIEXPORT jlong JNICALL
+Java_CodeCacheRuntimeFunctionTableTest_callerRuntimeFunction(JNIEnv* env, jclass cls) {
+    DWORD64 control_pc = (DWORD64)_ReturnAddress();
+    DWORD64 image_base = 0;
+    PRUNTIME_FUNCTION runtime_function = RtlLookupFunctionEntry(control_pc, &image_base, NULL);
+    return (jlong)runtime_function;
 }
-
-#define HAVE_PLATFORM_PRINT_NATIVE_STACK 1
-inline bool os::platform_print_native_stack(outputStream* st, const void* context,
-                                            char *buf, int buf_size, address& lastpc) {
-  return os::win32::platform_print_native_stack(st, context, buf, buf_size, lastpc);
-}
-
-#endif // OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_INLINE_HPP
