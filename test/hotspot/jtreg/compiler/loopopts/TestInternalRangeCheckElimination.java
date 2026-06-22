@@ -87,6 +87,13 @@ public class TestInternalRangeCheckElimination {
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:LoopUnrollLimit=0",
                                    "--add-modules=jdk.incubator.vector");
+        TestFramework.runWithFlags("-XX:LoopUnrollLimit=0",
+                                   "-XX:+UnlockExperimentalVMOptions",
+                                   "-XX:PerMethodSpecTrapLimit=0",
+                                   "-XX:PerMethodTrapLimit=0",
+                                   "-XX:-UseLoopPredicate",
+                                   "-XX:-UseProfiledLoopPredicate",
+                                   "--add-modules=jdk.incubator.vector");
     }
 
     private static List<Integer> vectorLimitSpecials(int len) {
@@ -153,6 +160,73 @@ public class TestInternalRangeCheckElimination {
     }
 
     @Test
+    @IR(failOn = {IRNode.COUNTED_LOOP_MAIN})
+    public static int trueHotInternalIf(int limit) {
+        int sum = 0;
+        for (int i = 0; i < limit; i++) {
+            sum += (i < limit - 1) ? 1 : -1;
+        }
+        return sum;
+    }
+
+    private static void checkTrueHotInternalIf(int limit) {
+        int actual = trueHotInternalIf(limit);
+        int expected = (limit == 0) ? 0 : limit - 2;
+        Asserts.assertEQ(actual, expected,
+                "trueHotInternalIf mismatch: limit=" + limit);
+    }
+
+    @Run(test = "trueHotInternalIf")
+    public void runTrueHotInternalIf() {
+        checkTrueHotInternalIf(1024);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.COUNTED_LOOP_MAIN})
+    public static int falseHotInternalIf(int limit) {
+        int sum = 0;
+        for (int i = 0; i < limit; i++) {
+            sum += (i >= limit - 1) ? 1 : -1;
+        }
+        return sum;
+    }
+
+    private static void checkFalseHotInternalIf(int limit) {
+        int actual = falseHotInternalIf(limit);
+        int expected = (limit == 0) ? 0 : 2 - limit;
+        Asserts.assertEQ(actual, expected,
+                "falseHotInternalIf mismatch: limit=" + limit);
+    }
+
+    @Run(test = "falseHotInternalIf")
+    public void runFalseHotInternalIf() {
+        checkFalseHotInternalIf(1024);
+    }
+
+    @Test
+    @IR(counts = {IRNode.COUNTED_LOOP, ">= 1"})
+    public static int balancedInternalIf(int limit) {
+        int sum = 0;
+        for (int i = 0; i < limit; i++) {
+            sum += (i < (limit >> 1)) ? 1 : -1;
+        }
+        return sum;
+    }
+
+    private static void checkBalancedInternalIf(int limit) {
+        int actual = balancedInternalIf(limit);
+        int expected = 2 * (limit >> 1) - limit;
+        Asserts.assertEQ(actual, expected,
+                "balancedInternalIf mismatch: limit=" + limit);
+    }
+
+    @Run(test = "balancedInternalIf")
+    public void runBalancedInternalIf() {
+        checkBalancedInternalIf(1024);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.COUNTED_LOOP_MAIN})
     public static int basicInternalIf(int limit, int offset) {
         int sum = 0;
         int bound = limit - offset;
@@ -191,6 +265,7 @@ public class TestInternalRangeCheckElimination {
     }
 
     @Test
+    @IR(failOn = {IRNode.COUNTED_LOOP_MAIN})
     public static int internalIfFalseHot(int limit, int offset) {
         int sum = 0;
         int bound = limit - offset;
@@ -229,6 +304,7 @@ public class TestInternalRangeCheckElimination {
     }
 
     @Test
+    @IR(failOn = {IRNode.RANGE_CHECK})
     public static int indexInRangeLike(int limit, int length) {
         int acc = 0;
         for (int i = 0; i < limit; i++) {
