@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ public class PlatformSupportImpl extends PlatformSupport {
      * It is important that this directory is well-known and the
      * same for all VM instances. It cannot be affected by configuration
      * variables such as java.io.tmpdir.
+     * It can be affected by VM option -XX:AltTempDir, however.
      *
      * Implementation Details:
      *
@@ -159,8 +160,7 @@ public class PlatformSupportImpl extends PlatformSupport {
             File containerFile = new File(containerTmpDir);
 
             if (containerFile.exists() && containerFile.isDirectory() &&
-                containerFile.canRead() &&
-                !tempDirectoryEquals(containerFile.toPath())) {
+                containerFile.canRead()) {
                 v.add(containerTmpDir);
             }
         }
@@ -170,14 +170,16 @@ public class PlatformSupportImpl extends PlatformSupport {
 
 
     /*
-     * Extract either the host PID or the NameSpace PID
-     * from a file path.
+     * Extract the VM ID (PID) from a file path.
+     * Specifically the host pid for a container process.
      *
      * File path should be in 1 of these 2 forms:
      *
      * /proc/{pid}/root/tmp/hsperfdata_{user}/{nspid}
      *              or
      * /tmp/hsperfdata_{user}/{pid}
+     *
+     * (where /tmp may be substituted due to -XX:AltTempDir)
      *
      * In either case we want to return {pid} and NOT {nspid}
      *
@@ -189,24 +191,52 @@ public class PlatformSupportImpl extends PlatformSupport {
      */
     public int getLocalVmId(File file) throws NumberFormatException {
         String p = file.getAbsolutePath();
-        String s[] = p.split("\\/");
+        String parts[] = p.split("\\/");
 
-        // Determine if this file is from a container
-        if (s.length == 7 && s[1].equals("proc")) {
-            int hostpid = Integer.parseInt(s[2]);
-            int nspid = Integer.parseInt(s[6]);
-            if (nspid == hostpid || nspid == getNamespaceVmId(hostpid)) {
+        boolean seenProc = false;
+        boolean seenPerf = false;
+        int hostpid = -1;
+        int nspid = -1;
+
+        // Step through, as format is flexible given -XX:AltTempDir settings.
+        // (this could be fooled by including "hsperfdata_" in the temp dir path)
+        for (String s : parts) {
+            if (!seenProc && s.equals("proc")) {
+                seenProc = true;
+                continue;
+            }
+            if (seenProc && hostpid == -1) {
+                // host pid immediately follows "proc".
+                hostpid = Integer.parseInt(s);
+                continue;
+            }
+            if (!seenPerf && s.startsWith("hsperfdata_")) {
+                seenPerf = true;
+                continue;
+            }
+            if (seenPerf) {
+                // Parse pid or nspid after seeing "hsperfdata_"
+                if (hostpid == -1) {
+                    hostpid = Integer.parseInt(s);
+                } else {
+                    nspid = Integer.parseInt(s);
+                }
+                break;
+            }
+        }
+
+        if (seenPerf) {
+            if (nspid == -1) {
                 return hostpid;
-            }
-            else {
-                return -1;
+            } else {
+                // We have both pids.
+                if (nspid == getNamespaceVmId(hostpid)) {
+                    return hostpid;
+                }
             }
         }
-        else {
-            return Integer.parseInt(file.getName());
-        }
+        return -1;
     }
-
 
     /*
      * Return the inner most namespaced PID if there is one,
