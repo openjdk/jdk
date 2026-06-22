@@ -788,6 +788,10 @@ JShell.
     is searched as well. As an example, for `<directory>/lib.jar`,
     `<directory>/lib-sources.jar` will be searched as well.
 
+    The source file's path should be the same as is, or would be, the path to the
+    corresponding classfile for the corresponding top-level class, with
+    `.class` replaced with `.java`.
+
     When entering a method call, use the Tab key after the method call's
     opening parenthesis to see the parameters for the method. If the method has
     more than one signature, then all signatures are displayed. Pressing the
