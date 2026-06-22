@@ -3737,9 +3737,16 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
         // now that toArray is strongly typed, we can define this
         short[] a = toArray();
         // Canonicalize NaN lane encodings so that all NaN representations,
-        // including signaling ones, contribute the same hash code.
+        // including signaling ones, contribute the same hash code. The
+        // check operates directly on the bit pattern to avoid any Float16
+        // allocation.
+        short canonicalNaNBits = Float16.float16ToRawShortBits(Float16.NaN);
         for (int i = 0; i < a.length; i++) {
-            a[i] = Float16.float16ToShortBits(Float16.shortBitsToFloat16(a[i]));
+            short bits = a[i];
+            if ((bits & Float16Consts.EXP_BIT_MASK) == Float16Consts.EXP_BIT_MASK &&
+                (bits & Float16Consts.SIGNIF_BIT_MASK) != 0) {
+                a[i] = canonicalNaNBits;
+            }
         }
         return Objects.hash(species(), Arrays.hashCode(a));
     }
