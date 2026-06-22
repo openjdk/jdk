@@ -184,6 +184,8 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
             }
 
             case LINK, LINK_PLAIN -> {
+                // @see [String]
+                // @see [Map class][Map]
                 // Markdown reference links to program elements are covered by @see reference label form.
                 return invalidSeeTagOutput(element, seeTag);
             }
