@@ -486,7 +486,7 @@ public final class ImageReader implements AutoCloseable {
                     ImageLocation loc = null;
                     if (isPreviewEnabled) {
                         // We must test preview location first (if in preview mode).
-                        loc = findLocation(moduleName, PREVIEW_RESOURCE_PREFIX + resourcePath);
+                        loc = findLocation(moduleName, PREVIEW_RESOURCE_PREFIX + "/" + resourcePath);
                     }
                     if (loc == null) {
                         loc = findLocation(moduleName, resourcePath);
@@ -531,7 +531,7 @@ public final class ImageReader implements AutoCloseable {
                         return node.isResource();
                     }
                 }
-                loc = findLocation(moduleName, PREVIEW_RESOURCE_PREFIX + resourcePath);
+                loc = findLocation(moduleName, PREVIEW_RESOURCE_PREFIX + "/" + resourcePath);
             }
             if (loc == null) {
                 loc = findLocation(moduleName, resourcePath);
