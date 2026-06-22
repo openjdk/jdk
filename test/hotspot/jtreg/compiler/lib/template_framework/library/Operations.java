@@ -801,6 +801,25 @@ public final class Operations {
             // skip hashCode
         }
 
+        // ----------------- Float16 scalar <-> Float16Vector lane bridges --------------------
+        // ShortCarriesFloat16 is the Float16Vector lane type. Its only semantically valid
+        // scalar peer is the boxed Float16 (which carries real float16 arithmetic), NOT a
+        // plain short: applying integer +/-/*/<< to raw float16 bits is meaningless, which
+        // is precisely why ShortCarriesFloat16 is kept distinct from SHORTS. We therefore
+        // bridge the lane type only to/from FLOAT16, mirroring how the scalar Float16 type
+        // bridges to SHORTS via its bit-cast methods in generateFloat16Operations().
+        var float16Lane = ShortCarriesFloat16.FLOAT16;
+        // Lane carrier -> boxed Float16: lifts a lane()/reduceLanes() result into the rich
+        // scalar Float16 world. Pure function of the bits (NaN-awareness is handled by
+        // Float16 verification), so deterministic.
+        ops.add(Expression.make(FLOAT16, "Float16.shortBitsToFloat16(", float16Lane, ")"));
+        // Boxed Float16 -> lane carrier: produces a ShortCarriesFloat16 scalar to feed
+        // Float16Vector.broadcast/add(scalar)/withLane(...). float16ToShortBits canonicalizes
+        // NaN (deterministic); float16ToRawShortBits preserves the raw NaN encoding, so it
+        // is non-deterministic.
+        ops.add(Expression.make(float16Lane, "Float16.float16ToShortBits(", FLOAT16, ")"));
+        ops.add(Expression.make(float16Lane, "Float16.float16ToRawShortBits(", FLOAT16, ")", WITH_NONDETERMINISTIC_RESULT));
+
         // TODO: VectorSpecies API methods
 
         // Make sure the list is not modifiable.
