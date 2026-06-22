@@ -31,9 +31,9 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 5, time = 3)
-@Measurement(iterations = 5, time = 3)
-@Fork(value = 5)
+@Warmup(iterations = 4, time = 2)
+@Measurement(iterations = 4, time = 2)
+@Fork(value = 3)
 public class ObjectsCheckIndex {
 
     @Param({"256", "1024", "4096"})
