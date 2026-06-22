@@ -81,6 +81,10 @@ ifneq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64), true+true)
   HOTSPOT_JTREG_EXCLUDE += libTestSVEWithJNI.c
 endif
 
+ifneq ($(call isTargetOs, windows)+$(call isTargetCpu, aarch64), true+true)
+  HOTSPOT_JTREG_EXCLUDE += libCodeCacheRuntimeFunctionTableTest.c
+endif
+
 ifeq ($(call isTargetOs, windows), true)
   HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
   HOTSPOT_JTREG_LIBRARIES_JDK_LIBS_libnativeStack := java.base:libjvm
