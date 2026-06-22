@@ -67,17 +67,19 @@ private:
   // no region to hand out. Returns the allocation, or nullptr if no slot could satisfy the request.
   HeapWord* try_allocate_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, uint start_index);
 
-  // Try to install freshly-allocated region into stripe slot index as an active alloc region
+  // Try to install freshly-allocated new_region into stripe slot index as the active alloc region
   // (heap lock held). occupant is the value the caller already loaded from the slot under the lock;
   // since installs happen only under the lock, the slot can only have changed from occupant to
   // nullptr (the lock-free fast path retiring it), so occupant is a valid CAS expected value.
-  // Only installs when the slot is "ready for replenish": empty (occupant == nullptr), or holding a
-  // region that no longer has room for a minimum LAB. Prepares new_region (make regular + retire
-  // from the partition), then publishes it with a CAS against occupant; if that CAS loses to the
-  // fast path retiring the slot, new_region is deactivated and returned to the free set. Returns
-  // true iff new_region became the slot's active alloc region. When it returns false new_region
-  // remains an ordinary free-set member (the caller's allocation from it is already accounted).
-  bool install_alloc_region(uint index, ShenandoahHeapRegion* occupant, ShenandoahHeapRegion* new_region);
+  //
+  // Installs only when new_region is the better region to cache: the slot is empty, or new_region
+  // has strictly more remaining capacity than the occupant. When it installs, any displaced
+  // occupant is deactivated and its remnant returned to the free set. When the occupant has at least
+  // as much room as new_region, the install is declined and new_region is left as an ordinary
+  // free-set member (the caller's allocation from it is already accounted).
+  //
+  // Returns true iff new_region became the slot's active alloc region.
+  bool try_install_alloc_region(uint index, ShenandoahHeapRegion* occupant, ShenandoahHeapRegion* new_region);
 
   // Allocate within a single region; the caller must guarantee the region has enough free
   // capacity for the request. Handles LAB sizing, updates partition accounting via

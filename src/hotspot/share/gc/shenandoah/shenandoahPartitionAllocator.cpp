@@ -94,19 +94,28 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in_alloc_regions
 }
 
 template<ShenandoahFreeSetPartitionId PARTITION>
-bool ShenandoahPartitionAllocator<PARTITION>::install_alloc_region(uint index,
-                                                                   ShenandoahHeapRegion* occupant,
-                                                                   ShenandoahHeapRegion* new_region) {
+bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint index,
+                                                                       ShenandoahHeapRegion* occupant,
+                                                                       ShenandoahHeapRegion* new_region) {
   shenandoah_assert_heaplocked();
   assert(!new_region->is_atomic_alloc_region(), "Fresh region must not already be an active alloc region");
   assert(occupant == nullptr || occupant == _alloc_regions[index].load_acquire() ||
          _alloc_regions[index].load_acquire() == nullptr,
          "Under the lock the slot can only change from occupant to nullptr (fast-path retire)");
 
-  // Only replace the slot when it is ready for replenish: empty, or holding a region that no longer
-  // has room for a minimum LAB. If the slot still holds a usable region (it just could not satisfy
-  // this thread's larger request), leave it -- evicting it would discard usable lock-free capacity.
-  if (occupant != nullptr && (occupant->free() >> LogHeapWordSize) >= PLAB::min_size()) {
+  // Replace the slot only when new_region is the better region to cache, i.e. it has strictly more
+  // remaining capacity than the occupant (an empty slot always installs). new_region has already
+  // served the current request (allocate_in ran before this), so new_region->free() is its post-
+  // allocation remnant; the caller only calls us when that remnant is still >= PLAB::min_size, so we
+  // never cache a near-empty region. Keeping the larger region maximizes future fast-path hits and
+  // un-wedges a slot stuck on a low-capacity region that keeps failing larger requests. Conversely,
+  // when the occupant still has more room than new_region, we leave it -- evicting it would strand
+  // its larger remnant in the free set (reachable only via the slow path).
+  //
+  // occupant->free() is read while the occupant is still an active alloc region, so it is a
+  // concurrent snapshot that may only grow until the region is retired; an occasionally-stale value
+  // only affects which region we keep (a heuristic), never correctness.
+  if (occupant != nullptr && occupant->free() >= new_region->free()) {
     return false;
   }
 
@@ -227,14 +236,14 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
         boundary_changed = true;
       }
       // If the region still has usable capacity, try to install it into our stripe slot as an active
-      // alloc region so subsequent allocations use the lock-free fast path. install_alloc_region
-      // only does so when the slot is ready for replenish (empty or full); if it declines or loses
-      // the publish CAS, fresh simply remains an ordinary free-set member (already accounted by
-      // allocate_in). Either way the partition boundary moved.
+      // alloc region so subsequent allocations use the lock-free fast path. try_install_alloc_region
+      // installs only when fresh is the better region to cache (slot empty, or fresh has more room
+      // than the occupant); otherwise fresh simply remains an ordinary free-set member (already
+      // accounted by allocate_in). Either way the partition boundary moved.
       if (_free_set->alloc_capacity(fresh) >> LogHeapWordSize >= PLAB::min_size()) {
         // shared_region is the slot value loaded above under the lock; find_region_for_alloc does
         // not touch the slots, so it is still a valid CAS expected value for the install.
-        install_alloc_region(start_index, shared_region, fresh);
+        try_install_alloc_region(start_index, shared_region, fresh);
         boundary_changed = true;
       }
       _free_set->notify_allocation(PARTITION, in_new_region, boundary_changed);
