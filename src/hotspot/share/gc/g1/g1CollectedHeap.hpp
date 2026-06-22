@@ -146,27 +146,20 @@ public:
 };
 
 class G1CollectedHeap : public CollectedHeap {
+  friend class G1CheckRegionAttrTableClosure;
+  friend class G1EvacuateRegionsTask;
+  friend class G1FullCollector;
+  friend class G1GCAllocRegion;
+  friend class G1HeapPrinterMark;
+  friend class G1HeapRegionClaimer;
+  friend class G1HeapVerifier;
+  friend class G1PLABAllocator;
+  friend class G1YoungGCVerifierMark;
+  friend class MutatorAllocRegion;
   friend class VM_G1CollectForAllocation;
   friend class VM_G1CollectFull;
   friend class VM_G1TryInitiateConcMark;
   friend class VMStructs;
-  friend class MutatorAllocRegion;
-  friend class G1FullCollector;
-  friend class G1GCAllocRegion;
-  friend class G1HeapVerifier;
-
-  friend class G1YoungGCVerifierMark;
-
-  // Closures used in implementation.
-  friend class G1EvacuateRegionsTask;
-  friend class G1PLABAllocator;
-
-  // Other related classes.
-  friend class G1HeapPrinterMark;
-  friend class G1HeapRegionClaimer;
-
-  // Testing classes.
-  friend class G1CheckRegionAttrTableClosure;
 
 private:
   // GC Overhead Limit functionality related members.

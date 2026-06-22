@@ -353,6 +353,24 @@ public class TestHasTruncationWrap {
 
     // testIRShort2b: short loop, ranges proved in short range via CmpI before loop.
     // Compared to testIRShort2, the check in the loop is an NEQ.
+    //
+    // Since the bug fix of JDK-8386830, we no longer allow this case to detect CountedLoop:
+    // The backedge finds no useful constraint, the "i != limit" does not give any restrictions,
+    // and so we have to assume it produces the full range.
+    // Comparing with testIRShort2, there we have a useful check "i < limit", which does
+    // give us a restriction, that helps us prove there is not wrap overflow.
+    //
+    // In the future, we could try to do something more smart, and combine the info about
+    // entry type "init < limit <= 100" with the fact that we have unity-stride, and so
+    // we should not be able to skip the NEQ "i != limit", and be able to canonicalize
+    // NEQ to LT. But for now, I consider this an edge-case that we will just have to accept
+    // will not be optimized to CountedLoop for now. For now, a workaround is using the
+    // exit condition "i < limit".
+    // This is really a problem about iv evolution (iv starts in range, increments by 1,
+    // and cannot skip exit check, so NEQ can be converted to LT), and cannot be solved
+    // by the type info of entry/backedge separately, so I don't have a quick fix here.
+    // We do this NEQ to LT canonicalization for int loops, but we would also need
+    // dedicated logic for it specifically combined with the wrap-detection logic.
     public static int testIRShort2b_gold = testIRShort2b();
 
     @Run(test = "testIRShort2b")
@@ -362,7 +380,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
     static int testIRShort2b() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
@@ -374,10 +392,8 @@ public class TestHasTruncationWrap {
         int sum = 0;
         for (int i = init; i != limit; i = (short)(i+1)) {
             sum = opaqueSum(sum); // work to keep loop alive
-            // The backedge value of i is also far
-            // enough from short boundaries, because of
-            // the loop exit check:
-            //   i < limit <= 100
+            // Unfortunately, the backedge does not produce a useful
+            // check with "i != limit", and so the type is unconstrained.
         }
         return sum;
     }
@@ -589,8 +605,15 @@ public class TestHasTruncationWrap {
     }
 
     // testIRShort5d: short while-loop, again similar to testIRShort2b and testIRShort5c, but with while-loop form.
-    // No peeling, and so the entry value is init, and so the "init >= limit" check is useful,
-    // and used by has_truncation_wrap. With it, C2 manages to prove no short-overflow.
+    //
+    // Same issue as with testIRShort2b:
+    // After JDK-8386830, we now see that the backedge type is not constrained,
+    // and so don't allow CountedLoop detection.
+    // However, we could be smarter in the future, and canonicalize NEQ
+    // to LT, because this is a unity-stride loop where the "i != limit"
+    // can provably not be skipped. For now, we just have to accept that
+    // we cannot optimize this, and people would have to use "i < limit",
+    // see testIRShort5.
     public static int testIRShort5d_gold = testIRShort5d();
 
     @Run(test = "testIRShort5d")
@@ -600,7 +623,7 @@ public class TestHasTruncationWrap {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTED_LOOP, "> 0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "= 0"})
     static int testIRShort5d() {
         int init  = Math.max(lo, 0);   // init  in [0..max_int]
         int limit = Math.min(hi, 100); // limit in [min_int..100]
@@ -614,6 +637,8 @@ public class TestHasTruncationWrap {
         while (i != limit) {
             sum = opaqueSum(sum); // work to keep loop alive
             i = (short)(i+1);
+            // Unfortunately, the backedge does not produce a useful
+            // check with "i != limit", and so the type is unconstrained.
         }
         return sum;
     }
