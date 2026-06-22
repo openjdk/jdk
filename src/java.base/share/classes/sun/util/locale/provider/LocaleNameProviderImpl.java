@@ -91,7 +91,7 @@ public class LocaleNameProviderImpl extends LocaleNameProvider implements Availa
     }
 
     /**
-     * Returns a localized name for the given <a href="http://www.rfc-editor.org/rfc/bcp/bcp47.txt">
+     * Returns a localized name for the given <a href="https://www.rfc-editor.org/info/bcp47/">
      * IETF BCP47</a> script code and the given locale that is appropriate for
      * display to the user.
      * For example, if <code>scriptCode</code> is "Latn" and <code>locale</code>
