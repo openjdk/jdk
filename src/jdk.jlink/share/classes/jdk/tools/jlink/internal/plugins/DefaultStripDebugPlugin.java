@@ -29,7 +29,6 @@ import java.util.Map;
 
 import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.internal.ResourcePoolManager;
-import jdk.tools.jlink.internal.ResourcePoolManager.ResourcePoolImpl;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
@@ -43,6 +42,8 @@ public final class DefaultStripDebugPlugin extends AbstractPlugin {
 
     private static final String STRIP_NATIVE_DEBUG_PLUGIN = "strip-native-debug-symbols";
     private static final String EXCLUDE_DEBUGINFO = "exclude-debuginfo-files";
+    private static final String EXCLUDE_FILES_PLUGIN = "exclude-files";
+    private static final String EXCLUDE_DEBUG_FILES_PATTERN = "**.debuginfo,**.diz";
 
     private final Plugin javaStripPlugin;
     private final NativePluginFactory stripNativePluginFactory;
@@ -68,26 +69,25 @@ public final class DefaultStripDebugPlugin extends AbstractPlugin {
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         Plugin stripNativePlugin = stripNativePluginFactory.create();
-        if (stripNativePlugin != null) {
-            Map<String, String> stripNativeConfig = Map.of(
-                                     STRIP_NATIVE_DEBUG_PLUGIN, EXCLUDE_DEBUGINFO);
-            stripNativePlugin.configure(stripNativeConfig);
 
-            if (!isJavaStripPluginEnabled) {
-                return stripNativePlugin.transform(in, out);
-            }
+        ExcludeFilesPlugin excludeFilesPlugin = new ExcludeFilesPlugin();
+        excludeFilesPlugin.configure(Map.of(EXCLUDE_FILES_PLUGIN, EXCLUDE_DEBUG_FILES_PATTERN));
 
-            ResourcePoolManager outRes =
-                                 new ResourcePoolManager(in.byteOrder(),
-                                                        ((ResourcePoolImpl)in).getStringTable());
-            ResourcePool strippedJava = javaStripPlugin.transform(in,
-                                                                  outRes.resourcePoolBuilder());
-            return stripNativePlugin.transform(strippedJava, out);
-        } else if (isJavaStripPluginEnabled) {
-            return javaStripPlugin.transform(in, out);
-        } else {
-            return in;
+        ResourcePool result = in;
+        if (isJavaStripPluginEnabled) {
+            result = pipe(result, javaStripPlugin);
         }
+        if (stripNativePlugin != null) {
+            stripNativePlugin.configure(Map.of(STRIP_NATIVE_DEBUG_PLUGIN, EXCLUDE_DEBUGINFO));
+            result = pipe(result, stripNativePlugin);
+        }
+        return excludeFilesPlugin.transform(result, out);
+    }
+
+    private ResourcePool pipe(ResourcePool pool, Plugin plugin) {
+        ResourcePoolManager mgr = new ResourcePoolManager(
+                pool.byteOrder(), ((ResourcePoolManager.ResourcePoolImpl)pool).getStringTable());
+        return plugin.transform(pool, mgr.resourcePoolBuilder());
     }
 
     public interface NativePluginFactory {
