@@ -37,7 +37,9 @@ static void z_color(MacroAssembler* masm, Register dst, Register src) {
   assert_different_registers(src, dst);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeMov);
   __ movzw(dst, barrier_Relocation::unpatched);
-  __ orr(dst, dst, src, Assembler::LSL, ZPointerLoadShift);
+  if (src != noreg) {
+    __ orr(dst, dst, src, Assembler::LSL, ZPointerLoadShift);
+  }
 }
 
 static void z_uncolor(MacroAssembler* masm, Register ref) {
@@ -165,10 +167,28 @@ instruct zStoreP(memory mem, iRegP src, iRegPNoSp tmp, rFlagsReg cr)
   effect(TEMP tmp, KILL cr);
 
   ins_cost(125); // XXX
-  format %{ "movq    $mem, $src\t# ptr" %}
+  format %{ "str    $src, $mem\t# ptr" %}
   ins_encode %{
     const Address ref_addr = mem2address($mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
     z_store_barrier(masm, this, ref_addr, $src$$Register, $tmp$$Register, rscratch2, false /* is_atomic */);
+    __ str($tmp$$Register, ref_addr);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+// Store Null Pointer
+instruct zStorePNull(memory mem, immP0 zero, iRegPNoSp tmp, rFlagsReg cr)
+%{
+  predicate(UseZGC && !needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreP mem zero));
+  effect(TEMP tmp, KILL cr);
+
+  ins_cost(125); // TODO: check if this needs to be adjusted.
+  format %{ "mov    $tmp, #0\n\t"
+            "str    $tmp, $mem\t# ptr" %}
+  ins_encode %{
+    const Address ref_addr = mem2address($mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+    z_store_barrier(masm, this, ref_addr, noreg, $tmp$$Register, rscratch2, false /* is_atomic */);
     __ str($tmp$$Register, ref_addr);
   %}
   ins_pipe(pipe_serial);
@@ -182,7 +202,7 @@ instruct zStorePVolatile(indirect mem, iRegP src, iRegPNoSp tmp, rFlagsReg cr)
   effect(TEMP tmp, KILL cr);
 
   ins_cost(125); // XXX
-  format %{ "movq    $mem, $src\t# ptr" %}
+  format %{ "stlr    $src, $mem\t# ptr" %}
   ins_encode %{
     const Address ref_addr = Address($mem$$Register);
     z_store_barrier(masm, this, ref_addr, $src$$Register, $tmp$$Register, rscratch2, false /* is_atomic */);
