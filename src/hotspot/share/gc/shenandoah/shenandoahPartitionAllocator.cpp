@@ -320,24 +320,25 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_atomic_allocate_in(uint i
 
   if (obj != nullptr) {
     req.set_actual_size(actual_size);
-    if (ready_for_replenish) {
-      // The region is now (nearly) full. Claim the slot for retirement with a CAS on its stripe
-      // entry. Multiple threads may observe ready_for_replenish concurrently on this lock-free path,
-      // but only the thread that wins this CAS may retire it: unset_active_alloc_region() is not
-      // safe to run concurrently on the same region (two unsetters can clobber each other's _top
-      // sync). The slot is left empty; the next allocator on this stripe takes the slow path and
-      // installs a fresh region.
-      if (_alloc_regions[index].compare_exchange(r, (ShenandoahHeapRegion*) nullptr) == r) {
-        bool unset = r->unset_active_alloc_region();
-        assert(unset, "Winner of the retire CAS must deactivate the region");
-        if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
-          // The region is now full of evacuated objects. Advance the update watermark to its
-          // final top so update-refs covers them, and clear the reserved flag so the barrier
-          // stops forcing bulk updates over the region. unset_active_alloc_region() has already
-          // synced _atomic_top to _top, so stable_top() is the authoritative final top.
-          r->set_update_watermark(r->stable_top());
-          r->set_collector_allocator_reserved(false);
-        }
+  }
+
+  if (ready_for_replenish) {
+    // The region is now (nearly) full. Claim the slot for retirement with a CAS on its stripe
+    // entry. Multiple threads may observe ready_for_replenish concurrently on this lock-free path,
+    // but only the thread that wins this CAS may retire it: unset_active_alloc_region() is not
+    // safe to run concurrently on the same region (two unsetters can clobber each other's _top
+    // sync). The slot is left empty; the next allocator on this stripe takes the slow path and
+    // installs a fresh region.
+    if (_alloc_regions[index].compare_exchange(r, (ShenandoahHeapRegion*) nullptr) == r) {
+      bool unset = r->unset_active_alloc_region();
+      assert(unset, "Winner of the retire CAS must deactivate the region");
+      if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
+        // The region is now full of evacuated objects. Advance the update watermark to its
+        // final top so update-refs covers them, and clear the reserved flag so the barrier
+        // stops forcing bulk updates over the region. unset_active_alloc_region() has already
+        // synced _atomic_top to _top, so stable_top() is the authoritative final top.
+        r->set_update_watermark(r->stable_top());
+        r->set_collector_allocator_reserved(false);
       }
     }
   }
