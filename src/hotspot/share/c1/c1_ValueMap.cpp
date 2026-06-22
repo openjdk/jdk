@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
-#include "classfile/vmIntrinsics.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 #ifndef PRODUCT
@@ -392,19 +391,7 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
   Instruction* prev = block;
   Instruction* cur = block->next();
 
-  bool prev_is_intrinsic_precond = false;
-
   while (cur != nullptr) {
-    // Remember for the next instruction if cur is a precondition check index.
-    // If the nex instruction is a LoadIndexed we must not hoist it out of the
-    // loop because that would move the load before its range check.
-    if (Intrinsic* i = cur->as_Intrinsic(); i != nullptr &&
-        (i->id() == vmIntrinsics::_Preconditions_checkIndex || i->id() == vmIntrinsics::_Preconditions_checkLongIndex)) {
-      prev_is_intrinsic_precond = true;
-      // Preconditions cannot be hoisted, so we can safely continue early.
-      continue;
-    }
-
     // determine if cur instruction is loop invariant
     // only selected instruction types are processed here
     bool cur_invariant = false;
@@ -424,7 +411,7 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
       cur_invariant = is_invariant(length->array());
     } else if (cur->as_LoadIndexed() != nullptr) {
       LoadIndexed *li = (LoadIndexed *)cur->as_LoadIndexed();
-      cur_invariant = !_short_loop_optimizer->has_indexed_store(as_BasicType(cur->type())) && is_invariant(li->array()) && is_invariant(li->index()) && _insert_is_pred && !prev_is_intrinsic_precond;
+      cur_invariant = !_short_loop_optimizer->has_indexed_store(as_BasicType(cur->type())) && is_invariant(li->array()) && is_invariant(li->index()) && _insert_is_pred;
     } else if (cur->as_NegateOp() != nullptr) {
       NegateOp* neg = (NegateOp*)cur->as_NegateOp();
       cur_invariant = is_invariant(neg->x());
@@ -469,8 +456,6 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
       prev = cur;
       cur = cur->next();
     }
-
-    prev_is_intrinsic_precond = false;
   }
 }
 

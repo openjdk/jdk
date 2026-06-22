@@ -5275,8 +5275,8 @@ public final class String
      * StringIndexOutOfBoundsException  if {@code index} is
      * negative or greater than or equal to {@code length}.
      */
-    static void checkIndex(int index, int length) {
-        Preconditions.checkIndex(index, length, Preconditions.SIOOBE_FORMATTER);
+    static int checkIndex(int index, int length) {
+        return Preconditions.checkIndex(index, length, Preconditions.SIOOBE_FORMATTER);
     }
 
     /*
