@@ -1871,6 +1871,8 @@ public:
 
   virtual const TypeKlassPtr* try_improve() const { return this; }
 
+  bool has_interface_constraints() const { return !_interfaces->empty(); }
+
 private:
   virtual bool is_meet_subtype_of(const TypePtr* other) const {
     return is_meet_subtype_of_helper(other->is_klassptr(), klass_is_exact(), other->is_klassptr()->klass_is_exact());
