@@ -226,7 +226,7 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
     // Assume spill slot for Z_R14 (return register) contains a suitable pc.
     // Should have been filled by method entry code.
     intptr_t* sp = jfa->last_Java_sp();
-    pc = sp != nullptr ? (address) *(sp + 14) : nullptr;
+    pc = sp != nullptr ? (address) *(sp + _z_abi(gpr14)) : nullptr;
   }
   frame fr(jfa->last_Java_sp(), nullptr, pc);
   return fr;

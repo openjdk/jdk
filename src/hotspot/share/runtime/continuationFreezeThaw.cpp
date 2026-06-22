@@ -525,7 +525,8 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
 #endif
   // With preemption doYield() might not have been resolved yet
   assert(_preempt || SharedRuntime::cont_doYield_stub()->frame_size() == doYield_stub_frame_size,
-      "_preempt = %d, cont_doYield_stub()->frame_size() = %d, doYield_stub_frame_size = %d", (_preempt ? 1 : 0), SharedRuntime::cont_doYield_stub()->frame_size(), doYield_stub_frame_size);
+      "_preempt = %d, cont_doYield_stub()->frame_size() = %d, doYield_stub_frame_size = %d",
+      (_preempt ? 1 : 0), SharedRuntime::cont_doYield_stub()->frame_size(), doYield_stub_frame_size);
 
   if (preempt) {
     _last_frame = _thread->last_frame();

@@ -6785,7 +6785,7 @@ void MacroAssembler::push_cont_fastpath() {
   BLOCK_COMMENT("push_cont_fastpath {");
   if (!Continuations::enabled()) return;
   NearLabel done;
-  z_cg(Z_SP, Address(Z_thread, JavaThread::cont_fastpath_offset()));
+  z_clg(Z_SP, Address(Z_thread, JavaThread::cont_fastpath_offset()));
   z_brnh(done); // bcondNotHigh -> less than equal
   z_stg(Z_SP, Address(Z_thread, JavaThread::cont_fastpath_offset()));
   bind(done);
@@ -6796,7 +6796,7 @@ void MacroAssembler::pop_cont_fastpath() {
   BLOCK_COMMENT("pop_cont_fastpath {");
   if (!Continuations::enabled()) return;
   NearLabel done;
-  z_cg(Z_SP, Address(Z_thread, JavaThread::cont_fastpath_offset()));
+  z_clg(Z_SP, Address(Z_thread, JavaThread::cont_fastpath_offset()));
   z_brl(done);
   z_mvghi(Address(Z_thread, JavaThread::cont_fastpath_offset()), 0);
   bind(done);
