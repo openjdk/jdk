@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,14 @@ package com.sun.crypto.provider;
 import jdk.internal.access.SharedSecrets;
 
 import java.util.Arrays;
+import static java.util.Locale.ENGLISH;
 
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.PBMAC1ParameterSpec;
 import java.security.*;
 import java.security.spec.*;
 
@@ -62,26 +65,26 @@ abstract class PBMAC1Core extends HmacCore {
 
     private static PBKDF2Core getKDFImpl(String algo) {
         PBKDF2Core kdf;
-        switch(algo) {
-        case "HmacSHA1":
+        switch(algo.toUpperCase(ENGLISH)) {
+        case "HMACSHA1":
                 kdf = new PBKDF2Core.HmacSHA1();
                 break;
-        case "HmacSHA224":
+        case "HMACSHA224":
                 kdf = new PBKDF2Core.HmacSHA224();
                 break;
-        case "HmacSHA256":
+        case "HMACSHA256":
                 kdf = new PBKDF2Core.HmacSHA256();
                 break;
-        case "HmacSHA384":
+        case "HMACSHA384":
                 kdf = new PBKDF2Core.HmacSHA384();
                 break;
-        case "HmacSHA512":
+        case "HMACSHA512":
                 kdf = new PBKDF2Core.HmacSHA512();
                 break;
-        case "HmacSHA512/224":
+        case "HMACSHA512/224":
                 kdf = new PBKDF2Core.HmacSHA512_224();
                 break;
-        case "HmacSHA512/256":
+        case "HMACSHA512/256":
                 kdf = new PBKDF2Core.HmacSHA512_256();
                 break;
         default:
@@ -107,6 +110,8 @@ abstract class PBMAC1Core extends HmacCore {
         char[] passwdChars;
         byte[] salt = null;
         int iCount = 0;
+        String prfAlgo = kdfAlgo;
+        int keyLength = blockLength * 8;
         if (key instanceof javax.crypto.interfaces.PBEKey) {
             javax.crypto.interfaces.PBEKey pbeKey =
                 (javax.crypto.interfaces.PBEKey) key;
@@ -143,6 +148,18 @@ abstract class PBMAC1Core extends HmacCore {
                         ("PBEParameterSpec type required");
             } else {
                 PBEParameterSpec pbeParams = (PBEParameterSpec) params;
+
+                AlgorithmParameterSpec inner = pbeParams.getParameterSpec();
+                if (inner instanceof PBMAC1ParameterSpec ps) {
+                    keyLength = ps.getKeyLength();
+                    if (ps.getPrfAlgorithm() != null) {
+                        prfAlgo = ps.getPrfAlgorithm();
+                    }
+                } else if (inner != null) {
+                    throw new InvalidAlgorithmParameterException(
+                            "Unsupported PBMAC1 parameter spec");
+                }
+
                 // make sure the parameter values are consistent
                 if (salt != null) {
                     if (!Arrays.equals(salt, pbeParams.getSalt())) {
@@ -173,7 +190,7 @@ abstract class PBMAC1Core extends HmacCore {
                         ("IterationCount must be a positive number");
             }
 
-            pbeSpec = new PBEKeySpec(passwdChars, salt, iCount, blockLength);
+            pbeSpec = new PBEKeySpec(passwdChars, salt, iCount, keyLength);
             // password char[] was cloned in PBEKeySpec constructor,
             // so we can zero it out here
         } finally {
@@ -184,10 +201,10 @@ abstract class PBMAC1Core extends HmacCore {
         byte[] derivedKey = null;
         SecretKeySpec cipherKey = null;
         try {
-            PBKDF2Core kdf = getKDFImpl(kdfAlgo);
+            PBKDF2Core kdf = getKDFImpl(prfAlgo);
             s = (PBKDF2KeyImpl)kdf.engineGenerateSecret(pbeSpec);
             derivedKey = s.getEncoded();
-            cipherKey = new SecretKeySpec(derivedKey, kdfAlgo);
+            cipherKey = new SecretKeySpec(derivedKey, prfAlgo);
             super.engineInit(cipherKey, null);
         } catch (InvalidKeySpecException ikse) {
             throw new InvalidKeyException("Cannot construct PBE key", ikse);
@@ -245,6 +262,12 @@ abstract class PBMAC1Core extends HmacCore {
     public static final class HmacSHA512_256 extends PBMAC1Core {
         public HmacSHA512_256() throws NoSuchAlgorithmException {
             super("HmacSHA512/256", "SHA-512/256", 128);
+        }
+    }
+
+    public static final class HmacSHA3_384 extends PBMAC1Core {
+        public HmacSHA3_384() throws NoSuchAlgorithmException {
+            super("HmacSHA3-384", "SHA3-384", 104);
         }
     }
 }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8343232 8366979
+ * @bug 8343232
  * @summary Verify correctness of the structure of PKCS12 PBMAC1
  *          keystores created with various property values.
  *          Verify that keystores load correctly from an input stream.
@@ -115,7 +115,7 @@ public class PBMAC1Test {
         System.setProperty("keystore.pkcs12.macAlgorithm", "PBEWithHmacSHA456");
         var reason = Asserts.assertThrows(NoSuchAlgorithmException.class,
                 () -> emptyP12()).getMessage();
-        Asserts.assertTrue(reason.contains("Algorithm hmacsha456 not available"), reason);
+        Asserts.assertTrue(reason.contains("Unknown Hmac algorithm: hmacsha456"), reason);
 
         // Verify that DEFAULT HmacSHA1 prf does not get encoded.
         System.setProperty("keystore.pkcs12.macAlgorithm", "PBEWITHHMACSHA1");
@@ -141,7 +141,7 @@ public class PBMAC1Test {
         der = loadAndStore(sha2p12);
         DerUtils.checkAlg(der, "20010130", KnownOIDs.HmacSHA256);
         DerUtils.checkAlg(der, "200110", KnownOIDs.HmacSHA256);
-        DerUtils.checkInt(der, "2001012", 8); // key length remains 8
+        DerUtils.checkInt(der, "2001012", 32); // key length changed to 32
     }
 
     static void overflow() throws Exception {
