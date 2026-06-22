@@ -128,7 +128,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public static final String WINDOW_TRANSPARENT_TITLE_BAR = "apple.awt.transparentTitleBar";
     public static final String WINDOW_TITLE_VISIBLE = "apple.awt.windowTitleVisible";
     public static final String WINDOW_ACCESSIBILITY_ELEMENT =
-            "apple.awt.windowAccessibiltyElement";
+            "apple.awt.windowAccessibilityElement";
 
     // This system property is named as jdk.* because it is not specific to AWT
     // and it is also used in JavaFX
@@ -273,7 +273,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         new Property<CPlatformWindow>(WINDOW_ACCESSIBILITY_ELEMENT) {
             public void applyProperty(final CPlatformWindow c,
                                       final Object value) {
-                c.setAccessibilityElement(value == null ? false :
+                c.setAccessibilityElement(value == null ? true :
                         Boolean.parseBoolean(value.toString()));
             }
         }
