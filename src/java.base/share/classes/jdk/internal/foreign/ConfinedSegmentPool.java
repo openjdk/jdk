@@ -58,6 +58,8 @@ public final class ConfinedSegmentPool {
     // The following values can be observed {-1 (disabled), 8, 16, 32 or 64} bytes
     private static final long POOLED_MEMORY_SIZE = clampedPowerOfPropertyOr(POOLED_MEMORY_PROPERTY, 6);
 
+    private static final boolean DEBUG = !"release".equals(VM.getSavedProperty("jdk.debug"));
+
     private static volatile boolean virtualPoolInitialized;
 
     /**
@@ -86,6 +88,7 @@ public final class ConfinedSegmentPool {
      */
     @ForceInline
     static long acquire(Thread thread) {
+        assertCurrentThreadInDebugMode(thread);
         if (POOLED_MEMORY_SIZE <= 0) {
             return 0;
         }
@@ -98,18 +101,10 @@ public final class ConfinedSegmentPool {
      * Zeros out and releases pooled memory owned by the given thread.
      */
     @ForceInline
-    public static void release(Thread thread, long size) {
+    static void release(Thread thread, long size) {
+        assertCurrentThreadInDebugMode(thread);
         if (thread.isVirtual()) {
             releaseVirtual(thread, size);
-        } else {
-            releasePlatform(thread, size);
-        }
-    }
-
-    @ForceInline
-    static void releaseAcquired(Thread thread, long size) {
-        if (thread.isVirtual()) {
-            releaseAcquiredVirtual(thread, size);
         } else {
             releasePlatform(thread, size);
         }
@@ -130,6 +125,13 @@ public final class ConfinedSegmentPool {
                 U.freeMemory(Math.abs(pool));
                 jla.setConfinedMemoryPool(thread, 0);
             }
+        }
+    }
+
+    @ForceInline
+    private static void assertCurrentThreadInDebugMode(Thread thread) {
+        if (DEBUG && thread != Thread.currentThread()) {
+            throw new AssertionError();
         }
     }
 
@@ -180,13 +182,6 @@ public final class ConfinedSegmentPool {
 
     @ForceInline
     private static void releaseVirtual(Thread thread, long size) {
-        if (!virtualPoolInitialized || !VirtualThreadPool.release(thread, size)) {
-            throw cannotReleasePooledMemory(thread);
-        }
-    }
-
-    @ForceInline
-    private static void releaseAcquiredVirtual(Thread thread, long size) {
         if (!VirtualThreadPool.release(thread, size)) {
             throw cannotReleasePooledMemory(thread);
         }
