@@ -64,9 +64,6 @@ void ShenandoahOldGC::op_final_mark() {
     // We need to do this because weak root cleaning reports the number of dead handles
     JvmtiTagMap::set_needs_cleaning();
 
-    // Attempt to inject a pin before we synchronize pinned region states in prepare_regions_and_collection_set().
-    heap->try_inject_pin();
-
     _generation->prepare_regions_and_collection_set(true);
 
     heap->set_unload_classes(false);

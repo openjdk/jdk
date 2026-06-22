@@ -2606,7 +2606,6 @@ void ShenandoahHeap::update_heap_region_states(bool concurrent) {
                             ShenandoahPhaseTimings::final_update_refs_update_region_states :
                             ShenandoahPhaseTimings::degen_gc_final_update_refs_update_region_states);
 
-    try_inject_pin();
     final_update_refs_update_region_states();
 
     assert_pinned_region_status();
