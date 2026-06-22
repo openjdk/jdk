@@ -1508,8 +1508,6 @@ source %{
     case Op_CompareAndSwapL:
     case Op_CompareAndSwapP:
     case Op_CompareAndSwapN:
-    case Op_ShenandoahCompareAndSwapP:
-    case Op_ShenandoahCompareAndSwapN:
     case Op_CompareAndSwapB:
     case Op_CompareAndSwapS:
     case Op_GetAndSetI:
@@ -1531,10 +1529,6 @@ source %{
     case Op_WeakCompareAndSwapL:
     case Op_WeakCompareAndSwapP:
     case Op_WeakCompareAndSwapN:
-    case Op_ShenandoahWeakCompareAndSwapP:
-    case Op_ShenandoahWeakCompareAndSwapN:
-    case Op_ShenandoahCompareAndExchangeP:
-    case Op_ShenandoahCompareAndExchangeN:
       return maybe_volatile;
     default:
       return false;
@@ -8288,6 +8282,34 @@ instruct castII(iRegI dst)
 %}
 
 instruct castII_checked(iRegI dst, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts > 0);
+  match(Set dst (CastII dst));
+  effect(KILL cr);
+
+  format %{ "# castII_checked of $dst" %}
+  ins_encode %{
+    __ verify_int_in_range(_idx, bottom_type()->is_int(), $dst$$Register, rscratch1);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// The unchecked and checked variants for CastII below both use iRegINoSp for src and dst
+// as some consumers of CastII node like ConvHF2F forbid the stack pointer as an input
+// (please see convHF2F_reg_reg rule which requires input to be in an iRegINoSp register).
+instruct castII_nosp(iRegINoSp dst)
+%{
+  predicate(VerifyConstraintCasts == 0);
+  match(Set dst (CastII dst));
+
+  size(0);
+  format %{ "# castII of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castII_checked_nosp(iRegINoSp dst, rFlagsReg cr)
 %{
   predicate(VerifyConstraintCasts > 0);
   match(Set dst (CastII dst));
