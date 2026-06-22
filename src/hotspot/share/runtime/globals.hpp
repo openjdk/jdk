@@ -465,9 +465,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, VerifyStackAtCalls, false,                                  \
           "Verify that the stack pointer is unchanged after calls")         \
                                                                             \
-  develop(bool, TraceJavaAssertions, false,                                 \
-          "Trace java language assertions")                                 \
-                                                                            \
   develop(bool, VerifyCodeCache, false,                                     \
           "Verify code cache on memory allocation/deallocation")            \
                                                                             \
