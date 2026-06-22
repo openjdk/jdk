@@ -659,7 +659,5 @@ bool NativeDeoptInstruction::is_deopt_at(address instr){
   }
   nmethod *nm = (nmethod *)cb;
 
-  // An illtrap at the verified_entry_point indicates a deoptimization point. Return true only
-  // if the illtrap is not at a deoptimization point.
-  return nm->verified_entry_point() != instr;
+  return true;
 }
