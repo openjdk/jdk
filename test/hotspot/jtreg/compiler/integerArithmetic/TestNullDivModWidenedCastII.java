@@ -109,7 +109,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined1_3(j, l);
 
-        int i = inlined1(k);
+        int i = inlined1(k, flag2);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -145,10 +145,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField1 = new int[10];
 
     // produces -3 after macro expansion
-    private static int inlined1(int k) {
+    private static int inlined1(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField1[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -163,7 +168,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined2_3(j, l);
 
-        int i = inlined2(k);
+        int i = inlined2(k, flag2);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -201,10 +206,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField2 = new int[10];
 
     // produces 0 after macro expansion
-    private static int inlined2(int k) {
+    private static int inlined2(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField2[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -219,7 +229,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined3_3(j, l);
 
-        int i = inlined3(k);
+        int i = inlined3(k, flag2);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -257,10 +267,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField3 = new int[10];
 
     // produces 0 after macro expansion
-    private static int inlined3(int k) {
+    private static int inlined3(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField3[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -275,7 +290,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined4_3(j, l);
 
-        int i = inlined4(k);
+        int i = inlined4(k, flag2);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -313,10 +328,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField4 = new int[10];
 
     // produces 0 after macro expansion
-    private static int inlined4(int k) {
+    private static int inlined4(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField4[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -331,7 +351,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined5_3(j, l);
 
-        int i = inlined5(k);
+        int i = inlined5(k, flag2);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -369,10 +389,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField5 = new int[10];
 
     // produces 0 after macro expansion
-    private static int inlined5(int k) {
+    private static int inlined5(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField5[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -387,7 +412,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined6_3(j, l);
 
-        int i = inlined6(k);
+        int i = inlined6(k, flag2);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -425,10 +450,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField6 = new int[10];
 
     // produces 0 after macro expansion
-    private static int inlined6(int k) {
+    private static int inlined6(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField6[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -443,7 +473,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined7_3(j, l);
 
-        int i = inlined7(k);
+        int i = inlined7(k, flag2);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -481,10 +511,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField7 = new int[10];
 
     // produces 0 after macro expansion
-    private static int inlined7(int k) {
+    private static int inlined7(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField7[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -499,7 +534,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined8_3(j, l);
 
-        int i = inlined8(k);
+        int i = inlined8(k, flag2);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -537,10 +572,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField8 = new int[10];
 
     // produces 0 after macro expansion
-    private static int inlined8(int k) {
+    private static int inlined8(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField8[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -555,7 +595,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined9_3(j, l);
 
-        int i = inlined9(k);
+        int i = inlined9(k, flag2);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -593,10 +633,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField9 = new int[10];
 
     // produces 0 after macro expansion
-    private static int inlined9(int k) {
+    private static int inlined9(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField9[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -611,7 +656,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined10_3(j, l);
 
-        int i = inlined10(k);
+        int i = inlined10(k, flag3);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -645,10 +690,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField10 = new int[10];
 
     // produces -3 after macro expansion
-    private static int inlined10(int k) {
+    private static int inlined10(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField10[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -663,7 +713,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined11_3(j, l);
 
-        int i = inlined11(k);
+        int i = inlined11(k, flag3);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -699,10 +749,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField11 = new int[10];
 
     // produces 0 after macro expansion
-    private static int inlined11(int k) {
+    private static int inlined11(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField11[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -717,7 +772,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined12_3(j, l);
 
-        int i = inlined12(k);
+        int i = inlined12(k, flag3);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -753,10 +808,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField12 = new int[10];
 
     // produces 0 after macro expansion
-    private static int inlined12(int k) {
+    private static int inlined12(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField12[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -771,7 +831,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined13_3(j, l);
 
-        int i = inlined13(k);
+        int i = inlined13(k, flag3);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -807,10 +867,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField13 = new int[10];
 
     // produces 0 after macro expansion
-    private static int inlined13(int k) {
+    private static int inlined13(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField13[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -825,7 +890,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined14_3(j, l);
 
-        int i = inlined14(k);
+        int i = inlined14(k, flag3);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -861,10 +926,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField14 = new int[10];
 
     // produces 0 after macro expansion
-    private static int inlined14(int k) {
+    private static int inlined14(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField14[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -879,7 +949,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined15_3(j, l);
 
-        int i = inlined15(k);
+        int i = inlined15(k, flag3);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -914,10 +984,15 @@ public class TestNullDivModWidenedCastII {
 
     static int[] arrayField15 = new int[10];
 
-    private static int inlined15(int k) {
+    private static int inlined15(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField15[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -932,7 +1007,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined16_3(j, l);
 
-        int i = inlined16(k);
+        int i = inlined16(k, flag3);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -968,10 +1043,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField16 = new int[10];
 
     // produces 0 after macro expansion
-    private static int inlined16(int k) {
+    private static int inlined16(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField16[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
@@ -986,7 +1066,7 @@ public class TestNullDivModWidenedCastII {
         for (; l < 10; l++);
         int m = inlined17_3(j, l);
 
-        int i = inlined17(k);
+        int i = inlined17(k, flag3);
         j = Integer.min(j, 9);
         int[] array = new int[10];
         if (flag == 0) {
@@ -1022,10 +1102,15 @@ public class TestNullDivModWidenedCastII {
     static int[] arrayField17 = new int[10];
 
     // produces 0 after macro expansion
-    private static int inlined17(int k) {
+    private static int inlined17(int k, boolean flag2) {
         k = Integer.max(0, Integer.min(k, 9));
         arrayField17[0] = -3;
-        int[] array2 = new int[10];
+        int[] array2;
+        if (flag2) {
+            array2 = new int[10];
+        } else {
+            array2 = new int[10];
+        }
         int j;
         for (j = 0; j < 10; j++) {
             for (int i = 0; i < 10; i++) {
