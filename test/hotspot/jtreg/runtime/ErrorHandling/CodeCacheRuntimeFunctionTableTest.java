@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 0000000
+ * @bug 8387032
  * @summary Verifies that Windows/AArch64 code-cache PCs are registered with
  *          the OS runtime function table by os::win32::register_code_area().
  * @requires os.family == "windows" & os.arch == "aarch64"
@@ -41,9 +41,7 @@ public class CodeCacheRuntimeFunctionTableTest {
         long runtimeFunction = callerRuntimeFunction();
 
         if (runtimeFunction == 0) {
-            throw new RuntimeException("RtlLookupFunctionEntry returned NULL for a " +
-                    "code-cache PC (the native method wrapper): the code cache is not " +
-                    "registered with the Windows runtime function table");
+            throw new RuntimeException("code cache is not registered");
         }
 
         String hex = Long.toHexString(runtimeFunction);
