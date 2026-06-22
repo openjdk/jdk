@@ -194,16 +194,25 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
     // Mutator allocations may yield to safepoint; GC allocations cannot
     ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), req.is_mutator_alloc());
 
-    // Another thread may have installed a fresh region into our slot while we waited for the lock;
-    // retry the lock-free probe of our own slot before taking a new region from the free set.
-    shared_region = _alloc_regions[start_index].load_acquire();
-    if (shared_region != nullptr) {
-      HeapWord* obj = try_atomic_allocate_in(start_index, shared_region, req);
+    // Retry the lock-free probe ONLY if the slot changed while we waited for the lock: another thread
+    // may have installed a fresh region (or replaced ours). If the slot still holds the same region
+    // we already failed on above, retrying is pointless -- a region's free capacity only shrinks, so
+    // it would deterministically fail again. (shared_region holds the region the fast path tried, or
+    // nullptr if the slot was empty then; a non-null reload that differs means the slot changed.)
+    //
+    // A relaxed load is sufficient here because we hold the heap lock: every writer that publishes a
+    // non-null region into the slot does so under this lock, so our lock acquire already orders their
+    // writes (region state, etc.) before this read. The only concurrent lock-free writer is the fast
+    // path retiring the slot, which only stores nullptr (no payload to order).
+    ShenandoahHeapRegion* const reloaded = _alloc_regions[start_index].load_relaxed();
+    if (reloaded != nullptr && reloaded != shared_region) {
+      HeapWord* obj = try_atomic_allocate_in(start_index, reloaded, req);
       if (obj != nullptr) {
         in_new_region = false;
         return obj;
       }
     }
+    shared_region = reloaded;
 
     // OldCollector: verify old generation has room before attempting allocation
     if constexpr (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) {
