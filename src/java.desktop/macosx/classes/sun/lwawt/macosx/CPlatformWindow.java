@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeDispose(long nsWindowPtr);
     private static native void nativeEnterFullScreenMode(long nsWindowPtr);
     private static native void nativeExitFullScreenMode(long nsWindowPtr);
+    private static native void nativeSetNSWindowAccessibleHidden(long nsWindowPtr, boolean axHidden);
     static native CPlatformWindow nativeGetTopmostPlatformWindowUnderMouse();
 
     // Logger to report issues happened during execution but that do not affect functionality
@@ -126,6 +127,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     public static final String WINDOW_FULL_CONTENT = "apple.awt.fullWindowContent";
     public static final String WINDOW_TRANSPARENT_TITLE_BAR = "apple.awt.transparentTitleBar";
     public static final String WINDOW_TITLE_VISIBLE = "apple.awt.windowTitleVisible";
+    public static final String WINDOW_ACCESSIBILITY_HIDDEN =
+            "apple.awt.windowAccessibleHidden";
 
     // This system property is named as jdk.* because it is not specific to AWT
     // and it is also used in JavaFX
@@ -265,6 +268,13 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         new Property<CPlatformWindow>(WINDOW_TITLE_VISIBLE) {
             public void applyProperty(final CPlatformWindow c, final Object value) {
                 c.setStyleBits(TITLE_VISIBLE, value == null ? true : Boolean.parseBoolean(value.toString()));
+            }
+        },
+        new Property<CPlatformWindow>(WINDOW_ACCESSIBILITY_HIDDEN) {
+            public void applyProperty(final CPlatformWindow c,
+                                      final Object value) {
+                c.setAccessibleHidden(value == null ? false :
+                        Boolean.parseBoolean(value.toString()));
             }
         }
     }) {
@@ -534,6 +544,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     // this is the counter-point to -[CWindow _nativeSetStyleBit:]
     private void setStyleBits(final int mask, final boolean value) {
         execute(ptr -> nativeSetNSWindowStyleBits(ptr, mask, value ? mask : 0));
+    }
+
+    private void setAccessibleHidden(final boolean value) {
+        execute(ptr -> nativeSetNSWindowAccessibleHidden(ptr, value));
     }
 
     private native void _toggleFullScreenMode(final long model);

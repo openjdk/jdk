@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,9 @@ final class ScreenPopupFactory extends PopupFactory {
             popupRootPane.putClientProperty(CPlatformWindow.WINDOW_ALPHA, TRANSLUCENT);
             popupRootPane.putClientProperty(CPlatformWindow.WINDOW_SHADOW, Boolean.TRUE);
             popupRootPane.putClientProperty(CPlatformWindow.WINDOW_FADE_DELEGATE, invoker);
+            popupRootPane.putClientProperty(
+                    CPlatformWindow.WINDOW_ACCESSIBILITY_HIDDEN,
+                    invoker instanceof JToolTip);
 
             w.setBackground(UIManager.getColor("PopupMenu.translucentBackground"));
             popupRootPane.putClientProperty(CPlatformWindow.WINDOW_DRAGGABLE_BACKGROUND, Boolean.FALSE);
