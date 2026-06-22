@@ -129,33 +129,37 @@ bool ShenandoahPartitionAllocator<PARTITION>::install_alloc_region(uint index,
   }
   new_region->set_active_alloc_region();
 
-  // Single CAS publishes new_region AND atomically claims the displaced occupant for retirement. The
-  // lock-free fast path may concurrently CAS the same full occupant to nullptr (its retire path);
-  // exactly one of the two CASes wins. If we lose, undo: deactivate new_region and free it.
-  if (_alloc_regions[index].compare_exchange(occupant, new_region) != occupant) {
-    bool unset = new_region->unset_active_alloc_region();
-    assert(unset, "We just activated new_region under the lock; nobody else can deactivate it");
-    if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
-      new_region->set_update_watermark(new_region->stable_top());
-      new_region->set_collector_allocator_reserved(false);
+  // Publish new_region into the slot. We hold the heap lock, so the ONLY concurrent mutation
+  // possible is the lock-free fast path retiring a full occupant (occupant -> nullptr); it never
+  // writes a non-null value, and every other writer holds the lock we own. So the slot is either
+  // still `occupant` or has become nullptr.
+  if (_alloc_regions[index].compare_exchange(occupant, new_region) == occupant) {
+    // Won against the observed occupant, atomically claiming it for retirement. If it was a live
+    // (full) region, we now exclusively own it: only this thread may run unset_active_alloc_region()
+    // on it (the fast path's competing retire CAS, if any, failed).
+    if (occupant != nullptr) {
+      bool unset = occupant->unset_active_alloc_region();
+      assert(unset, "Winner of the slot CAS is the unique retirer of the displaced region");
+      if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
+        occupant->set_update_watermark(occupant->stable_top());
+        occupant->set_collector_allocator_reserved(false);
+      }
+      if (occupant->free() >> LogHeapWordSize >= PLAB::min_size()) {
+        _free_set->unretire_alloc_region(PARTITION, occupant);
+      }
     }
-    _free_set->unretire_alloc_region(PARTITION, new_region);
-    return false;
+    return true;
   }
 
-  // We won the CAS and now exclusively own the displaced occupant (the fast path's competing retire
-  // CAS, if any, failed). Retire it: only this thread may run unset_active_alloc_region() on it.
-  if (occupant != nullptr) {
-    bool unset = occupant->unset_active_alloc_region();
-    assert(unset, "Winner of the slot CAS is the unique retirer of the displaced region");
-    if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
-      occupant->set_update_watermark(occupant->stable_top());
-      occupant->set_collector_allocator_reserved(false);
-    }
-    if (occupant->free() >> LogHeapWordSize >= PLAB::min_size()) {
-      _free_set->unretire_alloc_region(PARTITION, occupant);
-    }
-  }
+  // The CAS failed, so the fast path retired the full occupant to nullptr between our load and now.
+  // (An empty slot, occupant == nullptr, can never be concurrently mutated to non-null, so the CAS
+  // above would have won.) The fast-path winner already deactivated the occupant. The slot is now
+  // stable at nullptr -- only an installer writes a non-null value and only one installer runs at a
+  // time under the heap lock, which we hold -- so we can simply publish new_region with a plain
+  // release store; no further CAS is needed.
+  assert(occupant != nullptr, "An empty slot cannot be concurrently mutated; the first CAS must win");
+  assert(_alloc_regions[index].load_relaxed() == nullptr, "Slot must be stable at nullptr under the heap lock");
+  _alloc_regions[index].release_store(new_region);
   return true;
 }
 
