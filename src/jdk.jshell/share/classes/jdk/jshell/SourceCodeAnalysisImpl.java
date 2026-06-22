@@ -209,8 +209,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         String cleared = mcm.cleared();
         String trimmedInput = Util.trimEnd(cleared);
         if (trimmedInput.isEmpty()) {
-            // Just comment or empty
-            return new CompletionInfoImpl(Completeness.EMPTY, srcInput, "");
+            // Just comment, empty, or javadoc prefix
+            boolean hasDocumentation = !Util.trimEnd(new MaskCommentsAndModifiers(srcInput, false, false).cleared()).isEmpty();
+            return new CompletionInfoImpl(hasDocumentation ? Completeness.PREFIX : Completeness.EMPTY, srcInput, "");
         }
         CaInfo info = ca.scan(trimmedInput);
         Completeness status = info.status;
