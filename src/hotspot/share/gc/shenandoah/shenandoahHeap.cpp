@@ -2773,7 +2773,7 @@ void ShenandoahHeap::try_inject_pin() {
     _injected_pin_count < MAX_INJECTED_PINS) {
     const size_t idx = os::random() % num_regions();
     ShenandoahHeapRegion* r = get_region(idx);
-    if (r->is_regular() && r->has_live()) {
+    if ((r->is_regular() || r->is_humongous_start()) && r->has_live()) {
       r->record_pin();
       log_debug(gc)("Region %zu was injected with a pin.", idx);
       _injected_pin_indices[_injected_pin_count] = idx;
