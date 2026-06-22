@@ -906,7 +906,7 @@ void CompileBroker::init_compiler_threads() {
       if (trace_compiler_threads()) {
         ResourceMark rm;
         ThreadsListHandle tlh;  // name() depends on the TLH.
-        assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
+        if (!tlh.includes(ct)) continue;
         stringStream msg;
         msg.print("Added initial compiler thread %s", ct->name());
         print_compiler_threads(msg);
@@ -927,7 +927,7 @@ void CompileBroker::init_compiler_threads() {
       if (trace_compiler_threads()) {
         ResourceMark rm;
         ThreadsListHandle tlh;  // name() depends on the TLH.
-        assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
+        if (!tlh.includes(ct)) continue;
         stringStream msg;
         msg.print("Added initial compiler thread %s", ct->name());
         print_compiler_threads(msg);
@@ -1005,7 +1005,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
       if (trace_compiler_threads()) {
         ResourceMark rm;
         ThreadsListHandle tlh;  // name() depends on the TLH.
-        assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
+        if (!tlh.includes(ct)) continue;
         stringStream msg;
         msg.print("Added compiler thread %s (free memory: %dMB, available non-profiled code cache: %dMB)",
                   ct->name(), (int)(free_memory/M), (int)(available_cc_np/M));
@@ -1028,7 +1028,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
       if (trace_compiler_threads()) {
         ResourceMark rm;
         ThreadsListHandle tlh;  // name() depends on the TLH.
-        assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
+        if (!tlh.includes(ct)) continue;
         stringStream msg;
         msg.print("Added compiler thread %s (free memory: %dMB, available profiled code cache: %dMB)",
                   ct->name(), (int)(free_memory/M), (int)(available_cc_p/M));
