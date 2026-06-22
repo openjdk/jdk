@@ -74,7 +74,8 @@ public:
   void lock(bool allow_block_for_safepoint = false) {
     assert(_owner.load_relaxed() != Thread::current(), "reentrant locking attempt, would deadlock");
 
-    if (_state.compare_exchange(unlocked, locked) != unlocked) {
+    if ((allow_block_for_safepoint && SafepointSynchronize::is_synchronizing()) ||
+        _state.compare_exchange(unlocked, locked) != unlocked) {
       // 1. Java thread, and there is a pending safepoint. Dive into contended locking
       //    immediately without trying anything else, and block.
       // 2. Fast lock fails, dive into contended lock handling.
