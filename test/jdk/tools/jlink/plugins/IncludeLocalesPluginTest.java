@@ -428,12 +428,14 @@ public class IncludeLocalesPluginTest {
             System.out.println("Invoking jlink with no --include-locales option");
             result = JImageGenerator.getJLinkTask()
                 .output(helper.createNewImageDir(MODULE_NAME))
+                .option("--strip-debug")
                 .addMods(optAddModules)
                 .call();
         } else {
             System.out.println("Invoking jlink with \"" + optIncludeLocales + "\"");
             result = JImageGenerator.getJLinkTask()
                 .output(helper.createNewImageDir(MODULE_NAME))
+                .option("--strip-debug")
                 .addMods(optAddModules)
                 .option(optIncludeLocales)
                 .call();
