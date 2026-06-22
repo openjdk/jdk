@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,20 +214,12 @@ protected:
   MulHiLoLNode(Node* ctrl, Node* in1, Node* in2) : BinaryMultiNode(ctrl, in1, in2) {}
 
 public:
-  enum {
-    lo_proj_num = 0,
-    hi_proj_num = 1
-  };
-
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeTuple::LONG_PAIR; }
 
   virtual Node* match(const ProjNode* proj, const Matcher* m);
 
   static MulHiLoLNode* make(Node* mul_hi);
-
-  ProjNode* lo_proj() { return proj_out_or_null(lo_proj_num); }
-  ProjNode* hi_proj() { return proj_out_or_null(hi_proj_num); }
 };
 
 //------------------------------UMulHiLoLNode----------------------------------

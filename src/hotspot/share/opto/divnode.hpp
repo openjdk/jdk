@@ -243,16 +243,9 @@ class DivModNode : public BinaryMultiNode {
 protected:
   DivModNode(Node* ctrl, Node* dividend, Node* divisor) : BinaryMultiNode(ctrl, dividend, divisor) {}
 public:
-  enum {
-    div_proj_num =  0,      // quotient
-    mod_proj_num =  1       // remainder
-  };
   virtual int Opcode() const;
 
   static DivModNode* make(Node* div_or_mod, BasicType bt, bool is_unsigned);
-
-  ProjNode* div_proj() { return proj_out_or_null(div_proj_num); }
-  ProjNode* mod_proj() { return proj_out_or_null(mod_proj_num); }
 };
 
 //------------------------------DivModINode---------------------------------------

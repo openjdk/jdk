@@ -612,8 +612,8 @@ MulHiLoLNode* MulHiLoLNode::make(Node* mul_hi) {
   assert(mul_hi->Opcode() == Op_MulHiL, "expected MulHiL");
 
   MulHiLoLNode* mul_hi_lo = new MulHiLoLNode(mul_hi->in(0), mul_hi->in(1), mul_hi->in(2));
-  [[maybe_unused]] Node* lo_proj = new ProjNode(mul_hi_lo, MulHiLoLNode::lo_proj_num);
-  [[maybe_unused]] Node* hi_proj = new ProjNode(mul_hi_lo, MulHiLoLNode::hi_proj_num);
+  [[maybe_unused]] Node* lo_proj = new ProjNode(mul_hi_lo, MulHiLoLNode::first_proj_num);
+  [[maybe_unused]] Node* hi_proj = new ProjNode(mul_hi_lo, MulHiLoLNode::second_proj_num);
   return mul_hi_lo;
 }
 
@@ -621,19 +621,19 @@ UMulHiLoLNode* UMulHiLoLNode::make(Node* umul_hi) {
   assert(umul_hi->Opcode() == Op_UMulHiL, "expected UMulHiL");
 
   UMulHiLoLNode* umul_hi_lo = new UMulHiLoLNode(umul_hi->in(0), umul_hi->in(1), umul_hi->in(2));
-  [[maybe_unused]] Node* lo_proj = new ProjNode(umul_hi_lo, MulHiLoLNode::lo_proj_num);
-  [[maybe_unused]] Node* hi_proj = new ProjNode(umul_hi_lo, MulHiLoLNode::hi_proj_num);
+  [[maybe_unused]] Node* lo_proj = new ProjNode(umul_hi_lo, MulHiLoLNode::first_proj_num);
+  [[maybe_unused]] Node* hi_proj = new ProjNode(umul_hi_lo, MulHiLoLNode::second_proj_num);
   return umul_hi_lo;
 }
 
 Node* MulHiLoLNode::match(const ProjNode* proj, const Matcher* match) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
-  if (proj->_con == lo_proj_num) {
-    rm.assignFrom(match->divL_proj_mask());
+  if (proj->_con == first_proj_num) {
+    rm.assignFrom(match->firstL_proj_mask());
   } else {
-    assert(proj->_con == hi_proj_num, "must be lo or hi projection");
-    rm.assignFrom(match->modL_proj_mask());
+    assert(proj->_con == second_proj_num, "must be lo or hi projection");
+    rm.assignFrom(match->secondL_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }

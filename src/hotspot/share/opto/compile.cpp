@@ -3251,8 +3251,8 @@ void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
     // DivMod node so the dependency is not lost.
     divmod->add_prec_from(n);
     divmod->add_prec_from(d);
-    d->subsume_by(divmod->div_proj(), this);
-    n->subsume_by(divmod->mod_proj(), this);
+    d->subsume_by(divmod->first_proj(), this);
+    n->subsume_by(divmod->second_proj(), this);
   } else {
     // Replace "a % b" with "a - ((a / b) * b)"
     Node* mult = MulNode::make(d, d->in(2), bt);
@@ -3275,8 +3275,8 @@ void Compile::handle_mulhi_mul_op(Node* n, bool is_unsigned) {
 
   MulHiLoLNode* mul_hi_lo = is_unsigned ? static_cast<MulHiLoLNode*>(UMulHiLoLNode::make(n))
                                         : MulHiLoLNode::make(n);
-  mul->subsume_by(mul_hi_lo->lo_proj(), this);
-  n->subsume_by(mul_hi_lo->hi_proj(), this);
+  mul->subsume_by(mul_hi_lo->first_proj(), this);
+  n->subsume_by(mul_hi_lo->second_proj(), this);
 }
 
 void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes) {
