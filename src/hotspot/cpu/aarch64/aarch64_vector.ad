@@ -3677,7 +3677,9 @@ instruct reduce_addF_sve(vRegF dst_src1, vReg src2) %{
 // reduction addD
 
 instruct reduce_strict_order_add2D_neon(vRegD dst_src1, vReg vsrc, vRegD tmp) %{
-  predicate(UseSVE == 0 && n->as_Reduction()->requires_strict_order());
+  predicate(UseSVE == 0 &&
+            Matcher::vector_length(n->in(2)) == 2 &&
+            n->as_Reduction()->requires_strict_order());
   match(Set dst_src1 (AddReductionVD dst_src1 vsrc));
   effect(TEMP tmp);
   format %{ "reduce_strict_order_add2D_neon $dst_src1, $dst_src1, $vsrc\t# 2D, strict order" %}
