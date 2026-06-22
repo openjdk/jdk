@@ -538,6 +538,10 @@ class ServerImpl {
                                 if (MAX_CONNECTIONS > 0 && allConnections.size() >= MAX_CONNECTIONS) {
                                     // we've hit max limit of current open connections, so we go
                                     // ahead and close this connection without processing it
+                                    if (logger.isLoggable(Level.DEBUG)) {
+                                        logger.log(Level.DEBUG, "connection limit reached; " +
+                                                "closing accepted connection");
+                                    }
                                     try {
                                         chan.close();
                                     } catch (IOException ignore) {
