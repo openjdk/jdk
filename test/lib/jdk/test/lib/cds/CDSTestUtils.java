@@ -324,7 +324,7 @@ public class CDSTestUtils {
     public static void checkCommonExecExceptions(OutputAnalyzer output, Exception e)
         throws Exception {
         if (output.getStdout().contains("https://bugreport.java.com/bugreport/crash.jsp")) {
-            throw new RuntimeException("Hotspot crashed");
+            throw new RuntimeException(getCrashMessage(output.getStdout()));
         }
         if (output.getStdout().contains("TEST FAILED")) {
             throw new RuntimeException("Test Failed");

@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.Map;
 import java.util.Objects;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.converter.SimpleArgumentConverter;
 
 
 public final class JUnitUtils {
@@ -118,6 +119,19 @@ public final class JUnitUtils {
         private String expectedMessage;
         private Class<? extends Exception> expectedType;
         private Class<? extends Throwable> expectedCauseType;
+    }
+
+
+    public static class StringArrayConverter extends SimpleArgumentConverter {
+
+        @Override
+        protected Object convert(Object source, Class<?> targetType) {
+            if (source instanceof String && String[].class.isAssignableFrom(targetType)) {
+                return ((String) source).split("\\s*,\\s*");
+            } else {
+                throw new IllegalArgumentException();
+            }
+        }
     }
 
 

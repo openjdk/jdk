@@ -265,7 +265,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
   assert((&buckets[0][0] + nr_blocks) == offset, "should be");
 
   // Free the now unused memory
-  FREE_RESOURCE_ARRAY(Block*, buckets[1], (NUMBUCKS-1)*nr_blocks);
+  FREE_RESOURCE_ARRAY(buckets[1], (NUMBUCKS-1)*nr_blocks);
   // Finally, point the _blks to our memory
   _blks = buckets[0];
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,12 @@
 
 /*
  * @test
- * @bug 8256377
+ * @bug 8256377 8382815
  * @summary Based on test/jdk/java/lang/ref/ReferenceRefersTo.java.
+ * @run main/othervm -XX:CompileCommand=dontinline,${test.main.class}::test_* ${test.main.class}
  */
+
+package compiler.intrinsics;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -39,7 +42,7 @@ public class TestReferenceRefersTo {
     }
 
     // Test java.lang.ref.Reference::refersTo0 intrinsic.
-    private static final void test(Reference ref,
+    private static final void test0(Reference ref,
                                    Object expectedValue,
                                    Object unexpectedValue,
                                    String kind) throws Exception {
@@ -55,10 +58,10 @@ public class TestReferenceRefersTo {
     }
 
     // Test java.lang.ref.PhantomReference::refersTo0 intrinsic.
-    private static final void test_phantom(PhantomReference ref,
+    private static final void test_phantom0(PhantomReference ref,
                                            Object expectedValue,
-                                           Object unexpectedValue) throws Exception {
-        String kind = "phantom";
+                                           Object unexpectedValue,
+                                           String kind) throws Exception {
         if ((expectedValue != null) && ref.refersTo(null)) {
             fail(kind + " refers to null");
         }
@@ -68,53 +71,120 @@ public class TestReferenceRefersTo {
         if (ref.refersTo(unexpectedValue)) {
             fail(kind + " refers to unexpected value");
         }
+    }
 
+    // Entry points to the test, important to push down type information to
+    // individual test methods.
+
+    private static final void test_phantom(PhantomReference ref,
+                                           Object expectedValue,
+                                           Object unexpectedValue) throws Exception {
+        test_phantom0(ref, expectedValue, unexpectedValue, "phantom");
+    }
+
+    private static final void test_phantom_shadow(ShadowPhantomReference ref,
+                                           Object expectedValue,
+                                           Object unexpectedValue) throws Exception {
+        test_phantom0(ref, expectedValue, unexpectedValue, "phantom shadow");
     }
 
     private static final void test_weak(WeakReference ref,
                                         Object expectedValue,
                                         Object unexpectedValue) throws Exception {
-        test(ref, expectedValue, unexpectedValue, "weak");
+        test0(ref, expectedValue, unexpectedValue, "weak");
+    }
+
+    private static final void test_weak_shadow(ShadowWeakReference ref,
+                                        Object expectedValue,
+                                        Object unexpectedValue) throws Exception {
+        test0(ref, expectedValue, unexpectedValue, "weak shadow");
     }
 
     private static final void test_soft(SoftReference ref,
                                         Object expectedValue,
                                         Object unexpectedValue) throws Exception {
-        test(ref, expectedValue, unexpectedValue, "soft");
+        test0(ref, expectedValue, unexpectedValue, "soft");
     }
+
+    private static final void test_soft_shadow(ShadowSoftReference ref,
+                                        Object expectedValue,
+                                        Object unexpectedValue) throws Exception {
+        test0(ref, expectedValue, unexpectedValue, "soft shadow");
+    }
+
+    static Object unexpected = new Object();
+
+    static Object obj0 = new Object();
+    static Object obj1 = new Object();
+    static Object obj2 = new Object();
+    static Object obj3 = new Object();
+    static Object obj4 = new Object();
+    static Object obj5 = new Object();
 
     public static void main(String[] args) throws Exception {
         var queue = new ReferenceQueue<Object>();
 
-        var obj0 = new Object();
-        var obj1 = new Object();
-        var obj2 = new Object();
-        var obj3 = new Object();
+        // It is important to do all test methods in the loop, so that we
+        // exercise all paths in intrinsics.
+        for (int i = 0; i < 100000; i++) {
+            System.out.println("Create");
+            var pref = new PhantomReference(obj0, queue);
+            var wref = new WeakReference(obj1);
+            var sref = new SoftReference(obj2);
+            var psref = new ShadowPhantomReference<>(obj3, queue);
+            var wsref = new ShadowWeakReference<>(obj4);
+            var ssref = new ShadowSoftReference<>(obj5);
 
-        var pref = new PhantomReference(obj0, queue);
-        var wref = new WeakReference(obj1);
-        var sref = new SoftReference(obj2);
+            System.out.println("After creation");
+            test_phantom(pref, obj0, unexpected);
+            test_weak(wref, obj1, unexpected);
+            test_soft(sref, obj2, unexpected);
+            test_phantom_shadow(psref, obj3, unexpected);
+            test_weak_shadow(wsref, obj4, unexpected);
+            test_soft_shadow(ssref, obj5, unexpected);
 
-        System.out.println("Warmup");
-        for (int i = 0; i < 10000; i++) {
-            test_phantom(pref, obj0, obj3);
-            test_weak(wref, obj1, obj3);
-            test_soft(sref, obj2, obj3);
+            System.out.println("Cleaning references");
+            pref.clear();
+            wref.clear();
+            sref.clear();
+            psref.clear();
+            wsref.clear();
+            ssref.clear();
+
+            System.out.println("Testing after cleaning");
+            test_phantom(pref, null, unexpected);
+            test_weak(wref, null, unexpected);
+            test_soft(sref, null, unexpected);
+            test_phantom_shadow(psref, null, unexpected);
+            test_weak_shadow(wsref, null, unexpected);
+            test_soft_shadow(ssref, null, unexpected);
         }
+    }
 
-        System.out.println("Testing starts");
-        test_phantom(pref, obj0, obj3);
-        test_weak(wref, obj1, obj3);
-        test_soft(sref, obj2, obj3);
+    // References that have their own "shadow" referent. Check that intrinsics
+    // hit the right referent.
 
-        System.out.println("Cleaning references");
-        pref.clear();
-        wref.clear();
-        sref.clear();
+    static class ShadowSoftReference<T> extends SoftReference<T> {
+        T referent;
+        public ShadowSoftReference(T ref) {
+            super(ref);
+            referent = ref;
+        }
+    }
 
-        System.out.println("Testing after cleaning");
-        test_phantom(pref, null, obj3);
-        test_weak(wref, null, obj3);
-        test_soft(sref, null, obj3);
+    static class ShadowWeakReference<T> extends WeakReference<T> {
+        T referent;
+        public ShadowWeakReference(T ref) {
+            super(ref);
+            referent = ref;
+        }
+    }
+
+    static class ShadowPhantomReference<T> extends PhantomReference<T> {
+        T referent;
+        public ShadowPhantomReference(T ref, ReferenceQueue<Object> q) {
+            super(ref, q);
+            referent = ref;
+        }
     }
 }

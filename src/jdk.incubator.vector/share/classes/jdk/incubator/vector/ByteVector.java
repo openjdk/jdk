@@ -2369,6 +2369,9 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
         ByteVector that = (ByteVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         ByteVector iotaVector = (ByteVector) iotaShuffle().toBitsVector();
         ByteVector filter = broadcast((byte)origin);
         VectorMask<Byte> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);

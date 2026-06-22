@@ -402,8 +402,7 @@
     // between a callee frame and its stack arguments, where it is part
     // of the caller/callee overlap
     metadata_words_at_top                  = sizeof(java_abi) >> LogBytesPerWord,
-    // size, in words, of frame metadata at the frame top that needs
-    // to be reserved for callee functions in the runtime
+    // in bytes
     frame_alignment                        = 16,
     frame_alignment_in_words               = frame_alignment >> LogBytesPerWord,
     // size, in words, of maximum shift in frame position due to alignment
