@@ -66,4 +66,17 @@ class RtfConverterTest {
 
         assertEquals(Optional.empty(), RtfConverter.createSimple(licenseFile));
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\f0\\fs24 Hello, Duke!}",
+    })
+    void test_createSimple_rtf_file(String text, @TempDir Path workDir) throws IOException {
+
+        final var licenseFile = workDir.resolve("license");
+
+        Files.writeString(licenseFile, text);
+
+        assertEquals(Optional.empty(), RtfConverter.createSimple(workDir));
+    }
 }
