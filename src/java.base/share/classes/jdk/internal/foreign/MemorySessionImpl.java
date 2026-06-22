@@ -86,7 +86,7 @@ public abstract sealed class MemorySessionImpl
     int acquireCount;
 
     public ArenaImpl asArena() {
-        return ArenaImpl.of(this);
+        return new ArenaImpl(this);
     }
 
     @ForceInline

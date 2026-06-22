@@ -131,10 +131,4 @@ public sealed class ArenaImpl implements Arena {
 
     }
 
-    static ArenaImpl of(MemorySessionImpl session) {
-        return session instanceof ConfinedSession confinedSession
-                ? new OfConfined(confinedSession)
-                : new ArenaImpl(session);
-    }
-
 }
