@@ -96,6 +96,7 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Pair;
+import java.util.function.Function;
 
 import jdk.internal.org.commonmark.ext.gfm.tables.TablesExtension;
 import jdk.internal.org.commonmark.node.Node;
@@ -114,11 +115,12 @@ public abstract class JavadocHelper implements AutoCloseable {
      * @param sourceLocations paths where source files should be searched
      * @return a JavadocHelper
      */
-    public static JavadocHelper create(JavacTask mainTask, Collection<? extends Path> sourceLocations) {
+    public static JavadocHelper create(JavacTask mainTask, Collection<? extends Path> sourceLocations,
+                                       Function<String, String> extraBinaryName2FullSource) {
         StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
         try {
             fm.setLocationFromPaths(StandardLocation.SOURCE_PATH, sourceLocations);
-            return new OnDemandJavadocHelper(mainTask, fm);
+            return new OnDemandJavadocHelper(mainTask, fm, extraBinaryName2FullSource);
         } catch (IOException ex) {
             try {
                 fm.close();
@@ -243,11 +245,14 @@ public abstract class JavadocHelper implements AutoCloseable {
         private final JavaFileManager baseFileManager;
         private final StandardJavaFileManager fm;
         private final Map<String, Pair<JavacTask, TreePath>> signature2Source = new HashMap<>();
+        private final Function<String, String> extraBinaryName2FullSource;
 
-        private OnDemandJavadocHelper(JavacTask mainTask, StandardJavaFileManager fm) {
+        private OnDemandJavadocHelper(JavacTask mainTask, StandardJavaFileManager fm,
+                                      Function<String, String> extraBinaryName2FullSource) {
             this.mainTask = mainTask;
             this.baseFileManager = ((JavacTaskImpl) mainTask).getContext().get(JavaFileManager.class);
             this.fm = fm;
+            this.extraBinaryName2FullSource = extraBinaryName2FullSource;
         }
 
         @Override
@@ -888,8 +893,15 @@ public abstract class JavadocHelper implements AutoCloseable {
                                                         binaryName,
                                                         JavaFileObject.Kind.SOURCE);
 
-            if (jfo == null)
-                return null;
+            if (jfo == null) {
+                String fullSource = extraBinaryName2FullSource.apply(binaryName);
+
+                if (fullSource == null) {
+                    return null;
+                }
+
+                jfo = SimpleJavaFileObject.forSource(URI.create("mem://Temp.java"), fullSource);
+            }
 
             List<JavaFileObject> jfos = Arrays.asList(jfo);
             JavaFileManager patchFM = moduleName != null

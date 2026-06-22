@@ -174,6 +174,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     private final JShell proc;
     private final CompletenessAnalyzer ca;
+    private final Function<String, String> binaryName2SnipperOuterWrap;
     private final List<AutoCloseable> closeables = new ArrayList<>();
     private final Map<Path, ClassIndex> currentIndexes = new HashMap<>();
     private int indexVersion;
@@ -185,6 +186,14 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         this.proc = proc;
         this.ca = new CompletenessAnalyzer(proc);
 
+        this.binaryName2SnipperOuterWrap = binaryName -> {
+            return proc.snippets()
+                       .filter(s -> binaryName.equals(s.classFullName()))
+                       .map(s -> s.outerWrap().wrapped())
+                       .findAny()
+                       .orElse(null);
+        };
+
         int cpVersion = classpathVersion = 1;
 
         INDEXER.submit(() -> refreshIndexes(cpVersion));
@@ -192,7 +201,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     @Override
     public CompletionInfo analyzeCompletion(String srcInput) {
-        MaskCommentsAndModifiers mcm = new MaskCommentsAndModifiers(srcInput, false);
+        MaskCommentsAndModifiers mcm = new MaskCommentsAndModifiers(srcInput, false, true);
         if (mcm.endsWithOpenToken()) {
             proc.debug(DBG_COMPA, "Incomplete (open comment): %s\n", srcInput);
             return new CompletionInfoImpl(DEFINITELY_INCOMPLETE, null, srcInput + '\n');
@@ -803,7 +812,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         //TODO: OuterWrap duplicated
         OuterWrap codeWrap = switch (guessKind(snippet)) {
             case IMPORT -> proc.outerMap.wrapImport(Wrap.simpleWrap(snippet + "any.any"), null);
-            case CLASS, METHOD -> proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(snippet));
+            case CLASS, METHOD -> proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(snippet, 0));
             default -> proc.outerMap.wrapInTrialClass(Wrap.methodWrap(snippet));
         };
         String wrappedCode = codeWrap.wrapped();
@@ -1239,7 +1248,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             result.add(new ElementSuggestionImpl(c, null, smart.test(c), anchor, () -> {
                 return proc.taskFactory.analyze(proc.outerMap.wrapInTrialClass(Wrap.methodWrap(";")), task -> {
                     try (CloseableSources closeableSources = findSources(binaryPaths);
-                         JavadocHelper nestedJavadoc = JavadocHelper.create(task.task, closeableSources.sources())) {
+                         JavadocHelper nestedJavadoc = JavadocHelper.create(task.task, closeableSources.sources(), binaryName2SnipperOuterWrap)) {
                         return nestedJavadoc.getResolvedDocComment(stored);
                     } catch (IOException ex) {
                         ex.printStackTrace();
@@ -1905,7 +1914,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             List<Documentation> result = Collections.emptyList();
 
             try (CloseableSources sources = findSources(getAllPaths());
-                 JavadocHelper helper = JavadocHelper.create(at.task, sources.sources())) {
+                 JavadocHelper helper = JavadocHelper.create(at.task, sources.sources(), binaryName2SnipperOuterWrap)) {
                 int parameterIndexFin = parameterIndex;
                 result = elements.map(el -> constructDocumentation(at, helper, el, parameterIndexFin, computeJavadoc))
                                  .filter(Objects::nonNull)
@@ -2229,7 +2238,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             case IMPORT:
                 return new QualifiedNames(Collections.emptyList(), -1, true, false);
             case METHOD:
-                codeWrap = proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(codeFin));
+                codeWrap = proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(codeFin, 0));
                 break;
             default:
                 codeWrap = proc.outerMap.wrapInTrialClass(Wrap.methodWrap(codeFin));
@@ -2608,10 +2617,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     lastImportIsModuleImport = moduleImport[0];
                 }
                 case CLASS, METHOD -> {
-                    pendingWrap = declarationWrap = Wrap.classMemberWrap(whitespaces(code, startOffset) + current);
+                    pendingWrap = declarationWrap = Wrap.classMemberWrap(whitespaces(code, startOffset) + current, 0);
                 }
                 case VARIABLE -> {
-                    declarationWrap = Wrap.classMemberWrap(whitespaces(code, startOffset) + current);
+                    declarationWrap = Wrap.classMemberWrap(whitespaces(code, startOffset) + current, 0);
                     pendingWrap = Wrap.methodWrap(whitespaces(code, startOffset) + current);
                 }
                 default -> {

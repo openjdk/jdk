@@ -145,6 +145,98 @@ public class JavadocTest extends KullaTesting {
         setJDKSourcesOverride(List.of(srcZip));
     }
 
+    @Test
+    public void testJavadocFromSnippets() {
+        assertEval("""
+                   /**SnippetClazz top level.*/
+                   class SnippetClazz {
+                       /**Method javadoc.*/
+                       public static void test() {}
+                       /**SnippetClazzNested nested.*/
+                       static class SnippetClazzNested {
+                           /**Nested method javadoc.*/
+                           public static void nestedMethod() {}
+                       }
+                   }
+                   """);
+        assertEval("""
+                   /**topLevel method.*/
+                   void topLevel(SnippetClazz clazz) {}
+                   """);
+        assertEval("""
+                   /**topLevel variable.*/
+                   int variable = 0;
+                   """);
+        assertJavadoc("SnippetClazz|",
+                      """
+                      SnippetClazz
+                      SnippetClazz top level.""");
+        assertJavadoc("SnippetClazz.SnippetClazzNested|",
+                      """
+                      SnippetClazz.SnippetClazzNested
+                      SnippetClazzNested nested.""");
+        assertJavadoc("SnippetClazz.test(|",
+                      """
+                      void SnippetClazz.test()
+                      Method javadoc.""");
+        assertJavadoc("SnippetClazz.SnippetClazzNested.nestedMethod(|",
+                      """
+                      void SnippetClazz.SnippetClazzNested.nestedMethod()
+                      Nested method javadoc.""");
+        assertJavadoc("topLevel(|",
+                      """
+                      void topLevel(SnippetClazz clazz)
+                      topLevel method.""");
+        assertJavadoc("variable|",
+                      """
+                      variable:int
+                      topLevel variable.""");
+    }
+
+    @Test
+    public void testJavadocFromSnippetsMarkdown() {
+        assertEval("""
+                   ///SnippetClazz top level.
+                   class SnippetClazz {
+                       ///Method javadoc.
+                       public static void test() {}
+                       ///SnippetClazzNested nested.
+                       static class SnippetClazzNested {
+                           ///Nested method javadoc.
+                           public static void nestedMethod() {}
+                           }
+                   }
+                   """);
+        assertEval("""
+                   ///topLevel Method.
+                   public static void topLevel(SnippetClazz clazz) {}
+                   """);
+        assertEval("""
+                   ///topLevel variable.
+                   int variable = 0;
+                   """);
+        assertJavadoc("SnippetClazz|",
+                      """
+                      SnippetClazz
+                      SnippetClazz top level.""");
+        assertJavadoc("SnippetClazz.SnippetClazzNested|",
+                      """
+                      SnippetClazz.SnippetClazzNested
+                      SnippetClazzNested nested.""");
+        assertJavadoc("SnippetClazz.test(|",
+                      """
+                      void SnippetClazz.test()
+                      Method javadoc.""");
+        assertJavadoc("SnippetClazz.SnippetClazzNested.nestedMethod(|",
+                      """
+                      void SnippetClazz.SnippetClazzNested.nestedMethod()
+                      Nested method javadoc.""");
+        assertJavadoc("variable|",
+                      """
+                      variable:int
+                      topLevel variable.""");
+    }
+
     @Override
     public void tearDown() {
         setJDKSourcesOverride(null);
