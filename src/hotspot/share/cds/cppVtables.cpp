@@ -22,7 +22,6 @@
  *
  */
 
-#include "cds/aotGrowableArray.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
@@ -41,6 +40,7 @@
 #include "oops/typeArrayKlass.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 
 // Objects of the Metadata types (such as Klass and ConstantPool) have C++ vtables.
 // (In GCC this is the field <Type>::_vptr, i.e., first word in the object.)
@@ -58,10 +58,10 @@
 
 #ifndef PRODUCT
 
-// AOTGrowableArray has a vtable only when in non-product builds (due to
+// GrowableArray has a vtable only when in non-product builds (due to
 // the virtual printing functions in AnyObj).
 
-using GrowableArray_ModuleEntry_ptr = AOTGrowableArray<ModuleEntry*>;
+using GrowableArray_ModuleEntry_ptr = GrowableArray<ModuleEntry*>;
 
 #define DEBUG_CPP_VTABLE_TYPES_DO(f) \
   f(GrowableArray_ModuleEntry_ptr) \
@@ -140,7 +140,7 @@ void CppVtableCloner<T>::initialize(const char* name, CppVtableInfo* info) {
 
   // We already checked (and, if necessary, adjusted n) when the vtables were allocated, so we are
   // safe to do memcpy.
-  log_debug(aot, vtables)("Copying %3d vtable entries for %s", n, name);
+  log_debug(aot, vtables)("Copying %3d vtable entries for %s to " INTPTR_FORMAT, n, name, p2i(dstvtable));
   memcpy(dstvtable, srcvtable, sizeof(intptr_t) * n);
 }
 

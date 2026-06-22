@@ -74,7 +74,7 @@ PerfVariable* ThreadService::_daemon_threads_count = nullptr;
 volatile int ThreadService::_atomic_threads_count = 0;
 volatile int ThreadService::_atomic_daemon_threads_count = 0;
 
-volatile jlong ThreadService::_exited_allocated_bytes = 0;
+volatile uint64_t ThreadService::_exited_allocated_bytes = 0;
 
 ThreadDumpResult* ThreadService::_threaddump_list = nullptr;
 
@@ -1179,13 +1179,14 @@ public:
   OopHandle _carrier_thread;
   GrowableArray<OwnedLock>* _locks;
   Blocker _blocker;
+  bool _processed;
 
   GetThreadSnapshotHandshakeClosure(Handle thread_h):
     HandshakeClosure("GetThreadSnapshotHandshakeClosure"),
     _thread_h(thread_h), _java_thread(nullptr),
     _frame_count(0), _methods(nullptr), _bcis(nullptr),
-    _thread_status(), _thread_name(nullptr),
-    _locks(nullptr), _blocker() {
+    _thread_status(JavaThreadStatus::NEW), _thread_name(nullptr),
+    _locks(nullptr), _blocker(), _processed(false) {
   }
   virtual ~GetThreadSnapshotHandshakeClosure() {
     delete _methods;
@@ -1252,7 +1253,7 @@ private:
             // The first stage of async deflation does not affect any field
             // used by this comparison so the ObjectMonitor* is usable here.
             if (mark.has_monitor()) {
-              ObjectMonitor* mon = ObjectSynchronizer::read_monitor(current, monitor->owner(), mark);
+              ObjectMonitor* mon = ObjectSynchronizer::read_monitor(monitor->owner(), mark);
               if (// if the monitor is null we must be in the process of locking
                   mon == nullptr ||
                   // we have marked ourself as pending on this monitor
@@ -1274,6 +1275,7 @@ public:
   void do_thread(Thread* th) override {
     Thread* current = Thread::current();
     _java_thread = th != nullptr ? JavaThread::cast(th) : nullptr;
+    _processed = true;
 
     bool is_virtual = java_lang_VirtualThread::is_instance(_thread_h());
     if (_java_thread != nullptr) {
@@ -1473,10 +1475,11 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
     Handshake::execute(&cl, &tlh, java_thread);
   }
 
-  assert(cl._thread_status != JavaThreadStatus::NEW, "unstarted Thread");
-  if (is_virtual && (cl._thread_status == JavaThreadStatus::TERMINATED)) {
-    return nullptr; // virtual thread terminated
+  assert(cl._processed || (!is_virtual && java_thread->is_terminated()), "should have executed handshake closure");
+  if (!cl._processed || cl._thread_status == JavaThreadStatus::TERMINATED) {
+    return nullptr; // thread terminated
   }
+  assert(cl._thread_status != JavaThreadStatus::NEW, "unstarted Thread");
 
   // StackTrace
   InstanceKlass* ste_klass = vmClasses::StackTraceElement_klass();

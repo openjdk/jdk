@@ -29,6 +29,7 @@
 
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/safepointVerifiers.hpp"
 
 inline GlobalCounter::CSContext
 GlobalCounter::critical_section_begin(Thread *thread) {
@@ -53,11 +54,13 @@ GlobalCounter::critical_section_end(Thread *thread, CSContext context) {
 }
 
 class GlobalCounter::CriticalSection {
- private:
+  NoSafepointVerifier _nsv;
   Thread* _thread;
   CSContext _context;
- public:
+
+public:
   inline CriticalSection(Thread* thread) :
+    _nsv(),
     _thread(thread),
     _context(GlobalCounter::critical_section_begin(_thread))
   {}

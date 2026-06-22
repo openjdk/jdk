@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -167,6 +167,12 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
                                                         Register obj, Register tmp, Label& slowpath) {
   __ z_nill(obj, ~JNIHandles::tag_mask);
   __ z_lg(obj, 0, obj); // Resolve (untagged) jobject.
+}
+
+void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                                          Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle without barriers.
+  __ z_lg(obj, Address(weak_handle));
 }
 
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {

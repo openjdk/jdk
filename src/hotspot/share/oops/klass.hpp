@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,6 @@ class vtableEntry;
 class Klass : public Metadata {
 
   friend class VMStructs;
-  friend class JVMCIVMStructs;
  public:
   // Klass Kinds for all subclasses of Klass
   enum KlassKind : u2 {
@@ -451,10 +450,6 @@ protected:
   static ByteSize java_mirror_offset()           { return byte_offset_of(Klass, _java_mirror); }
   static ByteSize class_loader_data_offset()     { return byte_offset_of(Klass, _class_loader_data); }
   static ByteSize layout_helper_offset()         { return byte_offset_of(Klass, _layout_helper); }
-#if INCLUDE_JVMCI
-  static ByteSize subklass_offset()              { return byte_offset_of(Klass, _subklass); }
-  static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
-#endif
   static ByteSize secondary_supers_bitmap_offset()
                                                  { return byte_offset_of(Klass, _secondary_supers_bitmap); }
   static ByteSize hash_slot_offset()             { return byte_offset_of(Klass, _hash_slot); }
@@ -466,9 +461,9 @@ protected:
   static const int _lh_log2_element_size_shift = BitsPerByte*0;
   static const int _lh_log2_element_size_mask  = BitsPerLong-1;
   static const int _lh_element_type_shift      = BitsPerByte*1;
-  static const int _lh_element_type_mask       = right_n_bits(BitsPerByte);  // shifted mask
+  static const int _lh_element_type_mask       = right_n_bits<int>(BitsPerByte);  // shifted mask
   static const int _lh_header_size_shift       = BitsPerByte*2;
-  static const int _lh_header_size_mask        = right_n_bits(BitsPerByte);  // shifted mask
+  static const int _lh_header_size_mask        = right_n_bits<int>(BitsPerByte);  // shifted mask
   static const int _lh_array_tag_bits          = 2;
   static const int _lh_array_tag_shift         = BitsPerInt - _lh_array_tag_bits;
   static const int _lh_array_tag_obj_value     = ~0x01;   // 0x80000000 >> 30

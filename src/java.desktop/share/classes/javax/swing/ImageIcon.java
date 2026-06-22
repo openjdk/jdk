@@ -53,8 +53,6 @@ import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
 
-import sun.awt.AWTAccessor;
-
 /**
  * An implementation of the Icon interface that paints Icons
  * from Images. Images that are created from a URL, filename or byte array

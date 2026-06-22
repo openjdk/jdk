@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,22 +27,19 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
  * @compile ../ReferenceTracker.java
- * @run testng/othervm -Djdk.httpclient.qpack.encoderTableCapacityLimit=4096
+ * @run junit/othervm -Djdk.httpclient.qpack.encoderTableCapacityLimit=4096
  *                     -Djdk.httpclient.qpack.decoderMaxTableCapacity=4096
  *                     -Dhttp3.test.server.encoderAllowedHeaders=*
  *                     -Dhttp3.test.server.decoderMaxTableCapacity=4096
  *                     -Dhttp3.test.server.encoderTableCapacityLimit=4096
  *                     -Djdk.internal.httpclient.qpack.log.level=NORMAL
- *                     H3HeadersEncoding
+ *                     ${test.main.class}
  * @summary this test verifies that when QPACK dynamic table is enabled multiple
  *          random headers can be encoded/decoded correctly
  */
 
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -72,17 +69,21 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static jdk.httpclient.test.lib.common.HttpServerAdapters.*;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 public class H3HeadersEncoding {
 
     private static final int REQUESTS_COUNT = 500;
     private static final int HEADERS_PER_REQUEST = 20;
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer http3TestServer;
-    HeadersHandler serverHeadersHandler;
-    String http3URI;
+    private static HttpTestServer http3TestServer;
+    private static HeadersHandler serverHeadersHandler;
+    private static String http3URI;
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         System.out.println("Creating servers");
         http3TestServer = HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext);
         serverHeadersHandler = new HeadersHandler();
@@ -92,8 +93,8 @@ public class H3HeadersEncoding {
         http3TestServer.start();
     }
 
-    @AfterTest
-    public void tearDown() {
+    @AfterAll
+    public static void tearDown() {
         http3TestServer.stop();
     }
 
@@ -272,7 +273,7 @@ public class H3HeadersEncoding {
     }
 
 
-    private class HeadersHandler implements HttpTestHandler {
+    private static class HeadersHandler implements HttpTestHandler {
         @Override
         public void handle(HttpTestExchange t) throws IOException {
 

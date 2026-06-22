@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2026, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -57,6 +57,7 @@
   } while (0)
 
 class ShenandoahCollectionSet;
+class ShenandoahHeap;
 class ShenandoahHeapRegion;
 
 /*
@@ -78,21 +79,27 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
   };
 #endif
 
+private:
+  double _most_recent_trigger_evaluation_time;
+  double _most_recent_planned_sleep_interval;
+
+  // When we decide to do an abbreviated cycle, withdraw reserves so memory can be made available to mutators.
+  void adjust_reserves_for_abbreviated(ShenandoahHeap* heap);
+
 protected:
-  static const uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
+  static constexpr uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
 
   bool _start_gc_is_pending;              // True denotes that GC has been triggered, so no need to trigger again.
   size_t _declined_trigger_count;         // This counts how many times since previous GC finished that this
                                           //  heuristic has answered false to should_start_gc().
   size_t _most_recent_declined_trigger_count;
-                                       ;  // This represents the value of _declined_trigger_count as captured at the
+                                          // This represents the value of _declined_trigger_count as captured at the
                                           //  moment the most recent GC effort was triggered.  In case the most recent
                                           //  concurrent GC effort degenerates, the value of this variable allows us to
                                           //  differentiate between degeneration because heuristic was overly optimistic
                                           //  in delaying the trigger vs. degeneration for other reasons (such as the
                                           //  most recent GC triggered "immediately" after previous GC finished, but the
                                           //  free headroom has already been depleted).
-
   class RegionData {
     private:
     ShenandoahHeapRegion* _region;
@@ -103,6 +110,7 @@ protected:
 #ifdef ASSERT
     UnionTag _union_tag;
 #endif
+
     public:
 
     inline void clear() {
@@ -171,12 +179,12 @@ protected:
 
   size_t _guaranteed_gc_interval;
 
+  double _precursor_cycle_start;
   double _cycle_start;
   double _last_cycle_end;
 
   size_t _gc_times_learned;
   intx _gc_time_penalties;
-  TruncatedSeq* _gc_cycle_time_history;
 
   // There may be many threads that contend to set this flag
   ShenandoahSharedFlag _metaspace_oom;
@@ -188,16 +196,22 @@ protected:
                                                      RegionData* data, size_t data_size,
                                                      size_t free) = 0;
 
-  void adjust_penalty(intx step);
+  virtual void adjust_penalty(intx step);
 
   inline void accept_trigger() {
-    _most_recent_declined_trigger_count = _declined_trigger_count;
-    _declined_trigger_count = 0;
     _start_gc_is_pending = true;
   }
 
   inline void decline_trigger() {
     _declined_trigger_count++;
+  }
+
+  inline double get_most_recent_wake_time() const {
+    return _most_recent_trigger_evaluation_time;
+  }
+
+  inline double get_planned_sleep_interval() const {
+    return _most_recent_planned_sleep_interval;
   }
 
 public:
@@ -212,9 +226,25 @@ public:
     _guaranteed_gc_interval = guaranteed_gc_interval;
   }
 
+  virtual void start_idle_span();
+  virtual void compute_headroom_adjustment() {
+    // Default implementation does nothing.
+  }
+
+  double cycle_start_time_seconds() const {
+    return _cycle_start;
+  }
+
   virtual void record_cycle_start();
 
+  void record_degenerated_cycle_start(bool out_of_cycle);
+
   virtual void record_cycle_end();
+
+  void update_should_start_query_times(double now, double planned_sleep_interval) {
+    _most_recent_trigger_evaluation_time = now;
+    _most_recent_planned_sleep_interval = planned_sleep_interval;
+  }
 
   virtual bool should_start_gc();
 
@@ -226,7 +256,7 @@ public:
 
   virtual void record_success_concurrent();
 
-  virtual void record_degenerated();
+  virtual void record_degenerated(bool is_generational_global);
 
   virtual void record_success_full();
 
@@ -248,16 +278,15 @@ public:
   virtual bool is_diagnostic() = 0;
   virtual bool is_experimental() = 0;
   virtual void initialize();
+  virtual void post_initialize();
 
   double elapsed_cycle_time() const;
-
-  virtual size_t force_alloc_rate_sample(size_t bytes_allocated) {
-    // do nothing
-    return 0;
-  }
+  double elapsed_degenerated_cycle_time() const;
 
   // Format prefix and emit log message indicating a GC cycle hs been triggered
   void log_trigger(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);
+
+  DEBUG_ONLY(static void assert_humongous_mark_consistency(ShenandoahHeapRegion* region));
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP

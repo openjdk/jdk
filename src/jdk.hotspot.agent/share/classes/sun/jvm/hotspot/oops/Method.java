@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@ public class Method extends Metadata {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     type                       = db.lookupType("Method");
     constMethod                = type.getAddressField("_constMethod");
-    methodData                 = type.getAddressField("_method_data");
     methodCounters             = type.getAddressField("_method_counters");
     accessFlags                = new CIntField(type.getCIntegerField("_access_flags"), 0);
     code                       = type.getAddressField("_code");
@@ -82,7 +81,6 @@ public class Method extends Metadata {
 
   // Fields
   private static AddressField  constMethod;
-  private static AddressField  methodData;
   private static AddressField  methodCounters;
   private static CIntField accessFlags;
   private static CIntField vtableIndex;
@@ -125,10 +123,6 @@ public class Method extends Metadata {
   }
   public U1Array      getStackMapData()               {
     return getConstMethod().getStackMapData();
-  }
-  public MethodData   getMethodData()                 {
-    Address addr = methodData.getValue(getAddress());
-    return VMObjectFactory.newObject(MethodData.class, addr);
   }
   public MethodCounters getMethodCounters()           {
     Address addr = methodCounters.getValue(getAddress());

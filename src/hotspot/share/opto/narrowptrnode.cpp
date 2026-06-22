@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ const Type* EncodePKlassNode::Value(PhaseGVN* phase) const {
   if (t == Type::TOP) return Type::TOP;
   assert (t != TypePtr::NULL_PTR, "null klass?");
 
-  assert(UseCompressedClassPointers && t->isa_klassptr(), "only klass ptr here");
+  assert(t->isa_klassptr(), "only klass ptr here");
   return t->make_narrowklass();
 }
 

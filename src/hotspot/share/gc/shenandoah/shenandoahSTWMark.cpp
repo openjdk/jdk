@@ -63,7 +63,7 @@ void ShenandoahSTWMarkTask::work(uint worker_id) {
 
 ShenandoahSTWMark::ShenandoahSTWMark(ShenandoahGeneration* generation, bool full_gc) :
   ShenandoahMark(generation),
-  _root_scanner(full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_stw_mark),
+  _root_scanner(full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_mark),
   _terminator(ShenandoahHeap::heap()->workers()->active_workers(), task_queues()),
   _full_gc(full_gc) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a Shenandoah safepoint");
@@ -74,7 +74,7 @@ void ShenandoahSTWMark::mark() {
 
   // Arm all nmethods. Even though this is STW mark, some marking code
   // piggybacks on nmethod barriers for special instances.
-  ShenandoahCodeRoots::arm_nmethods_for_mark();
+  ShenandoahCodeRoots::arm_nmethods();
 
   // Weak reference processing
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
@@ -104,6 +104,12 @@ void ShenandoahSTWMark::mark() {
     heap->workers()->run_task(&task);
 
     assert(task_queues()->is_empty(), "Should be empty");
+
+    if (!generation()->is_old()) {
+      // Lastly, ensure all the invisible roots are marked.
+      ShenandoahInvisibleRootsMarkClosure cl;
+      Threads::java_threads_do(&cl);
+    }
   }
 
   _generation->set_mark_complete();
@@ -145,10 +151,8 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
 }
 
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
-  ShenandoahPhaseTimings::Phase phase = _full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_stw_mark;
-  ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::ParallelMark, worker_id);
-  StringDedup::Requests requests;
+  ShenandoahPhaseTimings::Phase phase = _full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_mark;
+  ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::Work, worker_id);
 
-  mark_loop(worker_id, &_terminator, _generation->type(), false /* not cancellable */,
-            ShenandoahStringDedup::is_enabled() ? ALWAYS_DEDUP : NO_DEDUP, &requests);
+  mark_loop(worker_id, &_terminator, _generation->type(), false /* not cancellable */);
 }

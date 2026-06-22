@@ -135,19 +135,6 @@ final class AppImageFile {
     }
 
     /**
-     * Loads application image info from the specified application layout.
-     * <p>
-     * It is an equivalent to calling
-     * {@link #load(ApplicationLayout, OperatingSystem)} method with
-     * {@code OperatingSystem.current()} for the second parameter.
-     *
-     * @param appLayout the application layout
-     */
-    static ExternalApplication load(ApplicationLayout appLayout) {
-        return load(appLayout, OperatingSystem.current());
-    }
-
-    /**
      * Loads application image info from the specified application layout and OS.
      *
      * @param appLayout the application layout

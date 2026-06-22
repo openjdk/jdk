@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1088,10 +1088,8 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
   return clone_base_plus_offset_address(m, mstack, address_visited);
 }
 
-// Return whether or not this register is ever used as an argument.  This
-// function is used on startup to build the trampoline stubs in generateOptoStub.
-// Registers not mentioned will be killed by the VM call in the trampoline, and
-// arguments in those registers not be available to the callee.
+#ifdef ASSERT
+// Return whether or not this register is ever used as an argument.
 bool Matcher::can_be_java_arg( int reg ) {
   if (reg == R_R0_num ||
       reg == R_R1_num ||
@@ -1102,10 +1100,7 @@ bool Matcher::can_be_java_arg( int reg ) {
       reg <= R_S13_num) return true;
   return false;
 }
-
-bool Matcher::is_spillable_arg( int reg ) {
-  return can_be_java_arg(reg);
-}
+#endif
 
 uint Matcher::int_pressure_limit()
 {
@@ -1115,10 +1110,6 @@ uint Matcher::int_pressure_limit()
 uint Matcher::float_pressure_limit()
 {
   return (FLOATPRESSURE == -1) ? 30 : FLOATPRESSURE;
-}
-
-bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
-  return false;
 }
 
 // Register for DIVI projection of divmodI
@@ -4445,6 +4436,18 @@ instruct membar_release_lock() %{
   ins_pipe(empty);
 %}
 
+instruct membar_storeload() %{
+  match(MemBarStoreLoad);
+  ins_cost(4*MEMORY_REF_COST);
+
+  size(4);
+  format %{ "MEMBAR-storeload" %}
+  ins_encode %{
+    __ membar(MacroAssembler::StoreLoad, noreg);
+  %}
+  ins_pipe(long_memory_op);
+%}
+
 instruct membar_volatile() %{
   match(MemBarVolatile);
   ins_cost(4*MEMORY_REF_COST);
@@ -4466,6 +4469,18 @@ instruct unnecessary_membar_volatile() %{
   format %{ "!MEMBAR-volatile (unnecessary so empty encoding)" %}
   ins_encode( );
   ins_pipe(empty);
+%}
+
+instruct membar_full() %{
+  match(MemBarFull);
+  ins_cost(4*MEMORY_REF_COST);
+
+  size(4);
+  format %{ "MEMBAR-full" %}
+  ins_encode %{
+    __ membar(MacroAssembler::StoreLoad, noreg);
+  %}
+  ins_pipe(long_memory_op);
 %}
 
 //----------Register Move Instructions-----------------------------------------
@@ -9199,10 +9214,12 @@ instruct bytes_reverse_long(iRegL dst, iRegL src) %{
 
 instruct bytes_reverse_unsigned_short(iRegI dst, iRegI src) %{
   match(Set dst (ReverseBytesUS src));
-  size(4);
-  format %{ "REV16 $dst,$src" %}
+  size(8);
+  format %{ "REV32 $dst,$src\n\t"
+            "LSR   $dst,$dst,#16" %}
   ins_encode %{
-    __ rev16($dst$$Register, $src$$Register);
+    __ rev($dst$$Register, $src$$Register);
+    __ mov($dst$$Register, AsmOperand($dst$$Register, lsr, 16));
   %}
   ins_pipe( iload_mem ); // FIXME
 %}

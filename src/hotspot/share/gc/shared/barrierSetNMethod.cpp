@@ -39,9 +39,6 @@
 #include "runtime/threads.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/debug.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciRuntime.hpp"
-#endif
 
 int BarrierSetNMethod::disarmed_guard_value() const {
   return *disarmed_guard_value_address();
@@ -65,7 +62,7 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
     return false;
   }
 
-  if (nm->is_native_method() || nm->is_compiled_by_c2() || nm->is_compiled_by_c1() || nm->is_compiled_by_jvmci()) {
+  if (nm->is_native_method() || nm->is_compiled_by_c2() || nm->is_compiled_by_c1()) {
     return true;
   }
 
@@ -111,6 +108,8 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return true;
   }
 
+  // Enable WXWrite: the function is called directly from nmethod_entry_barrier
+  // stub.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   // If the nmethod is the only thing pointing to the oops, and we are using a

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class SharedStringsUtils {
     // SharedStringsUtils.run() is for running the main test body multiple times, each with a different
     // set of extra VM options that are passed to the child processes.
     //
-    // See ./ExerciseGC.java for an example.
+    // See ./LargePages.java for an example.
     public static void run(String args[], Test t) throws Exception {
         int numSetOfChildVMOptions = vmOptionCombos.length;
         for (int i=0; i< numSetOfChildVMOptions; i++) {

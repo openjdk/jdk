@@ -48,24 +48,28 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
                 trustManager = getInstance(TrustStoreManager.getTrustedCerts());
             } catch (SecurityException se) {
                 // eat security exceptions but report other throwables
-                if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                     SSLLogger.fine(
                             "SunX509: skip default keystore", se);
                 }
             } catch (Error err) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                     SSLLogger.fine(
                         "SunX509: skip default keystore", err);
                 }
                 throw err;
             } catch (RuntimeException re) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                     SSLLogger.fine(
                         "SunX509: skip default keystore", re);
                 }
                 throw re;
             } catch (Exception e) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("trustmanager")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                     SSLLogger.fine(
                         "SunX509: skip default keystore", e);
                 }

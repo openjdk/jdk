@@ -26,11 +26,13 @@ package sun.tools.attach;
 
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
+import com.sun.tools.attach.AttachOperationFailedException;
 import com.sun.tools.attach.spi.AttachProvider;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,6 +44,7 @@ import java.util.regex.Pattern;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import sun.jvmstat.monitor.MonitoredHost;
+import sun.jvmstat.monitor.MonitorException;
 
 /*
  * Linux implementation of HotSpotVirtualMachine
@@ -251,24 +254,26 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         return f;
     }
 
-    private String findTargetProcessTmpDirectory(long pid) throws AttachNotSupportedException {
+    private String findTargetProcessTmpDirectory(long pid) throws IOException {
         final var tmpOnProcPidRoot = PROC.resolve(Long.toString(pid)).resolve(ROOT_TMP);
 
         /* We need to handle at least 4 different cases:
-         * 1. Caller and target processes share PID namespace and root filesystem (host to host or container to
-         *    container with both /tmp mounted between containers).
-         * 2. Caller and target processes share PID namespace and root filesystem but the target process has elevated
-         *    privileges (host to host).
-         * 3. Caller and target processes share PID namespace but NOT root filesystem (container to container).
-         * 4. Caller and target processes share neither PID namespace nor root filesystem (host to container)
+         * 1. Caller and target processes share PID namespace and root
+         *    filesystem (host to host or container to container with both /tmp
+         *    mounted between containers).
+         * 2. Caller and target processes share PID namespace and root
+         *    filesystem but the target process has elevated privileges
+         *    (host to host).
+         * 3. Caller and target processes share PID namespace but NOT root
+         *    filesystem (container to container).
+         * 4. Caller and target processes share neither PID namespace nor root
+         *    filesystem (host to container)
          *
-         * if target is elevated, we cant use /proc/<pid>/... so we have to fallback to /tmp, but that may not be shared
-         * with the target/attachee process, so we should check whether /tmp on both is same. This method would throw
-         * AttachNotSupportedException if they are different because we cannot make a connection with target VM.
-         *
-         * In addition, we can also check the target pid's signal masks to see if it catches SIGQUIT and only do so if in
-         * fact it does ... this reduces the risk of killing an innocent process in the current ns as opposed to
-         * attaching to the actual target JVM ... c.f: checkCatchesAndSendQuitTo() below.
+         * if target is elevated, we cant use /proc/<pid>/... so we have to
+         * fallback to /tmp, but that may not be shared with the target/attachee
+         * process, so we should check whether /tmp on both is same. This method
+         * would throw AttachOperationFailedException if they are different
+         * because we cannot make a connection with target VM.
          */
 
         try {
@@ -277,7 +282,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             } else if (Files.isSameFile(tmpOnProcPidRoot, TMPDIR)) {
                 return TMPDIR.toString();
             } else {
-                throw new AttachNotSupportedException("Unable to access the filesystem of the target process");
+                throw new AttachOperationFailedException("Unable to access the filesystem of the target process");
             }
         } catch (IOException ioe) {
             try {
@@ -290,15 +295,19 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                     // even if we cannot access /proc/<PID>/root.
                     // The process with capsh/setcap would fall this pattern.
                     return TMPDIR.toString();
-                } else {
-                    throw new AttachNotSupportedException("Unable to access the filesystem of the target process", ioe);
                 }
-            } catch (AttachNotSupportedException e) {
-                // AttachNotSupportedException happened in above should go through
-                throw e;
-            } catch (Exception e) {
-                // Other exceptions would be wrapped with AttachNotSupportedException
-                throw new AttachNotSupportedException("Unable to access the filesystem of the target process", e);
+                // Throw original IOE if target process not found on localhost.
+                throw ioe;
+            } catch (URISyntaxException e) {
+                // URISyntaxException is defined as a checked exception at
+                // MonitoredHost.getMonitoredHost() if the URI string poorly
+                // formed. However "//localhost" is hard-coded at here, so the
+                // exception should not happen.
+                throw new AssertionError("Unexpected exception", e);
+            } catch (MonitorException e) {
+                // Other exceptions (happened at MonitoredHost) would be wrapped
+                // with AttachOperationFailedException.
+                throw new AttachOperationFailedException("Unable to find target proces", e);
             }
         }
     }

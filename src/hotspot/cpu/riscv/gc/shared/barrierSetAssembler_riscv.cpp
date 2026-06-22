@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -228,7 +228,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   Assembler::IncompressibleScope scope(masm); // Fixed length: see entry_barrier_offset()
 
-  Label local_guard;
+  Label local_guard, skip_barrier;
   NMethodPatchingType patching_type = nmethod_patching_type();
 
   if (slow_path == nullptr) {
@@ -290,24 +290,26 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
       ShouldNotReachHere();
   }
 
+  Label& barrier_target = slow_path == nullptr ? skip_barrier : *slow_path;
   if (slow_path == nullptr) {
-    Label skip_barrier;
-    __ beq(t0, t1, skip_barrier);
+    __ beq(t0, t1, barrier_target, true /* is_far */);
+  } else {
+    __ bne(t0, t1, barrier_target, true /* is_far */);
+  }
 
+  if (slow_path == nullptr) {
     __ rt_call(StubRoutines::method_entry_barrier());
-
     __ j(skip_barrier);
 
     __ bind(local_guard);
 
     MacroAssembler::assert_alignment(__ pc());
     __ emit_int32(0); // nmethod guard value. Skipped over in common case.
-    __ bind(skip_barrier);
   } else {
-    __ beq(t0, t1, *continuation);
-    __ j(*slow_path);
     __ bind(*continuation);
   }
+
+  __ bind(skip_barrier);
 }
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
@@ -354,6 +356,12 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ beqz(obj, error);           // if klass is null it is broken
 }
 
+void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                                          Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle without barriers.
+  __ ld(obj, Address(weak_handle));
+}
+
 #ifdef COMPILER2
 
 OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
@@ -368,7 +376,6 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
 
   return opto_reg;
 }
-
 #undef __
 #define __ _masm->
 

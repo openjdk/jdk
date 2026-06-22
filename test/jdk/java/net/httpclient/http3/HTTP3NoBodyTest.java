@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,16 @@
  *        jdk.httpclient.test.lib.http3.Http3TestServer
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @compile ../ReferenceTracker.java
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors
  *       -Djdk.internal.httpclient.debug=true
- *       HTTP3NoBodyTest
+ *       ${test.main.class}
  * @summary this is a copy of http2/NoBodyTest over HTTP/3
  */
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.*;
-import javax.net.ssl.*;
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
@@ -48,8 +47,11 @@ import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Random;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.net.ssl.SSLContext;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
@@ -58,7 +60,6 @@ import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.RandomFactory;
-import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
@@ -66,7 +67,8 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 
-@Test
+import org.junit.jupiter.api.Test;
+
 public class HTTP3NoBodyTest {
     private static final Random RANDOM = RandomFactory.getRandom();
 
@@ -119,7 +121,7 @@ public class HTTP3NoBodyTest {
     }
 
     @Test
-    public static void runtest() throws Exception {
+    public void runtest() throws Exception {
         try {
             initialize();
             warmup(false);

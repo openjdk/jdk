@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1GCCounters.hpp"
@@ -38,8 +39,8 @@ bool G1PeriodicGCTask::should_start_periodic_gc(G1CollectedHeap* g1h,
   // Ensure no GC safepoints while we're doing the checks, to avoid data races.
   SuspendibleThreadSetJoiner sts;
 
-  // If we are currently in a concurrent mark we are going to uncommit memory soon.
-  if (g1h->concurrent_mark()->in_progress()) {
+  // If we are currently in a concurrent cycle we are going to uncommit memory soon.
+  if (g1h->collector_state()->is_in_concurrent_cycle()) {
     log_debug(gc, periodic)("Concurrent cycle in progress. Skipping.");
     return false;
   }

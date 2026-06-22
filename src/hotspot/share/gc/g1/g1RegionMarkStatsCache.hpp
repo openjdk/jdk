@@ -95,7 +95,7 @@ private:
   // Evict a given element of the statistics cache.
   void evict(uint idx);
 
-  size_t _num_cache_entries_mask;
+  const uint _num_cache_entries_mask;
 
   uint hash(uint idx) {
     return idx & _num_cache_entries_mask;

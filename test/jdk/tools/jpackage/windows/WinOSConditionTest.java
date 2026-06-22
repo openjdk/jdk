@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Iterator;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
@@ -74,10 +77,13 @@ public class WinOSConditionTest {
             // MSI error code 1603 is generic.
             // Dig into the last msi log file for log messages specific to failed condition.
             try (final var lines = cmd.winMsiLogFileContents().orElseThrow()) {
-                TKit.TextStreamVerifier.group()
-                        .add(TKit.assertTextStream("Doing action: LaunchConditions").predicate(String::endsWith))
-                        .add(TKit.assertTextStream("Not supported on this version of Windows").predicate(String::endsWith))
-                        .create().accept(lines.iterator());
+                Stream.of(
+                        "Doing action: LaunchConditions",
+                        "Not supported on this version of Windows"
+                ).map(TKit::assertTextStream).map(v -> {
+                    Consumer<Iterator<String>> consumer = v.predicate(String::endsWith)::apply;
+                    return consumer;
+                }).reduce(Consumer::andThen).orElseThrow().accept(lines.iterator());
             }
         })
         .createMsiLog(true)

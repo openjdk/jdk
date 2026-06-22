@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,14 +70,6 @@ class MacroAssembler: public Assembler {
   // Move register if destination register and target register are different
   inline void mr_if_needed(Register rd, Register rs, bool allow_invalid = false);
   inline void fmr_if_needed(FloatRegister rd, FloatRegister rs);
-  // This is dedicated for emitting scheduled mach nodes. For better
-  // readability of the ad file I put it here.
-  // Endgroups are not needed if
-  //  - the scheduler is off
-  //  - the scheduler found that there is a natural group end, in that
-  //    case it reduced the size of the instruction used in the test
-  //    yielding 'needed'.
-  inline void endgroup_if_needed(bool needed);
 
   // Memory barriers.
   inline void membar(int bits);
@@ -388,8 +380,19 @@ class MacroAssembler: public Assembler {
                            Register toc);
 #endif
 
+  // CompiledIC call
+  bool ic_call(Register Rmethod_toc,
+               address target,
+               jint method_index = 0,
+               bool scratch_emit = false,
+               bool fixed_size = false);
   static int ic_check_size();
   int ic_check(int end_alignment);
+
+  enum { trampoline_stub_size = 6 * 4 };
+  address trampoline_call(AddressLiteral target,
+                          Register Rmethod_toc = noreg,
+                          bool scratch_emit = false);
 
  protected:
 
@@ -710,9 +713,6 @@ class MacroAssembler: public Assembler {
     Label&   slow_case                 // continuation point if fast allocation fails
   );
 
-  enum { trampoline_stub_size = 6 * 4 };
-  address emit_trampoline_stub(int destination_toc_offset, int insts_call_instruction_offset, Register Rtoc = noreg);
-
   void compiler_fast_lock_object(ConditionRegister flag, Register oop, Register box,
                                  Register tmp1, Register tmp2, Register tmp3);
 
@@ -810,7 +810,6 @@ class MacroAssembler: public Assembler {
                            MacroAssembler::PreservationLevel preservation_level);
   void load_method_holder(Register holder, Register method);
 
-  static int instr_size_for_decode_klass_not_null();
   void decode_klass_not_null(Register dst, Register src = noreg);
   Register encode_klass_not_null(Register dst, Register src = noreg);
 
@@ -870,6 +869,12 @@ class MacroAssembler: public Assembler {
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
                        Register tmp6, Register tmp7, Register tmp8, Register tmp9, Register tmp10,
                        Register tmp11, Register tmp12, Register tmp13);
+
+  // non-atomic 64-bit memory increment by simm16
+  void increment_mem64(Register base, RegisterOrConstant ind_or_offs, int val, Register tmp);
+
+  // Bytecode profiling (tmp2 = noreg is allowed, but then recv is killed)
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register tmp1, Register tmp2);
 
   // Emitters for CRC32 calculation.
   // A note on invertCRC:

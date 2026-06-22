@@ -184,7 +184,8 @@ final class PskKeyExchangeModesExtension {
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(
                     SSLExtension.PSK_KEY_EXCHANGE_MODES)) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                         "Ignore unavailable psk_key_exchange_modes extension");
                 }
@@ -216,7 +217,8 @@ final class PskKeyExchangeModesExtension {
                 if (!spec.contains(PskKeyExchangeMode.PSK_DHE_KE)) {
                     shc.isResumption = false;
                     shc.resumingSession = null;
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
                             "abort session resumption, " +
                             "no supported psk_dhe_ke PSK key exchange mode");
@@ -247,7 +249,8 @@ final class PskKeyExchangeModesExtension {
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(
                     SSLExtension.PSK_KEY_EXCHANGE_MODES)) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning(
                         "Ignore unavailable psk_key_exchange_modes extension");
                 }
@@ -287,7 +290,8 @@ final class PskKeyExchangeModesExtension {
             if (shc.isResumption) {     // resumingSession may not be set
                 shc.isResumption = false;
                 shc.resumingSession = null;
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
                             "abort session resumption, " +
                             "no supported psk_dhe_ke PSK key exchange mode");

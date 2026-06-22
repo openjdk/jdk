@@ -134,7 +134,7 @@ final class EncryptedExtensions {
                             SSLHandshake.ENCRYPTED_EXTENSIONS,
                             shc.negotiatedProtocol);
             eem.extensions.produce(shc, extTypes);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine("Produced EncryptedExtensions message", eem);
             }
 
@@ -168,7 +168,7 @@ final class EncryptedExtensions {
 
             EncryptedExtensionsMessage eem =
                     new EncryptedExtensionsMessage(chc, message);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Consuming EncryptedExtensions handshake message", eem);
             }

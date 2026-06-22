@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 ################################################################################
 
 # Minimum supported versions
-JTREG_MINIMUM_VERSION=8.1
+JTREG_MINIMUM_VERSION=8.2.1
 GTEST_MINIMUM_VERSION=1.14.0
 
 ################################################################################

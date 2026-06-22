@@ -448,15 +448,19 @@ public interface JavaLangAccess {
     PrintStream initialSystemErr();
 
     /**
-     * Encodes as many ASCII codepoints as possible from the source array into
-     * the destination byte array, assuming that the encoding is ASCII
-     * compatible.
-     * <p>
-     * <b>WARNING: This method does not perform any bound checks.</b>
+     * Encodes as many ASCII codepoints as possible from the source
+     * character array into the destination byte array, assuming that
+     * the encoding is ASCII compatible.
      *
-     * @return the number of bytes successfully encoded, or 0 if none
+     * @param sa the source character array
+     * @param sp the index of the source array to start reading from
+     * @param da the target byte array
+     * @param dp the index of the target array to start writing to
+     * @param len the total number of characters to be encoded
+     * @return the total number of characters successfully encoded
+     * @throws NullPointerException if any of the provided arrays is null
      */
-    int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len);
+    int encodeASCII(char[] sa, int sp, byte[] da, int dp, int len);
 
     /**
      * Set the cause of Throwable
@@ -576,6 +580,16 @@ public interface JavaLangAccess {
      * Return the current thread's scoped value bindings.
      */
     Object scopedValueBindings();
+
+    /**
+     * Returns the native thread ID for the given platform thread or 0 if not set.
+     */
+    long nativeThreadID(Thread thread);
+
+    /**
+     * Sets the native thread ID for the current platform thread.
+     */
+    void setThreadNativeID(long id);
 
     /**
      * Returns the innermost mounted continuation

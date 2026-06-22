@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ inline GenericTaskQueueSet<T, MT>::GenericTaskQueueSet(uint n) : _n(n) {
 
 template <class T, MemTag MT>
 inline GenericTaskQueueSet<T, MT>::~GenericTaskQueueSet() {
-  FREE_C_HEAP_ARRAY(T*, _queues);
+  FREE_C_HEAP_ARRAY(_queues);
 }
 
 #if TASKQUEUE_STATS
@@ -279,13 +279,11 @@ typename GenericTaskQueue<E, MT, N>::PopResult GenericTaskQueue<E, MT, N>::pop_g
   // Increment top; if it wraps, also increment tag, to distinguish it
   // from any recent _age for the same top() index.
   idx_t new_top = increment_index(oldAge.top());
+  // Don't use bottom, since a pop_local might have decremented it.
+  assert_not_underflow(localBot, new_top);
   idx_t new_tag = oldAge.tag() + ((new_top == 0) ? 1 : 0);
   Age newAge(new_top, new_tag);
   bool result = par_set_age(oldAge, newAge);
-
-  // Note that using "bottom" here might fail, since a pop_local might
-  // have decremented it.
-  assert_not_underflow(localBot, newAge.top());
   return result ? PopResult::Success : PopResult::Contended;
 }
 

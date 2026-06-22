@@ -41,7 +41,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-ArrayKlass::ArrayKlass() {
+ArrayKlass::ArrayKlass() : _dimension() {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
@@ -88,9 +88,9 @@ Method* ArrayKlass::uncached_lookup_method(const Symbol* name,
   return super()->uncached_lookup_method(name, signature, OverpassLookupMode::skip, private_mode);
 }
 
-ArrayKlass::ArrayKlass(Symbol* name, KlassKind kind) :
+ArrayKlass::ArrayKlass(int n, Symbol* name, KlassKind kind) :
   Klass(kind),
-  _dimension(1),
+  _dimension(n),
   _higher_dimension(nullptr),
   _lower_dimension(nullptr) {
   // Arrays don't add any new methods, so their vtable is the same size as

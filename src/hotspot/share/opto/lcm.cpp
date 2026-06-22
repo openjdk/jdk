@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,8 +306,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
         // cannot reason about it; is probably not implicit null exception
       } else {
         const TypePtr* tptr;
-        if ((UseCompressedOops && CompressedOops::shift() == 0) ||
-            (UseCompressedClassPointers && CompressedKlassPointers::shift() == 0)) {
+        if ((UseCompressedOops && CompressedOops::shift() == 0) || CompressedKlassPointers::shift() == 0) {
           // 32-bits narrow oop can be the base of address expressions
           tptr = base->get_ptr_type();
         } else {

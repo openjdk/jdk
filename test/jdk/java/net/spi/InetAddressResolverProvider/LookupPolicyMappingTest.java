@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,15 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4_FIRST;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
+import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
 
 import jdk.test.lib.net.IPSupport;
 import jdk.test.lib.NetworkConfiguration;
-import org.testng.annotations.Test;
-import org.testng.Assert;
-import org.testng.SkipException;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.abort;
 
 /*
  * @test
@@ -45,26 +48,26 @@ import org.testng.SkipException;
  * @library lib providers/simple /test/lib
  * @build test.library/testlib.ResolutionRegistry simple.provider/impl.SimpleResolverProviderImpl
  *        jdk.test.lib.net.IPSupport LookupPolicyMappingTest
- * @run testng/othervm LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv6Addresses=true LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv6Addresses=false LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv6Addresses=system LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv6Addresses LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack=true LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=false LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=system LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack=false LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack -Djava.net.preferIPv6Addresses=true LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack -Djava.net.preferIPv6Addresses=false LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack -Djava.net.preferIPv6Addresses=system LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack -Djava.net.preferIPv6Addresses LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv4Stack LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv6Addresses=true LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv6Addresses=false LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv6Addresses=system LookupPolicyMappingTest
- * @run testng/othervm -Djava.net.preferIPv6Addresses LookupPolicyMappingTest
+ * @run junit/othervm LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv6Addresses=true LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv6Addresses=false LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv6Addresses=system LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv6Addresses LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=false LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=system LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack=false LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack -Djava.net.preferIPv6Addresses=true LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack -Djava.net.preferIPv6Addresses=false LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack -Djava.net.preferIPv6Addresses=system LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack -Djava.net.preferIPv6Addresses LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=true LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=false LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=system LookupPolicyMappingTest
+ * @run junit/othervm -Djava.net.preferIPv6Addresses LookupPolicyMappingTest
  */
 
 public class LookupPolicyMappingTest {
@@ -88,19 +91,19 @@ public class LookupPolicyMappingTest {
         String expectedResultsKey = calculateMapKey(preferIPv4Stack, preferIPv6Addresses);
         int expectedCharacteristics = EXPECTED_RESULTS_MAP.get(expectedResultsKey);
 
-        Assert.assertTrue(characteristicsMatch(
+        assertTrue(characteristicsMatch(
                 runtimeCharacteristics, expectedCharacteristics), "Unexpected LookupPolicy observed");
     }
 
     // Throws SkipException if platform doesn't support required IP address types
     static void checkPlatformNetworkConfiguration() {
-        IPSupport.throwSkippedExceptionIfNonOperational();
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
         IPSupport.printPlatformSupport(System.err);
         NetworkConfiguration.printSystemConfiguration(System.err);
         // If preferIPv4=true and no IPv4 - skip
         if (IPSupport.preferIPv4Stack()) {
             if (!IPSupport.hasIPv4()) {
-                throw new SkipException("Skip tests - IPv4 support required");
+                abort("Skip tests - IPv4 support required");
             }
             return;
         }

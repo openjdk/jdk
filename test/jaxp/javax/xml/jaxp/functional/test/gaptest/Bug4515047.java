@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package test.gaptest;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
@@ -31,13 +33,11 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.testng.annotations.Test;
-
 /*
  * @test
  * @bug 4515047
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm test.gaptest.Bug4515047
+ * @run junit/othervm test.gaptest.Bug4515047
  * @summary test transform an empty dom source
  */
 public class Bug4515047 {
