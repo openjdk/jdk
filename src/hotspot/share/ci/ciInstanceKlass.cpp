@@ -434,6 +434,55 @@ ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature,
   return field;
 }
 
+#ifdef ASSERT
+static void assert_injected_field(InternalFieldStream& fs) {
+  assert(!fs.done(), "invarinat");
+  fieldDescriptor fd = fs.field_descriptor();
+  assert(fd.is_injected(), "invariant");
+}
+#endif
+
+// ------------------------------------------------------------------
+// ciInstanceKlass::get_injected_instance_field_by_name
+//
+// Implements also compute_injected_fields().
+//
+ciField* ciInstanceKlass::get_injected_instance_field_by_name(ciSymbol* name, ciSymbol* signature) {
+  VM_ENTRY_MARK;
+  InstanceKlass* const k = get_instanceKlass();
+  const Symbol* const name_symbol = name->get_symbol();
+  assert(name_symbol != nullptr, "invariant");
+  const Symbol* const sig_sym = signature->get_symbol();
+  assert(sig_sym != nullptr, "invariant");
+
+  if (_has_injected_fields == -1) {
+    if (super() != nullptr && super()->has_injected_fields()) {
+      _has_injected_fields = 1;
+    }
+  }
+
+  ciField* injected = nullptr;
+  for (InternalFieldStream fs(k); !fs.done(); fs.next()) {
+    if (fs.access_flags().is_static())  continue;
+    DEBUG_ONLY(assert_injected_field(fs);)
+    if (_has_injected_fields == -1) {
+      _has_injected_fields = 1;
+    }
+    if (fs.name() == name_symbol && fs.signature() == sig_sym) {
+      fieldDescriptor fd = fs.field_descriptor();
+      assert(fd.is_injected(), "invariant");
+      injected = new (CURRENT_THREAD_ENV->arena()) ciField(&fd);
+      break;
+    }
+  }
+
+  if (_has_injected_fields == -1) {
+    _has_injected_fields = 0;
+  }
+
+  return injected;
+}
+
 // This is essentially a shortcut for:
 //   get_field_by_offset(field_offset, is_static)->layout_type()
 // except this does not require allocating memory for a new ciField

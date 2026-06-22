@@ -30,9 +30,6 @@
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciExceptions.hpp"
-#endif
 
 
 // We have interfaces for the following instructions:
@@ -110,10 +107,22 @@ public:
 
   static bool is_adrp_at(address instr);
 
-  static bool is_ldr_literal_at(address instr);
+  static bool is_load_literal_at(address instr);
 
-  bool is_ldr_literal() {
-    return is_ldr_literal_at(addr_at(0));
+  bool is_load_literal() {
+    return is_load_literal_at(addr_at(0));
+  }
+
+  static bool is_ldr_gpr_literal_at(address instr);
+
+  bool is_ldr_gpr_literal() {
+    return is_ldr_gpr_literal_at(addr_at(0));
+  }
+
+  static bool is_ldrw_gpr_literal_at(address instr);
+
+  bool is_ldrw_gpr_literal() {
+    return is_ldrw_gpr_literal_at(addr_at(0));
   }
 
   static bool is_ldrw_to_zr(address instr);
@@ -128,7 +137,7 @@ public:
   }
 
   static bool maybe_cpool_ref(address instr) {
-    return is_adrp_at(instr) || is_ldr_literal_at(instr);
+    return is_adrp_at(instr) || is_load_literal_at(instr);
   }
 
   bool is_Membar() {
@@ -142,6 +151,29 @@ public:
     return Instruction_aarch64::extract(insn, 29, 27) == 0b111 &&
       Instruction_aarch64::extract(insn, 23, 23) == 0b0 &&
       Instruction_aarch64::extract(insn, 26, 25) == 0b00;
+  }
+
+  static bool is_neon_vector_mov_alias(uint32_t insn) {
+    if (Instruction_aarch64::extract(insn, 31, 31) != 0 ||
+        Instruction_aarch64::extract(insn, 29, 21) != 0b001110101 ||
+        Instruction_aarch64::extract(insn, 15, 10) != 0b000111) {
+      return false;
+    }
+    return Instruction_aarch64::extract(insn, 9, 5) ==
+           Instruction_aarch64::extract(insn, 20, 16);
+  }
+
+  static bool is_sve_vector_mov_alias(uint32_t insn) {
+    if (Instruction_aarch64::extract(insn, 31, 21) != 0b00000100011 ||
+        Instruction_aarch64::extract(insn, 15, 10) != 0b001100) {
+      return false;
+    }
+    return Instruction_aarch64::extract(insn, 9, 5) ==
+           Instruction_aarch64::extract(insn, 20, 16);
+  }
+
+  static uint32_t encode_sve_movprfx(uint32_t dst, uint32_t src) {
+    return 0x1082f << 10 | (src << 5) | dst;
   }
 };
 
@@ -215,9 +247,6 @@ public:
   void set_destination_mt_safe(address dest);
 
   address get_trampoline();
-#if INCLUDE_JVMCI
-  void trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS);
-#endif
 };
 
 inline NativeCall* nativeCall_at(address address) {
@@ -250,7 +279,7 @@ public:
       return addr_at(instruction_size);
     else if (is_adrp_at(instruction_address()))
       return addr_at(2*4);
-    else if (is_ldr_literal_at(instruction_address()))
+    else if (is_load_literal_at(instruction_address()))
       return(addr_at(4));
     assert(false, "Unknown instruction in NativeMovConstReg");
     return nullptr;

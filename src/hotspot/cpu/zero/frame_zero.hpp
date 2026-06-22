@@ -39,6 +39,7 @@
     // between a callee frame and its stack arguments, where it is part
     // of the caller/callee overlap
     metadata_words_at_top                            = 0,
+    // in bytes
     frame_alignment  = 16,
     // size, in words, of maximum shift in frame position due to alignment
     align_wiggle     =  1

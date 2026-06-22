@@ -1192,8 +1192,8 @@ var getJibProfilesDependencies = function (input, common) {
             server: "jpg",
             product: "jcov",
             version: "3.0",
-            build_number: "5",
-            file: "bundles/jcov-3.0+5.zip",
+            build_number: "6",
+            file: "bundles/jcov-3.0+6.zip",
             environment_name: "JCOV_HOME",
         },
 

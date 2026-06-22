@@ -874,6 +874,7 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, Node* n3, const TypeV
   case Op_SignumVD: return new SignumVDNode(n1, n2, n3, vt);
   case Op_SignumVF: return new SignumVFNode(n1, n2, n3, vt);
   case Op_VectorBlend: return new VectorBlendNode(n1, n2, n3);
+  case Op_VectorBitwiseBlend: return new VectorBitwiseBlendNode(n1, n2, n3, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return nullptr;
@@ -1168,6 +1169,32 @@ static bool is_commutative_vector_operation(int opcode) {
   }
 }
 
+static bool is_associative_and_commutative_vector_operation(int opcode) {
+  switch (opcode) {
+    case Op_AddVB:
+    case Op_AddVS:
+    case Op_AddVI:
+    case Op_AddVL:
+    case Op_MulVB:
+    case Op_MulVS:
+    case Op_MulVI:
+    case Op_MulVL:
+    case Op_MaxV:
+    case Op_MinV:
+    case Op_UMinV:
+    case Op_UMaxV:
+    case Op_XorV:
+    case Op_OrV:
+    case Op_AndV:
+    case Op_AndVMask:
+    case Op_OrVMask:
+    case Op_XorVMask:
+      return true;
+    default:
+      return false;
+  }
+}
+
 bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
   // Predicated vector operations are sensitive to ordering of inputs.
   // When the mask corresponding to a vector lane is false then
@@ -1299,7 +1326,7 @@ Node* VectorNode::create_reassociated_node(Node* parent, Node* child, Node* cinp
   return cloned_parent;
 }
 
-// Try to reassociate commutative vector operations using the following ideal transformation,
+// Try to reassociate associative vector operations using the following ideal transformation,
 // this will facilitate strength reducing a vector operation with all replicated inputs to
 // a scalar operation.
 //
@@ -1312,8 +1339,16 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
     return nullptr;
   }
 
-  // Enable re-association for commutative vector operations.
-  if (!is_commutative_vector_operation(Opcode())) {
+  // Enable re-association only for associative and commutative vector operations.
+  if (!is_associative_and_commutative_vector_operation(Opcode())) {
+    return nullptr;
+  }
+
+  // Reassociation is beneficial if transformed node with replicate inputs can
+  // subsequently be collapsed by push_through_replicate into Replicate(ScalarOp(..)).
+  // That folding needs a scalar opcode for this operation/element type.
+  // Safety check to ensure we skip useless/redundant reassociations.
+  if (scalar_opcode(Opcode(), vect_type()->element_basic_type()) == 0) {
     return nullptr;
   }
 
@@ -2701,9 +2736,7 @@ Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
   Node* in2 = in(2);
   // Transformations for predicated vectors are not supported for now.
-  if (is_predicated_vector() ||
-      in1->is_predicated_vector() ||
-      in2->is_predicated_vector()) {
+  if (is_predicated_vector()) {
     return nullptr;
   }
 
@@ -2727,6 +2760,7 @@ Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
   }
   if (in1->Opcode() != Op_VectorMaskCmp ||
       in1->outcnt() != 1 ||
+      in1->is_predicated_vector() ||
       !in1->as_VectorMaskCmp()->predicate_can_be_negated() ||
       !VectorNode::is_all_ones_vector(in2)) {
     return nullptr;
@@ -2741,6 +2775,70 @@ Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
     res = new VectorMaskCastNode(phase->transform(res), vect_type());
   }
   return res;
+}
+
+// XorV(a, AndV(sel, XorV(a, b)))       => VectorBitwiseBlend(a, b, sel)
+// XorV(a, AndV(sel, XorV(a, b)), mask) =>
+//   VectorBlend(a, VectorBitwiseBlend(a, b, sel), mask)
+Node* XorVNode::Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_reshape) {
+  const TypeVect* vt = vect_type();
+  BasicType bt = vt->element_basic_type();
+  uint vlen = vt->length();
+  if (!Matcher::match_rule_supported_vector(Op_VectorBitwiseBlend, vlen, bt)) {
+    return nullptr;
+  }
+
+  bool is_masked = is_predicated_vector();
+  if (is_masked &&
+      !Matcher::match_rule_supported_vector(Op_VectorBlend, vlen, bt)) {
+    return nullptr;
+  }
+
+  // For the predicated case in(1) is fixed as the merge source. Otherwise the
+  // outer XorV is commutative.
+  Node* a = nullptr;
+  Node* andv = nullptr;
+  if (is_masked || in(2)->Opcode() == Op_AndV) {
+    andv = in(2);
+    a = in(1);
+  } else {
+    andv = in(1);
+    a = in(2);
+  }
+  if (andv->Opcode() != Op_AndV || andv->is_predicated_vector()) {
+    return nullptr;
+  }
+
+  Node* sel = nullptr;
+  Node* inner_xor = nullptr;
+  if (andv->in(2)->Opcode() == Op_XorV) {
+    inner_xor = andv->in(2);
+    sel = andv->in(1);
+  } else if (andv->in(1)->Opcode() == Op_XorV) {
+    inner_xor = andv->in(1);
+    sel = andv->in(2);
+  } else {
+    return nullptr;
+  }
+  if (inner_xor->is_predicated_vector()) {
+    return nullptr;
+  }
+
+  Node* b = nullptr;
+  if (inner_xor->in(1) == a) {
+    b = inner_xor->in(2);
+  } else if (inner_xor->in(2) == a) {
+    b = inner_xor->in(1);
+  } else {
+    return nullptr;
+  }
+
+  Node* blend = new VectorBitwiseBlendNode(a, b, sel, vt);
+  if (!is_masked) {
+    return blend;
+  }
+  blend = phase->transform(blend);
+  return new VectorBlendNode(a, blend, in(3));
 }
 
 Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -2761,6 +2859,11 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (res != nullptr) {
     return res;
   }
+
+  res = Ideal_XorV_to_VectorBitwiseBlend(phase, can_reshape);
+  if (res != nullptr) {
+    return res;
+  }
   return VectorNode::Ideal(phase, can_reshape);
 }
 
@@ -2775,18 +2878,20 @@ static bool is_replicate_uint_constant(const Node* n) {
   return n->Opcode() == Op_Replicate &&
          n->in(1)->is_Con() &&
          n->in(1)->bottom_type()->isa_long() &&
-         n->in(1)->bottom_type()->is_long()->get_con() <= 0xFFFFFFFFL;
+         (julong)n->in(1)->bottom_type()->is_long()->get_con() <= 0xFFFFFFFFUL;
 }
 
 static bool has_vector_elements_fit_uint(Node* n) {
   auto is_lower_doubleword_mask_pattern = [](const Node* n) {
     return n->Opcode() == Op_AndV &&
+           !n->is_predicated_vector() &&
            (is_replicate_uint_constant(n->in(1)) ||
             is_replicate_uint_constant(n->in(2)));
   };
 
   auto is_clear_upper_doubleword_uright_shift_pattern = [](const Node* n) {
     return n->Opcode() == Op_URShiftVL &&
+           !n->is_predicated_vector() &&
            n->in(2)->Opcode() == Op_RShiftCntV && n->in(2)->in(1)->is_Con() &&
            n->in(2)->in(1)->bottom_type()->isa_int() &&
            n->in(2)->in(1)->bottom_type()->is_int()->get_con() >= 32;
@@ -2802,6 +2907,7 @@ static bool has_vector_elements_fit_int(Node* n) {
 
   auto is_clear_upper_doubleword_right_shift_pattern = [](const Node* n) {
     return n->Opcode() == Op_RShiftVL &&
+           !n->is_predicated_vector() &&
            n->in(2)->Opcode() == Op_RShiftCntV && n->in(2)->in(1)->is_Con() &&
            n->in(2)->in(1)->bottom_type()->isa_int() &&
            n->in(2)->in(1)->bottom_type()->is_int()->get_con() >= 32;
