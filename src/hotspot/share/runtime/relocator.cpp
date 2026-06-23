@@ -430,8 +430,8 @@ void Relocator::adjust_line_no_table(int bci, int delta) {
     writer.write_terminator();
     set_compressed_line_number_table(writer.buffer());
     set_compressed_line_number_table_size(writer.position());
-    if (const LogTarget(Trace, relocator) out; out.is_enabled()) {
-      LogStream ls(out);
+    if (LogMessage(relocator) out; out.is_trace()) {
+      NonInterleavingLogStream ls(LogLevelType::Trace, out);
       ls.print_cr("Adjusted line number table");
       print_linenumber_table(&ls, compressed_line_number_table());
     }
