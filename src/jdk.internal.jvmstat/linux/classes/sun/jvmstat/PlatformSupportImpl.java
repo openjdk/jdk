@@ -199,7 +199,6 @@ public class PlatformSupportImpl extends PlatformSupport {
         int nspid = -1;
 
         // Step through, as format is flexible given -XX:AltTempDir settings.
-        // (this could be fooled by including "hsperfdata_" in the temp dir path)
         for (String s : parts) {
             if (!seenProc && s.equals("proc")) {
                 seenProc = true;
@@ -210,7 +209,7 @@ public class PlatformSupportImpl extends PlatformSupport {
                 hostpid = Integer.parseInt(s);
                 continue;
             }
-            if (!seenPerf && s.startsWith("hsperfdata_")) {
+            if (s.startsWith("hsperfdata_")) {
                 seenPerf = true;
                 continue;
             }
