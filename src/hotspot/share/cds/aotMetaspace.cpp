@@ -1990,10 +1990,9 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
       archive_space_size + gap_size + class_space_size;
 
   // Validate that class space base address plus shift can be decoded by aarch64, when restored.
-  const int precomputed_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
-  assert(CompressedKlassPointers::check_klass_decode_mode(base_address, precomputed_shift, total_range_size),
-           "Cannot use SharedBaseAddress: " PTR_FORMAT " with precomputed shift %d.",
-           p2i(base_address), precomputed_shift);
+  assert(shared_base_valid((char*)base_address, total_range_size),
+      "Cannot use SharedBaseAddress " PTR_FORMAT " with precomputed shift %d.",
+      p2i(base_address), ArchiveBuilder::precomputed_narrow_klass_shift());
 
   assert(total_range_size > ccs_begin_offset, "must be");
   if (use_windows_memory_mapping() && use_archive_base_addr) {
