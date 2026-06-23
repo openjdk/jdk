@@ -82,7 +82,7 @@ public sealed class ArenaImpl implements Arena {
             // The session cleanup at the end of this method may throw, so we
             // need to release the acquired pooled memory first.
             if (pool > 0) {
-                ConfinedSegmentPool.release(session.owner, poolSp);
+                ConfinedSegmentPool.release(session.owner, pool, poolSp);
             }
             session.resourceList.cleanup();
         }

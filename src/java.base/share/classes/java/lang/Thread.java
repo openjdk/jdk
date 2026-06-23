@@ -278,7 +278,8 @@ public class Thread implements Runnable {
     private volatile ClassLoader contextClassLoader;
 
     // Additional fields for platform threads.
-    // All fields, except task and terminatingThreadLocals, are accessed directly by the VM.
+    // All fields, except task, terminatingThreadLocals, and confinedMemoryPools,
+    // are accessed directly by the VM.
     private static class FieldHolder {
         final ThreadGroup group;
         final Runnable task;
@@ -294,6 +295,7 @@ public class Thread implements Runnable {
         ThreadLocal.ThreadLocalMap terminatingThreadLocals;
 
         /**
+         * Component values:
          * Zero -> no pool allocated yet
          * Positive -> Pool released (available)
          * Negative -> Pool acquired (not available)
@@ -301,7 +303,7 @@ public class Thread implements Runnable {
          * PTRDIFF_MAX (usually 2<sup>63</sup>-1) allows us to use the sign bit
          * as a flag for acquire state without conflicting with malloc() return values.
          */
-        long confinedMemoryPool;
+        long[] confinedMemoryPools;
 
         FieldHolder(ThreadGroup group,
                     Runnable task,
@@ -379,20 +381,36 @@ public class Thread implements Runnable {
         currentThread().scopedValueBindings = bindings;
     }
 
-    long confinedMemoryPool() {
+    long[] confinedMemoryPools() {
         final FieldHolder holder = this.holder;
         return holder != null
-                ? holder.confinedMemoryPool
-                : 0;
+                ? holder.confinedMemoryPools
+                : null;
     }
 
-    void setConfinedMemoryPool(long value) {
+    long[] getOrCreateConfinedMemoryPools() {
         final FieldHolder holder = this.holder;
         if (holder != null) {
-            holder.confinedMemoryPool = value;
-        } else if (value != 0) {
-            throw new UnsupportedOperationException("Virtual threads do not support a confined memory pool field");
+            long[] confinedMemoryPools = holder.confinedMemoryPools;
+            if (confinedMemoryPools == null) {
+                confinedMemoryPools = holder.confinedMemoryPools = new long[4];
+            }
+            return confinedMemoryPools;
         }
+        throw new UnsupportedOperationException("Virtual threads do not support a confined memory pool field");
+    }
+
+    boolean hasConfinedMemoryPools() {
+        final FieldHolder holder = this.holder;
+        final long[] confinedMemoryPools;
+        if (holder != null && (confinedMemoryPools = holder.confinedMemoryPools) != null) {
+            for (long pool : confinedMemoryPools) {
+                if (pool != 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -1603,7 +1621,7 @@ public class Thread implements Runnable {
                 TerminatingThreadLocal.threadTerminated();
             }
         } finally {
-            if (isVirtual() || holder.confinedMemoryPool != 0) {
+            if (isVirtual() || hasConfinedMemoryPools()) {
                 ConfinedSegmentPool.releaseOnThreadExit(this);
             }
             clearReferences();

@@ -2353,13 +2353,13 @@ public final class System {
             }
 
             @Override
-            public long getConfinedMemoryPool(Thread thread) {
-                return thread.confinedMemoryPool();
+            public long[] getConfinedMemoryPools(Thread thread) {
+                return thread.confinedMemoryPools();
             }
 
             @Override
-            public void setConfinedMemoryPool(Thread thread, long value) {
-                thread.setConfinedMemoryPool(value);
+            public long[] getOrCreateConfinedMemoryPools(Thread thread) {
+                return thread.getOrCreateConfinedMemoryPools();
             }
 
         });
