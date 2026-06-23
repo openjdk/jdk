@@ -55,8 +55,8 @@ public class VThreadTest {
                 producer("msg: ");
             }
         } catch (Throwable t) {
-            log("Failed: PRODUCER caught a throwable: " + t);
             t.printStackTrace(System.out);
+            throw new RuntimeException("VThreadTest failed: PRODUCER caught a throwable: " + t");
         }
     };
 
@@ -66,8 +66,8 @@ public class VThreadTest {
                 String s = QUEUE.take();
             }
         } catch (Throwable t) {
-            log("Failed: CONSUMER cauoht a throwable: " + t);
             t.printStackTrace(System.out);
+            throw new RuntimeException("VThreadTest failed: CONSUMER caught a throwable: " + t");
         }
     };
 
