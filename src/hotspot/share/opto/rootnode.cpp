@@ -95,7 +95,7 @@ Node* DeadPathNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   assert(unique_ctrl_out() == phase->C->root(), "only referenced from root");
   assert(can_reshape, "only used once igvn executes");
   bool modified = false;
-  for( uint i = 1; i < req(); i++ ) { // For all inputs
+  for (uint i = 1; i < req(); i++) { // For all inputs
     // Check for and remove dead inputs
     if( phase->type(in(i)) == Type::TOP ) {
       del_req(i--);             // Delete TOP inputs
