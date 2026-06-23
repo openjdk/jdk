@@ -728,6 +728,9 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
   for (int c = 0; c < concats.length(); c++) {
     StringConcat* sc = concats.at(c);
     replace_string_concat(sc);
+    if (C->failing()) {
+      return;
+    }
   }
 
   remove_dead_nodes();
@@ -1819,6 +1822,8 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
     coder = __ intcon(java_lang_String::CODER_UTF16);
   }
 
+  bool static_overflow = false;
+
   for (int argi = 0; argi < sc->num_arguments(); argi++) {
     Node* arg = sc->argument(argi);
     switch (sc->mode(argi)) {
@@ -1969,13 +1974,28 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
         ShouldNotReachHere();
     }
     if (argi > 0) {
+      bool prev_stopped = kit.stopped();
       // Check that the sum hasn't overflowed
       IfNode* iff = kit.create_and_map_if(kit.control(),
                                           __ Bool(__ CmpI(length, __ intcon(0)), BoolTest::lt),
                                           PROB_MIN, COUNT_UNKNOWN);
       kit.set_control(__ IfFalse(iff));
       overflow->set_req(argi, __ IfTrue(iff));
+      if (!prev_stopped && kit.stopped()) {
+        // There could be downstream users in either a later call to replace_string_concat
+        // or late inlines that expect a live result.  This is an edge case:
+        // having a statically known overflowing concat, where we would throw an OOM error at runtime if it is reached,
+        // and at this point we have done destructive graph updates; hence do a hard bailout.
+        static_overflow = true;
+        break;
+      }
     }
+  }
+
+  if (kit.stopped()) {
+    assert(static_overflow, "no reachable success path for a non-overflow case.");
+    C->record_method_not_compilable("StringConcat replacement did not produce a reachable success path.");
+    return;
   }
 
   {
@@ -1988,68 +2008,64 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   }
 
   Node* result;
-  if (!kit.stopped()) {
-    assert(CompactStrings || (coder->is_Con() && coder->get_int() == java_lang_String::CODER_UTF16),
-           "Result string must be UTF16 encoded if CompactStrings is disabled");
+  assert(CompactStrings || (coder->is_Con() && coder->get_int() == java_lang_String::CODER_UTF16),
+         "Result string must be UTF16 encoded if CompactStrings is disabled");
 
-    Node* dst_array = nullptr;
-    if (sc->num_arguments() == 1 &&
-        (sc->mode(0) == StringConcat::StringMode ||
-         sc->mode(0) == StringConcat::StringNullCheckMode)) {
-      // Handle the case when there is only a single String argument.
-      // In this case, we can just pull the value from the String itself.
-      dst_array = kit.load_String_value(sc->argument(0), true);
-    } else {
-      // Allocate destination byte array according to coder
-      dst_array = allocate_byte_array(kit, nullptr, __ LShiftI(length, coder));
+  Node* dst_array = nullptr;
+  if (sc->num_arguments() == 1 &&
+      (sc->mode(0) == StringConcat::StringMode ||
+       sc->mode(0) == StringConcat::StringNullCheckMode)) {
+    // Handle the case when there is only a single String argument.
+    // In this case, we can just pull the value from the String itself.
+    dst_array = kit.load_String_value(sc->argument(0), true);
+  } else {
+    // Allocate destination byte array according to coder
+    dst_array = allocate_byte_array(kit, nullptr, __ LShiftI(length, coder));
 
-      // Now copy the string representations into the final byte[]
-      Node* start = __ intcon(0);
-      for (int argi = 0; argi < sc->num_arguments(); argi++) {
-        Node* arg = sc->argument(argi);
-        switch (sc->mode(argi)) {
-          case StringConcat::NegativeIntCheckMode:
-            break; // Nothing to do, was only needed to add a runtime check earlier.
-          case StringConcat::IntMode: {
-            start = int_getChars(kit, arg, dst_array, coder, start, string_sizes->in(argi));
-            break;
-          }
-          case StringConcat::StringNullCheckMode:
-          case StringConcat::StringMode: {
-            start = copy_string(kit, arg, dst_array, coder, start);
-            break;
-          }
-          case StringConcat::CharMode: {
-            start = copy_char(kit, arg, dst_array, coder, start);
+    // Now copy the string representations into the final byte[]
+    Node* start = __ intcon(0);
+    for (int argi = 0; argi < sc->num_arguments(); argi++) {
+      Node* arg = sc->argument(argi);
+      switch (sc->mode(argi)) {
+        case StringConcat::NegativeIntCheckMode:
+          break; // Nothing to do, was only needed to add a runtime check earlier.
+        case StringConcat::IntMode: {
+          start = int_getChars(kit, arg, dst_array, coder, start, string_sizes->in(argi));
           break;
-          }
-          default:
-            ShouldNotReachHere();
         }
+        case StringConcat::StringNullCheckMode:
+        case StringConcat::StringMode: {
+          start = copy_string(kit, arg, dst_array, coder, start);
+          break;
+        }
+        case StringConcat::CharMode: {
+          start = copy_char(kit, arg, dst_array, coder, start);
+        break;
+        }
+        default:
+          ShouldNotReachHere();
       }
     }
-
-    {
-      PreserveReexecuteState preexecs(&kit);
-      // The original jvms is for an allocation of either a String or
-      // StringBuffer so no stack adjustment is necessary for proper
-      // reexecution.
-      kit.jvms()->set_should_reexecute(true);
-      result = kit.new_instance(__ makecon(TypeKlassPtr::make(C->env()->String_klass())));
-    }
-
-    // Initialize the string
-    kit.store_String_value(result, dst_array);
-    kit.store_String_coder(result, coder);
-
-    // The value field is final. Emit a barrier here to ensure that the effect
-    // of the initialization is committed to memory before any code publishes
-    // a reference to the newly constructed object (see Parse::do_exits()).
-    assert(AllocateNode::Ideal_allocation(result) != nullptr, "should be newly allocated");
-    kit.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease, result);
-  } else {
-    result = C->top();
   }
+
+  {
+    PreserveReexecuteState preexecs(&kit);
+    // The original jvms is for an allocation of either a String or
+    // StringBuffer so no stack adjustment is necessary for proper
+    // reexecution.
+    kit.jvms()->set_should_reexecute(true);
+    result = kit.new_instance(__ makecon(TypeKlassPtr::make(C->env()->String_klass())));
+  }
+
+  // Initialize the string
+  kit.store_String_value(result, dst_array);
+  kit.store_String_coder(result, coder);
+
+  // The value field is final. Emit a barrier here to ensure that the effect
+  // of the initialization is committed to memory before any code publishes
+  // a reference to the newly constructed object (see Parse::do_exits()).
+  assert(AllocateNode::Ideal_allocation(result) != nullptr, "should be newly allocated");
+  kit.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease, result);
   // hook up the outgoing control and result
   kit.replace_call(sc->end(), result);
 
