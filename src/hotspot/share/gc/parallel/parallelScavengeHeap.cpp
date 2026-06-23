@@ -320,9 +320,12 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
         // transition while expanding the heap.
         MonitorLocker ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
         if (!is_init_completed()) {
-          // Can't do GC; just do best-effort expansion and return the result.
           result = expand_heap_and_allocate(size, is_tlab);
-          return result;
+          // Return the result if it's tlab-allocation. If the result is null, callers will retry
+          // non-tlab allocation.
+          if (result != nullptr || is_tlab) {
+            return result;
+          }
         }
       }
     }
