@@ -287,6 +287,9 @@ protected:
     _gc_cycle_is_atypical |= GC_Has_Promote_In_Place;;
   }
 
+  // For non-generational mode, anticipate_pip_words is zero
+  virtual double predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words) { return 0.0; }
+
 public:
   ShenandoahHeuristics(ShenandoahSpaceInfo* space_info);
   virtual ~ShenandoahHeuristics();
@@ -367,18 +370,24 @@ public:
   virtual void record_evac_end(double now, size_t evacuated_words, size_t pip_words) {}
   virtual void record_update_end(double now, size_t updated_words) {}
   virtual void record_final_roots_end(double now, size_t pip_words) {}
-  virtual double predict_mark_time(size_t anticipated_marked_words) { return 0.0; }
-
-  // For satb mode, anticipate_pip_words is zero
-  virtual double predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words) { return 0.0; }
+  virtual double predict_mark_time(size_t anticipated_processed_words) { return 0.0; }
   virtual double predict_update_time(size_t anticipated_update_words) { return 0.0; }
 
   // In non-generational mode, supply pip_words as zero
   virtual double predict_final_roots_time(size_t pip_words) { return 0.0; }
 
+
+  // Predict gc time using conservative approximations of anticipated mark, evac, and update words.  Returns 0.0 if there
+  // is not enough history to make a prediction.
+  virtual double predict_gc_time(double timestamp_at_start) { return 0.0; }
+
+#ifdef KELVIN_DEPRECATE
   // Predict gc time using conservative approximations of anticipated mark, evac, and update words.  Returns 0.0 if there
   // is not enough history to make a prediction.
   virtual double predict_gc_time(size_t mark_words) { return 0.0; }
+#else
+  virtual double predict_gc_time_by_phases(double timestamp_at_start) { return 0.0; }
+#endif
 
   virtual const char* name() = 0;
   virtual bool is_diagnostic() = 0;

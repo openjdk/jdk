@@ -70,6 +70,8 @@ protected:
   // (aka how many live words in tenure-aged regions at end of most recently completed GC?)
   size_t _anticipated_pip_words;
 
+  double predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words) override;
+
 public:
   explicit ShenandoahYoungHeuristics(ShenandoahYoungGeneration* generation);
 
@@ -146,11 +148,11 @@ public:
     return _live_words_most_recently_promoted_in_place;
   }
 
-  double predict_evac_time(size_t anticipated_evac_words, size_t anticipated_pip_words) override;
   double predict_final_roots_time(size_t anticipated_pip_words) override;
-
+#ifdef KELVIN_BROKEN
   double predict_gc_time(size_t anticipated_mark_words) override;
-
+  double predict_gc_time_by_phases(double anticipated_start_time) override;
+#endif
   // Setting this value to zero denotes current GC cycle to be "traditional young", so average GC cycle tine or linear
   // prediction are preferred over phase-account prediction.
   inline void set_anticipated_mark_words(size_t words) {
@@ -165,12 +167,13 @@ public:
     return _anticipated_pip_words;
   }
 
+#ifdef KELVIN_DEPRECATE
   // We may eventually replace this function with adjust_old_evac_ratio
   void update_anticipated_after_completed_gc(size_t old_cset_regions, size_t young_cset_regions,
                                              ShenandoahOldGeneration* old_gen, ShenandoahYoungGeneration* young_gen,
                                              size_t promo_potential_words, size_t pip_potential_words,
                                              size_t mixed_candidate_live_words, size_t mixed_candidate_garbage_words);
-
+#endif
 private:
   void choose_young_collection_set(ShenandoahCollectionSet* cset,
                                    const RegionData* data,

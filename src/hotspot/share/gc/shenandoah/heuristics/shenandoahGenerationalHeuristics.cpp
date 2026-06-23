@@ -219,7 +219,7 @@ void ShenandoahGenerationalHeuristics::compute_evacuation_budgets(ShenandoahInPl
   old_generation->set_evacuation_reserve(old_evacuation_reserve);
   old_generation->set_promoted_reserve(old_promo_reserve);
 
-  size_t anticipated_words_promoted_by_evac = (size_t) (old_evac_reserve / ShenandoahPromoEvacWaste);
+  size_t anticipated_words_promoted_by_evac = (size_t) (old_evacuation_reserve / ShenandoahPromoEvacWaste);
   add_to_words_promoted_since_start_of_old_gc(anticipated_words_promoted_by_evac);
 
   // There is no need to expand OLD because all memory used here was set aside at end of previous GC, except in the

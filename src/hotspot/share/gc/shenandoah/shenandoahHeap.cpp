@@ -2567,9 +2567,11 @@ void ShenandoahHeap::rebuild_free_set_within_phase() {
     size_t pip_potential_words = old_gen->get_pip_potential() / HeapWordSize;
     size_t mixed_candidate_live_words = old_heuristics->unprocessed_old_collection_candidates_live_memory() / HeapWordSize;
     size_t mixed_candidate_garbage_words = old_heuristics->unprocessed_old_collection_candidates_garbage() / HeapWordSize;
+#ifdef KELVIN_REPLACE_THIS
     young_heuristics->update_anticipated_after_completed_gc(old_trashed_regions, young_trashed_regions, old_gen, young_gen,
                                                             promo_potential_words, pip_potential_words, mixed_candidate_live_words,
                                                             mixed_candidate_garbage_words);
+#endif
 #ifdef ASSERT
     if (ShenandoahVerify) {
       verifier()->verify_before_rebuilding_free_set();
