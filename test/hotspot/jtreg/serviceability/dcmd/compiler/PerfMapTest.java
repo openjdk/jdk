@@ -83,7 +83,7 @@ public class PerfMapTest {
                 if (m.group(3).contains("StubRoutines call_stub")) {
                     sawCallStub = true;
                 }
-                if (m.group(3).contains("vtable stub [") {
+                if (m.group(3).contains("vtable stub [")) {
                     sawVtableStub = true;
                 }
             }
