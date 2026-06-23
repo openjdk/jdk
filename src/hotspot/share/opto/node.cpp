@@ -739,7 +739,7 @@ bool Node::is_dead() const {
   if (is_top() || is_Mach() || (Opcode() == Op_Node && _outcnt > 0) || this == Compile::current()->dead_path()) {
     return false;
   }
-  for(uint i = 0; i < _max; i++) {
+  for (uint i = 0; i < _max; i++) {
     if(_in[i] != nullptr) {
       return false;
     }
