@@ -61,10 +61,12 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vmThread.hpp"
 #include "sanitizers/leak.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER1
@@ -228,9 +230,14 @@ void CodeCache::initialize_heaps() {
 
   assert(heap_available(CodeBlobType::MethodNonProfiled), "MethodNonProfiled heap is always available for segmented code heap");
 
-  size_t compiler_buffer_size = 0;
-  COMPILER1_PRESENT(compiler_buffer_size += CompilationPolicy::c1_count() * Compiler::code_buffer_size());
-  COMPILER2_PRESENT(compiler_buffer_size += CompilationPolicy::c2_count() * C2Compiler::initial_code_buffer_size());
+  uint64_t compiler_buffer_size_uint64 = 0;
+  COMPILER1_PRESENT(compiler_buffer_size_uint64 += (uint64_t)CompilationPolicy::c1_count() * Compiler::code_buffer_size());
+  COMPILER2_PRESENT(compiler_buffer_size_uint64 += (uint64_t)CompilationPolicy::c2_count() * C2Compiler::initial_code_buffer_size());
+  if (compiler_buffer_size_uint64 > (uint64_t)CODE_CACHE_SIZE_LIMIT) {
+    err_msg msg("CICompilerCount is too large (%" PRIdPTR "): compiler buffer size exceeds the CodeCache size limit", CICompilerCount);
+    vm_exit_during_initialization(msg);
+  }
+  size_t compiler_buffer_size = integer_cast_permit_tautology<size_t>(compiler_buffer_size_uint64);
 
   if (!non_nmethod.set) {
     non_nmethod.size += compiler_buffer_size;
@@ -1715,7 +1722,7 @@ void CodeCache::print_internals() {
     }
   }
 
-  FREE_C_HEAP_ARRAY(int, buckets);
+  FREE_C_HEAP_ARRAY(buckets);
   print_memory_overhead();
 }
 
@@ -1838,11 +1845,15 @@ void CodeCache::print() {
 }
 
 void CodeCache::print_summary(outputStream* st, bool detailed) {
+  int total_blob_count = 0;
+  int total_nmethod_count = 0;
+  int total_adapter_count = 0;
   int full_count = 0;
   julong total_used = 0;
   julong total_max_used = 0;
   julong total_free = 0;
   julong total_size = 0;
+
   FOR_ALL_HEAPS(heap_iterator) {
     CodeHeap* heap = (*heap_iterator);
     size_t total = (heap->high_boundary() - heap->low_boundary());
@@ -1868,8 +1879,13 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
                    p2i(heap->low_boundary()),
                    p2i(heap->high()),
                    p2i(heap->high_boundary()));
-
-      full_count += get_codemem_full_count(heap->code_blob_type());
+      st->print_cr(" blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
+                   ", adapters=" UINT32_FORMAT ", full_count=" UINT32_FORMAT,
+                   heap->blob_count(), heap->nmethod_count(), heap->adapter_count(), heap->full_count());
+      total_blob_count += heap->blob_count();
+      total_nmethod_count += heap->nmethod_count();
+      total_adapter_count += heap->adapter_count();
+      full_count += heap->full_count();
     }
   }
 
@@ -1879,10 +1895,10 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
       st->print_cr(" size=" JULONG_FORMAT "Kb, used=" JULONG_FORMAT
                    "Kb, max_used=" JULONG_FORMAT "Kb, free=" JULONG_FORMAT "Kb",
                    total_size, total_used, total_max_used, total_free);
+      st->print_cr(" total blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
+                   ", adapters=" UINT32_FORMAT ", full_count=" UINT32_FORMAT,
+                   total_blob_count, total_nmethod_count, total_adapter_count, full_count);
     }
-    st->print_cr(" total_blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
-                 ", adapters=" UINT32_FORMAT ", full_count=" UINT32_FORMAT,
-                 blob_count(), nmethod_count(), adapter_count(), full_count);
     st->print_cr("Compilation: %s, stopped_count=%d, restarted_count=%d",
                  CompileBroker::should_compile_new_jobs() ?
                  "enabled" : Arguments::mode() == Arguments::_int ?
@@ -1901,13 +1917,8 @@ void CodeCache::print_codelist(outputStream* st) {
     nmethod* nm = iter.method();
     ResourceMark rm;
     char* method_name = nm->method()->name_and_sig_as_C_string();
-    const char* jvmci_name = nullptr;
-#if INCLUDE_JVMCI
-    jvmci_name = nm->jvmci_name();
-#endif
-    st->print_cr("%d %d %d %s%s%s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
-                 nm->compile_id(), nm->comp_level(), nm->get_state(),
-                 method_name, jvmci_name ? " jvmci_name=" : "", jvmci_name ? jvmci_name : "",
+    st->print_cr("%d %d %d %s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
+                 nm->compile_id(), nm->comp_level(), nm->get_state(), method_name,
                  (intptr_t)nm->header_begin(), (intptr_t)nm->code_begin(), (intptr_t)nm->code_end());
   }
 }
@@ -1926,6 +1937,18 @@ void CodeCache::log_state(outputStream* st) {
 }
 
 #ifdef LINUX
+static bool is_stub_code_blob(CodeBlob* cb) {
+  if (!cb->is_buffer_blob()) {
+    return false;
+  }
+  for (StubCodeDesc* d = StubCodeDesc::first(); d != nullptr; d = StubCodeDesc::next(d)) {
+    if (cb->code_contains(d->begin())) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   char fname[JVM_MAXPATHLEN];
@@ -1948,21 +1971,25 @@ void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   AllCodeBlobsIterator iter(AllCodeBlobsIterator::not_unloading);
   while (iter.next()) {
     CodeBlob *cb = iter.method();
+    if (is_stub_code_blob(cb)) {
+      // Individual stub routines are dumped after the main loop.
+      continue;
+    }
     ResourceMark rm;
     const char* method_name = nullptr;
-    const char* jvmci_name = nullptr;
     if (cb->is_nmethod()) {
       nmethod* nm = cb->as_nmethod();
       method_name = nm->method()->external_name();
-#if INCLUDE_JVMCI
-      jvmci_name = nm->jvmci_name();
-#endif
     } else {
       method_name = cb->name();
     }
-    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s%s%s",
-                (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(),
-                method_name, jvmci_name ? " jvmci_name=" : "", jvmci_name ? jvmci_name : "");
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s",
+                (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(), method_name);
+  }
+  for (StubCodeDesc* d = StubCodeDesc::first(); d != nullptr; d = StubCodeDesc::next(d)) {
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s %s",
+                (intptr_t)d->begin(), (intptr_t)d->size_in_bytes(),
+                d->group(), d->name());
   }
 }
 #endif // LINUX

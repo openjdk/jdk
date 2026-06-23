@@ -241,9 +241,9 @@ source %{
           return false;
         }
         break;
-      // At the time of writing this, the Vector API has no half-float (FP16) species.
-      // Consequently, AddReductionVHF and MulReductionVHF are only produced by the
-      // auto-vectorizer, which requires strictly ordered semantics for FP reductions.
+      // AddReductionVHF and MulReductionVHF are currently only produced by the
+      // auto-vectorizer (the Vector API does not yet intrinsify Float16 reductions),
+      // which requires strictly ordered semantics for FP reductions.
       //
       // There is no direct Neon instruction that performs strictly ordered floating
       // point add reduction. Hence, on Neon only machines, the add reduction operation
@@ -301,6 +301,19 @@ source %{
           return false;
         }
         break;
+      case Op_RotateLeftV:
+      case Op_RotateRightV:
+        if (length_in_bytes > 16) {
+          return false; // NEON only, since SLI/USHR are not available in SVE
+        }
+        break;
+      case Op_VectorBitwiseBlend:
+        // Use NEON BSL when UseSVE < 2; SVE1 has no BSL so larger vectors are
+        // not supported on UseSVE == 1 machines.
+        if (UseSVE < 2 && length_in_bytes > 16) {
+          return false;
+        }
+        break;
       default:
         break;
     }
@@ -324,6 +337,7 @@ source %{
       case Op_MulReductionVL:
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
+      case Op_VectorBitwiseBlend:
         return false;
       case Op_SaturatingAddV:
       case Op_SaturatingSubV:
@@ -348,9 +362,9 @@ source %{
         opcode = Op_StoreVectorScatterMasked;
         break;
       // Currently, the masked versions of the following 8 Float16 operations are disabled.
-      // When the support for Float16 vector classes is added in VectorAPI and the masked
-      // Float16 IR can be generated, these masked operations will be enabled and relevant
-      // backend support added.
+      // The Vector API does not yet emit predicated Float16 IR. When such masked IR can be
+      // generated, these masked operations will be enabled and the relevant backend support
+      // added.
       case Op_AddVHF:
       case Op_SubVHF:
       case Op_MulVHF:
@@ -359,6 +373,11 @@ source %{
       case Op_MinVHF:
       case Op_SqrtVHF:
       case Op_FmaVHF:
+        return false;
+      // There's no SLI instruction in SVE, so we can't have an optimal vector
+      // rotate with masking when emitting code for SVE.
+      case Op_RotateLeftV:
+      case Op_RotateRightV:
         return false;
       default:
         break;
@@ -431,11 +450,11 @@ source %{
       // On architectures that do not support predicate, masks are stored in
       // general vector registers (TypeVect) with sizes ranging from TypeVectA
       // to TypeVectX based on the vector size in bytes.
-      assert(vt->isa_vectmask() == nullptr, "mask type is not matched");
+      assert(vt->isa_pvectmask() == nullptr, "mask type is not matched");
       return false;
     }
 
-    assert(vt->isa_vectmask() != nullptr, "expected TypeVectMask on SVE");
+    assert(vt->isa_pvectmask() != nullptr, "expected TypePVectMask on SVE");
     switch (opcode) {
       case Op_VectorMaskToLong:
       case Op_VectorLongToMask:
@@ -567,13 +586,9 @@ instruct vloadcon(vReg dst, immI0 src) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (UseSVE == 0) {
       uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+      int entry_idx = __ vector_iota_entry_index(bt);
       assert(length_in_bytes <= 16, "must be");
-      // The iota indices are ordered by type B/S/I/L/F/D, and the offset between two types is 16.
-      int offset = exact_log2(type2aelembytes(bt)) << 4;
-      if (is_floating_point_type(bt)) {
-        offset += 32;
-      }
-      __ lea(rscratch1, ExternalAddress(StubRoutines::aarch64::vector_iota_indices() + offset));
+      __ lea(rscratch1, ExternalAddress(StubRoutines::aarch64::vector_iota_indices(entry_idx)));
       if (length_in_bytes == 16) {
         __ ldrq($dst$$FloatRegister, rscratch1);
       } else {
@@ -892,13 +907,22 @@ dnl
 dnl VECTOR_NOT_PREDICATE($1  )
 dnl VECTOR_NOT_PREDICATE(type)
 define(`VECTOR_NOT_PREDICATE', `
-instruct vnot$1_masked`'(vReg dst_src, imm$1_M1 m1, pRegGov pg) %{
+// The Java Vector API specification requires that for masked unary operations,
+// suppressed lanes are filled from the first vector operand (see "Masked
+// Operations" in Vector.java around line 568). So we use movprfx to copy src
+// into dst before emitting the predicated instruction.
+instruct vnot$1_masked`'(vReg dst, vReg src, imm$1_M1 m1, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (XorV (Binary dst_src (Replicate m1)) pg));
-  format %{ "vnot$1_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (XorV (Binary src (Replicate m1)) pg));
+  format %{ "vnot$1_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_not($dst_src$$FloatRegister, get_reg_variant(this),
-               $pg$$PRegister, $dst_src$$FloatRegister);
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    // Although dst and src hold the same value after movprfx, we must use src
+    // (not dst) as the source of the following instruction. The movprfx
+    // destination register must not appear in any source operand of the
+    // following instruction except as the destructive operand.
+    __ sve_not($dst$$FloatRegister, get_reg_variant(this),
+               $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -1035,14 +1059,23 @@ dnl
 dnl UNARY_OP_PREDICATE($1,        $2,      $3  )
 dnl UNARY_OP_PREDICATE(rule_name, op_name, insn)
 define(`UNARY_OP_PREDICATE', `
-instruct $1_masked(vReg dst_src, pRegGov pg) %{
+// The Java Vector API specification requires that for masked unary operations,
+// suppressed lanes are filled from the first vector operand (see "Masked
+// Operations" in Vector.java around line 568). So we use movprfx to copy src
+// into dst before emitting the predicated instruction.
+instruct $1_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src ($2 dst_src pg));
-  format %{ "$1_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst ($2 src pg));
+  format %{ "$1_masked $dst, $pg, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ $3($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pg$$PRegister, $dst_src$$FloatRegister);
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    // Although dst and src hold the same value after movprfx, we must use src
+    // (not dst) as the source of the following instruction. The movprfx
+    // destination register must not appear in any source operand of the
+    // following instruction except as the destructive operand.
+    __ $3($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+               $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -1050,12 +1083,21 @@ dnl
 dnl UNARY_OP_PREDICATE_WITH_SIZE($1,        $2,      $3,   $4  )
 dnl UNARY_OP_PREDICATE_WITH_SIZE(rule_name, op_name, insn, size)
 define(`UNARY_OP_PREDICATE_WITH_SIZE', `
-instruct $1_masked(vReg dst_src, pRegGov pg) %{
+// The Java Vector API specification requires that for masked unary operations,
+// suppressed lanes are filled from the first vector operand (see "Masked
+// Operations" in Vector.java around line 568). So we use movprfx to copy src
+// into dst before emitting the predicated instruction.
+instruct $1_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src ($2 dst_src pg));
-  format %{ "$1_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst ($2 src pg));
+  format %{ "$1_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ $3($dst_src$$FloatRegister, __ $4, $pg$$PRegister, $dst_src$$FloatRegister);
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    // Although dst and src hold the same value after movprfx, we must use src
+    // (not dst) as the source of the following instruction. The movprfx
+    // destination register must not appear in any source operand of the
+    // following instruction except as the destructive operand.
+    __ $3($dst$$FloatRegister, __ $4, $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -1965,6 +2007,25 @@ instruct vlsra_imm(vReg dst, vReg src, immI_positive shift) %{
       assert(type2aelembytes(bt) == 4 || type2aelembytes(bt) == 8, "unsupported type");
       __ usra($dst$$FloatRegister, get_arrangement(this), $src$$FloatRegister, con);
     }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector rotate with constant shift count (NEON only)
+// Uses USHR+SLI 2-instruction sequence instead of SHL+USHR+ORR 3-instruction decomposition.
+
+instruct vrotateconstant(vReg dst, vReg src, immI shift) %{
+  predicate(Matcher::vector_length_in_bytes(n) <= 16);
+  match(Set dst (RotateLeftV src shift));
+  match(Set dst (RotateRightV src shift));
+  effect(TEMP_DEF dst);
+  format %{ "vrotateconstant $dst, $src, $shift" %}
+  ins_encode %{
+    int opc = this->ideal_Opcode();
+    int raw_shift = checked_cast<int>(opc == Op_RotateLeftV ?
+                                      $shift$$constant : -$shift$$constant);
+    __ neon_vector_rotate($dst$$FloatRegister, get_arrangement(this),
+                          $src$$FloatRegister, raw_shift);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3342,9 +3403,7 @@ instruct insertI_index_lt32(vReg dst, vReg src, iRegIorL2I val, immI idx,
     __ sve_index($tmp$$FloatRegister, size, -16, 1);
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, size, ptrue,
                $tmp$$FloatRegister, (int)($idx$$constant) - 16);
-    if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
-    }
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     __ sve_cpy($dst$$FloatRegister, size, $pgtmp$$PRegister, $val$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -3367,9 +3426,7 @@ instruct insertI_index_ge32(vReg dst, vReg src, iRegIorL2I val, immI idx, vReg t
     __ sve_dup($tmp2$$FloatRegister, size, (int)($idx$$constant));
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, size, ptrue,
                $tmp1$$FloatRegister, $tmp2$$FloatRegister);
-    if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
-    }
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     __ sve_cpy($dst$$FloatRegister, size, $pgtmp$$PRegister, $val$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -3403,9 +3460,7 @@ instruct insertL_gt128b(vReg dst, vReg src, iRegL val, immI idx,
     __ sve_index($tmp$$FloatRegister, __ D, -16, 1);
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, __ D, ptrue,
                $tmp$$FloatRegister, (int)($idx$$constant) - 16);
-    if ($dst$$FloatRegister != $src$$FloatRegister) {
-      __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
-    }
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     __ sve_cpy($dst$$FloatRegister, __ D, $pgtmp$$PRegister, $val$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -3443,7 +3498,7 @@ instruct insertF_index_lt32(vReg dst, vReg src, vRegF val, immI idx,
     __ sve_index($dst$$FloatRegister, __ S, -16, 1);
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, __ S, ptrue,
                $dst$$FloatRegister, (int)($idx$$constant) - 16);
-    __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
+    __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     __ sve_cpy($dst$$FloatRegister, __ S, $pgtmp$$PRegister, $val$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -3462,7 +3517,7 @@ instruct insertF_index_ge32(vReg dst, vReg src, vRegF val, immI idx, vReg tmp,
     __ sve_dup($dst$$FloatRegister, __ S, (int)($idx$$constant));
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, __ S, ptrue,
                $tmp$$FloatRegister, $dst$$FloatRegister);
-    __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
+    __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     __ sve_cpy($dst$$FloatRegister, __ S, $pgtmp$$PRegister, $val$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -3497,7 +3552,7 @@ instruct insertD_gt128b(vReg dst, vReg src, vRegD val, immI idx,
     __ sve_index($dst$$FloatRegister, __ D, -16, 1);
     __ sve_cmp(Assembler::EQ, $pgtmp$$PRegister, __ D, ptrue,
                $dst$$FloatRegister, (int)($idx$$constant) - 16);
-    __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
+    __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
     __ sve_cpy($dst$$FloatRegister, __ D, $pgtmp$$PRegister, $val$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -3595,8 +3650,12 @@ instruct extract$1(vReg$1 dst, vReg src, immI idx) %{
       __ ins($dst$$FloatRegister, __ $4, $src$$FloatRegister, 0, index);
     } else {
       assert(UseSVE > 0, "must be sve");
-      __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
-      __ sve_ext($dst$$FloatRegister, $dst$$FloatRegister, index << $5);
+      __ sve_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+      // Although dst and src hold the same value after movprfx, we must use src
+      // (not dst) as the second source of ext. The movprfx destination register
+      // must not appear in any source operand of the following instruction
+      // except as the destructive operand.
+      __ sve_ext($dst$$FloatRegister, $src$$FloatRegister, index << $5);
     }
   %}
   ins_pipe(pipe_slow);
@@ -4656,13 +4715,22 @@ instruct vpopcountL(vReg dst, vReg src) %{
 // vector popcount - predicated
 UNARY_OP_PREDICATE(vpopcountI, PopCountVI, sve_cnt)
 
-instruct vpopcountL_masked(vReg dst_src, pRegGov pg) %{
+// The Java Vector API specification requires that for masked unary operations,
+// suppressed lanes are filled from the first vector operand (see "Masked
+// Operations" in Vector.java around line 568). So we use movprfx to copy src
+// into dst before emitting the predicated instruction.
+instruct vpopcountL_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (PopCountVL dst_src pg));
-  format %{ "vpopcountL_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (PopCountVL src pg));
+  format %{ "vpopcountL_masked $dst, $pg, $src" %}
   ins_encode %{
-    __ sve_cnt($dst_src$$FloatRegister, __ D,
-               $pg$$PRegister, $dst_src$$FloatRegister);
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    // Although dst and src hold the same value after movprfx, we must use src
+    // (not dst) as the source of the following instruction. The movprfx
+    // destination register must not appear in any source operand of the
+    // following instruction except as the destructive operand.
+    __ sve_cnt($dst$$FloatRegister, __ D,
+               $pg$$PRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -4690,6 +4758,31 @@ instruct vblend_sve(vReg dst, vReg src1, vReg src2, pReg pg) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_sel($dst$$FloatRegister, __ elemType_to_regVariant(bt),
                $pg$$PRegister, $src2$$FloatRegister, $src1$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ------------------------------ Vector bitwise blend -------------------------
+
+instruct vbitwise_blend_neon_sve1(vReg src1, vReg src2, vReg dst_src3) %{
+  predicate(UseSVE < 2 &&
+            VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src3 (VectorBitwiseBlend (Binary src1 src2) dst_src3));
+  format %{ "vbitwise_blend_neon_sve1 $src1, $src2, $dst_src3" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    Assembler::SIMD_Arrangement T = length_in_bytes == 16 ? __ T16B : __ T8B;
+    __ bsl($dst_src3$$FloatRegister, T, $src2$$FloatRegister, $src1$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vbitwise_blend_sve2(vReg src1, vReg dst_src2, vReg src3) %{
+  predicate(UseSVE == 2);
+  match(Set dst_src2 (VectorBitwiseBlend (Binary src1 dst_src2) src3));
+  format %{ "vbitwise_blend_sve2 $src1, $dst_src2, $src3" %}
+  ins_encode %{
+    __ sve_bsl($dst_src2$$FloatRegister, $src1$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -5074,19 +5167,26 @@ instruct vcountTrailingZeros(vReg dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-// The dst and src should use the same register to make sure the
-// inactive lanes in dst save the same elements as src.
-instruct vcountTrailingZeros_masked(vReg dst_src, pRegGov pg) %{
+// The Java Vector API specification requires that for masked unary operations,
+// suppressed lanes are filled from the first vector operand (see "Masked
+// Operations" in Vector.java around line 568). So we use movprfx to copy src
+// into dst before emitting the predicated instruction.
+instruct vcountTrailingZeros_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (CountTrailingZerosV dst_src pg));
-  format %{ "vcountTrailingZeros_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (CountTrailingZerosV src pg));
+  format %{ "vcountTrailingZeros_masked $dst, $pg, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
-    __ sve_rbit($dst_src$$FloatRegister, size,
-                $pg$$PRegister, $dst_src$$FloatRegister);
-    __ sve_clz($dst_src$$FloatRegister, size,
-               $pg$$PRegister, $dst_src$$FloatRegister);
+    __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+    // Although dst and src hold the same value after movprfx, we must use src
+    // (not dst) as the source of the following instruction. The movprfx
+    // destination register must not appear in any source operand of the
+    // following instruction except as the destructive operand.
+    __ sve_rbit($dst$$FloatRegister, size,
+                $pg$$PRegister, $src$$FloatRegister);
+    __ sve_clz($dst$$FloatRegister, size,
+               $pg$$PRegister, $dst$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -5160,19 +5260,28 @@ instruct vreverseBytes(vReg dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-// The dst and src should use the same register to make sure the
-// inactive lanes in dst save the same elements as src.
-instruct vreverseBytes_masked(vReg dst_src, pRegGov pg) %{
+// The Java Vector API specification requires that for masked unary operations,
+// suppressed lanes are filled from the first vector operand (see "Masked
+// Operations" in Vector.java around line 568). So we use movprfx to copy src
+// into dst before emitting the predicated instruction.
+instruct vreverseBytes_masked(vReg dst, vReg src, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src (ReverseBytesV dst_src pg));
-  format %{ "vreverseBytes_masked $dst_src, $pg, $dst_src" %}
+  match(Set dst (ReverseBytesV src pg));
+  format %{ "vreverseBytes_masked $dst, $pg, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (bt == T_BYTE) {
-      // do nothing
+      if ($dst$$FloatRegister != $src$$FloatRegister) {
+        __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
+      }
     } else {
-      __ sve_revb($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
-                  $pg$$PRegister, $dst_src$$FloatRegister);
+      __ maybe_movprfx($dst$$FloatRegister, $src$$FloatRegister);
+      // Although dst and src hold the same value after movprfx, we must use src
+      // (not dst) as the source of the following instruction. The movprfx
+      // destination register must not appear in any source operand of the
+      // following instruction except as the destructive operand.
+      __ sve_revb($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+                  $pg$$PRegister, $src$$FloatRegister);
     }
   %}
   ins_pipe(pipe_slow);

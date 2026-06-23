@@ -280,9 +280,9 @@ private:
 // Typically they contain the areas from TAMS to top of the regions.
 // We could scan and mark through these objects during the concurrent start pause,
 // but for pause time reasons we move this work to the concurrent phase.
-// We need to complete this procedure before we can evacuate a particular region
-// because evacuation might determine that some of these "root objects" are dead,
-// potentially dropping some required references.
+// Garbage collections that evacuate must either complete or abort this procedure
+// before they can move objects because evacuation might determine that some of these
+// "root objects" are dead, potentially dropping some references.
 // Root MemRegions comprise of the contents of survivor regions at the end
 // of the GC, and any objects copied into the old gen during GC.
 class G1CMRootMemRegions {
@@ -323,6 +323,7 @@ public:
 // This class manages data structures and methods for doing liveness analysis in
 // G1's concurrent cycle.
 class G1ConcurrentMark : public CHeapObj<mtGC> {
+  friend class G1ClearBitMapTask;
   friend class G1CMBitMapClosure;
   friend class G1CMConcurrentMarkingTask;
   friend class G1CMDrainMarkingStackClosure;
@@ -331,7 +332,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   friend class G1CMRemarkTask;
   friend class G1CMRootRegionScanTask;
   friend class G1CMTask;
-  friend class G1ClearBitMapTask;
   friend class G1CollectorState;
   friend class G1ConcurrentMarkThread;
 

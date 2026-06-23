@@ -729,7 +729,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
       result = humongous_obj_allocate(word_size);
       if (result != nullptr) {
         policy()->old_gen_alloc_tracker()->
-          add_allocated_humongous_bytes_since_last_gc(humongous_byte_size);
+          add_allocated_humongous_bytes(humongous_byte_size);
         return result;
       }
 
@@ -896,7 +896,7 @@ void G1CollectedHeap::abort_refinement() {
 
     // Record any available refinement statistics.
     policy()->record_refinement_stats(sweep_state.stats());
-    sweep_state.complete_work(false /* concurrent */, false /* print_log */);
+    sweep_state.cancel_refinement();
   }
   sweep_state.reset_stats();
 }
@@ -944,10 +944,6 @@ void G1CollectedHeap::do_full_collection(size_t allocation_word_size,
 }
 
 void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
-  // Currently, there is no facility in the do_full_collection(bool) API to notify
-  // the caller that the collection did not succeed (e.g., because it was locked
-  // out by the GC locker). So, right now, we'll ignore the return value.
-
   do_full_collection(size_t(0) /* allocation_word_size */,
                      clear_all_soft_refs,
                      false /* do_maximal_compaction */);
@@ -2493,9 +2489,9 @@ void G1CollectedHeap::gc_epilogue(bool full) {
     increment_old_marking_cycles_completed(false /* concurrent */, true /* liveness_completed */);
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   assert(DerivedPointerTable::is_empty(), "derived pointer present");
-#endif
+#endif // COMPILER2
 
   // We have just completed a GC. Update the soft reference
   // policy with the new heap occupancy
@@ -2654,6 +2650,7 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
   if (collector_state()->is_in_concurrent_start_gc()) {
     log_debug(gc, verify)("Marking state");
     _verifier->verify_marking_state();
+    _verifier->verify_bitmap_clear(true /* above_tams_only */);
   }
   _verifier->verify_free_regions_card_tables_clean();
 
@@ -2737,12 +2734,12 @@ void G1CollectedHeap::do_collection_pause_at_safepoint(size_t allocation_word_si
   // Perform the collection.
   G1YoungCollector collector(gc_cause(), allocation_word_size);
   collector.collect();
-
+  // Update collector state.
+  _collector_state = collector.next_state();
   // It should now be safe to tell the concurrent mark thread to start
   // without its logging output interfering with the logging output
   // that came from the pause.
   if (should_start_concurrent_mark_operation) {
-    verifier()->verify_bitmap_clear(true /* above_tams_only */);
     // CAUTION: after the start_concurrent_cycle() call below, the concurrent marking
     // thread(s) could be running concurrently with us. Make sure that anything
     // after this point does not assume that we are the only GC thread running.
@@ -2864,7 +2861,7 @@ void G1CollectedHeap::record_obj_copy_mem_stats() {
                 G1ReservePercent);
 
   policy()->old_gen_alloc_tracker()->
-    add_allocated_bytes_since_last_gc(total_old_allocated * HeapWordSize);
+    add_allocated_non_humongous_bytes(total_old_allocated * HeapWordSize);
 
   _gc_tracer_stw->report_evacuation_statistics(create_g1_evac_summary(&_survivor_evac_stats),
                                                create_g1_evac_summary(&_old_evac_stats));
@@ -2960,7 +2957,7 @@ void G1CollectedHeap::abandon_collection_set() {
   collection_set()->abandon();
 }
 
-size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_word_size) {
+size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_word_size) const {
   const size_t cur_occupancy = (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes -
                                _allocator->free_bytes_in_retained_old_region();
   // Humongous allocations will always be assigned to non-young heap, so consider

@@ -360,7 +360,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
       assert(RegisterSaver_LiveVecRegs[i + 1].reg_num == reg_num + 1, "or use other instructions!");
 
       __ stxvp(as_VectorRegister(reg_num).to_vsr(), offset, R1_SP);
-      // Note: The contents were read in the same order (see loadV16_Power9 node in ppc.ad).
+      // Note: The contents were read in the same order (see loadV16 node in ppc.ad).
       // RegisterMap::pd_location only uses the first VMReg for each VectorRegister.
       if (generate_oop_map) {
         map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2),
@@ -374,13 +374,8 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
     for (int i = 0; i < vecregstosave_num; i++) {
       int reg_num = RegisterSaver_LiveVecRegs[i].reg_num;
 
-      if (PowerArchitecturePPC64 >= 9) {
-        __ stxv(as_VectorRegister(reg_num)->to_vsr(), offset, R1_SP);
-      } else {
-        __ li(R31, offset);
-        __ stxvd2x(as_VectorRegister(reg_num)->to_vsr(), R31, R1_SP);
-      }
-      // Note: The contents were read in the same order (see loadV16_Power8 / loadV16_Power9 node in ppc.ad).
+      __ stxv(as_VectorRegister(reg_num)->to_vsr(), offset, R1_SP);
+      // Note: The contents were read in the same order (see loadV16 node in ppc.ad).
       // RegisterMap::pd_location only uses the first VMReg for each VectorRegister.
       if (generate_oop_map) {
         VMReg vsr = RegisterSaver_LiveVecRegs[i].vmreg;
@@ -464,12 +459,7 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
     for (int i = 0; i < vecregstosave_num; i++) {
       int reg_num  = RegisterSaver_LiveVecRegs[i].reg_num;
 
-      if (PowerArchitecturePPC64 >= 9) {
-        __ lxv(as_VectorRegister(reg_num).to_vsr(), offset, R1_SP);
-      } else {
-        __ li(R31, offset);
-        __ lxvd2x(as_VectorRegister(reg_num).to_vsr(), R31, R1_SP);
-      }
+      __ lxv(as_VectorRegister(reg_num).to_vsr(), offset, R1_SP);
 
       offset += vec_reg_size;
     }
@@ -1723,10 +1713,8 @@ static void gen_continuation_enter(MacroAssembler* masm,
   check_continuation_enter_argument(regs[pos_is_cont].first(),    reg_is_cont,    "isContinue");
   check_continuation_enter_argument(regs[pos_is_virtual].first(), reg_is_virtual, "isVirtualThread");
 
-  address resolve_static_call = SharedRuntime::get_resolve_static_call_stub();
-
+  AddressLiteral resolve(SharedRuntime::get_resolve_static_call_stub(), relocInfo::static_call_type);
   address start = __ pc();
-
   Label L_thaw, L_exit;
 
   // i2i entry used at interp_only_mode only
@@ -1763,33 +1751,17 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
     // Emit compiled static call. The call will be always resolved to the c2i
     // entry of Continuation.enter(Continuation c, boolean isContinue).
-    // There are special cases in SharedRuntime::resolve_static_call_C() and
-    // SharedRuntime::resolve_sub_helper_internal() to achieve this
-    // See also corresponding call below.
-    address c2i_call_pc = __ pc();
-    int start_offset = __ offset();
-    // Put the entry point as a constant into the constant pool.
-    const address entry_point_toc_addr   = __ address_constant(resolve_static_call, RelocationHolder::none);
-    const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
-    guarantee(entry_point_toc_addr != nullptr, "const section overflow");
+    address c2i_call_pc = __ trampoline_call(resolve);
+    guarantee(c2i_call_pc != nullptr, "CodeCache is full at gen_continuation_enter");
 
-    // Emit the trampoline stub which will be related to the branch-and-link below.
-    address stub = __ emit_trampoline_stub(entry_point_toc_offset, start_offset);
-    guarantee(stub != nullptr, "no space for trampoline stub");
+    // Emit stub for static call
+    address stub = CompiledDirectCall::emit_to_interp_stub(masm, c2i_call_pc);
+    guarantee(stub != nullptr, "CodeCache is full at gen_continuation_enter");
 
-    __ relocate(relocInfo::static_call_type);
-    // Note: At this point we do not have the address of the trampoline
-    // stub, and the entry point might be too far away for bl, so __ pc()
-    // serves as dummy and the bl will be patched later.
-    __ bl(__ pc());
     oop_maps->add_gc_map(__ pc() - start, map);
     __ post_call_nop();
 
     __ b(L_exit);
-
-    // static stub for the call above
-    stub = CompiledDirectCall::emit_to_interp_stub(masm, c2i_call_pc);
-    guarantee(stub != nullptr, "no space for static stub");
   }
 
   // compiled entry
@@ -1814,22 +1786,9 @@ static void gen_continuation_enter(MacroAssembler* masm,
   // SharedRuntime::find_callee_info_helper() which calls
   // LinkResolver::resolve_continuation_enter() which resolves the call to
   // Continuation.enter(Continuation c, boolean isContinue).
-  address call_pc = __ pc();
-  int start_offset = __ offset();
-  // Put the entry point as a constant into the constant pool.
-  const address entry_point_toc_addr   = __ address_constant(resolve_static_call, RelocationHolder::none);
-  const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
-  guarantee(entry_point_toc_addr != nullptr, "const section overflow");
+  address call_pc = __ trampoline_call(resolve);
+  guarantee(call_pc != nullptr, "CodeCache is full at gen_continuation_enter");
 
-  // Emit the trampoline stub which will be related to the branch-and-link below.
-  address stub = __ emit_trampoline_stub(entry_point_toc_offset, start_offset);
-  guarantee(stub != nullptr, "no space for trampoline stub");
-
-  __ relocate(relocInfo::static_call_type);
-  // Note: At this point we do not have the address of the trampoline
-  // stub, and the entry point might be too far away for bl, so __ pc()
-  // serves as dummy and the bl will be patched later.
-  __ bl(__ pc());
   oop_maps->add_gc_map(__ pc() - start, map);
   __ post_call_nop();
 
@@ -1882,8 +1841,8 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ blr();
 
   // static stub for the call above
-  stub = CompiledDirectCall::emit_to_interp_stub(masm, call_pc);
-  guarantee(stub != nullptr, "no space for static stub");
+  address stub = CompiledDirectCall::emit_to_interp_stub(masm, call_pc);
+  guarantee(stub != nullptr, "CodeCache is full at gen_continuation_enter");
 }
 
 static void gen_continuation_yield(MacroAssembler* masm,
@@ -2361,10 +2320,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // Make sure that thread is non-volatile; it crosses a bunch of VM calls below.
   assert(R16_thread->is_nonvolatile(), "thread must be in non-volatile register");
 
-# if 0
-  // DTrace method entry
-# endif
-
   // Lock a synchronized method.
   // --------------------------------------------------------------------------
 
@@ -2635,10 +2590,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     __ bind(done);
   }
-
-# if 0
-  // DTrace method exit
-# endif
 
   // Clear "last Java frame" SP and PC.
   // --------------------------------------------------------------------------

@@ -133,7 +133,6 @@ struct JvmtiCachedClassFileData;
 
 class InstanceKlass: public Klass {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class ClassFileParser;
   friend class CompileReplay;
 
@@ -329,9 +328,6 @@ class InstanceKlass: public Klass {
   bool defined_by_app_loader() const       { return _misc_flags.defined_by_app_loader(); }
   bool defined_by_other_loaders() const    { return _misc_flags.defined_by_other_loaders(); }
   void set_class_loader_type()             { _misc_flags.set_class_loader_type(_class_loader_data); }
-
-  // Check if the class can be shared in CDS
-  bool is_shareable() const;
 
   bool shared_loading_failed() const { return _misc_flags.shared_loading_failed(); }
 
@@ -1136,8 +1132,6 @@ private:
   void link_previous_versions(InstanceKlass* pv) { _previous_versions = pv; }
   void mark_newly_obsolete_methods(Array<Method*>* old_methods, int emcp_method_count);
 #endif
-  // log class name to classlist
-  void log_to_classlist() const;
 public:
 
 #if INCLUDE_CDS
@@ -1169,6 +1163,7 @@ public:
   // Printing
   void print_on(outputStream* st) const override;
   void print_value_on(outputStream* st) const override;
+  void print_class_flags(outputStream* st) const;
 
   void oop_print_value_on(oop obj, outputStream* st) override;
 

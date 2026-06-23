@@ -76,7 +76,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _trim_ticks(),
     _surviving_young_words_base(nullptr),
     _surviving_young_words(nullptr),
-    _surviving_words_length(collection_set->young_region_length() + 1),
+    _surviving_words_length(collection_set->num_young_regions() + 1),
     _old_gen_is_full(false),
     _partial_array_splitter(g1h->partial_array_state_manager(), num_workers),
     _string_dedup_requests(),
@@ -131,9 +131,9 @@ size_t G1ParScanThreadState::flush_stats(size_t* surviving_young_words, uint num
 G1ParScanThreadState::~G1ParScanThreadState() {
   delete _plab_allocator;
   delete _closures;
-  FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
+  FREE_C_HEAP_ARRAY(_surviving_young_words_base);
   delete[] _oops_into_optional_regions;
-  FREE_C_HEAP_ARRAY(size_t, _obj_alloc_stat);
+  FREE_C_HEAP_ARRAY(_obj_alloc_stat);
 }
 
 size_t G1ParScanThreadState::lab_waste_words() const {
@@ -444,7 +444,7 @@ void G1ParScanThreadState::do_iterate_object(oop const obj,
       return;
     }
 
-    ContinuationGCSupport::transform_stack_chunk(obj);
+    ContinuationGCSupport::transform_stack_chunk(obj, klass);
 
     // Check for deduplicating young Strings.
     if (G1StringDedup::is_candidate_from_evacuation(klass,
@@ -717,7 +717,7 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
     _g1h(g1h),
     _collection_set(collection_set),
     _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, num_workers, mtGC)),
-    _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, collection_set->young_region_length() + 1, mtGC)),
+    _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, collection_set->num_young_regions() + 1, mtGC)),
     _num_workers(num_workers),
     _flushed(false),
     _evac_failure_regions(evac_failure_regions)
@@ -725,13 +725,13 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
   for (uint i = 0; i < num_workers; ++i) {
     _states[i] = nullptr;
   }
-  memset(_surviving_young_words_total, 0, (collection_set->young_region_length() + 1) * sizeof(size_t));
+  memset(_surviving_young_words_total, 0, (collection_set->num_young_regions() + 1) * sizeof(size_t));
 }
 
 G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
   assert(_flushed, "thread local state from the per thread states should have been flushed");
-  FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
-  FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
+  FREE_C_HEAP_ARRAY(_states);
+  FREE_C_HEAP_ARRAY(_surviving_young_words_total);
 }
 
 #if TASKQUEUE_STATS

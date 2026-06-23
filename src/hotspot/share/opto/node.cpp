@@ -3095,7 +3095,7 @@ void Node_Stack::grow() {
   size_t old_top = pointer_delta(_inode_top,_inodes,sizeof(INode)); // save _top
   size_t old_max = pointer_delta(_inode_max,_inodes,sizeof(INode));
   size_t max = old_max << 1;             // max * 2
-  _inodes = REALLOC_ARENA_ARRAY(_a, INode, _inodes, old_max, max);
+  _inodes = REALLOC_ARENA_ARRAY(_a, _inodes, old_max, max);
   _inode_max = _inodes + max;
   _inode_top = _inodes + old_top;        // restore _top
 }
@@ -3213,4 +3213,3 @@ Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   return Node::Ideal(phase, can_reshape);
 }
-

@@ -27,10 +27,7 @@ import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.text.MessageFormat;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -50,7 +47,7 @@ public enum JPackageStringBundle {
             throw toUnchecked(ex);
         }
         formatter = (String key, Object[] args) -> {
-            return new FormattedMessage(key, args).value();
+            return createFormattedMessage(key, args).value();
         };
     }
 
@@ -70,102 +67,21 @@ public enum JPackageStringBundle {
     }
 
     public Pattern cannedFormattedStringAsPattern(String key, Function<Object, Pattern> formatArgMapper, Object ... args) {
-        var fm = new FormattedMessage(key, args);
-        return fm.messageFormat().map(mf -> {
-            return toPattern(mf, formatArgMapper, args);
-        }).orElseGet(() -> {
-            return Pattern.compile(Pattern.quote(fm.value()));
-        });
+        return createFormattedMessage(key, args).toPattern(formatArgMapper);
     }
 
     public Pattern cannedFormattedStringAsPattern(String key, Object ... args) {
-        return cannedFormattedStringAsPattern(key, MATCH_ANY, args);
+        return createFormattedMessage(key, args).toPattern();
     }
 
-    static Pattern toPattern(MessageFormat mf, Function<Object, Pattern> formatArgMapper, Object ... args) {
-        Objects.requireNonNull(mf);
-        Objects.requireNonNull(formatArgMapper);
-
-        var patternSb = new StringBuilder();
-        var runSb = new StringBuilder();
-
-        var it = mf.formatToCharacterIterator(args);
-        while (it.getIndex() < it.getEndIndex()) {
-            var runBegin = it.getRunStart();
-            var runEnd = it.getRunLimit();
-            if (runEnd < runBegin) {
-                throw new IllegalStateException();
-            }
-
-            var attrs = it.getAttributes();
-            if (attrs.isEmpty()) {
-                // Regular text run.
-                runSb.setLength(0);
-                it.setIndex(runBegin);
-                for (int counter = runEnd - runBegin; counter != 0; --counter) {
-                    runSb.append(it.current());
-                    it.next();
-                }
-                patternSb.append(Pattern.quote(runSb.toString()));
-            } else {
-                // Format run.
-                int argi = (Integer)attrs.get(MessageFormat.Field.ARGUMENT);
-                var arg = args[argi];
-                var pattern = Objects.requireNonNull(formatArgMapper.apply(arg));
-                patternSb.append(pattern.toString());
-                it.setIndex(runEnd);
-            }
-        }
-
-        return Pattern.compile(patternSb.toString());
-    }
-
-    private final class FormattedMessage {
-
-        FormattedMessage(String key, Object[] args) {
-            List.of(args).forEach(Objects::requireNonNull);
-
-            var formatter = getString(key);
-
-            var mf = new MessageFormat(formatter);
-            var formatCount = mf.getFormatsByArgumentIndex().length;
-            if (formatCount != args.length) {
-                throw new IllegalArgumentException(String.format(
-                        "Expected %d arguments for [%s] string, but given %d", formatCount, key, args.length));
-            }
-
-            if (formatCount == 0) {
-                this.mf = null;
-                value = formatter;
-            } else {
-                this.mf = mf;
-                value = mf.format(args);
-            }
-        }
-
-        String value() {
-            return value;
-        }
-
-        Optional<MessageFormat> messageFormat() {
-            return Optional.ofNullable(mf);
-        }
-
-        private final String value;
-        private final MessageFormat mf;
+    private CannedMessageFormat createFormattedMessage(String key, Object ... args) {
+        return CannedMessageFormat.create(
+                CannedMessageFormat.defaultInvalidFormatArgumentCountExceptionSupplier(key, args.length),
+                getString(key),
+                args);
     }
 
     private final Class<?> i18nClass;
     private final Method i18nClass_getString;
     private final BiFunction<String, Object[], String> formatter;
-
-    private static final Function<Object, Pattern> MATCH_ANY = new Function<>() {
-
-        @Override
-        public Pattern apply(Object v) {
-            return PATTERN;
-        }
-
-        private static final Pattern PATTERN = Pattern.compile(".*");
-    };
 }

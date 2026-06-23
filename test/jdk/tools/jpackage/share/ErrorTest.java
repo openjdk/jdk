@@ -873,20 +873,16 @@ public final class ErrorTest {
         for (var withAppImage : List.of(true, false)) {
             for (var existingCertType : CertificateType.values()) {
                 Token keychain;
-                StandardCertificateNamePrefix missingCertificateNamePrefix;
-                switch (existingCertType) {
+                StandardCertificateNamePrefix missingCertificateNamePrefix = switch (existingCertType) {
                     case INSTALLER -> {
                         keychain = Token.KEYCHAIN_WITH_PKG_CERT;
-                        missingCertificateNamePrefix = StandardCertificateNamePrefix.CODE_SIGN;
+                        yield StandardCertificateNamePrefix.CODE_SIGN;
                     }
                     case CODE_SIGN -> {
                         keychain = Token.KEYCHAIN_WITH_APP_IMAGE_CERT;
-                        missingCertificateNamePrefix = StandardCertificateNamePrefix.INSTALLER;
+                        yield StandardCertificateNamePrefix.INSTALLER;
                     }
-                    default -> {
-                        throw new AssertionError();
-                    }
-                }
+                };
 
                 var builder = testSpec()
                         .type(PackageType.MAC_PKG)

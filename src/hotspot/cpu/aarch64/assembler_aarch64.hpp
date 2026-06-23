@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1252,6 +1253,13 @@ public:
                        enum operand_size sz, bool ordered) {
     load_store_exclusive(status, new_val, dummy_reg, addr,
                          sz, 0b000, ordered);
+  }
+
+  void load_store_volatile(Register data, BasicType type, Register addr,
+                           bool is_load) {
+     load_store_exclusive(dummy_reg, data, dummy_reg, addr,
+                          (Assembler::operand_size)exact_log2(type2aelembytes(type)),
+                          is_load ? 0b110 : 0b100, /* ordered = */ true);
   }
 
 #define INSN4(NAME, sz, op, o0) /* Four registers */                    \
@@ -4284,14 +4292,15 @@ public:
 #undef INSN
 
 // SVE2 bitwise ternary operations
-#define INSN(NAME, opc)                                               \
-  void NAME(FloatRegister Zdn, FloatRegister Zm, FloatRegister Zk) {  \
-    starti;                                                           \
-    f(0b00000100, 31, 24), f(opc, 23, 21), rf(Zm, 16);                \
-    f(0b001110, 15, 10), rf(Zk, 5), rf(Zdn, 0);                       \
+#define INSN(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Zdn, FloatRegister Zm, FloatRegister Zk) {   \
+    starti;                                                            \
+    f(0b00000100, 31, 24), f(op1, 23, 21), rf(Zm, 16);                 \
+    f(0b00111, 15, 11), f(op2, 10), rf(Zk, 5), rf(Zdn, 0);             \
   }
 
-  INSN(sve_eor3, 0b001); // Bitwise exclusive OR of three vectors
+  INSN(sve_eor3, 0b001, 0b0); // Bitwise exclusive OR of three vectors
+  INSN(sve_bsl,  0b001, 0b1); // Bitwise select
 #undef INSN
 
 // SVE2 saturating operations - predicate
