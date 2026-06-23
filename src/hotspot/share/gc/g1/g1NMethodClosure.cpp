@@ -56,7 +56,10 @@ void G1NMethodClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
     // Either the oop did not move or was not in the collection set in the first place. Must still be
     // recorded in the current region's code root set either way.
     oop o = CompressedOops::decode(oop_or_narrowoop);
-    assert(o == nullptr || _g1h->heap_region_containing(o)->rem_set()->code_roots_list_contains(_nm), "must be");
+    G1HeapRegion* r = _g1h->heap_region_containing(o);
+    assert(o == nullptr || r->rem_set()->code_roots_list_contains(_nm),
+           "object " PTR_FORMAT " nmethod " PTR_FORMAT " is not null or region %u does not contain it in remset",
+          p2i(o), p2i(_nm), r->hrm_index());
 #endif
   }
 }
