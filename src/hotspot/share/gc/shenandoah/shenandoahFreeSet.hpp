@@ -674,19 +674,6 @@ public:
   ShenandoahHeapRegion* steal_from_mutator(ShenandoahFreeSetPartitionId target_partition,
                                            ShenandoahAllocRequest& req);
 
-  // Reserve up to regions_to_reserve regions from PARTITION, each with at least min_free_words of
-  // allocatable capacity, for use as striped CAS alloc regions. Each reserved region is prepared
-  // (affiliated/made-regular as needed) and retired from the partition (its remaining capacity
-  // pre-charged to used, exactly as retire_region does), then returned in reserved[]. Unlike calling
-  // find_region_for_alloc + retire_region per region, the partition total accounting (used,
-  // affiliated/empty region counts) is recomputed ONCE after the whole batch, so intermediate
-  // states never trip the affiliated>=used / interval-bounds invariants. Collector partitions may
-  // overflow into the Mutator partition when ShenandoahEvacReserveOverflow is set. Returns the
-  // number of regions reserved (0..regions_to_reserve). Caller must hold the heap lock.
-  template<ShenandoahFreeSetPartitionId PARTITION>
-  int reserve_alloc_regions(ShenandoahAllocRequest& req, int regions_to_reserve, size_t min_free_words,
-                            ShenandoahHeapRegion** reserved);
-
   // Allocate contiguous regions for humongous objects. Caller must hold heap lock.
   HeapWord* allocate_contiguous(ShenandoahAllocRequest& req, bool is_humongous);
 
