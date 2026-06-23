@@ -12922,6 +12922,11 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
     }
 
+    // The difference between AArch64 vs. x86_64 intrinsics implementation
+    // include the lack of square() intrinsics; usage caused a 3.3% performance
+    // degradation due to the efficiencies of the symmetric squaring shape in
+    // Java vs. the inefficiencies of the leaf calls and the additional cycles
+    // required for 64 bit multiplication in AArch64.
     if (UseIntPoly25519Intrinsics) {
       StubRoutines::_intpoly_mult_25519 = generate_intpoly_mult_25519();
     }
