@@ -122,10 +122,10 @@ class MemoryPool;
 // path as low-overhead as possible.
 
 class G1MonitoringSupport : public CHeapObj<mtGC> {
-  friend class VMStructs;
-  friend class G1YoungGCMonitoringScope;
-  friend class G1FullGCMonitoringScope;
   friend class G1ConcGCMonitoringScope;
+  friend class G1FullGCMonitoringScope;
+  friend class G1YoungGCMonitoringScope;
+  friend class VMStructs;
 
   G1CollectedHeap* _g1h;
 

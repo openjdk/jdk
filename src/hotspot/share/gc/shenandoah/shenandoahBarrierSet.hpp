@@ -134,8 +134,8 @@ private:
   template <class T>
   inline void arraycopy_update(T* src, size_t count);
 
-  inline void clone_evacuation(oop src);
-  inline void clone_update(oop src);
+  template <bool EVAC>
+  inline void clone_work(oop src);
 
   template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>
   inline void arraycopy_work(T* src, size_t count);
