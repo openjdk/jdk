@@ -746,6 +746,9 @@ public class TestReductions {
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_B,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
+    @IR(counts = {IRNode.X86_SCONV_I2L, "= 4"},
+        applyIfPlatform = {"x64", "true"},
+        phase = CompilePhase.MATCHING)
     private static byte byteXorBig() {
         byte acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -992,6 +995,9 @@ public class TestReductions {
 
     @Test
     @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
+    @IR(counts = {IRNode.X86_SCONV_I2L, "= 4"},
+        applyIfPlatform = {"x64", "true"},
+        phase = CompilePhase.MATCHING)
     private static char charXorBig() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1304,6 +1310,9 @@ public class TestReductions {
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_S,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
+    @IR(counts = {IRNode.X86_SCONV_I2L, "= 4"},
+        applyIfPlatform = {"x64", "true"},
+        phase = CompilePhase.MATCHING)
     private static short shortXorBig() {
         short acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {

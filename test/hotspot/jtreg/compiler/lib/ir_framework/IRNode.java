@@ -2883,6 +2883,11 @@ public class IRNode {
         machOnlyNameRegex(X86_SCONV_F2L, "convF2L_reg_reg");
     }
 
+    public static final String X86_SCONV_I2L = PREFIX + "X86_SCONV_I2L" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_I2L, "convI2L_reg_reg");
+    }
+
     public static final String X86_SCONV_D2I_AVX10_2 = PREFIX + "X86_SCONV_D2I_AVX10_2" + POSTFIX;
     static {
         machOnlyNameRegex(X86_SCONV_D2I_AVX10_2, "convD2I_(reg_reg|reg_mem)_avx10_2");
