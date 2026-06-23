@@ -2442,6 +2442,12 @@ public class IRNode {
         vectorNode(VECTOR_BLEND_D, "VectorBlend", TYPE_DOUBLE);
     }
 
+    public static final String VECTOR_BITWISE_BLEND = PREFIX + "VECTOR_BITWISE_BLEND" + POSTFIX;
+    static {
+        String regex = START + "VectorBitwiseBlend" + MID + END;
+        afterBarrierExpansionToBeforeMatching(VECTOR_BITWISE_BLEND, regex);
+    }
+
     public static final String VECTOR_MASK_CMP_I = VECTOR_PREFIX + "VECTOR_MASK_CMP_I" + POSTFIX;
     static {
         vectorNode(VECTOR_MASK_CMP_I, "VectorMaskCmp", TYPE_INT);

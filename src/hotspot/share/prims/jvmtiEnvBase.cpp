@@ -2312,6 +2312,7 @@ SetForceEarlyReturn::doit(Thread *target) {
   // Set pending step flag for this early return.
   // It is cleared when next step event is posted.
   _state->set_pending_step_for_earlyret();
+  _state->invalidate_cur_stack_depth();
 }
 
 void

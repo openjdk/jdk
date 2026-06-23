@@ -4977,7 +4977,7 @@ class StubGenerator: public StubCodeGenerator {
       return start;
     }
     // Implements the double_keccak() method of the
-    // sun.secyrity.provider.SHA3Parallel class
+    // sun.security.provider.SHA3Parallel class
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     start = __ pc();
@@ -5045,7 +5045,8 @@ class StubGenerator: public StubCodeGenerator {
     __ ldpd(v8, v9, __ post(sp, 64));
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -5458,7 +5459,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // load N/2 pairs of quadword values from memory into N vector
   // registers via the address supplied in base with each pair indexed
-  // using the the start offset plus the corresponding entry in the
+  // using the start offset plus the corresponding entry in the
   // offsets array
   template<int N>
   void vs_ldpq_indexed(const VSeq<N>& v, Register base, int start, int (&offsets)[N/2]) {
@@ -5469,7 +5470,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // store N vector registers into N/2 pairs of quadword memory
   // locations via the address supplied in base with each pair indexed
-  // using the the start offset plus the corresponding entry in the
+  // using the start offset plus the corresponding entry in the
   // offsets array
   template<int N>
   void vs_stpq_indexed(const VSeq<N>& v, Register base, int start, int offsets[N/2]) {
@@ -5480,7 +5481,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // load N single quadword values from memory into N vector registers
   // via the address supplied in base with each value indexed using
-  // the the start offset plus the corresponding entry in the offsets
+  // the start offset plus the corresponding entry in the offsets
   // array
   template<int N>
   void vs_ldr_indexed(const VSeq<N>& v, Assembler::SIMD_RegVariant T, Register base,
@@ -5492,7 +5493,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // store N vector registers into N single quadword memory locations
   // via the address supplied in base with each value indexed using
-  // the the start offset plus the corresponding entry in the offsets
+  // the start offset plus the corresponding entry in the offsets
   // array
   template<int N>
   void vs_str_indexed(const VSeq<N>& v, Assembler::SIMD_RegVariant T, Register base,
@@ -5504,7 +5505,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // load N/2 pairs of quadword values from memory de-interleaved into
   // N vector registers 2 at a time via the address supplied in base
-  // with each pair indexed using the the start offset plus the
+  // with each pair indexed using the start offset plus the
   // corresponding entry in the offsets array
   template<int N>
   void vs_ld2_indexed(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base,
@@ -5517,7 +5518,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // store N vector registers 2 at a time interleaved into N/2 pairs
   // of quadword memory locations via the address supplied in base
-  // with each pair indexed using the the start offset plus the
+  // with each pair indexed using the start offset plus the
   // corresponding entry in the offsets array
   template<int N>
   void vs_st2_indexed(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base,
@@ -5776,7 +5777,7 @@ class StubGenerator: public StubCodeGenerator {
     // registers.
     // 3. In the seilerNTT() method we use R = 2^20 for the Montgomery
     // multiplications (this is because that way there should not be any
-    // overflow during the inverse NTT computation), here we usr R = 2^16 so
+    // overflow during the inverse NTT computation), here we use R = 2^16 so
     // that we can use the 16-bit arithmetic in the vector unit.
     //
     // On each level, we fill up the vector registers in such a way that the
@@ -5898,7 +5899,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // level 4
     // At level 4 coefficients occur in 8 discrete blocks of size 16
-    // so they are loaded using employing an ldr at 8 distinct offsets.
+    // so they are loaded by employing an ldr at 8 distinct offsets.
 
     vs_ldpq(vq, kyberConsts);
     int offsets3[8] = { 0, 32, 64, 96, 128, 160, 192, 224 };
@@ -5954,7 +5955,6 @@ class StubGenerator: public StubCodeGenerator {
     kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
     vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 0, offsets4);
     vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 128, offsets4);
-    // __ ldpq(v18, v19, __ post(zetas, 32));
     load32shorts(vs_front(vs2), zetas);
     kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
     vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 128, offsets4);
@@ -5970,7 +5970,7 @@ class StubGenerator: public StubCodeGenerator {
     vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 384, offsets4);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -6067,7 +6067,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // level 2
     // At level 2 coefficients occur in 8 discrete blocks of size 16
-    // so they are loaded using employing an ldr at 8 distinct offsets.
+    // so they are loaded by employing an ldr at 8 distinct offsets.
 
     int offsets3[8] = { 0, 32, 64, 96, 128, 160, 192, 224 };
     vs_ldr_indexed(vs1, __ Q, coeffs, 0, offsets3);
@@ -6262,7 +6262,7 @@ class StubGenerator: public StubCodeGenerator {
     store64shorts(vs2, tmpAddr);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -6407,7 +6407,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::NE, kyberNttMult_loop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -6499,7 +6499,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -6606,7 +6606,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -6692,8 +6692,8 @@ class StubGenerator: public StubCodeGenerator {
     // twice, one copy manipulated to provide the lower 4 bits
     // belonging to the first short in a pair and another copy
     // manipulated to provide the higher 4 bits belonging to the
-    // second short in a pair. This is why the the vector sequences va
-    // and vb used to hold the expanded 8H elements are of length 8.
+    // second short in a pair. This is why the vector sequences va
+    // and vb are used to hold the expanded 8H elements are of length 8.
 
     // Expand vin[0] into va[0:1], and vin[1] into va[2:3] and va[4:5]
     // n.b. target elements 2 and 3 duplicate elements 4 and 5
@@ -6763,7 +6763,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::GT, L_loop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // bind label and generate constant data used by this stub
@@ -6869,7 +6869,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -6943,7 +6943,7 @@ class StubGenerator: public StubCodeGenerator {
     vs_addv(va0, __ T4S, va0, vc);
   }
 
-  // Perform combined add/sub then montul on 4x4S vectors.
+  // Perform combined add/sub then montmul on 4x4S vectors.
   void dilithium_sub_add_montmul16(
           const VSeq<4>& va0, const VSeq<4>& va1, const VSeq<4>& vb,
           const VSeq<4>& vtmp1, const VSeq<4>& vtmp2, const VSeq<2>& vq) {
@@ -7079,7 +7079,7 @@ class StubGenerator: public StubCodeGenerator {
     // coefficients we load 4 adjacent values at 8 different offsets
     // using an indexed ldr with register variant Q and multiply them
     // in sequence order by the next set of inputs. Likewise we store
-    // the resuls using an indexed str with register variant Q.
+    // the results using an indexed str with register variant Q.
     for (int i = 0; i < 1024; i += 256) {
       // reload constants q, qinv each iteration as they get clobbered later
       vs_ldpq(vq, dilithiumConsts); // qInv, q
@@ -7129,11 +7129,11 @@ class StubGenerator: public StubCodeGenerator {
 
     // level 7
     // At level 7 the coefficients we need to combine with the zetas
-    // occur singly with montmul inputs alterating with add/sub
+    // occur singly with montmul inputs alternating with add/sub
     // inputs. Once again we can use 4-way parallelism to combine 16
     // zetas at a time. However, we have to load 8 adjacent values at
     // 4 different offsets using an ld2 load with arrangement 4S. That
-    // interleaves the the odd words of each pair into one
+    // interleaves the odd words of each pair into one
     // coefficients vector register and the even words of the pair
     // into the next register. We then need to montmul the 4 even
     // elements of the coefficients register sequence by the zetas in
@@ -7155,7 +7155,7 @@ class StubGenerator: public StubCodeGenerator {
       vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, i, offsets);
     }
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -7334,7 +7334,7 @@ class StubGenerator: public StubCodeGenerator {
       // c0 load 32 (8x4S) coefficients via first offsets
       vs_ldr_indexed(vs1, __ Q, coeffs, i, offsets1);
       // c1 load 32 (8x4S) coefficients via second offsets
-      vs_ldr_indexed(vs2, __ Q,coeffs, i, offsets2);
+      vs_ldr_indexed(vs2, __ Q, coeffs, i, offsets2);
       // a0 = c0 + c1  n.b. clobbers vq which overlaps vs3
       vs_addv(vs3, __ T4S, vs1, vs2);
       // c = c0 - c1
@@ -7355,7 +7355,7 @@ class StubGenerator: public StubCodeGenerator {
     dilithiumInverseNttLevel3_7(dilithiumConsts, coeffs, zetas);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -7367,8 +7367,8 @@ class StubGenerator: public StubCodeGenerator {
   // Dilithium multiply polynomials in the NTT domain.
   // Straightforward implementation of the method
   // static int implDilithiumNttMult(
-  //              int[] result, int[] ntta, int[] nttb {} of
-  // the sun.security.provider.ML_DSA class.
+  //              int[] product, int[] coeffs1, int[] coeffs2) {}
+  // of the sun.security.provider.ML_DSA class.
   //
   // result (int[256]) = c_rarg0
   // poly1 (int[256]) = c_rarg1
@@ -7429,7 +7429,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::GE, L_loop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -7438,10 +7438,10 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Dilithium Motgomery multiply an array by a constant.
+  // Dilithium Montgomery multiply an array by a constant.
   // A straightforward implementation of the method
   // static int implDilithiumMontMulByConstant(int[] coeffs, int constant) {}
-  // of the sun.security.provider.MLDSA class
+  // of the sun.security.provider.ML_DSA class
   //
   // coeffs (int[256]) = c_rarg0
   // constant (int) = c_rarg1
@@ -7498,7 +7498,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::GE, L_loop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
@@ -7509,7 +7509,8 @@ class StubGenerator: public StubCodeGenerator {
 
   // Dilithium decompose poly.
   // Implements the method
-  // static int implDilithiumDecomposePoly(int[] coeffs, int constant) {}
+  //    static int implDilithiumDecomposePoly(int[] input, int[] lowPart, int[] highPart,
+  //                                          int twoGamma2, int multiplier) {
   // of the sun.security.provider.ML_DSA class
   //
   // input (int[256]) = c_rarg0
@@ -7613,7 +7614,7 @@ class StubGenerator: public StubCodeGenerator {
     vs_andr(vtmp, vs4, twog2);
     vs_subv(vs3, __ T4S, vs3, vtmp);
 
-    //  quotient += (mask & 1);
+    // quotient += (mask & 1);
     vs_andr(vtmp, vs4, one);
     vs_addv(vs2, __ T4S, vs2, vtmp);
 
@@ -7647,7 +7648,7 @@ class StubGenerator: public StubCodeGenerator {
     // r1 = r1 & quotient;
     vs_andr(vs1, vs2, vs1);
 
-    // store results inteleaved
+    // store results interleaved
     // lowPart[m] = r0;
     // highPart[m] = r1;
     __ st4(vs3[0], vs3[1], vs3[2], vs3[3], __ T4S, __ post(lowPart, 64));
@@ -7664,7 +7665,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ldpd(v8, v9, __ post(sp, 64));
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
 
     // record the stub entry and end
