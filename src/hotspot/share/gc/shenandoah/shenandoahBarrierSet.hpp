@@ -83,8 +83,6 @@ public:
 
   template <class T>
   inline void arraycopy_barrier(T* src, T* dst, size_t count);
-  inline void clone_barrier(oop src);
-  void clone_barrier_runtime(oop src);
 
   // Support for optimizing compilers to call the barrier set on slow path allocations
   // that did not enter a TLAB. Used for e.g. ReduceInitialCardMarks to take any
@@ -104,7 +102,7 @@ public:
 
   inline void keep_alive_if_weak(DecoratorSet decorators, oop value);
 
-  inline void enqueue(oop obj);
+  inline void enqueue(oop obj, bool filter = true);
 
   inline oop load_reference_barrier(oop obj);
 
@@ -136,8 +134,8 @@ private:
   template <class T>
   inline void arraycopy_update(T* src, size_t count);
 
-  inline void clone_evacuation(oop src);
-  inline void clone_update(oop src);
+  template <bool EVAC>
+  inline void clone_work(oop src);
 
   template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>
   inline void arraycopy_work(T* src, size_t count);
