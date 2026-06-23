@@ -101,13 +101,14 @@
 
             $type$ subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
 #if[FP16]
-            // Float16Vector.hashCode canonicalizes NaN lane encodings, so the
-            // reference array must be canonicalized the same way.
+            Float16[] f16subarr = new Float16[subarr.length];
             for (int j = 0; j < subarr.length; j++) {
-                subarr[j] = float16ToShortBits(shortBitsToFloat16(subarr[j]));
+                f16subarr[j] = shortBitsToFloat16(subarr[j]);
             }
-#end[FP16]
+            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(f16subarr));
+#else[FP16]
             int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
+#end[FP16]
             Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
         }
     }
@@ -123,8 +124,8 @@
             (short) 0xfc01, (short) 0xfdaa, (short) 0xfe00, (short) 0xffff
         };
 
-        $type$[] canon = new $type$[SPECIES.length()];
-        Arrays.fill(canon, float16ToShortBits(Float16.NaN));
+        Float16[] canon = new Float16[SPECIES.length()];
+        Arrays.fill(canon, Float16.NaN);
         int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(canon));
 
         for (short bits : nanBits) {
@@ -162,8 +163,8 @@
         $abstractvectortype$ nv2 = $abstractvectortype$.fromArray(SPECIES, num, 0);
         Assert.assertTrue(nv1.equals(nv2), "non-NaN vectors with identical lanes must be equal");
     }
-#end[FP16]
 
+#end[FP16]
 #if[byte]
     @Test(dataProvider = "$type$UnaryOpProvider")
     static void reinterpretAsBytes$vectorteststype$SmokeTest(IntFunction<$type$[]> fa) {

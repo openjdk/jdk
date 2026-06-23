@@ -5423,12 +5423,11 @@ public class Float16Vector64Tests extends AbstractVectorTest {
             int hash = av.hashCode();
 
             short subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
-            // Float16Vector.hashCode canonicalizes NaN lane encodings, so the
-            // reference array must be canonicalized the same way.
+            Float16[] f16subarr = new Float16[subarr.length];
             for (int j = 0; j < subarr.length; j++) {
-                subarr[j] = float16ToShortBits(shortBitsToFloat16(subarr[j]));
+                f16subarr[j] = shortBitsToFloat16(subarr[j]);
             }
-            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
+            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(f16subarr));
             Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
         }
     }
@@ -5443,8 +5442,8 @@ public class Float16Vector64Tests extends AbstractVectorTest {
             (short) 0xfc01, (short) 0xfdaa, (short) 0xfe00, (short) 0xffff
         };
 
-        short[] canon = new short[SPECIES.length()];
-        Arrays.fill(canon, float16ToShortBits(Float16.NaN));
+        Float16[] canon = new Float16[SPECIES.length()];
+        Arrays.fill(canon, Float16.NaN);
         int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(canon));
 
         for (short bits : nanBits) {
