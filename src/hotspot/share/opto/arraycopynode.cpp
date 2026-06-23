@@ -181,7 +181,7 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
   }
 
   Node* out_mem = proj_out_or_null(TypeFunc::Memory);
-  if (out_mem == nullptr) { // dead node?
+  if (can_reshape && out_mem == nullptr) { // dead node?
     return NodeSentinel;
   }
 
