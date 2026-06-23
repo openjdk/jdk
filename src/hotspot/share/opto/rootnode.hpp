@@ -77,7 +77,7 @@ public:
     assert(Compile::current()->dead_path() == nullptr, "only one");
   }
   virtual int   Opcode() const;
-  virtual const Type *bottom_type() const { return Type::BOTTOM; }
+  virtual const Type* bottom_type() const { return Type::BOTTOM; }
   virtual Node* Identity(PhaseGVN* phase) { return this; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
