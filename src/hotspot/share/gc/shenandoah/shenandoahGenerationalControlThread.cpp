@@ -700,6 +700,7 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
     if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
       // exit early to retry the allocation
       _alloc_waiters_count.sub_then_fetch(1UL);
+      log_debug(gc, thread)("Woke up: alloc waiters count now: %zu", alloc_waiters_count());
       break;
     }
   }
