@@ -60,7 +60,6 @@ private:
   // deferred until a subsequent evacuation pass.
   size_t _promoted_reserve;
 
-  shenandoah_padding(0);
   // Bytes of old-gen memory expended on promotions. This may be modified concurrently
   // by mutators and gc workers when promotion LABs are retired during evacuation. It
   // is therefore always accessed through atomic operations. This is increased when a
