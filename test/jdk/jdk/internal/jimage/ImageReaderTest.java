@@ -37,6 +37,7 @@ import tests.Helper;
 import tests.JImageGenerator;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -58,6 +59,7 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
 /*
  * @test
+ * @bug 8385355
  * @summary Tests for ImageReader.
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
@@ -72,13 +74,18 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 /// There is no mutable test instance state to worry about.
 @TestInstance(PER_CLASS)
 public class ImageReaderTest {
-    // The '@' prefix marks the entry as a preview entry which will be placed in
-    // the '/modules/<module>/META-INF/preview/...' namespace.
+    // The '@' prefix marks the entry as a preview class entry which will be placed in
+    // the '/modules/<module>/META-INF/preview/...' namespace. The '!' prefix marks
+    // the entry as a non-class resource path.
     private static final Map<String, List<String>> IMAGE_ENTRIES = Map.of(
             "modfoo", Arrays.asList(
                     "com.foo.HasPreviewVersion",
                     "com.foo.NormalFoo",
                     "com.foo.bar.NormalBar",
+                    "!META-INF/maven/com.google.code.findbugs/jsr305/pom.properties",
+                    "!META-INF/z",
+                    "!META-INF/collision/child.properties",
+                    "!META-INF/collision",
                     // Replaces original class in preview mode.
                     "@com.foo.HasPreviewVersion",
                     // New class in existing package in preview mode.
@@ -135,6 +142,23 @@ public class ImageReaderTest {
             assertNonPreviewVersion(loader, "modfoo", "com.foo.NormalFoo");
             assertNonPreviewVersion(loader, "modfoo", "com.foo.bar.NormalBar");
             assertNonPreviewVersion(loader, "modbar", "com.bar.One");
+        }
+    }
+
+    @Test
+    public void testMetaInfResourcesAreNotPackagePaths() throws IOException {
+        for (PreviewMode mode : List.of(PreviewMode.ENABLED, PreviewMode.DISABLED)) {
+            try (ImageReader reader = ImageReader.open(image, mode)) {
+                assertResource(reader, "modfoo", "META-INF/maven/com.google.code.findbugs/jsr305/pom.properties");
+                assertResource(reader, "modfoo", "META-INF/z");
+                assertResource(reader, "modfoo", "META-INF/collision/child.properties");
+                assertDirContents(reader, "/modules/modfoo/META-INF", "MANIFEST.MF", "collision", "maven", "z");
+                assertDirContents(reader, "/modules/modfoo/META-INF/collision", "child.properties");
+                assertDirContents(reader, "/modules/modfoo/META-INF/maven", "com.google.code.findbugs");
+                assertDirContents(reader, "/modules/modfoo/META-INF/maven/com.google.code.findbugs", "jsr305");
+                assertDirContents(reader, "/modules/modfoo/META-INF/maven/com.google.code.findbugs/jsr305", "pom.properties");
+                assertAbsent(reader, "/modules/modfoo/META-INF/maven/com/google/code/findbugs/jsr305/pom.properties");
+            }
         }
     }
 
@@ -416,6 +440,10 @@ public class ImageReaderTest {
             jar.addEntry("module-info.class", InMemoryJavaCompiler.compile("module-info", moduleInfo));
 
             classes.forEach(fqn -> {
+                if (fqn.startsWith("!")) {
+                    jar.addEntry(fqn.substring(1), "resource".getBytes(StandardCharsets.UTF_8));
+                    return;
+                }
                 boolean isPreviewEntry = fqn.startsWith("@");
                 if (isPreviewEntry) {
                     fqn = fqn.substring(1);

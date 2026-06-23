@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @summary Intrinsic for JFR
+ * @summary Intrinsics for JFR
  * @requires vm.hasJFR
  * @library /test/lib
  *
@@ -37,16 +37,16 @@
  *
  * @run main/othervm -Xbootclasspath/a:. -ea -Xmixed -Xbatch -XX:TieredStopAtLevel=4 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      jdk.jfr.jvm.TestJFRIntrinsic
- *
-  * @run main/othervm -Xbootclasspath/a:. -ea -Xmixed -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      jdk.jfr.jvm.TestJFRIntrinsic
  */
 
 package jdk.jfr.jvm;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.stream.IntStream;
+
+import jdk.jfr.Recording;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.JVMSupport;
 import jdk.test.lib.Platform;
@@ -59,8 +59,16 @@ public class TestJFRIntrinsic {
     public Object eventWriter;
 
     TestJFRIntrinsic() throws Exception {
-        // the intrinsic is premised on this class being loaded already - the event writer object is massaged heavily before returning
+        // The intrinsic is premised on this class being loaded already - the event writer object is massaged heavily before returning
         eventWriterClazz = Class.forName("jdk.jfr.internal.event.EventWriter", true, TestJFRIntrinsic.class.getClassLoader());
+        // The epoch intrinsic needs the epoch system to be initialized.
+        try (Recording r = new Recording()) {
+            try {
+                r.start(); // epoch intialized.
+            } finally {
+                r.stop(); // epoch shift.
+            }
+        }
     }
 
     public static void main(String... args) throws Exception {
@@ -70,6 +78,8 @@ public class TestJFRIntrinsic {
         ti.runIntrinsicTest(classid);
         Method eventWriterMethod = TestJFRIntrinsic.class.getDeclaredMethod("getEventWriterIntrinsic", Class.class);
         ti.runIntrinsicTest(eventWriterMethod);
+        Method tryUpdateEpochMethod = TestJFRIntrinsic.class.getDeclaredMethod("tryUpdateEpochIntrinsic", Class.class);
+        ti.runIntrinsicTest(tryUpdateEpochMethod);
     }
 
     public void getClassIdIntrinsic(Class<?> cls) {
@@ -83,6 +93,20 @@ public class TestJFRIntrinsic {
         Object o = JVM.getEventWriter();
         if (o != null) {
             eventWriter = o;
+        }
+    }
+
+    /**
+     * Test class with final fields.
+     */
+    static class TestClass {
+        final int value = 1;
+    }
+
+    public void tryUpdateEpochIntrinsic(Class<?> cls) throws NoSuchFieldException {
+        Field field = TestClass.class.getDeclaredField("value");
+        if (!JVM.tryUpdateEpoch(field)) {
+            throw new RuntimeException("tryUpdateEpoch failed");
         }
     }
 

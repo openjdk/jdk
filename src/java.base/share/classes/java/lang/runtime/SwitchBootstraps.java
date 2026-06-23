@@ -180,7 +180,7 @@ public final class SwitchBootstraps {
      *
      * @throws NullPointerException     if any argument is {@code null}, unless noted otherwise
      * @throws IllegalArgumentException if any element in the labels array is null
-     * @throws IllegalArgumentException if the invocation type is not a method type of first parameter of a reference type,
+     * @throws IllegalArgumentException if the invocation type is not a method type of first parameter of a target type,
      *                                  second parameter of type {@code int} and with {@code int} as its return type
      * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code String},
      *                                  {@code Integer}, {@code Long}, {@code Float}, {@code Double}, {@code Boolean},

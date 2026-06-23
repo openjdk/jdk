@@ -54,7 +54,7 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _gc_mode(none),
   _degen_point(ShenandoahGC::_degenerated_unset),
   _heap(ShenandoahGenerationalHeap::heap()),
-  _age_period(0) {
+  _do_old_gc_bootstrap(false) {
   shenandoah_assert_generational();
   set_name("ShenControl");
   create_and_start();
@@ -230,15 +230,6 @@ void ShenandoahGenerationalControlThread::maybe_print_young_region_ages() const 
   }
 }
 
-void ShenandoahGenerationalControlThread::maybe_set_aging_cycle() {
-  if (_age_period-- == 0) {
-    _heap->set_aging_cycle(true);
-    _age_period = ShenandoahAgingCyclePeriod - 1;
-  } else {
-    _heap->set_aging_cycle(false);
-  }
-}
-
 void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest& request) {
 
   log_debug(gc, thread)("Starting GC (%s): %s, %s", gc_mode_name(gc_mode()), GCCause::to_string(request.cause), request.generation->name());
@@ -256,11 +247,6 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   GCIdMark gc_id_mark;
 
-  if ((gc_mode() != servicing_old) && (gc_mode() != stw_degenerated)) {
-    // If mode is stw_degenerated, count bytes allocated from the start of the conc GC that experienced alloc failure.
-    _heap->reset_bytes_allocated_since_gc_start();
-  }
-
   MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();
 
   // If GC was requested, we are sampling the counters even without actual triggers
@@ -274,7 +260,7 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     // Cannot uncommit bitmap slices during concurrent reset
     ShenandoahNoUncommitMark forbid_region_uncommit(_heap);
 
-    // When a whitebox full GC is requested, set the tenuring threshold to zero
+    // When a whitebox full GC is requested, set the age census to always tenure
     // so that all young objects are promoted to old. This ensures that tests
     // using WB.fullGC() to promote objects to old gen will not loop forever.
     ShenandoahTenuringOverride tenuring_override(request.cause == GCCause::_wb_full_gc,
@@ -539,20 +525,19 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
   // At this point:
   //  if (generation == YOUNG), this is a normal young cycle or a bootstrap cycle
   //  if (generation == GLOBAL), this is a GLOBAL cycle
-  // In either case, we want to age old objects if this is an aging cycle
-  maybe_set_aging_cycle();
-
   ShenandoahGCSession session(cause, generation);
   TraceCollectorStats tcs(_heap->monitoring_support()->concurrent_collection_counters());
 
   assert(!generation->is_old(), "Old GC takes a different control path");
 
+  _do_old_gc_bootstrap = do_old_gc_bootstrap;
   ShenandoahConcurrentGC gc(generation, do_old_gc_bootstrap);
   _heap->increment_total_collections(false);
   if (gc.collect(cause)) {
     // Cycle is complete
     _heap->notify_gc_progress();
     generation->record_success_concurrent(gc.abbreviated());
+    _do_old_gc_bootstrap = false;
   } else {
     assert(_heap->cancelled_gc(), "Must have been cancelled");
     check_cancellation_or_degen(gc.degen_point());
@@ -620,7 +605,6 @@ bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(Shenandoah
 void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   _heap->increment_total_collections(true);
   ShenandoahGCSession session(cause, _heap->global_generation());
-  maybe_set_aging_cycle();
   ShenandoahFullGC gc;
   gc.collect(cause);
   _degen_point = ShenandoahGC::_degenerated_unset;
@@ -632,9 +616,10 @@ void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const Sh
 
   ShenandoahGCSession session(request.cause, request.generation, true,
                               _degen_point == ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle);
-  ShenandoahDegenGC gc(_degen_point, request.generation);
+  ShenandoahDegenGC gc(_degen_point, request.generation, _do_old_gc_bootstrap);
   gc.collect(request.cause);
   _degen_point = ShenandoahGC::_degenerated_unset;
+  _do_old_gc_bootstrap = false;
 
   assert(_heap->young_generation()->task_queues()->is_empty(), "Unexpected young generation marking tasks");
   if (request.generation->is_global()) {

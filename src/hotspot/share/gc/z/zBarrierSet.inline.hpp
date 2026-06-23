@@ -30,6 +30,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zNMethod.hpp"
+#include "gc/z/zUtils.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "utilities/debug.hpp"
 
@@ -416,26 +417,10 @@ inline OopCopyResult ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ar
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(oop src, oop dst, size_t size) {
   check_is_valid_zaddress(src);
+  check_is_valid_zaddress(dst);
+  precond(src->klass() == dst->klass());
 
-  if (dst->is_objArray()) {
-    // Cloning an object array is similar to performing array copy.
-    // If an array is large enough to have its allocation segmented,
-    // this operation might require GC barriers. However, the intrinsics
-    // for cloning arrays transform the clone to an optimized allocation
-    // and arraycopy sequence, so the performance of this runtime call
-    // does not matter for object arrays.
-    clone_obj_array(objArrayOop(src), objArrayOop(dst));
-    return;
-  }
-
-  // Fix the oops
-  ZBarrierSet::load_barrier_all(src, size);
-
-  // Clone the object
-  Raw::clone_in_heap(src, dst, size);
-
-  // Color store good before handing out
-  ZBarrierSet::color_store_good_all(dst, size);
+  clone_obj(to_zaddress(src), to_zaddress(dst), ZUtils::words_to_bytes(size));
 }
 
 //
