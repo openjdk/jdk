@@ -7674,7 +7674,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   /**
-   * Arithmetic polynomial multiplicaiton in Curve25519.  The algorithm mimics
+   * Arithmetic polynomial multiplication in Curve25519.  The algorithm mimics
    * the version in the IntegerPolynomial25519 class, including the use of all
    * columns (no folding method).
    *
@@ -7717,8 +7717,8 @@ class StubGenerator: public StubCodeGenerator {
     const int32_t rem        = 64 - bpl;
     const int32_t TERM       = 19;
     const int32_t columns    = limbs * 2;
-    const uint64_t mask      = -1UL >> rem;
-    const uint64_t CARRY_ADD = 1UL << (bpl - 1);
+    const uint64_t mask      = (uint64_t) -1 >> rem;
+    const uint64_t CARRY_ADD = (uint64_t) 1 << (bpl - 1);
 
     __ mov(term, TERM);
     for (int i = 0; i < columns; i++) {
