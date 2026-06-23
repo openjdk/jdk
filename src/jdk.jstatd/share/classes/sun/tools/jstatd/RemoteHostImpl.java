@@ -61,7 +61,7 @@ public class RemoteHostImpl implements RemoteHost, HostListener {
     }
 
     public RemoteHostImpl(int rmiPort) throws MonitorException {
-        this(0, null);
+        this(rmiPort, null);
     }
 
     public RemoteHostImpl(int rmiPort, ObjectInputFilter filter) throws MonitorException {
