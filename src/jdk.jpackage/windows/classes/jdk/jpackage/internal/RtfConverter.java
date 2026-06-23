@@ -58,7 +58,7 @@ sealed interface RtfConverter {
     }
 
     static Optional<RtfConverter> createSimple(Path path) throws IOException {
-        if (isRtfFile(path)) {
+        if (!Files.isDirectory(path) && !isRtfFile(path)) {
             return Optional.of(Details.Simple.VALUE);
         } else {
             return Optional.empty();
