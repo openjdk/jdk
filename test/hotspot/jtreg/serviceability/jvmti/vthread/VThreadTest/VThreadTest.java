@@ -57,7 +57,7 @@ public class VThreadTest {
                 producer("msg: ");
             }
         } catch (Throwable t) {
-            log("Failed: PRODUCER caught a trowable: " + t);
+            log("Failed: PRODUCER caught a throwable: " + t);
             t.printStackTrace(System.out);
         }
     };
@@ -68,7 +68,7 @@ public class VThreadTest {
                 String s = QUEUE.take();
             }
         } catch (Throwable t) {
-            log("Failed: CONSUMER caught a trowable: " + t);
+            log("Failed: CONSUMER cauoht a throwable: " + t);
             t.printStackTrace(System.out);
         }
     };
