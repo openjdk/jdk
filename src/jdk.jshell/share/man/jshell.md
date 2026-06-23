@@ -788,9 +788,9 @@ JShell.
     is searched as well. As an example, for `<directory>/lib.jar`,
     `<directory>/lib-sources.jar` will be searched as well.
 
-    The source file's path should be the same as is, or would be, the path to the
-    corresponding classfile for the corresponding top-level class, with
-    `.class` replaced with `.java`.
+    When searching for sources, JShell expects source files to be co-located with class files.
+    That is, the source for a given class or interface must be in a file with the same path and name
+    as the class file for the corresponding top-level class or interface, with `.class` replaced by `.java`.
 
     When entering a method call, use the Tab key after the method call's
     opening parenthesis to see the parameters for the method. If the method has
