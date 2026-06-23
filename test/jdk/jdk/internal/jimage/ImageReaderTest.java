@@ -88,8 +88,10 @@ public class ImageReaderTest {
                     "!META-INF/collision/child.properties",
                     "!META-INF/collision",
                     // Non-class resource in top level directory
-                    "!file.txt",
-                    "!META-INF/preview/file.txt",
+                    "!fileA.txt",
+                    "!fileB.txt",
+                    "!META-INF/preview/fileA.txt",
+                    "!META-INF/preview/fileB.txt",
                     // Replaces original class in preview mode.
                     "@com.foo.HasPreviewVersion",
                     // New class in existing package in preview mode.
@@ -100,6 +102,11 @@ public class ImageReaderTest {
                     // Two new packages in preview mode (new symbolic links).
                     "@com.bar.preview.stuff.Foo",
                     "@com.bar.preview.stuff.Bar"),
+            "modbaz", Arrays.asList(
+                    "!file.txt",
+                    "!normal.txt",
+                    "!META-INF/preview/file.txt",
+                    "!META-INF/preview/previewOnly.txt"),
             "modgus", Arrays.asList(
                     // A second module with a preview-only empty package (preview).
                     "@com.bar.preview.other.Gus"));
@@ -276,8 +283,16 @@ public class ImageReaderTest {
             assertDirContents(reader, "/modules/modfoo/com/foo/bar", "NormalBar.class");
 
             // Non-class resource in top level directory
-            assertResource(reader, "modfoo", "file.txt");
-            assertNonPreviewResourceVersion(reader, "modfoo", "file.txt");
+            assertResource(reader, "modfoo", "fileA.txt");
+            assertNonPreviewResourceVersion(reader, "modfoo", "fileA.txt");
+            assertNode(reader, "/modules/modfoo/fileB.txt");
+            assertNonPreviewResourceVersion(reader, "modfoo", "fileB.txt");
+            assertDirContents(reader, "/modules/modfoo", "META-INF", "module-info.class", "fileA.txt", "fileB.txt", "com");
+
+            assertAbsent(reader, "/modules/modbaz/previewOnly.txt");
+            assertDirContents(reader, "/modules/modbaz", "META-INF", "module-info.class", "file.txt", "normal.txt");
+            assertNonPreviewResourceVersion(reader, "modbaz", "file.txt");
+            assertNonPreviewResourceVersion(reader, "modbaz", "normal.txt");
         }
     }
 
@@ -299,8 +314,17 @@ public class ImageReaderTest {
             assertDirContents(reader, "/modules/modfoo/com/foo/bar", "NormalBar.class", "IsPreviewOnly.class");
 
             // Non-class resource in top level directory
-            assertResource(reader, "modfoo", "file.txt");
-            assertPreviewResourceVersion(reader, "modfoo", "file.txt");
+            assertResource(reader, "modfoo", "fileA.txt");
+            assertPreviewResourceVersion(reader, "modfoo", "fileA.txt");
+            assertNode(reader, "/modules/modfoo/fileB.txt");
+            assertPreviewResourceVersion(reader, "modfoo", "fileB.txt");
+            assertDirContents(reader, "/modules/modfoo", "META-INF", "module-info.class", "fileA.txt", "fileB.txt", "com");
+
+            assertNode(reader, "/modules/modbaz/previewOnly.txt");
+            assertDirContents(reader, "/modules/modbaz", "META-INF", "module-info.class", "file.txt", "normal.txt", "previewOnly.txt");
+            assertPreviewResourceVersion(reader, "modbaz", "file.txt");
+            assertNonPreviewResourceVersion(reader, "modbaz", "normal.txt");
+            assertPreviewResourceVersion(reader, "modbaz", "previewOnly.txt");
         }
     }
 
