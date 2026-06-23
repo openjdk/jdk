@@ -304,9 +304,11 @@ private:
   //     and set_update_watermark(), so any thread observing the flag as
   //     false also observes the final _top and _update_watermark.
   //
-  // Writers:
-  //   - ShenandoahAllocator::replenish_alloc_regions (set true on reserve)
-  //   - ShenandoahAllocator::release_alloc_regions   (set false on release)
+  // Writers (all in ShenandoahPartitionAllocator):
+  //   - try_install_alloc_region   (set true when a collector region is installed)
+  //   - try_install_alloc_region   (set false when an install loses the publish CAS / on undo)
+  //   - try_atomic_allocate_in      (set false on the lock-free retire of a filled region)
+  //   - release_alloc_region        (set false on release at a GC phase boundary)
   // Readers:
   //   - ShenandoahBarrierSet::need_bulk_update       (barrier fast path)
   Atomic<bool> _collector_allocator_reserved;
@@ -419,8 +421,6 @@ public:
 
   // Allocate fill after top
   inline HeapWord* allocate_fill(size_t word_size);
-
-  inline HeapWord* allocate_lab(const ShenandoahAllocRequest &req, size_t &actual_size);
 
   // Allocate object with CAS, return nullptr if full or not enough space for the req
   inline HeapWord* allocate_atomic(const ShenandoahAllocRequest &req, bool &ready_for_replenish);
@@ -629,9 +629,10 @@ public:
     _atomic_top.release_store(stable_top());
   }
 
-  // Unset a heap region as active alloc region,
-  // This method should be only called from ShenandoahAllocator::refresh_alloc_regions or ShenandoahAllocator::release_alloc_regions
-  // when the region is removed from the alloc region array in ShenandoahAllocator.
+  // Unset a heap region as active alloc region. Called by ShenandoahPartitionAllocator when the
+  // region is removed from its _alloc_regions slot: try_install_alloc_region (when undoing an
+  // install that lost the publish CAS), try_atomic_allocate_in (lock-free retire of a filled
+  // region), and release_alloc_region (release at a GC phase boundary).
   inline bool unset_active_alloc_region() {
     // Retire the region from CAS allocation by resetting _atomic_top to
     // nullptr, and sync the current _atomic_top back to _top so that readers

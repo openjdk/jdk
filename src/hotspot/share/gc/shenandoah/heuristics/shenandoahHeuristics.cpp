@@ -106,17 +106,19 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       continue;
     }
 
-    size_t garbage = region->garbage();
-    total_garbage += garbage;
-
     if (region->is_atomic_alloc_region()) {
       // Active mutator CAS alloc region: application threads are concurrently bumping its
       // _atomic_top. It must never be trashed or added to the collection set -- it is a hot,
-      // in-use region whose objects above TAMS are implicitly live. Skip it entirely; it stays
-      // out of the free set and the rebuild re-accounts it in place. (Collector/old alloc regions
-      // were already released before cset selection, so any region still active here is mutator.)
+      // in-use region whose objects above TAMS are implicitly live. Skip it entirely (before the
+      // garbage tally, so its transient garbage() does not skew total_garbage / immediate_percent
+      // or the summarize/report_evacuation_info figures); it stays out of the free set and the
+      // rebuild re-accounts it in place. (Collector/old alloc regions were already released before
+      // cset selection, so any region still active here is mutator.)
       continue;
     }
+
+    size_t garbage = region->garbage();
+    total_garbage += garbage;
 
     if (region->is_empty()) {
       free_regions++;

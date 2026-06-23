@@ -67,7 +67,8 @@ static uint mutator_alloc_regions() {
 }
 
 ShenandoahAllocator::ShenandoahAllocator(ShenandoahFreeSet* free_set)
-  : _free_set(free_set),_mutator_alloc(free_set, mutator_alloc_regions()),
+  : _free_set(free_set),
+    _mutator_alloc(free_set, mutator_alloc_regions()),
     _collector_alloc(free_set, ShenandoahCollectorAllocRegions),
     _old_collector_alloc(free_set, ShenandoahCollectorAllocRegions) {}
 

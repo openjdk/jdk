@@ -327,10 +327,6 @@ void ShenandoahHeapRegion::make_empty() {
   reset_age();
   CENSUS_NOISE(clear_youth();)
   switch (state()) {
-    case _regular:
-      if (free() != region_size_bytes()) {
-        report_illegal_transition("emptying");
-      }
     case _trash:
       set_state(_empty_committed);
       _empty_time = os::elapsedTime();
@@ -580,7 +576,6 @@ ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
 void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
   assert(!is_atomic_alloc_region(), "Must not be atomic alloc region");
-  assert(atomic_top() == nullptr, "Must be");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   _top_at_evac_start = _bottom;

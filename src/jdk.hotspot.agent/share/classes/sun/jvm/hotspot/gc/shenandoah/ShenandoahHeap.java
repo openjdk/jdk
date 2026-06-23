@@ -91,7 +91,19 @@ public class ShenandoahHeap extends CollectedHeap {
     public long used() {
         Address globalFreeSetAddress = globalFreeSet.getValue(addr);
         ShenandoahFreeSet freeset = VMObjectFactory.newObject(ShenandoahFreeSet.class, globalFreeSetAddress);
-        return freeset.used();
+        // The free set stores raw used with each active CAS alloc region's entire remaining capacity
+        // pre-charged at reserve time. In-process readers subtract the still-unconsumed remnant (see
+        // ShenandoahFreeSet::corrected_used / alloc_region_correction); mirror that here so the SA
+        // reports the same used as the live MemoryMXBean rather than an inflated value. The
+        // subtraction is saturating for the same reason it is in C++: the raw used is a snapshot
+        // while the per-region remnant is read live.
+        long rawUsed = freeset.used();
+        long correction = 0;
+        long n = numOfRegions();
+        for (long i = 0; i < n; i++) {
+            correction += getRegion(i).activeAllocRegionFree();
+        }
+        return rawUsed > correction ? rawUsed - correction : 0;
     }
 
     public long committed() {

@@ -113,8 +113,9 @@ bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint inde
   // its larger remnant in the free set (reachable only via the slow path).
   //
   // occupant->free() is read while the occupant is still an active alloc region, so it is a
-  // concurrent snapshot that may only grow until the region is retired; an occasionally-stale value
-  // only affects which region we keep (a heuristic), never correctness.
+  // concurrent snapshot that may only shrink (its _atomic_top only advances) until the region is
+  // retired; an occasionally-stale value only affects which region we keep (a heuristic), never
+  // correctness.
   if (occupant != nullptr && occupant->free() >= new_region->free()) {
     return false;
   }
@@ -398,10 +399,11 @@ void ShenandoahPartitionAllocator<PARTITION>::release_alloc_region(uint index) {
     return;
   }
   // Sync _atomic_top back to _top and deactivate CAS allocation. unset_active_alloc_region()
-  // also resets the region age if it received any allocation while active.
-  if (!alloc_region->unset_active_alloc_region()) {
-    return;
-  }
+  // also resets the region age if it received any allocation while active. Having won the claim CAS
+  // above, this thread is the unique retirer of the region, so the deactivation must succeed
+  // (matching the assert at the other two retire sites in try_atomic_allocate_in / install).
+  bool unset = alloc_region->unset_active_alloc_region();
+  assert(unset, "Winner of the claim CAS must deactivate the region");
   if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
     // Cover the objects evacuated into this region so update-refs processes them, then
     // clear the reserved flag so the barrier stops forcing bulk updates over the region.

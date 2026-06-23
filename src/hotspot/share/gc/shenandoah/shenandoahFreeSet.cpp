@@ -988,9 +988,9 @@ size_t ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartit
   if (used_bytes < _region_size_bytes) {
     // Count the alignment pad remnant of memory as used when we retire this region
     remnant_bytes = _region_size_bytes - used_bytes;
-    decrease_region_counts(partition, 1);
     increase_used(partition, remnant_bytes);
   }
+  decrease_region_counts(partition, 1);
   _membership[int(partition)].clear_bit(idx);
   shrink_interval_if_boundary_modified(partition, idx);
 
