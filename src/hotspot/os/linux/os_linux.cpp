@@ -112,6 +112,7 @@
 # include <sys/time.h>
 # include <sys/times.h>
 # include <sys/types.h>
+# include <sys/un.h>
 # include <sys/utsname.h>
 # include <syscall.h>
 # include <time.h>
@@ -1555,15 +1556,32 @@ static bool is_writable_directory(const char* name) {
 
 // We need to check that any given alternate temporary directory name isn't too long
 // and is a writable directory.  Revert back to hardcoded /tmp.
+// Since the attach mechanism uses the socket name length, this severely limits the length of the
+// alternate temporary directory name.
+
+// If in a containerized process, temp can be used to compose the dirname of
+// /proc/{vmid}/root/tmp/{PERFDATA_NAME_user}, otherwise /tmp/{PERFDATA_NAME_user}, so we add 22.
+
+// We also check that it is a fully qualified pathname.
+
+#ifndef UNIX_PATH_MAX
+#define UNIX_PATH_MAX   sizeof(sockaddr_un::sun_path)
+#endif
+
 void os::pd_check_temp_directory() {
   if (AltTempDir != nullptr && AltTempDir[0] != '\0') {
-    size_t safe_max = PATH_MAX - 100; // accounting for /proc/%pid composition in containers
-    if (strlen(AltTempDir) > safe_max) {
-      log_warning(os)("Warning: AltTempDir is ignored because it's longer than %zd bytes", safe_max);
+    if (AltTempDir[0] != '/') {
+      log_warning(os)("Warning: AltTempDir is ignored because it must be a fully qualified pathname");
       AltTempDir = nullptr;
-    } else if (!is_writable_directory(AltTempDir)) {
-      log_warning(os)("Warning: AltTempDir is ignored because it is not present or writable");
-      AltTempDir = nullptr;
+    } else {
+      size_t safe_max = UNIX_PATH_MAX - 22; // accounting for /proc/%pid composition in containers
+      if (strlen(AltTempDir) > safe_max) {
+        log_warning(os)("Warning: AltTempDir is ignored because it is longer than %zd bytes", safe_max);
+        AltTempDir = nullptr;
+      } else if (!is_writable_directory(AltTempDir)) {
+        log_warning(os)("Warning: AltTempDir is ignored because it is not present or writable");
+        AltTempDir = nullptr;
+      }
     }
   } else {
     AltTempDir = nullptr; // avoid checking AltTempDir[0] again.

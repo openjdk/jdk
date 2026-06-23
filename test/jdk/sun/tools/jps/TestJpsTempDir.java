@@ -44,7 +44,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestJpsTempDir {
 
     public static void main(java.lang.String[] unused) throws Exception {
-        Path clientTmpDir = Files.createTempDirectory(Path.of("."), "c");
+        Path clientTmpDir = Files.createTempDirectory(Path.of("/tmp"), "c");
         clientTmpDir.toFile().deleteOnExit();
         String tmpdirString = "-XX:AltTempDir=" + clientTmpDir.toString();
 

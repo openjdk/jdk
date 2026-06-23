@@ -63,9 +63,9 @@ public class JvmTempDirTest {
 
         startTime = System.currentTimeMillis();
 
-        Path clientTmpDir = Files.createTempDirectory(Path.of("."), "c");
+        Path clientTmpDir = Files.createTempDirectory(Path.of("/tmp"), "c");
         clientTmpDir.toFile().deleteOnExit();
-        Path targetTmpDir = Files.createTempDirectory(Path.of("."), "t");
+        Path targetTmpDir = Files.createTempDirectory(Path.of("/tmp"), "t");
         targetTmpDir.toFile().deleteOnExit();
 
         // Run the test with all possible combinations of setting AltTempDir.
@@ -78,12 +78,16 @@ public class JvmTempDirTest {
         runExperiment(clientTmpDir, targetTmpDir, false);
         runExperiment(null, targetTmpDir, false);
 
-        Path noExist = Path.of("./noexist");
-        runExperiment(noExist, noExist, true); // reverts to /tmp
+        Path noExist = Path.of("/tmp/noexist");
+        runNoExistTest(noExist);
 
-        Path veryLongDir = Files.createTempDirectory(Path.of("."), "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        Path veryLongDir = Files.createTempDirectory(Path.of("/tmp"), "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         veryLongDir.toFile().deleteOnExit();
-        runLogTest(veryLongDir);
+        runLongTest(veryLongDir);
+
+        Path relativeDir = Files.createTempDirectory(Path.of("."), "a");
+        relativeDir.toFile().deleteOnExit();
+        runRelativeTest(relativeDir);
     }
 
     private static int counter = 0;
@@ -201,12 +205,32 @@ public class JvmTempDirTest {
         }
     }
 
-    private static void runLogTest(Path tmpDir) throws Throwable {
+    private static void runLongTest(Path tmpDir) throws Throwable {
 
         // Arguments : [-XX:AltTempDir=] -version
         String[] args = new String[] { "-XX:AltTempDir=" + tmpDir, "-version" };
         OutputAnalyzer output = ProcessTools.executeTestJava(args);
-        output.shouldMatch("\\[warning\\]\\[attach *\\] Failed to create temporary file for attach");
+        output.shouldMatch("\\[warning\\]\\[os *\\] Warning: AltTempDir is ignored because it is longer than .*bytes");
+        // Still passes, it's just a warning.
+        output.shouldHaveExitValue(0);
+    }
+
+    private static void runNoExistTest(Path tmpDir) throws Throwable {
+
+        // Arguments : [-XX:AltTempDir=] -version
+        String[] args = new String[] { "-XX:AltTempDir=" + tmpDir, "-version" };
+        OutputAnalyzer output = ProcessTools.executeTestJava(args);
+        output.shouldMatch("\\[warning\\]\\[os *\\] Warning: AltTempDir is ignored because it is not present or writable");
+        // Still passes, it's just a warning.
+        output.shouldHaveExitValue(0);
+    }
+
+    private static void runRelativeTest(Path tmpDir) throws Throwable {
+
+        // Arguments : [-XX:AltTempDir=] -version
+        String[] args = new String[] { "-XX:AltTempDir=" + tmpDir, "-version" };
+        OutputAnalyzer output = ProcessTools.executeTestJava(args);
+        output.shouldMatch("\\[warning\\]\\[os *\\] Warning: AltTempDir is ignored because it must be a fully qualified pathname");
         // Still passes, it's just a warning.
         output.shouldHaveExitValue(0);
     }
