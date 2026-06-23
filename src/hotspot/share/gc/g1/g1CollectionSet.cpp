@@ -332,9 +332,9 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   log_trace(gc, ergo, cset)("Start choosing CSet. Pending cards: %zu target pause time: %1.2fms",
                             pending_cards, target_pause_time_ms);
 
-  // The young list is laid with the survivor regions from the previous
-  // pause are appended to the RHS of the young list, i.e.
-  //   [Newly Young Regions ++ Survivors from last pause].
+  // Young region indexes are assigned with eden regions first, followed by
+  // survivor regions from the previous pause:
+  //   [Eden regions ++ Survivors from last pause].
 
   uint num_eden_regions = _g1h->eden_regions_count();
   uint num_survivor_regions = survivors->length();
@@ -355,7 +355,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
                             num_eden_regions, num_survivor_regions,
                             predicted_eden_time, predicted_base_time_ms, target_pause_time_ms, remaining_time_ms);
 
-  // Clear the fields that point to the survivor list - they are all young now.
+  // Set survivor regions as eden and clear survivor tracking for this pause.
   survivors->convert_to_eden();
 
   phase_times()->record_young_cset_choice_time_ms((Ticks::now() - start_time).seconds() * 1000.0);
@@ -426,7 +426,7 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 
   uint min_old_cset_length = _policy->calc_min_old_cset_length(candidates()->last_marking_candidates_length());
   uint max_old_cset_length = MAX2(min_old_cset_length, _policy->calc_max_old_cset_length());
-  bool check_time_remaining = _policy->use_adaptive_young_list_length();
+  bool check_time_remaining = _policy->use_adaptive_num_young_regions();
 
   G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();
 
