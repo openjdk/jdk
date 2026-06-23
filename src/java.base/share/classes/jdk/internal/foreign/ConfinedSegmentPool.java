@@ -52,8 +52,9 @@ public final class ConfinedSegmentPool {
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
-    // Providing "0" as a value for this property disables confined pooling
-    private static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
+    // Internal tuning knob; no behavioral or compatibility guarantees are given.
+    // Setting the pool-size power to 0 disables confined pooling.
+   private static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
 
     // The following values can be observed {-1 (disabled), 8, 16, 32 or 64} bytes
     private static final long POOLED_MEMORY_SIZE = clampedPowerOfPropertyOr(POOLED_MEMORY_PROPERTY, 6);
@@ -350,6 +351,7 @@ public final class ConfinedSegmentPool {
                     : Long.BYTES; // No cache line support
         }
 
+        // Internal tuning knob; no behavioral or compatibility guarantees are given.
         private static final String SLOT_COUNT_PROPERTY = "java.lang.foreign.native.confined.pool.power.slots";
 
         // Always a power of two.

@@ -101,19 +101,25 @@ import static org.junit.Assert.assertEquals;
 
 final class TestConfinedSegmentPoolConfig {
 
-    static final long MAX = 64;
+    // Pool
     static final long DEFAULT = 64;
     static final long MIN = 8;
+    static final long MAX = 64;
     static final long DISABLED = -1;
+
+    // Slots
+    static final int DEFAULT_SLOTS = defaultSlotCount();
+    static final int MIN_SLOTS = 1 << 1;
+    static final int MAX_SLOTS = 1 << 20;
 
     static final String POOLED_MEMORY_PROPERTY = "java.lang.foreign.native.confined.pool.power.size";
     static final String SLOT_COUNT_PROPERTY = "java.lang.foreign.native.confined.pool.power.slots";
 
     @Test
     void pooledMemorySize() {
-        final long actual = getPooledMemorySize();;
-        final String configParameter = System.getProperty(POOLED_MEMORY_PROPERTY);
-        final long expected = switch (configParameter) {
+        long actual = getPooledMemorySize();
+        String configParameter = System.getProperty(POOLED_MEMORY_PROPERTY);
+        long expected = switch (configParameter) {
             case null             -> DEFAULT;
             case "0"              -> DISABLED;
             case "1"              -> MIN;
@@ -135,11 +141,11 @@ final class TestConfinedSegmentPoolConfig {
 
     @Test
     void virtualThreadSlotCount() {
-        final int actual = confinedSegmentPoolSlots();
-        final String configParameter = System.getProperty(SLOT_COUNT_PROPERTY);
-        final int expected = switch (configParameter) {
-            case null             -> defaultSlotCount();
-            case "0"              -> 1 << 1;   // clamped to min power
+        int actual = confinedSegmentPoolSlots();
+        String configParameter = System.getProperty(SLOT_COUNT_PROPERTY);
+        int expected = switch (configParameter) {
+            case null             -> DEFAULT_SLOTS;
+            case "0"              -> MIN_SLOTS;   // clamped to min power
             case "1"              -> 1 << 1;
             case "2"              -> 1 << 2;
             case "3"              -> 1 << 3;
@@ -147,11 +153,11 @@ final class TestConfinedSegmentPoolConfig {
             case "5"              -> 1 << 5;
             case "6"              -> 1 << 6;
             case "7"              -> 1 << 7;
-            case "24"             -> 1 << 20; // 20 is max
+            case "24"             -> MAX_SLOTS;
             case "-1"             -> 1 << 1;
-            case "23847682736221" -> defaultSlotCount(); // Too big for an int
-            case "TEXT"           -> defaultSlotCount(); // Covers the case of a non-number
-            case "PAGE_ALIGN"     -> defaultSlotCount(); // The text is used only as a flag
+            case "23847682736221" -> DEFAULT_SLOTS; // Too big for an int
+            case "TEXT"           -> DEFAULT_SLOTS; // Covers the case of a non-number
+            case "PAGE_ALIGN"     -> DEFAULT_SLOTS; // The text is used only as a flag
             default -> throw new AssertionError(configParameter + " -> " + actual);
         };
         assertEquals(expected, actual);
