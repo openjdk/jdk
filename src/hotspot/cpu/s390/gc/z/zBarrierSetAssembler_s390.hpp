@@ -137,6 +137,13 @@ virtual void arraycopy_prologue(MacroAssembler* masm,
                                 Register dst,
                                 Register count);
 
+virtual void arraycopy_epilogue(MacroAssembler* masm,
+                                DecoratorSet decorators,
+                                BasicType type,
+                                Register src,
+                                Register dst,
+                                bool do_return = false);
+
 virtual void try_resolve_jobject_in_native(MacroAssembler* masm,
                                            Register jni_env,
                                            Register robj,

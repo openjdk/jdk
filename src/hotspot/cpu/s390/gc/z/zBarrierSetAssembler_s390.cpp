@@ -685,6 +685,22 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
   __ z_brct(Z_ARG3, loop);
 
   __ bind(done);
+
+  // TODO: Come up with a better solution, i.e. try putting it in the arraycopy_prologue
+  //__ stop("arraycopy epilogue");
+  //__ z_lgdr(_load_bad_mask, Z_F0);
+  //__ z_lgdr(_store_bad_mask, Z_F1);
+  //__ z_lgdr(_store_good_mask, Z_F2);
+
+  int offset = 8;
+  __ restore_return_pc();           offset += 8;
+  __ z_lg(Z_R5, offset, Z_SP);      offset += 8;
+  __ z_lg(Z_R6, offset, Z_SP);      offset += 8;
+  __ z_lg(Z_R7, offset, Z_SP);      offset += 8;
+  __ z_lg(Z_R10, offset, Z_SP);     offset += 8;
+  __ z_lg(Z_R11, offset, Z_SP);
+  __ pop_frame();
+
   // TODO: look at it again, we can also use __ z_xogr(Z_RET, Z_RET); done
   __ z_xgr(Z_RET, Z_RET);
   __ z_br(Z_R14);
@@ -717,6 +733,23 @@ void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool
   __ z_brct(Z_ARG3, loop);
 
   __ bind(done);
+
+  // TODO: Come up with a better solution, i.e. try putting it in the arraycopy_prologue
+//  __ stop("arraycopy epilogue");
+  //__ z_lgdr(_load_bad_mask, Z_F0);
+  //__ z_lgdr(_store_bad_mask, Z_F1);
+  //__ z_lgdr(_store_good_mask, Z_F2);
+
+  int offset = 8;
+  __ restore_return_pc();           offset += 8;
+  __ z_lg(Z_R5, offset, Z_SP);      offset += 8;
+  __ z_lg(Z_R6, offset, Z_SP);      offset += 8;
+  __ z_lg(Z_R7, offset, Z_SP);      offset += 8;
+  __ z_lg(Z_R10, offset, Z_SP);     offset += 8;
+  __ z_lg(Z_R11, offset, Z_SP);
+  __ pop_frame();
+
+
   // TODO: look at it again, we can also use __ z_xogr(Z_RET, Z_RET); done
   __ z_xgr(Z_RET, Z_RET);
   __ z_br(Z_R14);
@@ -745,9 +778,32 @@ void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
   //__ z_agsi(0, Z_R1, 1);
   //__ z_lgdr(Z_R1, Z_F0);
 
+  //__ z_ldgr(Z_F0, _load_bad_mask);
+  //__ z_ldgr(Z_F1, _store_bad_mask);
+  //__ z_ldgr(Z_F2, _store_good_mask);
+
+  int nbytes_save = 7 * BytesPerWord;                 // SP, PC, R5, R6, R7, R10, R11
+  int offset = 0;
+  __ push_frame(nbytes_save);      offset += 8;
+  __ save_return_pc();                 offset += 8;
+  __ z_stg(Z_R5, offset, Z_SP);        offset += 8;
+  __ z_stg(Z_R6, offset, Z_SP);        offset += 8;
+  __ z_stg(Z_R7, offset, Z_SP);        offset += 8;
+  __ z_stg(Z_R10, offset, Z_SP);       offset += 8;
+  __ z_stg(Z_R11, offset, Z_SP);
+
   load_copy_masks(masm, _load_bad_mask, _store_bad_mask, _store_good_mask, dest_uninitialized);
 
   __ block_comment("} arraycopy_prologue (zgc)");
+}
+
+void ZBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm,
+                                              DecoratorSet decorators,
+                                              BasicType type,
+                                              Register src,
+                                              Register dst,
+                                              bool do_return) {
+
 }
 
 void ZBarrierSetAssembler::load_copy_masks(MacroAssembler* masm,
