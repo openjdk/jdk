@@ -906,7 +906,12 @@ void CompileBroker::init_compiler_threads() {
       if (trace_compiler_threads()) {
         ResourceMark rm;
         ThreadsListHandle tlh;  // name() depends on the TLH.
-        if (!tlh.includes(ct)) continue;
+        if (!tlh.includes(ct)) {
+          stringStream msg;
+          msg.print("Compiler thread " INTPTR_FORMAT " exited before it could be tracked", p2i(ct));
+          print_compiler_threads(msg);
+          continue;
+        }
         stringStream msg;
         msg.print("Added initial compiler thread %s", ct->name());
         print_compiler_threads(msg);
@@ -927,7 +932,12 @@ void CompileBroker::init_compiler_threads() {
       if (trace_compiler_threads()) {
         ResourceMark rm;
         ThreadsListHandle tlh;  // name() depends on the TLH.
-        if (!tlh.includes(ct)) continue;
+        if (!tlh.includes(ct)) {
+          stringStream msg;
+          msg.print("Compiler thread " INTPTR_FORMAT " exited before it could be tracked", p2i(ct));
+          print_compiler_threads(msg);
+          continue;
+        }
         stringStream msg;
         msg.print("Added initial compiler thread %s", ct->name());
         print_compiler_threads(msg);
@@ -1005,7 +1015,12 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
       if (trace_compiler_threads()) {
         ResourceMark rm;
         ThreadsListHandle tlh;  // name() depends on the TLH.
-        if (!tlh.includes(ct)) continue;
+        if (!tlh.includes(ct)) {
+          stringStream msg;
+          msg.print("Compiler thread " INTPTR_FORMAT " exited before it could be tracked", p2i(ct));
+          print_compiler_threads(msg);
+          continue;
+        }
         stringStream msg;
         msg.print("Added compiler thread %s (free memory: %dMB, available non-profiled code cache: %dMB)",
                   ct->name(), (int)(free_memory/M), (int)(available_cc_np/M));
@@ -1028,7 +1043,12 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
       if (trace_compiler_threads()) {
         ResourceMark rm;
         ThreadsListHandle tlh;  // name() depends on the TLH.
-        if (!tlh.includes(ct)) continue;
+        if (!tlh.includes(ct)) {
+          stringStream msg;
+          msg.print("Compiler thread " INTPTR_FORMAT " exited before it could be tracked", p2i(ct));
+          print_compiler_threads(msg);
+          continue;
+        }
         stringStream msg;
         msg.print("Added compiler thread %s (free memory: %dMB, available profiled code cache: %dMB)",
                   ct->name(), (int)(free_memory/M), (int)(available_cc_p/M));
