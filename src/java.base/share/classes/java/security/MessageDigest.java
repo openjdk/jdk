@@ -176,8 +176,11 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * </li>
      * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * if the specified algorithm is considered legacy. If so, it
-     * emits a warning when the algorithm is requested.
+     * if the specified algorithm is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the algorithm. This warning is shown once per caller for
+     * each legacy algorithm. If the algorithm is also disabled,
+     * the warning will not be shown.
      * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
      * it supersedes the security property value.
      * </li>
@@ -258,8 +261,11 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * </li>
      * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * if the specified algorithm is considered legacy. If so, it
-     * emits a warning when the algorithm is requested.
+     * if the specified algorithm is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the algorithm. This warning is shown once per caller for
+     * each legacy algorithm. If the algorithm is also disabled,
+     * the warning will not be shown.
      * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
      * it supersedes the security property value.
      * </li>
@@ -343,8 +349,11 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * </li>
      * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
-     * if the specified algorithm is considered legacy. If so, it
-     * emits a warning when the algorithm is requested.
+     * if the specified algorithm is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the algorithm. This warning is shown once per caller for
+     * each legacy algorithm. If the algorithm is also disabled,
+     * the warning will not be shown.
      * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
      * it supersedes the security property value.
      * </li>
