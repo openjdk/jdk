@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.foreign
  * @run junit/othervm --add-opens=java.base/java.lang=ALL-UNNAMED
  *                    --add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED
  *                    TestConfinedSegmentPoolConfig
