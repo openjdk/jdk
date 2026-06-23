@@ -1843,13 +1843,19 @@ public:
 
 #undef SVE_DESTRUCTIVE_TERNARY_INS
 
-  using Assembler::sve_eor3;
-  void sve_eor3(FloatRegister Zd, FloatRegister Zm, FloatRegister Zk) {
-    if (Zd != Zm && Zd != Zk) {
-      try_to_replace_prev_vector_copy_with_movprfx(Zd);
-    }
-    Assembler::sve_eor3(Zd, Zm, Zk);
+#define SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(NAME)                               \
+  using Assembler::NAME;                                                       \
+  void NAME(FloatRegister Zd, FloatRegister Zm, FloatRegister Zk) {            \
+    if (Zd != Zm && Zd != Zk) {                                                \
+      try_to_replace_prev_vector_copy_with_movprfx(Zd);                        \
+    }                                                                          \
+    Assembler::NAME(Zd, Zm, Zk);                                               \
   }
+
+  SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(sve_bsl);
+  SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(sve_eor3);
+
+#undef SVE_DESTRUCTIVE_TERNARY_UNPRED_INS
 };
 
 #ifdef ASSERT

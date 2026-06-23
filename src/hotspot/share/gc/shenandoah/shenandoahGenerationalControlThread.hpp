@@ -84,6 +84,9 @@ private:
   // preparing for mark).
   ShenandoahSharedFlag _allow_old_preemption;
 
+  // True while the current cycle is the bootstrap of an old GC.
+  bool _do_old_gc_bootstrap;
+
 public:
   ShenandoahGenerationalControlThread();
 
