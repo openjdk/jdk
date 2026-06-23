@@ -3574,7 +3574,7 @@ os::win32::PlaceholderRegionPair os::win32::split_memory(const PlaceholderRegion
 char* os::win32::convert_to_reserved(PlaceholderRegion region, int numa_node) {
   guarantee(is_VirtualAlloc2_supported(), "convert_to_reserved requires VirtualAlloc2");
   assert(!region.is_empty(), "Region cannot be empty");
-  assert(is_aligned(region.base(), os::vm_page_size()), "Region base should be page-aligned");
+  assert(is_aligned(region.base(), os::vm_allocation_granularity()), "Region base should be aligned to allocation granularity.");
   assert(is_aligned(region.size(), os::vm_page_size()), "Region size should be page-aligned");
 
   char* base = region.base();
@@ -3666,6 +3666,8 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
   // will go thru reserve_memory_special rather than thru here.
   bool use_numa_interleaving = (UseNUMAInterleaving && !UseLargePages);
   if (use_numa_interleaving) {
+    elapsedTimer reserveTimer;
+    if (Verbose && PrintMiscellaneous) reserveTimer.start();
     if (is_VirtualAlloc2_supported()) {
       // Splittable NUMA interleaving with VirtualAlloc2 placeholders.
       res = reserve_with_numa_placeholder(addr, bytes);
@@ -3674,19 +3676,16 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
       }
     } else {
       // Non-splittable NUMA interleaving: allocate_pages_individually (possible races).
-      elapsedTimer reserveTimer;
-      if (Verbose && PrintMiscellaneous) reserveTimer.start();
-      // in numa interleaving, we have to allocate pages individually
       // (well really chunks of NUMAInterleaveGranularity size)
       res = allocate_pages_individually(bytes, addr, MEM_RESERVE, PAGE_READWRITE);
       if (res == nullptr) {
         log_warning(os)("NUMA page allocation failed");
       }
-      if (Verbose && PrintMiscellaneous) {
-        reserveTimer.stop();
-        tty->print_cr("reserve_memory of %zx bytes took " JLONG_FORMAT " ms (" JLONG_FORMAT " ticks)", bytes,
-                reserveTimer.milliseconds(), reserveTimer.ticks());
-      }
+    }
+    if (Verbose && PrintMiscellaneous) {
+      reserveTimer.stop();
+      tty->print_cr("reserve_memory of %zx bytes took " JLONG_FORMAT " ms (" JLONG_FORMAT " ticks)", bytes,
+              reserveTimer.milliseconds(), reserveTimer.ticks());
     }
   } else {
     // Standard reservation.

@@ -1007,6 +1007,7 @@ TEST_VM_FATAL_ERROR_MSG(os, placeholder_double_convert, ".*Failed to convert pla
   // Double convert
   char* reserved = os::win32::convert_to_reserved(region);
   ASSERT_EQ(reserved, region.base());
+  // This second conversion attempt should crash producing the error "...Failed to convert placeholder..."
   reserved = os::win32::convert_to_reserved(region);
 }
 
