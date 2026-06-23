@@ -65,7 +65,8 @@ public class SaveJlinkArgfilesPluginTest {
         var image = helper.generateDefaultImage(new String[] {
                 "--add-modules", "jdk.jlink,jdk.jdeps,jdk.internal.opt,jdk.compiler,java.compiler,jdk.zipfs,jdk.internal.ed",
                 "--keep-packaged-modules", "images/base.image/jmods",
-                "--save-jlink-argfiles", argfile1 + File.pathSeparator + argfile2
+                "--save-jlink-argfiles", argfile1 + File.pathSeparator + argfile2,
+                "--strip-debug"
             }, module)
             .assertSuccess();
         helper.checkImage(image, module, null, null);

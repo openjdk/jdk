@@ -72,7 +72,8 @@ public class VendorInfoPluginsTest {
                 "--add-modules", "jdk.unsupported",
                 "--vendor-version", VERSION,
                 "--vendor-bug-url", BUG_URL,
-                "--vendor-vm-bug-url", VM_BUG_URL },
+                "--vendor-vm-bug-url", VM_BUG_URL,
+                "--strip-debug" },
             module).assertSuccess();
         helper.checkImage(image, module, null, null);
 

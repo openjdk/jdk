@@ -249,6 +249,7 @@ public class UserModuleTest {
         Set<String> modules = Set.of("m1", "m4");
         assertTrue(JLINK_TOOL.run(System.out, System.out,
             "--output", dir.toString(),
+            "--strip-debug",
             "--exclude-resources", "m4/p4/dummy/*",
             "--add-modules", modules.stream().collect(Collectors.joining(",")),
             "--module-path", mp) == 0);
@@ -278,6 +279,7 @@ public class UserModuleTest {
         Set<String> modules = Set.of("m1", "m4");
         assertTrue(JLINK_TOOL.run(System.out, System.out,
             "--output", dir.toString(),
+            "--strip-debug",
             "--exclude-resources", "m4/p4/dummy/*",
             "--add-modules", modules.stream().collect(Collectors.joining(",")),
             "--module-path", mp) == 0);
@@ -308,6 +310,7 @@ public class UserModuleTest {
     private void createImage(Path outputDir, String... modules) throws Throwable {
         assertTrue(JLINK_TOOL.run(System.out, System.out,
             "--output", outputDir.toString(),
+            "--strip-debug",
             "--add-modules", Arrays.stream(modules).collect(Collectors.joining(",")),
             "--module-path", MODULE_PATH) == 0);
     }

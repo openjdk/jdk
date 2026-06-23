@@ -103,6 +103,7 @@ public class GenerateJLIClassesPluginTest {
         Files.write(baseFile, fileString.getBytes(Charset.defaultCharset()));
         Result result = JImageGenerator.getJLinkTask()
                 .output(lastImageDir = helper.createNewImageDir("generate-jli-file"))
+                .option("--strip-debug")
                 .option("--generate-jli-classes=@" + baseFile.toString())
                 .addMods("java.base")
                 .call();
@@ -140,6 +141,7 @@ public class GenerateJLIClassesPluginTest {
     public static void nonExistentTraceFile() throws IOException {
         Result result = JImageGenerator.getJLinkTask()
                 .output(lastImageDir = helper.createNewImageDir("non-existent-tracefile"))
+                .option("--strip-debug")
                 .option("--generate-jli-classes=@NON_EXISTENT_FILE")
                 .addMods("java.base")
                 .call();
@@ -155,6 +157,7 @@ public class GenerateJLIClassesPluginTest {
         Files.writeString(invokersTrace, fileString, Charset.defaultCharset());
         Result result = JImageGenerator.getJLinkTask()
                 .output(lastImageDir = helper.createNewImageDir("jli-invokers"))
+                .option("--strip-debug")
                 .option("--generate-jli-classes=@" + invokersTrace.toString())
                 .addMods("java.base")
                 .call();

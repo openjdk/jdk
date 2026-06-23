@@ -106,6 +106,7 @@ public class CompiledVersionTest {
         Path jlink = Paths.get(JAVA_HOME, "bin", "jlink");
         String mp = JMODS.toString() + File.pathSeparator + MODS_DIR.toString();
         assertTrue(executeProcess(jlink.toString(), "--output", outputDir.toString(),
+                        "--strip-debug",
                         "--add-modules", Arrays.stream(modules).collect(Collectors.joining(",")),
                         "--module-path", mp)
                         .outputTo(System.out)

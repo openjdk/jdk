@@ -210,8 +210,10 @@ public class ExcludeJmodSectionPluginTest {
     private Path createImage(String outputDir, List<String> options,
                              List<String> expectedFiles) {
         System.out.println("jlink " + options.toString());
+        List<String> allOptions = new ArrayList<>(options);
+        allOptions.add("--strip-debug");
         int rc = JLINK_TOOL.run(System.out, System.out,
-                                options.toArray(new String[0]));
+                                allOptions.toArray(new String[0]));
         assertTrue(rc == 0);
 
         Path d = IMAGES_DIR.resolve(outputDir);
