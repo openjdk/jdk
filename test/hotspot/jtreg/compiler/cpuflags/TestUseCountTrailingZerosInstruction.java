@@ -26,7 +26,7 @@
  * @bug 8386656
  * @summary Verify no assertions when running with -XX:-UseCountTrailingZerosInstruction
  * @requires os.simpleArch == "x64"
- * @run main/othervm -Xbatch -XX:-UseCountTrailingZerosInstruction compiler.cpuflags.TestUseCountTrailingZerosInstruction
+ * @run main/othervm -Xbatch -XX:-UseCountTrailingZerosInstruction ${test.main.class}
  */
 
 /**
@@ -34,7 +34,7 @@
  * @bug 8386656
  * @summary Verify no assertions when running with -XX:+UseCountTrailingZerosInstruction
  * @requires os.simpleArch == "x64"
- * @run main/othervm -Xbatch -XX:+UseCountTrailingZerosInstruction compiler.cpuflags.TestUseCountTrailingZerosInstruction
+ * @run main/othervm -Xbatch -XX:+UseCountTrailingZerosInstruction ${test.main.class}
  */
 
 package compiler.cpuflags;
