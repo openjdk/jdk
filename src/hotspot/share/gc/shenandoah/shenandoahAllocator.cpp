@@ -30,16 +30,27 @@
 #include "runtime/os.hpp"
 
 // Derive the number of CAS alloc-region stripe slots for the mutator allocator. Striping spreads
-// lock-free allocation contention, so it is bounded by the available parallelism (no benefit in
-// more slots than CPUs the process may run on). It is also bounded by heap size: each slot holds a
-// reserved region whose remaining capacity is pre-charged to used, so too many slots on a small
-// heap would pin most of the heap as partially-filled tails and starve whole-region consumers
-// (evacuation reserve, humongous/contiguous allocations). We scale the heap bound to ~1/128 of the
-// regions, which also mirrors the MAX_ALLOC_REGIONS (128) stripe-array size. The min of the two
-// bounds handles both edge cases (many cores + tiny heap, and few threads + many cores) without a
-// tuning flag. Always at least 1; capped at MAX_ALLOC_REGIONS. Collector allocators are sized
-// separately (ShenandoahCollectorAllocRegions): their regions come from the bounded evacuation
-// reserve, so neither bound applies to them.
+// lock-free allocation contention; the slot count is the minimum of three upper bounds, each
+// capturing a distinct limit, then clamped to [1, MAX_ALLOC_REGIONS]:
+//
+//   cpu_bound    = active processor count. No benefit in more slots than CPUs the process may run
+//                  on -- there is no further concurrency to spread.
+//
+//   region_bound = MAX_REGION_SIZE / region_size. The contention driver is TLAB-refill traffic: a
+//                  refill takes a LAB from the shared alloc region via CAS. TLAB size scales with
+//                  region size, so larger regions mean larger TLABs, rarer refills, and little
+//                  contention -- few slots suffice (region_bound -> 1 at the 32M max). Smaller
+//                  regions mean smaller TLABs, frequent refills, and high contention -- so we want
+//                  more slots (region_bound -> 128 at the 256K min). Inverse to region size.
+//
+//   heap_bound   = region_count / 128. Each slot holds a region whose remaining capacity is
+//                  pre-charged to used, so too many slots on a small heap would pin most of the heap
+//                  as partially-filled tails and starve whole-region consumers (evacuation reserve,
+//                  humongous/contiguous allocations). Caps the count to ~1/128 of the heap.
+//
+// This handles the edge cases (many cores + tiny heap, few threads + many cores, large vs small
+// regions) without a tuning flag. Collector allocators are sized separately
+// (ShenandoahCollectorAllocRegions): their regions come from the bounded evacuation reserve.
 //
 // ShenandoahMutatorAllocRegions overrides the derived value when explicitly set (non-default); its
 // default of 0 means "derive". An explicit value is still capped at MAX_ALLOC_REGIONS.
@@ -47,9 +58,12 @@ static uint mutator_alloc_regions() {
   if (!FLAG_IS_DEFAULT(ShenandoahMutatorAllocRegions)) {
     return MIN2((uint) ShenandoahMutatorAllocRegions, ShenandoahMutatorAllocator::MAX_ALLOC_REGIONS);
   }
-  const uint cpu_bound = (uint) MAX2(os::initial_active_processor_count(), 1);
-  const uint heap_bound = (uint) MAX2(ShenandoahHeapRegion::region_count() / 128, (size_t) 1);
-  return MIN2(MIN2(cpu_bound, heap_bound), ShenandoahMutatorAllocator::MAX_ALLOC_REGIONS);
+  const uint cpu_bound    = (uint) MAX2(os::initial_active_processor_count(), 1);
+  const uint region_bound = (uint) MAX2(ShenandoahHeapRegion::MAX_REGION_SIZE /
+                                        ShenandoahHeapRegion::region_size_bytes(), (size_t) 1);
+  const uint heap_bound   = (uint) MAX2(ShenandoahHeapRegion::region_count() / 128, (size_t) 1);
+  const uint slots = MIN2(MIN2(cpu_bound, region_bound), heap_bound);
+  return MIN2(slots, ShenandoahMutatorAllocator::MAX_ALLOC_REGIONS);
 }
 
 ShenandoahAllocator::ShenandoahAllocator(ShenandoahFreeSet* free_set)
