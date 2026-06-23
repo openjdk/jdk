@@ -111,8 +111,10 @@ public:
   // This zeros out the expended promotion count after the promotion reserve is computed
   void reset_promoted_expended();
 
-  // This is incremented when allocations are made to copy promotions into the old generation
-  size_t expend_promoted(size_t increment);
+  // Atomically reserve `increment` bytes of promotion budget. Returns true if the full amount
+  // was reserved without exceeding the reserve. Lock-free: safe to call without the heap lock.
+  // Use this to gate a promotion decision before promoting.
+  bool try_expend_promoted(size_t increment);
 
   // This is used to return unused memory from a retired promotion LAB
   size_t unexpend_promoted(size_t decrement);
