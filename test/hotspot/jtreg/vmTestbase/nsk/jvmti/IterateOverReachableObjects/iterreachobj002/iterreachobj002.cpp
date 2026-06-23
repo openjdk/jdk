@@ -342,7 +342,6 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             if (callbackAborted) break;
 
-#if 1
             for (int gcCount = 0; gcCount < 5; gcCount++) {
                 NSK_DISPLAY1("Calling ForceGarbageCollection #%d before saving objectCountMax\n", gcCount + 1);
                 if (!NSK_JVMTI_VERIFY(jvmti->ForceGarbageCollection())) {
@@ -353,7 +352,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             if (nsk_jvmti_getStatus() != NSK_STATUS_PASSED) {
                 break;
             }
-#endif
+
             objectCountMax = objectCount;
 
             /* Deallocate last unnecessary descriptor */
