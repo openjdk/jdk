@@ -350,11 +350,20 @@ public final class ConfinedSegmentPool {
                     : Long.BYTES; // No cache line support
         }
 
+        private static final String SLOT_COUNT_PROPERTY = "java.lang.foreign.native.confined.pool.power.slots";
+
         // Always a power of two.
         private static int slotCount() {
             // Default carrier threads times two
             final int target = Runtime.getRuntime().availableProcessors() << 1;
-            return Integer.highestOneBit(target - 1) << 1;
+            final int defaultSlotPower = powerOfTwoCeilExponent(target);
+            final int slotPower = Integer.getInteger(SLOT_COUNT_PROPERTY, defaultSlotPower);
+            return 1 << Math.clamp(slotPower, 1, 20);
+        }
+
+        // For value = 2 and upwards
+        static int powerOfTwoCeilExponent(int value) {
+            return Integer.SIZE - Integer.numberOfLeadingZeros(value - 1);
         }
 
         private static long allocatePool() {
