@@ -347,8 +347,6 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
             if (callbackAborted) break;
 
-            objectCountMax = objectTagCount;
-
             /* This fragment is needed to stress test execution with extra GC's. */
             for (int gcCount = 0; gcCount < 5; gcCount++) {
                 NSK_DISPLAY1("Calling ForceGarbageCollection #%d before saving objectCountMax\n", gcCount + 1);
@@ -360,6 +358,8 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             if (nsk_jvmti_getStatus() != NSK_STATUS_PASSED) {
                 break;
             }
+
+            objectCountMax = objectTagCount;
 
             /* Deallocate last unnecessary descriptor */
             if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)objectDescList))) {
