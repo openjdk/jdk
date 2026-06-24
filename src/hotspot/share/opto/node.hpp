@@ -1060,6 +1060,11 @@ public:
   // The data node which is safe to leave in dead loop during IGVN optimization.
   bool is_dead_loop_safe() const;
 
+  void mark_not_dead_loop_safe() {
+    assert(is_dead_loop_safe(), "shouldn't be cleared yet");
+    remove_flag(Node::Flag_is_dead_loop_safe);
+  }
+
   // is_Copy() returns copied edge index (0 or 1)
   uint is_Copy() const { return (_flags & Flag_is_Copy); }
 
