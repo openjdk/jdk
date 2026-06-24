@@ -63,25 +63,25 @@ public class TestAddingOldAccessibleContextAsDocumentListener {
 
         List<DocumentListener> docListeners = Arrays.asList(
                 plainDoc.getDocumentListeners());
-        if (docListeners.contains(htmlAXContext)) {
-            throw new Exception("outdated listener added to new document");
-        }
+        assertEquals(0, Collections.frequency(docListeners, htmlAXContext));
 
-        AccessibleContext pax = textPane.getAccessibleContext();
-        // in this scenario we've call doc.addDocumentListener(pax) twice;
-        // let's be sure it's only listed once.
-        if (Collections.frequency(docListeners, pax) != 1) {
-            throw new Exception("new listener was added multiple times");
-        }
+        AccessibleContext plainAXContext = textPane.getAccessibleContext();
+        assertEquals(1, Collections.frequency(docListeners, plainAXContext));
 
         // this is optional (we don't care about the HTMLDocument anymore).
         // setDocument() automatically removes the old AX context listener
         List<DocumentListener> htmlDocListeners = Arrays.asList(
                 htmlDoc.getDocumentListeners());
-        if (Collections.frequency(docListeners, htmlAXContext) != 0) {
-            throw new Exception("outdated listener was not removed");
-        }
+        assertEquals(0, Collections.frequency(htmlDocListeners,
+                htmlAXContext));
 
         System.out.println("test passed");
+    }
+
+    private static void assertEquals(int expectedValue, int observedValue) {
+        if (expectedValue != observedValue) {
+            throw new RuntimeException("Expected: " + expectedValue +
+                    ", observed: " + observedValue);
+        }
     }
 }
