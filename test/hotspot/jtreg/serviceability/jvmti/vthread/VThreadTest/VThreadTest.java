@@ -56,7 +56,7 @@ public class VThreadTest {
             }
         } catch (Throwable t) {
             t.printStackTrace(System.out);
-            throw new RuntimeException("VThreadTest failed: PRODUCER caught a throwable: " + t");
+            throw new RuntimeException("VThreadTest failed: PRODUCER caught a throwable: " + t);
         }
     };
 
@@ -67,7 +67,7 @@ public class VThreadTest {
             }
         } catch (Throwable t) {
             t.printStackTrace(System.out);
-            throw new RuntimeException("VThreadTest failed: CONSUMER caught a throwable: " + t");
+            throw new RuntimeException("VThreadTest failed: CONSUMER caught a throwable: " + t);
         }
     };
 
