@@ -26,7 +26,7 @@ package api;
 /**
  * This is a preview API marked by javadoc tags.
  *
- * @previewFeature [title="First preview feature" url="http://example.org/first-preview-feature"]
+ * @previewFeature [title="First preview feature" url="https://example.org/first-preview-feature"]
  * Alternative preview note. {@link PreviewApi} is a preview API.
  */
 public class PreviewApi {
