@@ -299,7 +299,7 @@ public:
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
     _st->print_cr("  " HR_FORMAT ", TAMS: " PTR_FORMAT " PB: " PTR_FORMAT ", age: %4d",
                   HR_FORMAT_PARAMS(r),
-                  p2i(cm->top_at_mark_start(r)),
+                  p2i(cm->top_at_mark_start_or_bottom(r)),
                   p2i(r->parsable_bottom()),
                   r->has_surv_rate_group() ? checked_cast<int>(r->age_in_surv_rate_group()) : -1);
     return false;
