@@ -846,7 +846,7 @@ void G1CollectedHeap::prepare_heap_for_full_collection() {
   _hrm.remove_all_free_regions();
 }
 
-void G1CollectedHeap::verify_before_full_collection() {
+void G1CollectedHeap::verify_before_full_collection(bool concurrent_cycle_aborted) {
   assert_used_and_recalculate_used_equal(this);
   if (!VerifyBeforeGC) {
     return;
@@ -856,7 +856,7 @@ void G1CollectedHeap::verify_before_full_collection() {
   }
   _verifier->verify_region_sets_optional();
   _verifier->verify_before_gc();
-  _verifier->verify_bitmap_clear(true /* above_tams_only */);
+  _verifier->verify_bitmap_clear(true /* above_tams_only */, concurrent_cycle_aborted);
 }
 
 void G1CollectedHeap::prepare_for_mutator_after_full_collection(size_t allocation_word_size) {
@@ -1799,12 +1799,12 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
 }
 
 void G1CollectedHeap::increment_old_marking_cycles_started() {
-  assert(_old_marking_cycles_started == _old_marking_cycles_completed ||
-         _old_marking_cycles_started == _old_marking_cycles_completed + 1,
-         "Wrong marking cycle count (started: %d, completed: %d)",
-         _old_marking_cycles_started, _old_marking_cycles_completed);
+  assert(old_marking_cycles_started() == old_marking_cycles_completed() ||
+         old_marking_cycles_started() == old_marking_cycles_completed() + 1,
+         "Wrong marking cycle count (started: %u, completed: %u)",
+         old_marking_cycles_started(), old_marking_cycles_completed());
 
-  _old_marking_cycles_started++;
+  _old_marking_cycles_started.add_then_fetch(1u, memory_order_relaxed);
 }
 
 void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
@@ -1825,21 +1825,21 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
 
   // This is the case for the inner caller, i.e. a Full GC.
   assert(concurrent ||
-         (_old_marking_cycles_started == _old_marking_cycles_completed + 1) ||
-         (_old_marking_cycles_started == _old_marking_cycles_completed + 2),
-         "for inner caller (Full GC): _old_marking_cycles_started = %u "
-         "is inconsistent with _old_marking_cycles_completed = %u",
-         _old_marking_cycles_started, _old_marking_cycles_completed);
+         (old_marking_cycles_started() == old_marking_cycles_completed() + 1) ||
+         (old_marking_cycles_started() == old_marking_cycles_completed() + 2),
+         "for inner caller (Full GC): old_marking_cycles_started = %u "
+         "is inconsistent with old_marking_cycles_completed = %u",
+         old_marking_cycles_started(), old_marking_cycles_completed());
 
   // This is the case for the outer caller, i.e. the concurrent cycle.
   assert(!concurrent ||
-         (_old_marking_cycles_started == _old_marking_cycles_completed + 1),
+         (old_marking_cycles_started() == old_marking_cycles_completed() + 1),
          "for outer caller (concurrent cycle): "
-         "_old_marking_cycles_started = %u "
-         "is inconsistent with _old_marking_cycles_completed = %u",
-         _old_marking_cycles_started, _old_marking_cycles_completed);
+         "old_marking_cycles_started = %u "
+         "is inconsistent with old_marking_cycles_completed = %u",
+         old_marking_cycles_started(), old_marking_cycles_completed());
 
-  _old_marking_cycles_completed += 1;
+  _old_marking_cycles_completed.add_then_fetch(1u, memory_order_relaxed);
   if (whole_heap_examined) {
     // Signal that we have completed a visit to all live objects.
     record_whole_heap_examined_timestamp();
@@ -1904,7 +1904,7 @@ bool G1CollectedHeap::wait_full_mark_finished(GCCause::Cause cause,
     // while completed_now < started_after.
     LOG_COLLECT_CONCURRENTLY(cause, "wait");
     MonitorLocker ml(G1OldGCCount_lock);
-    while (gc_counter_less_than(_old_marking_cycles_completed,
+    while (gc_counter_less_than(old_marking_cycles_completed(),
                                 old_marking_started_after)) {
       ml.wait();
     }
@@ -1986,8 +1986,8 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
       // more recent collection.  That's what we want, rather than having
       // our retry possibly perform an unnecessary collection.
       gc_counter = total_collections();
-      old_marking_started_after = _old_marking_cycles_started;
-      old_marking_completed_after = _old_marking_cycles_completed;
+      old_marking_started_after = old_marking_cycles_started();
+      old_marking_completed_after = old_marking_cycles_completed();
     }
 
     if (cause == GCCause::_wb_breakpoint) {
@@ -2880,6 +2880,7 @@ void G1CollectedHeap::free_region(G1HeapRegion* hr, G1FreeRegionList* free_list)
 
   // Reset region metadata to allow reuse.
   hr->hr_clear(true /* clear_space */);
+  concurrent_mark()->reset_region_marking_state(hr);
   _policy->remset_tracker()->update_at_free(hr);
 
   if (free_list != nullptr) {
@@ -3192,6 +3193,9 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
       // Synchronize with region attribute table.
       update_region_attr(new_alloc_region);
     }
+
+    _cm->notify_new_region(new_alloc_region);
+
     G1HeapRegionPrinter::alloc(new_alloc_region);
     return new_alloc_region;
   }
@@ -3209,8 +3213,8 @@ void G1CollectedHeap::retire_gc_alloc_region(G1HeapRegion* alloc_region,
     _survivor.add_used_bytes(allocated_bytes);
   }
 
-  bool const during_im = collector_state()->is_in_concurrent_start_gc();
-  if (during_im && allocated_bytes > 0) {
+  bool in_concurrent_start_gc = collector_state()->is_in_concurrent_start_gc();
+  if (in_concurrent_start_gc && allocated_bytes > 0) {
     _cm->add_root_region(alloc_region);
   }
   G1HeapRegionPrinter::retire(alloc_region);
