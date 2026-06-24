@@ -141,9 +141,9 @@ size_t ShenandoahOldGeneration::get_promoted_reserve() const {
 
 void ShenandoahOldGeneration::augment_promoted_reserve(size_t increment) {
   shenandoah_assert_heaplocked_or_safepoint();
-  // Written under the heap lock, so a plain load/store of the current value is sufficient; the
-  // atomic store only guards the concurrent lock-free reader.
-  _promoted_reserve.store_relaxed(_promoted_reserve.load_relaxed() + increment);
+  // Writers are serialized by the heap lock, so relaxed ordering is sufficient; the atomic RMW
+  // only guards against tearing the concurrent lock-free reader (get_promoted_reserve).
+  _promoted_reserve.fetch_then_add(increment, memory_order_relaxed);
 }
 
 void ShenandoahOldGeneration::reset_promoted_expended() {
