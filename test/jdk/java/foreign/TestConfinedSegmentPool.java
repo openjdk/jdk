@@ -400,7 +400,14 @@ final class TestConfinedSegmentPool {
             Thread thread = threadBuilder.factory().newThread(() -> {
                 boolean acquiredCountedDown = false;
                 try {
-                    // Deliberately keep this arena open until the thread completes
+                    // First, use a scratch arena so that the local pool gets registered
+                    // with the thread.
+                    try (Arena scratch = Arena.ofConfined()) {
+                        // Make sure to actually allocate something or else
+                        // no local pool is ever created.
+                        scratch.allocate(ValueLayout.JAVA_BYTE);
+                    }
+                    // Deliberately keep this second arena open until the thread completes
                     Arena arena = Arena.ofConfined();
                     arena.allocate(ValueLayout.JAVA_BYTE);
                     assertNotEquals(0, confinedMemoryPool(Thread.currentThread()));

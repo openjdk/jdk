@@ -145,7 +145,7 @@ final class TestConfinedSegmentPoolDefensiveRelease {
         if (ConfinedSegmentPool.pooledMemorySize() > 0) {
             try (Arena arena = Arena.ofConfined()) {
                 arena.allocate(1);
-                assertThrows(AssertionError.class, () -> release(Thread.currentThread(), OUT_OF_SIZE));
+                assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), OUT_OF_SIZE));
             }
         }
     }

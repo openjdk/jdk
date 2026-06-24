@@ -96,6 +96,9 @@ public sealed class ArenaImpl implements Arena {
                 long pool = this.pool;
                 if (pool == 0) {
                     pool = ConfinedSegmentPool.acquire(session.owner);
+                    if (pool == 0) {
+                        pool = ConfinedSegmentPool.allocateLocal(session.owner);
+                    }
                     if (pool > 0) {
                         this.pool = pool;
                     }

@@ -104,6 +104,22 @@ public final class ConfinedSegmentPool {
     }
 
     /**
+     * Allocates a local platform-thread pool that is not yet associated with the
+     * current thread's pool cache.
+     *
+     * Unlike cached platform pools, this pool is not (potentially yet) visible to
+     * thread-exit cleanup; it is returned to the thread cache, or freed, when the
+     * owning arena is closed.
+     */
+    static long allocateLocal(Thread thread) {
+        assertCurrentThreadInDebugMode(thread);
+        if (POOLED_MEMORY_SIZE <= 0 || thread.isVirtual()) {
+            return 0;
+        }
+        return allocatePlatformPool();
+    }
+
+    /**
      * Zeros out and releases pooled memory owned by the given thread.
      */
     @ForceInline
@@ -156,20 +172,21 @@ public final class ConfinedSegmentPool {
 
     @ForceInline
     private static long acquirePlatform(Thread thread) {
-        final long[] pools = JLA.getOrCreateConfinedMemoryPools(thread);
+        final long[] pools = JLA.getConfinedMemoryPools(thread);
+        if (pools == null) {
+            return 0;
+        }
         for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
             final long pool = pools[i];
             if (pool > 0) {
                 pools[i] = -pool;
                 return pool;
-            } else if (pool == 0) {
-                return allocateAndAcquirePlatformPool(pools, i);
             }
         }
         return 0;
     }
 
-    private static long allocateAndAcquirePlatformPool(long[] pools, int index) {
+    private static long allocatePlatformPool() {
         final long address;
         try {
             address = U.allocateMemory(POOLED_MEMORY_SIZE);
@@ -181,7 +198,6 @@ public final class ConfinedSegmentPool {
             return 0;
         }
         U.setMemory(address, POOLED_MEMORY_SIZE, (byte) 0);
-        pools[index] = -address;
         return address;
     }
 
@@ -190,18 +206,21 @@ public final class ConfinedSegmentPool {
         if (pool <= 0) {
             throw cannotReleasePooledMemory(thread);
         }
-        final long[] pools = JLA.getConfinedMemoryPools(thread);
-        if (pools == null) {
-            throw cannotReleasePooledMemory(thread);
-        }
+        final long[] pools = JLA.getOrCreateConfinedMemoryPools(thread);
+        zeroOutMemory(pool, size);
         for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
             if (pools[i] == -pool) {
-                zeroOutMemory(pool, size);
                 pools[i] = pool;
                 return;
             }
         }
-        throw cannotReleasePooledMemory(thread);
+        for (int i = 0; i < PLATFORM_POOL_COUNT; i++) {
+            if (pools[i] == 0) {
+                pools[i] = pool;
+                return;
+            }
+        }
+        U.freeMemory(pool);
     }
 
     private static long currentPlatformPool(Thread thread) {
@@ -264,7 +283,7 @@ public final class ConfinedSegmentPool {
             case 2: U.putLong(address + 0x08, 0L);
             case 1: U.putLong(address, 0L);
             case 0: break;
-            default: throw new AssertionError(size);
+            default: throw new IllegalStateException(Long.toString(size));
         }
     }
 
