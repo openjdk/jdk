@@ -3240,10 +3240,10 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
 Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replace) {
   kill_dead_locals();           // Benefit all the uncommon traps
   assert( !stopped(), "dead parse path should be checked in callers" );
-  assert(!TypePtr::NULL_PTR->higher_equal(_gvn.type(superklass)->is_klassptr()),
+  const TypeKlassPtr* klass_ptr_type = _gvn.type(superklass)->isa_klassptr();
+  assert(klass_ptr_type != nullptr && !TypePtr::NULL_PTR->higher_equal(klass_ptr_type),
          "must check for not-null not-dead klass in callers");
-  const TypeKlassPtr* klass_ptr_type = _gvn.type(superklass)->is_klassptr();
-  const TypeKlassPtr* improved_klass_ptr_type = klass_ptr_type->try_improve();
+  klass_ptr_type = klass_ptr_type->try_improve();
   // Make the merge point
   enum { _obj_path = 1, _fail_path, _null_path, PATH_LIMIT };
   RegionNode* region = new RegionNode(PATH_LIMIT);
@@ -3279,10 +3279,10 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
 
   // Do we know the type check always succeed?
   bool known_statically = false;
-  if (improved_klass_ptr_type->singleton()) {
+  if (klass_ptr_type->singleton()) {
     const TypeKlassPtr* subk = _gvn.type(obj)->is_oopptr()->as_klass_type();
     if (subk->is_loaded()) {
-      int static_res = C->static_subtype_check(improved_klass_ptr_type, subk);
+      int static_res = C->static_subtype_check(klass_ptr_type, subk);
       known_statically = (static_res == Compile::SSC_always_true || static_res == Compile::SSC_always_false);
     }
   }
@@ -3305,10 +3305,7 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
   }
 
   // Generate the subtype check
-  Node* improved_superklass = superklass;
-  if (improved_klass_ptr_type != klass_ptr_type && improved_klass_ptr_type->singleton()) {
-    improved_superklass = makecon(improved_klass_ptr_type);
-  }
+  Node* improved_superklass = klass_ptr_type->singleton() ? makecon(klass_ptr_type) : superklass;
   Node* not_subtype_ctrl = gen_subtype_check(not_null_obj, improved_superklass);
 
   // Plug in the success path to the general merge in slot 1.
