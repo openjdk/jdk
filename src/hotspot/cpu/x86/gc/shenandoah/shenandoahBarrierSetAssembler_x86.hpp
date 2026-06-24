@@ -60,9 +60,6 @@ public:
 
   void load_reference_barrier(MacroAssembler* masm, Register dst, Address src, DecoratorSet decorators);
 
-  void cmpxchg_oop(MacroAssembler* masm,
-                   Register res, Address addr, Register oldval, Register newval,
-                   bool exchange, Register tmp1, Register tmp2);
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register src, Register dst, Register count);
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ void G1MonitoringSupport::initialize_serviceability() {
   _full_gc_memory_manager.add_pool(_survivor_space_pool);
   _full_gc_memory_manager.add_pool(_old_gen_pool);
 
-  _conc_gc_memory_manager.add_pool(_old_gen_pool);
+  _conc_gc_memory_manager.add_pool(_old_gen_pool, false /* always_affected_by_gc */);
 
   _young_gc_memory_manager.add_pool(_eden_space_pool);
   _young_gc_memory_manager.add_pool(_survivor_space_pool);
@@ -383,9 +383,10 @@ G1FullGCMonitoringScope::G1FullGCMonitoringScope(G1MonitoringSupport* monitoring
                     "end of major GC") {
 }
 
-G1ConcGCMonitoringScope::G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support) :
+G1ConcGCMonitoringScope::G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support, bool affects_memory_pools) :
   G1MonitoringScope(monitoring_support,
                     monitoring_support->_conc_collection_counters,
                     &monitoring_support->_conc_gc_memory_manager,
-                    "end of concurrent GC pause") {
+                    "end of concurrent GC pause",
+                    affects_memory_pools) {
 }

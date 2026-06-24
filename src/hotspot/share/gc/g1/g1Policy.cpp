@@ -849,13 +849,13 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
   if (update_stats) {
     // We maintain the invariant that all objects allocated by mutator
     // threads will be allocated out of eden regions. So, we can use
-    // the eden region number allocated since the previous GC to
-    // calculate the application's allocate rate. The only exception
+    // the number of eden regions allocated since the previous GC to
+    // calculate the application's allocation rate. The only exception
     // to that is humongous objects that are allocated separately. But
     // given that humongous object allocations do not really affect
     // either the pause's duration nor when the next pause will take
     // place we can safely ignore them here.
-    uint regions_allocated = _collection_set->eden_region_length();
+    uint regions_allocated = _collection_set->num_eden_regions();
     double alloc_rate_ms = (double) regions_allocated / app_time_ms;
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
 
@@ -919,14 +919,14 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
       _analytics->report_cost_per_byte_ms(cost_per_byte_ms, is_young_only_pause);
     }
 
-    if (_collection_set->young_region_length() > 0) {
+    if (_collection_set->num_young_regions() > 0) {
       _analytics->report_young_other_cost_per_region_ms(young_other_time_ms() /
-                                                        _collection_set->young_region_length());
+                                                        _collection_set->num_young_regions());
     }
 
-    if (_collection_set->initial_old_region_length() > 0) {
+    if (_collection_set->num_initial_old_regions() > 0) {
       _analytics->report_non_young_other_cost_per_region_ms(non_young_other_time_ms() /
-                                                            _collection_set->initial_old_region_length());
+                                                            _collection_set->num_initial_old_regions());
     }
 
     _analytics->report_constant_other_time_ms(constant_other_time_ms(pause_time_ms));

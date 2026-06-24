@@ -4176,50 +4176,6 @@ void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nm
   }
 }
 
-void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
-                                Label &succeed, Label *fail) {
-  assert_different_registers(addr, tmp, t0);
-  assert_different_registers(newv, tmp, t0);
-  assert_different_registers(oldv, tmp, t0);
-
-  // oldv holds comparison value
-  // newv holds value to write in exchange
-  // addr identifies memory word to compare against/update
-  if (UseZacas) {
-    mv(tmp, oldv);
-    atomic_cas(tmp, newv, addr, Assembler::int64, Assembler::aq, Assembler::rl);
-    beq(tmp, oldv, succeed);
-  } else {
-    Label retry_load, nope;
-    bind(retry_load);
-    // Load reserved from the memory location
-    load_reserved(tmp, addr, int64, Assembler::aqrl);
-    // Fail and exit if it is not what we expect
-    bne(tmp, oldv, nope);
-    // If the store conditional succeeds, tmp will be zero
-    store_conditional(tmp, newv, addr, int64, Assembler::rl);
-    beqz(tmp, succeed);
-    // Retry only when the store conditional failed
-    j(retry_load);
-
-    bind(nope);
-  }
-
-  // neither amocas nor lr/sc have an implied barrier in the failing case
-  membar(AnyAny);
-
-  mv(oldv, tmp);
-  if (fail != nullptr) {
-    j(*fail);
-  }
-}
-
-void MacroAssembler::cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
-                                        Label &succeed, Label *fail) {
-  assert(oopDesc::mark_offset_in_bytes() == 0, "assumption");
-  cmpxchgptr(oldv, newv, obj, tmp, succeed, fail);
-}
-
 void MacroAssembler::load_reserved(Register dst,
                                    Register addr,
                                    Assembler::operand_size size,

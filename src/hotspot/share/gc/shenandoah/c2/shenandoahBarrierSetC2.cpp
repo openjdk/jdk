@@ -27,7 +27,6 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
@@ -712,10 +711,9 @@ void ShenandoahBarrierSetC2::print_barrier_data(outputStream* os, uint8_t data) 
     fatal("Unknown bit!");
   }
 
-  os->print_cr(" GC configuration: %sLRB %sSATB %sCAS %sClone %sCard",
+  os->print_cr(" GC configuration: %sLRB %sSATB %sClone %sCard",
     (ShenandoahLoadRefBarrier ? "+" : "-"),
     (ShenandoahSATBBarrier    ? "+" : "-"),
-    (ShenandoahCASBarrier     ? "+" : "-"),
     (ShenandoahCloneBarrier   ? "+" : "-"),
     (ShenandoahCardBarrier    ? "+" : "-")
   );
