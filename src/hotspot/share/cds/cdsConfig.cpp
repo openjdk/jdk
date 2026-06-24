@@ -125,11 +125,7 @@ void CDSConfig::ergo_initialize() {
     FLAG_SET_ERGO(DisableAttachMechanism, true);
   }
 
-  constexpr size_t max_encoding_range_size = 4 * G;
-  const int precomputed_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
-  if (!CompressedKlassPointers::check_klass_decode_mode((address) SharedBaseAddress,
-                                                        precomputed_klass_shift,
-                                                        max_encoding_range_size)) {
+  if (!AOTMetaspace::shared_base_valid((char*)SharedBaseAddress)) {
      log_warning(cds)("SharedBaseAddress " PTR_FORMAT " is invalid. Reverting to " PTR_FORMAT,
                  p2i((void*)SharedBaseAddress), p2i((void*)DEFAULT_SHARED_BASE_ADDRESS));
      FLAG_SET_ERGO(SharedBaseAddress, DEFAULT_SHARED_BASE_ADDRESS);
