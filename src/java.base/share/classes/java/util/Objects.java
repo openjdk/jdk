@@ -228,7 +228,7 @@ public final class Objects {
     public static <T> T requireIdentity(T obj) {
         Objects.requireNonNull(obj);
         if (!hasIdentity(obj))
-            throw new IdentityException(obj.getClass());
+            throw new IdentityException(obj.getClass().getName() + " is not an identity class");
         return obj;
     }
 

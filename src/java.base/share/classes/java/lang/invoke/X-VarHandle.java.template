@@ -58,7 +58,6 @@ final class VarHandle$InputType$s {
 
         protected FieldInstanceReadOnly(Class<?> receiverType, long fieldOffset{#if[Object]?, Class<?> fieldType, boolean nullRestricted}{#if[FlatValue]?, int layout},
                                         VarForm form, boolean exact) {
-            super(form, exact);
             this.fieldOffset = fieldOffset;
             this.receiverType = receiverType;
 #if[Object]
@@ -68,6 +67,7 @@ final class VarHandle$InputType$s {
 #if[FlatValue]
             this.layout = layout;
 #end[FlatValue]
+            super(form, exact);
         }
 
         @Override
@@ -432,10 +432,7 @@ final class VarHandle$InputType$s {
     }
 
 #if[Static]
-    static sealed class FieldStaticReadOnly extends VarHandle {
-        final Class<?> declaringClass;
-        final Object base;
-        final long fieldOffset;
+    static sealed class FieldStaticReadOnly extends VarHandles.StaticFieldVarHandle {
 #if[Object]
         final Class<?> fieldType;
         final boolean nullRestricted;
@@ -450,10 +447,6 @@ final class VarHandle$InputType$s {
 
         protected FieldStaticReadOnly(Class<?> declaringClass, Object base, long fieldOffset{#if[Object]?, Class<?> fieldType, boolean nullRestricted}{#if[FlatValue]?, int layout},
                                       VarForm form, boolean exact) {
-            super(form, exact);
-            this.declaringClass = declaringClass;
-            this.base = base;
-            this.fieldOffset = fieldOffset;
 #if[Object]
             this.fieldType = fieldType;
             this.nullRestricted = nullRestricted;
@@ -461,6 +454,7 @@ final class VarHandle$InputType$s {
 #if[FlatValue]
             this.layout = layout;
 #end[FlatValue]
+            super(form, exact, declaringClass, base, fieldOffset);
         }
 
         @Override
@@ -499,7 +493,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ get(VarHandle ob) {
-            FieldStaticReadOnly handle = (FieldStaticReadOnly) ob.target();
+            FieldStaticReadOnly handle = (FieldStaticReadOnly) ob.onStaticFieldAccess(true);
             $type$ value = UNSAFE.get$Type$(handle.base,
                                  handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType});
 #if[Reference]
@@ -513,7 +507,7 @@ final class VarHandle$InputType$s {
 #if[NonPlainAccess]
         @ForceInline
         static $type$ getVolatile(VarHandle ob) {
-            FieldStaticReadOnly handle = (FieldStaticReadOnly) ob.target();
+            FieldStaticReadOnly handle = (FieldStaticReadOnly) ob.onStaticFieldAccess(true);
             $type$ value = UNSAFE.get$Type$Volatile(handle.base,
                                  handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType});
 #if[Reference]
@@ -526,7 +520,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getOpaque(VarHandle ob) {
-            FieldStaticReadOnly handle = (FieldStaticReadOnly) ob.target();
+            FieldStaticReadOnly handle = (FieldStaticReadOnly) ob.onStaticFieldAccess(true);
             $type$ value = UNSAFE.get$Type$Opaque(handle.base,
                                  handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType});
 #if[Reference]
@@ -539,7 +533,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAcquire(VarHandle ob) {
-            FieldStaticReadOnly handle = (FieldStaticReadOnly) ob.target();
+            FieldStaticReadOnly handle = (FieldStaticReadOnly) ob.onStaticFieldAccess(true);
             $type$ value = UNSAFE.get$Type$Acquire(handle.base,
                                  handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType});
 #if[Reference]
@@ -588,7 +582,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static void set(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(false);
             UNSAFE.put$Type$(handle.base,
                              handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType},
                              {#if[Object]?checkCast(handle, value):value});
@@ -597,7 +591,7 @@ final class VarHandle$InputType$s {
 #if[NonPlainAccess]
         @ForceInline
         static void setVolatile(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(false);
             UNSAFE.put$Type$Volatile(handle.base,
                                      handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType},
                                      {#if[Object]?checkCast(handle, value):value});
@@ -605,7 +599,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static void setOpaque(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(false);
             UNSAFE.put$Type$Opaque(handle.base,
                                    handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType},
                                    {#if[Object]?checkCast(handle, value):value});
@@ -613,7 +607,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static void setRelease(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(false);
             UNSAFE.put$Type$Release(handle.base,
                                     handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType},
                                     {#if[Object]?checkCast(handle, value):value});
@@ -622,7 +616,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static boolean compareAndSet(VarHandle ob, $type$ expected, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.compareAndSet$Type$(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
                                                {#if[Object]?checkCast(handle, expected):expected},
@@ -632,7 +626,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ compareAndExchange(VarHandle ob, $type$ expected, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.compareAndExchange$Type$(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
                                                {#if[Object]?checkCast(handle, expected):expected},
@@ -641,7 +635,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ compareAndExchangeAcquire(VarHandle ob, $type$ expected, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.compareAndExchange$Type$Acquire(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
                                                {#if[Object]?checkCast(handle, expected):expected},
@@ -650,7 +644,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ compareAndExchangeRelease(VarHandle ob, $type$ expected, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.compareAndExchange$Type$Release(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
                                                {#if[Object]?checkCast(handle, expected):expected},
@@ -659,7 +653,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static boolean weakCompareAndSetPlain(VarHandle ob, $type$ expected, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.weakCompareAndSet$Type$Plain(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
                                                {#if[Object]?checkCast(handle, expected):expected},
@@ -668,7 +662,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static boolean weakCompareAndSet(VarHandle ob, $type$ expected, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.weakCompareAndSet$Type$(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
                                                {#if[Object]?checkCast(handle, expected):expected},
@@ -677,7 +671,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static boolean weakCompareAndSetAcquire(VarHandle ob, $type$ expected, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.weakCompareAndSet$Type$Acquire(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
                                                {#if[Object]?checkCast(handle, expected):expected},
@@ -686,7 +680,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static boolean weakCompareAndSetRelease(VarHandle ob, $type$ expected, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.weakCompareAndSet$Type$Release(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
                                                {#if[Object]?checkCast(handle, expected):expected},
@@ -695,7 +689,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndSet(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndSet$Type$(handle.base,
                                           handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
                                           {#if[Object]?checkCast(handle, value):value});
@@ -703,7 +697,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndSetAcquire(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndSet$Type$Acquire(handle.base,
                                           handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
                                           {#if[Object]?checkCast(handle, value):value});
@@ -711,7 +705,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndSetRelease(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndSet$Type$Release(handle.base,
                                           handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
                                           {#if[Object]?checkCast(handle, value):value});
@@ -721,7 +715,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndAdd(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndAdd$Type$(handle.base,
                                        handle.fieldOffset,
                                        value);
@@ -729,7 +723,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndAddAcquire(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndAdd$Type$Acquire(handle.base,
                                        handle.fieldOffset,
                                        value);
@@ -737,7 +731,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndAddRelease(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndAdd$Type$Release(handle.base,
                                        handle.fieldOffset,
                                        value);
@@ -747,7 +741,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndBitwiseOr(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndBitwiseOr$Type$(handle.base,
                                        handle.fieldOffset,
                                        value);
@@ -755,7 +749,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndBitwiseOrRelease(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndBitwiseOr$Type$Release(handle.base,
                                        handle.fieldOffset,
                                        value);
@@ -763,7 +757,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndBitwiseOrAcquire(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndBitwiseOr$Type$Acquire(handle.base,
                                        handle.fieldOffset,
                                        value);
@@ -771,7 +765,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndBitwiseAnd(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndBitwiseAnd$Type$(handle.base,
                                        handle.fieldOffset,
                                        value);
@@ -779,7 +773,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndBitwiseAndRelease(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndBitwiseAnd$Type$Release(handle.base,
                                        handle.fieldOffset,
                                        value);
@@ -787,7 +781,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndBitwiseAndAcquire(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndBitwiseAnd$Type$Acquire(handle.base,
                                        handle.fieldOffset,
                                        value);
@@ -795,7 +789,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndBitwiseXor(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndBitwiseXor$Type$(handle.base,
                                        handle.fieldOffset,
                                        value);
@@ -803,7 +797,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndBitwiseXorRelease(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndBitwiseXor$Type$Release(handle.base,
                                        handle.fieldOffset,
                                        value);
@@ -811,7 +805,7 @@ final class VarHandle$InputType$s {
 
         @ForceInline
         static $type$ getAndBitwiseXorAcquire(VarHandle ob, $type$ value) {
-            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.target();
+            FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.getAndBitwiseXor$Type$Acquire(handle.base,
                                        handle.fieldOffset,
                                        value);

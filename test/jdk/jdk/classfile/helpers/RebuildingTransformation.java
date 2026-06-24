@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ class RebuildingTransformation {
                             ici.outerClass().map(ClassEntry::asSymbol),
                             ici.innerName().map(Utf8Entry::stringValue),
                             ici.flagsMask())).toArray(InnerClassInfo[]::new)));
-                    case LoadableDescriptorsAttribute a -> clb.with(LoadableDescriptorsAttribute.of(a.loadableDescriptors()));
+                    case LoadableDescriptorsAttribute a -> clb.with(LoadableDescriptorsAttribute.ofSymbols(a.loadableDescriptorSymbols()));
                     case ModuleAttribute a -> clb.with(ModuleAttribute.of(a.moduleName().asSymbol(), mob -> {
                         mob.moduleFlags(a.moduleFlagsMask());
                         a.moduleVersion().ifPresent(v -> mob.moduleVersion(v.stringValue()));

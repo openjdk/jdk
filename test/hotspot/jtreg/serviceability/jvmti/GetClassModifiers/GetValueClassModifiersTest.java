@@ -64,7 +64,7 @@ class GetValueClassModifiersTest {
                 V1.class,
                 V1[].class,
                 V2.class,
-                V2.class,
+                V2[].class,
                 R_V1.class,
                 R_V1[].class,
                 R_V2.class,

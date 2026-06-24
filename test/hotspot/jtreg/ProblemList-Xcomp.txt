@@ -62,5 +62,7 @@ gc/arguments/TestNewSizeFlags.java 8299116 macosx-aarch64
 #############################################################################
 
 # Valhalla failures start here:
+compiler/valhalla/inlinetypes/TestValueClasses.java#id0 8387030 generic-all
+compiler/valhalla/inlinetypes/TestValueClasses.java#id6 8387030 generic-all
 
 runtime/cds/appcds/cacheObject/ArchivedFlatArrayTest.java 8378071 generic-all

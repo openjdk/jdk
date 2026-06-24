@@ -156,7 +156,6 @@ ifneq ($(MODULE_PREVIEW_SRC_DIRS),)
       INCLUDES := $(JDK_USER_DEFINED_FILTER), \
       FAIL_NO_SRC := $(FAIL_NO_SRC), \
       BIN := $(PREVIEW_OUTPUTDIR)/, \
-      HEADERS := $(SUPPORT_OUTPUTDIR)/headers, \
       DISABLED_WARNINGS := $(DISABLED_WARNINGS_java) preview, \
       EXCLUDES := $(EXCLUDES), \
       EXCLUDE_FILES := $(EXCLUDE_FILES), \

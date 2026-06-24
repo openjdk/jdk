@@ -2135,6 +2135,9 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_CacheWBPreSync:
     case Op_CacheWBPostSync:
       return VM_Version::supports_data_cache_line_flush();
+
+    case Op_OnSpinWait:
+      return VM_Version::supports_on_spin_wait();
   }
 
   return true; // Per default match rules are supported.
@@ -6928,6 +6931,21 @@ instruct membar_CPUOrder() %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct onspinwait() %{
+  match(OnSpinWait);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "OnSpinWait (smt_prio_low ; smt_prio_medium)" %}
+  size(8);
+  ins_encode %{
+    __ block_comment("spin_wait {");
+    __ smt_prio_low();
+    __ smt_prio_medium();
+    __ block_comment("}");
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 //----------Conditional Move---------------------------------------------------
 
 // Cmove using isel.
@@ -9690,6 +9708,17 @@ instruct castP2X(iRegLdst dst, iRegP_N2P src) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct castN2X(iRegLdst dst, iRegNsrc src) %{
+  match(Set dst (CastP2X src));
+
+  format %{ "MR      $dst, $src \t// Ptr->Long" %}
+  // variable size, 0 or 4.
+  ins_encode %{
+    __ mr_if_needed($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct castPP(iRegPdst dst) %{
   match(Set dst (CastPP dst));
   format %{ " -- \t// castPP of $dst" %}
@@ -11406,8 +11435,8 @@ instruct array_size(iRegLdst dst, iRegPsrc end, iRegPsrc start) %{
 %}
 
 // Clear-array with constant short array length. The versions below can use dcbz with cnt > 30.
-instruct inlineCallClearArrayShort(immLmax30 cnt, rarg2RegP base, Universe dummy, regCTR ctr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct inlineCallClearArrayShort(immLmax30 cnt, rarg2RegP base, immL_0 zero, Universe dummy, regCTR ctr) %{
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL base, KILL ctr);
   ins_cost(2 * MEMORY_REF_COST);
 
@@ -11419,8 +11448,8 @@ instruct inlineCallClearArrayShort(immLmax30 cnt, rarg2RegP base, Universe dummy
 %}
 
 // Clear-array with constant large array length.
-instruct inlineCallClearArrayLarge(immL cnt, rarg2RegP base, Universe dummy, iRegLdst tmp, regCTR ctr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct inlineCallClearArrayLarge(immL cnt, rarg2RegP base, immL_0 zero, Universe dummy, iRegLdst tmp, regCTR ctr) %{
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL base, TEMP tmp, KILL ctr);
   ins_cost(3 * MEMORY_REF_COST);
 
@@ -11432,14 +11461,28 @@ instruct inlineCallClearArrayLarge(immL cnt, rarg2RegP base, Universe dummy, iRe
 %}
 
 // Clear-array with dynamic array length.
-instruct inlineCallClearArray(rarg1RegL cnt, rarg2RegP base, Universe dummy, regCTR ctr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct inlineCallClearArray(rarg1RegL cnt, rarg2RegP base, immL_0 zero, Universe dummy, regCTR ctr) %{
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, KILL ctr);
   ins_cost(4 * MEMORY_REF_COST);
 
   format %{ "ClearArray $cnt, $base" %}
   ins_encode %{
     __ clear_memory_doubleword($base$$Register, $cnt$$Register, R0); // kills cnt, base, R0
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Clear-array with dynamic array length and non-zero value.
+instruct inlineCallClearArrayWordCopy(rarg1RegL cnt, rarg2RegP base, iRegLdst val, Universe dummy, regCTR ctr) %{
+  predicate(((ClearArrayNode*)n)->word_copy_only());
+  match(Set dummy (ClearArray (Binary cnt base) val));
+  effect(USE_KILL base, KILL ctr);
+  ins_cost(8 * MEMORY_REF_COST);
+
+  format %{ "ClearArray $cnt, $base, $val" %}
+  ins_encode %{
+    __ fill_words($base$$Register, $cnt$$Register, $val$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}

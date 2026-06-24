@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArray.hpp"
+#include "ci/ciInlineKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -351,10 +352,15 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
     info_for_exception = state_for(x);
   }
 
+  CodeStub* throw_ie_stub =
+      x->maybe_inlinetype() ?
+      new SimpleExceptionStub(StubId::c1_throw_identity_exception_id, obj.result(), state_for(x)) :
+      nullptr;
+
   // This CodeEmitInfo must not have the xhandlers because here the
   // object is already locked (xhandlers expects object to be unlocked).
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  monitor_enter(obj.result(), lock, hdr, scratch, x->monitor_no(), info_for_exception, info);
+  monitor_enter(obj.result(), lock, hdr, scratch, x->monitor_no(), info_for_exception, info, throw_ie_stub);
 }
 
 
@@ -837,13 +843,14 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
     tty->print_cr("   ###class not loaded at new bci %d", x->printable_bci());
   }
 #endif
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = state_for(x, x->needs_state_before() ? x->state_before() : x->state());
   LIR_Opr klass_reg = FrameMap::R4_metadata_opr; // Used by slow path (NewInstanceStub).
   LIR_Opr tmp1 = FrameMap::R5_oop_opr;
   LIR_Opr tmp2 = FrameMap::R6_oop_opr;
   LIR_Opr tmp3 = FrameMap::R7_oop_opr;
   LIR_Opr tmp4 = FrameMap::R8_oop_opr;
-  new_instance(reg, x->klass(), x->is_unresolved(), /* allow_inline */ false, tmp1, tmp2, tmp3, tmp4, klass_reg, info);
+  new_instance(reg, x->klass(), x->is_unresolved(), !x->is_unresolved() && x->klass()->is_inlinetype(),
+               tmp1, tmp2, tmp3, tmp4, klass_reg, info);
 
   // Must prevent reordering of stores for object initialization
   // with stores that publish the new object.
@@ -912,13 +919,18 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   LIR_Opr tmp4 = FrameMap::R8_oop_opr;
   LIR_Opr len = length.result();
 
-  CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info);
-  ciMetadata* obj = ciObjArrayKlass::make(x->klass());
+  ciKlass* obj = ciObjArrayKlass::make(x->klass());
+
+  // TODO 8265122 Implement a fast path for this
+  bool is_flat = obj->is_loaded() && obj->is_flat_array_klass();
+  bool is_null_free = obj->is_loaded() && obj->as_array_klass()->is_elem_null_free();
+
+  CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info, is_null_free);
   if (obj == ciEnv::unloaded_ciobjarrayklass()) {
     BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
   }
   klass2reg_with_patching(klass_reg, obj, patching_info);
-  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, T_OBJECT, klass_reg, slow_path);
+  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, T_OBJECT, klass_reg, slow_path, true, is_null_free || is_flat);
 
   // Must prevent reordering of stores for object initialization
   // with stores that publish the new object.
@@ -1027,7 +1039,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   LIR_Opr tmp3 = FrameMap::R6_oop_opr; // temp
   __ checkcast(out_reg, obj.result(), x->klass(), tmp1, tmp2, tmp3,
                x->direct_compare(), info_for_exception, patching_info, stub,
-               x->profiled_method(), x->profiled_bci(), /*is_null_free*/ false);
+               x->profiled_method(), x->profiled_bci(), x->is_null_free());
 }
 
 
@@ -1072,17 +1084,21 @@ void LIRGenerator::do_If(If* x) {
   xin->load_item();
   left = xin->result();
 
-  if (yin->result()->is_constant() && yin->result()->type() == T_INT &&
-      Assembler::is_simm16(yin->result()->as_constant_ptr()->as_jint())) {
-    // Inline int constants which are small enough to be immediate operands.
-    right = LIR_OprFact::value_type(yin->value()->type());
-  } else if (tag == longTag && yin->is_constant() && yin->get_jlong_constant() == 0 &&
-             (cond == If::eql || cond == If::neq)) {
-    // Inline long zero.
-    right = LIR_OprFact::value_type(yin->value()->type());
-  } else if (tag == objectTag && yin->is_constant() && (yin->get_jobject_constant()->is_null_object())) {
-    right = LIR_OprFact::value_type(yin->value()->type());
-  } else {
+  if (yin->result()->is_constant() && !x->substitutability_check()) {
+    if (yin->result()->type() == T_INT &&
+        Assembler::is_simm16(yin->result()->as_constant_ptr()->as_jint())) {
+      // Inline int constants which are small enough to be immediate operands.
+      right = LIR_OprFact::value_type(yin->value()->type());
+    } else if (tag == longTag && yin->get_jlong_constant() == 0 &&
+               (cond == If::eql || cond == If::neq)) {
+      // Inline long zero.
+      right = LIR_OprFact::value_type(yin->value()->type());
+    } else if (tag == objectTag && (yin->get_jobject_constant()->is_null_object())) {
+      right = LIR_OprFact::value_type(yin->value()->type());
+    }
+  }
+
+  if (right == LIR_OprFact::illegalOpr) {
     yin->load_item();
     right = yin->result();
   }
@@ -1096,7 +1112,12 @@ void LIRGenerator::do_If(If* x) {
     __ safepoint(safepoint_poll_register(), state_for(x, x->state_before()));
   }
 
-  __ cmp(lir_cond(cond), left, right);
+  if (x->substitutability_check()) {
+    substitutability_check(x, *xin, *yin);
+  } else {
+    __ cmp(lir_cond(cond), left, right);
+  }
+
   // Generate branch profiling. Profiling code doesn't kill flags.
   profile_branch(x, cond);
   move_to_phi(x->state());

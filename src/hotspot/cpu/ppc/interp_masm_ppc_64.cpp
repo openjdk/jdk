@@ -555,9 +555,11 @@ void InterpreterMacroAssembler::load_resolved_klass_at_offset(Register Rcpool, R
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is
 // a subtype of super_klass. Blows registers Rsub_klass, tmp1, tmp2.
 void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass, Register Rsuper_klass, Register Rtmp1,
-                                                  Register Rtmp2, Register Rtmp3, Label &ok_is_subtype) {
+                                                  Register Rtmp2, Register Rtmp3, Label &ok_is_subtype, bool profile) {
   // Profile the not-null value's klass.
-  profile_typecheck(Rsub_klass, Rtmp1, Rtmp2);
+  if (profile) {
+    profile_typecheck(Rsub_klass, Rtmp1, Rtmp2);
+  }
   check_klass_subtype(Rsub_klass, Rsuper_klass, Rtmp1, Rtmp2, ok_is_subtype);
 }
 
@@ -919,6 +921,41 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     should_not_reach_here();
 
     bind(no_reserved_zone_enabling);
+  }
+
+  if (state == atos && InlineTypeReturnedAsFields) {
+    Label skip, not_null;
+    cmpdi(CR0, R17_tos, 0);
+    bne(CR0, not_null);
+
+    untested("remove_activation InlineTypeReturnedAsFields null");
+    // Returned value is null, zero all return registers because they may belong to oop fields
+    li(R3_ARG1, 0);
+    li(R4_ARG2, 0);
+    li(R5_ARG3, 0);
+    li(R6_ARG4, 0);
+    li(R7_ARG5, 0);
+    li(R8_ARG6, 0);
+    li(R9_ARG7, 0);
+    li(R10_ARG8, 0);
+    b(skip);
+
+    bind(not_null);
+
+    // Check if we are returning an non-null inline type and load its fields into registers
+    test_oop_is_not_inline_type(R17_tos, skip, /* can_be_null= */ false);
+
+    // Load fields from a buffered value with an inline class specific handler
+    load_klass(R11_scratch1, R17_tos);
+    ld(R11_scratch1, InlineKlass::adr_members_offset(), R11_scratch1);
+    ld(R11_scratch1, InlineKlass::unpack_handler_offset(), R11_scratch1);
+    // Unpack handler can be null if inline type is not scalarizable in returns
+    cmpdi(CR0, R11_scratch1, 0);
+    beq(CR0, skip);
+    mtctr(R11_scratch1);
+    bctrl();
+
+    bind(skip);
   }
 
   verify_oop(R17_tos, state);
@@ -1286,7 +1323,7 @@ void InterpreterMacroAssembler::profile_taken_branch(Register scratch, Register 
 }
 
 // Count a not-taken branch in the bytecodes.
-void InterpreterMacroAssembler::profile_not_taken_branch(Register scratch1, Register scratch2) {
+void InterpreterMacroAssembler::profile_not_taken_branch(Register scratch1, Register scratch2, bool acmp) {
   if (ProfileInterpreter) {
     Label profile_continue;
 
@@ -1298,7 +1335,7 @@ void InterpreterMacroAssembler::profile_not_taken_branch(Register scratch1, Regi
 
     // The method data pointer needs to be updated to correspond to the
     // next bytecode.
-    update_mdp_by_constant(in_bytes(BranchData::branch_data_size()));
+    update_mdp_by_constant(acmp ? in_bytes(ACmpData::acmp_data_size()) : in_bytes(BranchData::branch_data_size()));
     bind (profile_continue);
   }
 }
@@ -1457,6 +1494,111 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
     update_mdp_by_offset(scratch1, in_bytes(MultiBranchData::relative_displacement_offset()), scratch2);
 
     bind (profile_continue);
+  }
+}
+
+template <class ArrayData> void InterpreterMacroAssembler::profile_array_type(Register array,
+                                                                              Register tmp1,
+                                                                              Register tmp2) {
+  if (ProfileInterpreter) {
+    Label profile_continue;
+    assert_different_registers(array, tmp1, tmp2);
+
+    // If no method data exists, go to profile_continue.
+    test_method_data_pointer(profile_continue);
+
+    profile_obj_type(array, R28_mdx, in_bytes(ArrayData::array_offset()), tmp1, tmp2);
+
+    Label not_flat;
+    test_non_flat_array_oop(array, tmp1, not_flat);
+    set_mdp_flag_at(ArrayData::flat_array_byte_constant(), tmp1);
+    bind(not_flat);
+
+    Label not_null_free;
+    test_non_null_free_array_oop(array, tmp1, not_null_free);
+    set_mdp_flag_at(ArrayData::null_free_array_byte_constant(), tmp1);
+    bind(not_null_free);
+
+    bind(profile_continue);
+  }
+}
+
+template void InterpreterMacroAssembler::profile_array_type<ArrayLoadData>(Register array,
+                                                                           Register tmp1,
+                                                                           Register tmp2);
+template void InterpreterMacroAssembler::profile_array_type<ArrayStoreData>(Register array,
+                                                                            Register tmp1,
+                                                                            Register tmp2);
+
+void InterpreterMacroAssembler::profile_multiple_element_types(Register element, Register tmp1, Register tmp2, Register tmp3) {
+  if (ProfileInterpreter) {
+    Label profile_continue;
+
+    // If no method data exists, go to profile_continue.
+    test_method_data_pointer(profile_continue);
+
+    Label done, update;
+    cmpdi(CR0, element, 0);
+    bne(CR0, update);
+    set_mdp_flag_at(BitData::null_seen_byte_constant(), tmp1);
+    b(done);
+
+    bind(update);
+    load_klass(tmp1, element);
+
+    // Record the object type.
+    profile_receiver_type(tmp1, R28_mdx, 0, tmp2, tmp3);
+
+    bind(done);
+
+    // The method data pointer needs to be updated.
+    update_mdp_by_constant(in_bytes(ArrayStoreData::array_store_data_size()));
+
+    bind(profile_continue);
+  }
+}
+
+
+void InterpreterMacroAssembler::profile_element_type(Register element, Register tmp1, Register tmp2) {
+  if (ProfileInterpreter) {
+    Label profile_continue;
+
+    // If no method data exists, go to profile_continue.
+    test_method_data_pointer(profile_continue);
+
+    profile_obj_type(element, R28_mdx, in_bytes(ArrayLoadData::element_offset()), tmp1, tmp2);
+
+    // The method data pointer needs to be updated.
+    update_mdp_by_constant(in_bytes(ArrayLoadData::array_load_data_size()));
+
+    bind(profile_continue);
+  }
+}
+
+void InterpreterMacroAssembler::profile_acmp(Register left,
+                                             Register right,
+                                             Register tmp1,
+                                             Register tmp2) {
+  if (ProfileInterpreter) {
+    Label profile_continue;
+    assert_different_registers(left, right, tmp1, tmp2);
+
+    // If no method data exists, go to profile_continue.
+    test_method_data_pointer(profile_continue);
+
+    profile_obj_type(left, R28_mdx, in_bytes(ACmpData::left_offset()), tmp1, tmp2);
+
+    Label left_not_inline_type;
+    test_oop_is_not_inline_type(left, left_not_inline_type);
+    set_mdp_flag_at(ACmpData::left_inline_type_byte_constant(), tmp1);
+    bind(left_not_inline_type);
+
+    profile_obj_type(right, R28_mdx, in_bytes(ACmpData::right_offset()), tmp1, tmp2);
+
+    test_oop_is_not_inline_type(right, profile_continue);
+    set_mdp_flag_at(ACmpData::right_inline_type_byte_constant(), tmp1);
+
+    bind(profile_continue);
   }
 }
 
@@ -2286,4 +2428,37 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method, TosSta
   }
 
   // Dtrace support not implemented.
+}
+
+void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
+  call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field), obj, entry);
+  membar(Assembler::StoreStore | Assembler::LoadLoad); // for allocation and volatile load
+}
+
+void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1, Register tmp2,
+                                                 Register obj, Register field_offset, Register value) {
+  assert_different_registers(entry, field_offset, tmp1, tmp2, obj, value);
+  Label slow_path, done;
+
+  lbz(tmp1, in_bytes(ResolvedFieldEntry::flags_offset()), entry);
+  test_field_is_not_null_free_inline_type(tmp1, slow_path);
+
+  null_check_throw(value, -1, tmp1);
+
+  add(obj, obj, field_offset);
+
+  load_klass(tmp1, value);
+  payload_address(value, value, tmp1, tmp2);
+
+  Register layout_info = field_offset;
+  lbz(tmp1, in_bytes(ResolvedFieldEntry::field_index_offset()), entry);
+  ld(tmp2, in_bytes(ResolvedFieldEntry::field_holder_offset()), entry);
+  inline_layout_info(tmp2, tmp1, layout_info);
+
+  flat_field_copy(IN_HEAP, value, obj, layout_info);
+  b(done);
+
+  bind(slow_path);
+  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::write_flat_field), obj, value, entry);
+  bind(done);
 }

@@ -36,6 +36,7 @@
 # Valhalla failures start here:
 
 # Compiler:
+compiler/eliminateAutobox/TestSafepointDebugInfo.java   8387001 generic-all
 
 # Runtime:
 runtime/cds/appcds/aotCode/AOTCodeFlags.java#default_gc 8382398 generic-all
