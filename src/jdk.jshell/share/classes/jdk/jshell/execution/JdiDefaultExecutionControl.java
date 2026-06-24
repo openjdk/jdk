@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import com.sun.jdi.BooleanValue;
 import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.Field;
@@ -48,8 +47,12 @@ import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
 import java.io.PrintStream;
+import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import jdk.jshell.JShellConsole;
 import jdk.jshell.execution.JdiDefaultExecutionControl.JdiStarter.TargetDescription;
 import jdk.jshell.spi.ExecutionControl;
@@ -103,6 +106,7 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
      * @throws IOException if there are errors in set-up
      */
     static ExecutionControl create(ExecutionEnv env, Map<String, String> parameters, String remoteAgent, int timeout, JdiStarter starter) throws IOException {
+        Process processToStop = null;
         try (final ServerSocket listener = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             // timeout on I/O-socket
             listener.setSoTimeout(timeout);
@@ -146,15 +150,30 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             };
 
             // Set-up the JDI connection
-            TargetDescription target = starter.start(augmentedEnv, parameters, port);
+            TargetDescription target = starter.start(augmentedEnv, parameters, -1);
             VirtualMachine vm = target.vm();
-            Process process = target.process();
+            Process process = processToStop = target.process();
+            byte[] secret;
 
-            List<Consumer<String>> deathListeners = new ArrayList<>();
+            OutputStream stdout = process.getOutputStream();
+
+            //send the port number:
+            stdout.write(("" + port + "\n").getBytes());
+            stdout.flush();
+
+            //generate a secret that will help us validate the correct remote is attached:
+            secret = new byte[64];
+            new SecureRandom().nextBytes(secret);
+            stdout.write((Base64.getEncoder().encodeToString(secret) + "\n").getBytes());
+            stdout.flush();
+
+            CompletableFuture<String> agentStopped = new CompletableFuture<>();
+
             Util.detectJdiExitEvent(vm, s -> {
-                for (Consumer<String> h : deathListeners) {
-                    h.accept(s);
-                }
+                agentStopped.complete(s);
+            });
+            process.onExit().thenRun(() -> {
+                agentStopped.complete("Remote process died.");
             });
 
             // Set-up the commands/reslts on the socket.  Piggy-back snippet
@@ -162,6 +181,17 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             Socket socket = listener.accept();
             // out before in -- match remote creation so we don't hang
             OutputStream out = socket.getOutputStream();
+            InputStream in = socket.getInputStream();
+
+            socket.setSoTimeout(timeout);
+
+            //verify the secret:
+            byte[] receivedSecret = in.readNBytes(secret.length);
+
+            if (!Arrays.equals(secret, receivedSecret)) {
+                throw new IOException("Incorrect secret received.");
+            }
+
             Map<String, OutputStream> outputs = new HashMap<>();
             outputs.put("out", env.userOut());
             outputs.put("err", env.userErr());
@@ -176,10 +206,17 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
                 outputs.put("consoleInput", consoleOutput);
                 input.put("consoleOutput", consoleOutput.sinkInput);
             }
-            return remoteInputOutput(socket.getInputStream(), out, outputs, input,
+            ExecutionControl result = remoteInputOutput(in, out, outputs, input,
                     (objIn, objOut) -> new JdiDefaultExecutionControl(env,
-                                        objOut, objIn, vm, process, remoteAgent, deathListeners));
-        }
+                                        objOut, objIn, vm, process, remoteAgent,
+                                        agentStopped));
+            processToStop = null;
+            return result;
+        } finally {
+            if (processToStop != null) {
+                processToStop.destroy();
+            }
+}
     }
 
     /**
@@ -191,7 +228,7 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
     private JdiDefaultExecutionControl(ExecutionEnv env,
             ObjectOutput cmdout, ObjectInput cmdin,
             VirtualMachine vm, Process process, String remoteAgent,
-            List<Consumer<String>> deathListeners) {
+            CompletableFuture<String> agentStopped) {
         super(cmdout, cmdin);
         this.vm = vm;
         this.process = process;
@@ -199,8 +236,10 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
         // We have now succeeded in establishing the connection.
         // If there is an exit now it propagates all the way up
         // and the VM should be disposed of.
-        deathListeners.add(s -> env.closeDown());
-        deathListeners.add(s -> disposeVM());
+        agentStopped.thenAccept(s -> {
+            env.closeDown();
+            disposeVM();
+        });
      }
 
     /**
@@ -356,7 +395,7 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
          *
          * @param env the execution context
          * @param parameters additional execution parameters
-         * @param port the port to which the remote process should connect
+         * @param port the value is always {@code -1}
          * @return a description of the started external process
          * @throws RuntimeException if the process cannot be started
          * @throws Error if the process cannot be started
