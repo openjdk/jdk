@@ -85,8 +85,8 @@ private:
   uint calculate_default_min_num_regions(uint new_number_of_heap_regions);
   uint calculate_default_max_num_regions(uint new_number_of_heap_regions);
 
-  // Update the given values for minimum and maximum number of young regions in regions
-  // given the number of heap regions depending on the kind of sizing algorithm.
+  // Recalculate the minimum and maximum number of young regions for the
+  // given number of heap regions according to the current sizing algorithm.
   void recalculate_min_max_num_regions(uint number_of_heap_regions, uint* min_num_young_regions, uint* max_num_young_regions);
 
 public:
