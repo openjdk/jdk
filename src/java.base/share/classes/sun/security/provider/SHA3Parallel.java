@@ -107,7 +107,7 @@ public class SHA3Parallel {
             default:
                 throw new InvalidAlgorithmParameterException("Bad parallel parameter.");
         }
-        
+
         for (int i = 0; i < NRPAR; i++) {
             l2bLittle(lanesArr[i], 0, buffers[i], 0, blockSize);
         }
