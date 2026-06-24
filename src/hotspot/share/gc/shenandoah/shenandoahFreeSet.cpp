@@ -354,8 +354,12 @@ size_t ShenandoahFreeSet::alloc_region_correction(ShenandoahFreeSetPartitionId p
 // free-region count) before any CAS allocation actually consumes it. So the partition's stored
 // used is over-counted, and available under-counted, by exactly the cached region's current free().
 // We correct that here at read time, leaving the stored partition counters (and their rebuild
-// invariants) untouched. At GC phase boundaries and rebuild the alloc regions are released first,
-// so the correction term is 0 there and these accessors equal the raw stored values.
+// invariants) untouched. The Collector/OldCollector regions are released before a rebuild
+// (prepare_to_rebuild() calls release_collector_alloc_regions()), so their correction term is 0
+// there and the Collector/OldCollector accessors equal the raw stored values. The Mutator regions
+// are NOT released at rebuild: find_regions_with_alloc_capacity() re-accounts them in place, so the
+// Mutator correction term is generally non-zero across a rebuild (only a Full GC, which releases ALL
+// regions before walking the heap, zeroes it).
 //
 // The subtraction is saturating because these accessors may run concurrently (off heap lock):
 // the stored used is a snapshot from the last under-lock recompute, while the correction term is
@@ -1253,12 +1257,12 @@ void ShenandoahRegionPartitions::assert_bounds() {
     // synced _top visible, so the capacity read below is the final retired remnant. Reading
     // capacity first would race: a large (active) capacity could be paired with a flag that
     // has since flipped to retired, tripping the asserts below for a region that is fine.
-    const bool is_atomic_alloc_region = r->is_atomic_alloc_region();
+    const bool is_active_alloc = r->is_atomic_alloc_region();
     size_t capacity = _free_set->alloc_capacity(i);
     switch (partition) {
       case ShenandoahFreeSetPartitionId::NotFree:
       {
-        assert(is_atomic_alloc_region || (capacity != _region_size_bytes), "Should not be retired if empty");
+        assert(is_active_alloc || (capacity != _region_size_bytes), "Should not be retired if empty");
         if (r->is_humongous()) {
           if (r->is_old()) {
             regions[int(ShenandoahFreeSetPartitionId::OldCollector)]++;
@@ -1274,7 +1278,7 @@ void ShenandoahRegionPartitions::assert_bounds() {
             young_humongous_waste += capacity;
           }
         } else {
-          assert(r->is_cset() || is_atomic_alloc_region || (capacity < PLAB::min_size() * HeapWordSize),
+          assert(r->is_cset() || is_active_alloc || (capacity < PLAB::min_size() * HeapWordSize),
                  "Expect retired remnant size to be smaller than min plab size");
           // This region has been retired already or it is in the cset.  In either case, we set capacity to zero
           // so that the entire region will be counted as used.  We count young cset regions as "retired".

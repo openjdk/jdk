@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +39,7 @@ typedef ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::OldCollector>
 // to the appropriate per-partition allocator (mutator, collector, or old-collector).
 // Both paths run under the heap lock.
 class ShenandoahAllocator : public CHeapObj<mtGC> {
+  friend class VMStructs;
 private:
   ShenandoahFreeSet*                  _free_set;
   ShenandoahMutatorAllocator          _mutator_alloc;
@@ -55,7 +57,7 @@ public:
   // whether the returned address is the first allocation in a freshly acquired region.
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // Release the cached alloc region in every partition allocator. Call before the
+  // Release the cached alloc regions in every partition allocator. Call before the
   // free set is rebuilt, since rebuild may reclassify region affiliation/membership.
   void release_alloc_regions();
 

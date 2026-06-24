@@ -1227,13 +1227,10 @@ void ShenandoahHeap::evacuate_collection_set(ShenandoahGeneration* generation, b
 }
 
 void ShenandoahHeap::concurrent_prepare_for_update_refs() {
-  {
-    // Release the collector alloc regions before update-refs: these regions received
-    // evacuated objects past their update watermark, so they must be deactivated and have
-    // their watermark advanced (and accounting reconciled) before the heap is iterated.
-    ShenandoahHeapLocker locker(lock());
-    allocator()->release_collector_alloc_regions();
-  }
+  // Release the collector alloc regions before update-refs: these regions received
+  // evacuated objects past their update watermark, so they must be deactivated and have
+  // their watermark advanced (and accounting reconciled) before the heap is iterated.
+  free_set()->release_collector_alloc_regions_under_lock();
   {
     // Java threads take this lock while they are being attached and added to the list of threads.
     // If another thread holds this lock before we update the gc state, it will receive a stale

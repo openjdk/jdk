@@ -26,6 +26,7 @@
 /*
  * @test id=default
  * @summary Multi-threaded CAS allocation stress with default alloc regions
+ * @bug 8361099
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -36,6 +37,7 @@
 /*
  * @test id=single-slot
  * @summary Force all mutator threads onto a single alloc region slot
+ * @bug 8361099
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -47,10 +49,11 @@
 /*
  * @test id=many-slots
  * @summary Many alloc region slots, typically more than actively used
+ * @bug 8361099
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:ShenandoahMutatorAllocRegions=128 -XX:ShenandoahCollectorAllocRegions=32
+ *      -XX:ShenandoahMutatorAllocRegions=128 -XX:ShenandoahCollectorAllocRegions=128
  *      -XX:+ShenandoahVerify -Xmx512m -Xms512m
  *      TestCASAllocContention
  */
@@ -58,6 +61,7 @@
 /*
  * @test id=generational-default
  * @summary Default alloc regions with generational mode
+ * @bug 8361099
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -69,10 +73,23 @@
 /*
  * @test id=generational-single-slot
  * @summary Generational mode with maximum contention on one mutator slot
+ * @bug 8361099
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:ShenandoahGCMode=generational -XX:ShenandoahMutatorAllocRegions=1
+ *      -XX:+ShenandoahVerify -Xmx512m -Xms512m
+ *      TestCASAllocContention
+ */
+
+/*
+ * @test id=generational-many-slots
+ * @summary Generational mode with many alloc region slots, typically more than actively used
+ * @bug 8361099
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:ShenandoahGCMode=generational -XX:ShenandoahMutatorAllocRegions=128 -XX:ShenandoahCollectorAllocRegions=128
  *      -XX:+ShenandoahVerify -Xmx512m -Xms512m
  *      TestCASAllocContention
  */
@@ -83,10 +100,11 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Spawns many concurrent allocator threads and verifies:
  *   - no crashes / assertion failures under sustained CAS contention
- *   - accumulated allocations are at least as large as the sum of per-thread
- *     acknowledgements (weak correctness sanity check)
+ *   - every worker completed its allocation loop and recorded a non-trivial tally
+ *     (a sanity net against a silently broken or optimized-away run)
  *
- * Runs under +ShenandoahVerify so heap corruption or accounting drift surfaces.
+ * The load-bearing correctness check is +ShenandoahVerify, which runs throughout
+ * so any heap corruption or accounting drift surfaces as a verification failure.
  *
  * Intentionally conservative on thread count and duration so CI slow boxes
  * don't trip OutOfMemoryError when allocation rate outpaces GC throughput
@@ -116,6 +134,10 @@ public class TestCASAllocContention {
         CountDownLatch doneGate = new CountDownLatch(nThreads);
         AtomicLong totalAllocs = new AtomicLong();
         AtomicLong totalBytes = new AtomicLong();
+        // Number of workers that ran their full allocation loop and published their
+        // tallies. Any worker that exits early (e.g. interrupted before recording)
+        // fails to increment this, so we can assert below that every worker finished.
+        AtomicLong completedWorkers = new AtomicLong();
 
         Thread[] threads = new Thread[nThreads];
         for (int i = 0; i < nThreads; i++) {
@@ -149,6 +171,7 @@ public class TestCASAllocContention {
                     sink = window;  // publish so window isn't DCE'd
                     totalAllocs.addAndGet(allocs);
                     totalBytes.addAndGet(bytes);
+                    completedWorkers.incrementAndGet();
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 } finally {
@@ -164,14 +187,33 @@ public class TestCASAllocContention {
 
         long allocs = totalAllocs.get();
         long bytes = totalBytes.get();
+        long completed = completedWorkers.get();
         System.out.println("Total allocs across threads: " + allocs);
         System.out.println("Total bytes across threads:  " + bytes);
+        System.out.println("Workers completed:           " + completed + "/" + nThreads);
 
-        if (allocs == 0) {
-            throw new IllegalStateException("No allocations recorded");
+        // The load-bearing correctness check is +ShenandoahVerify, which runs throughout and
+        // fails the test on any heap corruption or accounting drift under CAS contention. The
+        // assertions below are a secondary sanity net: they catch a silently broken run (every
+        // worker bailing out early, or the allocation loop being optimized away) that would
+        // otherwise let the test pass without actually exercising the allocator.
+
+        // Every worker must have completed its loop and published its tally; an early exit
+        // (e.g. interruption) means we did not actually sustain contention for the full run.
+        if (completed != nThreads) {
+            throw new IllegalStateException("Only " + completed + " of " + nThreads
+                                            + " workers completed; contention was not sustained");
         }
-        if (bytes == 0) {
-            throw new IllegalStateException("No bytes recorded");
+        // Smallest object size, allocated once per worker, is the floor on total bytes. A real
+        // multi-second run allocates orders of magnitude more, so this just rejects a no-op run.
+        long minExpectedBytes = (long) nThreads * SIZES[0];
+        if (bytes < minExpectedBytes) {
+            throw new IllegalStateException("Recorded " + bytes + " bytes, expected at least "
+                                            + minExpectedBytes);
+        }
+        if (allocs < nThreads) {
+            throw new IllegalStateException("Recorded " + allocs + " allocations across "
+                                            + nThreads + " workers; allocation loop did not run");
         }
     }
 }

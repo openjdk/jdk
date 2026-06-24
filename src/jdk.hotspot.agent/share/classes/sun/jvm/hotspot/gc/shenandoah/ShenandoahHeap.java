@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +45,7 @@ import sun.jvm.hotspot.utilities.Observer;
 public class ShenandoahHeap extends CollectedHeap {
     private static CIntegerField numRegions;
     private static AddressField  globalFreeSet;
+    private static AddressField  allocatorField;
     private static CIntegerField committed;
     private static AddressField  regions;
     private static CIntegerField logMinObjAlignmentInBytes;
@@ -61,6 +63,7 @@ public class ShenandoahHeap extends CollectedHeap {
         Type type = db.lookupType("ShenandoahHeap");
         numRegions = type.getCIntegerField("_num_regions");
         globalFreeSet = type.getAddressField("_free_set");
+        allocatorField = type.getAddressField("_allocator");
         committed = type.getCIntegerField("_committed");
         regions = type.getAddressField("_regions");
         logMinObjAlignmentInBytes = type.getCIntegerField("_log_min_obj_alignment_in_bytes");
@@ -97,13 +100,18 @@ public class ShenandoahHeap extends CollectedHeap {
         // reports the same used as the live MemoryMXBean rather than an inflated value. The
         // subtraction is saturating for the same reason it is in C++: the raw used is a snapshot
         // while the per-region remnant is read live.
+        //
+        // The correction sums only the allocator's cached alloc regions (at most a handful of
+        // bounded stripe slots per partition), reached via the allocator rather than by walking
+        // every heap region -- so used() stays O(slots) and does not regress to O(num_regions),
+        // which would make a jhsdb used() query crawl (and risk OOM) on a multi-TB heap.
         long rawUsed = freeset.used();
-        long correction = 0;
-        long n = numOfRegions();
-        for (long i = 0; i < n; i++) {
-            correction += getRegion(i).activeAllocRegionFree();
-        }
+        long correction = allocator().activeAllocRegionFree();
         return rawUsed > correction ? rawUsed - correction : 0;
+    }
+
+    public ShenandoahAllocator allocator() {
+        return VMObjectFactory.newObject(ShenandoahAllocator.class, allocatorField.getValue(addr));
     }
 
     public long committed() {

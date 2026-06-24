@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,10 +427,7 @@ void ShenandoahDegenGC::op_init_update_refs() {
   // Release the collector alloc regions reserved during evacuation before update-refs, so
   // that regions holding evacuated objects sync their _atomic_top to _top and advance their
   // update watermark before the heap is iterated.
-  {
-    ShenandoahHeapLocker locker(heap->lock());
-    heap->allocator()->release_collector_alloc_regions();
-  }
+  heap->free_set()->release_collector_alloc_regions_under_lock();
   heap->prepare_update_heap_references();
   heap->set_update_refs_in_progress(true);
 }

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,8 +306,8 @@ private:
   //     false also observes the final _top and _update_watermark.
   //
   // Writers (all in ShenandoahPartitionAllocator):
-  //   - try_install_alloc_region   (set true when a collector region is installed)
-  //   - try_install_alloc_region   (set false when an install loses the publish CAS / on undo)
+  //   - try_install_alloc_region   (set true on the newly installed collector region)
+  //   - try_install_alloc_region   (set false on the displaced occupant when the publish CAS wins)
   //   - try_atomic_allocate_in      (set false on the lock-free retire of a filled region)
   //   - release_alloc_region        (set false on release at a GC phase boundary)
   // Readers:

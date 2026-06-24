@@ -365,7 +365,15 @@ void ShenandoahHeapRegion::reset_alloc_metadata() {
 }
 
 size_t ShenandoahHeapRegion::get_shared_allocs() const {
-  return used() - (_tlab_allocs.load_relaxed() + _gclab_allocs.load_relaxed() + _plab_allocs.load_relaxed()) * HeapWordSize;
+  // Saturating subtraction: used() reads the live _atomic_top (acquire) while the per-type lab
+  // counters are bumped with a relaxed add AFTER the release CAS that advances the top. An off-
+  // safepoint reader (e.g. ShenandoahHeapRegionCounters::update, which holds only the heap lock
+  // while lock-free mutators take no lock) can therefore observe a just-incremented counter paired
+  // with a not-yet-advanced top, momentarily making the lab total exceed used(). Clamp to 0 so the
+  // unsigned subtraction never underflows to a near-SIZE_MAX value and corrupts jstat/perfdata.
+  size_t lab_allocs = (_tlab_allocs.load_relaxed() + _gclab_allocs.load_relaxed() + _plab_allocs.load_relaxed()) * HeapWordSize;
+  size_t u = used();
+  return u > lab_allocs ? u - lab_allocs : 0;
 }
 
 size_t ShenandoahHeapRegion::get_tlab_allocs() const {
