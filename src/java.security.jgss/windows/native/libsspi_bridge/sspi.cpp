@@ -867,8 +867,13 @@ gss_init_sec_context(OM_uint32 *minor_status,
 
     SECURITY_STATUS ss;
     TimeStamp lifeTime;
-    SecBufferDesc inBuffDesc;
-    SecBuffer inSecBuff;
+    SecBufferDesc inBuffDesc = {};
+    SecBuffer inSecBuff[2] = {};
+    ULONG inSecBuffCount = 2;
+    SecBufferDesc* pInBuffDesc = NULL;
+    PBYTE cbtStorage = NULL;
+    ULONG cbtStorageLength = 0;
+
     SecBufferDesc outBuffDesc;
     SecBuffer outSecBuff;
     BOOLEAN isSPNEGO = is_same_oid(mech_type, &SPNEGO_OID);
@@ -914,17 +919,19 @@ gss_init_sec_context(OM_uint32 *minor_status,
     outBuffDesc.ulVersion = SECBUFFER_VERSION;
     outBuffDesc.cBuffers = 1;
     outBuffDesc.pBuffers = &outSecBuff;
-
     outSecBuff.BufferType = SECBUFFER_TOKEN;
 
     if (!firstTime) {
-        inBuffDesc.ulVersion = SECBUFFER_VERSION;
-        inBuffDesc.cBuffers = 1;
-        inBuffDesc.pBuffers = &inSecBuff;
 
-        inSecBuff.BufferType = SECBUFFER_TOKEN;
-        inSecBuff.cbBuffer = (ULONG)input_token->length;
-        inSecBuff.pvBuffer = input_token->value;
+        if(input_token == GSS_C_NO_BUFFER || input_token ->length > ULONG_MAX || (input_token->length != 0 && input_token->value == NULL)) {
+            *minor_status = SEC_E_INVALID_TOKEN;
+            goto err;
+        }
+        inSecBuff[inSecBuffCount].BufferType = SECBUFFER_TOKEN;
+        inSecBuff[inSecBuffCount].cbBuffer = (ULONG)input_token->length;
+        inSecBuff[inSecBuffCount].pvBuffer = input_token->value;
+        inSecBuffCount++;
+        
     } else if (!pc->phCred) {
         if (isSPNEGO && initiator_cred_handle
                 && initiator_cred_handle->phCredS) {
@@ -966,6 +973,65 @@ gss_init_sec_context(OM_uint32 *minor_status,
             pc->isLocalCred = TRUE;
         }
     }
+    if(input_chan_bindings != GSS_C_NO_CHANNEL_BINDINGS){
+            if(input_chan_bindings->initiator_address.length!=0 || input_chan_bindings->acceptor_address.length != 0){
+                PP("Channel Bindings containing addresses are not supported");
+                *minor_status = SEC_E_UNSUPPORTED_FUNCTION;
+                goto err;
+            }
+
+            const gss_buffer_desc* appData = &input_chan_bindings->application_data;
+            if(appData->length > ULONG_MAX - sizeof(SEC_CHANNEL_BINDINGS) || (appData->length != 0 && appData->value == NULL)) {
+                *minor_status = SEC_E_INVALID_TOKEN;
+                goto err;
+            }
+
+            cbtStorageLength = (ULONG) (sizeof(SEC_CHANNEL_BINDINGS) + appData->length);
+            cbtStorage = (PBYTE)calloc(1,cbtStorageLength);
+            if(cbtStorage == NULL) {
+                *minor_status = SEC_E_INSUFFICIENT_MEMORY;
+                goto err;
+            }
+
+            PSEC_CHANNEL_BINDINGS windowsCbt = (PSEC_CHANNEL_BINDINGS)cbtStorage;
+
+            windowsCbt->cbApplicationDataLength = (ULONG)appData->length;
+            windowsCbt->dwApplicationDataOffset = sizeof(SEC_CHANNEL_BINDINGS);
+
+            if (appData->length != 0){
+                errno_t copyResult = memcpy_s(
+                    cbtStorage + sizeof(SEC_CHANNEL_BINDINGS),
+                    appData->length,
+                    appData->value,
+                    appData->length);
+
+                if(copyResult != 0){
+                    *minor_status = SEC_E_INVALID_TOKEN;
+                    goto err;
+                }
+
+            }
+
+            inSecBuff[inSecBuffCount].BufferType = SECBUFFER_CHANNEL_BINDINGS;
+            inSecBuff[inSecBuffCount].cbBuffer = cbtStorageLength;
+            inSecBuff[inSecBuffCount].pvBuffer = cbtStorage;
+            inSecBuffCount++;
+
+            PP("Passing CBT to InitializeSecurityContext: application data=%lu complete buffer=%lu",
+                (unsigned long)appData->length,
+                cbtStorageLength)
+
+            if(inSecBuffCount != 0){
+                inBuffDesc.ulVersion = SECBUFFER_VERSION;
+                inBuffDesc.cBuffers = inSecBuffCount;
+                inBuffDesc.pBuffers = inSecBuff;
+                pInBuffDesc = &inBuffDesc;
+            }
+
+
+    }
+
+
     ss = InitializeSecurityContext(
             pc->phCred,
             firstTime ? NULL : &pc->hCtxt,
@@ -973,12 +1039,15 @@ gss_init_sec_context(OM_uint32 *minor_status,
             flag,
             0,
             SECURITY_NATIVE_DREP,
-            firstTime ? NULL : &inBuffDesc,
+            pInBuffDesc,
             0,
             &pc->hCtxt,
             &outBuffDesc,
             &outFlag,
             &lifeTime);
+
+    free(cbtStorage);
+    cbtStorage=NULL;
 
     if (!SEC_SUCCESS(ss)) {
         PP("InitializeSecurityContext failed");
@@ -1020,6 +1089,9 @@ gss_init_sec_context(OM_uint32 *minor_status,
         return GSS_S_COMPLETE;
     }
 err:
+    free(cbtStorage);
+    cbtStorage=NULL;
+    
     if (firstTime) {
         OM_uint32 dummy;
         gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
