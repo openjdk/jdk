@@ -2137,11 +2137,10 @@ class VectorBoxAllocateNode : public CallStaticJavaNode {
 // vector value. This is a macro node expanded during vector optimization
 // phase.
 class VectorUnboxNode : public VectorNode {
- protected:
-  uint size_of() const { return sizeof(*this); }
- public:
-  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* obj, Node* mem)
+public:
+  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* ctrl, Node* obj, Node* mem)
     : VectorNode(mem, obj, vec_type) {
+    init_req(0, ctrl);
     init_class_id(Class_VectorUnbox);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -2152,6 +2151,10 @@ class VectorUnboxNode : public VectorNode {
   Node* mem() const { return in(1); }
   virtual Node* Identity(PhaseGVN* phase);
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+private:
+  uint size_of() const { return sizeof(*this); }
+  bool depends_only_on_test_impl() const { return false; }
 };
 
 // Lane-wise right rotation of the first input by the second input.
