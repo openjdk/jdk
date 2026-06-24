@@ -85,7 +85,8 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(const ShenandoahAllocRequest& re
     return nullptr;
   }
 
-  for (;/*Always return in the loop*/;) {
+  // The loop always returns from within its body.
+  for (;;) {
     size_t free_words = pointer_delta(end(), obj);
     if (free_words >= size) {
       if (try_allocate(obj /*value*/, size, obj /*reference*/)) {
@@ -99,7 +100,7 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(const ShenandoahAllocRequest& re
       }
     } else {
       // Region cannot satisfy this request. Mark it for replenish only when it has no room for any
-      // minimum LAB (truly full); otherwise leave it -- a smaller future request may still fit, and
+      // minimum LAB (truly full); otherwise leave it, since a smaller future request may still fit, and
       // retiring it here would discard usable capacity to one oversized request. Note free_words < size
       // here, so do not compute free_words - size (unsigned underflow).
       ready_for_replenish = free_words < PLAB::min_size();
@@ -121,7 +122,8 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
     // _atomic_top has been updated to nullptr, it is not allowed to do atomic alloc
     return nullptr;
   }
-  for (;/*Always return in the loop*/;) {
+  // The loop always returns from within its body.
+  for (;;) {
     size_t adjusted_size = req_size;
     size_t free_words = pointer_delta(end(), obj);
     size_t aligned_free_words = align_down(free_words, MinObjAlignment);

@@ -273,7 +273,11 @@ private:
 
   Atomic<uint> _age;
   bool _promoted_in_place;
-  CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
+  // Tracks epochs of retrograde ageing (rejuvenation). Atomic for the same reason as _age:
+  // reset_age() updates it on the lock-free retire path (unset_active_alloc_region), while
+  // youth() is read off-lock by marking workers in count_liveness. A plain uint RMW there
+  // would be a data race against those concurrent reads.
+  CENSUS_NOISE(Atomic<uint> _youth;)
 
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
 
@@ -592,7 +596,7 @@ public:
 
   // Region ageing and rejuvenation
   uint age() const { return _age.load_relaxed(); }
-  CENSUS_NOISE(uint youth() const { return _youth; })
+  CENSUS_NOISE(uint youth() const { return _youth.load_relaxed(); })
 
   void increment_age() {
     const uint current_age = age();
@@ -604,11 +608,11 @@ public:
   }
 
   void reset_age() {
-    CENSUS_NOISE(_youth += age();)
+    CENSUS_NOISE(_youth.add_then_fetch(age(), memory_order_relaxed);)
     _age.store_relaxed(0);
   }
 
-  CENSUS_NOISE(void clear_youth() { _youth = 0u; })
+  CENSUS_NOISE(void clear_youth() { _youth.store_relaxed(0u); })
 
   inline bool need_bitmap_reset() const {
     return _needs_bitmap_reset;
@@ -639,7 +643,7 @@ public:
     // going through top() (which falls back to _top when atomic_top() is
     // nullptr) continue to see the correct high-water mark.
     //
-    // Store order is load-bearing: _top must be updated BEFORE the CAS that
+    // Store order matters here: _top must be updated BEFORE the CAS that
     // resets _atomic_top. Any reader that observes atomic_top() == nullptr
     // has, by the acquire load in atomic_top(), also observed the release CAS
     // below, and therefore the preceding release_store to _top. Storing _top

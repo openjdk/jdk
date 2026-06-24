@@ -102,10 +102,15 @@ public class ShenandoahHeap extends CollectedHeap {
         //
         // The correction sums only the allocator's cached alloc regions (at most a handful of
         // bounded stripe slots per partition), reached via the allocator rather than by walking
-        // every heap region -- so used() stays O(slots) and does not regress to O(num_regions),
+        // every heap region, so used() stays O(slots) and does not regress to O(num_regions),
         // which would make a jhsdb used() query crawl (and risk OOM) on a multi-TB heap.
         long rawUsed = freeset.used();
-        long correction = allocator().activeAllocRegionFree();
+        // The allocator may not be installed yet (e.g. a core captured before ShenandoahHeap::_allocator
+        // is set), in which case allocator() is null and there are no cached alloc regions to correct for.
+        // Mirror the C++ guard in ShenandoahFreeSet::alloc_region_correction (allocator == nullptr ? 0 : ...)
+        // so 'jhsdb jmap --heap' on such a core reports raw used instead of throwing NullPointerException.
+        ShenandoahAllocator allocator = allocator();
+        long correction = allocator == null ? 0 : allocator.activeAllocRegionFree();
         return rawUsed > correction ? rawUsed - correction : 0;
     }
 

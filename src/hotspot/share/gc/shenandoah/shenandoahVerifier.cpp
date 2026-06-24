@@ -401,7 +401,7 @@ public:
   void heap_region_do(ShenandoahHeapRegion* r) override {
     if (_count_alloc_regions_as_full && r->is_atomic_alloc_region()) {
       // Off-safepoint accounting: count the whole region as used (the raw partition used pre-charged
-      // it in full). Do not read free()/_atomic_top here -- it races with concurrent allocation.
+      // it in full). Do not read free()/_atomic_top here; it races with concurrent allocation.
       _used += _region_size_bytes;
       _garbage += _region_size_bytes - r->get_live_data_bytes();
     } else if (r->is_cset() || r->is_trash()) {

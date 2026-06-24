@@ -56,7 +56,7 @@ uint ShenandoahPartitionAllocator<PARTITION>::alloc_region_start_index(Thread* t
                  : ShenandoahThreadLocalData::collector_alloc_region_start_index(thread);
   if (index == UINT_MAX) {
     // Assign a stable per-thread start slot. GC workers stripe by worker id; other threads by a
-    // pseudo-random value. (Math/Date intrinsics are unavailable here, os::random is fine.)
+    // pseudo-random value.
     if (PARTITION != ShenandoahFreeSetPartitionId::Mutator && thread->is_Worker_thread()) {
       index = WorkerThread::worker_id() % _alloc_region_count;
     } else {
@@ -109,7 +109,7 @@ bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint inde
   // allocation remnant; the caller only calls us when that remnant is still >= PLAB::min_size, so we
   // never cache a near-empty region. Keeping the larger region maximizes future fast-path hits and
   // un-wedges a slot stuck on a low-capacity region that keeps failing larger requests. Conversely,
-  // when the occupant still has more room than new_region, we leave it -- evicting it would strand
+  // when the occupant still has more room than new_region, we leave it: evicting it would strand
   // its larger remnant in the free set (reachable only via the slow path).
   //
   // occupant->free() is read while the occupant is still an active alloc region, so it is a
@@ -164,8 +164,8 @@ bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint inde
   // The CAS failed, so the fast path retired the full occupant to nullptr between our load and now.
   // (An empty slot, occupant == nullptr, can never be concurrently mutated to non-null, so the CAS
   // above would have won.) The fast-path winner already deactivated the occupant. The slot is now
-  // stable at nullptr -- only an installer writes a non-null value and only one installer runs at a
-  // time under the heap lock, which we hold -- so we can simply publish new_region with a plain
+  // stable at nullptr: only an installer writes a non-null value and only one installer runs at a
+  // time under the heap lock, which we hold, so we can simply publish new_region with a plain
   // release store; no further CAS is needed.
   assert(occupant != nullptr, "An empty slot cannot be concurrently mutated; the first CAS must win");
   assert(_alloc_regions[index].load_relaxed() == nullptr, "Slot must be stable at nullptr under the heap lock");
@@ -184,7 +184,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
   // If the attempt fails but the slot has meanwhile been replaced with a DIFFERENT region (e.g. a
   // slow-path thread installed a fresh region with more capacity), retry the lock-free path against
   // the new region before falling back to the locked slow path. We stop retrying once the slot is
-  // unchanged (same region we just failed on -- its free only shrinks, so a retry would fail again)
+  // unchanged (same region we just failed on, whose free only shrinks, so a retry would fail again)
   // or empty. This cannot livelock: a retry requires the slot to have changed to a new non-null
   // region, and slots are only filled under the heap lock, so retries are rate-limited by other
   // threads' (rare) slow-path installs.
@@ -209,7 +209,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
 
     // Retry the lock-free probe ONLY if the slot changed while we waited for the lock: another thread
     // may have installed a fresh region (or replaced ours). If the slot still holds the same region
-    // we already failed on above, retrying is pointless -- a region's free capacity only shrinks, so
+    // we already failed on above, retrying is pointless: a region's free capacity only shrinks, so
     // it would deterministically fail again. (shared_region holds the region the fast path tried, or
     // nullptr if the slot was empty then; a non-null reload that differs means the slot changed.)
     //

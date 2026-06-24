@@ -47,14 +47,14 @@
 
 /*
  * @test id=max-mutator
- * @summary Maximum mutator alloc regions
+ * @summary Maximum mutator alloc regions, driven by enough threads to populate all 128 slots
  * @bug 8361099
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:ShenandoahMutatorAllocRegions=128
- *      -XX:+ShenandoahVerify -Xmx256m -Xms256m
- *      TestAllocRegions
+ *      -XX:+ShenandoahVerify -Xmx512m -Xms512m
+ *      TestAllocRegions 128
  */
 
 /*
@@ -119,15 +119,15 @@
 
 /*
  * @test id=generational-max-both
- * @summary Generational mode with maximum alloc regions
+ * @summary Generational mode with maximum alloc regions, driven by enough threads to populate all 128 mutator slots
  * @bug 8361099
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:ShenandoahGCMode=generational
  *      -XX:ShenandoahMutatorAllocRegions=128 -XX:ShenandoahCollectorAllocRegions=128
- *      -XX:+ShenandoahVerify -Xmx256m -Xms256m
- *      TestAllocRegions
+ *      -XX:+ShenandoahVerify -Xmx512m -Xms512m
+ *      TestAllocRegions 128
  */
 
 /**
@@ -136,24 +136,53 @@
  *   - slow-path region install/replacement on region fill
  *   - release_alloc_regions at GC phase boundaries
  *
+ * An optional first argument sets the number of concurrent allocator threads
+ * (default 1). A mutator stripe slot becomes active only when a thread installs
+ * a region into its own start slot, so the number of simultaneously-active
+ * mutator slots is bounded by the count of concurrently-allocating threads, not
+ * by ShenandoahMutatorAllocRegions alone. The many-slots configs therefore spawn
+ * at least as many threads as slots so the high slot count is actually populated.
+ *
  * Runs under +ShenandoahVerify so any heap corruption or accounting drift
  * surfaces as a verification failure rather than silent misbehavior.
  */
 public class TestAllocRegions {
-    // Total allocation target, enough to force multiple GC cycles within 256m heap.
+    // Total allocation target across all threads, enough to force multiple GC cycles.
     static final long TARGET_BYTES = 512L * 1024 * 1024;
     static final int OBJ_SIZE = 1024;
 
-    static volatile Object sink;
+    // Per-thread retention slot, kept live so each thread's rolling window isn't optimized away.
+    static volatile Object[] sinks;
 
     public static void main(String[] args) throws Exception {
-        long allocated = 0;
-        long count = 0;
-        while (allocated < TARGET_BYTES) {
-            sink = new byte[OBJ_SIZE];
-            allocated += OBJ_SIZE;
-            count++;
+        int nThreads = args.length > 0 ? Integer.parseInt(args[0]) : 1;
+        long perThreadBytes = TARGET_BYTES / nThreads;
+        sinks = new Object[nThreads];
+        System.out.println("Allocating " + TARGET_BYTES + " bytes across " + nThreads + " thread(s)");
+
+        Thread[] threads = new Thread[nThreads];
+        for (int i = 0; i < nThreads; i++) {
+            final int id = i;
+            threads[i] = new Thread(() -> {
+                long allocated = 0;
+                // Small rolling window: keeps a tiny live set per thread so we exercise the
+                // allocator's install/replace path without letting the live set outpace GC.
+                Object[] window = new Object[4];
+                int wIdx = 0;
+                while (allocated < perThreadBytes) {
+                    byte[] obj = new byte[OBJ_SIZE];
+                    obj[0] = (byte) id;
+                    window[wIdx] = obj;
+                    wIdx = (wIdx + 1) & 3;
+                    allocated += OBJ_SIZE;
+                }
+                sinks[id] = window;  // publish so the window isn't dead-code-eliminated
+            }, "allocator-" + i);
+            threads[i].start();
         }
-        System.out.println("Allocated " + count + " objects totalling " + allocated + " bytes");
+        for (Thread t : threads) {
+            t.join();
+        }
+        System.out.println("Done");
     }
 }

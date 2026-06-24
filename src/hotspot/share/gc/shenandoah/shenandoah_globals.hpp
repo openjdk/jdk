@@ -411,7 +411,7 @@
           "GC-worker evacuation-allocation contention. Each reserved slot " \
           "pre-charges its remaining capacity as used, drawn from the "     \
           "bounded evacuation reserve, so a larger value reduces the "      \
-          "effective reserve -- on small heaps this can increase "          \
+          "effective reserve; on small heaps this can increase "            \
           "overflow into the mutator partition. 1 disables striping.")      \
           range(1, 128)                                                     \
                                                                             \

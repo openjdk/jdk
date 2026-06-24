@@ -2037,7 +2037,7 @@ size_t ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed
       // An active mutator CAS alloc region is kept live across the rebuild (collector/old regions
       // were already released before this scan). It must NOT rejoin the free partition: the
       // allocator retains exclusive use of it via _atomic_top. Reproduce exactly the accounting
-      // applied when the region was installed as an alloc region and retired from the partition -- its
+      // applied when the region was installed as an alloc region and retired from the partition: its
       // entire capacity is pre-charged to used, it counts toward total and affiliated region
       // counts, and it is left out of the free set (membership stays NotFree from clear()).
       // Subsequent CAS allocations consume the pre-charge; read-time accessors correct for the

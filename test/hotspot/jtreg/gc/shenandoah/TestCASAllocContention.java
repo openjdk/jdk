@@ -102,7 +102,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *   - every worker completed its allocation loop and recorded a non-trivial tally
  *     (a sanity net against a silently broken or optimized-away run)
  *
- * The load-bearing correctness check is +ShenandoahVerify, which runs throughout
+ * The primary correctness check is +ShenandoahVerify, which runs throughout
  * so any heap corruption or accounting drift surfaces as a verification failure.
  *
  * Intentionally conservative on thread count and duration so CI slow boxes
@@ -122,7 +122,16 @@ public class TestCASAllocContention {
     // CAS allocator's slot array, not an allocation-vs-GC race.
     static final int MAX_THREADS = 8;
 
-    static volatile Object sink;
+    // Per-worker retention slot, kept live so each worker's rolling window isn't DCE'd.
+    // One slot per worker (rather than a single shared field) so the retention pressure
+    // the comment below claims actually holds across all workers concurrently.
+    static Object[] sinks;
+
+    // First unexpected throwable raised by any worker (e.g. OutOfMemoryError when the
+    // allocation rate outpaces GC on a slow CI host). Captured and rethrown from main so
+    // the real failure surfaces as itself instead of being masked by the "contention was
+    // not sustained" check, which would otherwise fire because the worker never completed.
+    static volatile Throwable workerError;
 
     public static void main(String[] args) throws Exception {
         int nThreads = Math.min(MAX_THREADS, Math.max(2, Runtime.getRuntime().availableProcessors()));
@@ -138,6 +147,7 @@ public class TestCASAllocContention {
         // fails to increment this, so we can assert below that every worker finished.
         AtomicLong completedWorkers = new AtomicLong();
 
+        sinks = new Object[nThreads];
         Thread[] threads = new Thread[nThreads];
         for (int i = 0; i < nThreads; i++) {
             final int id = i;
@@ -167,12 +177,17 @@ public class TestCASAllocContention {
                             sizeIdx = (sizeIdx + 1) % SIZES.length;
                         }
                     }
-                    sink = window;  // publish so window isn't DCE'd
+                    sinks[id] = window;  // publish so window isn't DCE'd
                     totalAllocs.addAndGet(allocs);
                     totalBytes.addAndGet(bytes);
                     completedWorkers.incrementAndGet();
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
+                } catch (Throwable t) {
+                    // Record the first real failure (e.g. OutOfMemoryError) so main can
+                    // rethrow it as the actual cause rather than masking it behind the
+                    // "contention was not sustained" completion check.
+                    workerError = t;
                 } finally {
                     doneGate.countDown();
                 }
@@ -191,7 +206,14 @@ public class TestCASAllocContention {
         System.out.println("Total bytes across threads:  " + bytes);
         System.out.println("Workers completed:           " + completed + "/" + nThreads);
 
-        // The load-bearing correctness check is +ShenandoahVerify, which runs throughout and
+        // If any worker died with an unexpected throwable (most plausibly OutOfMemoryError when
+        // a slow CI host can't keep up with the allocation rate), report that as the real cause
+        // rather than letting the completion check below misattribute it to lost contention.
+        if (workerError != null) {
+            throw new IllegalStateException("Worker thread failed during allocation", workerError);
+        }
+
+        // The primary correctness check is +ShenandoahVerify, which runs throughout and
         // fails the test on any heap corruption or accounting drift under CAS contention. The
         // assertions below are a secondary sanity net: they catch a silently broken run (every
         // worker bailing out early, or the allocation loop being optimized away) that would

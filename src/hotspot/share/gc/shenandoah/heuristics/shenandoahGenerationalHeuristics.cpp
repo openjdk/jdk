@@ -310,7 +310,7 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(ShenandoahInPlacePr
 
     if (r->is_atomic_alloc_region()) {
       // Active mutator CAS alloc region: application threads are still allocating into it. Never
-      // select it for in-place promotion or as a promotion-by-evacuation candidate -- it is a hot,
+      // select it for in-place promotion or as a promotion-by-evacuation candidate. It is a hot,
       // in-use region. (It stays a young mutator region; if it ages it will be considered after a
       // later cycle once it is no longer an active alloc region.)
       continue;

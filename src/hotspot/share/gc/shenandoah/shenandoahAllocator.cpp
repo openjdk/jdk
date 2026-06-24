@@ -34,13 +34,13 @@
 // capturing a distinct limit, then clamped to [1, MAX_ALLOC_REGIONS]:
 //
 //   cpu_bound    = active processor count. No benefit in more slots than CPUs the process may run
-//                  on -- there is no further concurrency to spread.
+//                  on, since there is no further concurrency to spread.
 //
 //   region_bound = MAX_REGION_SIZE / region_size. The contention driver is TLAB-refill traffic: a
 //                  refill takes a LAB from the shared alloc region via CAS. TLAB size scales with
 //                  region size, so larger regions mean larger TLABs, rarer refills, and little
-//                  contention -- few slots suffice (region_bound -> 1 at the 32M max). Smaller
-//                  regions mean smaller TLABs, frequent refills, and high contention -- so we want
+//                  contention, so few slots suffice (region_bound -> 1 at the 32M max). Smaller
+//                  regions mean smaller TLABs, frequent refills, and high contention, so we want
 //                  more slots (region_bound -> 128 at the 256K min). Inverse to region size.
 //
 //   heap_bound   = region_count / 128. Each slot holds a region whose remaining capacity is
@@ -52,10 +52,11 @@
 // regions) without a tuning flag. Collector allocators are sized separately
 // (ShenandoahCollectorAllocRegions): their regions come from the bounded evacuation reserve.
 //
-// ShenandoahMutatorAllocRegions overrides the derived value when explicitly set (non-default); its
-// default of 0 means "derive". An explicit value is still capped at MAX_ALLOC_REGIONS.
+// ShenandoahMutatorAllocRegions overrides the derived value when set to a non-zero count; 0 means
+// "derive" (whether left at the default or passed explicitly as =0, so the behavior matches the
+// flag's help text). An explicit value is still capped at MAX_ALLOC_REGIONS.
 static uint mutator_alloc_regions() {
-  if (!FLAG_IS_DEFAULT(ShenandoahMutatorAllocRegions)) {
+  if (ShenandoahMutatorAllocRegions != 0) {
     return MIN2((uint) ShenandoahMutatorAllocRegions, ShenandoahMutatorAllocator::MAX_ALLOC_REGIONS);
   }
   const uint cpu_bound    = (uint) MAX2(os::initial_active_processor_count(), 1);
