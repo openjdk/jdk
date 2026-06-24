@@ -3545,7 +3545,9 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
              "no mismatched stores, except on raw memory: %s %s", NodeClassNames[Opcode()], NodeClassNames[st->Opcode()]);
 
       if (st->in(MemNode::Address)->eqv_uncast(address) &&
-          st->as_Store()->memory_size() <= this->memory_size()) {
+          st->as_Store()->memory_size() <= this->memory_size() &&
+          !this->is_StoreVectorMasked() && !this->is_StoreVectorScatterMasked() &&
+          !this->is_predicated_vector()) {
         Node* use = st->raw_out(0);
         if (phase->is_IterGVN()) {
           phase->is_IterGVN()->rehash_node_delayed(use);
