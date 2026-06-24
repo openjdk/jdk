@@ -1143,6 +1143,7 @@ public class ML_DSA {
         }
     }
 
+    private static final int DM = 5;
     private interface LongArrayOp {
         void apply(long[] arr, int i, int j);
     }
@@ -1165,9 +1166,9 @@ public class ML_DSA {
         final int NR = 8;
         int[][] a = new int[mlDsa_k*mlDsa_l][ML_DSA_N];
         short[] offsets = new short[NR];
-        long[][] states = new long[NR][5*5];
+        long[][] states = new long[NR][DM*DM];
         int[][] slots = new int[NR][];
-        long[] initSt = new long[5*5];
+        long[] initSt = new long[DM*DM];
 
         int rhoLen = seed.length;
         assert(rhoLen == 32);
@@ -1178,7 +1179,6 @@ public class ML_DSA {
         }
         initSt[SHAKE128_BLOCK_SIZE/8-1] = 0x8000000000000000L;
         // rest of initSt array has been zeroed by GC
-
 
         LongArrayOp initState = (arr, i, j) -> {
             System.arraycopy(initSt, 0, arr, 0, initSt.length);
@@ -1193,9 +1193,9 @@ public class ML_DSA {
         }
 
         while (active > 0) {
-            eightKeccakN(active, states[0], states[1], states[2], states[3], 
+            eightKeccakN(active, states[0], states[1], states[2], states[3],
                 states[4], states[5], states[6], states[7]);
-            
+
             for (int i = 0; i<active; i++) {
                 offsets[i] = copyOut(states[i], slots[i], offsets[i]);
                 if (offsets[i] > 255) {
