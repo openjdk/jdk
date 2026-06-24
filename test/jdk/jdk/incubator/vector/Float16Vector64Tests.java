@@ -1561,14 +1561,16 @@ public class Float16Vector64Tests extends AbstractVectorTest {
     }
 
     static short cornerCaseValue(int i) {
-        return switch(i % 8) {
+        return switch(i % 10) {
             case 0  -> float16ToRawShortBits(Float16.MAX_VALUE);
             case 1  -> float16ToRawShortBits(Float16.MIN_VALUE);
             case 2  -> float16ToRawShortBits(Float16.NEGATIVE_INFINITY);
             case 3  -> float16ToRawShortBits(Float16.POSITIVE_INFINITY);
             case 4  -> float16ToRawShortBits(Float16.NaN);
             case 5  -> float16ToRawShortBits(shortBitsToFloat16((short)0x7FFA));
-            case 6  -> float16ToShortBits(Float16.valueOf(0.0f));
+            case 6  -> float16ToRawShortBits(shortBitsToFloat16((short)0x7c01)); // signaling NaN
+            case 7  -> float16ToRawShortBits(shortBitsToFloat16((short)0x7e00)); // quiet NaN
+            case 8  -> float16ToShortBits(Float16.valueOf(0.0f));
             default -> float16ToShortBits(Float16.valueOf(-0.0f));
         };
     }
@@ -5430,56 +5432,6 @@ public class Float16Vector64Tests extends AbstractVectorTest {
             int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(f16subarr));
             Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
         }
-    }
-
-    @Test
-    static void hashCodeNaNFloat16Vector64TestsSmokeTest() {
-        // Various non-canonical binary16 NaN encodings, including signaling NaNs
-        // (significand MSB clear) and NaNs with assorted payloads and signs.
-        short[] nanBits = {
-            (short) 0x7c01, (short) 0x7d55, (short) 0x7dff,
-            (short) 0x7e00, (short) 0x7fff,
-            (short) 0xfc01, (short) 0xfdaa, (short) 0xfe00, (short) 0xffff
-        };
-
-        Float16[] canon = new Float16[SPECIES.length()];
-        Arrays.fill(canon, Float16.NaN);
-        int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(canon));
-
-        for (short bits : nanBits) {
-            Assert.assertTrue(Float16.isNaN(shortBitsToFloat16(bits)),
-                "0x" + Integer.toHexString(bits & 0xffff) + " is expected to be NaN");
-
-            short[] a = new short[SPECIES.length()];
-            Arrays.fill(a, bits);
-            Float16Vector av = Float16Vector.fromArray(SPECIES, a, 0);
-            int hash = av.hashCode();
-            Assert.assertTrue(hash == expectedHash, "NaN encoding 0x" +
-                Integer.toHexString(bits & 0xffff) + " should hash to the canonical NaN hash = " +
-                expectedHash + ", but is = " + hash);
-        }
-    }
-
-    @Test
-    static void equalsNaNFloat16Vector64TestsSmokeTest() {
-        // equals defers to VectorOperators.EQ (numeric ==), so any NaN lane is
-        // unequal regardless of its bit encoding, matching FloatVector/DoubleVector.
-        short[] sig = new short[SPECIES.length()];
-        short[] quiet = new short[SPECIES.length()];
-        Arrays.fill(sig, (short) 0x7c01);   // signaling NaN
-        Arrays.fill(quiet, (short) 0x7e00); // quiet NaN
-        Float16Vector sv = Float16Vector.fromArray(SPECIES, sig, 0);
-        Float16Vector qv = Float16Vector.fromArray(SPECIES, quiet, 0);
-
-        Assert.assertFalse(sv.equals(qv), "NaN vectors with different encodings must not be equal");
-        Assert.assertFalse(sv.equals(sv), "a vector with NaN lanes must not equal itself");
-
-        // Non-NaN vectors with identical lanes are equal.
-        short[] num = new short[SPECIES.length()];
-        Arrays.fill(num, float16ToRawShortBits(Float16.valueOf(1.0f)));
-        Float16Vector nv1 = Float16Vector.fromArray(SPECIES, num, 0);
-        Float16Vector nv2 = Float16Vector.fromArray(SPECIES, num, 0);
-        Assert.assertTrue(nv1.equals(nv2), "non-NaN vectors with identical lanes must be equal");
     }
 
 
