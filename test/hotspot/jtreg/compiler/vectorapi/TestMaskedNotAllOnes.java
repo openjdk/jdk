@@ -27,7 +27,7 @@
  * @summary Checks there is no assertion failure with macro logic optimization when both inputs of not patterns are all one vectors
  * @modules jdk.incubator.vector
  * @library /test/lib /
- * @run driver compiler.vectorapi.TestMaskedNotAllOnes
+ * @run driver ${test.main.class}
  */
 
 package compiler.vectorapi;
@@ -57,7 +57,7 @@ public class TestMaskedNotAllOnes {
         return out;
     }
 
-    static final Object GOLD = testMaskedDivNegOne();
+    static final int[] GOLD = testMaskedDivNegOne();
 
     @Check(test = "testMaskedDivNegOne")
     static void checkMaskedDivNegOne(int[] out) {
