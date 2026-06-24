@@ -50,15 +50,15 @@ public class Object {
      * {@code Class} object is the object that is locked by {@code
      * static synchronized} methods of the represented class.
      *
-     * <p><b>The actual result type is {@code Class<? extends |X|>}
+     * <p><b>The actual result type is {@code Class<? extends |X|>}</b>
      * where {@code |X|} is the erasure of the static type of the
-     * expression on which {@code getClass} is called.</b> For
+     * expression on which {@code getClass} is called. For
      * example, no cast is required in this code fragment:</p>
      *
-     * <p>
-     * {@code Number n = 0;                             }<br>
-     * {@code Class<? extends Number> c = n.getClass(); }
-     * </p>
+     * <pre>{@code
+     * Number n = 0;
+     * Class<? extends Number> c = n.getClass();
+     * }</pre>
      *
      * @return The {@code Class} object that represents the runtime
      *         class of this object.

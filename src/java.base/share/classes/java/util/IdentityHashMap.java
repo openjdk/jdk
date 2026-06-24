@@ -42,12 +42,13 @@ import jdk.internal.access.SharedSecrets;
  * {@code HashMap}) two keys {@code k1} and {@code k2} are considered equal
  * if and only if {@code (k1==null ? k2==null : k1.equals(k2))}.)
  *
- * <p><b>This class is <i>not</i> a general-purpose {@code Map}
- * implementation!  While this class implements the {@code Map} interface, it
+ * {@note [kind=important header="This class is <i>not</i> a general-purpose
+ * <code>Map</code> implementation!"]
+ * While this class implements the {@code Map} interface, it
  * intentionally violates {@code Map's} general contract, which mandates the
  * use of the {@code equals} method when comparing objects.  This class is
  * designed for use only in the rare cases wherein reference-equality
- * semantics are required.</b>
+ * semantics are required.}
  *
  * <p>The view collections of this map also have reference-equality semantics
  * for their elements. See the {@link keySet() keySet}, {@link values() values},
@@ -88,7 +89,7 @@ import jdk.internal.access.SharedSecrets;
  * pays not to set the expected maximum size too high if you are especially
  * concerned with iteration performance or memory usage.
  *
- * <p><strong>Note that this implementation is not synchronized.</strong>
+ * {@note [header="Note that this implementation is not synchronized."]
  * If multiple threads access an identity hash map concurrently, and at
  * least one of the threads modifies the map structurally, it <i>must</i>
  * be synchronized externally.  (A structural modification is any operation
@@ -100,8 +101,9 @@ import jdk.internal.access.SharedSecrets;
  * If no such object exists, the map should be "wrapped" using the
  * {@link Collections#synchronizedMap Collections.synchronizedMap}
  * method.  This is best done at creation time, to prevent accidental
- * unsynchronized access to the map:<pre>
- *   Map m = Collections.synchronizedMap(new IdentityHashMap(...));</pre>
+ * unsynchronized access to the map:
+ * <pre>Map m = Collections.synchronizedMap(new IdentityHashMap(...));</pre>
+ * }
  *
  * <p>The iterators returned by the {@code iterator} method of the
  * collections returned by all of this class's "collection view
@@ -648,11 +650,11 @@ public class IdentityHashMap<K,V>
      * {@link entrySet() entrySet} method for the specification of equality
      * of this map's entries.
      *
-     * <p><b>Owing to the reference-equality-based semantics of this map it is
-     * possible that the symmetry and transitivity requirements of the
-     * {@code Object.equals} contract may be violated if this map is compared
-     * to a normal map.  However, the {@code Object.equals} contract is
-     * guaranteed to hold among {@code IdentityHashMap} instances.</b>
+     * {@note [kind=important header=""] Owing to the reference-equality-based
+     * semantics of this map it is possible that the symmetry and transitivity
+     * requirements of the {@code Object.equals} contract may be violated if
+     * this map is compared to a normal map.  However, the {@code Object.equals}
+     * contract is guaranteed to hold among {@code IdentityHashMap} instances.}
      *
      * @param  o object to be compared for equality with this map
      * @return {@code true} if the specified object is equal to this map
@@ -690,12 +692,13 @@ public class IdentityHashMap<K,V>
      * {@code IdentityHashMap} instances {@code m1} and {@code m2}, as
      * required by the general contract of {@link Object#hashCode}.
      *
-     * <p><b>Owing to the reference-equality-based semantics of the
+     * {@note [kind=important header=""]
+     * Owing to the reference-equality-based semantics of the
      * {@code Map.Entry} instances in the set returned by this map's
      * {@code entrySet} method, it is possible that the contractual
      * requirement of {@code Object.hashCode} mentioned in the previous
      * paragraph will be violated if one of the two objects being compared is
-     * an {@code IdentityHashMap} instance and the other is a normal map.</b>
+     * an {@code IdentityHashMap} instance and the other is a normal map.}
      *
      * @return the hash code value for this map
      * @see Object#equals(Object)
@@ -956,21 +959,22 @@ public class IdentityHashMap<K,V>
      * {@code clear} methods.  It does not support the {@code add} or
      * {@code addAll} methods.
      *
-     * <p><b>While the object returned by this method implements the
+     * {@note [kind=important header=""]
+     * While the object returned by this method implements the
      * {@code Set} interface, it does <i>not</i> obey {@code Set's} general
      * contract.  Like its backing map, the set returned by this method
      * defines element equality as reference-equality rather than
      * object-equality.  This affects the behavior of its {@code contains},
      * {@code remove}, {@code containsAll}, {@code equals}, and
-     * {@code hashCode} methods.</b>
+     * {@code hashCode} methods.
      *
-     * <p><b>The {@code equals} method of the returned set returns {@code true}
+     * <p>The {@code equals} method of the returned set returns {@code true}
      * only if the specified object is a set containing exactly the same
      * object references as the returned set.  The symmetry and transitivity
      * requirements of the {@code Object.equals} contract may be violated if
      * the set returned by this method is compared to a normal set.  However,
      * the {@code Object.equals} contract is guaranteed to hold among sets
-     * returned by this method.</b>
+     * returned by this method.}
      *
      * <p>The {@code hashCode} method of the returned set returns the sum of
      * the <i>identity hashcodes</i> of the elements in the set, rather than
@@ -1081,13 +1085,14 @@ public class IdentityHashMap<K,V>
      * {@code retainAll} and {@code clear} methods.  It does not
      * support the {@code add} or {@code addAll} methods.
      *
-     * <p><b>While the object returned by this method implements the
+     * {@note [kind=important header=""]
+     * While the object returned by this method implements the
      * {@code Collection} interface, it does <i>not</i> obey
      * {@code Collection's} general contract.  Like its backing map,
      * the collection returned by this method defines element equality as
      * reference-equality rather than object-equality.  This affects the
      * behavior of its {@code contains}, {@code remove} and
-     * {@code containsAll} methods.</b>
+     * {@code containsAll} methods.}
      */
     public Collection<V> values() {
         Collection<V> vs = values;
@@ -1183,7 +1188,8 @@ public class IdentityHashMap<K,V>
      * are compared using reference equality, the {@code Map.Entry}
      * objects themselves are not.)
      *
-     * <p><b>Owing to the reference-equality-based semantics of the
+     * {@note [kind=important header=""]
+     * Owing to the reference-equality-based semantics of the
      * {@code Map.Entry} instances in the set returned by this method,
      * it is possible that the symmetry and transitivity requirements of
      * the {@link Object#equals(Object)} contract may be violated if any of
@@ -1192,7 +1198,7 @@ public class IdentityHashMap<K,V>
      * entries (such as would be returned by a call to this method on a normal
      * map).  However, the {@code Object.equals} contract is guaranteed to
      * hold among identity-based map entries, and among sets of such entries.
-     * </b>
+     * }
      *
      * @return a set view of the identity-mappings contained in this map
      */

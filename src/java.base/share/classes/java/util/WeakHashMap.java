@@ -87,7 +87,7 @@ import java.util.function.Consumer;
  * removed only after the weak references to it, both inside and outside of the
  * map, have been cleared by the garbage collector.
  *
- * <p> <strong>Implementation note:</strong> The value objects in a
+ * {@note [header="Implementation note:"] The value objects in a
  * {@code WeakHashMap} are held by ordinary strong references.  Thus care
  * should be taken to ensure that value objects do not strongly refer to their
  * own keys, either directly or indirectly, since that will prevent the keys
@@ -100,6 +100,7 @@ import java.util.function.Consumer;
  * {@code WeakReferences} before
  * inserting, as in: {@code m.put(key, new WeakReference(value))},
  * and then unwrapping upon each {@code get}.
+ * }
  *
  * <p>The iterators returned by the {@code iterator} method of the collections
  * returned by all of this class's "collection view methods" are

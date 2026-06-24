@@ -75,7 +75,7 @@ package java.util;
  * than for {@code HashSet}, as iteration times for this class are unaffected
  * by capacity.
  *
- * <p><strong>Note that this implementation is not synchronized.</strong>
+ * {@note [header="Note that this implementation is not synchronized."]
  * If multiple threads access a linked hash set concurrently, and at least
  * one of the threads modifies the set, it <em>must</em> be synchronized
  * externally.  This is typically accomplished by synchronizing on some
@@ -84,8 +84,8 @@ package java.util;
  * If no such object exists, the set should be "wrapped" using the
  * {@link Collections#synchronizedSet Collections.synchronizedSet}
  * method.  This is best done at creation time, to prevent accidental
- * unsynchronized access to the set: <pre>
- *   Set s = Collections.synchronizedSet(new LinkedHashSet(...));</pre>
+ * unsynchronized access to the set:
+ * <pre>Set s = Collections.synchronizedSet(new LinkedHashSet(...));</pre>}
  *
  * <p>The iterators returned by this class's {@code iterator} method are
  * <em>fail-fast</em>: if the set is modified at any time after the iterator
