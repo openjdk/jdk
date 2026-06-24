@@ -810,11 +810,11 @@ public class Raster {
         if (dataBuffer == null) {
             throw new NullPointerException("DataBuffer cannot be null");
         }
-        if (pixelStride <= 0) {
-            throw new IllegalArgumentException("pixelStride is <= 0");
+        if (pixelStride < 0) {
+            throw new IllegalArgumentException("pixelStride is < 0");
         }
-        if (scanlineStride <= 0) {
-            throw new IllegalArgumentException("scanlineStride is <= 0");
+        if (scanlineStride < 0) {
+            throw new IllegalArgumentException("scanlineStride is < 0");
         }
         if (bandOffsets == null) {
             throw new NullPointerException("bandOffsets is null");
