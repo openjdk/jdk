@@ -4382,7 +4382,8 @@ operand immBAddSubV()
 // 16 bit integer valid for add sub immediate
 operand immSAddSub()
 %{
-  predicate(n->get_int() <= 4095 && n->get_int() >= -4095);
+  predicate(Assembler::operand_valid_for_add_sub_immediate((int64_t)n->get_int()) &&
+            Assembler::is_uimm(g_uabs((jlong)n->get_int()), 16));
   match(ConI);
 
   op_cost(0);
