@@ -115,7 +115,13 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private int                 negotiatedMaxFragLen = -1;
     private int                 maximumPacketSize;
 
+    // tls-unique channel binding (RFC 5929) - verify_data from Finished messages
+    private static final boolean tlsUniqueChannelBindingEnabled = Utilities.getBooleanProperty(
+            "sun.security.ssl.enableTlsUniqueChannelBinding", false);
+    private static final String tlsUniqueChannelBindingMode = System.getProperty(
+            "sun.security.ssl.tlsUniqueChannelBindingMode", "rfc5929");
     private volatile byte[] clientFinishedVerifyData;
+    private volatile byte[] serverFinishedVerifyData;
 
     private final Queue<SSLSessionImpl> childSessions =
                                         new ConcurrentLinkedQueue<>();
@@ -1687,28 +1693,62 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         return (byte[])exportKeyingMaterial(null, label, context, length);
     }
 
+    // tls-unique channel binding (RFC 5929)
     void setClientFinishedVerifyData(byte[] verifyData) {
+        if (!tlsUniqueChannelBindingEnabled) {
+            return;
+        }
         this.clientFinishedVerifyData = (verifyData != null)
+                ? verifyData.clone()
+                : null;
+    }
+
+    void setServerFinishedVerifyData(byte[] verifyData) {
+        if (!tlsUniqueChannelBindingEnabled) {
+            return;
+        }
+        this.serverFinishedVerifyData = (verifyData != null)
                 ? verifyData.clone()
                 : null;
     }
 
     @Override
     public byte[] getTlsUniqueChannelBinding() {
+        if (!tlsUniqueChannelBindingEnabled) {
+            return null;
+        }
+
         if (protocolVersion.useTLS13PlusSpec()) {
             return null;
         }
         if (!useExtendedMasterSecret) {
             return null;
         }
-        return (clientFinishedVerifyData != null)
-                ? clientFinishedVerifyData.clone()
-                : null;
+
+        byte[] result;
+        if ("client".equalsIgnoreCase(tlsUniqueChannelBindingMode)) {
+            result = getClientFinishedData();
+        } else {
+            result = getFirstFinishedData();
+        }
+
+        return (result != null) ? result.clone() : null;
     }
 
-    /** Returns a string representation of this SSL session */
-    @Override
-    public String toString() {
-        return "Session(" + creationTime + "|" + getCipherSuite() + ")";
+    // Returns the client's Finished verify_data.
+    private byte[] getClientFinishedData() {
+        return clientFinishedVerifyData;
+    }
+
+    /**
+     * Returns the first Finished verify_data sent per RFC 5929.
+     * In a full handshake the client sends Finished first.
+     * In a resumed session the server sends Finished first.
+     */
+    private byte[] getFirstFinishedData() {
+        return (serverFinishedVerifyData != null
+                && clientFinishedVerifyData == null)
+                        ? serverFinishedVerifyData
+                        : clientFinishedVerifyData;
     }
 }

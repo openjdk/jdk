@@ -474,6 +474,11 @@ final class Finished {
                 shc.conContext.serverVerifyData = fm.verifyData;
             }
 
+            // Store server's Finished verify_data for tls-unique (RFC 5929)
+            if (shc.handshakeSession != null) {
+                shc.handshakeSession.setServerFinishedVerifyData(fm.verifyData);
+            }
+
             // update the consumers and producers
             if (shc.isResumption) {
                 shc.conContext.consumers.put(ContentType.CHANGE_CIPHER_SPEC.id,
@@ -554,6 +559,11 @@ final class Finished {
 
             if (chc.conContext.secureRenegotiation) {
                 chc.conContext.serverVerifyData = fm.verifyData;
+            }
+
+            // Store server's Finished verify_data for tls-unique (RFC 5929)
+            if (chc.handshakeSession != null) {
+                chc.handshakeSession.setServerFinishedVerifyData(fm.verifyData);
             }
 
             if (!chc.isResumption) {

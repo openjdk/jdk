@@ -21,11 +21,11 @@
  * questions.
  */
 
-import java.nio.ByteBuffer;
 import java.security.Security;
 import java.util.Arrays;
-import javax.net.ssl.*;
-import javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import javax.net.ssl.ExtendedSSLSession;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 
 /*
  * @test
@@ -33,7 +33,9 @@ import javax.net.ssl.SSLEngineResult.HandshakeStatus;
  * @summary Verify tls-unique channel binding (RFC 5929) via ExtendedSSLSession
  * @library /javax/net/ssl/templates /test/lib
  * @build SSLEngineTemplate
- * @run main/othervm TlsUniqueChannelBindingTest
+ * @run main/othervm -Dsun.security.ssl.enableTlsUniqueChannelBinding=true TlsUniqueChannelBindingTest TLS12_ENABLED
+ * @run main/othervm TlsUniqueChannelBindingTest DISABLED
+ * @run main/othervm -Dsun.security.ssl.enableTlsUniqueChannelBinding=true TlsUniqueChannelBindingTest TLS13_NULL
  */
 
 public class TlsUniqueChannelBindingTest extends SSLEngineTemplate {
@@ -65,23 +67,40 @@ public class TlsUniqueChannelBindingTest extends SSLEngineTemplate {
     }
 
     public static void main(String[] args) throws Exception {
+        String testCase = args.length > 0 ? args[0] : "TLS12_ENABLED";
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
 
-        // TLS 1.2 full handshake should produce non-null channel binding
+        switch (testCase) {
+            case "TLS12_ENABLED":
+                testTls12Enabled();
+                break;
+            case "DISABLED":
+                testDisabled();
+                break;
+            case "TLS13_NULL":
+                testTls13Null();
+                break;
+            default:
+                throw new RuntimeException("Unknown test case: " + testCase);
+        }
+    }
+
+    private static void testTls12Enabled() throws Exception {
         new TlsUniqueChannelBindingTest(
                 "TLSv1.2", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")
                 .runTest(true);
+    }
 
+    private static void testDisabled() throws Exception {
         new TlsUniqueChannelBindingTest(
-                "TLSv1.2", "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256")
-                .runTest(true);
+                "TLSv1.2", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")
+                .runTest(false);
+    }
 
-        // TLS 1.3 should return null (use tls-exporter instead)
+    private static void testTls13Null() throws Exception {
         new TlsUniqueChannelBindingTest(
                 "TLSv1.3", "TLS_AES_128_GCM_SHA256")
                 .runTest(false);
-
-        System.out.println("All tests PASSED");
     }
 
     private void runTest(boolean expectNonNull) throws Exception {
@@ -107,8 +126,9 @@ public class TlsUniqueChannelBindingTest extends SSLEngineTemplate {
             cTOs.compact();
             sTOc.compact();
 
-            if (!dataDone && (clientOut.limit() == serverIn.position()) &&
-                    (serverOut.limit() == clientIn.position())) {
+            if (!dataDone
+                    && (clientOut.limit() == serverIn.position())
+                    && (serverOut.limit() == clientIn.position())) {
 
                 ExtendedSSLSession clientSession =
                         (ExtendedSSLSession) clientEngine.getSession();
@@ -136,9 +156,8 @@ public class TlsUniqueChannelBindingTest extends SSLEngineTemplate {
         if (!expectNonNull) {
             if (clientBinding != null || serverBinding != null) {
                 throw new Exception(
-                        "Expected null channel binding for TLS 1.3");
+                        "Expected null channel binding");
             }
-            System.out.println("TLS 1.3: null binding as expected");
             return;
         }
 
@@ -157,7 +176,7 @@ public class TlsUniqueChannelBindingTest extends SSLEngineTemplate {
                     "Client and server channel bindings do not match");
         }
 
-        // Verify defensive copy
+        // Verify that each call returns a defensive copy.
         byte[] second = clientSession.getTlsUniqueChannelBinding();
         if (clientBinding == second) {
             throw new Exception("Same array instance returned (no clone)");
@@ -166,7 +185,5 @@ public class TlsUniqueChannelBindingTest extends SSLEngineTemplate {
             throw new Exception("Subsequent calls return different values");
         }
 
-        System.out.println("PASSED: " + clientSession.getProtocol() +
-                " binding=" + clientBinding.length + " bytes, both sides match");
     }
 }
