@@ -469,18 +469,10 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
-void ShenandoahBarrierSet::clone_evacuation(oop obj) {
-  assert(_heap->is_evacuation_in_progress(), "only during evacuation");
+template <bool EVAC>
+void ShenandoahBarrierSet::clone_work(oop obj) {
   if (need_bulk_update(cast_from_oop<HeapWord*>(obj))) {
-    ShenandoahUpdateEvacForCloneOopClosure<true> cl;
-    obj->oop_iterate(&cl);
-  }
-}
-
-void ShenandoahBarrierSet::clone_update(oop obj) {
-  assert(_heap->is_update_refs_in_progress(), "only during update-refs");
-  if (need_bulk_update(cast_from_oop<HeapWord*>(obj))) {
-    ShenandoahUpdateEvacForCloneOopClosure<false> cl;
+    ShenandoahUpdateEvacForCloneOopClosure<EVAC> cl;
     obj->oop_iterate(&cl);
   }
 }
@@ -494,9 +486,9 @@ void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap
   if (gc_state != 0 && ShenandoahCloneBarrier) {
     ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
     if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
-      bs->clone_evacuation(src);
+      bs->clone_work<true>(src);
     } else if ((gc_state & ShenandoahHeap::UPDATE_REFS) != 0) {
-      bs->clone_update(src);
+      bs->clone_work<false>(src);
     }
   }
 
