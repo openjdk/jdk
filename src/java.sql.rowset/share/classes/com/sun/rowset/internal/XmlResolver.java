@@ -25,7 +25,6 @@
 
 package com.sun.rowset.internal;
 
-import com.sun.rowset.JdbcRowSetResourceBundle;
 import org.xml.sax.*;
 
 import org.xml.sax.EntityResolver;
@@ -34,7 +33,6 @@ import org.xml.sax.InputSource;
 import javax.sql.rowset.WebRowSet;
 import java.io.IOException;
 import java.io.StringReader;
-import java.text.MessageFormat;
 
 /**
  * An implementation of the <code>EntityResolver</code> interface, which
@@ -44,6 +42,10 @@ import java.text.MessageFormat;
 public class XmlResolver implements EntityResolver {
     //The standard WebRowSet XML Schema as defined in WebRowSet
     public static final String STD_SCHEMA_ID = "http://xmlns.jcp.org/xml/ns//jdbc/webrowset.xsd";
+    // Error messages
+    private static final String ENTITY_MESSAGE =
+            "readXML : external entity %s other than the standard schema is not allowed.";
+
 
     @Override
     public InputSource resolveEntity(String publicId, String systemId)
@@ -57,8 +59,6 @@ public class XmlResolver implements EntityResolver {
         }
 
         // reports error upon any external entity other than the standard schema
-        throw new SAXException(MessageFormat.format(
-            JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle().handleGetObject(
-                "wrsxmlreader.entity").toString(), systemId));
+        throw new SAXException(ENTITY_MESSAGE.formatted(systemId));
     }
 }

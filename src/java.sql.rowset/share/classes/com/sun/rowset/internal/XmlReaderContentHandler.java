@@ -84,7 +84,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
     private String propertyValue;
     private String metaDataValue;
 
-    private int tag;
+    private int tag = -1;
     private int state;
 
     private WebRowSetImpl rs;
@@ -386,6 +386,10 @@ public class XmlReaderContentHandler extends DefaultHandler {
 
     private static final String XSI_NS = "http://www.w3.org/2001/XMLSchema-instance";
 
+    // Error messages
+    private static final String SCHEMA_LOC_MESSAGE = "readXML : Malformed xsi:schemaLocation: %s.";
+    private static final String SCHEMA_MESSAGE = "readXML : Non-standard schema specified for namespace %s : %s.";
+
     /**
      * A constant indicating the state of this <code>XmlReaderContentHandler</code>
      * object in which it has not yet been called by the SAX parser and therefore
@@ -660,8 +664,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
 
         String[] tokens = schemaLocation.trim().split("\\s+");
         if (tokens.length % 2 != 0) {
-            throw new SAXException(MessageFormat.format(
-                resBundle.handleGetObject("wrsxmlreader.schemaloc").toString(), schemaLocation));
+            throw new SAXException(SCHEMA_LOC_MESSAGE.formatted(schemaLocation));
         }
 
         for (int i = 0; i < tokens.length; i += 2) {
@@ -669,8 +672,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
             String xsd = tokens[i + 1];
 
             if (!isWebRowSetSchema(xsd)) {
-                throw new SAXException(MessageFormat.format(
-                    resBundle.handleGetObject("wrsxmlreader.schema").toString(), ns, xsd));
+                throw new SAXException(SCHEMA_MESSAGE.formatted(ns, xsd));
             }
         }
     }
@@ -941,6 +943,13 @@ public class XmlReaderContentHandler extends DefaultHandler {
         try {
             switch (getState()) {
             case PROPERTIES:
+
+                // If tag is -1, startElement has not registered a valid tag
+                // Thus, we are in whitespace between elements, and should exit
+                if (tag == -1) {
+                    break;
+                }
+
                 propertyValue = new String(ch, start, length);
 
                 /**
