@@ -167,13 +167,8 @@ Java_sun_nio_ch_Pollset_pollsetPoll(JNIEnv *env, jclass c,
     struct pollfd *events = jlong_to_ptr(address);
     int res = _pollset_poll(ps, events, numfds, timeout);
     if (res < 0) {
-	if (errno == EINTR) {
+        if (errno == EINTR) {
             return IOS_INTERRUPTED;
-	}
-	// Don't throw exception on EBADF - pollset may have been closed
-        // This can happen during concurrent close operations
-	else if (errno == EBADF) {
-            return 0;  // Return 0 events, selector is closing
         } else {
             JNU_ThrowIOExceptionWithLastError(env, "pollset failed");
             return IOS_THROWN;
@@ -185,16 +180,7 @@ Java_sun_nio_ch_Pollset_pollsetPoll(JNIEnv *env, jclass c,
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Pollset_pollsetDestroy(JNIEnv *env, jclass c, jint ps) {
     int res;
-    // Validate pollset descriptor before attempting destroy
-    if (ps < 0) {
-        return;  // Already destroyed or invalid
-    }
     RESTARTABLE(_pollset_destroy((pollset_t)ps), res);
-    // Don't throw exception on EBADF - pollset might already be destroyed
-    if (res < 0 && errno != EBADF) {
-        JNU_ThrowIOExceptionWithLastError(env, "pollset_destroy failed");
-    }
-
 }
 
 JNIEXPORT void JNICALL

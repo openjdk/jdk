@@ -107,7 +107,7 @@ public class Pollset {
     }
 
     static {
-	    init();
+        init();
     }
     // -- Native methods --
     public static native int pollsetCreate() throws IOException;
