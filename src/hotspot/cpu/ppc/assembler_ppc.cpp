@@ -76,20 +76,37 @@ int Assembler::branch_destination(int inst, int pos) {
 }
 
 // Low-level andi-one-instruction-macro.
-void Assembler::andi(Register a, Register s, const long ui16) {
-  if (is_power_of_2(((unsigned long) ui16)+1)) {
+void Assembler::andi(Register a, Register s, julong int_or_long_const) {
+  if (is_power_of_2(int_or_long_const + 1)) {
     // pow2minus1
-    clrldi(a, s, 64 - log2i_exact((((unsigned long) ui16)+1)));
-  } else if (is_power_of_2((jlong) ui16)) {
+    clrldi(a, s, 64 - log2i_exact(int_or_long_const + 1));
+  } else if (is_power_of_2(-int_or_long_const)) {
+    // negpow2 (includes (julong)min_jlong)
+    clrrdi(a, s, log2i_exact(-int_or_long_const));
+  } else if (is_power_of_2(int_or_long_const)) {
     // pow2
-    rlwinm(a, s, 0, 31 - log2i_exact((jlong) ui16), 31 - log2i_exact((jlong) ui16));
-  } else if (is_power_of_2((jlong)-ui16)) {
-    // negpow2
-    clrrdi(a, s, log2i_exact((jlong)-ui16));
+    rlwinm(a, s, 0, 31 - log2i_exact(int_or_long_const), 31 - log2i_exact(int_or_long_const));
+  } else if (is_uimm((jlong)int_or_long_const, 16)) {
+    // side effect: clobbers CR0
+    andi_(a, s, int_or_long_const);
   } else {
-    assert(is_uimm(ui16, 16), "must be 16-bit unsigned immediate");
-    andi_(a, s, ui16);
+    assert((int_or_long_const & 0xFFFF) == 0 && is_uimm((jlong)(int_or_long_const >> 16), 16), "not encodable");
+    // side effect: clobbers CR0
+    andis_(a, s, int_or_long_const >> 16);
   }
+}
+
+// Check if int_or_long_const is supported by Assembler::andi.
+bool Assembler::andi_supports(julong int_or_long_const) {
+  // The following cases are supported: andi_, andis_, clrldi, clrrdi
+  if (is_uimm((jlong)int_or_long_const, 16) ||
+      ((int_or_long_const & 0xFFFF) == 0 && is_uimm((jlong)(int_or_long_const >> 16), 16)) ||
+      is_power_of_2(int_or_long_const + 1) || is_power_of_2(-int_or_long_const)) return true;
+
+  // rlwinm is a 32 bit instruction.
+  if (is_uimm((jlong)int_or_long_const, 32) && is_power_of_2(int_or_long_const)) return true;
+
+  return false;
 }
 
 // RegisterOrConstant version.
