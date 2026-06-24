@@ -103,7 +103,7 @@ public class SHA3Parallel {
                 throw new InvalidAlgorithmParameterException("Bad parallel parameter.");
         }
 
-        for (int i = 0; i < NRPAR; i++) {
+        for (int i = 0; i < nr; i++) {
             l2bLittle(lanesArr[i], 0, buffers[i], 0, blockSize);
         }
         return retVal;
