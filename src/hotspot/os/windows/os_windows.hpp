@@ -132,8 +132,16 @@ class os::win32 {
       size_t const _size;
   public:
       PlaceholderRegion() : _base(nullptr), _size(0) {}
-      PlaceholderRegion(char* base, size_t size) : _base(base), _size(size) {}
-      PlaceholderRegion(const PlaceholderRegion& source) : _base(source._base), _size(source._size) {}
+      PlaceholderRegion(char* base, size_t size) : _base(base), _size(size) {
+        if (base != nullptr) {
+          assert(size > 0, "Non-empty Placeholder must have positive size.");
+          assert(is_aligned(base, os::vm_allocation_granularity()), "New Placeholder base should be aligned to allocation granularity.");
+          assert(is_aligned(size, os::vm_page_size()), "New Placeholder size should be page-aligned");
+        } else {
+          assert(size == 0, "Empty Placeholder must have zero size.");
+        }
+      }
+      PlaceholderRegion(const PlaceholderRegion& source) : PlaceholderRegion(source._base, source._size) {}
       char*  base() const { return _base; }
       size_t size() const { return _size; }
       bool   is_empty() const { return _base == nullptr; }
@@ -153,7 +161,7 @@ class os::win32 {
 
   // Split 'orig' at 'offset'. Returns left and right placeholder pieces as a PlaceholderRegionPair.
   // The caller must not use 'orig' afterward.
-  // Offset must be page-aligned.
+  // Offset must be aligned to allocation granularity.
   // If offset == orig.size(), returns { orig, empty }.
   // If offset == 0, returns { empty, orig }.
   // This should not fail. If unsuccessful, this function fails fatally.

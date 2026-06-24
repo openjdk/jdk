@@ -3538,8 +3538,6 @@ os::win32::PlaceholderRegionPair os::win32::split_memory(const PlaceholderRegion
   guarantee(is_VirtualAlloc2_supported(), "split_memory requires VirtualAlloc2.");
   assert(!orig.is_empty(), "Region cannot be empty");
   assert(offset <= orig.size(), "Offset must be less than or equal to region size");
-  assert(is_aligned(orig.base(), os::vm_page_size()), "Region base should be page-aligned");
-  assert(is_aligned(offset, os::vm_page_size()), "Offset should be page-aligned");
 
   char* original_base = orig.base();
   size_t original_size = orig.size();
@@ -3551,6 +3549,8 @@ os::win32::PlaceholderRegionPair os::win32::split_memory(const PlaceholderRegion
     log_trace(os)("Split memory consumed the whole region: " RANGEFMT, RANGEFMTARGS(original_base, original_size));
     return { orig, PlaceholderRegion() };
   }
+
+  assert(is_aligned(offset, os::vm_allocation_granularity()), "If the split does not consume the entire original region, the offset should be aligned to allocation granularity since a new Placeholder is spawned the split point.");
 
   // VirtualFree with MEM_RELEASE | MEM_PRESERVE_PLACEHOLDER splits the
   // placeholder [original_base, original_base+original_size) in two:
@@ -3574,8 +3574,6 @@ os::win32::PlaceholderRegionPair os::win32::split_memory(const PlaceholderRegion
 char* os::win32::convert_to_reserved(PlaceholderRegion region, int numa_node) {
   guarantee(is_VirtualAlloc2_supported(), "convert_to_reserved requires VirtualAlloc2");
   assert(!region.is_empty(), "Region cannot be empty");
-  assert(is_aligned(region.base(), os::vm_allocation_granularity()), "Region base should be aligned to allocation granularity.");
-  assert(is_aligned(region.size(), os::vm_page_size()), "Region size should be page-aligned");
 
   char* base = region.base();
   size_t size = region.size();
