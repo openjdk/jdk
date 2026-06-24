@@ -387,6 +387,22 @@ void frame::deoptimize(JavaThread* thread) {
 #endif // ASSERT
 }
 
+void frame::deoptimize(JavaThread* thread, stackChunkOop chunk) {
+  assert(is_heap_frame() && _frame_index >= 0, "wrong frame type");
+
+  // Fast path does not expect deopted frames
+  chunk->force_slow_path();
+
+  frame fr = chunk->derelativize(*this);
+  fr.deoptimize(nullptr);
+
+  // Fix chunk pc if deopted frame is the top one
+  bool is_top = fr.sp() == chunk->sp_address();
+  if (is_top) {
+    chunk->set_pc(fr.raw_pc());
+  }
+}
+
 frame frame::java_sender() const {
   RegisterMap map(JavaThread::current(),
                   RegisterMap::UpdateMap::skip,
