@@ -120,16 +120,16 @@ bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint inde
     return false;
   }
 
-  // Prepare new_region as an active alloc region. Transition it to the regular-allocation state
-  // before publishing: the lock-free CAS path (allocate_atomic / allocate_lab_atomic) only bumps
-  // _atomic_top and never changes region state, so a freshly reserved region must be made regular
-  // here, under the heap lock, or it would receive objects while still in an empty state.
-  // make_regular_allocation is idempotent and requires affiliation to be set, which
-  // find_region_for_alloc / steal_from_mutator guarantee.
+  // new_region has already been prepared for allocation: the slow path runs allocate_in (hence
+  // ShenandoahHeapRegion::allocate -> make_regular_allocation) on it before reaching this install,
+  // and the lock-free CAS path only bumps _atomic_top without changing region state. So no state
+  // transition is needed here; just assert the expected affiliation and state. make_regular_allocation
+  // turns an empty region regular but leaves an already-pinned region pinned, so accept either.
   constexpr ShenandoahAffiliation affiliation =
     (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) ? OLD_GENERATION : YOUNG_GENERATION;
   assert(new_region->affiliation() == affiliation, "Region affiliation must be established before install");
-  new_region->make_regular_allocation(affiliation);
+  assert(new_region->is_regular_or_regular_pinned(),
+         "Region must be made regular (or left pinned) by allocate_in before install");
   size_t remnant_bytes = _free_set->retire_region(PARTITION, new_region->index(), new_region->used());
   assert(remnant_bytes == _free_set->alloc_capacity(new_region), "Sanity check");
   // The flag must be set BEFORE the region becomes an active alloc region, so any thread that can
