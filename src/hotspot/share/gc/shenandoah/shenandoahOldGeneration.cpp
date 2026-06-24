@@ -196,11 +196,11 @@ void ShenandoahOldGeneration::maybe_log_promotion_failure_stats(bool concurrent)
 }
 
 bool ShenandoahOldGeneration::try_expend_promoted(size_t increment) {
+  // The reserve does not change during evacuation, so snapshot it once; only _promoted_expended is
+  // contended and re-read on CAS failure.
+  const size_t reserve = get_promoted_reserve();
   size_t cur = _promoted_expended.load_relaxed();
-  // Reload the reserve on every iteration: it may be augmented concurrently (e.g. promote-in-place
-  // adding to the reserve under the heap lock), so a stale snapshot could reject a promotion the
-  // freshly-grown reserve would allow.
-  while (cur + increment <= get_promoted_reserve()) {
+  while (cur + increment <= reserve) {
     size_t prev = _promoted_expended.compare_exchange(cur, cur + increment);
     if (prev == cur) {
       return true;
