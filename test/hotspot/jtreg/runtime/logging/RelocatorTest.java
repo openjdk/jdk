@@ -29,7 +29,6 @@
  * @modules java.compiler
  *          java.instrument
  * @requires vm.jvmti
- * @requires vm.debug
  * @run main RedefineClassHelper
  * @run driver RelocatorTest
  */
@@ -65,6 +64,7 @@ public class RelocatorTest {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-javaagent:redefineagent.jar",
+                                                                             "-XX:+UnlockDiagnosticVMOptions",
                                                                              "-XX:+StressLdcRewrite",
                                                                              "-Xlog:relocator=trace,redefine+class+constantpool=trace",
                                                                              InternalClass.class.getName());

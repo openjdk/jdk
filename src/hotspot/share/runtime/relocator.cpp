@@ -24,6 +24,7 @@
 
 #include "classfile/stackMapTableFormat.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
