@@ -28,7 +28,12 @@ package sun.security.provider;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.security.provider.SHA3.SHAKE256;
 import sun.security.provider.SHA3Parallel.Shake128Parallel;
-
+import static sun.security.provider.SHA3Parallel.eightKeccakN;
+import java.lang.foreign.ValueLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.MessageDigest;
 import java.security.InvalidKeyException;
@@ -538,7 +543,7 @@ public class ML_DSA {
         hash.reset();
 
         //Sample A
-        int[][][] keygenA = generateA(rho); //A is in NTT domain
+        int[][] keygenA = generateA(rho); //A is in NTT domain
 
         //Sample S1 and S2
         int[][] s1 = integerMatrixAlloc(mlDsa_l, ML_DSA_N);
@@ -583,7 +588,7 @@ public class ML_DSA {
     // an IllegalArgumentException is thrown.
     public ML_DSA_PublicKey privKeyToPubKey(ML_DSA_PrivateKey sk) {
         // Sample A
-        int[][][] keygenA = generateA(sk.rho); //A is in NTT domain
+        int[][] keygenA = generateA(sk.rho); //A is in NTT domain
 
         // Compute t and tr
         // make a copy of sk.s1 and modify it. Although we can also
@@ -625,7 +630,7 @@ public class ML_DSA {
         mlDsaVectorNtt(sk.s1());
         mlDsaVectorNtt(sk.s2());
         mlDsaVectorNtt(sk.t0());
-        int[][][] aHat = generateA(sk.rho());
+        int[][] aHat = generateA(sk.rho());
 
         //Compute mu
         hash.update(sk.tr());
@@ -717,7 +722,7 @@ public class ML_DSA {
         ML_DSA_PublicKey pk = pkDecode(pkBytes);
 
         //Expand A
-        int[][][] aHat = generateA(pk.rho());
+        int[][] aHat = generateA(pk.rho());
 
         //Generate tr
         hash.update(pkBytes);
@@ -1138,88 +1143,78 @@ public class ML_DSA {
         }
     }
 
-    private int[][][] generateA(byte[] seed) {
+    private interface LongArrayOp {
+        void apply(long[] arr, int i, int j);
+    }
 
-        // Manually do multidimensional array initialization for performance
-        int[][][] a = new int[mlDsa_k][][];
-        for (int i = 0; i < mlDsa_k; i++) {
-            a[i] = new int[mlDsa_l][];
+    static final ValueLayout.OfInt LAYOUT = ValueLayout.JAVA_INT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN);
+    static final VarHandle VHL = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.LITTLE_ENDIAN);
+
+    private static short copyOut(long[] raw, int[] parsed, short offset) {
+        MemorySegment seg = MemorySegment.ofArray(raw);
+        for (int off = 0; offset < ML_DSA_N && off < SHAKE128_BLOCK_SIZE; off+=3) {
+            int val = seg.get(LAYOUT, off) & 0x7FFFFF;
+            if (val < ML_DSA_Q) {
+                parsed[offset++] = val;
+            }
+        }
+        return offset;
+    }
+
+    private int[][] generateA(byte[] seed) {
+        final int NR = 8;
+        int[][] a = new int[mlDsa_k*mlDsa_l][ML_DSA_N];
+        short[] offsets = new short[NR];
+        long[][] states = new long[NR][5*5];
+        int[][] slots = new int[NR][];
+        long[] initSt = new long[5*5];
+
+        int rhoLen = seed.length;
+        assert(rhoLen == 32);
+
+        int t = 0;
+        for (int i = 0; i < seed.length; i += 8, t++) {
+            initSt[t] = (long) VHL.get(seed, i);
+        }
+        initSt[SHAKE128_BLOCK_SIZE/8-1] = 0x8000000000000000L;
+        // rest of initSt array has been zeroed by GC
+
+
+        LongArrayOp initState = (arr, i, j) -> {
+            System.arraycopy(initSt, 0, arr, 0, initSt.length);
+            arr[rhoLen/8] = 0x1F<<16 | i<<8 | j;
+        };
+
+        int active = 0;
+        int next = 0;
+        for (; next < NR; next++, active++) {
+            initState.apply(states[next], next/mlDsa_l, next%mlDsa_l);
+            slots[next] = a[next];
         }
 
-        int nrPar = 4;
-        int rhoLen = seed.length;
-        byte[] seedBuf = new byte[SHAKE128_BLOCK_SIZE];
-        System.arraycopy(seed, 0, seedBuf, 0, seed.length);
-        seedBuf[rhoLen + 2] = 0x1F;
-        seedBuf[SHAKE128_BLOCK_SIZE - 1] = (byte)0x80;
-        byte[][] xofBufArr = new byte[nrPar][SHAKE128_BLOCK_SIZE];
-        int[] iIndex = new int[nrPar];
-        int[] jIndex = new int[nrPar];
-
-        int[] parsedBuf = new int[SHAKE128_BLOCK_SIZE / 3];
-
-        int parInd = 0;
-        boolean allDone;
-        int[] ofs = new int[nrPar];
-        Arrays.fill(ofs, 0);
-        int[][] aij = new int[nrPar][];
-        try {
-            Shake128Parallel parXof = new Shake128Parallel(xofBufArr);
-
-            for (int i = 0; i < mlDsa_k; i++) {
-                for (int j = 0; j < mlDsa_l; j++) {
-                    xofBufArr[parInd] = seedBuf.clone();
-                    xofBufArr[parInd][rhoLen] = (byte) j;
-                    xofBufArr[parInd][rhoLen + 1] = (byte) i;
-                    iIndex[parInd] = i;
-                    jIndex[parInd] = j;
-                    ofs[parInd] = 0;
-                    aij[parInd] = new int[ML_DSA_N];
-                    parInd++;
-
-                    if ((parInd == nrPar) ||
-                            ((i == mlDsa_k - 1) && (j == mlDsa_l - 1))) {
-                        parXof.reset(xofBufArr);
-
-                        allDone = false;
-                        while (!allDone) {
-                            allDone = true;
-                            parXof.squeezeBlock();
-                            for (int k = 0; k < parInd; k++) {
-                                int parsedOfs = 0;
-                                int tmp;
-                                if (ofs[k] < ML_DSA_N) {
-                                    for (int l = 0; l < SHAKE128_BLOCK_SIZE; l += 3) {
-                                        byte[] rawBuf = xofBufArr[k];
-                                        parsedBuf[l / 3] = (rawBuf[l] & 0xFF) +
-                                                ((rawBuf[l + 1] & 0xFF) << 8) +
-                                                ((rawBuf[l + 2] & 0x7F) << 16);
-                                    }
-                                }
-                                while ((ofs[k] < ML_DSA_N) &&
-                                        (parsedOfs < SHAKE128_BLOCK_SIZE / 3)) {
-                                    tmp = parsedBuf[parsedOfs++];
-                                    if (tmp < ML_DSA_Q) {
-                                        aij[k][ofs[k]] = tmp;
-                                        ofs[k]++;
-                                    }
-                                }
-                                if (ofs[k] < ML_DSA_N) {
-                                    allDone = false;
-                                }
-                            }
-                        }
-
-                        for (int k = 0; k < parInd; k++) {
-                            a[iIndex[k]][jIndex[k]] = aij[k];
-                        }
-                        parInd = 0;
+        while (active > 0) {
+            eightKeccakN(active, states[0], states[1], states[2], states[3], 
+                states[4], states[5], states[6], states[7]);
+            
+            for (int i = 0; i<active; i++) {
+                offsets[i] = copyOut(states[i], slots[i], offsets[i]);
+                if (offsets[i] > 255) {
+                    offsets[i] = 0;
+                    int lastActive = active-1;
+                    if (next<mlDsa_k*mlDsa_l) { // grab next
+                        initState.apply(states[i], next/mlDsa_l, next%mlDsa_l);
+                        slots[i] = a[next++];
+                    } else if (i != lastActive) { // compact
+                        slots[i] = slots[lastActive];
+                        states[i] = states[lastActive];
+                        offsets[i] = offsets[lastActive];
+                        active--;
+                        i--; //process this slot again
+                    } else { // i==active-1
+                        active--;
                     }
                 }
             }
-        } catch (InvalidAlgorithmParameterException e) {
-            // This should never happen since xofBufArr is of the correct size
-            throw new RuntimeException("Internal error.");
         }
 
         return a;
@@ -1506,7 +1501,7 @@ public class ML_DSA {
         }
     }
 
-    private void matrixVectorPointwiseMultiply(int[][] res, int[][][] matrix,
+    private void matrixVectorPointwiseMultiply(int[][] res, int[][] matrix,
                                                int[][] vector) {
 
         int resulti[] = new int[ML_DSA_N];
@@ -1516,7 +1511,7 @@ public class ML_DSA {
                 resulti[m] = 0;
             }
             for (int j = 0; j < mlDsa_l; j++) {
-                mlDsaNttMultiply(product, matrix[i][j], vector[j]);
+                mlDsaNttMultiply(product, matrix[i*mlDsa_l+j], vector[j]);
                 for (int m = 0; m < ML_DSA_N; m++) {
                     resulti[m] += product[m];
                 }

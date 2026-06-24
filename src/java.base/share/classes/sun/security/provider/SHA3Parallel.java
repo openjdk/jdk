@@ -101,6 +101,49 @@ public class SHA3Parallel {
         return 1;
     }
 
+    private static int eightKeccak(
+        long[] lanes0, long[] lanes1, long[] lanes2, long[] lanes3, 
+        long[] lanes4, long[] lanes5, long[] lanes6, long[] lanes7){
+        quadKeccak(lanes0, lanes1, lanes2, lanes3);
+        quadKeccak(lanes4, lanes5, lanes6, lanes7);
+        return 1;
+    }
+
+    static void eightKeccakN(int N,
+        long[] lanes0, long[] lanes1, long[] lanes2, long[] lanes3, 
+        long[] lanes4, long[] lanes5, long[] lanes6, long[] lanes7){
+        switch (N) {
+            case 1:
+                keccak(lanes0); 
+                return;
+            case 2:
+                doubleKeccak(lanes0, lanes1);
+                return;
+            case 3:
+                doubleKeccak(lanes0, lanes1);
+                keccak(lanes2); 
+                return;
+            case 4:
+                quadKeccak(lanes0, lanes1, lanes2, lanes3);
+                return;
+            case 5:
+                quadKeccak(lanes0, lanes1, lanes2, lanes3);
+                keccak(lanes4); 
+                return;
+            case 6:
+                quadKeccak(lanes0, lanes1, lanes2, lanes3);
+                doubleKeccak(lanes4, lanes5); 
+                return;
+            case 7:
+            case 8:
+                eightKeccak(lanes0, lanes1, lanes2, lanes3,
+                    lanes4, lanes5, lanes6, lanes7);
+                return;
+            default:
+                assert(false);
+        }
+    }
+
     private static int doubleKeccakJava(long[] lanes0, long[] lanes1) {
         keccak(lanes0);
         keccak(lanes1);
