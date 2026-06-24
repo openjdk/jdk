@@ -925,17 +925,17 @@ void FieldLayoutBuilder::regular_field_sorting() {
   }
 }
 
-/* Field sorting for inline classes:
- *   - because inline classes are immutable, the @Contended annotation is ignored
- *     when computing their layout (with only read operation, there's no false
- *     sharing issue)
- *   - this method also records the alignment of the field with the most
- *     constraining alignment, this value is then used as the alignment
- *     constraint when flattening this inline type into another container
- *   - field flattening decisions are taken in this method (those decisions are
- *     currently only based in the size of the fields to be flattened, the size
- *     of the resulting instance is not considered)
- */
+// Field sorting for inline classes:
+//   - because inline classes are immutable, the @Contended annotation is ignored
+//     when computing their layout (with only read operation, there's no false
+//     sharing issue)
+//   - this method also records the alignment of the field with the most
+//     constraining alignment, this value is then used as the alignment
+//     constraint when flattening this inline type into another container
+//   - field flattening decisions are taken in this method (those decisions are
+//     currently only based in the size of the fields to be flattened, the size
+//     of the resulting instance is not considered)
+//
 void FieldLayoutBuilder::inline_class_field_sorting() {
   assert(_is_inline_type || _is_abstract_value, "Should only be used for inline classes");
   int alignment = -1;
@@ -1091,18 +1091,18 @@ void FieldLayoutBuilder::compute_regular_layout() {
   epilogue();
 }
 
-/* Computation of inline classes has a slightly different strategy than for
- * regular classes. Regular classes have their oop fields allocated at the end
- * of the layout to increase GC performance. Unfortunately, this strategy
- * increases the number of empty slots inside an instance. Because the purpose
- * of inline classes is to be embedded into other containers, it is critical
- * to keep their size as small as possible. For this reason, the allocation
- * strategy is:
- *   - big primitive fields (primitive types and flat inline types larger
- *     than an oop) are allocated first (from the biggest to the smallest)
- *   - then oop fields
- *   - then small primitive fields (from the biggest to the smallest)
- */
+// Computation of inline classes has a slightly different strategy than for
+// regular classes. Regular classes have their oop fields allocated at the end
+// of the layout to increase GC performance. Unfortunately, this strategy
+// increases the number of empty slots inside an instance. Because the purpose
+// of inline classes is to be embedded into other containers, it is critical
+// to keep their size as small as possible. For this reason, the allocation
+// strategy is:
+//   - big primitive fields (primitive types and flat inline types larger
+//     than an oop) are allocated first (from the biggest to the smallest)
+//   - then oop fields
+//   - then small primitive fields (from the biggest to the smallest)
+//
 void FieldLayoutBuilder::compute_inline_class_layout() {
 
   // Test if the concrete inline class is an empty class (no instance fields)

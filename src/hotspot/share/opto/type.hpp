@@ -1858,6 +1858,7 @@ public:
   jint flat_layout_helper() const;
   int flat_elem_size() const;
   int flat_log_elem_size() const;
+  jint max_flat_elements() const;
 
   const TypeAryPtr* cast_to_stable(bool stable, int stable_dimension = 1) const;
   int stable_dimension() const;

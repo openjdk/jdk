@@ -202,12 +202,13 @@ private:
   }
 
   // Checks the validity of a single barrier.
+  // The first instruction of the nmethod entry barrier is an ldrw (literal)
+  // instruction. Verify that it's really there, so the offsets are not skewed.
   bool check_barrier_impl(address& instruction, err_msg& msg) {
-    uint32_t* addr = (uint32_t*) instruction;
-    uint32_t inst = *addr;
-    if ((inst & 0xff000000) != 0x18000000) {
-      msg.print("Nmethod entry barrier did not start with ldr (literal) as expected. "
-                "Addr: " PTR_FORMAT " Code: " UINT32_FORMAT, p2i(addr), inst);
+    NativeInstruction* ni = nativeInstruction_at(instruction);
+    if (!ni->is_ldrw_gpr_literal()) {
+      msg.print("Nmethod entry barrier did not start with ldrw (literal) as expected. "
+              "Addr: " PTR_FORMAT " Code: " UINT32_FORMAT, p2i(instruction), ni->encoding());
       return false;
     }
     return true;

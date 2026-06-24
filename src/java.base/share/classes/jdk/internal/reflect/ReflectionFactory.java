@@ -105,7 +105,7 @@ public class ReflectionFactory {
             }
         }
         boolean isFinal = Modifier.isFinal(field.getModifiers());
-        boolean isReadOnly = isFinal && (!override || langReflectAccess.isTrustedFinalField(field));
+        boolean isReadOnly = isFinal && (!override || langReflectAccess.isTrustedFinalField(field) || field.isStrictInit());
         return MethodHandleAccessorFactory.newFieldAccessor(field, isReadOnly);
     }
 

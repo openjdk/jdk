@@ -307,6 +307,13 @@ source %{
           return false; // NEON only, since SLI/USHR are not available in SVE
         }
         break;
+      case Op_VectorBitwiseBlend:
+        // Use NEON BSL when UseSVE < 2; SVE1 has no BSL so larger vectors are
+        // not supported on UseSVE == 1 machines.
+        if (UseSVE < 2 && length_in_bytes > 16) {
+          return false;
+        }
+        break;
       default:
         break;
     }
@@ -330,6 +337,7 @@ source %{
       case Op_MulReductionVL:
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
+      case Op_VectorBitwiseBlend:
         return false;
       case Op_SaturatingAddV:
       case Op_SaturatingSubV:
@@ -4750,6 +4758,31 @@ instruct vblend_sve(vReg dst, vReg src1, vReg src2, pReg pg) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_sel($dst$$FloatRegister, __ elemType_to_regVariant(bt),
                $pg$$PRegister, $src2$$FloatRegister, $src1$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ------------------------------ Vector bitwise blend -------------------------
+
+instruct vbitwise_blend_neon_sve1(vReg src1, vReg src2, vReg dst_src3) %{
+  predicate(UseSVE < 2 &&
+            VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src3 (VectorBitwiseBlend (Binary src1 src2) dst_src3));
+  format %{ "vbitwise_blend_neon_sve1 $src1, $src2, $dst_src3" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    Assembler::SIMD_Arrangement T = length_in_bytes == 16 ? __ T16B : __ T8B;
+    __ bsl($dst_src3$$FloatRegister, T, $src2$$FloatRegister, $src1$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vbitwise_blend_sve2(vReg src1, vReg dst_src2, vReg src3) %{
+  predicate(UseSVE == 2);
+  match(Set dst_src2 (VectorBitwiseBlend (Binary src1 dst_src2) src3));
+  format %{ "vbitwise_blend_sve2 $src1, $dst_src2, $src3" %}
+  ins_encode %{
+    __ sve_bsl($dst_src2$$FloatRegister, $src1$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}

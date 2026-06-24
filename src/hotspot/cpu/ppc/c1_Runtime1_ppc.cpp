@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,8 +329,8 @@ OopMapSet* Runtime1::generate_stub_call(StubAssembler* sasm, Register result, ad
   return oop_maps;
 }
 
-static OopMapSet* stub_call_with_stack_parms(StubAssembler* sasm, Register result, address target,
-                                             int stack_parms, bool do_return = true) {
+static OopMapSet* stub_call_with_stack_parms(StubAssembler* sasm, Register oop_result, address target,
+                                             int stack_parms, bool do_return = true, Register result2 = noreg) {
   // Make a frame and preserve the caller's caller-save registers.
   const int parm_size_in_bytes = align_up(stack_parms << LogBytesPerWord, frame::alignment_in_bytes);
   const int padding = parm_size_in_bytes - (stack_parms << LogBytesPerWord);
@@ -345,14 +345,14 @@ static OopMapSet* stub_call_with_stack_parms(StubAssembler* sasm, Register resul
     case 1:
     __ ld(R4_ARG2, frame_size_in_bytes + padding + 0, R1_SP);
     case 0:
-    call_offset = __ call_RT(result, noreg, target);
+    call_offset = __ call_RT(oop_result, noreg, target);
     break;
     default: Unimplemented(); break;
   }
   OopMapSet* oop_maps = new OopMapSet();
   oop_maps->add_gc_map(call_offset, oop_map);
 
-  restore_live_registers(sasm, result, noreg);
+  restore_live_registers(sasm, oop_result, result2);
   if (do_return) __ blr();
   return oop_maps;
 }
@@ -432,25 +432,38 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 
     case StubId::c1_new_type_array_id:
     case StubId::c1_new_object_array_id:
+    case StubId::c1_new_null_free_array_id:
       {
         if (id == StubId::c1_new_type_array_id) {
           __ set_info("new_type_array", dont_gc_arguments);
-        } else {
+        } else if (id == StubId::c1_new_object_array_id) {
           __ set_info("new_object_array", dont_gc_arguments);
+        } else {
+          __ set_info("new_null_free_array", dont_gc_arguments);
         }
 
 #ifdef ASSERT
         // Assert object type is really an array of the proper kind.
-        {
-          int tag = (id == StubId::c1_new_type_array_id) ? Klass::_lh_array_tag_type_value : Klass::_lh_array_tag_ref_value;
-          Label ok;
-          __ lwz(R0, in_bytes(Klass::layout_helper_offset()), R4_ARG2);
-          __ srawi(R0, R0, Klass::_lh_array_tag_shift);
-          __ cmpwi(CR0, R0, tag);
-          __ beq(CR0, ok);
-          __ stop("assert(is an array klass)");
-          __ should_not_reach_here();
-          __ bind(ok);
+        __ lwz(R0, in_bytes(Klass::layout_helper_offset()), R4_ARG2);
+        __ srawi(R0, R0, Klass::_lh_array_tag_shift);
+        switch (id) {
+          case StubId::c1_new_type_array_id:
+            __ cmpwi(CR0, R0, Klass::_lh_array_tag_type_value);
+            __ asm_assert_eq("assert(is a type array klass)");
+            break;
+          case StubId::c1_new_object_array_id:
+            __ cmpwi(CR0, R0, Klass::_lh_array_tag_ref_value);  // new "[Ljava/lang/Object;"
+            __ cmpwi(CR1, R0, Klass::_lh_array_tag_flat_value); // new "[LVT;"
+            __ cror(CR0, Assembler::equal, CR1, Assembler::equal);
+            __ asm_assert_eq("assert(is an object or inline type array klass)");
+            break;
+          case StubId::c1_new_null_free_array_id:
+            __ cmpwi(CR0, R0, Klass::_lh_array_tag_flat_value); // the array can be a flat array.
+            __ cmpwi(CR1, R0, Klass::_lh_array_tag_ref_value);  // the array cannot be a flat array (due to the InlineArrayElementMaxFlatSize, etc.)
+            __ cror(CR0, Assembler::equal, CR1, Assembler::equal);
+            __ asm_assert_eq("assert(is an object or inline type array klass)");
+            break;
+          default: ShouldNotReachHere();
         }
 #endif // ASSERT
 
@@ -458,8 +471,11 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 
         if (id == StubId::c1_new_type_array_id) {
           oop_maps = generate_stub_call(sasm, R3_RET, CAST_FROM_FN_PTR(address, new_type_array), R4_ARG2, R5_ARG3);
-        } else {
+        } else if (id == StubId::c1_new_object_array_id) {
           oop_maps = generate_stub_call(sasm, R3_RET, CAST_FROM_FN_PTR(address, new_object_array), R4_ARG2, R5_ARG3);
+        } else {
+          assert(id == StubId::c1_new_null_free_array_id, "must be");
+          oop_maps = generate_stub_call(sasm, R3_RET, CAST_FROM_FN_PTR(address, new_null_free_array), R4_ARG2, R5_ARG3);
         }
       }
       break;
@@ -472,6 +488,36 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         __ set_info("new_multi_array", dont_gc_arguments);
         oop_maps = generate_stub_call(sasm, R3_RET, CAST_FROM_FN_PTR(address, new_multi_array), R4_ARG2, R5_ARG3, R6_ARG4);
       }
+      break;
+
+    case StubId::c1_buffer_inline_args_id:
+    case StubId::c1_buffer_inline_args_no_receiver_id:
+      {
+        address entry = (id == StubId::c1_buffer_inline_args_id) ?
+          CAST_FROM_FN_PTR(address, buffer_inline_args) :
+          CAST_FROM_FN_PTR(address, buffer_inline_args_no_receiver);
+
+        __ unimplemented("c1_buffer_inline_args"); // TODO: handle arguments and return value
+        OopMap* oop_map = save_live_registers(sasm);
+        int call_offset = __ call_RT(noreg, noreg, entry, R3_ARG1);
+
+        oop_maps = new OopMapSet();
+        oop_maps->add_gc_map(call_offset, oop_map);
+        restore_live_registers(sasm, R3_RET, noreg);
+        __ blr();
+      }
+      break;
+
+    case StubId::c1_load_flat_array_id:
+      oop_maps = stub_call_with_stack_parms(sasm, R3_RET, CAST_FROM_FN_PTR(address, load_flat_array), 2);
+      break;
+
+    case StubId::c1_store_flat_array_id:
+      oop_maps = stub_call_with_stack_parms(sasm, noreg, CAST_FROM_FN_PTR(address, store_flat_array), 3);
+      break;
+
+    case StubId::c1_substitutability_check_id:
+      oop_maps = stub_call_with_stack_parms(sasm, noreg, CAST_FROM_FN_PTR(address, substitutability_check), 2, true, R3_RET);
       break;
 
     case StubId::c1_register_finalizer_id:
@@ -591,8 +637,22 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 
     case StubId::c1_throw_incompatible_class_change_error_id:
       {
-        __ set_info("throw_incompatible_class_cast_exception", dont_gc_arguments);
+        __ set_info("throw_incompatible_class_change_error", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_incompatible_class_change_error), false);
+      }
+      break;
+
+    case StubId::c1_throw_illegal_monitor_state_exception_id:
+      {
+        __ set_info("c1_throw_illegal_monitor_state_exception", dont_gc_arguments);
+        oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_illegal_monitor_state_exception), false);
+      }
+      break;
+
+    case StubId::c1_throw_identity_exception_id:
+      {
+        __ set_info("throw_identity_exception", dont_gc_arguments);
+        oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_identity_exception), true);
       }
       break;
 
@@ -760,22 +820,9 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
       break;
 
     case StubId::c1_dtrace_object_alloc_id:
-      { // O0: object
+      {
         __ unimplemented("stub dtrace_object_alloc_id");
         __ set_info("dtrace_object_alloc", dont_gc_arguments);
-//        // We can't gc here so skip the oopmap but make sure that all
-//        // the live registers get saved.
-//        save_live_registers(sasm);
-//
-//        __ save_thread(L7_thread_cache);
-//        __ call(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)),
-//                relocInfo::runtime_call_type);
-//        __ delayed()->mov(I0, O0);
-//        __ restore_thread(L7_thread_cache);
-//
-//        restore_live_registers(sasm);
-//        __ ret();
-//        __ delayed()->restore();
       }
       break;
 

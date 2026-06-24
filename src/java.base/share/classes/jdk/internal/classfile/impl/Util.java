@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,6 +197,14 @@ public final class Util {
         var result = new Object[list.size()]; // null check
         for (int i = 0; i < result.length; i++) {
             result[i] = TemporaryConstantPool.INSTANCE.classEntry(list.get(i));
+        }
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(result);
+    }
+
+    public static List<Utf8Entry> fieldDescriptorList(List<? extends ClassDesc> list) {
+        var result = new Object[list.size()]; // null check
+        for (int i = 0; i < result.length; i++) {
+            result[i] = TemporaryConstantPool.INSTANCE.utf8Entry(list.get(i));
         }
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(result);
     }

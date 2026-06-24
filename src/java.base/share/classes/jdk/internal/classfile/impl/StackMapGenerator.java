@@ -1163,6 +1163,9 @@ public final class StackMapGenerator {
                     locals[localsSize++] = type;
                 }
             }
+            if (locals != null && localsSize < locals.length) {
+                Arrays.fill(locals, localsSize, locals.length, Type.TOP_TYPE);
+            }
             this.localsSize = localsSize;
         }
 

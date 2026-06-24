@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,9 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
                         psa.permittedSubclasses().stream().map(ps ->
                                 map(ps.asSymbol())).toList()));
             case LoadableDescriptorsAttribute pa ->
-                clb.with(LoadableDescriptorsAttribute.of(pa.loadableDescriptors()));
+                clb.with(LoadableDescriptorsAttribute.ofSymbols(
+                        pa.loadableDescriptorSymbols().stream()
+                                .map(this::map).toList()));
             case RuntimeVisibleAnnotationsAttribute aa ->
                 clb.with(RuntimeVisibleAnnotationsAttribute.of(
                         mapAnnotations(aa.annotations())));

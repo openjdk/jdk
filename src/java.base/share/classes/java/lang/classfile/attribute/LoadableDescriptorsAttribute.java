@@ -30,6 +30,7 @@ import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
+import java.util.Arrays;
 import java.util.List;
 
 import jdk.internal.classfile.impl.BoundAttribute;
@@ -74,6 +75,8 @@ public sealed interface LoadableDescriptorsAttribute
     /**
      * {@return a {@code LoadableDescriptors} attribute}
      * @param loadableDescriptors the loadable descriptors
+     * @throws IllegalArgumentException if the number of loadable descriptors
+     *         exceeds the limit of {@link java.lang.classfile##u2 u2}
      */
     static LoadableDescriptorsAttribute of(List<Utf8Entry> loadableDescriptors) {
         return new UnboundAttribute.UnboundLoadableDescriptorsAttribute(loadableDescriptors);
@@ -82,8 +85,30 @@ public sealed interface LoadableDescriptorsAttribute
     /**
      * {@return a {@code LoadableDescriptors} attribute}
      * @param loadableDescriptors the loadable descriptors
+     * @throws IllegalArgumentException if the number of loadable descriptors
+     *         exceeds the limit of {@link java.lang.classfile##u2 u2}
      */
     static LoadableDescriptorsAttribute of(Utf8Entry... loadableDescriptors) {
         return of(List.of(loadableDescriptors));
+    }
+
+    /**
+     * {@return a {@code LoadableDescriptors} attribute}
+     * @param loadableDescriptors the loadable descriptors
+     * @throws IllegalArgumentException if the number of loadable descriptors
+     *         exceeds the limit of {@link java.lang.classfile##u2 u2}
+     */
+    static LoadableDescriptorsAttribute ofSymbols(List<ClassDesc> loadableDescriptors) {
+        return of(Util.fieldDescriptorList(loadableDescriptors));
+    }
+
+    /**
+     * {@return a {@code LoadableDescriptors} attribute}
+     * @param loadableDescriptors the loadable descriptors
+     * @throws IllegalArgumentException if the number of loadable descriptors
+     *         exceeds the limit of {@link java.lang.classfile##u2 u2}
+     */
+    static LoadableDescriptorsAttribute ofSymbols(ClassDesc... loadableDescriptors) {
+        return ofSymbols(Arrays.asList(loadableDescriptors));
     }
 }

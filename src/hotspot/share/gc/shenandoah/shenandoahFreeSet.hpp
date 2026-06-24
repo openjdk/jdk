@@ -894,8 +894,7 @@ public:
   // OldCollector partition.  Upon return, old_region_count holds the updated number of regions in the OldCollector partition.
   //
   // Returns allocatable memory within Mutator partition, in words.
-  size_t reserve_regions(size_t to_reserve, size_t old_reserve, size_t &old_region_count,
-                       size_t &young_used_regions, size_t &old_used_regions, size_t &young_used_bytes, size_t &old_used_bytes);
+  size_t reserve_regions(size_t to_reserve, size_t old_reserve, size_t &old_region_count);
 
   // Reserve space for evacuations, with regions reserved for old evacuations placed to the right
   // of regions reserved of young evacuations.
