@@ -57,7 +57,7 @@
 
 // Good estimate for the initial table size.
 static uint initial_nmethod_table_size(G1CollectedHeap* g1h) {
-  // The +1 is to consider the retained region, and avoid passing an unsupported 0 size as initial size.
+  // The +1 is both to consider the retained old region likely to be added, and avoid zero-sized initial tables.
   return MIN3(g1h->collection_set()->num_regions(), g1h->max_num_regions() / 2, g1h->num_available_regions()) + 1;
 }
 
@@ -625,13 +625,13 @@ void G1ParScanThreadStateSet::flush_stats() {
     size_t evac_failure_cards = pss->num_cards_from_evac_failure();
     size_t marked_cards = pss->num_cards_marked();
 
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::FlushPSS, worker_id, copied_bytes, G1GCPhaseTimes::MergePSSCopiedBytes);
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::FlushPSS, worker_id, lab_waste_bytes, G1GCPhaseTimes::MergePSSLABWasteBytes);
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::FlushPSS, worker_id, lab_undo_waste_bytes, G1GCPhaseTimes::MergePSSLABUndoWasteBytes);
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::FlushPSS, worker_id, pending_cards, G1GCPhaseTimes::MergePSSPendingCards);
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::FlushPSS, worker_id, to_young_gen_cards, G1GCPhaseTimes::MergePSSToYoungGenCards);
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::FlushPSS, worker_id, evac_failure_cards, G1GCPhaseTimes::MergePSSEvacFail);
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::FlushPSS, worker_id, marked_cards, G1GCPhaseTimes::MergePSSMarked);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::FlushPSS, worker_id, copied_bytes, G1GCPhaseTimes::FlushPSSCopiedBytes);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::FlushPSS, worker_id, lab_waste_bytes, G1GCPhaseTimes::FlushPSSLABWasteBytes);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::FlushPSS, worker_id, lab_undo_waste_bytes, G1GCPhaseTimes::FlushPSSLABUndoWasteBytes);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::FlushPSS, worker_id, pending_cards, G1GCPhaseTimes::FlushPSSPendingCards);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::FlushPSS, worker_id, to_young_gen_cards, G1GCPhaseTimes::FlushPSSToYoungGenCards);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::FlushPSS, worker_id, evac_failure_cards, G1GCPhaseTimes::FlushPSSEvacFail);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::FlushPSS, worker_id, marked_cards, G1GCPhaseTimes::FlushPSSMarked);
   }
 
   _flushed = true;
@@ -674,7 +674,7 @@ void G1ParScanThreadStateSet::update_nmethod_regions_to_add(G1NmethodsToAdd* nme
 
 void G1ParScanThreadStateSet::par_iterate_nmethod_regions_to_add(G1HeapRegionClosure* cl,
                                                                  G1HeapRegionClaimer* claimer,
-                                                                uint worker_id) {
+                                                                 uint worker_id) {
   _g1h->par_iterate_regions_array(cl, claimer, _nmethod_regions_to_add, num_nmethod_regions_to_add(), worker_id);
 }
 

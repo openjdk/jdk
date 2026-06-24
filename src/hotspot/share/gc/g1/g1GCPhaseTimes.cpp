@@ -127,13 +127,13 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
 
   _gc_par_phases[OptCodeRoots]->create_thread_work_items("Scanned Nmethods:", CodeRootsScannedNMethods);
 
-  _gc_par_phases[FlushPSS]->create_thread_work_items("Copied Bytes:", MergePSSCopiedBytes);
-  _gc_par_phases[FlushPSS]->create_thread_work_items("LAB Waste:", MergePSSLABWasteBytes);
-  _gc_par_phases[FlushPSS]->create_thread_work_items("LAB Undo Waste:", MergePSSLABUndoWasteBytes);
-  _gc_par_phases[FlushPSS]->create_thread_work_items("Pending Cards:", MergePSSPendingCards);
-  _gc_par_phases[FlushPSS]->create_thread_work_items("To-Young-Gen Cards:", MergePSSToYoungGenCards);
-  _gc_par_phases[FlushPSS]->create_thread_work_items("Evac-Fail Cards:", MergePSSEvacFail);
-  _gc_par_phases[FlushPSS]->create_thread_work_items("Marked Cards:", MergePSSMarked);
+  _gc_par_phases[FlushPSS]->create_thread_work_items("Copied Bytes:", FlushPSSCopiedBytes);
+  _gc_par_phases[FlushPSS]->create_thread_work_items("LAB Waste:", FlushPSSLABWasteBytes);
+  _gc_par_phases[FlushPSS]->create_thread_work_items("LAB Undo Waste:", FlushPSSLABUndoWasteBytes);
+  _gc_par_phases[FlushPSS]->create_thread_work_items("Pending Cards:", FlushPSSPendingCards);
+  _gc_par_phases[FlushPSS]->create_thread_work_items("To-Young-Gen Cards:", FlushPSSToYoungGenCards);
+  _gc_par_phases[FlushPSS]->create_thread_work_items("Evac-Fail Cards:", FlushPSSEvacFail);
+  _gc_par_phases[FlushPSS]->create_thread_work_items("Marked Cards:", FlushPSSMarked);
 
   _gc_par_phases[RestoreEvacuationFailedRegions]->create_thread_work_items("Evacuation Failed Regions:", RestoreEvacFailureRegionsEvacFailedNum);
   _gc_par_phases[RestoreEvacuationFailedRegions]->create_thread_work_items("Pinned Regions:", RestoreEvacFailureRegionsPinnedNum);
@@ -497,7 +497,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
 
   debug_time("Post Evacuate Cleanup 1", _cur_post_evacuate_cleanup_1_time_ms);
   debug_phase(_gc_par_phases[FlushPSS], 1);
-  debug_phase(_gc_par_phases[UpdateCodeRoots]);
+  debug_phase(_gc_par_phases[UpdateCodeRoots], 1);
   debug_phase(_gc_par_phases[ClearCardTable], 1);
   debug_phase(_gc_par_phases[RecalculateUsed], 1);
   if (evacuation_failed) {

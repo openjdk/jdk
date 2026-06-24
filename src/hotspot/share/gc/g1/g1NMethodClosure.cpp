@@ -39,9 +39,14 @@ void G1NMethodClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
 
   _work->do_oop(p);
   T oop_or_narrowoop = RawAccess<>::oop_load(p);
-  // If the oop moved, we need to update the code root set at the new location. Otherwise
-  // it must still be in the current one. In this case the nmethod need not be added to the
-  // code roots again.
+  // If the oop moved, we need to update the code root set at the new location. If it did not
+  // change, it is either in the existing code root set, or an earlier evacuation round already
+  // enqueued it for deferred update.
+  //
+  // We defer actual update to the code roots to later. This can, in presence of optional
+  // collections, ultimately result in duplicates in the per-thread code root set update list.
+  // We consider this negligible, given that optional collection is rare and typically does
+  // not cover many regions/nmethods.
   if (oop_or_narrowoop != old_oop_or_narrowoop) {
     // If the oop moved, it must not have been null.
     assert(!CompressedOops::is_null(oop_or_narrowoop), "must be");
@@ -49,18 +54,14 @@ void G1NMethodClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
     assert(!_g1h->is_in_cset(o), "must be");
 
     G1HeapRegion* hr = _g1h->heap_region_containing(o);
-
     _affected_regions.append_if_missing(hr);
   } else {
-#ifdef ASSERT
-    // Either the oop did not move or was not in the collection set in the first place. Must still be
-    // recorded in the current region's code root set either way.
-    oop o = CompressedOops::decode(oop_or_narrowoop);
-    G1HeapRegion* r = _g1h->heap_region_containing(o);
-    assert(o == nullptr || r->rem_set()->code_roots_list_contains(_nm),
-           "object " PTR_FORMAT " nmethod " PTR_FORMAT " is not null or region %u does not contain it in remset",
-          p2i(o), p2i(_nm), r->hrm_index());
-#endif
+    // We could be tempted to verify that for a non-null oop, the _nm is already in the target code root
+    // set or in one of the deferred code root set update lists. It would not be sufficient to verify the
+    // current thread's list, because across evacuation rounds (i.e. initial/multiple optional) different
+    // threads may have worked on a given oop from an nmethod.
+    // This is rather expensive, not only requiring looking at all threads' lists, but also making sure
+    // that there are no memory ordering issues when doing that. So we skip it.
   }
 }
 
