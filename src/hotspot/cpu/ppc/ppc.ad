@@ -10071,7 +10071,7 @@ instruct cmovI_bso_reg_conLvalue0(iRegIdst dst, flagsRegSrc crx, regD src) %{
   effect(TEMP_DEF dst, USE crx, USE src);
   predicate(false);
 
-  format %{ "CMOVI   $dst, $crx, $src" %}
+  format %{ "CMOVI   $dst, $crx, $src, 0 \t// set to 0 if unordered" %}
   size(12);
   ins_encode %{
     Label done;
@@ -10209,7 +10209,7 @@ instruct cmovL_bso_reg_conLvalue0(iRegLdst dst, flagsRegSrc crx, regD src) %{
   effect(TEMP_DEF dst, USE crx, USE src);
   predicate(false);
 
-  format %{ "CMOVL   $dst, $crx, $src" %}
+  format %{ "CMOVL   $dst, $crx, $src, 0 \t// set to 0 if unordered" %}
   size(12);
   ins_encode %{
     Label done;
