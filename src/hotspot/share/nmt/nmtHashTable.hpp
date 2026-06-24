@@ -59,7 +59,7 @@ class OpenAddressedHashTable : public StackObj {
   static_assert(std::is_trivially_copyable<KVElement>::value &&
                 std::is_trivially_destructible<KVElement>::value,
                 "These are required for the hashtable to function correctly");
-  static_assert(LoadFactorPercentage <= 1, "Load factor cannot be higher than one in an open addressed hashtable");
+  static_assert(LoadFactorPercentage <= 100, "Load factor cannot be higher than 100% in an open addressed hashtable");
 
 private:
   // Load factor before resize is necessary
