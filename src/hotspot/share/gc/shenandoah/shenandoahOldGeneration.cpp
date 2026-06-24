@@ -132,16 +132,18 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues)
 
 void ShenandoahOldGeneration::set_promoted_reserve(size_t new_val) {
   shenandoah_assert_heaplocked_or_safepoint();
-  _promoted_reserve = new_val;
+  _promoted_reserve.store_relaxed(new_val);
 }
 
 size_t ShenandoahOldGeneration::get_promoted_reserve() const {
-  return _promoted_reserve;
+  return _promoted_reserve.load_relaxed();
 }
 
 void ShenandoahOldGeneration::augment_promoted_reserve(size_t increment) {
   shenandoah_assert_heaplocked_or_safepoint();
-  _promoted_reserve += increment;
+  // Written under the heap lock, so a plain load/store of the current value is sufficient; the
+  // atomic store only guards the concurrent lock-free reader.
+  _promoted_reserve.store_relaxed(_promoted_reserve.load_relaxed() + increment);
 }
 
 void ShenandoahOldGeneration::reset_promoted_expended() {
@@ -194,9 +196,11 @@ void ShenandoahOldGeneration::maybe_log_promotion_failure_stats(bool concurrent)
 }
 
 bool ShenandoahOldGeneration::try_expend_promoted(size_t increment) {
-  const size_t reserve = get_promoted_reserve();
   size_t cur = _promoted_expended.load_relaxed();
-  while (cur + increment <= reserve) {
+  // Reload the reserve on every iteration: it may be augmented concurrently (e.g. promote-in-place
+  // adding to the reserve under the heap lock), so a stale snapshot could reject a promotion the
+  // freshly-grown reserve would allow.
+  while (cur + increment <= get_promoted_reserve()) {
     size_t prev = _promoted_expended.compare_exchange(cur, cur + increment);
     if (prev == cur) {
       return true;
