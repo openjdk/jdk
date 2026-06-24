@@ -10891,7 +10891,7 @@ instruct cmpD_reg_reg(flagsReg crx, regD src1, regD src2) %{
   match(Set crx (CmpD src1 src2));
   ins_cost(DEFAULT_COST+BRANCH_COST);
 
-  format %{ "CmpD    $crx, $src1, $src2" %}
+  format %{ "CMPD    $crx, $src1, $src2" %}
   size(16);
   ins_encode %{
     Label done;
