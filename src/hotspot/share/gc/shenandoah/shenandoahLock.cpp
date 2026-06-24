@@ -29,9 +29,8 @@
 #include "runtime/os.hpp"
 #include "runtime/os.inline.hpp"
 
-// In-flight release callback, modeled on the file-private InFlightMutexRelease in mutex.cpp and
-// shared by both ShenandoahLock (the _state spin lock) and ShenandoahSimpleLock (the PlatformMonitor
-// blocking lock). ThreadBlockInVMPreprocess invokes operator() after the acquiring JavaThread has
+// In-flight release callback for ShenandoahLock, modeled on the file-private InFlightMutexRelease in
+// mutex.cpp. ThreadBlockInVMPreprocess invokes operator() after the acquiring JavaThread has
 // transitioned back to _thread_in_vm but before it processes a pending safepoint, giving us the
 // chance to release the just-acquired lock so the thread does not hold it across the safepoint.
 // The callback does nothing until armed via arm() -- it must not release a lock it does not hold,
@@ -121,6 +120,8 @@ bool ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
           return false;
         }
       }
+      // Reached when ALLOW_BLOCK but no safepoint is pending (or one was announced then cleared
+      // before our poll armed): yield like the non-blocking path rather than re-spin tightly.
       yield_or_sleep(yields);
     } else {
       yield_or_sleep(yields);
@@ -191,6 +192,7 @@ void ShenandoahSimpleLock::unlock() {
 }
 
 void ShenandoahSimpleLock::release_for_safepoint() {
+  // The owner is set only after lock() returns, so there is no owner write to undo here.
   _lock.unlock();
 }
 

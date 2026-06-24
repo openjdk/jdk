@@ -75,7 +75,7 @@ public:
     assert(_owner.load_relaxed() != Thread::current(), "reentrant locking attempt, would deadlock");
 
     if ((allow_block_for_safepoint && SafepointSynchronize::is_synchronizing()) ||
-        _state.compare_exchange(unlocked, locked) != unlocked) {
+        (_state.compare_exchange(unlocked, locked) != unlocked)) {
       // 1. Java thread, and there is a pending safepoint. Dive into contended locking
       //    immediately without trying anything else, and block.
       // 2. Fast lock fails, dive into contended lock handling.
@@ -96,8 +96,11 @@ public:
 
   void contended_lock(bool allow_block_for_safepoint);
 
-  // Single non-blocking TTAS attempt to acquire the lock. Returns true iff this call won it. Does
-  // not set _owner; the caller does that. Used by contended_lock to re-acquire after a safepoint.
+  // Single non-blocking TTAS attempt to acquire the lock. Returns true iff this call won it.
+  // Note: contended_lock does NOT route through this; it re-acquires via a raw _state CAS so it can
+  // set _owner itself afterwards. Routing contended_lock through try_lock() would set _owner here
+  // (under ASSERT) and then trip lock()'s assert(_owner == nullptr). Kept for parity with
+  // ShenandoahSimpleLock::try_lock and for callers that want a bare non-blocking attempt.
   bool try_lock() {
     bool const acquired = _state.compare_exchange(unlocked, locked) == unlocked;
 #ifdef ASSERT
@@ -121,16 +124,16 @@ public:
 };
 
 // Blocking lock backed by a PlatformMonitor: a contended waiter parks on the native monitor instead
-// of busy-spinning like ShenandoahLock. When used as the heap lock, a JavaThread that passes
-// allow_block_for_safepoint acquires in a safepoint-aware way -- it blocks in _thread_blocked (so a
-// pending safepoint is not stalled) and, if a safepoint becomes pending while it is acquiring,
-// releases the lock on the safepoint's behalf and retries afterward. This mirrors HotSpot's
-// Mutex::lock_contended (ThreadBlockInVMPreprocess + in-flight release), but is a Shenandoah-private
-// lock so it is exempt from the Mutex rank model: the heap lock is taken by JavaThreads both with
-// and without a safepoint check, which no single Mutex rank permits.
+// of busy-spinning like ShenandoahLock. A JavaThread that passes allow_block_for_safepoint acquires
+// in a safepoint-aware way -- it blocks in _thread_blocked (so a pending safepoint is not stalled)
+// and, if a safepoint becomes pending while it is acquiring, releases the lock on the safepoint's
+// behalf and retries afterward. This mirrors HotSpot's Mutex::lock_contended (ThreadBlockInVMPreprocess
+// + in-flight release), but is a Shenandoah-private lock so it is exempt from the Mutex rank model.
 //
-// Callers that never pass allow_block_for_safepoint (e.g. ShenandoahNMethodLock) keep the plain
-// blocking behavior unchanged -- they always take the direct _lock.lock() path below.
+// The safepoint-aware path is parity groundwork: the in-tree caller (ShenandoahNMethodLock) never
+// passes allow_block_for_safepoint and so always takes the plain _lock.lock() path. It is exercised
+// only by ShenandoahLock today; this class mirrors the same contract so the heap lock could later be
+// backed by a blocking monitor instead of a spin lock.
 class ShenandoahSimpleLock {
   // Grants access to release_for_safepoint() for the in-flight release callback (defined in the .cpp).
   template<typename Lock> friend class ShenandoahInFlightLockRelease;
