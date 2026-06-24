@@ -91,16 +91,11 @@ public class SHA3Parallel {
     public int squeezeBlock(int nr) throws InvalidAlgorithmParameterException {
         int retVal = 0;
         switch (nr) {
-            case 1:
-                keccak(lanesArr[0]);
-                break;
+            case 1: // until we enable single keccak intrinsic, use the better doubleKeccak
             case 2:
                 doubleKeccak(lanesArr[0], lanesArr[1]);
                 break;
-            case 3:
-                doubleKeccak(lanesArr[0], lanesArr[1]);
-                keccak(lanesArr[2]);
-                break;
+            case 3:  // until we enable single keccak intrinsic, use the better doubleKeccak/quadKeccak
             case 4:
                 quadKeccak(lanesArr[0], lanesArr[1], lanesArr[2], lanesArr[3]);
                 break;
