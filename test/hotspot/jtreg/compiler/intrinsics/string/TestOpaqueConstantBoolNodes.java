@@ -43,7 +43,8 @@ public class TestOpaqueConstantBoolNodes {
         TestFramework.runWithFlags(
             "-XX:CompileCommand=inline,java.lang.String::*",
             "-XX:CompileCommand=inline,java.lang.StringCoding::*",
-            "-XX:CompileCommand=exclude,jdk.internal.util.Preconditions::checkFromIndexSize");
+            "-XX:CompileCommand=exclude,jdk.internal.util.Preconditions::checkFromIndexSize",
+            "-XX:ControlIntrinsic=-_Preconditions_checkFromIndexSize");
     }
 
     @Setup

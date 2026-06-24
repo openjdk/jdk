@@ -29,6 +29,7 @@
  * @run main/othervm
  *      -XX:CompileCommand=inline,java.lang.StringCoding::*
  *      -XX:CompileCommand=exclude,jdk.internal.util.Preconditions::checkFromIndexSize
+ *      -XX:ControlIntrinsic=-_Preconditions_checkFromIndexSize
  *      ${test.main.class}
  */
 
