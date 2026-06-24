@@ -158,6 +158,7 @@ class TestCodeCacheWhiteBoxRunner {
                 triggerCodeCacheGC();
                 System.out.println("Thread completed");
             });
+            toRun.setDaemon(true); // non-daemon thread could prevent VM shutdown after the main thread times out
             toRun.start();
             toRun.join(60_000);
 
