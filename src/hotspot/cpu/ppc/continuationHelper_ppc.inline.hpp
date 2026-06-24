@@ -106,6 +106,8 @@ inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, cons
 }
 
 inline address* ContinuationHelper::Frame::return_pc_address(const frame& f) {
+  assert(f.cb() == nullptr || !f.cb()->is_nmethod() || !f.cb()->as_nmethod()->needs_stack_repair(),
+         "unsupported");
   return (address*)&f.callers_abi()->lr;
 }
 

@@ -45,7 +45,7 @@ enum {
   JVM_CONSTANT_MethodHandleInError      = 104,  // Error tag due to resolution error
   JVM_CONSTANT_MethodTypeInError        = 105,  // Error tag due to resolution error
   JVM_CONSTANT_DynamicInError           = 106,  // Error tag due to resolution error
-  JVM_CONSTANT_InternalMax              = 106,  // Last implementation tag
+  JVM_CONSTANT_InternalMax              = 106   // Last implementation tag
 };
 
 

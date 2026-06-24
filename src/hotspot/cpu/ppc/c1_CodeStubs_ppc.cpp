@@ -143,6 +143,85 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
 }
 
 
+// Implementation of LoadFlattenedArrayStub
+
+LoadFlattenedArrayStub::LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr result, CodeEmitInfo* info) {
+  _array = array;
+  _index = index;
+  _result = result;
+  _scratch_reg = FrameMap::R3_oop_opr;
+  _info = new CodeEmitInfo(info);
+}
+
+void LoadFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  // Pass arguments on stack.
+  __ std(_array->as_register(), -16, R1_SP);
+  __ std(_index->as_register(), -8, R1_SP);
+  address stub = Runtime1::entry_for(StubId::c1_load_flat_array_id);
+  //__ load_const_optimized(R0, stub);
+  __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
+  __ mtctr(R0);
+  __ bctrl();
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  __ mr_if_needed(_result->as_register(), R3_RET);
+  __ b(_continuation);
+}
+
+
+// Implementation of StoreFlattenedArrayStub
+
+StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr value, CodeEmitInfo* info) {
+  _array = array;
+  _index = index;
+  _value = value;
+  _scratch_reg = LIR_OprFact::illegalOpr;
+  _info = new CodeEmitInfo(info);
+}
+
+void StoreFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  // Pass arguments on stack.
+  __ std(_array->as_register(), -24, R1_SP);
+  __ std(_index->as_register(), -16, R1_SP);
+  __ std(_value->as_register(), -8, R1_SP);
+  address stub = Runtime1::entry_for(StubId::c1_store_flat_array_id);
+  //__ load_const_optimized(R0, stub);
+  __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
+  __ mtctr(R0);
+  __ bctrl();
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  __ b(_continuation);
+}
+
+
+// Implementation of SubstitutabilityCheckStub
+SubstitutabilityCheckStub::SubstitutabilityCheckStub(LIR_Opr left, LIR_Opr right, CodeEmitInfo* info) {
+  _left = left;
+  _right = right;
+  _scratch_reg = FrameMap::R3_oop_opr;
+  _info = new CodeEmitInfo(info);
+}
+
+void SubstitutabilityCheckStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  // Pass arguments on stack.
+  __ std(_left->as_register(), -16, R1_SP);
+  __ std(_right->as_register(), -8, R1_SP);
+  address stub = Runtime1::entry_for(StubId::c1_substitutability_check_id);
+  //__ load_const_optimized(R0, stub);
+  __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
+  __ mtctr(R0);
+  __ bctrl();
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  // Result is in R3_RET (_scratch_reg)
+  __ b(_continuation);
+}
+
+
 void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
   address a;
   if (_info->deoptimize_on_exception()) {
@@ -237,13 +316,14 @@ NewObjectArrayStub::NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Op
   _length = length;
   _result = result;
   _info = new CodeEmitInfo(info);
-  _is_null_free = is_null_free; // unimplemented
+  _is_null_free = is_null_free;
 }
 
 void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
 
-  address entry = Runtime1::entry_for(StubId::c1_new_object_array_id);
+  address entry = _is_null_free ? Runtime1::entry_for(StubId::c1_new_null_free_array_id)
+                                : Runtime1::entry_for(StubId::c1_new_object_array_id);
   //__ load_const_optimized(R0, entry);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(entry));
   __ mr_if_needed(/*op->tmp1()->as_register()*/ R5_ARG3, _length->as_register()); // already sign-extended
@@ -256,6 +336,15 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
 
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+  if (_throw_ie_stub != nullptr) {
+    // When we come here, _obj_reg has already been checked to be non-null.
+    const int is_value_mask = markWord::inline_type_pattern;
+    __ ld(R0, oopDesc::mark_offset_in_bytes(), _obj_reg->as_register());
+    __ andi(R0, R0, is_value_mask);
+    __ cmpdi(CR0, R0, is_value_mask);
+    __ bc_far_optimized(Assembler::bcondCRbiIs1, __ bi0(CR0, Assembler::equal), *_throw_ie_stub->entry());
+  }
+
   address stub = Runtime1::entry_for(ce->compilation()->has_fpu_code() ? StubId::c1_monitorenter_id : StubId::c1_monitorenter_nofpu_id);
   //__ load_const_optimized(R0, stub);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
@@ -469,30 +558,4 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   __ b(_continuation);
 }
 
-// Implementation of SubstitutabilityCheckStub
-SubstitutabilityCheckStub::SubstitutabilityCheckStub(LIR_Opr left, LIR_Opr right, CodeEmitInfo* info) {
-  Unimplemented();
-}
-
-void SubstitutabilityCheckStub::emit_code(LIR_Assembler* ce) {
-  Unimplemented();
-}
-
-LoadFlattenedArrayStub::LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr result, CodeEmitInfo* info) {
-  Unimplemented();
-}
-
-void LoadFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
-  Unimplemented();
-}
-
-// Implementation of StoreFlattenedArrayStub
-
-StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr value, CodeEmitInfo* info) {
-  Unimplemented();
-}
-
-void StoreFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
-  Unimplemented();
-}
 #undef __

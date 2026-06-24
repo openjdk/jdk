@@ -473,7 +473,7 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  */
 public abstract sealed class VarHandle implements Constable
      permits IndirectVarHandle, LazyInitializingVarHandle, SegmentVarHandle,
-             ArrayVarHandle,
+             ArrayVarHandle, VarHandles.StaticFieldVarHandle,
              VarHandleByteArrayAsChars.ByteArrayViewVarHandle,
              VarHandleByteArrayAsDoubles.ByteArrayViewVarHandle,
              VarHandleByteArrayAsFloats.ByteArrayViewVarHandle,
@@ -482,33 +482,23 @@ public abstract sealed class VarHandle implements Constable
              VarHandleByteArrayAsShorts.ByteArrayViewVarHandle,
              VarHandleBooleans.Array,
              VarHandleBooleans.FieldInstanceReadOnly,
-             VarHandleBooleans.FieldStaticReadOnly,
              VarHandleBytes.Array,
              VarHandleBytes.FieldInstanceReadOnly,
-             VarHandleBytes.FieldStaticReadOnly,
              VarHandleChars.Array,
              VarHandleChars.FieldInstanceReadOnly,
-             VarHandleChars.FieldStaticReadOnly,
              VarHandleDoubles.Array,
              VarHandleDoubles.FieldInstanceReadOnly,
-             VarHandleDoubles.FieldStaticReadOnly,
              VarHandleFloats.Array,
              VarHandleFloats.FieldInstanceReadOnly,
-             VarHandleFloats.FieldStaticReadOnly,
              VarHandleInts.Array,
              VarHandleInts.FieldInstanceReadOnly,
-             VarHandleInts.FieldStaticReadOnly,
              VarHandleLongs.Array,
              VarHandleLongs.FieldInstanceReadOnly,
-             VarHandleLongs.FieldStaticReadOnly,
              VarHandleReferences.FieldInstanceReadOnly,
-             VarHandleReferences.FieldStaticReadOnly,
              VarHandleShorts.Array,
              VarHandleShorts.FieldInstanceReadOnly,
-             VarHandleShorts.FieldStaticReadOnly,
              VarHandleFlatValues.FieldInstanceReadOnly,
              VarHandleNonAtomicReferences.FieldInstanceReadOnly,
-             VarHandleNonAtomicReferences.FieldStaticReadOnly,
              VarHandleNonAtomicFlatValues.FieldInstanceReadOnly {
     final VarForm vform;
     final boolean exact;
@@ -523,17 +513,21 @@ public abstract sealed class VarHandle implements Constable
     }
 
     /**
-     * Returns the target VarHandle.   Subclasses may override this method to implement
-     * additional logic for example lazily initializing the declaring class of a static field var handle.
+     * A barrier for accessing a target var handle used by static var handle
+     * implementation methods.  This allows initialization barriers and strict
+     * field initialization checks.
+     *
+     * @param reading whether this access performs any read
      */
     @ForceInline
-    VarHandle target() {
-        return asDirect();
+    VarHandle onStaticFieldAccess(boolean reading) {
+        return this;
     }
 
     /**
-     * Returns the direct target VarHandle.   Indirect VarHandle subclasses should implement
-     * this method.
+     * Returns the direct VarHandle, passed into the method handle that perform
+     * conversions or has the actual implementation when this VarHandle is
+     * indirect.
      *
      * @see #getMethodHandle(int)
      * @see #checkAccessModeThenIsDirect(AccessDescriptor)

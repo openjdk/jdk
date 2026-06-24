@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ public abstract class PrintJobAdapter implements PrintJobListener {
      *
      * @param  pje the event being notified
      */
+    @Override
     public void printDataTransferCompleted(PrintJobEvent pje)  {
     }
 
@@ -57,6 +58,7 @@ public abstract class PrintJobAdapter implements PrintJobListener {
      *
      * @param  pje the event being notified
      */
+    @Override
     public void printJobCompleted(PrintJobEvent pje)  {
     }
 
@@ -66,6 +68,7 @@ public abstract class PrintJobAdapter implements PrintJobListener {
      *
      * @param  pje the event being notified
      */
+    @Override
     public void printJobFailed(PrintJobEvent pje)  {
     }
 
@@ -74,6 +77,7 @@ public abstract class PrintJobAdapter implements PrintJobListener {
      *
      * @param  pje the event being notified
      */
+    @Override
     public void printJobCanceled(PrintJobEvent pje) {
     }
 
@@ -86,6 +90,7 @@ public abstract class PrintJobAdapter implements PrintJobListener {
      *
      * @param  pje the event being notified
      */
+    @Override
     public void printJobNoMoreEvents(PrintJobEvent pje)  {
     }
 
@@ -95,6 +100,7 @@ public abstract class PrintJobAdapter implements PrintJobListener {
      *
      * @param  pje the event being notified
      */
+    @Override
     public void printJobRequiresAttention(PrintJobEvent pje)  {
     }
 }

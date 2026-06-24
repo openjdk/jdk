@@ -2454,7 +2454,7 @@ void Method::print_value_on(outputStream* st) const {
   st->print("%s", internal_name());
   print_address_on(st);
   st->print(" ");
-  if (WizardMode) print_access_flags(st);
+  print_access_flags(st);
   name()->print_value_on(st);
   st->print(" ");
   signature()->print_value_on(st);

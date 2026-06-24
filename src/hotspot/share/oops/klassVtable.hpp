@@ -297,10 +297,7 @@ class klassItable {
   itableMethodEntry* method_entry(int i) { assert(0 <= i && i <= _size_method_table, "index out of bounds");
                                            return &((itableMethodEntry*)method_start())[i]; }
 
-  InstanceKlass* klass() const          { return _klass; }
-  int table_offset() const              { return _table_offset; }
-  int size_offset_table() const         { return _size_offset_table; }
-  int size_method_table() const         { return _size_method_table; }
+  int size_offset_table() const          { return _size_offset_table; }
 
   // Initialization
   void initialize_itable_and_check_constraints(TRAPS);

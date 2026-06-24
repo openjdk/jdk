@@ -3318,6 +3318,129 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   ld(holder, ConstantPool::pool_holder_offset(), holder);
 }
 
+void MacroAssembler::test_markword_is_inline_type(Register markword, Label& is_inline_type) {
+  assert_different_registers(markword, R0);
+  andi(R0, markword, markWord::inline_type_pattern_mask);
+  cmpwi(CR0, R0, markWord::inline_type_pattern);
+  beq(CR0, is_inline_type);
+}
+
+void MacroAssembler::test_oop_is_not_inline_type(Register object, Label& not_inline_type, bool can_be_null) {
+  if (can_be_null) {
+    cmpdi(CR0, object, 0);
+    beq(CR0, not_inline_type);
+  }
+  ld(R0, oopDesc::mark_offset_in_bytes(), object);
+  andi(R0, R0, markWord::inline_type_pattern_mask);
+  cmpwi(CR0, R0, markWord::inline_type_pattern);
+  bne(CR0, not_inline_type);
+}
+
+void MacroAssembler::test_field_is_null_free_inline_type(Register flags, Label& is_null_free_inline_type) {
+  testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
+  bne(CR0, is_null_free_inline_type);
+}
+
+void MacroAssembler::test_field_is_not_null_free_inline_type(Register flags, Label& not_null_free_inline_type) {
+  testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
+  beq(CR0, not_null_free_inline_type);
+}
+
+void MacroAssembler::test_field_is_flat(Register flags, Label& is_flat) {
+  testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_flat_shift);
+  bne(CR0, is_flat);
+}
+
+void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set,
+                                            Label& jmp_label, bool maybe_far) {
+  Label test_mark_word;
+  // load mark word
+  ld(temp_reg, oopDesc::mark_offset_in_bytes(), oop);
+  // if unlocked bit is set we can directly use the mark word
+  andi_(R0, temp_reg, markWord::unlocked_value);
+  bne(CR0, test_mark_word);
+  // slow path use klass prototype
+  load_prototype_header(temp_reg, oop);
+
+  bind(test_mark_word);
+  andi_(R0, temp_reg, test_bit);
+  if (maybe_far) {
+    bc_far_optimized(jmp_set ? Assembler::bcondCRbiIs0 : Assembler::bcondCRbiIs1,
+                     bi0(CR0, Assembler::equal), jmp_label);
+  } else {
+    if (jmp_set) {
+      bne(CR0, jmp_label);
+    } else {
+      beq(CR0, jmp_label);
+    }
+  }
+}
+
+void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array, bool maybe_far) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array, maybe_far);
+}
+
+void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg, Label& is_non_flat_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
+}
+
+void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array, bool maybe_far) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array, maybe_far);
+}
+
+void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label& is_non_null_free_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
+}
+
+void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
+  testbitdi(CR0, R0, lh, exact_log2(Klass::_lh_array_tag_flat_value_bit_inplace));
+  bne(CR0, is_flat_array);
+}
+
+void MacroAssembler::load_metadata(Register dst, Register src) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(dst, src);
+  } else {
+    lwz(dst, oopDesc::klass_offset_in_bytes(), src);
+  }
+}
+
+void MacroAssembler::load_prototype_header(Register dst, Register src) {
+  load_klass(dst, src);
+  ld(dst, Klass::prototype_header_offset(), dst);
+}
+
+void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->flat_field_copy(this, decorators, src, dst, inline_layout_info);
+}
+
+void MacroAssembler::payload_offset(Register inline_klass, Register offset) {
+  ld(offset, in_bytes(InlineKlass::adr_members_offset()), inline_klass);
+  lwz(offset, in_bytes(InlineKlass::payload_offset_offset()), offset);
+}
+
+void MacroAssembler::payload_address(Register oop, Register data, Register inline_klass, Register t1) {
+  // ((address) (void*) o) + vk->payload_offset();
+  payload_offset(inline_klass, t1);
+  add(data, oop, t1);
+}
+
+void MacroAssembler::inline_layout_info(Register holder_klass, Register index, Register layout_info) {
+  assert_different_registers(holder_klass, index, layout_info);
+  InlineLayoutInfo array[2];
+  int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
+  if (is_power_of_2(size)) {
+    sldi(index, index, log2i_exact(size)); // Scale index by power of 2
+  } else {
+    mulld(index, index, size); // Scale the index to be the entry index * array_element_size
+  }
+  ld(layout_info, InstanceKlass::inline_layout_info_array_offset(), holder_klass);
+  addi(layout_info, layout_info, Array<InlineLayoutInfo>::base_offset_in_bytes());
+  add(layout_info, layout_info, index);
+}
+
+
 // Clear Array
 // For very short arrays. tmp == R0 is allowed.
 void MacroAssembler::clear_memory_unrolled(Register base_ptr, int cnt_dwords, Register tmp, int offset) {
@@ -3402,6 +3525,31 @@ void MacroAssembler::clear_memory_doubleword(Register base_ptr, Register cnt_dwo
     std(tmp, 0, base_ptr);             // Clear 8byte aligned block.
     addi(base_ptr, base_ptr, 8);
     bdnz(restloop);
+
+  bind(done);
+}
+
+// base:   Address of a buffer to be filled, 8 bytes aligned. Killed.
+// cnt:    Count in 8-byte unit.
+// value:  Value to be filled with.
+void MacroAssembler::fill_words(Register base, Register cnt, Register value) {
+  Label loop, loop_end, done;
+
+  // 2x unrolled loop
+  srdi_(R0, cnt, 1);
+  beq(CR0, loop_end); // less than 2 elements
+  mtctr(R0);
+
+  bind(loop);
+  std(value, 0, base);
+  std(value, 8, base);
+  addi(base, base, 16);
+  bdnz(loop);
+
+  bind(loop_end);
+  andi_(R0, cnt, 1);
+  beq(CR0, done);
+  std(value, 0, base); // last element
 
   bind(done);
 }
@@ -4450,7 +4598,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
     addi(offset, offset, receiver_step);
   bdnz(L_loop_search_receiver);
 
-  // Fast: no receiver, but profile is full
+  // Fast: no receiver, but profile is not full
   if (count != noreg) {
     mtctr(count);
   } else {
@@ -4725,8 +4873,8 @@ void MacroAssembler::atomically_flip_locked_state(bool is_unlock, Register obj, 
   if (!is_unlock) {
     ldarx(tmp, obj, MacroAssembler::cmpxchgx_hint_acquire_lock());
     xori(tmp, tmp, markWord::unlocked_value); // flip unlocked bit
-    andi_(R0, tmp, markWord::lock_mask_in_place);
-    bne(CR0, failed); // failed if new header doesn't contain locked_value (which is 0)
+    andi_(R0, tmp, markWord::lock_mask_in_place | markWord::inline_type_bit_in_place);
+    bne(CR0, failed); // failed if new header doesn't contain locked_value (which is 0) or belongs to an inline type
   } else {
     ldarx(tmp, obj, MacroAssembler::cmpxchgx_hint_release_lock());
     andi_(R0, tmp, markWord::lock_mask_in_place);

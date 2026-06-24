@@ -51,6 +51,10 @@ protected:
 public:
   LayoutKind layout_kind() const { return get_FlatArrayKlass()->layout_kind(); }
 
+  jint max_elements() const {
+    return get_FlatArrayKlass()->max_elements();
+  }
+
   int log2_element_size() {
     return Klass::layout_helper_log2_element_size(layout_helper());
   }

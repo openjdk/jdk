@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +56,9 @@ inline frame FreezeBase::sender(const frame& f) {
   if (FKind::interpreted) {
     return frame(f.sender_sp(), f.sender_pc(), f.interpreter_frame_sender_sp());
   }
+
+  assert(f.cb() == nullptr || !f.cb()->is_nmethod() || !f.cb()->as_nmethod()->needs_stack_repair(),
+         "unsupported");
 
   intptr_t* sender_sp = f.sender_sp();
   address sender_pc = f.sender_pc();
@@ -270,6 +274,7 @@ inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
 //
 template<typename FKind>
 frame FreezeBase::new_heap_frame(frame& f, frame& caller, int size_adjust) {
+  assert(size_adjust == 0, "unsupported");
   assert(FKind::is_instance(f), "");
 
   intptr_t *sp, *fp;
@@ -504,6 +509,7 @@ inline frame ThawBase::new_entry_frame() {
 //  if there are no stackargs. This is to comply with shared code (see e.g. StackChunkFrameStream::frame_size())
 //
 template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame& caller, bool bottom, int size_adjust) {
+  assert(size_adjust == 0, "unsupported");
   assert(FKind::is_instance(hf), "");
 
   assert(is_aligned(caller.fp(), frame::frame_alignment), PTR_FORMAT, p2i(caller.fp()));
