@@ -33,7 +33,6 @@
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "logging/logStream.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -128,8 +127,11 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 
   _g1h->register_old_collection_set_region_with_region_attr(hr);
 
-  assert(num_regions() < _max_num_regions, "Collection set now larger than maximum size.");
-  _regions[_num_regions++] = hr->hrm_index();
+  uint local_num_regions = num_regions();
+  assert(local_num_regions < _max_num_regions, "Collection set now larger than maximum size.");
+  _regions[local_num_regions] = hr->hrm_index();
+  _num_regions.store_relaxed(local_num_regions + 1);
+
   _num_initial_old_regions++;
 
   _g1h->old_set_remove(hr);
@@ -162,14 +164,13 @@ void G1CollectionSet::stop_incremental_building() {
 
 void G1CollectionSet::clear() {
   assert_at_safepoint_on_vm_thread();
-  _num_regions = 0;
+  _num_regions.store_relaxed(0);
   _groups.clear();
   assert(_optional_groups.length() == 0, "must be");
 }
 
 void G1CollectionSet::iterate(G1HeapRegionClosure* cl) const {
-  uint len = _num_regions;
-  OrderAccess::loadload();
+  uint len = _num_regions.load_acquire();
 
   for (uint i = 0; i < len; i++) {
     G1HeapRegion* r = _g1h->region_at(_regions[i]);
@@ -233,8 +234,7 @@ void G1CollectionSet::add_young_region_common(G1HeapRegion* hr) {
   _regions[index] = hr->hrm_index();
   // Concurrent readers must observe the store of the value in the array before an
   // update to the _num_regions field.
-  OrderAccess::storestore();
-  _num_regions++;
+  _num_regions.fetch_then_add(1u, memory_order_release);
 }
 
 void G1CollectionSet::add_survivor_regions(G1HeapRegion* hr) {
