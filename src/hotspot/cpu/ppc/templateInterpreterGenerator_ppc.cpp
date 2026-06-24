@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -617,6 +617,11 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     case dtos: __ fmr(F15_ftos, F1_RET); break; // TOS cache -> GR_FRET
     case vtos: break;                           // Nothing to do, this was a void return.
     default  : ShouldNotReachHere();
+  }
+
+  if (state == atos && InlineTypeReturnedAsFields) {
+    __ unimplemented("return entry InlineTypeReturnedAsFields");
+    //__ store_inline_type_fields_to_buf(nullptr, true);
   }
 
   __ restore_interpreter_state(R11_scratch1, false /*bcp_and_mdx_only*/, true /*restore_top_frame_sp*/);
@@ -1792,6 +1797,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, b
   if (synchronized) {
     lock_method(R3_ARG1, R4_ARG2, R5_ARG3);
   }
+
 #ifdef ASSERT
   else {
     Label Lok;
@@ -1802,16 +1808,15 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, b
   }
 #endif // ASSERT
 
-  // --------------------------------------------------------------------------
-  // JVMTI support
-  __ notify_method_entry();
-
-  // --------------------------------------------------------------------------
   // Issue a StoreStore barrier on entry to Object_init if the
   // class has strict field fields.  Be lazy, always do it.
   if (object_init) {
-    __ membar(Assembler::StoreStore);
+    __ membar(MacroAssembler::StoreStore);
   }
+
+  // --------------------------------------------------------------------------
+  // JVMTI support
+  __ notify_method_entry();
 
   // --------------------------------------------------------------------------
   // Start executing instructions.

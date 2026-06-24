@@ -43,26 +43,22 @@ import java.util.function.Consumer;
  * so this class behaves somewhat differently from other {@code Map}
  * implementations.
  *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          {@linkplain java.util.Objects#hasIdentity Value objects} can not be used as
+ *          keys in a {@code WeakHashMap}. The {@link #put(Object, Object) put(K, V)}
+ *          method, and all methods that associate a value with a key, throw {@link
+ *          IdentityException} if the key is a value object.
+ *          The {@link WeakHashMap#WeakHashMap(Map)} constructor and the {@link
+ *          #putAll(Map)} method also throw {@code IdentityException} if invoked with
+ *          a {@code Map} containing a key that is a value object.
+ *      </div>
+ * </div>
+ *
  * <p> Both null values and the null key are supported. This class has
  * performance characteristics similar to those of the {@code HashMap}
  * class, and has the same efficiency parameters of <em>initial capacity</em>
  * and <em>load factor</em>.
- *
- * <div class="preview-block">
- *      <div class="preview-comment">
- *          Objects that are {@linkplain java.util.Objects#hasIdentity value objects}
- *          do not have identity and can not be used as keys in a
- *          {@code WeakHashMap}. {@linkplain java.lang.ref.Reference References}
- *          such as {@linkplain WeakReference WeakReference} used by {@code WeakhashMap}
- *          to hold the key cannot refer to a value object.
- *          Methods such as {@linkplain #get get} or {@linkplain #containsKey containsKey}
- *          will always return {@code null} or {@code false} respectively.
- *          The methods such as {@linkplain #put put}, {@linkplain #putAll putAll},
- *          {@linkplain #compute(Object, BiFunction) compute}, and
- *          {@linkplain #computeIfAbsent(Object, Function) computeIfAbsent} or any method putting
- *          a value object, as a key, throw {@link IdentityException}.
- *      </div>
- * </div>
  *
  * <p> Like most collection classes, this class is not synchronized.
  * A synchronized {@code WeakHashMap} may be constructed using the
@@ -103,14 +99,14 @@ import java.util.function.Consumer;
  * removed only after the weak references to it, both inside and outside of the
  * map, have been cleared by the garbage collector.
  *
- * <p> <strong>Implementation note:</strong> The value objects in a
+ * <p> <strong>Implementation note:</strong> The values in a
  * {@code WeakHashMap} are held by ordinary strong references.  Thus care
- * should be taken to ensure that value objects do not strongly refer to their
+ * should be taken to ensure that values do not strongly refer to their
  * own keys, either directly or indirectly, since that will prevent the keys
- * from being discarded.  Note that a value object may refer indirectly to its
- * key via the {@code WeakHashMap} itself; that is, a value object may
- * strongly refer to some other key object whose associated value object, in
- * turn, strongly refers to the key of the first value object.  If the values
+ * from being discarded.  Note that a value may refer indirectly to its
+ * key via the {@code WeakHashMap} itself; that is, a value may
+ * strongly refer to some other key object whose associated value, in
+ * turn, strongly refers to the key of the first value.  If the values
  * in the map do not rely on the map holding strong references to them, one way
  * to deal with this is to wrap values themselves within
  * {@code WeakReferences} before

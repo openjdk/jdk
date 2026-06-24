@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,6 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/devirtualizer.inline.hpp"
 #include "utilities/macros.hpp"
-
-/*
- * Warning incomplete: requires embedded oops, not yet enabled, so consider this a "sketch-up" of oop iterators
- */
 
 template <typename T, class OopClosureType>
 void FlatArrayKlass::oop_oop_iterate_elements_specialized(flatArrayOop a,

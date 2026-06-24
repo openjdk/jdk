@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,8 +402,7 @@
     // between a callee frame and its stack arguments, where it is part
     // of the caller/callee overlap
     metadata_words_at_top                  = sizeof(java_abi) >> LogBytesPerWord,
-    // size, in words, of frame metadata at the frame top that needs
-    // to be reserved for callee functions in the runtime
+    // in bytes
     frame_alignment                        = 16,
     frame_alignment_in_words               = frame_alignment >> LogBytesPerWord,
     // size, in words, of maximum shift in frame position due to alignment
@@ -417,7 +416,6 @@
   // returns the sending frame, without applying any barriers
   inline frame sender_raw(RegisterMap* map) const;
 
-  intptr_t* repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const;
   static intptr_t* repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr);
   bool was_augmented_on_entry(int& real_size) const;
 

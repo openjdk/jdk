@@ -38,7 +38,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          When preview features are enabled, subclasses of {@code java.lang.Object} can be either
  *          identity classes or {@linkplain Class#isValue value classes}.
  *          See The Java Language Specification {@jls value-objects-8.1.1.5 Value Classes}.
- *          Use of value class instances for synchronization, mutexes, or with
+ *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} results in
  *          {@link IdentityException}.
  *      </div>

@@ -49,6 +49,7 @@ import java.io.IOException;
 /*
  * @test id=aggressive
  * @key stress
+ * @library / /test/lib
  * @requires vm.gc.Shenandoah
  * @requires vm.flavor == "server"
  * @summary Stress the Shenandoah GC by trying to make old objects more likely to be garbage than young objects.

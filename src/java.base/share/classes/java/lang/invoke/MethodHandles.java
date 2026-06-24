@@ -3445,6 +3445,11 @@ return mh1;
                                                   : "final field has no write access";
                     throw field.makeAccessException(msg, this);
                 }
+                // strictly-initialized finals not trusted finals at this time
+                if (field.isStrictInit()) {
+                    throw field.makeAccessException("strictly-initialized final field has no write access", this);
+                }
+
                 // check if write access to final field allowed
                 if (!field.isStatic() && isAccessible) {
                     SharedSecrets.getJavaLangReflectAccess().checkAllowedToUnreflectFinalSetter(lookupClass, f);
@@ -3961,7 +3966,7 @@ return mh1;
                 refc = lookupClass();
             }
             return VarHandles.makeFieldHandle(getField, refc,
-                                              this.allowedModes == TRUSTED && !getField.isTrustedFinalField());
+                                              this.allowedModes == TRUSTED);
         }
         /** Check access and get the requested constructor. */
         private MethodHandle getDirectConstructor(Class<?> refc, MemberName ctor) throws IllegalAccessException {

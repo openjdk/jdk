@@ -103,16 +103,6 @@ ifneq ($(REQUIRED_MIN_MAKE_MAJOR_VERSION),)
 endif
 
 ################################################################################
-# Define common directories and files
-
-# Ensure we have 32-bit libs also for x64. We enable mixed-mode.
-ifeq (x86_64,$(ARCH))
-  LIBDIRS := lib64 lib
-  CFLAGS_lib := -m32
-else
-  LIBDIRS := lib
-endif
-
 # Define directories
 DOWNLOAD := $(OUTPUT_ROOT)/download
 SRCDIR := $(OUTPUT_ROOT)/src
@@ -200,23 +190,19 @@ TOOLS ?= $(call declare_tools,_FOR_TARGET,$(TARGET)-)
 
 ################################################################################
 
-# Create a TARGET bfd + libiberty only.
-# Configure one or two times depending on mulitlib arch.
-# If multilib, the second should be 32-bit, and we resolve
-# CFLAG_<name> to most likely -m32.
-define mk_bfd
-  $$(info Libs for $(1))
-  $$(BUILDDIR)/$$(BINUTILS_VER)-$(subst /,-,$(1))/Makefile: \
-      CFLAGS += $$(CFLAGS_$(1))
-  $$(BUILDDIR)/$$(BINUTILS_VER)-$(subst /,-,$(1))/Makefile: \
-      LIBDIRS = --libdir=$(TARGETDIR)/$(1)
+ifeq (x86_64,$(ARCH))
+  LIBDIR := lib64
+else
+  LIBDIR := lib
+endif
 
-  BFDLIB += $$(TARGETDIR)/$$(BINUTILS_VER)-$(subst /,-,$(1)).done
-  BFDMAKES += $$(BUILDDIR)/$$(BINUTILS_VER)-$(subst /,-,$(1))/Makefile
-endef
+$(BUILDDIR)/$(BINUTILS_VER)-$(LIBDIR)/Makefile:
+	CFLAGS += CFLAGS_$(LIBDIR)
+$(BUILDDIR)/$(BINUTILS_VER)-$(LIBDIR)/Makefile:
+	LIBDIR = --libdir=$(TARGETDIR)/$(LIBDIR)
 
-# Create one set of bfds etc for each multilib arch
-$(foreach l,$(LIBDIRS),$(eval $(call mk_bfd,$(l))))
+BFDLIB += $(TARGETDIR)/$(BINUTILS_VER)-$(LIBDIR).done
+BFDMAKES += $(BUILDDIR)/$(BINUTILS_VER)-$(LIBDIR)/Makefile
 
 # Only build these two libs.
 $(BFDLIB): MAKECMD = all-libiberty all-bfd
@@ -228,7 +214,7 @@ $(BFDMAKES): CONFIG = --target=$(TARGET) \
     --host=$(TARGET) --build=$(BUILD) \
     --prefix=$(TARGETDIR) \
     --with-sysroot=$(SYSROOT) \
-    $(LIBDIRS)
+    $(LIBDIR)
 
 $(BFDMAKES): TOOLS = $(call declare_tools,_FOR_TARGET,$(TARGET)-) $(call declare_tools,,$(TARGET)-)
 
@@ -243,21 +229,14 @@ $(GCC) \
     $(CCACHE): ENVS += $(TOOLS)
 
 # libdir to work around hateful bfd stuff installing into wrong dirs...
-# ensure we have 64 bit bfd support in the HOST library. I.e our
-# compiler on i686 will know 64 bit symbols, BUT later
-# we build just the libs again for TARGET, then with whatever the arch
-# wants.
-$(BUILDDIR)/$(BINUTILS_VER)/Makefile: CONFIG += --enable-64-bit-bfd --libdir=$(PREFIX)/$(word 1,$(LIBDIRS))
+# ensure we have 64 bit bfd support in the HOST library.
+$(BUILDDIR)/$(BINUTILS_VER)/Makefile: CONFIG += --enable-64-bit-bfd --libdir=$(PREFIX)/$(LIBDIR)
 
 ifeq ($(filter $(ARCH), s390x riscv64 ppc64le), )
   # gold compiles but cannot link properly on s390x @ gcc 13.2 and Fedore 41
   # gold is not available for riscv64 and ppc64le,
   # and subsequent linking will fail if we try to enable it.
   LINKER_CONFIG_ENABLE_GOLD := --enable-gold=default
-endif
-
-ifeq ($(filter riscv64 ppc64le s390x armhfp, $(ARCH)), )
-  ENABLE_MULTILIB := --enable-multilib
 endif
 
 # Makefile creation. Simply run configure in build dir.
@@ -274,8 +253,8 @@ $(BUILDDIR)/$(BINUTILS_VER)/Makefile: $(BINUTILS_CFG)
 	      $(LINKER_CONFIG_ENABLE_GOLD) \
 	      --with-sysroot=$(SYSROOT) \
 	      --disable-nls \
+	      --disable-gprofng \
 	      --program-prefix=$(TARGET)- \
-	      $(ENABLE_MULTILIB) \
 	      --enable-threads \
 	      --enable-plugins \
 	) > $(@D)/log.config 2>&1
@@ -340,15 +319,12 @@ ifeq ($(ARCH), riscv64)
   $(BUILDDIR)/$(GCC_VER)/Makefile: CONFIG += --disable-libsanitizer
 endif
 
-ifneq ($(filter riscv64 ppc64le s390x armhfp, $(ARCH)), )
-  # We only support 64-bit on these platforms anyway
-  CONFIG += --disable-multilib
-endif
+# We don't need to support multilib
+CONFIG += --disable-multilib
 
 # Want:
 # c,c++
 # shared libs
-# multilib (-m32/-m64 on x64)
 # skip native language.
 # and link and assemble with the binutils we created
 # earlier, so --with-gnu*
@@ -438,14 +414,12 @@ ifeq ($(HOST),$(TARGET))
   # "Solve" this by create links from the target libdirs to where they are.
   $(LINK_LIBS_MARKER): $(GCC)
 	@echo -n 'Creating library symlinks...'
-	@for l in $(LIBDIRS); do \
-	  for f in `cd $(PREFIX)/$$l && ls`; do \
-	    if [ ! -e $(TARGETDIR)/$$l/$$f ]; then \
-	      mkdir -p $(TARGETDIR)/$$l && \
-	      cd $(TARGETDIR)/$$l/ && \
-	      ln -fs ../../$$l/$$f $$f; \
-	    fi \
-	  done \
+	@for f in `cd $(PREFIX)/$(LIBDIR) && ls`; do \
+	  if [ ! -e $(TARGETDIR)/$(LIBDIR)/$$f ]; then \
+	    mkdir -p $(TARGETDIR)/$(LIBDIR) && \
+	    cd $(TARGETDIR)/$(LIBDIR)/ && \
+	    ln -fs ../../$(LIBDIR)/$$f $$f; \
+	  fi \
 	done
 	@touch $@
 	@echo 'done'

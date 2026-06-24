@@ -3283,7 +3283,7 @@ u2 ClassFileParser::parse_classfile_loadable_descriptors_attribute(const ClassFi
         descriptor_index, CHECK_0);
       Symbol* descriptor = _cp->symbol_at(descriptor_index);
       bool valid = legal_field_signature(descriptor, CHECK_0);
-      if(!valid) {
+      if (!valid) {
         ResourceMark rm(THREAD);
         Exceptions::fthrow(THREAD_AND_LOCATION,
           vmSymbols::java_lang_ClassFormatError(),
@@ -4269,7 +4269,6 @@ static Array<InstanceKlass*>* compute_transitive_interfaces(const InstanceKlass*
     // length will be less than the max_transitive_size if duplicates were removed
     const int length = result->length();
     assert(length <= max_transitive_size, "just checking");
-
     Array<InstanceKlass*>* const new_result =
       MetadataFactory::new_array<InstanceKlass*>(loader_data, length, CHECK_NULL);
     for (int i = 0; i < length; i++) {
@@ -6282,6 +6281,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
     // Apply VM options override
     if (*ForceNonTearable != '\0') {
       // Allow a command line switch to force the same atomicity property:
+      ResourceMark rm(THREAD);
       const char* class_name_str = _class_name->as_C_string();
       if (StringUtils::class_list_match(ForceNonTearable, class_name_str)) {
         _must_be_atomic = true;

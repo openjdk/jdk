@@ -107,8 +107,10 @@ public class ScalarReplacementWithGCBarrierTests {
     @Test
     @IR(applyIf = {"enable-valhalla", "false"}, phase = { CompilePhase.PHASEIDEAL_BEFORE_EA }, counts = { IRNode.ALLOC, "2" })
     @IR(applyIf = {"enable-valhalla", "false"}, phase = { CompilePhase.ITER_GVN_AFTER_ELIMINATION }, counts = { IRNode.ALLOC, "1"})
-    @IR(applyIf = {"enable-valhalla", "true"}, phase = { CompilePhase.PHASEIDEAL_BEFORE_EA }, counts = { IRNode.ALLOC, "1" })
-    @IR(applyIf = {"enable-valhalla", "true"}, phase = { CompilePhase.ITER_GVN_AFTER_ELIMINATION }, failOn = { IRNode.ALLOC })
+    @IR(applyIf = {"enable-valhalla", "true"}, applyIfPlatformOr = {"x64", "true", "aarch64", "true"},
+        phase = { CompilePhase.PHASEIDEAL_BEFORE_EA }, counts = { IRNode.ALLOC, "1" })
+    @IR(applyIf = {"enable-valhalla", "true"}, applyIfPlatformOr = {"x64", "true", "aarch64", "true"},
+        phase = { CompilePhase.ITER_GVN_AFTER_ELIMINATION }, failOn = { IRNode.ALLOC })
     private int testScalarReplacementWithGCBarrier(List list) {
         Iter iter = list.iter();
         while (true) {

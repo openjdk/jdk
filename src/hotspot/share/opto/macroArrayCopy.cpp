@@ -1333,6 +1333,9 @@ const TypePtr* PhaseMacroExpand::adjust_for_flat_array(const TypeAryPtr* top_des
       // treat as array of long but scale length, src offset and dest offset
       assert((elem_size % 8) == 0, "not a power of 2?");
       int factor = elem_size / 8;
+      jint max_safe_scaled_index = max_jint / factor;
+      jint max_elements = top_dest->max_flat_elements();
+      guarantee(max_elements <= max_safe_scaled_index, "scaling must never overflow int range");
       length = transform_later(new MulINode(length, intcon(factor)));
       src_offset = transform_later(new MulINode(src_offset, intcon(factor)));
       dest_offset = transform_later(new MulINode(dest_offset, intcon(factor)));

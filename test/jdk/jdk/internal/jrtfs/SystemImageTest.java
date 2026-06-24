@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,12 +59,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toSet;
 import static jdk.internal.jimage.PreviewMode.DISABLED;
 import static jdk.internal.jimage.PreviewMode.ENABLED;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /*
@@ -93,8 +88,8 @@ class SystemImageTest {
     // Selects the underlying implementation to be tested.
     enum ImageType {SYSTEM, EXPLODED}
 
-    // The '@' prefix marks the entry as a preview entry which will be placed in
-    // the '/modules/<module>/META-INF/preview/...' path.
+    /// The image configuration.
+    /// See [#compileModuleJar] for the exact format.
     private static final Map<String, List<String>> IMAGE_ENTRIES = Map.of(
             "modfoo", Arrays.asList(
                     "com.foo.HasPreviewVersion",
@@ -109,7 +104,13 @@ class SystemImageTest {
                     "com.bar.Two",
                     // Two new packages in preview mode (new symbolic links).
                     "@com.bar.preview.stuff.Foo",
-                    "@com.bar.preview.stuff.Bar"),
+                    "@com.bar.preview.stuff.Bar",
+                    // File cannot be preview-overridden
+                    "!META-INF/one.txt",
+                    // File cannot be discovered out-of-preview
+                    "!META-INF/preview/com/two.txt",
+                    // File never found in jrtfs
+                    "!META-INF/preview/META-INF/one.txt"),
             "modgus", Arrays.asList(
                     // A second module with a preview-only empty package (preview).
                     "@com.bar.preview.other.Gus"));
@@ -148,7 +149,8 @@ class SystemImageTest {
             "/modules/modbar",
             "/modules/modfoo/com",
             "/modules/modfoo/com/foo",
-            "/modules/modfoo/com/foo/bar"})
+            "/modules/modfoo/com/foo/bar",
+            "/modules/modbar/META-INF"})
     public void testModuleDirectories_expected(String name) throws IOException {
         try (var image = getImage(DISABLED)) {
             assertDir(image, name);
@@ -171,7 +173,9 @@ class SystemImageTest {
             "/modules/modfoo/com/foo/../",
             "/modules/modfoo/com/bar/../foo",
             "/modules/../packages",
-            "/modules/../.."})
+            "/modules/../..",
+            "/modules/modbar/META-INF/preview/com/two.txt",
+            "/modules/modbar/META-INF/preview/META-INF/one.txt"})
     public void testModuleNodes_absent(String name) throws IOException {
         try (var image = getImage(DISABLED)) {
             assertAbsent(image, name);
@@ -183,6 +187,10 @@ class SystemImageTest {
         try (var image = getImage(DISABLED)) {
             assertNode(image, "/modules/modfoo/com/foo/HasPreviewVersion.class");
             assertNode(image, "/modules/modbar/com/bar/One.class");
+
+            assertResourceContents(image, "/modules/modbar/META-INF/one.txt", "!META-INF/one.txt");
+            assertAbsent(image, "/modules/modbar/META-INF/preview/com/two.txt");
+            assertAbsent(image, "/modules/modbar/META-INF/preview/META-INF/one.txt");
 
             ImageClassLoader loader = loader(image);
             loader.assertNonPreviewVersion("modfoo", "com.foo.HasPreviewVersion");
@@ -233,6 +241,11 @@ class SystemImageTest {
             assertAbsent(image, "/modules/modfoo/com/foo/bar/IsPreviewOnly.class");
             assertDirContents(image, "/modules/modfoo/com/foo", "HasPreviewVersion.class", "NormalFoo.class", "bar");
             assertDirContents(image, "/modules/modfoo/com/foo/bar", "NormalBar.class");
+
+            // No preview file visible
+            assertAbsent(image, "/modules/modbar/com/two.txt");
+            // No way to override
+            assertResourceContents(image, "/modules/modbar/META-INF/one.txt", "!META-INF/one.txt");
         }
     }
 
@@ -251,6 +264,11 @@ class SystemImageTest {
             assertResource(image, "/modules/modfoo/com/foo/bar/IsPreviewOnly.class");
             assertDirContents(image, "/modules/modfoo/com/foo", "HasPreviewVersion.class", "NormalFoo.class", "bar");
             assertDirContents(image, "/modules/modfoo/com/foo/bar", "NormalBar.class", "IsPreviewOnly.class");
+
+            // Visible in preview
+            assertResourceContents(image, "/modules/modbar/com/two.txt", "!META-INF/preview/com/two.txt");
+            // Content should not be overridden in preview to !META-INF/preview/META-INF/one.txt
+            assertResourceContents(image, "/modules/modbar/META-INF/one.txt", "!META-INF/one.txt");
         }
     }
 
@@ -327,6 +345,12 @@ class SystemImageTest {
             String previewPath = "com/foo/HasPreviewVersion.class";
             assertNode(image, "/modules/modfoo/" + previewPath);
             assertAbsent(image, "/modules/modfoo/META-INF/preview/" + previewPath);
+
+            // Files: preview directory completely hidden
+            assertAbsent(image, "/modules/modbar/META-INF/preview/com/two.txt");
+            assertAbsent(image, "/modules/modbar/META-INF/preview/META-INF/one.txt");
+            // No way to override even in preview
+            assertResourceContents(image, "/modules/modbar/META-INF/one.txt", "!META-INF/one.txt");
         }
     }
 
@@ -338,9 +362,15 @@ class SystemImageTest {
         return node;
     }
 
-    private static void assertResource(SystemImage image, String name) throws IOException {
+    private static ImageReader.Node assertResource(SystemImage image, String name) throws IOException {
         ImageReader.Node node = assertNode(image, name);
         assertTrue(node.isResource(), "Node was not a resource: " + name);
+        return node;
+    }
+
+    private static void assertResourceContents(SystemImage image, String name, String contents) throws IOException {
+        ImageReader.Node node = assertResource(image, name);
+        assertArrayEquals(contents.getBytes(), image.getResource(node));
     }
 
     private static ImageReader.Node assertDir(SystemImage image, String name) throws IOException {
@@ -403,23 +433,28 @@ class SystemImageTest {
     }
 
     /// Compiles a synthetic module containing test classes into a single Jar
-    /// file named {@code <module>.jar} in the given directory. Test classes can
-    /// be instantiated and have their {@code toString()} method called to
+    /// file named `<module>.jar` in the given directory. Test classes can
+    /// be instantiated and have their `toString()` method called to
     /// return a status string for testing.
     ///
-    /// If a fully qualified class name is prefixed with {@code @} then it is
+    /// If a fully qualified class name is prefixed with `@` then it is
     /// compiled as a preview version of the class, with different
-    /// {@code toString()} representation.
+    /// `toString()` representation.
+    ///
+    /// If a name is prefixed with `!` then it is an arbitrary file,
+    /// slash-separated. The content of the file is the name with prefix.
     private static void compileModuleJar(String module, List<String> classNames, Path jarDir) {
         JarBuilder jar = new JarBuilder(jarDir.resolve(module + ".jar").toString());
         String moduleInfo = "module " + module + " {}";
         jar.addEntry("module-info.class", InMemoryJavaCompiler.compile("module-info", moduleInfo));
 
-        classNames.forEach(fqn -> {
-            boolean isPreviewEntry = fqn.startsWith("@");
-            if (isPreviewEntry) {
-                fqn = fqn.substring(1);
+        classNames.forEach(notation -> {
+            if (notation.startsWith("!")) {
+                jar.addEntry(notation.substring(1), notation.getBytes(UTF_8));
+                return;
             }
+            boolean isPreviewEntry = notation.startsWith("@");
+            String fqn = isPreviewEntry ? notation.substring(1) : notation;
             int lastDot = fqn.lastIndexOf('.');
             String pkg = fqn.substring(0, lastDot);
             String cls = fqn.substring(lastDot + 1);

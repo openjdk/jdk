@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,14 +281,22 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
                                        Register base, RegisterOrConstant ind_or_offs, Register val,
                                        Register tmp1, Register tmp2, Register tmp3,
                                        MacroAssembler::PreservationLevel preservation_level) {
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  bool as_normal = (decorators & AS_NORMAL) != 0;
+  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
+  bool needs_pre_barrier = as_normal && !dest_uninitialized;
+  bool needs_post_barrier = (val != noreg && in_heap);
   bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool precise = is_array || on_anonymous;
+
   // Load and record the previous value.
-  g1_write_barrier_pre(masm, decorators,
-                       base, ind_or_offs,
-                       tmp1, tmp2, tmp3,
-                       preservation_level);
+  if (needs_pre_barrier) {
+    g1_write_barrier_pre(masm, decorators,
+                         base, ind_or_offs,
+                         tmp1, tmp2, tmp3,
+                         preservation_level);
+  }
 
   BarrierSetAssembler::store_at(masm, decorators,
                                 type, base, ind_or_offs, val,
@@ -296,7 +304,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
                                 preservation_level);
 
   // No need for post barrier if storing null
-  if (val != noreg) {
+  if (needs_post_barrier) {
     if (precise) {
       if (ind_or_offs.is_constant()) {
         __ add_const_optimized(base, base, ind_or_offs.as_constant(), tmp1);
