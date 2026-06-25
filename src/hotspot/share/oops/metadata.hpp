@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,11 @@ class Metadata : public MetaspaceObj {
   NOT_PRODUCT(int _valid;)
  public:
   NOT_PRODUCT(Metadata() : _valid(0) {})
+
+  // We have to keep the vtable alive under LTGC dead-section removal/LTO
+  // for serviceability tests to work.
+  // This can be done by linker settings or modifications to the Metadata class.
+
   NOT_PRODUCT(bool is_valid() const { return _valid == 0; })
 
   int identity_hash()                { return (int)(uintptr_t)this; }

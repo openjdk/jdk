@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @test
  * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603
  *      7044019 8008577 8176853 8255086 8263202 8287868 8174269 8369452
- *      8369590
+ *      8369590 8387185
  * @summary test API changes to Locale
  * @modules jdk.localedata
  * @run junit/othervm -esa LocaleEnhanceTest
@@ -1375,6 +1375,25 @@ public class LocaleEnhanceTest {
         checkDigit(Locale.of("th", "TH", "TH"), '\u0e50');
         checkDigit(Locale.of("th", "TH", "TH"), '\u0e50');
         checkDigit(Locale.forLanguageTag("en-u-nu-thai"), '\u0e50');
+    }
+
+    // Test that numeric singletons are supported
+    @Test
+    public void numericSingletonRoundTripTest() {
+        var tag = "en-0-foo";
+        var value = "foo";
+        var singleton = '0';
+        // test `forLanguageTag`
+        var locale = Locale.forLanguageTag(tag);
+        assertEquals(value, locale.getExtension(singleton));
+        assertEquals(tag, locale.toLanguageTag());
+        // test `Locale.Builder`
+        locale = new Builder()
+                .setLanguage("en")
+                .setExtension(singleton, value)
+                .build();
+        assertEquals(value, locale.getExtension(singleton));
+        assertEquals(tag, locale.toLanguageTag());
     }
 
     private void checkCalendar(Locale loc, String expected) {
