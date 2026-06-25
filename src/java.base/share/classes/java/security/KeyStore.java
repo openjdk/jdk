@@ -857,8 +857,8 @@ public class KeyStore {
      * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified keystore type is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
@@ -867,8 +867,8 @@ public class KeyStore {
      * with the keystore type. This warning is shown once per caller for
      * each legacy keystore type. If the keystore type is also disabled,
      * the warning will not be shown.
-     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
-     * it supersedes the security property value.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * </ul>
      *
@@ -929,8 +929,8 @@ public class KeyStore {
      * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified keystore type is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
@@ -939,8 +939,8 @@ public class KeyStore {
      * with the keystore type. This warning is shown once per caller for
      * each legacy keystore type. If the keystore type is also disabled,
      * the warning will not be shown.
-     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
-     * it supersedes the security property value.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * </ul>
      *
@@ -1010,8 +1010,8 @@ public class KeyStore {
      * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified keystore type is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
@@ -1020,8 +1020,8 @@ public class KeyStore {
      * with the keystore type. This warning is shown once per caller for
      * each legacy keystore type. If the keystore type is also disabled,
      * the warning will not be shown.
-     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
-     * it supersedes the security property value.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * </ul>
      *
@@ -1815,8 +1815,9 @@ public class KeyStore {
      * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified keystore type is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value. Disallowed type will be skipped.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * Disallowed type will be skipped.
      * </li>
      * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
@@ -1825,8 +1826,8 @@ public class KeyStore {
      * with the keystore type. This warning is shown once per caller for
      * each legacy keystore type. If the keystore type is also disabled,
      * the warning will not be shown.
-     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
-     * it supersedes the security property value.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * </ul>
      *
@@ -1891,8 +1892,9 @@ public class KeyStore {
      * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified keystore type is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value. Disallowed type will be skipped.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * Disallowed type will be skipped.
      * </li>
      * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
@@ -1901,8 +1903,8 @@ public class KeyStore {
      * with the keystore type. This warning is shown once per caller for
      * each legacy keystore type. If the keystore type is also disabled,
      * the warning will not be shown.
-     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
-     * it supersedes the security property value.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * </ul>
      *

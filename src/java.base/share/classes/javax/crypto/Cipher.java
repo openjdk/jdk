@@ -517,8 +517,8 @@ public class Cipher {
      * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified algorithm is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
@@ -527,8 +527,8 @@ public class Cipher {
      * with the algorithm. This warning is shown once per caller for
      * each legacy algorithm. If the algorithm is also disabled,
      * the warning will not be shown.
-     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
-     * it supersedes the security property value.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * </ul>
      *
@@ -645,8 +645,8 @@ public class Cipher {
      * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified algorithm is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
@@ -655,8 +655,8 @@ public class Cipher {
      * with the algorithm. This warning is shown once per caller for
      * each legacy algorithm. If the algorithm is also disabled,
      * the warning will not be shown.
-     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
-     * it supersedes the security property value.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * </ul>
      *
@@ -741,8 +741,8 @@ public class Cipher {
      * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified algorithm is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * <li>the {@code jdk.crypto.legacyAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
@@ -751,8 +751,8 @@ public class Cipher {
      * with the algorithm. This warning is shown once per caller for
      * each legacy algorithm. If the algorithm is also disabled,
      * the warning will not be shown.
-     * If the {@systemProperty jdk.crypto.legacyAlgorithms} is set,
-     * it supersedes the security property value.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * </ul>
      *

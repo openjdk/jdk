@@ -818,7 +818,9 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 # Note: The jdk.crypto.legacyAlgorithms property is checked in the
 # getInstance(...) methods of the supported Service classes, i.e. Cipher,
 # KeyStore, MessageDigest, and Signature. If the algorithm is considered legacy, the
-# JDK emits a warning when the algorithm is requested.
+# JDK emits a warning at runtime when the algorithm is requested.
+# This warning is shown once per caller for each legacy algorithm.
+# If the algorithm is also disabled, the warning will not be shown.
 #
 # Note: These properties are currently used by the JDK Reference implementation.
 # They are not guaranteed to be examined and used by other implementations.
