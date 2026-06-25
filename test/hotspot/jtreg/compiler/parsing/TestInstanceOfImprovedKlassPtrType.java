@@ -48,6 +48,7 @@ public class TestInstanceOfImprovedKlassPtrType {
         TestFramework.run();
     }
 
+    @DontInline
     int testHelper2(Object o) {
         return 1;
     }
@@ -65,6 +66,7 @@ public class TestInstanceOfImprovedKlassPtrType {
     }
 
     @Run(test = "test1")
+    @Warmup(0)
     void runTest() {
         int sum = 0;
         Object[] arr = new Object[] {new C(), new D(), new E()};
