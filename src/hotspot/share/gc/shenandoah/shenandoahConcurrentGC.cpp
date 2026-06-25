@@ -108,6 +108,7 @@ void ShenandoahConcurrentGC::entry_concurrent_update_refs_prepare(ShenandoahHeap
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_update_refs_prepare);
   EventMark em("%s", msg);
 
+  heap->try_inject_pin();
   // Evacuation is complete, retire gc labs and change gc state
   heap->concurrent_prepare_for_update_refs();
 }
@@ -124,6 +125,7 @@ void ShenandoahConcurrentGC::entry_update_card_table() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
                               "concurrent update cards");
 
+  heap->try_inject_pin();
   // Heap needs to be parsable here.
   // Also, parallel heap region iterate must have a phase set.
   assert(ShenandoahTimingsTracker::is_current_phase_valid(), "Current phase must be set");
@@ -312,9 +314,9 @@ void ShenandoahConcurrentGC::vmop_entry_init_mark() {
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::init_mark_gross);
 
   heap->try_inject_alloc_failure();
-  heap->try_inject_pin();
   VM_ShenandoahInitMark op(this);
   VMThread::execute(&op); // jump to entry_init_mark() under safepoint
+  heap->try_inject_pin();
 }
 
 void ShenandoahConcurrentGC::vmop_entry_final_mark() {
@@ -323,9 +325,9 @@ void ShenandoahConcurrentGC::vmop_entry_final_mark() {
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_mark_gross);
 
   heap->try_inject_alloc_failure();
-  heap->try_inject_pin();
   VM_ShenandoahFinalMarkStartEvac op(this);
   VMThread::execute(&op); // jump to entry_final_mark under safepoint
+  heap->try_inject_pin();
 }
 
 void ShenandoahConcurrentGC::vmop_entry_init_update_refs() {
@@ -446,7 +448,6 @@ void ShenandoahConcurrentGC::entry_scan_remembered_set() {
                                 msg);
 
     heap->try_inject_alloc_failure();
-    heap->try_inject_pin();
     _generation->scan_remembered_set(true /* is_concurrent */);
   }
 }
@@ -463,7 +464,6 @@ void ShenandoahConcurrentGC::entry_mark_roots() {
                               "concurrent marking roots");
 
   heap->try_inject_alloc_failure();
-  heap->try_inject_pin();
   op_mark_roots();
 }
 
@@ -479,8 +479,8 @@ void ShenandoahConcurrentGC::entry_mark() {
                               "concurrent marking");
 
   heap->try_inject_alloc_failure();
-  heap->try_inject_pin();
   op_mark();
+  heap->try_inject_pin();
 }
 
 void ShenandoahConcurrentGC::entry_thread_roots() {
@@ -606,6 +606,7 @@ void ShenandoahConcurrentGC::entry_promote_in_place() const {
   ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::promote_in_place);
   EventMark em("%s", "Promote in place");
 
+  ShenandoahGenerationalHeap::heap()->try_inject_pin();
   ShenandoahGenerationalHeap::heap()->promote_regions_in_place(_generation, true);
 }
 
@@ -648,7 +649,6 @@ void ShenandoahConcurrentGC::entry_cleanup_complete() {
 
   // This phase does not use workers, no need for setup
   heap->try_inject_alloc_failure();
-  heap->try_inject_pin();
   op_cleanup_complete();
 }
 
