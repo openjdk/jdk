@@ -539,7 +539,7 @@ class ServerImpl {
                                     // we've hit max limit of current open connections, so we go
                                     // ahead and close this connection without processing it
                                     logger.log(Level.DEBUG, "connection limit reached, " +
-                                            "closing accepted connection");
+                                            "closing accepted connection " + chan);
                                     try {
                                         chan.close();
                                     } catch (IOException ignore) {
