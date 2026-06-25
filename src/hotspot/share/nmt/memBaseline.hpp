@@ -49,7 +49,6 @@ class MemBaseline {
   };
 
   enum SortingOrder {
-    by_address,       // by memory address
     by_size,          // by memory size
     by_site,          // by call site where the memory is allocated from
     by_site_and_tag,  // by call site and memory tag
@@ -73,7 +72,7 @@ class MemBaseline {
   // All virtual memory allocations
   RegionsTree* _vma_allocations;
 
-  // Virtual memory allocations by allocation sites, always in by_address
+  // Virtual memory allocations by allocation sites, always in by_site
   // order
   VirtualMemoryAllocationSite* _virtual_memory_sites;
   int                          _virtual_memory_sites_length;

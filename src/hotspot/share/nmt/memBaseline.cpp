@@ -138,7 +138,6 @@ bool MemBaseline::baseline_allocation_sites() {
   if (!aggregate_virtual_memory_allocation_sites()) {
     return false;
   }
-  sort_virtual_memory_sites(by_address);
 
   return true;
 }
@@ -159,11 +158,6 @@ void MemBaseline::baseline(bool summaryOnly) {
     baseline_allocation_sites();
     _baseline_type = Detail_baselined;
   }
-}
-
-int compare_allocation_site(const VirtualMemoryAllocationSite& s1,
-  const VirtualMemoryAllocationSite& s2) {
-  return s1.call_stack()->compare(*s2.call_stack());
 }
 
 bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
@@ -196,7 +190,11 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
     return false;
   }
   _virtual_memory_sites = vht.detach(&_virtual_memory_sites_length);
-  return _virtual_memory_sites != nullptr;
+  if (_virtual_memory_sites == nullptr) {
+    return false;
+  }
+  sort_virtual_memory_sites(by_site);
+  return true;
 }
 
 MallocSiteIterator MemBaseline::malloc_sites(SortingOrder order) {
