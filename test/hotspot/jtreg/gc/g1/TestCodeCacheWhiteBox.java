@@ -92,14 +92,10 @@ public class TestCodeCacheWhiteBox {
         Asserts.assertTrue(success, "Could not find a CodeCache GC Threshold GC after finishing the concurrent cycle");
     }
 
-    private static void allTests() throws Exception {
+    public static void main(String[] args) throws Exception {
         runAndCheckTest(WB.BEFORE_MARKING_COMPLETED);    // This one should always complete. Just for sanity checking.
         runAndCheckTest(WB.G1_BEFORE_REBUILD_COMPLETED);
         runAndCheckTest(WB.G1_BEFORE_CLEANUP_COMPLETED);
-    }
-
-    public static void main(String[] args) throws Exception {
-        allTests();
     }
 }
 
