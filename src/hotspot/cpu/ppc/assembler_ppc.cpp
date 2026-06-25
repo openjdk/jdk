@@ -84,10 +84,10 @@ void Assembler::andi(Register a, Register s, julong int_or_long_const) {
   } else if (is_power_of_2(-int_or_long_const)) {
     // negpow2 (includes (julong)min_jlong)
     clrrdi(a, s, log2i_exact(-int_or_long_const));
-  } else if (is_power_of_2(int_or_long_const)) {
-    assert(is_uimm((jlong)int_or_long_const, 32), "not encodable: " UINT64_FORMAT_X, int_or_long_const);
-    // pow2
-    rlwinm(a, s, 0, 31 - log2i_exact(int_or_long_const), 31 - log2i_exact(int_or_long_const));
+  } else if (is_uimm((jlong)int_or_long_const, 32) && has_continuous_ones(int_or_long_const)) {
+    // continuous ones
+    rlwinm(a, s, 0, count_leading_zeros((uint32_t)int_or_long_const),
+                    31 - count_trailing_zeros((uint32_t)int_or_long_const));
   } else if (is_uimm((jlong)int_or_long_const, 16)) {
     // side effect: clobbers CR0
     andi_(a, s, int_or_long_const);
@@ -104,8 +104,9 @@ bool Assembler::andi_supports(julong int_or_long_const) {
   // 16 bit always possible by andi_ (but other instructions are preferred)
   if (is_uimm((jlong)int_or_long_const, 16)) return true;
 
-  // special cases 32 bit: higher 16 bit always possible by andis_ (but other instructions are preferred)
-  if (is_uimm((jlong)int_or_long_const, 32) && (int_or_long_const & 0xFFFF) == 0) return true;
+  // special cases 32 bit: higher 16 bit and continuous ones are supported
+  if (is_uimm((jlong)int_or_long_const, 32) &&
+   ((int_or_long_const & 0xFFFF) == 0 || has_continuous_ones(int_or_long_const))) return true;
 
   // special cases 64 bit: clrldi, clrrdi
   return is_power_of_2(int_or_long_const + 1) || is_power_of_2(-int_or_long_const);

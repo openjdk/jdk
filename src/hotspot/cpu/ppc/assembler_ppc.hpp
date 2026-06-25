@@ -1048,6 +1048,13 @@ class Assembler : public AbstractAssembler {
     return (julong)x < maxplus1;
   }
 
+  // Test if x has exactly one continuous range of one bits (e.g. 00111000)
+  static bool has_continuous_ones(julong x) {
+    if (x == max_julong) return true;
+    if (x == 0) return false;
+    return is_power_of_2((x >> count_trailing_zeros(x)) + 1);
+  }
+
  protected:
   // helpers
 
