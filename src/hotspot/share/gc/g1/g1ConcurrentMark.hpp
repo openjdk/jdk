@@ -603,6 +603,7 @@ public:
   bool mark_stack_empty() const                 { return _global_mark_stack.is_empty(); }
 
   void concurrent_cycle_start();
+  void shutdown_concurrent_cycle();
   // Abandon current marking iteration due to a Full GC.
   bool concurrent_cycle_abort();
   void concurrent_cycle_end(bool mark_cycle_completed);
