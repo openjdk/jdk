@@ -44,6 +44,7 @@ public class TestOpaqueConstantBoolNodes {
             "-XX:CompileCommand=inline,java.lang.String::*",
             "-XX:CompileCommand=inline,java.lang.StringCoding::*",
             "-XX:CompileCommand=exclude,jdk.internal.util.Preconditions::checkFromIndexSize",
+            "-XX:+UnlockDiagnosticVMOptions",
             "-XX:ControlIntrinsic=-_Preconditions_checkFromIndexSize");
     }
 
