@@ -57,12 +57,11 @@ public class TestMaskedStoreIdealization {
     public static void main(String[] args) {
         final CompileFramework comp = new CompileFramework();
         comp.addJavaSourceCode(PACKAGE + "." + CLASS_NAME, generate(comp));
-        comp.compile();
+        comp.compile("--add-modules=jdk.incubator.vector");
 
         List<String> vmArgs = new ArrayList<>(List.of(
             "--add-modules=jdk.incubator.vector",
-            "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED",
-            "--add-opens", "java.base/java.lang=ALL-UNNAMED"
+            "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED"
         ));
         vmArgs.addAll(Arrays.asList(args)); // Forward args
         String[] vmArgsArray = vmArgs.toArray(new String[0]);
@@ -99,10 +98,46 @@ public class TestMaskedStoreIdealization {
             // zero, as the original bug only triggered with the first element.
             final int idx = RANDOM.nextBoolean() ? RANDOM.nextInt(0, vec.length) : 0;
 
+            var irVerification = Template.make(() -> {
+                // For IR-verification we need more than two lanes. To prevent flakyness, we skip verification
+                // for vectors of longs because there are other StoreL nodes in this method.
+                if (vec.length <= 2 || vec.elementType.name().equals("long")) {
+                    return scope("");
+                }
+
+                String ptyIR = vec.elementType.abbrev().equals("S") ? "C" : vec.elementType.abbrev();
+
+                // IR verification of vectors of int needs special handling due to an additional
+                // node in used for address computation when not using COH.
+                if (vec.elementType.name().equals("int")) {
+                    return scope(
+                        let("ptyIR", ptyIR),
+                        """
+                            @IR(counts = {IRNode.STORE_#ptyIR, "= 1",
+                                          IRNode.VECTOR_STORE_MASK, "= 1"},
+                                applyIf = {"UseCompactObjectHeaders", "true"},
+                                applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
+                            @IR(counts = {IRNode.STORE_#ptyIR, "= 2",
+                                          IRNode.VECTOR_STORE_MASK, "= 1"},
+                                applyIf = {"UseCompactObjectHeaders", "false"},
+                                applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
+                        """
+                    );
+                }
+
+                return scope(
+                    let("ptyIR", ptyIR),
+                    """
+                        @IR(counts = {IRNode.STORE_#ptyIR, "= 1",
+                                      IRNode.VECTOR_STORE_MASK, "= 1"},
+                            applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
+                    """
+                );
+            });
+
             return Template.make(() -> scope(
                 let("testName", testName),
                 let("pty", vec.elementType.name()),
-                let("ptyIR", vec.elementType.abbrev().equals("S") ? "C" : vec.elementType.abbrev()),
                 let("boxedTy", vec.elementType.boxedTypeName()),
                 let("vecTy", vec.name()),
                 let("lanes", vec.length),
@@ -129,12 +164,7 @@ public class TestMaskedStoreIdealization {
 
                     @Test
                 """,
-                vec.length <= 2 || vec.elementType.name().equals("long") ? "" :
-                """
-                    @IR(counts = {IRNode.STORE_#ptyIR, "= 1",
-                                  IRNode.VECTOR_STORE_MASK, "= 1"},
-                        applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
-                """,
+                irVerification.asToken(),
                 """
                     static #pty[] test#{testName}(final #pty broadcastVal, final #pty arrVal){
                         #pty[] a = new #pty[#lanes];
