@@ -5386,6 +5386,7 @@ class StubGenerator: public StubCodeGenerator {
   // address supplied in base.
   template<int N>
   void vs_ldpq(const VSeq<N>& v, Register base) {
+    static_assert(N > 0 && is_even(N), "sequence length must be even");
     for (int i = 0; i < N; i += 2) {
       __ ldpq(v[i], v[i+1], Address(base, 32 * i));
     }
@@ -5462,6 +5463,7 @@ class StubGenerator: public StubCodeGenerator {
   // offsets array
   template<int N>
   void vs_ldpq_indexed(const VSeq<N>& v, Register base, int start, int (&offsets)[N/2]) {
+    static_assert(N > 0 && is_even(N), "sequence length must be even");
     for (int i = 0; i < N/2; i++) {
       __ ldpq(v[2*i], v[2*i+1], Address(base, start + offsets[i]));
     }
@@ -5509,6 +5511,7 @@ class StubGenerator: public StubCodeGenerator {
   template<int N>
   void vs_ld2_indexed(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base,
                       Register tmp, int start, int (&offsets)[N/2]) {
+    static_assert(N > 0 && is_even(N), "sequence length must be even");
     for (int i = 0; i < N/2; i++) {
       __ add(tmp, base, start + offsets[i]);
       __ ld2(v[2*i], v[2*i+1], T, tmp);
@@ -5522,6 +5525,7 @@ class StubGenerator: public StubCodeGenerator {
   template<int N>
   void vs_st2_indexed(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base,
                       Register tmp, int start, int (&offsets)[N/2]) {
+    static_assert(N > 0 && is_even(N), "sequence length must be even");
     for (int i = 0; i < N/2; i++) {
       __ add(tmp, base, start + offsets[i]);
       __ st2(v[2*i], v[2*i+1], T, tmp);
