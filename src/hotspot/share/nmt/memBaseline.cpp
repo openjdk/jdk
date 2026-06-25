@@ -209,7 +209,6 @@ MallocSiteIterator MemBaseline::malloc_sites(SortingOrder order) {
     case by_site_and_tag:
       malloc_sites_to_allocation_site_and_tag_order();
       break;
-    case by_address:
     default:
       ShouldNotReachHere();
   }
@@ -225,7 +224,6 @@ void MemBaseline::sort_virtual_memory_sites(SortingOrder order) {
     case by_site:
       virtual_memory_sites_to_reservation_site_order();
       break;
-    case by_address:
     default:
       ShouldNotReachHere();
   }
