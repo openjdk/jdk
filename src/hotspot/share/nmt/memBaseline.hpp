@@ -95,7 +95,7 @@ class MemBaseline {
   }
 
   ~MemBaseline() {
-    delete _vma_allocations;
+    reset();
   }
 
   void baseline(bool summaryOnly = true);
@@ -198,6 +198,7 @@ class MemBaseline {
     _malloc_sites.clear();
     os::free(_virtual_memory_sites);
     _virtual_memory_sites_length = 0;
+    _virtual_memory_sites = nullptr;
     delete _vma_allocations;
     _vma_allocations = nullptr;
   }

@@ -50,12 +50,12 @@ TEST(NMTOAHTTest, Basic) {
   KVElement kv{1, 1};
   bool found = false;
   ht.put_if_absent(kv, &found);
-  assert(found == false, "");
-  assert(ht.occupied() == 1, "");
+  EXPECT_FALSE(found);
+  EXPECT_EQ(1, ht.occupied());
   kv.v = 0;
   KVElement* found_kv = ht.put_if_absent(kv, &found);
-  assert(found == true, "");
-  assert(found_kv->v == 1, "");
+  EXPECT_TRUE(found);
+  EXPECT_EQ(1, found_kv->v);
 }
 
 struct PointerKey {
@@ -96,10 +96,10 @@ TEST(NMTOAHTTest, PointerKeyAccessor) {
   PointerKeyElement kv{{1}, 1};
   bool found = false;
   ht.put_if_absent(kv, &found);
-  assert(found == false, "");
-  assert(ht.occupied() == 1, "");
+  EXPECT_FALSE(found);
+  EXPECT_EQ(1, ht.occupied());
   kv._v = 0;
   PointerKeyElement* found_kv = ht.put_if_absent(kv, &found);
-  assert(found == true, "");
-  assert(found_kv->_v == 1, "");
+  EXPECT_TRUE(found);
+  EXPECT_EQ(1, found_kv->_v);
 }

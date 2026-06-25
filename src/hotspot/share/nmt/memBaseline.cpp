@@ -196,7 +196,7 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
     return false;
   }
   _virtual_memory_sites = vht.detach(&_virtual_memory_sites_length);
-  return true;
+  return _virtual_memory_sites != nullptr;
 }
 
 MallocSiteIterator MemBaseline::malloc_sites(SortingOrder order) {
@@ -281,12 +281,12 @@ void MemBaseline::virtual_memory_sites_to_size_order() {
 }
 
 void MemBaseline::virtual_memory_sites_to_reservation_site_order() {
-  if (_virtual_memory_sites_order != by_size) {
+  if (_virtual_memory_sites_order != by_site) {
     ::qsort(_virtual_memory_sites, _virtual_memory_sites_length, sizeof(VirtualMemoryAllocationSite),
             [](const void* a, const void* b) -> int {
               return compare_virtual_memory_site(*static_cast<const VirtualMemoryAllocationSite*>(a),
                                                  *static_cast<const VirtualMemoryAllocationSite*>(b));
             });
-    _virtual_memory_sites_order = by_size;
+    _virtual_memory_sites_order = by_site;
   }
 }
