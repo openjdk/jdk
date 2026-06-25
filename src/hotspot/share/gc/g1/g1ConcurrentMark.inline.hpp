@@ -28,6 +28,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
@@ -106,9 +107,27 @@ inline void G1CMMarkStack::iterate(Fn fn) const {
 }
 #endif
 
+inline void G1CMTask::process_klass(Klass* klass) {
+  _cm_oop_closure->do_klass(klass);
+}
+
 // It scans an object and visits its children.
 inline void G1CMTask::process_entry(G1TaskQueueEntry task_entry, bool stolen) {
-  process_grey_task_entry<true>(task_entry, stolen);
+  assert(task_entry.is_partial_array_state() || _mark_bitmap->is_marked(cast_from_oop<HeapWord*>(task_entry.to_oop())),
+         "Any stolen object should be a slice or marked");
+
+  if (task_entry.is_partial_array_state()) {
+    _words_scanned += process_partial_array(task_entry, stolen);
+  } else {
+    oop obj = task_entry.to_oop();
+    if (should_be_sliced(obj)) {
+      _words_scanned += start_partial_array_processing(objArrayOop(obj));
+    } else {
+      _words_scanned += obj->oop_iterate_size(_cm_oop_closure);
+    }
+  }
+
+  check_limits();
 }
 
 inline void G1CMTask::push(G1TaskQueueEntry task_entry) {
@@ -160,27 +179,6 @@ inline bool G1CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
   return objAddr < global_finger;
 }
 
-template<bool scan>
-inline void G1CMTask::process_grey_task_entry(G1TaskQueueEntry task_entry, bool stolen) {
-  assert(scan || (!task_entry.is_partial_array_state() && task_entry.to_oop()->is_typeArray()), "Skipping scan of grey non-typeArray");
-  assert(task_entry.is_partial_array_state() || _mark_bitmap->is_marked(cast_from_oop<HeapWord*>(task_entry.to_oop())),
-         "Any stolen object should be a slice or marked");
-
-  if (scan) {
-    if (task_entry.is_partial_array_state()) {
-      _words_scanned += process_partial_array(task_entry, stolen);
-    } else {
-      oop obj = task_entry.to_oop();
-      if (should_be_sliced(obj)) {
-        _words_scanned += start_partial_array_processing(obj);
-      } else {
-        _words_scanned += obj->oop_iterate_size(_cm_oop_closure);
-      }
-    }
-  }
-  check_limits();
-}
-
 inline bool G1CMTask::should_be_sliced(oop obj) {
   return obj->is_objArray() && ((objArrayOop)obj)->length() >= (int)ObjArrayMarkingStride;
 }
@@ -192,13 +190,60 @@ inline void G1CMTask::process_array_chunk(objArrayOop obj, size_t start, size_t 
 }
 
 inline void G1ConcurrentMark::update_top_at_mark_start(G1HeapRegion* r) {
+  assert_fully_initialized();
+  assert(_g1h->collector_state()->is_in_concurrent_start_gc(), "must be");
   uint const region = r->hrm_index();
   assert(region < _g1h->max_num_regions(), "Tried to access TAMS for region %u out of bounds", region);
   _top_at_mark_starts[region].store_relaxed(r->top());
 }
 
-inline void G1ConcurrentMark::reset_top_at_mark_start(G1HeapRegion* r) {
+inline void G1ConcurrentMark::set_top_at_mark_start_to_bottom(G1HeapRegion* r) {
+  assert_fully_initialized();
   _top_at_mark_starts[r->hrm_index()].store_relaxed(r->bottom());
+}
+
+inline void G1ConcurrentMark::assert_top_at_mark_start_is_bottom(G1HeapRegion* r) {
+  // Can not assert anything if not initialized.
+  if (!tams_may_be_read()) {
+    return;
+  }
+  HeapWord* local_top_at_mark_start = top_at_mark_start(r);
+  assert(local_top_at_mark_start == r->bottom(),
+         "must be, but tams for r %u (%s) is" PTR_FORMAT,
+         r->hrm_index(), r->get_short_type_str(), p2i(local_top_at_mark_start));
+}
+
+inline HeapWord* G1ConcurrentMark::top_at_mark_start_or_bottom(const G1HeapRegion* r) const {
+  if (!tams_may_be_read()) {
+    return r->bottom();
+  }
+  return top_at_mark_start(r);
+}
+
+inline HeapWord* G1ConcurrentMark::top_at_mark_start_for_verification(const G1HeapRegion* r,
+                                                                      bool concurrent_cycle_aborted) const {
+  if (!is_fully_initialized()) {
+    // We do not have TAMS data yet.
+    return r->bottom();
+  }
+  if (tams_may_be_read()) {
+    // Normal case, we can read TAMS data and it is valid.
+    return top_at_mark_start(r);
+  }
+  if (concurrent_cycle_aborted) {
+    assert(_g1h->collector_state()->is_in_full_gc(), "Must be in Full GC if concurrent cycle has aborted");
+    assert(r->hrm_index() < _g1h->max_num_regions(),
+           "Tried to access TAMS for region %u out of bounds", r->hrm_index());
+    return _top_at_mark_starts[r->hrm_index()].load_relaxed();
+  }
+  return r->bottom();
+}
+
+inline bool G1ConcurrentMark::tams_may_be_read() const {
+  // We need the TAMS to be valid even outside of actual marking for e.g. clearing the bitmap.
+  G1CollectorState* state = _g1h->collector_state();
+  return is_fully_initialized() &&
+         (state->is_in_concurrent_cycle() || state->is_in_concurrent_start_gc());
 }
 
 inline HeapWord* G1ConcurrentMark::top_at_mark_start(const G1HeapRegion* r) const {
@@ -206,6 +251,8 @@ inline HeapWord* G1ConcurrentMark::top_at_mark_start(const G1HeapRegion* r) cons
 }
 
 inline HeapWord* G1ConcurrentMark::top_at_mark_start(uint region) const {
+  assert_fully_initialized();
+  assert(tams_may_be_read(), "must be");
   assert(region < _g1h->max_num_regions(), "Tried to access TARS for region %u out of bounds", region);
   return _top_at_mark_starts[region].load_relaxed();
 }
@@ -217,10 +264,12 @@ inline bool G1ConcurrentMark::obj_allocated_since_mark_start(oop obj) const {
 }
 
 inline HeapWord* G1ConcurrentMark::top_at_rebuild_start(G1HeapRegion* r) const {
+  assert_fully_initialized();
   return _top_at_rebuild_starts[r->hrm_index()].load_relaxed();
 }
 
 inline void G1ConcurrentMark::update_top_at_rebuild_start(G1HeapRegion* r) {
+  assert_fully_initialized();
   assert(r->is_old() || r->is_humongous(), "precondition");
 
   uint const region = r->hrm_index();
@@ -241,6 +290,26 @@ inline void G1CMTask::inc_incoming_refs(oop const obj) {
 
 inline void G1ConcurrentMark::add_to_liveness(uint worker_id, oop const obj, size_t size) {
   task(worker_id)->update_liveness(obj, size);
+}
+
+inline bool G1ConcurrentMark::contains_live_object(uint region) const {
+  assert_fully_initialized();
+  return _region_mark_stats[region].live_words() != 0;
+}
+
+inline size_t G1ConcurrentMark::live_bytes(uint region) const {
+  assert_fully_initialized();
+  return _region_mark_stats[region].live_words() * HeapWordSize;
+}
+
+inline void G1ConcurrentMark::set_live_bytes(uint region, size_t live_bytes) {
+  assert_fully_initialized();
+  _region_mark_stats[region]._live_words.store_relaxed(live_bytes / HeapWordSize);
+}
+
+inline size_t G1ConcurrentMark::incoming_refs(uint region) const {
+  assert_fully_initialized();
+  return _region_mark_stats[region].incoming_refs();
 }
 
 inline void G1CMTask::abort_marking_if_regular_check_fail() {
@@ -272,7 +341,6 @@ inline bool G1CMTask::make_reference_grey(oop obj) {
   // be pushed on the stack. So, some duplicate work, but no
   // correctness problems.
   if (is_below_finger(obj, global_finger)) {
-    G1TaskQueueEntry entry(obj);
     if (obj->is_typeArray()) {
       // Immediately process arrays of primitive types, rather
       // than pushing on the mark stack.  This keeps us from
@@ -284,8 +352,8 @@ inline bool G1CMTask::make_reference_grey(oop obj) {
       // by only doing a bookkeeping update and avoiding the
       // actual scan of the object - a typeArray contains no
       // references, and the metadata is built-in.
-      process_grey_task_entry<false>(entry, false /* stolen */);
     } else {
+      G1TaskQueueEntry entry(obj);
       push(entry);
     }
   }

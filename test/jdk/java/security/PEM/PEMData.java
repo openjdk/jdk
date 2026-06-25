@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
  */
 
 import javax.crypto.EncryptedPrivateKeyInfo;
-import java.security.DEREncodable;
+import java.nio.charset.StandardCharsets;
+import java.security.BinaryEncodable;
 import java.security.KeyPair;
 import java.security.PEM;
 import java.security.cert.X509CRL;
@@ -32,7 +33,9 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.*;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -399,26 +402,26 @@ class PEMData {
         6onPAs4hkm+63dfzCojvEkALevO8J3OVX7YS5q9J1r75wDn60Ob0Zh+iiorpx8Ob
         WqcWcoJqfdLEyBT+
         -----END PRIVATE KEY-----
-        """, DEREncodable.class, null);
+        """, BinaryEncodable.class, null);
 
     private static final Entry invalidPEM = new Entry("invalidPEM", """
         -----BEGIN INVALID PEM-----
         MIG2AgEAMBAGByqGSM49AgEGBSuBBAAiBIGeMIGbAgEBBDBVS52ZSKZ0oES7twD2
         GGwRIVu3uHlGIwlu0xzFe7sgIPntca2bHfYMhgGxrlCm0q+hZANiAAQNWgwWfLX8
         8pYVjvwbfvDF9f+Oa9w6JjrfpWwFAUI6b1OPgrNUh+yXtUXnQNXnfUcIu0Os53bM
-        """, DEREncodable.class, null);
+        """, BinaryEncodable.class, null);
 
     private static final Entry invalidHeader = new Entry("invalidHeader", """
         ---BEGIN PRIVATE KEY---
         MC4CAQAwBQYDK2VwBCIEIFFZsmD+OKk67Cigc84/2fWtlKsvXWLSoMJ0MHh4jI4I
         -----END PRIVATE KEY-----
-        """, DEREncodable.class, null);
+        """, BinaryEncodable.class, null);
 
     private static final Entry invalidFooter = new Entry("invalidFooter", """
         -----BEGIN PRIVATE KEY-----
         MC4CAQAwBQYDK2VwBCIEIFFZsmD+OKk67Cigc84/2fWtlKsvXWLSoMJ0MHh4jI4I
         ---END PRIVATE KEY---
-        """, DEREncodable.class, null);
+        """, BinaryEncodable.class, null);
 
     private static final Entry incorrectFooter = new Entry("incorrectFooter", """
         -----BEGIN PRIVATE KEY-----
@@ -427,7 +430,7 @@ class PEMData {
         8pYVjvwbfvDF9f+Oa9w6JjrfpWwFAUI6b1OPgrNUh+yXtUXnQNXnfUcIu0Os53bM
         8fTqPkQl6RyWEDHeXqJK8zTBHMeBq9nLfDPSbzQgLDyC64Orn0D8exM=
         -----END PUBLIC KEY-----
-        """, DEREncodable.class, null);
+        """, BinaryEncodable.class, null);
 
     // EC cert with explicit parameters -- Not currently supported by SunEC
     static final String ecCertEX = """
@@ -498,6 +501,41 @@ class PEMData {
         -----END CERTIFICATE REQUEST-----
         """ + postData, PEM.class, "SunEC");
 
+    // This PEM is not valid, it is only used to verify PEMDecoder will
+    // parse the non-base64 text properly.
+    public static final String encpkcs1 = """
+        -----BEGIN RSA PRIVATE KEY-----
+        Proc-Type: 4,ENCRYPTED
+        DEK-Info: DES-EDE3-CBC,ECBE98FA344F0C87
+
+        MIIEowIBAAKCAQEAqozTLan1qFcOCWnS63jXQn5lLyGOKDv3GM11n2zkGGrChayj
+        cSzB2KTlDmN9NgOyFdqGNWbSgdmXR5ToHGHYwaKubJoQIoPQcsipWDI156d3+X/8
+        BxCGY8l5nYwvS4olOXc+2kEjeFF1eamnm9IQ5DHZfaFPl0ri4Yfm1YHBAbt/7HvF
+        3MBjgBj1xSsSFLW4O6ws6guRVGDfKBVyyRNUhRTbSua/nEz0wAjxF2PWT+ZTHS6M
+        0siYwVTuPI4/n4ItoYoahvGb9JskkXP+bc/QZJCTFYdyxF5tKqVMSdYaJTxop02p
+        Jo3oeafVKSlBrr0K731xgNBKqBud44aKT5R96QIDAQABAoIBAQCD9Q/T7gOvayPm
+        LqXOISJURV1emRTXloX5/8Y5QtQ8/CVjrg6Lm3ikefjsKBgR+cwJUpmyqcrIQyXk
+        cZchlqdSMt/IEW/YdKqMlStJnRfOE+ok9lx2ztdcT9+0AWn6hXmFu/i6f9nE1yoQ
+        py6SxnbhSJyhsnTVd1CR9Uep/InsHvYW/15WlVMD1VuCSIt9sefqXwavbAfBaqbn
+        mjwBB/ulsqKhHSuRq/QWqlj+jyGqhhYmTguC1Qwt0woDbThiHtK+suCTAlGBj/A+
+        IZ1U9d+VsHBcWDKBkxmlKWcJAGR3xXiKKy9vfzC+DU7L99kgay80VZarDyXgiy78
+        9xMMzRMBAoGBANoxnZhu1bUFtLqTJ1HfDm6UB+1zVd2Mu4DXYdy/AHjoaCLp05OQ
+        0ZeyhO/eXPT+eGpzCxkWD7465KO/QDfnp54p/NS73jaJVdWQHBhzJx1MymqURy3N
+        JQeW4+ojzwSmVXcrs7Og6EBa4L+PWLpMLW2kODniCY+vp9f5LS6m8UPJAoGBAMgZ
+        4rBw7B9YFZZW/EE4eos4Q7KtA5tEP6wvCq04oxfiSytWXifYX0ToPp0CHhZlWOxk
+        v9a/BDGqM7AxAQJs7mmIvT5AT2V1w7oTbFPnnAo6pQtLcfaxdFFqr0h6t0sXSOKC
+        rQeZAqqFqwuOyP7vT0goGlBruHkwS21NKkzCyzkhAoGAc2JjhbWu+8Cdt0CUPX5o
+        ol9T5eTlFnkSuuqrTNIQzN+SGkxu341o2QDFvhdoLwLW6OwXhVeeUanROSqtKiMu
+        B70Kf/EtbMephXtk8CUNHTh7nmr1TSo8F8xakHoJQts3PQL2T9qal1W3nnWOpU4d
+        g+qg9TMsfTiV2OdjVlVgJskCgYBSnjV1qjojuue22hVvDFW0c7en5z2M9wHfItEi
+        sjbMnrdwnklj5Dd5qPZpNz2a+59ag0Kd9OJTazXKMoF7MeTCGB4ivMTLXHNCudBJ
+        WGCZ7JrGbhEQzTX8g7L5lwlk7KlANLoiX++03lm//OVKNR6j6ULsH33cM6+A4pJr
+        fSYRYQKBgCr9iMTmL0x+n6AmMNecR+MhDxi99Oy0s2EBAYqN9g/8yNgwM4KR0cjz
+        EcgIOtkvoTrJ9Cquvuj+O7/d2yNoH0SZQ4IYJKq47/Z4kKhwXzJnBCCCBKgkjfub
+        RTQSNnSEgTaBD29l7FrhNRHX9lIKFZ23caCTBS6o3q3+KgPbq7ao
+        -----END RSA PRIVATE KEY-----
+        """;
+
     final static Pattern CR = Pattern.compile("\r");
     final static Pattern LF = Pattern.compile("\n");
     final static Pattern LSDEFAULT = Pattern.compile(System.lineSeparator());
@@ -543,8 +581,8 @@ class PEMData {
                 clazz, provider, password());
         }
 
-        Entry makeCR(String name) {
-            return new Entry(name,
+        Entry makeCR(String newName) {
+            return new Entry(newName,
                 Pattern.compile(System.lineSeparator()).matcher(pem).replaceAll("\r"),
                 clazz, provider, password());
         }
@@ -554,6 +592,32 @@ class PEMData {
                 LF.matcher(CR.matcher(pem).replaceAll("")).
                     replaceAll(""),
                 clazz, provider, password());
+        }
+
+        Entry makeValidNoCRLF(String newName) {
+            int cr = pem.indexOf('\r');
+            int lf = pem.indexOf('\n');
+            if (cr == -1 && lf == -1) {
+                throw new AssertionError("Cannot find EOL with " + newName);
+            }
+
+            Matcher eol;
+            int cut; // index right after the first EOL
+
+            if (lf - cr == 1) {
+                eol = LSDEFAULT.matcher(pem);
+                cut = lf + 1;
+            } else if (cr != -1 && cr < lf) {
+                eol = CR.matcher(pem);
+                cut = cr + 1;
+            } else {
+                eol = LF.matcher(pem);
+                cut = lf + 1;
+            }
+
+            String p = pem.substring(0, cut) +
+                eol.pattern().matcher(pem.substring(cut)).replaceAll("");
+            return new Entry(newName, p, clazz, provider, password());
         }
     }
 
@@ -613,8 +677,8 @@ class PEMData {
         passList.addAll(entryList);
         passList.addAll(encryptedList);
 
-        failureEntryList.add(new Entry("emptyPEM", "", DEREncodable.class, null));
-        failureEntryList.add(new Entry("nullPEM", null, DEREncodable.class, null));
+        failureEntryList.add(new Entry("emptyPEM", "", BinaryEncodable.class, null));
+        failureEntryList.add(new Entry("nullPEM", null, BinaryEncodable.class, null));
         failureEntryList.add(incorrectFooter);
         failureEntryList.add(invalidPEM);
         failureEntryList.add(invalidDer);
@@ -649,6 +713,18 @@ class PEMData {
         }
     }
 
+    static void checkResultsExact(String expected, String result) {
+        try {
+            if (expected.compareTo(result) != 0) {
+                System.out.println("expected:\n" + expected);
+                System.out.println("generated:\n" + result);
+                indexDiff(expected, result);
+            }
+        } catch (AssertionError e) {
+            throw new AssertionError("Encoder PEM mismatch ");
+        }
+    }
+
     static void indexDiff(String a, String b) {
         String lenerr = "";
         int len = a.length();
@@ -663,5 +739,23 @@ class PEMData {
                     "  (" + a.charAt(i) + " vs " + b.charAt(i) + ")" + lenerr);
             }
         }
+    }
+
+    static Entry insertPostHeaderChar(Entry entry, char c) {
+        String pem = entry.pem();
+        int secondHyphen = pem.indexOf("-----", 5);
+        int i = secondHyphen + 5;
+        return new Entry(
+            entry.name() + "[" + toChar(c) + "]" ,
+            pem.substring(0, i) + c + pem.substring(i),
+            entry.clazz(), entry.provider(), entry.password());
+    }
+
+    private static String toChar(char c) {
+        return switch (c) {
+            case '\s' -> "sp";
+            case '\t' -> "tab";
+            default -> String.valueOf(c);
+        };
     }
 }

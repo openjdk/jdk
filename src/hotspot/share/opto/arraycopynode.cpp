@@ -258,6 +258,19 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
   return mem;
 }
 
+// We may have narrowed the type of base because this runs with PhaseIterGVN::_delay_transform true, explicitly
+// update the type of the AddP so it's consistent with its base and load() picks the right memory slice.
+Node* ArrayCopyNode::make_and_transform_addp(PhaseGVN* phase, Node* base, Node* offset) {
+  return make_and_transform_addp(phase, base, base, offset);
+}
+
+Node* ArrayCopyNode::make_and_transform_addp(PhaseGVN* phase, Node* base, Node* ptr, Node* offset) {
+  assert(phase->is_IterGVN() == nullptr || phase->is_IterGVN()->delay_transform(), "helper method when delay transform is set");
+  Node* addp = phase->transform(AddPNode::make_with_base(base, ptr, offset));
+  phase->set_type(addp, addp->Value(phase));
+  return addp;
+}
+
 bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
                                        Node*& adr_src,
                                        Node*& base_src,
@@ -332,12 +345,11 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     Node* dest_scale = phase->transform(new LShiftXNode(dest_offset, phase->intcon(shift)));
 
-    adr_src = phase->transform(AddPNode::make_with_base(base_src, src_scale));
-    adr_dest = phase->transform(AddPNode::make_with_base(base_dest, dest_scale));
+    adr_src = make_and_transform_addp(phase, base_src, src_scale);
+    adr_dest = make_and_transform_addp(phase, base_dest, dest_scale);
 
-    adr_src = phase->transform(AddPNode::make_with_base(base_src, adr_src, phase->MakeConX(header)));
-    adr_dest = phase->transform(AddPNode::make_with_base(base_dest, adr_dest, phase->MakeConX(header)));
-
+    adr_src = make_and_transform_addp(phase, base_src, adr_src, phase->MakeConX(header));
+    adr_dest = make_and_transform_addp(phase, base_dest, adr_dest, phase->MakeConX(header));
     copy_type = dest_elem;
   } else {
     assert(ary_src != nullptr, "should be a clone");
@@ -355,8 +367,8 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
       return false;
     }
 
-    adr_src = phase->transform(AddPNode::make_with_base(base_src, src_offset));
-    adr_dest = phase->transform(AddPNode::make_with_base(base_dest, dest_offset));
+    adr_src = make_and_transform_addp(phase, base_src, src_offset);
+    adr_dest = make_and_transform_addp(phase, base_dest, dest_offset);
 
     // The address is offsetted to an aligned address where a raw copy would start.
     // If the clone copy is decomposed into load-stores - the address is adjusted to
@@ -366,8 +378,8 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     int diff = arrayOopDesc::base_offset_in_bytes(elem) - offset;
     assert(diff >= 0, "clone should not start after 1st array element");
     if (diff > 0) {
-      adr_src = phase->transform(AddPNode::make_with_base(base_src, adr_src, phase->MakeConX(diff)));
-      adr_dest = phase->transform(AddPNode::make_with_base(base_dest, adr_dest, phase->MakeConX(diff)));
+      adr_src = make_and_transform_addp(phase, base_src, adr_src, phase->MakeConX(diff));
+      adr_dest = make_and_transform_addp(phase, base_dest, adr_dest, phase->MakeConX(diff));
     }
     copy_type = elem;
     value_type = ary_src->elem();
@@ -381,6 +393,10 @@ const TypePtr* ArrayCopyNode::get_address_type(PhaseGVN* phase, const TypePtr* a
   }
   // adjust atp to be the correct array element address type
   return atp->add_offset(Type::OffsetBot);
+}
+
+const TypePtr* ArrayCopyNode::get_src_adr_type(PhaseGVN* phase) const {
+  return get_address_type(phase, _src_type, in(Src));
 }
 
 void ArrayCopyNode::array_copy_test_overlap(PhaseGVN *phase, bool can_reshape, bool disjoint_bases, int count, Node*& forward_ctl, Node*& backward_ctl) {
@@ -425,12 +441,8 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
       store(bs, phase, forward_ctl, mm, adr_dest, atp_dest, v, value_type, copy_type);
       for (int i = 1; i < count; i++) {
         Node* off  = phase->MakeConX(type2aelembytes(copy_type) * i);
-        Node* next_src = phase->transform(AddPNode::make_with_base(base_src,adr_src,off));
-        // We may have narrowed the type of next_src right before calling this method but because this runs with
-        // PhaseIterGVN::_delay_transform true, explicitly update the type of the AddP so it's consistent  with its
-        // base and load() picks the right memory slice.
-        phase->set_type(next_src, next_src->Value(phase));
-        Node* next_dest = phase->transform(AddPNode::make_with_base(base_dest,adr_dest,off));
+        Node* next_src = make_and_transform_addp(phase, base_src,adr_src,off);
+        Node* next_dest = make_and_transform_addp(phase, base_dest,adr_dest,off);
         // Same as above
         phase->set_type(next_dest, next_dest->Value(phase));
         v = load(bs, phase, forward_ctl, mm, next_src, atp_src, value_type, copy_type);
@@ -469,13 +481,8 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
     if (count > 0) {
       for (int i = count-1; i >= 1; i--) {
         Node* off  = phase->MakeConX(type2aelembytes(copy_type) * i);
-        Node* next_src = phase->transform(AddPNode::make_with_base(base_src,adr_src,off));
-        // We may have narrowed the type of next_src right before calling this method but because this runs with
-        // PhaseIterGVN::_delay_transform true, explicitly update the type of the AddP so it's consistent  with its
-        // base and store() picks the right memory slice.
-        phase->set_type(next_src, next_src->Value(phase));
-        Node* next_dest = phase->transform(AddPNode::make_with_base(base_dest,adr_dest,off));
-        phase->set_type(next_dest, next_dest->Value(phase));
+        Node* next_src = make_and_transform_addp(phase, base_src,adr_src,off);
+        Node* next_dest = make_and_transform_addp(phase, base_dest,adr_dest,off);
         Node* v = load(bs, phase, backward_ctl, mm, next_src, atp_src, value_type, copy_type);
         store(bs, phase, backward_ctl, mm, next_dest, atp_dest, v, value_type, copy_type);
       }
@@ -614,20 +621,30 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   phase->set_type(src, phase->type(src)->join_speculative(atp_src));
   phase->set_type(dest, phase->type(dest)->join_speculative(atp_dest));
 
+  // Control flow is going to be created, it's easier to do with _delay_transform set to true.
+
+  // prepare_array_copy() doesn't build control flow, but it creates AddP nodes. The src/dest type possibly gets
+  // narrowed above. If a newly created AddP node is commoned with a pre-existing one, then the type narrowing is lost.
+  // Setting _delay_transform before prepare_array_copy() guarantees this doesn't happen.
+  if (can_reshape) {
+    assert(!phase->is_IterGVN()->delay_transform(), "cannot delay transforms");
+    phase->is_IterGVN()->set_delay_transform(true);
+  }
+
   if (!prepare_array_copy(phase, can_reshape,
                           adr_src, base_src, adr_dest, base_dest,
                           copy_type, value_type, disjoint_bases)) {
     assert(adr_src == nullptr, "no node can be left behind");
     assert(adr_dest == nullptr, "no node can be left behind");
+    if (can_reshape) {
+      assert(phase->is_IterGVN()->delay_transform(), "cannot delay transforms");
+      phase->is_IterGVN()->set_delay_transform(false);
+    }
+
     return nullptr;
   }
 
   Node* in_mem = in(TypeFunc::Memory);
-
-  if (can_reshape) {
-    assert(!phase->is_IterGVN()->delay_transform(), "cannot delay transforms");
-    phase->is_IterGVN()->set_delay_transform(true);
-  }
 
   Node* backward_ctl = phase->C->top();
   Node* forward_ctl = phase->C->top();
@@ -688,7 +705,7 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return mem;
 }
 
-bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
+bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const {
   Node* dest = in(ArrayCopyNode::Dest);
   if (dest->is_top()) {
     return false;

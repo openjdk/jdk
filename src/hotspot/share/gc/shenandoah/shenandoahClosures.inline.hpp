@@ -30,7 +30,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
-#include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
@@ -88,7 +88,7 @@ bool ShenandoahForwardedIsAliveClosure::do_object_b(oop obj) {
   if (CompressedOops::is_null(obj)) {
     return false;
   }
-  obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+  obj = ShenandoahForwarding::get_forwardee(obj);
   shenandoah_assert_not_forwarded_if(nullptr, obj, ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
   return _mark_context->is_marked_or_old(obj);
 }
@@ -132,22 +132,12 @@ void ShenandoahKeepAliveClosure::do_oop_work(T* p) {
 
 template <bool CONCURRENT, bool STABLE_THREAD>
 void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop(oop* p) {
-  if (CONCURRENT) {
-    ShenandoahEvacOOMScope scope;
-    do_oop_work(p);
-  } else {
-    do_oop_work(p);
-  }
+  do_oop_work(p);
 }
 
 template <bool CONCURRENT, bool STABLE_THREAD>
 void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop(narrowOop* p) {
-  if (CONCURRENT) {
-    ShenandoahEvacOOMScope scope;
-    do_oop_work(p);
-  } else {
-    do_oop_work(p);
-  }
+  do_oop_work(p);
 }
 
 template <bool CONCURRENT, bool STABLE_THREAD>
@@ -163,7 +153,7 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_
     if (_heap->in_collection_set(obj)) {
       assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
-      oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop resolved = ShenandoahForwarding::get_forwardee(obj);
       if (resolved == obj) {
         Thread* thr = STABLE_THREAD ? _thread : Thread::current();
         assert(thr == Thread::current(), "Wrong thread");
@@ -209,15 +199,13 @@ void ShenandoahCleanUpdateWeakOopsClosure<CONCURRENT, IsAlive, KeepAlive>::do_oo
 }
 
 ShenandoahNMethodAndDisarmClosure::ShenandoahNMethodAndDisarmClosure(OopClosure* cl) :
-  NMethodToOopClosure(cl, true /* fix_relocations */),
-   _bs(BarrierSet::barrier_set()->barrier_set_nmethod()) {
-}
+  NMethodToOopClosure(cl, true /* fix_relocations */) {}
 
 void ShenandoahNMethodAndDisarmClosure::do_nmethod(nmethod* nm) {
   assert(nm != nullptr, "Sanity");
   assert(!ShenandoahNMethod::gc_data(nm)->is_unregistered(), "Should not be here");
   NMethodToOopClosure::do_nmethod(nm);
-  _bs->disarm(nm);
+  ShenandoahNMethod::disarm_nmethod(nm);
 }
 
 

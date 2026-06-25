@@ -55,7 +55,7 @@ protected:
 
     old = new ShenandoahOldGeneration(8);
     old->set_promoted_reserve(512 * HeapWordSize);
-    old->expend_promoted(256 * HeapWordSize);
+    old->try_expend_promoted(256 * HeapWordSize);
     old->set_evacuation_reserve(512 * HeapWordSize);
 
     Thread* thread = Thread::current();
@@ -171,10 +171,10 @@ TEST_VM_F(ShenandoahOldGenerationTest, test_actual_size_exceeds_promotion_reserv
   EXPECT_FALSE(promotions_enabled()) << "New plab can only be used for evacuations";
 }
 
-TEST_VM_F(ShenandoahOldGenerationTest, test_expend_promoted_should_increase_expended) {
+TEST_VM_F(ShenandoahOldGenerationTest, test_try_expend_promoted_should_increase_expended) {
   SKIP_IF_NOT_SHENANDOAH();
   size_t expended_before = old->get_promoted_expended();
-  old->expend_promoted(128);
+  EXPECT_TRUE(old->try_expend_promoted(128)) << "Should fit within reserve";
   size_t expended_after = old->get_promoted_expended();
   EXPECT_EQ(expended_before + 128, expended_after) << "Should expend promotion";
 }

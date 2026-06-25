@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,8 +243,8 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
     public void hide() {
         MenuSelectionManager manager = MenuSelectionManager.defaultManager();
         MenuElement [] selection = manager.getSelectedPath();
-        for ( int i = 0 ; i < selection.length ; i++ ) {
-            if ( selection[i] == this ) {
+        for (int i = 0 ; i < selection.length; i++ ) {
+            if (selection[i] == this) {
                 manager.clearSelectedPath();
                 break;
             }
@@ -924,7 +924,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
             if (!SwingUtilities.isLeftMouseButton(e) || !comboBox.isEnabled() || !comboBox.isShowing())
                 return;
 
-            if ( comboBox.isEditable() ) {
+            if (comboBox.isEditable()) {
                 Component comp = comboBox.getEditor().getEditorComponent();
                 if ((!(comp instanceof JComponent)) || ((JComponent)comp).isRequestFocusEnabled()) {
                     comp.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
@@ -957,12 +957,12 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
             Component source = (Component)e.getSource();
             Dimension size = source.getSize();
             Rectangle bounds = new Rectangle( 0, 0, size.width, size.height);
-            if ( !bounds.contains( e.getPoint() ) ) {
+            if (!bounds.contains(e.getPoint())) {
                 MouseEvent newEvent = convertMouseEvent( e );
                 Point location = newEvent.getPoint();
                 Rectangle r = new Rectangle();
                 list.computeVisibleRect( r );
-                if ( r.contains( location ) ) {
+                if (r.contains(location)) {
                     if (comboBox.getSelectedIndex() == list.getSelectedIndex()) {
                         comboBox.getEditor().setItem(list.getSelectedValue());
                     }
@@ -989,7 +989,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
                 Point location = anEvent.getPoint();
                 Rectangle r = new Rectangle();
                 list.computeVisibleRect( r );
-                if ( r.contains( location ) ) {
+                if (r.contains(location)) {
                     updateListBoxSelectionForEvent( anEvent, false );
                 }
             }
@@ -999,34 +999,34 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
             if (e.getSource() == list) {
                 return;
             }
-            if ( isVisible() ) {
+            if (isVisible()) {
                 MouseEvent newEvent = convertMouseEvent( e );
                 Rectangle r = new Rectangle();
                 list.computeVisibleRect( r );
 
-                if ( newEvent.getPoint().y >= r.y && newEvent.getPoint().y <= r.y + r.height - 1 ) {
+                if (newEvent.getPoint().y >= r.y && newEvent.getPoint().y <= r.y + r.height - 1) {
                     hasEntered = true;
-                    if ( isAutoScrolling ) {
+                    if (isAutoScrolling) {
                         stopAutoScrolling();
                     }
                     Point location = newEvent.getPoint();
-                    if ( r.contains( location ) ) {
+                    if (r.contains(location)) {
                         updateListBoxSelectionForEvent( newEvent, false );
                     }
                 }
                 else {
-                    if ( hasEntered ) {
+                    if (hasEntered) {
                         int directionToScroll = newEvent.getPoint().y < r.y ? SCROLL_UP : SCROLL_DOWN;
-                        if ( isAutoScrolling && scrollDirection != directionToScroll ) {
+                        if (isAutoScrolling && scrollDirection != directionToScroll) {
                             stopAutoScrolling();
                             startAutoScrolling( directionToScroll );
                         }
-                        else if ( !isAutoScrolling ) {
+                        else if (!isAutoScrolling) {
                             startAutoScrolling( directionToScroll );
                         }
                     }
                     else {
-                        if ( e.getPoint().y < 0 ) {
+                        if (e.getPoint().y < 0) {
                             hasEntered = true;
                             startAutoScrolling( SCROLL_UP );
                         }
@@ -1043,7 +1043,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
             JComboBox<Object> comboBox = (JComboBox)e.getSource();
             String propertyName = e.getPropertyName();
 
-            if ( propertyName == "model" ) {
+            if (propertyName == "model") {
                 @SuppressWarnings("unchecked")
                 ComboBoxModel<Object> oldModel = (ComboBoxModel)e.getOldValue();
                 @SuppressWarnings("unchecked")
@@ -1053,13 +1053,13 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
 
                 list.setModel(newModel);
 
-                if ( isVisible() ) {
+                if (isVisible()) {
                     hide();
                 }
             }
-            else if ( propertyName == "renderer" ) {
+            else if (propertyName == "renderer") {
                 list.setCellRenderer( comboBox.getRenderer() );
-                if ( isVisible() ) {
+                if (isVisible()) {
                     hide();
                 }
             }
@@ -1067,18 +1067,18 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
                 // Pass along the new component orientation
                 // to the list and the scroller
 
-                ComponentOrientation o =(ComponentOrientation)e.getNewValue();
+                ComponentOrientation o = (ComponentOrientation)e.getNewValue();
 
                 JList<?> list = getList();
-                if (list != null && list.getComponentOrientation()!=o) {
+                if (list != null && list.getComponentOrientation() != o) {
                     list.setComponentOrientation(o);
                 }
 
-                if (scroller != null && scroller.getComponentOrientation()!=o) {
+                if (scroller != null && scroller.getComponentOrientation() != o) {
                     scroller.setComponentOrientation(o);
                 }
 
-                if (o!=getComponentOrientation()) {
+                if (o != getComponentOrientation()) {
                     setComponentOrientation(o);
                 }
             }
@@ -1134,13 +1134,13 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
     protected void startAutoScrolling( int direction ) {
         // XXX - should be a private method within InvocationMouseMotionHandler
         // if possible.
-        if ( isAutoScrolling ) {
+        if (isAutoScrolling) {
             autoscrollTimer.stop();
         }
 
         isAutoScrolling = true;
 
-        if ( direction == SCROLL_UP ) {
+        if (direction == SCROLL_UP) {
             scrollDirection = SCROLL_UP;
             Point convertedPoint = SwingUtilities.convertPoint( scroller, new Point( 1, 1 ), list );
             int top = list.locationToIndex( convertedPoint );
@@ -1149,7 +1149,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
             autoscrollTimer = new Timer( 100, new AutoScrollActionHandler(
                                              SCROLL_UP) );
         }
-        else if ( direction == SCROLL_DOWN ) {
+        else if (direction == SCROLL_DOWN) {
             scrollDirection = SCROLL_DOWN;
             Dimension size = scroller.getSize();
             Point convertedPoint = SwingUtilities.convertPoint( scroller,
@@ -1171,7 +1171,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
     protected void stopAutoScrolling() {
         isAutoScrolling = false;
 
-        if ( autoscrollTimer != null ) {
+        if (autoscrollTimer != null) {
             autoscrollTimer.stop();
             autoscrollTimer = null;
         }
@@ -1183,7 +1183,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      */
     protected void autoScrollUp() {
         int index = list.getSelectedIndex();
-        if ( index > 0 ) {
+        if (index > 0) {
             list.setSelectedIndex( index - 1 );
             list.ensureIndexIsVisible( index - 1 );
         }
@@ -1196,7 +1196,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
     protected void autoScrollDown() {
         int index = list.getSelectedIndex();
         int lastItem = list.getModel().getSize() - 1;
-        if ( index < lastItem ) {
+        if (index < lastItem) {
             list.setSelectedIndex( index + 1 );
             list.ensureIndexIsVisible( index + 1 );
         }
@@ -1234,7 +1234,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * @param e a mouse event
      */
     protected void delegateFocus( MouseEvent e ) {
-        if ( comboBox.isEditable() ) {
+        if (comboBox.isEditable()) {
             Component comp = comboBox.getEditor().getEditorComponent();
             if ((!(comp instanceof JComponent)) || ((JComponent)comp).isRequestFocusEnabled()) {
                 if (e != null) {
@@ -1258,7 +1258,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * visible.
      */
     protected void togglePopup() {
-        if ( isVisible() ) {
+        if (isVisible()) {
             hide();
         }
         else {
@@ -1274,7 +1274,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * @param selectedIndex the index to set the list
      */
     private void setListSelection(int selectedIndex) {
-        if ( selectedIndex == -1 ) {
+        if (selectedIndex == -1) {
             list.clearSelection();
         }
         else {
@@ -1325,7 +1325,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         ListCellRenderer<Object> renderer = list.getCellRenderer();
         Object value = null;
 
-        for ( int i = 0; i < minRowCount; ++i ) {
+        for (int i = 0; i < minRowCount; ++i) {
             value = list.getModel().getElementAt( i );
             Component c = renderer.getListCellRendererComponent( list, value, i, false, false );
             height += c.getPreferredSize().height;
@@ -1439,18 +1439,18 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         // XXX - only seems to be called from this class. shouldScroll flag is
         // never true
         Point location = anEvent.getPoint();
-        if ( list == null )
+        if (list == null)
             return;
         int index = list.locationToIndex(location);
-        if ( index == -1 ) {
-            if ( location.y < 0 )
+        if (index == -1) {
+            if (location.y < 0)
                 index = 0;
             else
                 index = comboBox.getModel().getSize() - 1;
         }
-        if ( list.getSelectedIndex() != index ) {
+        if (list.getSelectedIndex() != index) {
             list.setSelectedIndex(index);
-            if ( shouldScroll )
+            if (shouldScroll)
                 list.ensureIndexIsVisible(index);
         }
     }

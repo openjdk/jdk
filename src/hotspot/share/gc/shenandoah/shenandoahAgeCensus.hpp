@@ -121,6 +121,8 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
 
   uint _max_workers;                 // Maximum number of workers for parallel tasks
 
+  bool _always_tenure;               // When true, every age is tenurable.
+
   // Mortality rate of a cohort, given its population in
   // previous and current epochs
   double mortality_rate(size_t prev_pop, size_t cur_pop);
@@ -150,9 +152,9 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
     return _tenuring_threshold[prev];
   }
 
-  // Override the tenuring threshold for the current epoch. This is used to
-  // cause everything to be promoted for a whitebox full gc request.
-  void set_tenuring_threshold(uint threshold) { _tenuring_threshold[_epoch] = threshold; }
+  // Set always tenure mode. Currently only used by ShenandoahTenuringOverride
+  // to force is_tenurable() to be true for every age during WB.fullGC tests.
+  void set_always_tenure(bool always_tenure) { _always_tenure = always_tenure; }
 
 #ifndef PRODUCT
   // Return the sum of size of objects of all ages recorded in the
@@ -187,10 +189,12 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // Visible for testing. Use is_tenurable for consistent tenuring comparisons.
   uint tenuring_threshold() const { return _tenuring_threshold[_epoch]; }
 
-  // Return true if this age is at or above the tenuring threshold.
+  // Return true if this age is at or above the tenuring threshold, or if always tenure is enabled.
   bool is_tenurable(uint age) const {
-    return age >= tenuring_threshold();
+    return age >= tenuring_threshold() || _always_tenure;
   }
+
+  bool is_always_tenure() const { return _always_tenure; }
 
   // Update the local age table for worker_id by size for
   // given obj_age, region_age, and region_youth
@@ -216,6 +220,12 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // allocated when the concurrent marking was in progress.
   void update_census(size_t age0_pop);
 
+  // Return the total size of the population at or above the given threshold for the current epoch
+  size_t get_tenurable_bytes(uint tenuring_threshold) const;
+
+  // As above, but use the current tenuring threshold
+  size_t get_tenurable_bytes() const { return get_tenurable_bytes(tenuring_threshold()); }
+
   // Reset the epoch, clearing accumulated census history
   // Note: this isn't currently used, but reserved for planned
   // future usage.
@@ -238,24 +248,22 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   void print();
 };
 
-// RAII object that temporarily overrides the tenuring threshold for the
-// duration of a scope, restoring the original value on destruction.
-// Used to force promotion of all young objects during whitebox full GCs.
+// RAII object that enables ShenandoahAgeCensus always tenure mode for the
+// duration of a scope and disables it on destruction. Used to force promotion
+// of all young objects during whitebox full GCs.
 class ShenandoahTenuringOverride : public StackObj {
   ShenandoahAgeCensus* _census;
-  uint _saved_threshold;
   bool _active;
 public:
   ShenandoahTenuringOverride(bool active, ShenandoahAgeCensus* census) :
-    _census(census), _saved_threshold(0), _active(active) {
+    _census(census), _active(active) {
     if (_active) {
-      _saved_threshold = _census->tenuring_threshold();
-      _census->set_tenuring_threshold(0);
+      _census->set_always_tenure(true);
     }
   }
   ~ShenandoahTenuringOverride() {
     if (_active) {
-      _census->set_tenuring_threshold(_saved_threshold);
+      _census->set_always_tenure(false);
     }
   }
 };

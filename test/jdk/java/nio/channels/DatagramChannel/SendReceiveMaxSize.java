@@ -83,14 +83,14 @@ import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static java.net.StandardSocketOptions.SO_SNDBUF;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
-import static jdk.test.lib.net.IPSupport.hasIPv4;
-import static jdk.test.lib.net.IPSupport.hasIPv6;
-import static jdk.test.lib.net.IPSupport.preferIPv4Stack;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Assumptions;
+
+import static jdk.test.lib.net.IPSupport.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -107,7 +107,7 @@ public class SendReceiveMaxSize {
 
     @BeforeAll
     public static void setUp() {
-        IPSupport.throwSkippedExceptionIfNonOperational();
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
     }
 
     public static List<Arguments> testCases() throws IOException {

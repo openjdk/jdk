@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *          to its lowest possible value, 1, does not wedge the client
  * @library /test/jdk/java/net/httpclient/lib
  *          /test/lib
- * @run junit/othervm -Djdk.httpclient.bufsize=1 BufferSize1Test
+ * @run junit/othervm -Djdk.httpclient.bufsize=1 ${test.main.class}
  */
 
 class BufferSize1Test implements HttpServerAdapters {

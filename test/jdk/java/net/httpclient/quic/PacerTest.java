@@ -40,7 +40,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
- * @run junit/othervm -Djdk.httpclient.quic.timerFrequency=1000 PacerTest
+ * @run junit/othervm -Djdk.httpclient.quic.timerFrequency=1000 ${test.main.class}
  */
 public class PacerTest {
 

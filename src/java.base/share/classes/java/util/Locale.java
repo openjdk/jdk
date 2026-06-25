@@ -79,9 +79,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * the number should be formatted according to the customs and conventions of the
  * user's native country, region, or culture.
  *
- * <p>The {@code Locale} class implements IETF BCP 47 which is composed of
- * <a href="https://tools.ietf.org/html/rfc4647">RFC 4647 "Matching of Language
- * Tags"</a> and <a href="https://tools.ietf.org/html/rfc5646">RFC 5646 "Tags
+ * <p>The {@code Locale} class implements
+ * <a href="https://www.rfc-editor.org/info/bcp47">IETF BCP 47</a> which contains
+ * <a href="https://www.rfc-editor.org/info/rfc4647">RFC 4647 "Matching of Language
+ * Tags"</a> and <a href="https://www.rfc-editor.org/info/rfc5646">RFC 5646 "Tags
  * for Identifying Languages"</a> with support for the LDML (UTS#35, "Unicode
  * Locale Data Markup Language") BCP 47-compatible extensions for locale data
  * exchange. Each {@code Locale} is associated with locale data which is provided
@@ -101,7 +102,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>
  * {@code Locale} implements IETF BCP 47 and any deviations should be observed
  * by the comments prefixed by <em>"BCP 47 deviation:"</em>.
- * <a href="https://tools.ietf.org/html/rfc5646">RFC 5646</a>
+ * <a href="https://www.rfc-editor.org/info/rfc5646">RFC 5646</a>
  * combines subtags from various ISO (639, 3166, 15924) standards which are also
  * included in the composition of {@code Locale}.
  * Additionally, the full list of valid codes for each field can be found in the
@@ -120,7 +121,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  *   <dd> <em>Syntax:</em> Well-formed {@code language} values have the form {@code [a-zA-Z]{2,8}}.</dd>
  *   <dd> <em> BCP 47 deviation:</em> this is not the full BCP 47 language production, since it excludes
- *   <a href="https://datatracker.ietf.org/doc/html/rfc5646#section-2.2.2">extlang</a>
+ *   <a href="https://www.rfc-editor.org/rfc/rfc5646#section-2.2.2">extlang</a>
  *   (as modern three-letter language codes are preferred).</dd>
  *
  *   <dd> <em>Example:</em> "en" (English), "ja" (Japanese), "kok" (Konkani)</dd>
@@ -208,7 +209,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * </dl>
  *
  * <b>BCP 47 deviation:</b> BCP47 defines the following two levels of
- * <a href="https://datatracker.ietf.org/doc/html/rfc5646#section-2.2.9">conformance</a>,
+ * <a href="https://www.rfc-editor.org/rfc/rfc5646#section-2.2.9">conformance</a>,
  * "valid" and "well-formed". A valid tag requires that it is well-formed, its
  * subtag values are registered in the IANA Language Subtag Registry, and it does not
  * contain duplicate variant or extension singleton subtags. The {@code Locale}
@@ -222,8 +223,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <h3><a id="def_locale_extension">Unicode BCP 47 U Extension</a></h3>
  *
- * <p>UTS#35, "Unicode Locale Data Markup Language" defines optional
- * attributes and keywords to override or refine the default behavior
+ * <p>UTS#35, "Unicode Locale Data Markup Language" defines the
+ * <a href="https://www.unicode.org/reports/tr35/#u_Extension">Unicode BCP 47 U Extension</a>,
+ * an extension based on <a href="https://www.rfc-editor.org/info/rfc6067">RFC 6067</a>,
+ * which describes optional attributes and keywords to override or refine the default behavior
  * associated with a locale.  A keyword is represented by a pair of
  * key and type.  For example, "nu-thai" indicates that Thai local
  * digits (value:"thai") should be used for formatting numbers
@@ -410,7 +413,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * with "locale" in the following locale matching documentation.
  *
  * <p>In order to match a user's preferred locales to a set of language
- * tags, <a href="https://tools.ietf.org/html/rfc4647">RFC 4647 Matching of
+ * tags, <a href="https://www.rfc-editor.org/info/rfc4647">RFC 4647 Matching of
  * Language Tags</a> defines two mechanisms: filtering and lookup.
  * <em>Filtering</em> is used to get all matching locales, whereas
  * <em>lookup</em> is to select the best matching locale.
@@ -546,6 +549,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * this mapping, so that resources can be named using either convention,
  * see {@link ResourceBundle.Control}.
  *
+ * @spec https://www.rfc-editor.org/info/bcp47
+ *      IETF BCP 47
  * @spec https://www.rfc-editor.org/info/rfc4647
  *      RFC 4647: Matching of Language Tags
  * @spec https://www.rfc-editor.org/info/rfc5646
@@ -1932,7 +1937,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's language that is appropriate for display to the
+     * Returns a name for {@code this} locale's language that is appropriate for display to the
      * user.
      * If possible, the name returned will be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale.
@@ -1946,14 +1951,15 @@ public final class Locale implements Cloneable, Serializable {
      * this function falls back on the English name, and uses the ISO code as a last-resort
      * value.  If the locale doesn't specify a language, this function returns the empty string.
      *
-     * @return The name of the display language.
+     * @return The name of the display language appropriate to the default
+     *      {@link Locale.Category#DISPLAY DISPLAY} locale.
      */
-    public final String getDisplayLanguage() {
+    public String getDisplayLanguage() {
         return getDisplayLanguage(getDefault(Category.DISPLAY));
     }
 
     /**
-     * Returns a name for the locale's language that is appropriate for display to the
+     * Returns a name for {@code this} locale's language that is appropriate for display to the
      * user.
      * If possible, the name returned will be localized according to inLocale.
      * For example, if the locale is fr_FR and inLocale
@@ -1964,7 +1970,7 @@ public final class Locale implements Cloneable, Serializable {
      * on the ISO code as a last-resort value.  If the locale doesn't specify a language,
      * this function returns the empty string.
      *
-     * @param inLocale The locale for which to retrieve the display language.
+     * @param inLocale The locale in which to localize the display language.
      * @return The name of the display language appropriate to the given locale.
      * @throws    NullPointerException if {@code inLocale} is {@code null}
      */
@@ -1973,13 +1979,13 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's script that is appropriate for display to
+     * Returns a name for {@code this} locale's script that is appropriate for display to
      * the user. If possible, the name will be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale.  Returns
      * the empty string if this locale doesn't specify a script code.
      *
-     * @return the display name of the script code for the current default
-     *     {@link Locale.Category#DISPLAY DISPLAY} locale
+     * @return The display name of the script code appropriate to the default
+     *     {@link Locale.Category#DISPLAY DISPLAY} locale.
      * @since 1.7
      */
     public String getDisplayScript() {
@@ -1987,14 +1993,13 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's script that is appropriate
+     * Returns a name for {@code this} locale's script that is appropriate
      * for display to the user. If possible, the name will be
      * localized for the given locale. Returns the empty string if
      * this locale doesn't specify a script code.
      *
-     * @param inLocale The locale for which to retrieve the display script.
-     * @return the display name of the script code for the current default
-     * {@link Locale.Category#DISPLAY DISPLAY} locale
+     * @param inLocale The locale in which to localize the display script.
+     * @return The display name of the script code appropriate to the given locale.
      * @throws NullPointerException if {@code inLocale} is {@code null}
      * @since 1.7
      */
@@ -2003,7 +2008,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's country that is appropriate for display to the
+     * Returns a name for {@code this} locale's country that is appropriate for display to the
      * user.
      * If possible, the name returned will be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale.
@@ -2017,14 +2022,15 @@ public final class Locale implements Cloneable, Serializable {
      * this function falls back on the English name, and uses the ISO code as a last-resort
      * value.  If the locale doesn't specify a country, this function returns the empty string.
      *
-     * @return The name of the country appropriate to the locale.
+     * @return The name of the country appropriate to the default
+     *      {@link Locale.Category#DISPLAY DISPLAY} locale.
      */
-    public final String getDisplayCountry() {
+    public String getDisplayCountry() {
         return getDisplayCountry(getDefault(Category.DISPLAY));
     }
 
     /**
-     * Returns a name for the locale's country that is appropriate for display to the
+     * Returns a name for {@code this} locale's country that is appropriate for display to the
      * user.
      * If possible, the name returned will be localized according to inLocale.
      * For example, if the locale is fr_FR and inLocale
@@ -2035,7 +2041,7 @@ public final class Locale implements Cloneable, Serializable {
      * on the ISO code as a last-resort value.  If the locale doesn't specify a country,
      * this function returns the empty string.
      *
-     * @param inLocale The locale for which to retrieve the display country.
+     * @param inLocale The locale in which to localize the display country.
      * @return The name of the country appropriate to the given locale.
      * @throws    NullPointerException if {@code inLocale} is {@code null}
      */
@@ -2061,23 +2067,24 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale's variant code that is appropriate for display to the
+     * Returns a name for {@code this} locale's variant code that is appropriate for display to the
      * user.  If possible, the name will be localized for the default
      * {@link Locale.Category#DISPLAY DISPLAY} locale.  If the locale
      * doesn't specify a variant code, this function returns the empty string.
      *
-     * @return The name of the display variant code appropriate to the locale.
+     * @return The name of the display variant code appropriate to the default
+     *      {@link Locale.Category#DISPLAY DISPLAY} locale.
      */
-    public final String getDisplayVariant() {
+    public String getDisplayVariant() {
         return getDisplayVariant(getDefault(Category.DISPLAY));
     }
 
     /**
-     * Returns a name for the locale's variant code that is appropriate for display to the
+     * Returns a name for {@code this} locale's variant code that is appropriate for display to the
      * user.  If possible, the name will be localized for inLocale.  If the locale
      * doesn't specify a variant code, this function returns the empty string.
      *
-     * @param inLocale The locale for which to retrieve the display variant code.
+     * @param inLocale The locale in which to localize the display variant code.
      * @return The name of the display variant code appropriate to the given locale.
      * @throws    NullPointerException if {@code inLocale} is {@code null}
      */
@@ -2098,7 +2105,7 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a name for the locale that is appropriate for display to the
+     * Returns a name for {@code this} locale that is appropriate for display to the
      * user. This will be the values returned by getDisplayLanguage(),
      * getDisplayScript(), getDisplayCountry(), getDisplayVariant() and
      * optional {@linkplain ##def_locale_extension Unicode extensions}
@@ -2116,14 +2123,15 @@ public final class Locale implements Cloneable, Serializable {
      * be localized depending on the locale. If the language, script, country,
      * and variant fields are all empty, this function returns the empty string.
      *
-     * @return The name of the locale appropriate to display.
+     * @return The display name appropriate to the default
+     *      {@link Locale.Category#DISPLAY DISPLAY} locale.
      */
-    public final String getDisplayName() {
+    public String getDisplayName() {
         return getDisplayName(getDefault(Category.DISPLAY));
     }
 
     /**
-     * Returns a name for the locale that is appropriate for display
+     * Returns a name for {@code this} locale that is appropriate for display
      * to the user.  This will be the values returned by
      * getDisplayLanguage(), getDisplayScript(), getDisplayCountry(),
      * getDisplayVariant(), and optional {@linkplain ##def_locale_extension
@@ -2142,8 +2150,8 @@ public final class Locale implements Cloneable, Serializable {
      * be localized depending on the locale. If the language, script, country,
      * and variant fields are all empty, this function returns the empty string.
      *
-     * @param inLocale The locale for which to retrieve the display name.
-     * @return The name of the locale appropriate to display.
+     * @param inLocale The locale in which to localize the display name.
+     * @return The display name appropriate to the given locale.
      * @throws NullPointerException if {@code inLocale} is {@code null}
      */
     public String getDisplayName(Locale inLocale) {
@@ -2982,7 +2990,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * This enum provides constants to select a filtering mode for locale
-     * matching. Refer to <a href="https://tools.ietf.org/html/rfc4647">RFC 4647
+     * matching. Refer to <a href="https://www.rfc-editor.org/info/rfc4647">RFC 4647
      * Matching of Language Tags</a> for details.
      *
      * <p>As an example, think of two Language Priority Lists each of which
@@ -3119,7 +3127,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * This class expresses a <em>Language Range</em> defined in
-     * <a href="https://tools.ietf.org/html/rfc4647">RFC 4647 Matching of
+     * <a href="https://www.rfc-editor.org/info/rfc4647">RFC 4647 Matching of
      * Language Tags</a>. A language range is an identifier which is used to
      * select language tag(s) meeting specific requirements by using the
      * mechanisms described in {@linkplain Locale##LocaleMatching Locale
@@ -3490,7 +3498,8 @@ public final class Locale implements Cloneable, Serializable {
      *     sorted in descending order based on priority or weight, or an empty
      *     list if nothing matches. The list is modifiable.
      * @throws NullPointerException if {@code priorityList} or {@code locales}
-     *     is {@code null}
+     *      are {@code null}. {@code NullPointerException} may be thrown if any
+     *      elements within either {@code Collection} are {@code null}.
      * @throws IllegalArgumentException if one or more extended language ranges
      *     are included in the given list when
      *     {@link FilteringMode#REJECT_EXTENDED_RANGES} is specified
@@ -3500,6 +3509,8 @@ public final class Locale implements Cloneable, Serializable {
     public static List<Locale> filter(List<LanguageRange> priorityList,
                                       Collection<Locale> locales,
                                       FilteringMode mode) {
+        Objects.requireNonNull(priorityList);
+        Objects.requireNonNull(locales);
         return LocaleMatcher.filter(priorityList, locales, mode);
     }
 
@@ -3519,12 +3530,15 @@ public final class Locale implements Cloneable, Serializable {
      *     sorted in descending order based on priority or weight, or an empty
      *     list if nothing matches. The list is modifiable.
      * @throws NullPointerException if {@code priorityList} or {@code locales}
-     *     is {@code null}
+     *      are {@code null}. {@code NullPointerException} may be thrown if any
+     *      elements within either {@code Collection} are {@code null}.
      *
      * @since 1.8
      */
     public static List<Locale> filter(List<LanguageRange> priorityList,
                                       Collection<Locale> locales) {
+        Objects.requireNonNull(priorityList);
+        Objects.requireNonNull(locales);
         return filter(priorityList, locales, FilteringMode.AUTOSELECT_FILTERING);
     }
 
@@ -3550,8 +3564,9 @@ public final class Locale implements Cloneable, Serializable {
      * @return a list of matching language tags sorted in descending order
      *     based on priority or weight, or an empty list if nothing matches.
      *     The list is modifiable.
-     * @throws NullPointerException if {@code priorityList} or {@code tags} is
-     *     {@code null}
+     * @throws NullPointerException if {@code priorityList} or {@code tags}
+     *      are {@code null}. {@code NullPointerException} may be thrown if any
+     *      elements within either {@code Collection} are {@code null}.
      * @throws IllegalArgumentException if one or more extended language ranges
      *     are included in the given list when
      *     {@link FilteringMode#REJECT_EXTENDED_RANGES} is specified
@@ -3561,6 +3576,8 @@ public final class Locale implements Cloneable, Serializable {
     public static List<String> filterTags(List<LanguageRange> priorityList,
                                           Collection<String> tags,
                                           FilteringMode mode) {
+        Objects.requireNonNull(priorityList);
+        Objects.requireNonNull(tags);
         return LocaleMatcher.filterTags(priorityList, tags, mode);
     }
 
@@ -3587,13 +3604,15 @@ public final class Locale implements Cloneable, Serializable {
      * @return a list of matching language tags sorted in descending order
      *     based on priority or weight, or an empty list if nothing matches.
      *     The list is modifiable.
-     * @throws NullPointerException if {@code priorityList} or {@code tags} is
-     *     {@code null}
-     *
+     * @throws NullPointerException if {@code priorityList} or {@code tags}
+     *      are {@code null}. {@code NullPointerException} may be thrown if any
+     *      elements within either {@code Collection} are {@code null}.
      * @since 1.8
      */
     public static List<String> filterTags(List<LanguageRange> priorityList,
                                           Collection<String> tags) {
+        Objects.requireNonNull(priorityList);
+        Objects.requireNonNull(tags);
         return filterTags(priorityList, tags, FilteringMode.AUTOSELECT_FILTERING);
     }
 
@@ -3606,13 +3625,15 @@ public final class Locale implements Cloneable, Serializable {
      * @param locales {@code Locale} instances used for matching
      * @return the best matching {@code Locale} instance chosen based on
      *     priority or weight, or {@code null} if nothing matches.
-     * @throws NullPointerException if {@code priorityList} or {@code locales} is
-     *     {@code null}
-     *
+     * @throws NullPointerException if {@code priorityList} or {@code locales}
+     *      are {@code null}. {@code NullPointerException} may be thrown if any
+     *      elements within either {@code Collection} are {@code null}.
      * @since 1.8
      */
     public static Locale lookup(List<LanguageRange> priorityList,
                                 Collection<Locale> locales) {
+        Objects.requireNonNull(priorityList);
+        Objects.requireNonNull(locales);
         return LocaleMatcher.lookup(priorityList, locales);
     }
 
@@ -3628,13 +3649,15 @@ public final class Locale implements Cloneable, Serializable {
      * @param tags language tags used for matching
      * @return the best matching language tag chosen based on priority or
      *     weight, or {@code null} if nothing matches.
-     * @throws NullPointerException if {@code priorityList} or {@code tags} is
-     *     {@code null}
-     *
+     * @throws NullPointerException if {@code priorityList} or {@code tags}
+     *      are {@code null}. {@code NullPointerException} may be thrown if any
+     *      elements within either {@code Collection} are {@code null}.
      * @since 1.8
      */
     public static String lookupTag(List<LanguageRange> priorityList,
                                    Collection<String> tags) {
+        Objects.requireNonNull(priorityList);
+        Objects.requireNonNull(tags);
         return LocaleMatcher.lookupTag(priorityList, tags);
     }
 

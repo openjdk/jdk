@@ -379,7 +379,13 @@ public class RepaintManager
             return;
         }
         if (invalidComponents != null) {
-            invalidComponents.remove(component);
+            int n = invalidComponents.size();
+            for (int i = 0; i < n; i++) {
+                if (component == invalidComponents.get(i)) {
+                    invalidComponents.remove(i);
+                    break;
+                }
+            }
         }
     }
 
@@ -1020,7 +1026,7 @@ public class RepaintManager
 
         // If the window is non-opaque, it's double-buffered at peer's level
         Window w = (c instanceof Window) ? (Window)c : SwingUtilities.getWindowAncestor(c);
-        if (!w.isOpaque()) {
+        if (w != null && !w.isOpaque()) {
             Toolkit tk = Toolkit.getDefaultToolkit();
             if ((tk instanceof SunToolkit) && (((SunToolkit)tk).needUpdateWindow())) {
                 return null;

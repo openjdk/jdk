@@ -729,7 +729,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
       result = humongous_obj_allocate(word_size);
       if (result != nullptr) {
         policy()->old_gen_alloc_tracker()->
-          add_allocated_humongous_bytes_since_last_gc(humongous_byte_size);
+          add_allocated_humongous_bytes(humongous_byte_size);
         return result;
       }
 
@@ -846,7 +846,7 @@ void G1CollectedHeap::prepare_heap_for_full_collection() {
   _hrm.remove_all_free_regions();
 }
 
-void G1CollectedHeap::verify_before_full_collection() {
+void G1CollectedHeap::verify_before_full_collection(bool concurrent_cycle_aborted) {
   assert_used_and_recalculate_used_equal(this);
   if (!VerifyBeforeGC) {
     return;
@@ -856,7 +856,7 @@ void G1CollectedHeap::verify_before_full_collection() {
   }
   _verifier->verify_region_sets_optional();
   _verifier->verify_before_gc();
-  _verifier->verify_bitmap_clear(true /* above_tams_only */);
+  _verifier->verify_bitmap_clear(true /* above_tams_only */, concurrent_cycle_aborted);
 }
 
 void G1CollectedHeap::prepare_for_mutator_after_full_collection(size_t allocation_word_size) {
@@ -896,7 +896,7 @@ void G1CollectedHeap::abort_refinement() {
 
     // Record any available refinement statistics.
     policy()->record_refinement_stats(sweep_state.stats());
-    sweep_state.complete_work(false /* concurrent */, false /* print_log */);
+    sweep_state.cancel_refinement();
   }
   sweep_state.reset_stats();
 }
@@ -944,10 +944,6 @@ void G1CollectedHeap::do_full_collection(size_t allocation_word_size,
 }
 
 void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
-  // Currently, there is no facility in the do_full_collection(bool) API to notify
-  // the caller that the collection did not succeed (e.g., because it was locked
-  // out by the GC locker). So, right now, we'll ignore the return value.
-
   do_full_collection(size_t(0) /* allocation_word_size */,
                      clear_all_soft_refs,
                      false /* do_maximal_compaction */);
@@ -1652,6 +1648,7 @@ jint G1CollectedHeap::initialize() {
 }
 
 void G1CollectedHeap::stop() {
+  assert_not_at_safepoint();
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
   // that are destroyed during shutdown.
@@ -1802,12 +1799,12 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
 }
 
 void G1CollectedHeap::increment_old_marking_cycles_started() {
-  assert(_old_marking_cycles_started == _old_marking_cycles_completed ||
-         _old_marking_cycles_started == _old_marking_cycles_completed + 1,
-         "Wrong marking cycle count (started: %d, completed: %d)",
-         _old_marking_cycles_started, _old_marking_cycles_completed);
+  assert(old_marking_cycles_started() == old_marking_cycles_completed() ||
+         old_marking_cycles_started() == old_marking_cycles_completed() + 1,
+         "Wrong marking cycle count (started: %u, completed: %u)",
+         old_marking_cycles_started(), old_marking_cycles_completed());
 
-  _old_marking_cycles_started++;
+  _old_marking_cycles_started.add_then_fetch(1u, memory_order_relaxed);
 }
 
 void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
@@ -1828,21 +1825,21 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
 
   // This is the case for the inner caller, i.e. a Full GC.
   assert(concurrent ||
-         (_old_marking_cycles_started == _old_marking_cycles_completed + 1) ||
-         (_old_marking_cycles_started == _old_marking_cycles_completed + 2),
-         "for inner caller (Full GC): _old_marking_cycles_started = %u "
-         "is inconsistent with _old_marking_cycles_completed = %u",
-         _old_marking_cycles_started, _old_marking_cycles_completed);
+         (old_marking_cycles_started() == old_marking_cycles_completed() + 1) ||
+         (old_marking_cycles_started() == old_marking_cycles_completed() + 2),
+         "for inner caller (Full GC): old_marking_cycles_started = %u "
+         "is inconsistent with old_marking_cycles_completed = %u",
+         old_marking_cycles_started(), old_marking_cycles_completed());
 
   // This is the case for the outer caller, i.e. the concurrent cycle.
   assert(!concurrent ||
-         (_old_marking_cycles_started == _old_marking_cycles_completed + 1),
+         (old_marking_cycles_started() == old_marking_cycles_completed() + 1),
          "for outer caller (concurrent cycle): "
-         "_old_marking_cycles_started = %u "
-         "is inconsistent with _old_marking_cycles_completed = %u",
-         _old_marking_cycles_started, _old_marking_cycles_completed);
+         "old_marking_cycles_started = %u "
+         "is inconsistent with old_marking_cycles_completed = %u",
+         old_marking_cycles_started(), old_marking_cycles_completed());
 
-  _old_marking_cycles_completed += 1;
+  _old_marking_cycles_completed.add_then_fetch(1u, memory_order_relaxed);
   if (whole_heap_examined) {
     // Signal that we have completed a visit to all live objects.
     record_whole_heap_examined_timestamp();
@@ -1907,7 +1904,7 @@ bool G1CollectedHeap::wait_full_mark_finished(GCCause::Cause cause,
     // while completed_now < started_after.
     LOG_COLLECT_CONCURRENTLY(cause, "wait");
     MonitorLocker ml(G1OldGCCount_lock);
-    while (gc_counter_less_than(_old_marking_cycles_completed,
+    while (gc_counter_less_than(old_marking_cycles_completed(),
                                 old_marking_started_after)) {
       ml.wait();
     }
@@ -1989,8 +1986,8 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
       // more recent collection.  That's what we want, rather than having
       // our retry possibly perform an unnecessary collection.
       gc_counter = total_collections();
-      old_marking_started_after = _old_marking_cycles_started;
-      old_marking_completed_after = _old_marking_cycles_completed;
+      old_marking_started_after = old_marking_cycles_started();
+      old_marking_completed_after = old_marking_cycles_completed();
     }
 
     if (cause == GCCause::_wb_breakpoint) {
@@ -2492,9 +2489,9 @@ void G1CollectedHeap::gc_epilogue(bool full) {
     increment_old_marking_cycles_completed(false /* concurrent */, true /* liveness_completed */);
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   assert(DerivedPointerTable::is_empty(), "derived pointer present");
-#endif
+#endif // COMPILER2
 
   // We have just completed a GC. Update the soft reference
   // policy with the new heap occupancy
@@ -2653,6 +2650,7 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
   if (collector_state()->is_in_concurrent_start_gc()) {
     log_debug(gc, verify)("Marking state");
     _verifier->verify_marking_state();
+    _verifier->verify_bitmap_clear(true /* above_tams_only */);
   }
   _verifier->verify_free_regions_card_tables_clean();
 
@@ -2736,12 +2734,12 @@ void G1CollectedHeap::do_collection_pause_at_safepoint(size_t allocation_word_si
   // Perform the collection.
   G1YoungCollector collector(gc_cause(), allocation_word_size);
   collector.collect();
-
+  // Update collector state.
+  _collector_state = collector.next_state();
   // It should now be safe to tell the concurrent mark thread to start
   // without its logging output interfering with the logging output
   // that came from the pause.
   if (should_start_concurrent_mark_operation) {
-    verifier()->verify_bitmap_clear(true /* above_tams_only */);
     // CAUTION: after the start_concurrent_cycle() call below, the concurrent marking
     // thread(s) could be running concurrently with us. Make sure that anything
     // after this point does not assume that we are the only GC thread running.
@@ -2863,7 +2861,7 @@ void G1CollectedHeap::record_obj_copy_mem_stats() {
                 G1ReservePercent);
 
   policy()->old_gen_alloc_tracker()->
-    add_allocated_bytes_since_last_gc(total_old_allocated * HeapWordSize);
+    add_allocated_non_humongous_bytes(total_old_allocated * HeapWordSize);
 
   _gc_tracer_stw->report_evacuation_statistics(create_g1_evac_summary(&_survivor_evac_stats),
                                                create_g1_evac_summary(&_old_evac_stats));
@@ -2882,6 +2880,7 @@ void G1CollectedHeap::free_region(G1HeapRegion* hr, G1FreeRegionList* free_list)
 
   // Reset region metadata to allow reuse.
   hr->hr_clear(true /* clear_space */);
+  concurrent_mark()->reset_region_marking_state(hr);
   _policy->remset_tracker()->update_at_free(hr);
 
   if (free_list != nullptr) {
@@ -2959,7 +2958,7 @@ void G1CollectedHeap::abandon_collection_set() {
   collection_set()->abandon();
 }
 
-size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_word_size) {
+size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_word_size) const {
   const size_t cur_occupancy = (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes -
                                _allocator->free_bytes_in_retained_old_region();
   // Humongous allocations will always be assigned to non-young heap, so consider
@@ -3194,6 +3193,9 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
       // Synchronize with region attribute table.
       update_region_attr(new_alloc_region);
     }
+
+    _cm->notify_new_region(new_alloc_region);
+
     G1HeapRegionPrinter::alloc(new_alloc_region);
     return new_alloc_region;
   }
@@ -3211,14 +3213,14 @@ void G1CollectedHeap::retire_gc_alloc_region(G1HeapRegion* alloc_region,
     _survivor.add_used_bytes(allocated_bytes);
   }
 
-  bool const during_im = collector_state()->is_in_concurrent_start_gc();
-  if (during_im && allocated_bytes > 0) {
+  bool in_concurrent_start_gc = collector_state()->is_in_concurrent_start_gc();
+  if (in_concurrent_start_gc && allocated_bytes > 0) {
     _cm->add_root_region(alloc_region);
   }
   G1HeapRegionPrinter::retire(alloc_region);
 }
 
-void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, size_t obj_size) const {
+void G1CollectedHeap::mark_evac_failure_object(const oop obj) const {
   assert(!_cm->is_marked_in_bitmap(obj), "must be");
 
   _cm->raw_mark_in_bitmap(obj);

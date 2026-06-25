@@ -582,9 +582,9 @@ public class JavadocLog extends Log implements Reporter {
         }
         CompilationUnitTree compUnit = tp.getCompilationUnit();
         JCTree tree = (JCTree) tp.getLeaf();
-        int start = (int) posns.getStartPosition(compUnit, tree);
+        int start = (int) posns.getStartPosition(tree);
         int pos = tree.getPreferredPosition();
-        int end = (int) posns.getEndPosition(compUnit, tree);
+        int end = (int) posns.getEndPosition(tree);
         return createDiagnosticPosition(tree, start, pos, end);
     }
 

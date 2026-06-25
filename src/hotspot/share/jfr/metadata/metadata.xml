@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -500,11 +500,6 @@
     <Field type="float" contentType="percentage" name="thresholdPercentage" label="Current IHOP Threshold" description="Current IHOP threshold in percent of old generation" />
     <Field type="ulong" contentType="bytes" name="targetOccupancy" label="Target Occupancy" description="Target old generation occupancy to reach at the start of mixed GC" />
     <Field type="ulong" contentType="bytes" name="currentOccupancy" label="Current Occupancy" description="Current old generation occupancy" />
-    <Field type="ulong" contentType="bytes" name="recentMutatorAllocationSize" label="Recent Mutator Allocation Size"
-      description="Mutator allocation during mutator operation in the most recent interval" />
-    <Field type="long" contentType="millis" name="recentMutatorDuration" label="Recent Mutator Duration" description="Time the mutator ran in the most recent interval" />
-    <Field type="double" contentType="bytes-per-second" name="recentAllocationRate" label="Recent Allocation Rate" description="Allocation rate of the mutator in the most recent interval in bytes/second" />
-    <Field type="long" contentType="millis" name="lastMarkingDuration" label="Last Marking Duration" description="Last time from the end of the last concurrent start to the first mixed GC" />
   </Event>
 
   <Event name="G1AdaptiveIHOP" category="Java Virtual Machine, GC, Detailed" label="G1 Adaptive IHOP Statistics" startTime="false"
@@ -514,8 +509,15 @@
     <Field type="float" contentType="percentage" name="thresholdPercentage" label="Threshold" description="Current IHOP threshold in percent of the internal target occupancy" />
     <Field type="ulong" contentType="bytes" name="ihopTargetOccupancy" label="IHOP Target Occupancy" description="Internal target old generation occupancy to reach at the start of mixed GC" />
     <Field type="ulong" contentType="bytes" name="currentOccupancy" label="Current Occupancy" description="Current old generation occupancy" />
+    <Field type="ulong" contentType="bytes" name="nonHumongousAllocation" label="Current Non-Humongous Allocation"
+      description="Current non-humongous allocation accumulated by the concurrent cycle tracker" />
+    <Field type="ulong" contentType="bytes" name="peakExtraHumongousOccupancy" label="Current Peak Extra Humongous Occupancy"
+      description="Current peak increase in humongous occupancy relative to the occupancy at concurrent cycle start" experimental="true" />
     <Field type="ulong" contentType="bytes" name="additionalBufferSize" label="Additional Buffer" description="Additional buffer size" experimental="true" />
-    <Field type="double" contentType="bytes-per-second" name="predictedAllocationRate" label="Predicted Allocation Rate" description="Current predicted allocation rate for the mutator in bytes/second" />
+    <Field type="double" contentType="bytes-per-second" name="predictedNonHumongousAllocation" label="Predicted Non-Humongous Allocation Rate"
+      description="Predicted allocation rate of non-humongous objects into the old generation, in bytes per second" />
+    <Field type="ulong" contentType="bytes" name="predictedPeakExtraHumongousOccupancy" label="Predicted Peak Extra Humongous Occupancy"
+      description="Predicted peak increase in humongous occupancy during a concurrent cycle relative to the occupancy at concurrent cycle start" experimental="true" />
     <Field type="long" contentType="millis" name="predictedMarkingDuration" label="Predicted Marking Duration"
       description="Current predicted time from the end of the last concurrent start to the first mixed GC" />
     <Field type="boolean" name="predictionActive" label="Prediction Active" description="Indicates whether the adaptive IHOP prediction is active" />
@@ -1273,16 +1275,22 @@
     <Field type="ulong" name="cSetRegions" label="Collection Set Regions" />
     <Field type="ulong" contentType="bytes" name="cSetUsedBefore" label="Collection Set Before" description="Memory usage before GC in the collection set regions" />
     <Field type="ulong" contentType="bytes" name="cSetUsedAfter" label="Collection Set After" description="Memory usage after GC in the collection set regions" />
+    <Field type="ulong" name="freeRegions" label="Free Regions" description="Free regions prior to collection" />
+    <Field type="ulong" name="regionsImmediate" label="Regions Immediate" />
+    <Field type="ulong" contentType="bytes" name="immediateBytes" label="Immediate Bytes" />
+  </Event>
+
+  <Event name="ShenandoahPromotionInformation" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Promotion Information" startTime="false">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="ulong" contentType="bytes" name="collectedOld" label="Collected Old" description="Memory collected from old generation" />
     <Field type="ulong" contentType="bytes" name="collectedPromoted" label="Collected Promoted" description="Memory collected from generation promotion" />
     <Field type="ulong" contentType="bytes" name="collectedYoung" label="Collection Young" description="Memory collected from young generation" />
     <Field type="ulong" name="regionsPromotedHumongous" label="Regions Promoted Humongous" />
+    <Field type="ulong" contentType="bytes" name="humongousPromotedGarbage" label="Humongous Promoted Garbage" description="Garbage memory of in place promoted humongous regions" />
+    <Field type="ulong" contentType="bytes" name="humongousPromotedFree" label="Humongous Promoted Free" description="Free memory of in place promoted humongous regions" />
     <Field type="ulong" name="regionsPromotedRegular" label="Regions Promoted Regular" />
     <Field type="ulong" contentType="bytes" name="regularPromotedGarbage" label="Regular Promoted Garbage" description="Garbage memory of in place promoted regular regions" />
     <Field type="ulong" contentType="bytes" name="regularPromotedFree" label="Regular Promoted Free" description="Free memory of in place promoted regular regions" />
-    <Field type="ulong" name="freeRegions" label="Free Regions" description="Free regions prior to collection" />
-    <Field type="ulong" name="regionsImmediate" label="Regions Immediate" />
-    <Field type="ulong" contentType="bytes" name="immediateBytes" label="Immediate Bytes" />
   </Event>
 
   <Event name="StringDeduplication" category="Java Virtual Machine, GC, Detailed" label="String Deduplication Statistics" stackTrace="false">

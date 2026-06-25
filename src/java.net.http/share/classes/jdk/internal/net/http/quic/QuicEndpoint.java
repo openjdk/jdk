@@ -1532,12 +1532,16 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      */
     void removeConnection(final QuicPacketReceiver connection) {
         if (debug.on()) debug.log("removing connection " + connection);
-        // remove the connection completely
-        connection.connectionIds().forEach(connections::remove);
-        assert !connections.containsValue(connection) : connection;
         // remove references to this connection from the map which holds the peer issued
         // reset tokens
         dropPeerIssuedResetTokensFor(connection);
+        // remove the connection completely
+        connection.connectionIds().forEach(connections::remove);
+        assert !connections.containsValue(connection) : connection;
+        // Check that if there are no connections, there are no reset tokens either.
+        // This is safe because connections are added before reset tokens and removed after,
+        // except when we're closing the endpoint and don't bother with removing tokens.
+        assert peerIssuedResetTokens.isEmpty() || !connections.isEmpty() || closed : peerIssuedResetTokens;
     }
 
     /**
@@ -1587,7 +1591,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         if (closed) return;
 
         final long idleTimeout = connection.peerPtoMs() * 3; // 3 PTO
-        connection.localConnectionIdManager().close();
         DrainingConnection draining = new DrainingConnection(connection.connectionIds(),
                 connection.activeResetTokens(), idleTimeout);
         // we can ignore stateless reset in the draining state.
@@ -1626,7 +1629,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         closingDatagram.flip();
 
         final long idleTimeout = connection.peerPtoMs() * 3; // 3 PTO
-        connection.localConnectionIdManager().close();
         var closingConnection = new ClosingConnection(connection.connectionIds(),
                 connection.activeResetTokens(), idleTimeout, datagram);
         remapPeerIssuedResetToken(closingConnection);
