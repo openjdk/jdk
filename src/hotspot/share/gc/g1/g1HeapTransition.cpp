@@ -29,10 +29,10 @@
 #include "memory/metaspaceUtils.hpp"
 
 G1HeapTransition::Data::Data(G1CollectedHeap* g1_heap) :
-  _num_eden_regions(g1_heap->eden_regions_count()),
-  _num_survivor_regions(g1_heap->survivor_regions_count()),
-  _num_old_regions(g1_heap->old_regions_count()),
-  _num_humongous_regions(g1_heap->humongous_regions_count()),
+  _num_eden_regions(g1_heap->num_eden_regions()),
+  _num_survivor_regions(g1_heap->num_survivor_regions()),
+  _num_old_regions(g1_heap->num_old_regions()),
+  _num_humongous_regions(g1_heap->num_humongous_regions()),
   _meta_sizes(MetaspaceUtils::get_combined_statistics()),
   _num_eden_regions_per_node(nullptr),
   _num_survivor_regions_per_node(nullptr) {
@@ -47,8 +47,8 @@ G1HeapTransition::Data::Data(G1CollectedHeap* g1_heap) :
       _num_survivor_regions_per_node = NEW_C_HEAP_ARRAY(uint, node_count, mtGC);
 
       for (uint i = 0; i < node_count; i++) {
-        _num_eden_regions_per_node[i] = g1_heap->eden_regions_count(i);
-        _num_survivor_regions_per_node[i] = g1_heap->survivor_regions_count(i);
+        _num_eden_regions_per_node[i] = g1_heap->num_eden_regions(i);
+        _num_survivor_regions_per_node[i] = g1_heap->num_survivor_regions(i);
       }
     }
   }
@@ -67,15 +67,15 @@ struct G1HeapTransition::DetailedUsage : public StackObj {
   size_t _old_used;
   size_t _humongous_used;
 
-  size_t _eden_region_count;
-  size_t _survivor_region_count;
-  size_t _old_region_count;
-  size_t _humongous_region_count;
+  size_t _num_eden_regions;
+  size_t _num_survivor_regions;
+  size_t _num_old_regions;
+  size_t _num_humongous_regions;
 
   DetailedUsage() :
     _eden_used(0), _survivor_used(0), _old_used(0), _humongous_used(0),
-    _eden_region_count(0), _survivor_region_count(0), _old_region_count(0),
-    _humongous_region_count(0) {}
+    _num_eden_regions(0), _num_survivor_regions(0), _num_old_regions(0),
+    _num_humongous_regions(0) {}
 };
 
 class G1HeapTransition::DetailedUsageClosure: public G1HeapRegionClosure {
@@ -84,16 +84,16 @@ public:
   bool do_heap_region(G1HeapRegion* r) {
     if (r->is_old()) {
       _usage._old_used += r->used();
-      _usage._old_region_count++;
+      _usage._num_old_regions++;
     } else if (r->is_survivor()) {
       _usage._survivor_used += r->used();
-      _usage._survivor_region_count++;
+      _usage._num_survivor_regions++;
     } else if (r->is_eden()) {
       _usage._eden_used += r->used();
-      _usage._eden_region_count++;
+      _usage._num_eden_regions++;
     } else if (r->is_humongous()) {
       _usage._humongous_used += r->used();
-      _usage._humongous_region_count++;
+      _usage._num_humongous_regions++;
     } else {
       assert(r->used() == 0, "Expected used to be 0 but it was %zu", r->used());
     }
@@ -140,13 +140,13 @@ void G1HeapTransition::print() {
     DetailedUsageClosure blk;
     _g1_heap->heap_region_iterate(&blk);
     usage = blk._usage;
-    assert(usage._eden_region_count == 0, "Expected no eden regions, but got %zu", usage._eden_region_count);
-    assert(usage._survivor_region_count == after._num_survivor_regions, "Expected survivors to be %zu but was %zu",
-           after._num_survivor_regions, usage._survivor_region_count);
-    assert(usage._old_region_count == after._num_old_regions, "Expected old to be %zu but was %zu",
-           after._num_old_regions, usage._old_region_count);
-    assert(usage._humongous_region_count == after._num_humongous_regions, "Expected humongous to be %zu but was %zu",
-           after._num_humongous_regions, usage._humongous_region_count);
+    assert(usage._num_eden_regions == 0, "Expected no eden regions, but got %zu", usage._num_eden_regions);
+    assert(usage._num_survivor_regions == after._num_survivor_regions, "Expected survivors to be %zu but was %zu",
+           after._num_survivor_regions, usage._num_survivor_regions);
+    assert(usage._num_old_regions == after._num_old_regions, "Expected old to be %zu but was %zu",
+           after._num_old_regions, usage._num_old_regions);
+    assert(usage._num_humongous_regions == after._num_humongous_regions, "Expected humongous to be %zu but was %zu",
+           after._num_humongous_regions, usage._num_humongous_regions);
   }
 
   log_regions("Eden", _before._num_eden_regions, after._num_eden_regions, num_eden_after_gc,

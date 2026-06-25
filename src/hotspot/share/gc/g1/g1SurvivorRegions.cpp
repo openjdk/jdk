@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,12 @@ void G1SurvivorRegions::add(G1HeapRegion* hr) {
   _regions_on_node.add(hr);
 }
 
-uint G1SurvivorRegions::length() const {
+uint G1SurvivorRegions::num_regions() const {
   return (uint)_regions.length();
 }
 
 uint G1SurvivorRegions::regions_on_node(uint node_index) const {
-  return _regions_on_node.count(node_index);
+  return _regions_on_node.num_regions(node_index);
 }
 
 void G1SurvivorRegions::convert_to_eden() {

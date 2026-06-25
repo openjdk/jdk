@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@
   nonstatic_field(G1MonitoringSupport, _old_gen_committed,        size_t)     \
   nonstatic_field(G1MonitoringSupport, _old_gen_used,             size_t)     \
                                                                               \
-  nonstatic_field(G1HeapRegionSetBase,   _length,       uint)                 \
+  nonstatic_field(G1HeapRegionSetBase, _num_regions,       uint)              \
                                                                               \
   nonstatic_field(SATBMarkQueue,       _active,         bool)                 \
   nonstatic_field(SATBMarkQueue,       _buf,            void**)               \

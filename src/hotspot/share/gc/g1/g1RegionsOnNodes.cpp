@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1RegionsOnNodes.hpp"
 
-G1RegionsOnNodes::G1RegionsOnNodes() : _count_per_node(nullptr), _numa(G1NUMA::numa()) {
-  _count_per_node = NEW_C_HEAP_ARRAY(uint, _numa->num_active_nodes(), mtGC);
+G1RegionsOnNodes::G1RegionsOnNodes() : _regions_per_node(nullptr), _numa(G1NUMA::numa()) {
+  _regions_per_node = NEW_C_HEAP_ARRAY(uint, _numa->num_active_nodes(), mtGC);
   clear();
 }
 
 G1RegionsOnNodes::~G1RegionsOnNodes() {
-  FREE_C_HEAP_ARRAY(_count_per_node);
+  FREE_C_HEAP_ARRAY(_regions_per_node);
 }
 
 void G1RegionsOnNodes::add(G1HeapRegion* hr) {
@@ -40,16 +40,16 @@ void G1RegionsOnNodes::add(G1HeapRegion* hr) {
 
   // Update only if the node index is valid.
   if (node_index < _numa->num_active_nodes()) {
-    *(_count_per_node + node_index) += 1;
+    *(_regions_per_node + node_index) += 1;
   }
 }
 
 void G1RegionsOnNodes::clear() {
   for (uint i = 0; i < _numa->num_active_nodes(); i++) {
-    _count_per_node[i] = 0;
+    _regions_per_node[i] = 0;
   }
 }
 
-uint G1RegionsOnNodes::count(uint node_index) const {
-  return _count_per_node[node_index];
+uint G1RegionsOnNodes::num_regions(uint node_index) const {
+  return _regions_per_node[node_index];
 }

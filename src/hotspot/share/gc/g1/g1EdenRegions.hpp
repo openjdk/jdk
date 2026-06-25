@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,29 +32,29 @@
 
 class G1EdenRegions {
 private:
-  uint    _length;
+  uint _num_regions;
   // Sum of used bytes from all retired eden regions.
   // I.e. updated when mutator regions are retired.
   volatile size_t _used_bytes;
   G1RegionsOnNodes  _regions_on_node;
 
 public:
-  G1EdenRegions() : _length(0), _used_bytes(0), _regions_on_node() { }
+  G1EdenRegions() : _num_regions(0), _used_bytes(0), _regions_on_node() { }
 
   void add(G1HeapRegion* hr) {
     assert(hr->is_eden(), "must be");
-    _length++;
+    _num_regions++;
     _regions_on_node.add(hr);
   }
 
   void clear() {
-    _length = 0;
+    _num_regions = 0;
     _used_bytes = 0;
     _regions_on_node.clear();
   }
 
-  uint length() const { return _length; }
-  uint regions_on_node(uint node_index) const { return _regions_on_node.count(node_index); }
+  uint num_regions() const { return _num_regions; }
+  uint regions_on_node(uint node_index) const { return _regions_on_node.num_regions(node_index); }
 
   size_t used_bytes() const { return _used_bytes; }
 
