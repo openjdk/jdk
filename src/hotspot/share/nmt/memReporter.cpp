@@ -858,6 +858,9 @@ void MemDetailDiffReporter::diff_virtual_memory_sites() const {
     }
   };
 
+  early_site = early_next();
+  current_site = current_next();
+
   while (early_site != nullptr || current_site != nullptr) {
     if (early_site == nullptr) {
       new_virtual_memory_site(current_site);
