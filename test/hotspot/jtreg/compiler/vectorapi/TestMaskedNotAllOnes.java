@@ -36,6 +36,7 @@ import compiler.lib.ir_framework.*;
 import compiler.lib.verify.Verify;
 import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.VectorMask;
+import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 
 public class TestMaskedNotAllOnes {
@@ -57,10 +58,27 @@ public class TestMaskedNotAllOnes {
         return out;
     }
 
-    static final int[] GOLD = testMaskedDivNegOne();
+    static final int[] GOLD_DIV = testMaskedDivNegOne();
 
     @Check(test = "testMaskedDivNegOne")
     static void checkMaskedDivNegOne(int[] out) {
-        Verify.checkEQ(GOLD, out);
+        Verify.checkEQ(GOLD_DIV, out);
+    }
+
+    @Test
+    @Warmup(10000)
+    static int[] testMaskedNotAllOnesVector() {
+        IntVector allOnes = IntVector.broadcast(ISP, -1);
+        VectorMask<Integer> mask = VectorMask.fromLong(ISP, -1L);
+        int[] out = new int[ISP.length()];
+        allOnes.lanewise(VectorOperators.NOT, mask).intoArray(out, 0);
+        return out;
+    }
+
+    static final int[] GOLD_NOT = testMaskedNotAllOnesVector();
+
+    @Check(test = "testMaskedNotAllOnesVector")
+    static void checkMaskedNotAllOnesVector(int[] out) {
+        Verify.checkEQ(GOLD_NOT, out);
     }
 }
