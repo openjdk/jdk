@@ -388,8 +388,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             ITEM.set(this, this);
         }
 
-        final Thread getAcqWaiter() {
-            return (Thread)WAITER.getAcquire(this);
+        final Thread getVolatileWaiter() {
+            return (Thread)WAITER.getVolatile(this);
         }
 
         /** The number of times to spin when eligible */
@@ -596,7 +596,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                 q = p.next;
                 if (p.isData != haveData && haveData != (m != null)) {
                     if (p.cmpExItem(m, e) == m) {
-                        Thread w = p.getAcqWaiter(); // matched complementary node
+                        Thread w = p.getVolatileWaiter(); // matched complementary node
                         if (p != h && h == cmpExHead(h, (q == null) ? p : q))
                             h.next = h;     // advance head; self-link old
                         LockSupport.unpark(w);
