@@ -29,7 +29,7 @@
 struct KVElement {
   int k;
   int v;
-  static size_t hash(int x) {
+  static int hash(int x) {
     return x & 0xFF;
   }
   static bool equals(int v1, int v2) {

@@ -34,7 +34,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-// This is an open adressed hashtable which stores trivial key-value pairs.
+// This is an open-addressed hashtable which stores trivial key-value pairs.
 // It is backed by a CHeap allocated array which it reallocates, causing underlying pointers to be invalidated.
 // Membership is stored in an occupancy bitmap, so the memory overhead of this hashtable is fairly low.
 // The KVElement is a container for your key and value. Key, Hash, and Equals are function object types.
@@ -80,7 +80,7 @@ private:
   NONCOPYABLE(OpenAddressedHashTable);
 
   static void clear_members(KVElement* members, int length) {
-    // Uninitialize all memory. KVElement is trivially destructible,
+    // Zap all memory. KVElement is trivially destructible,
     // so this is correct.
     memset(static_cast<void*>(members), 0, sizeof(KVElement) * length);
   }
@@ -221,9 +221,11 @@ private:
   }
 
   KVElement* put_if_absent(const KVElement& kv, bool* found) {
+    assert(found != nullptr, "must be");
     assert(_occupied_map.size() == (size_t)_length, "must be");
     if (!has_capacity_for_insert()) {
       if (!grow_and_rehash()) {
+        *found = false;
         return nullptr;
       }
     }
