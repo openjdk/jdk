@@ -101,11 +101,7 @@
 
             $type$ subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
 #if[FP16]
-            Float16[] f16subarr = new Float16[subarr.length];
-            for (int j = 0; j < subarr.length; j++) {
-                f16subarr[j] = shortBitsToFloat16(subarr[j]);
-            }
-            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(f16subarr));
+            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(toFloat16Array(subarr)));
 #else[FP16]
             int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
 #end[FP16]
@@ -113,6 +109,16 @@
         }
     }
 
+#if[FP16]
+    static Float16[] toFloat16Array(short[] bits) {
+        Float16[] a = new Float16[bits.length];
+        for (int j = 0; j < bits.length; j++) {
+            a[j] = shortBitsToFloat16(bits[j]);
+        }
+        return a;
+    }
+
+#end[FP16]
 #if[byte]
     @Test(dataProvider = "$type$UnaryOpProvider")
     static void reinterpretAsBytes$vectorteststype$SmokeTest(IntFunction<$type$[]> fa) {

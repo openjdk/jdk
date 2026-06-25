@@ -5425,13 +5425,17 @@ public class Float16Vector256Tests extends AbstractVectorTest {
             int hash = av.hashCode();
 
             short subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
-            Float16[] f16subarr = new Float16[subarr.length];
-            for (int j = 0; j < subarr.length; j++) {
-                f16subarr[j] = shortBitsToFloat16(subarr[j]);
-            }
-            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(f16subarr));
+            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(toFloat16Array(subarr)));
             Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
         }
+    }
+
+    static Float16[] toFloat16Array(short[] bits) {
+        Float16[] a = new Float16[bits.length];
+        for (int j = 0; j < bits.length; j++) {
+            a[j] = shortBitsToFloat16(bits[j]);
+        }
+        return a;
     }
 
 
