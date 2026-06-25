@@ -874,6 +874,7 @@ static void print_compiler_threads(stringStream& msg) {
   }
 }
 
+ATTRIBUTE_PRINTF(2, 3)
 static void trace_compiler_thread_added(JavaThread* ct, const char* fmt, ...) {
   if (!trace_compiler_threads()) return;
   ResourceMark rm;
