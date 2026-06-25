@@ -1990,7 +1990,9 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
   const size_t total_range_size =
       archive_space_size + gap_size + class_space_size;
 
-  // Validate that class space base address plus shift can be decoded when restored.
+  // The code for dumping the archive ensures that the base address is valid.
+  // Here we validate that the base address plus shift can be decoded when
+  // restored.
   assert(shared_base_valid((char*)base_address),
       "Cannot use SharedBaseAddress " PTR_FORMAT " with precomputed shift %d.",
       p2i(base_address), ArchiveBuilder::precomputed_narrow_klass_shift());
