@@ -60,6 +60,9 @@ LIBSAPROC_EXCLUDE_FILES :=
 ifneq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, x86_64 aarch64)), true)
   LIBSAPROC_EXCLUDE_FILES := DwarfParser.cpp dwarf.cpp
 endif
+ifneq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, aarch64)), true)
+  LIBSAPROC_EXCLUDE_FILES += AARCH64DwarfParser.cpp aarch64Dwarf.cpp LinuxAARCH64DebuggerLocal.cpp
+endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBSAPROC, \
     NAME := saproc, \

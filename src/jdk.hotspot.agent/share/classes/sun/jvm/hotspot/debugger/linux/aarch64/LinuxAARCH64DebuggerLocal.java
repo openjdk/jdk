@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +23,23 @@
  *
  */
 
-package sun.jvm.hotspot.debugger;
+package sun.jvm.hotspot.debugger.linux.aarch64;
 
-public class MachineDescriptionAArch64 extends MachineDescriptionTwosComplement implements MachineDescription {
+import sun.jvm.hotspot.debugger.linux.LinuxDebuggerLocal;
+import sun.jvm.hotspot.debugger.DebuggerException;
+import sun.jvm.hotspot.debugger.MachineDescription;
 
-  private boolean pac;
 
-  public MachineDescriptionAArch64() {
-    pac = false;
-  }
+public class LinuxAARCH64DebuggerLocal extends LinuxDebuggerLocal {
 
-  public long getAddressSize() {
-    return 8;
-  }
+    public LinuxAARCH64DebuggerLocal(MachineDescription machDesc, boolean useCache) throws DebuggerException {
+        super(machDesc, useCache);
+    }
 
-  public boolean isLP64() {
-    return true;
-  }
+    public boolean isPACEnabled() {
+        return isPACEnabled0(p_ps_prochandle);
+    }
 
-  public boolean isBigEndian() {
-    return false;
-  }
-
-  public void enablePAC() {
-    pac = true;
-  }
-
-  public boolean isPACEnabled() {
-    return pac;
-  }
+    private native boolean isPACEnabled0(long inst);
 
 }

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +23,35 @@
  *
  */
 
-package sun.jvm.hotspot.debugger;
+#ifndef AARCH64_DWARF_H
+#define AARCH64_DWARF_H
 
-public class MachineDescriptionAArch64 extends MachineDescriptionTwosComplement implements MachineDescription {
+#include <stack>
 
-  private boolean pac;
+#include "dwarf.hpp"
 
-  public MachineDescriptionAArch64() {
-    pac = false;
-  }
+enum RASignState {
+  RA_NOT_SIGNED = 0,
+  RA_SIGNED_SP,
+  RA_SIGNED_SP_PC
+};
 
-  public long getAddressSize() {
-    return 8;
-  }
+class AARCH64DwarfParser : public DwarfParser {
+  private:
+    RASignState _sign_state; // RA_SIGN_STATE pseudo DWARF register
+    std::stack<RASignState> remember_state;
 
-  public boolean isLP64() {
-    return true;
-  }
+  protected:
+    virtual bool process_arch_specific_dwarf_instructions(const unsigned char op);
+    virtual void remember_arch_specific_state();
+    virtual void restore_arch_specific_state();
 
-  public boolean isBigEndian() {
-    return false;
-  }
+  public:
+    // RA_SIGN_STATE should be initialized by DW_AARCH64_RA_NOT_SIGNED.
+    AARCH64DwarfParser(lib_info* lib) : DwarfParser(lib), _sign_state(RA_NOT_SIGNED), remember_state() {}
+    ~AARCH64DwarfParser() {}
 
-  public void enablePAC() {
-    pac = true;
-  }
+    bool is_ra_signed() { return _sign_state != RA_NOT_SIGNED; }
+};
 
-  public boolean isPACEnabled() {
-    return pac;
-  }
-
-}
+#endif

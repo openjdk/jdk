@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +23,17 @@
  *
  */
 
-package sun.jvm.hotspot.debugger;
+#include <jni.h>
+#include "libproc.h"
 
-public class MachineDescriptionAArch64 extends MachineDescriptionTwosComplement implements MachineDescription {
 
-  private boolean pac;
-
-  public MachineDescriptionAArch64() {
-    pac = false;
-  }
-
-  public long getAddressSize() {
-    return 8;
-  }
-
-  public boolean isLP64() {
-    return true;
-  }
-
-  public boolean isBigEndian() {
-    return false;
-  }
-
-  public void enablePAC() {
-    pac = true;
-  }
-
-  public boolean isPACEnabled() {
-    return pac;
-  }
-
+/*
+ * Class:     sun_jvm_hotspot_debugger_linux_aarch64_LinuxAARCH64DebuggerLocal
+ * Method:    isPACEnabled0
+ * Signature: (J)Z
+ */
+extern "C"
+JNIEXPORT jboolean JNICALL Java_sun_jvm_hotspot_debugger_linux_aarch64_LinuxAARCH64DebuggerLocal_isPACEnabled0
+  (JNIEnv *env, jobject this_obj, jlong inst) {
+  return pac_enabled(reinterpret_cast<struct ps_prochandle*>(inst));
 }

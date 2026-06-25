@@ -73,16 +73,30 @@ class DwarfParser {
     struct DwarfState _state;
 
     void init_state(struct DwarfState& st);
-    uintptr_t read_leb(bool sign);
     uint64_t get_entry_length();
     bool process_cie(unsigned char *start_of_entry, uint32_t id);
     void parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const unsigned char *end);
     uint32_t get_decoded_value(unsigned char enc);
     unsigned int get_pc_range();
 
+  protected:
+    uintptr_t read_leb(bool sign);
+
+    virtual bool process_arch_specific_dwarf_instructions(const unsigned char op) {
+      return false; // Do nothing by default - it should be implemented by inherited classes.
+    };
+
+    virtual void remember_arch_specific_state() {
+      // Do nothing by default - it should be implemented by inherited classes.
+    };
+
+    virtual void restore_arch_specific_state() {
+      // Do nothing by default - it should be implemented by inherited classes.
+    };
+
   public:
     DwarfParser(lib_info *lib);
-    ~DwarfParser() {}
+    virtual ~DwarfParser() {}
     bool process_dwarf(const uintptr_t pc);
     enum DWARF_Register get_cfa_register() { return _state.cfa_reg; }
     int get_cfa_offset() { return _state.cfa_offset; }

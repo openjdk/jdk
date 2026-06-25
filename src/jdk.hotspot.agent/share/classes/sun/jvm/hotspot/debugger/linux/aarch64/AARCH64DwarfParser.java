@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +23,27 @@
  *
  */
 
-package sun.jvm.hotspot.debugger;
+package sun.jvm.hotspot.debugger.linux.aarch64;
 
-public class MachineDescriptionAArch64 extends MachineDescriptionTwosComplement implements MachineDescription {
+import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.debugger.linux.DwarfParser;
 
-  private boolean pac;
 
-  public MachineDescriptionAArch64() {
-    pac = false;
-  }
+public class AARCH64DwarfParser extends DwarfParser {
 
-  public long getAddressSize() {
-    return 8;
-  }
+    private static native long createDwarfContext(long lib);
 
-  public boolean isLP64() {
-    return true;
-  }
+    public AARCH64DwarfParser(Address lib) {
+        super(createDwarfContext(lib.asLongValue()));
+    }
 
-  public boolean isBigEndian() {
-    return false;
-  }
+    /**
+     * @return true if return address (RA) is signed by PAC.
+     */
+    public boolean isRASigned() {
+        return isRASigned0(p_dwarf_context);
+    }
 
-  public void enablePAC() {
-    pac = true;
-  }
-
-  public boolean isPACEnabled() {
-    return pac;
-  }
+    public native boolean isRASigned0(long inst);
 
 }
