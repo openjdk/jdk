@@ -31,12 +31,12 @@
  * @run driver ${test.main.class}
  */
 
-package compiler.types;
+package compiler.parsing;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
 
-public class TestSubTypeCheckInterfaceCheck {
+public class TestInstanceOfImprovedKlassPtrType {
     static abstract class B {}
     static final class C extends B {}
 
@@ -45,7 +45,7 @@ public class TestSubTypeCheckInterfaceCheck {
     static class E implements I {}
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:CompileCommand=compileonly,compiler.types.TestSubTypeCheckInterfaceCheck::*");
+        TestFramework.run();
     }
 
     int testHelper2(Object o) {
