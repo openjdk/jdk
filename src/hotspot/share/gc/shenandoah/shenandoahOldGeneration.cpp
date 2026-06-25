@@ -196,8 +196,8 @@ void ShenandoahOldGeneration::maybe_log_promotion_failure_stats(bool concurrent)
 }
 
 bool ShenandoahOldGeneration::try_expend_promoted(size_t increment) {
-  // The reserve does not change during evacuation, so snapshot it once; only _promoted_expended is
-  // contended and re-read on CAS failure.
+  // The promote reserve rarely changes during evacuation(only when there is PIP region), so snapshot it once;
+  // only _promoted_expended is contended and re-read on CAS failure.
   const size_t reserve = get_promoted_reserve();
   size_t cur = _promoted_expended.load_relaxed();
   while (cur + increment <= reserve) {

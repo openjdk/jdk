@@ -58,9 +58,6 @@ private:
   // and in addition to the evacuation reserve for intra-generation evacuations (ShenandoahGeneration::_evacuation_reserve).
   // If there is more data ready to be promoted than can fit within this reserve, the promotion of some objects will be
   // deferred until a subsequent evacuation pass.
-  // Written only under the heap lock or at a safepoint, but read lock-free on the promotion gating
-  // path (try_expend_promoted/can_promote during evacuation), so it is accessed atomically to avoid
-  // a data race on the concurrent read.
   Atomic<size_t> _promoted_reserve;
 
   // Bytes of old-gen memory expended on promotions. This may be modified concurrently
