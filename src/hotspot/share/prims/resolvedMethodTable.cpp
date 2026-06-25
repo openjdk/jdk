@@ -161,8 +161,7 @@ public:
     return _return();
   }
   void log_get() {
-    LogTarget(Trace, membername, table) log;
-    if (log.is_enabled()) {
+    if (const LogTarget(Trace, membername, table) log; log.is_enabled()) {
       ResourceMark rm;
       log.print("ResolvedMethod entry found for %s",
                 _method->name_and_sig_as_C_string());
@@ -187,8 +186,7 @@ oop ResolvedMethodTable::find_method(const Method* method) {
 }
 
 static void log_insert(const Method* method) {
-  LogTarget(Debug, membername, table) log;
-  if (log.is_enabled()) {
+  if (const LogTarget(Debug, membername, table) log; log.is_enabled()) {
     ResourceMark rm;
     log.print("ResolvedMethod entry added for %s",
               method->name_and_sig_as_C_string());

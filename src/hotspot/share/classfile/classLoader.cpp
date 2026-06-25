@@ -540,8 +540,7 @@ void ModuleClassPathList::add_to_list(ClassPathEntry* new_entry) {
 }
 
 void ClassLoader::trace_class_path(const char* msg, const char* name) {
-  LogTarget(Info, class, path) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, class, path) lt; lt.is_enabled()) {
     LogStream ls(lt);
     if (msg) {
       ls.print("%s", msg);

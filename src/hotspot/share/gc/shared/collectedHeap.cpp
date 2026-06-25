@@ -176,8 +176,7 @@ void CollectedHeap::print_invocation_on(outputStream* st, const char* type, GCWh
 
 void CollectedHeap::print_relative_to_gc(GCWhen::Type when) const {
   // Print heap information
-  LogTarget(Debug, gc, heap) lt_heap;
-  if (lt_heap.is_enabled()) {
+  if (const LogTarget(Debug, gc, heap) lt_heap; lt_heap.is_enabled()) {
     LogStream ls(lt_heap);
     print_invocation_on(&ls, "Heap", when);
     StreamIndentor si(&ls, 1);
@@ -189,8 +188,7 @@ void CollectedHeap::print_relative_to_gc(GCWhen::Type when) const {
   }
 
   // Print metaspace information
-  LogTarget(Debug, gc, metaspace) lt_metaspace;
-  if (lt_metaspace.is_enabled()) {
+  if (const LogTarget(Debug, gc, metaspace) lt_metaspace; lt_metaspace.is_enabled()) {
     LogStream ls(lt_metaspace);
     print_invocation_on(&ls, "Metaspace", when);
     StreamIndentor indentor(&ls, 1);
@@ -571,8 +569,7 @@ void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
     }
   }
 
-  LogTarget(Trace, gc, classhisto) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, gc, classhisto) lt; lt.is_enabled()) {
     GCTraceTime(Trace, gc, classhisto) tm(before ? "Class Histogram (before full gc)" : "Class Histogram (after full gc)", timer);
     LogStream ls(lt);
     VM_GC_HeapInspection inspector(&ls, false /* ! full gc */);

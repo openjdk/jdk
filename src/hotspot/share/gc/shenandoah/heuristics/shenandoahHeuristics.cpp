@@ -246,8 +246,7 @@ void ShenandoahHeuristics::adjust_penalty(intx step) {
 }
 
 void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
-  LogTarget(Info, gc) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, gc) lt; lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
     ls.print_raw("Trigger", 7);

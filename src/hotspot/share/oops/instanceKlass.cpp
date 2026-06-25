@@ -910,8 +910,7 @@ void InstanceKlass::initialize_with_aot_initialized_mirror(bool early_init, TRAP
     return;
   }
 
-  LogTarget(Info, class, init) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, class, init) lt; lt.is_enabled()) {
     ResourceMark rm(THREAD);
     LogStream ls(lt);
     ls.print("%d Initializing ", call_class_initializer_counter++);
@@ -1762,8 +1761,7 @@ void InstanceKlass::call_class_initializer(TRAPS) {
 
   methodHandle h_method(THREAD, class_initializer());
   assert(!is_initialized(), "we cannot initialize twice");
-  LogTarget(Info, class, init) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, class, init) lt; lt.is_enabled()) {
     ResourceMark rm(THREAD);
     LogStream ls(lt);
     ls.print("%d Initializing ", call_class_initializer_counter++);

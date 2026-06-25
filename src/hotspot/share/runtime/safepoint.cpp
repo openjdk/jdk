@@ -149,8 +149,7 @@ void SafepointSynchronize::decrement_waiting_to_block() {
 bool SafepointSynchronize::thread_not_running(ThreadSafepointState *cur_state) {
   if (!cur_state->is_running()) {
     // Robustness: asserted in the caller, but handle/tolerate it for release bits.
-    LogTarget(Error, safepoint) lt;
-    if (lt.is_enabled()) {
+    if (const LogTarget(Error, safepoint) lt; lt.is_enabled()) {
       LogStream ls(lt);
       ls.print("Illegal initial state detected: ");
       cur_state->print_on(&ls);
@@ -637,8 +636,7 @@ void SafepointSynchronize::print_safepoint_timeout() {
     timeout_error_printed = true;
     // Print out the thread info which didn't reach the safepoint for debugging
     // purposes (useful when there are lots of threads in the debugger).
-    LogTarget(Warning, safepoint) lt;
-    if (lt.is_enabled()) {
+    if (const LogTarget(Warning, safepoint) lt; lt.is_enabled()) {
       ResourceMark rm;
       LogStream ls(lt);
 

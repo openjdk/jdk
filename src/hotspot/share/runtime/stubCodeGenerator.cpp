@@ -145,8 +145,7 @@ void StubCodeGenerator::retrieve_unsafe_access_handlers(address start, address e
 // Helper used to restore ZGC pointer colouring relocation addresses
 // retrieved from the AOT cache.
 void StubCodeGenerator::register_reloc_addresses(GrowableArray<address> &entries, int begin, int count) {
-  LogTarget(Trace, aot, codecache, stubs) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, aot, codecache, stubs) lt; lt.is_enabled()) {
     LogStream ls(lt);
     for (int i = begin; i < count; i++) {
       ls.print_cr("Registered reloc address " INTPTR_FORMAT, p2i(entries.at(i)));
@@ -163,8 +162,7 @@ void StubCodeGenerator::retrieve_reloc_addresses(address start, address end, Gro
   int l = entries.length();
   ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
   zbs->retrieve_reloc_addresses(start, end, entries);
-  LogTarget(Trace, aot, codecache, stubs) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, aot, codecache, stubs) lt; lt.is_enabled()) {
     LogStream ls(lt);
     for (int i = l; i < entries.length(); i++) {
       ls.print_cr("retrieved reloc address " INTPTR_FORMAT, p2i(entries.at(i)));
@@ -185,8 +183,7 @@ void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
 }
 
 void StubCodeGenerator::print_stub_code_desc(StubCodeDesc* cdesc) {
-  LogTarget(Debug, stubs) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, stubs) lt; lt.is_enabled()) {
     LogStream ls(lt);
     cdesc->print_on(&ls);
     ls.cr();

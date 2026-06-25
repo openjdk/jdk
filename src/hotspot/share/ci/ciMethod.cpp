@@ -729,8 +729,8 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   }
 
 #ifndef PRODUCT
-  LogTarget(Debug, dependencies) lt;
-  if (lt.is_enabled() && target() != nullptr && target() != root_m->get_Method()) {
+  if (const LogTarget(Debug, dependencies) lt;
+      lt.is_enabled() && target() != nullptr && target() != root_m->get_Method()) {
     LogStream ls(&lt);
     ls.print("found a non-root unique target method");
     ls.print_cr("  context = %s", actual_recv->get_Klass()->external_name());

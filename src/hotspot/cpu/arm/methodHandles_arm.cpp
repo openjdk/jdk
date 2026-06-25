@@ -502,8 +502,7 @@ void trace_method_handle_stub(const char* adaptername,
   if (last_sp != saved_sp && last_sp != nullptr) {
     log_info(methodhandles)("*** last_sp=" INTPTR_FORMAT, p2i(last_sp));
   }
-  LogTarget(Trace, methodhandles) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, methodhandles) lt; lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
     ls.print(" reg dump: ");

@@ -790,8 +790,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
     heap->prepare_concurrent_roots();
 
     if (!heap->collection_set()->is_empty()) {
-      LogTarget(Debug, gc, cset) lt;
-      if (lt.is_enabled()) {
+      if (const LogTarget(Debug, gc, cset) lt; lt.is_enabled()) {
         ResourceMark rm;
         LogStream ls(lt);
         heap->collection_set()->print_on(&ls);

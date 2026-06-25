@@ -1193,8 +1193,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
         }
       }
 
-      LogTarget(Debug, methodhandles, condy) lt_condy;
-      if (lt_condy.is_enabled()) {
+      if (const LogTarget(Debug, methodhandles, condy) lt_condy; lt_condy.is_enabled()) {
         LogStream ls(lt_condy);
         bootstrap_specifier.print_msg_on(&ls, "resolve_constant_at_impl");
       }

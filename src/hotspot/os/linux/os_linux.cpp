@@ -4035,8 +4035,7 @@ static void warn_no_large_pages_configured() {
 
 struct LargePageInitializationLoggerMark {
   ~LargePageInitializationLoggerMark() {
-    LogTarget(Info, pagesize) lt;
-    if (lt.is_enabled()) {
+    if (const LogTarget(Info, pagesize) lt; lt.is_enabled()) {
       LogStream ls(lt);
       if (UseLargePages) {
         ls.print_cr("UseLargePages=1, UseTransparentHugePages=%d", UseTransparentHugePages);

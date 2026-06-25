@@ -503,8 +503,7 @@ void trace_method_handle_stub(const char* adaptername,
   log_info(methodhandles)("MH %s %s=" INTPTR_FORMAT " sp=" INTPTR_FORMAT,
                 adaptername, mh_reg_name, p2i(mh), p2i(entry_sp));
 
-  LogTarget(Trace, methodhandles) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, methodhandles) lt; lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
     ls.print_cr("Registers:");

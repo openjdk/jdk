@@ -392,8 +392,7 @@ oop StackWalk::walk(Handle stackStream, jint mode, int skip_frames, Handle cont_
 
   JavaThread* jt = THREAD;
   log_debug(stackwalk)("Start walking: mode " INT32_FORMAT_X " skip %d frames, buffer size %d", mode, skip_frames, buffer_size);
-  LogTarget(Debug, stackwalk) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, stackwalk) lt; lt.is_enabled()) {
     ResourceMark rm(THREAD);
     LogStream ls(lt);
     if (cont_scope() != nullptr) {

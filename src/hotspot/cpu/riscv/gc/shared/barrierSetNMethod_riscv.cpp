@@ -176,8 +176,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   assert(frame.cb() == nm, "must be");
   frame = frame.sender(&reg_map);
 
-  LogTarget(Trace, nmethod, barrier) out;
-  if (out.is_enabled()) {
+  if (const LogTarget(Trace, nmethod, barrier) out; out.is_enabled()) {
     ResourceMark mark;
     log_trace(nmethod, barrier)("deoptimize(nmethod: %s(%p), return_addr: %p, osr: %d, thread: %p(%s), making rsp: %p) -> %p",
                                 nm->method()->name_and_sig_as_C_string(),

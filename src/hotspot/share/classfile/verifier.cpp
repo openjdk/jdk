@@ -255,13 +255,11 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
         klass, message_buffer, message_buffer_len, THREAD);
   }
 
-  LogTarget(Info, class, init) lt1;
-  if (lt1.is_enabled()) {
+  if (const LogTarget(Info, class, init) lt1; lt1.is_enabled()) {
     LogStream ls(lt1);
     log_end_verification(&ls, klass->external_name(), exception_name, PENDING_EXCEPTION);
   }
-  LogTarget(Info, verification) lt2;
-  if (lt2.is_enabled()) {
+  if (const LogTarget(Info, verification) lt2; lt2.is_enabled()) {
     LogStream ls(lt2);
     log_end_verification(&ls, klass->external_name(), exception_name, PENDING_EXCEPTION);
   }
@@ -739,8 +737,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   StackMapReader reader(this, &stream, code_data, code_length, &current_frame, max_locals, max_stack, THREAD);
   StackMapTable stackmap_table(&reader, CHECK_VERIFY(this));
 
-  LogTarget(Debug, verification) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, verification) lt; lt.is_enabled()) {
     LogStream ls(lt);
     stackmap_table.print_on(&ls);
   }
@@ -780,8 +777,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
       VerificationType type, type2;
       VerificationType atype;
 
-      LogTarget(Debug, verification) lt;
-      if (lt.is_enabled()) {
+      if (const LogTarget(Debug, verification) lt; lt.is_enabled()) {
         LogStream ls(lt);
         current_frame.print_on(&ls);
         lt.print("offset = %d,  opcode = %s", bci,

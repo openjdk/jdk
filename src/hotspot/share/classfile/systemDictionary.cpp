@@ -389,8 +389,7 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
 }
 
 static inline void log_circularity_error(Symbol* name, PlaceholderEntry* probe) {
-  LogTarget(Debug, class, load, placeholders) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, class, load, placeholders) lt; lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
     ls.print("ClassCircularityError detected for placeholder entry %s", name->as_C_string());

@@ -957,8 +957,7 @@ void JavaThread::handle_async_exception(oop java_throwable) {
 
   clear_scopedValueBindings();
 
-  LogTarget(Info, exceptions) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, exceptions) lt; lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
     ls.print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));

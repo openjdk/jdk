@@ -5632,8 +5632,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   assert(is_internal_format(_class_name), "external class name format used internally");
 
   if (!is_internal()) {
-    LogTarget(Debug, class, preorder) lt;
-    if (lt.is_enabled()){
+    if (const LogTarget(Debug, class, preorder) lt; lt.is_enabled()) {
       ResourceMark rm(THREAD);
       LogStream ls(lt);
       ls.print("%s", _class_name->as_klass_external_name());

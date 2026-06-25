@@ -346,7 +346,7 @@ double ShenandoahAgeCensus::mortality_rate(size_t prev_pop, size_t cur_pop) {
 
 void ShenandoahAgeCensus::print() {
 
-  const LogTarget(Debug, gc, age) lt;
+  LogTarget(Debug, gc, age) lt;
   if (!lt.is_enabled()) {
     return;
   }

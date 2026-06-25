@@ -362,8 +362,7 @@ void mutex_init() {
 
 void MutexLockerImpl::post_initialize() {
   // Print mutex ranks if requested.
-  LogTarget(Info, vmmutex) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, vmmutex) lt; lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
     Mutex::print_lock_ranks(&ls);

@@ -2290,8 +2290,7 @@ void nmethod::purge(bool unregister_nmethod) {
   // completely deallocate this method
   Events::log_nmethod_flush(Thread::current(), "flushing %s nmethod " INTPTR_FORMAT, is_osr_method() ? "osr" : "", p2i(this));
 
-  LogTarget(Debug, codecache) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, codecache) lt; lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
     const char* method_name = method()->name()->as_C_string();
@@ -2704,8 +2703,7 @@ void nmethod::follow_nmethod(OopIterateClosure* cl) {
 nmethod* volatile nmethod::_oops_do_mark_nmethods;
 
 void nmethod::oops_do_log_change(const char* state) {
-  LogTarget(Trace, gc, nmethod) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, gc, nmethod) lt; lt.is_enabled()) {
     LogStream ls(lt);
     CompileTask::print(&ls, this, state, true /* short_form */);
   }
@@ -2879,8 +2877,7 @@ void nmethod::oops_do_marking_epilogue() {
       cur->_oops_do_mark_link = nullptr;
       DEBUG_ONLY(cur->verify_oop_relocations());
 
-      LogTarget(Trace, gc, nmethod) lt;
-      if (lt.is_enabled()) {
+      if (const LogTarget(Trace, gc, nmethod) lt; lt.is_enabled()) {
         LogStream ls(lt);
         CompileTask::print(&ls, cur, "oops_do, unmark", /*short_form:*/ true);
       }

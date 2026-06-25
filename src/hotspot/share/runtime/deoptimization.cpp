@@ -1689,8 +1689,7 @@ static void post_deoptimization_event(nmethod* nm,
 
 static void log_deopt(nmethod* nm, Method* tm, intptr_t pc, frame& fr, int trap_bci,
                       const char* reason_name, const char* reason_action, const char* class_name) {
-  LogTarget(Debug, deoptimization) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, deoptimization) lt; lt.is_enabled()) {
     LogStream ls(lt);
     bool is_osr = nm->is_osr_method();
     ls.print("cid=%4d %s level=%d",

@@ -678,9 +678,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, Kla
 
 void G1ParScanThreadState::initialize_numa_stats() {
   if (_numa->is_enabled()) {
-    LogTarget(Info, gc, heap, numa) lt;
-
-    if (lt.is_enabled()) {
+    if (const LogTarget(Info, gc, heap, numa) lt; lt.is_enabled()) {
       uint num_nodes = _numa->num_active_nodes();
       // Record only if there are multiple active nodes.
       _obj_alloc_stat = NEW_C_HEAP_ARRAY(size_t, num_nodes, mtGC);

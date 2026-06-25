@@ -433,8 +433,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
 
   log_info(module, load)("%s location: %s", module_name,
                          location_symbol != nullptr ? location_symbol->as_C_string() : "null");
-  LogTarget(Debug, module) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, module) lt; lt.is_enabled()) {
     LogStream ls(lt);
     ls.print("define_module(): creation of module: %s, version: %s, location: %s, ",
                  module_name, version_symbol != nullptr ? version_symbol->as_C_string() : "null",
@@ -942,8 +941,7 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
   assert(module != nullptr, "java.lang.Class module field not set");
   assert(java_lang_Module::is_instance(module), "module is not an instance of type java.lang.Module");
 
-  LogTarget(Debug,module) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug,module) lt; lt.is_enabled()) {
     LogStream ls(lt);
     Klass* klass = java_lang_Class::as_Klass(mirror);
     oop module_name = java_lang_Module::name(module);

@@ -1266,8 +1266,7 @@ G1AbstractSubTask* G1RemSet::create_cleanup_after_scan_heap_roots_task() {
 }
 
 void G1RemSet::print_coarsen_stats() {
-  LogTarget(Debug, gc, remset) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, gc, remset) lt; lt.is_enabled()) {
     LogStream ls(lt);
 
     G1CardSet::print_coarsen_stats(&ls);

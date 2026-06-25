@@ -241,8 +241,7 @@ void ArrayKlass::cds_print_value_on(outputStream* st) const {
 #endif // INCLUDE_CDS
 
 void ArrayKlass::log_array_class_load(Klass* k) {
-  LogTarget(Debug, class, load, array) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, class, load, array) lt; lt.is_enabled()) {
     LogStream ls(lt);
     ResourceMark rm;
     ls.print("%s", k->name()->as_klass_external_name());

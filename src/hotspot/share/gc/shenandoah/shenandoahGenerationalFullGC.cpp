@@ -102,8 +102,7 @@ void ShenandoahGenerationalFullGC::rebuild_remembered_set(ShenandoahHeap* heap) 
 }
 
 void ShenandoahGenerationalFullGC::log_live_in_old(ShenandoahHeap* heap) {
-  LogTarget(Debug, gc) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, gc) lt; lt.is_enabled()) {
     size_t live_bytes_in_old = 0;
     for (size_t i = 0; i < heap->num_regions(); i++) {
       ShenandoahHeapRegion* r = heap->get_region(i);

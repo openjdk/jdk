@@ -1942,8 +1942,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* c
   // normal bytecode execution.
   current->clear_exception_oop_and_pc();
 
-  LogTarget(Info, exceptions) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, exceptions) lt; lt.is_enabled()) {
     LogStream ls(lt);
     trace_exception(&ls, exception(), pc, "");
   }

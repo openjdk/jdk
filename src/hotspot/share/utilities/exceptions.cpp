@@ -63,8 +63,7 @@ void ThreadShadow::set_pending_exception(oop exception, const char* file, int li
 void ThreadShadow::clear_pending_exception() {
   assert(_pending_exception == nullptr || !_pending_exception->is_a(vmClasses::PreemptedException_klass()),
          "unexpected PreemptedException, missing NoPreemptMark?");
-  LogTarget(Debug, exceptions) lt;
-  if (_pending_exception != nullptr && lt.is_enabled()) {
+  if (const LogTarget(Debug, exceptions) lt; _pending_exception != nullptr && lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
     ls.print("Thread::clear_pending_exception: cleared exception:");

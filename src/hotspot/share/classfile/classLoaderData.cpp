@@ -91,8 +91,7 @@ void ClassLoaderData::init_null_class_loader_data() {
   ClassLoaderDataGraph::_head = _the_null_class_loader_data;
   assert(_the_null_class_loader_data->is_the_null_class_loader_data(), "Must be");
 
-  LogTarget(Trace, class, loader, data) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, class, loader, data) lt; lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
     ls.print("create ");
@@ -500,8 +499,7 @@ void ClassLoaderData::record_dependency(const Klass* k) {
   // It's a dependency we won't find through GC, add it.
   if (!_handles.contains(to)) {
     NOT_PRODUCT(AtomicAccess::inc(&_dependency_count));
-    LogTarget(Trace, class, loader, data) lt;
-    if (lt.is_enabled()) {
+    if (const LogTarget(Trace, class, loader, data) lt; lt.is_enabled()) {
       ResourceMark rm;
       LogStream ls(lt);
       ls.print("adding dependency from ");
@@ -533,8 +531,7 @@ void ClassLoaderData::add_class(Klass* k, bool publicize /* true */) {
   }
 
   if (publicize) {
-    LogTarget(Trace, class, loader, data) lt;
-    if (lt.is_enabled()) {
+    if (const LogTarget(Trace, class, loader, data) lt; lt.is_enabled()) {
       ResourceMark rm;
       LogStream ls(lt);
       ls.print("Adding k: " PTR_FORMAT " %s to ", p2i(k), k->external_name());
@@ -610,8 +607,7 @@ void ClassLoaderData::remove_jmethod_ids() {
 void ClassLoaderData::unload() {
   _unloading = true;
 
-  LogTarget(Trace, class, loader, data) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, class, loader, data) lt; lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
     ls.print("unload");

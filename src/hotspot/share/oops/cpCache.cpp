@@ -485,8 +485,7 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
     } else {
       rme->remove_unshareable_info();
     }
-    LogTarget(Trace, aot, resolve) lt;
-    if (lt.is_enabled()) {
+    if (const LogTarget(Trace, aot, resolve) lt; lt.is_enabled()) {
       ResourceMark rm;
       int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
       Symbol* klass_name = cp->klass_name_at(klass_cp_index);

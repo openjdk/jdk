@@ -1489,8 +1489,7 @@ Klass* Dependencies::check_call_site_target_value(oop call_site, oop method_hand
 void Dependencies::DepStream::trace_and_log_witness(Klass* witness) {
   if (_verify_in_progress) return;  // don't log
   if (witness != nullptr) {
-    LogTarget(Debug, dependencies) lt;
-    if (lt.is_enabled()) {
+    if (const LogTarget(Debug, dependencies) lt; lt.is_enabled()) {
       LogStream ls(&lt);
       print_dependency(&ls, witness, /*verbose=*/ true);
     }

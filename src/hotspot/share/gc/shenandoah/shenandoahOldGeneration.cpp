@@ -150,8 +150,7 @@ void ShenandoahOldGeneration::reset_promoted_expended() {
 }
 
 void ShenandoahOldGeneration::maybe_log_promotion_failure_stats(bool concurrent) const {
-  LogTarget(Info, gc, plab) plab_info;
-  if (plab_info.is_enabled()) {
+  if (const LogTarget(Info, gc, plab) plab_info; plab_info.is_enabled()) {
     size_t failed_count = 0;
     size_t failed_words = 0;
 
@@ -628,8 +627,7 @@ void ShenandoahOldGeneration::handle_failed_evacuation() {
 }
 
 void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) const {
-  LogTarget(Info, gc, plab) plab_info;
-  if (plab_info.is_enabled()) {
+  if (const LogTarget(Info, gc, plab) plab_info; plab_info.is_enabled()) {
     ShenandoahPLAB* plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
     if (plab != nullptr) {
       plab->record_promotion_failure(size);
@@ -639,8 +637,7 @@ void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t siz
     }
   }
 
-  LogTarget(Debug, gc, plab) plab_debug;
-  if (plab_debug.is_enabled()) {
+  if (const LogTarget(Debug, gc, plab) plab_debug; plab_debug.is_enabled()) {
     LogStream ls(plab_debug);
     log_failed_promotion(ls, thread, size);
   }
