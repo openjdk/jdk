@@ -152,10 +152,6 @@ inline void G1HeapRegion::reset_skip_compacting_after_full_gc() {
 }
 
 inline void G1HeapRegion::reset_after_full_gc_common() {
-  // After a full gc the mark information in a movable region is invalid. Reset marking
-  // information.
-  G1CollectedHeap::heap()->concurrent_mark()->reset_top_at_mark_start(this);
-
   // Everything above bottom() is parsable and live.
   reset_parsable_bottom();
 
