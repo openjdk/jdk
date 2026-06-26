@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,32 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package sun.security.util;
-
-import java.security.spec.KeySpec;
-
-/**
- * This is a KeySpec that is used to specify a key by its byte array implementation.
- * It is intended to be used in testing algorithms where the algorithm specification
- * describes the key in this form.
+/*
+ * @test
+ * @bug 8385651
+ * @summary Verify the HotCodeSampler and JFR do not attempt to suspend the same JavaThread and crash
+ * @requires vm.compiler2.enabled & vm.hasJFR
+ * @run main/othervm -XX:StartFlightRecording -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:+NMethodRelocation -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:HotCodeIntervalSeconds=0 -XX:HotCodeStartupDelaySeconds=0 -XX:HotCodeStablePercent=-1 -Xlog:hotcode=debug
+ *                   compiler.hotcode.HotCodeCollectorJFR
  */
-public class RawKeySpec implements KeySpec {
-    private final byte[] keyArr;
-    /**
-     * The sole constructor.
-     * @param key contains the key as a byte array
-     */
-    public RawKeySpec(byte[] key) {
-        keyArr = key.clone();
+
+package compiler.hotcode;
+
+public class HotCodeCollectorJFR {
+
+    private static final int FUNC_RUN_MILLIS = 10_000;
+
+    public static void main(String[] args) throws Exception {
+        long start = System.currentTimeMillis();
+        while (System.currentTimeMillis() - start < FUNC_RUN_MILLIS) {}
     }
 
-    /**
-     * Getter function.
-     * @return a copy of the key bits
-     */
-    public byte[] getKeyArr() {
-        return keyArr.clone();
-    }
 }

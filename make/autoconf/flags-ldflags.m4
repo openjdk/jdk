@@ -93,7 +93,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     BASIC_LDFLAGS="-opt:ref"
     BASIC_LDFLAGS_JDK_ONLY="-incremental:no"
-    BASIC_LDFLAGS_JVM_ONLY="-opt:icf,8 -subsystem:windows"
+    BASIC_LDFLAGS_JVM_ONLY="-opt:noicf -subsystem:windows"
     LDFLAGS_LTO="-LTCG:INCREMENTAL"
   fi
 

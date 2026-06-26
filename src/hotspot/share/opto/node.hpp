@@ -1060,10 +1060,16 @@ public:
   // The data node which is safe to leave in dead loop during IGVN optimization.
   bool is_dead_loop_safe() const;
 
+  void mark_not_dead_loop_safe() {
+    assert(is_dead_loop_safe(), "shouldn't be cleared yet");
+    remove_flag(Node::Flag_is_dead_loop_safe);
+  }
+
   // is_Copy() returns copied edge index (0 or 1)
   uint is_Copy() const { return (_flags & Flag_is_Copy); }
 
   virtual bool is_CFG() const { return false; }
+  bool is_memory_access_intrinsic() const;
 
   // If this node is control-dependent on a test, can it be rerouted to a dominating equivalent
   // test? This means that the node can be executed safely as long as it happens after the test
