@@ -42,6 +42,7 @@
 #include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/subtypenode.hpp"
 #include "utilities/macros.hpp"
 
 ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation) :
@@ -506,7 +507,17 @@ bool ConnectionGraph::can_reduce_phi_check_inputs(PhiNode* ophi) const {
 // I require the 'other' input to be a constant so that I can move the Cmp
 // around safely.
 bool ConnectionGraph::can_reduce_cmp(PhiNode* phi, Node* cmp) const {
-  assert(cmp->Opcode() == Op_CmpP || cmp->Opcode() == Op_CmpN, "not expected node: %s", cmp->Name());
+  assert(cmp->Opcode() == Op_CmpP ||
+         cmp->Opcode() == Op_CmpN ||
+         cmp->Opcode() == Op_SubTypeCheck,
+         "not expected node: %s", cmp->Name());
+
+  if (cmp->Opcode() == Op_SubTypeCheck) {
+    return cmp->in(SubTypeCheckNode::ObjOrSubKlass) == phi &&
+           cmp->in(SubTypeCheckNode::SuperKlass)->is_Con() &&
+           cmp->outcnt() == 1;
+  }
+
   Node* left = cmp->in(1);
   Node* right = cmp->in(2);
 
@@ -537,12 +548,12 @@ bool ConnectionGraph::has_been_reduced(PhiNode* phi, SafePointNode* sfpt) const 
 // Check if we are able to untangle the merge. The following patterns are
 // supported:
 //  - Phi -> SafePoints
-//  - Phi -> CmpP/N
+//  - Phi -> CmpP/CmpN/SubTypeCheck
 //  - Phi -> AddP -> Load
-//  - Phi -> CastPP -> SafePoints
-//  - Phi -> CastPP -> AddP -> Load
+//  - Phi -> CastPP/CheckCastPP -> SafePoints
+//  - Phi -> CastPP/CheckCastPP -> AddP -> Load
 bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
-  assert((n->is_Phi() && nesting == 0) || (n->is_CastPP() && nesting > 0),
+  assert((n->is_Phi() && nesting == 0) || ((n->is_CastPP() || n->is_CheckCastPP()) && nesting > 0),
          "invalid node class %s and nesting %d combination", n->Name(), nesting);
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* use = n->fast_out(i);
@@ -551,7 +562,7 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
       if (use->is_Call() && use->as_Call()->has_non_debug_use(n)) {
         NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. Call has non_debug_use().", n->_idx, _invocation);)
         return false;
-      } else if (has_been_reduced(n->is_Phi() ? n->as_Phi() : n->as_CastPP()->in(1)->as_Phi(), use->as_SafePoint())) {
+      } else if (has_been_reduced(n->is_Phi() ? n->as_Phi() : n->as_ConstraintCast()->in(1)->as_Phi(), use->as_SafePoint())) {
         NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. It has already been reduced.", n->_idx, _invocation);)
         return false;
       }
@@ -572,22 +583,22 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
     } else if (nesting > 0) {
       NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. Unsupported user %s at nesting level %d.", n->_idx, _invocation, use->Name(), nesting);)
       return false;
-    } else if (use->is_CastPP()) {
+    } else if (use->is_CastPP() || use->is_CheckCastPP()) {
       const Type* cast_t = _igvn->type(use);
       if (cast_t == nullptr || cast_t->make_ptr()->isa_instptr() == nullptr) {
 #ifndef PRODUCT
         if (TraceReduceAllocationMerges) {
-          tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP is not to an instance.", n->_idx, _invocation);
+          tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP/CheckCastPP is not to an instance.", n->_idx, _invocation);
           use->dump();
         }
 #endif
         return false;
       }
 
-      if (!can_reduce_phi_at_castpp(n->as_Phi(), use->as_CastPP())) {
+      if (!can_reduce_phi_at_castpp(n->as_Phi(), use->as_ConstraintCast())) {
 #ifdef ASSERT
         if (TraceReduceAllocationMerges) {
-          tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);
+          tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP/CheckCastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);
           n->dump(5);
         }
 #endif
@@ -597,9 +608,9 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
       if (!can_reduce_check_users(use, nesting+1)) {
         return false;
       }
-    } else if (use->Opcode() == Op_CmpP || use->Opcode() == Op_CmpN) {
+    } else if (use->Opcode() == Op_CmpP || use->Opcode() == Op_CmpN || use->Opcode() == Op_SubTypeCheck) {
       if (!can_reduce_cmp(n->as_Phi(), use)) {
-        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. CmpP/N %d isn't reducible.", n->_idx, _invocation, use->_idx);)
+        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. CmpP/N/SubTypeCheck %d isn't reducible.", n->_idx, _invocation, use->_idx);)
         return false;
       }
     } else {
@@ -611,16 +622,16 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
   return true;
 }
 
-// Returns true if the CastPP's control is simple enough to reduce the Phi:
+// Returns true if the CastPP/CheckCastPP's control is simple enough to reduce the Phi:
 //  1) no control,
 //  2) control is the same Region as the Phi, or
-//  3) an IfTrue/IfFalse coming from an CmpP/N between the phi and a constant.
-bool ConnectionGraph::can_reduce_phi_at_castpp(PhiNode* phi, CastPPNode* castpp) const {
+//  3) an IfTrue/IfFalse coming from an CmpP/CmpN/SubTypeCheck between the phi and a constant.
+bool ConnectionGraph::can_reduce_phi_at_castpp(PhiNode* phi, ConstraintCastNode* castpp) const {
   if (castpp->in(0) == nullptr || castpp->in(0) == phi->in(0)) {
     return true;
   }
   // If it's not a trivial control then we check if we can reduce the
-  // CmpP/N used by the If controlling the cast.
+  // CmpP/CmpN/SubTypeCheck used by the If controlling the cast.
   if (!(castpp->in(0)->is_IfTrue() || castpp->in(0)->is_IfFalse())) {
     return false; // Only If control is considered
   } else {
@@ -630,7 +641,7 @@ bool ConnectionGraph::can_reduce_phi_at_castpp(PhiNode* phi, CastPPNode* castpp)
     if (iff->Opcode() == Op_If && iff->in(1)->is_Bool() && iff->in(1)->in(1)->is_Cmp()) {
       Node* iff_cmp  = iff->in(1)->in(1);
       int opc = iff_cmp->Opcode();
-      if ((opc == Op_CmpP || opc == Op_CmpN) && can_reduce_cmp(phi, iff_cmp)) {
+      if ((opc == Op_CmpP || opc == Op_CmpN || opc == Op_SubTypeCheck) && can_reduce_cmp(phi, iff_cmp)) {
         return true;
       }
     }
@@ -666,15 +677,16 @@ bool ConnectionGraph::can_reduce_phi(PhiNode* ophi) const {
 }
 
 // This method will return a CmpP/N that we need to use on the If controlling a
-// CastPP after it was split. This method is only called on bases that are
-// nullable therefore we always need a controlling if for the splitted CastPP.
+// CastPP/CheckCastPP after it was split. This method is only called on bases
+// that are nullable therefore we always need a controlling if for the splitted
+// CastPP/CheckCastPP.
 //
-// 'curr_ctrl' is the control of the CastPP that we want to split through phi.
-// If the CastPP currently doesn't have a control then the CmpP/N will be
-// against the null constant, otherwise it will be against the constant input of
-// the existing CmpP/N. It's guaranteed that there will be a CmpP/N in the later
-// case because we have constraints on it and because the CastPP has a control
-// input.
+// 'curr_ctrl' is the control of the CastPP/CheckCastPP that we want to split
+// through phi. If the cast currently doesn't have a control then the CmpP/N
+// will be against the null constant, otherwise it will be against the constant
+// input of the existing CmpP/N/SubTypeCheck. It's guaranteed that there will be
+// a CmpP/N/SubTypeCheck in the later case because we have constraints on it and
+// because the cast has a control input.
 Node* ConnectionGraph::specialize_cmp(Node* base, Node* curr_ctrl) {
   const Type* t = base->bottom_type();
   Node* con = nullptr;
@@ -687,6 +699,14 @@ Node* ConnectionGraph::specialize_cmp(Node* base, Node* curr_ctrl) {
     Node* bol = curr_ctrl->in(0)->in(1);
     assert(bol->is_Bool(), "unexpected node %s", bol->Name());
     Node* curr_cmp = bol->in(1);
+    // Copy elements of the original SubTypeCheck node into a new
+    // SubTypeCheck node that is specialized to `base`.
+    if (curr_cmp->Opcode() == Op_SubTypeCheck) {
+      int bci = curr_cmp->as_SubTypeCheck()->bci();
+      ciMethod* method = curr_cmp->as_SubTypeCheck()->method();
+      Node* superklass = curr_cmp->in(SubTypeCheckNode::SuperKlass);
+      return new SubTypeCheckNode(_compile, base, superklass, method, bci);
+    }
     assert(curr_cmp->Opcode() == Op_CmpP || curr_cmp->Opcode() == Op_CmpN, "unexpected node %s", curr_cmp->Name());
     con = curr_cmp->in(1)->is_Con() ? curr_cmp->in(1) : curr_cmp->in(2);
   }
@@ -891,9 +911,10 @@ Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr
 //                      \|/
 //                      Phi        # "Field" Phi
 //
-void ConnectionGraph::reduce_phi_on_castpp_field_load(CastPPNode* curr_castpp, GrowableArray<Node*> &alloc_worklist) {
+void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, GrowableArray<Node*> &alloc_worklist) {
+  assert(curr_castpp->is_CastPP() || curr_castpp->is_CheckCastPP(), "must be a CastPP/CheckCastPP");
   PhiNode* ophi = curr_castpp->in(1)->as_Phi();
-  precond(can_reduce_phi_at_castpp(ophi, curr_castpp));
+  precond(can_reduce_phi_at_castpp(ophi, curr_castpp->as_ConstraintCast()));
 
   // Identify which base should be used for AddP->Load later when spliting the
   // CastPP->Loads through ophi. Three kind of values may be stored in this
@@ -1019,7 +1040,11 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
     Node* ophi_input = ophi->in(i);
     Node* res_phi_input = nullptr;
 
-    const TypeInt* tcmp = optimize_ptr_compare(ophi_input, other);
+    // Pointer comparisons are valid only for CmpP and CmpN nodes, not for
+    // SubTypeCheck nodes, so don't perform any constant folding and instead
+    // leave the comparison result as unknown.
+    const TypeInt* tcmp = cmp->Opcode() == Op_SubTypeCheck ?
+        TypeInt::CC : optimize_ptr_compare(ophi_input, other);
     if (tcmp->singleton()) {
       if ((mask == BoolTest::mask::eq && tcmp == TypeInt::CC_EQ) ||
           (mask == BoolTest::mask::ne && tcmp == TypeInt::CC_GT)) {
@@ -1234,10 +1259,10 @@ bool ConnectionGraph::reduce_phi_on_safepoints(PhiNode* ophi) {
     Node* use = ophi->raw_out(i);
     if (use->is_SafePoint()) {
       safepoints.push(use);
-    } else if (use->is_CastPP()) {
+    } else if (use->is_CastPP() || use->is_CheckCastPP()) {
       casts.push(use);
     } else {
-      assert(use->outcnt() == 0, "Only CastPP & SafePoint users should be left.");
+      assert(use->outcnt() == 0, "Only CastPP/CheckCastPP & SafePoint users should be left.");
     }
   }
 
@@ -1365,13 +1390,13 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_work
 
   // Copying all users first because some will be removed and others won't.
   // Ophi also may acquire some new users as part of Cast reduction.
-  // CastPPs also need to be processed before CmpPs.
+  // CastPP/CheckCastPP nodes also need to be processed before CmpP/SubTypeCheck.
   Unique_Node_List castpps;
   Unique_Node_List others;
   for (DUIterator_Fast imax, i = ophi->fast_outs(imax); i < imax; i++) {
     Node* use = ophi->fast_out(i);
 
-    if (use->is_CastPP()) {
+    if (use->is_CastPP() || use->is_CheckCastPP()) {
       castpps.push(use);
     } else if (use->is_AddP() || use->is_Cmp()) {
       others.push(use);
@@ -1383,11 +1408,11 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_work
 
   _compile->print_method(PHASE_EA_BEFORE_PHI_REDUCTION, 5, ophi);
 
-  // CastPPs need to be processed before Cmps because during the process of
-  // splitting CastPPs we make reference to the inputs of the Cmp that is used
-  // by the If controlling the CastPP.
+  // CastPP/CheckCastPP nodes need to be processed before Cmps because during
+  // the process of splitting casts we make reference to the inputs of the Cmp
+  // that is used by the If controlling the CastPP/CheckCastPP.
   for (uint i = 0; i < castpps.size(); i++) {
-    reduce_phi_on_castpp_field_load(castpps.at(i)->as_CastPP(), alloc_worklist);
+    reduce_phi_on_castpp_field_load(castpps.at(i), alloc_worklist);
     _compile->print_method(PHASE_EA_AFTER_PHI_CASTPP_REDUCTION, 6, castpps.at(i));
   }
 
@@ -4773,7 +4798,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       // At this point reducible Phis shouldn't have AddP users anymore; only SafePoints or Casts.
       for (DUIterator_Fast jmax, j = phi->fast_outs(jmax); j < jmax; j++) {
         Node* use = phi->fast_out(j);
-        if (!use->is_SafePoint() && !use->is_CastPP()) {
+        if (!use->is_SafePoint() && !use->is_CastPP() && !use->is_CheckCastPP()) {
           phi->dump(2);
           phi->dump(-2);
           assert(false, "Unexpected user of reducible Phi -> %d:%s:%d", use->_idx, use->Name(), use->outcnt());
