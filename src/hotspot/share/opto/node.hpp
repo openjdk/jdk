@@ -1069,6 +1069,7 @@ public:
   uint is_Copy() const { return (_flags & Flag_is_Copy); }
 
   virtual bool is_CFG() const { return false; }
+  bool is_memory_access_intrinsic() const;
 
   // If this node is control-dependent on a test, can it be rerouted to a dominating equivalent
   // test? This means that the node can be executed safely as long as it happens after the test

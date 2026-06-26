@@ -3001,6 +3001,27 @@ bool Node::is_data_proj_of_pure_function(const Node* maybe_pure_function) const 
   return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_CallLeafPure();
 }
 
+// Whether this is an intrinsic node that accesses memory and has a memory input, such as array
+// equal intrinsic. Some nodes do access memory but do not have a memory input, such as
+// PartialSubTypeCheck, they are not included here.
+bool Node::is_memory_access_intrinsic() const {
+  switch (Opcode()) {
+    case Op_StrComp:
+    case Op_StrEquals:
+    case Op_StrIndexOf:
+    case Op_StrIndexOfChar:
+    case Op_StrCompressedCopy:
+    case Op_StrInflatedCopy:
+    case Op_AryEq:
+    case Op_CountPositives:
+    case Op_VectorizedHashCode:
+    case Op_EncodeISOArray:
+      return true;
+    default:
+      return false;
+  }
+}
+
 //--------------------------has_non_debug_uses------------------------------
 // Checks whether the node has any non-debug uses or not.
 bool Node::has_non_debug_uses() const {

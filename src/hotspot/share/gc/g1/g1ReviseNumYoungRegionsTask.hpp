@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1REVISEYOUNGLENGTHTASK_HPP
-#define SHARE_GC_G1_G1REVISEYOUNGLENGTHTASK_HPP
+#ifndef SHARE_GC_G1_G1REVISENUMYOUNGREGIONSTASK_HPP
+#define SHARE_GC_G1_G1REVISENUMYOUNGREGIONSTASK_HPP
 
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1HeapRegionRemSet.hpp"
@@ -32,18 +32,18 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/ticks.hpp"
 
-// ServiceTask to revise the young generation target length.
-class G1ReviseYoungLengthTask : public G1ServiceTask {
+// ServiceTask to revise the target number of young regions.
+class G1ReviseNumYoungRegionsTask : public G1ServiceTask {
 
   // The delay used to reschedule this task.
   jlong reschedule_delay_ms() const;
 
   class RemSetSamplingClosure; // Helper class for calculating remembered set summary.
 
-  // Adjust the target length (in regions) of the young gen, based on the
-  // current length of the remembered sets.
+  // Adjust the target number of young regions, based on the
+  // current occupancy of the remembered sets.
   //
-  // At the end of the GC G1 determines the length of the young gen based on
+  // At the end of the GC G1 determines the number of young regions based on
   // how much time the next GC can take, and when the next GC may occur
   // according to the MMU.
   //
@@ -51,13 +51,13 @@ class G1ReviseYoungLengthTask : public G1ServiceTask {
   // the remembered sets (and many other components), so this thread constantly
   // reevaluates the prediction for the remembered set scanning costs, and potentially
   // resizes the young gen. This may do a premature GC or even increase the young
-  // gen size to keep pause time length goal.
-  void adjust_young_list_target_length();
+  // gen size to keep pause time goal.
+  void adjust_target_num_young_regions();
 
 public:
-  explicit G1ReviseYoungLengthTask(const char* name);
+  explicit G1ReviseNumYoungRegionsTask(const char* name);
 
   void execute() override;
 };
 
-#endif // SHARE_GC_G1_G1REVISEYOUNGLENGTHTASK_HPP
+#endif // SHARE_GC_G1_G1REVISENUMYOUNGREGIONSTASK_HPP

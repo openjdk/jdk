@@ -2717,7 +2717,13 @@ void LIR_Assembler::membar_storeload() {
 }
 
 void LIR_Assembler::on_spin_wait() {
-  Unimplemented();
+  // SMT priority hint: drop to low for the spin, then restore to medium so
+  // subsequent code is not penalised.
+  // Yield (or 27,27,27) is not used because it was never implemented on Power CPUs, see JDK-8201218.
+  __ block_comment("spin_wait {");
+  __ smt_prio_low();
+  __ smt_prio_medium();
+  __ block_comment("}");
 }
 
 void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest, LIR_PatchCode patch_code, CodeEmitInfo* info) {
