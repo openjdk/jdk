@@ -192,28 +192,37 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, int ba
     case T_ARRAY:
     case T_OBJECT:
       if (is_flat()) { // only some inline types can be flat
+        bool is_null = false;
         InlineKlass* vk = InlineKlass::cast(field_holder()->get_inline_type_field_klass(index()));
-        st->print("Flat inline type field '%s':", vk->name()->as_C_string());
+        int field_offset = offset() - vk->payload_offset();
+        int nm_offset;
+
         if (!is_null_free_inline_type()) {
           assert(has_null_marker(), "should have null marker");
           InlineLayoutInfo* li = field_holder()->inline_layout_info_adr(index());
-          int nm_offset = li->null_marker_offset();
+          nm_offset = li->null_marker_offset();
+          st->print("Flat inline type field '%s':", vk->name()->as_C_string());
           if (obj->byte_field_acquire(nm_offset) == 0) {
-            st->print_cr(" null");
-            return;
+            st->print(" null");
+            is_null = true;
           }
+          st->cr();
+        } else {
+          st->print_cr("Flat inline null-free type field '%s':", vk->name()->as_C_string());
         }
-        st->cr();
-        // Print fields of flat field (recursively)
-        int field_offset = offset() - vk->payload_offset();
-        obj = cast_to_oop(cast_from_oop<address>(obj) + field_offset);
-        FieldPrinter print_field(st, obj, indent + 1, base_offset + field_offset );
-        vk->do_nonstatic_fields(&print_field);
+
+        // Print fields of flat field (recursively) is not null
+        if (!is_null) {
+          obj = cast_to_oop(cast_from_oop<address>(obj) + field_offset);
+          FieldPrinter print_field(st, obj, indent + 1, base_offset + field_offset);
+          vk->do_nonstatic_fields(&print_field);
+        }
+
         if (this->field_flags().has_null_marker()) {
           for (int i = 0; i < indent + 1; i++) st->print("  ");
           st->print_cr(" - [null_marker] @%d %s",
-                    vk->null_marker_offset() - base_offset + field_offset,
-                    obj->bool_field(vk->null_marker_offset()) ? "Field marked as non-null" : "Field marked as null");
+                    base_offset + nm_offset,
+                    is_null ? "Field marked as null" : "Field marked as non-null");
         }
         return; // Do not print underlying representation
       }

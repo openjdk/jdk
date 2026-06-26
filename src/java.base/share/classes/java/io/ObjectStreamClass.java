@@ -1933,7 +1933,7 @@ public final class ObjectStreamClass implements Serializable {
                 writeKeys[i] = usedKeys.add(key) ?
                     key : Unsafe.INVALID_FIELD_OFFSET;
                 offsets[i] = f.getOffset();
-                layouts[i] = rf != null && !f.isPrimitive() ? UNSAFE.fieldLayout(rf) : 0;
+                layouts[i] = rf != null && !f.isPrimitive() ? UNSAFE.fieldLayout(rf) : Unsafe.NON_FLAT_LAYOUT;
                 typeCodes[i] = f.getTypeCode();
                 if (!f.isPrimitive()) {
                     typeList.add((rf != null) ? rf.getType() : null);
@@ -2029,9 +2029,9 @@ public final class ObjectStreamClass implements Serializable {
             for (int i = numPrimFields; i < fields.length; i++) {
                 vals[offsets[i]] = switch (typeCodes[i]) {
                     case 'L', '[' ->
-                            layouts[i] != 0
-                                    ? UNSAFE.getFlatValue(obj, readKeys[i], layouts[i], types[i - numPrimFields])
-                                    : UNSAFE.getReference(obj, readKeys[i]);
+                            layouts[i] == Unsafe.NON_FLAT_LAYOUT
+                                    ? UNSAFE.getReference(obj, readKeys[i])
+                                    : UNSAFE.getFlatValue(obj, readKeys[i], layouts[i], types[i - numPrimFields]);
                     default       -> throw new InternalError();
                 };
             }
@@ -2082,10 +2082,10 @@ public final class ObjectStreamClass implements Serializable {
                                 obj.getClass().getName());
                         }
                         if (!dryRun) {
-                            if (layouts[i] != 0) {
-                                UNSAFE.putFlatValue(obj, key, layouts[i], types[i - numPrimFields], val);
-                            } else {
+                            if (layouts[i] == Unsafe.NON_FLAT_LAYOUT) {
                                 UNSAFE.putReference(obj, key, val);
+                            } else {
+                                UNSAFE.putFlatValue(obj, key, layouts[i], types[i - numPrimFields], val);
                             }
                         }
                     }

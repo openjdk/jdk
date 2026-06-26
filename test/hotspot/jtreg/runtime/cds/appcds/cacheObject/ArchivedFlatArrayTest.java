@@ -34,6 +34,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar archived_flat_array.jar ArchivedFlatArrayApp
  *                                                                                  ArchivedFlatArrayApp$ArchivedData
  *                                                                                  ArchivedFlatArrayApp$CharPair
+ *                                                                                  ArchivedFlatArrayApp$Wrapper
  *                                                                                  ArchivedArrayLayoutsApp
  *                                                                                  ArchivedArrayLayoutsApp$Point
  *                                                                                  ArchivedArrayLayoutsApp$ArchivedData
