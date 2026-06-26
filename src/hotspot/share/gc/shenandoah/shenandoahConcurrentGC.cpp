@@ -316,7 +316,6 @@ void ShenandoahConcurrentGC::vmop_entry_init_mark() {
   heap->try_inject_alloc_failure();
   VM_ShenandoahInitMark op(this);
   VMThread::execute(&op); // jump to entry_init_mark() under safepoint
-  heap->try_inject_pin();
 }
 
 void ShenandoahConcurrentGC::vmop_entry_final_mark() {
