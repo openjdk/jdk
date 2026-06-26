@@ -49,6 +49,7 @@ public class RemoteAgentHandshakeTest {
                           .executionEngine(new JdiExecutionControlProvider(),
                                            Map.of(JdiExecutionControlProvider.PARAM_REMOTE_AGENT,
                                                   OldHandShake.class.getName()))
+                          .remoteVMOptions("-classpath", System.getProperty("test.classes"))
                           .build()) {
                 jshell.eval("1");
             }
@@ -62,6 +63,7 @@ public class RemoteAgentHandshakeTest {
                       .executionEngine(new JdiExecutionControlProvider(),
                                        Map.of(JdiExecutionControlProvider.PARAM_REMOTE_AGENT,
                                               NewHandShake.class.getName()))
+                      .remoteVMOptions("-classpath", System.getProperty("test.classes"))
                       .build()) {
             jshell.eval("1");
         }

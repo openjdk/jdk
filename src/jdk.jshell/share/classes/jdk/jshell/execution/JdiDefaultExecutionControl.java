@@ -192,6 +192,8 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
                 throw new IOException("Incorrect secret received.");
             }
 
+            socket.setSoTimeout(0);
+
             Map<String, OutputStream> outputs = new HashMap<>();
             outputs.put("out", env.userOut());
             outputs.put("err", env.userErr());
