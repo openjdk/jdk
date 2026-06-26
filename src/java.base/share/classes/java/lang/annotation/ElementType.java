@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 package java.lang.annotation;
 
 /**
- * A syntactic location where an annotation may appear in Java code. An
- * annotation interface may optionally restrict its usage to a
+ * A syntactic location where an annotation may appear in Java code.
+ * An annotation interface may optionally restrict its usage to a
  * particular subset of these locations using the {@link
  * java.lang.annotation.Target @Target} meta-annotation.
  *
@@ -42,21 +42,21 @@ package java.lang.annotation;
  * <h2 id="kinds-of-annotations">Declaration annotations and type-use
  * annotations</h2>
  *
- * <p>Most annotations in Java code are <b>declaration annotations</b>,
- * which act like modifiers of declarations (such as a field or method
- * declaration). The constants of this class cover all the kinds of
- * annotatable declarations, plus a subcategory of {@link #TYPE} called
- * {@link #ANNOTATION_TYPE}. An annotation interface can be used as a
- * declaration annotation if it either omits {@link
- * java.lang.annotation.Target @Target}, or uses it to list which
- * specific kinds of declarations it should apply to.
+ * <p>Most annotations in Java code are <b>declaration
+ * annotations</b>, which act like modifiers of declarations (such as
+ * a field or method declaration). The constants of this class cover
+ * all the kinds of annotatable declarations, plus a subcategory of
+ * {@link #TYPE} called {@link #ANNOTATION_TYPE}. An annotation
+ * interface can be used as a declaration annotation if it either
+ * omits {@link java.lang.annotation.Target @Target}, or uses it to
+ * list which specific kinds of declarations it should apply to.
  *
- * <p>There are also <b>type-use annotations</b> (sometimes called "type
- * annotations"), which can appear anywhere a Java type is being
- * indicated (normally, immediately preceding that type). To be used as
- * a type-use annotation, an annotation interface must use {@link
- * java.lang.annotation.Target @Target} and include {@link #TYPE_USE}
- * explicitly.
+ * <p>There are also <b>type-use annotations</b> (sometimes called
+ * "type annotations"), which can appear anywhere a Java type is being
+ * indicated (normally, immediately preceding that type). To be used
+ * as a type-use annotation, an annotation interface must explicitly
+ * include {@link #TYPE_USE} in {@link java.lang.annotation.Target
+ * @Target}.
  *
  * <h3 id="ambiguous">Ambiguous contexts</h3>
  *
@@ -65,8 +65,9 @@ package java.lang.annotation;
  * modifiers:
  *
  * <ul>
- * <li>a field, parameter, local variable, or record component
- *     (treated as if it precedes that variable's type)
+ * <li>a field, parameter, record component, or local variable, if the
+ *     type is being explicitly specified (treated as if it precedes
+ *     that variable's type)
  * <li>a non-void method (treated as if it precedes the method's
  *     return type)
  * <li>a constructor (treated as if it modifies the constructed type,
@@ -75,8 +76,8 @@ package java.lang.annotation;
  *
  * <p>In general, a library method for reading declaration annotations
  * (such as {@link java.lang.reflect.AccessibleObject#getAnnotations
- * Field.getAnnotations()}) will not return type-use annotations found in
- * the same location, and vice-versa.
+ * Field.getAnnotations()}) will not return type-use annotations found
+ * in the same location, and vice-versa.
  *
  * <p>An annotation interface may specify both {@link #TYPE_USE} and
  * declaration targets, and thereby be fully usable as either kind.
@@ -84,10 +85,11 @@ package java.lang.annotation;
  * contexts just listed, it functions as <em>both</em> a declaration
  * annotation and a type-use annotation at the same time. The results
  * may be counterintuitive in two cases: when the variable type or
- * method return type is an inner type or an array type. In these cases,
- * the declaration annotation applies to the "entire" declaration, yet
- * the type-use annotation applies more narrowly to the <em>outer
- * type</em> or to the <em>component type</em> of the array.
+ * method return type is an inner type or an array type. In these
+ * cases, the declaration annotation applies to the "entire"
+ * declaration, yet the type-use annotation applies more narrowly to
+ * the <em>outer type</em> or to the <em>element type</em> of the
+ * array.
  *
  * @author Joshua Bloch
  * @since 1.5
@@ -99,10 +101,11 @@ public enum ElementType {
      * The declaration of a named class or interface. Classes without
      * names (such as an anonymous class) cannot be annotated.
      *
-     * <p><b>Terminology note:</b> an annotation on a class or interface
-     * declaration is not a case of a "type annotation", despite how this
-     * constant is named. That phrase is an abbreviation of "type-use
-     * annotation", which is supported by the {@link #TYPE_USE} target.
+     * <p><b>Terminology note:</b> an annotation on a class or
+     * interface declaration is not a case of a "type annotation",
+     * despite how this constant is named. That phrase is an
+     * abbreviation of "type-use annotation", which is supported by
+     * the {@link #TYPE_USE} target.
      *
      * @jls 8.1 Class Declarations
      * @jls 8.9 Enum Classes
@@ -130,10 +133,10 @@ public enum ElementType {
      * The declaration of a method (including of an element of an
      * annotation interface).
      *
-     * <p>Any annotation valid for a method declaration may also appear
-     * on the declaration of a record component, and is automatically
-     * copied to the accessor method of the same name if one is
-     * generated during compilation.
+     * <p>Any annotation valid for a method declaration may also
+     * appear on the declaration of a record component, and is
+     * automatically copied to the accessor method of the same name if
+     * one is generated during compilation.
      *
      * @jls 8.4 Method Declarations (of classes)
      * @jls 9.4 Method Declarations (of interfaces)
@@ -148,14 +151,14 @@ public enum ElementType {
      *
      * <p>Any annotation valid for a parameter declaration may also
      * appear on the declaration of a record component. Unless the
-     * canonical constructor's full signature was provided explicitly in
-     * the source code, this annotation is automatically copied to the
-     * corresponding parameter declaration of the constructor generated
-     * during compilation.
+     * canonical constructor's full signature was provided explicitly
+     * in the source code, this annotation is automatically copied to
+     * the corresponding parameter declaration of the constructor
+     * generated during compilation.
      *
      * <p>A lambda parameter declared using a <em>concise parameter
-     * specifier</em> cannot be annotated; either a type or the {@code var}
-     * keyword must be provided.
+     * specifier</em> cannot be annotated; either a type or the {@code
+     * var} keyword must be provided.
      *
      * @jls 8.4.1 Formal Parameters
      * @jls 15.27.1 Lambda Parameters
@@ -172,10 +175,11 @@ public enum ElementType {
 
     /**
      * The declaration of a local variable. This may be an ordinary
-     * declaration statement, or declared within the header of a {@code
-     * for} or {@code try} statement, or within a pattern as a pattern
-     * variable. Note that an exception variable declared in a {@code
-     * catch} clause is considered a {@link #PARAMETER} instead.
+     * declaration statement, or declared within the header of a
+     * {@code for} or {@code try} statement, or within a pattern as a
+     * pattern variable. Note that an exception variable declared in a
+     * {@code catch} clause is considered a {@link #PARAMETER}
+     * instead.
      *
      * @jls 14.4 Local Variable Declarations
      * @jls 14.20.3 Try-with-resources
@@ -192,16 +196,17 @@ public enum ElementType {
     ANNOTATION_TYPE,
 
     /**
-     * The declaration of a package in a {@code package-info.java} file.
-     * Package declarations in other source files cannot be annotated.
+     * A package declaration. For each package, at most one package
+     * declaration may be annotated; by convention it should be in a
+     * file named {@code package-info.java}.
      *
      * @jls 7.4.1 Named Packages
      */
     PACKAGE,
 
     /**
-     * The declaration of a type parameter within a generic class, interface,
-     * method, or constructor declaration.
+     * The declaration of a type parameter within a generic class,
+     * interface, method, or constructor declaration.
      *
      * @since 1.8
      * @jls 4.4 Type Variables
@@ -213,18 +218,20 @@ public enum ElementType {
      * An annotation in such a location is called a "type-use
      * annotation" (sometimes called just "type annotation", but be
      * careful not to confuse this with {@link #TYPE}, which is only
-     * for <em>class</em> declarations).
+     * for <em>class</em> declarations). Runtime-retained type-use
+     * annotations are accessed via reflection methods that return
+     * {@link java.lang.reflect.AnnotatedType}.
      *
      * <p>This is a very broad category: JLS {@jls 4.11} lists
      * seventeen kinds of type contexts, followed by five more
      * locations where type-use annotations can also legally appear.
      * Several of these locations are also annotatable
-     * <em>declarations</em> themselves; see <a
-     * href="#ambiguous">ambiguous cases</a> above.
+     * <em>declarations</em> themselves; see
+     * <a href="#ambiguous">ambiguous cases</a> above.
      *
-     * <p>Specifying this target automatically includes the declaration
-     * targets {@link #TYPE} and {@link #TYPE_PARAMETER}, even though
-     * these are not type contexts.
+     * <p>Specifying this target automatically includes the
+     * declaration targets {@link #TYPE} and {@link #TYPE_PARAMETER},
+     * even though these are not type contexts.
      *
      * @since 1.8
      * @jls 4.11 Where Types Are Used
@@ -233,6 +240,9 @@ public enum ElementType {
 
     /**
      * The declaration of a module in a {@code module-info.java} file.
+     * Note that if a client uses the module on their <i>class
+     * path</i> rather than module path, the module declaration and
+     * all its annotations will be invisible.
      *
      * @since 9
      * @jls 7.7 Module Declarations
@@ -240,20 +250,23 @@ public enum ElementType {
     MODULE,
 
     /**
-     * The declaration of a record component, in the header of a record
-     * class declaration. If an annotation interface should apply
-     * conceptually to the field, accessor method, or constructor
-     * parameter that is generated corresponding to a record component,
-     * it should specify the appropriate element types ({@link #FIELD},
-     * {@link #METHOD}, or {@link #PARAMETER}), instead of {@code
+     * The declaration of a record component, in the header of a
+     * record class declaration.
+     *
+     * <p>If an annotation interface should apply conceptually to the
+     * field, accessor method, or constructor parameter that is
+     * generated corresponding to a record component, it should
+     * specify the appropriate element types ({@link #FIELD}, {@link
+     * #METHOD}, or {@link #PARAMETER}), instead of {@code
      * RECORD_COMPONENT} or in addition to it. This allows the
      * annotation to be automatically copied to any generated elements
      * it applies to.
      *
-     * <p>{@link #RECORD_COMPONENT} must be included explicitly in
-     * {@code @Target} in order for annotations of that type to be
-     * available via the {@link java.lang.reflect.RecordComponent
-     * RecordComponent} reflection API.
+     * <p>Runtime-retained annotations are only available through the
+     * {@link java.lang.reflect.RecordComponent RecordComponent} API
+     * if they are explicitly record-component annotations (meaning
+     * they either name this element type explicitly in {@link Target
+     * @Target} or they have no {@code @Target} annotation).
      *
      * @since 16
      * @jls 8.10.1 Record Components
