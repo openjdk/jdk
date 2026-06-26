@@ -1043,7 +1043,12 @@ abstract public class ToStream extends SerializerBase {
 
                 if (null != outputStringForChar)
                 {
-                    writer.write(outputStringForChar);
+                    if (m_encodingInfo != null && m_encodingInfo.isInEncoding(ch)) {
+                        writer.write(ch);  // Write UTF-8 character directly
+                    }
+                    else {
+                        writer.write(outputStringForChar); 
+                    }
                 }
                 else
                     return i;
