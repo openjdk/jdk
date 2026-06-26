@@ -61,8 +61,7 @@ public:
 
 // Base class for all the classes that represent heap region sets. It
 // contains the basic attributes that each set needs to maintain
-// (e.g., length, region num, used bytes sum) plus any shared
-// functionality (e.g., verification).
+// (e.g., number of regions) plus any shared functionality (e.g., verification).
 
 class G1HeapRegionSetBase {
   friend class VMStructs;
