@@ -2036,6 +2036,12 @@ void G1ConcurrentMark::print_stats() {
   }
 }
 
+bool G1ConcurrentMark::shutdown_cleanup_needed() const {
+  // Cleanup (aborting threads, setting abort flags) is needed throughout the whole cycle before
+  // stopping the CM thread.
+  return is_fully_initialized() && is_in_concurrent_cycle();
+}
+
 void G1ConcurrentMark::shutdown_concurrent_cycle() {
   assert_at_safepoint_on_vm_thread();
 

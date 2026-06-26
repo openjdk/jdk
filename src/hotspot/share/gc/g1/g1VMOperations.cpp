@@ -156,9 +156,7 @@ bool VM_G1PauseConcurrent::doit_prologue() {
   Heap_lock->lock();
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   _is_shutting_down = g1h->is_shutting_down();
-  // If we are shutting down and concurrent mark is cleaned up, ignore this VM operation.
-  // Otherwise help with concurrent marking cleanup in the pause.
-  if (_is_shutting_down && !G1BarrierSet::satb_mark_queue_set().is_active()) {
+  if (_is_shutting_down && !g1h->concurrent_mark()->shutdown_cleanup_needed()) {
     Heap_lock->unlock();
     return false;
   }
@@ -183,13 +181,14 @@ void VM_G1PauseCleanup::work() {
 }
 
 bool VM_G1StopMarking::doit_prologue() {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
 #ifdef ASSERT
   {
     MutexLocker ml(Heap_lock);
-    assert(G1CollectedHeap::heap()->is_shutting_down(), "must be");
+    assert(g1h->is_shutting_down(), "must be");
   }
 #endif
-  return G1BarrierSet::satb_mark_queue_set().is_active();
+  return g1h->concurrent_mark()->shutdown_cleanup_needed();
 }
 
 void VM_G1StopMarking::doit() {
