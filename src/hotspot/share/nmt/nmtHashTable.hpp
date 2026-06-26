@@ -104,7 +104,8 @@ private:
       _occupied_map.reinitialize(_length);
     }
   }
-
+  // We can't discern whether keys and values should be pointers, references or passed by-value.
+  // So we use decltype(auto) to automatically follow the implementation for us.
   KVElement& insert_into(KVElement* members,
                          int length,
                          OccupancyBitMap& occupied_map,
