@@ -260,8 +260,8 @@ void G1FreeRegionList::remove_starting_at(G1HeapRegion* first, uint num_regions_
   G1HeapRegion* next = first->next();
 
   G1HeapRegion* curr = first;
-  uint removed = 0;
-  while (removed < num_regions_to_remove) {
+  uint num_regions_removed = 0;
+  while (num_regions_removed < num_regions_to_remove) {
     verify_region(curr);
     next = curr->next();
     verify_region_to_remove(curr, next);
@@ -274,7 +274,7 @@ void G1FreeRegionList::remove_starting_at(G1HeapRegion* first, uint num_regions_
     curr->set_prev(nullptr);
     remove(curr);
 
-    removed++;
+    num_regions_removed++;
 
     decrease_length(curr->node_index());
 
@@ -292,9 +292,9 @@ void G1FreeRegionList::remove_starting_at(G1HeapRegion* first, uint num_regions_
     next->set_prev(prev);
   }
 
-  assert(removed == num_regions_to_remove,
+  assert(num_regions_removed == num_regions_to_remove,
          "[%s] count: %u should be == num_regions: %u",
-         name(), removed, num_regions_to_remove);
+         name(), num_regions_removed, num_regions_to_remove);
   assert(num_regions() + num_regions_to_remove == old_length,
          "[%s] new length should be consistent "
          "new length: %u old length: %u num_regions: %u",
