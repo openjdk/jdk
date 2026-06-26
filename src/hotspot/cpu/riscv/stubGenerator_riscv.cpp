@@ -7414,9 +7414,10 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     if (UseGHASHIntrinsics) {
       StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
-      if (UseAESCTRIntrinsics) {
-        StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
-      }
+    }
+
+    if (UseAESCTRIntrinsics && UseGHASHIntrinsics) {
+      StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
     }
 
     if (UsePoly1305Intrinsics) {
