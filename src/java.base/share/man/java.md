@@ -483,7 +483,7 @@ the JVM.
         without any warnings.
 
     -   `warn`: This mode is identical to `allow` except that a warning message is
-        issued for the first illegal final field mutation performaed in a module.
+        issued for the first illegal final field mutation performed in a module.
         This mode is the default for the current JDK but will change in a future
         release.
 

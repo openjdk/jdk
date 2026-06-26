@@ -1416,6 +1416,13 @@ Node* VectorNode::push_through_replicate(PhaseGVN* phase) {
 
   sop = phase->transform(sop);
 
+  // For subword types, the scalar operation computes at int width and may
+  // produce values outside the subword range. Narrow the result unconditionally
+  // before feeding it to Replicate.
+  if (is_subword_type(bt)) {
+    sop = Compile::narrow_value(bt, sop, Type::get_const_basic_type(bt), phase, true);
+  }
+
   return new ReplicateNode(sop, vect_type());
 }
 

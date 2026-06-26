@@ -29,6 +29,7 @@
  * @run main/othervm -XX:TieredStopAtLevel=1
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
  *                   ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 package compiler.c1;

@@ -789,6 +789,11 @@
           "high tier compiler")                                             \
           range(0, max_jint)                                                \
                                                                             \
+  product(bool, InlineColdMethods, false, DIAGNOSTIC,                       \
+          "Inline cold methods that would otherwise be rejected due to "    \
+          "cold profile counters. Useful for compiler testing to expose "   \
+          "more code to compilers.")                                        \
+                                                                            \
   product(bool, IncrementalInline, true,                                    \
           "do post parse inlining")                                         \
                                                                             \
