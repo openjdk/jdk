@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,5 +114,12 @@ public:
 };
 
 void G1SATBMarkQueueSet::filter(SATBMarkQueue& queue) {
-  apply_filter(G1SATBMarkQueueFilterFn(), queue);
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  if (g1h->collector_state()->is_in_marking()) {
+    apply_filter(G1SATBMarkQueueFilterFn(), queue);
+  } else {
+    // is_in_marking() covers both the concurrent marking and the Remark pause. Outside
+    // of that, there can be no entry that requires SATB marking.
+    queue.set_empty();
+  }
 }

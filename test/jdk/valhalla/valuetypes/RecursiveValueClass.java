@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,25 +24,9 @@
 /*
  * @test
  * @enablePreview
- * @run junit/othervm -Xint -Djdk.value.recursion.threshold=100000 RecursiveValueClass
+ * @run junit RecursiveValueClass
  */
 
-/*
- * @ignore 8296056
- * @enablePreview
- * @test
- * @run junit/othervm -XX:TieredStopAtLevel=1 -Djdk.value.recursion.threshold=100000 RecursiveValueClass
- */
-
-/*
- * @ignore 8296056
- * @enablePreview
- * @test
- * @run junit/othervm -Xcomp -Djdk.value.recursion.threshold=100000 RecursiveValueClass
- */
-
-import jdk.internal.value.ValueClass;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.Arguments;

@@ -43,9 +43,8 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch
+ * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch
  *                   -XX:CompileCommand=inline,TestValueConstruction::checkDeopt
- *                   -XX:CompileCommand=MemLimit,*.*,2G~crash
  *                   compiler.valhalla.inlinetypes.TestValueConstruction
  */
 
@@ -56,9 +55,8 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+DeoptimizeALot
+ * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+DeoptimizeALot
  *                   -XX:CompileCommand=inline,TestValueConstruction::checkDeopt
- *                   -XX:CompileCommand=MemLimit,*.*,2G~crash
  *                   compiler.valhalla.inlinetypes.TestValueConstruction
  */
 
@@ -69,7 +67,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=compileonly,*TestValueConstruction::test* -Xbatch
  *                   -XX:CompileCommand=inline,TestValueConstruction::checkDeopt
  *                   compiler.valhalla.inlinetypes.TestValueConstruction
@@ -83,7 +81,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch
+ * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch
  *                   -XX:CompileCommand=dontinline,compiler*::helper*
  *                   -XX:CompileCommand=inline,TestValueConstruction::checkDeopt
  *                   compiler.valhalla.inlinetypes.TestValueConstruction
@@ -96,7 +94,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=dontinline,*MyValue*::<init> -Xbatch
  *                   -XX:CompileCommand=inline,TestValueConstruction::checkDeopt
  *                   compiler.valhalla.inlinetypes.TestValueConstruction
@@ -109,7 +107,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=dontinline,*Object::<init> -Xbatch
  *                   -XX:CompileCommand=inline,TestValueConstruction::checkDeopt
  *                   compiler.valhalla.inlinetypes.TestValueConstruction
@@ -122,7 +120,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:+DeoptimizeALot -XX:CompileCommand=dontinline,*Object::<init> -Xbatch
  *                   -XX:CompileCommand=inline,TestValueConstruction::checkDeopt
  *                   compiler.valhalla.inlinetypes.TestValueConstruction
@@ -135,10 +133,9 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=dontinline,*MyAbstract::<init> -Xbatch
  *                   -XX:CompileCommand=inline,TestValueConstruction::checkDeopt
- *                   -XX:CompileCommand=MemLimit,*.*,2G~crash
  *                   compiler.valhalla.inlinetypes.TestValueConstruction
  */
 
@@ -149,10 +146,9 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch
+ * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch
  *                   -XX:-TieredCompilation -XX:+StressIncrementalInlining
  *                   -XX:CompileCommand=inline,TestValueConstruction::checkDeopt
- *                   -XX:CompileCommand=MemLimit,*.*,2G~crash
  *                   compiler.valhalla.inlinetypes.TestValueConstruction
  */
 
@@ -163,7 +159,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-TieredCompilation -XX:+StressIncrementalInlining
  *                   -XX:CompileCommand=inline,TestValueConstruction::checkDeopt
  *                   -XX:CompileCommand=compileonly,*TestValueConstruction::test* -Xbatch
@@ -176,7 +172,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-TieredCompilation -XX:+StressIncrementalInlining
  *                   -XX:CompileCommand=inline,TestValueConstruction::checkDeopt
  *                   -XX:CompileCommand=dontinline,*MyValue*::<init> -Xbatch
@@ -190,7 +186,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-TieredCompilation -XX:+StressIncrementalInlining
  *                   -XX:CompileCommand=inline,TestValueConstruction::checkDeopt
  *                   -XX:CompileCommand=dontinline,*Object::<init> -Xbatch
@@ -204,11 +200,10 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-TieredCompilation -XX:+StressIncrementalInlining
  *                   -XX:CompileCommand=inline,TestValueConstruction::checkDeopt
  *                   -XX:CompileCommand=dontinline,*MyAbstract::<init> -Xbatch
- *                   -XX:CompileCommand=MemLimit,*.*,2G~crash
  *                   compiler.valhalla.inlinetypes.TestValueConstruction
  */
 
@@ -219,11 +214,10 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/timeout=300 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-TieredCompilation -XX:+StressIncrementalInlining
  *                   -XX:Tier0BackedgeNotifyFreqLog=0 -XX:Tier2BackedgeNotifyFreqLog=0 -XX:Tier3BackedgeNotifyFreqLog=0
  *                   -XX:Tier2BackEdgeThreshold=1 -XX:Tier3BackEdgeThreshold=1 -XX:Tier4BackEdgeThreshold=1 -Xbatch
- *                   -XX:CompileCommand=MemLimit,*.*,2G~crash
  *                   compiler.valhalla.inlinetypes.TestValueConstruction
  */
 

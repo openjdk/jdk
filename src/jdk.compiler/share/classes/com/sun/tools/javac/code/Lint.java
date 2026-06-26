@@ -267,11 +267,6 @@ public class Lint {
         MODULE("module", Property.ENABLED_BY_DEFAULT),
 
         /**
-         * Warn about issues related to migration of JDK classes.
-         */
-        MIGRATION("migration"),
-
-        /**
          * Warn about issues regarding module opens.
          */
         OPENS("opens", Property.ENABLED_BY_DEFAULT),

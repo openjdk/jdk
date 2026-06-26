@@ -146,27 +146,20 @@ public:
 };
 
 class G1CollectedHeap : public CollectedHeap {
+  friend class G1CheckRegionAttrTableClosure;
+  friend class G1EvacuateRegionsTask;
+  friend class G1FullCollector;
+  friend class G1GCAllocRegion;
+  friend class G1HeapPrinterMark;
+  friend class G1HeapRegionClaimer;
+  friend class G1HeapVerifier;
+  friend class G1PLABAllocator;
+  friend class G1YoungGCVerifierMark;
+  friend class MutatorAllocRegion;
   friend class VM_G1CollectForAllocation;
   friend class VM_G1CollectFull;
   friend class VM_G1TryInitiateConcMark;
   friend class VMStructs;
-  friend class MutatorAllocRegion;
-  friend class G1FullCollector;
-  friend class G1GCAllocRegion;
-  friend class G1HeapVerifier;
-
-  friend class G1YoungGCVerifierMark;
-
-  // Closures used in implementation.
-  friend class G1EvacuateRegionsTask;
-  friend class G1PLABAllocator;
-
-  // Other related classes.
-  friend class G1HeapPrinterMark;
-  friend class G1HeapRegionClaimer;
-
-  // Testing classes.
-  friend class G1CheckRegionAttrTableClosure;
 
 private:
   // GC Overhead Limit functionality related members.
@@ -320,11 +313,11 @@ private:
 
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or
   // concurrent cycles) we have started.
-  volatile uint _old_marking_cycles_started;
+  Atomic<uint> _old_marking_cycles_started;
 
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or
   // concurrent cycles) we have completed.
-  volatile uint _old_marking_cycles_completed;
+  Atomic<uint> _old_marking_cycles_completed;
 
   // Create a memory mapper for auxiliary data structures of the given size and
   // translation factor.
@@ -531,7 +524,7 @@ private:
   // Internal helpers used during full GC to split it up to
   // increase readability.
   bool abort_concurrent_cycle();
-  void verify_before_full_collection();
+  void verify_before_full_collection(bool concurrent_cycle_aborted);
   void prepare_heap_for_full_collection();
   void prepare_for_mutator_after_full_collection(size_t allocation_word_size);
   void abort_refinement();
@@ -703,11 +696,11 @@ public:
   void increment_old_marking_cycles_completed(bool concurrent, bool whole_heap_examined);
 
   uint old_marking_cycles_started() const {
-    return _old_marking_cycles_started;
+    return _old_marking_cycles_started.load_relaxed();
   }
 
   uint old_marking_cycles_completed() const {
-    return _old_marking_cycles_completed;
+    return _old_marking_cycles_completed.load_relaxed();
   }
 
   // Allocates a new heap region instance.

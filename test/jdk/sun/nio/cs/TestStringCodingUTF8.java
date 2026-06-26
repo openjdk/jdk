@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,26 @@
  * questions.
  */
 
-/* @test
-   @bug 7040220 8054307
-   @summary Test if StringCoding and NIO result have the same de/encoding result for UTF-8
- * @run main/othervm/timeout=2000 TestStringCodingUTF8
+/*
+ * @test
+ * @bug 7040220 8054307
+ * @summary Test if StringCoding and NIO result have the same de/encoding result for UTF-8
  * @key randomness
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @run main/othervm/timeout=2000 TestStringCodingUTF8
  */
 
 import java.util.*;
 import java.nio.*;
 import java.nio.charset.*;
 
+import jdk.test.lib.RandomFactory;
+
 public class TestStringCodingUTF8 {
+
+    private static final Random rnd = RandomFactory.getRandom();
+
     public static void main(String[] args) throws Throwable {
         test("UTF-8");
         test("CESU-8");
@@ -62,7 +70,7 @@ public class TestStringCodingUTF8 {
         for (int i = 0; i < 0x20000; i++) {
             list.add(i, i);
         }
-        Collections.shuffle(list);
+        Collections.shuffle(list, rnd);
         int j = 0;
         char[] bmpsupp = new char[0x30000];
         for (int i = 0; i < 0x20000; i++) {
@@ -72,7 +80,6 @@ public class TestStringCodingUTF8 {
         test(cs, bmpsupp, 0, bmpsupp.length);
 
         // randomed "off" and "len" on shuffled data
-        Random rnd = new Random();
         int maxlen = 1000;
         int itr = 5000;
         for (int i = 0; i < itr; i++) {
@@ -88,11 +95,13 @@ public class TestStringCodingUTF8 {
             //new String(csn);
             if (!new String(ba, cs.name()).equals(
                  new String(decode(cs, ba, 0, ba.length))))
-                throw new RuntimeException("new String(csn) failed");
+                throw new RuntimeException("new String(csn) failed for charset " + cs
+                        + " for byte array of length " + ba.length);
             //new String(cs);
             if (!new String(ba, cs).equals(
                  new String(decode(cs, ba, 0, ba.length))))
-                throw new RuntimeException("new String(cs) failed");
+                throw new RuntimeException("new String(cs) failed for charset " + cs
+                        + " for byte array of length " + ba.length);
         }
         System.out.println("done!");
     }
@@ -103,21 +112,23 @@ public class TestStringCodingUTF8 {
 
         //getBytes(csn);
         byte[] baStr = str.getBytes(cs.name());
-        if (!Arrays.equals(ba, baStr))
-            throw new RuntimeException("getBytes(csn) failed");
+        failIfMismatch(ba, baStr, "getBytes(csn) failed for charset " + cs
+                + ", character array length=" + ca.length + ", offset=" + off + ", len=" + len);
 
         //getBytes(cs);
         baStr = str.getBytes(cs);
-        if (!Arrays.equals(ba, baStr))
-            throw new RuntimeException("getBytes(cs) failed");
+        failIfMismatch(ba, baStr, "getBytes(cs) failed for charset " + cs
+                + ", character array length=" + ca.length + ", offset=" + off + ", len=" + len);
 
         //new String(csn);
         if (!new String(ba, cs.name()).equals(new String(decode(cs, ba, 0, ba.length))))
-            throw new RuntimeException("new String(csn) failed");
+            throw new RuntimeException("new String(csn) failed for charset " + cs
+                    + ", character array length=" + ca.length + ", offset=" + off + ", len=" + len);
 
         //new String(cs);
         if (!new String(ba, cs).equals(new String(decode(cs, ba, 0, ba.length))))
-            throw new RuntimeException("new String(cs) failed");
+            throw new RuntimeException("new String(cs) failed for charset " + cs
+                    + ", character array length=" + ca.length + ", offset=" + off + ", len=" + len);
     }
 
     // copy/paste of the StringCoding.decode()
@@ -169,5 +180,46 @@ public class TestStringCodingUTF8 {
             throw new Error(x);
         }
         return Arrays.copyOf(ba, bb.position());
+    }
+
+    private static void failIfMismatch(final byte[] expected, final byte[] actual,
+                                       final String failureMsg) {
+        final int firstMismatchIndex = Arrays.mismatch(expected, actual);
+        if (firstMismatchIndex == -1) {
+            // no mismatch
+            return;
+        }
+        System.err.println("Arrays mismatch starts at index: " + firstMismatchIndex);
+        System.err.println("Printing few indexes before and after the mismatch:");
+        int printStartIdx = firstMismatchIndex - 20;
+        if (printStartIdx < 0) {
+            printStartIdx = 0;
+        }
+        for (int i = printStartIdx; i < firstMismatchIndex + 20; i++) {
+            if (i >= expected.length && i >= actual.length) {
+                // no more elements in either arrays, we are done
+                break;
+            }
+            final StringBuilder sb = new StringBuilder();
+            sb.append("Index=").append(i).append(", expected=");
+            if (i >= expected.length) {
+                // "expected" array isn't that big
+                sb.append("<no element>");
+            } else {
+                sb.append(expected[i]);
+            }
+            sb.append(", actual=");
+            if (i >= actual.length) {
+                // "actual" array isn't that big
+                sb.append("<no element>");
+            } else {
+                sb.append(actual[i]);
+            }
+            if (i == firstMismatchIndex) {
+                sb.append(" <--- first mismatch");
+            }
+            System.err.println(sb.toString());
+        }
+        throw new RuntimeException(failureMsg);
     }
 }

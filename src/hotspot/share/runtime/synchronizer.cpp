@@ -319,16 +319,22 @@ static bool _no_progress_skip_increment = false;
 // find out this inline type object cannot be locked.
 #define CHECK_THROW_NOSYNC_IMSE(obj)  \
   if ((obj)->mark().is_inline_type()) {  \
-    JavaThread* THREAD = current;           \
-    ResourceMark rm(THREAD);                \
-    THROW_MSG(vmSymbols::java_lang_IllegalMonitorStateException(), obj->klass()->external_name()); \
+    /*
+     * A value object can never be synchronized upon. The error message we use
+     * here is (accurate and) consistent with the one we use for identity objects
+     * when the current thread isn't the owner of the monitor.
+     */ \
+    THROW_MSG(vmSymbols::java_lang_IllegalMonitorStateException(), "current thread is not owner"); \
   }
 
 #define CHECK_THROW_NOSYNC_IMSE_0(obj)  \
   if ((obj)->mark().is_inline_type()) {  \
-    JavaThread* THREAD = current;             \
-    ResourceMark rm(THREAD);                  \
-    THROW_MSG_0(vmSymbols::java_lang_IllegalMonitorStateException(), obj->klass()->external_name()); \
+    /*
+     * A value object can never be synchronized upon. The error message we use
+     * here is (accurate and) consistent with the one we use for identity objects
+     * when the current thread isn't the owner of the monitor.
+     */ \
+    THROW_MSG_0(vmSymbols::java_lang_IllegalMonitorStateException(), "current thread is not owner"); \
   }
 
 // =====================> Quick functions
