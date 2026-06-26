@@ -127,7 +127,7 @@ public class TestAVXRegisterDump {
                 Pattern.compile("XMM\\[.*\\]=.*"),
             };
             HsErrFileUtils.checkHsErrFileContent(hsErrFile, zmmPatterns, zmmNegativePatterns, false, false);
-            
+
             Pattern[] kPatterns = createRegisterPatterns("K", 8);
             HsErrFileUtils.checkHsErrFileContent(hsErrFile, kPatterns, null, false, false);
         } catch (RuntimeException e) {
