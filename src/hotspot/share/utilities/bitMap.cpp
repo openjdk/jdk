@@ -195,7 +195,7 @@ bm_word_t* CHeapBitMap::reallocate(bm_word_t* map, size_t old_size_in_words, siz
   return MallocArrayAllocator<bm_word_t>::reallocate(map, new_size_in_words, _mem_tag);
 }
 
-void CHeapBitMap::swap(CHeapBitMap &other) {
+void CHeapBitMap::move(CHeapBitMap &other) {
   free(map(), size_in_words());
   update(other.map(), other.size());
   other.update(nullptr, 0);

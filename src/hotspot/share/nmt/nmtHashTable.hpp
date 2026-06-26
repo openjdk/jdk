@@ -186,7 +186,7 @@ private:
     _members = new_members;
     _length = new_length;
     _occupied = new_occupied;
-    _occupied_map.swap(new_occupied_map);
+    _occupied_map.move(new_occupied_map);
 
     if (old_members_on_c_heap) {
       FREE_C_HEAP_ARRAY(old_members);
