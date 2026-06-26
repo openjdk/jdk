@@ -2768,8 +2768,9 @@ bool ShenandoahHeap::should_inject_alloc_failure() {
 }
 
 void ShenandoahHeap::try_inject_pin() {
+  assert(!ShenandoahSafepoint::is_at_shenandoah_safepoint(), "try_inject_pin() must be called outside a safepoint.");
   if (ShenandoahPinRegionRate && !cancelled_gc() && ((uintx)(os::random() % 1000) < ShenandoahPinRegionRate) &&
-    _injected_pin_count < MAX_INJECTED_PINS) {
+      _injected_pin_count < MAX_INJECTED_PINS) {
     const size_t idx = os::random() % num_regions();
     ShenandoahHeapRegion* r = get_region(idx);
     if ((r->is_regular() || r->is_humongous_start()) && r->has_live()) {

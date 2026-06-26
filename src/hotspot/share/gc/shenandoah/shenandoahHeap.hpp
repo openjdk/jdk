@@ -866,6 +866,9 @@ private:
   void try_inject_alloc_failure();
   bool should_inject_alloc_failure();
 
+  // Randomly pin a region when ShenandoahPinRegionRate > 0. Pin injection is only called after
+  // the cycle has populated _live_data and runs concurrently on the control thread. Releasing
+  // injected pins is done at the start of every cycle preventing stale pinned region states.
   void try_inject_pin();
   void release_injected_pins();
 
