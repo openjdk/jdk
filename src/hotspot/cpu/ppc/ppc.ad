@@ -9203,6 +9203,19 @@ instruct andL_reg_immL(iRegLdst dst, iRegLsrc src1, immL src2, flagsRegCR0 cr0) 
   ins_pipe(pipe_class_default);
 %}
 
+// AndL + ConvL2I.
+instruct convL2I_andL_reg_immL(iRegIdst dst, iRegLsrc src1, immL src2, flagsRegCR0 cr0) %{
+  match(Set dst (ConvL2I (AndL src1 src2)));
+  predicate(Assembler::andi_supports(n->in(1)->in(2)->get_long()));
+  effect(KILL cr0);
+  format %{ "ANDI    $dst, $src1, $src2 \t// long + l2i" %}
+  size(4);
+  ins_encode %{
+    __ andi($dst$$Register, $src1$$Register, $src2$$constant); // optimized version
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // Or Instructions
 
 // Register Or
