@@ -134,12 +134,12 @@ final class StringUTF16 {
     static int codePointAt(byte[] value, int index, int end, boolean checked) {
         assert index < end;
         if (checked) {
-            index = checkIndex(index, value);
+            checkIndex(index, value);
         }
         char c1 = getChar(value, index);
         if (Character.isHighSurrogate(c1) && ++index < end) {
             if (checked) {
-                index = checkIndex(index, value);
+                checkIndex(index, value);
             }
             char c2 = getChar(value, index);
             if (Character.isLowSurrogate(c2)) {
@@ -156,13 +156,13 @@ final class StringUTF16 {
     private static int codePointBefore(byte[] value, int index, boolean checked) {
         --index;
         if (checked) {
-            index = checkIndex(index, value);
+            checkIndex(index, value);
         }
         char c2 = getChar(value, index);
         if (Character.isLowSurrogate(c2) && index > 0) {
             --index;
             if (checked) {
-                index = checkIndex(index, value);
+                checkIndex(index, value);
             }
             char c1 = getChar(value, index);
             if (Character.isHighSurrogate(c1)) {
@@ -1940,7 +1940,7 @@ final class StringUTF16 {
     }
 
     static char charAt(byte[] value, int index) {
-        index = checkIndex(index, value);
+        checkIndex(index, value);
         return getChar(value, index);
     }
 
@@ -2032,8 +2032,8 @@ final class StringUTF16 {
 
     private static final int MAX_LENGTH = Integer.MAX_VALUE >> 1;
 
-    private static int checkIndex(int off, byte[] val) {
-        return String.checkIndex(off, length(val));
+    private static void checkIndex(int off, byte[] val) {
+        String.checkIndex(off, length(val));
     }
 
     private static void checkOffset(int off, byte[] val) {

@@ -4405,7 +4405,7 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
     _memory->store_value(value);
   } else {
     Instruction* load = append(new LoadIndexed(array, index, nullptr, T_CHAR, state_before, true));
-    load->set_flag(Instruction::NeedsRangeCheckFlag, false);
+    load->set_flag(Instruction::NeedsRangeCheckFlag, true);
     push(load->type(), load);
   }
 }
