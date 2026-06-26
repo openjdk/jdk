@@ -1196,12 +1196,20 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   // Try to replace the runtime call to the substitutability test emitted by acmp if we can reason
   // about the operands
-  if (can_reshape && !control()->is_top() && !memory()->is_top() && method() != nullptr &&
-      method()->holder() == phase->C->env()->ValueObjectMethods_klass() &&
-      method()->name() == ciSymbols::isSubstitutable_name()) {
-    Node* res = replace_is_substitutable(phase->is_IterGVN());
-    if (res != nullptr) {
-      return res;
+  if (can_reshape && !control()->is_top() && !memory()->is_top() && method() != nullptr) {
+    if (method()->holder() == phase->C->env()->ValueObjectMethods_klass() &&
+        method()->name() == ciSymbols::isSubstitutable_name()) {
+      Node* res = replace_is_substitutable(phase->is_IterGVN());
+      if (res != nullptr) {
+        return res;
+      }
+    }
+    else if (method()->holder() == phase->C->env()->System_klass() &&
+        method()->name() == ciSymbols::identityHashCode_name()) {
+      Node* res = replace_identity_hash_code(phase->is_IterGVN());
+      if (res != nullptr) {
+        return res;
+      }
     }
   }
 
@@ -1395,6 +1403,41 @@ bool CallStaticJavaNode::remove_unknown_flat_array_load(PhaseIterGVN* igvn, Node
   igvn->add_input_to(igvn->C->root(), halt);
 
   return true;
+}
+
+Node* CallStaticJavaNode::replace_identity_hash_code(PhaseIterGVN* igvn) {
+  Node* arg = in(TypeFunc::Parms);
+  intptr_t klass_hash;
+  if (!InlineTypeNode::can_emit_identity_hash_code(*igvn, arg, klass_hash)) {
+    return nullptr;
+  }
+
+  // Delay IGVN during macro expansion
+  assert(!igvn->delay_transform(), "must not delay during Ideal");
+  igvn->set_delay_transform(true);
+  GraphKit kit(this, *igvn);
+
+  Node* replace = InlineTypeNode::emit_identity_hash_code(&kit, arg, klass_hash);
+  igvn->set_delay_transform(false);
+  assert(replace != nullptr, "must succeed");
+
+  // Kill exception projections and return a tuple that will replace the call
+  CallProjections* projs = extract_projections(false /*separate_io_proj*/);
+  if (projs->fallthrough_catchproj != nullptr) {
+    igvn->replace_node(projs->fallthrough_catchproj, kit.control());
+  }
+  if (projs->catchall_memproj != nullptr) {
+    igvn->replace_node(projs->catchall_memproj, igvn->C->top());
+  }
+  if (projs->catchall_ioproj != nullptr) {
+    igvn->replace_node(projs->catchall_ioproj, igvn->C->top());
+  }
+  if (projs->catchall_catchproj != nullptr) {
+    igvn->replace_node(projs->catchall_catchproj, igvn->C->top());
+  }
+  Node* new_mem = kit.reset_memory();
+  assert(in(TypeFunc::Memory) == new_mem, "must not modify memory");
+  return TupleNode::make(tf()->range_cc(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
 }
 
 // Try to replace a runtime call to the substitutability test by either a simple pointer comparison

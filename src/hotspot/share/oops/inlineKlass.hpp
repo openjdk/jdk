@@ -114,6 +114,13 @@ class InlineKlass: public InstanceKlass {
     int _fast_acmp_offset;    // if < 0, fast acmp doesn't apply
     int64_t _fast_acmp_mask;  // can be 0 for empty value classes
 
+    int _fast_hashcode_offset;   // if < 0, fast hashcode doesn't apply
+#ifdef VM_LITTLE_ENDIAN
+    int _fast_hashcode_shift;
+#else
+    int64_t _fast_hashcode_mask;
+#endif
+
     Members();
 
     void print_on(outputStream* st) const;
@@ -211,6 +218,17 @@ class InlineKlass: public InstanceKlass {
 
   int64_t fast_acmp_mask() const                              { return members()._fast_acmp_mask; }
   void set_fast_acmp_mask(int64_t mask)                       { members()._fast_acmp_mask = mask; }
+
+  int fast_hashcode_offset() const                                { return members()._fast_hashcode_offset; }
+  void set_fast_hashcode_offset(int offset)                       { members()._fast_hashcode_offset = offset; }
+
+#ifdef VM_LITTLE_ENDIAN
+  int fast_hashcode_shift() const                              { return members()._fast_hashcode_shift; }
+  void set_fast_hashcode_shift(int shift)                       { members()._fast_hashcode_shift = shift; }
+#else
+  int64_t fast_hashcode_mask() const                              { return members()._fast_hashcode_mask; }
+  void set_fast_hashcode_mask(int64_t mask)                       { members()._fast_hashcode_mask = mask; }
+#endif
 
   bool supports_nullable_layouts() const {
     return has_nullable_non_atomic_layout() || has_nullable_atomic_layout();
@@ -333,6 +351,19 @@ class InlineKlass: public InstanceKlass {
   static ByteSize fast_acmp_mask_offset() {
     return byte_offset_of(Members, _fast_acmp_mask);
   }
+
+  static ByteSize fast_hashcode_offset_offset() {
+    return byte_offset_of(Members, _fast_hashcode_offset);
+  }
+#ifdef VM_LITTLE_ENDIAN
+  static ByteSize fast_hashcode_shift_offset() {
+    return byte_offset_of(Members, _fast_hashcode_shift);
+  }
+#else
+  static ByteSize fast_hashcode_mask_offset() {
+    return byte_offset_of(Members, _fast_hashcode_mask);
+  }
+#endif
 
   oop null_reset_value() const;
   void set_null_reset_value(oop val);
