@@ -3242,6 +3242,7 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
   assert( !stopped(), "dead parse path should be checked in callers" );
   assert(!TypePtr::NULL_PTR->higher_equal(_gvn.type(superklass)->is_klassptr()),
          "must check for not-null not-dead klass in callers");
+
   // Make the merge point
   enum { _obj_path = 1, _fail_path, _null_path, PATH_LIMIT };
   RegionNode* region = new RegionNode(PATH_LIMIT);
@@ -3281,7 +3282,7 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
     const TypeKlassPtr* superk = _gvn.type(superklass)->is_klassptr();
     const TypeKlassPtr* subk = _gvn.type(obj)->is_oopptr()->as_klass_type();
     if (subk->is_loaded()) {
-      int static_res = C->static_subtype_check(superklass, subk);
+      int static_res = C->static_subtype_check(superk, subk);
       known_statically = (static_res == Compile::SSC_always_true || static_res == Compile::SSC_always_false);
     }
   }
