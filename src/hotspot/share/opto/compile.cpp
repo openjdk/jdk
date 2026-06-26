@@ -4463,66 +4463,7 @@ Compile::TracePhase::~TracePhase() {
   }
 }
 
-static bool filter_top_but_maybe_subtype_of(const TypeKlassPtr* subk,
-                                            const TypeKlassPtr* superk) {
-  const bool sub_is_array = subk->isa_aryklassptr() != nullptr;
-  const bool super_is_array = superk->isa_aryklassptr() != nullptr;
-
-  // Handle class-vs-class and array-vs-array only.
-  // Mixed array/class cases does not need to rescue.
-  if (sub_is_array != super_is_array) {
-    return false;
-  }
-
-  int sub_dims = 0;
-  int super_dims = 0;
-
-  const Type* sub_base_t = subk;
-  if (sub_is_array) {
-    sub_base_t = subk->is_aryklassptr()->base_element_type(sub_dims);
-  }
-
-  const Type* super_base_t = superk;
-  if (super_is_array) {
-    super_base_t = superk->is_aryklassptr()->base_element_type(super_dims);
-  }
-
-  const TypeInstKlassPtr* sub_base = sub_base_t->isa_instklassptr();
-  const TypeInstKlassPtr* super_base = super_base_t->isa_instklassptr();
-
-  // Primitive array base elements, or anything not represented as an instance
-  // klass, cannot be one of the interface-mismatch cases below.
-  if (sub_base == nullptr || super_base == nullptr) {
-    return false;
-  }
-
-  // For arrays, only same-dimensional arrays are treated as possible
-  // interface-mismatch cases.
-  if (sub_dims != super_dims) {
-    return false;
-  }
-
-  // We only want to rescue TOP results that may have been caused by
-  // incompatible interface constraints.
-  if (!sub_base->has_interface_constraints() &&
-      !super_base->has_interface_constraints()) {
-    return false;
-  }
-
-  ciInstanceKlass* sub_ik = sub_base->instance_klass();
-  ciInstanceKlass* super_ik = super_base->instance_klass();
-
-  // If the class parts are related, a common concrete subtype may still exist
-  // even though filter() returned TOP due to incompatible interface constraints.
-  return sub_ik->is_subtype_of(super_ik) ||
-         super_ik->is_subtype_of(sub_ik);
-}
-
-static const TypeKlassPtr* exact_if_leaf(const TypeKlassPtr* tk) {
-  if (tk->klass_is_exact()) {
-    return tk;
-  }
-
+static ciInstanceKlass* base_element_instance_klass(const TypeKlassPtr* tk) {
   const Type* elem_t = tk;
   if (elem_t->isa_aryklassptr()) {
     int ignored;
@@ -4530,16 +4471,36 @@ static const TypeKlassPtr* exact_if_leaf(const TypeKlassPtr* tk) {
   }
 
   if (elem_t->isa_instklassptr()) {
-    ciInstanceKlass* elem_ik = elem_t->is_instklassptr()->instance_klass();
-    if (!elem_ik->has_subklass()) {
-      if (!elem_ik->is_final()) {
-        Compile::current()->dependencies()->assert_leaf_type(elem_ik);
-      }
-      return tk->cast_to_exactness(true);
-    }
+    return elem_t->is_instklassptr()->instance_klass();
+  }
+
+  return nullptr;
+}
+
+static const TypeKlassPtr* exact_if_leaf(const TypeKlassPtr* tk) {
+  if (tk->klass_is_exact()) {
+    return tk;
+  }
+
+  ciInstanceKlass* ik = base_element_instance_klass(tk);
+  if (ik != nullptr && !ik->has_subklass()) {
+    return tk->cast_to_exactness(true);
   }
 
   return tk;
+}
+
+static bool has_no_subklass(const TypeKlassPtr* tk) {
+  ciInstanceKlass* ik = base_element_instance_klass(tk);
+  if (ik == nullptr || ik->has_subklass()) {
+    return false;
+  }
+
+  if (!ik->is_final()) {
+    Compile::current()->dependencies()->assert_leaf_type(ik);
+  }
+
+  return true;
 }
 
 //----------------------------static_subtype_check-----------------------------
@@ -4552,49 +4513,40 @@ Compile::SubTypeCheckResult Compile::static_subtype_check(const TypeKlassPtr* su
     return SSC_full_test;
   }
 
-  bool superk_is_exact = superk->klass_is_exact();
-  const TypeKlassPtr* subk_e = exact_if_leaf(subk);
-  const TypeKlassPtr* superk_e = exact_if_leaf(superk->cast_to_exactness(false));
+  const bool superk_is_exact = superk->klass_is_exact();
+  const bool subk_is_exact = subk->klass_is_exact();
+  const TypeKlassPtr* superk_ne = superk->cast_to_exactness(false);
 
-  bool subk_e_higher = subk_e->higher_equal(superk_e);
+  const bool subk_higher = subk->higher_equal(superk_ne);
 
-  if (subk_e_higher && (superk_is_exact || superk_e->klass_is_exact())) {
+  if (subk_higher &&
+      (superk_is_exact || has_no_subklass(superk))) {
     return SSC_always_true;
   }
 
-  if (!subk_e_higher && subk_e->klass_is_exact()) {
+  if (!subk_higher &&
+      (subk_is_exact || has_no_subklass(subk))) {
     return SSC_always_false;
   }
 
-  const Type* tboth = subk_e->filter(superk_e);
-  if (tboth == Type::TOP) {
-    if (superk_e->klass_is_exact()) {
-      return SSC_always_false;
-    }
-    // A TOP result from filter() does not always prove that the Java klass sets
-    // are disjoint when interface constraints are involved. The class parts may
-    // still overlap, so a concrete subtype can satisfy both types:
-    //   A&I1     vs B&I2      where A <: B or B <: A
-    //   (A&I1)[] vs (B&I2)[]  where A <: B or B <: A
-    //   I1[]     vs I2[]
-    //   I1[]     vs A[]
-    if (!filter_top_but_maybe_subtype_of(subk_e, superk_e)) {
-      return SSC_always_false;
-    }
+  const TypeKlassPtr* superk_e = exact_if_leaf(superk_ne);
+  const TypeKlassPtr* subk_e = exact_if_leaf(subk);
+
+  const Type* ft = subk_e->filter(superk_e);
+  if (ft == Type::TOP &&
+      (superk_e == superk_ne || has_no_subklass(superk)) &&
+      (subk_e == subk || has_no_subklass(subk))) {
+    return SSC_always_false;
   }
 
-  const Type* superelem = superk_e;
-  if (superk_e->isa_aryklassptr()) {
-    int ignored;
-    superelem = superk_e->is_aryklassptr()->base_element_type(ignored);
-  }
-
-  if (superelem->isa_instklassptr()) {
-    if (superk_e->klass_is_exact() && !superk_e->exact_klass()->is_interface()) {
+  ciInstanceKlass* ik = base_element_instance_klass(superk);
+  if (ik != nullptr) {
+    if (!ik->is_interface() &&
+        (ik->is_final() || has_no_subklass(superk))) {
       return SSC_easy_test;
     }
-  } else {
-    return SSC_easy_test;
+  } else if (superk->isa_aryklassptr()) {
+    return SSC_easy_test; // primitive array type has no subtypes
   }
 
   return SSC_full_test;

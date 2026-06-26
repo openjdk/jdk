@@ -3242,8 +3242,6 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
   assert( !stopped(), "dead parse path should be checked in callers" );
   assert(!TypePtr::NULL_PTR->higher_equal(_gvn.type(superklass)->is_klassptr()),
          "must check for not-null not-dead klass in callers");
-  const TypeKlassPtr* klass_ptr_type = _gvn.type(superklass)->is_klassptr();
-  const TypeKlassPtr* improved_klass_ptr_type = klass_ptr_type->try_improve();
   // Make the merge point
   enum { _obj_path = 1, _fail_path, _null_path, PATH_LIMIT };
   RegionNode* region = new RegionNode(PATH_LIMIT);
@@ -3279,10 +3277,11 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
 
   // Do we know the type check always succeed?
   bool known_statically = false;
-  if (improved_klass_ptr_type->singleton()) {
+  if (_gvn.type(superklass)->singleton()) {
+    const TypeKlassPtr* superk = _gvn.type(superklass)->is_klassptr();
     const TypeKlassPtr* subk = _gvn.type(obj)->is_oopptr()->as_klass_type();
     if (subk->is_loaded()) {
-      int static_res = C->static_subtype_check(improved_klass_ptr_type, subk);
+      int static_res = C->static_subtype_check(superklass, subk);
       known_statically = (static_res == Compile::SSC_always_true || static_res == Compile::SSC_always_false);
     }
   }
@@ -3305,11 +3304,7 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
   }
 
   // Generate the subtype check
-  Node* improved_superklass = superklass;
-  if (improved_klass_ptr_type != klass_ptr_type && improved_klass_ptr_type->singleton()) {
-    improved_superklass = makecon(improved_klass_ptr_type);
-  }
-  Node* not_subtype_ctrl = gen_subtype_check(not_null_obj, improved_superklass);
+  Node* not_subtype_ctrl = gen_subtype_check(not_null_obj, superklass);
 
   // Plug in the success path to the general merge in slot 1.
   region->init_req(_obj_path, control());
