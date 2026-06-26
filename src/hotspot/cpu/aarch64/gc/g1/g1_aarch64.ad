@@ -316,7 +316,7 @@ instruct g1CompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRe
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword,
-               memory_order_acq_rel, $res$$Register);
+               memory_order_seq_cst, $res$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
                        $newval$$Register /* new_val */,
@@ -377,7 +377,7 @@ instruct g1CompareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRe
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word,
-               memory_order_acq_rel, $res$$Register);
+               memory_order_seq_cst, $res$$Register);
     __ decode_heap_oop($tmp1$$Register, $newval$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
@@ -441,7 +441,7 @@ instruct g1CompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP newval, iRegPNo
                       $tmp2$$Register /* tmp2 */,
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, memory_order_acq_rel);
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, memory_order_seq_cst);
     __ cset($res$$Register, Assembler::EQ);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
@@ -506,7 +506,7 @@ instruct g1CompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN newval, iRegPNo
                       $tmp3$$Register /* tmp2 */,
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, memory_order_acq_rel);
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, memory_order_seq_cst);
     __ cset($res$$Register, Assembler::EQ);
     __ decode_heap_oop($tmp1$$Register, $newval$$Register);
     write_barrier_post(masm, this,

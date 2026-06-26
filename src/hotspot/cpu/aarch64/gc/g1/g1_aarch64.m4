@@ -151,7 +151,7 @@ instruct g1CompareAndExchangeP$1(iRegPNoSp res, indirect mem, iRegP oldval, iReg
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword,
-               ifelse($1,Acq,memory_order_acq_rel,memory_order_release), $res$$Register);
+               ifelse($1,Acq,memory_order_seq_cst,memory_order_release), $res$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
                        $newval$$Register /* new_val */,
@@ -185,7 +185,7 @@ instruct g1CompareAndExchangeN$1(iRegNNoSp res, indirect mem, iRegN oldval, iReg
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word,
-               ifelse($1,Acq,memory_order_acq_rel,memory_order_release), $res$$Register);
+               ifelse($1,Acq,memory_order_seq_cst,memory_order_release), $res$$Register);
     __ decode_heap_oop($tmp1$$Register, $newval$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
@@ -221,7 +221,7 @@ instruct g1CompareAndSwapP$1(iRegINoSp res, indirect mem, iRegP newval, iRegPNoS
                       $tmp2$$Register /* tmp2 */,
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, ifelse($1,Acq,memory_order_acq_rel,memory_order_release));
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, ifelse($1,Acq,memory_order_seq_cst,memory_order_release));
     __ cset($res$$Register, Assembler::EQ);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
@@ -257,7 +257,7 @@ instruct g1CompareAndSwapN$1(iRegINoSp res, indirect mem, iRegN newval, iRegPNoS
                       $tmp3$$Register /* tmp2 */,
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, ifelse($1,Acq,memory_order_acq_rel,memory_order_release));
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, ifelse($1,Acq,memory_order_seq_cst,memory_order_release));
     __ cset($res$$Register, Assembler::EQ);
     __ decode_heap_oop($tmp1$$Register, $newval$$Register);
     write_barrier_post(masm, this,

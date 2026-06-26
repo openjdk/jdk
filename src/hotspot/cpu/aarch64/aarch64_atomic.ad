@@ -132,7 +132,7 @@ instruct compareAndExchangeBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   %}
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::byte, memory_order_acq_rel, $res$$Register);
+               Assembler::byte, memory_order_seq_cst, $res$$Register);
     __ sxtbw($res$$Register, $res$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -148,7 +148,7 @@ instruct compareAndExchangeSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   %}
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::halfword, memory_order_acq_rel, $res$$Register);
+               Assembler::halfword, memory_order_seq_cst, $res$$Register);
     __ sxthw($res$$Register, $res$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -164,7 +164,7 @@ instruct compareAndExchangeIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   %}
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::word, memory_order_acq_rel, $res$$Register);
+               Assembler::word, memory_order_seq_cst, $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -179,7 +179,7 @@ instruct compareAndExchangeLAcq(iRegLNoSp res, indirect mem, iRegL oldval, iRegL
   %}
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::xword, memory_order_acq_rel, $res$$Register);
+               Assembler::xword, memory_order_seq_cst, $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -194,7 +194,7 @@ instruct compareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRegN
   %}
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::word, memory_order_acq_rel, $res$$Register);
+               Assembler::word, memory_order_seq_cst, $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -209,7 +209,7 @@ instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP
   %}
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::xword, memory_order_acq_rel, $res$$Register);
+               Assembler::xword, memory_order_seq_cst, $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -316,7 +316,7 @@ instruct compareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI new
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::byte, memory_order_acq_rel);
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::byte, memory_order_seq_cst);
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -332,7 +332,7 @@ instruct compareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI new
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::halfword, memory_order_acq_rel);
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::halfword, memory_order_seq_cst);
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -348,7 +348,7 @@ instruct compareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI new
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, memory_order_acq_rel);
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, memory_order_seq_cst);
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -364,7 +364,7 @@ instruct compareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL new
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, memory_order_acq_rel);
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, memory_order_seq_cst);
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -380,7 +380,7 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN new
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, memory_order_acq_rel);
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, memory_order_seq_cst);
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -396,7 +396,7 @@ instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP new
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, memory_order_acq_rel);
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, memory_order_seq_cst);
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -504,7 +504,7 @@ instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ cmpxchg_weak($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::byte, memory_order_acq_rel);
+    __ cmpxchg_weak($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::byte, memory_order_seq_cst);
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -520,7 +520,7 @@ instruct weakCompareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ cmpxchg_weak($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::halfword, memory_order_acq_rel);
+    __ cmpxchg_weak($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::halfword, memory_order_seq_cst);
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -536,7 +536,7 @@ instruct weakCompareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ cmpxchg_weak($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, memory_order_acq_rel);
+    __ cmpxchg_weak($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, memory_order_seq_cst);
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -552,7 +552,7 @@ instruct weakCompareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ cmpxchg_weak($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, memory_order_acq_rel);
+    __ cmpxchg_weak($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, memory_order_seq_cst);
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -568,7 +568,7 @@ instruct weakCompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ cmpxchg_weak($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, memory_order_acq_rel);
+    __ cmpxchg_weak($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, memory_order_seq_cst);
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -584,7 +584,7 @@ instruct weakCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ cmpxchg_weak($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, memory_order_acq_rel);
+    __ cmpxchg_weak($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, memory_order_seq_cst);
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);

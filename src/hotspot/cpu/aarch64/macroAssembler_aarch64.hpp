@@ -1250,24 +1250,14 @@ private:
 public:
   void cmpxchg(Register addr, Register expected, Register new_val,
                enum operand_size size, enum atomic_memory_order order,
-               Register result) {
+               Register result = noreg) {
     cmpxchg(addr, expected, new_val, size, order, /* weak */ false, result);
-  }
-
-  void cmpxchg(Register addr, Register expected, Register new_val,
-               enum operand_size size, enum atomic_memory_order order) {
-    cmpxchg(addr, expected, new_val, size, order, noreg);
   }
 
   void cmpxchg_weak(Register addr, Register expected, Register new_val,
                     enum operand_size size, enum atomic_memory_order order,
-                    Register result) {
+                    Register result = noreg) {
     cmpxchg(addr, expected, new_val, size, order, /* weak */ true, result);
-  }
-
-  void cmpxchg_weak(Register addr, Register expected, Register new_val,
-                    enum operand_size size, enum atomic_memory_order order) {
-    cmpxchg_weak(addr, expected, new_val, size, order, noreg);
   }
 
 #ifdef ASSERT

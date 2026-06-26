@@ -53,7 +53,7 @@ ifelse($7,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),`dnl')
   %}
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::$4, ifelse($7,Acq,memory_order_acq_rel,memory_order_release), $res$$Register);
+               Assembler::$4, ifelse($7,Acq,memory_order_seq_cst,memory_order_release), $res$$Register);
     __ $6($res$$Register, $res$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -75,7 +75,7 @@ ifelse($1$6,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_Lo
   %}
   ins_encode %{
     __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
-               Assembler::$4, ifelse($6,Acq,memory_order_acq_rel,memory_order_release), $res$$Register);
+               Assembler::$4, ifelse($6,Acq,memory_order_seq_cst,memory_order_release), $res$$Register);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -110,7 +110,7 @@ ifelse($6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),`dnl')
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ ifelse($7,Weak,cmpxchg_weak,cmpxchg)($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::$4, ifelse($6,Acq,memory_order_acq_rel,memory_order_release));
+    __ ifelse($7,Weak,cmpxchg_weak,cmpxchg)($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::$4, ifelse($6,Acq,memory_order_seq_cst,memory_order_release));
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
@@ -133,7 +133,7 @@ ifelse($1$6,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_Lo
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ ifelse($7,Weak,cmpxchg_weak,cmpxchg)($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::$4, ifelse($6,Acq,memory_order_acq_rel,memory_order_release));
+    __ ifelse($7,Weak,cmpxchg_weak,cmpxchg)($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::$4, ifelse($6,Acq,memory_order_seq_cst,memory_order_release));
     __ csetw($res$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);

@@ -3499,10 +3499,32 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
   guarantee(order == memory_order_relaxed ||
             order == memory_order_acquire ||
             order == memory_order_release ||
-            order == memory_order_acq_rel, "unexpected memory ordering requirement");
+            order == memory_order_acq_rel ||
+            order == memory_order_seq_cst, "unexpected memory ordering requirement");
 
-  bool acquire = (order == memory_order_acquire || order == memory_order_acq_rel);
-  bool release = (order == memory_order_release || order == memory_order_acq_rel);
+  bool acquire, release;
+
+  switch (order) {
+    case memory_order_relaxed:
+      acquire = false;
+      release = false;
+      break;
+    case memory_order_acquire:
+      acquire = true;
+      release = false;
+      break;
+    case memory_order_release:
+      acquire = false;
+      release = true;
+      break;
+    case memory_order_acq_rel:
+    case memory_order_seq_cst:
+      acquire = true;
+      release = true;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
 
   if (result == noreg)  result = rscratch1;
   BLOCK_COMMENT("cmpxchg {");

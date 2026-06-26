@@ -597,7 +597,7 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
 
   ShenandoahBarrierStubC2::load_store_pre(masm, node, addr, tmp1, tmp2, tmp3, narrow);
 
-  atomic_memory_order order = acquire ? memory_order_acq_rel : memory_order_release;
+  atomic_memory_order order = acquire ? memory_order_seq_cst : memory_order_release;
 
   // CAS!
   if (weak) {
