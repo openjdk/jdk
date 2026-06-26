@@ -63,10 +63,13 @@ private:
   // in to avoid a repeated Thread::current() on the allocation fast path.
   uint alloc_region_start_index(Thread* thread);
 
-  // Last-resort under-lock scan of ALL stripe slots starting at start_index and wrapping, used only
-  // when the free set is exhausted: a sibling slot may still have room even though the free set has
-  // no region to hand out. Returns the allocation, or nullptr if no slot could satisfy the request.
-  HeapWord* try_allocate_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, uint start_index);
+  // Under-lock scan of the stripe slots in the half-open range [start_index, end_index), wrapping
+  // around the slot array, used when the free set has no region of its own to hand out: a sibling
+  // slot may still have room. Callers pass start_index = own_slot + 1 and end_index = own_slot to
+  // scan every OTHER slot (the own slot was already probed lock-free and can only have been retired
+  // since). Collector partitions call this before stealing from the mutator; the mutator calls it as
+  // a last resort. Returns the allocation, or nullptr if no slot in the range could satisfy it.
+  HeapWord* try_allocate_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, uint start_index, uint end_index);
 
   // Try to install freshly-allocated new_region into stripe slot index as the active alloc region
   // (heap lock held). occupant is the value the caller already loaded from the slot under the lock;

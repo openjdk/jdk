@@ -75,7 +75,9 @@ uint ShenandoahPartitionAllocator<PARTITION>::alloc_region_start_index(Thread* t
 template<ShenandoahFreeSetPartitionId PARTITION>
 HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in_alloc_regions(ShenandoahAllocRequest& req,
                                                                                  bool& in_new_region,
-                                                                                 uint start_index) {
+                                                                                 uint start_index,
+                                                                                 uint end_index) {
+  assert(end_index < _alloc_region_count, "Must be");
   uint i = start_index;
   do {
     ShenandoahHeapRegion* r = _alloc_regions[i].load_acquire();
@@ -89,7 +91,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in_alloc_regions
     if (++i == _alloc_region_count) {
       i = 0u;
     }
-  } while (i != start_index);
+  } while (i != end_index);
   return nullptr;
 }
 
@@ -239,13 +241,27 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
     // Take a fresh region from the free set, allocate from it, then install it into our slot for
     // subsequent lock-free use (retiring whatever now-full region was there).
     ShenandoahHeapRegion* fresh = _free_set->find_region_for_alloc<PARTITION>(min_req_words, in_new_region);
-    // Collector partitions can overflow into Mutator partition
+    // Collector partitions, when the free set has no region of their own to hand out, try the
+    // sibling stripe slots BEFORE stealing a region from the mutator. A sibling slot is an
+    // already-reserved collector region that may still have remnant capacity, so satisfying the
+    // request there avoids taking another whole region away from the mutator. This ordering matters
+    // on small heaps: the evacuation reserve is a thin slice there, and eagerly stealing whole
+    // regions starves mutator allocation and can force premature degeneration. Only when no sibling
+    // slot can satisfy the request do we overflow into the mutator partition (if enabled).
     if constexpr (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
-      if (fresh == nullptr && ShenandoahEvacReserveOverflow) {
-        fresh = _free_set->steal_from_mutator(PARTITION, req);
-        if (fresh != nullptr) {
-          assert(fresh->is_empty(), "Stolen region must be empty");
-          in_new_region = true;
+      if (fresh == nullptr) {
+        if (_alloc_region_count > 1) {
+          HeapWord* obj = try_allocate_in_alloc_regions(req, in_new_region, (start_index + 1) % _alloc_region_count, start_index);
+          if (obj != nullptr) {
+            return obj;
+          }
+        }
+        if (ShenandoahEvacReserveOverflow) {
+          fresh = _free_set->steal_from_mutator(PARTITION, req);
+          if (fresh != nullptr) {
+            assert(fresh->is_empty(), "Stolen region must be empty");
+            in_new_region = true;
+          }
         }
       }
     }
@@ -272,12 +288,16 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
       return result;
     }
 
-    // Free set is exhausted. LAST RESORT: a sibling stripe slot may still have room even though the
-    // free set has no region to hand out. Scan all slots under the lock before giving up; this is
-    // what keeps a full own-slot from causing a spurious allocation failure.
-    HeapWord* obj = try_allocate_in_alloc_regions(req, in_new_region, start_index);
-    if (obj != nullptr) {
-      return obj;
+    if constexpr (PARTITION == ShenandoahFreeSetPartitionId::Mutator) {
+      // Free set is exhausted. LAST RESORT: a sibling stripe slot may still have room even though the
+      // free set has no region to hand out. Scan all slots under the lock before giving up; this is
+      // what keeps a full own-slot from causing a spurious allocation failure.
+      if (_alloc_region_count > 1) {
+        HeapWord* obj = try_allocate_in_alloc_regions(req, in_new_region, (start_index + 1) % _alloc_region_count, start_index);
+        if (obj != nullptr) {
+          return obj;
+        }
+      }
     }
 
     return nullptr;
