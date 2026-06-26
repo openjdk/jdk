@@ -32,7 +32,7 @@ class G1HeapRegion;
 
 // Contains per node index region count
 class G1RegionsOnNodes : public StackObj {
-  volatile uint* _regions_per_node;
+  volatile uint* _num_regions_per_node;
   G1NUMA*        _numa;
 
 public:
@@ -40,12 +40,12 @@ public:
 
   ~G1RegionsOnNodes();
 
-  // Increase _regions_per_node for the node of given heap region.
+  // Increase _num_regions_per_node for the node of given heap region.
   void add(G1HeapRegion* hr);
 
   void clear();
 
-  uint num_regions(uint node_index) const;
+  uint num_regions_per_node(uint node_index) const;
 };
 
 #endif // SHARE_VM_GC_G1_G1REGIONS_HPP

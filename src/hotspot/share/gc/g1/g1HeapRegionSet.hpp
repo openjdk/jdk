@@ -28,16 +28,16 @@
 #include "gc/g1/g1HeapRegion.hpp"
 #include "utilities/macros.hpp"
 
-#define assert_heap_region_set(p, message) \
-  do {                                     \
-    assert((p), "[%s] %s ln: %u",          \
-           name(), message, num_regions());\
+#define assert_heap_region_set(p, message)  \
+  do {                                      \
+    assert((p), "[%s] %s ln: %u",           \
+           name(), message, num_regions()); \
   } while (0)
 
-#define guarantee_heap_region_set(p, message) \
-  do {                                        \
-    guarantee((p), "[%s] %s ln: %u",          \
-              name(), message, num_regions());\
+#define guarantee_heap_region_set(p, message)  \
+  do {                                         \
+    guarantee((p), "[%s] %s ln: %u",           \
+              name(), message, num_regions()); \
   } while (0)
 
 #define assert_free_region_list(p, message)                          \

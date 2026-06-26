@@ -43,7 +43,7 @@ uint G1SurvivorRegions::num_regions() const {
 }
 
 uint G1SurvivorRegions::regions_on_node(uint node_index) const {
-  return _regions_on_node.num_regions(node_index);
+  return _regions_on_node.num_regions_per_node(node_index);
 }
 
 void G1SurvivorRegions::convert_to_eden() {
