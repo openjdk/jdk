@@ -94,7 +94,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeDispose(long nsWindowPtr);
     private static native void nativeEnterFullScreenMode(long nsWindowPtr);
     private static native void nativeExitFullScreenMode(long nsWindowPtr);
-    private static native void nativeSetNSWindowAccessibilityElement(long nsWindowPtr, boolean axHidden);
+    private static native void nativeSetNSWindowAccessibilityElement(long nsWindowPtr, boolean axElement);
     static native CPlatformWindow nativeGetTopmostPlatformWindowUnderMouse();
 
     // Logger to report issues happened during execution but that do not affect functionality
