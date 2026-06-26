@@ -86,7 +86,7 @@ private:
   }
 
   static KVElement* allocate_kvelement_array(int length) {
-    if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
+    if constexpr (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
       return NEW_C_HEAP_ARRAY_RETURN_NULL(KVElement, length, MT);
     }
     return NEW_C_HEAP_ARRAY(KVElement, length, MT);
@@ -155,7 +155,7 @@ private:
 
     KVElement* new_members = allocate_kvelement_array(new_length);
     if (new_members == nullptr) {
-      if (alloc_failmode == AllocFailStrategy::EXIT_OOM) {
+      if constexpr (alloc_failmode == AllocFailStrategy::EXIT_OOM) {
         vm_exit_out_of_memory(new_length, OOM_MALLOC_ERROR, "Hashtable resize failed, out of memory");
       }
       return false;
