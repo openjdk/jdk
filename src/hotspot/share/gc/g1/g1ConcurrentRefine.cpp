@@ -381,7 +381,7 @@ void G1ConcurrentRefineSweepState::complete_refinement(jlong total_yield_during_
   policy->record_refinement_stats(stats());
 
   {
-    MutexLocker x(G1ReviseYoungLength_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(G1ReviseNumYoungRegions_lock, Mutex::_no_safepoint_check_flag);
     policy->record_dirtying_stats(TimeHelper::counter_to_millis(g1h->last_refinement_epoch_start()),
                                   TimeHelper::counter_to_millis(next_epoch_start),
                                   _stats.cards_pending(),
