@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4931668
+ * @bug 4931668 8001150
  * @summary Tests XEmbed server/client functionality
  * @author denis mikhalkin: area=awt.xembed
  * @requires (!(os.family=="mac") & !(os.family=="windows"))
