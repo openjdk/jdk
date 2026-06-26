@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4148078 8364404
+ * @bug 4148078
  * @summary Repainting problems in scrolled panel
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
