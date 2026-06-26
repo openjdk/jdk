@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,18 @@
 
 /*
  * @test
- * @bug 4148078
+ * @bug 4148078 8364404
  * @summary Repainting problems in scrolled panel
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PanelRepaint
  */
 
+import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Panel;
 import java.awt.Point;
@@ -69,9 +69,9 @@ public class PanelRepaint extends Panel implements FocusListener {
 
     public static Frame createUI() {
         Frame f = new Frame("Panel Repaint Test");
-        f.setLayout(new FlowLayout());
-        f.setSize(620, 288);
+        f.setLayout(new BorderLayout());
         PanelRepaint pr = new PanelRepaint();
+        pr.setLayout(new BorderLayout());
 
         panel = new Panel();
         panel.setLayout(null);
@@ -173,10 +173,9 @@ public class PanelRepaint extends Panel implements FocusListener {
         pr.addComp(t29);
         t29.setBounds(240, 330, 100, 20);
 
-        pr.add(sPanel);
-        f.add(pr);
-        sPanel.setBounds(100, 100, 500, 250);
-        sPanel.doLayout();
+        pr.add(sPanel, BorderLayout.CENTER);
+        f.add(pr, BorderLayout.CENTER);
+        f.setSize(620, 288);
         return f;
     }
 
