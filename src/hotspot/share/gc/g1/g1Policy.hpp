@@ -389,10 +389,7 @@ public:
                              size_t next_pending_cards_from_gc,
                              size_t next_to_collection_set_cards);
 
-  bool should_retain_evac_failed_region(G1HeapRegion* r) const {
-    return should_retain_evac_failed_region(r->hrm_index());
-  }
-  bool should_retain_evac_failed_region(uint index) const;
+  bool should_retain_evac_failed_region(G1HeapRegion* r) const;
 
 private:
   //

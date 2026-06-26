@@ -394,8 +394,13 @@ public:
     oop obj = cast_to_oop(r->bottom());
     {
       ResourceMark rm;
-      bool allocated_after_mark_start = r->bottom() == _g1h->concurrent_mark()->top_at_mark_start(r);
       bool mark_in_progress = _g1h->collector_state()->is_in_marking();
+      bool allocated_after_mark_start = false;
+      if (mark_in_progress) {
+        // top_at_mark_start() will assert if we are not in marking, so check first.
+        allocated_after_mark_start = r->bottom() == _g1h->concurrent_mark()->top_at_mark_start(r);
+      }
+
       guarantee(_g1h->can_be_marked_through_immediately(obj) || (allocated_after_mark_start || !mark_in_progress),
                 "Only eagerly reclaiming arrays without oops is always supported, other humongous objects only if allocated after mark start, but the object "
                 PTR_FORMAT " (%s) is not (allocated after mark: %d mark in progress %d marked immediately %d is_array %d array_with_oops %d).",
@@ -498,20 +503,22 @@ class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTas
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
       G1ConcurrentMark* cm = g1h->concurrent_mark();
 
-      // Concurrent mark does not mark through regions that we retain (they are root
-      // regions wrt to marking), so we must clear their mark data (tams, bitmap, ...)
-      // set eagerly or during evacuation failure.
+      // Retained regions are root regions for marking, so we must clear their mark data
+      // (tams, bitmap, ...). Outside of Concurrent Start GC we must always clear the mark data
+      // for the next GC.
       bool clear_mark_data = !g1h->collector_state()->is_in_concurrent_start_gc() ||
                              g1h->policy()->should_retain_evac_failed_region(r);
 
       if (clear_mark_data) {
         g1h->clear_bitmap_for_region(r);
+        // Must be because this is a region that should not have been selected to
+        // be marked through.
+        cm->assert_top_at_mark_start_is_bottom(r);
       } else {
         // This evacuation failed region is going to be marked through. Update mark data.
-        cm->update_top_at_mark_start(r);
-        cm->set_live_bytes(r->hrm_index(), r->live_bytes());
-        assert(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), cm->top_at_mark_start(r)) != cm->top_at_mark_start(r),
-               "Marks must be on bitmap for region %u", r->hrm_index());
+        // Since we have some marked live data information, pass that too.
+        cm->assert_statistics_clear(r);
+        cm->notify_new_region(r, r->live_bytes());
       }
       return false;
     }
@@ -649,9 +656,9 @@ class FreeCSetClosure : public G1HeapRegionClosure {
 
   void assert_tracks_surviving_words(G1HeapRegion* r) {
     assert(r->young_index_in_cset() != 0 &&
-           (uint)r->young_index_in_cset() <= _g1h->collection_set()->young_region_length(),
+           (uint)r->young_index_in_cset() <= _g1h->collection_set()->num_young_regions(),
            "Young index %u is wrong for region %u of type %s with %u young regions",
-           r->young_index_in_cset(), r->hrm_index(), r->get_type_str(), _g1h->collection_set()->young_region_length());
+           r->young_index_in_cset(), r->hrm_index(), r->get_type_str(), _g1h->collection_set()->num_young_regions());
   }
 
   void handle_evacuated_region(G1HeapRegion* r) {
@@ -810,7 +817,7 @@ public:
     p->record_serial_free_cset_time_ms((Ticks::now() - serial_time).seconds() * 1000.0);
   }
 
-  double worker_cost() const override { return G1CollectedHeap::heap()->collection_set()->initial_region_length(); }
+  double worker_cost() const override { return G1CollectedHeap::heap()->collection_set()->num_initial_regions(); }
 
   void set_max_workers(uint max_workers) override {
     _active_workers = max_workers;

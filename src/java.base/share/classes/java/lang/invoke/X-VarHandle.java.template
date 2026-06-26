@@ -107,11 +107,6 @@ final class VarHandle$InputType$s {
             FieldInstanceReadOnly handle = (FieldInstanceReadOnly)ob;
             $type$ value = UNSAFE.get$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                  handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType});
-#if[Reference]
-            if (value == null && handle.nullRestricted) {
-                throw new NullPointerException("Uninitialized null-restricted field");
-            }
-#end[Reference]
             return value;
         }
 
@@ -121,11 +116,6 @@ final class VarHandle$InputType$s {
             FieldInstanceReadOnly handle = (FieldInstanceReadOnly)ob;
             $type$ value = UNSAFE.get$Type$Volatile(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                  handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType});
-#if[Reference]
-            if (value == null && handle.nullRestricted) {
-                throw new NullPointerException("Uninitialized null-restricted field");
-            }
-#end[Reference]
             return value;
         }
 
@@ -134,12 +124,6 @@ final class VarHandle$InputType$s {
             FieldInstanceReadOnly handle = (FieldInstanceReadOnly)ob;
             $type$ value = UNSAFE.get$Type$Opaque(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                  handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType});
-#if[Reference]
-            if (value == null && handle.nullRestricted) {
-                throw new NullPointerException("Uninitialized null-restricted field");
-
-            }
-#end[Reference]
             return value;
         }
 
@@ -148,11 +132,6 @@ final class VarHandle$InputType$s {
             FieldInstanceReadOnly handle = (FieldInstanceReadOnly)ob;
             $type$ value = UNSAFE.get$Type$Acquire(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                  handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType});
-#if[Reference]
-            if (value == null && handle.nullRestricted) {
-                throw new NullPointerException("Uninitialized null-restricted field");
-            }
-#end[Reference]
             return value;
         }
 #end[NonPlainAccess]
@@ -187,10 +166,8 @@ final class VarHandle$InputType$s {
 #if[Object]
         @ForceInline
         static Object checkCast(FieldInstanceReadWrite handle, $type$ value) {
-#if[Reference]
             if (value == null && handle.nullRestricted)
                 throw new NullPointerException();
-#end[Reference]
             return handle.fieldType.cast(value);
         }
 #end[Object]
@@ -496,11 +473,6 @@ final class VarHandle$InputType$s {
             FieldStaticReadOnly handle = (FieldStaticReadOnly) ob.onStaticFieldAccess(true);
             $type$ value = UNSAFE.get$Type$(handle.base,
                                  handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType});
-#if[Reference]
-            if (value == null && handle.nullRestricted) {
-                throw new NullPointerException("Uninitialized null-restricted field");
-            }
-#end[Reference]
             return value;
         }
 
@@ -510,11 +482,6 @@ final class VarHandle$InputType$s {
             FieldStaticReadOnly handle = (FieldStaticReadOnly) ob.onStaticFieldAccess(true);
             $type$ value = UNSAFE.get$Type$Volatile(handle.base,
                                  handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType});
-#if[Reference]
-            if (value == null && handle.nullRestricted) {
-                throw new NullPointerException("Uninitialized null-restricted field");
-            }
-#end[Reference]
             return value;
         }
 
@@ -523,11 +490,6 @@ final class VarHandle$InputType$s {
             FieldStaticReadOnly handle = (FieldStaticReadOnly) ob.onStaticFieldAccess(true);
             $type$ value = UNSAFE.get$Type$Opaque(handle.base,
                                  handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType});
-#if[Reference]
-            if (value == null && handle.nullRestricted) {
-                throw new NullPointerException("Uninitialized null-restricted field");
-            }
-#end[Reference]
             return value;
         }
 
@@ -536,11 +498,6 @@ final class VarHandle$InputType$s {
             FieldStaticReadOnly handle = (FieldStaticReadOnly) ob.onStaticFieldAccess(true);
             $type$ value = UNSAFE.get$Type$Acquire(handle.base,
                                  handle.fieldOffset{#if[FlatValue]?, handle.layout, handle.fieldType});
-#if[Reference]
-            if (value == null && handle.nullRestricted) {
-                throw new NullPointerException("Uninitialized null-restricted field");
-            }
-#end[Reference]
             return value;
         }
 #end[NonPlainAccess]
