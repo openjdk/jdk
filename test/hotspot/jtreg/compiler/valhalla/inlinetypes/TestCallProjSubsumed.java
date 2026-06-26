@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,30 +21,30 @@
  * questions.
  */
 
-package sun.security.util;
-
-import java.security.spec.KeySpec;
-
 /**
- * This is a KeySpec that is used to specify a key by its byte array implementation.
- * It is intended to be used in testing algorithms where the algorithm specification
- * describes the key in this form.
+ * @test
+ * @bug 8386999
+ * @summary [lworld] C2: assert(is_dead_loop_safe()) failed: shouldn't be cleared yet
+ * @enablePreview
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-BackgroundCompilation -XX:-TieredCompilation
+ *                   -XX:-UseOnStackReplacement -XX:+AlwaysIncrementalInline ${test.main.class}
  */
-public class RawKeySpec implements KeySpec {
-    private final byte[] keyArr;
-    /**
-     * The sole constructor.
-     * @param key contains the key as a byte array
-     */
-    public RawKeySpec(byte[] key) {
-        keyArr = key.clone();
+
+package compiler.valhalla.inlinetypes;
+
+public class TestCallProjSubsumed {
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test1();
+        }
     }
 
-    /**
-     * Getter function.
-     * @return a copy of the key bits
-     */
-    public byte[] getKeyArr() {
-        return keyArr.clone();
+    static int test1() {
+        Integer ib = lateInlined1();
+        return ib.intValue();
+    }
+
+    static int lateInlined1() {
+        return 42;
     }
 }

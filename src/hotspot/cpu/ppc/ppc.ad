@@ -9291,7 +9291,7 @@ instruct orI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "OR      $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    __ or_unchecked($dst$$Register, $src1$$Register, $src2$$Register);
+    __ orr($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9303,7 +9303,7 @@ instruct orI_reg_reg_2(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "OR      $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    __ or_unchecked($dst$$Register, $src1$$Register, $src2$$Register);
+    __ orr($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9341,7 +9341,7 @@ instruct orL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   size(4);
   format %{ "OR      $dst, $src1, $src2 \t// long" %}
   ins_encode %{
-    __ or_unchecked($dst$$Register, $src1$$Register, $src2$$Register);
+    __ orr($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9354,7 +9354,7 @@ instruct orI_regL_regL(iRegIdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "OR      $dst, $src1, $src2 \t// long + l2i" %}
   size(4);
   ins_encode %{
-    __ or_unchecked($dst$$Register, $src1$$Register, $src2$$Register);
+    __ orr($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}

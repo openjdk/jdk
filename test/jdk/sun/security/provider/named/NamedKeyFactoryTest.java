@@ -36,7 +36,6 @@ import jdk.test.lib.security.SeededSecureRandom;
 import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.provider.NamedKeyFactory;
 import sun.security.provider.NamedKeyPairGenerator;
-import sun.security.util.RawKeySpec;
 import sun.security.x509.NamedX509Key;
 
 import java.security.*;
@@ -119,30 +118,22 @@ public class NamedKeyFactoryTest {
         Utils.runAndCheckException(() -> kf5.generatePublic(skSpec),
                 InvalidKeySpecException.class);
 
-        // The private RawKeySpec and unnamed RAW EncodedKeySpec
-        var prk = kf.getKeySpec(pk, RawKeySpec.class);
-        Asserts.assertEqualsByteArray(prk.getKeyArr(), pk.getRawBytes());
-        var prk2 = kf.getKeySpec(pk, EncodedKeySpec.class);
-        Asserts.assertEquals("RAW", prk2.getFormat());
-        Asserts.assertEqualsByteArray(prk.getKeyArr(), prk2.getEncoded());
+        // The unnamed RAW EncodedKeySpec
+        var prk = kf.getKeySpec(pk, EncodedKeySpec.class);
+        Asserts.assertEquals("RAW", prk.getFormat());
+        Asserts.assertEqualsByteArray(pk.getRawBytes(), prk.getEncoded());
 
         Asserts.assertEqualsByteArray(kf2.generatePublic(prk).getEncoded(), pk.getEncoded());
         Utils.runAndCheckException(() -> kf.generatePublic(prk), InvalidKeySpecException.class); // no pname
-        Asserts.assertEqualsByteArray(kf2.generatePublic(prk2).getEncoded(), pk.getEncoded());
-        Utils.runAndCheckException(() -> kf.generatePublic(prk2), InvalidKeySpecException.class); // no pname
 
-        var srk = kf.getKeySpec(sk, RawKeySpec.class);
-        Asserts.assertEqualsByteArray(srk.getKeyArr(), sk.getRawBytes());
-        var srk2 = kf.getKeySpec(sk, EncodedKeySpec.class);
-        Asserts.assertEquals("RAW", srk2.getFormat());
-        Asserts.assertEqualsByteArray(srk2.getEncoded(), sk.getRawBytes());
+        var srk = kf.getKeySpec(sk, EncodedKeySpec.class);
+        Asserts.assertEquals("RAW", srk.getFormat());
+        Asserts.assertEqualsByteArray(srk.getEncoded(), sk.getRawBytes());
 
         checkKey(kf2.generatePrivate(srk), "SHA", "SHA-256");
         Asserts.assertEqualsByteArray(kf2.generatePrivate(srk).getEncoded(), sk.getEncoded());
         Utils.runAndCheckException(() -> kf.generatePrivate(srk), InvalidKeySpecException.class); // no pname
         checkKey(kf2.generatePrivate(srk), "SHA", "SHA-256");
-        Asserts.assertEqualsByteArray(kf2.generatePrivate(srk2).getEncoded(), sk.getEncoded());
-        Utils.runAndCheckException(() -> kf.generatePrivate(srk2), InvalidKeySpecException.class); // no pname
 
         var pk1 = new PublicKey() {
             public String getAlgorithm() { return "SHA"; }

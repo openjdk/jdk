@@ -115,7 +115,7 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   bool is_in_progress() const;
 
   bool is_in_marking() const;
-  bool is_in_rebuild_or_scrub() const;
+  bool is_in_marking_or_rebuild() const;
   bool is_in_reset_for_next_cycle() const;
 
   bool is_in_undo_cycle() const;

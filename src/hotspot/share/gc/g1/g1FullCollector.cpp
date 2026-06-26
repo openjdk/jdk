@@ -192,7 +192,7 @@ void G1FullCollector::prepare_collection() {
 
   // Verification needs the bitmap, so we should clear the bitmap only later.
   bool in_concurrent_cycle = _heap->abort_concurrent_cycle();
-  _heap->verify_before_full_collection();
+  _heap->verify_before_full_collection(in_concurrent_cycle);
   if (in_concurrent_cycle) {
     GCTraceTime(Debug, gc) debug("Clear Bitmap");
     _heap->concurrent_mark()->clear_bitmap(_heap->workers());

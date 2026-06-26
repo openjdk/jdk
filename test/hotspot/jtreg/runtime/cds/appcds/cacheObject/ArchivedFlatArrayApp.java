@@ -32,6 +32,7 @@ public class ArchivedFlatArrayApp {
     public static class ArchivedData {
         Integer[] intArray;
         CharPair[] charPairArray;
+        Wrapper[] wrapperArray;
     }
 
     public static value class CharPair implements Comparable<CharPair> {
@@ -48,6 +49,22 @@ public class ArchivedFlatArrayApp {
         public CharPair(char c0, char c1) {
             this.c0 = c0;
             this.c1 = c1;
+        }
+    }
+
+    public static value class Wrapper implements Comparable<Wrapper> {
+        Integer i;
+
+        public String toString() {
+            return i.toString();
+        }
+
+        public int compareTo(Wrapper o) {
+            return i - o.i;
+        }
+
+        Wrapper(int i) {
+            this.i = new Integer(i);
         }
     }
 
@@ -68,11 +85,17 @@ public class ArchivedFlatArrayApp {
             archivedObjects.charPairArray[0] = new CharPair('a', 'b');
             archivedObjects.charPairArray[1] = new CharPair('c', 'd');
             archivedObjects.charPairArray[2] = new CharPair('e', 'f');
+
+            archivedObjects.wrapperArray = new Wrapper[3];
+            archivedObjects.wrapperArray[0] = new Wrapper(0);
+            archivedObjects.wrapperArray[1] = new Wrapper(1);
+            archivedObjects.wrapperArray[2] = new Wrapper(2);
         } else {
             restored = true;
             System.out.println("Initialized from CDS");
             System.out.println("intArray " + archivedObjects.intArray);
             System.out.println("charPairArray " + archivedObjects.charPairArray);
+            System.out.println("wrapperArray " + archivedObjects.wrapperArray);
         }
 
         for (Integer i : archivedObjects.intArray) {
@@ -81,6 +104,10 @@ public class ArchivedFlatArrayApp {
 
         for (CharPair c : archivedObjects.charPairArray) {
             System.out.println(c);
+        }
+
+        for (Wrapper w : archivedObjects.wrapperArray) {
+            System.out.println(w);
         }
     }
 
@@ -91,6 +118,10 @@ public class ArchivedFlatArrayApp {
 
         if (!ValueClass.isFlatArray(archivedObjects.charPairArray)) {
             throw new RuntimeException("CharPair array should be flat");
+        }
+
+        if (!ValueClass.isFlatArray(archivedObjects.wrapperArray)) {
+            throw new RuntimeException("Wrapper array should be flat");
         }
 
         if (restored) {
@@ -105,12 +136,21 @@ public class ArchivedFlatArrayApp {
             runtimeCharPairArray[1] = new CharPair('c', 'd');
             runtimeCharPairArray[2] = new CharPair('e', 'f');
 
+            Wrapper[] runtimeWrapperArray = new Wrapper[3];
+            runtimeWrapperArray[0] = new Wrapper(0);
+            runtimeWrapperArray[1] = new Wrapper(1);
+            runtimeWrapperArray[2] = new Wrapper(2);
+
             if (Arrays.compare(archivedObjects.intArray, runtimeIntArray) != 0) {
                 throw new RuntimeException("Integer array not restored correctly");
             }
 
             if (Arrays.compare(archivedObjects.charPairArray, runtimeCharPairArray) != 0) {
                 throw new RuntimeException("CharPair array not restored correctly");
+            }
+
+            if (Arrays.compare(archivedObjects.wrapperArray, runtimeWrapperArray) != 0) {
+                throw new RuntimeException("Wrapper array not restored correctly");
             }
         }
     }
