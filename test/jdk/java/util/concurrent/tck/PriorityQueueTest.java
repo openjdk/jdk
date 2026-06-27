@@ -430,12 +430,9 @@ public class PriorityQueueTest extends JSR166TestCase {
 
         CountedComparator cmp = new CountedComparator();
         PriorityQueue<Item> q = new PriorityQueue<>(cmp);
-        assertTrue("addAll should return true for non-empty input",
-                   q.addAll(Arrays.asList(items)));
-        assertEquals("addAll should add all elements",
-                     size, q.size());
-        assertTrue("addAll should heapify instead of adding elements one at a time",
-                   cmp.comparisons < size * 4);
+        assertTrue(q.addAll(Arrays.asList(items)));
+        assertEquals(size, q.size());
+        assertTrue(cmp.comparisons < size * 4);
         for (int i = 0; i < size; ++i)
             mustEqual(i, q.poll());
     }
@@ -445,21 +442,15 @@ public class PriorityQueueTest extends JSR166TestCase {
      */
     public void testAddAllSubclassAddsEachElement() {
         CountedAddPriorityQueue<Item> q = new CountedAddPriorityQueue<>();
-        assertTrue("addAll should return true for non-empty input",
-                   q.addAll(Arrays.asList(three, two, one)));
-        assertEquals("empty subclass should add elements one at a time",
-                     3, q.adds);
-        assertEquals("empty subclass should contain all added elements",
-                     3, q.size());
+        assertTrue(q.addAll(Arrays.asList(three, two, one)));
+        assertEquals(3, q.adds);
+        assertEquals(3, q.size());
 
         q = new CountedAddPriorityQueue<>();
         mustAdd(q, zero);
-        assertTrue("addAll should return true for non-empty input",
-                   q.addAll(Arrays.asList(three, two, one)));
-        assertEquals("non-empty subclass should add elements one at a time",
-                     4, q.adds);
-        assertEquals("non-empty subclass should contain all added elements",
-                     4, q.size());
+        assertTrue(q.addAll(Arrays.asList(three, two, one)));
+        assertEquals(4, q.adds);
+        assertEquals(4, q.size());
     }
 
     /**
