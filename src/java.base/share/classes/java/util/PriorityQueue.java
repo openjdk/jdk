@@ -373,10 +373,9 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             if (len == 0)
                 return false;
 
-            // Leave this queue unchanged if validation or heap construction fails.
             es = prepareElements(es, c.getClass());
-            heapify(es, len);
             initElementsFromArray(es, len);
+            heapify();
 
             this.modCount++;
             return true;
@@ -797,10 +796,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * This classic algorithm due to Floyd (1964) is known to be O(size).
      */
     private void heapify() {
-        heapify(queue, size);
-    }
-
-    private void heapify(Object[] es, int n) {
+        final Object[] es = queue;
+        int n = size;
         int i = (n >>> 1) - 1;
         final Comparator<? super E> cmp;
         if ((cmp = comparator) == null)
