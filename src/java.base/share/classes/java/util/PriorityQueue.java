@@ -288,15 +288,24 @@ public class PriorityQueue<E> extends AbstractQueue<E>
 
     private void initElementsFromCollection(Collection<? extends E> c) {
         Object[] es = c.toArray();
+        es = prepareElements(es, c.getClass());
+        initElementsFromArray(es, es.length);
+    }
+
+    private void initElementsFromArray(Object[] es, int size) {
+        this.queue = ensureNonEmpty(es);
+        this.size = size;
+    }
+
+    private Object[] prepareElements(Object[] es, Class<?> cClass) {
         int len = es.length;
-        if (c.getClass() != ArrayList.class)
+        if (cClass != ArrayList.class)
             es = Arrays.copyOf(es, len, Object[].class);
         if (len == 1 || this.comparator != null)
             for (Object e : es)
                 if (e == null)
                     throw new NullPointerException();
-        this.queue = ensureNonEmpty(es);
-        this.size = len;
+        return es;
     }
 
     /**
@@ -335,6 +344,45 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      */
     public boolean add(E e) {
         return offer(e);
+    }
+
+    /**
+     * Adds all of the elements in the specified collection to this
+     * priority queue.
+     *
+     * @param c collection containing elements to be added to this queue
+     * @return {@code true} if this queue changed as a result of the call
+     * @throws ClassCastException if elements of the specified collection
+     *         cannot be compared with elements currently in this queue
+     *         according to the priority queue's ordering
+     * @throws NullPointerException if the specified collection contains a
+     *         null element, or if the specified collection is null
+     * @throws IllegalArgumentException if the specified collection is this
+     *         queue
+     */
+    @Override
+    public boolean addAll(Collection<? extends E> c) {
+        if (c == null)
+            throw new NullPointerException();
+        if (c == this)
+            throw new IllegalArgumentException();
+
+        if (size == 0 && getClass() == PriorityQueue.class) {
+            Object[] es = c.toArray();
+            int len = es.length;
+            if (len == 0)
+                return false;
+
+            // Leave this queue unchanged if validation or heap construction fails.
+            es = prepareElements(es, c.getClass());
+            heapify(es, len);
+            initElementsFromArray(es, len);
+
+            this.modCount++;
+            return true;
+        }
+
+        return super.addAll(c);
     }
 
     /**
@@ -749,8 +797,11 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * This classic algorithm due to Floyd (1964) is known to be O(size).
      */
     private void heapify() {
-        final Object[] es = queue;
-        int n = size, i = (n >>> 1) - 1;
+        heapify(queue, size);
+    }
+
+    private void heapify(Object[] es, int n) {
+        int i = (n >>> 1) - 1;
         final Comparator<? super E> cmp;
         if ((cmp = comparator) == null)
             for (; i >= 0; i--)
