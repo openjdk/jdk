@@ -22,25 +22,26 @@
  */
 
 /*
- * @test id=AVX2
- * @bug 8369699
+ * @test
+ * @bug 8369699 8381618
  * @key randomness
  * @summary Test the Template Library's expression generation for the Vector API.
- * @requires os.family == "linux" & os.simpleArch == "x64"
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @compile ../../compiler/lib/verify/Verify.java
- * @run driver ${test.main.class} -XX:UseAVX=2
+ * @run driver ${test.main.class}
  */
 
-// TODO: remove the x64 and linux restriction above. I added that for now so we are not flooded
-//       with failures in the CI. We should remove these restriction once more bugs are fixed.
-//       x64 linux is the easiest to debug on for me, that's why I picked it.
-//       In addition, I put a UseAVX=2 restriction below, to avoid AVX512 bugs for now.
+// TODO: Some compilation bailouts are to be expected, for example, we've encountered this before:
+//         COMPILE SKIPPED: out of virtual registers in LIR generator (retry at different tier)
+//       Which manifested in:
+//         compiler.lib.ir_framework.shared.TestRunException: <some method> not compilable (anymore) at level C1_FULL_PROFILE. Most likely, this is not expected, but if it is, you can use 'allowNotCompilable'.
 //
-//       A trick to extend this to other platforms: create a new run block, so you have full
-//       freedom to restrict it as necessary for platform and vector features.
+//       It would be good to only selectively allow some bailouts. For now, we just have to do:
+//         @Test(allowNotCompilable = true)
+//       But after JDK-8378943, we should list only the expected bailouts, so that we can
+//       detect and investigate any unexpected bailouts.
 
 package compiler.vectorapi;
 
@@ -127,7 +128,7 @@ public class VectorExpressionFuzzer {
 
                 static final Object $GOLD = $test();
 
-                @Test
+                @Test(allowNotCompilable = true)
                 public static Object $test() {
                     try {
                 """,
@@ -296,7 +297,7 @@ public class VectorExpressionFuzzer {
                 """
                 }
 
-                @Test
+                @Test(allowNotCompilable = true)
                 public static Object $test(
                 """,
                 receiveArguments,

@@ -1174,7 +1174,7 @@ void InterpreterMacroAssembler::notify_method_exit(
   // Whenever JVMTI is interp_only_mode, method entry/exit events are sent to
   // track stack depth.  If it is possible to enter interp_only_mode we add
   // the code to check if the event should be sent.
-  if (mode == NotifyJVMTI && JvmtiExport::can_post_interpreter_events()) {
+  if (mode == NotifyJVMTI && (JvmtiExport::can_post_interpreter_events() || JvmtiExport::can_post_frame_pop())) {
     Label L;
     // Note: frame::interpreter_frame_result has a dependency on how the
     // method result is saved across the call to post_method_exit. If this
@@ -1183,8 +1183,15 @@ void InterpreterMacroAssembler::notify_method_exit(
 
     // template interpreter will leave the result on the top of the stack.
     push(state);
-    ldrw(r3, Address(rthread, JavaThread::interp_only_mode_offset()));
-    cbz(r3, L);
+
+    ldr(rscratch1, Address(rthread, JavaThread::jvmti_thread_state_offset()));
+    cbz(rscratch1, L); // if (thread->jvmti_thread_state() == nullptr) exit;
+
+    ldrw(rscratch1, Address(rscratch1, JvmtiThreadState::frame_pop_cnt_offset()));
+    ldrw(rscratch2, Address(rthread, JavaThread::interp_only_mode_offset()));
+    orrw(rscratch1, rscratch1, rscratch2);
+    cbzw(rscratch1, L);
+
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit));
     bind(L);

@@ -2043,7 +2043,11 @@ Rule	Vanc	1962	2006	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Vancouver	-8:12:28 -	LMT	1884
 			-8:00	Vanc	P%sT	1987
-			-8:00	Canada	P%sT
+			-8:00	Canada	P%sT	2026 Mar  9
+			# Temporary hack; see above.
+			-8:00	1:00	PDT	2026 Nov  1 02:00
+			# End of temporary hack.
+			-7:00	-	MST
 Zone America/Dawson_Creek -8:00:56 -	LMT	1884
 			-8:00	Canada	P%sT	1947
 			-8:00	Vanc	P%sT	1972 Aug 30  2:00

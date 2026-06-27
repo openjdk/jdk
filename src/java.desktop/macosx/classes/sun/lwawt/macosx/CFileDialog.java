@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,10 @@ final class CFileDialog implements FileDialogPeer {
                 accessor.setFiles(target, files);
             } finally {
                 // Java2 Dialog waits for hide to let show() return
-                target.dispose();
+                AWTAccessor.FileDialogAccessor accessor = AWTAccessor.getFileDialogAccessor();
+                if (!accessor.isBeingDisposed(target)) {
+                    target.dispose();
+                }
             }
         }
     }
@@ -121,12 +124,15 @@ final class CFileDialog implements FileDialogPeer {
         this.target = target;
     }
 
+    private volatile long nativeCFileDialogPtr;
+    private volatile long nativeWindowID;
+
+    private native void nativeDispose();
+
     @Override
     public void dispose() {
         LWCToolkit.targetDisposedPeer(target, this);
-        // Unlike other peers, we do not have a native model pointer to
-        // dispose of because the save and open panels are never released by
-        // an application.
+        setVisible(false);
     }
 
     @Override
@@ -135,9 +141,13 @@ final class CFileDialog implements FileDialogPeer {
             // Java2 Dialog class requires peer to run code in a separate thread
             // and handles keeping the call modal
             new Thread(null, new Task(), "FileDialog", 0, false).start();
+        } else {
+             // This call doesn't directly dispose the dialog, but if it is being
+             // displayed it stops the modal loop which hides it and returns control
+            if ((nativeCFileDialogPtr != 0L) && (nativeWindowID != 0L)) {
+                nativeDispose();
+            }
         }
-        // We hide ourself before "show" returns - setVisible(false)
-        // doesn't apply
     }
 
     /**

@@ -233,6 +233,11 @@ public class IRNode {
         beforeMatchingNameRegex(ADD_P, "AddP");
     }
 
+    public static final String ADD_D = PREFIX + "ADD_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ADD_D, "AddD");
+    }
+
     public static final String ADD_VD = VECTOR_PREFIX + "ADD_VD" + POSTFIX;
     static {
         vectorNode(ADD_VD, "AddVD", TYPE_DOUBLE);
@@ -763,9 +768,19 @@ public class IRNode {
         vectorNode(DIV_VHF, "DivVHF", TYPE_SHORT);
     }
 
+    public static final String DIV_F = PREFIX + "DIV_F" + POSTFIX;
+    static {
+       beforeMatchingNameRegex(DIV_F, "DivF");
+    }
+
     public static final String DIV_VF = VECTOR_PREFIX + "DIV_VF" + POSTFIX;
     static {
         vectorNode(DIV_VF, "DivVF", TYPE_FLOAT);
+    }
+
+    public static final String DIV_D = PREFIX + "DIV_D" + POSTFIX;
+    static {
+       beforeMatchingNameRegex(DIV_D, "DivD");
     }
 
     public static final String DIV_VD = VECTOR_PREFIX + "DIV_VD" + POSTFIX;
@@ -909,12 +924,6 @@ public class IRNode {
     public static final String IF = PREFIX + "IF" + POSTFIX;
     static {
         beforeMatchingNameRegex(IF, "If\\b");
-    }
-
-    // Does not work for VM builds without JVMCI like x86_32 (a rule containing this regex will be skipped without having JVMCI built).
-    public static final String INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP = PREFIX + "INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP" + POSTFIX;
-    static {
-        trapNodes(INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "intrinsic_or_type_checked_inlining");
     }
 
     public static final String INTRINSIC_TRAP = PREFIX + "INTRINSIC_TRAP" + POSTFIX;
@@ -1472,6 +1481,16 @@ public class IRNode {
     public static final String MASK_ALL = PREFIX + "MASK_ALL" + POSTFIX;
     static {
         beforeMatchingNameRegex(MASK_ALL, "MaskAll");
+    }
+
+    public static final String AARCH64_VMASK_ALL_IMM_I = PREFIX + "AARCH64_VMASK_ALL_IMM_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMASK_ALL_IMM_I, "vmaskAll_immI");
+    }
+
+    public static final String AARCH64_VMASK_ALL_IMM_L = PREFIX + "AARCH64_VMASK_ALL_IMM_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMASK_ALL_IMM_L, "vmaskAll_immL");
     }
 
     public static final String VECTOR_LONG_TO_MASK = PREFIX + "VECTOR_LONG_TO_MASK" + POSTFIX;
@@ -2423,6 +2442,12 @@ public class IRNode {
         vectorNode(VECTOR_BLEND_D, "VectorBlend", TYPE_DOUBLE);
     }
 
+    public static final String VECTOR_BITWISE_BLEND = PREFIX + "VECTOR_BITWISE_BLEND" + POSTFIX;
+    static {
+        String regex = START + "VectorBitwiseBlend" + MID + END;
+        afterBarrierExpansionToBeforeMatching(VECTOR_BITWISE_BLEND, regex);
+    }
+
     public static final String VECTOR_MASK_CMP_I = VECTOR_PREFIX + "VECTOR_MASK_CMP_I" + POSTFIX;
     static {
         vectorNode(VECTOR_MASK_CMP_I, "VectorMaskCmp", TYPE_INT);
@@ -2703,6 +2728,11 @@ public class IRNode {
         machOnlyNameRegex(RISCV_VFMADD_MASKED, "vfmadd_masked");
     }
 
+    public static final String VMASK_AND_NOT_I = PREFIX + "VMASK_AND_NOT_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_AND_NOT_I, "vmask_and_notI");
+    }
+
     public static final String VMASK_AND_NOT_L = PREFIX + "VMASK_AND_NOT_L" + POSTFIX;
     static {
         machOnlyNameRegex(VMASK_AND_NOT_L, "vmask_and_notL");
@@ -2821,6 +2851,16 @@ public class IRNode {
     public static final String VSTOREMASK_TRUECOUNT = PREFIX + "VSTOREMASK_TRUECOUNT" + POSTFIX;
     static {
         machOnlyNameRegex(VSTOREMASK_TRUECOUNT, "vstoremask_truecount_neon");
+    }
+
+    public static final String X86_VMULUDQ_REG = PREFIX + "X86_VMULUDQ_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VMULUDQ_REG, "vmuludq_reg");
+    }
+
+    public static final String X86_VMULDQ_REG = PREFIX + "X86_VMULDQ_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VMULDQ_REG, "vmuldq_reg");
     }
 
     public static final String X86_SCONV_D2I = PREFIX + "X86_SCONV_D2I" + POSTFIX;
@@ -3577,12 +3617,6 @@ public class IRNode {
      */
     public static void checkIRNodeSupported(String node) throws CheckedTestFrameworkException {
         switch (node) {
-            case INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP -> {
-                if (!WhiteBox.getWhiteBox().isJVMCISupportedByGC()) {
-                    throw new CheckedTestFrameworkException("INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP is unsupported " +
-                                                            "in builds without JVMCI.");
-                }
-            }
             case CHECKCAST_ARRAYCOPY -> {
                 if (Platform.isS390x()) {
                     throw new CheckedTestFrameworkException("CHECKCAST_ARRAYCOPY is unsupported on s390.");

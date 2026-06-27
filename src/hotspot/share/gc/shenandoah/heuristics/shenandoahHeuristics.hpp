@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2026, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -57,6 +57,7 @@
   } while (0)
 
 class ShenandoahCollectionSet;
+class ShenandoahHeap;
 class ShenandoahHeapRegion;
 
 /*
@@ -82,8 +83,11 @@ private:
   double _most_recent_trigger_evaluation_time;
   double _most_recent_planned_sleep_interval;
 
+  // When we decide to do an abbreviated cycle, withdraw reserves so memory can be made available to mutators.
+  void adjust_reserves_for_abbreviated(ShenandoahHeap* heap);
+
 protected:
-  static const uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
+  static constexpr uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
 
   bool _start_gc_is_pending;              // True denotes that GC has been triggered, so no need to trigger again.
   size_t _declined_trigger_count;         // This counts how many times since previous GC finished that this
@@ -181,7 +185,6 @@ protected:
 
   size_t _gc_times_learned;
   intx _gc_time_penalties;
-  TruncatedSeq* _gc_cycle_time_history;
 
   // There may be many threads that contend to set this flag
   ShenandoahSharedFlag _metaspace_oom;
@@ -196,8 +199,6 @@ protected:
   virtual void adjust_penalty(intx step);
 
   inline void accept_trigger() {
-    _most_recent_declined_trigger_count = _declined_trigger_count;
-    _declined_trigger_count = 0;
     _start_gc_is_pending = true;
   }
 
@@ -230,6 +231,10 @@ public:
     // Default implementation does nothing.
   }
 
+  double cycle_start_time_seconds() const {
+    return _cycle_start;
+  }
+
   virtual void record_cycle_start();
 
   void record_degenerated_cycle_start(bool out_of_cycle);
@@ -251,7 +256,7 @@ public:
 
   virtual void record_success_concurrent();
 
-  virtual void record_degenerated();
+  virtual void record_degenerated(bool is_generational_global);
 
   virtual void record_success_full();
 
@@ -277,11 +282,6 @@ public:
 
   double elapsed_cycle_time() const;
   double elapsed_degenerated_cycle_time() const;
-
-  virtual size_t force_alloc_rate_sample(size_t bytes_allocated) {
-    // do nothing
-    return 0;
-  }
 
   // Format prefix and emit log message indicating a GC cycle hs been triggered
   void log_trigger(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);

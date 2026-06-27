@@ -46,7 +46,6 @@
 
 class oopDesc {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
  private:
   volatile markWord _mark;
   narrowKlass _compressed_klass;
@@ -90,6 +89,7 @@ class oopDesc {
 
   void set_narrow_klass(narrowKlass nk) NOT_CDS_JAVA_HEAP_RETURN;
   inline narrowKlass narrow_klass() const;
+  inline narrowKlass narrow_klass_acquire() const;
   inline void set_klass(Klass* k);
   static inline void release_set_klass(HeapWord* mem, Klass* k);
 
@@ -329,8 +329,7 @@ class oopDesc {
   static int klass_offset_in_bytes()     {
 #ifdef _LP64
     if (UseCompactObjectHeaders) {
-      // NOTE: The only places where this is used with compact headers are the C2
-      // compiler and JVMCI.
+      // NOTE: The only place where this is used with compact headers is C2.
       return mark_offset_in_bytes() + markWord::klass_offset_in_bytes;
     } else
 #endif
