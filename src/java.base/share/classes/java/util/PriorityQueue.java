@@ -797,8 +797,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      */
     private void heapify() {
         final Object[] es = queue;
-        int n = size;
-        int i = (n >>> 1) - 1;
+        int n = size, i = (n >>> 1) - 1;
         final Comparator<? super E> cmp;
         if ((cmp = comparator) == null)
             for (; i >= 0; i--)
