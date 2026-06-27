@@ -34,7 +34,7 @@ bool AARCH64DwarfParser::process_arch_specific_dwarf_instructions(const unsigned
       } else if (_sign_state == RA_SIGNED_SP) {
         _sign_state = RA_NOT_SIGNED;
       } else {
-        print_debug("DWARF: DW_CFA_AARCH64_negate_ra_state: illegal state (%d)\n", _sign_state);
+        print_error("DWARF: DW_CFA_AARCH64_negate_ra_state: illegal state (%d)\n", _sign_state);
         return false;
       }
       break;
@@ -44,7 +44,7 @@ bool AARCH64DwarfParser::process_arch_specific_dwarf_instructions(const unsigned
       } else if (_sign_state == RA_SIGNED_SP_PC) {
         _sign_state = RA_NOT_SIGNED;
       } else {
-        print_debug("DWARF: DW_CFA_AARCH64_negate_ra_state_with_pc: illegal state (%d\n)", _sign_state);
+        print_error("DWARF: DW_CFA_AARCH64_negate_ra_state_with_pc: illegal state (%d)\n", _sign_state);
         return false;
       }
       break;
@@ -64,7 +64,7 @@ void AARCH64DwarfParser::remember_arch_specific_state() {
 
 void AARCH64DwarfParser::restore_arch_specific_state() {
   if (remember_state.empty()) {
-    print_debug("DWARF Error: DW_CFA_restore_state for AArch64 is empty.\n");
+    print_error("DWARF Error: DW_CFA_restore_state for AArch64 is empty.\n");
     return;
   }
   _sign_state = remember_state.top();
