@@ -45,8 +45,8 @@ public abstract class PhysicalFont extends Font2D {
         if (o == this) {
             return true;
         }
-        return o.getClass() == this.getClass() &&
-            o instanceof PhysicalFont other &&
+        return o instanceof PhysicalFont other &&
+            other.getClass() == this.getClass() &&
             fullName.equals(other.fullName) &&
             Objects.equals(platName, other.platName);
     }
