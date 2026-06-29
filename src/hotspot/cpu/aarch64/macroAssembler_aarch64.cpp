@@ -3496,12 +3496,6 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
                              enum atomic_memory_order order,
                              bool weak,
                              Register result) {
-  guarantee(order == memory_order_relaxed ||
-            order == memory_order_acquire ||
-            order == memory_order_release ||
-            order == memory_order_acq_rel ||
-            order == memory_order_seq_cst, "unexpected memory ordering requirement");
-
   bool acquire, release;
 
   switch (order) {
