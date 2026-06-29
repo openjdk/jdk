@@ -36,7 +36,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -51,6 +53,8 @@ public class TestIdealGraphDump {
     private static final String METHOD_COMPUTE = TEST_CLASS + "::compute";
     private static final String METHOD_BRANCH = TEST_CLASS + "::branchyMethod";
 
+    private static final Map<Integer, Path> dumpCache = new HashMap<>();
+
     public static void main(String[] args) throws Exception {
         testDisabled();
         testLevel0();
@@ -60,7 +64,6 @@ public class TestIdealGraphDump {
         testLevel4();
         testLevel5();
         testLevel6();
-        testLevelSpecificPhases();
         testMonotonicallyIncreasingGraphCounts();
         testXmlWellFormedness();
         testMethodNameInGraph();
@@ -69,110 +72,71 @@ public class TestIdealGraphDump {
     }
 
     private static void testDisabled() throws Exception {
-        Path xmlFile = dumpAtLevel(-1);
+        Path xmlFile = getCachedDump(-1);
         Asserts.assertTrue(Files.size(xmlFile) == 0,
             "Level -1 (disabled) must produce an empty file");
-        System.out.println("testDisabled PASSED");
     }
 
     private static void testLevel0() throws Exception {
-        Path xmlFile = dumpAtLevel(0);
+        Path xmlFile = getCachedDump(0);
         Asserts.assertTrue(Files.size(xmlFile) == 0,
             "Level 0 must produce an empty file (no system-wide dumps)");
-        System.out.println("testLevel0 PASSED");
     }
 
     private static void testLevel1() throws Exception {
-        Path xmlFile = dumpAtLevel(1);
-        String content = Files.readString(xmlFile);
+        String content = getCachedContent(1);
         assertContainsPhase(content, "After Parsing", 1);
+        assertContainsPhase(content, "Before Matching", 1);
         assertContainsPhase(content, "Final Code", 1);
-        System.out.println("testLevel1 PASSED: " + countGraphs(content) + " graph(s)");
+        assertNotContainsPhase(content, "PhaseCCP 1", 1);
     }
 
     private static void testLevel2() throws Exception {
-        Path xmlFile = dumpAtLevel(2);
-        String content = Files.readString(xmlFile);
+        String content = getCachedContent(2);
         assertContainsPhase(content, "After Parsing", 2);
         assertContainsPhase(content, "Final Code", 2);
         assertContainsPhase(content, "After Iter GVN 1", 2);
         assertContainsPhase(content, "PhaseCCP 1", 2);
-        System.out.println("testLevel2 PASSED: " + countGraphs(content) + " graph(s)");
+        assertNotContainsPhase(content, "Before Macro Expansion", 2);
     }
 
     private static void testLevel3() throws Exception {
-        Path xmlFile = dumpAtLevel(3);
-        String content = Files.readString(xmlFile);
+        String content = getCachedContent(3);
         assertContainsPhase(content, "Before Macro Expansion", 3);
-        System.out.println("testLevel3 PASSED: " + countGraphs(content) + " graph(s)");
+        assertNotContainsPhase(content, "Initial Liveness", 3);
     }
 
     private static void testLevel4() throws Exception {
-        Path xmlFile = dumpAtLevel(4);
-        String content = Files.readString(xmlFile);
-        int count = countGraphs(content);
-        Asserts.assertTrue(count > 0, "Level 4 must produce graphs");
-        System.out.println("testLevel4 PASSED: " + count + " graph(s)");
+        String content = getCachedContent(4);
+        assertContainsPhase(content, "Initial Liveness", 4);
+        assertNotContainsPhase(content, "After Iter GVN Step", 4);
     }
 
     private static void testLevel5() throws Exception {
-        Path xmlFile = dumpAtLevel(5);
-        String content = Files.readString(xmlFile);
+        String content = getCachedContent(5);
         assertContainsPhase(content, "After Iter GVN Step", 5);
-        System.out.println("testLevel5 PASSED: " + countGraphs(content) + " graph(s)");
     }
 
     private static void testLevel6() throws Exception {
-        Path xmlFile = dumpAtLevel(6);
-        String content = Files.readString(xmlFile);
-        int count = countGraphs(content);
-        Asserts.assertTrue(count > 0, "Level 6 must produce graphs");
-        System.out.println("testLevel6 PASSED: " + count + " graph(s)");
-    }
-
-    private static void testLevelSpecificPhases() throws Exception {
-        Path xmlLevel1 = dumpAtLevel(1);
-        Path xmlLevel2 = dumpAtLevel(2);
-        Path xmlLevel5 = dumpAtLevel(5);
-
-        String content1 = Files.readString(xmlLevel1);
-        String content2 = Files.readString(xmlLevel2);
-        String content5 = Files.readString(xmlLevel5);
-
-        Asserts.assertTrue(containsPhase(content1, "Final Code"),
-            "Level 1 must contain 'Final Code' phase");
-        Asserts.assertFalse(containsPhase(content1, "PhaseCCP 1"),
-            "Level 1 must NOT contain 'PhaseCCP 1' (requires level 2+)");
-        Asserts.assertFalse(containsPhase(content1, "After Iter GVN Step"),
-            "Level 1 must NOT contain 'After Iter GVN Step' (requires level 5+)");
-
-        Asserts.assertTrue(containsPhase(content2, "PhaseCCP 1"),
-            "Level 2 must contain 'PhaseCCP 1'");
-        Asserts.assertFalse(containsPhase(content2, "After Iter GVN Step"),
-            "Level 2 must NOT contain 'After Iter GVN Step' (requires level 5+)");
-
-        Asserts.assertTrue(containsPhase(content5, "After Iter GVN Step"),
-            "Level 5 must contain 'After Iter GVN Step'");
-
-        System.out.println("testLevelSpecificPhases PASSED");
+        String content = getCachedContent(6);
+        Asserts.assertTrue(containsPhase(content, "Bytecode"),
+            "Level 6 must contain per-bytecode graphs (e.g., 'Bytecode 0: ...')");
     }
 
     private static void testMonotonicallyIncreasingGraphCounts() throws Exception {
         int prevCount = 0;
         for (int level = 1; level <= 6; level++) {
-            Path xmlFile = dumpAtLevel(level);
-            String content = Files.readString(xmlFile);
+            String content = getCachedContent(level);
             int count = countGraphs(content);
             Asserts.assertTrue(count >= prevCount,
                 "Level " + level + " (" + count + " graphs) must have at least as many as level " +
                 (level - 1) + " (" + prevCount + " graphs)");
             prevCount = count;
         }
-        System.out.println("testMonotonicallyIncreasingGraphCounts PASSED");
     }
 
     private static void testXmlWellFormedness() throws Exception {
-        Path xmlFile = dumpAtLevel(2);
+        Path xmlFile = getCachedDump(2);
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -182,7 +146,7 @@ public class TestIdealGraphDump {
             Asserts.fail("IGV XML at level 2 is not well-formed: " + e.getMessage());
         }
 
-        String content = Files.readString(xmlFile);
+        String content = getCachedContent(2);
         Asserts.assertTrue(content.contains("<graphDocument>"), "Must contain <graphDocument>");
         Asserts.assertTrue(content.contains("</graphDocument>"), "Must contain closing </graphDocument>");
         Asserts.assertTrue(content.contains("<properties>"), "Must contain <properties>");
@@ -192,22 +156,16 @@ public class TestIdealGraphDump {
         Asserts.assertTrue(content.contains("<method name="), "Must contain <method>");
         Asserts.assertTrue(content.contains("<bytecodes>"), "Must contain <bytecodes>");
         Asserts.assertTrue(content.contains("<controlFlow>"), "Must contain <controlFlow>");
-
-        System.out.println("testXmlWellFormedness PASSED");
     }
 
     private static void testMethodNameInGraph() throws Exception {
-        Path xmlFile = dumpAtLevel(1);
-        String content = Files.readString(xmlFile);
-
+        String content = getCachedContent(1);
         Asserts.assertTrue(content.contains("TestMethods.compute"),
             "Graph output must contain the compiled method name 'TestMethods.compute'");
-
-        System.out.println("testMethodNameInGraph PASSED");
     }
 
     private static void testMultipleMethods() throws Exception {
-        Path xmlFile = dumpMultipleMethods(2);
+        Path xmlFile = dumpMultipleMethods(1);
         String content = Files.readString(xmlFile);
 
         Asserts.assertTrue(content.contains("TestMethods.compute"),
@@ -215,11 +173,12 @@ public class TestIdealGraphDump {
         Asserts.assertTrue(content.contains("TestMethods.branchyMethod"),
             "Must contain graphs for 'branchyMethod' method");
 
-        int groupCount = countOccurrences(content, "<group>");
-        Asserts.assertTrue(groupCount >= 2,
-            "Must have at least 2 method groups in output, got " + groupCount);
-
-        System.out.println("testMultipleMethods PASSED: " + groupCount + " method group(s)");
+        int computeFinalCode = countMethodPhase(content, "TestMethods.compute", "Final Code");
+        int branchFinalCode = countMethodPhase(content, "TestMethods.branchyMethod", "Final Code");
+        Asserts.assertTrue(computeFinalCode >= 1,
+            "compute must emit at least one 'Final Code' graph, got " + computeFinalCode);
+        Asserts.assertTrue(branchFinalCode >= 1,
+            "branchyMethod must emit at least one 'Final Code' graph, got " + branchFinalCode);
     }
 
     private static void testIGVPrintLevelDirective() throws Exception {
@@ -230,8 +189,7 @@ public class TestIdealGraphDump {
         options.add("-Xbatch");
         options.add("-XX:PrintIdealGraphLevel=0");
         options.add("-XX:PrintIdealGraphFile=" + xmlFile.toAbsolutePath());
-        options.add("-XX:CompileCommand=option," + METHOD_COMPUTE + ",IGVPrintLevel,2");
-        options.add("-XX:CompileCommand=compileonly," + METHOD_COMPUTE);
+        options.add("-XX:CompileCommand=IGVPrintLevel," + METHOD_COMPUTE + ",2");
         options.add(TEST_CLASS);
 
         OutputAnalyzer oa = ProcessTools.executeTestJava(options);
@@ -244,8 +202,17 @@ public class TestIdealGraphDump {
         Asserts.assertTrue(content.contains("TestMethods.compute"),
             "Directive-based dump must contain the target method");
         assertContainsPhase(content, "After Parsing", 2);
+    }
 
-        System.out.println("testIGVPrintLevelDirective PASSED");
+    private static Path getCachedDump(int level) throws Exception {
+        if (!dumpCache.containsKey(level)) {
+            dumpCache.put(level, dumpAtLevel(level));
+        }
+        return dumpCache.get(level);
+    }
+
+    private static String getCachedContent(int level) throws Exception {
+        return Files.readString(getCachedDump(level));
     }
 
     private static Path dumpAtLevel(int level) throws Exception {
@@ -292,12 +259,33 @@ public class TestIdealGraphDump {
     private static boolean containsPhase(String content, String phaseName) {
         return content.contains("'" + phaseName + "'") ||
                content.contains("\"" + phaseName + "\"") ||
-               content.contains(">" + phaseName + "<");
+               content.contains(">" + phaseName + "<") ||
+               content.contains("'" + phaseName);
     }
 
     private static void assertContainsPhase(String content, String phaseName, int level) {
         Asserts.assertTrue(containsPhase(content, phaseName),
             "Level " + level + " must contain phase '" + phaseName + "'");
+    }
+
+    private static void assertNotContainsPhase(String content, String phaseName, int level) {
+        Asserts.assertFalse(containsPhase(content, phaseName),
+            "Level " + level + " must NOT contain phase '" + phaseName + "'");
+    }
+
+    private static int countMethodPhase(String content, String methodName, String phaseName) {
+        int count = 0;
+        int groupStart = 0;
+        while ((groupStart = content.indexOf("<group>", groupStart)) != -1) {
+            int groupEnd = content.indexOf("</group>", groupStart);
+            if (groupEnd == -1) break;
+            String group = content.substring(groupStart, groupEnd);
+            if (group.contains(methodName) && containsPhase(group, phaseName)) {
+                count++;
+            }
+            groupStart = groupEnd;
+        }
+        return count;
     }
 
     private static int countOccurrences(String str, String sub) {
