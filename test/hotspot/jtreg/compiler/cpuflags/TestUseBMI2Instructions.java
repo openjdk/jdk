@@ -43,7 +43,7 @@
  * @bug 8386475
  * @summary Verify no assertions when generating vectorizedMismatch stub with -XX:-UseBMI2Instructions
  * @requires os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*"
- * @run main/othervm -Xcomp -XX:AVX3Threshold=0 -XX:-UseBMI2Instructions ${test.main.class}
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:AVX3Threshold=0 -XX:-UseBMI2Instructions ${test.main.class}
  */
 
 /*
@@ -51,7 +51,7 @@
  * @bug 8386475
  * @summary Verify no assertions when generating string_indexof stub with -XX:-UseBMI2Instructions
  * @requires os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*"
- * @run main/othervm -Xcomp -XX:UseAVX=2 -XX:+EnableX86ECoreOpts -XX:-UseBMI2Instructions ${test.main.class}
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:UseAVX=2 -XX:+EnableX86ECoreOpts -XX:-UseBMI2Instructions ${test.main.class}
  */
 
 package compiler.cpuflags;
