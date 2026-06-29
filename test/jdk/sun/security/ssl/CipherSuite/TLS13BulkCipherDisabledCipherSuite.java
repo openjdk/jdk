@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 IBM Corporation. All rights reserved.
+ * Copyright (c) 2026, IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @summary Test TLS 1.3 disabled algorithms behavior
- * @run testng/othervm TLS13DisableCipherSuite
+ * @bug 8387124
+ * @summary Test disabling TLS 1.3 cipher suites with bulk ciphers names
+ * @run testng TLS13BulkCipherDisabledCipherSuite
  */
 
 import static org.testng.AssertJUnit.assertTrue;
@@ -35,26 +36,26 @@ import org.testng.annotations.Test;
 import java.security.Security;
 import java.util.List;
 
-public class TLS13DisableCipherSuite extends AbstractDisableCipherSuites {
+public class TLS13BulkCipherDisabledCipherSuite extends AbstractDisableCipherSuites {
 
     private static final String SECURITY_PROPERTY = "jdk.tls.disabledAlgorithms";
-    private static final String TEST_ALGORITHMS = "TLS_AES_128_GCM_SHA256,"
+    private static final String TEST_ALGORITHMS = "AES_256_GCM,"
             + " AES_128_GCM,"
-            + " AES_256_GCM,"
             + " CHACHA20_POLY1305";
     private static final String[] CIPHER_SUITES = new String[] {
-            "TLS_AES_128_GCM_SHA256",
             "TLS_AES_256_GCM_SHA384",
-            "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
-            "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
-            "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+            "TLS_AES_128_GCM_SHA256",
+            "TLS_CHACHA20_POLY1305_SHA256"
     };
     static final List<Integer> CIPHER_SUITES_IDS = List.of(
             0x1301,
             0x1302,
-            0xCCA9,
-            0xCCA8,
-            0xCCAA);
+            0x1303);
+
+    @Override
+    protected String getProtocol() {
+        return "TLSv1.3";
+    }
 
     @BeforeTest
     void setUp() throws Exception {
