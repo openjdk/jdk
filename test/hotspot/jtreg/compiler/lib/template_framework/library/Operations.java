@@ -814,11 +814,9 @@ public final class Operations {
         // Float16 verification), so deterministic.
         ops.add(Expression.make(FLOAT16, "Float16.shortBitsToFloat16(", float16Lane, ")"));
         // Boxed Float16 -> lane carrier: produces a ShortCarriesFloat16 scalar to feed
-        // Float16Vector.broadcast/add(scalar)/withLane(...). float16ToShortBits canonicalizes
-        // NaN (deterministic); float16ToRawShortBits preserves the raw NaN encoding, so it
-        // is non-deterministic.
+        // Float16Vector.broadcast/add(scalar)/withLane(...).
         ops.add(Expression.make(float16Lane, "Float16.float16ToShortBits(", FLOAT16, ")"));
-        ops.add(Expression.make(float16Lane, "Float16.float16ToRawShortBits(", FLOAT16, ")", WITH_NONDETERMINISTIC_RESULT));
+        ops.add(Expression.make(float16Lane, "Float16.float16ToRawShortBits(", FLOAT16, ")"));
 
         // TODO: VectorSpecies API methods
 

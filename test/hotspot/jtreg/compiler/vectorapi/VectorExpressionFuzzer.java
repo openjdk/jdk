@@ -219,13 +219,10 @@ public class VectorExpressionFuzzer {
                     }
                     case 1 -> {
                         // Create the constant outside, and pass it.
-                        String typeName = (argumentType instanceof VectorElementType vet)
-                            ? vet.carrierTypeName()
-                            : argumentType.name();
                         arguments.add(new TestArgument(
-                            List.of(typeName, " ", name, " = ", argumentType.con(), ";\n"),
+                            List.of(argumentType.name(), " ", name, " = ", argumentType.con(), ";\n"),
                             name,
-                            List.of(typeName, " ", name),
+                            List.of(argumentType.name(), " ", name),
                             name
                         ));
                     }
