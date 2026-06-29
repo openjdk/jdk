@@ -10019,19 +10019,6 @@ instruct convL2I_reg(iRegIdst dst, iRegLsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct convD2IRaw_regD(regD dst, regD src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE src);
-  predicate(false);
-
-  format %{ "FCTIWZ $dst, $src \t// convD2I, $src != NaN" %}
-  size(4);
-  ins_encode %{
-    __ fctiwz($dst$$FloatRegister, $src$$FloatRegister);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE src);
@@ -10062,6 +10049,18 @@ instruct cmovI_bso_reg_conLvalue0(iRegIdst dst, flagsRegSrc crx, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct convD2IRaw_regD(regD dst, regD src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE src);
+  predicate(false);
+
+  format %{ "FCTIWZ $dst, $src \t// convD2I, $src != NaN" %}
+  size(4);
+  ins_encode %{
+    __ fctiwz($dst$$FloatRegister, $src$$FloatRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
 
 // Double to Int conversion, NaN is mapped to 0. Special version for Power8.
 instruct convD2I_reg_mffprd_ExEx(iRegIdst dst, regD src) %{
@@ -10143,19 +10142,6 @@ instruct zeroExtendL_regL(iRegLdst dst, iRegLsrc src, immL_32bits mask) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct convF2LRaw_regF(regF dst, regF src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE src);
-  predicate(false);
-
-  format %{ "FCTIDZ $dst, $src \t// convF2L, $src != NaN" %}
-  size(4);
-  ins_encode %{
-    __ fctidz($dst$$FloatRegister, $src$$FloatRegister);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE src);
@@ -10186,6 +10172,18 @@ instruct cmovL_bso_reg_conLvalue0(iRegLdst dst, flagsRegSrc crx, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct convF2LRaw_regF(regF dst, regF src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE src);
+  predicate(false);
+
+  format %{ "FCTIDZ $dst, $src \t// convF2L, $src != NaN" %}
+  size(4);
+  ins_encode %{
+    __ fctidz($dst$$FloatRegister, $src$$FloatRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
 
 // Float to Long conversion, NaN is mapped to 0. Special version for Power8.
 instruct convF2L_reg_mffprd_ExEx(iRegLdst dst, regF src) %{
@@ -10213,7 +10211,6 @@ instruct convD2LRaw_regD(regD dst, regD src) %{
   %}
   ins_pipe(pipe_class_default);
 %}
-
 
 // Double to Long conversion, NaN is mapped to 0. Special version for Power8.
 instruct convD2L_reg_mffprd_ExEx(iRegLdst dst, regD src) %{
