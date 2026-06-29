@@ -30,6 +30,7 @@
 #include "code/dependencyContext.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
+#include "code/vtableStubs.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -1971,8 +1972,8 @@ void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   AllCodeBlobsIterator iter(AllCodeBlobsIterator::not_unloading);
   while (iter.next()) {
     CodeBlob *cb = iter.method();
-    if (is_stub_code_blob(cb)) {
-      // Individual stub routines are dumped after the main loop.
+    if (is_stub_code_blob(cb) || cb->is_vtable_blob()) {
+      // Individual stub routines and vtable stubs are dumped after the main loop.
       continue;
     }
     ResourceMark rm;
@@ -1991,6 +1992,13 @@ void CodeCache::write_perf_map(const char* filename, outputStream* st) {
                 (intptr_t)d->begin(), (intptr_t)d->size_in_bytes(),
                 d->group(), d->name());
   }
+  VtableStubs::vtable_stub_do([&](VtableStub* s) {
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s [%d]",
+                (intptr_t)s->code_begin(),
+                (intptr_t)s->code_size(),
+                s->is_vtable_stub() ? "vtable stub" : "itable stub",
+                s->index());
+  });
 }
 #endif // LINUX
 
