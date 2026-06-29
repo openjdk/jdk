@@ -31,9 +31,6 @@
 #include "runtime/atomicAccess.hpp"
 #include "utilities/checkedCast.hpp"
 
-// A VtableStub holds an individual code stub for a pair (vtable index, #args) for either itables or vtables
-// There's a one-to-one relationship between a VtableStub and such a pair.
-
 // A word on VtableStub sizing:
 //   Such a vtable/itable stub consists of the instance data
 //   and an immediately following CodeBuffer.
@@ -69,11 +66,11 @@
 //   As a result, we allocate all but the first code buffers with the same, tightly matching size.
 //
 
-// VtableStubs creates the code stubs for compiled calls through vtables.
-// There is one stub per (vtable index, args_size) pair, and the stubs are
-// never deallocated. They don't need to be GCed because they contain no oops.
 class VtableStub;
 
+// VtableStubs creates the code stubs for compiled calls through vtables and itables. There is one
+// stub per (type, index), and the stubs are never deallocated. They don't need to be GCed because
+// they contain no oops.
 class VtableStubs : AllStatic {
  public:                                         // N must be public (some compilers need this for _table)
   enum {
@@ -118,6 +115,8 @@ class VtableStubs : AllStatic {
 };
 
 
+// A VtableStub holds an individual code stub for a particular type (itable or vtable) and index
+// pair.  There's a one-to-one relationship between a VtableStub and such a pair.
 class VtableStub {
  private:
   friend class VtableStubs;
