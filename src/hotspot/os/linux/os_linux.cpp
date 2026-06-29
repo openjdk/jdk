@@ -1584,6 +1584,9 @@ void os::pd_check_temp_directory() {
       }
     }
   } else {
+    if (!is_writable_directory("/tmp")) {
+      log_warning(os)("Warning: /tmp is not a writable directory. Consider using -XX:AltTempDir=/<dir> to one that is writable");
+    }
     AltTempDir = nullptr; // avoid checking AltTempDir[0] again.
   }
 }
