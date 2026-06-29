@@ -2721,13 +2721,11 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& inputs) {
   if (is_vector_bitwise_op(n)) {
     uint inp_cnt = n->is_predicated_vector() ? n->req()-1 : n->req();
     if (VectorNode::is_vector_bitwise_not_pattern(n)) {
-      for (uint i = 1; i < inp_cnt; i++) {
-        Node* in = n->in(i);
-        bool skip = VectorNode::is_all_ones_vector(in);
-        if (!skip && !inputs.member(in)) {
-          inputs.push(in);
-          cnt++;
-        }
+      assert(n->req() == (n->is_predicated_vector() ? 4 : 3), "must have 2 data inputs");
+      Node* opnd = VectorNode::is_all_ones_vector(n->in(1)) ? n->in(2) : n->in(1);
+      if (!inputs.member(opnd)) {
+        inputs.push(opnd);
+        cnt++;
       }
       assert(cnt <= 1, "not unary");
     } else {

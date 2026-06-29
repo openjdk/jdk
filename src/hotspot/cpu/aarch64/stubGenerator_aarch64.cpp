@@ -8654,6 +8654,123 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  /**
+   * Arithmetic polynomial multiplication in Curve25519.  The algorithm mimics
+   * the version in the IntegerPolynomial25519 class, including the use of all
+   * columns (no folding method).
+   *
+   * Arguments:
+   *
+   * Inputs:
+   *   c_rarg0   - long[] aLimbs
+   *   c_rarg1   - long[] bLimbs
+   *
+   * Output:
+   *   c_rarg2   - long[] rLimbs result
+   */
+  address generate_intpoly_mult_25519() {
+    StubId stub_id = StubId::stubgen_intpoly_mult_25519_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    __ enter();
+
+    // Register Map
+    const Register aLimbs  = c_rarg0; // r0
+    const Register bLimbs  = c_rarg1; // r1
+    const Register rLimbs  = c_rarg2; // r2
+
+    Register c[]   = {r3, r4, r5, r6, r7, r8, r9, r10, r11, r12};
+    Register a     = r13;
+    Register b     = r14;
+    Register term  = r15;
+    Register low   = r16;
+    Register high  = r17;
+
+    const int32_t limbs      = 5;
+    const int32_t bpl        = 51;
+    const int32_t rem        = 64 - bpl;
+    const int32_t TERM       = 19;
+    const int32_t columns    = limbs * 2;
+    const uint64_t mask      = (uint64_t) -1 >> rem;
+    const uint64_t CARRY_ADD = (uint64_t) 1 << (bpl - 1);
+
+    __ mov(term, TERM);
+    for (int i = 0; i < columns; i++) {
+      __ mov(c[i], zr);
+    }
+
+    // Perform high/low multiplication with signed 5x51 bit limbs
+    for (int i = 0; i < limbs; i++) {
+      __ ldr(b, Address(bLimbs, i * 8));
+      for (int j = 0; j < limbs; j++) {
+        __ ldr(a, Address(aLimbs, j * 8));
+        __ smulh(high, a, b);
+        __ mul(low, a, b);
+        __ extr(high, high, low, bpl);
+        __ andr(low, low,  mask);
+        __ add(c[i + j], c[i + j], low);
+        __ add(c[i + j + 1], c[i + j + 1], high);
+      }
+    }
+
+    for (int i = 0; i < limbs; i++) {
+      __ mul(c[i + 5], c[i + 5], term);
+      __ add(c[i], c[i], c[i + 5]);
+    }
+
+    // Carry-add with reduction from high limb
+    Register tmp       = low;
+    Register carry_add = high;
+    __ mov(carry_add, CARRY_ADD);
+
+    // Limb 3
+    __ add(tmp, c[3], carry_add);
+    __ asr(tmp, tmp, bpl);
+    __ add(c[4], c[4], tmp);
+    __ lsl(tmp, tmp, bpl);
+    __ sub(c[3], c[3], tmp);
+
+    // Limb 4
+    __ add(tmp, c[4], carry_add);
+    __ asr(tmp, tmp, bpl);
+
+    // Reduce high order limb and fold back into low order limb
+    __ mul(term, tmp, term);
+    __ add(c[0], c[0], term);
+
+    __ lsl(tmp, tmp, bpl);
+    __ sub(c[4], c[4], tmp);
+
+    // Limbs 0 - 3
+    for (int i = 0; i < (limbs - 1); i++) {
+      __ add(tmp, c[i], carry_add);
+      __ asr(tmp, tmp, bpl);
+      __ add(c[i + 1], c[i + 1], tmp);
+      __ lsl(tmp, tmp, bpl);
+      __ sub(c[i], c[i], tmp);
+    }
+
+    for (int i = 0; i < limbs; i++) {
+      __ str(c[i], Address(rLimbs, i * 8));
+    }
+
+    __ mov(r0, 0);
+    __ leave();   // required for proper stackwalking of RuntimeStub frame
+    __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
   void bcax5(Register a0, Register a1, Register a2, Register a3, Register a4,
              Register tmp0, Register tmp1, Register tmp2) {
     __ bic(tmp0, a2, a1); // for a0
@@ -13789,6 +13906,15 @@ class StubGenerator: public StubCodeGenerator {
 
     if (UsePoly1305Intrinsics) {
       StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
+    }
+
+    // The difference between AArch64 vs. x86_64 intrinsics implementation
+    // include the lack of square() intrinsics; usage caused a 3.3% performance
+    // degradation due to the efficiencies of the symmetric squaring shape in
+    // Java vs. the inefficiencies of the leaf calls and the additional cycles
+    // required for 64 bit multiplication in AArch64.
+    if (UseIntPoly25519Intrinsics) {
+      StubRoutines::_intpoly_mult_25519 = generate_intpoly_mult_25519();
     }
 
     // generate Adler32 intrinsics code

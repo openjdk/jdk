@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,44 +19,35 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1HEAPTRANSITION_HPP
-#define SHARE_GC_G1_G1HEAPTRANSITION_HPP
+/**
+ * @test
+ * @bug 8386656
+ * @summary Verify no assertions when running with -XX:-UseCountTrailingZerosInstruction
+ * @requires os.simpleArch == "x64"
+ * @run main/othervm -Xbatch -XX:-UseCountTrailingZerosInstruction ${test.main.class}
+ */
 
-#include "gc/shared/plab.hpp"
-#include "memory/metaspaceStats.hpp"
+/**
+ * @test
+ * @bug 8386656
+ * @summary Verify no assertions when running with -XX:+UseCountTrailingZerosInstruction
+ * @requires os.simpleArch == "x64"
+ * @run main/othervm -Xbatch -XX:+UseCountTrailingZerosInstruction ${test.main.class}
+ */
 
-class G1CollectedHeap;
+package compiler.cpuflags;
 
-class G1HeapTransition {
-  struct DetailedUsage;
-  class DetailedUsageClosure;
+import java.util.Arrays;
 
-  struct Data {
-    size_t _num_eden_regions;
-    size_t _num_survivor_regions;
-    size_t _num_old_regions;
-    size_t _num_humongous_regions;
-    const MetaspaceCombinedStats _meta_sizes;
+public class TestUseCountTrailingZerosInstruction {
+    public static void main(String[] args) {
+        byte[] a = new byte[32];
+        byte[] b = new byte[32];
+        for (int i = 0; i < 20_000; i++) {
+            Arrays.mismatch(a, b);
+        }
+    }
+}
 
-    // Only includes current eden regions.
-    uint* _num_eden_regions_per_node;
-    // Only includes current survivor regions.
-    uint* _num_survivor_regions_per_node;
-
-    Data(G1CollectedHeap* g1_heap);
-    ~Data();
-  };
-
-  G1CollectedHeap* _g1_heap;
-  Data _before;
-
-public:
-  G1HeapTransition(G1CollectedHeap* g1_heap);
-
-  void print();
-};
-
-#endif // SHARE_GC_G1_G1HEAPTRANSITION_HPP

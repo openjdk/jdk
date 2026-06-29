@@ -61,7 +61,7 @@
 #include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/g1RemSet.hpp"
-#include "gc/g1/g1ReviseYoungLengthTask.hpp"
+#include "gc/g1/g1ReviseNumYoungRegionsTask.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
@@ -916,7 +916,7 @@ void G1CollectedHeap::verify_after_full_collection() {
 
   // At this point there should be no regions in the
   // entire heap tagged as young.
-  assert(check_young_list_empty(), "young list should be empty at this point");
+  assert(check_no_young_regions(), "We should not have young regions at this point");
 
   // Note: since we've just done a full GC, concurrent
   // marking is no longer active. Therefore we need not
@@ -1295,7 +1295,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _service_thread(nullptr),
   _periodic_gc_task(nullptr),
   _free_arena_memory_task(nullptr),
-  _revise_young_length_task(nullptr),
+  _revise_num_young_regions_task(nullptr),
   _workers(nullptr),
   _refinement_epoch(0),
   _last_synchronized_start(0),
@@ -1604,9 +1604,9 @@ jint G1CollectedHeap::initialize() {
   _free_arena_memory_task = new G1MonotonicArenaFreeMemoryTask("Card Set Free Memory Task");
   _service_thread->register_task(_free_arena_memory_task);
 
-  if (policy()->use_adaptive_young_list_length()) {
-    _revise_young_length_task = new G1ReviseYoungLengthTask("Revise Young Length List Task");
-    _service_thread->register_task(_revise_young_length_task);
+  if (policy()->use_adaptive_num_young_regions()) {
+    _revise_num_young_regions_task = new G1ReviseNumYoungRegionsTask("Revise Num Young Regions Task");
+    _service_thread->register_task(_revise_num_young_regions_task);
   }
 
   // Here we allocate the dummy G1HeapRegion that is required by the
@@ -2282,7 +2282,7 @@ bool G1CollectedHeap::block_is_obj(const HeapWord* addr) const {
 }
 
 size_t G1CollectedHeap::tlab_capacity() const {
-  return eden_target_length() * G1HeapRegion::GrainBytes;
+  return target_num_eden_regions() * G1HeapRegion::GrainBytes;
 }
 
 size_t G1CollectedHeap::tlab_used() const {
@@ -2451,7 +2451,7 @@ G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
   size_t heap_used = Heap_lock->owned_by_self() ? used() : used_unlocked();
 
   size_t eden_capacity_bytes =
-    (policy()->young_list_target_length() * G1HeapRegion::GrainBytes) - survivor_used_bytes;
+    (policy()->target_num_young_regions() * G1HeapRegion::GrainBytes) - survivor_used_bytes;
 
   VirtualSpaceSummary heap_summary = create_heap_space_summary();
   return G1HeapSummary(heap_summary, heap_used, eden_used_bytes, eden_capacity_bytes,
@@ -2723,13 +2723,14 @@ void G1CollectedHeap::do_collection_pause_at_safepoint(size_t allocation_word_si
 
   _bytes_used_during_gc = 0;
 
-  _cm->fully_initialize();
-
   policy()->decide_on_concurrent_start_pause();
   // Record whether this pause may need to trigger a concurrent operation. Later,
   // when we signal the G1ConcurrentMarkThread, the collector state has already
   // been reset for the next pause.
   bool should_start_concurrent_mark_operation = collector_state()->is_in_concurrent_start_gc();
+  if (should_start_concurrent_mark_operation) {
+    _cm->fully_initialize();
+  }
 
   // Perform the collection.
   G1YoungCollector collector(gc_cause(), allocation_word_size);
@@ -2989,7 +2990,7 @@ public:
   bool success() { return _success; }
 };
 
-bool G1CollectedHeap::check_young_list_empty() {
+bool G1CollectedHeap::check_no_young_regions() {
   bool ret = (young_regions_count() == 0);
 
   NoYoungRegionsClosure closure;
@@ -3008,8 +3009,8 @@ void G1CollectedHeap::prepare_region_for_full_compaction(G1HeapRegion* hr) {
   } else if (hr->is_old()) {
     _old_set.remove(hr);
   } else if (hr->is_young()) {
-    // Note that emptying the eden and survivor lists is postponed and instead
-    // done as the first step when rebuilding the regions sets again. The reason
+    // Note that clearing eden and survivor region tracking is postponed and
+    // done as the first step when rebuilding the region sets again. The reason
     // for this is that during a full GC string deduplication needs to know if
     // a collected region was young or old when the full GC was initiated.
     hr->uninstall_surv_rate_group();

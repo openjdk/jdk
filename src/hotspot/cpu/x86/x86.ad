@@ -3179,6 +3179,13 @@ bool Matcher::match_rule_supported(int opcode) {
       break;
 
     case Op_VectorCmpMasked:
+      if (!UseCountTrailingZerosInstruction) {
+        return false;
+      }
+      if (UseAVX < 3 || !VM_Version::supports_bmi2()) {
+        return false;
+      }
+      break;
     case Op_VectorMaskGen:
       if (UseAVX < 3 || !VM_Version::supports_bmi2()) {
         return false;

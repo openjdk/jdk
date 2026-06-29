@@ -100,11 +100,25 @@
             int hash = av.hashCode();
 
             $type$ subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
+#if[FP16]
+            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(toFloat16Array(subarr)));
+#else[FP16]
             int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
+#end[FP16]
             Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
         }
     }
 
+#if[FP16]
+    static Float16[] toFloat16Array(short[] bits) {
+        Float16[] a = new Float16[bits.length];
+        for (int j = 0; j < bits.length; j++) {
+            a[j] = shortBitsToFloat16(bits[j]);
+        }
+        return a;
+    }
+
+#end[FP16]
 #if[byte]
     @Test(dataProvider = "$type$UnaryOpProvider")
     static void reinterpretAsBytes$vectorteststype$SmokeTest(IntFunction<$type$[]> fa) {
