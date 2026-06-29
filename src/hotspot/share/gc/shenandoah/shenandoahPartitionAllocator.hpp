@@ -119,7 +119,7 @@ public:
   size_t active_alloc_region_free() const {
     size_t total = 0;
     for (uint i = 0; i < _alloc_region_count; i++) {
-      ShenandoahHeapRegion* r = _alloc_regions[i].load_acquire();
+      ShenandoahHeapRegion* r = _alloc_regions[i].load_relaxed();
       if (r != nullptr) {
         total += r->free();
       }
