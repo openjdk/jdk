@@ -195,7 +195,7 @@ public class Arguments {
         errorMode = ErrorMode.LOG;
         files = new LinkedHashSet<>();
         deferredFileManagerOptions = new LinkedHashMap<>();
-        fileObjects = new LinkedHashSet<>();
+        fileObjects = null;
         classNames = new LinkedHashSet<>();
         processArgs(args, Option.getJavaCompilerOptions(), cmdLineHelper, true, false);
         if (errors) {
@@ -276,6 +276,10 @@ public class Arguments {
      * @return the files to be compiled
      */
     public Set<JavaFileObject> getFileObjects() {
+        if (fileObjects == null) {
+            // see Arguments::validate
+            throw new IllegalStateException("file objects have not been initialized");
+        }
         return fileObjects;
     }
 
@@ -412,6 +416,9 @@ public class Arguments {
      */
     public boolean validate() {
         JavaFileManager fm = getFileManager();
+        if (fileObjects == null) {
+            fileObjects = new LinkedHashSet<>();
+        }
         if (options.isSet(Option.MODULE)) {
             if (!fm.hasLocation(StandardLocation.CLASS_OUTPUT)) {
                 log.error(Errors.OutputDirMustBeSpecifiedWithDashMOption);
