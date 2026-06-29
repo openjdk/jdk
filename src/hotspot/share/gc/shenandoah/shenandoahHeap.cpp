@@ -2769,6 +2769,9 @@ bool ShenandoahHeap::should_inject_alloc_failure() {
 
 void ShenandoahHeap::try_inject_pin() {
   assert(!ShenandoahSafepoint::is_at_shenandoah_safepoint(), "try_inject_pin() must be called outside a safepoint.");
+  assert(active_generation() != nullptr, "Active generation must be set before we inject pins.");
+  assert(is_concurrent_mark_in_progress() || active_generation()->is_mark_complete(),
+         "try_inject_pin() requires marking is in progress or has completed.");
   if (ShenandoahPinRegionRate && !cancelled_gc() && ((uintx)(os::random() % 1000) < ShenandoahPinRegionRate) &&
       _injected_pin_count < MAX_INJECTED_PINS) {
     const size_t idx = os::random() % num_regions();
