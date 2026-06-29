@@ -228,7 +228,7 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
       }
       default:
         if (!process_arch_specific_dwarf_instructions(op)) {
-          print_error("DWARF: Unknown opcode: 0x%x\n", op);
+          print_debug("DWARF: Unknown opcode: 0x%x\n", op);
           return;
         }
     }
