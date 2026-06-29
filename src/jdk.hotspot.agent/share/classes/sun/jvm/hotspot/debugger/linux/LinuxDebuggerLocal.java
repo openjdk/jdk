@@ -40,7 +40,6 @@ import sun.jvm.hotspot.debugger.DebuggerBase;
 import sun.jvm.hotspot.debugger.DebuggerException;
 import sun.jvm.hotspot.debugger.DebuggerUtilities;
 import sun.jvm.hotspot.debugger.MachineDescription;
-import sun.jvm.hotspot.debugger.MachineDescriptionAArch64;
 import sun.jvm.hotspot.debugger.NotInHeapException;
 import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.debugger.ProcessInfo;
@@ -51,7 +50,6 @@ import sun.jvm.hotspot.debugger.UnmappedAddressException;
 import sun.jvm.hotspot.debugger.cdbg.CDebugger;
 import sun.jvm.hotspot.debugger.cdbg.ClosestSymbol;
 import sun.jvm.hotspot.debugger.cdbg.LoadObject;
-import sun.jvm.hotspot.debugger.linux.aarch64.LinuxAARCH64DebuggerLocal;
 import sun.jvm.hotspot.utilities.PlatformInfo;
 
 /** <P> An implementation of the JVMDebugger interface. The basic debug
@@ -300,6 +298,10 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
         }
     }
 
+    protected void onAttach() {
+       // Do nothing by default: it should be implemented by inherited classes.
+    }
+
     /** From the Debugger interface via JVMDebugger */
     public synchronized void attach(int processID) throws DebuggerException {
         checkAttached();
@@ -321,12 +323,11 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
            int pid;
            public void doit(LinuxDebuggerLocal debugger) {
               debugger.attach0(pid);
-              if ((debugger instanceof LinuxAARCH64DebuggerLocal d) && d.isPACEnabled()) {
-                 ((MachineDescriptionAArch64)d.getMachineDescription()).enablePAC();
-              }
               debugger.attached = true;
               debugger.isCore = false;
               findABIVersion();
+
+              onAttach();
            }
         }
 
@@ -341,12 +342,11 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
         threadList = new ArrayList<>();
         loadObjectList = new ArrayList<>();
         attach0(execName, coreName);
-        if ((this instanceof LinuxAARCH64DebuggerLocal d) && d.isPACEnabled()) {
-            ((MachineDescriptionAArch64)d.getMachineDescription()).enablePAC();
-        }
         attached = true;
         isCore = true;
         findABIVersion();
+
+        onAttach();
     }
 
     /** From the Debugger interface via JVMDebugger */

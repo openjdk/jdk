@@ -28,12 +28,20 @@ package sun.jvm.hotspot.debugger.linux.aarch64;
 import sun.jvm.hotspot.debugger.linux.LinuxDebuggerLocal;
 import sun.jvm.hotspot.debugger.DebuggerException;
 import sun.jvm.hotspot.debugger.MachineDescription;
+import sun.jvm.hotspot.debugger.MachineDescriptionAArch64;
 
 
 public class LinuxAARCH64DebuggerLocal extends LinuxDebuggerLocal {
 
     public LinuxAARCH64DebuggerLocal(MachineDescription machDesc, boolean useCache) throws DebuggerException {
         super(machDesc, useCache);
+    }
+
+    @Override
+    protected void onAttach() {
+        if (isPACEnabled()) {
+            ((MachineDescriptionAArch64)getMachineDescription()).enablePAC();
+        }
     }
 
     public boolean isPACEnabled() {
