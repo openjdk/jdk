@@ -10068,7 +10068,7 @@ instruct cmovI_bso_reg(iRegIdst dst, flagsRegSrc crx, regD src) %{
 
 instruct cmovI_bso_reg_conLvalue0(iRegIdst dst, flagsRegSrc crx, regD src) %{
   // no match-rule, false predicate
-  effect(TEMP_DEF dst, USE crx, USE src);
+  effect(DEF dst, USE crx, USE src);
   predicate(false);
 
   format %{ "CMOVI   $dst, $crx, $src, 0 \t// set to 0 if unordered" %}
@@ -10206,7 +10206,7 @@ instruct cmovL_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
 
 instruct cmovL_bso_reg_conLvalue0(iRegLdst dst, flagsRegSrc crx, regD src) %{
   // no match-rule, false predicate
-  effect(TEMP_DEF dst, USE crx, USE src);
+  effect(DEF dst, USE crx, USE src);
   predicate(false);
 
   format %{ "CMOVL   $dst, $crx, $src, 0 \t// set to 0 if unordered" %}
