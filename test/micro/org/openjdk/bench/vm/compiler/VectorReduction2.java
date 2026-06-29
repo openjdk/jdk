@@ -294,6 +294,16 @@ public abstract class VectorReduction2 {
 
     // ---------byte***PairwiseAdd ------------------------------------------------------------
     @Benchmark
+    public void byteAddPairwiseAdd(Blackhole bh) {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] + in2B[i]);
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
     public void byteMulPairwiseAdd(Blackhole bh) {
         byte acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -517,6 +527,16 @@ public abstract class VectorReduction2 {
     }
 
     // ---------char***PairwiseAdd ------------------------------------------------------------
+    @Benchmark
+    public void charAddPairwiseAdd(Blackhole bh) {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] + in2C[i]);
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
     @Benchmark
     public void charMulPairwiseAdd(Blackhole bh) {
         char acc = 1; // neutral element
@@ -742,6 +762,16 @@ public abstract class VectorReduction2 {
 
     // ---------short***PairwiseAdd ------------------------------------------------------------
     @Benchmark
+    public void shortAddPairwiseAdd(Blackhole bh) {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] + in2S[i]);
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
     public void shortMulPairwiseAdd(Blackhole bh) {
         short acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -965,6 +995,16 @@ public abstract class VectorReduction2 {
     }
 
     // ---------int***PairwiseAdd ------------------------------------------------------------
+    @Benchmark
+    public void intAddPairwiseAdd(Blackhole bh) {
+        int acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i] + in2I[i];
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
     @Benchmark
     public void intMulPairwiseAdd(Blackhole bh) {
         int acc = 1; // neutral element
@@ -1190,6 +1230,16 @@ public abstract class VectorReduction2 {
 
     // ---------long***PairwiseAdd ------------------------------------------------------------
     @Benchmark
+    public void longAddPairwiseAdd(Blackhole bh) {
+        long acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i] + in2L[i];
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
     public void longMulPairwiseAdd(Blackhole bh) {
         long acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1354,6 +1404,16 @@ public abstract class VectorReduction2 {
 
     // ---------float***PairwiseAdd ------------------------------------------------------------
     @Benchmark
+    public void floatAddPairwiseAdd(Blackhole bh) {
+        float acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            float val = in1F[i] + in2F[i];
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
     public void floatMulPairwiseAdd(Blackhole bh) {
         float acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1488,6 +1548,16 @@ public abstract class VectorReduction2 {
 
     // ---------double***PairwiseAdd ------------------------------------------------------------
     @Benchmark
+    public void doubleAddPairwiseAdd(Blackhole bh) {
+        double acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            double val = in1D[i] + in2D[i];
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
     public void doubleMulPairwiseAdd(Blackhole bh) {
         double acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1585,6 +1655,18 @@ public abstract class VectorReduction2 {
     }
 
     // ---------float16***PairwiseAdd ------------------------------------------------------------
+    @Benchmark
+    public void float16AddPairwiseAdd(Blackhole bh) {
+        short acc = Float.floatToFloat16(0.0f); // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            Float16 val = Float16.add(Float16.shortBitsToFloat16(in1F16[i]),
+                                      Float16.shortBitsToFloat16(in2F16[i]));
+            acc = Float16.float16ToRawShortBits(
+                    Float16.add(Float16.shortBitsToFloat16(acc), val));
+        }
+        bh.consume(acc);
+    }
+
     @Benchmark
     public void float16MulPairwiseAdd(Blackhole bh) {
         short acc = Float.floatToFloat16(1.0f); // neutral element
