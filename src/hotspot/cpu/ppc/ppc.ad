@@ -3078,13 +3078,6 @@ encode %{
     __ bind(done);
   %}
 
-  enc_class enc_cmove_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
-    Label done;
-    __ bso($crx$$CondRegister, done);
-    __ mffprd($dst$$Register, $src$$FloatRegister);
-    __ bind(done);
-  %}
-
   enc_class enc_bc(flagsRegSrc crx, cmpOp cmp, Label lbl) %{
     Label d;   // dummy
     __ bind(d);
@@ -10052,20 +10045,6 @@ instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_bso_reg(iRegIdst dst, flagsRegSrc crx, regD src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVI   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_reg(dst, crx, src) );
-  ins_pipe(pipe_class_default);
-%}
-
-
 instruct cmovI_bso_reg_conLvalue0(iRegIdst dst, flagsRegSrc crx, regD src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE src);
@@ -10189,20 +10168,6 @@ instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
 %}
-
-instruct cmovL_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVL   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_reg(dst, crx, src) );
-  ins_pipe(pipe_class_default);
-%}
-
 
 instruct cmovL_bso_reg_conLvalue0(iRegLdst dst, flagsRegSrc crx, regD src) %{
   // no match-rule, false predicate
