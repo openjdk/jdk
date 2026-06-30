@@ -372,33 +372,20 @@ public:
                                                    XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5, Register rscratch,
                                                    AddressLiteral float_sign_flip, int vec_enc);
 
-  void vector_cast_double_to_int_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                    KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral float_sign_flip,
-                                                    int vec_enc);
+  void evcmp_fp(BasicType src_elem_bt, KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
+                ComparisonPredicateFP comparison, int vec_enc);
 
-  void vector_cast_double_to_long_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                     KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral double_sign_flip,
-                                                     int vec_enc);
+  void vector_cast_fp_to_int_special_cases_evex(BasicType src_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, Register rscratch,
+                                                AddressLiteral float_sign_flip, int vec_enc);
 
-  void vector_cast_float_to_int_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                   KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral float_sign_flip,
-                                                   int vec_enc);
-
-  void vector_cast_float_to_long_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                    KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral double_sign_flip,
-                                                    int vec_enc);
+  void vector_cast_fp_to_long_special_cases_evex(BasicType src_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                 XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, Register rscratch,
+                                                 AddressLiteral double_sign_flip, int vec_enc);
 
   void vector_cast_float_to_int_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3,
                                                   XMMRegister xtmp4, Register rscratch, AddressLiteral float_sign_flip,
                                                   int vec_enc);
-
-  void vector_cast_float16_to_int_special_cases(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral float_sign_flip,
-                                                int vec_enc);
-
-  void vector_cast_float16_to_long_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                      KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral double_sign_flip,
-                                                      int vec_enc);
 
   void vector_crosslane_doubleword_pack_avx(XMMRegister dst, XMMRegister src, XMMRegister zero,
                                             XMMRegister xtmp, int index, int vec_enc);
