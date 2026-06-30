@@ -1574,12 +1574,12 @@ void os::pd_check_temp_directory() {
       log_warning(os)("Warning: AltTempDir is ignored because it must be an absolute pathname");
       AltTempDir = nullptr;
     } else {
-      size_t safe_max = UNIX_PATH_MAX - CONTAINER_PREFIX_LEN; 
+      size_t safe_max = UNIX_PATH_MAX - CONTAINER_PREFIX_LEN;
       if (strlen(AltTempDir) > safe_max) {
         log_warning(os)("Warning: AltTempDir is ignored because it is longer than %zd bytes", safe_max);
         AltTempDir = nullptr;
       } else if (!is_writable_directory(AltTempDir)) {
-        log_warning(os)("Warning: AltTempDir is ignored because it is not an existing, writable, directory");
+        log_warning(os)("Warning: AltTempDir is ignored because it is not an existing or writable directory");
         AltTempDir = nullptr;
       }
     }

@@ -81,7 +81,8 @@ public class JvmTempDirTest {
         Path noExist = Path.of("/tmp/noexist");
         runNoExistTest(noExist);
 
-        Path veryLongDir = Files.createTempDirectory(Path.of("/tmp"), "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        String name = String.valueOf('a').repeat(108-22);
+        Path veryLongDir = Files.createTempDirectory(Path.of("/tmp"), name);
         veryLongDir.toFile().deleteOnExit();
         runLongTest(veryLongDir);
 
@@ -218,7 +219,7 @@ public class JvmTempDirTest {
         // Arguments : [-XX:AltTempDir=] -version
         String[] args = new String[] { "-XX:AltTempDir=" + tmpDir, "-version" };
         OutputAnalyzer output = ProcessTools.executeTestJava(args);
-        output.shouldMatch("\\[warning\\]\\[os *\\] Warning: AltTempDir is ignored because it is not present or writable");
+        output.shouldMatch("\\[warning\\]\\[os *\\] Warning: AltTempDir is ignored because it is not an existing or writable directory");
         // Still passes, it's just a warning.
         output.shouldHaveExitValue(0);
     }
@@ -227,7 +228,7 @@ public class JvmTempDirTest {
         // Arguments : [-XX:AltTempDir=] -version
         String[] args = new String[] { "-XX:AltTempDir=" + tmpDir, "-version" };
         OutputAnalyzer output = ProcessTools.executeTestJava(args);
-        output.shouldMatch("\\[warning\\]\\[os *\\] Warning: AltTempDir is ignored because it must be a fully qualified pathname");
+        output.shouldMatch("\\[warning\\]\\[os *\\] Warning: AltTempDir is ignored because it must be an absolute pathname");
         // Still passes, it's just a warning.
         output.shouldHaveExitValue(0);
     }
