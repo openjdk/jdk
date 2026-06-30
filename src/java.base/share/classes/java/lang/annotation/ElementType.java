@@ -55,8 +55,8 @@ package java.lang.annotation;
  * "type annotations"), which can appear anywhere a Java type is being
  * indicated (normally, immediately preceding that type). To be used
  * as a type-use annotation, an annotation interface must explicitly
- * include {@link #TYPE_USE} in {@link java.lang.annotation.Target
- * @Target}.
+ * include {@link #TYPE_USE} in {@link
+ * java.lang.annotation.Target @Target}.
  *
  * <h3 id="ambiguous">Ambiguous contexts</h3>
  *
@@ -65,13 +65,13 @@ package java.lang.annotation;
  * modifiers:
  *
  * <ul>
- * <li>a field, parameter, record component, or local variable (if the
- *     type is being explicitly specified; treated as if it precedes
- *     that variable's type)
- * <li>a non-void method (treated as if it precedes the method's
- *     return type)
- * <li>a constructor (treated as if it modifies the constructed type,
- *     even though this is not technically a type context)
+ *   <li>a field, parameter, record component, or local variable (if
+ *       the type is being explicitly specified; treated as if it
+ *       precedes that variable's type)
+ *   <li>a non-void method (treated as if it precedes the method's
+ *       return type)
+ *   <li>a constructor (treated as if it modifies the constructed
+ *       type, even though this is not technically a type context)
  * </ul>
  *
  * <p>In general, a library method for reading declaration annotations
@@ -79,9 +79,9 @@ package java.lang.annotation;
  * Field.getAnnotations()}) will not return type-use annotations found
  * in the same location, and vice-versa.
  *
- * <p>An annotation interface may list both {@link #TYPE_USE} and
- * one or more declaration targets, and thereby be fully usable as
- * either kind. When an annotation of this type appears in one of the
+ * <p>An annotation interface may list both {@link #TYPE_USE} and one
+ * or more declaration targets, and thereby be fully usable as either
+ * kind. When an annotation of this type appears in one of the
  * ambiguous contexts just listed, it functions as <em>both</em> a
  * declaration annotation and a type-use annotation at the same time.
  * The results may be counterintuitive in two cases: when the variable
@@ -117,7 +117,7 @@ public enum ElementType {
     TYPE,
 
     /**
-     * The declaration of a field (including of an enum constant).
+     * The declaration of a field (including that of an enum constant).
      *
      * <p>Any annotation valid for a field declaration may also appear
      * on the declaration of a record component, and is automatically
@@ -132,8 +132,7 @@ public enum ElementType {
     FIELD,
 
     /**
-     * The declaration of a method (including of an element of an
-     * annotation interface).
+     * The declaration of a method.
      *
      * <p>Any annotation valid for a method declaration may also
      * appear on the declaration of a record component, and is
@@ -152,6 +151,10 @@ public enum ElementType {
      * The declaration of a formal parameter of a method, constructor,
      * or lambda expression, or of an exception parameter.
      *
+     * <p>A lambda parameter declared using a <em>concise parameter
+     * specifier</em> cannot be annotated; either a type or the {@code
+     * var} keyword must be provided.
+     *
      * <p>Any annotation valid for a parameter declaration may also
      * appear on the declaration of a record component. Unless the
      * canonical constructor's full signature was provided explicitly
@@ -161,14 +164,11 @@ public enum ElementType {
      * constructor was not provided explicitly or it used the compact
      * syntax without an explicit parameter list.
      *
-     * <p>A lambda parameter declared using a <em>concise parameter
-     * specifier</em> cannot be annotated; either a type or the {@code
-     * var} keyword must be provided.
-     *
      * @see java.lang.reflect.Parameter#getAnnotations()
-     *      Parameter.getAnnotations() (when applicable)
+     *     Parameter.getAnnotations() (when applicable)
      * @jls 8.4.1 Formal Parameters
      * @jls 15.27.1 Lambda Parameters
+     * @jls 14.20 The {@code try} Statement
      * @jls 8.10.4 Record Constructor Declarations
      */
     PARAMETER,
@@ -182,12 +182,11 @@ public enum ElementType {
     CONSTRUCTOR,
 
     /**
-     * The declaration of a local variable. This may be an ordinary
-     * declaration statement, or declared within the header of a
-     * {@code for} or {@code try} statement, or within a pattern as a
-     * pattern variable. Note that an exception variable declared in a
-     * {@code catch} clause is considered a {@link #PARAMETER}
-     * instead.
+     * The declaration of a local variable. The variable might be
+     * declared in an ordinary declaration statement, in the header of
+     * a {@code for} or {@code try} statement, or within a pattern (as
+     * a pattern variable). However, an exception variable declared
+     * after {@code catch} is considered a {@link #PARAMETER} instead.
      *
      * <p>These annotations are not available via reflection.
      *
@@ -228,42 +227,40 @@ public enum ElementType {
 
     /**
      * A syntactic location where a compile-time type is being
-     * explicitly indicated. An annotation in such a location is
-     * a <b>type-use annotation</b> (sometimes called just "type
-     * annotation", but be careful not to confuse this with {@link
-     * #TYPE}, which is for declaration annotations for classes
-     * and interfaces).
+     * explicitly indicated. An annotation in such a location is a
+     * <b>type-use annotation</b> (sometimes called a "type
+     * annotation", but not to be confused with {@link #TYPE}).
      *
      * <p>This is a very broad category: JLS {@jls 4.11} lists
      * seventeen kinds of type contexts, followed by five more
-     * locations where type-use annotations can also legally appear.
-     * Several of these locations are also annotatable
-     * <em>declarations</em> themselves; see
-     * <a href="#ambiguous">ambiguous cases</a> above. Type-use
-     * annotations may only appear where a type is being explicitly
-     * given (not, for example, if the {@code var} keyword is used).
+     * locations where type-use annotations can also appear. Several
+     * of these locations are also annotatable <em>declarations</em>
+     * themselves; see <a href="#ambiguous">ambiguous cases</a> above.
+     * Type-use annotations may only appear where a type is being
+     * explicitly given (not, for example, if the {@code var} keyword
+     * is used).
      *
-     * <p>For types that are available through the reflection API
-     * (for example, a field type, but not a local variable type),
-     * their associated runtime-retained type-use annotations are
-     * available as well, via the various methods (with "Annotated"
-     * in their names) that return {@link
+     * <p>Type-use annotations present on types exposed through the
+     * reflection API (for example, a field type, but not a local
+     * variable type) can be accessed via the various reflection
+     * methods, with "Annotated" in their names, that return {@link
      * java.lang.reflect.AnnotatedType}.
      *
-     * <p>Specifying this target automatically includes the
-     * declaration targets {@link #TYPE} and {@link #TYPE_PARAMETER}.
-     * Annotations appearing in such declarations are still treated as
-     * declaration annotations. As a special rule, type-use
-     * annotations can also appear in a constructor declaration, to be
-     * obtained by {@link
+     * <p>Specifying this target automatically implies the declaration
+     * targets {@link #TYPE} and {@link #TYPE_PARAMETER} as well.
+     * Annotations appearing in such declarations are declaration
+     * annotations. As a special rule, type-use annotations may also
+     * appear in a constructor declaration, to be obtained by {@link
      * java.lang.reflect.Constructor#getAnnotatedReturnType()
-     * Constructor.getAnnotatedReturnType()}.
+     * Constructor.getAnnotatedReturnType()}. These are <em>not</em>
+     * treated as declaration annotations unless {@link #CONSTRUCTOR}
+     * was also specified.
      *
      * <p>When the type of a record component is propagated to its
-     * generated field, accessor method, and/or constructor parameter,
-     * any present type-use annotations are propagated with it. This
-     * does not apply if the parameter or method was provided explicitly
-     * in the source code.
+     * generated field, accessor method, or constructor parameter, its
+     * embedded type-use annotations are propagated with it. No such
+     * propagation occurs if the parameter or method was declared
+     * explicitly in the source code.
      *
      * @since 1.8
      * @see java.lang.reflect.AnnotatedType#getAnnotations()
@@ -273,9 +270,10 @@ public enum ElementType {
 
     /**
      * The declaration of a module in a {@code module-info.java} file.
-     * Note that if a client uses the module on their <i>class
-     * path</i> rather than module path, the module declaration and
-     * all its annotations will be invisible.
+     *
+     * <p><b>Warning:</b> If a client uses the module on the <em>class
+     * path</em> rather than the module path, the module declaration
+     * and all its annotations will be invisible to that client.
      *
      * @since 9
      * @see java.lang.Module#getAnnotations()
@@ -284,25 +282,17 @@ public enum ElementType {
     MODULE,
 
     /**
-     * The declaration of a record component, in the header of a
-     * record class declaration.
+     * The declaration of a record component in a record class
+     * declaration.
      *
-     * <p>If an annotation interface should apply conceptually to the
-     * field, accessor method, or constructor parameter that is
-     * generated corresponding to a record component, it should
-     * specify the appropriate element types ({@link #FIELD}, {@link
-     * #METHOD}, or {@link #PARAMETER}), instead of {@code
-     * RECORD_COMPONENT} or in addition to it. This allows the
-     * annotation to be automatically copied to any generated elements
-     * it applies to.
-     *
-     * <p>Annotations are only available through {@link
+     * <p>The targets ({@link #FIELD}, {@link #METHOD}, and {@link
+     * #PARAMETER}) also enable usage on a record component
+     * declaration, as each explains. However, if the annotation
+     * interface uses {@link Target @Target} without explicitly
+     * including {@link #RECORD_COMPONENT}, annotations of that type
+     * will not be returned by {@link
      * java.lang.reflect.RecordComponent#getAnnotations()
-     * RecordComponent.getAnnotations()} API if they
-     * are explicitly record-component annotations (meaning they
-     * either name this element type explicitly in their {@link Target
-     * @Target} annotation, or they have no {@code @Target}
-     * annotation).
+     * RecordComponent.getAnnotations()}.
      *
      * @since 16
      * @jls 8.10.1 Record Components
