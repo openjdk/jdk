@@ -620,8 +620,7 @@ public final class LauncherHelper {
                 File.pathSeparator));
     }
 
-    static void
-    initOutput(boolean printToStderr) {
+    static void initOutput(boolean printToStderr) {
         ostream =  (printToStderr) ? System.err : System.out;
     }
 

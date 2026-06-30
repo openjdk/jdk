@@ -705,7 +705,7 @@ class SerializeClosure;
   template(componentType_name,                         "componentType")                                           \
   template(showSettingsBytes_name,                     "showSettingsBytes")                                       \
   template(showSettingsBytes_signature,                "(Ljava/lang/String;J)[B")                                 \
-  template(sun_launcher_LauncherHelper,                "sun/launcher/LauncherHelper")                                      \
+  template(sun_launcher_LauncherHelper,                "sun/launcher/LauncherHelper")                             \
                                                                                                                   \
   /* forEachRemaining support */                                                                                  \
   template(java_util_stream_StreamsRangeIntSpliterator,          "java/util/stream/Streams$RangeIntSpliterator")  \
