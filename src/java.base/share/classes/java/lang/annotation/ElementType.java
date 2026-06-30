@@ -29,7 +29,7 @@ package java.lang.annotation;
  * A syntactic location where an annotation may appear in Java code.
  * An annotation interface may optionally restrict its usage to a
  * particular subset of these locations using the {@link
- * java.lang.annotation.Target @Target} meta-annotation.
+ * Target @Target} meta-annotation.
  *
  * <p>For example, an annotation of the following type may only appear
  * within a type parameter or local variable declaration:
@@ -48,15 +48,14 @@ package java.lang.annotation;
  * all the kinds of annotatable declarations, plus a subcategory of
  * {@link #TYPE} called {@link #ANNOTATION_TYPE}. An annotation
  * interface can be used as a declaration annotation if it either
- * omits {@link java.lang.annotation.Target @Target}, or uses it to
- * list which specific kinds of declarations it should apply to.
+ * omits {@link Target @Target}, or uses it to list which specific
+ * kinds of declarations it should apply to.
  *
  * <p>There are also <b>type-use annotations</b> (sometimes called
  * "type annotations"), which can appear anywhere a Java type is being
  * indicated (normally, immediately preceding that type). To be used
  * as a type-use annotation, an annotation interface must explicitly
- * include {@link #TYPE_USE} in {@link
- * java.lang.annotation.Target @Target}.
+ * include {@link #TYPE_USE} in {@link Target @Target}.
  *
  * <h3 id="ambiguous">Ambiguous contexts</h3>
  *
@@ -117,7 +116,8 @@ public enum ElementType {
     TYPE,
 
     /**
-     * The declaration of a field (including that of an enum constant).
+     * The declaration of a field (including that of an enum
+     * constant).
      *
      * <p>Any annotation valid for a field declaration may also appear
      * on the declaration of a record component, and is automatically
