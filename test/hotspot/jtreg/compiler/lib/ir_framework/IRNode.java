@@ -2613,6 +2613,11 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_MASK_CAST, "VectorMaskCast");
     }
 
+    public static final String VECTOR_REINTERPRET = PREFIX + "VECTOR_REINTERPRET" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_REINTERPRET, "VectorReinterpret");
+    }
+
     public static final String VECTOR_REINTERPRET_B = VECTOR_PREFIX + "VECTOR_REINTERPRET_B" + POSTFIX;
     static {
         vectorNode(VECTOR_REINTERPRET_B, "VectorReinterpret", TYPE_BYTE);
