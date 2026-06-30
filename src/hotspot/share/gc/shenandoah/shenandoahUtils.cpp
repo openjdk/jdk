@@ -122,6 +122,17 @@ ShenandoahConcurrentPhase::~ShenandoahConcurrentPhase() {
   _timer->register_gc_concurrent_end();
 }
 
+ShenandoahConcurrentRootPhase::ShenandoahConcurrentRootPhase(const char* title, ShenandoahPhaseTimings::Phase phase, bool log_heap_usage) :
+  ShenandoahTimingsTracker(phase),
+  _tracer(title, nullptr, GCCause::_no_gc, log_heap_usage),
+  _timer(ShenandoahHeap::heap()->gc_timer()) {
+  _timer->register_gc_concurrent_start(title);
+}
+
+ShenandoahConcurrentRootPhase::~ShenandoahConcurrentRootPhase() {
+  _timer->register_gc_concurrent_end();
+}
+
 ShenandoahTimingsTracker::ShenandoahTimingsTracker(ShenandoahPhaseTimings::Phase phase, bool should_aggregate) :
   _timings(ShenandoahHeap::heap()->phase_timings()), _phase(phase), _should_aggregate(should_aggregate) {
   assert(Thread::current()->is_VM_thread() || Thread::current()->is_ConcurrentGC_thread(),
