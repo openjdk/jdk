@@ -91,16 +91,16 @@ void VM_G1TryInitiateConcMark::doit() {
   _cycle_already_in_progress =  state->is_in_concurrent_cycle();
   _whitebox_controlled = (_gc_cause != GCCause::_wb_breakpoint) && ConcurrentGCBreakpoints::is_controlled();
 
-  // Clear any code cache unloading GC request if we are WhiteBox controlled and we are going to
-  // suppress it. If marking is active, we do not need to suppress because that will satisfy the
+  // Notify the code cache that we deferred clearing the unloading GC request if we are WhiteBox controlled
+  // and we are going to suppress it. If marking is active, we do not need to suppress because that will satisfy the
   // request already.
   // This needs to be atomic wrt. to all code-cache allocation threads to allow setting the request
   // after WhiteBox releases control again.
-  bool suppress_codecache_request = whitebox_controlled() &&
-                                    GCCause::is_codecache_requested_gc(_gc_cause) &&
-                                    !mark_in_progress();
-  if (suppress_codecache_request) {
-    CodeCache::clear_unloading_gc_request();
+  bool defer_codecache_request = whitebox_controlled() &&
+                                 GCCause::is_codecache_requested_gc(_gc_cause) &&
+                                 !mark_in_progress();
+  if (defer_codecache_request) {
+    CodeCache::defer_unloading_gc_request();
     return;
   } else if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
     // Failure to force the next GC pause to be a concurrent start indicates
