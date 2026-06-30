@@ -10019,7 +10019,7 @@ instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_bso_reg_conLvalue0(iRegIdst dst, flagsRegSrc crx, regD src) %{
+instruct cmovI_bso_reg_con0(iRegIdst dst, flagsRegSrc crx, regD src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE src);
   predicate(false);
@@ -10059,7 +10059,7 @@ instruct convD2I_reg_mffprd_ExEx(iRegIdst dst, regD src) %{
     flagsReg crx;
     cmpDUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
     convD2IRaw_regD(tmpD, src);                         // Convert float to int (speculated).
-    cmovI_bso_reg_conLvalue0(dst, crx, tmpD);           // Cmove based on NaN check.
+    cmovI_bso_reg_con0(dst, crx, tmpD);                 // Cmove based on NaN check.
   %}
 %}
 
@@ -10087,7 +10087,7 @@ instruct convF2I_regF_mffprd_ExEx(iRegIdst dst, regF src) %{
     flagsReg crx;
     cmpFUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
     convF2IRaw_regF(tmpF, src);                         // Convert float to int (speculated).
-    cmovI_bso_reg_conLvalue0(dst, crx, tmpF);           // Cmove based on NaN check.
+    cmovI_bso_reg_con0(dst, crx, tmpF);                 // Cmove based on NaN check.
   %}
 %}
 
@@ -10140,7 +10140,7 @@ instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovL_bso_reg_conLvalue0(iRegLdst dst, flagsRegSrc crx, regD src) %{
+instruct cmovL_bso_reg_con0(iRegLdst dst, flagsRegSrc crx, regD src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE src);
   predicate(false);
@@ -10180,7 +10180,7 @@ instruct convF2L_reg_mffprd_ExEx(iRegLdst dst, regF src) %{
     flagsReg crx;
     cmpFUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
     convF2LRaw_regF(tmpF, src);                         // Convert float to long (speculated).
-    cmovL_bso_reg_conLvalue0(dst, crx, tmpF);           // Cmove based on NaN check.
+    cmovL_bso_reg_con0(dst, crx, tmpF);                 // Cmove based on NaN check.
   %}
 %}
 
@@ -10207,7 +10207,7 @@ instruct convD2L_reg_mffprd_ExEx(iRegLdst dst, regD src) %{
     flagsReg crx;
     cmpDUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
     convD2LRaw_regD(tmpD, src);                         // Convert float to long (speculated).
-    cmovL_bso_reg_conLvalue0(dst, crx, tmpD);           // Cmove based on NaN check.
+    cmovL_bso_reg_con0(dst, crx, tmpD);                 // Cmove based on NaN check.
   %}
 %}
 
