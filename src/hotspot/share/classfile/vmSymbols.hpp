@@ -738,6 +738,7 @@ class SerializeClosure;
   template(componentType_name,                         "componentType")                                           \
   template(showSettingsBytes_name,                     "showSettingsBytes")                                       \
   template(showSettingsBytes_signature,                "(Ljava/lang/String;J)[B")                                 \
+  template(sun_launcher_LauncherHelper,                "sun/launcher/LauncherHelper")                             \
   template(sun_launcher_LauncherHelper,                "sun/launcher/LauncherHelper")                                      \
   template(primaryType_name,                           "primaryType")                                             \
   template(secondaryType_name,                         "secondaryType")                                           \
