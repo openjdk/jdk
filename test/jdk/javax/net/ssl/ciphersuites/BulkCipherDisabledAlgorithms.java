@@ -34,7 +34,6 @@
  * @run main/othervm BulkCipherDisabledAlgorithms handshake
  */
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -43,7 +42,6 @@ import javax.net.ssl.*;
 
 import jdk.test.lib.process.Proc;
 
-import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 
@@ -185,80 +183,46 @@ public class BulkCipherDisabledAlgorithms {
     }
 
     private static void testHandshake(String suite, boolean expectedDisabled) throws Exception {
-        try (SSLServer server = new SSLServer(new String[] { suite })) {
-            Thread t = new Thread(server);
-            t.setDaemon(true);
-            t.start();
+        try {
+            new TLSHandshakeTest(suite).run();
 
-            while (!server.running) {
-                Thread.sleep(50);
+            if (expectedDisabled) {
+                throw new RuntimeException(
+                        "Handshake succeeded but should fail: " + suite);
             }
-
-            try (SSLClient client = new SSLClient(server.getPort(), suite)) {
-                client.connect();
-                if (expectedDisabled) {
-                    throw new RuntimeException(
-                            "Handshake succeeded but expected failure for suite=" + suite);
-                }
-            } catch (SSLHandshakeException e) {
-                if (!expectedDisabled) {
-                    throw new RuntimeException(
-                            "Handshake failed unexpectedly for suite=" + suite);
-                }
+        } catch (SSLHandshakeException e) {
+            if (!expectedDisabled) {
+                throw new RuntimeException(
+                        "Handshake failed unexpectedly: " + suite, e);
             }
         }
     }
 
-    private static class SSLServer extends SSLContextTemplate implements Runnable, AutoCloseable {
-        private final SSLServerSocket socket;
-        volatile boolean running = false;
+    private static class TLSHandshakeTest extends SSLSocketTemplate {
+        private final String suite;
 
-        public SSLServer(String[] suites) throws Exception {
-            SSLContext ctx = createServerSSLContext();
-            socket = (SSLServerSocket) ctx.getServerSocketFactory()
-                    .createServerSocket(0, 0, InetAddress.getLoopbackAddress());
-            socket.setEnabledCipherSuites(suites);
+        TLSHandshakeTest(String suite) {
+            this.suite = suite;
         }
 
         @Override
-        public void run() {
-            running = true;
-            try (SSLSocket s = (SSLSocket) socket.accept()) {
-                s.startHandshake();
-            } catch (SSLHandshakeException ignored) {
-                // expected in this test
-            } catch (IOException ioe) {
-                throw new RuntimeException(ioe);
-            }
-        }
-
-        int getPort() {
-            return socket.getLocalPort();
-        }
-
-        @Override
-        public void close() throws Exception {
-            socket.close();
-        }
-    }
-
-    private static class SSLClient extends SSLContextTemplate implements AutoCloseable {
-        private final SSLSocket socket;
-
-        public SSLClient(int port, String suite) throws Exception {
-            SSLContext ctx = createClientSSLContext();
-            socket = (SSLSocket) ctx.getSocketFactory()
-                    .createSocket(InetAddress.getLoopbackAddress(), port);
+        protected void configureClientSocket(SSLSocket socket) {
             socket.setEnabledCipherSuites(new String[] { suite });
         }
 
-        void connect() throws Exception {
+        @Override
+        protected void configureServerSocket(SSLServerSocket socket) {
+            socket.setEnabledCipherSuites(new String[] { suite });
+        }
+
+        @Override
+        protected void runClientApplication(SSLSocket socket) throws Exception {
             socket.startHandshake();
         }
 
         @Override
-        public void close() throws Exception {
-            socket.close();
+        protected void runServerApplication(SSLSocket socket) throws Exception {
+            socket.startHandshake();
         }
     }
 }
