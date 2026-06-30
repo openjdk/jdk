@@ -2750,6 +2750,8 @@ private:
   void evmaxph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void evfmadd132ph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evfmadd132ph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evfmadd231ph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evfmadd231ph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void evsqrtph(XMMRegister dst, XMMRegister src1, int vector_len);
   void evsqrtph(XMMRegister dst, Address src1, int vector_len);
 
