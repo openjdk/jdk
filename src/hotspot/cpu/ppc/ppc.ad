@@ -2960,27 +2960,6 @@ encode %{
     assert(!(ra_->is_oop(this)), "sanity"); // This is not supposed to be GC'ed.
   %}
 
-  enc_class postalloc_expand_encode_oop_not_null(iRegNdst dst, iRegPdst src) %{
-
-    encodeP_subNode *n1 = new encodeP_subNode();
-    n1->add_req(n_region, n_src);
-    n1->_opnds[0] = op_dst;
-    n1->_opnds[1] = op_src;
-    n1->_bottom_type = _bottom_type;
-
-    encodeP_shiftNode *n2 = new encodeP_shiftNode();
-    n2->add_req(n_region, n1);
-    n2->_opnds[0] = op_dst;
-    n2->_opnds[1] = op_dst;
-    n2->_bottom_type = _bottom_type;
-    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n1);
-    nodes->push(n2);
-    assert(!(ra_->is_oop(this)), "sanity"); // This is not supposed to be GC'ed.
-  %}
-
   enc_class postalloc_expand_decode_oop(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
     decodeN_shiftNode *n_shift    = new decodeN_shiftNode();
     cmpN_reg_imm0Node *n_compare  = new cmpN_reg_imm0Node();
@@ -3022,29 +3001,6 @@ encode %{
     nodes->push(n_cond_set);
 
   %}
-
-  enc_class postalloc_expand_decode_oop_not_null(iRegPdst dst, iRegNsrc src) %{
-    decodeN_shiftNode *n1 = new decodeN_shiftNode();
-    n1->add_req(n_region, n_src);
-    n1->_opnds[0] = op_dst;
-    n1->_opnds[1] = op_src;
-    n1->_bottom_type = _bottom_type;
-
-    decodeN_addNode *n2 = new decodeN_addNode();
-    n2->add_req(n_region, n1);
-    n2->_opnds[0] = op_dst;
-    n2->_opnds[1] = op_dst;
-    n2->_bottom_type = _bottom_type;
-    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
-    ra_->set_oop(n2, true);
-
-    nodes->push(n1);
-    nodes->push(n2);
-  %}
-
 
   // This enc_class is needed so that scheduler gets proper
   // input mapping for latency computation.
@@ -6341,14 +6297,18 @@ instruct encodeP_Ex(iRegNdst dst, flagsReg crx, iRegPsrc src) %{
 %}
 
 // shift != 0, base != 0
-instruct encodeP_not_null_Ex(iRegNdst dst, iRegPsrc src) %{
+instruct encodeP_not_null(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodeP src));
   predicate(n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull &&
             CompressedOops::shift() != 0 &&
             CompressedOops::base_overlaps());
 
-  format %{ "EncodeP $dst, $src\t// $src != Null, postalloc expanded" %}
-  postalloc_expand( postalloc_expand_encode_oop_not_null(dst, src) );
+  format %{ "EncodeP $dst, $src\t// $src != Null" %}
+  ins_encode %{
+    __ sub_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
+    __ srdi($dst$$Register, $dst$$Register, CompressedOops::shift() & 0x3f);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // shift != 0, base == 0
@@ -6577,7 +6537,7 @@ instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
 %}
 
 // src != 0, shift != 0, base != 0
-instruct decodeN_notNull_addBase_Ex(iRegPdst dst, iRegNsrc src) %{
+instruct decodeN_notNull_addBase(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
   predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
              n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
@@ -6585,8 +6545,12 @@ instruct decodeN_notNull_addBase_Ex(iRegPdst dst, iRegNsrc src) %{
             CompressedOops::base() != nullptr);
   ins_cost(2 * DEFAULT_COST);
 
-  format %{ "DecodeN $dst, $src \t// $src != nullptr, postalloc expanded" %}
-  postalloc_expand( postalloc_expand_decode_oop_not_null(dst, src));
+  format %{ "DecodeN $dst, $src \t// $src != nullptr" %}
+  ins_encode %{
+    __ sldi($dst$$Register, $src$$Register, CompressedOops::shift());
+    __ add_const_optimized($dst$$Register, $dst$$Register, CompressedOops::base(), R0);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Compressed OOPs with narrow_oop_shift == 0.
