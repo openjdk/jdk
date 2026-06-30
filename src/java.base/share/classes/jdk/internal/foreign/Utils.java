@@ -142,8 +142,6 @@ public final class Utils {
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = ADDRESS_CARRIER_TYPE;
-        } else if (layout.carrier() == boolean.class) {
-            baseCarrier = byte.class;
         }
 
         VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
@@ -154,8 +152,6 @@ public final class Utils {
                     MethodHandles.insertArguments(LONG_TO_ADDRESS_TARGET, 1, addressLayout) :
                     LONG_TO_ADDRESS_NO_TARGET;
             handle = MethodHandles.filterValue(handle, LONG_TO_CARRIER, longToAddressAdapter);
-        } else if (layout.carrier() == boolean.class) {
-            handle = MethodHandles.filterValue(handle, BOOLEAN_TO_BYTE, BYTE_TO_BOOLEAN);
         }
         return handle;
     }
