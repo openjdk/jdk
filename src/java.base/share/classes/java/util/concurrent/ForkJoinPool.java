@@ -1277,30 +1277,25 @@ public class ForkJoinPool extends AbstractExecutorService
          * @throws RejectedExecutionException if array could not be resized
          */
         final void push(ForkJoinTask<?> task, ForkJoinPool pool, boolean internal) {
-            int s = top++, m; ForkJoinTask<?>[] a; // backout top on failure
+            int s = top, m; ForkJoinTask<?>[] a;
             if ((a = array) == null || s - base == (m = a.length - 1) || m < 0)
-                growAndPush(task, pool, internal, s);
+                growAndPush(task, pool, internal);
             else {
-                U.getAndSetReference(a, slotOffset(m & s), task);
-                if (U.getReferenceAcquire(a, slotOffset(m & (s - 1))) != null)
-                    pool = null;  // not empty
-                if (!internal)    // unlock
+                long k = slotOffset(m & s), pk = slotOffset(m & (s - 1));
+                top = s + 1;
+                U.putReferenceRelease(a, k, task);
+                if (!internal)
                     U.getAndAddInt(this, PHASE, IDLE);
+                if (U.getReferenceAcquire(a, pk) == null && pool != null)
+                    pool.signalWork();
             }
-            if (pool != null)
-                pool.signalWork();
         }
 
         /**
          * Resizes the queue array and pushes task unless out of memory.
-         * @param task the task
-         * @param pool the pool
-         * @param internal if caller owns this queue
-         * @param s previous top
-         * @throws RejectedExecutionException if out of memory
          */
         private void growAndPush(ForkJoinTask<?> task, ForkJoinPool pool,
-                                 boolean internal, int s) {
+                                 boolean internal) {
             ForkJoinTask<?>[] a; int cap, newCap;
             boolean resized = false;
             if ((a = array) != null && (cap = a.length) > 0 &&
@@ -1312,7 +1307,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 }
                 if (newArray != null) {
                     resized = true;
-                    int m = cap - 1, newMask = newCap - 1;
+                    int m = cap - 1, newMask = newCap - 1, s = top++;
                     newArray[s-- & newMask] = task;
                     for (int k = s, j = m; j > 0; --j, --k) {
                         ForkJoinTask<?> u;           // poll old, push to new
@@ -1324,14 +1319,14 @@ public class ForkJoinPool extends AbstractExecutorService
                     U.putReferenceRelease(this, ARRAY, newArray);
                 }
             }
-            if (!resized)
-                top = s;
             if (!internal)
                 unlockPhase();
             if (!resized)
                 throw new RejectedExecutionException("Queue capacity exceeded");
-            else if (pool != null)                  // ensure rescans
+            else if (pool != null) {                 // ensure rescans
                 pool.advanceRunState();
+                pool.signalWork();
+            }
         }
 
         /**
@@ -2032,12 +2027,12 @@ public class ForkJoinPool extends AbstractExecutorService
                 if ((q = qs[qid = i & (n - 1)]) != null &&
                     (a = q.array) != null && (cap = a.length) > 0) {
                     boolean taken = false;
-                    for (int m = cap - 1, pb = -1, propagated = -1;;) {
+                    for (int m = cap - 1, pb = -1;;) {
                         int b, nb; long bp;
                         ForkJoinTask<?> t = (ForkJoinTask<?>)U.getReferenceAcquire(
                             a, bp = slotOffset(m & (b = q.base)));
                         long np = slotOffset(m & (nb = b + 1));
-                        if (q.base != b) {   // inconsistent / busy
+                        if (q.base != b) {        // inconsistent / busy
                             if (src != qid)
                                 break outer;      // reduce interference
                         }
@@ -2059,13 +2054,13 @@ public class ForkJoinPool extends AbstractExecutorService
                             Object u = U.compareAndExchangeReference(a, bp, t, null);
                             if (u == t) {
                                 q.base = pb = nb;
-                                if (U.getReferenceAcquire(a, np) != null &&
-                                    (src != qid || (qid & 1) == 0) &&
-                                    propagated != b)
-                                    propagated = nb;
+                                boolean propagate =
+                                    (U.getReferenceAcquire(a, np) != null &&
+                                     (src != qid ||
+                                      ((qid & 1) == 0) && t.noUserHelp() != 0));
                                 taken = true;
                                 U.putIntRelease(w, WorkQueue.SOURCE, src = qid);
-                                if (propagated == nb)
+                                if (propagate)
                                     signalWork();
                                 w.topLevelExec(t);
                             }
@@ -2077,8 +2072,7 @@ public class ForkJoinPool extends AbstractExecutorService
                         }
                         else if ((idle = (phase = w.phase) & IDLE) != 0) {
                             phase = tryReactivate(w, phase, qid, r);
-                            if ((idle = phase & IDLE) != 0)
-                                break outer;
+                            break outer;
                         }
                     }
                 }
@@ -2717,6 +2711,36 @@ public class ForkJoinPool extends AbstractExecutorService
             qs[r & EXTERNAL_ID_MASK & (n - 1)] : null;
     }
 
+    private WorkQueue randomExternalQueue() {
+        for (;;) {
+            int n, i, id; WorkQueue[] qs; WorkQueue q;
+            int r = ThreadLocalRandom.nextSecondarySeed();
+            if ((qs = queues) == null)
+                break;
+            if ((n = qs.length) <= 0)
+                break;
+            if ((q = qs[i = (id = r & EXTERNAL_ID_MASK) & (n - 1)]) == null) {
+                WorkQueue w = new WorkQueue(null, id, 0, false);
+                boolean reject = ((lockRunState() & SHUTDOWN) != 0);
+                if (!reject && queues == qs && qs[i] == null)
+                    q = qs[i] = w;                   // else lost race to install
+                unlockRunState();
+                if (q != null)
+                    return q;
+                if (reject)
+                    break;
+            }
+            else if (q.tryLockPhase()) {
+                if ((runState & SHUTDOWN) != 0L) {
+                    q.unlockPhase();                     // check while q lock held
+                    break;
+                }
+                return q;
+            }
+        }
+        throw new RejectedExecutionException();
+    }
+
     /**
      * Returns external queue for common pool.
      */
@@ -3353,7 +3377,9 @@ public class ForkJoinPool extends AbstractExecutorService
      * @since 19
      */
     public <T> ForkJoinTask<T> lazySubmit(ForkJoinTask<T> task) {
-        return poolSubmit(false,  Objects.requireNonNull(task));
+        Objects.requireNonNull(task);
+        randomExternalQueue().push(task, null, false);
+        return task;
     }
 
     /**
