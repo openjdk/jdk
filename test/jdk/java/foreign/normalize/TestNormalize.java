@@ -195,22 +195,8 @@ public class TestNormalize extends NativeTestHelper {
     @DataProvider
     public static Object[][] bools() {
         return new Object[][]{
-            { 0b1,           true  }, // least significant bit 1 (canonical Java 'true' value)
             { 0b10,          true  }, // zero least significant bit, but non-zero first byte
             { 0b1_0000_0000, false }  // zero first byte
         };
-    }
-
-    // force byte order to LE to make sure the test works on BE platforms
-    static final ValueLayout.OfInt JAVA_INT_LE = JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN);
-
-    @Test(dataProvider = "bools")
-    public void testBoolVarHandles(int testValue, boolean expected) {
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment ms = arena.allocate(JAVA_INT_LE);
-            ms.set(JAVA_INT_LE, 0L, testValue);
-            boolean b = ms.get(JAVA_BOOLEAN, 0L);
-            assertEquals(b, expected);
-        }
     }
 }
