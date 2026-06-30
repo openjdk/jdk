@@ -25,7 +25,7 @@
  * @test
  * @bug 8387124
  * @summary Test disabling TLS 1.3 cipher suites with bulk ciphers names
- * @run testng TLS13BulkCipherDisabledCipherSuite
+ * @run testng/othervm TLS13BulkCipherDisabledCipherSuite
  */
 
 import static org.testng.AssertJUnit.assertTrue;
