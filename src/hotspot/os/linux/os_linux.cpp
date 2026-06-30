@@ -1554,15 +1554,15 @@ static bool is_writable_directory(const char* name) {
   return (ret_val != -1 && S_ISDIR(mystat.st_mode) > 0 && access(name, R_OK|W_OK|X_OK) == 0);
 }
 
-// We need to check that any given alternate temporary directory name isn't too long
-// and is a writable directory.  Revert back to hardcoded /tmp.
+// We need to check that any given alternate temporary directory name isn't too long,
+// is a writable directory, and specifies an absolute path.  Revert back to hardcoded /tmp otherwise.
 // Since the attach mechanism uses the socket name length, this severely limits the length of the
 // alternate temporary directory name.
 
 // If in a containerized process, temp can be used to compose the dirname of
-// /proc/{vmid}/root/tmp/{PERFDATA_NAME_user}, otherwise /tmp/{PERFDATA_NAME_user}, so we add 22.
-
-// We also check that it is a fully qualified pathname.
+// /proc/{vmid}/root/tmp/{PERFDATA_NAME_user}, otherwise /tmp/{PERFDATA_NAME_user}, so we allow
+// 22 characters for the prefix.
+const int CONTAINER_PREFIX_LEN = 22;
 
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX   sizeof(sockaddr_un::sun_path)
@@ -1571,21 +1571,21 @@ static bool is_writable_directory(const char* name) {
 void os::pd_check_temp_directory() {
   if (AltTempDir != nullptr && AltTempDir[0] != '\0') {
     if (AltTempDir[0] != '/') {
-      log_warning(os)("Warning: AltTempDir is ignored because it must be a fully qualified pathname");
+      log_warning(os)("Warning: AltTempDir is ignored because it must be an absolute pathname");
       AltTempDir = nullptr;
     } else {
-      size_t safe_max = UNIX_PATH_MAX - 22; // accounting for /proc/%pid composition in containers
+      size_t safe_max = UNIX_PATH_MAX - CONTAINER_PREFIX_LEN; 
       if (strlen(AltTempDir) > safe_max) {
         log_warning(os)("Warning: AltTempDir is ignored because it is longer than %zd bytes", safe_max);
         AltTempDir = nullptr;
       } else if (!is_writable_directory(AltTempDir)) {
-        log_warning(os)("Warning: AltTempDir is ignored because it is not present or writable");
+        log_warning(os)("Warning: AltTempDir is ignored because it is not an existing, writable, directory");
         AltTempDir = nullptr;
       }
     }
   } else {
     if (!is_writable_directory("/tmp")) {
-      log_warning(os)("Warning: /tmp is not a writable directory. Consider using -XX:AltTempDir=/<dir> to one that is writable");
+      log_warning(os)("Warning: /tmp is not writable. Consider using -XX:AltTempDir=/<dir> to set a writable temp directory");
     }
     AltTempDir = nullptr; // avoid checking AltTempDir[0] again.
   }

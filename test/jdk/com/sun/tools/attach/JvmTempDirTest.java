@@ -97,7 +97,7 @@ public class JvmTempDirTest {
      * The responsibility of this class is to:
      * 1. Start the Application class in a separate process.
      * 2. Find the pid and shutdown port of the running Application.
-     * 3. Launches the tests in nested class TestMain that will attach to the Application.
+     * 3. Launch the tests in nested class TestMain that will attach to the Application.
      * 4. Shut down the Application.
      */
     public static void runExperiment(Path clientTmpDir, Path targetTmpDir, boolean shouldPass) throws Throwable {
@@ -206,7 +206,6 @@ public class JvmTempDirTest {
     }
 
     private static void runLongTest(Path tmpDir) throws Throwable {
-
         // Arguments : [-XX:AltTempDir=] -version
         String[] args = new String[] { "-XX:AltTempDir=" + tmpDir, "-version" };
         OutputAnalyzer output = ProcessTools.executeTestJava(args);
@@ -216,7 +215,6 @@ public class JvmTempDirTest {
     }
 
     private static void runNoExistTest(Path tmpDir) throws Throwable {
-
         // Arguments : [-XX:AltTempDir=] -version
         String[] args = new String[] { "-XX:AltTempDir=" + tmpDir, "-version" };
         OutputAnalyzer output = ProcessTools.executeTestJava(args);
@@ -226,7 +224,6 @@ public class JvmTempDirTest {
     }
 
     private static void runRelativeTest(Path tmpDir) throws Throwable {
-
         // Arguments : [-XX:AltTempDir=] -version
         String[] args = new String[] { "-XX:AltTempDir=" + tmpDir, "-version" };
         OutputAnalyzer output = ProcessTools.executeTestJava(args);
