@@ -206,9 +206,9 @@ address frame::raw_pc() const {
   if (is_deoptimized_frame()) {
     nmethod* nm = cb()->as_nmethod_or_null();
     assert(nm != nullptr, "only nmethod is expected here");
-    return nm->deopt_handler_entry() - pc_return_offset;
+    return nm->deopt_handler_entry();
   } else {
-    return (pc() - pc_return_offset);
+    return pc();
   }
 }
 
@@ -385,6 +385,22 @@ void frame::deoptimize(JavaThread* thread) {
     assert(fr.is_deoptimized_frame(), "missed deopt");
   }
 #endif // ASSERT
+}
+
+void frame::deoptimize(JavaThread* thread, stackChunkOop chunk) {
+  assert(is_heap_frame() && _frame_index >= 0, "wrong frame type");
+
+  // Fast path does not expect deopted frames
+  chunk->force_slow_path();
+
+  frame fr = chunk->derelativize(*this);
+  fr.deoptimize(nullptr);
+
+  // Fix chunk pc if deopted frame is the top one
+  bool is_top = fr.sp() == chunk->sp_address();
+  if (is_top) {
+    chunk->set_pc(fr.raw_pc());
+  }
 }
 
 frame frame::java_sender() const {

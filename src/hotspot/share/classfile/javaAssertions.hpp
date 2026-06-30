@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,6 @@ private:
   static void fillJavaArrays(const OptionList* p, int len, objArrayHandle names,
     typeArrayHandle status, TRAPS);
 
-  static inline void trace(const char* name, const char* typefound,
-    const char* namefound, bool enabled);
-
   static inline OptionList*     match_class(const char* classname);
   static OptionList*            match_package(const char* classname);
 
@@ -90,8 +87,6 @@ inline bool JavaAssertions::userClassDefault() {
 }
 
 inline void JavaAssertions::setUserClassDefault(bool enabled) {
-  if (TraceJavaAssertions)
-    tty->print_cr("JavaAssertions::setUserClassDefault(%d)", enabled);
   _userDefault = enabled;
 }
 
@@ -100,8 +95,6 @@ inline bool JavaAssertions::systemClassDefault() {
 }
 
 inline void JavaAssertions::setSystemClassDefault(bool enabled) {
-  if (TraceJavaAssertions)
-    tty->print_cr("JavaAssertions::setSystemClassDefault(%d)", enabled);
   _sysDefault = enabled;
 }
 
