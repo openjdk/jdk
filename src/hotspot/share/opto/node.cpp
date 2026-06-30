@@ -2882,7 +2882,7 @@ bool Node::is_iteratively_computed() {
 //--------------------------find_similar------------------------------
 // Return a node with opcode "opc" and same inputs as "this" if one can
 // be found; Otherwise return null;
-Node* Node::find_similar(int opc) {
+Node* Node::find_similar(int opc, bool is_commutative) {
   if (req() >= 2) {
     Node* def = in(1);
     if (def && def->outcnt() >= 2) {
@@ -2890,9 +2890,26 @@ Node* Node::find_similar(int opc) {
         Node* use = def->fast_out(i);
         if (use != this &&
             use->Opcode() == opc &&
-            use->req() == req() &&
-            has_same_inputs_as(use)) {
-          return use;
+            use->req() == req()) {
+          bool same = false;
+          if (!is_commutative || req() < 3) {
+            same = use->has_same_inputs_as(this);
+          } else {
+            if (use->in(0) == in(0) &&
+                ((use->in(1) == in(1) && use->in(2) == in(2)) ||
+                 (use->in(1) == in(2) && use->in(2) == in(1)))) {
+              same = true;
+              for (uint j = 3; j < req(); j++) {
+                if (use->in(j) != in(j)) {
+                  same = false;
+                  break;
+                }
+              }
+            }
+          }
+          if (same) {
+            return use;
+          }
         }
       }
     }

@@ -43,18 +43,6 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-inline oop ShenandoahBarrierSet::resolve_forwarded_not_null(oop p) {
-  return ShenandoahForwarding::get_forwardee(p);
-}
-
-inline oop ShenandoahBarrierSet::resolve_forwarded(oop p) {
-  if (p != nullptr) {
-    return resolve_forwarded_not_null(p);
-  } else {
-    return p;
-  }
-}
-
 template <DecoratorSet decorators, class T>
 inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load_addr) {
   assert(ShenandoahLoadRefBarrier, "Should be enabled");
@@ -119,7 +107,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
   if (_heap->has_forwarded_objects() && _heap->in_collection_set(obj)) {
     // Subsumes null-check
     assert(obj != nullptr, "cset check must have subsumed null-check");
-    oop fwd = resolve_forwarded_not_null(obj);
+    oop fwd = ShenandoahForwarding::get_forwardee(obj);
     if (obj == fwd && _heap->is_evacuation_in_progress()) {
       Thread* t = Thread::current();
       return _heap->evacuate_object(obj, t);
@@ -167,14 +155,15 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
   return fwd;
 }
 
-inline void ShenandoahBarrierSet::enqueue(oop obj) {
+inline void ShenandoahBarrierSet::enqueue(oop obj, bool filter) {
   assert(obj != nullptr, "checked by caller");
+  shenandoah_assert_correct(nullptr, obj);
   assert(_satb_mark_queue_set.is_active(), "only get here when SATB active");
 
   // Filter marked objects before hitting the SATB queues. The same predicate would
   // be used by SATBMQ::filter to eliminate already marked objects downstream, but
   // filtering here helps to avoid wasteful SATB queueing work to begin with.
-  if (!_heap->requires_marking(obj)) return;
+  if (filter && !_heap->requires_marking(obj)) return;
 
   SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(Thread::current());
   _satb_mark_queue_set.enqueue_known_active(queue, obj);
@@ -434,12 +423,68 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 }
 
 // Clone barrier support
+template <bool EVAC>
+class ShenandoahUpdateEvacForCloneOopClosure : public BasicOopIterateClosure {
+private:
+  ShenandoahHeap* const _heap;
+  const ShenandoahCollectionSet* const _cset;
+  Thread* const _thread;
+
+  template <class T>
+  inline void do_oop_work(T* p) {
+    T o = RawAccess<>::oop_load(p);
+    if (!CompressedOops::is_null(o)) {
+      oop obj = CompressedOops::decode_not_null(o);
+      if (_cset->is_in(obj)) {
+        oop fwd = ShenandoahForwarding::get_forwardee(obj);
+        if (EVAC && obj == fwd) {
+          fwd = _heap->evacuate_object(obj, _thread);
+        }
+        shenandoah_assert_forwarded_except(p, obj, _heap->cancelled_gc());
+        ShenandoahHeap::atomic_update_oop(fwd, p, o);
+        obj = fwd;
+      }
+    }
+  }
+
+public:
+  ShenandoahUpdateEvacForCloneOopClosure() :
+          _heap(ShenandoahHeap::heap()),
+          _cset(_heap->collection_set()),
+          _thread(Thread::current()) {}
+
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+};
+
+template <bool EVAC>
+void ShenandoahBarrierSet::clone_work(oop obj) {
+  if (need_bulk_update(cast_from_oop<HeapWord*>(obj))) {
+    ShenandoahUpdateEvacForCloneOopClosure<EVAC> cl;
+    obj->oop_iterate(&cl);
+  }
+}
+
 template <DecoratorSet decorators, typename BarrierSetT>
 void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(oop src, oop dst, size_t size) {
-  if (ShenandoahCloneBarrier) {
-    ShenandoahBarrierSet::barrier_set()->clone_barrier_runtime(src);
+  // Hot code path, called from compiler/runtime. Make sure fast path is fast.
+
+  // Fix up src before doing the copy, if needed.
+  const char gc_state = ShenandoahThreadLocalData::gc_state(Thread::current());
+  if (gc_state != 0 && ShenandoahCloneBarrier) {
+    ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
+    if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
+      bs->clone_work<true>(src);
+    } else if ((gc_state & ShenandoahHeap::UPDATE_REFS) != 0) {
+      bs->clone_work<false>(src);
+    }
   }
+
   Raw::clone(src, dst, size);
+
+  // Current allocator never allocates in old, so clone destination is guaranteed to be in young.
+  // Otherwise we need card barriers.
+  shenandoah_assert_in_young_if(nullptr, dst, ShenandoahCardBarrier);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
@@ -479,7 +524,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       if (HAS_FWD && cset->is_in(obj)) {
-        oop fwd = resolve_forwarded_not_null(obj);
+        oop fwd = ShenandoahForwarding::get_forwardee(obj);
         if (EVAC && obj == fwd) {
           fwd = _heap->evacuate_object(obj, thread);
         }

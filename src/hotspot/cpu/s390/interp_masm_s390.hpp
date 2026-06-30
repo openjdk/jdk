@@ -280,12 +280,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
                         Register test_value_out,
                         Label& not_equal_continue);
 
-  void record_klass_in_profile(Register receiver, Register mdp,
-                               Register reg2);
-  void record_klass_in_profile_helper(Register receiver, Register mdp,
-                                      Register reg2, int start_row,
-                                      Label& done);
-
   void update_mdp_by_offset(Register mdp_in, int offset_of_offset);
   void update_mdp_by_offset(Register mdp_in, Register dataidx, int offset_of_disp);
   void update_mdp_by_constant(Register mdp_in, int constant);

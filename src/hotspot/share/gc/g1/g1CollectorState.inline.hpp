@@ -77,48 +77,28 @@ inline bool G1CollectorState::initiate_conc_mark_if_possible() const {
 
 inline bool G1CollectorState::is_in_concurrent_cycle() const {
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  return cm->is_in_concurrent_cycle();
+  return cm->is_fully_initialized() && cm->is_in_concurrent_cycle();
 }
+
 inline bool G1CollectorState::is_in_marking() const {
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  return cm->is_in_marking();
+  return cm->is_fully_initialized() && cm->is_in_marking();
 }
+
 inline bool G1CollectorState::is_in_mark_or_rebuild() const {
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  return is_in_marking() || cm->is_in_rebuild_or_scrub();
+  return cm->is_fully_initialized() && cm->is_in_marking_or_rebuild();
 }
+
 inline bool G1CollectorState::is_in_reset_for_next_cycle() const {
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  return cm->is_in_reset_for_next_cycle();
+  return cm->is_fully_initialized() && cm->is_in_reset_for_next_cycle();
 }
 
 inline void G1CollectorState::assert_is_young_pause(Pause type) {
   assert(type != Pause::Full, "must be");
   assert(type != Pause::Remark, "must be");
   assert(type != Pause::Cleanup, "must be");
-}
-
-inline bool G1CollectorState::is_young_only_pause(Pause type) {
-  assert_is_young_pause(type);
-  return type == Pause::ConcurrentStartUndo ||
-         type == Pause::ConcurrentStartFull ||
-         type == Pause::PrepareMixed ||
-         type == Pause::Normal;
-}
-
-inline bool G1CollectorState::is_mixed_pause(Pause type) {
-  assert_is_young_pause(type);
-  return type == Pause::Mixed;
-}
-
-inline bool G1CollectorState::is_prepare_mixed_pause(Pause type) {
-  assert_is_young_pause(type);
-  return type == Pause::PrepareMixed;
-}
-
-inline bool G1CollectorState::is_concurrent_start_pause(Pause type) {
-  assert_is_young_pause(type);
-  return type == Pause::ConcurrentStartFull || type == Pause::ConcurrentStartUndo;
 }
 
 inline bool G1CollectorState::is_concurrent_cycle_pause(Pause type) {
