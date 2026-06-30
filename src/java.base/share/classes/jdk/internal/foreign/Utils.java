@@ -59,8 +59,6 @@ public final class Utils {
     private static final MethodHandle LONG_TO_CARRIER;
     private static final MethodHandle LONG_TO_ADDRESS_TARGET;
     private static final MethodHandle LONG_TO_ADDRESS_NO_TARGET;
-    private static final MethodHandle BYTE_TO_BOOLEAN;
-    private static final MethodHandle BOOLEAN_TO_BYTE;
 
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -82,10 +80,6 @@ public final class Utils {
                     MethodType.methodType(MemorySegment.class, rawAddressType, AddressLayout.class));
             LONG_TO_ADDRESS_NO_TARGET = lookup.findStatic(Utils.class, "longToAddress",
                     MethodType.methodType(MemorySegment.class, rawAddressType));
-            BYTE_TO_BOOLEAN = lookup.findStatic(Utils.class, "byteToBoolean",
-                    MethodType.methodType(boolean.class, byte.class));
-            BOOLEAN_TO_BYTE = lookup.findStatic(Utils.class, "booleanToByte",
-                    MethodType.methodType(byte.class, boolean.class));
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
