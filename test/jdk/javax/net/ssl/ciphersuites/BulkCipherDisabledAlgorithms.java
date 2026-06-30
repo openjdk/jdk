@@ -214,15 +214,5 @@ public class BulkCipherDisabledAlgorithms {
         protected void configureServerSocket(SSLServerSocket socket) {
             socket.setEnabledCipherSuites(new String[] { suite });
         }
-
-        @Override
-        protected void runClientApplication(SSLSocket socket) throws Exception {
-            socket.startHandshake();
-        }
-
-        @Override
-        protected void runServerApplication(SSLSocket socket) throws Exception {
-            socket.startHandshake();
-        }
     }
 }
