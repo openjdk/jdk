@@ -141,7 +141,7 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
     // that have not yet been consumed (end - _atomic_top). Zero for any other region. The in-process
     // ShenandoahFreeSet subtracts the sum of this across regions from its raw stored used (see
     // alloc_region_correction / corrected_used); the SA mirrors that so jhsdb reports the same used.
-    public long activeAllocRegionFree() {
+    public long remnantBytes() {
         Address atomicTop = AtomicTopField.getValue(addr);
         if (atomicTop == null) {
             return 0;

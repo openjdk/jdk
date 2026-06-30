@@ -41,9 +41,9 @@ class ShenandoahAllocator : public CHeapObj<mtGC> {
   friend class VMStructs;
 private:
   ShenandoahFreeSet*                  _free_set;
-  ShenandoahMutatorAllocator          _mutator_alloc;
-  ShenandoahCollectorAllocator        _collector_alloc;
-  ShenandoahOldCollectorAllocator     _old_collector_alloc;
+  ShenandoahMutatorAllocator          _mutator_allocator;
+  ShenandoahCollectorAllocator        _collector_allocator;
+  ShenandoahOldCollectorAllocator     _old_collector_allocator;
 
 public:
   ShenandoahAllocator(ShenandoahFreeSet* free_set);
@@ -69,8 +69,8 @@ public:
   // Read-time accounting correction term for the given partition's cached alloc region: the
   // bytes that were pre-charged to the partition's used at reserve time but are not yet
   // actually consumed (the region's current free()). Returns 0 if no region is cached.
-  // See ShenandoahPartitionAllocator::active_alloc_region_free.
-  size_t active_alloc_region_free(ShenandoahFreeSetPartitionId partition) const;
+  // See ShenandoahPartitionAllocator::remnant_bytes.
+  size_t remnant_bytes(ShenandoahFreeSetPartitionId partition) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP

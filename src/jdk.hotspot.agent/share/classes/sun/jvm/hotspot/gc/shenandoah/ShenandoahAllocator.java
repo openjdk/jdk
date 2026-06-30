@@ -39,9 +39,9 @@ import sun.jvm.hotspot.utilities.Observer;
 // 3 * MAX_ALLOC_REGIONS) to compute the alloc-region accounting correction, rather than walking
 // every heap region.
 public class ShenandoahAllocator extends VMObject {
-    private static long mutatorAllocOffset;
-    private static long collectorAllocOffset;
-    private static long oldCollectorAllocOffset;
+    private static long mutatorAllocatorOffset;
+    private static long collectorAllocatorOffset;
+    private static long oldCollectorAllocatorOffset;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -55,9 +55,9 @@ public class ShenandoahAllocator extends VMObject {
         Type type = db.lookupType("ShenandoahAllocator");
         // The partition allocators are embedded by value, so resolve their byte offsets and
         // construct the mirror at addr+offset (the per-value sub-object idiom used elsewhere in SA).
-        mutatorAllocOffset      = type.getField("_mutator_alloc").getOffset();
-        collectorAllocOffset    = type.getField("_collector_alloc").getOffset();
-        oldCollectorAllocOffset = type.getField("_old_collector_alloc").getOffset();
+        mutatorAllocatorOffset      = type.getField("_mutator_allocator").getOffset();
+        collectorAllocatorOffset    = type.getField("_collector_allocator").getOffset();
+        oldCollectorAllocatorOffset = type.getField("_old_collector_allocator").getOffset();
     }
 
     public ShenandoahAllocator(Address addr) {
@@ -69,11 +69,11 @@ public class ShenandoahAllocator extends VMObject {
     }
 
     // Sum, across all three partitions' stripe slots, of the bytes pre-charged to used at reserve
-    // time but not yet consumed. Mirrors ShenandoahAllocator::active_alloc_region_free over every
+    // time but not yet consumed. Mirrors ShenandoahAllocator::remnant_bytes over every
     // partition. O(number of stripe slots), independent of the heap's region count.
-    public long activeAllocRegionFree() {
-        return partitionAllocator(mutatorAllocOffset).activeAllocRegionFree()
-             + partitionAllocator(collectorAllocOffset).activeAllocRegionFree()
-             + partitionAllocator(oldCollectorAllocOffset).activeAllocRegionFree();
+    public long remnantBytes() {
+        return partitionAllocator(mutatorAllocatorOffset).remnantBytes()
+             + partitionAllocator(collectorAllocatorOffset).remnantBytes()
+             + partitionAllocator(oldCollectorAllocatorOffset).remnantBytes();
     }
 }

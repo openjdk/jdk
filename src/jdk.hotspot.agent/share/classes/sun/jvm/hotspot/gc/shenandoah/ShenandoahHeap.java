@@ -110,7 +110,7 @@ public class ShenandoahHeap extends CollectedHeap {
         // Mirror the C++ guard in ShenandoahFreeSet::alloc_region_correction (allocator == nullptr ? 0 : ...)
         // so 'jhsdb jmap --heap' on such a core reports raw used instead of throwing NullPointerException.
         ShenandoahAllocator allocator = allocator();
-        long correction = allocator == null ? 0 : allocator.activeAllocRegionFree();
+        long correction = allocator == null ? 0 : allocator.remnantBytes();
         return rawUsed > correction ? rawUsed - correction : 0;
     }
 

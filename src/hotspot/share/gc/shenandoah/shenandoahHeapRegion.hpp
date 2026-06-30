@@ -533,6 +533,17 @@ public:
     return at == nullptr ? AtomicAccess::load_acquire(&_top) : at;
   }
 
+  // Relaxed counterpart of top(), for best-effort size readers that only use the result
+  // arithmetically and never dereference memory at the returned address (e.g. the alloc-region
+  // free scan in ShenandoahPartitionAllocator::remnant_bytes). It drops the acquire
+  // ordering of top(): there are no subsequent dependent loads to order, so the acquire would be
+  // pure overhead. A pointer load is single-copy-atomic and _atomic_top only advances within
+  // [bottom, end], so the value is always a valid (possibly stale) top <= end.
+  HeapWord* top_relaxed() const {
+    HeapWord* at = atomic_top_relaxed();
+    return at == nullptr ? AtomicAccess::load(&_top) : at;
+  }
+
   // Stable top. Asserts the region is NOT an active CAS alloc region, so
   // reading _top directly is guaranteed to observe the authoritative top.
   // Use for callers that establish this invariant by construction, e.g.,
@@ -572,6 +583,8 @@ public:
   size_t used_before_promote() const { return byte_size(bottom(), get_top_before_promote()); }
   size_t free() const           { return byte_size(top(),    end()); }
   size_t free_words() const     { return pointer_delta(end(), top()); }
+  // Relaxed, best-effort free(); see top_relaxed(). For size estimates that never dereference top.
+  size_t free_relaxed() const   { return byte_size(top_relaxed(), end()); }
 
   // Does this region contain this address?
   bool contains(HeapWord* p) const {

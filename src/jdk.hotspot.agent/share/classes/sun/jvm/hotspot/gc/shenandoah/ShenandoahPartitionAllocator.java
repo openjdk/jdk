@@ -69,9 +69,9 @@ public class ShenandoahPartitionAllocator extends VMObject {
     }
 
     // Sum of the still-unconsumed pre-charged remnant across this partition's stripe slots. Mirrors
-    // ShenandoahPartitionAllocator::active_alloc_region_free: iterate the slots, and for each
+    // ShenandoahPartitionAllocator::remnant_bytes: iterate the slots, and for each
     // non-null cached region add its active-alloc-region remnant (end - atomic_top). O(slot count).
-    public long activeAllocRegionFree() {
+    public long remnantBytes() {
         long total = 0;
         long count = allocRegionCount();
         for (long i = 0; i < count; i++) {
@@ -81,7 +81,7 @@ public class ShenandoahPartitionAllocator extends VMObject {
                 continue;
             }
             ShenandoahHeapRegion region = VMObjectFactory.newObject(ShenandoahHeapRegion.class, regionAddr);
-            total += region.activeAllocRegionFree();
+            total += region.remnantBytes();
         }
         return total;
     }

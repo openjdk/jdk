@@ -116,12 +116,18 @@ public:
   // active the partition's used is over-counted, and available under-counted, by exactly that
   // region's current free(). This returns the sum of that correction term across all stripe slots
   // so accounting readers can compensate.
-  size_t active_alloc_region_free() const {
+  //
+  // This is a best-effort estimate consumed by saturating-subtraction accounting readers, so it uses
+  // fully relaxed reads on the hottest scan path: load_relaxed for the slot pointer and free_relaxed()
+  // (relaxed _atomic_top) for its free bytes. The value is only used arithmetically -- never to
+  // dereference memory -- so no acquire ordering is needed; this avoids pulling each cached region's
+  // hot _atomic_top cache line in with acquire semantics on every accounting read.
+  size_t remnant_bytes() const {
     size_t total = 0;
     for (uint i = 0; i < _alloc_region_count; i++) {
       ShenandoahHeapRegion* r = _alloc_regions[i].load_relaxed();
       if (r != nullptr) {
-        total += r->free();
+        total += r->free_relaxed();
       }
     }
     return total;

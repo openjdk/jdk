@@ -46,9 +46,9 @@ typedef ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::OldCollector>
   nonstatic_field(ShenandoahHeap, _log_min_obj_alignment_in_bytes,     int)                                       \
   nonstatic_field(ShenandoahHeap, _free_set,                           ShenandoahFreeSet*)                        \
   nonstatic_field(ShenandoahHeap, _allocator,                          ShenandoahAllocator*)                      \
-  nonstatic_field(ShenandoahAllocator, _mutator_alloc,                 ShenandoahMutatorPartitionAllocator)       \
-  nonstatic_field(ShenandoahAllocator, _collector_alloc,               ShenandoahCollectorPartitionAllocator)     \
-  nonstatic_field(ShenandoahAllocator, _old_collector_alloc,           ShenandoahOldCollectorPartitionAllocator)  \
+  nonstatic_field(ShenandoahAllocator, _mutator_allocator,             ShenandoahMutatorPartitionAllocator)       \
+  nonstatic_field(ShenandoahAllocator, _collector_allocator,           ShenandoahCollectorPartitionAllocator)     \
+  nonstatic_field(ShenandoahAllocator, _old_collector_allocator,       ShenandoahOldCollectorPartitionAllocator)  \
   nonstatic_field(ShenandoahMutatorPartitionAllocator,      _alloc_region_count, const uint)                      \
   nonstatic_field(ShenandoahMutatorPartitionAllocator,      _alloc_regions[0],   Atomic<ShenandoahHeapRegion*>)   \
   nonstatic_field(ShenandoahCollectorPartitionAllocator,    _alloc_region_count, const uint)                      \
