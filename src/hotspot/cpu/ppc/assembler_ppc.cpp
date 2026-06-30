@@ -78,7 +78,10 @@ int Assembler::branch_destination(int inst, int pos) {
 // Low-level andi-one-instruction-macro. May clobber CR0.
 void Assembler::andi(Register a, Register s, julong int_or_long_const) {
   // Instructions which don't set CR0 are preferred.
-  if (is_power_of_2(int_or_long_const + 1)) {
+  if (int_or_long_const == 0) {
+    // should not be handled as pow2minus1
+    li(a, 0);
+  } else if (is_power_of_2(int_or_long_const + 1)) {
     // pow2minus1
     clrldi(a, s, 64 - log2i_exact(int_or_long_const + 1));
   } else if (is_power_of_2(-int_or_long_const)) {
