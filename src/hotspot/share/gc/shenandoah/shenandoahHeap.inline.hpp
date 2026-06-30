@@ -100,14 +100,6 @@ inline ShenandoahHeapRegion* ShenandoahHeap::heap_region_containing(const void* 
   return result;
 }
 
-inline void ShenandoahHeap::enter_evacuation(Thread* t) {
-  _oom_evac_handler.enter_evacuation(t);
-}
-
-inline void ShenandoahHeap::leave_evacuation(Thread* t) {
-  _oom_evac_handler.leave_evacuation(t);
-}
-
 template <class T>
 inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
@@ -118,7 +110,7 @@ inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
       // set that are not really forwarded. We can still go and try and update them
       // (uselessly) to simplify the common path.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop fwd = ShenandoahForwarding::get_forwardee(obj);
       shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
       // Unconditionally store the update: no concurrent updates expected.
@@ -137,7 +129,7 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
       // set that are not really forwarded. We can still go and try CAS-update them
       // (uselessly) to simplify the common path.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop fwd = ShenandoahForwarding::get_forwardee(obj);
       shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
       // Sanity check: we should not be updating the cset regions themselves,
@@ -272,7 +264,6 @@ inline GCCause::Cause ShenandoahHeap::cancelled_cause() const {
 inline void ShenandoahHeap::clear_cancelled_gc() {
   _cancelled_gc.set(GCCause::_no_gc);
   reset_cancellation_time();
-  _oom_evac_handler.clear();
 }
 
 inline GCCause::Cause ShenandoahHeap::clear_cancellation(const GCCause::Cause expected) {
@@ -455,7 +446,7 @@ inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
 }
 
 inline char ShenandoahHeap::gc_state() const {
-  return _gc_state.raw_value();
+  return integer_cast<char>(_gc_state.raw_value());
 }
 
 inline bool ShenandoahHeap::is_gc_state(GCState state) const {

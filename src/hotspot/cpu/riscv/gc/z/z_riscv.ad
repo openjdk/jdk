@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -57,6 +57,7 @@ static void check_color(MacroAssembler* masm, Register ref, bool on_non_strong, 
 }
 
 static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref, Register tmp) {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   const bool on_non_strong =
       ((node->barrier_data() & ZBarrierWeak) != 0) ||
       ((node->barrier_data() & ZBarrierPhantom) != 0);
@@ -78,6 +79,7 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
 }
 
 static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register rnew_zaddress, Register rnew_zpointer, Register tmp, bool is_atomic) {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   if (node->barrier_data() == ZBarrierElided) {
     z_color(masm, node, rnew_zpointer, rnew_zaddress, tmp);
   } else {

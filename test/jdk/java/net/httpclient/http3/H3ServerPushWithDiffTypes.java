@@ -28,7 +28,7 @@
  * @run junit/othervm
  *       -Djdk.internal.httpclient.debug=true
  *       -Djdk.httpclient.HttpClient.log=errors,requests,responses
- *       H3ServerPushWithDiffTypes
+ *       ${test.main.class}
  * @summary This is a clone of http2/ServerPushWithDiffTypes but for HTTP/3
  */
 

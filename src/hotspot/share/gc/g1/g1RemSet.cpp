@@ -124,8 +124,8 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
     }
 
     ~G1DirtyRegions() {
-      FREE_C_HEAP_ARRAY(uint, _buffer);
-      FREE_C_HEAP_ARRAY(Atomic<bool>, _contains);
+      FREE_C_HEAP_ARRAY(_buffer);
+      FREE_C_HEAP_ARRAY(_contains);
     }
 
     void reset() {
@@ -245,7 +245,7 @@ public:
     _scan_top(nullptr) { }
 
   ~G1RemSetScanState() {
-    FREE_C_HEAP_ARRAY(HeapWord*, _scan_top);
+    FREE_C_HEAP_ARRAY(_scan_top);
   }
 
   void initialize(uint max_reserved_regions) {
@@ -1061,11 +1061,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // so the bitmap for the regions in the collection set must be cleared if not already.
       if (should_clear_region(hr)) {
         _g1h->clear_bitmap_for_region(hr);
-        _g1h->concurrent_mark()->reset_top_at_mark_start(hr);
       } else {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }
-      _g1h->concurrent_mark()->clear_statistics(hr);
+      _g1h->concurrent_mark()->reset_region_marking_state(hr);
       _scan_state->add_all_dirty_region(hr->hrm_index());
       return false;
     }
@@ -1232,14 +1231,14 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   {
     WorkerThreads* workers = g1h->workers();
 
-    size_t const increment_length = g1h->collection_set()->groups_increment_length();
+    uint const num_groups_in_increment = g1h->collection_set()->num_groups_in_increment();
 
     uint const num_workers = initial_evacuation ? workers->active_workers() :
-                                                  MIN2(workers->active_workers(), (uint)increment_length);
+                                                  MIN2(workers->active_workers(), num_groups_in_increment);
 
     G1MergeHeapRootsTask cl(_scan_state, num_workers, initial_evacuation);
-    log_debug(gc, ergo)("Running %s using %u workers for %zu regions",
-                        cl.name(), num_workers, increment_length);
+    log_debug(gc, ergo)("Running %s using %u workers for %u groups",
+                        cl.name(), num_workers, num_groups_in_increment);
     workers->run_task(&cl, num_workers);
   }
 

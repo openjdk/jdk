@@ -37,8 +37,11 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 import jdk.internal.jimage.decompressor.Decompressor;
 
 /**
@@ -72,9 +75,10 @@ public class BasicImageReader implements AutoCloseable {
     private final ByteOrder byteOrder;
     private final String name;
     private final ByteBuffer memoryMap;
+    private final boolean isMemoryMapped;
     private final FileChannel channel;
     private final ImageHeader header;
-    private final long indexSize;
+    private final int indexSize;
     private final IntBuffer redirect;
     private final IntBuffer offsets;
     private final ByteBuffer locations;
@@ -89,14 +93,15 @@ public class BasicImageReader implements AutoCloseable {
         this.byteOrder = Objects.requireNonNull(byteOrder);
         this.name = this.imagePath.toString();
 
-        ByteBuffer map;
+        // The image reader will be for the current run-time image when the this class
+        // is defined by the boot class loader.
+        final boolean isCurrentRuntimeImage = BasicImageReader.class.getClassLoader() == null;
+        ByteBuffer map = null;
 
-        if (USE_JVM_MAP && BasicImageReader.class.getClassLoader() == null) {
+        if (USE_JVM_MAP && isCurrentRuntimeImage) {
             // Check to see if the jvm has opened the file using libjimage
             // native entry when loading the image for this runtime
             map = NativeImageBuffer.getNativeMap(name);
-         } else {
-            map = null;
         }
 
         // Open the file only if no memory map yet or is 32 bit jvm
@@ -108,7 +113,7 @@ public class BasicImageReader implements AutoCloseable {
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 @Override
                 public Void run() {
-                    if (BasicImageReader.class.getClassLoader() == null) {
+                    if (isCurrentRuntimeImage) {
                         try {
                             Class<?> fileChannelImpl =
                                 Class.forName("sun.nio.ch.FileChannelImpl");
@@ -129,10 +134,13 @@ public class BasicImageReader implements AutoCloseable {
             });
         }
 
-        // If no memory map yet and 64 bit jvm then memory map entire file
-        if (MAP_ALL && map == null) {
+        isMemoryMapped = isCurrentRuntimeImage && MAP_ALL;
+
+        // If no memory map yet, runtime image, and 64 bit jvm then memory map entire file
+        if (map == null && isMemoryMapped) {
             map = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
         }
+
 
         // Assume we have a memory map to read image file header
         ByteBuffer headerBuffer = map;
@@ -140,12 +148,7 @@ public class BasicImageReader implements AutoCloseable {
 
         // If no memory map then read header from image file
         if (headerBuffer == null) {
-            headerBuffer = ByteBuffer.allocateDirect(headerSize);
-            if (channel.read(headerBuffer, 0L) == headerSize) {
-                headerBuffer.rewind();
-            } else {
-                throw new IOException("\"" + name + "\" is not an image file");
-            }
+            headerBuffer = readDirectBuffer(headerSize);
         } else if (headerBuffer.capacity() < headerSize) {
             throw new IOException("\"" + name + "\" is not an image file");
         }
@@ -154,10 +157,9 @@ public class BasicImageReader implements AutoCloseable {
         header = readHeader(intBuffer(headerBuffer, 0, headerSize));
         indexSize = header.getIndexSize();
 
-        // If no memory map yet then must be 32 bit jvm not previously mapped
+        // If no memory map yet then must be 32 bit jvm or not runtime image not previously mapped
         if (map == null) {
-            // Just map the image index
-            map = channel.map(FileChannel.MapMode.READ_ONLY, 0, indexSize);
+            map = readDirectBuffer(indexSize);
         }
 
         memoryMap = map.asReadOnlyBuffer();
@@ -173,6 +175,16 @@ public class BasicImageReader implements AutoCloseable {
 
         stringsReader = new ImageStringsReader(this);
         decompressor = new Decompressor();
+    }
+
+    private ByteBuffer readDirectBuffer(int size) throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocateDirect(size);
+        if (channel.read(buffer, 0L) == size) {
+            buffer.flip();
+        } else {
+            throw new IOException("\"" + name + "\" is not an image file");
+        }
+        return buffer;
     }
 
     protected BasicImageReader(Path imagePath) throws IOException {
@@ -316,6 +328,56 @@ public class BasicImageReader implements AutoCloseable {
                 .toArray(String[]::new);
     }
 
+    /**
+     * Returns the "raw" API for accessing underlying jimage resource entries.
+     *
+     * <p>This is only meaningful for use by code dealing directly with jimage
+     * files, and cannot be used to reliably lookup resources used at runtime.
+     *
+     * <p>The returned {@code ResourceEntries} remains valid until the image
+     * reader from which it was obtained is closed.
+     */
+    // Package visible for use by ImageReader.
+    ResourceEntries getResourceEntries() {
+        return new ResourceEntries() {
+            @Override
+            public Stream<String> getEntryNames(String module) {
+                if (module.isEmpty() || module.equals("modules") || module.equals("packages")) {
+                    throw new IllegalArgumentException("Invalid module name: " + module);
+                }
+                return IntStream.range(0, offsets.capacity())
+                        .map(offsets::get)
+                        .filter(offset -> offset != 0)
+                        // Reusing a location instance or getting the module
+                        // offset directly would save a lot of allocations here.
+                        .mapToObj(offset -> ImageLocation.readFrom(BasicImageReader.this, offset))
+                        // Reverse lookup of module offset would be faster here.
+                        .filter(loc -> module.equals(loc.getModule()))
+                        .map(ImageLocation::getFullName);
+            }
+
+            private ImageLocation getResourceLocation(String name) {
+                if (!name.startsWith("/modules/") && !name.startsWith("/packages/")) {
+                    ImageLocation location = BasicImageReader.this.findLocation(name);
+                    if (location != null) {
+                        return location;
+                    }
+                }
+                throw new NoSuchElementException("No such resource entry: " + name);
+            }
+
+            @Override
+            public long getSize(String name) {
+                return getResourceLocation(name).getUncompressedSize();
+            }
+
+            @Override
+            public byte[] getBytes(String name) {
+                return BasicImageReader.this.getResource(getResourceLocation(name));
+            }
+        };
+    }
+
     ImageLocation getLocation(int offset) {
         return ImageLocation.readFrom(this, offset);
     }
@@ -360,7 +422,7 @@ public class BasicImageReader implements AutoCloseable {
         }
         int checkedSize = (int) size;
 
-        if (MAP_ALL) {
+        if (isMemoryMapped) {
             ByteBuffer buffer = slice(memoryMap, checkedOffset, checkedSize);
             buffer.order(ByteOrder.BIG_ENDIAN);
 

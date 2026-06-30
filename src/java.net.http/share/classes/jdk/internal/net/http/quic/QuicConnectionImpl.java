@@ -1758,6 +1758,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return localConnIdManager;
     }
 
+    PeerConnIdManager peerConnectionIdManager() {
+        return peerConnIdManager;
+    }
+
     /**
      * {@return the local connection id}
      */

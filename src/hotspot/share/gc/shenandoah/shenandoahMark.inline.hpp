@@ -38,7 +38,6 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
-#include "gc/shenandoah/shenandoahStringDedup.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.inline.hpp"
@@ -48,21 +47,7 @@
 #include "utilities/devirtualizer.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-template <StringDedupMode STRING_DEDUP>
-void ShenandoahMark::dedup_string(oop obj, StringDedup::Requests* const req) {
-  if (STRING_DEDUP == ENQUEUE_DEDUP) {
-    if (ShenandoahStringDedup::is_candidate(obj)) {
-      req->add(obj);
-    }
-  } else if (STRING_DEDUP == ALWAYS_DEDUP) {
-    if (ShenandoahStringDedup::is_string_candidate(obj) &&
-        !ShenandoahStringDedup::dedup_requested(obj)) {
-        req->add(obj);
-    }
-  }
-}
-
-template <class T, ShenandoahGenerationType GENERATION, StringDedupMode STRING_DEDUP>
+template <class T, ShenandoahGenerationType GENERATION, bool STRING_DEDUP>
 void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task, uint worker_id) {
   oop obj = task->obj();
 
@@ -75,31 +60,33 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
   cl->set_weak(weak);
 
   if (task->is_not_chunked()) {
-    if (obj->is_instance()) {
+    Klass* klass = obj->klass();
+    if (klass->is_instance_klass()) {
       // Case 1: Normal oop, process as usual.
-      if (obj->is_stackChunk()) {
+      if (STRING_DEDUP && (klass == vmClasses::String_klass())) {
+        dedup_string(obj, req);
+      }
+      if (klass->is_stack_chunk_instance_klass()) {
         // Loom doesn't support mixing of weak marking and strong marking of stack chunks.
         cl->set_weak(false);
       }
-
       obj->oop_iterate(cl);
-      dedup_string<STRING_DEDUP>(obj, req);
-    } else if (obj->is_objArray()) {
+    } else if (klass->is_objArray_klass()) {
       // Case 2: Object array instance and no chunk is set. Must be the first
       // time we visit it, start the chunked processing.
-      do_chunked_array_start<T>(q, cl, obj, weak);
+      do_chunked_array_start<T>(q, cl, obj, klass, weak);
     } else {
       // Case 3: Primitive array. Do nothing, no oops there. We use the same
       // performance tweak TypeArrayKlass::oop_oop_iterate_impl is using:
       // We skip iterating over the klass pointer since we know that
       // Universe::TypeArrayKlass never moves.
-      assert (obj->is_typeArray(), "should be type array");
+      assert(klass->is_typeArray_klass(), "should be type array");
     }
     // Count liveness the last: push the outstanding work to the queues first
     // Avoid double-counting objects that are visited twice due to upgrade
     // from final- to strong mark.
     if (task->count_liveness()) {
-      count_liveness<GENERATION>(live_data, obj, worker_id);
+      count_liveness<GENERATION>(live_data, obj, klass, worker_id);
     }
   } else {
     // Case 4: Array chunk, has sensible chunk id. Process it.
@@ -107,12 +94,28 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
   }
 }
 
+inline void ShenandoahMark::dedup_string(oop obj, StringDedup::Requests* const req) {
+  assert(req != nullptr, "Should be available if dedup is enabled");
+
+  // Skip if already requested or dedup is forbidden.
+  // The overwhelming majority of Strings would be filtered here.
+  // These bits are also sticky, so older Strings would be filtered here too.
+  if (java_lang_String::deduplication_requested_or_forbidden(obj)) {
+    return;
+  }
+
+  // Accept deduplication request.
+  if (!java_lang_String::test_and_set_deduplication_requested(obj)) {
+    req->add(obj);
+  }
+}
+
 template <ShenandoahGenerationType GENERATION>
-inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj, uint worker_id) {
+void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj, Klass* klass, uint worker_id) {
   const ShenandoahHeap* const heap = ShenandoahHeap::heap();
   const size_t region_idx = heap->heap_region_index_containing(obj);
   ShenandoahHeapRegion* const region = heap->get_region(region_idx);
-  const size_t size = obj->size();
+  const size_t size = obj->size_given_klass(klass);
 
   // Age census for objects in the young generation
   if (GENERATION == YOUNG || (GENERATION == GLOBAL && region->is_young())) {
@@ -152,14 +155,14 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
 }
 
 template <class T>
-inline void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj, bool weak) {
+void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj, Klass* klass, bool weak) {
   assert(obj->is_objArray(), "expect object array");
   objArrayOop array = objArrayOop(obj);
   int len = array->length();
 
   // Mark objArray klass metadata
   if (Devirtualizer::do_metadata(cl)) {
-    Devirtualizer::do_klass(cl, array->klass());
+    Devirtualizer::do_klass(cl, klass);
   }
 
   if (len <= (int) ObjArrayMarkingStride*2) {
@@ -219,7 +222,7 @@ inline void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, 
 }
 
 template <class T>
-inline void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop obj, int chunk, int pow, bool weak) {
+void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop obj, int chunk, int pow, bool weak) {
   assert(obj->is_objArray(), "expect object array");
   objArrayOop array = objArrayOop(obj);
 
@@ -288,7 +291,7 @@ bool ShenandoahMark::in_generation(ShenandoahHeap* const heap, oop obj) {
 }
 
 template<class T, ShenandoahGenerationType GENERATION>
-inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
+void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
   // Note: This is a very hot code path, so the code should be conditional on GENERATION template
   // parameter where possible, in order to generate the most efficient code.
 
@@ -324,17 +327,19 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
 }
 
 template<>
-inline void ShenandoahMark::mark_through_ref<oop, ShenandoahGenerationType::NON_GEN>(oop *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
+ALWAYSINLINE
+void ShenandoahMark::mark_through_ref<oop, ShenandoahGenerationType::NON_GEN>(oop *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
   mark_non_generational_ref(p, q, mark_context, weak);
 }
 
 template<>
-inline void ShenandoahMark::mark_through_ref<narrowOop, ShenandoahGenerationType::NON_GEN>(narrowOop *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
+ALWAYSINLINE
+void ShenandoahMark::mark_through_ref<narrowOop, ShenandoahGenerationType::NON_GEN>(narrowOop *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
   mark_non_generational_ref(p, q, mark_context, weak);
 }
 
 template<class T>
-inline void ShenandoahMark::mark_non_generational_ref(T* p, ShenandoahObjToScanQueue* q,
+void ShenandoahMark::mark_non_generational_ref(T* p, ShenandoahObjToScanQueue* q,
                                                       ShenandoahMarkingContext* const mark_context, bool weak) {
   oop o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
@@ -350,8 +355,8 @@ inline void ShenandoahMark::mark_non_generational_ref(T* p, ShenandoahObjToScanQ
 }
 
 inline void ShenandoahMark::mark_ref(ShenandoahObjToScanQueue* q,
-                              ShenandoahMarkingContext* const mark_context,
-                              bool weak, oop obj) {
+                                     ShenandoahMarkingContext* const mark_context,
+                                     bool weak, oop obj) {
   bool skip_live = false;
   bool marked;
   if (weak) {

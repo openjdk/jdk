@@ -30,7 +30,7 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        ReferenceTracker CancelStreamedBodyTest
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
- *                     CancelStreamedBodyTest
+ *                     ${test.main.class}
  */
 import jdk.test.lib.net.SimpleSSLContext;
 

@@ -26,8 +26,6 @@ package javax.xml.transform.ptests;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.w3c.dom.Document;
@@ -77,7 +75,6 @@ import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
  * @summary Tests for variable combination of Transformer.transform(Source, Result)
  */
 @TestInstance(Lifecycle.PER_CLASS)
-@Execution(ExecutionMode.SAME_THREAD)
 public class TransformTest {
 
     /*

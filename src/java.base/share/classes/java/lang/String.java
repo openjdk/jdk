@@ -70,9 +70,9 @@ import sun.nio.cs.UTF_8;
  * string literals in Java programs, such as {@code "abc"}, are
  * implemented as instances of this class.
  * <p>
- * Strings are constant; their values cannot be changed after they
- * are created. String buffers support mutable strings.
- * Because String objects are immutable they can be shared. For example:
+ * Strings are immutable; their values cannot be changed after they
+ * are created. Because String objects are immutable they can be shared.
+ * For example:
  * <blockquote><pre>
  *     String str = "abc";
  * </pre></blockquote><p>
@@ -671,14 +671,6 @@ public final class String
     }
 
     private static String decode(Charset charset, byte[] bytes, int offset, int length) {
-        // (1)We never cache the "external" cs, the only benefit of creating
-        // an additional StringDe/Encoder object to wrap it is to share the
-        // de/encode() method. These SD/E objects are short-lived, the young-gen
-        // gc should be able to take care of them well. But the best approach
-        // is still not to generate them if not really necessary.
-        // (2)The defensive copy of the input byte/char[] has a big performance
-        // impact, as well as the outgoing result byte/char[]. Need to do the
-        // optimization check of (sm==null && classLoader0==null) for both.
         CharsetDecoder cd = charset.newDecoder();
         // ArrayDecoder fastpaths
         if (cd instanceof ArrayDecoder ad) {

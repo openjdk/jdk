@@ -136,20 +136,6 @@ bool JvmtiTagMap::is_empty() {
   return hashmap()->is_empty();
 }
 
-// This checks for posting before operations that use
-// this tagmap table.
-void JvmtiTagMap::check_hashmap(GrowableArray<jlong>* objects) {
-  assert(is_locked(), "checking");
-
-  if (is_empty()) { return; }
-
-  if (_needs_cleaning &&
-      objects != nullptr &&
-      env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
-    remove_dead_entries_locked(objects);
-  }
-}
-
 // This checks for posting and is called from the heap walks.
 void JvmtiTagMap::check_hashmaps_for_heapwalk(GrowableArray<jlong>* objects) {
   assert(SafepointSynchronize::is_at_safepoint(), "called from safepoints");
@@ -162,7 +148,7 @@ void JvmtiTagMap::check_hashmaps_for_heapwalk(GrowableArray<jlong>* objects) {
     if (tag_map != nullptr) {
       // The ZDriver may be walking the hashmaps concurrently so this lock is needed.
       MutexLocker ml(tag_map->lock(), Mutex::_no_safepoint_check_flag);
-      tag_map->check_hashmap(objects);
+      tag_map->remove_dead_entries_locked(objects);
     }
   }
 }
@@ -329,11 +315,6 @@ class TwoOopCallbackWrapper : public CallbackWrapper {
 void JvmtiTagMap::set_tag(jobject object, jlong tag) {
   MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
 
-  // SetTag should not post events because the JavaThread has to
-  // transition to native for the callback and this cannot stop for
-  // safepoints with the hashmap lock held.
-  check_hashmap(nullptr);  /* don't collect dead objects */
-
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
 
@@ -353,11 +334,6 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
 // get the tag for an object
 jlong JvmtiTagMap::get_tag(jobject object) {
   MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
-
-  // GetTag should not post events because the JavaThread has to
-  // transition to native for the callback and this cannot stop for
-  // safepoints with the hashmap lock held.
-  check_hashmap(nullptr); /* don't collect dead objects */
 
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
@@ -716,7 +692,7 @@ static jint invoke_string_value_callback(jvmtiStringPrimitiveValueCallback cb,
                    user_data);
 
   if (is_latin1 && s_len > 0) {
-    FREE_C_HEAP_ARRAY(jchar, value);
+    FREE_C_HEAP_ARRAY(value);
   }
   return res;
 }

@@ -67,7 +67,6 @@ class InterpreterOopMap;
 
 class Method : public Metadata {
  friend class VMStructs;
- friend class JVMCIVMStructs;
  friend class MethodTest;
  private:
   // If you add a new field that points to any metaspace object, you
@@ -171,11 +170,11 @@ class Method : public Metadata {
   // C string, for the purpose of providing more useful
   // fatal error handling. The string is allocated in resource
   // area if a buffer is not provided by the caller.
-  char* name_and_sig_as_C_string() const;
+  char* name_and_sig_as_C_string(bool use_double_colon = false) const;
   char* name_and_sig_as_C_string(char* buf, int size) const;
 
   // Static routine in the situations we don't have a Method*
-  static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature);
+  static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature, bool use_double_colon = false);
   static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature, char* buf, int size);
 
   // Get return type + klass name + "." + method name + ( parameters types )
@@ -261,10 +260,10 @@ class Method : public Metadata {
   int highest_osr_comp_level() const;
   void set_highest_osr_comp_level(int level);
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   // Count of times method was exited via exception while interpreting
   inline void interpreter_throwout_increment(Thread* current);
-#endif
+#endif // COMPILER2
 
   inline int interpreter_throwout_count() const;
 
@@ -859,7 +858,8 @@ public:
   void print_on(outputStream* st) const;
 #endif
   void print_value_on(outputStream* st) const;
-  void print_linkage_flags(outputStream* st) PRODUCT_RETURN;
+  void print_access_flags(outputStream* st) const;
+  void print_linkage_flags(outputStream* st) const PRODUCT_RETURN;
 
   const char* internal_name() const { return "{method}"; }
 

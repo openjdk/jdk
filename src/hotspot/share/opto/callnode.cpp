@@ -827,7 +827,7 @@ uint CallNode::match_edge(uint idx) const {
 // Determine whether the call could modify the field of the specified
 // instance at the specified offset.
 //
-bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
+bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const {
   assert((t_oop != nullptr), "sanity");
   if (is_call_to_arraycopystub() && strcmp(_name, "unsafe_arraycopy") != 0) {
     const TypeTuple* args = _tf->domain();
@@ -898,7 +898,7 @@ bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
 }
 
 // Does this call have a direct reference to n other than debug information?
-bool CallNode::has_non_debug_use(Node *n) {
+bool CallNode::has_non_debug_use(const Node *n) {
   const TypeTuple * d = tf()->domain();
   for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
     Node *arg = in(i);
@@ -940,7 +940,7 @@ Node *CallNode::result_cast() {
 }
 
 
-void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts) const {
+void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts, bool allow_handlers) const {
   projs->fallthrough_proj      = nullptr;
   projs->fallthrough_catchproj = nullptr;
   projs->fallthrough_ioproj    = nullptr;
@@ -961,14 +961,13 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
         projs->fallthrough_proj = pn;
         const Node* cn = pn->unique_ctrl_out_or_null();
         if (cn != nullptr && cn->is_Catch()) {
-          ProjNode *cpn = nullptr;
           for (DUIterator_Fast kmax, k = cn->fast_outs(kmax); k < kmax; k++) {
-            cpn = cn->fast_out(k)->as_Proj();
-            assert(cpn->is_CatchProj(), "must be a CatchProjNode");
-            if (cpn->_con == CatchProjNode::fall_through_index)
+            CatchProjNode* cpn = cn->fast_out(k)->as_CatchProj();
+            assert(allow_handlers || !cpn->is_handler_proj(), "not allowed");
+            if (cpn->_con == CatchProjNode::fall_through_index) {
+              assert(cpn->handler_bci() == CatchProjNode::no_handler_bci, "");
               projs->fallthrough_catchproj = cpn;
-            else {
-              assert(cpn->_con == CatchProjNode::catch_all_index, "must be correct index.");
+            } else if (!cpn->is_handler_proj()) {
               projs->catchall_catchproj = cpn;
             }
           }
@@ -976,15 +975,20 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
         break;
       }
     case TypeFunc::I_O:
-      if (pn->_is_io_use)
+      if (pn->_is_io_use) {
         projs->catchall_ioproj = pn;
-      else
+      } else {
         projs->fallthrough_ioproj = pn;
+      }
       for (DUIterator j = pn->outs(); pn->has_out(j); j++) {
         Node* e = pn->out(j);
-        if (e->Opcode() == Op_CreateEx && e->in(0)->is_CatchProj() && e->outcnt() > 0) {
-          assert(projs->exobj == nullptr, "only one");
-          projs->exobj = e;
+        if (e->Opcode() == Op_CreateEx && e->outcnt() > 0) {
+          CatchProjNode* ecpn = e->in(0)->isa_CatchProj();
+          assert(allow_handlers || ecpn == nullptr || !ecpn->is_handler_proj(), "not allowed");
+          if (ecpn != nullptr && ecpn->_con != CatchProjNode::fall_through_index && !ecpn->is_handler_proj()) {
+            assert(projs->exobj == nullptr, "only one");
+            projs->exobj = e;
+          }
         }
       }
       break;
@@ -1607,6 +1611,33 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
   if (nb != -1) {
     igvn->delete_precedence_of(igvn->C->root(), nb);
   }
+}
+
+void SafePointNode::remove_non_debug_edges(NodeEdgeTempStorage& non_debug_edges) {
+  assert(non_debug_edges._state == NodeEdgeTempStorage::state_initial, "not processed");
+  assert(non_debug_edges.is_empty(), "edges not processed");
+
+  while (req() > jvms()->endoff()) {
+    uint last = req() - 1;
+    non_debug_edges.push(in(last));
+    del_req(last);
+  }
+
+  assert(jvms()->endoff() == req(), "no extra edges past debug info allowed");
+  DEBUG_ONLY(non_debug_edges._state = NodeEdgeTempStorage::state_populated);
+}
+
+void SafePointNode::restore_non_debug_edges(NodeEdgeTempStorage& non_debug_edges) {
+  assert(non_debug_edges._state == NodeEdgeTempStorage::state_populated, "not populated");
+  assert(jvms()->endoff() == req(), "no extra edges past debug info allowed");
+
+  while (!non_debug_edges.is_empty()) {
+    Node* non_debug_edge = non_debug_edges.pop();
+    add_req(non_debug_edge);
+  }
+
+  assert(non_debug_edges.is_empty(), "edges not processed");
+  DEBUG_ONLY(non_debug_edges._state = NodeEdgeTempStorage::state_processed);
 }
 
 //==============  SafePointScalarObjectNode  ==============
@@ -2413,7 +2444,7 @@ void AbstractLockNode::log_lock_optimization(Compile *C, const char * tag, Node*
   }
 }
 
-bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase) {
+bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase) const {
   if (dest_t->is_known_instance() && t_oop->is_known_instance()) {
     return dest_t->instance_id() == t_oop->instance_id();
   }
