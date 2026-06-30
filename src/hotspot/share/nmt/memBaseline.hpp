@@ -198,6 +198,7 @@ class MemBaseline {
     os::free(_virtual_memory_sites);
     _virtual_memory_sites_length = 0;
     _virtual_memory_sites = nullptr;
+    _virtual_memory_sites_order = invalid;
     delete _vma_allocations;
     _vma_allocations = nullptr;
   }

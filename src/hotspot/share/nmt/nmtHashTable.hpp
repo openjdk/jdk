@@ -271,13 +271,28 @@ private:
       return nullptr;
     }
 
+    KVElement* resulting_array = nullptr;
+    if (_members == small()) {
+      // Can't return the _small array, need to allocate one.
+      resulting_array = allocate_kvelement_array(_occupied);
+      if (resulting_array == nullptr) {
+        *length = 0;
+        return nullptr;
+      }
+      for (int i = 0; i < _occupied; i++) {
+        ::new (&resulting_array[i]) KVElement(small()[i]);
+      }
+    } else {
+      resulting_array = _members;
+    }
+
     // Remove all empty spaces in the array, making it dense.
     int result_index = 0;
     int index = 0;
     while (result_index < _occupied) {
       if (is_occupied(index)) {
         if (result_index != index) {
-          ::new (&_members[result_index]) KVElement(_members[index]);
+          ::new (&resulting_array[result_index]) KVElement(resulting_array[index]);
         }
         result_index++;
       }
@@ -285,20 +300,6 @@ private:
     }
     assert(result_index == _occupied, "must be");
 
-    KVElement* result = nullptr;
-    if (_members == small()) {
-      // Can't return the _small array, need to allocate one.
-      result = allocate_kvelement_array(_occupied);
-      if (result == nullptr) {
-        *length = 0;
-        return nullptr;
-      }
-      for (int i = 0; i < _occupied; i++) {
-        ::new (&result[i]) KVElement(small()[i]);
-      }
-    } else {
-      result = _members;
-    }
     *length = _occupied;
 
     if (_members == small()) {
@@ -311,7 +312,7 @@ private:
       clear_occupied_map();
     }
 
-    return result;
+    return resulting_array;
   }
 };
 
