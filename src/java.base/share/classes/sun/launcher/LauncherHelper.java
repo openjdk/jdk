@@ -25,7 +25,11 @@
 
 package sun.launcher;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
@@ -181,11 +185,8 @@ public final class LauncherHelper {
         showSettingsTo(optionFlag, initialHeapSize, maxHeapSize, stackSize);
     }
 
-    public static byte[] showSettingsBytes(String optionFlag, long stackSize) {
-        // Compute heap sizes here programmatically (same logic you’d use for java.c)
-        long initialHeapSize = Runtime.getRuntime().totalMemory(); // or a more precise source
-        long maxHeapSize     = Runtime.getRuntime().maxMemory();
-
+    public static byte[] showSettingsBytes(String optionFlag,
+            long initialHeapSize, long maxHeapSize, long stackSize) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (PrintStream ps = new PrintStream(baos, true, StandardCharsets.UTF_8)) {
             PrintStream old = ostream;
