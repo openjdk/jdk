@@ -704,7 +704,7 @@ class SerializeClosure;
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \
   template(showSettingsBytes_name,                     "showSettingsBytes")                                       \
-  template(showSettingsBytes_signature,                "(Ljava/lang/String;J)[B")                                 \
+  template(showSettingsBytes_signature,                "(Ljava/lang/String;JJJ)[B")                               \
   template(sun_launcher_LauncherHelper,                "sun/launcher/LauncherHelper")                             \
                                                                                                                   \
   /* forEachRemaining support */                                                                                  \

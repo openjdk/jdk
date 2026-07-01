@@ -472,7 +472,7 @@ void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
 
   const char* sec = _section.value();
   if (sec == nullptr || sec[0] == '\0') {
-      sec = "all";
+    sec = "all";
   }
 
   // Guard: only allow known sections
@@ -481,20 +481,21 @@ void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
       strcmp(sec, "properties") != 0 &&
       strcmp(sec, "locale") != 0 &&
       strcmp(sec, "security") != 0 &&
+      strcmp(sec, "security:all") != 0 &&
+      strcmp(sec, "security:properties") != 0 &&
+      strcmp(sec, "security:providers") != 0 &&
+      strcmp(sec, "security:tls") != 0 &&
       strcmp(sec, "system") != 0) {
     output()->print_cr("Unknown section: %s", sec);
-    output()->print_cr("Valid sections: all, vm, properties, locale, security, system");
+    output()->print_cr("Valid sections: all, vm, properties, locale, system");
+    output()->print_cr("Valid security sections: security, security:all, "
+                       "security:properties, security:providers, security:tls");
     return;
   }
 
   // Build full flag: "-XshowSettings:<section>"
   char flag_buf[64];
   jio_snprintf(flag_buf, sizeof(flag_buf), "-XshowSettings:%s", sec);
-
-  // Compute Java thread stack size on VM side.
-  // Use whatever helper is appropriate in your tree.
-  size_t stack_size_in_bytes = ThreadStackSize * K;
-  jlong stack_size = (jlong)stack_size_in_bytes;
 
   // Resolve sun.launcher.LauncherHelper
   Symbol* klass_sym = vmSymbols::sun_launcher_LauncherHelper();
@@ -510,28 +511,20 @@ void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
     return;
   }
 
-  // Call LauncherHelper.showSettingsBytes(Settings, String)
+  // Call LauncherHelper.showSettingsBytes(String, long, long, long)
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
 
-  // Create Settings enum instance: Settings.valueOf(sec.toUpperCase())
-  // To keep it simple, add an overload in Java:
-  //
-  //   public static byte[] showSettingsBytes(String section, String value) {
-  //       Settings s = Settings.valueOf(section.toUpperCase());
-  //       return showSettingsBytes(s, value);
-  //   }
-  //
-  // Then, from VM we just pass a String.
-
   Handle option_str = java_lang_String::create_from_str(flag_buf, CHECK);
   args.push_oop(option_str);
-  args.push_long(stack_size);
+  args.push_long((jlong)InitialHeapSize);
+  args.push_long((jlong)MaxHeapSize);
+  args.push_long((jlong)ThreadStackSize * K);
 
   JavaCalls::call_static(&result,
                          ik,
-                         vmSymbols::showSettingsBytes_name(),          // "showSettingsBytes"
-                         vmSymbols::showSettingsBytes_signature(), // (String,long)byte[]
+                         vmSymbols::showSettingsBytes_name(),
+                         vmSymbols::showSettingsBytes_signature(),
                          &args,
                          THREAD);
 

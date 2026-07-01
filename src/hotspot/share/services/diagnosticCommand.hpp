@@ -853,6 +853,30 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class ShowSettingsDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _section;
+public:
+  ShowSettingsDCmd(outputStream* output, bool heap) :
+      DCmdWithParser(output, heap),
+      _section("section",
+               "Settings section: all, vm, properties, locale, system, "
+               "security[:all|properties|providers|tls]",
+               "STRING", false, "all") {
+    _dcmdparser.add_dcmd_argument(&_section);
+  }
+
+  static int num_arguments() { return 1; }
+  static const char* name()        { return "VM.show_settings"; }
+  static const char* description() {
+    return "Print information similar to -XshowSettings, e.g. "
+           "'VM.show_settings locale' or 'VM.show_settings security:tls'.";
+  }
+  static const char* impact()      { return "Low"; }
+
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 #if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
 
 class SystemMapDCmd : public DCmd {
@@ -876,25 +900,6 @@ public:
     return "Dumps an annotated process memory map to an output file (linux, Windows and MacOS only).";
   }
   static const char* impact() { return "Medium; can be high for very large java heaps."; }
-  virtual void execute(DCmdSource source, TRAPS);
-};
-
-class ShowSettingsDCmd : public DCmdWithParser {
-protected:
-  DCmdArgument<char*> _section; // "all", "vm", "properties", "locale", "security"
-public:
-  ShowSettingsDCmd(outputStream* output, bool heap) :
-      DCmdWithParser(output, heap),
-      _section("section",
-               "Settings section: all, vm, properties, locale, security",
-               "STRING", false, "all") {
-    _dcmdparser.add_dcmd_argument(&_section);
-  }
-
-  static const char* name()        { return "VM.show_settings"; }
-  static const char* description() { return "Print information similar to -XshowSettings eg. 'VM.show_settings locale'"; }
-  static const char* impact()      { return "Low"; }
-
   virtual void execute(DCmdSource source, TRAPS);
 };
 
