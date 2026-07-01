@@ -50,7 +50,7 @@ public class TestStaticCallStub {
     record Instruction(String mnemonic, int mask, int value) {
     }
 
-    private static final Instruction ISB  = new Instruction("isb",  0xFFFFF0FF, 0xD50330DF);
+    private static final Instruction ISB  = new Instruction("isb",  0xFFFFFFFF, 0xD5033FDF);
     private static final Instruction MOVK = new Instruction("movk", 0xFF800000, 0xF2800000);
     private static final Instruction MOVZ = new Instruction("mov",  0xFF800000, 0xD2800000);
     private static final Instruction B =    new Instruction("b",    0xFC000000, 0x14000000);
