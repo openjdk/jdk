@@ -134,7 +134,7 @@ public class RangeTest extends OpTestCase {
     }
 
     @Test
-    public void tesIntRangeReduce() {
+    public void testIntRangeReduce() {
         withData(intRangeData(0, 10000)).
                 terminal(s -> s.reduce(0, Integer::sum)).exercise();
     }

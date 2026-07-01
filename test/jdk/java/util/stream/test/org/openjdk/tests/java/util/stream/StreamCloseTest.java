@@ -37,9 +37,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static java.util.stream.LambdaTestHelpers.countTo;
-import static java.util.stream.ThrowableHelper.checkNPE;
-import static java.util.stream.ThrowableHelper.checkISE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -48,7 +47,7 @@ public class StreamCloseTest extends OpTestCase {
 
     @Test
     public void testNullCloseHandler() {
-        checkNPE(() -> Stream.of(1).onClose(null));
+        assertThrows(NullPointerException.class, () -> Stream.of(1).onClose(null));
     }
 
     @Test
@@ -190,7 +189,7 @@ public class StreamCloseTest extends OpTestCase {
             s.forEach(i -> {});
             // Adding onClose handler when stream is consumed is illegal
             // handler must not be registered
-            checkISE(() -> s.onClose(() -> fail("1")));
+            assertThrows(IllegalStateException.class, () -> s.onClose(() -> fail("1")));
         }
 
         // close() must be idempotent:
@@ -198,7 +197,7 @@ public class StreamCloseTest extends OpTestCase {
         try(Stream<Integer> s = countTo(100).stream()) {
             s.close();
             // Adding onClose handler when stream is closed is also illegal
-            checkISE(() -> s.onClose(() -> fail("3")));
+            assertThrows(IllegalStateException.class, () -> s.onClose(() -> fail("3")));
         }
     }
 }

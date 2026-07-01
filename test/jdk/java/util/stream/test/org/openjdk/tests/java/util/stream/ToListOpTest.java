@@ -31,6 +31,7 @@ import java.util.stream.*;
 
 import static java.util.stream.LambdaTestHelpers.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -46,16 +47,10 @@ public class ToListOpTest extends OpTestCase {
     }
 
     private void checkUnmodifiable(List<Integer> list) {
-        try {
-            list.add(Integer.MIN_VALUE);
-            fail("List.add did not throw UnsupportedOperationException");
-        } catch (UnsupportedOperationException ignore) { }
+        assertThrows(UnsupportedOperationException.class, () -> list.add(Integer.MIN_VALUE));
 
-        if (list.size() > 0) {
-            try {
-                list.set(0, Integer.MAX_VALUE);
-                fail("List.set did not throw UnsupportedOperationException");
-            } catch (UnsupportedOperationException ignore) { }
+        if (!list.isEmpty()) {
+            assertThrows(UnsupportedOperationException.class, () -> list.set(0, Integer.MAX_VALUE));
         }
     }
 

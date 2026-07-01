@@ -24,6 +24,7 @@
 package org.openjdk.tests.java.util;
 
 import java.util.Arrays;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,14 +43,16 @@ public class FillableStringTest {
 
     @Test
     public void testStringBuilder() {
-        String s = generate().collect(Collectors.joining());
-        assertEquals("THREEFOURFIVE", s);
+        StringBuilder sb = generate().collect(
+                Collector.of(StringBuilder::new, StringBuilder::append, StringBuilder::append));
+        assertEquals("THREEFOURFIVE", sb.toString());
     }
 
     @Test
     public void testStringBuffer() {
-        String s = generate().collect(Collectors.joining());
-        assertEquals("THREEFOURFIVE", s);
+        StringBuffer sb = generate().collect(
+                Collector.of(StringBuffer::new, StringBuffer::append, StringBuffer::append));
+        assertEquals("THREEFOURFIVE", sb.toString());
     }
 
     @Test

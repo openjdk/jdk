@@ -29,6 +29,7 @@ import java.util.stream.LambdaTestHelpers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -638,7 +639,7 @@ public class SpliteratorTestHelper {
             assertTrue(s.hasCharacteristics(Spliterator.SIZED));
         }
         if (s.hasCharacteristics(Spliterator.SIZED)) {
-            assertTrue(s.estimateSize() != Long.MAX_VALUE);
+            assertNotEquals(Long.MAX_VALUE, s.estimateSize());
             assertTrue(s.getExactSizeIfKnown() >= 0);
         }
         try {

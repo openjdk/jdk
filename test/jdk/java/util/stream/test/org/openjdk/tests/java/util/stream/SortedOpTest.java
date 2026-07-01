@@ -42,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -105,15 +106,8 @@ public class SortedOpTest extends OpTestCase {
                 ls -> ls.limit(Long.MAX_VALUE).parallel());
 
         for (Function<LongStream, LongStream> transform : transforms) {
-            RuntimeException caught = null;
-            try {
-                terminal.apply(s.apply(transform.apply(input.get())));
-            } catch (RuntimeException e) {
-                caught = e;
-            }
-            assertNotNull(caught, "Expected an instance of exception IllegalArgumentException but no exception thrown");
-            assertInstanceOf(IllegalArgumentException.class, caught,
-                    String.format("Expected an instance of exception IllegalArgumentException but got %s", caught));
+            assertThrows(IllegalArgumentException.class,
+                    () -> terminal.apply(s.apply(transform.apply(input.get()))));
         }
     }
 

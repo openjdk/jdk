@@ -43,7 +43,6 @@ import java.util.stream.LongStream;
 import java.util.stream.OpTestCase;
 
 import static java.util.stream.LambdaTestHelpers.countTo;
-import static java.util.stream.ThrowableHelper.checkNPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -51,39 +50,39 @@ public class CollectAndSummaryStatisticsTest extends OpTestCase {
 
     @Test
     public void testIntCollectNull() {
-        checkNPE(() -> IntStream.of(1).collect(null,
+        assertThrows(NullPointerException.class, () -> IntStream.of(1).collect(null,
                                                IntSummaryStatistics::accept,
                                                IntSummaryStatistics::combine));
-        checkNPE(() -> IntStream.of(1).collect(IntSummaryStatistics::new,
+        assertThrows(NullPointerException.class, () -> IntStream.of(1).collect(IntSummaryStatistics::new,
                                                null,
                                                IntSummaryStatistics::combine));
-        checkNPE(() -> IntStream.of(1).collect(IntSummaryStatistics::new,
+        assertThrows(NullPointerException.class, () -> IntStream.of(1).collect(IntSummaryStatistics::new,
                                                IntSummaryStatistics::accept,
                                                null));
     }
 
     @Test
     public void testLongCollectNull() {
-        checkNPE(() -> LongStream.of(1).collect(null,
+        assertThrows(NullPointerException.class, () -> LongStream.of(1).collect(null,
                                                LongSummaryStatistics::accept,
                                                LongSummaryStatistics::combine));
-        checkNPE(() -> LongStream.of(1).collect(LongSummaryStatistics::new,
+        assertThrows(NullPointerException.class, () -> LongStream.of(1).collect(LongSummaryStatistics::new,
                                                 null,
                                                 LongSummaryStatistics::combine));
-        checkNPE(() -> LongStream.of(1).collect(LongSummaryStatistics::new,
+        assertThrows(NullPointerException.class, () -> LongStream.of(1).collect(LongSummaryStatistics::new,
                                                 LongSummaryStatistics::accept,
                                                 null));
     }
 
     @Test
     public void testDoubleCollectNull() {
-        checkNPE(() -> DoubleStream.of(1).collect(null,
+        assertThrows(NullPointerException.class, () -> DoubleStream.of(1).collect(null,
                                                 DoubleSummaryStatistics::accept,
                                                 DoubleSummaryStatistics::combine));
-        checkNPE(() -> DoubleStream.of(1).collect(DoubleSummaryStatistics::new,
+        assertThrows(NullPointerException.class, () -> DoubleStream.of(1).collect(DoubleSummaryStatistics::new,
                                                 null,
                                                 DoubleSummaryStatistics::combine));
-        checkNPE(() -> DoubleStream.of(1).collect(DoubleSummaryStatistics::new,
+        assertThrows(NullPointerException.class, () -> DoubleStream.of(1).collect(DoubleSummaryStatistics::new,
                                                   DoubleSummaryStatistics::accept,
                                                   null));
     }

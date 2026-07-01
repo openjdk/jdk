@@ -41,9 +41,8 @@ import java.util.stream.Stream;
 import java.util.stream.TestData;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.ThrowableHelper.checkISE;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class StreamBuilderTest extends OpTestCase {
 
@@ -101,9 +100,9 @@ public class StreamBuilderTest extends OpTestCase {
         IntStream.range(0, size).boxed().forEach(sb);
         sb.build();
 
-        checkISE(() -> sb.accept(1));
-        checkISE(() -> sb.add(1));
-        checkISE(() -> sb.build());
+        assertThrows(IllegalStateException.class, () -> sb.accept(1));
+        assertThrows(IllegalStateException.class, () -> sb.add(1));
+        assertThrows(IllegalStateException.class, sb::build);
     }
 
     @ParameterizedTest
@@ -166,9 +165,9 @@ public class StreamBuilderTest extends OpTestCase {
         IntStream.range(0, size).forEach(sb);
         sb.build();
 
-        checkISE(() -> sb.accept(1));
-        checkISE(() -> sb.add(1));
-        checkISE(() -> sb.build());
+        assertThrows(IllegalStateException.class, () -> sb.accept(1));
+        assertThrows(IllegalStateException.class, () -> sb.add(1));
+        assertThrows(IllegalStateException.class, sb::build);
     }
 
     @ParameterizedTest
@@ -231,9 +230,9 @@ public class StreamBuilderTest extends OpTestCase {
         LongStream.range(0, size).forEach(sb);
         sb.build();
 
-        checkISE(() -> sb.accept(1));
-        checkISE(() -> sb.add(1));
-        checkISE(() -> sb.build());
+        assertThrows(IllegalStateException.class, () -> sb.accept(1));
+        assertThrows(IllegalStateException.class, () -> sb.add(1));
+        assertThrows(IllegalStateException.class, sb::build);
     }
 
     @ParameterizedTest
@@ -295,9 +294,9 @@ public class StreamBuilderTest extends OpTestCase {
         IntStream.range(0, size).asDoubleStream().forEach(sb);
         sb.build();
 
-        checkISE(() -> sb.accept(1));
-        checkISE(() -> sb.add(1));
-        checkISE(() -> sb.build());
+        assertThrows(IllegalStateException.class, () -> sb.accept(1));
+        assertThrows(IllegalStateException.class, () -> sb.add(1));
+        assertThrows(IllegalStateException.class, sb::build);
     }
 
     @ParameterizedTest

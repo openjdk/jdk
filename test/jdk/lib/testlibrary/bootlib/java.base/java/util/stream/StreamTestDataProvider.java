@@ -199,7 +199,7 @@ public class StreamTestDataProvider {
         return new Object[] { description, ss };
     }
 
-    // Return an array of ( String name, StreamTestData<Integer>
+    // Return an array of ( String name, StreamTestData<Integer> )
     public static Stream<Arguments> integerStreamTestData() {
         return Arrays.stream(testData).map(Arguments::of);
     }

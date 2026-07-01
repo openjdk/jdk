@@ -56,8 +56,8 @@ import static java.util.stream.LambdaTestHelpers.flattenChars;
 import static java.util.stream.LambdaTestHelpers.mfId;
 import static java.util.stream.LambdaTestHelpers.mfLt;
 import static java.util.stream.LambdaTestHelpers.mfNull;
-import static java.util.stream.ThrowableHelper.checkNPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class MapMultiOpTest extends OpTestCase {
 
@@ -86,10 +86,10 @@ public class MapMultiOpTest extends OpTestCase {
     @ParameterizedTest
     @MethodSource("integerStreamProvider")
     public void testNullMapper(Stream<Integer> s) {
-        checkNPE(() -> s.mapMulti(null));
-        checkNPE(() -> s.mapMultiToInt(null));
-        checkNPE(() -> s.mapMultiToDouble(null));
-        checkNPE(() -> s.mapMultiToLong(null));
+        assertThrows(NullPointerException.class, () -> s.mapMulti(null));
+        assertThrows(NullPointerException.class, () -> s.mapMultiToInt(null));
+        assertThrows(NullPointerException.class, () -> s.mapMultiToDouble(null));
+        assertThrows(NullPointerException.class, () -> s.mapMultiToLong(null));
     }
 
     @Test
@@ -181,7 +181,7 @@ public class MapMultiOpTest extends OpTestCase {
     @ParameterizedTest
     @MethodSource("intStreamProvider")
     public void testIntNullMapper(IntStream s) {
-        checkNPE(() -> s.mapMulti(null));
+        assertThrows(NullPointerException.class, () -> s.mapMulti(null));
     }
 
     @ParameterizedTest
@@ -238,7 +238,7 @@ public class MapMultiOpTest extends OpTestCase {
     @ParameterizedTest
     @MethodSource("doubleStreamProvider")
     public void testDoubleNullMapper(DoubleStream s) {
-        checkNPE(() -> s.mapMulti(null));
+        assertThrows(NullPointerException.class, () -> s.mapMulti(null));
     }
 
     @ParameterizedTest
@@ -289,7 +289,7 @@ public class MapMultiOpTest extends OpTestCase {
     @ParameterizedTest
     @MethodSource("longStreamProvider")
     public void testLongNullMapper(LongStream s) {
-        checkNPE(() -> s.mapMulti(null));
+        assertThrows(NullPointerException.class, () -> s.mapMulti(null));
     }
 
     @ParameterizedTest

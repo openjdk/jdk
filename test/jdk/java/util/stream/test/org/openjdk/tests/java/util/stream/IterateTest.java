@@ -44,9 +44,8 @@ import java.util.stream.Stream;
 import java.util.stream.TestData;
 import java.util.stream.TestData.Factory;
 
-import static java.util.stream.ThrowableHelper.checkNPE;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 
 public class IterateTest extends OpTestCase {
 
@@ -91,14 +90,14 @@ public class IterateTest extends OpTestCase {
 
     @Test
     public void testNPE() {
-        checkNPE(() -> Stream.iterate("", null, x -> x + "a"));
-        checkNPE(() -> Stream.iterate("", String::isEmpty, null));
-        checkNPE(() -> IntStream.iterate(0, null, x -> x + 1));
-        checkNPE(() -> IntStream.iterate(0, x -> x < 10, null));
-        checkNPE(() -> LongStream.iterate(0, null, x -> x + 1));
-        checkNPE(() -> LongStream.iterate(0, x -> x < 10, null));
-        checkNPE(() -> DoubleStream.iterate(0, null, x -> x + 1));
-        checkNPE(() -> DoubleStream.iterate(0, x -> x < 10, null));
+        assertThrows(NullPointerException.class, () -> Stream.iterate("", null, x -> x + "a"));
+        assertThrows(NullPointerException.class, () -> Stream.iterate("", String::isEmpty, null));
+        assertThrows(NullPointerException.class, () -> IntStream.iterate(0, null, x -> x + 1));
+        assertThrows(NullPointerException.class, () -> IntStream.iterate(0, x -> x < 10, null));
+        assertThrows(NullPointerException.class, () -> LongStream.iterate(0, null, x -> x + 1));
+        assertThrows(NullPointerException.class, () -> LongStream.iterate(0, x -> x < 10, null));
+        assertThrows(NullPointerException.class, () -> DoubleStream.iterate(0, null, x -> x + 1));
+        assertThrows(NullPointerException.class, () -> DoubleStream.iterate(0, x -> x < 10, null));
     }
 
     @Test

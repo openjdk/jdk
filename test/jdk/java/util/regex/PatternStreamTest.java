@@ -52,7 +52,6 @@ import java.util.stream.TestData;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class PatternStreamTest extends OpTestCase {
 
@@ -227,20 +226,10 @@ public class PatternStreamTest extends OpTestCase {
         // Fail fast with short-circuit
         // Exercises Iterator.hasNext/next
         m.reset();
-        try {
-            m.results().peek(mr -> m.reset()).limit(2).count();
-            fail();
-        } catch (ConcurrentModificationException e) {
-            // Should reach here
-        }
+        assertThrows(ConcurrentModificationException.class, () -> m.results().peek(mr -> m.reset()).limit(2).count());
 
         m.reset();
-        try {
-            m.results().peek(mr -> m.find()).limit(2).count();
-            fail();
-        } catch (ConcurrentModificationException e) {
-            // Should reach here
-        }
+        assertThrows(ConcurrentModificationException.class, () -> m.results().peek(mr -> m.find()).limit(2).count());
     }
 
     @Test
@@ -251,20 +240,10 @@ public class PatternStreamTest extends OpTestCase {
         // Fail fast without short-circuit
         // Exercises Iterator.forEachRemaining
         m.reset();
-        try {
-            m.replaceFirst(mr -> { m.reset(); return "Y"; });
-            fail();
-        } catch (ConcurrentModificationException e) {
-            // Should reach here
-        }
+        assertThrows(ConcurrentModificationException.class, () -> m.replaceFirst(mr -> { m.reset(); return "Y"; }));
 
         m.reset();
-        try {
-            m.replaceAll(mr -> { m.reset(); return "Y"; });
-            fail();
-        } catch (ConcurrentModificationException e) {
-            // Should reach here
-        }
+        assertThrows(ConcurrentModificationException.class, () -> m.replaceAll(mr -> { m.reset(); return "Y"; }));
     }
 
     // A holder of MatchResult that can compare

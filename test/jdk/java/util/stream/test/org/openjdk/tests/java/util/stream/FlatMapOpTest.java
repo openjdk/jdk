@@ -46,17 +46,17 @@ import java.util.stream.Stream;
 import java.util.stream.TestData;
 
 import static java.util.stream.LambdaTestHelpers.*;
-import static java.util.stream.ThrowableHelper.checkNPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FlatMapOpTest extends OpTestCase {
 
     @Test
     public void testNullMapper() {
-        checkNPE(() -> Stream.of(1).flatMap(null));
-        checkNPE(() -> IntStream.of(1).flatMap(null));
-        checkNPE(() -> LongStream.of(1).flatMap(null));
-        checkNPE(() -> DoubleStream.of(1).flatMap(null));
+        assertThrows(NullPointerException.class, () -> Stream.of(1).flatMap(null));
+        assertThrows(NullPointerException.class, () -> IntStream.of(1).flatMap(null));
+        assertThrows(NullPointerException.class, () -> LongStream.of(1).flatMap(null));
+        assertThrows(NullPointerException.class, () -> DoubleStream.of(1).flatMap(null));
     }
 
     static final Function<Integer, Stream<Integer>> integerRangeMapper

@@ -21,9 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- */
 package java.util.stream;
 
 import org.junit.jupiter.params.ParameterizedTest;

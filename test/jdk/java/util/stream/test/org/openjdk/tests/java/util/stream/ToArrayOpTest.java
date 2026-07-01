@@ -21,10 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- */
-
 package org.openjdk.tests.java.util.stream;
 
 import org.junit.jupiter.api.Tag;
@@ -40,6 +36,7 @@ import static java.util.stream.LambdaTestHelpers.*;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -67,7 +64,7 @@ public class ToArrayOpTest extends OpTestCase {
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
 
         Object[] objects = exerciseTerminalOps(data, s -> s.map(i -> (Integer) (i + i)), s -> s.toArray());
-        assertTrue(objects.length == data.size());
+        assertEquals(data.size(), objects.length);
     }
 
     @ParameterizedTest
@@ -77,7 +74,7 @@ public class ToArrayOpTest extends OpTestCase {
         // This should kick in the parallel evaluation optimization for tasks stuffing elements into a shared array
 
         Object[] objects = exerciseTerminalOps(data, s -> s.sorted(), s -> s.toArray());
-        assertTrue(objects.length == data.size());
+        assertEquals(data.size(), objects.length);
     }
 
     @ParameterizedTest
@@ -89,7 +86,7 @@ public class ToArrayOpTest extends OpTestCase {
         Object[] objects = exerciseTerminalOps(data,
                                                s -> s.flatMap(e -> Arrays.stream(new Object[] { e, e })),
                                                s -> s.toArray());
-        assertTrue(objects.length == data.size() * 2);
+        assertEquals(data.size() * 2, objects.length);
     }
 
     @ParameterizedTest
@@ -133,14 +130,7 @@ public class ToArrayOpTest extends OpTestCase {
             assertEquals(Number[].class, ns.getClass());
 
             if (data.size() > 0) {
-                Exception caught = null;
-                try {
-                    exerciseTerminalOps(data, f, s -> s.toArray(String[]::new));
-                } catch (Exception e) {
-                    caught = e;
-                }
-                assertTrue(caught != null);
-                assertEquals(ArrayStoreException.class, caught.getClass());
+                assertThrows(ArrayStoreException.class, () -> exerciseTerminalOps(data, f, s -> s.toArray(String[]::new)));
             }
         }
     }
@@ -202,14 +192,7 @@ public class ToArrayOpTest extends OpTestCase {
             assertEquals(Number[].class, ns.getClass());
 
             if (data.size() > 0) {
-                Exception caught = null;
-                try {
-                    exerciseTerminalOps(data, f, s -> s.toArray(String[]::new));
-                } catch (Exception e) {
-                    caught = e;
-                }
-                assertNotNull(caught);
-                assertEquals(ArrayStoreException.class, caught.getClass());
+                assertThrows(ArrayStoreException.class, () -> exerciseTerminalOps(data, f, s -> s.toArray(String[]::new)));
             }
         }
     }
@@ -245,7 +228,7 @@ public class ToArrayOpTest extends OpTestCase {
     @ParameterizedTest
     @MethodSource("java.util.stream.IntStreamTestDataProvider#intStreamTestData")
     public void testIntOpsWithFlatMap(String name, TestData.OfInt data) {
-        // Int the size of the source
+        // Double the size of the source
         // Fixed size optimizations will not be used
 
         int[] objects = exerciseTerminalOps(data,
@@ -325,7 +308,7 @@ public class ToArrayOpTest extends OpTestCase {
     @ParameterizedTest
     @MethodSource("java.util.stream.LongStreamTestDataProvider#longStreamTestData")
     public void testLongOpsWithFlatMap(String name, TestData.OfLong data) {
-        // Long the size of the source
+        // Double the size of the source
         // Fixed size optimizations will not be used
 
         long[] objects = exerciseTerminalOps(data,
