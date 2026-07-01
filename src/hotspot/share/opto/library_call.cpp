@@ -5517,12 +5517,6 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   PhiNode*    result_mem = new PhiNode(result_reg, Type::MEMORY, TypePtr::BOTTOM);
   Node* obj = argument(0);
 
-  // Don't intrinsify hashcode on inline types for now.
-  // The "is locked" runtime check also subsumes the inline type check (as inline types cannot be locked) and goes to the slow path.
-  if (!UseNewCode && gvn().type(obj)->is_inlinetypeptr()) {
-    return false;
-  }
-
   if (obj->is_InlineType()) {
     PreserveReexecuteState preexecs(this);
     inc_sp(2);
@@ -5596,74 +5590,81 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   result_reg->init_req(_cache_path, control());
 
   set_control(_gvn.transform(compute_region));
+  IfNode* fast_path_iff = nullptr;
   if (!stopped()) {
-    if (UseHashcodeFastPath) {
+    if (UseHashcodeFastPath && !_gvn.type(obj)->is_inlinetypeptr()) {
       Node* is_not_value = inline_type_test(obj, false);
       generate_slow_guard(is_not_value, slow_region);
+      if (!stopped()) {
+        /* load 8 bytes from appropriate offset
+         * mask to keep 1, 2, 4 or 8 bytes if mask is 0 => slow path
+         * load hash from klass if none => slow path
+         * shift by 7, 6, 4 or 0 bytes
+         * if shift is 0 => 31 * (31 * klass_hash + shifted[31:0]) + shifted[63:32]
+         * else => 31 * klass_hash + shifted
+         */
+        Node* members_addr = off_heap_plus_addr(obj_klass, in_bytes(InlineKlass::adr_members_offset()));
+        Node* members = make_load(control(), members_addr, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
+        Node* offset_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_offset_offset()));
+        Node* offset = make_load(control(), offset_addr, TypeInt::INT, T_INT, MemNode::unordered);
+        Node* bol_no_fast_path = BoolCmpI(offset, BoolTest::lt, zerocon(T_INT));
+        generate_slow_guard(bol_no_fast_path, slow_region);
+        if (!stopped()) {
+          if (control()->is_IfFalse()) {
+            fast_path_iff = control()->in(0)->as_If();
+          }
 
-      /* load 8 bytes from appropriate offset
-       * mask to keep 1, 2, 4 or 8 bytes if mask is 0 => slow path
-       * load hash from klass if none => slow path
-       * shift by 7, 6, 4 or 0 bytes (big endian only?) = max_julong >> ((BitsPerByte - n) << LogBitsPerByte)
-       * if shift is 0 => 31 * (31 * klass_hash + shifted[31:0]) + shifted[63:32]
-       * else => 31 * klass_hash + shifted
-       */
-      Node* members_addr = off_heap_plus_addr(obj_klass, in_bytes(InlineKlass::adr_members_offset()));
-      Node* members = make_load(control(), members_addr, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
-      Node* offset_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_offset_offset()));
-      Node* offset = make_load(control(), offset_addr, TypeInt::INT, T_INT, MemNode::unordered);
-      Node* bol_no_fast_path = BoolCmpI(offset, BoolTest::lt, zerocon(T_INT));
-      generate_slow_guard(bol_no_fast_path, slow_region);
-
-      // See ClassFileParser::set_fast_hashcode_members
+          // See ClassFileParser::set_fast_hashcode_members
+          Node* obj_payload_addr = basic_plus_adr(obj, ConvI2L(offset));
+          Node* obj_payload = make_load(control(), obj_payload_addr, TypeLong::LONG, T_LONG, MemNode::unordered, LoadNNode::DependsOnlyOnTest, false, true, true, true);
 #ifdef VM_LITTLE_ENDIAN
-      // *(obj + offset) >>> shift
-      Node* shift_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_shift_offset()));
-      Node* shift = make_load(control(), shift_addr, TypeInt::INT, T_INT, MemNode::unordered);
-      Node* obj_payload_addr = basic_plus_adr(obj, ConvI2L(offset));
-      Node* obj_payload = make_load(control(), obj_payload_addr, TypeLong::LONG, T_LONG, MemNode::unordered, LoadNNode::DependsOnlyOnTest, false, true, true, true);
-      Node* obj_extracted = URShiftL(obj_payload, shift);
+          // *(obj + offset) >>> shift
+          Node* shift_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_shift_offset()));
+          Node* shift = make_load(control(), shift_addr, TypeInt::INT, T_INT, MemNode::unordered);
+          Node* obj_extracted = URShiftL(obj_payload, shift);
 #else
-      // *(obj + offset) & mask
-      Node* mask_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_mask_offset()));
-      Node* mask = make_load(control(), mask_addr, TypeLong::LONG, T_LONG, MemNode::unordered);
-      Node* obj_payload_addr = basic_plus_adr(obj, ConvI2L(offset));
-      Node* obj_payload = make_load(control(), obj_payload_addr, TypeLong::LONG, T_LONG, MemNode::unordered, LoadNNode::DependsOnlyOnTest, false, true, true, true);
-      Node* obj_extracted = AndL(obj_payload, mask);
+          // *(obj + offset) & mask
+          Node* mask_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_mask_offset()));
+          Node* mask = make_load(control(), mask_addr, TypeLong::LONG, T_LONG, MemNode::unordered);
+          Node* obj_extracted = AndL(obj_payload, mask);
 #endif
 
-      Node* klass_header_addr = off_heap_plus_addr(load_mirror_from_klass(obj_klass), oopDesc::mark_offset_in_bytes());
-      Node* klass_header = make_load(no_ctrl, klass_header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
-      hashcode_is_safe_to_read(klass_header, slow_region);
-      Node* result = get_hashcode_from_header(klass_header, slow_region);
+          Node* klass_header_addr = off_heap_plus_addr(load_mirror_from_klass(obj_klass), oopDesc::mark_offset_in_bytes());
+          Node* klass_header = make_load(no_ctrl, klass_header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
+          hashcode_is_safe_to_read(klass_header, slow_region);
+          if (!stopped()) {
+            Node* result = get_hashcode_from_header(klass_header, slow_region);
 
-      RegionNode* long_not_long_region = new RegionNode(4);
-      Node* fast_path_result = new PhiNode(long_not_long_region, TypeInt::INT);
+            RegionNode* long_not_long_region = new RegionNode(4);
+            Node* fast_path_result = new PhiNode(long_not_long_region, TypeInt::INT);
 
-      Node* bol_empty_object = BoolCmpI(offset, BoolTest::eq, zerocon(T_INT));
+            Node* bol_empty_object = BoolCmpI(offset, BoolTest::eq, zerocon(T_INT));
 #ifdef VM_LITTLE_ENDIAN
-      Node* is_long_payload_bol = BoolCmpI(shift, BoolTest::eq, intcon(0));
+            Node* is_long_payload_bol = BoolCmpI(shift, BoolTest::eq, intcon(0));
 #else
-      Node* is_long_payload_bol = BoolCmpI(mask, BoolTest::eq, longcon(-1));
+            Node* is_long_payload_bol = BoolCmpI(mask, BoolTest::eq, longcon(-1));
 #endif
-      IfNode* iff_is_empty_object = create_and_map_if(control(), bol_empty_object, PROB_FAIR, COUNT_UNKNOWN);
-      IfNode* iff_is_long_payload = create_and_map_if(IfFalse(iff_is_empty_object), is_long_payload_bol, PROB_FAIR, COUNT_UNKNOWN);
+            IfNode* iff_is_empty_object = create_and_map_if(control(), bol_empty_object, PROB_FAIR, COUNT_UNKNOWN);
+            IfNode* iff_is_long_payload = create_and_map_if(IfFalse(iff_is_empty_object), is_long_payload_bol, PROB_FAIR, COUNT_UNKNOWN);
 
-      fast_path_result->init_req(1, result);
-      long_not_long_region->init_req(1, IfTrue(iff_is_empty_object));
+            fast_path_result->init_req(1, result);
+            long_not_long_region->init_req(1, IfTrue(iff_is_empty_object));
 
-      result = AddI(MulI(intcon(31), result), ConvL2I(obj_extracted));
-      fast_path_result->init_req(2, result);
-      long_not_long_region->init_req(2, IfFalse(iff_is_long_payload));
+            result = AddI(MulI(intcon(31), result), ConvL2I(obj_extracted));
+            fast_path_result->init_req(2, result);
+            long_not_long_region->init_req(2, IfFalse(iff_is_long_payload));
 
-      result = AddI(MulI(intcon(31), result), ConvL2I(URShiftL(obj_extracted, intcon(32))));
-      fast_path_result->init_req(3, result);
-      long_not_long_region->init_req(3, IfTrue(iff_is_long_payload));
+            result = AddI(MulI(intcon(31), result), ConvL2I(URShiftL(obj_extracted, intcon(32))));
+            fast_path_result->init_req(3, result);
+            long_not_long_region->init_req(3, IfTrue(iff_is_long_payload));
 
-      fast_path_result = AndI(_gvn.transform(fast_path_result), intcon(markWord::hash_mask));
+            fast_path_result = AndI(_gvn.transform(fast_path_result), intcon(markWord::hash_mask));
 
-      result_reg->init_req(_inline_fast_path, _gvn.transform(long_not_long_region));
-      result_val->init_req(_inline_fast_path, fast_path_result);
+            result_reg->init_req(_inline_fast_path, _gvn.transform(long_not_long_region));
+            result_val->init_req(_inline_fast_path, fast_path_result);
+          }
+        }
+      }
     } else {
       slow_region->add_req(control());
     }
@@ -5685,6 +5686,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     CallJavaNode* slow_call = generate_method_call(hashCode_id, is_virtual, is_static, false);
     slow_call->set_req(TypeFunc::Parms, obj);
     Node* slow_result = set_results_for_java_call(slow_call);
+    assert(hashcode_fast_path_if_from_identity_hash_code_call(&_gvn, slow_call) == fast_path_iff, "");
     // this->control() comes from set_results_for_java_call
     result_reg->init_req(_slow_path, control());
     result_val->init_req(_slow_path, slow_result);
@@ -5698,6 +5700,73 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
 
   set_result(result_reg, result_val);
   return true;
+}
+IfNode* LibraryCallKit::hashcode_fast_path_if_from_identity_hash_code_call(PhaseGVN* phase, CallJavaNode* call) {
+  auto is_con_offset = [](Node* node, ByteSize n) -> bool {
+    if (!node->is_Con()) return false;
+    TypeNode* con = node->as_Type();
+    assert(con->type()->is_intptr_t(), "");
+    return con->type()->is_intptr_t()->is_con(in_bytes(n));
+  };
+
+  assert(call->in(TypeFunc::Control) != nullptr, "");
+  if (!call->in(TypeFunc::Control)->is_Region()) return nullptr;
+  RegionNode* region = call->in(TypeFunc::Control)->as_Region();
+  for (uint i = 1; i < region->req(); i++) {
+    assert(region->in(i) != nullptr, "");
+    if (!region->in(i)->is_IfProj()) continue;
+    IfProjNode* if_proj = region->in(i)->as_IfProj();
+    if (if_proj->_con != 1) continue;
+
+    assert(if_proj->in(0) != nullptr, "");
+    assert(if_proj->in(0)->is_If(), "");
+    IfNode* iff = if_proj->in(0)->as_If();
+
+    assert(iff->in(1) != nullptr, "");
+    if (!iff->in(1)->is_Bool()) continue;
+    BoolNode* lt = iff->in(1)->as_Bool();
+    if (lt->_test._test != BoolTest::lt) continue;
+
+    assert(lt->in(1) != nullptr, "");
+    if (lt->in(1)->Opcode() != Op_CmpI) continue;
+    CmpNode* cmp_i = lt->in(1)->as_Cmp();
+
+    assert(cmp_i->in(1) != nullptr, "");
+    assert(cmp_i->in(2) != nullptr, "");
+
+    if (cmp_i->in(1)->Opcode() != Op_LoadI) continue;
+    LoadNode* load_offset = cmp_i->in(1)->as_Load();
+    if (!cmp_i->in(2)->is_ConI()) continue;
+    ConINode* zero_i = cmp_i->in(2)->as_ConI();
+    assert(zero_i->type()->is_int() != nullptr, "");
+    if (!zero_i->type()->is_int()->is_con(0)) continue;
+
+    assert(load_offset->in(2) != nullptr, "");
+    if (!load_offset->in(2)->is_AddP()) continue;
+    AddPNode* offset_addr_add = load_offset->in(2)->as_AddP();
+
+    assert(offset_addr_add->in(AddPNode::Base) != nullptr, "");
+    assert(offset_addr_add->in(AddPNode::Address) != nullptr, "");
+    assert(offset_addr_add->in(AddPNode::Offset) != nullptr, "");
+    if (!offset_addr_add->in(AddPNode::Base)->is_top()) continue;
+    if (offset_addr_add->in(AddPNode::Address)->Opcode() != Op_LoadP) continue;
+    LoadNode* load_members = offset_addr_add->in(AddPNode::Address)->as_Load();
+    if (!is_con_offset(offset_addr_add->in(AddPNode::Offset), InlineKlass::fast_hashcode_offset_offset())) continue;
+
+    assert(load_members->in(2) != nullptr, "");
+    if (!load_members->in(2)->is_AddP()) continue;
+    AddPNode* members_addr_add = load_members->in(2)->as_AddP();
+
+    assert(members_addr_add->in(AddPNode::Base) != nullptr, "");
+    assert(members_addr_add->in(AddPNode::Address) != nullptr, "");
+    assert(members_addr_add->in(AddPNode::Offset) != nullptr, "");
+    if (!members_addr_add->in(AddPNode::Base)->is_top()) continue;
+    if (!phase->type(members_addr_add->in(AddPNode::Address))->isa_instklassptr()) continue;
+    if (!is_con_offset(members_addr_add->in(AddPNode::Offset), InlineKlass::adr_members_offset())) continue;
+
+    return iff;
+  }
+  return nullptr;
 }
 
 //---------------------------inline_native_getClass----------------------------

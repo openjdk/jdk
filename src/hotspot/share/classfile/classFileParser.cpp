@@ -5439,15 +5439,19 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
 
 void ClassFileParser::set_fast_hashcode_members(InlineKlass* vk) const {
   if (_layout_info->_oop_acmp_map->length() > 0) {  // Oops are not allowed in the fast path
-    tty->print("Too many oops (%d): ", _layout_info->_oop_acmp_map->length());
-    vk->name()->print();
-    tty->cr();
+    if (UseNewCode2) {
+      tty->print("Too many oops (%d): ", _layout_info->_oop_acmp_map->length());
+      vk->name()->print();
+      tty->cr();
+    }
     return;
   }
   if (_layout_info->_nonoop_acmp_map->length() >= 2) {
-    tty->print("Too many segments (%d): ", _layout_info->_nonoop_acmp_map->length());
-    vk->name()->print();
-    tty->cr();
+    if (UseNewCode2) {
+      tty->print("Too many segments (%d): ", _layout_info->_nonoop_acmp_map->length());
+      vk->name()->print();
+      tty->cr();
+    }
     return;
   }
 
@@ -5456,14 +5460,16 @@ void ClassFileParser::set_fast_hashcode_members(InlineKlass* vk) const {
 #ifdef VM_LITTLE_ENDIAN
     vk->set_fast_hashcode_shift(0);
 
-    tty->print("Fast hashcode: ");
-    vk->name()->print();
-    tty->cr();
+    if (UseNewCode2) {
+      tty->print("Fast hashcode: ");
+      vk->name()->print();
+      tty->cr();
 
-    tty->print_cr("  offset: %d", vk->fast_hashcode_offset());
-    tty->print_cr("  shift: %d", vk->fast_hashcode_shift());
-    tty->cr();
-    tty->cr();
+      tty->print_cr("  offset: %d", vk->fast_hashcode_offset());
+      tty->print_cr("  shift: %d", vk->fast_hashcode_shift());
+      tty->cr();
+      tty->cr();
+    }
 #else
     vk->set_fast_hashcode_mask(0);
 #endif // VM_LITTLE_ENDIAN
@@ -5474,9 +5480,11 @@ void ClassFileParser::set_fast_hashcode_members(InlineKlass* vk) const {
 
   int piece_size = _layout_info->_nonoop_acmp_map->at(0)._size;
   if (piece_size != 1 && piece_size != 2 && piece_size != 4 && piece_size != 8) {
-    tty->print("Segment has annoying size (%d): ", piece_size);
-    vk->name()->print();
-    tty->cr();
+    if (UseNewCode2) {
+      tty->print("Segment has annoying size (%d): ", piece_size);
+      vk->name()->print();
+      tty->cr();
+    }
     return;
   }
 
@@ -5485,16 +5493,18 @@ void ClassFileParser::set_fast_hashcode_members(InlineKlass* vk) const {
 #ifdef VM_LITTLE_ENDIAN
   vk->set_fast_hashcode_shift(BitsPerByte * (BytesPerLong - piece_size));
 
-  tty->print("Fast hashcode: ");
-  vk->name()->print();
-  tty->cr();
+  if (UseNewCode2) {
+    tty->print("Fast hashcode: ");
+    vk->name()->print();
+    tty->cr();
 
-  tty->print_cr("  start: %d", piece_start);
-  tty->print_cr("  size: %d", piece_size);
-  tty->print_cr("  offset: %d", vk->fast_hashcode_offset());
-  tty->print_cr("  shift: %d", vk->fast_hashcode_shift());
-  tty->cr();
-  tty->cr();
+    tty->print_cr("  start: %d", piece_start);
+    tty->print_cr("  size: %d", piece_size);
+    tty->print_cr("  offset: %d", vk->fast_hashcode_offset());
+    tty->print_cr("  shift: %d", vk->fast_hashcode_shift());
+    tty->cr();
+    tty->cr();
+  }
 #else
   vk->set_fast_hashcode_mask(right_n_bits<int64_t>(piece_size * BitsPerByte));
 #endif // VM_LITTLE_ENDIAN

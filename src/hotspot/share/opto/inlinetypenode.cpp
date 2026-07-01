@@ -997,41 +997,28 @@ Node* InlineTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node
 
 // Check if a substitutability check between 'lhs' and 'rhs' can be implemented in IR
 bool InlineTypeNode::can_emit_identity_hash_code(const PhaseIterGVN& igvn, Node* arg, intptr_t& klass_hash) {
-  if (!arg->bottom_type()->isa_ptr()) {
-    return false;
-  }
-
-  if (!arg->is_InlineType()) {
-    return false;
-  }
-
-  InlineTypeNode* arg_inline = arg->as_InlineType();
-
-  if (check_cycle(arg_inline->inline_klass())) {
-    return false;
-  }
-
   const Type* arg_type = igvn.type(arg);
+  if (!arg_type->is_inlinetypeptr()) {
+    return false;
+  }
   ciInlineKlass* vk = arg_type->inline_klass();
   klass_hash = vk->java_mirror()->hash();
   if (klass_hash == markWord::no_hash) {
-    tty->print_cr("In %s: no hash", igvn.C->method()->name()->as_quoted_ascii());
+    if (UseNewCode2) {
+      tty->print_cr("In %s: no hash", igvn.C->method()->name()->as_quoted_ascii());
+    }
     return false;
   }
   if (vk->number_of_oop_entries_in_acmp_map() > 0) {
-    tty->print_cr("In %s: oops", igvn.C->method()->name()->as_quoted_ascii());
+    if (UseNewCode2) {
+      tty->print_cr("In %s: oops", igvn.C->method()->name()->as_quoted_ascii());
+    }
     return false;
   }
 
-  for (uint i = 0; i < arg_inline->field_count(); i++) {
-    ciType* ft = arg_inline->field(i)->type();
-    if (!ft->is_primitive_type()) {
-      tty->print_cr("In %s: wrong type", igvn.C->method()->name()->as_quoted_ascii());
-      return false;
-    }
+  if (UseNewCode2) {
+    tty->print_cr("In %s: going to expand", igvn.C->method()->name()->as_quoted_ascii());
   }
-
-  tty->print_cr("In %s: going to expand", igvn.C->method()->name()->as_quoted_ascii());
   return true;
 }
 
@@ -1054,10 +1041,15 @@ Node* InlineTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t
   assert(vk->number_of_oop_entries_in_acmp_map() == 0, "cannot have oops here");
 
   auto make_load = [&](int offset, const Type* type, BasicType bt) -> Node* {
+    Node* adr = kit->basic_plus_adr(arg, offset);
     ciField* field = vk->get_field_by_offset(offset, false);
     // If the load is by chance not a mismatch, let mark it so. This way, loading the field can be simplified
     bool is_mismatch = field == nullptr || field->type()->basic_type() != bt;
-    Node* adr = kit->basic_plus_adr(arg, offset);
+    if (bt == T_BYTE && field != nullptr && field->type()->basic_type() == T_BOOLEAN) {
+      is_mismatch = false;
+      bt = T_BOOLEAN;
+      type = TypeInt::BOOL;
+    }
     return kit->make_load(kit->control(), adr, type, bt, MemNode::unordered, LoadNode::DependsOnlyOnTest, false, false, is_mismatch, is_mismatch);
   };
 
@@ -1097,7 +1089,9 @@ Node* InlineTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t
   }
   result = kit->AndI(result, kit->intcon(markWord::hash_mask));
 
-  tty->print_cr("In %s, expanded hashcode of %s.", igvn.C->method()->name()->as_quoted_ascii(), vk->name()->as_quoted_ascii());
+  if (UseNewCode2) {
+    tty->print_cr("In %s, expanded hashcode of %s.", igvn.C->method()->name()->as_quoted_ascii(), vk->name()->as_quoted_ascii());
+  }
 
   return result;
 }

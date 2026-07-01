@@ -315,6 +315,9 @@ class LibraryCallKit : public GraphKit {
   void hashcode_is_safe_to_read(Node* header, RegionNode* unsafe);
   Node* get_hashcode_from_header(Node* header, RegionNode* unset_region);
   bool inline_native_hashcode(bool is_virtual, bool is_static);
+public:
+  static IfNode* hashcode_fast_path_if_from_identity_hash_code_call(PhaseGVN* phase, CallJavaNode* call);
+private:
   bool inline_native_getClass();
 
   // Helper functions for inlining arraycopy

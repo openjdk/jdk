@@ -33,6 +33,8 @@
 #include "interpreter/interpreter.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/callnode.hpp"
+
+#include "library_call.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/escape.hpp"
@@ -1409,6 +1411,26 @@ Node* CallStaticJavaNode::replace_identity_hash_code(PhaseIterGVN* igvn) {
   Node* arg = in(TypeFunc::Parms);
   intptr_t klass_hash;
   if (!InlineTypeNode::can_emit_identity_hash_code(*igvn, arg, klass_hash)) {
+    // We can't expand, but now, maybe we can also tell the fast path won't work
+    const Type* arg_type = igvn->type(arg);
+    if (UseHashcodeFastPath && igvn->type(arg)->is_inlinetypeptr()) {
+      ciInlineKlass* vk = arg_type->inline_klass();
+      bool fast_path_wont_work = false;
+      fast_path_wont_work = fast_path_wont_work || vk->number_of_oop_entries_in_acmp_map() > 0;
+      fast_path_wont_work = fast_path_wont_work || vk->number_of_nonoop_entries_in_acmp_map() > 1;
+      if (vk->number_of_nonoop_entries_in_acmp_map() == 1) {
+        int size = vk->get_nonoop_segment_of_acmp_map(0)._size;
+        fast_path_wont_work = fast_path_wont_work || (size != 1 && size != 2 && size != 4 && size != 8);
+      }
+      if (fast_path_wont_work) {
+        IfNode* fast_path_if = LibraryCallKit::hashcode_fast_path_if_from_identity_hash_code_call(igvn, this);
+        if (fast_path_if != nullptr) {
+          fast_path_if->set_req(1, igvn->intcon(1));
+          igvn->_worklist.push(fast_path_if);
+          return this;
+        }
+      }
+    }
     return nullptr;
   }
 
@@ -1420,6 +1442,15 @@ Node* CallStaticJavaNode::replace_identity_hash_code(PhaseIterGVN* igvn) {
   Node* replace = InlineTypeNode::emit_identity_hash_code(&kit, arg, klass_hash);
   igvn->set_delay_transform(false);
   assert(replace != nullptr, "must succeed");
+
+  if (UseHashcodeFastPath) {
+    // Sabotage the fast hashcode path
+    IfNode* fast_path_if = LibraryCallKit::hashcode_fast_path_if_from_identity_hash_code_call(igvn, this);
+    if (fast_path_if != nullptr) {
+      fast_path_if->set_req(1, igvn->intcon(1));
+      igvn->_worklist.push(fast_path_if);
+    }
+  }
 
   // Kill exception projections and return a tuple that will replace the call
   CallProjections* projs = extract_projections(false /*separate_io_proj*/);

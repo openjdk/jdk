@@ -35,6 +35,8 @@ import java.util.concurrent.TimeUnit;
 public class FastPath {
     public static final int SIZE = 100;
 
+    // TODO try the cache path
+
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     private static int hash(Object obj) {
         return System.identityHashCode(obj);
@@ -45,72 +47,40 @@ public class FastPath {
         return System.identityHashCode(obj);
     }
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static int hash_specialized(Byte[] objects) {
-        int s = 0;
-        for (int i = 0; i < SIZE; i++) {
-            s += System.identityHashCode(objects[i]);
-        }
-        return s;
+    private static int hash_specialized(Byte obj) {
+        return System.identityHashCode(obj);
     }
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static int hash_specialized(Short[] objects) {
-        int s = 0;
-        for (int i = 0; i < SIZE; i++) {
-            s += System.identityHashCode(objects[i]);
-        }
-        return s;
+    private static int hash_specialized(Short obj) {
+        return System.identityHashCode(obj);
     }
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static int hash_specialized(Integer[] objects) {
-        int s = 0;
-        for (int i = 0; i < SIZE; i++) {
-            s += System.identityHashCode(objects[i]);
-        }
-        return s;
+    private static int hash_specialized(Integer obj) {
+        return System.identityHashCode(obj);
     }
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static int hash_specialized(Long[] objects) {
-        int s = 0;
-        for (int i = 0; i < SIZE; i++) {
-            s += System.identityHashCode(objects[i]);
-        }
-        return s;
+    private static int hash_specialized(Long obj) {
+        return System.identityHashCode(obj);
     }
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static int hash_specialized(MyIntInt[] objects) {
-        int s = 0;
-        for (int i = 0; i < SIZE; i++) {
-            s += System.identityHashCode(objects[i]);
-        }
-        return s;
+    private static int hash_specialized(MyIntInt obj) {
+        return System.identityHashCode(obj);
     }
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static int hash_specialized(MyLongInt[] objects) {
-        int s = 0;
-        for (int i = 0; i < SIZE; i++) {
-            s += System.identityHashCode(objects[i]);
-        }
-        return s;
+    private static int hash_specialized(MyLongInt obj) {
+        return System.identityHashCode(obj);
     }
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     private static int hash_specialized(MyLongLong obj) {
         return System.identityHashCode(obj);
     }
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private static int hash_specialized(MyByteShort[] objects) {
-        int s = 0;
-        for (int i = 0; i < SIZE; i++) {
-            s += System.identityHashCode(objects[i]);
-        }
-        return s;
+    private static int hash_specialized(WithOop obj) {
+        return System.identityHashCode(obj);
     }
-    @CompilerControl(CompilerControl.Mode.INLINE)
-    private static int hash_inline(Object[] objects) {
-        int s = 0;
-        for (int i = 0; i < SIZE; i++) {
-            s += System.identityHashCode(objects[i]);
-        }
-        return s;
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    private static int hash_specialized(MyByteShort obj) {
+        return System.identityHashCode(obj);
     }
 
     // Homogeneous array of null, all go to null path
@@ -126,13 +96,17 @@ public class FastPath {
     }
 
     // Homogeneous array of empty object, all go to fast path
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public int no_hoist() {
+        return hash(new Empty());
+    }
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
     public int homogeneous_empty() {
         int s = System.identityHashCode(Empty.class);
         for (int i = 0; i < SIZE; i++) {
-            s += hash(new Empty());
+            s += no_hoist();
         }
         return s;
     }
@@ -146,105 +120,171 @@ public class FastPath {
         }
         return s;
     }
-    /*
+
     // Homogeneous array of bytes, all go to fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_byte(NumericCase st) {
-        return hash(st.byte_arr);
+    public int homogeneous_byte() {
+        int s = System.identityHashCode(Byte.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash(new Byte((byte)i));
+        }
+        return s;
     }
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_byte_static(NumericCase st) {
-        return hash_specialized((Byte[]) st.byte_arr);
+    public int homogeneous_byte_static() {
+        int s = System.identityHashCode(Byte.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash_specialized(new Byte((byte)i));
+        }
+        return s;
     }
 
     // Homogeneous array of shorts, all go to fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_short(NumericCase st) {
-        return hash(st.short_arr);
+    public int homogeneous_short() {
+        int s = System.identityHashCode(Short.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash(new Short((short)(i + 256)));
+        }
+        return s;
     }
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_short_static(NumericCase st) {
-        return hash_specialized((Short[])st.short_arr);
+    public int homogeneous_short_static() {
+        int s = System.identityHashCode(Short.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash_specialized(new Short((short)(i + 256)));
+        }
+        return s;
     }
 
     // Homogeneous array of ints, all go to fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_int(NumericCase st) {
-        return hash(st.int_arr);
+    public int homogeneous_int() {
+        int s = System.identityHashCode(Integer.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash(new Integer(i + 256));
+        }
+        return s;
     }
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_int_static(NumericCase st) {
-        return hash_specialized((Integer[])st.int_arr);
+    public int homogeneous_int_static() {
+        int s = System.identityHashCode(Integer.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash_specialized(new Integer(i + 256));
+        }
+        return s;
     }
 
     // Homogeneous array of longs, all go to fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_long(NumericCase st) {
-        return hash(st.long_arr);
+    public int homogeneous_long() {
+        int s = System.identityHashCode(Long.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash(new Long(i + 256));
+        }
+        return s;
     }
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_long_static(NumericCase st) {
-        return hash_specialized((Long[])st.long_arr);
+    public int homogeneous_long_static() {
+        int s = System.identityHashCode(Long.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash_specialized(new Long(i + 256));
+        }
+        return s;
     }
 
     // Homogeneous array of pairs of ints, all go to fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_int_int(IntIntCase st) {
-        return hash(st.arr);
+    public int homogeneous_int_int() {
+        int s = System.identityHashCode(MyIntInt.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash(new MyIntInt(i, 2*i));
+        }
+        return s;
     }
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_int_int_static(IntIntCase st) {
-        return hash_specialized((MyIntInt[])st.arr);
+    public int homogeneous_int_int_static() {
+        int s = System.identityHashCode(MyIntInt.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash_specialized(new MyIntInt(i, 2*i));
+        }
+        return s;
     }
 
     // Heterogeneous array, all go to fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int heterogeneous_small(AllFastPathCase st) {
-        return hash(st.arr);
+    public int heterogeneous_small() {
+        int s = System.identityHashCode(Empty.class);
+        s += System.identityHashCode(Byte.class);
+        s += System.identityHashCode(Short.class);
+        s += System.identityHashCode(Integer.class);
+        s += System.identityHashCode(Long.class);
+        s += System.identityHashCode(MyIntInt.class);
+        for (int i = 0; i < SIZE; i++) {
+            Object v = switch (i % 7) {
+                case 0 -> new Empty();
+                case 1 -> new Byte((byte) i);
+                case 2 -> new Short((short) (i + 256));
+                case 3 -> new Integer(i + 256);
+                case 4 -> new Long(i + 256);
+                case 5 -> new MyIntInt(i, 2 * i);
+                default -> null;
+            };
+            s += hash(v);
+        }
+        return s;
     }
 
     // Homogeneous array of pairs of long and int, too big for fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_too_big_long_int(LongIntCase st) {
-        return hash(st.arr);
+    public int homogeneous_too_big_long_int() {
+        int s = System.identityHashCode(MyLongInt.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash(new MyLongInt(i, 2*i));
+        }
+        return s;
     }
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_too_big_long_int_static(LongIntCase st) {
-        return hash_specialized((MyLongInt[])st.arr);
+    public int homogeneous_too_big_long_int_static() {
+        int s = System.identityHashCode(MyLongInt.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash_specialized(new MyLongInt(i, 2*i));
+        }
+        return s;
     }
-*/
+
     // Homogeneous array of pairs of long, too big for fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
     public int homogeneous_too_big_long_long() {
-        int s = System.identityHashCode(Empty.class);
+        int s = System.identityHashCode(MyLongLong.class);
         for (int i = 0; i < SIZE; i++) {
             s += hash(new MyLongLong(i, 2*i));
         }
@@ -254,203 +294,145 @@ public class FastPath {
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
     public int homogeneous_too_big_long_long_static() {
-        int s = System.identityHashCode(Empty.class);
+        int s = System.identityHashCode(MyLongLong.class);
         for (int i = 0; i < SIZE; i++) {
             s += hash_specialized(new MyLongLong(i, 2*i));
         }
         return s;
     }
-/*
+
     // Heterogeneous array, too big for fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int heterogeneous_too_big(TooBigCase st) {
-        return hash(st.arr);
+    public int heterogeneous_too_big() {
+        int s = System.identityHashCode(MyLongInt.class);
+        s += System.identityHashCode(MyLongLong.class);
+        for (int i = 0; i < SIZE; i++) {
+            Object v = switch (i % 2) {
+                case 0 -> new MyLongInt(i, 2*i);
+                default -> new MyLongLong(i, 2*i);
+            };
+            s += hash(v);
+        }
+        return s;
     }
 
     // Homogeneous array, with oop, so no fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_with_oop(WithOopCase st) {
-        return hash(st.arr);
+    public int homogeneous_with_oop() {
+        int s = System.identityHashCode(WithOop.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash(new WithOop(i));
+        }
+        return s;
+    }
+    @Benchmark
+    @OperationsPerInvocation(SIZE)
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public int homogeneous_with_oop_static() {
+        int s = System.identityHashCode(WithOop.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash_specialized(new WithOop(i));
+        }
+        return s;
     }
 
     // Homogeneous array, not a nice size, so no fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_weird_size(ByteShortCase st) {
-        return hash(st.arr);
+    public int homogeneous_weird_size() {
+        int s = System.identityHashCode(MyByteShort.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash(new MyByteShort((byte) i, (short) (2*i)));
+        }
+        return s;
     }
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int homogeneous_weird_size_static(ByteShortCase st) {
-        return hash_specialized(st.arr);
+    public int homogeneous_weird_size_static() {
+        int s = System.identityHashCode(MyByteShort.class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash_specialized(new MyByteShort((byte) i, (short) (2*i)));
+        }
+        return s;
     }
 
     // Heterogeneous array, identity objects, so no fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int heterogeneous_with_oop(IdentityCase st) {
-        return hash(st.arr);
+    public int heterogeneous_with_oop() {
+        int s = System.identityHashCode(String.class);
+        s += System.identityHashCode(int[].class);
+        for (int i = 0; i < SIZE; i++) {
+            Object v = switch (i % 2) {
+                case 0 -> String.valueOf(i);
+                default -> new int[]{i};
+            };
+            s += hash(v);
+        }
+        return s;
     }
 
     // Heterogeneous array, all of the above
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int big_mix(BigMixCase st) {
-        return hash(st.arr);
-    }
-*/
-    @State(Scope.Thread)
-    public static class NullCase {
-        Object[] arr;
-
-        @Setup
-        public void setup() {
-            arr = new Object[SIZE];
+    public int big_mix() {
+        int s = System.identityHashCode(Empty.class);
+        s += System.identityHashCode(Byte.class);
+        s += System.identityHashCode(Short.class);
+        s += System.identityHashCode(Integer.class);
+        s += System.identityHashCode(Long.class);
+        s += System.identityHashCode(MyIntInt.class);
+        s += System.identityHashCode(MyLongInt.class);
+        s += System.identityHashCode(MyLongLong.class);
+        s += System.identityHashCode(WithOop.class);
+        s += System.identityHashCode(MyByteShort.class);
+        s += System.identityHashCode(String.class);
+        s += System.identityHashCode(int[].class);
+        for (int i = 0; i < SIZE; i++) {
+            Object v = switch (i % 13) {
+                    case 0 -> new Empty();
+                    case 1 -> new Byte((byte)i);
+                    case 2 -> new Short((short)(i + 256));
+                    case 3 -> new Integer((i + 256));
+                    case 4 -> new Long((i + 256));
+                    case 5 -> new MyIntInt(i, 2*i);
+                    case 6 -> new MyLongInt(i, 2*i);
+                    case 7 -> new MyLongLong(i, 2*i);
+                    case 8 -> new WithOop(i);
+                    case 9 -> new MyByteShort((byte) i, (short)(2*i));
+                    case 10 -> String.valueOf(i);
+                    case 11 -> new int[]{i};
+                    default -> null;
+            };
+            s += hash(v);
         }
+        return s;
     }
 
     static value class Empty {}
-    @State(Scope.Thread)
-    public static class EmptyCase {
-        Object[] arr;
-
-        @Setup
-        public void setup() {
-            arr = new Empty[SIZE];
-
-            for (int i = 0; i < SIZE; i++) {
-                arr[i] = new Empty();
-            }
-        }
-    }
-
-    @State(Scope.Thread)
-    public static class NumericCase {
-        Object[] byte_arr;
-        Object[] short_arr;
-        Object[] int_arr;
-        Object[] long_arr;
-
-        @Setup
-        public void setup() {
-            byte_arr = new Byte[SIZE];
-            short_arr = new Short[SIZE];
-            int_arr = new Integer[SIZE];
-            long_arr = new Long[SIZE];
-
-            for (int i = 0; i < SIZE; i++) {
-                byte_arr[i] = new Byte((byte)i);
-                short_arr[i] = new Short((short)(i + 256));
-                int_arr[i] = new Integer(i + 256);
-                long_arr[i] = new Long(i + 256);
-            }
-        }
-    }
-
     static value class MyIntInt {
         int fst;
         int snd;
         public MyIntInt (int fst, int snd) {this.fst = fst; this.snd = snd;}
     }
-    @State(Scope.Thread)
-    public static class IntIntCase {
-        Object[] arr;
-
-        @Setup
-        public void setup() {
-            arr = new MyIntInt[SIZE];
-
-            for (int i = 0; i < SIZE; i++) {
-                arr[i] = new MyIntInt(i, 2*i);
-            }
-        }
-    }
-
-    @State(Scope.Thread)
-    public static class AllFastPathCase {
-        Object[] arr;
-
-        @Setup
-        public void setup() {
-            arr = new Object[SIZE];
-
-            for (int i = 0; i < SIZE; i++) {
-                switch (i % 7) {
-                    case 0: arr[i] = new Empty(); break;
-                    case 1: arr[i] = new Byte((byte)i); break;
-                    case 2: arr[i] = new Short((short)(i + 256)); break;
-                    case 3: arr[i] = new Integer(i + 256); break;
-                    case 4: arr[i] = new Long(i + 256); break;
-                    case 5: arr[i] = new MyIntInt(i, 2*i); break;
-                    case 6: arr[i] = null; break;
-                }
-            }
-        }
-    }
-
     static value class MyLongInt {
         long fst;
         int snd;
         MyLongInt(long fst, int snd) { this.fst = fst; this.snd = snd; }
     }
-    @State(Scope.Thread)
-    public static class LongIntCase {
-        Object[] arr;
-
-        @Setup
-        public void setup() {
-            arr = new MyLongInt[SIZE];
-
-            for (int i = 0; i < SIZE; i++) {
-                arr[i] = new MyLongInt(i, 2*i);
-            }
-        }
-    }
-
     static value class MyLongLong {
         long fst;
         long snd;
         MyLongLong(long fst, long snd) { this.fst = fst; this.snd = snd; }
     }
-    @State(Scope.Thread)
-    public static class LongLongCase {
-        Object[] arr;
-
-        @Setup
-        public void setup() {
-            arr = new MyLongLong[SIZE];
-
-            for (int i = 0; i < SIZE; i++) {
-                arr[i] = new MyLongLong(i, 2*i);
-            }
-        }
-    }
-
-    @State(Scope.Thread)
-    public static class TooBigCase {
-        Object[] arr;
-
-        @Setup
-        public void setup() {
-            arr = new Object[SIZE];
-
-            for (int i = 0; i < SIZE; i++) {
-                switch (i % 6) {
-                    case 0: arr[i] = new MyLongInt(i, 2*i); break;
-                    case 1: arr[i] = new MyLongLong(i, 2*i); break;
-                }
-            }
-        }
-    }
-
     static value class WithOop {
         Integer[] s;
         WithOop(int i) {
@@ -461,80 +443,9 @@ public class FastPath {
             }
         }
     }
-    @State(Scope.Thread)
-    public static class WithOopCase {
-        Object[] arr;
-
-        @Setup
-        public void setup() {
-            arr = new Object[SIZE];
-
-            for (int i = 0; i < SIZE; i++) {
-                arr[i] = new WithOop(i);
-            }
-        }
-    }
-
     static value class MyByteShort {
         byte fst;
         short snd;
         MyByteShort(byte fst, short snd) { this.fst = fst; this.snd = snd; }
-    }
-    @State(Scope.Thread)
-    public static class ByteShortCase {
-        MyByteShort[] arr;
-
-        @Setup
-        public void setup() {
-            arr = new MyByteShort[SIZE];
-
-            for (int i = 0; i < SIZE; i++) {
-                arr[i] = new MyByteShort((byte) i, (short) (2*i));
-            }
-        }
-    }
-
-    @State(Scope.Thread)
-    public static class IdentityCase {
-        Object[] arr;
-
-        @Setup
-        public void setup() {
-            arr = new Object[SIZE];
-
-            for (int i = 0; i < SIZE; i++) {
-                switch (i % 2) {
-                    case 0: arr[i] = String.valueOf(i); break;
-                    case 1: arr[i] = new int[]{i}; break;
-                }
-            }
-        }
-    }
-
-    @State(Scope.Thread)
-    public static class BigMixCase {
-        Object[] arr;
-
-        @Setup
-        public void setup() {
-            arr = new Object[SIZE];
-
-            for (int i = 0; i < SIZE; i++) {
-                switch (i % 12) {
-                    case 0: arr[i] = new Empty(); break;
-                    case 1: arr[i] = new Byte((byte)i); break;
-                    case 2: arr[i] = new Short((short)(i + 256)); break;
-                    case 3: arr[i] = new Integer((i + 256)); break;
-                    case 4: arr[i] = new Long((i + 256)); break;
-                    case 5: arr[i] = new MyIntInt(i, 2*i); break;
-                    case 6: arr[i] = new MyLongInt(i, 2*i); break;
-                    case 7: arr[i] = new MyLongLong(i, 2*i); break;
-                    case 8: arr[i] = new WithOop(i); break;
-                    case 9: arr[i] = new MyByteShort((byte) i, (short)(2*i)); break;
-                    case 10: arr[i] = String.valueOf(i); break;
-                    case 11: arr[i] = new int[]{i}; break;
-                }
-            }
-        }
     }
 }
