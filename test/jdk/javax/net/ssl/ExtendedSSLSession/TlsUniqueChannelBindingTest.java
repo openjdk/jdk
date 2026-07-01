@@ -150,40 +150,51 @@ public class TlsUniqueChannelBindingTest extends SSLEngineTemplate {
             ExtendedSSLSession serverSession,
             boolean expectNonNull) throws Exception {
 
-        byte[] clientBinding = clientSession.getTlsUniqueChannelBinding();
-        byte[] serverBinding = serverSession.getTlsUniqueChannelBinding();
+        byte[] clientClientFirst =
+                clientSession.getTlsUniqueClientFirstFinishedVerifyData();
+        byte[] serverClientFirst =
+                serverSession.getTlsUniqueClientFirstFinishedVerifyData();
+        byte[] clientFirstFinished =
+                clientSession.getTlsUniqueFirstFinishedVerifyData();
+        byte[] serverFirstFinished =
+                serverSession.getTlsUniqueFirstFinishedVerifyData();
 
         if (!expectNonNull) {
-            if (clientBinding != null || serverBinding != null) {
-                throw new Exception(
-                        "Expected null channel binding");
-            }
+            assertAllNull(clientClientFirst, serverClientFirst,
+                    clientFirstFinished, serverFirstFinished);
             return;
         }
 
-        if (clientBinding == null) {
-            throw new Exception("Client channel binding is null");
-        }
-        if (serverBinding == null) {
-            throw new Exception("Server channel binding is null");
-        }
-        if (clientBinding.length != 12) {
-            throw new Exception(
-                    "Expected 12 bytes, got " + clientBinding.length);
-        }
-        if (!Arrays.equals(clientBinding, serverBinding)) {
-            throw new Exception(
-                    "Client and server channel bindings do not match");
-        }
+        assertPair("Client-first", clientClientFirst, serverClientFirst);
+        assertPair("First-finished", clientFirstFinished, serverFirstFinished);
 
-        // Verify that each call returns a defensive copy.
-        byte[] second = clientSession.getTlsUniqueChannelBinding();
-        if (clientBinding == second) {
+        byte[] second = clientSession.getTlsUniqueFirstFinishedVerifyData();
+        if (clientFirstFinished == second) {
             throw new Exception("Same array instance returned (no clone)");
         }
-        if (!Arrays.equals(clientBinding, second)) {
+        if (!Arrays.equals(clientFirstFinished, second)) {
             throw new Exception("Subsequent calls return different values");
         }
+    }
 
+    private static void assertAllNull(byte[]... values) throws Exception {
+        for (byte[] value : values) {
+            if (value != null) {
+                throw new Exception("Expected null channel binding");
+            }
+        }
+    }
+
+    private static void assertPair(String label, byte[] clientValue,
+            byte[] serverValue) throws Exception {
+        if (clientValue == null || serverValue == null) {
+            throw new Exception(label + " verify_data is null");
+        }
+        if (clientValue.length != 12 || serverValue.length != 12) {
+            throw new Exception(label + " verify_data length is not 12");
+        }
+        if (!Arrays.equals(clientValue, serverValue)) {
+            throw new Exception(label + " verify_data does not match");
+        }
     }
 }

@@ -275,21 +275,26 @@ public abstract class ExtendedSSLSession implements SSLSession {
     }
 
     /**
-     * Returns the tls-unique channel binding value for this session, as defined in
-     * RFC 5929.
-     * <P>
-     * Returns null if: Feature not enabled via
-     * sun.security.ssl.enableTlsUniqueChannelBinding, Session uses TLS 1.3+ (use
-     * exportKeyingMaterialData instead), Extended Master Secret (RFC 7627) not
-     * active, Handshake not yet completed.
-     * 
+     * Returns the Client Finished verify_data for this session.
+     *
      * @implSpec The default implementation returns null.
-     * 
-     * @return channel binding bytes (typically 12 bytes for TLS 1.2), or null if
-     *         unavailable
+     *
+     * @return Client Finished verify_data bytes, or null if unavailable
      * @since 27
      */
-    public byte[] getTlsUniqueChannelBinding() {
+    public byte[] getTlsUniqueClientFirstFinishedVerifyData() {
+        return null;
+    }
+
+    /**
+     * Returns the first Finished verify_data sent for this session.
+     *
+     * @implSpec The default implementation returns null.
+     *
+     * @return first Finished verify_data bytes, or null if unavailable
+     * @since 27
+     */
+    public byte[] getTlsUniqueFirstFinishedVerifyData() {
         return null;
     }
 }
