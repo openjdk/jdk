@@ -47,7 +47,7 @@ import compiler.lib.template_framework.Template;
  *       {@code FLOATING_VECTOR_ELEMENT_TYPES}, ...) enumerate the lane types
  *       valid for {@code VectorType.Vector}. These are typed as
  *       {@code List<VectorElementType>} and additionally include
- *       {@link ShortCarriesFloat16#FLOAT16} since {@code Float16Vector} is a real
+ *       {@link ShortCarriesFloat16Type#SHORT_CARRIES_FLOAT16} since {@code Float16Vector} is a real
  *       Vector API type whose lanes happen to have no Java primitive
  *       keyword.</li>
  * </ul>
@@ -126,16 +126,16 @@ public interface CodeGenerationDataNameType extends DataName.Type {
      * {@code Float16Vector}. This is a {@link VectorElementType},
      * <strong>not</strong> a Java {@link PrimitiveType}; it appears in
      * vector-lane lists but never in the scalar
-     * {@code PRIMITIVE_TYPES}/{@code FLOATING_TYPES} lists. The carrier of its
-     * lanes is {@code short}, hence the explicit {@code shortCarriesFloat16}
-     * naming to avoid confusion with the scalar {@link #float16()} logical type.
+     * {@code PRIMITIVE_TYPES}/{@code FLOATING_TYPES} lists. Its lanes carry the
+     * raw bits of the {@code Float16} value in a {@code short}, hence the
+     * explicit {@code shortCarriesFloat16} naming.
      *
      * @return The {@code Float16Vector} {@link VectorElementType}.
      */
-    static ShortCarriesFloat16 shortCarriesFloat16() { return ShortCarriesFloat16.FLOAT16; }
+    static ShortCarriesFloat16Type shortCarriesFloat16() { return ShortCarriesFloat16Type.SHORT_CARRIES_FLOAT16; }
 
     /**
-     * The {@code Float16} scalar (logical) type.
+     * The {@code Float16} scalar (boxed) type.
      *
      * @return The scalar {@code Float16} type.
      */
@@ -223,14 +223,14 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     // Vector API lane-element type lists.
     //
     // These are typed as List<VectorElementType> and may include
-    // ShortCarriesFloat16.FLOAT16 in addition to the Java primitive lane
-    // carriers. They are the source of truth for vector lane iteration in
-    // vector generators (e.g. Operations.VECTOR_OPS).
+    // ShortCarriesFloat16Type.SHORT_CARRIES_FLOAT16 in addition to the Java
+    // primitive lane carriers. Vector generators (e.g. Operations.VECTOR_OPS)
+    // iterate over these lists to enumerate the lane types they support.
     // --------------------------------------------------------------------
 
     /**
      * All Vector API lane-element types: every Java numeric primitive lane
-     * carrier plus {@link ShortCarriesFloat16#FLOAT16}.
+     * carrier plus {@link ShortCarriesFloat16Type#SHORT_CARRIES_FLOAT16}.
      */
     List<VectorElementType> VECTOR_ELEMENT_TYPES = List.of(
         bytes(),
@@ -257,20 +257,6 @@ public interface CodeGenerationDataNameType extends DataName.Type {
      */
     List<VectorElementType> FLOATING_VECTOR_ELEMENT_TYPES = List.of(
         shortCarriesFloat16(),
-        floats(),
-        doubles()
-    );
-
-    /**
-     * Integral-and-floating Vector API lane-element types: every lane type
-     * except booleans/chars (which have no Vector API counterparts).
-     */
-    List<VectorElementType> INTEGRAL_AND_FLOATING_VECTOR_ELEMENT_TYPES = List.of(
-        bytes(),
-        shorts(),
-        shortCarriesFloat16(),
-        ints(),
-        longs(),
         floats(),
         doubles()
     );

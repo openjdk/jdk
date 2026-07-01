@@ -29,7 +29,7 @@ import compiler.lib.generators.Generator;
 import compiler.lib.template_framework.DataName;
 
 /**
- * The {@link ShortCarriesFloat16} is the {@link VectorElementType} that describes
+ * The {@link ShortCarriesFloat16Type} is the {@link VectorElementType} that describes
  * the lane type of a {@code Float16Vector}. Its name makes the semantics
  * explicit: a {@code Float16} value carried in a {@code short}.
  *
@@ -52,17 +52,17 @@ import compiler.lib.template_framework.DataName;
  * arrays should canonicalize via {@code Float.float16ToFloat} (which returns a
  * canonical NaN) before structural comparison.
  */
-public final class ShortCarriesFloat16 implements VectorElementType {
+public final class ShortCarriesFloat16Type implements VectorElementType {
     private static final Generator<Short> GEN_FLOAT16 = Generators.G.float16s();
 
     /** The singleton instance. */
-    public static final ShortCarriesFloat16 FLOAT16 = new ShortCarriesFloat16();
+    public static final ShortCarriesFloat16Type SHORT_CARRIES_FLOAT16 = new ShortCarriesFloat16Type();
 
-    private ShortCarriesFloat16() {}
+    private ShortCarriesFloat16Type() {}
 
     @Override
     public boolean isSubtypeOf(DataName.Type other) {
-        return other instanceof ShortCarriesFloat16;
+        return other instanceof ShortCarriesFloat16Type;
     }
 
     @Override

@@ -33,7 +33,7 @@ package compiler.lib.template_framework.library;
  *       (e.g. {@code "int"}) and {@link #vectorElementClass()} is the same
  *       token, so {@code vectorElementClass() + ".class"} yields the primitive
  *       {@code Class<?>} literal ({@code int.class}).</li>
- *   <li>{@link ShortCarriesFloat16} - the {@code Float16Vector} lane type. Float16
+ *   <li>{@link ShortCarriesFloat16Type} - the {@code Float16Vector} lane type. Float16
  *       has no Java primitive keyword; its lanes are stored in a {@code short[]}
  *       carrier, so {@link #name()} returns the code-usable carrier keyword
  *       {@code "short"} (consistent with {@link #toString()}), while
@@ -48,12 +48,12 @@ package compiler.lib.template_framework.library;
  * {@code FLOATING_TYPES}). Those lists model Java scalar types and are consumed
  * by scalar fuzzers. Vector-lane lists (e.g. {@code VECTOR_ELEMENT_TYPES},
  * {@code FLOATING_VECTOR_ELEMENT_TYPES}) are typed as {@code List<VectorElementType>}
- * and may include {@link ShortCarriesFloat16#FLOAT16}.
+ * and may include {@link ShortCarriesFloat16Type#SHORT_CARRIES_FLOAT16}.
  */
 public interface VectorElementType extends CodeGenerationDataNameType {
 
     /**
-     * The token whose {@code + ".class"} form is the lane element
+     * The string whose {@code + ".class"} form is the lane element
      * {@code Class<?>} literal expected by the Vector API conversion factories
      * ({@code VectorOperators.Conversion.ofCast}/{@code ofReinterpret}) and by
      * {@code Float16Vector.SPECIES_*}/{@code IntVector.SPECIES_*} lookups.

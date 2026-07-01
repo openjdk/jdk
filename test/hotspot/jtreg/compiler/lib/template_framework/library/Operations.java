@@ -36,6 +36,7 @@ import static compiler.lib.template_framework.library.PrimitiveType.FLOATS;
 import static compiler.lib.template_framework.library.PrimitiveType.DOUBLES;
 import static compiler.lib.template_framework.library.PrimitiveType.BOOLEANS;
 import static compiler.lib.template_framework.library.Float16Type.FLOAT16;
+import static compiler.lib.template_framework.library.ShortCarriesFloat16Type.SHORT_CARRIES_FLOAT16;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.PRIMITIVE_TYPES;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.INTEGRAL_TYPES;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.FLOATING_TYPES;
@@ -327,7 +328,7 @@ public final class Operations {
         TERNARY
     }
     // VOP element type pools are typed as VectorElementType so they can include
-    // ShortCarriesFloat16.FLOAT16 (the Float16Vector lane type) alongside the
+    // ShortCarriesFloat16Type.SHORT_CARRIES_FLOAT16 (the Float16Vector lane type) alongside the
     // primitive lane types.
     private record VOP(String name, VOPType type, List<VectorElementType> elementTypes, boolean isDeterministic) {
         VOP(String name, VOPType type, List<VectorElementType> elementTypes) {
@@ -526,7 +527,7 @@ public final class Operations {
                     if (type.elementType == FLOATS) {
                         ops.add(Expression.make(type, "", type2, ".reinterpretAsFloats()", reinterpretInfo));
                     }
-                    if (type.elementType instanceof ShortCarriesFloat16) {
+                    if (type.elementType == SHORT_CARRIES_FLOAT16) {
                         ops.add(Expression.make(type, "", type2, ".reinterpretAsFloat16s()", reinterpretInfo));
                     }
                     if (type.elementType == DOUBLES) {
@@ -801,22 +802,26 @@ public final class Operations {
             // skip hashCode
         }
 
-        // ----------------- Float16 scalar <-> Float16Vector lane bridges --------------------
-        // ShortCarriesFloat16 is the Float16Vector lane type. Its only semantically valid
-        // scalar peer is the boxed Float16 (which carries real float16 arithmetic), NOT a
-        // plain short: applying integer +/-/*/<< to raw float16 bits is meaningless, which
-        // is precisely why ShortCarriesFloat16 is kept distinct from SHORTS. We therefore
-        // bridge the lane type only to/from FLOAT16, mirroring how the scalar Float16 type
-        // bridges to SHORTS via its bit-cast methods in generateFloat16Operations().
-        var float16Lane = ShortCarriesFloat16.FLOAT16;
+        // ----------------- ShortCarriesFloat16Type lane bridges --------------------
+        // ShortCarriesFloat16Type is the Float16Vector lane type; its lanes carry the raw
+        // bits of a Float16 in a short. We bridge it both to the boxed Float16 (rich
+        // float16 arithmetic) and to a plain short (raw-bit fiddling), so expression
+        // nesting can transition in and out of the lane type and so any IGVN
+        // optimizations on those transitions are exercised.
+        var float16Lane = ShortCarriesFloat16Type.SHORT_CARRIES_FLOAT16;
         // Lane carrier -> boxed Float16: lifts a lane()/reduceLanes() result into the rich
-        // scalar Float16 world. Pure function of the bits (NaN-awareness is handled by
+        // scalar Float16 world. The raw bits are not exposed (NaN-awareness is handled by
         // Float16 verification), so deterministic.
         ops.add(Expression.make(FLOAT16, "Float16.shortBitsToFloat16(", float16Lane, ")"));
-        // Boxed Float16 -> lane carrier: produces a ShortCarriesFloat16 scalar to feed
+        // Boxed Float16 -> lane carrier: produces a ShortCarriesFloat16Type scalar to feed
         // Float16Vector.broadcast/add(scalar)/withLane(...).
         ops.add(Expression.make(float16Lane, "Float16.float16ToShortBits(", FLOAT16, ")"));
         ops.add(Expression.make(float16Lane, "Float16.float16ToRawShortBits(", FLOAT16, ")"));
+        // Raw short <-> lane carrier: a Java-level no-op (both are carried in a short), but
+        // a type-level transition. short -> lane is deterministic; lane -> short exposes the
+        // raw bits, so distinct NaN encodings make it non-deterministic (and thus unverified).
+        ops.add(Expression.make(SHORT_CARRIES_FLOAT16, "/*cast to ShortCarriesFloat16Type*/(", SHORTS, ")"));
+        ops.add(Expression.make(SHORTS, "/*cast to short*/(", SHORT_CARRIES_FLOAT16, ")", WITH_NONDETERMINISTIC_RESULT));
 
         // TODO: VectorSpecies API methods
 
@@ -865,7 +870,7 @@ public final class Operations {
      * Provides a list of Vector API operations. Iterates over all
      * {@link CodeGenerationDataNameType#VECTOR_VECTOR_TYPES}, including
      * {@code Float16Vector_*}, whose lanes are described by
-     * {@link ShortCarriesFloat16#FLOAT16}.
+     * {@link ShortCarriesFloat16Type#SHORT_CARRIES_FLOAT16}.
      */
     public static final List<Expression> VECTOR_OPERATIONS = generateVectorOperations();
 

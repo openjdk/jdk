@@ -66,7 +66,7 @@ import compiler.lib.template_framework.library.Expression.Nesting;
 import compiler.lib.template_framework.library.Operations;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 import compiler.lib.template_framework.library.PrimitiveType;
-import compiler.lib.template_framework.library.ShortCarriesFloat16;
+import compiler.lib.template_framework.library.ShortCarriesFloat16Type;
 import compiler.lib.template_framework.library.VectorElementType;
 import compiler.lib.template_framework.library.VectorType;
 
@@ -171,7 +171,7 @@ public class VectorExpressionFuzzer {
         // via {@link Float#float16ToFloat}, which returns a canonical NaN for any NaN input.
         var template2Body = Template.make("expression", "arguments", (Expression expression, List<Object> arguments) -> {
             VectorType.Vector retType = (VectorType.Vector) expression.returnType;
-            boolean float16Result = retType.elementType instanceof ShortCarriesFloat16;
+            boolean float16Result = retType.elementType instanceof ShortCarriesFloat16Type;
             return scope(
                 let("carrierType", retType.elementType.carrierTypeName()),
                 """
@@ -180,11 +180,12 @@ public class VectorExpressionFuzzer {
                 """,
                 expression.asToken(arguments), ".intoArray(out, 0);\n",
                 float16Result
-                    ? List.of(
-                        "// Float16Vector NaN canonicalization: widen short carrier to float for compare.\n",
-                        "float[] outF = new float[out.length];\n",
-                        "for (int i = 0; i < out.length; i++) { outF[i] = Float.float16ToFloat(out[i]); }\n",
-                        "return outF;\n")
+                    ? """
+                      // Float16Vector NaN canonicalization: widen short carrier to float for compare.
+                      float[] outF = new float[out.length];
+                      for (int i = 0; i < out.length; i++) { outF[i] = Float.float16ToFloat(out[i]); }
+                      return outF;
+                      """
                     : "return out;\n",
                 expression.info.exceptions.stream().map(exception ->
                     "} catch (" + exception + " e) { return e;\n"
@@ -240,7 +241,7 @@ public class VectorExpressionFuzzer {
                             ));
                         } else if (argumentType instanceof VectorType.Vector t) {
                             VectorElementType et = t.elementType;
-                            String fillMethod = (et instanceof ShortCarriesFloat16) ? "fill_float16" : "fill";
+                            String fillMethod = (et instanceof ShortCarriesFloat16Type) ? "fill_float16" : "fill";
                             arguments.add(new TestArgument(
                                 List.of(et.carrierTypeName(), "[] ", name, " = new ", et.carrierTypeName(), "[1000];\n",
                                         "LibraryRNG.", fillMethod, "(", name,");\n"),
