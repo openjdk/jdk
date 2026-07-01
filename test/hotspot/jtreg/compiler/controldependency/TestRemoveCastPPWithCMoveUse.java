@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,42 +20,34 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package compiler.controldependency;
 
-/**
+/*
  * @test
- * @bug 8360561
- * @summary Ranges can be proven to be disjoint but not orderable (thanks to unsigned range)
- *          Comparing such values in such range with != should always be true.
- * @library /test/lib /
- * @run driver ${test.main.class}
+ * @bug 8385420
+ * @summary C2 correctly handles the case when the removed CastPPNode has a CMove use.
+ * @run main ${test.main.class}
+ * @run main/othervm -Xbatch -XX:CompileOnly=${test.main.class}::test
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM ${test.main.class}
+ *
  */
-package compiler.igvn;
-
-import compiler.lib.ir_framework.*;
-
-public class CmpDisjointButNonOrderedRangesLong {
-    static boolean bFld;
-    static double dFld1;
-    static double dFld2;
-
-    public static void main(String[] strArr) {
-        TestFramework.run();
+public class TestRemoveCastPPWithCMoveUse {
+    public static void main(String[] args) {
+        for (int i = 0; i < 10_000; i++) {
+            test(null, false);
+            test(null, true);
+            test("", false);
+            test("", true);
+        }
     }
 
-    @Test
-    @IR(failOn = {IRNode.PHI})
-    @Warmup(0)
-    static int test() {
-        long x = 7;
-        if (bFld) {
-            x = -195;
+    static int test(String a, boolean flag) {
+        StringBuilder sb = new StringBuilder();
+        if (a == null) {
+            sb.append("");
+        } else {
+            sb.append(flag ? a : "");
         }
-
-        dFld1 = dFld2 % 2.5;
-
-        if (x == 0) {
-            return 0;
-        }
-        return 1;
+        return sb.length();
     }
 }

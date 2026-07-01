@@ -2231,8 +2231,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // offset is no longer needed after the address is computed.
 
   lea(rscratch2, Address(mdp, offset));
-  cmpxchg(/*addr*/ rscratch2, /*expected*/ zr, /*new*/ recv, Assembler::xword,
-          /*acquire*/ false, /*release*/ false, /*weak*/ true, noreg);
+  cmpxchg_weak(/*addr*/ rscratch2, /*expected*/ zr, /*new*/ recv, Assembler::xword, memory_order_relaxed);
 
   // CAS success means the slot now has the receiver we want. CAS failure means
   // something had claimed the slot concurrently: it can be the same receiver we want,
@@ -3494,9 +3493,33 @@ void MacroAssembler::reinit_heapbase()
 void MacroAssembler::cmpxchg(Register addr, Register expected,
                              Register new_val,
                              enum operand_size size,
-                             bool acquire, bool release,
+                             enum atomic_memory_order order,
                              bool weak,
                              Register result) {
+  bool acquire, release;
+
+  switch (order) {
+    case memory_order_relaxed:
+      acquire = false;
+      release = false;
+      break;
+    case memory_order_acquire:
+      acquire = true;
+      release = false;
+      break;
+    case memory_order_release:
+      acquire = false;
+      release = true;
+      break;
+    case memory_order_acq_rel:
+    case memory_order_seq_cst:
+      acquire = true;
+      release = true;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
   if (result == noreg)  result = rscratch1;
   BLOCK_COMMENT("cmpxchg {");
   if (UseLSE) {
@@ -7180,8 +7203,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register t1, R
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
   orr(mark, mark, markWord::unlocked_value);
   eor(t, mark, markWord::unlocked_value);
-  cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::xword,
-          /*acquire*/ true, /*release*/ false, /*weak*/ false, noreg);
+  cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::xword, memory_order_acquire);
   br(Assembler::NE, slow);
 
   bind(push);
@@ -7249,8 +7271,7 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Register t2, Registe
   // Try to unlock. Transition lock bits 0b00 => 0b01
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
   orr(t, mark, markWord::unlocked_value);
-  cmpxchg(obj, mark, t, Assembler::xword,
-          /*acquire*/ false, /*release*/ true, /*weak*/ false, noreg);
+  cmpxchg(obj, mark, t, Assembler::xword, memory_order_release);
   br(Assembler::EQ, unlocked);
 
   bind(push_and_slow);

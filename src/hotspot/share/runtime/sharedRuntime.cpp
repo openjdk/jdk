@@ -1810,7 +1810,7 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   nmethod* caller = cb->as_nmethod();
 
   // Get the return PC for the passed caller PC.
-  address return_pc = caller_pc + frame::pc_return_offset;
+  address return_pc = caller_pc;
 
   if (!caller->is_in_use() || !NativeCall::is_call_before(return_pc)) {
     return;
