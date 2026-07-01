@@ -220,15 +220,12 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
 
   assert(map->include_argument_oops(), "should be set by clear");
 
-  address pc = jfa->last_Java_pc();
-  if (pc == nullptr) {
-    // Last_java_pc is not set if we come here from compiled code.
-    // Assume spill slot for Z_R14 (return register) contains a suitable pc.
-    // Should have been filled by method entry code.
-    intptr_t* sp = jfa->last_Java_sp();
-    pc = sp != nullptr ? (address) *(sp + _z_abi(gpr14)) : nullptr;
+  if (jfa->last_Java_pc() != nullptr) {
+    frame fr(jfa->last_Java_sp(), jfa->last_Java_pc());
+    return fr;
   }
-  frame fr(jfa->last_Java_sp(), nullptr, pc);
+  // Last_java_pc is not set if we come here from compiled code.
+  frame fr(jfa->last_Java_sp());
   return fr;
 }
 
