@@ -739,7 +739,7 @@ class SerializeClosure;
   template(primaryType_name,                           "primaryType")                                             \
   template(secondaryType_name,                         "secondaryType")                                           \
   template(showSettingsBytes_name,                     "showSettingsBytes")                                       \
-  template(showSettingsBytes_signature,                "(Ljava/lang/String;J)[B")                                 \
+  template(showSettingsBytes_signature,                "(Ljava/lang/String;JJJ)[B")                               \
   template(sun_launcher_LauncherHelper,                "sun/launcher/LauncherHelper")                             \
                                                                                                                   \
   /* forEachRemaining support */                                                                                  \
