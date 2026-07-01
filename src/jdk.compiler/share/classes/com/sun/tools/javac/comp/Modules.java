@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -717,11 +717,19 @@ public class Modules extends JCTree.Visitor {
 
         ListBuffer<RequiresDirective> requires = new ListBuffer<>();
 
+        //performance: pre-populate the requiresTransitiveCache:
+        Set<ModuleSymbol> requiresTransitive = new HashSet<>();
+
         for (ModuleSymbol ms : allModules()) {
             if (ms == syms.unnamedModule || ms == msym)
                 continue;
-            Set<RequiresFlag> flags = (ms.flags_field & Flags.AUTOMATIC_MODULE) != 0 ?
-                    EnumSet.of(RequiresFlag.TRANSITIVE) : EnumSet.noneOf(RequiresFlag.class);
+            Set<RequiresFlag> flags;
+            if ((ms.flags_field & Flags.AUTOMATIC_MODULE) != 0) {
+                flags = EnumSet.of(RequiresFlag.TRANSITIVE);
+                requiresTransitive.add(ms);
+            } else {
+                flags = EnumSet.noneOf(RequiresFlag.class);
+            }
             RequiresDirective d = new RequiresDirective(ms, flags);
             directives.add(d);
             requires.add(d);
@@ -733,6 +741,8 @@ public class Modules extends JCTree.Visitor {
 
         msym.requires = requires.toList();
         msym.directives = directives.toList();
+
+        requiresTransitiveCache.put(msym, requiresTransitive);
     }
 
     private Completer getSourceCompleter(JCCompilationUnit tree) {
@@ -1520,21 +1530,13 @@ public class Modules extends JCTree.Visitor {
         }
 
         Set<ModuleSymbol> readable = new LinkedHashSet<>();
-        Set<ModuleSymbol> requiresTransitive = new HashSet<>();
 
         for (RequiresDirective d : msym.requires) {
             d.module.complete();
             readable.add(d.module);
-            Set<ModuleSymbol> s = retrieveRequiresTransitive(d.module);
-            Assert.checkNonNull(s, () -> "no entry in cache for " + d.module);
-            readable.addAll(s);
-            if (d.flags.contains(RequiresFlag.TRANSITIVE)) {
-                requiresTransitive.add(d.module);
-                requiresTransitive.addAll(s);
-            }
+            readable.addAll(retrieveRequiresTransitive(d.module));
         }
 
-        requiresTransitiveCache.put(msym, requiresTransitive);
         initVisiblePackages(msym, readable);
         for (ExportsDirective d: msym.exports) {
             if (d.packge != null) {
@@ -1576,6 +1578,7 @@ public class Modules extends JCTree.Visitor {
             }
 
             requiresTransitive.remove(msym);
+            requiresTransitiveCache.putIfAbsent(msym, requiresTransitive);
         }
 
         return requiresTransitive;
