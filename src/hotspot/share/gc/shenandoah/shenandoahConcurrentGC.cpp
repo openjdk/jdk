@@ -303,6 +303,7 @@ void ShenandoahConcurrentGC::entry_complete_abbreviated_cycle() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
                               msg);
 
+  heap->try_inject_pin();
   // We chose not to evacuate because we found sufficient immediate garbage.
   // However, there may still be regions to promote in place, so do that now.
   if (heap->old_generation()->has_in_place_promotions()) {
