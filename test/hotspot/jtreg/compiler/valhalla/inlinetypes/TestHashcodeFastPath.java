@@ -192,7 +192,6 @@ public class TestHashcodeFastPath {
             scenario.addFlags("-XX:-UseHashcodeFastPath");
         }
         scenario.addFlags("-XX:CompileCommand=exclude,*::h");
-        scenario.addFlags("-XX:+UseNewCode");
         InlineTypes.getFramework()
                 .addScenarios(scenario)
                 .start();

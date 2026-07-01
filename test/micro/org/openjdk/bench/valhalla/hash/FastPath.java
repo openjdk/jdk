@@ -26,7 +26,7 @@ import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
 
-@Fork(value = 2, jvmArgsAppend = {"--enable-preview", "-XX:+UnlockDiagnosticVMOptions", "-XX:+UseNewCode"})
+@Fork(value = 2, jvmArgsAppend = {"--enable-preview"})
 @Warmup(iterations = 1, time = 1)
 @Measurement(iterations = 3, time = 1)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -83,7 +83,7 @@ public class FastPath {
         return System.identityHashCode(obj);
     }
 
-    // Homogeneous array of null, all go to null path
+    // Homogeneous cases of null, all go to null path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -95,7 +95,7 @@ public class FastPath {
         return s;
     }
 
-    // Homogeneous array of empty object, all go to fast path
+    // Homogeneous cases of empty object, all go to fast path
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public int no_hoist() {
         return hash(new Empty());
@@ -121,7 +121,7 @@ public class FastPath {
         return s;
     }
 
-    // Homogeneous array of bytes, all go to fast path
+    // Homogeneous cases of bytes, all go to fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -143,7 +143,7 @@ public class FastPath {
         return s;
     }
 
-    // Homogeneous array of shorts, all go to fast path
+    // Homogeneous cases of shorts, all go to fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -165,7 +165,7 @@ public class FastPath {
         return s;
     }
 
-    // Homogeneous array of ints, all go to fast path
+    // Homogeneous cases of ints, all go to fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -187,7 +187,7 @@ public class FastPath {
         return s;
     }
 
-    // Homogeneous array of longs, all go to fast path
+    // Homogeneous cases of longs, all go to fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -209,7 +209,7 @@ public class FastPath {
         return s;
     }
 
-    // Homogeneous array of pairs of ints, all go to fast path
+    // Homogeneous cases of pairs of ints, all go to fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -231,7 +231,7 @@ public class FastPath {
         return s;
     }
 
-    // Heterogeneous array, all go to fast path
+    // Heterogeneous cases, all go to fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -257,7 +257,7 @@ public class FastPath {
         return s;
     }
 
-    // Homogeneous array of pairs of long and int, too big for fast path
+    // Homogeneous cases of pairs of long and int, too big for fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -279,7 +279,7 @@ public class FastPath {
         return s;
     }
 
-    // Homogeneous array of pairs of long, too big for fast path
+    // Homogeneous cases of pairs of long, too big for fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -301,7 +301,7 @@ public class FastPath {
         return s;
     }
 
-    // Heterogeneous array, too big for fast path
+    // Heterogeneous cases, too big for fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -318,7 +318,7 @@ public class FastPath {
         return s;
     }
 
-    // Homogeneous array, with oop, so no fast path
+    // Homogeneous cases, with oop, so no fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -340,7 +340,7 @@ public class FastPath {
         return s;
     }
 
-    // Homogeneous array, not a nice size, so no fast path
+    // Homogeneous cases, not a nice size, so no fast path
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -362,11 +362,37 @@ public class FastPath {
         return s;
     }
 
-    // Heterogeneous array, identity objects, so no fast path
+    // Homogeneous cases of String, so fast path not taken
     @Benchmark
     @OperationsPerInvocation(SIZE)
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public int heterogeneous_with_oop() {
+    public int homogeneous_with_obj_string() {
+        int s = System.identityHashCode(String.class);
+        s += System.identityHashCode(int[].class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash(String.valueOf(i));
+        }
+        return s;
+    }
+
+    // Homogeneous cases of arrays, so fast path not taken
+    @Benchmark
+    @OperationsPerInvocation(SIZE)
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public int homogeneous_with_obj_array() {
+        int s = System.identityHashCode(String.class);
+        s += System.identityHashCode(int[].class);
+        for (int i = 0; i < SIZE; i++) {
+            s += hash(new int[]{i});
+        }
+        return s;
+    }
+
+    // Heterogeneous array, identity objects, so fast path not taken
+    @Benchmark
+    @OperationsPerInvocation(SIZE)
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public int heterogeneous_with_obj() {
         int s = System.identityHashCode(String.class);
         s += System.identityHashCode(int[].class);
         for (int i = 0; i < SIZE; i++) {
@@ -417,6 +443,18 @@ public class FastPath {
         return s;
     }
 
+    // Array of pre-hashed values, should take the cache path.
+    @Benchmark
+    @OperationsPerInvocation(SIZE)
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public int pre_hashed(PreHashedCase st) {
+        int s = 0;
+        for (int i = 0; i < SIZE; i++) {
+            s += hash(st.arr[i]);
+        }
+        return s;
+    }
+
     static value class Empty {}
     static value class MyIntInt {
         int fst;
@@ -447,5 +485,20 @@ public class FastPath {
         byte fst;
         short snd;
         MyByteShort(byte fst, short snd) { this.fst = fst; this.snd = snd; }
+    }
+
+    @State(Scope.Thread)
+    public static class PreHashedCase {
+        Object[] arr;
+
+        @Setup
+        public void setup() {
+            arr = new Object[SIZE];
+
+            for (int i = 0; i < SIZE; i++) {
+                arr[i] = new MyLongLong(((long)i) << 32, i);
+                System.identityHashCode(arr[i]);
+            }
+        }
     }
 }
