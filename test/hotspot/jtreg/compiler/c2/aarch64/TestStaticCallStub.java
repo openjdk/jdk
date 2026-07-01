@@ -59,7 +59,7 @@ public class TestStaticCallStub {
     private static final Instruction[] nearStaticCallInsts = {ISB, MOVZ, MOVK, MOVK, B};
     private static final Instruction[] farStaticCallInsts =  {ISB, MOVZ, MOVK, MOVK, MOVZ, MOVK, MOVK, BR};
 
-    static String extractMnemonic(String line) {
+    static String instructionsSubstring(String line) {
         int colonIndex = line.indexOf(':');
         if (colonIndex != -1) {
             line = line.substring(colonIndex + 1).trim();
@@ -70,31 +70,28 @@ public class TestStaticCallStub {
             line = line.substring(0, semicolonIndex).trim();
         }
 
-        if (line.isBlank()) {
+        return line;
+    }
+
+    static String extractMnemonic(String line) {
+        String instructions = instructionsSubstring(line);
+
+        if (instructions.isBlank()) {
             return "";
         }
 
-        return line.split("\\s+")[0];
+        return instructions.split("\\s+")[0];
     }
 
     static List<Integer> extractOpcodes(String line) {
         List<Integer> opcodes = new ArrayList<>();
+        String instructions = instructionsSubstring(line);
 
-        int colonIndex = line.indexOf(':');
-        if (colonIndex != -1) {
-            line = line.substring(colonIndex + 1).trim();
-        }
-
-        int semicolonIndex = line.indexOf(';');
-        if (semicolonIndex != -1) {
-            line = line.substring(0, semicolonIndex).trim();
-        }
-
-        if (line.isBlank()) {
+        if (instructions.isBlank()) {
             return Collections.emptyList();
         }
 
-        String[] words = line.split("\\|");
+        String[] words = instructions.split("\\|");
         for (String word : words) {
             int value = Integer
                     .reverseBytes(Integer.parseUnsignedInt(word.replaceAll("\\s", ""), 16));
