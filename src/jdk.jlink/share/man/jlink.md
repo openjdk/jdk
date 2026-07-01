@@ -245,7 +245,8 @@ Description
     `conf/security/java.security` configuration file with the properties in
     the specified *filename*. Security properties with the same name are
     overridden and security properties not present are added to the end of the
-    `conf/security/java.security` configuration file.
+    `conf/security/java.security` configuration file. Comments in the
+    properties file are ignored and not copied.
 
     The `include` option adds an `include` statement with the specified
     *filename* to the end of the `conf/security/java.security` configuration
