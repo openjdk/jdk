@@ -35,8 +35,6 @@ ifeq ($(INCLUDE), true)
 $(eval $(call SetupJdkLibrary, BUILD_LIBVERIFY, \
     NAME := verify, \
     OPTIMIZATION := HIGH, \
-    DISABLED_WARNINGS_gcc_check_code.c := unused-variable, \
-    DISABLED_WARNINGS_clang_check_code.c := unused-variable, \
     EXTRA_HEADER_DIRS := libjava, \
     JDK_LIBS := libjvm, \
 ))

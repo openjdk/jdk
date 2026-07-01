@@ -2721,13 +2721,11 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& inputs) {
   if (is_vector_bitwise_op(n)) {
     uint inp_cnt = n->is_predicated_vector() ? n->req()-1 : n->req();
     if (VectorNode::is_vector_bitwise_not_pattern(n)) {
-      for (uint i = 1; i < inp_cnt; i++) {
-        Node* in = n->in(i);
-        bool skip = VectorNode::is_all_ones_vector(in);
-        if (!skip && !inputs.member(in)) {
-          inputs.push(in);
-          cnt++;
-        }
+      assert(n->req() == (n->is_predicated_vector() ? 4 : 3), "must have 2 data inputs");
+      Node* opnd = VectorNode::is_all_ones_vector(n->in(1)) ? n->in(2) : n->in(1);
+      if (!inputs.member(opnd)) {
+        inputs.push(opnd);
+        cnt++;
       }
       assert(cnt <= 1, "not unary");
     } else {
@@ -3278,14 +3276,32 @@ void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
     // DivMod node so the dependency is not lost.
     divmod->add_prec_from(n);
     divmod->add_prec_from(d);
-    d->subsume_by(divmod->div_proj(), this);
-    n->subsume_by(divmod->mod_proj(), this);
+    d->subsume_by(divmod->first_proj(), this);
+    n->subsume_by(divmod->second_proj(), this);
   } else {
     // Replace "a % b" with "a - ((a / b) * b)"
     Node* mult = MulNode::make(d, d->in(2), bt);
     Node* sub = SubNode::make(d->in(1), mult, bt);
     n->subsume_by(sub, this);
   }
+}
+
+void Compile::handle_mulhi_mul_op(Node* n, bool is_unsigned) {
+  const int fused_opcode = is_unsigned ? Op_UMulHiLoL : Op_MulHiLoL;
+  if (!Matcher::has_match_rule(fused_opcode)) {
+    return;
+  }
+
+  Node* mul = n->find_similar(Op_MulL, true);
+
+  if (mul == nullptr) {
+    return;
+  }
+
+  MulHiLoLNode* mul_hi_lo = is_unsigned ? static_cast<MulHiLoLNode*>(UMulHiLoLNode::make(n))
+                                        : MulHiLoLNode::make(n);
+  mul->subsume_by(mul_hi_lo->first_proj(), this);
+  n->subsume_by(mul_hi_lo->second_proj(), this);
 }
 
 void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes) {
@@ -3721,6 +3737,14 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
   case Op_UModL:
     handle_div_mod_op(n, T_LONG, true);
+    break;
+
+  case Op_MulHiL:
+    handle_mulhi_mul_op(n, false);
+    break;
+
+  case Op_UMulHiL:
+    handle_mulhi_mul_op(n, true);
     break;
 
   case Op_LoadVector:

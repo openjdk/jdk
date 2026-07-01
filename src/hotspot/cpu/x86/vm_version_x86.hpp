@@ -683,6 +683,11 @@ protected:
     uint32_t          apx_xstate_size;          // EAX: size of APX state (128)
     uint32_t          apx_xstate_offset;        // EBX: offset in standard XSAVE area
 
+    // cpuid function 0xD, subleaf 5, 6 and 7 (AVX-512 extended state)
+    uint32_t          opmask_xstate_offset;          // EBX: offset of Opmask component
+    uint32_t          zmm0to15_hi256_xstate_offset;  // EBX: offset of ZMM_Hi256 component
+    uint32_t          zmm16to31_xstate_offset;       // EBX: offset of Hi16_ZMM component
+
     VM_Features feature_flags() const;
 
     // Asserts
@@ -748,9 +753,15 @@ public:
   static ByteSize apx_save_offset() { return byte_offset_of(CpuidInfo, apx_save); }
   static ByteSize apx_xstate_offset_offset() { return byte_offset_of(CpuidInfo, apx_xstate_offset); }
   static ByteSize apx_xstate_size_offset() { return byte_offset_of(CpuidInfo, apx_xstate_size); }
+  static ByteSize opmask_xstate_offset_offset() { return byte_offset_of(CpuidInfo, opmask_xstate_offset); }
+  static ByteSize zmm0to15_hi256_xstate_offset_offset() { return byte_offset_of(CpuidInfo, zmm0to15_hi256_xstate_offset); }
+  static ByteSize zmm16to31_xstate_offset_offset() { return byte_offset_of(CpuidInfo, zmm16to31_xstate_offset); }
 
   static uint32_t apx_xstate_offset() { return _cpuid_info.apx_xstate_offset; }
   static uint32_t apx_xstate_size()   { return _cpuid_info.apx_xstate_size; }
+  static uint32_t opmask_xstate_offset()        { return _cpuid_info.opmask_xstate_offset; }
+  static uint32_t zmm0to15_hi256_xstate_offset() { return _cpuid_info.zmm0to15_hi256_xstate_offset; }
+  static uint32_t zmm16to31_xstate_offset()      { return _cpuid_info.zmm16to31_xstate_offset; }
 
   // The value used to check ymm register after signal handle
   static int ymm_test_value()    { return 0xCAFEBABE; }
