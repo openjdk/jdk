@@ -318,6 +318,7 @@ public class ImageReaderTest {
             assertPreviewResourceVersion(reader, "modfoo", "fileA.txt");
             assertNode(reader, "/modules/modfoo/fileB.txt");
             assertPreviewResourceVersion(reader, "modfoo", "fileB.txt");
+            assertDirContents(reader, "/modules/modfoo/com", "foo");
             assertDirContents(reader, "/modules/modfoo", "META-INF", "module-info.class", "fileA.txt", "fileB.txt", "com");
 
             assertNode(reader, "/modules/modbaz/previewOnly.txt");
