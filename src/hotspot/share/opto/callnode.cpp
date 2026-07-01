@@ -33,12 +33,11 @@
 #include "interpreter/interpreter.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/callnode.hpp"
-
-#include "library_call.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/escape.hpp"
 #include "opto/inlinetypenode.hpp"
+#include "opto/library_call.hpp"
 #include "opto/locknode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
