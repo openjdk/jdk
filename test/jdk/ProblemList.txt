@@ -648,6 +648,8 @@ jdk/jfr/event/oldobject/TestZ.java                              8375615 generic-
 
 # jdk_foreign
 
+java/foreign/normalize/TestNormalize.java 8386848 generic-all
+
 ############################################################################
 # Client manual tests
 

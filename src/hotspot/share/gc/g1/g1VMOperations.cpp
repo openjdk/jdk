@@ -130,8 +130,13 @@ void VM_G1CollectForAllocation::doit() {
 }
 
 void VM_G1PauseConcurrent::doit() {
-  GCIdMark gc_id_mark(_gc_id);
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  if (_is_shutting_down) {
+    g1h->concurrent_mark()->shutdown_concurrent_cycle();
+    return;
+  }
+
+  GCIdMark gc_id_mark(_gc_id);
   GCTraceCPUTime tcpu(g1h->concurrent_mark()->gc_tracer_cm());
 
   // GCTraceTime(...) only supports sub-phases, so a more verbose version
@@ -150,12 +155,9 @@ void VM_G1PauseConcurrent::doit() {
 bool VM_G1PauseConcurrent::doit_prologue() {
   Heap_lock->lock();
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  if (g1h->is_shutting_down()) {
+  _is_shutting_down = g1h->is_shutting_down();
+  if (_is_shutting_down && !g1h->concurrent_mark()->shutdown_cleanup_needed()) {
     Heap_lock->unlock();
-    // JVM shutdown has started. Abort concurrent marking to ensure that any further
-    // concurrent VM operations will not try to start and interfere with the shutdown
-    // process.
-    g1h->concurrent_mark()->abort_marking_threads();
     return false;
   }
   return true;
@@ -176,4 +178,20 @@ void VM_G1PauseRemark::work() {
 void VM_G1PauseCleanup::work() {
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
   cm->cleanup();
+}
+
+bool VM_G1StopMarking::doit_prologue() {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+#ifdef ASSERT
+  {
+    MutexLocker ml(Heap_lock);
+    assert(g1h->is_shutting_down(), "must be");
+  }
+#endif
+  return g1h->concurrent_mark()->shutdown_cleanup_needed();
+}
+
+void VM_G1StopMarking::doit() {
+  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
+  cm->shutdown_concurrent_cycle();
 }
