@@ -50,23 +50,14 @@ public class TestStaticCallStub {
     record Instruction(String mnemonic, int mask, int value) {
     }
 
-    private static final Instruction[] nearStaticCallInsts = {
-        new Instruction("isb",  0xFFFFF0FF, 0xD50330DF), // ISB
-        new Instruction("mov",  0xFF800000, 0xD2800000), // MOVZ
-        new Instruction("movk", 0xFF800000, 0xF2800000), // MOVK
-        new Instruction("movk", 0xFF800000, 0xF2800000), // MOVK
-        new Instruction("b",    0xFC000000, 0x14000000)  // B
-    };
-    private static final Instruction[] farStaticCallInsts = {
-        new Instruction("isb",  0xFFFFF0FF, 0xD50330DF), // ISB
-        new Instruction("mov",  0xFF800000, 0xD2800000), // MOVZ
-        new Instruction("movk", 0xFF800000, 0xF2800000), // MOVK
-        new Instruction("movk", 0xFF800000, 0xF2800000), // MOVK
-        new Instruction("mov",  0xFF800000, 0xD2800000), // MOVZ
-        new Instruction("movk", 0xFF800000, 0xF2800000), // MOVK
-        new Instruction("movk", 0xFF800000, 0xF2800000), // MOVK
-        new Instruction("br",   0xFFFFFC1F, 0xD61F0000)  // BR
-    };
+    private static final Instruction ISB  = new Instruction("isb",  0xFFFFF0FF, 0xD50330DF);
+    private static final Instruction MOVK = new Instruction("movk", 0xFF800000, 0xF2800000);
+    private static final Instruction MOVZ = new Instruction("mov",  0xFF800000, 0xD2800000);
+    private static final Instruction B =    new Instruction("b",    0xFC000000, 0x14000000);
+    private static final Instruction BR =   new Instruction("br",   0xFFFFFC1F, 0xD61F0000);
+
+    private static final Instruction[] nearStaticCallInsts = {ISB, MOVZ, MOVK, MOVK, B};
+    private static final Instruction[] farStaticCallInsts =  {ISB, MOVZ, MOVK, MOVK, MOVZ, MOVK, MOVK, BR};
 
     static String extractMnemonic(String line) {
         int colonIndex = line.indexOf(':');
@@ -83,12 +74,7 @@ public class TestStaticCallStub {
             return "";
         }
 
-        String[] words = line.split("\\s+");
-        if (words.length > 0) {
-            return words[0].trim();
-        }
-
-        return "";
+        return line.split("\\s+")[0];
     }
 
     static List<Integer> extractOpcodes(String line) {
@@ -110,10 +96,8 @@ public class TestStaticCallStub {
 
         String[] words = line.split("\\|");
         for (String word : words) {
-            String[] halfwords = word.trim().split("\\s+");
-            int value = (Integer.parseUnsignedInt(halfwords[0].trim(), 16) << 16)
-                    + Integer.parseUnsignedInt(halfwords[1].trim(), 16);
-            value = Integer.reverseBytes(value);
+            int value = Integer
+                    .reverseBytes(Integer.parseUnsignedInt(word.replaceAll("\\s", ""), 16));
             opcodes.add(value);
         }
 
@@ -149,37 +133,25 @@ public class TestStaticCallStub {
                 .allMatch(i -> (opcodes.get(i) & insts[i].mask) == insts[i].value);
     }
 
-    static boolean staticCallMatches(ListIterator<String> iter, Instruction[] insts,
-            boolean disassembled) {
-        boolean matches;
-
-        if (disassembled) {
-            List<String> extracted = extractMnemonicsN(iter, insts.length);
-            matches = extracted.equals(Arrays.stream(insts).map(Instruction::mnemonic).toList());
-        } else {
-            List<Integer> extracted = extractOpcodesN(iter, insts.length);
-            matches = opcodesMatch(extracted, insts);
-        }
-
-        return matches;
+    @FunctionalInterface
+    interface StaticCallMatcher {
+        boolean matches(ListIterator<String> iter, Instruction[] insts);
     }
 
-    static void verifyNearStaticCall(ListIterator<String> iter, boolean disassembled) {
-        if (!staticCallMatches(iter, nearStaticCallInsts, disassembled)) {
-            throw new RuntimeException(
-                    "for code cache < 250MB the static call stub is expected to be implemented using near branch");
-        }
-
-        return;
+    static boolean matchMnemonics(ListIterator<String> iter, Instruction[] insts) {
+        return extractMnemonicsN(iter, insts.length)
+                .equals(Arrays.stream(insts).map(Instruction::mnemonic).toList());
     }
 
-    static void verifyFarStaticCall(ListIterator<String> iter, boolean disassembled) {
-        if (!staticCallMatches(iter, farStaticCallInsts, disassembled)) {
-            throw new RuntimeException(
-                    "for code cache > 250MB the static call stub is expected to be implemented using far branch");
-        }
+    static boolean matchOpcodes(ListIterator<String> iter, Instruction[] insts) {
+        return opcodesMatch(extractOpcodesN(iter, insts.length), insts);
+    }
 
-        return;
+    static void verifyStaticCall(ListIterator<String> iter, StaticCallMatcher matcher,
+            Instruction[] insts, String errorMessage) {
+        if (!matcher.matches(iter, insts)) {
+            throw new RuntimeException(errorMessage);
+        }
     }
 
     static void runVM(boolean bigCodeCache) throws Exception {
@@ -210,6 +182,9 @@ public class TestStaticCallStub {
                     break;
                 }
             }
+            StaticCallMatcher matcher = disassembled ? TestStaticCallStub::matchMnemonics
+                                                     : TestStaticCallStub::matchOpcodes;
+
 
             // 2. Look for the block comment
             while (iter.hasNext()) {
@@ -217,9 +192,11 @@ public class TestStaticCallStub {
                 if (line.contains("{static_stub}")) {
                     iter.previous();
                     if (bigCodeCache) {
-                        verifyFarStaticCall(iter, disassembled);
+                        verifyStaticCall(iter, matcher, farStaticCallInsts,
+                                "for code cache > 250MB the static call stub is expected to be implemented using far branch");
                     } else {
-                        verifyNearStaticCall(iter, disassembled);
+                        verifyStaticCall(iter, matcher, nearStaticCallInsts,
+                                "for code cache < 250MB the static call stub is expected to be implemented using near branch");
                     }
                     return;
                 }
