@@ -2800,17 +2800,25 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
 
   // (VectorStoreMask (VectorMaskCast* (VectorLoadMask x))) => (x)
   if (use_op == Op_VectorMaskCast) {
-    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_VectorStoreMask; });
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_VectorStoreMask;
+    });
   }
 
-  // (AndV/OrV (AndV/OrV src1 src2) src1) => (AndV/OrV src1 src2)
-  if (use_op == Op_AndV || use_op == Op_OrV) {
-    add_users_to_worklist_if(worklist, use, [use_op](Node* u) { return u->Opcode() == use_op; });
+  // (AndV/OrV/AndVMask/OrVMask (AndV/OrV/AndVMask/OrVMask src1 src2) src1)
+  //   => (AndV/OrV/AndVMask/OrVMask src1 src2)
+  if (use_op == Op_AndV || use_op == Op_OrV ||
+      use_op == Op_AndVMask || use_op == Op_OrVMask) {
+    add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
+      return u->Opcode() == use_op;
+    });
   }
 
   // Vector shift by zero, see ShiftVNode::Identity
   if (use_op == Op_LShiftCntV || use_op == Op_RShiftCntV) {
-    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->is_ShiftV(); });
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_ShiftV();
+    });
   }
 
   // From CastX2PNode::Ideal

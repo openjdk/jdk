@@ -73,6 +73,16 @@ public class VectorStoreMaskIdentityStressTest {
                   .cast(to_species3).intoArray(mask_out, 0);
     }
 
+    // The cast chain does not change the boolean value of any lane, so the first
+    // "length" lanes of mask_out must equal the corresponding lanes of mask_in.
+    private static void verifyResult(int length) {
+        for (int i = 0; i < length; i++) {
+            if (mask_out[i] != mask_in[i]) {
+                throw new RuntimeException("Mismatch at lane " + i + ": " + mask_out[i] + " != " + mask_in[i]);
+            }
+        }
+    }
+
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_8, ">= 1",
                    IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, ">= 1",
@@ -86,6 +96,11 @@ public class VectorStoreMaskIdentityStressTest {
         testThreeCastsKernel(I128, S64, F128, S64);
     }
 
+    @Check(test = "testVectorMaskStoreIdentity1")
+    public static void checkVectorMaskStoreIdentity1() {
+        verifyResult(I128.length());
+    }
+
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_2, ">= 1",
                    IRNode.VECTOR_LOAD_MASK, "= 0",
@@ -97,6 +112,11 @@ public class VectorStoreMaskIdentityStressTest {
         testThreeCastsKernel(L128, I64, D128, I64);
     }
 
+    @Check(test = "testVectorMaskStoreIdentity2")
+    public static void checkVectorMaskStoreIdentity2() {
+        verifyResult(L128.length());
+    }
+
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, ">= 1",
                    IRNode.VECTOR_LOAD_MASK, "= 0",
@@ -106,6 +126,11 @@ public class VectorStoreMaskIdentityStressTest {
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentity3() {
         testThreeCastsKernel(L256, I128, F128, S64);
+    }
+
+    @Check(test = "testVectorMaskStoreIdentity3")
+    public static void checkVectorMaskStoreIdentity3() {
+        verifyResult(L256.length());
     }
 
     public static void main(String[] args) {

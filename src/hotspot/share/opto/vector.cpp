@@ -36,6 +36,24 @@ static bool is_vector_mask(ciKlass* klass) {
   return klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
 }
 
+// A node is vector-related if it either produces a vector/mask value or
+// consumes one.
+static bool is_vector_related(const Node* n) {
+  // Produces a vector/mask value (AndV, VectorStoreMask, LoadVector, ...).
+  if (n->bottom_type()->isa_vect() != nullptr) {
+    return true;
+  }
+  // Consumes a vector/mask value but produces a scalar
+  // (VectorMaskToLong, reductions, Extract, VectorTest, ...).
+  for (uint i = 1; i < n->req(); i++) {
+    Node* in = n->in(i);
+    if (in != nullptr && in->bottom_type()->isa_vect() != nullptr) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void PhaseVector::optimize_vector_boxes() {
   Compile::TracePhase tp(_t_vector_elimination);
 
@@ -64,9 +82,12 @@ void PhaseVector::optimize_vector_boxes() {
   C->set_post_vector_phase(true);
 }
 
-void PhaseVector::add_all_nodes_into_igvn_worklist(const Unique_Node_List* useful) {
+void PhaseVector::add_vector_nodes_into_igvn_worklist(const Unique_Node_List* useful) {
   for (uint i = 0; i < useful->size(); ++i) {
-    C->record_for_igvn(useful->at(i));
+    Node* n = useful->at(i);
+    if (is_vector_related(n)) {
+      C->record_for_igvn(n);
+    }
   }
 }
 
@@ -84,9 +105,10 @@ void PhaseVector::do_cleanup() {
     // optimizations (e.g., VectorStoreMask (VectorMaskCast* VectorLoadMask x)
     // => x) can be missed. Now that incremental inlining and box elimination
     // are done, the tree is now fully materialized and free of extraneous nodes.
-    // Add all nodes to the worklist so these optimizations get another chance.
-    // Reuse the live-node set that PhaseRemoveUseless just computed.
-    add_all_nodes_into_igvn_worklist(pru.get_useful());
+    // Add the vector-related nodes to the worklist so these optimizations get
+    // another chance. Reuse the live-node set that PhaseRemoveUseless just
+    // computed.
+    add_vector_nodes_into_igvn_worklist(pru.get_useful());
   }
   {
     Compile::TracePhase tp(_t_vector_igvn);
