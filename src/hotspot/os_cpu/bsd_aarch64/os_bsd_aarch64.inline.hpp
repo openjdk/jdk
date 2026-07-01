@@ -25,4 +25,13 @@
 #ifndef OS_CPU_BSD_AARCH64_OS_BSD_AARCH64_INLINE_HPP
 #define OS_CPU_BSD_AARCH64_OS_BSD_AARCH64_INLINE_HPP
 
+#include "runtime/os.hpp"
+
+inline jlong os::cntvctss() {
+  uint64_t res;
+  // s3_3_c14_c0_6 is the numeric encoding of CNTVCTSS_EL0 for old GNU assemblers
+  __asm__ volatile("mrs %0, s3_3_c14_c0_6" : "=r"(res));
+  return (jlong)res;
+}
+
 #endif // OS_CPU_BSD_AARCH64_OS_BSD_AARCH64_INLINE_HPP

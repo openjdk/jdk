@@ -25,19 +25,14 @@
 
 #include "cntvctss_aarch64.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/os.inline.hpp"
 #include "vm_version_aarch64.hpp"
 
 jlong Cntvctss::_epoch = 0;
 
-static inline jlong read_cntvctss() {
-  uint64_t res;
-  __asm__ volatile("mrs %0, s3_3_c14_c0_6" : "=r"(res)); // s3_3_c14_c0_6 is the numeric encoding of CNTVCTSS_EL0 for old GNU assemblers
-  return (jlong)res;
-}
-
 jlong Cntvctss::set_epoch() {
   assert(0 == _epoch, "invariant");
-  _epoch = read_cntvctss();
+  _epoch = os::cntvctss();
   return _epoch;
 }
 
@@ -70,7 +65,7 @@ jlong Cntvctss::frequency() {
 }
 
 jlong Cntvctss::elapsed_counter() {
-  return read_cntvctss() - _epoch;
+  return os::cntvctss() - _epoch;
 }
 
 jlong Cntvctss::epoch() {
@@ -78,7 +73,7 @@ jlong Cntvctss::epoch() {
 }
 
 jlong Cntvctss::raw() {
-  return read_cntvctss();
+  return os::cntvctss();
 }
 
 bool Cntvctss::enabled() {

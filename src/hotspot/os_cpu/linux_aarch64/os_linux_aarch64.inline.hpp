@@ -27,6 +27,13 @@
 
 #include "runtime/os.hpp"
 
+inline jlong os::cntvctss() {
+  uint64_t res;
+  // s3_3_c14_c0_6 is the numeric encoding of CNTVCTSS_EL0 for old GNU assemblers
+  __asm__ volatile("mrs %0, s3_3_c14_c0_6" : "=r"(res));
+  return (jlong)res;
+}
+
 #if defined(COMPATIBLE_CDS_ALIGNMENT)
 #define HAVE_CDS_CORE_REGION_ALIGNMENT 1
 inline size_t os::cds_core_region_alignment() {

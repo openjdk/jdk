@@ -39,4 +39,9 @@ inline bool os::platform_print_native_stack(outputStream* st, const void* contex
   return os::win32::platform_print_native_stack(st, context, buf, buf_size, lastpc);
 }
 
+inline jlong os::cntvctss() {
+  const int CNTVCTSS_EL0 = ARM64_SYSREG(3, 3, 14, 0, 6);
+  return (jlong)_ReadStatusReg(CNTVCTSS_EL0);
+}
+
 #endif // OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_INLINE_HPP
