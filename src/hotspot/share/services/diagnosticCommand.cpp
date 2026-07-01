@@ -475,7 +475,6 @@ void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
     sec = "all";
   }
 
-  // Guard: only allow known sections
   if (strcmp(sec, "all") != 0 &&
       strcmp(sec, "vm") != 0 &&
       strcmp(sec, "properties") != 0 &&
@@ -493,11 +492,10 @@ void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
     return;
   }
 
-  // Build full flag: "-XshowSettings:<section>"
   char flag_buf[64];
   jio_snprintf(flag_buf, sizeof(flag_buf), "-XshowSettings:%s", sec);
 
-  // Resolve sun.launcher.LauncherHelper
+  // resolve sun.launcher.LauncherHelper
   Symbol* klass_sym = vmSymbols::sun_launcher_LauncherHelper();
   Klass* k = SystemDictionary::resolve_or_fail(klass_sym, true, CHECK);
   InstanceKlass* ik = InstanceKlass::cast(k);
@@ -511,7 +509,7 @@ void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
     return;
   }
 
-  // Call LauncherHelper.showSettingsBytes(String, long, long, long)
+  // call LauncherHelper.showSettingsBytes(String, long, long, long)
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
 
