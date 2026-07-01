@@ -597,6 +597,9 @@ class CheckedFeatures {
         {"windows-x64",     "com.sun.jdi.CommandLineLaunch", "dt_socket"},
         {"windows-x64",     "com.sun.jdi.RawCommandLineLaunch", "dt_socket"},
 
+        {"windows-aarch64", "com.sun.jdi.CommandLineLaunch", "dt_socket"},
+        {"windows-aarch64", "com.sun.jdi.RawCommandLineLaunch", "dt_socket"},
+
         {"macosx-amd64",     "com.sun.jdi.CommandLineLaunch", "dt_shmem"},
         {"macosx-amd64",     "com.sun.jdi.RawCommandLineLaunch", "dt_shmem"},
 
