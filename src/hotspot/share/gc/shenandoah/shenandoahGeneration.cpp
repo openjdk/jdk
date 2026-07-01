@@ -430,8 +430,3 @@ size_t ShenandoahGeneration::available(size_t capacity) const {
   size_t result = in_use > capacity ? 0 : capacity - in_use;
   return result;
 }
-
-void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {
-  heuristics()->record_success_concurrent();
-  ShenandoahHeap::heap()->shenandoah_policy()->record_success_concurrent(is_young(), abbreviated);
-}

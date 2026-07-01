@@ -110,8 +110,6 @@ private:
   void service_concurrent_normal_cycle(const ShenandoahGCRequest& request);
   void service_concurrent_old_cycle(const ShenandoahGCRequest& request);
 
-  void notify_gc_waiters();
-
   // Blocks until at least one cycle is complete. WARNING: it doesn't know what kind of cycle will be run.
   void handle_requested_gc(GCCause::Cause cause, ShenandoahGeneration* generation);
 

@@ -125,7 +125,7 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   }
 
   // Regardless if progress was made, we record that we completed a "successful" full GC.
-  _generation->heuristics()->record_success_full();
+  _generation->heuristics()->record_full_gc(cause);
   heap->shenandoah_policy()->record_success_full();
 
   {

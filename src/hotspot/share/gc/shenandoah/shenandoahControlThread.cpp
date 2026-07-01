@@ -270,9 +270,8 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 
   ShenandoahConcurrentGC gc(heap->global_generation(), false);
   if (gc.collect(cause)) {
-    // Cycle is complete.  There were no failed allocation requests and no degeneration, so count this as good progress.
     heap->notify_gc_progress();
-    heap->global_generation()->heuristics()->record_success_concurrent();
+    heap->global_generation()->heuristics()->record_concurrent_completion(alloc_stalls_during_cycle());
     heap->shenandoah_policy()->record_success_concurrent(false, gc.abbreviated());
     heap->log_heap_status("At end of GC");
   } else {
@@ -355,6 +354,7 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
     if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
+      _alloc_stalls.store_relaxed(true);
       _alloc_waiters_count.add_then_fetch(1UL);
     }
 
@@ -385,9 +385,4 @@ void ShenandoahControlThread::handle_alloc_failure_full() {
     ml.wait();
     full_gc_count = policy->full_gc_count();
   }
-}
-
-void ShenandoahControlThread::notify_gc_waiters() {
-  MonitorLocker ml(&_gc_waiters_lock);
-  ml.notify_all();
 }

@@ -66,12 +66,14 @@ class ShenandoahHeapRegion;
  * cycle.
  */
 class ShenandoahHeuristics : public CHeapObj<mtGC> {
-  static const intx Concurrent_Adjust   = -1; // recover from penalties
-  static const intx Degenerated_Penalty = 10; // how much to penalize average GC duration history on Degenerated GC
-  static const intx Full_Penalty        = 20; // how much to penalize average GC duration history on Full GC
+  static constexpr intx Concurrent_Adjust   = -1; // recover from penalties
+  static constexpr intx Degenerated_Penalty = 10; // how much to penalize average GC duration history on Degenerated GC
+  static constexpr intx Full_Penalty        = 20; // how much to penalize average GC duration history on Full GC
+  static constexpr intx Min_Penalty         = 0;
+  static constexpr intx Max_Penalty         = 100;
 
   // How many times can I decline a trigger opportunity without being penalized for excessive idle span before trigger?
-  static const size_t Penalty_Free_Declinations = 16;
+  static constexpr size_t Penalty_Free_Declinations = 16;
 
 #ifdef ASSERT
   enum UnionTag {
@@ -89,17 +91,17 @@ private:
 protected:
   static constexpr uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
 
-  bool _start_gc_is_pending;              // True denotes that GC has been triggered, so no need to trigger again.
-  size_t _declined_trigger_count;         // This counts how many times since previous GC finished that this
-                                          //  heuristic has answered false to should_start_gc().
-  size_t _most_recent_declined_trigger_count;
-                                          // This represents the value of _declined_trigger_count as captured at the
-                                          //  moment the most recent GC effort was triggered.  In case the most recent
-                                          //  concurrent GC effort degenerates, the value of this variable allows us to
-                                          //  differentiate between degeneration because heuristic was overly optimistic
-                                          //  in delaying the trigger vs. degeneration for other reasons (such as the
-                                          //  most recent GC triggered "immediately" after previous GC finished, but the
-                                          //  free headroom has already been depleted).
+  // True denotes that GC has been triggered, so no need to trigger again.
+  bool _start_gc_is_pending;
+
+  // This counts how many times since previous GC finished that this heuristic has answered false to should_start_gc().
+  // If allocations stall during a concurrent gc and this is above Penalty_Free_Declinations at the end of the cycle,
+  // the heuristics will be 'penalized' in a way that will make them start the next concurrent cycle sooner. Also
+  // note that once the trigger has been accepted, _start_gc_is_pending will be set and subsequent attempts to evaluate
+  // the trigger conditions will return early and will not increase _declined_trigger_count. This is written to
+  // by both the regulator and control thread, read by control thread.
+  Atomic<size_t> _declined_trigger_count;
+
   class RegionData {
     private:
     ShenandoahHeapRegion* _region;
@@ -203,7 +205,7 @@ protected:
   }
 
   inline void decline_trigger() {
-    _declined_trigger_count++;
+    _declined_trigger_count.add_then_fetch(1UL);
   }
 
   inline double get_most_recent_wake_time() const {
@@ -254,11 +256,9 @@ public:
 
   virtual bool should_degenerate_cycle();
 
-  virtual void record_success_concurrent();
+  virtual void record_concurrent_completion(bool alloc_failures_during_cycle);
 
-  virtual void record_degenerated(bool is_generational_global);
-
-  virtual void record_success_full();
+  virtual void record_full_gc(GCCause::Cause cause);
 
   virtual void record_allocation_failure_gc();
 

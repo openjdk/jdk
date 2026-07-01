@@ -29,7 +29,6 @@
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
 #include "gc/shenandoah/shenandoahCycleDuration.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "utilities/numberSeq.hpp"
 
 
@@ -56,8 +55,7 @@ public:
   // before we need to start the next GC.
   void start_idle_span() override;
 
-  void record_success_concurrent() override;
-  void record_degenerated(bool is_generational_global) override;
+  void record_concurrent_completion(bool alloc_failures_during_cycle) override;
 
   bool should_start_gc() override;
 

@@ -157,8 +157,8 @@ void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start,
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
-  ShenandoahHeuristics::record_success_concurrent();
+void ShenandoahAdaptiveHeuristics::record_concurrent_completion(bool alloc_failures_during_cycle) {
+  ShenandoahHeuristics::record_concurrent_completion(alloc_failures_during_cycle);
 
   // We add this time even if it is a shortened cycle. There is a risk that this pulls
   // the gc time trend down, but it is still a more accurate view than excluding times
@@ -208,13 +208,6 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
     if (_last_trigger == RATE) {
       adjust_margin_of_error(z_score / -100);
     }
-  }
-}
-
-void ShenandoahAdaptiveHeuristics::record_degenerated(bool is_generational_global) {
-  ShenandoahHeuristics::record_degenerated(is_generational_global);
-  if (!is_generational_global) {
-    add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time());
   }
 }
 

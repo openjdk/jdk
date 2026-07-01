@@ -616,11 +616,6 @@ ShenandoahHeuristics* ShenandoahOldGeneration::initialize_heuristics(ShenandoahM
   return _heuristics;
 }
 
-void ShenandoahOldGeneration::record_success_concurrent(bool abbreviated) {
-  heuristics()->record_success_concurrent();
-  ShenandoahHeap::heap()->shenandoah_policy()->record_success_old();
-}
-
 void ShenandoahOldGeneration::handle_failed_evacuation() {
   if (_failed_evacuation.try_set()) {
     log_debug(gc)("Old gen evac failure.");

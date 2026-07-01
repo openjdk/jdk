@@ -52,6 +52,7 @@ private:
 
   // Set when evacuation in the old generation fails. When this is set, the control thread will initiate a
   // full GC instead of a futile degenerated cycle.
+  // TODO: This is only used to get a debug log message now.
   ShenandoahSharedFlag _failed_evacuation;
 
   // Bytes reserved within old-gen to hold the results of promotion. This is separate from
@@ -255,7 +256,6 @@ public:
 
   void prepare_gc() override;
   void prepare_regions_and_collection_set(bool concurrent) override;
-  void record_success_concurrent(bool abbreviated) override;
   void cancel_marking() override;
 
   // Cancels old gc and transitions to the idle state
