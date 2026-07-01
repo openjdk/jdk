@@ -52,8 +52,6 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   set_num_rt_args(0); // Nothing on stack.
   assert(!(oop_result1->is_valid() || metadata_result->is_valid()) || oop_result1 != metadata_result, "registers must be different");
 
-  // The last java pc isn't required to be precise. To support preemption it has
-  // to point to the location were execution is supposed to be resumed.
   Label resume;
   z_larl(Z_R1_scratch, resume);
   set_last_Java_frame(Z_SP, Z_R1_scratch);

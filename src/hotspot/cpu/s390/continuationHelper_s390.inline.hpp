@@ -31,7 +31,7 @@
 static inline void patch_return_pc_with_preempt_stub(frame& f) {
   if (f.is_runtime_frame()) {
     // Patch the pc of the now old last Java frame (we already set the anchor to enterSpecial)
-    // so that when target goes back to Java it will actually return to the preempt cleanup stub.
+    // so that when target returns to Java it will actually return to the preempt cleanup stub.
     // We step over the runtime stub frame and patch the return PC in the caller's frame.
     intptr_t* caller_sp = f.sp() + f.cb()->frame_size();
     frame::z_common_abi* abi = (frame::z_common_abi*)caller_sp;
@@ -49,7 +49,7 @@ static inline void patch_return_pc_with_preempt_stub(frame& f) {
 
 inline int ContinuationHelper::frame_align_words(int size) {
   // S390 requires 8-byte (1-word) frame alignment, not 16-byte like other platforms.
-  // Since frames are already 8-byte aligned, no additional padding words are needed.
+  // Because frames are already 8-byte aligned, no additional padding words are needed.
   // Other platforms (x86, aarch64, ppc) return size & 1 to ensure 16-byte alignment,
   // but s390's 8-byte alignment requirement is already satisfied.
   return 0;

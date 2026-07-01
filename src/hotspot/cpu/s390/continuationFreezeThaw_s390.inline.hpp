@@ -140,7 +140,7 @@ void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
 }
 
 inline void FreezeBase::prepare_freeze_interpreted_top_frame(frame& f) {
-  // Nothing to do. We don't save a last sp since we cannot use sp as esp.
+  // Nothing to do. We don't save a last sp because we cannot use sp as esp.
   // Instead the top frame is trimmed when making an i2i call. The original
   // top_frame_sp is set when the frame is pushed (see generate_fixed_frame()).
   // An interpreter top frame that was just thawed is resized to top_frame_sp by the
@@ -183,7 +183,7 @@ inline void FreezeBase::patch_pd(frame& hf, const frame& caller) {
     // For compiled frames the back link is actually redundant. It gets computed
     // as unextended_sp + frame_size.
 
-    // Note the difference on x86_64: the link is not made relative if the caller
+    // Note a difference from x86_64: the link is not made relative if the caller
     // is a compiled frame because there rbp is used as a non-volatile register by
     // c1/c2 so it could be a computed value local to the caller.
 
