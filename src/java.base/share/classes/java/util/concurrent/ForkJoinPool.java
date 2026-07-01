@@ -1278,15 +1278,17 @@ public class ForkJoinPool extends AbstractExecutorService
          */
         final void push(ForkJoinTask<?> task, ForkJoinPool pool, boolean internal) {
             int s = top, m; ForkJoinTask<?>[] a;
-            if ((a = array) == null || s - base == (m = a.length - 1) || m < 0)
+            if ((a = array) == null || (s - base) == (m = a.length - 1) || m < 0)
                 growAndPush(task, pool, internal);
             else {
                 long k = slotOffset(m & s), pk = slotOffset(m & (s - 1));
                 top = s + 1;
-                U.putReferenceRelease(a, k, task);
+                U.putReferenceVolatile(a, k, task);
+                if (U.getReferenceVolatile(a, pk) != null)
+                    pool = null;
                 if (!internal)
                     U.getAndAddInt(this, PHASE, IDLE);
-                if (U.getReferenceAcquire(a, pk) == null && pool != null)
+                if (pool != null)
                     pool.signalWork();
             }
         }
@@ -2027,7 +2029,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 if ((q = qs[qid = i & (n - 1)]) != null &&
                     (a = q.array) != null && (cap = a.length) > 0) {
                     boolean taken = false;
-                    for (int m = cap - 1, pb = -1;;) {
+                    for (int m = cap - 1, pb = -1, propagated = -1;;) {
                         int b, nb; long bp;
                         ForkJoinTask<?> t = (ForkJoinTask<?>)U.getReferenceAcquire(
                             a, bp = slotOffset(m & (b = q.base)));
@@ -2053,16 +2055,19 @@ public class ForkJoinPool extends AbstractExecutorService
                         else if (idle == 0) {
                             Object u = U.compareAndExchangeReference(a, bp, t, null);
                             if (u == t) {
-                                q.base = pb = nb;
-                                boolean propagate =
-                                    (U.getReferenceAcquire(a, np) != null &&
-                                     (src != qid ||
-                                      ((qid & 1) == 0) && t.noUserHelp() != 0));
-                                taken = true;
-                                U.putIntRelease(w, WorkQueue.SOURCE, src = qid);
-                                if (propagate)
+                                int sd;
+                                Object nt = U.getReferenceVolatile(a, np);
+                                U.putIntVolatile(q, WorkQueue.BASE, pb = nb);
+                                if ((sd = src - qid) != 0)
+                                    U.putIntRelease(w, WorkQueue.SOURCE, src = qid);
+                                if (nt != null && (propagated != b || !taken) &&
+                                    (sd != 0 ||
+                                     ((qid & 1) == 0) && t.noUserHelp() != 0)) {
+                                    propagated = nb;
                                     signalWork();
+                                }
                                 w.topLevelExec(t);
+                                taken = true;
                             }
                             else if (u == null) { // lost CAS
                                 if (src != qid)
