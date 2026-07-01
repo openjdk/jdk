@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,43 +19,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/**
- * @test
- * @bug 8360561
- * @summary Ranges can be proven to be disjoint but not orderable (thanks to unsigned range)
- *          Comparing such values in such range with != should always be true.
- * @library /test/lib /
- * @run driver ${test.main.class}
+/* @test
+ * @summary Run Shenandoah gtests
+ * @library /test/lib
+ * @requires vm.gc.Shenandoah
+ * @requires vm.debug
+ * @run main/native GTestWrapper --gtest_filter=Shenandoah*
  */
-package compiler.igvn;
-
-import compiler.lib.ir_framework.*;
-
-public class CmpDisjointButNonOrderedRangesLong {
-    static boolean bFld;
-    static double dFld1;
-    static double dFld2;
-
-    public static void main(String[] strArr) {
-        TestFramework.run();
-    }
-
-    @Test
-    @IR(failOn = {IRNode.PHI})
-    @Warmup(0)
-    static int test() {
-        long x = 7;
-        if (bFld) {
-            x = -195;
-        }
-
-        dFld1 = dFld2 % 2.5;
-
-        if (x == 0) {
-            return 0;
-        }
-        return 1;
-    }
-}

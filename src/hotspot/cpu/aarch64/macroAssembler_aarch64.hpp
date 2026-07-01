@@ -32,6 +32,7 @@
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/compressedKlass.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -1239,12 +1240,25 @@ public:
     str(rscratch1, adr);
   }
 
+private:
   // A generic CAS; success or failure is in the EQ flag.
   // Clobbers rscratch1
   void cmpxchg(Register addr, Register expected, Register new_val,
-               enum operand_size size,
-               bool acquire, bool release, bool weak,
-               Register result);
+               enum operand_size size, enum atomic_memory_order order,
+               bool weak, Register result);
+
+public:
+  void cmpxchg(Register addr, Register expected, Register new_val,
+               enum operand_size size, enum atomic_memory_order order,
+               Register result = noreg) {
+    cmpxchg(addr, expected, new_val, size, order, /* weak */ false, result);
+  }
+
+  void cmpxchg_weak(Register addr, Register expected, Register new_val,
+                    enum operand_size size, enum atomic_memory_order order,
+                    Register result = noreg) {
+    cmpxchg(addr, expected, new_val, size, order, /* weak */ true, result);
+  }
 
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline

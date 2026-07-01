@@ -2036,6 +2036,26 @@ void G1ConcurrentMark::print_stats() {
   }
 }
 
+bool G1ConcurrentMark::shutdown_cleanup_needed() const {
+  // Cleanup (aborting threads, setting abort flags) is needed throughout the whole cycle before
+  // stopping the CM thread.
+  return is_fully_initialized() && is_in_concurrent_cycle();
+}
+
+void G1ConcurrentMark::shutdown_concurrent_cycle() {
+  assert_at_safepoint_on_vm_thread();
+
+  abort_root_region_scan_at_safepoint();
+  abort_marking_threads();
+
+  SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
+  satb_mq_set.abandon_partial_marking();
+  // This can be called either during or outside marking, we'll read
+  // the expected_active value from the SATB queue set.
+  satb_mq_set.set_active_all_threads(false, /* new active value */
+                                     satb_mq_set.is_active() /* expected_active */);
+}
+
 bool G1ConcurrentMark::concurrent_cycle_abort() {
   assert_at_safepoint_on_vm_thread();
   assert(_g1h->collector_state()->is_in_full_gc(), "must be");
