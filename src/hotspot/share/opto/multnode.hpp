@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ public:
   virtual const Type *bottom_type() const = 0;
   virtual bool       is_CFG() const { return true; }
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
-  virtual bool depends_only_on_test() const { return false; }
   virtual const RegMask &out_RegMask() const;
   virtual Node *match( const ProjNode *proj, const Matcher *m );
   virtual uint ideal_reg() const { return NotAMachineReg; }
@@ -150,6 +149,34 @@ public:
   ProjNode* find_first(uint which_proj, bool is_io_use) const;
 };
 
+class BinaryMultiNode : public MultiNode {
+protected:
+  BinaryMultiNode(Node* ctrl, Node* in1, Node* in2) : MultiNode(3) {
+    init_req(0, ctrl);
+    init_req(1, in1);
+    init_req(2, in2);
+  }
+
+public:
+  enum {
+    first_proj_num = 0,
+    second_proj_num = 1
+  };
+
+  virtual Node* Identity(PhaseGVN* phase) { return this; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) { return nullptr; }
+  virtual const Type* Value(PhaseGVN* phase) const { return bottom_type(); }
+  virtual uint hash() const { return Node::hash(); }
+  virtual bool is_CFG() const { return false; }
+  virtual uint ideal_reg() const { return NotAMachineReg; }
+
+  ProjNode* first_proj() const { return proj_out_or_null(first_proj_num); }
+  ProjNode* second_proj() const { return proj_out_or_null(second_proj_num); }
+
+private:
+  virtual bool depends_only_on_test() const { return false; }
+};
+
 //------------------------------ProjNode---------------------------------------
 // This class defines a Projection node.  Projections project a single element
 // out of a tuple (or Signature) type.  Only MultiNodes produce TypeTuple
@@ -176,8 +203,7 @@ public:
   const bool _is_io_use;        // Used to distinguish between the projections
                                 // used on the control and io paths from a macro node
   virtual int Opcode() const;
-  virtual bool      is_CFG() const;
-  virtual bool depends_only_on_test() const { return false; }
+  virtual bool is_CFG() const;
   virtual const Type *bottom_type() const;
   virtual const TypePtr *adr_type() const;
   virtual bool pinned() const;
@@ -200,9 +226,6 @@ public:
   //                                             other_proj->[region->..]call_uct"
   // null otherwise
   CallStaticJavaNode* is_uncommon_trap_if_pattern(Deoptimization::DeoptReason reason = Deoptimization::Reason_none) const;
-
-  // Return other proj node when this is a If proj node
-  ProjNode* other_if_proj() const;
 };
 
 // A ProjNode variant that captures an adr_type(). Used as a projection of InitializeNode to have the right adr_type()

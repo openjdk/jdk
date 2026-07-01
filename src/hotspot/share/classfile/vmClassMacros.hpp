@@ -190,6 +190,9 @@
   /* GC support */                                                                                              \
   do_klass(FillerObject_klass,                          jdk_internal_vm_FillerObject                          ) \
                                                                                                                 \
+  /* Scoped Values */                                                                                           \
+  do_klass(ScopedValue_Carrier_klass,                   java_lang_ScopedValue_Carrier                         ) \
+                                                                                                                \
   /*end*/
 
 #endif // SHARE_CLASSFILE_VMCLASSMACROS_HPP

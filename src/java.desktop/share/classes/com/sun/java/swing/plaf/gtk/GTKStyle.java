@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import javax.swing.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.synth.*;
 
-import sun.awt.AppContext;
 import sun.awt.UNIXToolkit;
 import sun.swing.SwingUtilities2;
 import javax.swing.plaf.synth.SynthIcon;
@@ -142,6 +141,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
         return GTKPainter.INSTANCE;
     }
 
+    @Override
     protected Color getColorForState(SynthContext context, ColorType type) {
         if (type == ColorType.FOCUS || type == GTKColorType.BLACK) {
             return BLACK_COLOR;
@@ -292,6 +292,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
         return font;
     }
 
+    @Override
     protected Font getFontForState(SynthContext context) {
         Font propFont = UIManager
                               .getFont(context.getRegion().getName() + ".font");
@@ -959,11 +960,11 @@ class GTKStyle extends SynthStyle implements GTKConstants {
 
     static class GTKStockIconInfo {
         private static Map<String,Integer> ICON_TYPE_MAP;
-        private static final Object ICON_SIZE_KEY = new StringBuffer("IconSize");
+
+        private static Dimension[] iconSizesMap;
 
         private static Dimension[] getIconSizesMap() {
-            AppContext appContext = AppContext.getAppContext();
-            Dimension[] iconSizes = (Dimension[])appContext.get(ICON_SIZE_KEY);
+            Dimension[] iconSizes = iconSizesMap;
 
             if (iconSizes == null) {
                 iconSizes = new Dimension[7];
@@ -974,7 +975,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
                 iconSizes[4] = new Dimension(20, 20); // GTK_ICON_SIZE_BUTTON
                 iconSizes[5] = new Dimension(32, 32); // GTK_ICON_SIZE_DND
                 iconSizes[6] = new Dimension(48, 48); // GTK_ICON_SIZE_DIALOG
-                appContext.put(ICON_SIZE_KEY, iconSizes);
+                iconSizesMap = iconSizes;
             }
             return iconSizes;
         }
@@ -1053,6 +1054,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             this.size = size;
         }
 
+        @Override
         public void paintIcon(SynthContext context, Graphics g, int x,
                               int y, int w, int h) {
             Icon icon = getIcon(context);
@@ -1067,6 +1069,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             }
         }
 
+        @Override
         public int getIconWidth(SynthContext context) {
             Icon icon = getIcon(context);
 
@@ -1076,6 +1079,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             return 0;
         }
 
+        @Override
         public int getIconHeight(SynthContext context) {
             Icon icon = getIcon(context);
 
@@ -1135,6 +1139,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             this.methodName = methodName;
         }
 
+        @Override
         @SuppressWarnings("deprecation")
         public Object createValue(UIDefaults table) {
             try {

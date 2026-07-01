@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,38 +21,35 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4624534
  * @summary Make sure jar certificates work for Turkish locale
- * @author kladko
+ * @run junit/othervm -Duser.language=tr -Duser.country=TR TurkCert
  */
+
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 import java.util.jar.*;
 import java.security.cert.*;
 import java.io.*;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 public class TurkCert {
-    public static void main(String[] args) throws Exception{
-        Locale reservedLocale = Locale.getDefault();
-        try {
-            Locale.setDefault(Locale.of("tr", "TR"));
-            File f = new File(System.getProperty("test.src","."), "test.jar");
-            try (JarFile jf = new JarFile(f, true)) {
-                JarEntry je = (JarEntry)jf.getEntry("test.class");
-                try (InputStream is = jf.getInputStream(je)) {
-                    byte[] b = new byte[1024];
-                    while (is.read(b) != -1) {
-                    }
-                }
-                if (je.getCertificates() == null) {
-                    throw new Exception("Null certificate for test.class.");
+
+    @Test
+    void turkishLocaleTest() throws IOException {
+        File f = new File(System.getProperty("test.src", "."), "test.jar");
+        try (JarFile jf = new JarFile(f, true)) {
+            JarEntry je = (JarEntry)jf.getEntry("test.class");
+            try (InputStream is = jf.getInputStream(je)) {
+                byte[] b = new byte[1024];
+                while (is.read(b) != -1) {
                 }
             }
-        } finally {
-            // restore the default locale
-            Locale.setDefault(reservedLocale);
+            assertNotNull(je.getCertificates(), "Null certificate for test.class.");
         }
     }
 }

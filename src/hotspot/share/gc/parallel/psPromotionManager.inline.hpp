@@ -51,7 +51,7 @@ inline PSPromotionManager* PSPromotionManager::manager_array(uint index) {
 }
 
 template <class T>
-inline void PSPromotionManager::claim_or_forward_depth(T* p) {
+ALWAYSINLINE void PSPromotionManager::claim_or_forward_depth(T* p) {
   assert(ParallelScavengeHeap::heap()->is_in(p), "pointer outside heap");
   T heap_oop = RawAccess<>::oop_load(p);
   if (PSScavenge::is_obj_in_young(heap_oop)) {
@@ -121,10 +121,10 @@ inline void InstanceRefKlass::oop_oop_iterate_reverse<narrowOop, PSPushContentsC
   InstanceKlass::oop_oop_iterate_reverse<narrowOop>(obj, closure);
 }
 
-inline void PSPromotionManager::push_contents(oop obj) {
-  if (!obj->klass()->is_typeArray_klass()) {
+inline void PSPromotionManager::push_contents(oop obj, Klass* klass) {
+  if (!klass->is_typeArray_klass()) {
     PSPushContentsClosure pcc(this);
-    obj->oop_iterate_backwards(&pcc);
+    obj->oop_iterate_backwards(&pcc, klass);
   }
 }
 
@@ -204,13 +204,13 @@ inline HeapWord* PSPromotionManager::allocate_in_old_gen(Klass* klass,
   // Do we allocate directly, or flush and refill?
   if (obj_size > (OldPLABSize / 2)) {
     // Allocate this object directly
-    result = old_gen()->allocate(obj_size);
+    result = old_gen()->cas_allocate_with_expansion(obj_size);
     promotion_trace_event(cast_to_oop(result), klass, obj_size, age, true, nullptr);
   } else {
     // Flush and fill
     _old_lab.flush();
 
-    HeapWord* lab_base = old_gen()->allocate(OldPLABSize);
+    HeapWord* lab_base = old_gen()->cas_allocate_with_expansion(OldPLABSize);
     if (lab_base != nullptr) {
       _old_lab.initialize(MemRegion(lab_base, OldPLABSize));
       // Try the old lab allocation again.
@@ -292,19 +292,18 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
       assert(young_space()->contains(new_obj), "Attempt to push non-promoted obj");
     }
 
-    ContinuationGCSupport::transform_stack_chunk(new_obj);
+    ContinuationGCSupport::transform_stack_chunk(new_obj, klass);
 
     // Do the size comparison first with new_obj_size, which we
     // already have. Hopefully, only a few objects are larger than
     // _min_array_size_for_chunking, and most of them will be arrays.
     // So, the objArray test would be very infrequent.
     if (new_obj_size > _min_array_size_for_chunking &&
-        klass->is_objArray_klass() &&
-        PSChunkLargeArrays) {
+        klass->is_objArray_klass()) {
       push_objArray(o, new_obj);
     } else {
       // we'll just push its contents
-      push_contents(new_obj);
+      push_contents(new_obj, klass);
 
       if (StringDedup::is_enabled_string(klass) &&
           psStringDedup::is_candidate_from_evacuation(new_obj, new_obj_is_tenured)) {
@@ -344,7 +343,6 @@ inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
 inline void PSPromotionManager::process_popped_location_depth(ScannerTask task,
                                                               bool stolen) {
   if (task.is_partial_array_state()) {
-    assert(PSChunkLargeArrays, "invariant");
     process_array_chunk(task.to_partial_array_state(), stolen);
   } else {
     if (task.is_narrow_oop_ptr()) {

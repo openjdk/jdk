@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/objectMonitorTable.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -482,7 +483,7 @@ void MacroAssembler::set_dest_of_bc_far_at(address instruction_addr, address des
     // variant 3, far cond branch to the next instruction, already patched to nops:
     //
     //    nop
-    //    endgroup
+    //    nop
     //  SKIP/DEST:
     //
     return;
@@ -499,7 +500,7 @@ void MacroAssembler::set_dest_of_bc_far_at(address instruction_addr, address des
   if (is_bc_far_variant2_at(instruction_addr) && dest == instruction_addr + 8) {
     // Far branch to next instruction: Optimize it by patching nops (produce variant 3).
     masm.nop();
-    masm.endgroup();
+    masm.nop();
   } else {
     if (is_bc_far_variant1_at(instruction_addr)) {
       // variant 1, the 1st instruction contains the destination address:
@@ -798,13 +799,7 @@ void MacroAssembler::save_nonvolatile_registers(Register dst, int offset, bool i
       }
     } else {
       for (int i = 20; i < 32; i++) {
-        if (PowerArchitecturePPC64 >= 9) {
-          stxv(as_VectorRegister(i)->to_vsr(), offset, dst);
-        } else {
-          Register spill_addr = R0;
-          addi(spill_addr, dst, offset);
-          stxvd2x(as_VectorRegister(i)->to_vsr(), spill_addr);
-        }
+        stxv(as_VectorRegister(i)->to_vsr(), offset, dst);
         offset += 16;
       }
     }
@@ -837,13 +832,7 @@ void MacroAssembler::restore_nonvolatile_registers(Register src, int offset, boo
       }
     } else {
       for (int i = 20; i < 32; i++) {
-        if (PowerArchitecturePPC64 >= 9) {
-          lxv(as_VectorRegister(i)->to_vsr(), offset, src);
-        } else {
-          Register spill_addr = R0;
-          addi(spill_addr, src, offset);
-          lxvd2x(as_VectorRegister(i)->to_vsr(), spill_addr);
-        }
+        lxv(as_VectorRegister(i)->to_vsr(), offset, src);
         offset += 16;
       }
     }
@@ -1209,6 +1198,75 @@ address MacroAssembler::call_c_using_toc(const FunctionDescriptor* fd,
   return _last_calls_return_pc;
 }
 #endif // ABI_ELFv2
+
+bool MacroAssembler::ic_call(Register Rmethod_toc,
+                             address target,
+                             jint method_index,
+                             bool scratch_emit,
+                             bool fixed_size) {
+  AddressLiteral target_al(target, virtual_call_Relocation::spec(pc(), method_index));
+  DEBUG_ONLY(int ic_load_offset = offset());
+
+  // Load a clear inline cache.
+  AddressLiteral empty_ic((address) Universe::non_oop_word());
+  bool success = load_const_from_method_toc(R19_inline_cache_reg, empty_ic, Rmethod_toc, fixed_size);
+  if (!success) return false;
+
+  assert(MacroAssembler::is_load_const_from_method_toc_at(addr_at(ic_load_offset)),
+         "should be load from TOC");
+
+  address call_pc = trampoline_call(target_al, Rmethod_toc, scratch_emit);
+  return call_pc != nullptr;
+}
+
+address MacroAssembler::trampoline_call(AddressLiteral target,
+                                        Register Rmethod_toc,
+                                        bool scratch_emit) {
+  // First, emit the trampoline stub
+  if (!scratch_emit) {
+    RelocationHolder rh = trampoline_stub_Relocation::spec(pc() /* of the bl below */);
+
+    // Put the target's entry point as a constant into the constant pool.
+    const address target_toc_addr = address_constant((address)target.value());
+    if (target_toc_addr == nullptr) return nullptr;
+
+    const int target_toc_offset = offset_to_method_toc(target_toc_addr);
+    address stub = start_a_stub(64);
+    if (stub == nullptr) return nullptr;
+
+    // Annotate the stub with a relocation that points to the owning call instruction.
+    relocate(rh);
+    DEBUG_ONLY(int stub_start_offset = offset());
+
+    // For java_to_interp stubs we use R11_scratch1 as scratch register
+    // and in call trampoline stubs we use R12_scratch2. This way we
+    // can distinguish them (see is_NativeCallTrampolineStub_at()).
+    Register reg_scratch = R12_scratch2;
+
+    if (Rmethod_toc == noreg) {
+      calculate_address_from_global_toc(reg_scratch, method_toc());
+      Rmethod_toc = reg_scratch;
+    }
+
+    ld_largeoffset_unchecked(reg_scratch, target_toc_offset, Rmethod_toc, false);
+    mtctr(reg_scratch);
+    bctr();
+
+    assert(target_toc_offset == NativeCallTrampolineStub_at(addr_at(stub_start_offset))->destination_toc_offset(),
+           "encoded offset into the constant pool must match");
+    assert((uint)(offset() - stub_start_offset) <= trampoline_stub_size, "should be good size");
+    assert(is_NativeCallTrampolineStub_at(addr_at(stub_start_offset)), "doesn't look like a trampoline");
+
+    // End the stub.
+    end_a_stub();
+  }
+
+  // The call will be resolved / patched later.
+  address call_pc = pc();
+  relocate(target.rspec());
+  bl(call_pc);
+  return call_pc;
+}
 
 void MacroAssembler::post_call_nop() {
   // Make inline again when loom is always enabled.
@@ -2626,50 +2684,6 @@ void MacroAssembler::tlab_allocate(
   //verify_tlab(); not implemented
 }
 
-address MacroAssembler::emit_trampoline_stub(int destination_toc_offset,
-                                             int insts_call_instruction_offset, Register Rtoc) {
-  // Start the stub.
-  address stub = start_a_stub(64);
-  if (stub == nullptr) { return nullptr; } // CodeCache full: bail out
-
-  // Create a trampoline stub relocation which relates this trampoline stub
-  // with the call instruction at insts_call_instruction_offset in the
-  // instructions code-section.
-  relocate(trampoline_stub_Relocation::spec(code()->insts()->start() + insts_call_instruction_offset));
-  const int stub_start_offset = offset();
-
-  // For java_to_interp stubs we use R11_scratch1 as scratch register
-  // and in call trampoline stubs we use R12_scratch2. This way we
-  // can distinguish them (see is_NativeCallTrampolineStub_at()).
-  Register reg_scratch = R12_scratch2;
-
-  // Now, create the trampoline stub's code:
-  // - load the TOC
-  // - load the call target from the constant pool
-  // - call
-  if (Rtoc == noreg) {
-    calculate_address_from_global_toc(reg_scratch, method_toc());
-    Rtoc = reg_scratch;
-  }
-
-  ld_largeoffset_unchecked(reg_scratch, destination_toc_offset, Rtoc, false);
-  mtctr(reg_scratch);
-  bctr();
-
-  const address stub_start_addr = addr_at(stub_start_offset);
-
-  // Assert that the encoded destination_toc_offset can be identified and that it is correct.
-  assert(destination_toc_offset == NativeCallTrampolineStub_at(stub_start_addr)->destination_toc_offset(),
-         "encoded offset into the constant pool must match");
-  // Trampoline_stub_size should be good.
-  assert((uint)(offset() - stub_start_offset) <= trampoline_stub_size, "should be good size");
-  assert(is_NativeCallTrampolineStub_at(stub_start_addr), "doesn't look like a trampoline");
-
-  // End the stub.
-  end_a_stub();
-  return stub;
-}
-
 // "The box" is the space on the stack where we copy the object mark.
 void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register obj, Register box,
                                                Register tmp1, Register tmp2, Register tmp3) {
@@ -2756,39 +2770,54 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
       addi(owner_addr, mark, in_bytes(ObjectMonitor::owner_offset()) - monitor_tag);
       mark = noreg;
     } else {
+      const Register tmp3_bucket = tmp3;
+      const Register tmp2_hash = tmp2;
       Label monitor_found;
-      Register cache_addr = tmp2;
 
-      // Load cache address
-      addi(cache_addr, R16_thread, in_bytes(JavaThread::om_cache_oops_offset()));
+      // Save the mark, we might need it to extract the hash.
+      mr(tmp2_hash, mark);
 
-      const int num_unrolled = 2;
+      // Look for the monitor in the om_cache.
+
+      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
+      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
+      const int num_unrolled  = OMCache::CAPACITY;
       for (int i = 0; i < num_unrolled; i++) {
-        ld(R0, 0, cache_addr);
+        ld(R0, in_bytes(cache_offset), R16_thread);
+        ld(monitor, in_bytes(cache_offset + monitor_offset), R16_thread);
         cmpd(CR0, R0, obj);
         beq(CR0, monitor_found);
-        addi(cache_addr, cache_addr, in_bytes(OMCache::oop_to_oop_difference()));
+        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
       }
 
-      Label loop;
+      // Look for the monitor in the table.
 
-      // Search for obj in cache.
-      bind(loop);
+      // Get the hash code.
+      srdi(tmp2_hash, tmp2_hash, markWord::hash_shift);
 
-      // Check for match.
-      ld(R0, 0, cache_addr);
-      cmpd(CR0, R0, obj);
-      beq(CR0, monitor_found);
+      // Get the table and calculate the bucket's address
+      int simm16_rest = load_const_optimized(tmp3, ObjectMonitorTable::current_table_address(), R0, true);
+      ld_ptr(tmp3, simm16_rest, tmp3);
+      ld(tmp1, in_bytes(ObjectMonitorTable::table_capacity_mask_offset()), tmp3);
+      andr(tmp2_hash, tmp2_hash, tmp1);
+      ld(tmp3_bucket, in_bytes(ObjectMonitorTable::table_buckets_offset()), tmp3);
 
-      // Search until null encountered, guaranteed _null_sentinel at end.
-      addi(cache_addr, cache_addr, in_bytes(OMCache::oop_to_oop_difference()));
-      cmpdi(CR1, R0, 0);
-      bne(CR1, loop);
-      // Cache Miss, CR0.NE set from cmp above
-      b(slow_path);
+      // Read the monitor from the bucket.
+      sldi(tmp2_hash, tmp2_hash, LogBytesPerWord);
+      ldx(monitor, tmp3_bucket, tmp2_hash);
+
+      // Check if the monitor in the bucket is special (empty, tombstone or removed).
+      cmpldi(CR0, monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
+      blt(CR0, slow_path);
+
+      // Check if object matches.
+      ld(tmp3, in_bytes(ObjectMonitor::object_offset()), monitor);
+      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+      bs_asm->try_peek_weak_handle_in_nmethod(this, tmp3, tmp3, tmp2, slow_path);
+      cmpd(CR0, tmp3, obj);
+      bne(CR0, slow_path);
 
       bind(monitor_found);
-      ld(monitor, in_bytes(OMCache::oop_to_monitor_difference()), cache_addr);
 
       // Compute owner address.
       addi(owner_addr, monitor, in_bytes(ObjectMonitor::owner_offset()));
@@ -3185,45 +3214,17 @@ Register MacroAssembler::encode_klass_not_null(Register dst, Register src) {
 
 void MacroAssembler::store_klass(Register dst_oop, Register klass, Register ck) {
   assert(!UseCompactObjectHeaders, "not with compact headers");
-  if (UseCompressedClassPointers) {
-    Register compressedKlass = encode_klass_not_null(ck, klass);
-    stw(compressedKlass, oopDesc::klass_offset_in_bytes(), dst_oop);
-  } else {
-    std(klass, oopDesc::klass_offset_in_bytes(), dst_oop);
-  }
+  Register compressedKlass = encode_klass_not_null(ck, klass);
+  stw(compressedKlass, oopDesc::klass_offset_in_bytes(), dst_oop);
 }
 
 void MacroAssembler::store_klass_gap(Register dst_oop, Register val) {
   assert(!UseCompactObjectHeaders, "not with compact headers");
-  if (UseCompressedClassPointers) {
-    if (val == noreg) {
-      val = R0;
-      li(val, 0);
-    }
-    stw(val, oopDesc::klass_gap_offset_in_bytes(), dst_oop);
+  if (val == noreg) {
+    val = R0;
+    li(val, 0);
   }
-}
-
-int MacroAssembler::instr_size_for_decode_klass_not_null() {
-  static int computed_size = -1;
-
-  // Not yet computed?
-  if (computed_size == -1) {
-
-    if (!UseCompressedClassPointers) {
-      computed_size = 0;
-    } else {
-      // Determine by scratch emit.
-      ResourceMark rm;
-      int code_size = 8 * BytesPerInstWord;
-      CodeBuffer cb("decode_klass_not_null scratch buffer", code_size, 0);
-      MacroAssembler* a = new MacroAssembler(&cb);
-      a->decode_klass_not_null(R11_scratch1);
-      computed_size = a->offset();
-    }
-  }
-
-  return computed_size;
+  stw(val, oopDesc::klass_gap_offset_in_bytes(), dst_oop);
 }
 
 void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
@@ -3243,18 +3244,14 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
 void MacroAssembler::load_klass_no_decode(Register dst, Register src) {
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(dst, src);
-  } else if (UseCompressedClassPointers) {
-    lwz(dst, oopDesc::klass_offset_in_bytes(), src);
   } else {
-    ld(dst, oopDesc::klass_offset_in_bytes(), src);
+    lwz(dst, oopDesc::klass_offset_in_bytes(), src);
   }
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
   load_klass_no_decode(dst, src);
-  if (UseCompressedClassPointers) { // also true for UseCompactObjectHeaders
-    decode_klass_not_null(dst);
-  }
+  decode_klass_not_null(dst);
 }
 
 // Loads the obj's Klass* into dst.
@@ -3270,18 +3267,13 @@ void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
 
 void MacroAssembler::cmp_klass(ConditionRegister dst, Register obj, Register klass, Register tmp, Register tmp2) {
   assert_different_registers(obj, klass, tmp);
-  if (UseCompressedClassPointers) {
-    if (UseCompactObjectHeaders) {
-      load_narrow_klass_compact(tmp, obj);
-    } else {
-      lwz(tmp, oopDesc::klass_offset_in_bytes(), obj);
-    }
-    Register encoded_klass = encode_klass_not_null(tmp2, klass);
-    cmpw(dst, tmp, encoded_klass);
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(tmp, obj);
   } else {
-    ld(tmp, oopDesc::klass_offset_in_bytes(), obj);
-    cmpd(dst, tmp, klass);
+    lwz(tmp, oopDesc::klass_offset_in_bytes(), obj);
   }
+  Register encoded_klass = encode_klass_not_null(tmp2, klass);
+  cmpw(dst, tmp, encoded_klass);
 }
 
 void MacroAssembler::cmp_klasses_from_objects(ConditionRegister dst, Register obj1, Register obj2, Register tmp1, Register tmp2) {
@@ -3289,14 +3281,10 @@ void MacroAssembler::cmp_klasses_from_objects(ConditionRegister dst, Register ob
     load_narrow_klass_compact(tmp1, obj1);
     load_narrow_klass_compact(tmp2, obj2);
     cmpw(dst, tmp1, tmp2);
-  } else if (UseCompressedClassPointers) {
+  } else {
     lwz(tmp1, oopDesc::klass_offset_in_bytes(), obj1);
     lwz(tmp2, oopDesc::klass_offset_in_bytes(), obj2);
     cmpw(dst, tmp1, tmp2);
-  } else {
-    ld(tmp1, oopDesc::klass_offset_in_bytes(), obj1);
-    ld(tmp2, oopDesc::klass_offset_in_bytes(), obj2);
-    cmpd(dst, tmp1, tmp2);
   }
 }
 
@@ -4341,6 +4329,173 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
   bind(L_done);
 }   // multiply_to_len
 
+void MacroAssembler::increment_mem64(Register base, RegisterOrConstant ind_or_offs, int val, Register tmp) {
+  ld(tmp, ind_or_offs, base);
+  addi(tmp, tmp, val);
+  std(tmp, ind_or_offs, base);
+}
+
+// Handle the receiver type profile update given the "recv" klass.
+//
+// Normally updates the ReceiverData (RD) that starts at "mdp" + "mdp_offset".
+// If there are no matching or claimable receiver entries in RD, updates
+// the polymorphic counter.
+//
+// This code expected to run by either the interpreter or JIT-ed code, without
+// extra synchronization. For safety, receiver cells are claimed atomically, which
+// avoids grossly misrepresenting the profiles under concurrent updates. For speed,
+// counter updates are not atomic.
+//
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register tmp1, Register tmp2) {
+  assert_different_registers(recv, mdp, tmp1, tmp2);
+
+  int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
+  int poly_count_offset      = in_bytes(CounterData::count_offset());
+  int receiver_step          = in_bytes(ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
+  int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+
+  // Adjust for MDP offsets.
+  base_receiver_offset += mdp_offset;
+  poly_count_offset    += mdp_offset;
+
+#ifdef ASSERT
+  // We are about to walk the MDO slots without asking for offsets.
+  // Check that our math hits all the right spots.
+  for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
+    int real_recv_offset  = mdp_offset + in_bytes(ReceiverTypeData::receiver_offset(c));
+    int real_count_offset = mdp_offset + in_bytes(ReceiverTypeData::receiver_count_offset(c));
+    int offset = base_receiver_offset + receiver_step*c;
+    int count_offset = offset + receiver_to_count_step;
+    assert(offset == real_recv_offset, "receiver slot math");
+    assert(count_offset == real_count_offset, "receiver count math");
+  }
+  int real_poly_count_offset = mdp_offset + in_bytes(CounterData::count_offset());
+  assert(poly_count_offset == real_poly_count_offset, "poly counter math");
+#endif
+
+  // Corner case: no profile table. Increment poly counter and exit.
+  if (ReceiverTypeData::row_limit() == 0) {
+    increment_mem64(mdp, poly_count_offset, DataLayout::counter_increment, tmp1);
+    return;
+  }
+
+  Label L_loop_search_receiver, L_loop_search_empty;
+  Label L_restart, L_found_recv, L_found_empty, L_count_update;
+  Register offset = tmp1, count = tmp2;
+
+  // The code here recognizes three major cases:
+  //   A. Fastest: receiver found in the table
+  //   B. Fast: no receiver in the table, and the table is full
+  //   C. Slow: no receiver in the table, free slots in the table
+  //
+  // The case A performance is most important, as perfectly-behaved code would end up
+  // there, especially with larger TypeProfileWidth. The case B performance is
+  // important as well, this is where bulk of code would land for normally megamorphic
+  // cases. The case C performance is not essential, its job is to deal with installation
+  // races, we optimize for code density instead. Case C needs to make sure that receiver
+  // rows are only claimed once. This makes sure we never overwrite a row for another
+  // receiver and never duplicate the receivers in the list, making profile type-accurate.
+  //
+  // It is very tempting to handle these cases in a single loop, and claim the first slot
+  // without checking the rest of the table. But, profiling code should tolerate free slots
+  // in the table, as class unloading can clear them. After such cleanup, the receiver
+  // we need might be _after_ the free slot. Therefore, we need to let at least full scan
+  // to complete, before trying to install new slots. Splitting the code in several tight
+  // loops also helpfully optimizes for cases A and B.
+  //
+  // This code is effectively:
+  //
+  // restart:
+  //   // Fastest: receiver is already installed
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == recv) goto found_recv(i);
+  //   }
+  //
+  //   // Fast: no receiver, but profile is not full
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == null) goto found_null(i);
+  //   }
+  //
+  //   // Slow: profile is full, polymorphic case
+  //   count++;
+  //   return
+  //
+  //   // Slow: try to install receiver
+  // found_null(i):
+  //   CAS(&receiver(i), null, recv);
+  //   goto restart
+  //
+  // found_recv(i):
+  //   *receiver_count(i)++
+  //
+
+  if (count != noreg) {
+    li(count, ReceiverTypeData::row_limit());
+  }
+
+  bind(L_restart);
+
+  // Fastest: receiver is already installed
+  if (count != noreg) {
+    mtctr(count);
+  } else {
+    li(R0, ReceiverTypeData::row_limit());
+    mtctr(R0);
+  }
+  li(offset, base_receiver_offset);
+  bind(L_loop_search_receiver);
+    ldx(R0, offset, mdp);
+    cmpd(CR0, R0, recv);
+    beq(CR0, L_found_recv);
+    addi(offset, offset, receiver_step);
+  bdnz(L_loop_search_receiver);
+
+  // Fast: no receiver, but profile is not full
+  if (count != noreg) {
+    mtctr(count);
+  } else {
+    li(R0, ReceiverTypeData::row_limit());
+    mtctr(R0);
+  }
+  li(offset, base_receiver_offset);
+  bind(L_loop_search_empty);
+    ldx(R0, offset, mdp);
+    cmpdi(CR0, R0, 0);
+    beq(CR0, L_found_empty);
+    addi(offset, offset, receiver_step);
+  bdnz(L_loop_search_empty);
+
+  // Slow: Receiver is not found and table is full.
+  // Increment polymorphic counter instead of receiver slot.
+  li(offset, poly_count_offset);
+  b(L_count_update);
+
+  // Slowest: try to install receiver
+  bind(L_found_empty);
+
+  // Atomically swing receiver slot: null -> recv.
+  {
+    Register receiver_addr = offset;
+    add(receiver_addr, mdp, offset); // kills offset
+    cmpxchgd(CR0, R0, RegisterOrConstant(0), recv, receiver_addr, MemBarNone, cmpxchgx_hint_atomic_update(),
+             noreg, nullptr, /* check without ldarx first */ false, /* weak */ true);
+  }
+
+  // CAS success means the slot now has the receiver we want. CAS failure means
+  // something had claimed the slot concurrently: it can be the same receiver we want,
+  // or something else. Since this is a slow path, we can optimize for code density,
+  // and just restart the search from the beginning.
+  b(L_restart);
+
+  // Found a receiver, convert its slot offset to corresponding count offset.
+  bind(L_found_recv);
+  addi(offset, offset, receiver_to_count_step);
+
+  // Finally, update the counter
+  bind(L_count_update);
+  increment_mem64(mdp, offset, DataLayout::counter_increment, /* temp */ (count != noreg) ? count : recv);
+}
+
 #ifdef ASSERT
 void MacroAssembler::asm_assert(AsmAssertCond cond, const char *msg) {
   Label ok;
@@ -4535,7 +4690,7 @@ void MacroAssembler::push_cont_fastpath() {
   Label done;
   ld_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
   cmpld(CR0, R1_SP, R0);
-  ble(CR0, done);
+  ble(CR0, done);          // if (SP <= _cont_fastpath) goto done;
   st_ptr(R1_SP, JavaThread::cont_fastpath_offset(), R16_thread);
   bind(done);
 }
@@ -4546,7 +4701,7 @@ void MacroAssembler::pop_cont_fastpath() {
   Label done;
   ld_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
   cmpld(CR0, R1_SP, R0);
-  ble(CR0, done);
+  blt(CR0, done);          // if (SP < _cont_fastpath) goto done;
   li(R0, 0);
   st_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
   bind(done);

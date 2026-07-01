@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ typedef ppd_file_t* (*fn_ppdOpenFile)(const char *);
 typedef void (*fn_ppdClose)(ppd_file_t *);
 typedef ppd_option_t* (*fn_ppdFindOption)(ppd_file_t *, const char *);
 typedef ppd_size_t* (*fn_ppdPageSize)(ppd_file_t *, char *);
+typedef ppd_attr_t* (*fn_ppdFindAttr)(ppd_file_t *, const char *name, const char *spec);
+typedef ppd_attr_t* (*fn_ppdFindNextAttr)(ppd_file_t *, const char *name, const char *spec);
 
 fn_cupsServer j2d_cupsServer;
 fn_ippPort j2d_ippPort;
@@ -64,6 +66,8 @@ fn_cupsFreeDests j2d_cupsFreeDests;
 fn_ppdOpenFile j2d_ppdOpenFile;
 fn_ppdClose j2d_ppdClose;
 fn_ppdFindOption j2d_ppdFindOption;
+fn_ppdFindAttr j2d_ppdFindAttr;
+fn_ppdFindNextAttr j2d_ppdFindNextAttr;
 fn_ppdPageSize j2d_ppdPageSize;
 
 
@@ -148,6 +152,18 @@ Java_sun_print_CUPSPrinter_initIDs(JNIEnv *env,
 
   j2d_ppdFindOption = (fn_ppdFindOption)dlsym(handle, "ppdFindOption");
   if (j2d_ppdFindOption == NULL) {
+    dlclose(handle);
+    return JNI_FALSE;
+  }
+
+  j2d_ppdFindAttr = (fn_ppdFindAttr)dlsym(handle, "ppdFindAttr");
+  if (j2d_ppdFindAttr == NULL) {
+    dlclose(handle);
+    return JNI_FALSE;
+  }
+
+  j2d_ppdFindNextAttr = (fn_ppdFindNextAttr)dlsym(handle, "ppdFindNextAttr");
+  if (j2d_ppdFindNextAttr == NULL) {
     dlclose(handle);
     return JNI_FALSE;
   }
@@ -636,6 +652,9 @@ Java_sun_print_CUPSPrinter_getResolutions(JNIEnv *env,
         return;
     }
 
+    // IPP value of 3 means DPI, 4 means dpcm
+    jobject dpi = (*env)->NewObject(env, intCls, intCtr, 3);
+    CHECK_NULL(dpi);
 
     // NOTE: cupsGetPPD returns a pointer to a filename of a temporary file.
     // unlink() must be called to remove the file after using it.
@@ -672,6 +691,7 @@ Java_sun_print_CUPSPrinter_getResolutions(JNIEnv *env,
           CHECK_NULL(ryObj);
           (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, rxObj);
           (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, ryObj);
+          (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, dpi);
         }
 
         for (i = 0; i < resolution->num_choices; i++) {
@@ -700,6 +720,41 @@ Java_sun_print_CUPSPrinter_getResolutions(JNIEnv *env,
               CHECK_NULL(ryObj);
               (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, rxObj);
               (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, ryObj);
+              (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, dpi);
+            }
+        }
+
+    } else {
+        ppd_attr_t *defresolution = j2d_ppdFindAttr(ppd, "DefaultResolution", NULL);
+        if (defresolution == NULL) {
+            defresolution = j2d_ppdFindAttr(ppd, "Resolution", NULL);
+        }
+        if (defresolution != NULL) {
+            int matches = sscanf(defresolution->value, "%dx%ddpi", &defx, &defy);
+            if (matches == 2) {
+                if (defx <= 0 || defy <= 0) {
+                    defx = 0;
+                    defy = 0;
+                }
+            } else {
+                matches = sscanf(defresolution->value, "%ddpi", &defx);
+                if (matches == 1) {
+                    if (defx <= 0) {
+                       defx = 0;
+                    } else {
+                       defy = defx;
+                    }
+                }
+            }
+            if (defx > 0) {
+              jobject rxObj, ryObj;
+              rxObj = (*env)->NewObject(env, intCls, intCtr, defx);
+              CHECK_NULL(rxObj);
+              ryObj = (*env)->NewObject(env, intCls, intCtr, defy);
+              CHECK_NULL(ryObj);
+              (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, rxObj);
+              (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, ryObj);
+              (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, dpi);
             }
         }
     }

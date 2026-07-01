@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,9 @@
 #include "utilities/exceptions.hpp"
 #if defined(LINUX)
 #include "os_linux.hpp"
+#endif
+#if defined(BSD)
+#include "os_bsd.hpp"
 #endif
 
 # include <errno.h>
@@ -109,9 +112,13 @@ static void save_memory_to_file(char* addr, size_t size) {
     result = ::close(fd);
     if (result == OS_ERR) {
       warning("Could not close %s: %s\n", destfile, os::strerror(errno));
+    } else {
+      if (!successful_write) {
+        remove(destfile);
+      }
     }
   }
-  FREE_C_HEAP_ARRAY(char, destfile);
+  FREE_C_HEAP_ARRAY(destfile);
 }
 
 
@@ -141,6 +148,18 @@ static char* get_user_tmp_dir(const char* user, int vmid, int nspid) {
   if (nspid != -1) {
     jio_snprintf(buffer, TMP_BUFFER_LEN, "/proc/%d/root%s", vmid, tmpdir);
     tmpdir = buffer;
+  }
+#endif
+#ifdef __APPLE__
+  char buffer[PATH_MAX] = {0};
+  // Check if the current user is root and the target VM is running as non-root.
+  // Otherwise the output of os::get_temp_directory() is used.
+  //
+  if (os::Posix::is_current_user_root() && !os::Bsd::is_process_root(vmid)) {
+    int path_size = os::Bsd::get_user_tmp_dir_macos(user, vmid, buffer, sizeof buffer);
+    if (path_size > 0 && (size_t)path_size < sizeof buffer) {
+      tmpdir = buffer;
+    }
   }
 #endif
   const char* perfdir = PERFDATA_NAME;
@@ -464,17 +483,18 @@ static char* get_user_name(uid_t uid) {
                      p->pw_name == nullptr ? "pw_name = null" : "pw_name zero length");
       }
     }
-    FREE_C_HEAP_ARRAY(char, pwbuf);
+    FREE_C_HEAP_ARRAY(pwbuf);
     return nullptr;
   }
 
   char* user_name = NEW_C_HEAP_ARRAY(char, strlen(p->pw_name) + 1, mtInternal);
   strcpy(user_name, p->pw_name);
 
-  FREE_C_HEAP_ARRAY(char, pwbuf);
+  FREE_C_HEAP_ARRAY(pwbuf);
   return user_name;
 }
 
+#ifndef __APPLE__
 // return the name of the user that owns the process identified by vmid.
 //
 // This method uses a slow directory search algorithm to find the backing
@@ -552,7 +572,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
     DIR* subdirp = open_directory_secure(usrdir_name);
 
     if (subdirp == nullptr) {
-      FREE_C_HEAP_ARRAY(char, usrdir_name);
+      FREE_C_HEAP_ARRAY(usrdir_name);
       continue;
     }
 
@@ -563,7 +583,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
     // symlink can be exploited.
     //
     if (!is_directory_secure(usrdir_name)) {
-      FREE_C_HEAP_ARRAY(char, usrdir_name);
+      FREE_C_HEAP_ARRAY(usrdir_name);
       os::closedir(subdirp);
       continue;
     }
@@ -587,13 +607,13 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
         // don't follow symbolic links for the file
         RESTARTABLE(::lstat(filename, &statbuf), result);
         if (result == OS_ERR) {
-           FREE_C_HEAP_ARRAY(char, filename);
+           FREE_C_HEAP_ARRAY(filename);
            continue;
         }
 
         // skip over files that are not regular files.
         if (!S_ISREG(statbuf.st_mode)) {
-          FREE_C_HEAP_ARRAY(char, filename);
+          FREE_C_HEAP_ARRAY(filename);
           continue;
         }
 
@@ -603,7 +623,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
           if (statbuf.st_ctime > oldest_ctime) {
             char* user = strchr(dentry->d_name, '_') + 1;
 
-            FREE_C_HEAP_ARRAY(char, oldest_user);
+            FREE_C_HEAP_ARRAY(oldest_user);
             oldest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1, mtInternal);
 
             strcpy(oldest_user, user);
@@ -611,11 +631,11 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
           }
         }
 
-        FREE_C_HEAP_ARRAY(char, filename);
+        FREE_C_HEAP_ARRAY(filename);
       }
     }
     os::closedir(subdirp);
-    FREE_C_HEAP_ARRAY(char, usrdir_name);
+    FREE_C_HEAP_ARRAY(usrdir_name);
   }
   os::closedir(tmpdirp);
 
@@ -638,6 +658,7 @@ static char* get_user_name(int vmid, int *nspid, TRAPS) {
 #endif
   return result;
 }
+#endif
 
 // return the file name of the backing store file for the named
 // shared memory region for the given user name and vmid.
@@ -680,6 +701,39 @@ static void remove_file(const char* path) {
   }
 }
 
+// Files newer than this threshold are considered to belong to a JVM that may
+// still be starting up and are therefore not candidates for stale-file
+// cleanup. This avoids racing a concurrent JVM startup while scanning the
+// hsperfdata directory.
+static const time_t cleanup_grace_period_seconds = 5;
+
+static bool is_cleanup_candidate(const char* filename, const char* dirname) {
+  struct stat statbuf;
+  int result;
+
+  RESTARTABLE(::lstat(filename, &statbuf), result);
+  if (result == OS_ERR) {
+    log_debug(perf, memops)("lstat failed for %s/%s: %s", dirname, filename, os::strerror(errno));
+    return false;
+  }
+
+  if (!S_ISREG(statbuf.st_mode)) {
+    return false;
+  }
+
+  const time_t now = time(nullptr);
+  if (now == (time_t)-1) {
+    return false;
+  }
+
+  if (statbuf.st_mtime >= now - cleanup_grace_period_seconds) {
+    log_debug(perf, memops)("Skip cleanup of fresh file %s/%s", dirname, filename);
+    return false;
+  }
+
+  return true;
+}
+
 // cleanup stale shared memory files
 //
 // This method attempts to remove all stale shared memory files in
@@ -719,6 +773,11 @@ static void cleanup_sharedmem_files(const char* dirname) {
         unlink(filename);
       }
 
+      errno = 0;
+      continue;
+    }
+
+    if (!is_cleanup_candidate(filename, dirname)) {
       errno = 0;
       continue;
     }
@@ -851,16 +910,56 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
     return -1;
   }
 
-  // Open the filename in the current directory.
-  // Cannot use O_TRUNC here; truncation of an existing file has to happen
-  // after the is_file_secure() check below.
-  int fd;
-  RESTARTABLE(os::open(filename, O_RDWR|O_CREAT|O_NOFOLLOW, S_IRUSR|S_IWUSR), fd);
+  int fd = OS_ERR;
+  static const int create_sharedmem_file_retry_count = LINUX_ONLY(3) NOT_LINUX(1);
+  for (int attempt = 0; attempt < create_sharedmem_file_retry_count; attempt++) {
+    // Open the filename in the current directory.
+    // Use O_EXCL so that startup never reuses an existing pid file unless it
+    // has first been proven stale and removed in `cleanup_sharedmem_files`.
+    RESTARTABLE(os::open(filename, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, S_IRUSR|S_IWUSR), fd);
+    if (fd == OS_ERR) {
+      break;
+    }
+
+#if defined(LINUX)
+    // On Linux, different containerized processes that share the same /tmp
+    // directory (e.g., with "docker --volume ...") may have the same pid and
+    // try to use the same file. To avoid conflicts among such processes, we
+    // allow only one of them (the winner of the flock() call) to write to the
+    // file. If we lose the race, assume we may have collided with a concurrent
+    // scavenger briefly holding the lock on a fresh file and retry a few times
+    // before giving up.
+    int n;
+    RESTARTABLE(::flock(fd, LOCK_EX|LOCK_NB), n);
+    if (n == 0) {
+      break;
+    }
+
+    const int flock_errno = errno;
+    ::close(fd);
+    fd = OS_ERR;
+
+    if (attempt + 1 == create_sharedmem_file_retry_count || flock_errno != EWOULDBLOCK) {
+      log_warning(perf, memops)("Cannot use file %s/%s because %s (errno = %d)", dirname, filename,
+                                (flock_errno == EWOULDBLOCK) ?
+                                "it is locked by another process" :
+                                "flock() failed", flock_errno);
+      errno = flock_errno;
+      break;
+    }
+
+    // Short sleep to allow the lock to free up.
+    os::naked_short_sleep(1);
+#endif
+  }
+
   if (fd == OS_ERR) {
     if (log_is_enabled(Debug, perf)) {
       LogStreamHandle(Debug, perf) log;
       if (errno == ELOOP) {
         log.print_cr("file %s is a symlink and is not secure", filename);
+      } else if (errno == EEXIST) {
+        log.print_cr("could not create file %s: existing file is not provably stale", filename);
       } else {
         log.print_cr("could not create file %s: %s", filename, os::strerror(errno));
       }
@@ -880,27 +979,7 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
   }
 
 #if defined(LINUX)
-  // On Linux, different containerized processes that share the same /tmp
-  // directory (e.g., with "docker --volume ...") may have the same pid and
-  // try to use the same file. To avoid conflicts among such
-  // processes, we allow only one of them (the winner of the flock() call)
-  // to write to the file. All the other processes will give up and will
-  // have perfdata disabled.
-  //
-  // Note that the flock will be automatically given up when the winner
-  // process exits.
-  //
-  // The locking protocol works only with other JVMs that have the JDK-8286030
-  // fix. If you are sharing the /tmp difrectory among different containers,
-  // do not use older JVMs that don't have this fix, or the behavior is undefined.
-  int n;
-  RESTARTABLE(::flock(fd, LOCK_EX|LOCK_NB), n);
-  if (n != 0) {
-    log_warning(perf, memops)("Cannot use file %s/%s because %s (errno = %d)", dirname, filename,
-                              (errno == EWOULDBLOCK) ?
-                              "it is locked by another process" :
-                              "flock() failed", errno);
-    ::close(fd);
+  if (fd == OS_ERR) {
     return -1;
   }
 #endif
@@ -931,9 +1010,10 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
     if (result == -1 ) break;
     if (!os::write(fd, &zero_int, 1)) {
       if (errno == ENOSPC) {
-        warning("Insufficient space for shared memory file:\n   %s\nTry using the -Djava.io.tmpdir= option to select an alternate temp location.\n", filename);
+        warning("Insufficient space for shared memory file: %s/%s\n", dirname, filename);
       }
       result = OS_ERR;
+      remove(filename);
       break;
     }
   }
@@ -1025,11 +1105,11 @@ static char* mmap_create_shared(size_t size) {
   log_info(perf, memops)("Trying to open %s/%s", dirname, short_filename);
   fd = create_sharedmem_file(dirname, short_filename, size);
 
-  FREE_C_HEAP_ARRAY(char, user_name);
-  FREE_C_HEAP_ARRAY(char, dirname);
+  FREE_C_HEAP_ARRAY(user_name);
+  FREE_C_HEAP_ARRAY(dirname);
 
   if (fd == -1) {
-    FREE_C_HEAP_ARRAY(char, filename);
+    FREE_C_HEAP_ARRAY(filename);
     return nullptr;
   }
 
@@ -1041,7 +1121,7 @@ static char* mmap_create_shared(size_t size) {
   if (mapAddress == MAP_FAILED) {
     log_debug(perf)("mmap failed - %s", os::strerror(errno));
     remove_file(filename);
-    FREE_C_HEAP_ARRAY(char, filename);
+    FREE_C_HEAP_ARRAY(filename);
     return nullptr;
   }
 
@@ -1062,18 +1142,9 @@ static char* mmap_create_shared(size_t size) {
 // release a named shared memory region that was mmap-ed.
 //
 static void unmap_shared(char* addr, size_t bytes) {
-  int res;
-  if (MemTracker::enabled()) {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    res = ::munmap(addr, bytes);
-    if (res == 0) {
-      MemTracker::record_virtual_memory_release(addr, bytes);
-    }
-  } else {
-    res = ::munmap(addr, bytes);
-  }
-  if (res != 0) {
-    log_info(os)("os::release_memory failed (" PTR_FORMAT ", %zu)", p2i(addr), bytes);
+  MemTracker::record_virtual_memory_release(addr, bytes);
+  if (::munmap(addr, bytes) != 0) {
+    fatal("os::release_memory failed (" PTR_FORMAT ", %zu)", p2i(addr), bytes);
   }
 }
 
@@ -1100,7 +1171,7 @@ static void delete_shared_memory(char* addr, size_t size) {
     remove_file(backing_store_file_name);
     // Don't.. Free heap memory could deadlock os::abort() if it is called
     // from signal handler. OS will reclaim the heap memory.
-    // FREE_C_HEAP_ARRAY(char, backing_store_file_name);
+    // FREE_C_HEAP_ARRAY(backing_store_file_name);
     backing_store_file_name = nullptr;
   }
 }
@@ -1138,7 +1209,8 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
 
   // for linux, determine if vmid is for a containerized process
   int nspid = LINUX_ONLY(os::Linux::get_namespace_pid(vmid)) NOT_LINUX(-1);
-  const char* luser = get_user_name(vmid, &nspid, CHECK);
+  const char* luser = NOT_MACOS(get_user_name(vmid, &nspid, CHECK))
+                      MACOS_ONLY(get_user_name(os::Bsd::get_process_uid(vmid)));
 
   if (luser == nullptr) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
@@ -1151,8 +1223,8 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   // store file, we don't follow them when attaching either.
   //
   if (!is_directory_secure(dirname)) {
-    FREE_C_HEAP_ARRAY(char, dirname);
-    FREE_C_HEAP_ARRAY(char, luser);
+    FREE_C_HEAP_ARRAY(dirname);
+    FREE_C_HEAP_ARRAY(luser);
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Process not found");
   }
@@ -1164,9 +1236,9 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   int fd = open_sharedmem_file(filename, file_flags, THREAD);
 
   // free the c heap resources that are no longer needed
-  FREE_C_HEAP_ARRAY(char, luser);
-  FREE_C_HEAP_ARRAY(char, dirname);
-  FREE_C_HEAP_ARRAY(char, filename);
+  FREE_C_HEAP_ARRAY(luser);
+  FREE_C_HEAP_ARRAY(dirname);
+  FREE_C_HEAP_ARRAY(filename);
 
   if (HAS_PENDING_EXCEPTION) {
     assert(fd == OS_ERR, "open_sharedmem_file always return OS_ERR on exceptions");

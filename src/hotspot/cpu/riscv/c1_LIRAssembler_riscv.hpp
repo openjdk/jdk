@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -54,9 +54,8 @@ private:
   Address stack_slot_address(int index, uint shift, int adjust = 0);
 
   // Record the type of the receiver in ReceiverTypeData
-  void type_profile_helper(Register mdo,
-                           ciMethodData *md, ciProfileData *data,
-                           Register recv, Label* update_done);
+  void type_profile_helper(Register mdo, ciMethodData *md,
+                           ciProfileData *data, Register recv);
 
   void casw(Register addr, Register newval, Register cmpval);
   void caswu(Register addr, Register newval, Register cmpval);

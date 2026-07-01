@@ -125,20 +125,6 @@ static traceid get_source(const InstanceKlass* ik, JavaThread* jt) {
   return source_id;
 }
 
-static traceid get_source(const AOTClassLocation* cl, JavaThread* jt) {
-  assert(cl != nullptr, "invariant");
-  assert(!cl->is_modules_image(), "invariant");
-  const char* const path = cl->path();
-  assert(path != nullptr, "invariant");
-  size_t len = strlen(path);
-  const char* file_type = cl->file_type_string();
-  assert(file_type != nullptr, "invariant");
-  len += strlen(file_type) + 3; // ":/" + null
-  char* const url = NEW_RESOURCE_ARRAY_IN_THREAD(jt, char, len);
-  jio_snprintf(url, len, "%s%s%s", file_type, ":/", path);
-  return JfrSymbolTable::add(url);
-}
-
 static inline void send_event(const InstanceKlass* ik, traceid source_id) {
   EventClassDefine event;
   event.set_definedClass(ik);
@@ -172,6 +158,20 @@ void JfrClassDefineEvent::on_creation(const InstanceKlass* ik, const ClassFilePa
 }
 
 #if INCLUDE_CDS
+static traceid get_source(const AOTClassLocation* cl, JavaThread* jt) {
+  assert(cl != nullptr, "invariant");
+  assert(!cl->is_modules_image(), "invariant");
+  const char* const path = cl->path();
+  assert(path != nullptr, "invariant");
+  size_t len = strlen(path);
+  const char* file_type = cl->file_type_string();
+  assert(file_type != nullptr, "invariant");
+  len += strlen(file_type) + 3; // ":/" + null
+  char* const url = NEW_RESOURCE_ARRAY_IN_THREAD(jt, char, len);
+  jio_snprintf(url, len, "%s%s%s", file_type, ":/", path);
+  return JfrSymbolTable::add(url);
+}
+
 void JfrClassDefineEvent::on_restoration(const InstanceKlass* ik, JavaThread* jt) {
   assert(ik != nullptr, "invariant");
   assert(ik->trace_id() != 0, "invariant");

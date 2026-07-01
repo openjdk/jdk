@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8274148 8301580 8359497
+ * @bug 8274148 8301580 8359497 8374293
  * @summary Check snippet highlighting
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -122,6 +122,13 @@ public class SnippetHighlightTest extends KullaTesting {
                          """);
     }
 
+    @Test // 8374293: The returned Highlights should not overlap
+    public void testHighlightsOverlap() {
+        assertHighlights("public void E test()", "Highlight[start=0, end=6, attributes=[KEYWORD]]",
+                "Highlight[start=7, end=11, attributes=[KEYWORD]]",
+                "Highlight[start=14, end=18, attributes=[DECLARATION]]");
+    }
+
     private void assertHighlights(String code, String... expected) {
         List<String> completions = computeHighlights(code);
         assertEquals(Arrays.asList(expected), completions, "Input: " + code + ", " + completions.toString());
@@ -134,7 +141,6 @@ public class SnippetHighlightTest extends KullaTesting {
                 getAnalysis().highlights(code);
         return highlights.stream()
                           .map(h -> h.toString())
-                          .distinct()
                           .collect(Collectors.toList());
     }
 }

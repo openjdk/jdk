@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.jpackage.internal.cli;
 
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static java.util.stream.Collectors.toUnmodifiableSet;
+import static jdk.jpackage.internal.cli.OptionValueConverter.convertString;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -565,7 +566,7 @@ final class JOptSimpleOptionsBuilder {
                 final var converter = optionSpec.converter().orElseThrow();
 
                 final Result<T> conversionResult = optionValue.map(v -> {
-                    return converter.convert(optionName(), StringToken.of(v));
+                    return convertString(converter, optionName(), StringToken.of(v));
                 }).orElseGet(() -> {
                     return Result.ofValue(optionSpec.defaultOptionalValue().orElseThrow());
                 });
@@ -579,7 +580,7 @@ final class JOptSimpleOptionsBuilder {
                         final String str = getOptionValue(List.of(tokens), optionSpec.mergePolicy()).getFirst();
                         final String[] token = arrConverter.tokenize(str);
                         if (token.length == 1 && str.equals(token[0])) {
-                            final var singleTokenConversionResult = converter.convert(optionName(), StringToken.of(str));
+                            final var singleTokenConversionResult = convertString(converter, optionName(), StringToken.of(str));
                             if (singleTokenConversionResult.hasValue()) {
                                 return singleTokenConversionResult;
                             }

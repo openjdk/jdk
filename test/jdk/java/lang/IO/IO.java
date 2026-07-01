@@ -149,7 +149,7 @@ public class IO {
                     }
                     """);
         }
-        var pb = ProcessTools.createTestJavaProcessBuilder(file.toString());
+        var pb = ProcessTools.createTestJavaProcessBuilder("-Xlog:aot=off", "-Xlog:cds=off", file.toString());
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         assertEquals(0, output.getExitValue());
         assertTrue(output.getStderr().isEmpty());

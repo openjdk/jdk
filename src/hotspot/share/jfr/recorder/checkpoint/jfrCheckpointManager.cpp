@@ -176,6 +176,7 @@ static inline bool is_global(ConstBufferPtr buffer) {
   return buffer->context() == JFR_GLOBAL;
 }
 
+#ifdef ASSERT
 static inline bool is_thread_local(ConstBufferPtr buffer) {
   assert(buffer != nullptr, "invariant");
   return buffer->context() == JFR_THREADLOCAL;
@@ -185,6 +186,7 @@ static inline bool is_virtual_thread_local(ConstBufferPtr buffer) {
   assert(buffer != nullptr, "invariant");
   return buffer->context() == JFR_VIRTUAL_THREADLOCAL;
 }
+#endif // ASSERT
 
 BufferPtr JfrCheckpointManager::lease_global(Thread* thread, bool previous_epoch /* false */, size_t size /* 0 */) {
   JfrCheckpointMspace* const mspace = instance()._global_mspace;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,7 +426,8 @@ bool AOTClassLocation::check(const char* runtime_path, bool has_aot_linked_class
     bool size_differs = _filesize != st.st_size;
     bool time_differs = _check_time && (_timestamp != st.st_mtime);
     if (size_differs || time_differs) {
-      aot_log_warning(aot)("This file is not the one used while building the shared archive file: '%s'%s%s",
+      aot_log_warning(aot)("This file is not the one used while building the %s: '%s'%s%s",
+                       CDSConfig::type_of_archive_being_loaded(),
                        runtime_path,
                        time_differs ? ", timestamp has changed" : "",
                        size_differs ? ", size has changed" : "");
@@ -447,6 +448,13 @@ void AOTClassLocationConfig::dumptime_init(JavaThread* current) {
     // shouldn't happen this early in bootstrap.
     java_lang_Throwable::print(current->pending_exception(), tty);
     vm_exit_during_initialization("AOTClassLocationConfig::dumptime_init_helper() failed unexpectedly");
+  }
+
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    // The _max_used_index is usually updated by ClassLoader::record_result(). However,
+    // when dumping the final archive, the classes are loaded from their images in
+    // the AOT config file, so we don't go through ClassLoader::record_result().
+    dumptime_update_max_used_index(runtime()->_max_used_index); // Same value as recorded in the training run.
   }
 }
 

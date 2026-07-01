@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zStat.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/debug.hpp"
@@ -46,22 +45,22 @@
 
 static const ZStatCriticalPhase ZCriticalPhaseJNICriticalStall("JNI Critical Stall", false /* verbose */);
 
-volatile int64_t ZJNICritical::_count;
-ZConditionLock*  ZJNICritical::_lock;
+Atomic<int64_t> ZJNICritical::_count;
+ZConditionLock* ZJNICritical::_lock;
 
 void ZJNICritical::initialize() {
-  _count = 0;
+  precond(_count.load_relaxed() == 0);
   _lock = new ZConditionLock();
 }
 
 void ZJNICritical::block() {
   for (;;) {
-    const int64_t count = AtomicAccess::load_acquire(&_count);
+    const int64_t count = _count.load_acquire();
 
     if (count < 0) {
       // Already blocked, wait until unblocked
       ZLocker<ZConditionLock> locker(_lock);
-      while (AtomicAccess::load_acquire(&_count) < 0) {
+      while (_count.load_acquire() < 0) {
         _lock->wait();
       }
 
@@ -70,7 +69,7 @@ void ZJNICritical::block() {
     }
 
     // Increment and invert count
-    if (AtomicAccess::cmpxchg(&_count, count, -(count + 1)) != count) {
+    if (!_count.compare_set(count, -(count + 1))) {
       continue;
     }
 
@@ -80,7 +79,7 @@ void ZJNICritical::block() {
     if (count != 0) {
       // Wait until blocked
       ZLocker<ZConditionLock> locker(_lock);
-      while (AtomicAccess::load_acquire(&_count) != -1) {
+      while (_count.load_acquire() != -1) {
         _lock->wait();
       }
     }
@@ -91,18 +90,18 @@ void ZJNICritical::block() {
 }
 
 void ZJNICritical::unblock() {
-  const int64_t count = AtomicAccess::load_acquire(&_count);
+  const int64_t count = _count.load_acquire();
   assert(count == -1, "Invalid count");
 
   // Notify unblocked
   ZLocker<ZConditionLock> locker(_lock);
-  AtomicAccess::release_store(&_count, (int64_t)0);
+  _count.release_store(0);
   _lock->notify_all();
 }
 
 void ZJNICritical::enter_inner(JavaThread* thread) {
   for (;;) {
-    const int64_t count = AtomicAccess::load_acquire(&_count);
+    const int64_t count = _count.load_acquire();
 
     if (count < 0) {
       // Wait until unblocked
@@ -112,7 +111,7 @@ void ZJNICritical::enter_inner(JavaThread* thread) {
       ThreadBlockInVM tbivm(thread);
 
       ZLocker<ZConditionLock> locker(_lock);
-      while (AtomicAccess::load_acquire(&_count) < 0) {
+      while (_count.load_acquire() < 0) {
         _lock->wait();
       }
 
@@ -121,7 +120,7 @@ void ZJNICritical::enter_inner(JavaThread* thread) {
     }
 
     // Increment count
-    if (AtomicAccess::cmpxchg(&_count, count, count + 1) != count) {
+    if (!_count.compare_set(count, count + 1)) {
       continue;
     }
 
@@ -142,17 +141,17 @@ void ZJNICritical::enter(JavaThread* thread) {
 
 void ZJNICritical::exit_inner() {
   for (;;) {
-    const int64_t count = AtomicAccess::load_acquire(&_count);
+    const int64_t count = _count.load_acquire();
     assert(count != 0, "Invalid count");
 
     if (count > 0) {
       // No block in progress, decrement count
-      if (AtomicAccess::cmpxchg(&_count, count, count - 1) != count) {
+      if (!_count.compare_set(count, count - 1)) {
         continue;
       }
     } else {
       // Block in progress, increment count
-      if (AtomicAccess::cmpxchg(&_count, count, count + 1) != count) {
+      if (!_count.compare_set(count, count + 1)) {
         continue;
       }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -26,15 +26,19 @@
 
 package sun.jvm.hotspot.debugger.bsd.aarch64;
 
+import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.aarch64.*;
 import sun.jvm.hotspot.debugger.bsd.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
+import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.runtime.aarch64.*;
 
 public final class BsdAARCH64CFrame extends BasicCFrame {
-   public BsdAARCH64CFrame(BsdDebugger dbg, Address fp, Address pc) {
+   public BsdAARCH64CFrame(BsdDebugger dbg, Address sp, Address fp, Address pc) {
       super(dbg.getCDebugger());
+      this.sp = sp;
       this.fp = fp;
       this.pc = pc;
       this.dbg = dbg;
@@ -54,28 +58,65 @@ public final class BsdAARCH64CFrame extends BasicCFrame {
       return fp;
    }
 
+   @Override
    public CFrame sender(ThreadProxy thread) {
-      AARCH64ThreadContext context = (AARCH64ThreadContext) thread.getContext();
-      Address rsp = context.getRegisterAsAddress(AARCH64ThreadContext.SP);
+      return sender(thread, null, null, null);
+   }
 
-      if ((fp == null) || fp.lessThan(rsp)) {
+   @Override
+   public CFrame sender(ThreadProxy thread, Address nextSP, Address nextFP, Address nextPC) {
+      // Check fp
+      // Skip if both nextFP and nextPC are given - do not need to load from fp.
+      if (nextFP == null && nextPC == null) {
+        if (fp == null) {
+          return null;
+        }
+
+        // Check alignment of fp
+        if (dbg.getAddressValue(fp) % (2 * ADDRESS_SIZE) != 0) {
+          return null;
+        }
+      }
+
+      if (nextFP == null) {
+        nextFP = fp.getAddressAt(0);
+      }
+      if (nextFP == null) {
         return null;
       }
 
-      // Check alignment of fp
-      if (dbg.getAddressValue(fp) % (2 * ADDRESS_SIZE) != 0) {
-        return null;
+      if (nextPC == null) {
+        nextPC = fp.getAddressAt(ADDRESS_SIZE);
       }
-
-      Address nextFP = fp.getAddressAt(0 * ADDRESS_SIZE);
-      if (nextFP == null || nextFP.lessThanOrEqual(fp)) {
-        return null;
-      }
-      Address nextPC  = fp.getAddressAt(1 * ADDRESS_SIZE);
       if (nextPC == null) {
         return null;
       }
-      return new BsdAARCH64CFrame(dbg, nextFP, nextPC);
+
+      if (nextSP == null) {
+        CodeCache cc = VM.getVM().getCodeCache();
+        CodeBlob currentBlob = cc.findBlobUnsafe(pc());
+
+        // This case is different from HotSpot. See JDK-8371194 for details.
+        if (currentBlob != null && (currentBlob.isContinuationStub() || currentBlob.isNativeMethod())) {
+          // Use FP since it should always be valid for these cases.
+          // TODO: These should be walked as Frames not CFrames.
+          nextSP = fp.addOffsetTo(2 * ADDRESS_SIZE);
+        } else {
+          CodeBlob codeBlob = cc.findBlobUnsafe(nextPC);
+          boolean useCodeBlob = codeBlob != null && codeBlob.getFrameSize() > 0;
+          nextSP = useCodeBlob ? nextFP.addOffsetTo((2 * ADDRESS_SIZE) - codeBlob.getFrameSize()) : nextFP;
+        }
+      }
+      if (nextSP == null) {
+        return null;
+      }
+
+      return new BsdAARCH64CFrame(dbg, nextSP, nextFP, nextPC);
+   }
+
+   @Override
+   public Frame toFrame() {
+      return new AARCH64Frame(sp, fp, pc);
    }
 
    // package/class internals only

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
@@ -64,6 +65,7 @@ final class PeerConnIdManager {
     private final QuicConnectionImpl connection;
     private final String logTag;
     private final boolean isClient;
+    private boolean closed; // when true, no more reset tokens are registered
 
     private enum State {
         INITIAL_PKT_NOT_RECEIVED_FROM_PEER,
@@ -266,6 +268,7 @@ final class PeerConnIdManager {
             if (handshakeConnId == null) {
                 throw new IllegalStateException("No handshake peer connection available");
             }
+            if (closed) return;
             // recreate the conn id with the stateless token
             this.peerConnectionIds.put(0L, new PeerConnectionId(handshakeConnId.asReadOnlyBuffer(),
                     statelessResetToken));
@@ -277,12 +280,38 @@ final class PeerConnIdManager {
     }
 
     /**
+     * {@return the list of stateless reset tokens associated with active peer connection IDs}
+     */
+    public List<byte[]> activeResetTokens() {
+        lock.lock();
+        try {
+            // this method is currently only used to remove a connection from the endpoint
+            // after the connection is closed.
+            // The below assert can be removed if the method is needed elsewhere.
+            assert closed;
+            // we only support one active connection ID at the time
+            PeerConnectionId cid = peerConnectionIds.get(activeConnIdSeq);
+            byte[] statelessResetToken = null;
+            if (cid != null) {
+                statelessResetToken = cid.getStatelessResetToken();
+            }
+            if (statelessResetToken != null) {
+                return List.of(statelessResetToken);
+            } else {
+                return List.of();
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
      * {@return the active peer connection ID}
      */
     QuicConnectionId getPeerConnId() {
         lock.lock();
         try {
-            if (activeConnIdSeq < largestReceivedRetirePriorTo) {
+            if (activeConnIdSeq < largestReceivedRetirePriorTo && !closed) {
                 // stop using the old connection ID
                 switchConnectionId();
             }
@@ -473,9 +502,11 @@ final class PeerConnIdManager {
             // connection ids. It does however store the peer-issued stateless reset token of a
             // peer connection id, so we let the endpoint know that the stateless reset token needs
             // to be forgotten since the corresponding peer connection id is being retired
-            final byte[] resetTokenToForget = entry.getValue().getStatelessResetToken();
-            if (resetTokenToForget != null) {
-                this.connection.endpoint().forgetStatelessResetToken(resetTokenToForget);
+            if (seqNumToRetire == activeConnIdSeq) {
+                final byte[] resetTokenToForget = entry.getValue().getStatelessResetToken();
+                if (resetTokenToForget != null) {
+                    this.connection.endpoint().forgetStatelessResetToken(resetTokenToForget);
+                }
             }
         }
         for (Iterator<Long> iterator = gaps.iterator(); iterator.hasNext(); ) {
@@ -513,6 +544,15 @@ final class PeerConnIdManager {
                 return new RetireConnectionIDFrame(seqNumToRetire);
             }
             return null;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void close() {
+        lock.lock();
+        try {
+            closed = true;
         } finally {
             lock.unlock();
         }

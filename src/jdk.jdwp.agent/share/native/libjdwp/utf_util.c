@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,7 +173,7 @@ int JNICALL utf8mToUtf8sLength(jbyte *string, int length) {
 
     newLength = 0;
     for ( i = 0 ; i < length ; i++ ) {
-        unsigned byte1, byte2, byte3, byte4, byte5, byte6;
+        unsigned byte1, byte2, byte4, byte5, byte6;
 
         byte1 = (unsigned char)string[i];
         if ( (byte1 & 0x80) == 0 ) { /* 1byte encoding */
@@ -196,7 +196,7 @@ int JNICALL utf8mToUtf8sLength(jbyte *string, int length) {
                 break; /* Error condition */
             }
             byte2 = (unsigned char)string[++i];
-            byte3 = (unsigned char)string[++i];
+            ++i; // byte3 is not used
             newLength += 3;
             /* Possible process a second 3byte encoding */
             if ( (i+3) < length && byte1 == 0xED && (byte2 & 0xF0) == 0xA0 ) {

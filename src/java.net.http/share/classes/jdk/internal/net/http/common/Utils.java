@@ -39,6 +39,7 @@ import java.lang.System.Logger.Level;
 import java.net.ConnectException;
 import java.net.Inet6Address;
 import java.net.InetSocketAddress;
+import java.net.ProtocolException;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
 import java.net.Proxy;
@@ -1353,6 +1354,47 @@ public final class Utils {
         return hdrs.build();
     }
     // -- toAsciiString-like support to encode path and query URI segments
+
+    public static int readStatusCode(HttpHeaders headers, String errorPrefix) throws ProtocolException {
+        var s = headers.firstValue(":status").orElse(null);
+        if (s == null) {
+            throw new ProtocolException(errorPrefix + "missing status code");
+        }
+        Throwable t = null;
+        int i = 0;
+        try {
+            i = Integer.parseInt(s);
+        } catch (NumberFormatException nfe) {
+            t = nfe;
+        }
+        if (t != null || i < 100 || i > 999) {
+            var pe = new ProtocolException(errorPrefix + "invalid status code: " + s);
+            pe.initCause(t);
+            throw pe;
+        }
+        return i;
+    }
+
+    public static long readContentLength(HttpHeaders headers, String errorPrefix, long defaultIfMissing) throws ProtocolException {
+        var k = "Content-Length";
+        var s = headers.firstValue(k).orElse(null);
+        if (s == null) {
+            return defaultIfMissing;
+        }
+        Throwable t = null;
+        long i = 0;
+        try {
+            i = Long.parseLong(s);
+        } catch (NumberFormatException nfe) {
+            t = nfe;
+        }
+        if (t != null || i < 0) {
+            var pe = new ProtocolException("%sinvalid \"%s\": %s".formatted(errorPrefix, k, s));
+            pe.initCause(t);
+            throw pe;
+        }
+        return i;
+    }
 
     // Encodes all characters >= \u0080 into escaped, normalized UTF-8 octets,
     // assuming that s is otherwise legal

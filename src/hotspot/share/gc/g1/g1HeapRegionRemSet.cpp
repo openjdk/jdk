@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -88,8 +87,12 @@ void G1HeapRegionRemSet::clear(bool only_cardset, bool keep_tracked) {
   }
 }
 
-void G1HeapRegionRemSet::reset_table_scanner() {
+void G1HeapRegionRemSet::reset_code_root_table_scanner() {
   _code_roots.reset_table_scanner();
+}
+
+void G1HeapRegionRemSet::reset_table_scanner() {
+  reset_code_root_table_scanner();
   if (has_cset_group()) {
     card_set()->reset_table_scanner();
   }

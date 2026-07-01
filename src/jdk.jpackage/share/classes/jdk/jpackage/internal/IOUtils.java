@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,9 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
 import jdk.jpackage.internal.model.JPackageException;
 
 /**
@@ -50,46 +47,6 @@ final class IOUtils {
                    StandardCopyOption.COPY_ATTRIBUTES);
     }
 
-    public static void exec(ProcessBuilder pb)
-            throws IOException {
-        exec(pb, false, null, false, Executor.INFINITE_TIMEOUT);
-    }
-
-    // timeout in seconds. -1 will be return if process timeouts.
-    public static void exec(ProcessBuilder pb, long timeout)
-            throws IOException {
-        exec(pb, false, null, false, timeout);
-    }
-
-    static void exec(ProcessBuilder pb, boolean testForPresenceOnly,
-            PrintStream consumer, boolean writeOutputToFile, long timeout)
-            throws IOException {
-        exec(pb, testForPresenceOnly, consumer, writeOutputToFile,
-                timeout, false);
-    }
-
-    static void exec(ProcessBuilder pb, boolean testForPresenceOnly,
-            PrintStream consumer, boolean writeOutputToFile,
-            long timeout, boolean quiet) throws IOException {
-        List<String> output = new ArrayList<>();
-        Executor exec = Executor.of(pb)
-                .setWriteOutputToFile(writeOutputToFile)
-                .setTimeout(timeout)
-                .setQuiet(quiet)
-                .setOutputConsumer(lines -> {
-                    lines.forEach(output::add);
-                    if (consumer != null) {
-                        output.forEach(consumer::println);
-                    }
-                });
-
-        if (testForPresenceOnly) {
-            exec.execute();
-        } else {
-            exec.executeExpectSuccess();
-        }
-    }
-
     static void writableOutputDir(Path outdir) {
         if (!Files.isDirectory(outdir)) {
             try {
@@ -104,14 +61,12 @@ final class IOUtils {
         }
     }
 
-    public static long getPID(Process p) {
+    static void deleteIfExistsIgnoreError(Path path) {
         try {
-            return p.pid();
-        } catch (UnsupportedOperationException ex) {
-            Log.verbose(ex); // Just log exception and ignore it. This method
-                             // is used for verbose output, so not a problem
-                             // if unsupported.
-            return -1;
+            Files.deleteIfExists(path);
+        } catch (IOException ex) {
+            Log.trace(ex, "Failed to delete [%s]", path);
         }
     }
 }
+

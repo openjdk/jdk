@@ -1265,7 +1265,7 @@ static size_t teardown() {
     JfrKlassUnloading::clear();
     _artifacts->clear();
     _initial_type_set = true;
-  } else {
+  } else if (is_initial_typeset_for_chunk()) {
     _initial_type_set = false;
   }
   return total_count;

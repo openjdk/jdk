@@ -26,6 +26,7 @@
 #include "compiler/compilerDefinitions.hpp"
 #include "jvm_io.h"
 #include "runtime/arguments.hpp"
+#include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -151,28 +152,14 @@ const char* Abstract_VM_Version::vm_info_string() {
       }
     case Arguments::_mixed:
       if (is_vm_statically_linked()) {
-        if (CompilationModeFlag::quick_only()) {
-          return CDSConfig::is_using_archive() ? "mixed mode, emulated-client, static, sharing" : "mixed mode, emulated-client, static";
-        } else {
-          return CDSConfig::is_using_archive() ? "mixed mode, static, sharing" : "mixed mode, static";
-         }
+        return CDSConfig::is_using_archive() ? "mixed mode, static, sharing" : "mixed mode, static";
       } else {
-        if (CompilationModeFlag::quick_only()) {
-          return CDSConfig::is_using_archive() ? "mixed mode, emulated-client, sharing" : "mixed mode, emulated-client";
-        } else {
-          return CDSConfig::is_using_archive() ? "mixed mode, sharing" : "mixed mode";
-        }
+        return CDSConfig::is_using_archive() ? "mixed mode, sharing" : "mixed mode";
       }
     case Arguments::_comp:
       if (is_vm_statically_linked()) {
-        if (CompilationModeFlag::quick_only()) {
-          return CDSConfig::is_using_archive() ? "compiled mode, emulated-client, static, sharing" : "compiled mode, emulated-client, static";
-        }
         return CDSConfig::is_using_archive() ? "compiled mode, static, sharing" : "compiled mode, static";
       } else {
-        if (CompilationModeFlag::quick_only()) {
-          return CDSConfig::is_using_archive() ? "compiled mode, emulated-client, sharing" : "compiled mode, emulated-client";
-        }
         return CDSConfig::is_using_archive() ? "compiled mode, sharing" : "compiled mode";
       }
   }
@@ -282,6 +269,8 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.13 (VS2022)"
       #elif _MSC_VER == 1944
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.14 (VS2022)"
+      #elif _MSC_VER == 1950
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 18.0 (VS2026)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          /test/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit EmptyAuthenticate
+ * @run junit ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
@@ -56,17 +56,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class EmptyAuthenticate {
 
-    private static final SSLContext SSL_CONTEXT = createSslContext();
+    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
     private static final String WWW_AUTH_HEADER_NAME = "WWW-Authenticate";
-
-    private static SSLContext createSslContext() {
-        try {
-            return new SimpleSSLContext().get();
-        } catch (IOException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
 
     @ParameterizedTest
     @MethodSource("args")

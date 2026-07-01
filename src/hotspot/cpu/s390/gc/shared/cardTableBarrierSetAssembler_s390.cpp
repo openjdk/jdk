@@ -83,8 +83,7 @@ void CardTableBarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Registe
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count,
                                                                     bool do_return) {
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  CardTable* ct = ctbs->card_table();
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
   NearLabel doXC, done;
   assert_different_registers(Z_R0, Z_R1, addr, count);
@@ -105,7 +104,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ add2reg_with_index(count, -BytesPerHeapOop, count, addr);
 
   // Get base address of card table.
-  __ load_const_optimized(Z_R1, (address)ct->byte_map_base());
+  __ load_const_optimized(Z_R1, (address)ctbs->card_table_base_const());
 
   // count = (count>>shift) - (addr>>shift)
   __ z_srlg(addr,  addr,  CardTable::card_shift());
@@ -179,13 +178,12 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
 void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register store_addr, Register tmp) {
   // Does a store check for the oop in register obj. The content of
   // register obj is destroyed afterwards.
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  CardTable* ct = ctbs->card_table();
+  CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
   assert_different_registers(store_addr, tmp);
 
   __ z_srlg(store_addr, store_addr, CardTable::card_shift());
-  __ load_absolute_address(tmp, (address)ct->byte_map_base());
+  __ load_absolute_address(tmp, (address)ctbs->card_table_base_const());
   __ z_agr(store_addr, tmp);
   __ z_mvi(0, store_addr, CardTable::dirty_card_val());
 }

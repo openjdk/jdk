@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ void ReferenceProcessor::init_statics() {
   java_lang_ref_SoftReference::set_clock(_soft_ref_timestamp_clock);
 
   _always_clear_soft_ref_policy = new AlwaysClearPolicy();
-  if (CompilerConfig::is_c2_or_jvmci_compiler_enabled()) {
+  if (CompilerConfig::is_c2_enabled()) {
     _default_soft_ref_policy = new LRUMaxHeapPolicy();
   } else {
     _default_soft_ref_policy = new LRUCurrentHeapPolicy();
@@ -122,7 +122,7 @@ void ReferenceProcessor::verify_no_references_recorded() {
 #endif
 
 bool ReferenceProcessor::processing_is_mt() const {
-  return ParallelRefProcEnabled && _num_queues > 1;
+  return _num_queues > 1;
 }
 
 void ReferenceProcessor::weak_oops_do(OopClosure* f) {
@@ -586,33 +586,9 @@ void ReferenceProcessor::set_active_mt_degree(uint v) {
   _next_id = 0;
 }
 
-bool ReferenceProcessor::need_balance_queues(DiscoveredList refs_lists[]) {
-  assert(processing_is_mt(), "why balance non-mt processing?");
-  // _num_queues is the processing degree.  Only list entries up to
-  // _num_queues will be processed, so any non-empty lists beyond
-  // that must be redistributed to lists in that range.  Even if not
-  // needed for that, balancing may be desirable to eliminate poor
-  // distribution of references among the lists.
-  if (ParallelRefProcBalancingEnabled) {
-    return true;                // Configuration says do it.
-  } else {
-    // Configuration says don't balance, but if there are non-empty
-    // lists beyond the processing degree, then must ignore the
-    // configuration and balance anyway.
-    for (uint i = _num_queues; i < _max_num_queues; ++i) {
-      if (!refs_lists[i].is_empty()) {
-        return true;            // Must balance despite configuration.
-      }
-    }
-    return false;               // Safe to obey configuration and not balance.
-  }
-}
-
 void ReferenceProcessor::maybe_balance_queues(DiscoveredList refs_lists[]) {
   assert(processing_is_mt(), "Should not call this otherwise");
-  if (need_balance_queues(refs_lists)) {
-    balance_queues(refs_lists);
-  }
+  balance_queues(refs_lists);
 }
 
 // Balances reference queues.

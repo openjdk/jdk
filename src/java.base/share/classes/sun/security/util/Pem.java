@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import sun.security.pkcs.PKCS8Key;
 import sun.security.x509.AlgorithmId;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
+import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
@@ -47,8 +48,11 @@ import java.util.regex.Pattern;
  * A utility class for PEM format encoding.
  */
 public class Pem {
-    private static final char WS = 0x20;  // Whitespace
-    private static final byte[] CRLF = new byte[] {'\r', '\n'};
+    private static final byte[] CRLF = new byte[]{'\r', '\n'};
+    private static final byte[] DASH;
+    private static final byte[] BEGIN_B;
+    private static final byte[] BEGIN_PREFIX;
+    private static final byte[] END_PREFIX;
 
     // Default algorithm from jdk.epkcs8.defaultAlgorithm in java.security
     public static final String DEFAULT_ALGO;
@@ -59,11 +63,14 @@ public class Pem {
     // Pattern matching for stripping whitespace.
     private static final Pattern STRIP_WHITESPACE_PATTERN;
 
+    // Pattern matching for inserting line breaks.
+    private static final Pattern LINE_WRAP_64_PATTERN;
+
     // Lazy initialized PBES2 OID value
-    private static ObjectIdentifier PBES2OID;
+    private static volatile ObjectIdentifier PBES2OID;
 
     // Lazy initialized singleton encoder.
-    private static Base64.Encoder b64Encoder;
+    private static volatile Base64.Encoder b64Encoder;
 
     static {
         String algo = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
@@ -72,6 +79,11 @@ public class Pem {
         PBE_PATTERN = Pattern.compile("^PBEWith.*And.*",
             Pattern.CASE_INSENSITIVE);
         STRIP_WHITESPACE_PATTERN = Pattern.compile("\\s+");
+        LINE_WRAP_64_PATTERN = Pattern.compile("(.{64})");
+        DASH = "-----".getBytes(StandardCharsets.ISO_8859_1);
+        BEGIN_B = "-----B".getBytes(StandardCharsets.ISO_8859_1);
+        BEGIN_PREFIX = "-----BEGIN ".getBytes(StandardCharsets.ISO_8859_1);
+        END_PREFIX = "-----END ".getBytes(StandardCharsets.ISO_8859_1);
     }
 
     public static final String CERTIFICATE = "CERTIFICATE";
@@ -159,13 +171,10 @@ public class Pem {
      * @param shortHeader if true, the hyphen length is 4 because the first
      *                    hyphen is assumed to have been read.  This is needed
      *                    for the CertificateFactory X509 implementation.
-     * @return a new PEMRecord
+     * @return a PEM instance
      * @throws IOException on IO errors or PEM syntax errors that leave
      * the read position not at the end of a PEM block
      * @throws EOFException when at the unexpected end of the stream
-     * @throws IllegalArgumentException when a PEM syntax error occurs,
-     * but the read position in the stream is at the end of the block, so
-     * future reads can be successful.
      */
     public static PEM readPEM(InputStream is, boolean shortHeader)
         throws IOException {
@@ -173,230 +182,250 @@ public class Pem {
 
         int hyphen = (shortHeader ? 1 : 0);
         int eol = 0;
-        ByteArrayOutputStream os = new ByteArrayOutputStream(6);
+        var os = new ClearableBufferStream(6); // preData
+        var readbuf = new ByteArrayOutputStream(64);  // header/footer
+        var pem = new ClearableBufferStream(1024); // PEM
+        String headerType, footerType;
+        byte[] encoding = null;
 
-        // Find 5 hyphens followed by a 'B' to start processing the header.
-        boolean headerStarted = false;
-        do {
-            int d = is.read();
-            switch (d) {
-                case '-' -> hyphen++;
-                case -1 -> {
-                    if (os.size() == 0) {
-                        throw new EOFException("No data available");
+        try {
+            // Find 5 hyphens followed by a 'B' to start processing the header.
+            boolean headerStarted = false;
+            do {
+                int d = is.read();
+                switch (d) {
+                    case '-' -> hyphen++;
+                    case -1 -> {
+                        if (os.size() == 0) {
+                            throw new EOFException("No data available");
+                        }
+                        throw new EOFException("No PEM data found");
                     }
-                    throw new EOFException("No PEM data found");
-                }
-                case 'B' -> {
-                    if (hyphen == 5) {
-                        headerStarted = true;
-                    } else {
-                        hyphen = 0;
+                    case 'B' -> {
+                        if (hyphen == 5) {
+                            headerStarted = true;
+                        } else {
+                            hyphen = 0;
+                        }
                     }
+                    default -> hyphen = 0;
                 }
-                default -> hyphen = 0;
-            }
-            os.write(d);
-        } while (!headerStarted);
+                os.write(d);
+            } while (!headerStarted);
 
-        StringBuilder sb = new StringBuilder(64);
-        sb.append("-----B");
-        hyphen = 0;
-        int c;
+            readbuf.writeBytes(BEGIN_B);
+            hyphen = 0;
+            int c;
 
-        // Get header definition until first hyphen
-        do {
-            switch (c = is.read()) {
-                case '-' -> hyphen++;
-                case -1 -> throw new EOFException("Input ended prematurely");
-                case '\n', '\r' -> throw new IOException("Incomplete header");
-                default -> sb.append((char) c);
-            }
-        } while (hyphen == 0);
+            // Get header definition until first hyphen
+            do {
+                switch (c = is.read()) {
+                    case '-' -> hyphen++;
+                    case -1 -> throw new EOFException("Input ended prematurely");
+                    case '\n', '\r' -> throw new IOException("Incomplete header");
+                    default -> readbuf.write(c);
+                }
+            } while (hyphen == 0);
 
-        // Verify header ending with 5 hyphens.
-        do {
-            switch (is.read()) {
-                case '-' -> hyphen++;
-                default ->
-                    throw new IOException("Incomplete header");
-            }
-        } while (hyphen < 5);
-
-        sb.append("-----");
-        String header = sb.toString();
-        if (header.length() < 16 || !header.startsWith("-----BEGIN ") ||
-            !header.endsWith("-----")) {
-            throw new IOException("Illegal header: " + header);
-        }
-
-        hyphen = 0;
-        sb = new StringBuilder(1024);
-
-        // Determine the line break using the char after the last hyphen
-        switch (is.read()) {
-            case WS -> {} // skip whitespace
-            case '\r' -> {
-                c = is.read();
-                if (c == '\n') {
-                    eol = '\n';
+            // Verify header ending with 5 hyphens.
+            do {
+                if (is.read() == '-') {
+                    hyphen++;
                 } else {
-                    eol = '\r';
-                    sb.append((char) c);
+                    throw new IOException("Incomplete header");
+                }
+            } while (hyphen < 5);
+
+            readbuf.writeBytes(DASH);
+            byte[] header = readbuf.toByteArray();
+            if (header.length < 16 ||
+                !matchesAt(header, 0, BEGIN_PREFIX) ||
+                !matchesAt(header, header.length - DASH.length, DASH)) {
+                throw new IOException("Illegal header: " +
+                    new String(header, StandardCharsets.ISO_8859_1));
+            }
+
+            hyphen = 0;
+            readbuf.reset();
+
+            // Determine the line break using the char after the last hyphen
+            while (eol == 0) {
+                switch (is.read()) {
+                    case '\s', '\t' -> {} // skip whitespace or tab
+                    case '\r' -> {
+                        c = is.read();
+                        if (c == '\n') {
+                            eol = '\n';
+                        } else {
+                            eol = '\r';
+                            pem.write(c);
+                        }
+                    }
+                    case '\n' -> eol = '\n';
+                    default -> throw new IOException("No EOL character found");
                 }
             }
-            case '\n' -> eol = '\n';
-            default ->
-                throw new IOException("No EOL character found");
+
+            // Read data until we find the first footer hyphen.
+            // CR & LF are allowed to support legacy PEM formats (ie: encrypted PKCS1)
+            do {
+                switch (c = is.read()) {
+                    case -1 -> throw new EOFException("Incomplete header");
+                    case '-' -> hyphen++;
+                    default -> {
+                        // If reading a legacy format, allow for one dash
+                        if (hyphen == 1) {
+                            hyphen = 0;
+                            pem.write('-');
+                        }
+                        pem.write(c);
+                    }
+                }
+            } while (hyphen < 2);
+
+            // Verify footer starts with 5 hyphens.
+            do {
+                switch (is.read()) {
+                    case '-' -> hyphen++;
+                    case -1 ->
+                        throw new EOFException("Input ended prematurely");
+                    default -> throw new IOException("Incomplete footer");
+                }
+            } while (hyphen < 5);
+
+            hyphen = 0;
+            readbuf.reset();
+            readbuf.writeBytes(DASH);
+
+            // Look for Complete header by looking for the end of the hyphens
+            do {
+                switch (c = is.read()) {
+                    case '-' -> hyphen++;
+                    case -1 ->
+                        throw new EOFException("Input ended prematurely");
+                    default -> readbuf.write(c);
+                }
+            } while (hyphen == 0);
+
+            // Verify ending with 5 hyphens.
+            do {
+                switch (is.read()) {
+                    case '-' -> hyphen++;
+                    case -1 ->
+                        throw new EOFException("Input ended prematurely");
+                    default -> throw new IOException("Incomplete footer");
+                }
+            } while (hyphen < 5);
+
+            while ((c = is.read()) != eol && c != -1) {
+                // skip when eol is '\n', the line separator is likely "\r\n".
+                if (c == '\r' || c == '\s' || c == '\t') {
+                    continue;
+                }
+                throw new IOException("Invalid PEM format:  " +
+                    "No EOL char found in footer:  0x" +
+                    HexFormat.of().toHexDigits((byte) c));
+            }
+
+            readbuf.writeBytes(DASH);
+            byte[] footer = readbuf.toByteArray();
+            if (footer.length < 14 ||
+                !matchesAt(footer, 0, END_PREFIX) ||
+                !matchesAt(footer, footer.length - DASH.length, DASH)) {
+
+                // Not an IOE because the read pointer is correctly at the end.
+                throw new IOException("Illegal footer: " +
+                    new String(footer, StandardCharsets.ISO_8859_1));
+            }
+
+            // Verify the object type in the header and the footer are the same.
+            headerType = new String(header, 11, header.length - 16,
+                StandardCharsets.ISO_8859_1);
+            footerType = new String(footer, 9, footer.length - 14,
+                StandardCharsets.ISO_8859_1);
+            if (!headerType.equals(footerType)) {
+                throw new IOException("Header and footer do not " +
+                    "match: " + headerType + " " + footerType);
+            }
+
+            // If there was data before finding the 5 dashes of the PEM header,
+            // backup 5 characters and save that data.
+            byte[] preData = null;
+            if (os.size() > 6) {
+                preData = Arrays.copyOf(os.getBuffer(), os.size() - 6);
+            }
+
+            encoding = pem.toByteArray();
+            return (preData == null) ?
+                new PEM(typeConverter(headerType), encoding) :
+                new PEM(typeConverter(headerType), encoding, preData);
+        } finally {
+            KeyUtil.clear(encoding);
+            os.close();
+            pem.clear();
+            pem.close();
+            readbuf.close();
         }
 
-        // Read data until we find the first footer hyphen.
-        do {
-            switch (c = is.read()) {
-                case -1 ->
-                    throw new EOFException("Incomplete header");
-                case '-' -> hyphen++;
-                case WS, '\t', '\r', '\n' -> {} // skip whitespace and tab
-                default -> sb.append((char) c);
-            }
-        } while (hyphen == 0);
-
-        String data = sb.toString();
-
-        // Verify footer starts with 5 hyphens.
-        do {
-            switch (is.read()) {
-                case '-' -> hyphen++;
-                case -1 -> throw new EOFException("Input ended prematurely");
-                default -> throw new IOException("Incomplete footer");
-            }
-        } while (hyphen < 5);
-
-        hyphen = 0;
-        sb = new StringBuilder(64);
-        sb.append("-----");
-
-        // Look for Complete header by looking for the end of the hyphens
-        do {
-            switch (c = is.read()) {
-                case '-' -> hyphen++;
-                case -1 -> throw new EOFException("Input ended prematurely");
-                default -> sb.append((char) c);
-            }
-        } while (hyphen == 0);
-
-        // Verify ending with 5 hyphens.
-        do {
-            switch (is.read()) {
-                case '-' -> hyphen++;
-                case -1 -> throw new EOFException("Input ended prematurely");
-                default -> throw new IOException("Incomplete footer");
-            }
-        } while (hyphen < 5);
-
-        while ((c = is.read()) != eol && c != -1 && c != WS) {
-            // skip when eol is '\n', the line separator is likely "\r\n".
-            if (c == '\r') {
-                continue;
-            }
-            throw new IOException("Invalid PEM format:  " +
-                "No EOL char found in footer:  0x" +
-                HexFormat.of().toHexDigits((byte) c));
-        }
-
-        sb.append("-----");
-        String footer = sb.toString();
-        if (footer.length() < 14 || !footer.startsWith("-----END ") ||
-            !footer.endsWith("-----")) {
-            // Not an IOE because the read pointer is correctly at the end.
-            throw new IOException("Illegal footer: " + footer);
-        }
-
-        // Verify the object type in the header and the footer are the same.
-        String headerType = header.substring(11, header.length() - 5);
-        String footerType = footer.substring(9, footer.length() - 5);
-        if (!headerType.equals(footerType)) {
-            throw new IOException("Header and footer do not " +
-                "match: " + headerType + " " + footerType);
-        }
-
-        // If there was data before finding the 5 dashes of the PEM header,
-        // backup 5 characters and save that data.
-        byte[] preData = null;
-        if (os.size() > 6) {
-            preData = Arrays.copyOf(os.toByteArray(), os.size() - 6);
-        }
-
-        return new PEM(typeConverter(headerType), data, preData);
     }
 
     public static PEM readPEM(InputStream is) throws IOException {
         return readPEM(is, false);
     }
 
-    private static String pemEncoded(String type, String base64) {
-        return
-            "-----BEGIN " + type + "-----\r\n" +
-            base64 + (!base64.endsWith("\n") ? "\r\n" : "") +
-            "-----END " + type + "-----\r\n";
+    /**
+     * Return a PEM encoding with the given type and base64 byte array.
+     */
+    public static byte[] pemEncoded(String type, byte[] base64) {
+        byte[] header = ("-----BEGIN " + type + "-----\r\n")
+            .getBytes(StandardCharsets.ISO_8859_1);
+        byte[] footer = ("-----END " + type + "-----\r\n")
+            .getBytes(StandardCharsets.ISO_8859_1);
+
+        int crlfLen = (base64.length == 0 ||
+            base64[base64.length - 1] != '\n') ? 2 : 0;
+        byte[] result = new byte[header.length + base64.length +
+            crlfLen + footer.length];
+        System.arraycopy(header, 0, result, 0, header.length);
+        System.arraycopy(base64, 0, result, header.length, base64.length);
+        if (crlfLen == 2) {
+            result[header.length + base64.length] = '\r';
+            result[header.length + base64.length + 1] = '\n';
+        }
+        System.arraycopy(footer, 0, result,
+            header.length + base64.length + crlfLen, footer.length);
+        return result;
     }
 
-    /**
-     * Construct a String-based encoding based off the type.  leadingData
-     * is not used with this method.
-     * @return PEM in a string
-     */
-    public static String pemEncoded(String type, byte[] der) {
+    public static byte[] pemEncodedFromDER(String type, byte[] der) {
         if (b64Encoder == null) {
             b64Encoder = Base64.getMimeEncoder(64, CRLF);
         }
-        return pemEncoded(type, b64Encoder.encodeToString(der));
+        return KeyUtil.clear(b64Encoder.encode(der), e -> pemEncoded(type, e));
     }
 
     /**
-     * Construct a String-based encoding based off the type.  leadingData
-     * is not used with this method.
-     * @return PEM in a string
+     * Decrypt the EncryptedPrivateKeyInfo with the given keySpec and
+     * return the PKCS#8 byte array
      */
-    public static String pemEncoded(PEM pem) {
-        String p = pem.content().replaceAll("(.{64})", "$1\r\n");
-        return pemEncoded(pem.type(), p);
-    }
-
-    /*
-     * Get PKCS8 encoding from an encrypted private key encoding.
-     */
-    public static byte[] decryptEncoding(byte[] encoded, char[] password)
-        throws GeneralSecurityException {
-        EncryptedPrivateKeyInfo ekpi;
-
-        Objects.requireNonNull(password, "password cannot be null");
-        PBEKeySpec keySpec = new PBEKeySpec(password);
-        try {
-            ekpi = new EncryptedPrivateKeyInfo(encoded);
-            return decryptEncoding(ekpi, keySpec);
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
-        } finally {
-            keySpec.clearPassword();
-        }
-    }
-
-    public static byte[] decryptEncoding(EncryptedPrivateKeyInfo ekpi, PBEKeySpec keySpec)
-        throws NoSuchAlgorithmException, InvalidKeyException {
+    public static byte[] decryptEncoding(EncryptedPrivateKeyInfo ekpi,
+        PBEKeySpec keySpec) throws NoSuchAlgorithmException,
+        InvalidKeyException {
 
         PKCS8EncodedKeySpec p8KeySpec = null;
+        SecretKeyFactory skf = SecretKeyFactory.getInstance(ekpi.getAlgName());
+        SecretKey sk = null;
         try {
-            SecretKeyFactory skf = SecretKeyFactory.getInstance(ekpi.getAlgName());
-            p8KeySpec = ekpi.getKeySpec(skf.generateSecret(keySpec));
+            sk = skf.generateSecret(keySpec);
+            p8KeySpec = ekpi.getKeySpec(sk);
             return p8KeySpec.getEncoded();
         } catch (InvalidKeySpecException e) {
             throw new InvalidKeyException(e);
         } finally {
+            KeyUtil.destroySecretKeys(sk);
             KeyUtil.clear(p8KeySpec);
         }
     }
-
 
     /**
      * With a given PKCS8 encoding, construct a PrivateKey or KeyPair.  A
@@ -404,25 +433,17 @@ public class Pem {
      * otherwise, a PrivateKey is returned.
      *
      * @param encoded PKCS8 encoding
-     * @param pair set to true for returning a KeyPair, if possible. Otherwise,
-     *             return a PrivateKey
      * @param provider KeyFactory provider
      */
-    public static DEREncodable toDEREncodable(byte[] encoded, boolean pair,
+    public static BinaryEncodable toPKCS8Encodable(byte[] encoded,
         Provider provider) throws InvalidKeyException {
 
         PrivateKey privKey;
         PublicKey pubKey = null;
+        KeyFactory kf;
         PKCS8EncodedKeySpec p8KeySpec;
         PKCS8Key p8key = new PKCS8Key(encoded);
-        KeyFactory kf;
-
-        try {
-            p8KeySpec = new PKCS8EncodedKeySpec(encoded);
-        } catch (NullPointerException e) {
-            p8key.clear();
-            throw new InvalidKeyException("No encoding found", e);
-        }
+        p8KeySpec = new PKCS8EncodedKeySpec(encoded);
 
         try {
             if (provider == null) {
@@ -438,12 +459,6 @@ public class Pem {
 
         try {
             privKey = kf.generatePrivate(p8KeySpec);
-
-            // Only want the PrivateKey? then return it.
-            if (!pair) {
-                return privKey;
-            }
-
             if (p8key.hasPublicKey()) {
                 // PKCS8Key.decode() has extracted the public key already
                 pubKey = kf.generatePublic(
@@ -463,10 +478,43 @@ public class Pem {
         } finally {
             KeyUtil.clear(p8KeySpec, p8key);
         }
-        if (pair && pubKey != null) {
+        if (pubKey != null) {
             return new KeyPair(pubKey, privKey);
         }
         return privKey;
     }
 
+    private static boolean matchesAt(byte[] source, int offset, byte[] match) {
+        for (int i = 0; i < match.length; i++) {
+            if (source[offset + i] != match[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Clearable ByteArrayOutputStream for temporary data.  Access to the
+     * internal buffer is allowed to limit data copying.  Handle with care.
+     */
+    private static final class ClearableBufferStream
+        extends ByteArrayOutputStream {
+
+        ClearableBufferStream(int len) {
+            super(len);
+        }
+
+        byte[] getBuffer() {
+            return buf;
+        }
+
+        int length() {
+            return count;
+        }
+
+        void clear() {
+            Arrays.fill(buf, (byte) 0);
+            count = 0;
+        }
+    }
 }

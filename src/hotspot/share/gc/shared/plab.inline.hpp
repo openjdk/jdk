@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,22 +29,21 @@
 
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 
 void PLABStats::add_allocated(size_t v) {
-  AtomicAccess::add(&_allocated, v);
+  _allocated.add_then_fetch(v);
 }
 
 void PLABStats::add_unused(size_t v) {
-  AtomicAccess::add(&_unused, v);
+  _unused.add_then_fetch(v);
 }
 
 void PLABStats::add_wasted(size_t v) {
-  AtomicAccess::add(&_wasted, v);
+  _wasted.add_then_fetch(v);
 }
 
 void PLABStats::add_undo_wasted(size_t v) {
-  AtomicAccess::add(&_undo_wasted, v);
+  _undo_wasted.add_then_fetch(v);
 }
 
 #endif // SHARE_GC_SHARED_PLAB_INLINE_HPP

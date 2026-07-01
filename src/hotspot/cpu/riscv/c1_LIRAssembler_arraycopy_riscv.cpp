@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -196,12 +196,9 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
     if (UseCompactObjectHeaders) {
       __ load_narrow_klass_compact(tmp, src);
       __ load_narrow_klass_compact(t0, dst);
-    } else if (UseCompressedClassPointers) {
+    } else {
       __ lwu(tmp, Address(src, oopDesc::klass_offset_in_bytes()));
       __ lwu(t0, Address(dst, oopDesc::klass_offset_in_bytes()));
-    } else {
-      __ ld(tmp, Address(src, oopDesc::klass_offset_in_bytes()));
-      __ ld(t0, Address(dst, oopDesc::klass_offset_in_bytes()));
     }
     __ bne(tmp, t0, *stub->entry(), /* is_far */ true);
   } else {
@@ -243,37 +240,6 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
   }
 }
 
-void LIR_Assembler::arraycopy_assert(Register src, Register dst, Register tmp, ciArrayKlass *default_type, int flags) {
-  assert(default_type != nullptr, "null default_type!");
-  BasicType basic_type = default_type->element_type()->basic_type();
-  if (basic_type == T_ARRAY) { basic_type = T_OBJECT; }
-  if (basic_type != T_OBJECT || !(flags & LIR_OpArrayCopy::type_check)) {
-    // Sanity check the known type with the incoming class.  For the
-    // primitive case the types must match exactly with src.klass and
-    // dst.klass each exactly matching the default type.  For the
-    // object array case, if no type check is needed then either the
-    // dst type is exactly the expected type and the src type is a
-    // subtype which we can't check or src is the same array as dst
-    // but not necessarily exactly of type default_type.
-    Label known_ok, halt;
-    __ mov_metadata(tmp, default_type->constant_encoding());
-    if (UseCompressedClassPointers) {
-      __ encode_klass_not_null(tmp);
-    }
-
-    if (basic_type != T_OBJECT) {
-      __ cmp_klass_compressed(dst, tmp, t0, halt, false);
-      __ cmp_klass_compressed(src, tmp, t0, known_ok, true);
-    } else {
-      __ cmp_klass_compressed(dst, tmp, t0, known_ok, true);
-      __ beq(src, dst, known_ok);
-    }
-    __ bind(halt);
-    __ stop("incorrect type information in arraycopy");
-    __ bind(known_ok);
-  }
-}
-
 void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   ciArrayKlass *default_type = op->expected_type();
   Register src = op->src()->as_register();
@@ -304,7 +270,28 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 
 #ifdef ASSERT
-  arraycopy_assert(src, dst, tmp, default_type, flags);
+  if (basic_type != T_OBJECT || !(flags & LIR_OpArrayCopy::type_check)) {
+    // Sanity check the known type with the incoming class.  For the
+    // primitive case the types must match exactly with src.klass and
+    // dst.klass each exactly matching the default type.  For the
+    // object array case, if no type check is needed then either the
+    // dst type is exactly the expected type and the src type is a
+    // subtype which we can't check or src is the same array as dst
+    // but not necessarily exactly of type default_type.
+    Label known_ok, halt;
+    __ mov_metadata(tmp, default_type->constant_encoding());
+
+    if (basic_type != T_OBJECT) {
+      __ cmp_klass_bne(dst, tmp, t0, t1, halt);
+      __ cmp_klass_beq(src, tmp, t0, t1, known_ok);
+    } else {
+      __ cmp_klass_beq(dst, tmp, t0, t1, known_ok);
+      __ beq(src, dst, known_ok);
+    }
+    __ bind(halt);
+    __ stop("incorrect type information in arraycopy");
+    __ bind(known_ok);
+  }
 #endif
 
 #ifndef PRODUCT

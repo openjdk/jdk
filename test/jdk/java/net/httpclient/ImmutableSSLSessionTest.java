@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        java.net.http/jdk.internal.net.http.common.ImmutableSSLSessionAccess
  * @run junit/othervm -Djdk.httpclient.HttpClient.log=request,response,headers,errors
- *                    ImmutableSSLSessionTest
+ *                    ${test.main.class}
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ImmutableSSLSessionTest implements HttpServerAdapters {
@@ -90,15 +90,11 @@ public class ImmutableSSLSessionTest implements HttpServerAdapters {
     private String h1ReqURIBase;
     private String h2ReqURIBase;
     private String h3ReqURIBase;
-    private static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private final AtomicInteger counter = new AtomicInteger();
 
     @BeforeAll
     public void beforeAll() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
         h1server = HttpTestServer.create(HTTP_1_1, sslContext);
         h1server.start();
         h1ReqURIBase = "https://" + h1server.serverAuthority() + "/h1ImmutableSSLSessionTest/";

@@ -42,7 +42,6 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
@@ -96,9 +95,8 @@ public class TestLog
         CharSequence cs = fo.getCharContent(true);
         Parser parser = pfac.newParser(cs, false, genEndPos, false);
         JCTree.JCCompilationUnit tree = parser.parseCompilationUnit();
-        log.setEndPosTable(fo, tree.endPositions);
 
-        TreeScanner ts = new LogTester(log, tree.endPositions);
+        TreeScanner ts = new LogTester(log);
         ts.scan(tree);
 
         check(log.nerrors, 4, "errors");
@@ -117,9 +115,8 @@ public class TestLog
     }
 
     private static class LogTester extends TreeScanner {
-        LogTester(Log log, EndPosTable endPosTable) {
+        LogTester(Log log) {
             this.log = log;
-            this.endPosTable = endPosTable;
         }
 
         public void visitIf(JCTree.JCIf tree) {
@@ -138,7 +135,6 @@ public class TestLog
         }
 
         private Log log;
-        private EndPosTable endPosTable;
     }
 
     private static class StringJavaFileObject extends SimpleJavaFileObject {

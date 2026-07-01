@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,10 +72,11 @@ public class TimeoutResponseTestSupport {
 
     private static final Logger LOGGER = Utils.getDebugLogger(CLASS_NAME::toString, Utils.DEBUG);
 
-    private static final SSLContext SSL_CONTEXT = createSslContext();
+    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
     protected static final Duration REQUEST_TIMEOUT =
-            Duration.ofMillis(Long.parseLong(System.getProperty("test.requestTimeoutMillis")));
+            Duration.ofMillis(jdk.test.lib.Utils.adjustTimeout(
+                Long.parseLong(System.getProperty("test.requestTimeoutMillis"))));
 
     static {
         assertTrue(
@@ -87,7 +88,8 @@ public class TimeoutResponseTestSupport {
             Integer.parseInt(System.getProperty("jdk.httpclient.redirects.retrylimit", "0"));
 
     private static final long RESPONSE_FAILURE_WAIT_DURATION_MILLIS =
-            Long.parseLong(System.getProperty("test.responseFailureWaitDurationMillis", "0"));
+            jdk.test.lib.Utils.adjustTimeout(
+                Long.parseLong(System.getProperty("test.responseFailureWaitDurationMillis", "0")));
 
     static {
         if (RETRY_LIMIT > 0) {
@@ -125,14 +127,6 @@ public class TimeoutResponseTestSupport {
             HTTP2 = ServerRequestPair.of(Version.HTTP_2, false),
             HTTPS2 = ServerRequestPair.of(Version.HTTP_2, true),
             HTTP3 = ServerRequestPair.of(Version.HTTP_3, true);
-
-    private static SSLContext createSslContext() {
-        try {
-            return new SimpleSSLContext().get();
-        } catch (IOException exception) {
-            throw new UncheckedIOException(exception);
-        }
-    }
 
     protected record ServerRequestPair(HttpTestServer server, HttpRequest request, boolean secure) {
 

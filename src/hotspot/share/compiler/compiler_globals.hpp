@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,6 @@
 #ifdef COMPILER2
 #include "opto/c2_globals.hpp"
 #endif // COMPILER2
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci_globals.hpp"
-#endif
 
 // TODO -- currently, even if all JIT compilers are disabled, the following flags
 // are still available in HotSpot. This should eventually be fixed ...
@@ -279,9 +276,7 @@
           "Compilation modes: "                                             \
           "default: normal tiered compilation; "                            \
           "quick-only: C1-only mode; "                                      \
-          "high-only: C2/JVMCI-only mode; "                                 \
-          "high-only-quick-internal: C2/JVMCI-only mode, "                  \
-          "with JVMCI compiler compiled with C1.")                          \
+          "high-only: C2-only mode.")                                       \
                                                                             \
   product(bool, PrintTieredEvents, false,                                   \
           "Print tiered events notifications")                              \

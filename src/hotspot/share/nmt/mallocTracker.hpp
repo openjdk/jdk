@@ -311,15 +311,6 @@ class MallocTracker : AllStatic {
   // totally failproof. Only use this during debugging or when you can afford
   // signals popping up, e.g. when writing an hs_err file.
   static bool print_pointer_information(const void* p, outputStream* st);
-
-  static inline MallocHeader* malloc_header(void *memblock) {
-    assert(memblock != nullptr, "null pointer");
-    return (MallocHeader*)memblock -1;
-  }
-  static inline const MallocHeader* malloc_header(const void *memblock) {
-    assert(memblock != nullptr, "null pointer");
-    return (const MallocHeader*)memblock -1;
-  }
 };
 
 #endif // SHARE_NMT_MALLOCTRACKER_HPP

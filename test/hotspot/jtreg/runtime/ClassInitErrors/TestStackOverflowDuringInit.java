@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,24 @@
  *          cause, even if we can't create the ExceptionInInitializerError
  * @comment This test could easily be perturbed so don't allow flag settings.
  * @requires vm.flagless
+ * @library /test/lib
  * @comment Run with the smallest stack possible to limit the execution time.
  *          This is the smallest stack that is supported by all platforms.
- * @run main/othervm -Xss384K -Xint TestStackOverflowDuringInit
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStackOverflowDuringInit
  */
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestStackOverflowDuringInit {
+
+    static String expected = "java.lang.NoClassDefFoundError: Could not initialize class TestStackOverflowDuringInit$LongCache";
+    static String cause = "Caused by: java.lang.StackOverflowError";
 
     // The setup for this is somewhat intricate. We need to trigger a
     // StackOverflowError during execution of the static initializer
@@ -88,34 +97,47 @@ public class TestStackOverflowDuringInit {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        String expected = "java.lang.NoClassDefFoundError: Could not initialize class TestStackOverflowDuringInit$LongCache";
-        String cause = "Caused by: java.lang.StackOverflowError";
+    static class Launcher {
+        public static void main(String[] args) throws Exception {
 
-        // Pre-load, but not initialize, LongCache, else we will
-        // hit SOE during class loading.
-        System.out.println("Pre-loading ...");
-        Class<?> c = Class.forName("TestStackOverflowDuringInit$LongCache",
-                                   false,
-                                   TestStackOverflowDuringInit.class.getClassLoader());
-        try {
-            recurse();
-        } catch (Throwable ex) {
-            //            ex.printStackTrace();
-            verify_stack(ex, expected, cause);
+            // Pre-load, but not initialize, LongCache, else we will
+            // hit SOE during class loading.
+            System.out.println("Pre-loading ...");
+            Class<?> c = Class.forName("TestStackOverflowDuringInit$LongCache",
+                                       false,
+                                       TestStackOverflowDuringInit.class.getClassLoader());
+            try {
+                recurse();
+            } catch (Throwable ex) {
+                //            ex.printStackTrace();
+                verify_stack(ex, expected, cause);
+            }
+        }
+
+        private static void verify_stack(Throwable e, String expected, String cause) throws Exception {
+            ByteArrayOutputStream byteOS = new ByteArrayOutputStream();
+            try (PrintStream printStream = new PrintStream(byteOS)) {
+                e.printStackTrace(printStream);
+            }
+            String stackTrace = byteOS.toString("ASCII");
+            System.out.println(stackTrace);
+            if (!stackTrace.contains(expected) ||
+                (cause != null && !stackTrace.contains(cause))) {
+                throw new RuntimeException(expected + " and/or " + cause + " missing from stacktrace");
+            }
         }
     }
 
-    private static void verify_stack(Throwable e, String expected, String cause) throws Exception {
-        ByteArrayOutputStream byteOS = new ByteArrayOutputStream();
-        try (PrintStream printStream = new PrintStream(byteOS)) {
-            e.printStackTrace(printStream);
-        }
-        String stackTrace = byteOS.toString("ASCII");
-        System.out.println(stackTrace);
-        if (!stackTrace.contains(expected) ||
-            (cause != null && !stackTrace.contains(cause))) {
-            throw new RuntimeException(expected + " and/or " + cause + " missing from stacktrace");
-        }
+    public static void main(String[] args) throws Exception {
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        long minimumJavaStackSize = wb.getMinimumJavaStackSize();
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-Xss" + Long.toString(minimumJavaStackSize), "-Xint",
+                Launcher.class.getName());
+
+        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+        analyzer.shouldHaveExitValue(0);
+        analyzer.shouldContain(expected);
+        analyzer.shouldContain(cause);
     }
 }

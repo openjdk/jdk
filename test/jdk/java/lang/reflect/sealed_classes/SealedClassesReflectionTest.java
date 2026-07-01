@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,17 @@
  * @bug 8227046
  * @summary reflection test for sealed classes
  * @compile SealedClassesReflectionTest.java
- * @run testng/othervm SealedClassesReflectionTest
+ * @run junit/othervm SealedClassesReflectionTest
  */
 
 import java.lang.annotation.*;
-import java.lang.constant.ClassDesc;
 import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.List;
-import org.testng.annotations.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@Test
 public class SealedClassesReflectionTest {
 
     sealed class SealedClass1 permits FinalSubclass1, NonSealedSubclass1 {}
@@ -68,8 +67,7 @@ public class SealedClassesReflectionTest {
     sealed class SealedSubclass2 implements SealedInt3 permits NonSealedSubclass2 {}
     non-sealed class NonSealedSubclass2 extends SealedSubclass2 {}
 
-    @DataProvider(name = "sealedClasses")
-    public Object[][] sealedClassesData() {
+    public static List<Class<?>> sealedClassesData() {
         return List.of(
                 SealedClass1.class,
                 SealedClass2.class,
@@ -79,19 +77,19 @@ public class SealedClassesReflectionTest {
                 SealedInt2.class,
                 SealedInt3.class,
                 SealedSubInt1.class
-        ).stream().map(c -> new Object[] {c}).toArray(Object[][]::new);
+        );
     }
 
-    @Test(dataProvider = "sealedClasses")
+    @ParameterizedTest
+    @MethodSource("sealedClassesData")
     public void testSealedClasses(Class<?> cls) {
         assertTrue(cls.isSealed());
-        assertTrue(!Modifier.isFinal(cls.getModifiers()));
-        assertTrue(cls.getPermittedSubclasses() != null);
+        assertFalse(Modifier.isFinal(cls.getModifiers()));
+        assertNotNull(cls.getPermittedSubclasses());
         assertTrue(cls.getPermittedSubclasses().length > 0);
     }
 
-    @DataProvider(name = "notSealedClasses")
-    public Object[][] notSealedClassesData() {
+    public static List<Class<?>> notSealedClassesData() {
         return List.of(
                 Object.class,
                 void.class, Void.class, Void[].class,
@@ -104,34 +102,34 @@ public class SealedClassesReflectionTest {
                 double.class, double[].class, Double.class, Double[].class,
                 boolean.class, boolean[].class, Boolean.class, Boolean[].class,
                 String.class, String[].class
-        ).stream().map(c -> new Object[] {c}).toArray(Object[][]::new);
+        );
     }
 
-    @Test(dataProvider = "notSealedClasses")
+    @ParameterizedTest
+    @MethodSource("notSealedClassesData")
     public void testNotSealedClasses(Class<?> cls) {
-        assertTrue(!cls.isSealed());
-        assertTrue(cls.getPermittedSubclasses() == null);
+        assertFalse(cls.isSealed());
+        assertNull(cls.getPermittedSubclasses());
     }
 
-    @DataProvider(name = "non_sealedClasses")
-    public Object[][] non_sealedClassesData() {
+    public static List<Class<?>> non_sealedClassesData() {
         return List.of(
                 NonSealedSubclass1.class,
                 NonSealedSubInt1.class,
                 NonSealedSubclass2.class
-        ).stream().map(c -> new Object[] {c}).toArray(Object[][]::new);
+        );
     }
 
-    @Test(dataProvider = "non_sealedClasses")
+    @ParameterizedTest
+    @MethodSource("non_sealedClassesData")
     public void testnon_sealedClasses(Class<?> cls) {
-        assertTrue(!cls.isSealed());
-        assertTrue(!Modifier.isFinal(cls.getModifiers()));
+        assertFalse(cls.isSealed());
+        assertFalse(Modifier.isFinal(cls.getModifiers()));
         assertTrue((cls.getSuperclass() != null && cls.getSuperclass().isSealed()) || Arrays.stream(cls.getInterfaces()).anyMatch(Class::isSealed));
-        assertTrue(cls.getPermittedSubclasses() == null);
+        assertNull(cls.getPermittedSubclasses());
     }
 
-    @DataProvider(name = "reflectionData")
-    public Object[][] reflectionData() {
+    public static Object[][] reflectionData() {
         return new Object[][] {
                 new Object[] {
                         SealedClass1.class,
@@ -204,7 +202,8 @@ public class SealedClassesReflectionTest {
         SEALED, NON_SEALED, FINAL
     }
 
-    @Test(dataProvider = "reflectionData")
+    @ParameterizedTest
+    @MethodSource("reflectionData")
     public void testSealedReflection(Class<?> sealedClass,
                                      int numberOfSubclasses,
                                      String[] subclassDescriptors,
@@ -213,10 +212,10 @@ public class SealedClassesReflectionTest {
             throws ReflectiveOperationException
     {
         assertTrue(sealedClass.isSealed());
-        assertTrue(sealedClass.getPermittedSubclasses().length == numberOfSubclasses);
+        assertEquals(numberOfSubclasses, sealedClass.getPermittedSubclasses().length);
         int i = 0;
         for (Class<?> cd : sealedClass.getPermittedSubclasses()) {
-            assertTrue(cd.getName().equals(subclassDescriptors[i]), "expected: " + subclassDescriptors[i] + " found: " + cd.getName());
+            assertEquals(subclassDescriptors[i], cd.getName());
             i++;
         }
         i = 0;

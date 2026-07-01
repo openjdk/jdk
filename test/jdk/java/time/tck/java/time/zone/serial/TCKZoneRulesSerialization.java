@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,6 @@
  */
 package tck.java.time.zone.serial;
 
-import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -68,16 +67,17 @@ import java.io.ObjectOutputStream;
 import java.time.ZoneId;
 import java.time.zone.ZoneRules;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 import tck.java.time.AbstractTCKTest;
 
 /**
  * Test serialization of ZoneRules.
  */
-@Test
 public class TCKZoneRulesSerialization extends AbstractTCKTest{
 
+    @Test
     public void test_serialization_loaded() throws Exception {
         assertSerialization(europeLondon());
         assertSerialization(europeParis());
@@ -95,7 +95,7 @@ public class TCKZoneRulesSerialization extends AbstractTCKTest{
         ObjectInputStream in = new ObjectInputStream(bais);
         ZoneRules result = (ZoneRules) in.readObject();
 
-        assertEquals(result, test);
+        assertEquals(test, result);
     }
 
     //-----------------------------------------------------------------------

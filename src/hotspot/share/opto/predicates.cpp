@@ -65,7 +65,7 @@ bool AssertionPredicate::has_assertion_predicate_opaque(const Node* predicate_pr
 
 // Check if the other projection (UCT projection) of `success_proj` has a Halt node as output.
 bool AssertionPredicate::has_halt(const IfTrueNode* success_proj) {
-  ProjNode* other_proj = success_proj->other_if_proj();
+  IfProjNode* other_proj = success_proj->other_if_proj();
   return other_proj->outcnt() == 1 && other_proj->unique_out()->Opcode() == Op_Halt;
 }
 
@@ -396,7 +396,7 @@ bool InitializedAssertionPredicate::is_predicate(const Node* maybe_success_proj)
 
 #ifdef ASSERT
 bool InitializedAssertionPredicate::has_halt(const IfTrueNode* success_proj) {
-  ProjNode* other_proj = success_proj->other_if_proj();
+  IfProjNode* other_proj = success_proj->other_if_proj();
   if (other_proj->outcnt() != 1) {
     return false;
   }

@@ -119,10 +119,7 @@ public class AbstractVectorTest {
                 Arrays.fill(a, true);
                 return a;
             }),
-            withToString("mask[false]", boolean[]::new),
-            withToString("mask[random]", (int s) -> {
-                return fill_boolean(s,_i -> RAND.nextBoolean());
-            })
+            withToString("mask[false]", boolean[]::new)
     );
 
     static final List<List<IntFunction<boolean[]>>>

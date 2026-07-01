@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4826,7 +4826,9 @@ assert((int)twice.invokeExact(21) == 42);
      * Before the method handle is returned, the passed-in value is converted to the requested type.
      * If the requested type is primitive, widening primitive conversions are attempted,
      * else reference conversions are attempted.
-     * <p>The returned method handle is equivalent to {@code identity(type).bindTo(value)}.
+     * <p>The returned method handle is equivalent to {@code identity(type).bindTo(value)},
+     * for reference types.  For all types it is equivalent to
+     * {@code insertArguments(identity(type), 0, value)}.
      * @param type the return type of the desired method handle
      * @param value the value to return
      * @return a method handle of the given return type and no arguments, which always returns the given value

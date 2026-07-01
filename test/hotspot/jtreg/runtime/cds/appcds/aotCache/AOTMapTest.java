@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,7 @@ public class AOTMapTest {
 }
 
 class AOTMapTestApp {
+    static URLClassLoader loader; // keep Hello class alive
     public static void main(String[] args) throws Exception {
         System.out.println("Hello AOTMapTestApp");
         testCustomLoader();
@@ -144,7 +145,7 @@ class AOTMapTestApp {
     static void testCustomLoader() throws Exception {
         File custJar = new File("cust.jar");
         URL[] urls = new URL[] {custJar.toURI().toURL()};
-        URLClassLoader loader = new URLClassLoader(urls, AOTMapTestApp.class.getClassLoader());
+        loader = new URLClassLoader(urls, AOTMapTestApp.class.getClassLoader());
         Class<?> c = loader.loadClass("Hello");
         System.out.println(c);
     }

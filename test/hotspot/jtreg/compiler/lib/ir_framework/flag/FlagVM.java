@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- * This class' main method is called from {@link TestFramework} and represents the so-called "flag VM". It uses the
- * Whitebox API to determine the necessary additional flags to run the test VM (e.g. to do IR matching). It returns
+ * This class' main method is called from {@link TestFramework} and represents the so-called "Flag VM". It uses the
+ * Whitebox API to determine the necessary additional flags to run the Test VM (e.g. to do IR matching). It returns
  * the flags over the dedicated TestFramework socket.
  */
 public class FlagVM {
@@ -79,12 +79,12 @@ public class FlagVM {
     private static final boolean VERIFY_IR = REQUESTED_VERIFY_IR && USE_COMPILER && !EXCLUDE_RANDOM && !FLIP_C1_C2 && !TEST_C1 && Platform.isServer();
 
     /**
-     * Main entry point of the flag VM.
+     * Main entry point of the Flag VM.
      */
     public static void main(String[] args) {
         String testClassName = args[0];
         if (VERBOSE) {
-            System.out.println("FlagVM main() called. Prepare test VM flags to run class " + testClassName);
+            System.out.println("FlagVM main() called. Prepare Test VM flags to run class " + testClassName);
         }
         Class<?> testClass;
         try {
@@ -96,8 +96,8 @@ public class FlagVM {
     }
 
     /**
-     * Emit test VM flags to the dedicated test VM flags file to parse them from the TestFramework "driver" VM again
-     * which adds them to the test VM.
+     * Emit Test VM flags to the dedicated Test VM flags file to parse them from the TestFramework Driver VM again
+     * which adds them to the Test VM.
      */
     private static void emitTestVMFlags(ArrayList<String> flags) {
         try (var bw = Files.newBufferedWriter(Paths.get(TEST_VM_FLAGS_FILE))) {

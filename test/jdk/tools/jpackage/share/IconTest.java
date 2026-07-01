@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.ConfigurationTarget;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.LauncherIconVerifier;
 import jdk.jpackage.test.LinuxHelper;
@@ -203,7 +204,7 @@ public class IconTest {
         return withDesktopFile;
     }
 
-    private ThrowingBiConsumer<JPackageCommand, Executor.Result> createBundleVerifier() {
+    private ThrowingBiConsumer<JPackageCommand, Executor.Result, IOException> createBundleVerifier() {
         return (cmd, result) -> {
             Stream.of(Launcher.Main, Launcher.Additional).filter(config::containsKey).forEach(launcher -> {
                 createConsoleOutputVerifier(cmd, launcher).ifPresent(verifier -> {
@@ -276,7 +277,7 @@ public class IconTest {
         return Optional.of(TKit.assertTextStream(lookupString.getValue()));
     }
 
-    private ThrowingConsumer<JPackageCommand> createInstallVerifier() {
+    private ThrowingConsumer<JPackageCommand, IOException> createInstallVerifier() {
         return cmd -> {
             var verifier = new LauncherIconVerifier();
 
@@ -326,6 +327,7 @@ public class IconTest {
             cmd.saveConsoleOutput(true);
             cmd.setFakeRuntime();
             cmd.addArguments(extraJPackageArgs);
+            cmd.setEnabledMessageCategories(MessageCategory.RESOURCES).setDisabledMessageCategories();
         });
     }
 

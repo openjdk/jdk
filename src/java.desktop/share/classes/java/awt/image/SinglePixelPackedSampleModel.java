@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,7 +250,12 @@ public class SinglePixelPackedSampleModel extends SampleModel
         return bitSizes.clone();
     }
 
-    /** Returns the number of bits per sample for the specified band. */
+    /** Returns the number of bits per sample for the specified band.
+     * @param band the specified band
+     * @return the size of the samples of the specified band.
+     * @throws ArrayIndexOutOfBoundsException if the {@code band} index
+     * is less than zero or greater than or equal to {@code getNumBands()}
+     */
     public int getSampleSize(int band) {
         return bitSizes[band];
     }
@@ -302,9 +307,13 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * SinglePixelPackedSampleModel/DataBuffer combination will represent
      * an image with a subset of the bands of the original
      * SinglePixelPackedSampleModel/DataBuffer combination.
+     *
+     * @throws NullPointerException if {@code bands} is {@code null}
+     * @throws IllegalArgumentException if the number of bands is not greater than 0
      * @throws RasterFormatException if the length of the bands argument is
      *                                  greater than the number of bands in
      *                                  the sample model.
+     * @throws ArrayIndexOutOfBoundsException if any of the bank indices is out of bounds
      */
     public SampleModel createSubsetSampleModel(int[] bands) {
         if (bands.length > numBands)

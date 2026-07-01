@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary define a lambda proxy class whose target class has an invalid
  *          nest membership
- * @run testng/othervm p.LambdaNestedInnerTest
+ * @run junit/othervm p.LambdaNestedInnerTest
  */
 
 package p;
@@ -41,11 +41,10 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class LambdaNestedInnerTest {
     private static final String INNER_CLASSNAME = "p.LambdaNestedInnerTest$Inner";
@@ -68,7 +67,7 @@ public class LambdaNestedInnerTest {
             lambda1.run();
         }
 
-        // testng may not be visible to this class
+        // junit may not be visible to this class
         private static void assertTrue(boolean x) {
             if (!x) {
                 throw new AssertionError("expected true but found false");
@@ -79,8 +78,8 @@ public class LambdaNestedInnerTest {
         }
     }
 
-    @BeforeTest
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
         String filename = INNER_CLASSNAME.replace('.', File.separatorChar) + ".class";
         Path src = Paths.get(System.getProperty("test.classes"), filename);
         Path dest = Paths.get(DIR, filename);
@@ -93,9 +92,9 @@ public class LambdaNestedInnerTest {
         Class<?> inner = Class.forName(INNER_CLASSNAME);
         // inner class is a nest member of LambdaNestedInnerTest
         Class<?> nestHost = inner.getNestHost();
-        assertTrue(nestHost == LambdaNestedInnerTest.class);
+        assertSame(LambdaNestedInnerTest.class, nestHost);
         Set<Class<?>> members = Arrays.stream(nestHost.getNestMembers()).collect(Collectors.toSet());
-        assertEquals(members, Set.of(nestHost, inner, TestLoader.class));
+        assertEquals(Set.of(nestHost, inner, TestLoader.class), members);
 
         // spin lambda proxy hidden class
         Runnable runnable = (Runnable) inner.newInstance();
@@ -107,8 +106,8 @@ public class LambdaNestedInnerTest {
         URL[] urls = new URL[] { Paths.get(DIR).toUri().toURL() };
         URLClassLoader loader = new URLClassLoader(urls, null);
         Class<?> inner = loader.loadClass(INNER_CLASSNAME);
-        assertTrue(inner.getClassLoader() == loader);
-        assertTrue(inner.getNestHost() == inner);   // linkage error ignored
+        assertSame(loader, inner.getClassLoader());
+        assertSame(inner, inner.getNestHost());   // linkage error ignored
 
         Runnable runnable = (Runnable) inner.newInstance();
         // this validates the lambda proxy class
@@ -125,8 +124,8 @@ public class LambdaNestedInnerTest {
         TestLoader loader = new TestLoader(urls);
 
         Class<?> inner = loader.loadClass(INNER_CLASSNAME);
-        assertTrue(inner.getClassLoader() == loader);
-        assertTrue(inner.getNestHost() == inner);   // linkage error ignored.
+        assertSame(loader, inner.getClassLoader());
+        assertSame(inner, inner.getNestHost());   // linkage error ignored.
 
         Runnable runnable = (Runnable) inner.newInstance();
         // this validates the lambda proxy class

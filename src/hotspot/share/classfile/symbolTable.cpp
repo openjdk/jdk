@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -690,7 +691,7 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
     assert(fixed_hash == hash_symbol((const char*)sym->bytes(), sym->utf8_length(), false),
            "must not rehash during dumping");
     sym->set_permanent();
-    writer->add(fixed_hash, builder->buffer_to_offset_u4((address)sym));
+    writer->add(fixed_hash, AOTCompressedPointers::encode_not_null(sym));
   }
 }
 
@@ -763,6 +764,10 @@ struct SymbolTableDeleteCheck : StackObj {
 };
 
 void SymbolTable::clean_dead_entries(JavaThread* jt) {
+  // BulkDeleteTask::prepare() may take ConcurrentHashTableResize_lock (nosafepoint-2).
+  // When NativeHeapTrimmer is enabled, SuspendMark may take NativeHeapTrimmer::_lock (nosafepoint).
+  // Take SuspendMark first to keep lock order and avoid deadlock.
+  NativeHeapTrimmer::SuspendMark sm("symboltable");
   SymbolTableHash::BulkDeleteTask bdt(_local_table);
   if (!bdt.prepare(jt)) {
     return;
@@ -770,7 +775,6 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
 
   SymbolTableDeleteCheck stdc;
   SymbolTableDoDelete stdd;
-  NativeHeapTrimmer::SuspendMark sm("symboltable");
   {
     TraceTime timer("Clean", TRACETIME_LOG(Debug, symboltable, perf));
     while (bdt.do_task(jt, stdc, stdd)) {

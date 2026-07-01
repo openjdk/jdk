@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,9 @@ import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.IsoFields.QUARTER_OF_YEAR;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.ParsePosition;
 import java.time.DayOfWeek;
@@ -77,17 +78,18 @@ import java.time.temporal.TemporalQueries;
 import java.time.temporal.ChronoField;
 import java.util.Locale;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test TextPrinterParser.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestTextParser extends AbstractTestPrinterParser {
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="error")
     Object[][] data_error() {
         return new Object[][] {
             {DAY_OF_WEEK, TextStyle.FULL, "Monday", -1, IndexOutOfBoundsException.class},
@@ -95,7 +97,8 @@ public class TestTextParser extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider="error")
+    @ParameterizedTest
+    @MethodSource("data_error")
     public void test_parse_error(TemporalField field, TextStyle style, String text, int pos, Class<?> expected) {
         try {
             getFormatter(field, style).parseUnresolved(text, new ParsePosition(pos));
@@ -105,49 +108,53 @@ public class TestTextParser extends AbstractTestPrinterParser {
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_parse_midStr() throws Exception {
         ParsePosition pos = new ParsePosition(3);
-        assertEquals(getFormatter(DAY_OF_WEEK, TextStyle.FULL)
-                     .parseUnresolved("XxxMondayXxx", pos)
-                     .getLong(DAY_OF_WEEK), 1L);
-        assertEquals(pos.getIndex(), 9);
+        assertEquals(1L, getFormatter(DAY_OF_WEEK, TextStyle.FULL)
+                .parseUnresolved("XxxMondayXxx", pos)
+                .getLong(DAY_OF_WEEK));
+        assertEquals(9, pos.getIndex());
     }
 
+    @Test
     public void test_parse_remainderIgnored() throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(DAY_OF_WEEK, TextStyle.SHORT)
-                     .parseUnresolved("Wednesday", pos)
-                     .getLong(DAY_OF_WEEK), 3L);
-        assertEquals(pos.getIndex(), 3);
+        assertEquals(3L, getFormatter(DAY_OF_WEEK, TextStyle.SHORT)
+                .parseUnresolved("Wednesday", pos)
+                .getLong(DAY_OF_WEEK));
+        assertEquals(3, pos.getIndex());
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_parse_noMatch1() throws Exception {
         ParsePosition pos = new ParsePosition(0);
         TemporalAccessor parsed =
             getFormatter(DAY_OF_WEEK, TextStyle.FULL).parseUnresolved("Munday", pos);
-        assertEquals(pos.getErrorIndex(), 0);
-        assertEquals(parsed, null);
+        assertEquals(0, pos.getErrorIndex());
+        assertEquals(null, parsed);
     }
 
+    @Test
     public void test_parse_noMatch2() throws Exception {
         ParsePosition pos = new ParsePosition(3);
         TemporalAccessor parsed =
             getFormatter(DAY_OF_WEEK, TextStyle.FULL).parseUnresolved("Monday", pos);
-        assertEquals(pos.getErrorIndex(), 3);
-        assertEquals(parsed, null);
+        assertEquals(3, pos.getErrorIndex());
+        assertEquals(null, parsed);
     }
 
+    @Test
     public void test_parse_noMatch_atEnd() throws Exception {
         ParsePosition pos = new ParsePosition(6);
         TemporalAccessor parsed =
             getFormatter(DAY_OF_WEEK, TextStyle.FULL).parseUnresolved("Monday", pos);
-        assertEquals(pos.getErrorIndex(), 6);
-        assertEquals(parsed, null);
+        assertEquals(6, pos.getErrorIndex());
+        assertEquals(null, parsed);
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="parseText")
     Object[][] provider_text() {
         return new Object[][] {
             {DAY_OF_WEEK, TextStyle.FULL, 1, "Monday"},
@@ -189,7 +196,6 @@ public class TestTextParser extends AbstractTestPrinterParser {
        };
     }
 
-    @DataProvider(name="parseNumber")
     Object[][] provider_number() {
         return new Object[][] {
             {DAY_OF_MONTH, TextStyle.FULL, 1, "1"},
@@ -204,7 +210,6 @@ public class TestTextParser extends AbstractTestPrinterParser {
        };
     }
 
-    @DataProvider(name="parseDayOfWeekText")
     Object[][] providerDayOfWeekData() {
         return new Object[][] {
             // Locale, pattern, input text, expected DayOfWeek
@@ -215,30 +220,34 @@ public class TestTextParser extends AbstractTestPrinterParser {
     }
 
 
-    @Test(dataProvider="parseText")
+    @ParameterizedTest
+    @MethodSource("provider_text")
     public void test_parseText(TemporalField field, TextStyle style, int value, String input) throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(field, style).parseUnresolved(input, pos).getLong(field), (long) value);
-        assertEquals(pos.getIndex(), input.length());
+        assertEquals((long) value, getFormatter(field, style).parseUnresolved(input, pos).getLong(field));
+        assertEquals(input.length(), pos.getIndex());
     }
 
-    @Test(dataProvider="parseNumber")
+    @ParameterizedTest
+    @MethodSource("provider_number")
     public void test_parseNumber(TemporalField field, TextStyle style, int value, String input) throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(field, style).parseUnresolved(input, pos).getLong(field), (long) value);
-        assertEquals(pos.getIndex(), input.length());
+        assertEquals((long) value, getFormatter(field, style).parseUnresolved(input, pos).getLong(field));
+        assertEquals(input.length(), pos.getIndex());
     }
 
-    @Test(dataProvider="parseDayOfWeekText")
+    @ParameterizedTest
+    @MethodSource("providerDayOfWeekData")
     public void test_parseDayOfWeekText(Locale locale, String pattern, String input, DayOfWeek expected) {
         DateTimeFormatter formatter = getPatternFormatter(pattern).withLocale(locale);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(DayOfWeek.from(formatter.parse(input, pos)), expected);
-        assertEquals(pos.getIndex(), input.length());
+        assertEquals(expected, DayOfWeek.from(formatter.parse(input, pos)));
+        assertEquals(input.length(), pos.getIndex());
     }
 
     //-----------------------------------------------------------------------
-    @Test(dataProvider="parseText")
+    @ParameterizedTest
+    @MethodSource("provider_text")
     public void test_parse_strict_caseSensitive_parseUpper(TemporalField field, TextStyle style, int value, String input) throws Exception {
         if (input.equals(input.toUpperCase(Locale.ROOT))) {
             // Skip if the given input is all upper case (e.g., "Q1")
@@ -247,19 +256,21 @@ public class TestTextParser extends AbstractTestPrinterParser {
         setCaseSensitive(true);
         ParsePosition pos = new ParsePosition(0);
         getFormatter(field, style).parseUnresolved(input.toUpperCase(Locale.ROOT), pos);
-        assertEquals(pos.getErrorIndex(), 0);
+        assertEquals(0, pos.getErrorIndex());
     }
 
-    @Test(dataProvider="parseText")
+    @ParameterizedTest
+    @MethodSource("provider_text")
     public void test_parse_strict_caseInsensitive_parseUpper(TemporalField field, TextStyle style, int value, String input) throws Exception {
         setCaseSensitive(false);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(field, style).parseUnresolved(input.toUpperCase(Locale.ROOT), pos).getLong(field), (long) value);
-        assertEquals(pos.getIndex(), input.length());
+        assertEquals((long) value, getFormatter(field, style).parseUnresolved(input.toUpperCase(Locale.ROOT), pos).getLong(field));
+        assertEquals(input.length(), pos.getIndex());
     }
 
     //-----------------------------------------------------------------------
-    @Test(dataProvider="parseText")
+    @ParameterizedTest
+    @MethodSource("provider_text")
     public void test_parse_strict_caseSensitive_parseLower(TemporalField field, TextStyle style, int value, String input) throws Exception {
         if (input.equals(input.toLowerCase(Locale.ROOT))) {
             // Skip if the given input is all lower case (e.g., "1st quarter")
@@ -268,105 +279,118 @@ public class TestTextParser extends AbstractTestPrinterParser {
         setCaseSensitive(true);
         ParsePosition pos = new ParsePosition(0);
         getFormatter(field, style).parseUnresolved(input.toLowerCase(Locale.ROOT), pos);
-        assertEquals(pos.getErrorIndex(), 0);
+        assertEquals(0, pos.getErrorIndex());
     }
 
-    @Test(dataProvider="parseText")
+    @ParameterizedTest
+    @MethodSource("provider_text")
     public void test_parse_strict_caseInsensitive_parseLower(TemporalField field, TextStyle style, int value, String input) throws Exception {
         setCaseSensitive(false);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(field, style).parseUnresolved(input.toLowerCase(Locale.ROOT), pos).getLong(field), (long) value);
-        assertEquals(pos.getIndex(), input.length());
+        assertEquals((long) value, getFormatter(field, style).parseUnresolved(input.toLowerCase(Locale.ROOT), pos).getLong(field));
+        assertEquals(input.length(), pos.getIndex());
     }
 
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
+    @Test
     public void test_parse_full_strict_full_match() throws Exception {
         setStrict(true);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(MONTH_OF_YEAR, TextStyle.FULL).parseUnresolved("January", pos).getLong(MONTH_OF_YEAR), 1L);
-        assertEquals(pos.getIndex(), 7);
+        assertEquals(1L, getFormatter(MONTH_OF_YEAR, TextStyle.FULL).parseUnresolved("January", pos).getLong(MONTH_OF_YEAR));
+        assertEquals(7, pos.getIndex());
     }
 
+    @Test
     public void test_parse_full_strict_short_noMatch() throws Exception {
         setStrict(true);
         ParsePosition pos = new ParsePosition(0);
         getFormatter(MONTH_OF_YEAR, TextStyle.FULL).parseUnresolved("Janua", pos);
-        assertEquals(pos.getErrorIndex(), 0);
+        assertEquals(0, pos.getErrorIndex());
     }
 
+    @Test
     public void test_parse_full_strict_number_noMatch() throws Exception {
         setStrict(true);
         ParsePosition pos = new ParsePosition(0);
         getFormatter(MONTH_OF_YEAR, TextStyle.FULL).parseUnresolved("1", pos);
-        assertEquals(pos.getErrorIndex(), 0);
+        assertEquals(0, pos.getErrorIndex());
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_parse_short_strict_full_match() throws Exception {
         setStrict(true);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).parseUnresolved("January", pos).getLong(MONTH_OF_YEAR), 1L);
-        assertEquals(pos.getIndex(), 3);
+        assertEquals(1L, getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).parseUnresolved("January", pos).getLong(MONTH_OF_YEAR));
+        assertEquals(3, pos.getIndex());
     }
 
+    @Test
     public void test_parse_short_strict_short_match() throws Exception {
         setStrict(true);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).parseUnresolved("Janua", pos).getLong(MONTH_OF_YEAR), 1L);
-        assertEquals(pos.getIndex(), 3);
+        assertEquals(1L, getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).parseUnresolved("Janua", pos).getLong(MONTH_OF_YEAR));
+        assertEquals(3, pos.getIndex());
     }
 
+    @Test
     public void test_parse_short_strict_number_noMatch() throws Exception {
         setStrict(true);
         ParsePosition pos = new ParsePosition(0);
         getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).parseUnresolved("1", pos);
-        assertEquals(pos.getErrorIndex(), 0);
+        assertEquals(0, pos.getErrorIndex());
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_parse_full_lenient_full_match() throws Exception {
         setStrict(false);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(MONTH_OF_YEAR, TextStyle.FULL).parseUnresolved("January.", pos).getLong(MONTH_OF_YEAR), 1L);
-        assertEquals(pos.getIndex(), 7);
+        assertEquals(1L, getFormatter(MONTH_OF_YEAR, TextStyle.FULL).parseUnresolved("January.", pos).getLong(MONTH_OF_YEAR));
+        assertEquals(7, pos.getIndex());
     }
 
+    @Test
     public void test_parse_full_lenient_short_match() throws Exception {
         setStrict(false);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(MONTH_OF_YEAR, TextStyle.FULL).parseUnresolved("Janua", pos).getLong(MONTH_OF_YEAR), 1L);
-        assertEquals(pos.getIndex(), 3);
+        assertEquals(1L, getFormatter(MONTH_OF_YEAR, TextStyle.FULL).parseUnresolved("Janua", pos).getLong(MONTH_OF_YEAR));
+        assertEquals(3, pos.getIndex());
     }
 
+    @Test
     public void test_parse_full_lenient_number_match() throws Exception {
         setStrict(false);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(MONTH_OF_YEAR, TextStyle.FULL).parseUnresolved("1", pos).getLong(MONTH_OF_YEAR), 1L);
-        assertEquals(pos.getIndex(), 1);
+        assertEquals(1L, getFormatter(MONTH_OF_YEAR, TextStyle.FULL).parseUnresolved("1", pos).getLong(MONTH_OF_YEAR));
+        assertEquals(1, pos.getIndex());
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_parse_short_lenient_full_match() throws Exception {
         setStrict(false);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).parseUnresolved("January", pos).getLong(MONTH_OF_YEAR), 1L);
-        assertEquals(pos.getIndex(), 7);
+        assertEquals(1L, getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).parseUnresolved("January", pos).getLong(MONTH_OF_YEAR));
+        assertEquals(7, pos.getIndex());
     }
 
+    @Test
     public void test_parse_short_lenient_short_match() throws Exception {
         setStrict(false);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).parseUnresolved("Janua", pos).getLong(MONTH_OF_YEAR), 1L);
-        assertEquals(pos.getIndex(), 3);
+        assertEquals(1L, getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).parseUnresolved("Janua", pos).getLong(MONTH_OF_YEAR));
+        assertEquals(3, pos.getIndex());
     }
 
+    @Test
     public void test_parse_short_lenient_number_match() throws Exception {
         setStrict(false);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).parseUnresolved("1", pos).getLong(MONTH_OF_YEAR), 1L);
-        assertEquals(pos.getIndex(), 1);
+        assertEquals(1L, getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).parseUnresolved("1", pos).getLong(MONTH_OF_YEAR));
+        assertEquals(1, pos.getIndex());
     }
 
 }

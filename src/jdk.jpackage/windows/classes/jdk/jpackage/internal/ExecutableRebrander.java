@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinExePackage;
 import jdk.jpackage.internal.model.WinLauncher;
@@ -74,11 +76,11 @@ final class ExecutableRebrander {
 
         this.props = new HashMap<>();
 
-        validateValueAndPut(this.props, Map.entry("COMPANY_NAME", props.vendor), "vendor");
-        validateValueAndPut(this.props, Map.entry("FILE_DESCRIPTION",props.description), "description");
-        validateValueAndPut(this.props, Map.entry("FILE_VERSION", props.version.toString()), "version");
-        validateValueAndPut(this.props, Map.entry("LEGAL_COPYRIGHT", props.copyright), "copyright");
-        validateValueAndPut(this.props, Map.entry("PRODUCT_NAME", props.name), "name");
+        this.props.put("COMPANY_NAME", validateSingleLine(props.vendor));
+        this.props.put("FILE_DESCRIPTION", validateSingleLine(props.description));
+        this.props.put("FILE_VERSION", validateSingleLine(props.version.toString()));
+        this.props.put("LEGAL_COPYRIGHT", validateSingleLine(props.copyright));
+        this.props.put("PRODUCT_NAME", validateSingleLine(props.name));
 
         this.props.put("FIXEDFILEINFO_FILE_VERSION", toFixedFileVersion(props.version));
         this.props.put("INTERNAL_NAME", props.executableName);
@@ -90,7 +92,7 @@ final class ExecutableRebrander {
 
         UpdateResourceAction versionSwapper = resourceLock -> {
             if (versionSwap(resourceLock, propsArray) != 0) {
-                throw I18N.buildException().message("error.version-swap", target).create(RuntimeException::new);
+                throw new JPackageException(I18N.format("error.version-swap", target));
             }
         };
 
@@ -100,7 +102,7 @@ final class ExecutableRebrander {
                 .map(absIcon -> {
                     return resourceLock -> {
                         if (iconSwap(resourceLock, absIcon.toString()) != 0) {
-                            throw I18N.buildException().message("error.icon-swap", absIcon).create(RuntimeException::new);
+                            throw new JPackageException(I18N.format("error.icon-swap", absIcon));
                         }
                     };
                 });
@@ -118,43 +120,58 @@ final class ExecutableRebrander {
 
     private static void rebrandExecutable(BuildEnv env, final Path target,
             List<UpdateResourceAction> actions) throws IOException {
+
+        Objects.requireNonNull(env);
+        Objects.requireNonNull(target);
         Objects.requireNonNull(actions);
         actions.forEach(Objects::requireNonNull);
 
-        String tempDirectory = env.buildRoot().toAbsolutePath().toString();
-        if (WindowsDefender.isThereAPotentialWindowsDefenderIssue(tempDirectory)) {
-            Log.verbose(I18N.format("message.potential.windows.defender.issue", tempDirectory));
-        }
-
-        var shortTargetPath = ShortPathUtils.toShortPath(target);
-        long resourceLock = lockResource(shortTargetPath.orElse(target).toString());
-        if (resourceLock == 0) {
-            throw I18N.buildException().message("error.lock-resource", shortTargetPath.orElse(target)).create(RuntimeException::new);
-        }
-
-        final boolean resourceUnlockedSuccess;
         try {
-            for (var action : actions) {
-                action.editResource(resourceLock);
-            }
-        } finally {
-            if (resourceLock == 0) {
-                resourceUnlockedSuccess = true;
-            } else {
-                resourceUnlockedSuccess = unlockResource(resourceLock);
-                if (shortTargetPath.isPresent()) {
-                    // Windows will rename the executable in the unlock operation.
-                    // Should restore executable's name.
-                    var tmpPath = target.getParent().resolve(
-                            target.getFileName().toString() + ".restore");
-                    Files.move(shortTargetPath.get(), tmpPath);
-                    Files.move(tmpPath, target);
-                }
-            }
-        }
+            Globals.instance().objectFactory().<Void, RuntimeException>retryExecutor(RuntimeException.class).setExecutable(() -> {
 
-        if (!resourceUnlockedSuccess) {
-            throw I18N.buildException().message("error.unlock-resource", target).create(RuntimeException::new);
+                var shortTargetPath = ShortPathUtils.toShortPath(target);
+                long resourceLock = lockResource(shortTargetPath.orElse(target).toString());
+                if (resourceLock == 0) {
+                    throw new JPackageException(I18N.format("error.lock-resource", shortTargetPath.orElse(target)));
+                }
+
+                final boolean resourceUnlockedSuccess;
+                try {
+                    for (var action : actions) {
+                        try {
+                            action.editResource(resourceLock);
+                        } catch (IOException ex) {
+                            throw new UncheckedIOException(ex);
+                        }
+                    }
+                } finally {
+                    if (resourceLock == 0) {
+                        resourceUnlockedSuccess = true;
+                    } else {
+                        resourceUnlockedSuccess = unlockResource(resourceLock);
+                        if (shortTargetPath.isPresent()) {
+                            // Windows will rename the executable in the unlock operation.
+                            // Should restore executable's name.
+                            var tmpPath = target.getParent().resolve(
+                                    target.getFileName().toString() + ".restore");
+                            try {
+                                Files.move(shortTargetPath.get(), tmpPath);
+                                Files.move(tmpPath, target);
+                            } catch (IOException ex) {
+                                throw new UncheckedIOException(ex);
+                            }
+                        }
+                    }
+                }
+
+                if (!resourceUnlockedSuccess) {
+                    throw new JPackageException(I18N.format("error.unlock-resource", shortTargetPath.orElse(target)));
+                }
+
+                return null;
+            }).setMaxAttemptsCount(5).setAttemptTimeout(3, TimeUnit.SECONDS).execute();
+        } catch (UncheckedIOException ex) {
+            throw ex.getCause();
         }
     }
 
@@ -197,14 +214,13 @@ final class ExecutableRebrander {
         }
     }
 
-    private static void validateValueAndPut(Map<String, String> target,
-            Map.Entry<String, String> e, String label) {
-        if (e.getValue().contains("\r") || e.getValue().contains("\n")) {
-            Log.error("Configuration parameter " + label
-                    + " contains multiple lines of text, ignore it");
-            e = Map.entry(e.getKey(), "");
+    private static String validateSingleLine(String v) {
+        Objects.requireNonNull(v);
+        if (v.contains("\r") || v.contains("\n")) {
+            throw new IllegalArgumentException("Configuration parameter contains multiple lines of text");
+        } else {
+            return v;
         }
-        target.put(e.getKey(), e.getValue());
     }
 
     @FunctionalInterface
@@ -212,19 +228,35 @@ final class ExecutableRebrander {
         public void editResource(long resourceLock) throws IOException;
     }
 
-    private static record ExecutableProperties(String vendor, String description,
+    private record ExecutableProperties(String vendor, String description,
             DottedVersion version, String copyright, String name, String executableName) {
-        static ExecutableProperties create(WinApplication app,
-                WinLauncher launcher) {
-            return new ExecutableProperties(app.vendor(), launcher.description(),
-                    app.winVersion(), app.copyright(), launcher.name(),
+
+        ExecutableProperties {
+            Objects.requireNonNull(vendor);
+            Objects.requireNonNull(description);
+            Objects.requireNonNull(version);
+            Objects.requireNonNull(copyright);
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(executableName);
+        }
+
+        static ExecutableProperties create(WinApplication app, WinLauncher launcher) {
+            return new ExecutableProperties(
+                    app.vendor(),
+                    launcher.description(),
+                    app.winVersion(),
+                    app.copyright(),
+                    launcher.name(),
                     launcher.executableNameWithSuffix());
         }
 
         static ExecutableProperties create(WinExePackage pkg) {
-            return new ExecutableProperties(pkg.app().vendor(),
-                    pkg.description(), DottedVersion.lazy(pkg.version()),
-                    pkg.app().copyright(), pkg.packageName(),
+            return new ExecutableProperties(
+                    pkg.app().vendor(),
+                    pkg.description(),
+                    DottedVersion.lazy(pkg.version()),
+                    pkg.app().copyright(),
+                    pkg.packageName(),
                     pkg.packageFileNameWithSuffix());
         }
     }

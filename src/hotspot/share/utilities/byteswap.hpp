@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, 2024, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -141,7 +142,7 @@ struct ByteswapImpl : public ByteswapFallbackImpl<T, N> {};
  *****************************************************************************/
 #elif defined(TARGET_COMPILER_visCPP)
 
-#include <cstdlib>
+#include "cppstdlib/cstdlib.hpp"
 
 #pragma intrinsic(_byteswap_ushort)
 #pragma intrinsic(_byteswap_ulong)

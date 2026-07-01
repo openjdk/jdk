@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +39,6 @@
   void arraycopy_type_check(Register src, Register src_pos, Register length,
                             Register dst, Register dst_pos, Register tmp,
                             CodeStub *stub, BasicType basic_type, int flags);
-  void arraycopy_assert(Register src, Register dst, Register tmp, ciArrayKlass *default_type, int flags);
   void arraycopy_prepare_params(Register src, Register src_pos, Register length,
                                 Register dst, Register dst_pos, BasicType basic_type);
   void arraycopy_checkcast_prepare_params(Register src, Register src_pos, Register length,

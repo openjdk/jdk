@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.regex.Pattern;
 import jdk.internal.platform.Metrics;
 import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
@@ -290,7 +291,9 @@ public class DockerTestUtils {
      * @throws Exception
      */
     public static void removeDockerImage(String imageNameAndTag) throws Exception {
+        if(!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
             execute(Container.ENGINE_COMMAND, "rmi", "--force", imageNameAndTag);
+        }
     }
 
 
@@ -341,6 +344,16 @@ public class DockerTestUtils {
         return output;
     }
 
+    public static void shouldMatchWithValue(OutputAnalyzer output, String metric, String value) throws Exception {
+        String pattern = "^" + Pattern.quote(metric) + ":\\s*" + Pattern.quote(value) + ".*$";
+        output.shouldMatch(pattern);
+    }
+
+    public static void shouldNotMatchWithValue(OutputAnalyzer output, String metric, String value) throws Exception {
+        String pattern = "^" + Pattern.quote(metric) + ":\\s*" + Pattern.quote(value) + ".*$";
+        output.shouldNotMatch(pattern);
+    }
+
 
     private static void writeOutputToFile(String output, String fileName) throws Exception {
         try (FileWriter fw = new FileWriter(fileName)) {
@@ -367,6 +380,7 @@ public class DockerTestUtils {
         }
         template = template + "COPY /jdk /jdk\n" +
             "ENV JAVA_HOME=/jdk\n" +
+            "ENV LANG=C.UTF-8\n" +
             "CMD [\"/bin/bash\"]\n";
         String dockerFileStr = String.format(template, baseImage, baseImageVersion);
         Files.writeString(dockerfile, dockerFileStr);

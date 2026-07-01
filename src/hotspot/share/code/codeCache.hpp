@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,6 @@ class ReservedSpace;
 
 class CodeCache : AllStatic {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   template <class T, class Filter, bool is_relaxed> friend class CodeBlobIterator;
   friend class WhiteBox;
   friend class ShenandoahParallelCodeHeapIterator;
@@ -118,10 +117,6 @@ class CodeCache : AllStatic {
   // Creates a new heap with the given name and size, containing CodeBlobs of the given type
   static void add_heap(ReservedSpace rs, const char* name, CodeBlobType code_blob_type);
   static CodeHeap* get_code_heap_containing(void* p);         // Returns the CodeHeap containing the given pointer, or nullptr
-  static CodeHeap* get_code_heap(const void* cb);             // Returns the CodeHeap for the given CodeBlob
-  static CodeHeap* get_code_heap(CodeBlobType code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
-  // Returns the name of the VM option to set the size of the corresponding CodeHeap
-  static const char* get_code_heap_flag_name(CodeBlobType code_blob_type);
   static ReservedSpace reserve_heap_memory(size_t size, size_t rs_ps); // Reserves one continuous chunk of memory for the CodeHeaps
 
   // Iteration
@@ -145,6 +140,8 @@ class CodeCache : AllStatic {
   static int code_heap_compare(CodeHeap* const &lhs, CodeHeap* const &rhs);
 
   static void add_heap(CodeHeap* heap);
+  static CodeHeap* get_code_heap(const void* cb);              // Returns the CodeHeap for the given CodeBlob
+  static CodeHeap* get_code_heap(CodeBlobType code_blob_type); // Returns the CodeHeap for the given CodeBlobType
   static const GrowableArray<CodeHeap*>* heaps() { return _heaps; }
   static const GrowableArray<CodeHeap*>* nmethod_heaps() { return _nmethod_heaps; }
 
@@ -264,7 +261,7 @@ class CodeCache : AllStatic {
   }
 
   static bool code_blob_type_accepts_nmethod(CodeBlobType type) {
-    return type == CodeBlobType::All || type <= CodeBlobType::MethodProfiled;
+    return type == CodeBlobType::All || type <= CodeBlobType::MethodHot;
   }
 
   static bool code_blob_type_accepts_allocable(CodeBlobType type) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 
 uint          SuspendibleThreadSet::_nthreads          = 0;
 uint          SuspendibleThreadSet::_nthreads_stopped  = 0;
-volatile bool SuspendibleThreadSet::_suspend_all       = false;
+Atomic<bool>  SuspendibleThreadSet::_suspend_all{false};
 double        SuspendibleThreadSet::_suspend_all_start = 0.0;
 
 static Semaphore* _synchronize_wakeup = nullptr;
@@ -96,7 +96,7 @@ void SuspendibleThreadSet::synchronize() {
   {
     MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
     assert(!should_yield(), "Only one at a time");
-    AtomicAccess::store(&_suspend_all, true);
+    _suspend_all.store_relaxed(true);
     if (is_synchronized()) {
       return;
     }
@@ -127,6 +127,6 @@ void SuspendibleThreadSet::desynchronize() {
   MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
   assert(should_yield(), "STS not synchronizing");
   assert(is_synchronized(), "STS not synchronized");
-  AtomicAccess::store(&_suspend_all, false);
+  _suspend_all.store_relaxed(false);
   ml.notify_all();
 }

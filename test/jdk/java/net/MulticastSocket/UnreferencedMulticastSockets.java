@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @library /test/lib
  * @modules java.management java.base/java.io:+open java.base/java.net:+open
- *          java.base/sun.net java.base/sun.nio.ch:+open
+ *          java.base/sun.nio.ch:+open
  * @run main/othervm/timeout=480 -Djava.net.preferIPv4Stack=true UnreferencedMulticastSockets
  * @run main/othervm/timeout=480 UnreferencedMulticastSockets
  * @summary Check that unreferenced multicast sockets are closed
@@ -41,7 +41,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.DatagramSocketImpl;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
@@ -50,8 +49,6 @@ import java.nio.channels.DatagramChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Optional;
@@ -61,7 +58,6 @@ import java.util.concurrent.TimeUnit;
 import jdk.test.lib.net.IPSupport;
 
 import com.sun.management.UnixOperatingSystemMXBean;
-import sun.net.NetProperties;
 
 public class UnreferencedMulticastSockets {
 
@@ -229,12 +225,6 @@ public class UnreferencedMulticastSockets {
                 : -1L;
     }
 
-    private static boolean usePlainDatagramSocketImpl() {
-        PrivilegedAction<String> pa = () -> NetProperties.get("jdk.net.usePlainDatagramSocketImpl");
-        String s = AccessController.doPrivileged(pa);
-        return (s != null) && (s.isEmpty() || s.equalsIgnoreCase("true"));
-    }
-
     // Reflect to find references in the datagram implementation that will be gc'd
     private static void extractRefs(DatagramSocket s, String name) {
 
@@ -242,35 +232,20 @@ public class UnreferencedMulticastSockets {
             Field datagramSocketField = DatagramSocket.class.getDeclaredField("delegate");
             datagramSocketField.setAccessible(true);
 
-            if (!usePlainDatagramSocketImpl()) {
-                // MulticastSocket using DatagramSocketAdaptor
-                Object MulticastSocket = datagramSocketField.get(s);
+            // MulticastSocket using DatagramSocketAdaptor
+            Object MulticastSocket = datagramSocketField.get(s);
 
-                Method m = DatagramSocket.class.getDeclaredMethod("getChannel");
-                m.setAccessible(true);
-                DatagramChannel datagramChannel = (DatagramChannel) m.invoke(MulticastSocket);
+            Method m = DatagramSocket.class.getDeclaredMethod("getChannel");
+            m.setAccessible(true);
+            DatagramChannel datagramChannel = (DatagramChannel) m.invoke(MulticastSocket);
 
-                assert datagramChannel.getClass() == Class.forName("sun.nio.ch.DatagramChannelImpl");
+            assert datagramChannel.getClass() == Class.forName("sun.nio.ch.DatagramChannelImpl");
 
-                Field fileDescriptorField = datagramChannel.getClass().getDeclaredField("fd");
-                fileDescriptorField.setAccessible(true);
-                FileDescriptor fileDescriptor = (FileDescriptor) fileDescriptorField.get(datagramChannel);
-                extractRefs(fileDescriptor, name);
+            Field fileDescriptorField = datagramChannel.getClass().getDeclaredField("fd");
+            fileDescriptorField.setAccessible(true);
+            FileDescriptor fileDescriptor = (FileDescriptor) fileDescriptorField.get(datagramChannel);
+            extractRefs(fileDescriptor, name);
 
-            } else {
-                // MulticastSocket using PlainDatagramSocketImpl
-                Object MulticastSocket = datagramSocketField.get(s);
-                assert MulticastSocket.getClass() == Class.forName("java.net.NetMulticastSocket");
-
-                Method m = MulticastSocket.getClass().getDeclaredMethod("getImpl");
-                m.setAccessible(true);
-                DatagramSocketImpl datagramSocketImpl = (DatagramSocketImpl) m.invoke(MulticastSocket);
-
-                Field fileDescriptorField = DatagramSocketImpl.class.getDeclaredField("fd");
-                fileDescriptorField.setAccessible(true);
-                FileDescriptor fileDescriptor = (FileDescriptor) fileDescriptorField.get(datagramSocketImpl);
-                extractRefs(fileDescriptor, name);
-            }
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new AssertionError("missing field", ex);

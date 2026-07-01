@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,7 @@
 
 /**
  * @test id=nocoops_nocoh
- * @summary Test Loading of default archives in all configurations
+ * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-nocoh)
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
@@ -37,7 +37,7 @@
 
 /**
  * @test id=nocoops_coh
- * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
+ * @summary Test Loading of default archives in all configurations
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
@@ -50,12 +50,12 @@
 
 /**
  * @test id=coops_nocoh
- * @summary Test Loading of default archives in all configurations
+ * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-nocoh)
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
- * @requires !vm.gc.Z
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -64,12 +64,12 @@
 
 /**
  * @test id=coops_coh
- * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
+ * @summary Test Loading of default archives in all configurations
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
- * @requires !vm.gc.Z
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -114,7 +114,7 @@ public class TestDefaultArchiveLoading {
         switch (args[0]) {
             case "nocoops_nocoh":
                 coh = coops = '-';
-                archiveSuffix = "_nocoops";
+                archiveSuffix = "_nocoops_nocoh";
                 if (!isArchiveAvailable(coops, coh, archiveSuffix)) {
                     throw new SkippedException("Skipping test due to " +
                                                archivePath(archiveSuffix).toString() + " not available");
@@ -123,7 +123,7 @@ public class TestDefaultArchiveLoading {
             case "nocoops_coh":
                 coops = '-';
                 coh = '+';
-                archiveSuffix = "_nocoops_coh";
+                archiveSuffix = "_nocoops";
                 if (!isArchiveAvailable(coops, coh, archiveSuffix)) {
                     throw new SkippedException("Skipping test due to " +
                                                archivePath(archiveSuffix).toString() + " not available");
@@ -132,7 +132,7 @@ public class TestDefaultArchiveLoading {
             case "coops_nocoh":
                 coops = '+';
                 coh = '-';
-                archiveSuffix = "";
+                archiveSuffix = "_nocoh";
                 if (!isArchiveAvailable(coops, coh, archiveSuffix)) {
                     throw new SkippedException("Skipping test due to " +
                                                archivePath(archiveSuffix).toString() + " not available");
@@ -140,7 +140,7 @@ public class TestDefaultArchiveLoading {
                 break;
             case "coops_coh":
                 coh = coops = '+';
-                archiveSuffix = "_coh";
+                archiveSuffix = "";
                 if (!isArchiveAvailable(coops, coh, archiveSuffix)) {
                     throw new SkippedException("Skipping test due to " +
                                                archivePath(archiveSuffix).toString() + " not available");

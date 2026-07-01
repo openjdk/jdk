@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,29 +27,12 @@
 
 #include "gc/shared/parallelCleaning.hpp"
 
-#if INCLUDE_JVMCI
-class JVMCICleaningTask : public StackObj {
-  volatile bool _cleaning_claimed;
-
-public:
-  JVMCICleaningTask();
-  // Clean JVMCI metadata handles.
-  void work(bool unloading_occurred);
-
-private:
-  bool claim_cleaning_task();
-};
-#endif
-
 // Do cleanup of some weakly held data in the same parallel task.
 // Assumes a non-moving context.
 class G1ParallelCleaningTask : public WorkerTask {
 private:
   bool                    _unloading_occurred;
   CodeCacheUnloadingTask  _code_cache_task;
-#if INCLUDE_JVMCI
-  JVMCICleaningTask       _jvmci_cleaning_task;
-#endif
   KlassCleaningTask       _klass_cleaning_task;
 
 public:

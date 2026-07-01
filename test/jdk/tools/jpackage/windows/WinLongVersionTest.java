@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,9 +180,8 @@ public class WinLongVersionTest {
             cmd.setFakeRuntime();
 
             // Create package without Upgrade table
-            Document doc = XmlUtils.initDocumentBuilder().parse(
-                    Files.newInputStream(TKit.SRC_ROOT.resolve(
-                            "windows/classes/jdk/jpackage/internal/resources/main.wxs")));
+            Document doc = XmlUtils.initDocumentBuilder().parse(TKit.SRC_ROOT.resolve(
+                    "windows/classes/jdk/jpackage/internal/resources/main.wxs").toFile());
             XPath xPath = XPathFactory.newInstance().newXPath();
             NodeList nodes = (NodeList) xPath.evaluate("/Wix/Product/Upgrade",
                     doc, XPathConstants.NODESET);

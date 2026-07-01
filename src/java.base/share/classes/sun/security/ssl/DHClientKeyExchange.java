@@ -187,7 +187,7 @@ final class DHClientKeyExchange {
             chc.handshakePossessions.add(dhePossession);
             DHClientKeyExchangeMessage ckem =
                     new DHClientKeyExchangeMessage(chc);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Produced DH ClientKeyExchange handshake message", ckem);
             }
@@ -268,7 +268,7 @@ final class DHClientKeyExchange {
 
             DHClientKeyExchangeMessage ckem =
                     new DHClientKeyExchangeMessage(shc, message);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Consuming DH ClientKeyExchange handshake message", ckem);
             }

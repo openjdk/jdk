@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,18 @@
 
 package javax.xml.transform.ptests;
 
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
-
-import java.io.File;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamSource;
+import java.io.File;
 
-import org.testng.annotations.Test;
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Class containing the test cases for ErrorListener interface
@@ -43,7 +42,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.transform.ptests.ErrorListenerTest
+ * @run junit/othervm javax.xml.transform.ptests.ErrorListenerTest
  */
 public class ErrorListenerTest implements ErrorListener {
     /**
@@ -63,15 +62,13 @@ public class ErrorListenerTest implements ErrorListener {
     @Test
     public void errorListener01() {
         ErrorListenerTest listener = new ErrorListenerTest();
-        try {
-            TransformerFactory tfactory = TransformerFactory.newInstance();
-            tfactory.setErrorListener (listener);
-            tfactory.newTransformer(new StreamSource(
-                                        new File(XML_DIR + "invalid.xsl")));
-            fail("Expect TransformerConfigurationException here");
-        } catch (TransformerConfigurationException ex) {
-            assertEquals(listener.status, ListenerStatus.FATAL);
-        }
+        TransformerFactory tfactory = TransformerFactory.newInstance();
+        tfactory.setErrorListener(listener);
+        StreamSource source = new StreamSource(new File(XML_DIR + "invalid.xsl"));
+        assertThrows(
+                TransformerConfigurationException.class,
+                () -> tfactory.newTransformer(source));
+        assertEquals(ListenerStatus.FATAL, listener.status);
     }
 
     /**

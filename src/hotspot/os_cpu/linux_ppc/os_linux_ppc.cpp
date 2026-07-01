@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/vtableStubs.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
@@ -62,7 +63,6 @@
 # include <signal.h>
 # include <errno.h>
 # include <dlfcn.h>
-# include <stdlib.h>
 # include <stdio.h>
 # include <unistd.h>
 # include <sys/resource.h>
@@ -509,7 +509,13 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
 
 extern "C" {
   int SpinPause() {
-    return 0;
+    // Setting prio low, then prio medium results in a pseudo yield.
+    // Yield (or 27,27,27) was never implemented on PPC.
+    //   or 1,1,1 = smt_prio_low
+    //   or 2,2,2 = smt_prio_medium
+    asm volatile ("or 1,1,1\n\t"
+                  "or 2,2,2" : : : "memory");
+    return 1;
   }
 }
 

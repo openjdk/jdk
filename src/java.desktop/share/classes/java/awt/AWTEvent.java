@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -554,22 +554,9 @@ public abstract class AWTEvent extends EventObject {
      */
     void copyPrivateDataInto(AWTEvent that) {
         that.bdata = this.bdata;
-        // Copy canAccessSystemClipboard value from this into that.
-        if (this instanceof InputEvent && that instanceof InputEvent) {
-
-            AWTAccessor.InputEventAccessor accessor
-                    = AWTAccessor.getInputEventAccessor();
-
-            boolean b = accessor.canAccessSystemClipboard((InputEvent) this);
-            accessor.setCanAccessSystemClipboard((InputEvent) that, b);
-        }
         that.isSystemGenerated = this.isSystemGenerated;
     }
 
     void dispatched() {
-        if (this instanceof InputEvent) {
-            AWTAccessor.getInputEventAccessor().
-                    setCanAccessSystemClipboard((InputEvent) this, false);
-        }
     }
 } // class AWTEvent

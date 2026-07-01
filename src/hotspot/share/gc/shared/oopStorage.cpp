@@ -136,7 +136,7 @@ OopStorage::ActiveArray* OopStorage::ActiveArray::create(size_t size,
 
 void OopStorage::ActiveArray::destroy(ActiveArray* ba) {
   ba->~ActiveArray();
-  FREE_C_HEAP_ARRAY(char, ba);
+  FREE_C_HEAP_ARRAY(ba);
 }
 
 size_t OopStorage::ActiveArray::size() const {
@@ -362,7 +362,7 @@ OopStorage::Block* OopStorage::Block::new_block(const OopStorage* owner) {
 void OopStorage::Block::delete_block(const Block& block) {
   void* memory = block._memory;
   block.Block::~Block();
-  FREE_C_HEAP_ARRAY(char, memory);
+  FREE_C_HEAP_ARRAY(memory);
 }
 
 // This can return a false positive if ptr is not contained by some
@@ -700,7 +700,7 @@ void OopStorage::Block::release_entries(uintx releasing, OopStorage* owner) {
     // then someone else has made such a claim and the deferred update has not
     // yet been processed and will include our change, so we don't need to do
     // anything further.
-    if (_deferred_updates_next.compare_exchange(nullptr, this) == nullptr) {
+    if (_deferred_updates_next.compare_set(nullptr, this)) {
       // Successfully claimed.  Push, with self-loop for end-of-list.
       Block* head = owner->_deferred_updates.load_relaxed();
       while (true) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,6 +203,9 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
             // an endpoint has been established (which is OK)
             return;
         }
+        // close the connection ID managers; any in-flight connection ID changes should be ignored.
+        connection.localConnectionIdManager().close();
+        connection.peerConnectionIdManager().close();
         endpoint.removeConnection(this.connection);
     }
 
@@ -344,10 +347,6 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
             }
         }
         failHandshakeCFs();
-        // remap the connection to a draining connection
-        final QuicEndpoint endpoint = this.connection.endpoint();
-        assert endpoint != null : "QUIC endpoint is null";
-        endpoint.draining(connection);
         discardConnectionState();
         connection.streams.terminate(terminationCause);
         if (Log.quic()) {
@@ -438,8 +437,11 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
         final QuicPacket packet = connection.newQuicPacket(keySpace, List.of(toSend));
         final ProtectionRecord protectionRecord = ProtectionRecord.single(packet,
                 connection::allocateDatagramForEncryption);
+        // close the connection ID managers; any in-flight connection ID changes should be ignored.
+        connection.localConnectionIdManager().close();
+        connection.peerConnectionIdManager().close();
         // while sending the packet containing the CONNECTION_CLOSE frame, the pushDatagram will
-        // remap (or remove) the QuicConnectionImpl in QuicEndpoint.
+        // remap the QuicConnectionImpl in QuicEndpoint.
         connection.pushDatagram(protectionRecord);
     }
 

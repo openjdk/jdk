@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @modules jdk.compiler
  * @library /test/lib/
  * @build jdk.test.lib.util.ForceGC
- * @run testng/othervm UnloadingTest
+ * @run junit/othervm UnloadingTest
  */
 
 import java.io.IOException;
@@ -48,18 +48,16 @@ import jdk.test.lib.util.ForceGC;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.Utils;
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-
-import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class UnloadingTest {
     private static final Path CLASSES_DIR = Paths.get("classes");
     private static byte[] hiddenClassBytes;
 
-    @BeforeTest
+    @BeforeAll
     static void setup() throws IOException {
         Path src = Paths.get(Utils.TEST_SRC, "src", "LookupHelper.java");
         if (!CompilerUtils.compile(src, CLASSES_DIR)) {
@@ -116,7 +114,7 @@ public class UnloadingTest {
 
         // keep a strong reference to the nest member class
         Class<?> member = unloaders[1].weakRef.get();
-        assertTrue(member != null);
+        assertNotNull(member);
         // nest host and member will not be unloaded
         assertFalse(unloaders[0].tryUnload());
         assertFalse(unloaders[1].tryUnload());
@@ -180,7 +178,7 @@ public class UnloadingTest {
         } else {
             hc = lookup.defineHiddenClass(hiddenClassBytes, false).lookupClass();
         }
-        assertTrue(hc.getClassLoader() == lookup.lookupClass().getClassLoader());
+        assertSame(lookup.lookupClass().getClassLoader(), hc.getClassLoader());
         return new HiddenClassUnloader(hc);
     }
 
@@ -202,7 +200,7 @@ public class UnloadingTest {
         } else {
             member = hostLookup.defineHiddenClass(hiddenClassBytes, false, NESTMATE).lookupClass();
         }
-        assertTrue(member.getNestHost() == host);
+        assertSame(host, member.getNestHost());
         return new HiddenClassUnloader[] { new HiddenClassUnloader(host), new HiddenClassUnloader(member) };
     }
 

@@ -51,8 +51,6 @@ class JvmtiTagMap :  public CHeapObj<mtServiceability> {
   // accessors
   inline JvmtiEnv* env() const              { return _env; }
 
-  void check_hashmap(GrowableArray<jlong>* objects);
-
   void entry_iterate(JvmtiTagMapKeyClosure* closure);
 
  public:

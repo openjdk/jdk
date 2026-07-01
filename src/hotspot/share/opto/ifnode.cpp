@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   cmp2->set_req(2,con2);
   const Type *t = cmp2->Value(igvn);
   // This compare is dead, so whack it!
-  igvn->remove_dead_node(cmp2);
+  igvn->remove_dead_node(cmp2, PhaseIterGVN::NodeOrigin::Speculative);
   if( !t->singleton() ) return nullptr;
 
   // No intervening control, like a simple Call
@@ -443,7 +443,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
       }
       l -= uses_found;    // we deleted 1 or more copies of this edge
     }
-    igvn->remove_dead_node(p);
+    igvn->remove_dead_node(p, PhaseIterGVN::NodeOrigin::Graph);
   }
 
   // Force the original merge dead
@@ -455,14 +455,14 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
       r->set_req(0, nullptr);
     } else {
       assert(u->outcnt() == 0, "only dead users");
-      igvn->remove_dead_node(u);
+      igvn->remove_dead_node(u, PhaseIterGVN::NodeOrigin::Graph);
     }
     l -= 1;
   }
-  igvn->remove_dead_node(r);
+  igvn->remove_dead_node(r, PhaseIterGVN::NodeOrigin::Graph);
 
   // Now remove the bogus extra edges used to keep things alive
-  igvn->remove_dead_node( hook );
+  igvn->remove_dead_node(hook, PhaseIterGVN::NodeOrigin::Speculative);
 
   // Must return either the original node (now dead) or a new node
   // (Do not return a top here, since that would break the uniqueness of top.)
@@ -487,7 +487,7 @@ IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Node
 
 // if this IfNode follows a range check pattern return the projection
 // for the failed path
-ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
+IfProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) const {
   if (outcnt() != 2) {
     return nullptr;
   }
@@ -515,8 +515,10 @@ ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
   //  Flip 1:  If (Bool[<] CmpU(l, LoadRange)) ...
   //  Flip 2:  If (Bool[<=] CmpU(LoadRange, l)) ...
 
-  ProjNode* iftrap = proj_out_or_null(flip_test == 2 ? true : false);
-  return iftrap;
+  if (flip_test == 2) {
+    return true_proj_or_null();
+  }
+  return false_proj_or_null();
 }
 
 
@@ -528,7 +530,7 @@ int RangeCheckNode::is_range_check(Node* &range, Node* &index, jint &offset) {
   int flip_test = 0;
   Node* l = nullptr;
   Node* r = nullptr;
-  ProjNode* iftrap = range_check_trap_proj(flip_test, l, r);
+  IfProjNode* iftrap = range_check_trap_proj(flip_test, l, r);
 
   if (iftrap == nullptr) {
     return 0;
@@ -602,7 +604,7 @@ static void adjust_check(IfProjNode* proj, Node* range, Node* index,
   // at the lowest/nearest dominating check in the graph. To ensure that these Loads/Casts do not float above any of the
   // dominating checks (even when the lowest dominating check is later replaced by yet another dominating check), we
   // need to pin them at the lowest dominating check.
-  proj->pin_array_access_nodes(igvn);
+  proj->pin_dependent_nodes(igvn);
 }
 
 //------------------------------up_one_dom-------------------------------------
@@ -652,6 +654,12 @@ Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
 
 //------------------------------filtered_int_type--------------------------------
 // Return a possibly more restrictive type for val based on condition control flow for an if
+//
+// Important: we only parse if val is on the lhs. This is a limitation, but it makes
+//            optimizations simpler. We rely on canonicalization to get us to this
+//            shape, which works well for comparisions with constants, as they are
+//            canonicalized to the rhs. This may not happen with variables, and so
+//            the optimization may not work for those cases, when val stays on the rhs.
 const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj) {
   assert(if_proj &&
          (if_proj->Opcode() == Op_IfTrue || if_proj->Opcode() == Op_IfFalse), "expecting an if projection");
@@ -661,11 +669,16 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
       BoolNode* bol = iff->in(1)->as_Bool();
       if (bol->in(1) && bol->in(1)->is_Cmp()) {
         const CmpNode* cmp  = bol->in(1)->as_Cmp();
-        if (cmp->in(1) == val) {
+        // Val is always the lhs of the comparision: val CmpI cmp2
+        if (cmp->Opcode() == Op_CmpI && cmp->in(1) == val) {
+          // Only CmpI allowed, assumed by signed logic below.
+          // We could extend to CmpU in the future, and would
+          // have to implement unsigned range logic below.
           const TypeInt* cmp2_t = gvn->type(cmp->in(2))->isa_int();
           if (cmp2_t != nullptr) {
             jint lo = cmp2_t->_lo;
             jint hi = cmp2_t->_hi;
+            // Negate the test if we are on the false branch.
             BoolTest::mask msk = if_proj->Opcode() == Op_IfTrue ? bol->_test._test : bol->_test.negate();
             switch (msk) {
             case BoolTest::ne: {
@@ -673,8 +686,12 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               const TypeInt* val_t = gvn->type(val)->isa_int();
               if (val_t != nullptr && !val_t->singleton() && cmp2_t->is_con()) {
                 if (val_t->_lo == lo) {
+                  // Condition leading to if_proj: val != val->lo
+                  //   val in [val->lo + 1, val->hi]
                   return TypeInt::make(val_t->_lo + 1, val_t->_hi, val_t->_widen);
                 } else if (val_t->_hi == hi) {
+                  // Condition leading to if_proj: val != val->hi
+                  //   val in [val->lo, val->hi - 1]
                   return TypeInt::make(val_t->_lo, val_t->_hi - 1, val_t->_widen);
                 }
               }
@@ -682,28 +699,38 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               return nullptr;
             }
             case BoolTest::eq:
+              // Condition leading to if_proj: val == cmp2
+              //   val in cmp2_t
               return cmp2_t;
             case BoolTest::lt:
-              lo = TypeInt::INT->_lo;
+              // Condition leading to if_proj: val < cmp2
+              //   val in [min_int .. max(min_int, cmp2->_hi - 1)]
+              lo = min_jint;
               if (hi != min_jint) {
                 hi = hi - 1;
               }
               break;
             case BoolTest::le:
-              lo = TypeInt::INT->_lo;
+              // Condition leading to if_proj: val <= cmp2
+              //   val in [min_int .. cmp2->_hi]
+              lo = min_jint;
               break;
             case BoolTest::gt:
+              // Condition leading to if_proj: val > cmp2
+              //   val in [min(cmp2->_lo + 1, max_int) .. max_int]
               if (lo != max_jint) {
                 lo = lo + 1;
               }
-              hi = TypeInt::INT->_hi;
+              hi = max_jint;
               break;
             case BoolTest::ge:
-              // lo unchanged
-              hi = TypeInt::INT->_hi;
+              // Condition leading to if_proj: val >= cmp2
+              //   val in [cmp2->_lo .. max_int]
+              hi = max_jint;
               break;
             default:
-              break;
+              assert(false, "impossible case");
+              return nullptr;
             }
             const TypeInt* rtn_t = TypeInt::make(lo, hi, cmp2_t->_widen);
             return rtn_t;
@@ -769,7 +796,7 @@ bool IfNode::cmpi_folds(PhaseIterGVN* igvn, bool fold_ne) {
 // Is a dominating control suitable for folding with this if?
 bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
   return ctrl != nullptr &&
-    ctrl->is_Proj() &&
+    ctrl->is_IfProj() &&
     ctrl->outcnt() == 1 && // No side-effects
     ctrl->in(0) != nullptr &&
     ctrl->in(0)->Opcode() == Op_If &&
@@ -782,8 +809,8 @@ bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
 }
 
 // Do this If and the dominating If share a region?
-bool IfNode::has_shared_region(ProjNode* proj, ProjNode*& success, ProjNode*& fail) {
-  ProjNode* otherproj = proj->other_if_proj();
+bool IfNode::has_shared_region(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail) const {
+  IfProjNode* otherproj = proj->other_if_proj();
   Node* otherproj_ctrl_use = otherproj->unique_ctrl_out_or_null();
   RegionNode* region = (otherproj_ctrl_use != nullptr && otherproj_ctrl_use->is_Region()) ? otherproj_ctrl_use->as_Region() : nullptr;
   success = nullptr;
@@ -791,13 +818,14 @@ bool IfNode::has_shared_region(ProjNode* proj, ProjNode*& success, ProjNode*& fa
 
   if (otherproj->outcnt() == 1 && region != nullptr && !region->has_phi()) {
     for (int i = 0; i < 2; i++) {
-      ProjNode* proj = proj_out(i);
-      if (success == nullptr && proj->outcnt() == 1 && proj->unique_out() == region) {
-        success = proj;
+      IfProjNode* next_proj = proj_out(i)->as_IfProj();
+      if (success == nullptr && next_proj->outcnt() == 1 && next_proj->unique_out() == region) {
+        success = next_proj;
       } else if (fail == nullptr) {
-        fail = proj;
+        fail = next_proj;
       } else {
-        success = fail = nullptr;
+        success = nullptr;
+        fail = nullptr;
       }
     }
   }
@@ -848,8 +876,8 @@ ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call, Deoptimization::
 }
 
 // Do this If and the dominating If both branch out to an uncommon trap
-bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNode*& fail, PhaseIterGVN* igvn) {
-  ProjNode* otherproj = proj->other_if_proj();
+bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail, PhaseIterGVN* igvn) const {
+  IfProjNode* otherproj = proj->other_if_proj();
   CallStaticJavaNode* dom_unc = otherproj->is_uncommon_trap_proj();
 
   if (otherproj->outcnt() == 1 && dom_unc != nullptr) {
@@ -876,6 +904,10 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
         return false;
       }
 
+      if (!dom_unc->safe_for_fold_compare()) {
+        return false;
+      }
+
       // See merge_uncommon_traps: the reason of the uncommon trap
       // will be changed and the state of the dominating If will be
       // used. Checked that we didn't apply this transformation in a
@@ -886,8 +918,8 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
           !igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_range_check) &&
           // Return true if c2 manages to reconcile with UnstableIf optimization. See the comments for it.
           igvn->C->remove_unstable_if_trap(dom_unc, true/*yield*/)) {
-        success = unc_proj;
-        fail = unc_proj->other_if_proj();
+        success = unc_proj->as_IfProj();
+        fail = unc_proj->as_IfProj()->other_if_proj();
         return true;
       }
     }
@@ -895,222 +927,533 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
   return false;
 }
 
-// Check that the 2 CmpI can be folded into as single CmpU and proceed with the folding
-bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn) {
-  Node* this_cmp = in(1)->in(1);
-  BoolNode* this_bool = in(1)->as_Bool();
-  IfNode* dom_iff = proj->in(0)->as_If();
-  BoolNode* dom_bool = dom_iff->in(1)->as_Bool();
-  Node* lo = dom_iff->in(1)->in(1)->in(2);
-  Node* hi = this_cmp->in(2);
-  Node* n = this_cmp->in(1);
-  ProjNode* otherproj = proj->other_if_proj();
+// We are given the following code shape with two CmpI:
+//
+//               n  v1
+//               |  |
+//               cmp1
+//                |
+//       entry  bool1(test1)
+//           |  |
+//           iff1
+//           |   \
+//        middle  fail1-------------+
+//           |                      |
+//           |   n  v2              |
+//           |   |  |               |
+//       maybe   cmp2               |
+//  null-check    |                 |
+//           |  bool2(test2)        |
+//           |  |                   |
+//           iff2                   |
+//           |   \                  v
+//          succ  fail2----> go to same region
+//                           or uncommon trap
+//
+// 1. In some cases, we can prove that succ cannot be reached,
+//    and we can fold away the iff2. Example:
+//
+//      if (n < -1 && n > 1) { succ } else { fail }
+//      // 1st condition: n in [min_int .. -2]
+//      // 2nd condition: n in [2 ..  max_int]
+//      // -> no overlap -> constant fold iff2 towards fail2
+//      //
+//      // Equivalent, if we flip everything:
+//      if (n >= -1 || n <= 1) { fail } else { succ }
+//
+// 2. In other cases, we can replace the two CmpI with
+//    a single CmpU. We fold iff1 towards middle, and
+//    replace the iff2 condition with the CmpU. Example:
+//
+//      if (n >= 0 && n < 10) { succ } else { fail }
+//      // transformed to:
+//      if (n <u 10) { succ } else { fail }
+//
+//      if (n < 0 || n >= arr.length) { throw ArrayOutOfBoundsException }
+//      // transformed to:
+//      if (n >=u arr.length) { throw ArrayOutOfBoundsException }
+//
+// Note1: we assume that the CmpI nodes are canonicalized to the
+// point where n is always on the lhs. This is a limitation,
+// but as long as v1 and v2 are constants they will eventually
+// be canonicalized to the rhs. For variables, this may not always
+// happen.
+//
+// Note2: We are flexible about the IfProj nodes: middle and succ
+// could both be either IfTrue or IfFalse.
+//
+// Note3: Surrounding code has a different naming scheme!
+// In has_only_uncommon_traps, the path towards the
+// uncommon trap (e.g. failed range check) is called
+// "success", while the path that does not go to
+// the uncommon trap (e.g. in-bounds access) is called
+// "fail". I think that is counter-intuitive, so I now
+// used a different naming scheme here.
+//
+// Return true iff we could perform one of the optimizations.
+bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjNode* succ, PhaseIterGVN* igvn) {
+  assert(fail2->in(0) == this, "link iff2->fail2");
+  assert(succ->in(0) == this,  "link iff2->succ");
 
-  const TypeInt* lo_type = IfNode::filtered_int_type(igvn, n, otherproj);
-  const TypeInt* hi_type = IfNode::filtered_int_type(igvn, n, success);
+  IfNode* iff1 = middle->in(0)->as_If();
+  IfNode* iff2 = this;
+  BoolNode* bool1 = iff1->in(1)->as_Bool();
+  BoolNode* bool2 = iff2->in(1)->as_Bool();
+  CmpNode* cmp1 = bool1->in(1)->as_Cmp();
+  CmpNode* cmp2 = bool2->in(1)->as_Cmp();
+  assert(cmp1->Opcode() == Op_CmpI, "comparisons must be CmpI");
+  assert(cmp2->Opcode() == Op_CmpI, "comparisons must be CmpI");
 
-  BoolTest::mask lo_test = dom_bool->_test._test;
-  BoolTest::mask hi_test = this_bool->_test._test;
-  BoolTest::mask cond = hi_test;
+  IfProjNode* fail1 = middle->other_if_proj();
 
-  // convert:
-  //
-  //          dom_bool = x {<,<=,>,>=} a
-  //                           / \
-  //     proj = {True,False}  /   \ otherproj = {False,True}
-  //                         /
-  //        this_bool = x {<,<=} b
-  //                       / \
-  //  fail = {True,False} /   \ success = {False,True}
-  //                     /
-  //
-  // (Second test guaranteed canonicalized, first one may not have
-  // been canonicalized yet)
-  //
-  // into:
-  //
-  // cond = (x - lo) {<u,<=u,>u,>=u} adjusted_lim
-  //                       / \
-  //                 fail /   \ success
-  //                     /
-  //
+  Node* v1 = cmp1->in(2);
+  Node* v2 = cmp2->in(2);
+  Node* n = cmp1->in(1);
+  assert(cmp2->in(1) == n, "n must be lhs in both CmpI");
 
-  // Figure out which of the two tests sets the upper bound and which
-  // sets the lower bound if any.
-  Node* adjusted_lim = nullptr;
-  if (lo_type != nullptr && hi_type != nullptr && hi_type->_lo > lo_type->_hi &&
-      hi_type->_hi == max_jint && lo_type->_lo == min_jint && lo_test != BoolTest::ne) {
-    assert((dom_bool->_test.is_less() && !proj->_con) ||
-           (dom_bool->_test.is_greater() && proj->_con), "incorrect test");
-
-    // this_bool = <
-    //   dom_bool = >= (proj = True) or dom_bool = < (proj = False)
-    //     x in [a, b[ on the fail (= True) projection, b > a-1 (because of hi_type->_lo > lo_type->_hi test above):
-    //     lo = a, hi = b, adjusted_lim = b-a, cond = <u
-    //   dom_bool = > (proj = True) or dom_bool = <= (proj = False)
-    //     x in ]a, b[ on the fail (= True) projection, b > a:
-    //     lo = a+1, hi = b, adjusted_lim = b-a-1, cond = <u
-    // this_bool = <=
-    //   dom_bool = >= (proj = True) or dom_bool = < (proj = False)
-    //     x in [a, b] on the fail (= True) projection, b+1 > a-1:
-    //     lo = a, hi = b, adjusted_lim = b-a+1, cond = <u
-    //     lo = a, hi = b, adjusted_lim = b-a, cond = <=u doesn't work because b = a - 1 is possible, then b-a = -1
-    //   dom_bool = > (proj = True) or dom_bool = <= (proj = False)
-    //     x in ]a, b] on the fail (= True) projection b+1 > a:
-    //     lo = a+1, hi = b, adjusted_lim = b-a, cond = <u
-    //     lo = a+1, hi = b, adjusted_lim = b-a-1, cond = <=u doesn't work because a = b is possible, then b-a-1 = -1
-
-    if (hi_test == BoolTest::lt) {
-      if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
-        lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
+  // Optimization 1: try to prove that succ is not reachable.
+  // Which values of n can pass iff1 to middle AND iff2 to succ?
+  const TypeInt* type_middle = filtered_int_type(igvn, n, middle);
+  if (type_middle != nullptr) {
+    const TypeInt* type_succ = filtered_int_type(igvn, n, succ);
+    if (type_succ != nullptr) {
+      if (type_middle->filter(type_succ) == Type::TOP) {
+        // The intersection is empty -> succ is not reachable.
+        // Fold iff2 towards fail2 (and away from succ).
+        igvn->replace_input_of(iff2, 1, igvn->intcon(fail2->_con));
+        return true; // success: succ not reachable
       }
-    } else if (hi_test == BoolTest::le) {
-      if (lo_test == BoolTest::ge || lo_test == BoolTest::lt) {
-        adjusted_lim = igvn->transform(new SubINode(hi, lo));
-        adjusted_lim = igvn->transform(new AddINode(adjusted_lim, igvn->intcon(1)));
-        cond = BoolTest::lt;
-      } else if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
-        adjusted_lim = igvn->transform(new SubINode(hi, lo));
-        lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
-        cond = BoolTest::lt;
-      } else {
-        assert(false, "unhandled lo_test: %d", lo_test);
-        return false;
-      }
-    } else {
-      assert(igvn->_worklist.member(in(1)) && in(1)->Value(igvn) != igvn->type(in(1)), "unhandled hi_test: %d", hi_test);
-      return false;
     }
-    // this test was canonicalized
-    assert(this_bool->_test.is_less() && fail->_con, "incorrect test");
-  } else if (lo_type != nullptr && hi_type != nullptr && lo_type->_lo > hi_type->_hi &&
-             lo_type->_hi == max_jint && hi_type->_lo == min_jint && lo_test != BoolTest::ne) {
+  }
 
-    // this_bool = <
-    //   dom_bool = < (proj = True) or dom_bool = >= (proj = False)
-    //     x in [b, a[ on the fail (= False) projection, a > b-1 (because of lo_type->_lo > hi_type->_hi above):
-    //     lo = b, hi = a, adjusted_lim = a-b, cond = >=u
-    //   dom_bool = <= (proj = True) or dom_bool = > (proj = False)
-    //     x in [b, a] on the fail (= False) projection, a+1 > b-1:
-    //     lo = b, hi = a, adjusted_lim = a-b+1, cond = >=u
-    //     lo = b, hi = a, adjusted_lim = a-b, cond = >u doesn't work because a = b - 1 is possible, then b-a = -1
-    // this_bool = <=
-    //   dom_bool = < (proj = True) or dom_bool = >= (proj = False)
-    //     x in ]b, a[ on the fail (= False) projection, a > b:
-    //     lo = b+1, hi = a, adjusted_lim = a-b-1, cond = >=u
-    //   dom_bool = <= (proj = True) or dom_bool = > (proj = False)
-    //     x in ]b, a] on the fail (= False) projection, a+1 > b:
-    //     lo = b+1, hi = a, adjusted_lim = a-b, cond = >=u
-    //     lo = b+1, hi = a, adjusted_lim = a-b-1, cond = >u doesn't work because a = b is possible, then b-a-1 = -1
+  // Optimization 2: try to replace the two CmpI with one CmpU
+  // We can handle the following 4 cases:
+  //     Input: two CmpI            Output: one CmpU           Assumption
+  //     --------------------       -------------------------  -------------------
+  // a)  (n >  lo && n <  hi)  ->   n - lo - 1 <u  hi - lo - 1  (assuming lo <  hi)
+  //     (n >  2  && n <  5 )       n - 3      <u  2
+  //     range: [3, 4]
+  //
+  // b)  (n >  lo && n <= hi)  ->   n - lo - 1 <u  hi - lo      (assuming lo <= hi)
+  //     (n >  2  && n <= 5 )       n - 3      <u  3
+  //     range: [3, 4, 5]
+  //
+  // c)  (n >= lo && n <  hi)  ->   n - lo     <u  hi - lo      (assuming lo <= hi)
+  //     (n >= 2  && n <  5 )       n - 2      <u  3
+  //     range: [2, 3, 4]
+  //
+  // d)  (n >= lo && n <= hi)  ->   n - lo     <=u hi - lo      (assuming lo <= hi)
+  //     (n >= 2  && n <= 5 )       n - 2      <=u 3
+  //     range: [2, 3, 4, 5]
+  //
+  // Note1: the rhs of the CmpU indicates the cardinality of the range,
+  //        allowing n to have exactly that many different values.
+  //
+  // Note2: all 4 case have an assumption: lo must be sufficiently smaller
+  //        than hi. Below, and with the use of Lemma1 from below, we will
+  //        prove that this implies that the rhs of the CmpU never
+  //        underflows or overflows, which is critical for correctness.
+  //
+  // Below, we will prove and implement each of these cases. But first,
+  // we must handle the combinations of IfTrue/IfFalse projections for
+  // middle and succ, and extract which one is the lower bound (lo) and
+  // which one the upper bound (hi).
+  //
+  // <---- lower bound -----> <----------- succ -------------> <---- upper bound ----->
+  // [min_int .. lo_type->hi] [lo_type->hi+1 .. hi_type->lo-1] [hi_type->lo .. max_int]
+  //                         ^                                ^
+  //                     n {>/>=} lo                      n {</<=} hi
+  //
+  // The trick is then to "shift down" the succ range, to create only
+  // a single transition point.
+  //
+  // <----------- succ -------------> <------------ unsigned upper bound ------------->
+  // [0           ..                ] [                      ..               max_uint]
+  //                                 ^
+  //                               CmpU
 
-    swap(lo, hi);
-    swap(lo_type, hi_type);
-    swap(lo_test, hi_test);
+  BoolTest::mask test1 = bool1->_test._test;
+  BoolTest::mask test2 = bool2->_test._test;
+  if (middle->Opcode() == Op_IfFalse) { test1 = BoolTest::negate_mask(test1); }
+  if (succ->Opcode()   == Op_IfFalse) { test2 = BoolTest::negate_mask(test2); }
 
-    assert((dom_bool->_test.is_less() && proj->_con) ||
-           (dom_bool->_test.is_greater() && !proj->_con), "incorrect test");
-
-    cond = (hi_test == BoolTest::le || hi_test == BoolTest::gt) ? BoolTest::gt : BoolTest::ge;
-
-    if (lo_test == BoolTest::lt) {
-      if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
-        cond = BoolTest::ge;
-      } else if (hi_test == BoolTest::le || hi_test == BoolTest::gt) {
-        adjusted_lim = igvn->transform(new SubINode(hi, lo));
-        adjusted_lim = igvn->transform(new AddINode(adjusted_lim, igvn->intcon(1)));
-        cond = BoolTest::ge;
-      } else {
-        assert(false, "unhandled hi_test: %d", hi_test);
-        return false;
-      }
-    } else if (lo_test == BoolTest::le) {
-      if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
-        lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
-        cond = BoolTest::ge;
-      } else if (hi_test == BoolTest::le || hi_test == BoolTest::gt) {
-        adjusted_lim = igvn->transform(new SubINode(hi, lo));
-        lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
-        cond = BoolTest::ge;
-      } else {
-        assert(false, "unhandled hi_test: %d", hi_test);
-        return false;
-      }
-    } else {
-      assert(igvn->_worklist.member(in(1)) && in(1)->Value(igvn) != igvn->type(in(1)), "unhandled lo_test: %d", lo_test);
-      return false;
-    }
-    // this test was canonicalized
-    assert(this_bool->_test.is_less() && !fail->_con, "incorrect test");
+  Node* lo = nullptr;
+  Node* hi = nullptr;
+  const TypeInt* lo_type = nullptr;
+  const TypeInt* hi_type = nullptr;
+  BoolTest::mask lo_test = BoolTest::illegal;
+  BoolTest::mask hi_test = BoolTest::illegal;
+  if (BoolTest::is_greater(test1) && BoolTest::is_less(test2)) {
+    lo = v1;
+    hi = v2;
+    lo_type = IfNode::filtered_int_type(igvn, n, fail1);
+    hi_type = IfNode::filtered_int_type(igvn, n, fail2);
+    lo_test = test1;
+    hi_test = test2;
+  } else if (BoolTest::is_less(test1) && BoolTest::is_greater(test2)) {
+    lo = v2;
+    hi = v1;
+    lo_type = IfNode::filtered_int_type(igvn, n, fail2);
+    hi_type = IfNode::filtered_int_type(igvn, n, fail1);
+    lo_test = test2;
+    hi_test = test1;
   } else {
-    const TypeInt* failtype = filtered_int_type(igvn, n, proj);
-    if (failtype != nullptr) {
-      const TypeInt* type2 = filtered_int_type(igvn, n, fail);
-      if (type2 != nullptr) {
-        if (failtype->filter(type2) == Type::TOP) {
-          // previous if determines the result of this if so
-          // replace Bool with constant
-          igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
-          return true;
-        }
-      }
-    }
+    // Could not find upper and lower bound.
+    return false;
+  }
+  assert(BoolTest::is_greater(lo_test), "lower bound: n {>/>=} lo");
+  assert(BoolTest::is_less(hi_test),    "upper bound: n {</<=} lo");
+
+  // Check that we got lower and upper bounds as expected.
+  if (lo_type == nullptr ||
+      hi_type == nullptr ||
+      hi_type->_hi != max_jint ||
+      lo_type->_lo != min_jint) {
+    // Upper and lower bounds could not be established.
     return false;
   }
 
-  assert(lo != nullptr && hi != nullptr, "sanity");
-  Node* hook = new Node(lo); // Add a use to lo to prevent him from dying
-  // Merge the two compares into a single unsigned compare by building (CmpU (n - lo) (hi - lo))
-  Node* adjusted_val = igvn->transform(new SubINode(n,  lo));
-  if (adjusted_lim == nullptr) {
-    adjusted_lim = igvn->transform(new SubINode(hi, lo));
-  }
-  hook->destruct(igvn);
+  // -------------------------------------------------------------------
+  // In the proofs below, we need some basic Lemmas to deal with integer
+  // signed and unsigned arithmetic.
+  //
+  // Lemma1:
+  //   Let a and b be in [min_int .. max_int].
+  //   If a >=s b, then:
+  //     U(a - b) = a - b
+  //
+  //   Proof:
+  //     a >= b
+  //     -> a - b >= 0
+  //
+  //     a <= max_int
+  //     b >= min_int
+  //     -> a - b <= max_int - min_int = 2^32-1
+  //
+  //     0 <= a - b <= 2^32-1
+  //     -> cast to unsigned has no overflow
+  //     -> U(a - b) = a - b
+  //
+  // Lemma2:
+  //   Let a and b be in [min_int .. max_int].
+  //   If a <s b, then:
+  //     U(a - b) = a - b + 2^32
+  //
+  //   Proof:
+  //     a < b
+  //     -> a - b < 0
+  //
+  //     a >= min_int
+  //     b <= max_int
+  //     -> a - b >= min_int - max_int = 2^32-1
+  //
+  //     2^32-1 <= a - b < 0
+  //     -> cast to unsigned leads to exactly one overflow
+  //     -> U(a - b) = a - b + 2^32
+  //
+  // Lemma3:
+  //   Let a and b be in [min_int .. max_int].
+  //     a + 2^32 > b
+  //
+  //   Proof:
+  //     Using a >= min_int, and b <= max_int:
+  //     a + 2^32 >= min_int + 2^32
+  //               = max_int + 1
+  //              >= b       + 1
+  //              >  b
+  // -------------------------------------------------------------------
 
-  if (adjusted_val->is_top() || adjusted_lim->is_top()) {
-    return false;
-  }
-
-  if (igvn->type(adjusted_lim)->is_int()->_lo < 0 &&
-      !igvn->C->post_loop_opts_phase()) {
-    // If range check elimination applies to this comparison, it includes code to protect from overflows that may
-    // cause the main loop to be skipped entirely. Delay this transformation.
-    // Example:
-    // for (int i = 0; i < limit; i++) {
-    //   if (i < max_jint && i > min_jint) {...
-    // }
-    // Comparisons folded as:
-    // i - min_jint - 1 <u -2
-    // when RC applies, main loop limit becomes:
-    // min(limit, max(-2 + min_jint + 1, min_jint))
-    // = min(limit, min_jint)
-    // = min_jint
-    if (adjusted_val->outcnt() == 0) {
-      igvn->remove_dead_node(adjusted_val);
+  // Handle the 4 cases.
+  // All produce this form: n - lo + x1 <cond> hi - lo + x2
+  Node* x1 = nullptr;
+  Node* x2 = nullptr;
+  BoolTest::mask cond = BoolTest::illegal;
+  if (lo_test == BoolTest::gt && hi_test == BoolTest::lt) {
+    // We perform the the (CHECK) below, which implies (LO-HI),
+    // as we will show below.
+    if (lo_type->_hi >= hi_type->_lo) {
+      return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
-    if (adjusted_lim->outcnt() == 0) {
-      igvn->remove_dead_node(adjusted_lim);
+    // a)  (n >  lo && n <  hi)  ->   n - lo - 1 <u  hi - lo - 1  (assuming lo <  hi)
+    //     (BEFORE)                   (AFTER)                     (LO-HI)
+    //
+    // Proof:
+    //   From IfNode::filtered_int_type, we get:
+    //     lo_type = [min_int .. lo->_hi]    for n <= lo
+    //     -> lo_type->_hi = lo->_hi
+    //     hi_type = [hi->_lo .. max_int]    for n >= lo
+    //     -> hi_type->_lo = hi->_lo
+    //   We will need the assumption (LO-HI) below, which we can
+    //   establish with the following (CHECK):
+    //     lo_type->_hi < hi_type->_lo               (CHECK)
+    //     -> lo->_hi < hi->_lo
+    //     -> lo      < hi                           (LO-HI)
+    //
+    //   Case n <= lo:
+    //     (BEFORE) is always false, show (AFTER) is always false.
+    //     Since lo < hi (LO-HI), S(lo+1) = lo+1 (no overflow):
+    //     -> lo+1 <= hi
+    //     -> n < lo+1
+    //     U(n - (lo + 1))           <  U(hi - (lo + 1))
+    //     -- Lemma2 (n < lo+1) --     -- Lemma1 (lo+1 <= hi) --
+    //       n - (lo + 1) + 2^32     <    hi - (lo + 1)
+    //       n            + 2^32     <    hi
+    //     Always false by Lemma3.
+    //
+    //   Case lo < n < hi:
+    //     (BEFORE) is always true, show (AFTER) is always true.
+    //     Since lo < hi (LO-HI), S(lo+1) = lo+1 (no overflow):
+    //     -> lo+1 <= hi
+    //     -> n >= lo+1
+    //     U(n - (lo + 1))           <  U(hi - (lo + 1))
+    //     -- Lemma1 (n >= lo+1) --   -- Lemma1 (lo+1 <= hi) --
+    //       n - (lo + 1)            <    hi - (lo + 1)
+    //       n                       <    hi
+    //     Corresponds to case assumption, so always true.
+    //
+    //   Case n >= hi:
+    //     (BEFORE) is always false, show (AFTER) is always false.
+    //     Since lo < hi (LO-HI), S(lo+1) = lo+1 (no overflow):
+    //     -> lo+1 <= hi
+    //     U(n - (lo + 1))           <  U(hi - (lo + 1))
+    //     -- Lemma1 (n >= lo+1) --    -- Lemma1 (lo+1 <= hi) --
+    //       n - (lo + 1)            <    hi - (lo + 1)
+    //       n                       <    hi
+    //     Contradicts case assumption, so always false.
+    // QED.
+    //
+    // Note: we cannot use anything more relaxed than the assumption
+    //       lo < hi: with lo=hi the rhs of the CmpU would underflow.
+    //
+    // Produce form: n - lo + x1 <cond> hi - lo + x2
+    //               n - lo -  1   <u   hi - lo - 1
+    x1 = igvn->intcon(-1);
+    x2 = igvn->intcon(-1);
+    cond = BoolTest::lt;
+  } else if (lo_test == BoolTest::gt && hi_test == BoolTest::le) {
+    // We perform the the (CHECK) below, which implies (LO-HI),
+    // as we will show below.
+    if (lo_type->_hi >= hi_type->_lo) {
+      return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
     }
-    igvn->C->record_for_post_loop_opts_igvn(this);
-    return false;
+    // b)  (n >  lo && n <= hi)  ->   n - lo - 1 <u  hi - lo      (assuming lo <= hi)
+    //     (BEFORE)                   (AFTER)                     (LO-HI)
+    //
+    // Proof:
+    //   From IfNode::filtered_int_type, we get:
+    //     lo_type = [min_int .. lo->_hi]                  for n <= lo
+    //     -> lo_type->_hi = lo->_hi
+    //     hi_type = [min(hi->_lo+1, max_int) .. max_int]  for n > hi
+    //     -> hi_type->_lo <= lo->_lo + 1
+    //   We will need the assumption (LO-HI) below, which we can
+    //   establish with the following (CHECK):
+    //        lo_type->_hi <  hi_type->_lo       (CHECK)
+    //     -> lo->_hi      <  hi->_lo + 1
+    //     -> lo           <  hi      + 1
+    //     -> lo           <= hi                 (LO-HI)
+    //
+    //   Case A: lo = hi
+    //     Let y = lo = hi
+    //     -> n > lo && n <= hi   vs     n - lo - 1 <u hi - lo
+    //     -> n > y  && n <= y    vs     n - y  - 1 <u y  - y = 0
+    //        false                      false
+    //     Hence, (BEFORE) and (AFTER) are both always false.
+    //
+    //   Case B: lo < hi
+    //     Case n <= lo:
+    //       (BEFORE) is always false, show (AFTER) is always false.
+    //       Since lo < hi (Case B), S(lo+1) = lo+1 (no overflow):
+    //       -> n < lo+1
+    //       U(n - (lo + 1))         <  U(hi - lo)
+    //       -- Lemma2 (n < lo+1) --    -- Lemma1 (lo <= hi, LO-HI) --
+    //         n - (lo + 1) + 2^32   <    hi - lo
+    //         n -       1  + 2^32   <    hi
+    //         n            + 2^32   <=   hi
+    //       Always false by Lemma3.
+    //       Note: To apply Lemma2 above, we must use (Case B), we
+    //             could not have done it with (LO-HI) alone.
+    //
+    //     Case lo < n <= hi:
+    //       (BEFORE) is always true, show (AFTER) is always true.
+    //       Since lo < hi (Case B), S(lo+1) = lo+1 (no overflow):
+    //       -> n >= lo+1
+    //       U(n - (lo + 1))          <  U(hi - lo)
+    //       -- Lemma1 (n >= lo+1) --   -- Lemma1 (lo <= hi, LO-HI) --
+    //         n - (lo + 1)           <    hi - lo
+    //         n -       1            <    hi
+    //         n                      <=   hi
+    //       Follows from case assumption, so always true.
+    //
+    //     Case n > hi:
+    //       (BEFORE) is always false, show (AFTER) is always false.
+    //       Since lo < hi (Case B), S(lo+1) = lo+1 (no overflow):
+    //       -> lo+1 <= hi
+    //       -> n > lo+1
+    //       U(n - (lo + 1))          <  U(hi - lo)
+    //       -- Lemma1 (n > lo+1) --     -- Lemma1 (lo <= hi, LO-HI) --
+    //         n - (lo + 1)           <    hi - lo
+    //         n -       1            <    hi
+    //         n                      <=   hi
+    //     Contradicts case assumption, so always false.
+    // QED.
+    //
+    // Note: we cannot use anything more relaxed than the assumption
+    //       lo <= hi: with lo=hi+1 the rhs of the CmpU would underflow.
+    //
+    // Produce form: n - lo + x1 <cond> hi - lo + x2
+    //               n - lo -  1   <u   hi - lo
+    x1 = igvn->intcon(-1);
+    x2 = igvn->intcon(0);
+    cond = BoolTest::lt;
+  } else if (lo_test == BoolTest::ge && hi_test == BoolTest::lt) {
+    // We perform the the (CHECK) below, which implies (LO-HI),
+    // as we will show below.
+    if (lo_type->_hi >= hi_type->_lo) {
+      return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
+    }
+    // c)  (n >= lo && n <  hi)  ->   n - lo     <u  hi - lo      (assuming lo <= hi)
+    //     (BEFORE)                   (AFTER)                     (LO-HI)
+    //
+    // Proof:
+    //   From IfNode::filtered_int_type, we get:
+    //     lo_type = [min_int .. max(min_int, lo->_hi - 1)]  for n < lo
+    //     -> lo_type->_hi >= lo->_hi - 1
+    //     hi_type = [b->_lo .. max_int]                     for n >= hi
+    //     -> hi_type->_lo = hi->_lo
+    //   We will need the assumption (LO-HI) below, which we can
+    //   establish with the following (CHECK):
+    //        lo_type->_hi < hi_type->_lo
+    //     -> lo->_hi - 1  <  hi->_lo
+    //     -> lo->_hi      <= hi->_lo
+    //     -> lo           <= hi                         (HI-LO)
+    //
+    //   Case n < lo:
+    //     (BEFORE) is always false, show (AFTER) is always false.
+    //     U(n - lo)              < U(hi - lo)
+    //     -- Lemma2 (n < lo) --    -- Lemma1 (lo <= hi, LO-HI) --
+    //       n - lo + 2^32        <   hi - lo
+    //       n      + 2^32        <   hi
+    //     Always false by Lemma3.
+    //
+    //   Case lo <=s n <s hi:
+    //     (BEFORE) is always true, show (AFTER) is always true.
+    //     U(n - lo)              < U(hi - lo)
+    //     -- Lemma1 (n >= lo) --   -- Lemma1 (lo <= hi, LO-HI) --
+    //       n - lo               <   hi - lo
+    //       n                    <   hi
+    //     Follows from case assumption, so always true.
+    //
+    //   Case n >=s hi:
+    //     (BEFORE) is always false, show (AFTER) is always false.
+    //     U(n - lo)              < U(hi - lo)
+    //     -- Lemma1 (n >= lo) --     -- Lemma1 (lo <= hi, LO-HI) --
+    //       n - lo               <   hi - lo
+    //       n                    <   hi
+    //     Contradicts case assumption, so always false.
+    // QED.
+    //
+    /// Note: we cannot use anything more relaxed than the assumption
+    //       lo <= hi: with lo=hi+1 the rhs of the CmpU would underflow.
+    //
+    // Produce form: n - lo + x1 <cond> hi - lo + x2
+    //               n - lo        <u   hi - lo
+    x1 = igvn->intcon(0);
+    x2 = igvn->intcon(0);
+    cond = BoolTest::lt;
+  } else {
+    assert (lo_test == BoolTest::ge && hi_test == BoolTest::le, "");
+    // We perform the the (CHECK) below, which implies (LO-HI),
+    // as we will show below.
+    jlong lo_type_hi = lo_type->_hi;
+    jlong hi_type_lo = hi_type->_lo;
+    if (lo_type_hi >= hi_type_lo - 1) {
+      return false; // (CHECK) fails, we cannot establish (LO-HI) assumption.
+    }
+    // d)  (n >= lo && n <= hi)  ->   n - lo     <=u hi - lo      (assuming lo <= hi)
+    //     (BEFORE)                   (AFTER)                     (LO-HI)
+    //
+    // Proof:
+    //   From IfNode::filtered_int_type, we get:
+    //     lo_type = [min_int .. max(min_int, lo->_hi-1)]   for n < lo
+    //     -> lo_type->_hi >= lo->_hi - 1
+    //     hi_type = [min(hi->_lo+1, max_int) .. max_int]   for n > hi
+    //     -> hi_type->_lo <= hi->_lo + 1
+    //   We will need the assumption (LO-HI) below, which we can
+    //   establish with the following (CHECK), which we must compute in
+    //   long to avoid underflow:
+    //        lo_type->_hi     <  hi_type->_lo - 1      (CHECK)
+    //     -> lo_type->_hi + 1 <= hi_type->_lo - 1
+    //     -> lo->_hi          <= hi->_lo
+    //     -> lo               <= hi                    (LO-HI)
+    //
+    //   Case n <s lo:
+    //     (BEFORE) is always false, show (AFTER) is always false.
+    //     U(n - lo)              <= U(hi - lo)
+    //     -- Lemma2 (n < lo) --     -- Lemma1 (hi >= lo, LO-HI) --
+    //       n - lo + 2^32        <=  hi - lo
+    //       n      + 2^32        <=  hi
+    //     Always false by Lemma3.
+    //
+    //   Case lo <=s n <=s hi:
+    //     (BEFORE) is always true, show (AFTER) is always true.
+    //     U(n - lo)              <= U(hi - lo)
+    //     -- Lemma1 (n >= lo) --    -- Lemma1 (hi >= lo, LO-HI) --
+    //       n - lo               <=   hi - lo
+    //       n                    <=   hi
+    //     Corresponds to case assumption, so always true.
+    //
+    //   Case n >s hi:
+    //     (BEFORE) is always false, show (AFTER) is always false.
+    //     U(n - lo)              <=  U(hi - lo)
+    //     -- Lemma1 (n > lo) --      -- Lemma1 (hi >= lo, LO-HI) --
+    //       n - lo               <=    hi - lo
+    //       n                    <=    hi
+    //       n                    <=    hi
+    //     Contradicts case assumption, so always false.
+    // QED.
+    //
+    // Note: (CHECK) is stronger in this case than in (a, b, c). We have
+    //       had multiple bugs around this case (d) in the past. For example:
+    //       - Before JDK-8135069: transform into: n - lo <=u hi - lo
+    //         leads to rhs underflow with lo=0      and hi=-1
+    //         -> we are coming back to this solution, but instead
+    //            of checking   lo_type->_hi <  hi_type->_lo
+    //            we now check: lo_type->_hi <  hi_type->_lo - 1
+    //            which implies lo <= hi and excludes this bad case.
+    //       - Before JDK-8346420: transform into: n - lo <u hi - lo + 1
+    //         leads to rhs overflow  with lo=min_int and hi=max_int
+    //
+    // Produce form: n - lo + x1 <cond> hi - lo + x2
+    //               n - lo        <=u  hi - lo
+    x1 = igvn->intcon(0);
+    x2 = igvn->intcon(0);
+    cond = BoolTest::le;
   }
 
-  Node* newcmp = igvn->transform(new CmpUNode(adjusted_val, adjusted_lim));
+  // Construct the new check: n - lo + x1 <cond> hi - lo + x2
+  Node* lhs = igvn->transform(new SubINode(n,  lo));
+  lhs = igvn->transform(new AddINode(lhs, x1));
+  Node* rhs = igvn->transform(new SubINode(hi, lo));
+  rhs = igvn->transform(new AddINode(rhs, x2));
+  Node* newcmp = igvn->transform(new CmpUNode(lhs, rhs));
+  if (succ->Opcode() == Op_IfFalse) { cond = BoolTest::negate_mask(cond); }
   Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
 
-  igvn->replace_input_of(dom_iff, 1, igvn->intcon(proj->_con));
-  igvn->replace_input_of(this, 1, newbool);
+  // Fold iff1 towards middle, and replace the iff2 condition:
+  igvn->replace_input_of(iff1, 1, igvn->intcon(middle->_con));
+  igvn->replace_input_of(iff2, 1, newbool);
 
-  return true;
+  return true; // Success with CmpU
 }
 
 // Merge the branches that trap for this If and the dominating If into
 // a single region that branches to the uncommon trap for the
 // dominating If
-Node* IfNode::merge_uncommon_traps(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn) {
+Node* IfNode::merge_uncommon_traps(IfProjNode* proj, IfProjNode* success, IfProjNode* fail, PhaseIterGVN* igvn) {
   Node* res = this;
   assert(success->in(0) == this, "bad projection");
 
-  ProjNode* otherproj = proj->other_if_proj();
+  IfProjNode* otherproj = proj->other_if_proj();
 
   CallStaticJavaNode* unc = success->is_uncommon_trap_proj();
   CallStaticJavaNode* dom_unc = otherproj->is_uncommon_trap_proj();
@@ -1237,7 +1580,7 @@ void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGV
 #endif
 }
 
-bool IfNode::is_cmp_with_loadrange(ProjNode* proj) {
+bool IfNode::is_cmp_with_loadrange(IfProjNode* proj) const {
   if (in(1) != nullptr &&
       in(1)->in(1) != nullptr &&
       in(1)->in(1)->in(2) != nullptr) {
@@ -1256,7 +1599,7 @@ bool IfNode::is_cmp_with_loadrange(ProjNode* proj) {
   return false;
 }
 
-bool IfNode::is_null_check(ProjNode* proj, PhaseIterGVN* igvn) {
+bool IfNode::is_null_check(IfProjNode* proj, PhaseIterGVN* igvn) const {
   Node* other = in(1)->in(1)->in(2);
   if (other->in(MemNode::Address) != nullptr &&
       proj->in(0)->in(1) != nullptr &&
@@ -1273,7 +1616,7 @@ bool IfNode::is_null_check(ProjNode* proj, PhaseIterGVN* igvn) {
 
 // Check that the If that is in between the 2 integer comparisons has
 // no side effect
-bool IfNode::is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn) {
+bool IfNode::is_side_effect_free_test(IfProjNode* proj, PhaseIterGVN* igvn) const {
   if (proj == nullptr) {
     return false;
   }
@@ -1313,9 +1656,9 @@ bool IfNode::is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn) {
 // won't be guarded by the first CmpI anymore. It can trap in cases
 // where the first CmpI would have prevented it from executing: on a
 // trap, we need to restart execution at the state of the first CmpI
-void IfNode::reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn) {
+void IfNode::reroute_side_effect_free_unc(IfProjNode* proj, IfProjNode* dom_proj, PhaseIterGVN* igvn) {
   CallStaticJavaNode* dom_unc = dom_proj->is_uncommon_trap_if_pattern();
-  ProjNode* otherproj = proj->other_if_proj();
+  IfProjNode* otherproj = proj->other_if_proj();
   CallStaticJavaNode* unc = proj->is_uncommon_trap_if_pattern();
   Node* call_proj = dom_unc->unique_ctrl_out();
   Node* halt = call_proj->unique_ctrl_out();
@@ -1346,9 +1689,9 @@ Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
     if (is_ctrl_folds(ctrl, igvn)) {
       // A integer comparison immediately dominated by another integer
       // comparison
-      ProjNode* success = nullptr;
-      ProjNode* fail = nullptr;
-      ProjNode* dom_cmp = ctrl->as_Proj();
+      IfProjNode* success = nullptr;
+      IfProjNode* fail = nullptr;
+      IfProjNode* dom_cmp = ctrl->as_IfProj();
       if (has_shared_region(dom_cmp, success, fail) &&
           // Next call modifies graph so must be last
           fold_compares_helper(dom_cmp, success, fail, igvn)) {
@@ -1362,11 +1705,11 @@ Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
       return nullptr;
     } else if (ctrl->in(0) != nullptr &&
                ctrl->in(0)->in(0) != nullptr) {
-      ProjNode* success = nullptr;
-      ProjNode* fail = nullptr;
+      IfProjNode* success = nullptr;
+      IfProjNode* fail = nullptr;
       Node* dom = ctrl->in(0)->in(0);
-      ProjNode* dom_cmp = dom->isa_Proj();
-      ProjNode* other_cmp = ctrl->isa_Proj();
+      IfProjNode* dom_cmp = dom->isa_IfProj();
+      IfProjNode* other_cmp = ctrl->isa_IfProj();
 
       // Check if it's an integer comparison dominated by another
       // integer comparison with another test in between
@@ -1536,7 +1879,7 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------dominated_by-----------------------------------
-Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_access_nodes) {
+Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool prev_dom_not_imply_this) {
 #ifndef PRODUCT
   if (TraceIterativeGVN) {
     tty->print("   Removing IfNode: "); this->dump();
@@ -1567,20 +1910,16 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_ac
     // Loop ends when projection has no more uses.
     for (DUIterator_Last jmin, j = ifp->last_outs(jmin); j >= jmin; --j) {
       Node* s = ifp->last_out(j);   // Get child of IfTrue/IfFalse
-      if (s->depends_only_on_test() && igvn->no_dependent_zero_check(s)) {
-        // For control producers.
-        // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
+      if (s->depends_only_on_test()) {
+        // For control producers
         igvn->replace_input_of(s, 0, data_target); // Move child to data-target
-        if (pin_array_access_nodes && data_target != top) {
-          // As a result of range check smearing, Loads and range check Cast nodes that are control dependent on this
-          // range check (that is about to be removed) now depend on multiple dominating range checks. After the removal
-          // of this range check, these control dependent nodes end up at the lowest/nearest dominating check in the
-          // graph. To ensure that these Loads/Casts do not float above any of the dominating checks (even when the
-          // lowest dominating check is later replaced by yet another dominating check), we need to pin them at the
-          // lowest dominating check.
-          Node* clone = s->pin_array_access_node();
+        if (prev_dom_not_imply_this && data_target != top) {
+          // If prev_dom_not_imply_this, s now depends on multiple tests with prev_dom being the
+          // lowest dominating one. As a result, it must be pinned there. Otherwise, it can be
+          // incorrectly moved to a dominating test equivalent to the lowest one here.
+          Node* clone = s->pin_node_under_control();
           if (clone != nullptr) {
-            clone = igvn->transform(clone);
+            igvn->register_new_node_with_optimizer(clone, s);
             igvn->replace_node(s, clone);
           }
         }
@@ -1593,11 +1932,11 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_ac
       }
     } // End for each child of a projection
 
-    igvn->remove_dead_node(ifp);
+    igvn->remove_dead_node(ifp, PhaseIterGVN::NodeOrigin::Graph);
   } // End for each IfTrue/IfFalse child of If
 
   // Kill the IfNode
-  igvn->remove_dead_node(this);
+  igvn->remove_dead_node(this, PhaseIterGVN::NodeOrigin::Graph);
 
   // Must return either the original node (now dead) or a new node
   // (Do not return a top here, since that would break the uniqueness of top.)
@@ -1665,6 +2004,57 @@ bool IfNode::same_condition(const Node* dom, PhaseIterGVN* igvn) const {
   return true;
 }
 
+void IfNode::mark_projections_unsafe_for_fold_compare() const {
+  // With the following code pattern
+  //
+  // if (some_condition) {
+  //     v = 0;
+  // } else {
+  //     v = 1;
+  // } // v is Phi(0, 1)
+  // if (v == 0) {
+  //     uncommon_trap(); // reexecutes the "if (v == 0) {" above, captures v as stack argument to ifeq bytecode
+  // }
+  // if (some_other_condition) {
+  //     uncommon_trap(); // reexecutes the "if (some_other_condition) {"
+  // }
+  //
+  // if the second if is split thru Phi, the result is:
+  //
+  // if (some_condition) {
+  //     uncommon_trap(); // reexecutes the "if (v == 0) {" that was removed above, captures v = 0 as stack argument to ifeq bytecode
+  // }
+  // if (some_other_condition) {
+  //     uncommon_trap(); // reexecutes the "if (some_other_condition) {"
+  // }
+  //
+  // some_condition and some_other_condition could be folded into
+  // a single new condition that is narrower than some_condition
+  // (done by IfNode::fold_compares(), for instance):
+  //
+  // if (combined_narrower_condition) {
+  //     uncommon_trap(); // reexecutes the "if (v == 0) {" that was removed, captures v = 0 as stack argument to ifeq bytecode
+  // }
+  //
+  // Then combined_narrower_condition is true for some input value for
+  // which some_condition is false. When such an input value is used
+  // at runtime, the trap is taken which causes "if (v == 0) {" to be
+  // reexecuted with v = 0 even though some_condition is wrong, causing
+  // the wrong branch to be executed.
+  //
+  // Mark the uncommon trap nodes to prevent such a transformation
+  // from happening.
+  IfProjNode* true_projection = true_proj();
+  IfProjNode* false_projection = false_proj();
+  CallStaticJavaNode* unc = true_projection->is_uncommon_trap_proj();
+  if (unc != nullptr) {
+    unc->clear_safe_for_fold_compare();
+  }
+  unc = false_projection->is_uncommon_trap_proj();
+  if (unc != nullptr) {
+    unc->clear_safe_for_fold_compare();
+  }
+}
 
 static int subsuming_bool_test_encode(Node*);
 
@@ -1759,7 +2149,7 @@ Node* IfNode::simple_subsuming(PhaseIterGVN* igvn) {
   }
 
   if (bol->outcnt() == 0) {
-    igvn->remove_dead_node(bol);    // Kill the BoolNode.
+    igvn->remove_dead_node(bol, PhaseIterGVN::NodeOrigin::Graph);    // Kill the BoolNode.
   }
   return this;
 }
@@ -1828,16 +2218,15 @@ bool IfNode::is_zero_trip_guard() const {
   return false;
 }
 
-void IfProjNode::pin_array_access_nodes(PhaseIterGVN* igvn) {
+void IfProjNode::pin_dependent_nodes(PhaseIterGVN* igvn) {
   for (DUIterator i = outs(); has_out(i); i++) {
     Node* u = out(i);
     if (!u->depends_only_on_test()) {
       continue;
     }
-    Node* clone = u->pin_array_access_node();
+    Node* clone = u->pin_node_under_control();
     if (clone != nullptr) {
-      clone = igvn->transform(clone);
-      assert(clone != u, "shouldn't common");
+      igvn->register_new_node_with_optimizer(clone, u);
       igvn->replace_node(u, clone);
       --i;
     }
@@ -1875,8 +2264,8 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
   assert(iff->in(0) != nullptr, "If must be live");
 
   if (iff->outcnt() != 2)  return nullptr; // Malformed projections.
-  Node* old_if_f = iff->proj_out(false);
-  Node* old_if_t = iff->proj_out(true);
+  IfFalseNode* old_if_f = iff->false_proj();
+  IfTrueNode* old_if_t = iff->true_proj();
 
   // CountedLoopEnds want the back-control test to be TRUE, regardless of
   // whether they are testing a 'gt' or 'lt' condition.  The 'gt' condition
@@ -1905,7 +2294,7 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
 
   Node *prior = igvn->hash_find_insert(iff);
   if( prior ) {
-    igvn->remove_dead_node(iff);
+    igvn->remove_dead_node(iff, PhaseIterGVN::NodeOrigin::Graph);
     iff = (IfNode*)prior;
   } else {
     // Cannot call transform on it just yet
@@ -2192,7 +2581,7 @@ void ParsePredicateNode::mark_useless(PhaseIterGVN& igvn) {
 }
 
 Node* ParsePredicateNode::uncommon_trap() const {
-  ParsePredicateUncommonProj* uncommon_proj = proj_out(0)->as_IfFalse();
+  ParsePredicateUncommonProj* uncommon_proj = false_proj();
   Node* uct_region_or_call = uncommon_proj->unique_ctrl_out();
   assert(uct_region_or_call->is_Region() || uct_region_or_call->is_Call(), "must be a region or call uct");
   return uct_region_or_call;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -56,8 +56,10 @@ void CardTableBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet d
   }
 }
 
-void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Register tmp) {
-  assert_different_registers(obj, tmp);
+void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2) {
+  precond(tmp1 != noreg);
+  precond(tmp2 != noreg);
+  assert_different_registers(obj, tmp1, tmp2);
   BarrierSet* bs = BarrierSet::barrier_set();
   assert(bs->kind() == BarrierSet::CardTableBarrierSet, "Wrong barrier set kind");
 
@@ -65,17 +67,17 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
 
   assert(CardTable::dirty_card_val() == 0, "must be");
 
-  __ load_byte_map_base(tmp);
-  __ add(tmp, obj, tmp);
+  __ load_byte_map_base(tmp1);
+  __ add(tmp1, obj, tmp1);
 
   if (UseCondCardMark) {
     Label L_already_dirty;
-    __ lbu(t1,  Address(tmp));
-    __ beqz(t1, L_already_dirty);
-    __ sb(zr, Address(tmp));
+    __ lbu(tmp2,  Address(tmp1));
+    __ beqz(tmp2, L_already_dirty);
+    __ sb(zr, Address(tmp1));
     __ bind(L_already_dirty);
   } else {
-    __ sb(zr, Address(tmp));
+    __ sb(zr, Address(tmp1));
   }
 }
 
@@ -119,10 +121,10 @@ void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorS
   if (needs_post_barrier) {
     // flatten object address if needed
     if (!precise || dst.offset() == 0) {
-      store_check(masm, dst.base(), tmp3);
+      store_check(masm, dst.base(), tmp1, tmp2);
     } else {
       __ la(tmp3, dst);
-      store_check(masm, tmp3, t0);
+      store_check(masm, tmp3, tmp1, tmp2);
     }
   }
 }

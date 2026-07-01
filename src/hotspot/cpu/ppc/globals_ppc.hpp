@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,7 +36,7 @@ define_pd_global(bool, ImplicitNullChecks,    true);  // Generate code for impli
 define_pd_global(bool, TrapBasedNullChecks,   true);
 define_pd_global(bool, UncommonNullCast,      true);  // Uncommon-trap nulls passed to check cast.
 
-define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
+define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_PRESENT(true) NOT_COMPILER2(false));
 
 #define DEFAULT_STACK_YELLOW_PAGES (2)
 #define DEFAULT_STACK_RED_PAGES (1)
@@ -60,7 +60,7 @@ define_pd_global(bool,  VMContinuations, true);
 
 // Use large code-entry alignment.
 define_pd_global(size_t, CodeCacheSegmentSize,  128);
-define_pd_global(intx,   CodeEntryAlignment,    64);
+define_pd_global(uint,   CodeEntryAlignment,    64);
 define_pd_global(intx,   OptoLoopAlignment,     16);
 define_pd_global(intx,   InlineSmallCode,       1500);
 
@@ -116,7 +116,8 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
                                                                             \
   /* special instructions */                                                \
   product(bool, SuperwordUseVSX, false,                                     \
-          "Use VSX instructions for superword optimization.")               \
+          "Use VSX instructions for superword optimization "                \
+          "(default for Power9 and later).")                                \
                                                                             \
   product(bool, UseByteReverseInstructions, false, DIAGNOSTIC,              \
           "Use byte reverse instructions.")                                 \

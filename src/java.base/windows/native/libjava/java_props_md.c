@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,43 +74,32 @@ getEncodingInternal(LCID lcid)
     case 65001:
         strcpy(ret, "UTF-8");
         break;
-    case 874:     /*  9:Thai     */
-    case 932:     /* 10:Japanese */
-    case 949:     /* 12:Korean Extended Wansung */
-    case 950:     /* 13:Chinese (Taiwan, Hongkong, Macau) */
-    case 1361:    /* 15:Korean Johab */
+    case 874:     /* Thai     */
+    case 932:     /* Japanese */
+    case 936:     /* Chinese (Simplified) */
+    case 949:     /* Korean Extended Wansung */
+    case 950:     /* Chinese (Taiwan, Hongkong, Macau) */
+    case 1361:    /* Korean Johab */
         ret[0] = 'M';
         ret[1] = 'S';
-        break;
-    case 936:
-        strcpy(ret, "GBK");
-        break;
-    case 54936:
-        strcpy(ret, "GB18030");
-        break;
-    default:
-        ret[0] = 'C';
-        ret[1] = 'p';
-        break;
-    }
 
-    //Traditional Chinese Windows should use MS950_HKSCS_XP as the
-    //default encoding, if HKSCS patch has been installed.
-    // "old" MS950 0xfa41 -> u+e001
-    // "new" MS950 0xfa41 -> u+92db
-    if (strcmp(ret, "MS950") == 0) {
-        TCHAR  mbChar[2] = {(char)0xfa, (char)0x41};
-        WCHAR  unicodeChar;
-        MultiByteToWideChar(CP_ACP, 0, mbChar, 2, &unicodeChar, 1);
-        if (unicodeChar == 0x92db) {
-            strcpy(ret, "MS950_HKSCS_XP");
-        }
-    } else {
-        //SimpChinese Windows should use GB18030 as the default
-        //encoding, if gb18030 patch has been installed (on windows
-        //2000/XP, (1)Codepage 54936 will be available
-        //(2)simsun18030.ttc will exist under system fonts dir )
-        if (strcmp(ret, "GBK") == 0 && IsValidCodePage(54936)) {
+        // Special handling for Chinese
+        if (codepage == 950) {
+            //Traditional Chinese Windows should use MS950_HKSCS_XP as the
+            //default encoding, if HKSCS patch has been installed.
+            // "old" MS950 0xfa41 -> u+e001
+            // "new" MS950 0xfa41 -> u+92db
+            TCHAR  mbChar[2] = {(char)0xfa, (char)0x41};
+            WCHAR  unicodeChar;
+            MultiByteToWideChar(CP_ACP, 0, mbChar, 2, &unicodeChar, 1);
+            if (unicodeChar == 0x92db) {
+                strcpy(ret, "MS950_HKSCS_XP");
+            }
+        } else if (codepage == 936 && IsValidCodePage(54936)) {
+            //SimpChinese Windows should use GB18030 as the default
+            //encoding, if gb18030 patch has been installed (on windows
+            //2000/XP, (1)Codepage 54936 will be available
+            //(2)simsun18030.ttc will exist under system fonts dir )
             char systemPath[MAX_PATH + 1];
             char* gb18030Font = "\\FONTS\\SimSun18030.ttc";
             FILE *f = NULL;
@@ -123,6 +112,14 @@ getEncodingInternal(LCID lcid)
                 }
             }
         }
+        break;
+    case 54936:
+        strcpy(ret, "GB18030");
+        break;
+    default:
+        ret[0] = 'C';
+        ret[1] = 'p';
+        break;
     }
 
     return ret;

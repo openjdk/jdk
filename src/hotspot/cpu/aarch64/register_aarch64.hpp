@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -533,6 +533,17 @@ template<int N>
 VSeq<N/2> vs_odd(const VSeq<N>& v) {
   static_assert(N > 0 && ((N & 1) == 0), "sequence length must be even");
   return VSeq<N/2>(v.base() + v.delta(), v.delta() * 2);
+}
+
+template<int N>
+FloatRegister vs_head(const VSeq<N>& v) {
+  static_assert(N > 1, "sequence length must be greater than 1");
+  return v.base();
+}
+
+template<int N>
+VSeq<N-1> vs_tail(const VSeq<N>& v) {
+  return VSeq<N-1>(v.base() + v.delta(), v.delta());
 }
 
 // convenience method to construct a vector register sequence that

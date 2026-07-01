@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package build.tools.taglet;
 
+import java.net.URI;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -33,8 +34,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
@@ -68,7 +67,7 @@ public class ToolGuide implements Taglet {
 
     static final String TAG_NAME = "toolGuide";
 
-    static final String BASE_URL = "../specs/man";
+    static final String BASE_URL = "specs/man";
 
     static final Pattern TAG_PATTERN = Pattern.compile("(?s)(?<name>[A-Za-z0-9]+)\\s*(?<label>.*)$");
 
@@ -92,6 +91,11 @@ public class ToolGuide implements Taglet {
 
     @Override
     public String toString(List<? extends DocTree> tags, Element elem) {
+        throw new UnsupportedOperationException();
+    }
+
+    // @Override - requires JDK-8373922 in build JDK
+    public String toString(List<? extends DocTree> tags, Element elem, URI docRoot) {
 
         if (tags.isEmpty())
             return "";
@@ -119,9 +123,10 @@ public class ToolGuide implements Taglet {
                 if (label.isEmpty()) {
                     label = name;
                 }
+                String rootParent = docRoot.resolve("..").toString();
 
                 String url = String.format("%s/%s/%s.html",
-                        docRoot(elem), BASE_URL, name);
+                        rootParent, BASE_URL, name);
 
                 if (needComma) {
                     sb.append(",\n");
@@ -140,35 +145,5 @@ public class ToolGuide implements Taglet {
         sb.append("</dd>\n");
 
         return sb.toString();
-    }
-
-    private String docRoot(Element elem) {
-        switch (elem.getKind()) {
-            case MODULE:
-                return "..";
-
-            case PACKAGE:
-                PackageElement pe = (PackageElement)elem;
-                String pkgPart = pe.getQualifiedName()
-                        .toString()
-                        .replace('.', '/')
-                        .replaceAll("[^/]+", "..");
-                return pe.getEnclosingElement() != null
-                        ? "../" + pkgPart
-                        : pkgPart;
-
-            case CLASS, ENUM, RECORD, INTERFACE, ANNOTATION_TYPE:
-                TypeElement te = (TypeElement)elem;
-                return te.getQualifiedName()
-                        .toString()
-                        .replace('.', '/')
-                        .replaceAll("[^/]+", "..");
-
-            default:
-                var enclosing = elem.getEnclosingElement();
-                if (enclosing == null)
-                    throw new IllegalArgumentException(elem.getKind().toString());
-                return docRoot(enclosing);
-        }
     }
 }

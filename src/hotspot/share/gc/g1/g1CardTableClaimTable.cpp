@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,25 +39,25 @@ G1CardTableClaimTable::G1CardTableClaimTable(uint chunks_per_region) :
 }
 
 G1CardTableClaimTable::~G1CardTableClaimTable() {
-  FREE_C_HEAP_ARRAY(uint, _card_claims);
+  FREE_C_HEAP_ARRAY(_card_claims);
 }
 
 void G1CardTableClaimTable::initialize(uint max_reserved_regions) {
   assert(_card_claims == nullptr, "Must not be initialized twice");
-  _card_claims = NEW_C_HEAP_ARRAY(uint, max_reserved_regions, mtGC);
+  _card_claims = NEW_C_HEAP_ARRAY(Atomic<uint>, max_reserved_regions, mtGC);
   _max_reserved_regions = max_reserved_regions;
   reset_all_to_unclaimed();
 }
 
 void G1CardTableClaimTable::reset_all_to_unclaimed() {
   for (uint i = 0; i < _max_reserved_regions; i++) {
-    _card_claims[i] = 0;
+    _card_claims[i].store_relaxed(0);
   }
 }
 
 void G1CardTableClaimTable::reset_all_to_claimed() {
   for (uint i = 0; i < _max_reserved_regions; i++) {
-    _card_claims[i] = (uint)G1HeapRegion::CardsPerRegion;
+    _card_claims[i].store_relaxed((uint)G1HeapRegion::CardsPerRegion);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,18 @@
  */
 package javax.xml.validation.ptests;
 
-import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
-import static javax.xml.validation.ptests.ValidationTestConst.XML_DIR;
-import static jaxp.library.JAXPTestUtilities.filenameToURL;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertSame;
-
-import java.io.File;
-import java.io.IOException;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.w3c.dom.Document;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -44,33 +47,33 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.w3c.dom.Document;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
-import org.xml.sax.helpers.DefaultHandler;
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+import static javax.xml.validation.ptests.ValidationTestConst.XML_DIR;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.validation.ptests.ValidatorTest
+ * @run junit/othervm javax.xml.validation.ptests.ValidatorTest
  * @summary Class containing the test cases for Validator API
  */
+@TestInstance(Lifecycle.PER_CLASS)
 public class ValidatorTest {
 
-    @BeforeClass
+    @BeforeAll
     public void setup() throws SAXException, IOException, ParserConfigurationException {
         schema = SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI).newSchema(new File(XML_DIR + "test.xsd"));
 
         assertNotNull(schema);
 
-        xmlFileUri = filenameToURL(XML_DIR + "test.xml");
+        xmlFileUri = Paths.get(XML_DIR).resolve("test.xml").toUri().toASCIIString();
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
@@ -84,11 +87,11 @@ public class ValidatorTest {
         validator.validate(getStreamSource());
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testValidateNullSource() throws SAXException, IOException {
+    @Test
+    public void testValidateNullSource() {
         Validator validator = getValidator();
         assertNotNull(validator);
-        validator.validate(null);
+        assertThrows(NullPointerException.class, () -> validator.validate(null));
     }
 
     @Test
@@ -98,11 +101,10 @@ public class ValidatorTest {
 
         ErrorHandler mh = new MyErrorHandler();
         validator.setErrorHandler(mh);
-        assertSame(validator.getErrorHandler(), mh);
+        assertSame(mh, validator.getErrorHandler());
 
     }
 
-    @DataProvider(name = "source-result")
     public Object[][] getSourceAndResult() {
         return new Object[][] {
                 { getStreamSource(), null },
@@ -112,66 +114,65 @@ public class ValidatorTest {
                 { getDOMSource(), null } };
     }
 
-    @Test(dataProvider = "source-result")
+    @ParameterizedTest
+    @MethodSource("getSourceAndResult")
     public void testValidateWithResult(Source source, Result result) throws SAXException, IOException {
         Validator validator = getValidator();
         validator.validate(source, result);
     }
 
-    @Test(expectedExceptions = SAXNotRecognizedException.class)
-    public void testGetUnrecognizedProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
+    @Test
+    public void testGetUnrecognizedProperty() {
         Validator validator = getValidator();
-        validator.getProperty(UNRECOGNIZED_NAME);
+        assertThrows(SAXNotRecognizedException.class, () -> validator.getProperty(UNRECOGNIZED_NAME));
 
     }
 
-    @Test(expectedExceptions = SAXNotRecognizedException.class)
-    public void testSetUnrecognizedProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
+    @Test
+    public void testSetUnrecognizedProperty() {
         Validator validator = getValidator();
-        validator.setProperty(UNRECOGNIZED_NAME, "test");
+        assertThrows(SAXNotRecognizedException.class, () -> validator.setProperty(UNRECOGNIZED_NAME, "test"));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testGetNullProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
+    @Test
+    public void testGetNullProperty() {
         Validator validator = getValidator();
         assertNotNull(validator);
-        validator.getProperty(null);
-
+        assertThrows(NullPointerException.class, () -> validator.getProperty(null));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testSetNullProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
+    @Test
+    public void testSetNullProperty() {
         Validator validator = getValidator();
         assertNotNull(validator);
-        validator.setProperty(null, "test");
+        assertThrows(NullPointerException.class, () -> validator.setProperty(null, "test"));
     }
 
-    @Test(expectedExceptions = SAXNotRecognizedException.class)
-    public void testGetUnrecognizedFeature() throws SAXNotRecognizedException, SAXNotSupportedException {
+    @Test
+    public void testGetUnrecognizedFeature() {
         Validator validator = getValidator();
-        validator.getFeature(UNRECOGNIZED_NAME);
+        assertThrows(SAXNotRecognizedException.class, () -> validator.getFeature(UNRECOGNIZED_NAME));
 
     }
 
-    @Test(expectedExceptions = SAXNotRecognizedException.class)
-    public void testSetUnrecognizedFeature() throws SAXNotRecognizedException, SAXNotSupportedException {
+    @Test
+    public void testSetUnrecognizedFeature() {
         Validator validator = getValidator();
-        validator.setFeature(UNRECOGNIZED_NAME, true);
+        assertThrows(SAXNotRecognizedException.class, () -> validator.setFeature(UNRECOGNIZED_NAME, true));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testGetNullFeature() throws SAXNotRecognizedException, SAXNotSupportedException {
-        Validator validator = getValidator();
-        assertNotNull(validator);
-        validator.getFeature(null);
-
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testSetNullFeature() throws SAXNotRecognizedException, SAXNotSupportedException {
+    @Test
+    public void testGetNullFeature() {
         Validator validator = getValidator();
         assertNotNull(validator);
-        validator.setFeature(null, true);
+        assertThrows(NullPointerException.class, () -> validator.getFeature(null));
+    }
+
+    @Test
+    public void testSetNullFeature() {
+        Validator validator = getValidator();
+        assertNotNull(validator);
+        assertThrows(NullPointerException.class, () -> validator.setFeature(null, true));
     }
 
     private Validator getValidator() {
@@ -204,5 +205,4 @@ public class ValidatorTest {
     private String xmlFileUri;
     private Schema schema;
     private Document xmlDoc;
-
 }

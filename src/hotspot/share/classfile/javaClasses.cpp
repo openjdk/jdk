@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,9 +89,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/utf8.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciJavaClasses.hpp"
-#endif
 
 #define DECLARE_INJECTED_FIELD(klass, name, signature, may_be_java)           \
   { VM_CLASS_ID(klass), VM_SYMBOL_ENUM_NAME(name##_name), VM_SYMBOL_ENUM_NAME(signature), may_be_java },
@@ -1263,6 +1260,10 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
         "Restored %s archived mirror " PTR_FORMAT, k->external_name(), p2i(mirror()));
   }
 
+  if (CDSConfig::is_dumping_heap()) {
+    create_scratch_mirror(k, CHECK_(false));
+  }
+
   return true;
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
@@ -1904,16 +1905,16 @@ oop java_lang_Thread::park_blocker(oop java_thread) {
   return java_thread->obj_field_access<MO_RELAXED>(_park_blocker_offset);
 }
 
-// Obtain stack trace for platform or mounted virtual thread.
-// If jthread is a virtual thread and it has been unmounted (or remounted to different carrier) the method returns null.
-// The caller (java.lang.VirtualThread) handles returned nulls via retry.
+// Obtain stack trace for a platform or virtual thread.
 oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   ThreadsListHandle tlh(THREAD);
   JavaThread* java_thread = nullptr;
-  oop thread_oop;
+  oop thread_oop = nullptr;
 
   bool has_java_thread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
-  if (!has_java_thread) {
+  assert(thread_oop != nullptr, "Missing Thread oop");
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+  if (!has_java_thread && !is_virtual) {
     return nullptr;
   }
 
@@ -1921,61 +1922,33 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   public:
     const Handle _thread_h;
     int _depth;
-    bool _retry_handshake;
-    GrowableArray<Method*>* _methods;
-    GrowableArray<int>*     _bcis;
+    enum InitLength { len = 64 }; // Minimum length that covers most cases
+    GrowableArrayCHeap<Method*, mtInternal> _methods;
+    GrowableArrayCHeap<int, mtInternal>     _bcis;
 
     GetStackTraceHandshakeClosure(Handle thread_h) :
-        HandshakeClosure("GetStackTraceHandshakeClosure"), _thread_h(thread_h), _depth(0), _retry_handshake(false),
-        _methods(nullptr), _bcis(nullptr) {
-    }
-    ~GetStackTraceHandshakeClosure() {
-      delete _methods;
-      delete _bcis;
-    }
-
-    bool read_reset_retry() {
-      bool ret = _retry_handshake;
-      // If we re-execute the handshake this method need to return false
-      // when the handshake cannot be performed. (E.g. thread terminating)
-      _retry_handshake = false;
-      return ret;
+        HandshakeClosure("GetStackTraceHandshakeClosure"), _thread_h(thread_h), _depth(0),
+        _methods(InitLength::len), _bcis(InitLength::len) {
     }
 
     void do_thread(Thread* th) {
-      if (!Thread::current()->is_Java_thread()) {
-        _retry_handshake = true;
+      JavaThread* java_thread = th != nullptr ? JavaThread::cast(th) : nullptr;
+      if (java_thread != nullptr && !java_thread->has_last_Java_frame()) {
+        // stack trace is empty
         return;
       }
 
-      JavaThread* java_thread = JavaThread::cast(th);
-
-      if (!java_thread->has_last_Java_frame()) {
-        return;
-      }
-
-      bool carrier = false;
-      if (java_lang_VirtualThread::is_instance(_thread_h())) {
-        // Ensure _thread_h is still mounted to java_thread.
-        const ContinuationEntry* ce = java_thread->vthread_continuation();
-        if (ce == nullptr || ce->cont_oop(java_thread) != java_lang_VirtualThread::continuation(_thread_h())) {
-          // Target thread has been unmounted.
-          return;
-        }
-      } else {
-        carrier = (java_thread->vthread_continuation() != nullptr);
-      }
+      bool is_virtual = java_lang_VirtualThread::is_instance(_thread_h());
+      bool vthread_carrier = !is_virtual && (java_thread->vthread_continuation() != nullptr);
 
       const int max_depth = MaxJavaStackTraceDepth;
       const bool skip_hidden = !ShowHiddenFrames;
 
-      // Pick minimum length that will cover most cases
-      int init_length = 64;
-      _methods = new (mtInternal) GrowableArray<Method*>(init_length, mtInternal);
-      _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
-
       int total_count = 0;
-      for (vframeStream vfst(java_thread, false, false, carrier); // we don't process frames as we don't care about oops
+      vframeStream vfst(java_thread != nullptr
+        ? vframeStream(java_thread, false, false, vthread_carrier)  // we don't process frames as we don't care about oops
+        : vframeStream(java_lang_VirtualThread::continuation(_thread_h())));
+      for (;
            !vfst.at_end() && (max_depth == 0 || max_depth != total_count);
            vfst.next()) {
 
@@ -1984,8 +1957,8 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
           continue;
         }
 
-        _methods->push(vfst.method());
-        _bcis->push(vfst.bci());
+        _methods.push(vfst.method());
+        _bcis.push(vfst.bci());
         total_count++;
       }
 
@@ -1997,9 +1970,11 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark   hm(THREAD);
   GetStackTraceHandshakeClosure gsthc(Handle(THREAD, thread_oop));
-  do {
-   Handshake::execute(&gsthc, &tlh, java_thread);
-  } while (gsthc.read_reset_retry());
+  if (is_virtual) {
+    Handshake::execute(&gsthc, thread_oop);
+  } else {
+    Handshake::execute(&gsthc, &tlh, java_thread);
+  }
 
   // Stop if no stack trace is found.
   if (gsthc._depth == 0) {
@@ -2015,9 +1990,9 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   objArrayHandle trace = oopFactory::new_objArray_handle(k, gsthc._depth, CHECK_NULL);
 
   for (int i = 0; i < gsthc._depth; i++) {
-    methodHandle method(THREAD, gsthc._methods->at(i));
+    methodHandle method(THREAD, gsthc._methods.at(i));
     oop element = java_lang_StackTraceElement::create(method,
-                                                      gsthc._bcis->at(i),
+                                                      gsthc._bcis.at(i),
                                                       CHECK_NULL);
     trace->obj_at_put(i, element);
   }
@@ -2196,7 +2171,7 @@ void java_lang_VirtualThread::set_timeout(oop vthread, jlong value) {
 
 JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) {
   JavaThreadStatus status = JavaThreadStatus::NEW;
-  switch (state & ~SUSPENDED) {
+  switch (state) {
     case NEW:
       status = JavaThreadStatus::NEW;
       break;
@@ -3176,23 +3151,6 @@ void java_lang_StackTraceElement::decode_file_and_line(Handle java_class,
   line_number = Backtrace::get_line_number(method(), bci);
 }
 
-#if INCLUDE_JVMCI
-void java_lang_StackTraceElement::decode(const methodHandle& method, int bci,
-                                         Symbol*& filename, int& line_number, TRAPS) {
-  ResourceMark rm(THREAD);
-  HandleMark hm(THREAD);
-
-  filename = nullptr;
-  line_number = -1;
-
-  oop source_file;
-  int version = method->constants()->version();
-  InstanceKlass* holder = method->method_holder();
-  Handle java_class(THREAD, holder->java_mirror());
-  decode_file_and_line(java_class, holder, version, method, bci, filename, source_file, line_number, CHECK);
-}
-#endif // INCLUDE_JVMCI
-
 // java_lang_ClassFrameInfo
 
 int java_lang_ClassFrameInfo::_classOrMemberName_offset;
@@ -3610,6 +3568,7 @@ int java_lang_reflect_Field::_modifiers_offset;
 int java_lang_reflect_Field::_trusted_final_offset;
 int java_lang_reflect_Field::_signature_offset;
 int java_lang_reflect_Field::_annotations_offset;
+JFR_ONLY(int java_lang_reflect_Field::_jfr_epoch_offset;)
 
 #define FIELD_FIELDS_DO(macro) \
   macro(_clazz_offset,     k, vmSymbols::clazz_name(),     class_signature,  false); \
@@ -3624,11 +3583,13 @@ int java_lang_reflect_Field::_annotations_offset;
 void java_lang_reflect_Field::compute_offsets() {
   InstanceKlass* k = vmClasses::reflect_Field_klass();
   FIELD_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  JFR_ONLY(FIELD_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);)
 }
 
 #if INCLUDE_CDS
 void java_lang_reflect_Field::serialize_offsets(SerializeClosure* f) {
   FIELD_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+  JFR_ONLY(FIELD_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);)
 }
 #endif
 
@@ -3693,6 +3654,12 @@ void java_lang_reflect_Field::set_signature(oop field, oop value) {
 void java_lang_reflect_Field::set_annotations(oop field, oop value) {
   field->obj_field_put(_annotations_offset, value);
 }
+
+#if INCLUDE_JFR
+u2 java_lang_reflect_Field::epoch(oop ref) {
+  return static_cast<u2>(ref->int_field(_jfr_epoch_offset));
+}
+#endif // INCLUDE_JFR
 
 oop java_lang_reflect_RecordComponent::create(InstanceKlass* holder, RecordComponent* component, TRAPS) {
   // Allocate java.lang.reflect.RecordComponent instance
@@ -4297,10 +4264,6 @@ int jdk_internal_foreign_abi_NativeEntryPoint::_downcall_stub_address_offset;
   macro(_method_type_offset,           k, "methodType",          java_lang_invoke_MethodType_signature, false); \
   macro(_downcall_stub_address_offset, k, "downcallStubAddress", long_signature, false);
 
-bool jdk_internal_foreign_abi_NativeEntryPoint::is_instance(oop obj) {
-  return obj != nullptr && is_subclass(obj->klass());
-}
-
 void jdk_internal_foreign_abi_NativeEntryPoint::compute_offsets() {
   InstanceKlass* k = vmClasses::NativeEntryPoint_klass();
   NEP_FIELDS_DO(FIELD_COMPUTE_OFFSET);
@@ -4336,10 +4299,6 @@ int jdk_internal_foreign_abi_ABIDescriptor::_scratch2_offset;
   macro(_shadowSpace_offset,     k, "shadowSpace",     int_signature, false); \
   macro(_scratch1_offset,        k, "scratch1",        jdk_internal_foreign_abi_VMStorage_signature, false); \
   macro(_scratch2_offset,        k, "scratch2",        jdk_internal_foreign_abi_VMStorage_signature, false);
-
-bool jdk_internal_foreign_abi_ABIDescriptor::is_instance(oop obj) {
-  return obj != nullptr && is_subclass(obj->klass());
-}
 
 void jdk_internal_foreign_abi_ABIDescriptor::compute_offsets() {
   InstanceKlass* k = vmClasses::ABIDescriptor_klass();
@@ -5132,12 +5091,6 @@ void java_lang_Integer_IntegerCache::serialize_offsets(SerializeClosure* f) {
 #endif
 #undef INTEGER_CACHE_FIELDS_DO
 
-jint java_lang_Integer::value(oop obj) {
-   jvalue v;
-   java_lang_boxing_object::get_value(obj, &v);
-   return v.i;
-}
-
 #define LONG_CACHE_FIELDS_DO(macro) \
   macro(_static_cache_offset, k, "cache", java_lang_Long_array_signature, true)
 
@@ -5161,12 +5114,6 @@ void java_lang_Long_LongCache::serialize_offsets(SerializeClosure* f) {
 }
 #endif
 #undef LONG_CACHE_FIELDS_DO
-
-jlong java_lang_Long::value(oop obj) {
-   jvalue v;
-   java_lang_boxing_object::get_value(obj, &v);
-   return v.j;
-}
 
 #define CHARACTER_CACHE_FIELDS_DO(macro) \
   macro(_static_cache_offset, k, "cache", java_lang_Character_array_signature, true)
@@ -5192,12 +5139,6 @@ void java_lang_Character_CharacterCache::serialize_offsets(SerializeClosure* f) 
 #endif
 #undef CHARACTER_CACHE_FIELDS_DO
 
-jchar java_lang_Character::value(oop obj) {
-   jvalue v;
-   java_lang_boxing_object::get_value(obj, &v);
-   return v.c;
-}
-
 #define SHORT_CACHE_FIELDS_DO(macro) \
   macro(_static_cache_offset, k, "cache", java_lang_Short_array_signature, true)
 
@@ -5221,12 +5162,6 @@ void java_lang_Short_ShortCache::serialize_offsets(SerializeClosure* f) {
 }
 #endif
 #undef SHORT_CACHE_FIELDS_DO
-
-jshort java_lang_Short::value(oop obj) {
-   jvalue v;
-   java_lang_boxing_object::get_value(obj, &v);
-   return v.s;
-}
 
 #define BYTE_CACHE_FIELDS_DO(macro) \
   macro(_static_cache_offset, k, "cache", java_lang_Byte_array_signature, true)
@@ -5252,12 +5187,6 @@ void java_lang_Byte_ByteCache::serialize_offsets(SerializeClosure* f) {
 #endif
 #undef BYTE_CACHE_FIELDS_DO
 
-jbyte java_lang_Byte::value(oop obj) {
-   jvalue v;
-   java_lang_boxing_object::get_value(obj, &v);
-   return v.b;
-}
-
 int java_lang_Boolean::_static_TRUE_offset;
 int java_lang_Boolean::_static_FALSE_offset;
 
@@ -5271,16 +5200,6 @@ void java_lang_Boolean::compute_offsets(InstanceKlass *k) {
   BOOLEAN_FIELDS_DO(FIELD_COMPUTE_OFFSET);
 }
 
-oop java_lang_Boolean::get_TRUE(InstanceKlass *ik) {
-  oop base = ik->static_field_base_raw();
-  return base->obj_field(_static_TRUE_offset);
-}
-
-oop java_lang_Boolean::get_FALSE(InstanceKlass *ik) {
-  oop base = ik->static_field_base_raw();
-  return base->obj_field(_static_FALSE_offset);
-}
-
 Symbol* java_lang_Boolean::symbol() {
   return vmSymbols::java_lang_Boolean();
 }
@@ -5291,12 +5210,6 @@ void java_lang_Boolean::serialize_offsets(SerializeClosure* f) {
 }
 #endif
 #undef BOOLEAN_CACHE_FIELDS_DO
-
-jboolean java_lang_Boolean::value(oop obj) {
-   jvalue v;
-   java_lang_boxing_object::get_value(obj, &v);
-   return v.z;
-}
 
 // java_lang_reflect_RecordComponent
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @modules java.base/java.lang:open
- * @run testng/othervm test.DefineClassTest
+ * @run junit/othervm test.DefineClassTest
  * @summary Basic test for java.lang.invoke.MethodHandles.Lookup.defineClass
  */
 
@@ -38,7 +38,6 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.testng.annotations.Test;
 
 import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 import static java.lang.classfile.ClassFile.ACC_STATIC;
@@ -48,7 +47,8 @@ import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static java.lang.constant.ConstantDescs.MTD_void;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodHandles.Lookup.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class DefineClassTest {
     private static final String THIS_PACKAGE = DefineClassTest.class.getPackageName();
@@ -60,9 +60,9 @@ public class DefineClassTest {
      * protection domain, as a lookup class.
      */
     void testSameAbode(Class<?> clazz, Class<?> lc) {
-        assertTrue(clazz.getClassLoader() == lc.getClassLoader());
-        assertEquals(clazz.getPackageName(), lc.getPackageName());
-        assertTrue(clazz.getProtectionDomain() == lc.getProtectionDomain());
+        assertSame(lc.getClassLoader(), clazz.getClassLoader());
+        assertEquals(lc.getPackageName(), clazz.getPackageName());
+        assertSame(lc.getProtectionDomain(), clazz.getProtectionDomain());
     }
 
     /**
@@ -72,8 +72,8 @@ public class DefineClassTest {
     void testDiscoverable(Class<?> clazz, Lookup lookup) throws Exception {
         String cn = clazz.getName();
         ClassLoader loader = clazz.getClassLoader();
-        assertTrue(Class.forName(cn, false, loader) == clazz);
-        assertTrue(lookup.findClass(cn) == clazz);
+        assertSame(clazz, Class.forName(cn, false, loader));
+        assertSame(clazz, lookup.findClass(cn));
     }
 
     /**
@@ -86,7 +86,7 @@ public class DefineClassTest {
         Class<?> clazz = lookup.defineClass(generateClass(CLASS_NAME));
 
         // test name
-        assertEquals(clazz.getName(), CLASS_NAME);
+        assertEquals(CLASS_NAME, clazz.getName());
 
         // test loader/package/protection-domain
         testSameAbode(clazz, lookup.lookupClass());
@@ -95,10 +95,8 @@ public class DefineClassTest {
         testDiscoverable(clazz, lookup);
 
         // attempt defineClass again
-        try {
-            lookup.defineClass(generateClass(CLASS_NAME));
-            assertTrue(false);
-        } catch (LinkageError expected) { }
+        var bytes = generateClass(CLASS_NAME);
+        assertThrows(LinkageError.class, () -> lookup.defineClass(bytes));
     }
 
     /**
@@ -126,10 +124,7 @@ public class DefineClassTest {
         classBytes = generateRunner(CLASS_NAME + nextNumber(), THIS_CLASS, "method4");
         Class<?> clazz = lookup.defineClass(classBytes);
         Runnable r = (Runnable) clazz.newInstance();
-        try {
-            r.run();
-            assertTrue(false);
-        } catch (IllegalAccessError expected) { }
+        assertThrows(IllegalAccessError.class, r::run);
     }
 
     public static void method1() { }
@@ -154,12 +149,8 @@ public class DefineClassTest {
         Class<?> clazz = lookup().defineClass(classBytes);
 
         // trigger initializer to run
-        try {
-            clazz.newInstance();
-            assertTrue(false);
-        } catch (ExceptionInInitializerError e) {
-            assertTrue(e.getCause() instanceof IllegalCallerException);
-        }
+        var e = assertThrows(ExceptionInInitializerError.class, clazz::newInstance);
+        assertInstanceOf(IllegalCallerException.class, e.getCause());
     }
 
     static void fail() { throw new IllegalCallerException(); }
@@ -189,9 +180,9 @@ public class DefineClassTest {
         ClassLoader loader = new URLClassLoader(new URL[] { url1, url2 });
         Class<?> target1 = Class.forName("p.C1", false, loader);
         Class<?> target2 = Class.forName("p.C2", false, loader);
-        assertTrue(target1.getClassLoader() == loader);
-        assertTrue(target1.getClassLoader() == loader);
-        assertNotEquals(target1.getProtectionDomain(), target2.getProtectionDomain());
+        assertSame(loader, target1.getClassLoader());
+        assertSame(loader, target1.getClassLoader());
+        assertNotEquals(target2.getProtectionDomain(), target1.getProtectionDomain());
 
         // protection domain 1
         Lookup lookup1 = privateLookupIn(target1, lookup());
@@ -214,43 +205,43 @@ public class DefineClassTest {
     @Test
     public void testBootLoader() throws Exception {
         Lookup lookup = privateLookupIn(Thread.class, lookup());
-        assertTrue(lookup.getClass().getClassLoader() == null);
+        assertNull(lookup.getClass().getClassLoader());
 
         Class<?> clazz = lookup.defineClass(generateClass("java.lang.Foo"));
-        assertEquals(clazz.getName(), "java.lang.Foo");
+        assertEquals("java.lang.Foo", clazz.getName());
         testSameAbode(clazz, Thread.class);
         testDiscoverable(clazz, lookup);
     }
 
-    @Test(expectedExceptions = { IllegalArgumentException.class })
+    @Test
     public void testWrongPackage() throws Exception {
-        lookup().defineClass(generateClass("other.C"));
+        assertThrows(IllegalArgumentException.class, () -> lookup().defineClass(generateClass("other.C")));
     }
 
-    @Test(expectedExceptions = { IllegalAccessException.class })
+    @Test
     public void testNoPackageAccess() throws Exception {
         Lookup lookup = lookup().dropLookupMode(PACKAGE);
-        lookup.defineClass(generateClass(THIS_PACKAGE + ".C"));
+        assertThrows(IllegalAccessException.class, () -> lookup.defineClass(generateClass(THIS_PACKAGE + ".C")));
     }
 
-    @Test(expectedExceptions = { ClassFormatError.class })
+    @Test
     public void testTruncatedClassFile() throws Exception {
-        lookup().defineClass(new byte[0]);
+        assertThrows(ClassFormatError.class, () -> lookup().defineClass(new byte[0]));
     }
 
-    @Test(expectedExceptions = { NullPointerException.class })
+    @Test
     public void testNull() throws Exception {
-        lookup().defineClass(null);
+        assertThrows(NullPointerException.class, () -> lookup().defineClass(null));
     }
 
-    @Test(expectedExceptions = { NoClassDefFoundError.class })
+    @Test
     public void testLinking() throws Exception {
-        lookup().defineClass(generateNonLinkableClass(THIS_PACKAGE + ".NonLinkableClass"));
+        assertThrows(NoClassDefFoundError.class, () -> lookup().defineClass(generateNonLinkableClass(THIS_PACKAGE + ".NonLinkableClass")));
     }
 
-    @Test(expectedExceptions = { IllegalArgumentException.class })
+    @Test
     public void testModuleInfo() throws Exception {
-        lookup().defineClass(generateModuleInfo());
+        assertThrows(IllegalArgumentException.class, () -> lookup().defineClass(generateModuleInfo()));
     }
 
     /**

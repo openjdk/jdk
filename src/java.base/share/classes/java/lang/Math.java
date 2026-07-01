@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,11 +108,11 @@ import static java.lang.Double.*;
  * sin}, {@link cos cos}, {@link tan tan}, {@link asin asin}, {@link
  * acos acos}, {@link atan atan}, {@link exp exp}, {@link expm1
  * expm1}, {@link log log}, {@link log10 log10}, {@link log1p log1p},
- * {@link sinh sinh}, {@link cosh cosh}, {@link tanh tanh}, {@link
- * hypot hypot}, and {@link pow pow}.  (The {@link sqrt sqrt}
- * operation is a required part of IEEE 754 from a different section
- * of the standard.) The special case behavior of the recommended
- * operations generally follows the guidance of the IEEE 754
+ * {@link sinh sinh}, {@link cosh cosh}, {@link tanh tanh}, {@link asinh asinh},
+ * {@link acosh acosh}, {@link atanh atanh}, {@link hypot hypot}, and {@link pow pow}.
+ * (The {@link sqrt sqrt} operation is a required part of IEEE 754
+ * from a different section of the standard.) The special case behavior
+ * of the recommended operations generally follows the guidance of the IEEE 754
  * standard. However, the {@code pow} method defines different
  * behavior for some arguments, as noted in its {@linkplain pow
  * specification}. The IEEE 754 standard defines its operations to be
@@ -2378,6 +2378,20 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static double fma(double a, double b, double c) {
+        // Implementation note: this method is intentionally coded in
+        // a straightforward manner relying on BigDecimal for the
+        // heavy-lifting of the numerical computation. It would be
+        // possible for the computation to be done solely using binary
+        // floating-point and integer operations, at the cost of more
+        // complicated logic. Since most processors have hardware
+        // support for fma and this method is an intrinsic candidate,
+        // the software implementation below would only be used on
+        // processors without native fma support (and also possibly on
+        // processors with native fma support while running in the
+        // interpreter). Therefore, the direct performance of the code
+        // is less of a concern than the code's simplicity,
+        // maintainability, and testability.
+
         /*
          * Infinity and NaN arithmetic is not quite the same with two
          * roundings as opposed to just one so the simple expression
@@ -2492,6 +2506,8 @@ public final class Math {
      */
     @IntrinsicCandidate
     public static float fma(float a, float b, float c) {
+        // See implementation note in fma(double, double, double).
+
         if (Float.isFinite(a) && Float.isFinite(b) && Float.isFinite(c)) {
             if (a == 0.0 || b == 0.0) {
                 return a * b + c; // Handled signed zero cases
@@ -2740,6 +2756,94 @@ public final class Math {
     @IntrinsicCandidate
     public static double tanh(double x) {
         return StrictMath.tanh(x);
+    }
+
+    /**
+     * Returns the inverse hyperbolic sine of a {@code double} value.
+     * The inverse hyperbolic sine of <i>x</i> is defined to be the function such that
+     * asinh({@linkplain Math#sinh sinh(<i>x</i>)}) = <i>x</i> for any <i>x</i>.
+     * Note that both domain and range of the exact asinh are unrestricted.
+     * <p>Special cases:
+     * <ul>
+     *
+     * <li>If the argument is zero, then the result is a zero with the
+     * same sign as the argument.
+     *
+     * <li>If the argument is infinity, then the result is
+     * infinity with the same sign as the argument.
+     *
+     * <li>If the argument is NaN, then the result is NaN.
+     *
+     *
+     * </ul>
+     * <p>The computed result must be within 2.5 ulps of the exact result.
+     * @param   x The number whose inverse hyperbolic sine is to be returned.
+     * @return  The inverse hyperbolic sine of {@code x}.
+     * @since 27
+     */
+    public static double asinh(double x) {
+        return StrictMath.asinh(x);
+    }
+
+
+
+    /**
+     * Returns the inverse hyperbolic cosine of a {@code double} value.
+     * The inverse hyperbolic cosine of <i>x</i> is defined to be the function such that
+     *  acosh({@linkplain Math#cosh cosh(<i>x</i>)}) = <i>x</i> for any <i>x</i> >= 0.
+     *  Note that range of the exact acosh(x) is >= 0.
+     * <p>Special cases:
+     * <ul>
+     *
+     * <li>If the argument is positive infinity, then the result is
+     * positive infinity
+     *
+     * <li>If the argument less than 1, then the result is NaN.
+     *
+     * <li>If the argument is NaN, then the result is NaN.
+     *
+     * <li>If the argument is {@code 1.0}, then the result is positive zero.
+     *
+     * </ul>
+     * <p>The computed result must be within 2.5 ulps of the exact result.
+     * @param   x The number whose inverse hyperbolic cosine is to be returned.
+     * @return  The inverse hyperbolic cosine of {@code x}.
+     * @since 27
+     */
+    public static double acosh(double x) {
+        return StrictMath.acosh(x);
+    }
+
+    /**
+     * Returns the inverse hyperbolic tangent of a {@code double} value.
+     * The inverse hyperbolic tangent of <i>x</i> is defined to be the function such that
+     * atanh({@linkplain Math#tanh tanh(<i>x</i>)}) = <i>x</i> for any <i>x</i>.
+     * Note that the domain of the exact atanh is (-1; 1), the range is unrestricted.
+     *
+     * <p>Special cases:
+     * <ul>
+     *
+     * <li>If the argument is NaN, then the result is NaN.
+     *
+     * <li>If the argument is zero, then the result is a zero with the
+     * same sign as the argument.
+     *
+     * <li>If the argument is {@code +1.0}, then the result is
+     * positive infinity.
+     *
+     * <li>If the argument is {@code -1.0}, then the result is
+     * negative infinity.
+     *
+     * <li>If the argument is greater than {@code 1.0} in magnitude, then the result is NaN.
+     *
+     * </ul>
+     * <p> The computed result must be within 2.5 ulps of the exact result.
+     * @param   x The number whose inverse hyperbolic tangent is to be returned.
+     * @return  The inverse hyperbolic tangent of {@code x}.
+     * @since 27
+     */
+    public static double atanh(double x) {
+        return StrictMath.atanh(x);
     }
 
     /**

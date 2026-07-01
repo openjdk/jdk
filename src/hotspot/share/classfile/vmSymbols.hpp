@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_CLASSFILE_VMSYMBOLS_HPP
 
 #include "classfile/vmIntrinsics.hpp"
-#include "jvmci/vmSymbols_jvmci.hpp"
 #include "memory/iterator.hpp"
 #include "oops/symbol.hpp"
 #include "utilities/enumIterator.hpp"
@@ -98,6 +97,7 @@ class SerializeClosure;
   template(jdk_internal_vm_vector_VectorMask,         "jdk/internal/vm/vector/VectorSupport$VectorMask")    \
   template(jdk_internal_vm_vector_VectorShuffle,      "jdk/internal/vm/vector/VectorSupport$VectorShuffle") \
   template(payload_name,                              "payload")                                            \
+  template(CTYPE_name,                                "CTYPE")                                              \
   template(ETYPE_name,                                "ETYPE")                                              \
   template(VLENGTH_name,                              "VLENGTH")                                            \
                                                                                                   \
@@ -245,10 +245,6 @@ class SerializeClosure;
                                                                                                   \
   /* Concurrency support */                                                                       \
   template(java_util_concurrent_locks_AbstractOwnableSynchronizer,           "java/util/concurrent/locks/AbstractOwnableSynchronizer") \
-  template(java_util_concurrent_atomic_AtomicIntegerFieldUpdater_Impl,       "java/util/concurrent/atomic/AtomicIntegerFieldUpdater$AtomicIntegerFieldUpdaterImpl") \
-  template(java_util_concurrent_atomic_AtomicLongFieldUpdater_CASUpdater,    "java/util/concurrent/atomic/AtomicLongFieldUpdater$CASUpdater") \
-  template(java_util_concurrent_atomic_AtomicLongFieldUpdater_LockedUpdater, "java/util/concurrent/atomic/AtomicLongFieldUpdater$LockedUpdater") \
-  template(java_util_concurrent_atomic_AtomicReferenceFieldUpdater_Impl,     "java/util/concurrent/atomic/AtomicReferenceFieldUpdater$AtomicReferenceFieldUpdaterImpl") \
   template(jdk_internal_vm_annotation_Contended_signature,                   "Ljdk/internal/vm/annotation/Contended;")    \
   template(jdk_internal_vm_annotation_ReservedStackAccess_signature,         "Ljdk/internal/vm/annotation/ReservedStackAccess;") \
   template(jdk_internal_ValueBased_signature,                                "Ljdk/internal/ValueBased;") \
@@ -302,6 +298,7 @@ class SerializeClosure;
   template(jdk_internal_misc_Scoped_signature,               "Ljdk/internal/misc/ScopedMemoryAccess$Scoped;") \
   template(jdk_internal_vm_annotation_IntrinsicCandidate_signature, "Ljdk/internal/vm/annotation/IntrinsicCandidate;") \
   template(jdk_internal_vm_annotation_Stable_signature,      "Ljdk/internal/vm/annotation/Stable;") \
+  template(jdk_internal_vm_annotation_TrustFinalFields_signature, "Ljdk/internal/vm/annotation/TrustFinalFields;") \
                                                                                                   \
   template(jdk_internal_vm_annotation_ChangesCurrentThread_signature,  "Ljdk/internal/vm/annotation/ChangesCurrentThread;")  \
   template(jdk_internal_vm_annotation_JvmtiHideEvents_signature,       "Ljdk/internal/vm/annotation/JvmtiHideEvents;")  \
@@ -357,9 +354,6 @@ class SerializeClosure;
   template(jdk_internal_foreign_abi_CallConv,                        "jdk/internal/foreign/abi/UpcallLinker$CallRegs") \
                                                                                                   \
   template(jdk_internal_foreign_NativeMemorySegmentImpl,             "jdk/internal/foreign/NativeMemorySegmentImpl") \
-                                                                                                  \
-  /* Support for JVMCI */                                                                         \
-  JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \
                                                                                                   \
   template(java_lang_ClassFrameInfo,                  "java/lang/ClassFrameInfo")                 \
   template(java_lang_StackWalker,                     "java/lang/StackWalker")                    \
@@ -704,13 +698,8 @@ class SerializeClosure;
   template(appendToClassPathForInstrumentation_name,   "appendToClassPathForInstrumentation")                     \
   do_alias(appendToClassPathForInstrumentation_signature, string_void_signature)                                  \
   template(serializePropertiesToByteArray_name,        "serializePropertiesToByteArray")                          \
+  template(serializeSecurityPropertiesToByteArray_name, "serializeSecurityPropertiesToByteArray")                 \
   template(serializeAgentPropertiesToByteArray_name,   "serializeAgentPropertiesToByteArray")                     \
-  template(encodeThrowable_name,                       "encodeThrowable")                                         \
-  template(encodeThrowable_signature,                  "(Ljava/lang/Throwable;JI)I")                              \
-  template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \
-  template(encodeAnnotations_name,                     "encodeAnnotations")                                       \
-  template(encodeAnnotations_signature,                "([BLjava/lang/Class;Ljdk/internal/reflect/ConstantPool;Z[Ljava/lang/Class;)[B")\
-  template(decodeAndThrowThrowable_signature,          "(IJZZ)V")                                                 \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \
@@ -751,8 +740,6 @@ class SerializeClosure;
   template(jdk_internal_vm_ThreadLock,             "jdk/internal/vm/ThreadSnapshot$ThreadLock")                   \
   template(jdk_internal_vm_ThreadLock_signature,   "Ljdk/internal/vm/ThreadSnapshot$ThreadLock;")                 \
   template(jdk_internal_vm_ThreadLock_array,       "[Ljdk/internal/vm/ThreadSnapshot$ThreadLock;")                \
-  template(java_lang_StackTraceElement_of_name,    "of")                                                          \
-  template(java_lang_StackTraceElement_of_signature, "([Ljava/lang/StackTraceElement;)[Ljava/lang/StackTraceElement;") \
                                                                                                                   \
   /* jcmd Thread.vthread_scheduler and Thread.vthread_pollers */                                                  \
   template(jdk_internal_vm_JcmdVThreadCommands,    "jdk/internal/vm/JcmdVThreadCommands")                         \
@@ -787,7 +774,6 @@ ENUMERATOR_RANGE(vmSymbolID, vmSymbolID::FIRST_SID, vmSymbolID::LAST_SID)
 class vmSymbols: AllStatic {
   friend class vmIntrinsics;
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
   static const int NO_SID    = static_cast<int>(vmSymbolID::NO_SID);    // exclusive lower limit
   static const int FIRST_SID = static_cast<int>(vmSymbolID::FIRST_SID); // inclusive lower limit

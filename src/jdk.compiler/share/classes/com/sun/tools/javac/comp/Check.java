@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,17 +268,17 @@ public class Check {
      *  @param pos        Position to be used for error reporting.
      *  @param required   An internationalized string describing the type tag
      *                    required.
-     *  @param found      The type that was found.
+     *  @param type       The type that was found.
      */
-    Type typeTagError(DiagnosticPosition pos, JCDiagnostic required, Object found) {
+    Type typeTagError(DiagnosticPosition pos, JCDiagnostic required, Type type) {
         // this error used to be raised by the parser,
         // but has been delayed to this point:
-        if (found instanceof Type type && type.hasTag(VOID)) {
+        if (type.hasTag(VOID)) {
             log.error(pos, Errors.IllegalStartOfType);
             return syms.errType;
         }
-        log.error(pos, Errors.TypeFoundReq(found, required));
-        return types.createErrorType(found instanceof Type type ? type : syms.errType);
+        log.error(pos, Errors.TypeFoundReq(asTypeParam(type), required));
+        return types.createErrorType(type);
     }
 
     /** Report duplicate declaration error.
@@ -645,7 +645,7 @@ public class Check {
         if (!t.hasTag(CLASS) && !t.hasTag(ARRAY) && !t.hasTag(ERROR)) {
             return typeTagError(pos,
                                 diags.fragment(Fragments.TypeReqClassArray),
-                                asTypeParam(t));
+                                t);
         } else {
             return t;
         }
@@ -659,7 +659,7 @@ public class Check {
         if (!t.hasTag(CLASS) && !t.hasTag(ERROR)) {
             return typeTagError(pos,
                                 diags.fragment(Fragments.TypeReqClass),
-                                asTypeParam(t));
+                                t);
         } else {
             return t;
         }
@@ -898,7 +898,7 @@ public class Check {
         }
         else if (!hasTrustMeAnno && varargElemType != null &&
                 !types.isReifiable(varargElemType)) {
-            warnUnchecked(tree.params.head.pos(), LintWarnings.UncheckedVarargsNonReifiableType(varargElemType));
+            warnUnchecked(tree.params.last().pos(), LintWarnings.UncheckedVarargsNonReifiableType(varargElemType));
         }
     }
     //where
@@ -3544,7 +3544,10 @@ public class Check {
                 if (s.kind == PCK)
                     applicableTargets.add(names.PACKAGE);
             } else if (target == names.TYPE_USE) {
-                if (s.kind == VAR && s.owner.kind == MTH && s.type.hasTag(NONE)) {
+                if (s.kind == VAR &&
+                    (s.flags() & Flags.VAR_VARIABLE) != 0 &&
+                    (!Feature.TYPE_ANNOTATIONS_ON_VAR_LAMBDA_PARAMETER.allowedInSource(source) ||
+                     ((s.flags() & Flags.LAMBDA_PARAMETER) == 0))) {
                     //cannot type annotate implicitly typed locals
                     continue;
                 } else if (s.kind == TYP || s.kind == VAR ||
@@ -3689,10 +3692,11 @@ public class Check {
             log.warning(pos, LintWarnings.MissingDeprecatedAnnotation);
         }
         // Note: @Deprecated has no effect on local variables, parameters and package decls.
-        if (lint.isEnabled(LintCategory.DEPRECATION) && !s.isDeprecatableViaAnnotation()) {
-            if (!syms.deprecatedType.isErroneous() && s.attribute(syms.deprecatedType.tsym) != null) {
-                log.warning(pos, LintWarnings.DeprecatedAnnotationHasNoEffect(Kinds.kindName(s)));
-            }
+        if (lint.isEnabled(LintCategory.DEPRECATION) && !s.isDeprecatableViaAnnotation() &&
+            (s.flags() & RECORD) == 0 &&
+            !syms.deprecatedType.isErroneous() &&
+            s.attribute(syms.deprecatedType.tsym) != null) {
+            log.warning(pos, LintWarnings.DeprecatedAnnotationHasNoEffect(Kinds.kindName(s)));
         }
     }
 
@@ -5632,8 +5636,8 @@ public class Check {
             }
             case JCVariableDecl variableDecl -> {
                 if (variableDecl.vartype != null &&
-                        (variableDecl.sym.flags_field & RECORD) == 0 ||
-                        (variableDecl.sym.flags_field & ~(Flags.PARAMETER | RECORD | GENERATED_MEMBER)) != 0) {
+                        ((variableDecl.sym.flags_field & RECORD) == 0 ||
+                         (variableDecl.sym.flags_field & ~(Flags.PARAMETER | RECORD | GENERATED_MEMBER)) != 0)) {
                     /* we don't want to warn twice so if this variable is a compiler generated parameter of
                      * a canonical record constructor, we don't want to issue a warning as we will warn the
                      * corresponding compiler generated private record field anyways

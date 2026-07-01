@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,17 +40,19 @@ import java.time.zone.ZoneRules;
 import java.util.Collections;
 import java.util.List;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * @summary Tests for ZoneRules class.
  *
  * @bug 8212970 8236903 8239836
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestZoneRules {
 
     private static final ZoneId DUBLIN = ZoneId.of("Europe/Dublin");
@@ -68,7 +70,6 @@ public class TestZoneRules {
     private static final ZoneOffsetTransition ZOT = ZoneId.of("America/Los_Angeles").getRules().getTransitions().get(0);
     private static final ZoneOffsetTransitionRule ZOTR = ZoneId.of("America/Los_Angeles").getRules().getTransitionRules().get(0);
 
-    @DataProvider
     private Object[][] negativeDST () {
         return new Object[][] {
             // ZoneId, localDate, offset, standard offset, isDaylightSavings
@@ -102,7 +103,6 @@ public class TestZoneRules {
         };
     }
 
-    @DataProvider
     private Object[][] transitionBeyondDay() {
         return new Object[][] {
             // ZoneId, LocalDateTime, beforeOffset, afterOffset
@@ -117,7 +117,6 @@ public class TestZoneRules {
         };
     }
 
-    @DataProvider
     private Object[][] emptyTransitionList() {
         return new Object[][] {
             // days, offset, std offset, savings, isDST
@@ -126,7 +125,6 @@ public class TestZoneRules {
         };
     }
 
-    @DataProvider
     private Object[][] isFixedOffset() {
         return new Object[][] {
             // ZoneRules, expected
@@ -144,20 +142,22 @@ public class TestZoneRules {
      * negative savings in the source TZ files.
      * @bug 8212970
      */
-    @Test(dataProvider="negativeDST")
+    @ParameterizedTest
+    @MethodSource("negativeDST")
     public void test_NegativeDST(ZoneId zid, LocalDate ld, ZoneOffset offset, ZoneOffset stdOffset, boolean isDST) {
         Instant i = Instant.from(ZonedDateTime.of(ld, LocalTime.MIN, zid));
         ZoneRules zr = zid.getRules();
-        assertEquals(zr.getOffset(i), offset);
-        assertEquals(zr.getStandardOffset(i), stdOffset);
-        assertEquals(zr.isDaylightSavings(i), isDST);
+        assertEquals(offset, zr.getOffset(i));
+        assertEquals(stdOffset, zr.getStandardOffset(i));
+        assertEquals(isDST, zr.isDaylightSavings(i));
     }
 
     /**
      * Check the transition cutover time beyond 24:00, which should translate into the next day.
      * @bug 8212970
      */
-    @Test(dataProvider="transitionBeyondDay")
+    @ParameterizedTest
+    @MethodSource("transitionBeyondDay")
     public void test_TransitionBeyondDay(ZoneId zid, LocalDateTime ldt, ZoneOffset before, ZoneOffset after) {
         ZoneOffsetTransition zot = ZoneOffsetTransition.of(ldt, before, after);
         ZoneRules zr = zid.getRules();
@@ -198,14 +198,15 @@ public class TestZoneRules {
                 Collections.singletonList(transitionRule));
         ZoneOffset offsetA = zoneRulesA.getOffset(maxLocalDateTime);
         ZoneOffset offsetB = zoneRulesB.getOffset(maxLocalDateTime);
-        assertEquals(offsetA, offsetB);
+        assertEquals(offsetB, offsetA);
     }
 
     /**
      * Tests whether empty "transitionList" is correctly interpreted.
      * @bug 8239836
      */
-    @Test(dataProvider="emptyTransitionList")
+    @ParameterizedTest
+    @MethodSource("emptyTransitionList")
     public void test_EmptyTransitionList(int days, int offset, int stdOffset, int savings, boolean isDST) {
         LocalDateTime transitionDay = LocalDateTime.of(2020, 1, 1, 2, 0);
         Instant testDay = transitionDay.plusDays(days).toInstant(ZoneOffset.UTC);
@@ -217,18 +218,19 @@ public class TestZoneRules {
             Collections.singletonList(trans),
             Collections.emptyList(), Collections.emptyList());
 
-        assertEquals(rules.getOffset(testDay), ZoneOffset.ofHours(offset));
-        assertEquals(rules.getStandardOffset(testDay), ZoneOffset.ofHours(stdOffset));
-        assertEquals(rules.getDaylightSavings(testDay), Duration.ofHours(savings));
-        assertEquals(rules.isDaylightSavings(testDay), isDST);
+        assertEquals(ZoneOffset.ofHours(offset), rules.getOffset(testDay));
+        assertEquals(ZoneOffset.ofHours(stdOffset), rules.getStandardOffset(testDay));
+        assertEquals(Duration.ofHours(savings), rules.getDaylightSavings(testDay));
+        assertEquals(isDST, rules.isDaylightSavings(testDay));
     }
 
     /**
      * Tests whether isFixedOffset() is working correctly
      * @bug 8239836
      */
-    @Test(dataProvider="isFixedOffset")
+    @ParameterizedTest
+    @MethodSource("isFixedOffset")
     public void test_IsFixedOffset(ZoneRules zr, boolean expected) {
-        assertEquals(zr.isFixedOffset(), expected);
+        assertEquals(expected, zr.isFixedOffset());
     }
 }

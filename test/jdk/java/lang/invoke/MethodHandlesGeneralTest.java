@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ import java.util.Map;
 
 import static java.lang.invoke.MethodType.methodType;
 import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 public class MethodHandlesGeneralTest extends MethodHandlesTest {
 
@@ -398,7 +399,7 @@ public class MethodHandlesGeneralTest extends MethodHandlesTest {
         Object obj = target.invokeWithArguments(args);
         if (!(defc == Example.class && params.length < 2))
             assertCalled(defc.getSimpleName()+".<init>", args);
-        assertTrue("instance of "+defc.getName(), defc.isInstance(obj));
+        assertInstanceOf(defc, obj);
     }
 
     @Test
@@ -971,8 +972,7 @@ public class MethodHandlesGeneralTest extends MethodHandlesTest {
                 arrayToMH = new SubIntExample[length];
             else
                 return;  // can't make an ArrayStoreException test
-            assert(arrayType.isInstance(arrayToMH))
-                : Arrays.asList(arrayType, arrayToMH.getClass(), testSetter, negTest);
+            assertInstanceOf(arrayType, arrayToMH, () -> Arrays.asList(testSetter, negTest).toString());
             break;
         }
         countTest(positive);

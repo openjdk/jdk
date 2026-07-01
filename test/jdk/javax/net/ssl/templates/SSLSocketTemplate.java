@@ -59,10 +59,25 @@ import java.util.concurrent.TimeUnit;
 public class SSLSocketTemplate extends SSLContextTemplate {
 
     /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=all
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
+
+    /*
      * ==================
      * Run the test case.
      */
     public static void main(String[] args) throws Exception {
+        if (debug) {
+            System.setProperty("javax.net.debug", "all");
+        }
+
         (new SSLSocketTemplate()).run();
     }
 

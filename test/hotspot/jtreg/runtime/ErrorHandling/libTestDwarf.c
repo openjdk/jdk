@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,10 @@ int zero = 0;
 int result = 0;
 int limit = 20;
 
-// Just big enough by doing some random things such that it is not inlined.
+// Explicitly don't inline. foo needs complexity so GCC/Clang don't optimize it away.
+#if !defined(_MSC_VER)
+__attribute__((noinline))
+#endif
 void foo(int x) {
     printf("foo3:");
     printf(" %d\n", x);
@@ -74,5 +77,14 @@ JNIEXPORT void JNICALL Java_TestDwarf_crashNativeMultipleMethods(JNIEnv* env, jc
   for (int i = 0; i < limit; i++) {
     result += zero + i;
   }
+}
+
+// Need to tell if Clang was used to build libTestDwarf.
+JNIEXPORT jboolean JNICALL Java_TestDwarf_isUsingClang(JNIEnv* env, jobject obj) {
+#if defined(__clang__)
+    return JNI_TRUE;
+#else
+    return JNI_FALSE;
+#endif
 }
 
