@@ -237,8 +237,8 @@ specified by the following line in the security properties file:
 
 >   `keystore.type=pkcs12`
 
-Case doesn't matter in keystore type designations. For example, `JKS` is the
-same as `jks`.
+Case doesn't matter in keystore type designations. For example, `PKCS12` is the
+same as `pkcs12`.
 
 To have the tools utilize a keystore implementation other than the default, you
 can change that line to specify a different keystore type. For example, if you
