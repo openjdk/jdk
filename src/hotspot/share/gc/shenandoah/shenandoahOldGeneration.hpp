@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
@@ -57,14 +58,16 @@ private:
   // and in addition to the evacuation reserve for intra-generation evacuations (ShenandoahGeneration::_evacuation_reserve).
   // If there is more data ready to be promoted than can fit within this reserve, the promotion of some objects will be
   // deferred until a subsequent evacuation pass.
-  size_t _promoted_reserve;
+  Atomic<size_t> _promoted_reserve;
 
   // Bytes of old-gen memory expended on promotions. This may be modified concurrently
   // by mutators and gc workers when promotion LABs are retired during evacuation. It
   // is therefore always accessed through atomic operations. This is increased when a
   // PLAB is allocated for promotions. The value is decreased by the amount of memory
   // remaining in a PLAB when it is retired.
+  shenandoah_padding(0);
   Atomic<size_t> _promoted_expended;
+  shenandoah_padding(1);
 
   // Represents the quantity of live bytes we expect to promote during the next GC cycle, either by
   // evacuation or by promote-in-place.  This value is used by the young heuristic to trigger mixed collections.
@@ -111,8 +114,10 @@ public:
   // This zeros out the expended promotion count after the promotion reserve is computed
   void reset_promoted_expended();
 
-  // This is incremented when allocations are made to copy promotions into the old generation
-  size_t expend_promoted(size_t increment);
+  // Atomically reserve `increment` bytes of promotion budget. Returns true if the full amount
+  // was reserved without exceeding the reserve. Lock-free: safe to call without the heap lock.
+  // Use this to gate a promotion decision before promoting.
+  bool try_expend_promoted(size_t increment);
 
   // This is used to return unused memory from a retired promotion LAB
   size_t unexpend_promoted(size_t decrement);

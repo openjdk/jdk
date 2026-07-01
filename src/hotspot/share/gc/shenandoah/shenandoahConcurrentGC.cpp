@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -202,8 +203,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // the space. This would be the last action if there is nothing to evacuate.  Note that
   // we will not age young-gen objects in the case that we skip evacuation.
   entry_cleanup_early();
-
-  heap->free_set()->log_status_under_lock();
 
   // Processing strong roots
   // This may be skipped if there is nothing to update/evacuate.
@@ -910,7 +909,7 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
         ShenandoahHeap::atomic_clear_oop(p, obj);
       }
     } else if (_evac_in_progress && _heap->in_collection_set(obj)) {
-      oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop resolved = ShenandoahForwarding::get_forwardee(obj);
       if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, _thread);
       }

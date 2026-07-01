@@ -488,4 +488,27 @@ TEST_VM(AssemblerAArch64, merge_ldst_after_expand) {
   asm_check((const unsigned int *)code.insts()->start(), insns, sizeof insns / sizeof insns[0]);
 }
 
+TEST_VM(AssemblerAArch64, native_instruction_load_predicates) {
+  static uint32_t insns[] = {
+    0x58000000, // ldr x0, #0
+    0x18000000, // ldr w0, #0
+    0x1C000000, // ldr s0, #0 (VR bit set to 1, enabling SIMD/FP register)
+  };
+
+  NativeInstruction* ni_ldr = nativeInstruction_at(&insns[0]);
+  EXPECT_TRUE(ni_ldr->is_load_literal());
+  EXPECT_TRUE(ni_ldr->is_ldr_gpr_literal());
+  EXPECT_FALSE(ni_ldr->is_ldrw_gpr_literal());
+
+  NativeInstruction* ni_ldrw = nativeInstruction_at(&insns[1]);
+  EXPECT_TRUE(ni_ldrw->is_load_literal());
+  EXPECT_FALSE(ni_ldrw->is_ldr_gpr_literal());
+  EXPECT_TRUE(ni_ldrw->is_ldrw_gpr_literal());
+
+  NativeInstruction* ni_ldrs = nativeInstruction_at(&insns[2]);
+  EXPECT_TRUE(ni_ldrs->is_load_literal());
+  EXPECT_FALSE(ni_ldrs->is_ldr_gpr_literal());
+  EXPECT_FALSE(ni_ldrs->is_ldrw_gpr_literal());
+}
+
 #endif  // AARCH64

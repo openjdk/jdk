@@ -2722,13 +2722,11 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& inputs) {
   if (is_vector_bitwise_op(n)) {
     uint inp_cnt = n->is_predicated_vector() ? n->req()-1 : n->req();
     if (VectorNode::is_vector_bitwise_not_pattern(n)) {
-      for (uint i = 1; i < inp_cnt; i++) {
-        Node* in = n->in(i);
-        bool skip = VectorNode::is_all_ones_vector(in);
-        if (!skip && !inputs.member(in)) {
-          inputs.push(in);
-          cnt++;
-        }
+      assert(n->req() == (n->is_predicated_vector() ? 4 : 3), "must have 2 data inputs");
+      Node* opnd = VectorNode::is_all_ones_vector(n->in(1)) ? n->in(2) : n->in(1);
+      if (!inputs.member(opnd)) {
+        inputs.push(opnd);
+        cnt++;
       }
       assert(cnt <= 1, "not unary");
     } else {
@@ -5308,7 +5306,9 @@ void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const N
 #endif // !PRODUCT
 
 Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res) {
-  if (type != nullptr && phase->type(value)->higher_equal(type)) {
+  precond(type != nullptr);
+
+  if (phase->type(value)->higher_equal(type)) {
     return value;
   }
   Node* result = nullptr;
@@ -5316,7 +5316,9 @@ Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGV
     result = phase->transform(new LShiftINode(value, phase->intcon(24)));
     result = new RShiftINode(result, phase->intcon(24));
   } else if (bt == T_BOOLEAN) {
-    result = new AndINode(value, phase->intcon(0xFF));
+    assert(type == TypeInt::BOOL || type == TypeInt::UBYTE, "unexpected boolean type: %s", Type::str(type));
+    Node* mask = phase->intcon(type == TypeInt::BOOL ? 1 : 0xFF);
+    result = new AndINode(value, mask);
   } else if (bt == T_CHAR) {
     result = new AndINode(value,phase->intcon(0xFFFF));
   } else {

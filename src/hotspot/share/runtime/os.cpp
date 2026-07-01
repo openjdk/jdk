@@ -2397,14 +2397,14 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
 char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size,
-                                 char* addr, bool executable) {
+                                 char* addr, MemTag mem_tag, bool executable) {
 
   assert(is_aligned(addr, alignment), "Unaligned request address");
 
   char* result = pd_reserve_memory_special(size, alignment, page_size, addr, executable);
   if (result != nullptr) {
     // The memory is committed
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC, mtNone);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC, mem_tag);
     log_debug(os, map)("Reserved and committed " RANGEFMT, RANGEFMTARGS(result, size));
   } else {
     log_info(os, map)("Reserve and commit failed (%zu bytes)", size);
