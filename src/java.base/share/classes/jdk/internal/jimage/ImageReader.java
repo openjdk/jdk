@@ -683,9 +683,9 @@ public final class ImageReader implements AutoCloseable {
                             } else {
                                 assert type == MODULES_DIR : "Invalid location type: " + childLoc;
                                 Node childNode = nodes.get(nonPreviewChildName);
-                                assert isPreviewOnly == (childNode != null) :
+                                assert !(isPreviewOnly && childNode == null) :
                                         "Inconsistent child node: " + nonPreviewChildName;
-                                return childNode;
+                                return isPreviewOnly ? childNode : null;
                             }
                         });
                     }
