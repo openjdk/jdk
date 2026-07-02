@@ -24,22 +24,27 @@
 /**
  * @test
  * @bug 8376748
- * @summary Test JCE layer legacy algorithm warning
+ * @summary Test JCE layer legacy algorithm warning for Signature
  * @library /test/lib
  * @run main/othervm TestLegacyAlgorithms SIGNATURe.sha512withRSA true
  * @run main/othervm TestLegacyAlgorithms signaturE.what false
  * @run main/othervm TestLegacyAlgorithms SiGnAtUrE.SHa512/224withRSA false
+ * @run main/othervm -Djdk.crypto.legacyAlgorithms=SIGNATURe.sha512withRSA
+ *      -Djdk.crypto.disabledAlgorithms=SIGNATURe.sha512withRSA
+ *      TestLegacyAlgorithms SIGNATURe.sha512withRSA false true
  */
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.security.Signature;
 import java.util.List;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 public class TestLegacyAlgorithms {
 
@@ -61,74 +66,143 @@ public class TestLegacyAlgorithms {
         return bOut.toString(StandardCharsets.UTF_8);
     }
 
-    private static void test(List<String> algos, Provider p) throws Exception {
-        for (String a : algos) {
-            System.out.println("Testing " + (p != null ?
-                    "provider " + p.getName() : "default provider") +
-                    ": alg " + a);
+    private static int countWarn(String warnS, String msg) {
+        int num = 0;
+        int index = 0;
+        while ((index = warnS.indexOf(msg, index)) >= 0) {
+            num++;
+            index += msg.length();
+        }
+        return num;
+    }
 
-            Signature s;
-            if (p == null) {
-                s = Signature.getInstance(a);
-                System.out.println("  got Signature w/ alg " +
-                        s.getAlgorithm());
-            } else {
-                s = Signature.getInstance(a, p);
-                System.out.println("  provider object: got Signature "
-                        + "w/ alg " + s.getAlgorithm());
-                s = Signature.getInstance(a, p.getName());
-                System.out.println("  provider name: got Signature w/ "
-                        + "alg " + s.getAlgorithm());
-            }
+    private static void checkOneWarn(String warnS, String alg) {
+        String warn1 =
+                "WARNING: An outdated Signature algorithm has been called by";
+        String warn2 = "WARNING: " + alg
+                + " will be disabled by default in a future release";
+
+        Asserts.assertEQ(countWarn(warnS, warn1), 1,
+                "Expected one legacy warning for Signature " + alg
+                        + " but got:\n" + warnS);
+        Asserts.assertEQ(countWarn(warnS, warn2), 1,
+                "Expected one future-disable warning for Signature "
+                        + alg + " but got:\n" + warnS);
+        Asserts.assertTrue(warnS.contains("TestLegacyAlgorithms"),
+                "Expected warning to preserve caller: " + warnS);
+    }
+
+    private static void checkNoWarn(String warnS) {
+        String warn1 =
+                "WARNING: An outdated Signature algorithm has been called by";
+        String warn2 =
+                "will be disabled by default in a future release";
+        Asserts.assertFalse(warnS.contains(warn1),
+                "Unexpected legacy warning for Signature: " + warnS);
+        Asserts.assertFalse(warnS.contains(warn2),
+                "Unexpected future-disable warning for Signature: " + warnS);
+    }
+
+    private static void checkWarn(String label, String alg,
+            boolean shouldWarn, ThrowingRunnable action) throws Exception {
+        System.out.println("Testing " + label);
+        String warnS = saveWarn(action);
+        System.out.println("Warning emitted:\n" + warnS);
+        if (shouldWarn) {
+            checkOneWarn(warnS, alg);
+        } else {
+            checkNoWarn(warnS);
         }
     }
 
-    private static void runTests() throws Exception {
-        test(ALG_LIST, null);
+    // Disable the algorithm and check that a warning is not emitted.
+    private static void warnDisabledTest()
+            throws Exception {
+        checkWarn("no warning when the algorithm is disabled",
+                "sha512withRSA", false, () -> {
+                    Utils.runAndCheckException(
+                            () -> Signature.getInstance("sha512withRSA"),
+                            NoSuchAlgorithmException.class);
+                });
+    }
+
+    private static void runTests(boolean shouldWarn) throws Exception {
+        for (String a : ALG_LIST) {
+            checkWarn("default provider: alg " + a, a, shouldWarn,
+                    () -> DefaultSig.run(a));
+        }
 
         Provider[] providers = Security.getProviders("Signature.SHA512withRSA");
         for (Provider p : providers) {
-            test(ALG_LIST, p);
+            for (String a : ALG_LIST) {
+                checkWarn("provider object " + p.getName() + ": alg " + a,
+                        a, shouldWarn, () -> ProvObjSig.run(a, p));
+
+                checkWarn("provider name " + p.getName() + ": alg " + a,
+                        a, shouldWarn, () -> ProvNameSig.run(a, p));
+            }
         }
     }
 
     public static void main(String[] args) throws Exception {
         String propValue = args[0];
         boolean shouldWarn = Boolean.parseBoolean(args[1]);
-
+        boolean warnDisabled =
+                args.length > 2 && Boolean.parseBoolean(args[2]);
         System.out.println("Setting Security Prop " + PROP_NAME + " = " +
                 propValue);
         Security.setProperty(PROP_NAME, propValue);
-
-        String warnS = saveWarn(TestLegacyAlgorithms::runTests);
-        System.out.println("Warning emitted:\n" + warnS);
-
-        String warn1 =
-                "WARNING: An outdated Signature algorithm has been called by";
-        String warn2 =
-                " will be disabled by default in a future release";
-
-        if (shouldWarn) {
-            Asserts.assertTrue(warnS.contains(warn1),
-                    "Expected legacy warning for Signature but not found");
-            for (String a : ALG_LIST) {
-                Asserts.assertTrue(warnS.contains("WARNING: " + a + warn2),
-                        "Expected future-disable warning for Signature "
-                        + a + " but not found");
-            }
-            Asserts.assertTrue(warnS.contains("TestLegacyAlgorithms"),
-                    "Expected warning not preserve caller: "
-                    + warnS);
+        if (warnDisabled) {
+            warnDisabledTest();
         } else {
-            Asserts.assertFalse(warnS.contains(warn1),
-                    "Unexpected legacy warning for Signature: " + warnS);
-            Asserts.assertFalse(warnS.contains(warn2),
-                    "Unexpected future-disable warning for Signature: " + warnS);
+            runTests(shouldWarn);
         }
     }
 
     @FunctionalInterface
     private interface ThrowingRunnable {
         void run() throws Exception;
+    }
+
+    private static final class DefaultSig {
+        static void run(String alg) throws Exception {
+            Signature s = Signature.getInstance(alg);
+            System.out.println("  type lookup: got Signature w/ alg "
+                    + s.getAlgorithm());
+
+            // Call the method twice, and make sure that only get one
+            // warning per caller.
+            s = Signature.getInstance(alg);
+            System.out.println("  type lookup again: got Signature w/ alg "
+                    + s.getAlgorithm());
+        }
+    }
+
+    private static final class ProvObjSig {
+        static void run(String alg, Provider provider) throws Exception {
+            Signature s = Signature.getInstance(alg, provider);
+            System.out.println("  provider object: got Signature w/ alg "
+                    + s.getAlgorithm());
+
+            // Call the method twice, and make sure that only get one
+            // warning per caller.
+            s = Signature.getInstance(alg, provider);
+            System.out.println("  provider object again: got Signature "
+                    + "w/ alg " + s.getAlgorithm());
+        }
+    }
+
+    private static final class ProvNameSig {
+        static void run(String alg, Provider provider) throws Exception {
+            Signature s = Signature.getInstance(alg, provider.getName());
+            System.out.println("  provider name: got Signature w/ alg "
+                    + s.getAlgorithm());
+
+            // Call the method twice, and make sure that only get one
+            // warning per caller.
+            s = Signature.getInstance(alg, provider.getName());
+            System.out.println("  provider name again: got Signature "
+                    + "w/ alg " + s.getAlgorithm());
+        }
     }
 }

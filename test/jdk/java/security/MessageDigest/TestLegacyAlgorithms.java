@@ -24,22 +24,27 @@
 /**
  * @test
  * @bug 8376748
- * @summary Test JCE layer legacy algorithm warning
+ * @summary Test JCE layer legacy algorithm warning for MessageDigest
  * @library /test/lib
  * @run main/othervm TestLegacyAlgorithms MESSAGEdigest.Sha-512 true
  * @run main/othervm TestLegacyAlgorithms messageDIGest.what false
  * @run main/othervm TestLegacyAlgorithms meSSagedIgest.sHA-512/224 false
+ * @run main/othervm -Djdk.crypto.legacyAlgorithms=MESSAGEdigest.Sha-512
+ *      -Djdk.crypto.disabledAlgorithms=MESSAGEdigest.Sha-512
+ *      TestLegacyAlgorithms MESSAGEdigest.Sha-512 false true
  */
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.util.List;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 public class TestLegacyAlgorithms {
 
@@ -61,74 +66,143 @@ public class TestLegacyAlgorithms {
         return bOut.toString(StandardCharsets.UTF_8);
     }
 
-    private static void test(List<String> algos, Provider p) throws Exception {
-        for (String a : algos) {
-            System.out.println("Testing " + (p != null ?
-                    "provider " + p.getName() : "default provider") +
-                    ": alg " + a);
+    private static int countWarn(String warnS, String msg) {
+        int num = 0;
+        int index = 0;
+        while ((index = warnS.indexOf(msg, index)) >= 0) {
+            num++;
+            index += msg.length();
+        }
+        return num;
+    }
 
-            MessageDigest m;
-            if (p == null) {
-                m = MessageDigest.getInstance(a);
-                System.out.println("  got MessageDigest w/ alg "
-                        + m.getAlgorithm());
-            } else {
-                m = MessageDigest.getInstance(a, p);
-                System.out.println("  provider object: got "
-                        + "MessageDigest w/ alg " + m.getAlgorithm());
-                m = MessageDigest.getInstance(a, p.getName());
-                System.out.println("  provider name: got "
-                        + "MessageDigest w/ alg " + m.getAlgorithm());
-            }
+    private static void checkOneWarn(String warnS, String alg) {
+        String warn1 =
+                "WARNING: An outdated MessageDigest algorithm has been called by";
+        String warn2 = "WARNING: " + alg
+                + " will be disabled by default in a future release";
+
+        Asserts.assertEQ(countWarn(warnS, warn1), 1,
+                "Expected one legacy warning for MessageDigest " + alg
+                        + " but got:\n" + warnS);
+        Asserts.assertEQ(countWarn(warnS, warn2), 1,
+                "Expected one future-disable warning for MessageDigest "
+                        + alg + " but got:\n" + warnS);
+        Asserts.assertTrue(warnS.contains("TestLegacyAlgorithms"),
+                "Expected warning to preserve caller: " + warnS);
+    }
+
+    private static void checkNoWarn(String warnS) {
+        String warn1 =
+                "WARNING: An outdated MessageDigest algorithm has been called by";
+        String warn2 =
+                "will be disabled by default in a future release";
+        Asserts.assertFalse(warnS.contains(warn1),
+                "Unexpected legacy warning for MessageDigest: " + warnS);
+        Asserts.assertFalse(warnS.contains(warn2),
+                "Unexpected future-disable warning for MessageDigest: " + warnS);
+    }
+
+    private static void checkwarn(String label, String alg,
+            boolean shouldWarn, ThrowingRunnable action) throws Exception {
+        System.out.println("Testing " + label);
+        String warnS = saveWarn(action);
+        System.out.println("Warning emitted:\n" + warnS);
+        if (shouldWarn) {
+            checkOneWarn(warnS, alg);
+        } else {
+            checkNoWarn(warnS);
         }
     }
 
-    private static void runTests() throws Exception {
-        test(ALG_LIST, null);
+    // Disable the algorithm and check that a warning is not emitted.
+    private static void warnDisabledTest()
+            throws Exception {
+        checkwarn("no warning when the algorithm is disabled",
+                "SHA-512", false, () -> {
+                    Utils.runAndCheckException(
+                            () -> MessageDigest.getInstance("SHA-512"),
+                            NoSuchAlgorithmException.class);
+                });
+    }
+
+    private static void runTests(boolean shouldWarn) throws Exception {
+        for (String a : ALG_LIST) {
+            checkwarn("default provider: alg " + a, a, shouldWarn,
+                    () -> DefaultMD.run(a));
+        }
 
         Provider[] providers = Security.getProviders("MessageDigest.SHA-512");
         for (Provider p : providers) {
-            test(ALG_LIST, p);
+            for (String a : ALG_LIST) {
+                checkwarn("provider object " + p.getName() + ": alg " + a,
+                        a, shouldWarn, () -> ProvObjMD.run(a, p));
+
+                checkwarn("provider name " + p.getName() + ": alg " + a,
+                        a, shouldWarn, () -> ProvNameMD.run(a, p));
+            }
         }
     }
 
     public static void main(String[] args) throws Exception {
         String propValue = args[0];
         boolean shouldWarn = Boolean.parseBoolean(args[1]);
-
+        boolean warnDisabled =
+                args.length > 2 && Boolean.parseBoolean(args[2]);
         System.out.println("Setting Security Prop " + PROP_NAME + " = " +
                 propValue);
         Security.setProperty(PROP_NAME, propValue);
-
-        String warnS = saveWarn(TestLegacyAlgorithms::runTests);
-        System.out.println("Warning emitted:\n" + warnS);
-
-        String warn1 =
-                "WARNING: An outdated MessageDigest algorithm has been called by";
-        String warn2 =
-                " will be disabled by default in a future release";
-
-        if (shouldWarn) {
-            Asserts.assertTrue(warnS.contains(warn1),
-                    "Expected legacy warning for MessageDigest but not found");
-            for (String a : ALG_LIST) {
-                Asserts.assertTrue(warnS.contains("WARNING: " + a + warn2),
-                        "Expected future-disable warning for MessageDigest "
-                        + a + " but not found");
-            }
-            Asserts.assertTrue(warnS.contains("TestLegacyAlgorithms"),
-                    "Expected warning not preserve caller: "
-                    + warnS);
+        if (warnDisabled) {
+            warnDisabledTest();
         } else {
-            Asserts.assertFalse(warnS.contains(warn1),
-                    "Unexpected legacy warning for MessageDigest: " + warnS);
-            Asserts.assertFalse(warnS.contains(warn2),
-                    "Unexpected future-disable warning for MessageDigest: " + warnS);
+            runTests(shouldWarn);
         }
     }
 
     @FunctionalInterface
     private interface ThrowingRunnable {
         void run() throws Exception;
+    }
+
+    private static final class DefaultMD {
+        static void run(String alg) throws Exception {
+            MessageDigest m = MessageDigest.getInstance(alg);
+            System.out.println("  type lookup: got MessageDigest w/ alg "
+                    + m.getAlgorithm());
+
+            // Call the method twice, and make sure that only get one
+            // warning per caller.
+            m = MessageDigest.getInstance(alg);
+            System.out.println("  type lookup again: got MessageDigest w/ alg "
+                    + m.getAlgorithm());
+        }
+    }
+
+    private static final class ProvObjMD {
+        static void run(String alg, Provider provider) throws Exception {
+            MessageDigest m = MessageDigest.getInstance(alg, provider);
+            System.out.println("  provider object: got MessageDigest w/ alg "
+                    + m.getAlgorithm());
+
+            // Call the method twice, and make sure that only get one
+            // warning per caller.
+            m = MessageDigest.getInstance(alg, provider);
+            System.out.println("  provider object again: got MessageDigest "
+                    + "w/ alg " + m.getAlgorithm());
+        }
+    }
+
+    private static final class ProvNameMD {
+        static void run(String alg, Provider provider) throws Exception {
+            MessageDigest m = MessageDigest.getInstance(alg, provider.getName());
+            System.out.println("  provider name: got MessageDigest w/ alg "
+                    + m.getAlgorithm());
+
+            // Call the method twice, and make sure that only get one
+            // warning per caller.
+            m = MessageDigest.getInstance(alg, provider.getName());
+            System.out.println("  provider name again: got MessageDigest "
+                    + "w/ alg " + m.getAlgorithm());
+        }
     }
 }
