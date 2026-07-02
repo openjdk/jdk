@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8245462 8229822 8254786 8297075 8297149 8298340 8302635 8377181
+ * @bug 8245462 8229822 8254786 8297075 8297149 8298340 8302635 8377181 8380967
  * @summary Tests cancelling the request.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @key randomness
@@ -394,14 +394,10 @@ public class CancelRequestTest implements HttpServerAdapters {
                 requestLatch.countDown();
             }
 
-            // Cancelling the request may cause an IOException instead...
-            boolean hasCancellationException = false;
             try {
                 cf1.get();
-            } catch (CancellationException | ExecutionException x) {
+            } catch (CancellationException x) {
                 out.println(now() + "Got expected exception: " + x);
-                assertTrue(isCancelled(x));
-                hasCancellationException = x instanceof CancellationException;
             }
 
             // because it's cf1 that was cancelled then response might not have
@@ -447,7 +443,6 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             assertTrue(response.isDone());
             assertFalse(response.isCancelled());
-            assertEquals(hasCancellationException, cf1.isCancelled());
             assertTrue(cf2.isDone());
             assertFalse(cf2.isCancelled());
             assertEquals(0, latch.getCount());
