@@ -1148,7 +1148,7 @@ const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
   if (isa_narrowklass() || t->isa_narrowklass()) {
     return mt;
   }
-  // TODO 8350865 This currently triggers a verification failure, the code around "// Even though MyValue is final" needs adjustments
+  // TODO 8387653 This currently triggers a verification failure, the code around "// Even though MyValue is final" needs adjustments
   if ((this_t->isa_ptr() && this_t->is_ptr()->is_not_flat()) ||
       (this_t->_dual->isa_ptr() && this_t->_dual->is_ptr()->is_not_flat())) return mt;
   this_t->check_symmetrical(t, mt, verify);
@@ -2629,7 +2629,7 @@ bool TypeAry::ary_must_be_exact() const {
     if (tinst->instance_klass()->is_final()) {
       // Even though MyValue is final, [LMyValue is only exact if the array
       // is (not) null-free due to null-free [LMyValue <: null-able [LMyValue.
-      // TODO 8350865 If we know that the array can't be null-free, it's allowed to be exact, right?
+      // TODO 8387653 If we know that the array can't be null-free, it's allowed to be exact, right?
       // If so, we should add '&& !_not_null_free'
       if (tinst->is_inlinetypeptr() && (tinst->ptr() != TypePtr::NotNull)) {
         return false;

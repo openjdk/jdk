@@ -1377,10 +1377,6 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
       return top();
     }
     if (assert_null) {
-      // TODO 8350865 Scalarize here (this leads to failures with TestLWorld::test45)
-      // vtptr = InlineTypeNode::make_null(_gvn, vtptr->type()->inline_klass());
-      // replace_in_map(value, vtptr);
-      // return vtptr;
       replace_in_map(value, null());
       return null();
     }
