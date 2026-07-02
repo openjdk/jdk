@@ -81,7 +81,7 @@ void ShenandoahControlThread::run_service() {
       cause = GCCause::_allocation_failure;
       heap->set_unload_classes(heuristics->can_unload_classes());
       mode = default_mode;
-    } else if (is_gc_requested ) {
+    } else if (is_gc_requested) {
       cause = requested_gc_cause;
       heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
