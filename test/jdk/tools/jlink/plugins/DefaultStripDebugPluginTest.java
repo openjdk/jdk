@@ -51,14 +51,23 @@ public class DefaultStripDebugPluginTest {
         DefaultStripDebugPlugin plugin = new DefaultStripDebugPlugin(javaPlugin,
                                                                      nativeFactory);
         ResourcePoolManager inManager = new ResourcePoolManager();
-        addDebugEntries(inManager);
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DEBUGINFO_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DIZ_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        ResourcePoolManager outManager = new ResourcePoolManager();
         ResourcePool pool = plugin.transform(inManager.resourcePool(),
-                                             inManager.resourcePoolBuilder());
+                                             outManager.resourcePoolBuilder());
         if (!pool.findEntry(MockStripPlugin.JAVA_PATH).isPresent() ||
             !pool.findEntry(MockStripPlugin.NATIVE_PATH).isPresent()) {
             throw new AssertionError("Expected both native and java to get called");
         }
-        assertDebugEntriesExcluded(pool);
+        if (pool.findEntry(MockStripPlugin.DEBUGINFO_PATH).isPresent()) {
+            throw new AssertionError(".debuginfo file should have been excluded");
+        }
+        if (pool.findEntry(MockStripPlugin.DIZ_PATH).isPresent()) {
+            throw new AssertionError(".diz file should have been excluded");
+        }
     }
 
     public void testNoNativeStripPluginPresent() {
@@ -68,13 +77,22 @@ public class DefaultStripDebugPluginTest {
         DefaultStripDebugPlugin plugin = new DefaultStripDebugPlugin(javaPlugin,
                                                                      nativeFactory);
         ResourcePoolManager inManager = new ResourcePoolManager();
-        addDebugEntries(inManager);
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DEBUGINFO_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DIZ_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        ResourcePoolManager outManager = new ResourcePoolManager();
         ResourcePool pool = plugin.transform(inManager.resourcePool(),
-                                             inManager.resourcePoolBuilder());
+                                             outManager.resourcePoolBuilder());
         if (!pool.findEntry(MockStripPlugin.JAVA_PATH).isPresent()) {
             throw new AssertionError("Expected java strip plugin to get called");
         }
-        assertDebugEntriesExcluded(pool);
+        if (pool.findEntry(MockStripPlugin.DEBUGINFO_PATH).isPresent()) {
+            throw new AssertionError(".debuginfo file should have been excluded");
+        }
+        if (pool.findEntry(MockStripPlugin.DIZ_PATH).isPresent()) {
+            throw new AssertionError(".diz file should have been excluded");
+        }
     }
 
     // Disable embedded strip Java plugin, with native plugin present.
@@ -88,14 +106,23 @@ public class DefaultStripDebugPluginTest {
         plugin.enableJavaStripPlugin(false);
 
         ResourcePoolManager inManager = new ResourcePoolManager();
-        addDebugEntries(inManager);
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DEBUGINFO_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DIZ_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        ResourcePoolManager outManager = new ResourcePoolManager();
         ResourcePool pool = plugin.transform(inManager.resourcePool(),
-                                             inManager.resourcePoolBuilder());
+                                             outManager.resourcePoolBuilder());
         if (pool.findEntry(MockStripPlugin.JAVA_PATH).isPresent() ||
             !pool.findEntry(MockStripPlugin.NATIVE_PATH).isPresent()) {
             throw new AssertionError("Expected only native to get called");
         }
-        assertDebugEntriesExcluded(pool);
+        if (pool.findEntry(MockStripPlugin.DEBUGINFO_PATH).isPresent()) {
+            throw new AssertionError(".debuginfo file should have been excluded");
+        }
+        if (pool.findEntry(MockStripPlugin.DIZ_PATH).isPresent()) {
+            throw new AssertionError(".diz file should have been excluded");
+        }
     }
 
     // Disable embedded strip Java plugin, and without native plugin present.
@@ -107,26 +134,17 @@ public class DefaultStripDebugPluginTest {
                                                                      nativeFactory);
         plugin.enableJavaStripPlugin(false);
         ResourcePoolManager inManager = new ResourcePoolManager();
-        addDebugEntries(inManager);
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DEBUGINFO_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DIZ_PATH,
+                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
+        ResourcePoolManager outManager = new ResourcePoolManager();
         ResourcePool pool = plugin.transform(inManager.resourcePool(),
-                                             inManager.resourcePoolBuilder());
+                                             outManager.resourcePoolBuilder());
         if (pool.findEntry(MockStripPlugin.JAVA_PATH).isPresent() ||
             pool.findEntry(MockStripPlugin.NATIVE_PATH).isPresent()) {
             throw new AssertionError("Expected both native and java not called");
         }
-        assertDebugEntriesExcluded(pool);
-    }
-
-    private void addDebugEntries(ResourcePoolManager mgr) {
-        mgr.add(ResourcePoolEntry.create(MockStripPlugin.DEBUGINFO_PATH,
-                                         ResourcePoolEntry.Type.NATIVE_LIB,
-                                         new byte[] { 0, 1, 2, 3 }));
-        mgr.add(ResourcePoolEntry.create(MockStripPlugin.DIZ_PATH,
-                                         ResourcePoolEntry.Type.NATIVE_LIB,
-                                         new byte[] { 0, 1, 2, 3 }));
-    }
-
-    private void assertDebugEntriesExcluded(ResourcePool pool) {
         if (pool.findEntry(MockStripPlugin.DEBUGINFO_PATH).isPresent()) {
             throw new AssertionError(".debuginfo file should have been excluded");
         }

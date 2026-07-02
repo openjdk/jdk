@@ -27,11 +27,13 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.util.Map;
 
+import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
+import jdk.tools.jlink.plugin.ResourcePoolModule;
 
 /**
  * Combined debug stripping plugin: Java debug attributes and native debug
@@ -43,7 +45,6 @@ public final class DefaultStripDebugPlugin extends AbstractPlugin {
     private static final String STRIP_NATIVE_DEBUG_PLUGIN = "strip-native-debug-symbols";
     private static final String EXCLUDE_DEBUGINFO = "exclude-debuginfo-files";
     private static final String EXCLUDE_FILES_PLUGIN = "exclude-files";
-    private static final String EXCLUDE_DEBUG_FILES_PATTERN = "**.debuginfo,**.diz";
 
     private final Plugin javaStripPlugin;
     private final NativePluginFactory stripNativePluginFactory;
@@ -70,8 +71,9 @@ public final class DefaultStripDebugPlugin extends AbstractPlugin {
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         Plugin stripNativePlugin = stripNativePluginFactory.create();
 
+        String pattern = debugFilePattern(in);
         ExcludeFilesPlugin excludeFilesPlugin = new ExcludeFilesPlugin();
-        excludeFilesPlugin.configure(Map.of(EXCLUDE_FILES_PLUGIN, EXCLUDE_DEBUG_FILES_PATTERN));
+        excludeFilesPlugin.configure(Map.of(EXCLUDE_FILES_PLUGIN, pattern));
 
         ResourcePool result = in;
         if (isJavaStripPluginEnabled) {
@@ -82,6 +84,26 @@ public final class DefaultStripDebugPlugin extends AbstractPlugin {
             result = pipe(result, stripNativePlugin);
         }
         return excludeFilesPlugin.transform(result, out);
+    }
+
+    // Returns the glob pattern for debug files matching the target platform.
+    // Mirrors the per-OS exclusion logic in make/CreateJmods.gmk.
+    private static String debugFilePattern(ResourcePool in) {
+        Platform platform;
+        try {
+            String tp = in.moduleView()
+                    .findModule("java.base")
+                    .map(ResourcePoolModule::targetPlatform)
+                    .orElse(null);
+            platform = tp != null ? Platform.parsePlatform(tp) : Platform.runtime();
+        } catch (IllegalArgumentException e) {
+            platform = Platform.runtime();
+        }
+        return switch (platform.os()) {
+            case WINDOWS -> "**.pdb,**.map,**.diz";
+            case MACOS   -> "**.dSYM/**,**.diz";
+            default      -> "**.debuginfo,**.diz"; // Linux, AIX
+        };
     }
 
     private ResourcePool pipe(ResourcePool pool, Plugin plugin) {
