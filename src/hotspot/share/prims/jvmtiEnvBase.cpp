@@ -2397,6 +2397,95 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
   return JVMTI_ERROR_NONE;
 }
 
+
+static bool is_async_unsafe_method(Method* m) {
+  if (m == nullptr) return false;
+  return m->method_holder() == vmClasses::VirtualThread_klass()
+         // Checks for VirtualThread$VThreadContinuation$1.run
+         || (m->name() == vmSymbols::run_method_name() && m->jvmti_hide_events());
+}
+
+static bool is_downcall_stub(CodeBlob* cb) {
+  return cb != nullptr && cb->is_runtime_stub() && (strcmp(cb->name(), "nep_invoker_blob") == 0);
+}
+
+class StopThreadAsyncClosure : public AsyncExceptionHandshakeClosure {
+public:
+  StopThreadAsyncClosure(OopHandle& exception)
+    : AsyncExceptionHandshakeClosure(exception, "StopThreadAsyncClosure") {}
+
+  virtual void do_thread(Thread* thread) {
+    JavaThread* java_thread = JavaThread::cast(thread);
+    DEBUG_ONLY(vframeStream vfst(java_thread);)
+    assert(vfst.at_end() || !is_async_unsafe_method(vfst.method()), "missing transition to Java with no async processing");
+    assert(!java_thread->is_in_vthread_transition(), "should not throw inside transition");
+
+    AsyncExceptionHandshakeClosure::do_thread(java_thread);
+  }
+};
+
+void
+StopThreadClosure::doit(JavaThread *target) {
+  OopHandle e(Universe::vm_global(), _exception());
+  target->install_async_exception(new StopThreadAsyncClosure(e));
+  _result = JVMTI_ERROR_NONE;
+}
+
+void
+StopThreadClosure::do_thread(Thread *target) {
+  assert(_target_jt == JavaThread::cast(target), "sanity check");
+
+  oop target_oop = _target_jt->threadObj();
+  if (target_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
+    if (!_self && !JvmtiEnvBase::is_vthread_suspended(target_oop, _target_jt)) {
+      _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+      return;
+    }
+  }
+  doit(_target_jt);
+}
+
+void
+StopThreadClosure::do_vthread(Handle target_h) {
+  if (!_self && !JvmtiEnvBase::is_vthread_suspended(target_h(), _target_jt)) {
+    _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    return;
+  }
+
+  if (_target_jt == nullptr) {
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+
+  if (_target_jt->on_monitor_waited_event()) {
+    // The exception could end up being thrown in the
+    // carrier so skip this case.
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+
+  vframeStream vfst(_target_jt);
+  Method* m = vfst.method();
+  if (is_async_unsafe_method(m)) {
+    // Throwing inside these methods can leave the
+    // vthread in an inconsistent state.
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+
+  if (_target_jt->at_no_async_entry_count() > 0
+      || _target_jt->is_at_poll_safepoint()
+      || is_downcall_stub(_target_jt->last_frame().cb())) {
+    // The target will defer processing of the async exception to
+    // some later safepoint poll. We cannot guarantee where that
+    // will be so we conservatively skip this case.
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+
+  doit(_target_jt);
+}
+
 void
 UpdateForPopTopFrameClosure::doit(Thread *target) {
   Thread* current_thread  = Thread::current();

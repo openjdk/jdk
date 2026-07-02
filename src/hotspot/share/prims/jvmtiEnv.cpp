@@ -1205,35 +1205,13 @@ jvmtiError
 JvmtiEnv::StopThread(jthread thread, jobject exception) {
   JavaThread* current_thread = JavaThread::current();
 
-  MountUnmountDisabler disabler(thread);
-  ThreadsListHandle tlh(current_thread);
-  JavaThread* java_thread = nullptr;
-  oop thread_oop = nullptr;
-
   NULL_CHECK(thread, JVMTI_ERROR_INVALID_THREAD);
-
-  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current_thread, &java_thread, &thread_oop);
-
-  bool is_virtual = thread_oop != nullptr && thread_oop->is_a(vmClasses::BaseVirtualThread_klass());
-
-  if (is_virtual && !is_JavaThread_current(java_thread, thread_oop)) {
-    if (!is_vthread_suspended(thread_oop, java_thread)) {
-      return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-    }
-    if (java_thread == nullptr) { // unmounted virtual thread
-      return JVMTI_ERROR_OPAQUE_FRAME;
-    }
-  }
-  if (err != JVMTI_ERROR_NONE) {
-    return err;
-  }
   oop e = JNIHandles::resolve_external_guard(exception);
   NULL_CHECK(e, JVMTI_ERROR_NULL_POINTER);
 
-  JavaThread::send_async_exception(java_thread, e);
-
-  return JVMTI_ERROR_NONE;
-
+  StopThreadClosure op(current_thread, e);
+  JvmtiHandshake::execute(&op, thread);
+  return op.result();
 } /* end StopThread */
 
 

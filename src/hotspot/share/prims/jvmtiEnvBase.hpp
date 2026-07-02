@@ -32,6 +32,7 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/frame.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/vmOperation.hpp"
@@ -530,6 +531,19 @@ public:
     assert(_target_jt->jvmti_vthread() == target_h(), "sanity check");
     doit(_target_jt); // mounted virtual thread
   }
+};
+
+// HandshakeClosure to send an asynchronous exception to thread.
+class StopThreadClosure : public JvmtiUnitedHandshakeClosure {
+private:
+  Handle _exception;
+public:
+  StopThreadClosure(JavaThread* thread, oop exception)
+    : JvmtiUnitedHandshakeClosure("StopThread"),
+     _exception(thread, exception) {}
+  void doit(JavaThread *target);
+  void do_thread(Thread *target);
+  void do_vthread(Handle target_h);
 };
 
 // HandshakeClosure to update for pop top frame.

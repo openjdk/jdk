@@ -126,9 +126,11 @@ class ThreadStateTransition : public StackObj {
 };
 
 class ThreadInVMfromJava : public ThreadStateTransition {
+  AtNoAsyncEntryMark nam;
   bool _check_asyncs;
  public:
-  ThreadInVMfromJava(JavaThread* thread, bool check_asyncs = true) : ThreadStateTransition(thread), _check_asyncs(check_asyncs) {
+  ThreadInVMfromJava(JavaThread* thread, bool check_asyncs = true)
+    : ThreadStateTransition(thread), nam(thread, check_asyncs), _check_asyncs(check_asyncs) {
     transition_from_java(thread, _thread_in_vm);
   }
   ~ThreadInVMfromJava()  {

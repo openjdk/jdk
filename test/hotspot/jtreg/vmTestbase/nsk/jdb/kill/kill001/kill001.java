@@ -48,6 +48,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
+ * @requires test.thread.factory == null
  * @build nsk.jdb.kill.kill001.kill001a
  * @run driver
  *      nsk.jdb.kill.kill001.kill001
