@@ -717,19 +717,11 @@ public class Modules extends JCTree.Visitor {
 
         ListBuffer<RequiresDirective> requires = new ListBuffer<>();
 
-        //performance: pre-populate the requiresTransitiveCache:
-        Set<ModuleSymbol> requiresTransitive = new HashSet<>();
-
         for (ModuleSymbol ms : allModules()) {
             if (ms == syms.unnamedModule || ms == msym)
                 continue;
-            Set<RequiresFlag> flags;
-            if ((ms.flags_field & Flags.AUTOMATIC_MODULE) != 0) {
-                flags = EnumSet.of(RequiresFlag.TRANSITIVE);
-                requiresTransitive.add(ms);
-            } else {
-                flags = EnumSet.noneOf(RequiresFlag.class);
-            }
+            Set<RequiresFlag> flags = (ms.flags_field & Flags.AUTOMATIC_MODULE) != 0 ?
+                    EnumSet.of(RequiresFlag.TRANSITIVE) : EnumSet.noneOf(RequiresFlag.class);
             RequiresDirective d = new RequiresDirective(ms, flags);
             directives.add(d);
             requires.add(d);
@@ -741,8 +733,6 @@ public class Modules extends JCTree.Visitor {
 
         msym.requires = requires.toList();
         msym.directives = directives.toList();
-
-        requiresTransitiveCache.put(msym, requiresTransitive);
     }
 
     private Completer getSourceCompleter(JCCompilationUnit tree) {
@@ -1531,10 +1521,16 @@ public class Modules extends JCTree.Visitor {
 
         Set<ModuleSymbol> readable = new LinkedHashSet<>();
 
-        for (RequiresDirective d : msym.requires) {
-            d.module.complete();
-            readable.add(d.module);
-            readable.addAll(retrieveRequiresTransitive(d.module));
+        if ((msym.flags() & Flags.AUTOMATIC_MODULE) != 0) {
+            readable.addAll(allModules());
+            readable.remove(msym);
+            readable.forEach(Symbol::complete);
+        } else {
+            for (RequiresDirective d : msym.requires) {
+                d.module.complete();
+                readable.add(d.module);
+                readable.addAll(retrieveRequiresTransitive(d.module));
+            }
         }
 
         initVisiblePackages(msym, readable);
