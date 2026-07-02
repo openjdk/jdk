@@ -73,8 +73,7 @@ private:
 
   static const char* cycle_end_message(ShenandoahGenerationType type);
 public:
-  ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation,
-                      bool is_degenerated = false, bool is_out_of_cycle = false);
+  ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation);
   ~ShenandoahGCSession();
 };
 

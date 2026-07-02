@@ -45,11 +45,6 @@ bool ShenandoahPassiveHeuristics::should_unload_classes() {
   return can_unload_classes();
 }
 
-bool ShenandoahPassiveHeuristics::should_degenerate_cycle() {
-  // Always fail to Degenerated GC, if enabled
-  return ShenandoahDegeneratedGC;
-}
-
 void ShenandoahPassiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                         RegionData* data, size_t size,
                                                                         size_t actual_free) {

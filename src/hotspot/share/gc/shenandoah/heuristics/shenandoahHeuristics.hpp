@@ -30,7 +30,6 @@
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/globals_extension.hpp"
-#include "utilities/numberSeq.hpp"
 
 #define SHENANDOAH_ERGO_DISABLE_FLAG(name)                                  \
   do {                                                                      \
@@ -180,7 +179,6 @@ protected:
 
   size_t _guaranteed_gc_interval;
 
-  double _precursor_cycle_start;
   double _cycle_start;
   double _last_cycle_end;
 
@@ -233,9 +231,6 @@ public:
   }
 
   virtual void record_cycle_start();
-
-  void record_degenerated_cycle_start(bool out_of_cycle);
-
   virtual void record_cycle_end();
 
   void update_should_start_query_times(double now, double planned_sleep_interval) {
@@ -252,8 +247,6 @@ public:
   }
 
   virtual bool should_start_gc();
-
-  virtual bool should_degenerate_cycle();
 
   virtual void record_concurrent_completion();
 
@@ -280,7 +273,6 @@ public:
   virtual void post_initialize();
 
   double elapsed_cycle_time() const;
-  double elapsed_degenerated_cycle_time() const;
 
   // Format prefix and emit log message indicating a GC cycle hs been triggered
   void log_trigger(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);

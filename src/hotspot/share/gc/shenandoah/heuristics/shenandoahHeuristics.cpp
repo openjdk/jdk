@@ -57,8 +57,7 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
   _space_info(space_info),
   _region_data(nullptr),
   _guaranteed_gc_interval(0),
-  _precursor_cycle_start(os::elapsedTime()),
-  _cycle_start(_precursor_cycle_start),
+  _cycle_start(os::elapsedTime()),
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
@@ -169,15 +168,6 @@ void ShenandoahHeuristics::adjust_reserves_for_abbreviated(ShenandoahHeap* heap)
   heap->old_generation()->set_promoted_reserve(0UL);
 }
 
-void ShenandoahHeuristics::record_degenerated_cycle_start(bool out_of_cycle) {
-  if (out_of_cycle) {
-    _precursor_cycle_start = _cycle_start = os::elapsedTime();
-  } else {
-    _precursor_cycle_start = _cycle_start;
-    _cycle_start = os::elapsedTime();
-  }
-}
-
 void ShenandoahHeuristics::record_cycle_start() {
   _cycle_start = os::elapsedTime();
   cancel_trigger_request();
@@ -219,10 +209,6 @@ bool ShenandoahHeuristics::should_start_gc() {
     }
   }
   decline_trigger();
-  return false;
-}
-
-bool ShenandoahHeuristics::should_degenerate_cycle() {
   return false;
 }
 
@@ -309,13 +295,6 @@ void ShenandoahHeuristics::post_initialize() {
 
 double ShenandoahHeuristics::elapsed_cycle_time() const {
   return os::elapsedTime() - _cycle_start;
-}
-
-
-// Includes the time spent in abandoned concurrent GC cycle that may have triggered this degenerated cycle.
-double ShenandoahHeuristics::elapsed_degenerated_cycle_time() const {
-  double now = os::elapsedTime();
-  return now - _precursor_cycle_start;
 }
 
 #ifdef ASSERT
