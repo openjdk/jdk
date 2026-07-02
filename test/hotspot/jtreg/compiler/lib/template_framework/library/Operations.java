@@ -819,7 +819,7 @@ public final class Operations {
         ops.add(Expression.make(float16Lane, "Float16.float16ToRawShortBits(", FLOAT16, ")"));
         // Raw short <-> lane carrier: a Java-level no-op (both are carried in a short), but
         // a type-level transition. short -> lane is deterministic; lane -> short exposes the
-        // raw bits, so distinct NaN encodings make it non-deterministic (and thus unverified).
+        // raw bits, so distinct NaN encodings make it non-deterministic (preventing result verification).
         ops.add(Expression.make(SHORT_CARRIES_FLOAT16, "/*cast to ShortCarriesFloat16Type*/(", SHORTS, ")"));
         ops.add(Expression.make(SHORTS, "/*cast to short*/(", SHORT_CARRIES_FLOAT16, ")", WITH_NONDETERMINISTIC_RESULT));
 
