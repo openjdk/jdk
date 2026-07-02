@@ -26,16 +26,14 @@ import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
 
-@Fork(value = 2, jvmArgsAppend = {"--enable-preview"})
-@Warmup(iterations = 1, time = 1)
-@Measurement(iterations = 3, time = 1)
+@Fork(value = 3, jvmArgsAppend = {"--enable-preview"})
+@Warmup(iterations = 3, time = 1)
+@Measurement(iterations = 5, time = 1)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @BenchmarkMode(Mode.AverageTime)
 @State(Scope.Thread)
 public class FastPath {
     public static final int SIZE = 100;
-
-    // TODO try the cache path
 
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     private static int hash(Object obj) {
