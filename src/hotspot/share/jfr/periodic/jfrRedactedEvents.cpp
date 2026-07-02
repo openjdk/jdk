@@ -188,44 +188,48 @@ char* JfrRedactedEvents::new_redacted_text() {
   return result;
 }
 
-bool JfrRedactedEvents::redact(String* value, const String* redaction) {
+void JfrRedactedEvents::redact(String* scratch_string, const char* target, const String* redaction) {
   if (strchr(redaction->text(), REDACTED_MARKER)) {
-    return false;
+    return;
   }
-  const char* sensitive = strstr(value->text(), redaction->text());
-  if (sensitive == nullptr) {
-    return false;
+  const char* position = target;
+  while (true) {
+    const char* sensitive = strstr(position, redaction->text());
+    if (sensitive == nullptr) {
+      return;
+    }
+    size_t index = (size_t)(sensitive - target);
+    for (size_t i = 0; i < redaction->length(); i++) {
+      scratch_string->set(index + i, REDACTED_MARKER);
+    }
+    position = sensitive + 1;
   }
-  size_t index = (size_t)(sensitive - value->text());
-  size_t source = index + redaction->length();
-  value->set(index++, REDACTED_MARKER);
-  while (source < value->length()) {
-    value->set(index++, value->at(source++));
-  }
-  value->set_length(index);
-  return true;
 }
 
 String* JfrRedactedEvents::redact_environment_variable_value(const char* value) {
   if (strchr(value, REDACTED_MARKER)) {
     return new String(REDACTED);
   }
-  String* temp = new String(value);
-  bool changed = false;
+  String* scratch_string = new String(value);
   for (int i = 0; i < _redacted_arguments->length(); i++) {
-    while (redact(temp, _redacted_arguments->at(i))) {
-      changed = true;
-    }
+     redact(scratch_string, value, _redacted_arguments->at(i));
   }
   stringStream result;
-  for (size_t i = 0; i < temp->length(); i++) {
-    if (temp->at(i) == REDACTED_MARKER) {
-      result.print(REDACTED);
+  bool changed = false;
+  bool inside_redaction = false;
+  for (size_t i = 0; i < scratch_string->length(); i++) {
+    if (scratch_string->at(i) == REDACTED_MARKER) {
+      changed = true;
+      if (!inside_redaction) {
+        result.print(REDACTED);
+      }
+      inside_redaction = true;
     } else {
-      result.put(temp->at(i));
+      result.put(scratch_string->at(i));
+      inside_redaction = false;
     }
   }
-  delete temp;
+  delete scratch_string;
   return changed ? new String(result.base()) : nullptr;
 }
 
@@ -451,7 +455,6 @@ void JfrRedactedEvents::ensure_initialized() {
   StringArray* flags_args = make_jvm_args_array(Arguments::jvm_flags_array(), Arguments::num_jvm_flags());
   _redacted_flags_command_line = redact_command_line(flags_args);
   delete flags_args;
-  // Reduces (not removes) risk of overlap when redacting arguments in environment variable values
   _redacted_arguments->sort();
   _initialized = true;
 }

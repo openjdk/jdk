@@ -421,6 +421,18 @@ public class TestRedact {
             e2.print();
             throw new Exception("Missing redaction inside option variable");
         }
+
+        Execution e3 = run(
+                Map.of("PROGRAM_OPTIONS", "ZEBRA FISH ZEBRACCOON FISH RACCOON"),
+                Map.of(),
+                "-XX:FlightRecorderOptions:redact-argument=+zebra;raccoon",
+                "ZEBRA", "FISH", "ZEBRACCOON", "FISH", "RACCOON"
+            );
+        programOptions = e3.environment().get("PROGRAM_OPTIONS");
+        if (!programOptions.equals("[REDACTED] FISH [REDACTED] FISH [REDACTED]")) {
+            e3.print();
+            throw new Exception("Incorrect redaction when option arguments overlap");
+        }
     }
 
     private static void testRedactKey() throws Exception {
