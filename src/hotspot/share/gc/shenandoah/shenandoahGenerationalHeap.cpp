@@ -351,8 +351,8 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     }
     oop winner = ShenandoahForwarding::try_forward_to_self(p, old_mark);
     if (winner == nullptr) {
-      // We own the self-forwarding. Flag the from-region so the degen/full
-      // GC entry drain knows to scan it for self_fwd bits to clear.
+      // We own the self-forwarding. Flag the from-region so that other threads
+      // don't waste time evacuating this region
       _has_self_forwarded_objects.store_relaxed(true);
       heap_region_containing(p)->set_has_self_forwards();
       return p;
@@ -708,17 +708,12 @@ void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) 
     }
   };
 
-  ShenandoahPhaseTimings::Phase phase = concurrent ?
-          ShenandoahPhaseTimings::conc_coalesce_and_fill :
-          ShenandoahPhaseTimings::degen_gc_coalesce_and_fill;
-
   // This is not cancellable
-  ShenandoahGlobalCoalesceAndFill coalesce(phase);
+  ShenandoahGlobalCoalesceAndFill coalesce(ShenandoahPhaseTimings::conc_coalesce_and_fill);
   workers()->run_task(&coalesce);
   old_generation()->set_parsable(true);
 }
 
-template<bool CONCURRENT>
 class ShenandoahGenerationalUpdateHeapRefsTask : public WorkerTask {
 private:
   // For update refs, _generation will be young or global. Mixed collections use the young generation.
@@ -742,14 +737,9 @@ public:
   }
 
   void work(uint worker_id) override {
-    if (CONCURRENT) {
-      ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      SuspendibleThreadSetJoiner stsj;
-      do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
-    } else {
-      ShenandoahParallelWorkerSession worker_session(worker_id);
-      do_work<ShenandoahNonConcUpdateRefsClosure>(worker_id);
-    }
+    ShenandoahConcurrentWorkerSession worker_session(worker_id);
+    SuspendibleThreadSetJoiner stsj;
+    do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
   }
 
 private:
@@ -757,7 +747,7 @@ private:
   void do_work(uint worker_id) {
     T cl;
 
-    if (CONCURRENT && (worker_id == 0)) {
+    if (worker_id == 0) {
       // We ask the first worker to replenish the Mutator free set by moving regions previously reserved to hold the
       // results of evacuation.  These reserves are no longer necessary because evacuation has completed.
       size_t cset_regions = _heap->collection_set()->count();
@@ -768,7 +758,6 @@ private:
       // next GC cycle.
       _heap->free_set()->move_regions_from_collector_to_mutator(cset_regions);
     }
-    // If !CONCURRENT, there's no value in expanding Mutator free set
 
     ShenandoahHeapRegion* r = _regions->next();
     // We update references for global, mixed, and young collections.
@@ -806,7 +795,7 @@ private:
         }
       }
 
-      if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
+      if (_heap->check_cancelled_gc_and_yield(true)) {
         return;
       }
 
@@ -830,7 +819,7 @@ private:
     ShenandoahRegionChunk assignment;
     ShenandoahScanRemembered* scanner = _heap->old_generation()->card_scan();
 
-    while (!_heap->check_cancelled_gc_and_yield(CONCURRENT) && _work_chunks->next(&assignment)) {
+    while (!_heap->check_cancelled_gc_and_yield(true) && _work_chunks->next(&assignment)) {
       // Keep grabbing next work chunk to process until finished, or asked to yield
       ShenandoahHeapRegion* r = assignment._r;
       if (r->is_active() && (!r->is_cset() || r->has_self_forwards()) && r->is_old()) {
@@ -932,17 +921,12 @@ private:
   }
 };
 
-void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* generation, bool concurrent) {
-  assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
+void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* generation) {
+  assert(!is_full_gc_in_progress(), "Only for concurrent GC");
   const uint nworkers = workers()->active_workers();
   ShenandoahRegionChunkIterator work_list(nworkers);
-  if (concurrent) {
-    ShenandoahGenerationalUpdateHeapRefsTask<true> task(generation, &_update_refs_iterator, &work_list);
-    workers()->run_task(&task);
-  } else {
-    ShenandoahGenerationalUpdateHeapRefsTask<false> task(generation, &_update_refs_iterator, &work_list);
-    workers()->run_task(&task);
-  }
+  ShenandoahGenerationalUpdateHeapRefsTask task(generation, &_update_refs_iterator, &work_list);
+  workers()->run_task(&task);
 
   if (ShenandoahEnableCardStats) {
     // Only do this if we are collecting card stats
@@ -1018,16 +1002,6 @@ void ShenandoahGenerationalHeap::final_update_refs_update_region_states() {
   ShenandoahUpdateRegionAges ages(marking_context());
   auto cl = ShenandoahCompositeRegionClosure::of(pins, ages);
   parallel_heap_region_iterate(&cl);
-}
-
-void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
-  shenandoah_assert_heaplocked_or_safepoint();
-  if (!old_generation()->is_parsable()) {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_coalesce_and_fill);
-    coalesce_and_fill_old_regions(false);
-  }
-
-  old_generation()->maybe_log_promotion_failure_stats(false);
 }
 
 void ShenandoahGenerationalHeap::complete_concurrent_cycle() {

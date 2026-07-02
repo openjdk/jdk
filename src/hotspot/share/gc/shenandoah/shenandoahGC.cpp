@@ -52,17 +52,11 @@ const char* ShenandoahGC::degen_point_to_string(ShenandoahDegenPoint point) {
    }
 }
 
-void ShenandoahGC::update_roots(bool full_gc) {
+void ShenandoahGC::update_roots() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
-         "Only for degenerated GC and full GC");
+  assert(ShenandoahHeap::heap()->is_full_gc_in_progress(), "Only for full GC");
 
-  bool check_alive = !full_gc;
-  ShenandoahPhaseTimings::Phase p = full_gc ?
-                                    ShenandoahPhaseTimings::full_gc_update_roots :
-                                    ShenandoahPhaseTimings::degen_gc_update_roots;
-
+  ShenandoahPhaseTimings::Phase p = ShenandoahPhaseTimings::full_gc_update_roots;
   ShenandoahGCPhase phase(p);
 #ifdef COMPILER2
   DerivedPointerTable::clear();
@@ -73,7 +67,7 @@ void ShenandoahGC::update_roots(bool full_gc) {
   uint nworkers = workers->active_workers();
 
   ShenandoahRootUpdater root_updater(nworkers, p);
-  ShenandoahUpdateRootsTask update_roots(&root_updater, check_alive);
+  ShenandoahUpdateRootsTask update_roots(&root_updater, /* check_alive = */ false);
   workers->run_task(&update_roots);
 
 #ifdef COMPILER2

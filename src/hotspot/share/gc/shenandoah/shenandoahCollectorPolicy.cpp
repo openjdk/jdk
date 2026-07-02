@@ -33,17 +33,11 @@
 ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _success_concurrent_gcs(0),
   _abbreviated_concurrent_gcs(0),
-  _success_degenerated_gcs(0),
-  _abbreviated_degenerated_gcs(0),
   _success_full_gcs(0),
-  _consecutive_degenerated_gcs(0),
-  _consecutive_degenerated_gcs_without_progress(0),
   _consecutive_young_gcs(0),
   _mixed_gcs(0),
   _success_old_gcs(0),
   _interrupted_old_gcs(0),
-  _alloc_failure_degenerated(0),
-  _alloc_failure_degenerated_upgrade_to_full(0),
   _alloc_failure_full(0) {
 
   Copy::zero_to_bytes(_degen_point_counts, sizeof(size_t) * ShenandoahGC::_DEGENERATED_LIMIT);
@@ -63,19 +57,12 @@ void ShenandoahCollectorPolicy::record_alloc_failure_to_full() {
 
 void ShenandoahCollectorPolicy::record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point) {
   assert(point < ShenandoahGC::_DEGENERATED_LIMIT, "sanity");
-  _alloc_failure_degenerated++;
   _degen_point_counts[point]++;
-}
-
-void ShenandoahCollectorPolicy::record_degenerated_upgrade_to_full() {
-  reset_consecutive_degenerated_gcs();
-  _alloc_failure_degenerated_upgrade_to_full++;
 }
 
 void ShenandoahCollectorPolicy::record_success_concurrent(bool is_young, bool is_abbreviated) {
   update_young(is_young);
 
-  reset_consecutive_degenerated_gcs();
   _success_concurrent_gcs++;
   if (is_abbreviated) {
     _abbreviated_concurrent_gcs++;
@@ -96,23 +83,6 @@ void ShenandoahCollectorPolicy::record_interrupted_old() {
   _interrupted_old_gcs++;
 }
 
-void ShenandoahCollectorPolicy::record_degenerated(bool is_young, bool is_abbreviated, bool progress) {
-  update_young(is_young);
-
-  _success_degenerated_gcs++;
-  _consecutive_degenerated_gcs++;
-
-  if (progress) {
-    _consecutive_degenerated_gcs_without_progress = 0;
-  } else {
-    _consecutive_degenerated_gcs_without_progress++;
-  }
-
-  if (is_abbreviated) {
-    _abbreviated_degenerated_gcs++;
-  }
-}
-
 void ShenandoahCollectorPolicy::update_young(bool is_young) {
   if (is_young) {
     _consecutive_young_gcs++;
@@ -122,7 +92,6 @@ void ShenandoahCollectorPolicy::update_young(bool is_young) {
 }
 
 void ShenandoahCollectorPolicy::record_success_full() {
-  reset_consecutive_degenerated_gcs();
   _consecutive_young_gcs = 0;
   _success_full_gcs++;
 }
@@ -213,8 +182,7 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
     gc_attempts += _collection_cause_counts[c];
   }
 
-  size_t completed_gcs = _success_full_gcs + _success_degenerated_gcs + _success_concurrent_gcs + _success_old_gcs;
-  size_t cancelled_gcs = gc_attempts - completed_gcs;
+  size_t completed_gcs = _success_full_gcs + _success_concurrent_gcs + _success_old_gcs;
   out->print_cr("%5zu GC attempts. %zu Completed GCs (%.2f%%).",
     gc_attempts, completed_gcs, percent_of(completed_gcs, gc_attempts));
 
@@ -252,11 +220,8 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
     out->cr();
   }
 
-  size_t degenerated_gcs = _alloc_failure_degenerated_upgrade_to_full + _success_degenerated_gcs;
-  out->print_cr("%5zu Degenerated GCs (%.2f%%)", degenerated_gcs, percent_of(degenerated_gcs, completed_gcs));
-  out->print_cr("  %5zu upgraded to Full GC (%.2f%%)",          _alloc_failure_degenerated_upgrade_to_full, percent_of(_alloc_failure_degenerated_upgrade_to_full, degenerated_gcs));
-  out->print_cr("  %5zu caused by allocation failure (%.2f%%)", _alloc_failure_degenerated, percent_of(_alloc_failure_degenerated, degenerated_gcs));
-  out->print_cr("  %5zu abbreviated (%.2f%%)",                  _abbreviated_degenerated_gcs, percent_of(_abbreviated_degenerated_gcs, degenerated_gcs));
+  size_t degenerated_gcs = 0;
+  out->print_cr("%5zu Stalls (%.2f%%)", degenerated_gcs, percent_of(degenerated_gcs, completed_gcs));
   for (int c = 0; c < ShenandoahGC::_DEGENERATED_LIMIT; c++) {
     if (_degen_point_counts[c] > 0) {
       const char* desc = ShenandoahGC::degen_point_to_string((ShenandoahGC::ShenandoahDegenPoint)c);
@@ -273,5 +238,4 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
     out->print_cr("  %5zu invoked implicitly (%.2f%%)", implicit_requests, percent_of(implicit_requests, _success_full_gcs));
   }
   out->print_cr("  %5zu caused by allocation failure (%.2f%%)", _alloc_failure_full, percent_of(_alloc_failure_full, _success_full_gcs));
-  out->print_cr("  %5zu upgraded from Degenerated GC (%.2f%%)", _alloc_failure_degenerated_upgrade_to_full, percent_of(_alloc_failure_degenerated_upgrade_to_full, _success_full_gcs));
 }

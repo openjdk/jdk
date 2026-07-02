@@ -52,7 +52,7 @@ void assert_usage_not_more_than_regions_used(ShenandoahGeneration* generation) {
 
 void ShenandoahGenerationalFullGC::prepare() {
   auto heap = ShenandoahGenerationalHeap::heap();
-  // Since we may arrive here from degenerated GC failure of either young or old, establish generation as GLOBAL.
+  // Full GC always operates on the GLOBAL generation.
   heap->set_active_generation(heap->global_generation());
 
   // Full GC supersedes any marking or coalescing in old generation.

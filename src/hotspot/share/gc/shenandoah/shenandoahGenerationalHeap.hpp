@@ -95,7 +95,7 @@ public:
   //
   // In the generational mode, we will use this function for young, mixed, and global collections.
   // For young and mixed, the generation argument will be the young generation, otherwise it will be the global generation.
-  void update_heap_references(ShenandoahGeneration* generation, bool concurrent) override;
+  void update_heap_references(ShenandoahGeneration* generation) override;
   void final_update_refs_update_region_states() override;
 
 private:
@@ -124,7 +124,6 @@ public:
   void compute_old_generation_balance(size_t old_xfer_limit, size_t old_trashed_regions, size_t young_trashed_regions);
 
   // Balances generations, coalesces and fills old regions if necessary
-  void complete_degenerated_cycle();
   void complete_concurrent_cycle();
 private:
   void initialize_controller() override;

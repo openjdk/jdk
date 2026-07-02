@@ -64,7 +64,7 @@ void ShenandoahOldGC::op_final_mark() {
     // We need to do this because weak root cleaning reports the number of dead handles
     JvmtiTagMap::set_needs_cleaning();
 
-    _generation->prepare_regions_and_collection_set(true);
+    _generation->prepare_regions_and_collection_set();
 
     heap->set_unload_classes(false);
     heap->prepare_concurrent_roots();

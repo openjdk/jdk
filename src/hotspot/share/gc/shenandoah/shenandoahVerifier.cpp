@@ -1215,21 +1215,6 @@ void ShenandoahVerifier::verify_after_gc(ShenandoahGeneration* generation) {
   );
 }
 
-void ShenandoahVerifier::verify_after_degenerated(ShenandoahGeneration* generation) {
-  verify_at_safepoint(
-          generation,
-          "After Degenerated GC",
-          _verify_remembered_disable,  // do not verify remembered set
-          _verify_forwarded_none,      // all objects are non-forwarded
-          _verify_marked_disable,      // no need to check unreachable objects, end of cycle
-          _verify_cset_none,           // no cset references
-          _verify_liveness_disable,    // no reliable liveness data anymore
-          _verify_regions_notrash_nocset, // no trash, no cset
-          _verify_size_exact,          // expect generation and heap sizes to match exactly
-          _verify_gcstate_stable       // degenerated refs had cleaned up forwarded objects
-  );
-}
-
 void ShenandoahVerifier::verify_before_fullgc(ShenandoahGeneration* generation) {
   verify_at_safepoint(
           generation,

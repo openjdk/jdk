@@ -255,7 +255,7 @@ public:
   void transition_old_generation_after_global_gc();
 
   void prepare_gc() override;
-  void prepare_regions_and_collection_set(bool concurrent) override;
+  void prepare_regions_and_collection_set() override;
   void cancel_marking() override;
 
   // Cancels old gc and transitions to the idle state

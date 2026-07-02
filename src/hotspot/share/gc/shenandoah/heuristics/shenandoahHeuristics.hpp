@@ -66,7 +66,7 @@ class ShenandoahHeapRegion;
  */
 class ShenandoahHeuristics : public CHeapObj<mtGC> {
   static constexpr intx Concurrent_Adjust   = -1; // recover from penalties
-  static constexpr intx Degenerated_Penalty = 10; // how much to penalize average GC duration history on Degenerated GC
+  static constexpr intx Stall_Penalty       = 10; // how much to penalize average GC duration history on allocation stall
   static constexpr intx Full_Penalty        = 20; // how much to penalize average GC duration history on Full GC
   static constexpr intx Min_Penalty         = 0;
   static constexpr intx Max_Penalty         = 100;

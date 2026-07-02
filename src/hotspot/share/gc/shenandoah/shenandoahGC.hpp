@@ -67,7 +67,7 @@ public:
 
   ShenandoahGeneration* generation() const { return _generation; }
 protected:
-  static void update_roots(bool full_gc);
+  static void update_roots();
 
   ShenandoahGeneration* _generation;
 };

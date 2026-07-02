@@ -237,7 +237,7 @@ void ShenandoahHeuristics::record_concurrent_completion() {
   _gc_times_learned++;
   const bool stalls = _allocation_stalls.exchange(false, memory_order_relaxed);
   if (stalls && _declined_trigger_count.load_relaxed() > Penalty_Free_Declinations) {
-    adjust_penalty(Degenerated_Penalty);
+    adjust_penalty(Stall_Penalty);
   } else {
     adjust_penalty(Concurrent_Adjust);
   }

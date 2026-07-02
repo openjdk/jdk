@@ -28,7 +28,6 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
-#include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahFullGC.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -60,10 +59,7 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
 
 void ShenandoahGenerationalControlThread::run_service() {
 
-  // This is the only instance of request. It is important that request.generation
-  // does not change between a concurrent cycle failure and the start of a degenerated
-  // cycle. We initialize it with the young generation to handle the pathological case
-  // where the very first cycle is degenerated (some tests exercise this path).
+  // This is the only instance of request.
   ShenandoahGCRequest request;
   request.generation = _heap->young_generation();
   while (!should_terminate()) {
@@ -256,9 +252,8 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
     // If an allocation failure occurred during this cycle, we'll have threads waiting
-    // to reclaim memory. We'll wake them up, and they'll retry their allocation. We need
-    // to clear the _requested_gc_cause here because we are NOT going to start a degenerated
-    // cycle. If our waiters cannot allocate, they will signal the control thread again
+    // to reclaim memory. We'll wake them up, and they'll retry their allocation.
+    // If our waiters cannot allocate, they will signal the control thread again
     // to start another cycle.
     MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
     _heap->clear_cancellation(_requested_gc_cause);

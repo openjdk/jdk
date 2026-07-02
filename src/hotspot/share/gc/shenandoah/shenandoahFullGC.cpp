@@ -144,10 +144,8 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  // A full GC may be entered directly, or as an upgrade from a failed
-  // degenerated GC. In the latter case, self-forwarded objects may be
-  // present from the failed evacuation. Drain those marks before any phase
-  // (verify, update_roots, phase1_mark_heap) walks headers.
+  // A full GC must be entered directly.
+  // TODO: All of the 'recover from evacuation failures' should be safe to remove now
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_un_self_forward);
     heap->un_self_forward_cset_regions();
@@ -207,7 +205,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
     // c. Update roots if this full GC is due to evac-oom, which may carry from-space pointers in roots.
     if (has_forwarded_objects) {
-      update_roots(true /*full_gc*/);
+      update_roots();
     }
 
     // d. Abandon reference discovery and clear all discovered references.
@@ -314,9 +312,9 @@ void ShenandoahFullGC::phase1_mark_heap() {
   // enable ("weak") refs discovery
   rp->set_soft_reference_policy(true); // forcefully purge all soft references
 
-  ShenandoahSTWMark mark(_generation, true /*full_gc*/);
+  ShenandoahSTWMark mark(_generation);
   mark.mark();
-  heap->parallel_cleaning(_generation, true /* full_gc */);
+  heap->parallel_cleaning(_generation);
 
   if (ShenandoahHeap::heap()->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::log_live_in_old(heap);

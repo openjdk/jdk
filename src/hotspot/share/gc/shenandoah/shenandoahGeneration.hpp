@@ -109,7 +109,7 @@ public:
   template <bool FOR_CURRENT_CYCLE, bool FULL_GC = false>
   void reset_mark_bitmap();
 
-  // Used by concurrent and degenerated GC to reset remembered set.
+  // Used by concurrent GC to reset remembered set.
   void swap_card_tables();
 
   // Update the read cards with the state of the write table (write table is not cleared).
@@ -135,7 +135,7 @@ public:
   //  been set aside to hold objects evacuated from the young-gen collection set.  Conservatively, this value
   //  equals the entire amount of live young-gen memory within the collection set, even though some of this memory
   //  will likely be promoted.
-  virtual void prepare_regions_and_collection_set(bool concurrent);
+  virtual void prepare_regions_and_collection_set();
 
   // Cancel marking (used by Full collect and when cancelling cycle).
   virtual void cancel_marking();

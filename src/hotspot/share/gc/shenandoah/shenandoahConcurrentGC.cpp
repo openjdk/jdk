@@ -563,7 +563,7 @@ void ShenandoahConcurrentGC::entry_cleanup_early() {
     // This is an abbreviated cycle.  Rebuild the freeset in order to establish reserves for the next GC cycle.  Doing
     // the rebuild ASAP also expedites availability of immediate trash, reducing the likelihood that we will degenerate
     // during promote-in-place processing.
-    heap->rebuild_free_set(true /*concurrent*/);
+    heap->rebuild_free_set();
   }
 }
 
@@ -783,7 +783,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
     // The collection set is chosen by prepare_regions_and_collection_set(). Additionally, certain parameters have been
     // established to govern the evacuation efforts that are about to begin.  Refer to comments on reserve members in
     // ShenandoahGeneration and ShenandoahOldGeneration for more detail.
-    _generation->prepare_regions_and_collection_set(true /*concurrent*/);
+    _generation->prepare_regions_and_collection_set();
 
     // Has to be done after cset selection
     heap->prepare_concurrent_roots();
@@ -1122,7 +1122,7 @@ void ShenandoahConcurrentGC::op_init_update_refs() {
 }
 
 void ShenandoahConcurrentGC::op_update_refs() {
-  ShenandoahHeap::heap()->update_heap_references(_generation, true /*concurrent*/);
+  ShenandoahHeap::heap()->update_heap_references(_generation);
 }
 
 class ShenandoahUpdateThreadHandshakeClosure : public HandshakeClosure {
@@ -1213,7 +1213,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
 
   // If we are running in generational mode, this will also age active regions that
   // haven't been used for allocation.
-  heap->update_heap_region_states(true /*concurrent*/);
+  heap->update_heap_region_states();
 
   heap->set_update_refs_in_progress(false);
   heap->set_has_forwarded_objects(false);
@@ -1222,7 +1222,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
     Universe::verify();
   }
 
-  heap->rebuild_free_set(true /*concurrent*/);
+  heap->rebuild_free_set();
 
   if (ShenandoahVerify) {
     ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_update_refs_verify);

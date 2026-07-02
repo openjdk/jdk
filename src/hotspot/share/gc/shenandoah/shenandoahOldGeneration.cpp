@@ -441,14 +441,12 @@ bool ShenandoahOldGeneration::contains(oop obj) const {
   return ShenandoahHeap::heap()->is_in_old(obj);
 }
 
-void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent) {
+void ShenandoahOldGeneration::prepare_regions_and_collection_set() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  assert(!heap->is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
+  assert(!heap->is_full_gc_in_progress(), "Only for concurrent GC");
 
   {
-    ShenandoahGCPhase phase(concurrent ?
-        ShenandoahPhaseTimings::final_update_region_states :
-        ShenandoahPhaseTimings::degen_gc_final_update_region_states);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_region_states);
     ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context());
 
     parallel_heap_region_iterate(&cl);
@@ -458,9 +456,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
   {
     // This doesn't actually choose a collection set, but prepares a list of
     // regions as 'candidates' for inclusion in a mixed collection.
-    ShenandoahGCPhase phase(concurrent ?
-        ShenandoahPhaseTimings::choose_cset :
-        ShenandoahPhaseTimings::degen_gc_choose_cset);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::choose_cset);
     ShenandoahHeapLocker locker(heap->lock());
     _old_heuristics->prepare_for_old_collections();
   }
@@ -468,16 +464,14 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
   {
     // Though we did not choose a collection set above, we still may have
     // freed up immediate garbage regions so proceed with rebuilding the free set.
-    ShenandoahGCPhase phase(concurrent ?
-        ShenandoahPhaseTimings::final_rebuild_freeset :
-        ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_rebuild_freeset);
     ShenandoahFreeSet* free_set = heap->free_set();
     ShenandoahHeapLocker locker(heap->lock());
 
     // This is completion of old-gen marking.  We rebuild in order to reclaim immediate garbage and to
     // prepare for subsequent mixed evacuations.
     size_t young_trash_regions, old_trash_regions, first_old, last_old, num_old;
-    heap->free_set()->prepare_to_rebuild(young_trash_regions, old_trash_regions, first_old, last_old, num_old);
+    free_set->prepare_to_rebuild(young_trash_regions, old_trash_regions, first_old, last_old, num_old);
     // At the end of old-gen, we may find that we have reclaimed immediate garbage, allowing a longer allocation runway.
     // We may also find that we have accumulated canddiate regions for mixed evacuation.  If so, we will want to expand
     // the OldCollector reserve in order to make room for these mixed evacuations.
@@ -488,7 +482,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     size_t allocation_runway =
       gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trash_regions);
     gen_heap->compute_old_generation_balance(allocation_runway, old_trash_regions, young_trash_regions);
-    heap->free_set()->finish_rebuild(young_trash_regions, old_trash_regions, num_old);
+    free_set->finish_rebuild(young_trash_regions, old_trash_regions, num_old);
   }
 }
 
