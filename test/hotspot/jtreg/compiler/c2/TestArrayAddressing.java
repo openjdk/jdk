@@ -39,7 +39,6 @@ import compiler.lib.template_framework.library.PrimitiveType;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
