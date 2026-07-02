@@ -1198,24 +1198,19 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     static final class WorkQueue {
         // fields declared in order of their likely layout on most VMs
+        Boolean r0, r1, r2, r3, r4, r5, r6, r7; // manual ref padding
         final ForkJoinWorkerThread owner; // null if shared
         ForkJoinTask<?>[] array;   // the queued tasks; power of 2 size
         int base;                  // index of next slot for poll
         final int config;          // mode bits
-
-        // fields otherwise causing more unnecessary false-sharing cache misses
-        @jdk.internal.vm.annotation.Contended("w")
+        int p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, pA, pB, pC, pD, pE, pF;
         int top;                   // index of next slot for push
-        @jdk.internal.vm.annotation.Contended("w")
-        volatile int phase;        // versioned active status
-        @jdk.internal.vm.annotation.Contended("w")
-        int stackPred;             // pool stack (ctl) predecessor link
-        @jdk.internal.vm.annotation.Contended("w")
-        volatile int source;       // source queue id (or DROPPED)
-        @jdk.internal.vm.annotation.Contended("w")
         int nsteals;               // number of steals from other queues
-        @jdk.internal.vm.annotation.Contended("w")
+        volatile int source;       // source queue id (or DROPPED or EMPTY_SCAN)
+        volatile int phase;        // versioned active status
+        int stackPred;             // pool stack (ctl) predecessor link
         volatile int parking;      // next phase if parked in awaitWork
+        int e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, eA, eB, eC, eD, eE, eF;
 
         // Support for atomic operations
         private static final Unsafe U;
@@ -1662,11 +1657,10 @@ public class ForkJoinPool extends AbstractExecutorService
     final long config;                   // static configuration bits
     volatile long stealCount;            // collects worker nsteals
     volatile long threadIds;             // for worker thread names
-
-    @jdk.internal.vm.annotation.Contended("fjpctl") // segregate
+    long p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, pA, pB, pC, pD, pE, pF;
     volatile long ctl;                   // main pool control
-    @jdk.internal.vm.annotation.Contended("fjpctl") // colocate
     int parallelism;                     // target number of workers
+    int e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, eA, eB, eC, eD, eE, eF;
 
     // Support for atomic operations
     private static final Unsafe U;
@@ -2041,8 +2035,6 @@ public class ForkJoinPool extends AbstractExecutorService
                         else if (t == null) {     // possibly empty
                             if (U.getReference(a, bp) == null) {
                                 Object nt = U.getReferenceAcquire(a, np);
-                                if (q.array != a)
-                                    break outer;  // resized
                                 if (b == (b = q.base) && nt == null) {
                                     if (taken)    // end run
                                         break outer;
