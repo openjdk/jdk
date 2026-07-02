@@ -93,11 +93,12 @@ private:
   Atomic<HeapWord*> _invisible_root;
   Atomic<size_t> _invisible_root_word_size;
 
-  // Per-thread start slot for the striped CAS alloc-region scan, one per striped partition.
-  // Initialized lazily to UINT_MAX, then assigned a stable per-thread slot so different threads
-  // begin their lock-free allocation scan at different alloc regions, spreading CAS contention.
-  uint _mutator_alloc_region_start_index;
-  uint _collector_alloc_region_start_index;
+  // Per-thread stripe slot for the striped CAS alloc regions, one per striped partition. This is
+  // the slot this thread allocates from on the lock-free fast path (and where its sibling scan
+  // begins). Initialized lazily to UINT_MAX, then assigned a stable per-thread slot so different
+  // threads map to different alloc regions, spreading CAS contention.
+  uint _mutator_alloc_region_slot;
+  uint _collector_alloc_region_slot;
 
   ShenandoahThreadLocalData();
   ~ShenandoahThreadLocalData();
@@ -195,20 +196,20 @@ public:
 
   // Caller passes the already-resolved current thread to avoid a repeated Thread::current() on the
   // allocation fast path.
-  static uint mutator_alloc_region_start_index(Thread* thread) {
-    return data(thread)->_mutator_alloc_region_start_index;
+  static uint mutator_alloc_region_slot(Thread* thread) {
+    return data(thread)->_mutator_alloc_region_slot;
   }
 
-  static void set_mutator_alloc_region_start_index(Thread* thread, uint index) {
-    data(thread)->_mutator_alloc_region_start_index = index;
+  static void set_mutator_alloc_region_slot(Thread* thread, uint slot) {
+    data(thread)->_mutator_alloc_region_slot = slot;
   }
 
-  static uint collector_alloc_region_start_index(Thread* thread) {
-    return data(thread)->_collector_alloc_region_start_index;
+  static uint collector_alloc_region_slot(Thread* thread) {
+    return data(thread)->_collector_alloc_region_slot;
   }
 
-  static void set_collector_alloc_region_start_index(Thread* thread, uint index) {
-    data(thread)->_collector_alloc_region_start_index = index;
+  static void set_collector_alloc_region_slot(Thread* thread, uint slot) {
+    data(thread)->_collector_alloc_region_slot = slot;
   }
 
   static void begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {

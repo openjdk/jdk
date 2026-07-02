@@ -40,8 +40,8 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _evacuation_stats(new ShenandoahEvacuationStats()),
   _invisible_root(nullptr),
   _invisible_root_word_size(0),
-  _mutator_alloc_region_start_index(UINT_MAX),
-  _collector_alloc_region_start_index(UINT_MAX) {
+  _mutator_alloc_region_slot(UINT_MAX),
+  _collector_alloc_region_slot(UINT_MAX) {
 }
 
 ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {

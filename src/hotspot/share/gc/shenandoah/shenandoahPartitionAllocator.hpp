@@ -61,7 +61,7 @@ private:
   // Return this thread's stripe slot, assigning a stable per-thread slot on first use so different
   // threads map to different alloc regions. `thread` is the already-resolved current thread, passed
   // in to avoid a repeated Thread::current() on the allocation fast path.
-  uint alloc_region_start_index(Thread* thread);
+  uint alloc_region_slot(Thread* thread);
 
   // Under-lock scan of the stripe slots in the half-open range [start_index, end_index), wrapping
   // around the slot array, used when the free set has no region of its own to hand out: a sibling
