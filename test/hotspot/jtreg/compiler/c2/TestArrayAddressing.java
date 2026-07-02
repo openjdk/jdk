@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8387146
- * @summary Verify that min/max add identity optimizations get applied correctly
+ * @summary Verify lower IR expectations for array addressing operations
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver ${test.main.class}
