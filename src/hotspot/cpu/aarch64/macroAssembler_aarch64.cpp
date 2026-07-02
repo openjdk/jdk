@@ -5108,11 +5108,11 @@ void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
   lsr(dst, dst, markWord::klass_shift);
 }
 
-void MacroAssembler::load_narrow_klass(Register dst, Register obj) {
+void MacroAssembler::load_narrow_klass(Register dst, Register src) {
   if (UseCompactObjectHeaders) {
-    load_narrow_klass_compact(dst, obj);
+    load_narrow_klass_compact(dst, src);
   } else {
-    ldrw(dst, Address(obj, oopDesc::klass_offset_in_bytes()));
+    ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
   }
 }
 

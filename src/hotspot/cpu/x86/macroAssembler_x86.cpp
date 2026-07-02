@@ -5434,11 +5434,11 @@ void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
   shrq(dst, markWord::klass_shift);
 }
 
-void MacroAssembler::load_narrow_klass(Register dst, Register obj) {
+void MacroAssembler::load_narrow_klass(Register dst, Register src) {
   if (UseCompactObjectHeaders) {
-    load_narrow_klass_compact(dst, obj);
+    load_narrow_klass_compact(dst, src);
   } else {
-    movl(dst, Address(obj, oopDesc::klass_offset_in_bytes()));
+    movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
   }
 }
 
