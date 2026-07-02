@@ -69,6 +69,18 @@
 #define STUB_ENTRY(name) ((FunctionDescriptor*)StubRoutines::name)->entry()
 #endif
 
+ATTRIBUTE_ALIGNED(16)
+static const uint8_t ADLER32_WEIGHTS[] = {
+  16,15,14,13,12,11,10,9,
+  8,7,6,5,4,3,2,1
+};
+
+ATTRIBUTE_ALIGNED(16)
+static const uint8_t ADLER32_ONES[] = {
+  1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1
+};
+
 class StubGenerator: public StubCodeGenerator {
  private:
 
@@ -3788,6 +3800,239 @@ class StubGenerator: public StubCodeGenerator {
     return stub_address;
   }
 
+  address generate_updateBytesAdler32() {
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
+    address start = __ function_entry();
+
+    const uint32_t BASE = 65521;
+    const uint32_t NMAX = 5552;
+
+    Label L_nmax;
+    Label L_nmax_loop;
+    Label L_by16;
+    Label L_by16_loop;
+    Label L_by1;
+    Label L_by1_loop;
+    Label L_do_mod;
+    Label L_combine;
+
+    Register adler = R3_ARG1;
+    Register buf   = R4_ARG2;
+    Register len   = R5_ARG3;
+
+    Register s1    = R6;
+    Register s2    = R7;
+    Register base  = R8;
+    Register nmax  = R9;
+    Register count = R10;
+    Register tmp0  = R11;
+    Register tmp1  = R12;
+
+    VectorRegister vdata    = VR0;
+    VectorRegister vones    = VR1;
+    VectorRegister vweights = VR2;
+    VectorRegister vacc1    = VR3;
+    VectorRegister vacc2    = VR4;
+
+    __ load_const32(base, BASE);
+    __ load_const32(nmax, NMAX);
+
+    // load tables
+    __ load_const(tmp0, (address)ADLER32_ONES);
+    __ lvx(vones, tmp0);
+
+    __ load_const(tmp0, (address)ADLER32_WEIGHTS);
+    __ lvx(vweights, tmp0);
+
+    // split Adler
+    __ clrldi(s1, adler, 48);      // low 16 bits
+
+    __ srdi(s2, adler, 16);
+    __ clrldi(s2, s2, 48);         // high 16 bits
+
+    // len < 16 ?
+    __ cmpwi(CR0, len, 16);
+    __ blt(CR0, L_by1);
+
+    // len >= NMAX ?
+    __ bind(L_nmax);
+
+    __ cmpw(CR0, len, nmax);
+    __ blt(CR0, L_by16);
+
+    __ mr(count, nmax);
+    __ bind(L_nmax_loop);
+
+    generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1,
+                         vdata, vones, vweights, vacc1, vacc2);
+
+    __ addi(count, count, -16);
+
+    __ cmpwi(CR0, count, 16);
+    __ bge(CR0, L_nmax_loop);
+
+    // s1 = s1 % BASE
+    //    = s1 - (s1 / base) * base
+    __ divwu(tmp0, s1, base);
+    __ mullw(tmp1, tmp0, base);
+    __ subf_(s1, tmp1, s1);
+
+    // s2 = s2 % BASE
+    //    = s2 - (s2 / base) * base
+    __ divwu(tmp0, s2, base);
+    __ mullw(tmp1, tmp0, base);
+    __ subf_(s2, tmp1, s2);
+
+    __ subf_(len, nmax, len);
+
+    __ cmpw(CR0, len, nmax);
+    __ bge(CR0, L_nmax);
+
+    // remaining 16 byte chunks
+    __ bind(L_by16);
+
+    __ cmpwi(CR0, len, 16);
+    __ blt(CR0, L_by1);
+
+    
+    __ bind(L_by16_loop);
+
+    generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1,
+                         vdata, vones, vweights, vacc1, vacc2);
+
+    __ addi(len, len, -16);
+
+    __ cmpwi(CR0, len, 16);
+    __ bge(CR0, L_by16_loop);
+
+    // handles remaining bytes when len < 16
+    __ bind(L_by1);
+
+    __ cmpwi(CR0, len, 0);
+    __ beq(CR0, L_do_mod);
+    __ bind(L_by1_loop);
+
+    __ lbz(tmp0, 0, buf);
+    __ addi(buf, buf, 1);
+    __ add(s1, s1, tmp0);
+    __ add(s2, s2, s1);
+    __ addi(len, len, -1);
+
+    __ cmpwi(CR0, len, 0);
+    __ bne(CR0, L_by1_loop);
+
+    // final reduction
+    __ bind(L_do_mod);
+
+    // s1 = s1 % base
+    __ divwu(tmp0, s1, base);
+    __ mullw(tmp1, tmp0, base);
+    __ subf_(s1, tmp1, s1);
+
+    // s2 = s2 % base
+    __ divwu(tmp0, s2, base);
+    __ mullw(tmp1, tmp0, base);
+    __ subf_(s2, tmp1, s2);
+
+    // combine
+    __ bind(L_combine);
+
+    __ slwi(tmp0, s2, 16);
+    __ orr(adler, s1, tmp0);
+    __ blr();
+    return start;
+  }
+  
+  void generate_updateBytesAdler32_accum(Register s1, Register s2, Register buf,
+                             Register tmp0, Register tmp1, VectorRegister vdata,
+                             VectorRegister vones, VectorRegister vweights,
+                             VectorRegister vacc1, VectorRegister vacc2) {
+
+    // save s1
+    __ mr(tmp1, s1);
+    
+    // load 16 input bytes
+    __ lxvx(vdata.to_vsr(),  buf);
+
+    // compute the weighted sum
+
+    // accumulator cleared to zero
+    __ vxor(vacc2, vacc2, vacc2);
+
+    // (i/p bytes) vdata =  {b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15}
+    // (weights) vweights = {16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}
+    // (accum) vacc2 =      {0, (x16 times) }
+    // L0 : b0*16 + b1*15 + b2*14 + b3*13 + 0
+    // L1 : b4*12 + b5*11 + b6*10 + b7*9 + 0
+    // L2 : b8*8 + b9*7 + b10*6 + b11*5 + 0
+    // L3 : b12*4 + b13*3 + b14*2 + b15*1 + 0
+    // vacc2 = {L0, L1, L2, L3}
+    __ vmsumubm(vacc2, vdata, vweights, vacc2);
+    
+    // reduce 4 lanes into 1 scalar
+    // 1. vacc1 = rotate vacc2 by 8 bytes
+    //    vacc1 = {L2, L3, L0, L1}
+    // 2. add lanes together; vacc2 = vacc2 + vacc1
+    //    vacc2 = {L0+L2, L1+L3, L2+L0, L3+L1}
+    __ vsldoi(vacc1, vacc2, vacc2, 8);
+    __ vadduwm(vacc2, vacc2, vacc1);
+
+    // rotate by 4 bytes and
+    // add all 4 lanes equal total
+    __ vsldoi(vacc1, vacc2, vacc2, 4);
+    __ vadduwm(vacc2, vacc2, vacc1);
+
+    // extract scalar from lane 0
+    // tmp0 = weighted_sum
+    __ mfvsrwz(tmp0, vacc2.to_vsr());
+    
+    // s2 += s1*16 + weighted_sum
+    __ slwi(tmp1, tmp1, 4);
+    __ add(tmp0, tmp0, tmp1);
+    __ add(s2, s2, tmp0);
+    
+    // compute the byte sum
+
+    // accumulator cleared to zero
+    __ vxor(vacc1, vacc1, vacc1);
+
+    // (i/p bytes) vdata = {b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15}
+    // (ones) vones      = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+    // (accum) vacc1     = {0, <*16 times>}
+    // L0 = b0 + b1 + b2 + b3 + 0
+    // L1 = b4 + b5 + b6 + b7 + 0
+    // L2 = b8 + b9 + b10 + b11 + 0
+    // L3 = b12 + b13 + b14 + b15 + 0
+    // vacc1 = {L0, L1, L2, L3}
+    __ vmsumubm(vacc1, vdata, vones, vacc1);
+    
+    // reduce 4 lanes into 1 scalar
+    // 1. vacc1 = rotate vacc2 by 8 bytes
+    //    vacc1 = {L2, L3, L0, L1}
+    // 2. add lanes together; vacc2 = vacc2 + vacc1
+    //    vacc2 = {L0+L2, L1+L3, L2+L0, L3+L1}
+    __ vsldoi(vacc2, vacc1, vacc1, 8);
+    __ vadduwm(vacc1, vacc1, vacc2);
+
+    // rotate by 4 bytes and
+    // add all 4 lanes equal total
+    __ vsldoi(vacc2, vacc1, vacc1, 4);
+    __ vadduwm(vacc1, vacc1, vacc2);
+    
+    // extract scalar from lane 0
+    // tmp0 = byte_sum
+    __ mfvsrwz(tmp0, vacc1.to_vsr());
+    
+    // s1 = s1 + byte_sum
+    __ add(s1, s1, tmp0);
+    
+    // advance the buffer pointer
+    __ addi(buf, buf, 16);
+
+  }
+
 #ifdef VM_LITTLE_ENDIAN
 // The following Base64 decode intrinsic is based on an algorithm outlined
 // in here:
@@ -5082,6 +5327,9 @@ void generate_lookup_secondary_supers_table_stub() {
     if (UseSHA512Intrinsics) {
       StubRoutines::_sha512_implCompress   = generate_sha512_implCompress(StubId::stubgen_sha512_implCompress_id);
       StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(StubId::stubgen_sha512_implCompressMB_id);
+    }
+    if (UseAdler32Intrinsics) {
+      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
 
 #ifdef VM_LITTLE_ENDIAN
