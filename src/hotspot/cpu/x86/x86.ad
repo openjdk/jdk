@@ -4105,10 +4105,10 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
         // Are there other uses besides address expressions?
         !is_visited(adr)) {
       address_visited.set(adr->_idx); // Flag as address_visited
-      Node *shift = adr->in(AddPNode::Offset);
-      if (!clone_shift(shift, this, mstack, address_visited) &&
-          !clone_conv(shift, this, mstack, address_visited)) {
-        mstack.push(shift, Pre_Visit);
+      Node *shift_or_conv = adr->in(AddPNode::Offset);
+      if (!clone_shift(shift_or_conv, this, mstack, address_visited) &&
+          !clone_conv(shift_or_conv, this, mstack, address_visited)) {
+        mstack.push(shift_or_conv, Pre_Visit);
       }
       mstack.push(adr->in(AddPNode::Address), Pre_Visit);
       mstack.push(adr->in(AddPNode::Base), Pre_Visit);
