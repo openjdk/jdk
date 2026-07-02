@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,9 +219,11 @@ public class thrstartreq001 {
                                 log.display("EventListener: following JDI event occured: "
                                     + event.toString());
                         }
-                        if (isConnected) {
-                            eventSet.resume();
-                        }
+                        eventSet.resume();
+                        // Even if isConnected has been set false, we need to continue consuming
+                        // events until there are no more. So do a continue here rather than
+                        // allowing continuing to be conditional on isConnected below.
+                        continue;
                     }
                 } while (isConnected);
             } catch (InterruptedException e) {
