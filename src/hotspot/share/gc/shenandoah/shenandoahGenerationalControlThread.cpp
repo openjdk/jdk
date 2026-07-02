@@ -483,7 +483,9 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
   if (gc.collect(cause)) {
     // Cycle is complete
     _heap->notify_gc_progress();
-    generation->heuristics()->record_concurrent_completion();
+    // In the generational mode, we don't use global heuristics to trigger global cycles, so
+    // direct heuristic signals to the young heuristics
+    _heap->young_generation()->heuristics()->record_concurrent_completion();
     _heap->shenandoah_policy()->record_success_concurrent(generation->is_young(), gc.abbreviated());
   } else {
     assert(_heap->cancelled_gc(), "Must have been cancelled");

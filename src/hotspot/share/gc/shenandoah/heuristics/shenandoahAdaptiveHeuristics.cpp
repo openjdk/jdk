@@ -75,14 +75,14 @@ void ShenandoahAdaptiveHeuristics::post_initialize() {
 }
 
 void ShenandoahAdaptiveHeuristics::compute_headroom_adjustment() {
-  // The trigger threshold represents mutator available - "head room".
+  // The trigger threshold represents mutator available - "headroom".
   // We plan for GC to finish before the amount of allocated memory exceeds trigger threshold.  This is the same  as saying we
   // intend to finish GC before the amount of available memory is less than the allocation headroom.  Headroom is the planned
   // safety buffer to allow a small amount of additional allocation to take place in case we were overly optimistic in delaying
   // our trigger.
   const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   const size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
-  const size_t penalties      = capacity / 100 * _gc_time_penalties.load_relaxed();
+  const size_t penalties      = capacity / 100 * _gc_time_penalties;
   _headroom_adjustment = spike_headroom + penalties;
 }
 

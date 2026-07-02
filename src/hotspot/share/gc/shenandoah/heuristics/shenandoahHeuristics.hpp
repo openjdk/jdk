@@ -99,6 +99,7 @@ protected:
   // the trigger conditions will return early and will not increase _declined_trigger_count. This is written to
   // by both the regulator and control thread, read by control thread.
   Atomic<size_t> _declined_trigger_count;
+  Atomic<bool> _allocation_stalls;
 
   class RegionData {
     private:
@@ -183,7 +184,7 @@ protected:
   double _last_cycle_end;
 
   size_t _gc_times_learned;
-  Atomic<intx> _gc_time_penalties;
+  intx _gc_time_penalties;
 
   // There may be many threads that contend to set this flag
   ShenandoahSharedFlag _metaspace_oom;
@@ -275,7 +276,7 @@ public:
   double elapsed_cycle_time() const;
 
   // Format prefix and emit log message indicating a GC cycle hs been triggered
-  void log_trigger(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);
+  void log_trigger(const char* fmt, ...) const ATTRIBUTE_PRINTF(2, 3);
 
   DEBUG_ONLY(static void assert_humongous_mark_consistency(ShenandoahHeapRegion* region));
 };
