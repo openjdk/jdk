@@ -80,7 +80,6 @@ void ShenandoahControlThread::run_service() {
       heuristics->log_trigger("Handle Allocation Failure");
       cause = GCCause::_allocation_failure;
       heap->set_unload_classes(heuristics->can_unload_classes());
-      heuristics->record_allocation_failure_gc();
       mode = default_mode;
     } else if (is_gc_requested ) {
       cause = requested_gc_cause;
@@ -271,7 +270,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   ShenandoahConcurrentGC gc(heap->global_generation(), false);
   if (gc.collect(cause)) {
     heap->notify_gc_progress();
-    heap->global_generation()->heuristics()->record_concurrent_completion(alloc_stalls_during_cycle());
+    heap->global_generation()->heuristics()->record_concurrent_completion();
     heap->shenandoah_policy()->record_success_concurrent(false, gc.abbreviated());
     heap->log_heap_status("At end of GC");
   } else {
@@ -311,6 +310,9 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
   if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
     handle_alloc_failure_full();
   } else if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
+    if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
+      ShenandoahHeap::heap()->global_generation()->heuristics()->record_allocation_stall();
+    }
     handle_requested_gc(cause);
   }
 }
@@ -354,7 +356,6 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
     if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      _alloc_stalls.store_relaxed(true);
       _alloc_waiters_count.add_then_fetch(1UL);
     }
 

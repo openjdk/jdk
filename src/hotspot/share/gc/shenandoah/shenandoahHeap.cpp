@@ -1820,6 +1820,11 @@ void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* 
     generation->heuristics()->record_degenerated_cycle_start(is_out_of_cycle);
   } else {
     generation->heuristics()->record_cycle_start();
+    if (mode()->is_generational() && generation->is_global()) {
+      // We are starting a global cycle, for heuristic's purposes, inform young and old too
+      young_generation()->heuristics()->record_cycle_start();
+      old_generation()->heuristics()->record_cycle_start();
+    }
   }
 }
 

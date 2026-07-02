@@ -51,10 +51,6 @@ protected:
   // The number of threads blocked in allocation
   Atomic<size_t> _alloc_waiters_count;
 
-  // Always set under waiters lock, read without a lock
-  Atomic<bool> _alloc_stalls;
-
-
   // Increments the internal GC count.
   void update_gc_id();
 
@@ -64,8 +60,7 @@ public:
   ShenandoahController():
     _gc_id(0),
     _gc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahGCWaiters_lock", true),
-    _alloc_waiters_count(0),
-    _alloc_stalls(false)
+    _alloc_waiters_count(0)
   { }
 
   // Request a collection cycle. This handles "explicit" gc requests
@@ -79,10 +74,6 @@ public:
   // Return number of threads blocked on allocation
   size_t alloc_waiters_count() const {
     return _alloc_waiters_count.load_relaxed();
-  }
-
-  bool alloc_stalls_during_cycle() {
-    return _alloc_stalls.exchange(false, memory_order_relaxed);
   }
 
   // Return the value of a monotonic increasing GC count, maintained by the control thread.

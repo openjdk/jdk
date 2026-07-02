@@ -51,6 +51,5 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
 
 void ShenandoahController::notify_gc_waiters() {
   MonitorLocker ml(&_gc_waiters_lock);
-  _alloc_stalls = false;
   ml.notify_all();
 }

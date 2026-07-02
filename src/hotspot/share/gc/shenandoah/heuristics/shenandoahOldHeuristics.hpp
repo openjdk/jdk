@@ -244,7 +244,7 @@ public:
   // Returns true if the old generation needs to prepare for marking, or continue marking.
   bool should_resume_old_cycle();
 
-  void record_concurrent_completion(bool alloc_failures_during_cycle) override;
+  void record_concurrent_completion() override;
 
   void record_full_gc(GCCause::Cause cause) override;
 

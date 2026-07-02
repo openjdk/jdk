@@ -81,7 +81,6 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
   };
 #endif
 
-private:
   double _most_recent_trigger_evaluation_time;
   double _most_recent_planned_sleep_interval;
 
@@ -92,7 +91,7 @@ protected:
   static constexpr uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
 
   // True denotes that GC has been triggered, so no need to trigger again.
-  bool _start_gc_is_pending;
+  Atomic<bool> _start_gc_is_pending;
 
   // This counts how many times since previous GC finished that this heuristic has answered false to should_start_gc().
   // If allocations stall during a concurrent gc and this is above Penalty_Free_Declinations at the end of the cycle,
@@ -115,7 +114,7 @@ protected:
 
     public:
 
-    inline void clear() {
+    void clear() {
       _region = nullptr;
       _region_union._garbage = 0;
 #ifdef ASSERT
@@ -123,7 +122,7 @@ protected:
 #endif
     }
 
-    inline void set_region_and_garbage(ShenandoahHeapRegion* region, size_t garbage) {
+    void set_region_and_garbage(ShenandoahHeapRegion* region, size_t garbage) {
       _region = region;
       _region_union._garbage = garbage;
 #ifdef ASSERT
@@ -131,7 +130,7 @@ protected:
 #endif
     }
 
-    inline void set_region_and_livedata(ShenandoahHeapRegion* region, size_t live) {
+    void set_region_and_livedata(ShenandoahHeapRegion* region, size_t live) {
       _region = region;
       _region_union._live_data = live;
 #ifdef ASSERT
@@ -139,24 +138,24 @@ protected:
 #endif
     }
 
-    inline void update_livedata(size_t live) {
+    void update_livedata(size_t live) {
       _region_union._live_data = live;
 #ifdef ASSERT
       _union_tag = is_live_data;
 #endif
     }
 
-    inline ShenandoahHeapRegion* get_region() const {
+    ShenandoahHeapRegion* get_region() const {
       assert(_union_tag != is_uninitialized, "Cannot fetch region from uninitialized RegionData");
       return _region;
     }
 
-    inline size_t get_garbage() const {
+    size_t get_garbage() const {
       assert(_union_tag == is_garbage, "Invalid union fetch");
       return _region_union._garbage;
     }
 
-    inline size_t get_livedata() const {
+    size_t get_livedata() const {
       assert(_union_tag == is_live_data, "Invalid union fetch");
       return _region_union._live_data;
     }
@@ -186,7 +185,7 @@ protected:
   double _last_cycle_end;
 
   size_t _gc_times_learned;
-  intx _gc_time_penalties;
+  Atomic<intx> _gc_time_penalties;
 
   // There may be many threads that contend to set this flag
   ShenandoahSharedFlag _metaspace_oom;
@@ -200,19 +199,15 @@ protected:
 
   virtual void adjust_penalty(intx step);
 
-  inline void accept_trigger() {
-    _start_gc_is_pending = true;
-  }
-
-  inline void decline_trigger() {
+  void decline_trigger() {
     _declined_trigger_count.add_then_fetch(1UL);
   }
 
-  inline double get_most_recent_wake_time() const {
+  double get_most_recent_wake_time() const {
     return _most_recent_trigger_evaluation_time;
   }
 
-  inline double get_planned_sleep_interval() const {
+  double get_planned_sleep_interval() const {
     return _most_recent_planned_sleep_interval;
   }
 
@@ -248,21 +243,25 @@ public:
     _most_recent_planned_sleep_interval = planned_sleep_interval;
   }
 
-  virtual bool should_start_gc();
-
-  inline void cancel_trigger_request() {
-    _start_gc_is_pending = false;
+  void accept_trigger() {
+    _start_gc_is_pending.store_relaxed(true);
   }
+
+  void cancel_trigger_request() {
+    _start_gc_is_pending.store_relaxed(false);
+  }
+
+  virtual bool should_start_gc();
 
   virtual bool should_degenerate_cycle();
 
-  virtual void record_concurrent_completion(bool alloc_failures_during_cycle);
+  virtual void record_concurrent_completion();
 
   virtual void record_full_gc(GCCause::Cause cause);
 
-  virtual void record_allocation_failure_gc();
-
   virtual void record_requested_gc();
+
+  virtual void record_allocation_stall();
 
   // Choose the collection set, returning the number of regions that need to be transferred to the old reserve from the young
   // reserve in order to effectively evacuate the chosen collection set.  In non-generational mode, the return value is 0.

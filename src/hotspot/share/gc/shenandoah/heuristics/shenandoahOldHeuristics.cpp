@@ -850,10 +850,10 @@ void ShenandoahOldHeuristics::adjust_old_garbage_threshold() {
   }
 }
 
-void ShenandoahOldHeuristics::record_concurrent_completion(bool alloc_failures_during_cycle) {
+void ShenandoahOldHeuristics::record_concurrent_completion() {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-  this->ShenandoahHeuristics::record_concurrent_completion(alloc_failures_during_cycle);
+  this->ShenandoahHeuristics::record_concurrent_completion();
 }
 
 void ShenandoahOldHeuristics::record_full_gc(GCCause::Cause cause) {

@@ -114,7 +114,7 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
 
   if (ShenandoahCollectorPolicy::is_allocation_failure(request.cause)) {
     if (_heap->old_generation()->is_concurrent_mark_in_progress()) {
-      // We know we can't allocate in young and we know we need to collect old.
+      // We know we can't allocate in young, and we know we need to collect old.
       // We don't really know how much longer it will take to clear out old (probably
       // a long time if it keeps getting interrupted by allocation failures). At
       // this point, let's run a global cycle.
@@ -123,9 +123,8 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
       request.generation = _heap->young_generation();
     }
 
-    // these things used to happen in preparation for a degenerated cycle.
+    // This used to happen in preparation for a degenerated cycle.
     _heap->old_generation()->clear_failed_evacuation();
-    _heap->young_generation()->heuristics()->record_allocation_failure_gc();
   }
 
   log_debug(gc, thread)("request.cause: %s, request.generation: %s",
@@ -424,7 +423,7 @@ void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
   ShenandoahOldGC gc(generation, _allow_old_preemption);
   if (gc.collect(cause)) {
     _heap->notify_gc_progress();
-    generation->heuristics()->record_concurrent_completion(alloc_stalls_during_cycle());
+    generation->heuristics()->record_concurrent_completion();
     _heap->shenandoah_policy()->record_success_old();
   }
 
@@ -484,7 +483,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
   if (gc.collect(cause)) {
     // Cycle is complete
     _heap->notify_gc_progress();
-    generation->heuristics()->record_concurrent_completion(alloc_stalls_during_cycle());
+    generation->heuristics()->record_concurrent_completion();
     _heap->shenandoah_policy()->record_success_concurrent(generation->is_young(), gc.abbreviated());
   } else {
     assert(_heap->cancelled_gc(), "Must have been cancelled");
@@ -549,7 +548,9 @@ void ShenandoahGenerationalControlThread::request_gc(GCCause::Cause cause) {
   if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
     handle_alloc_failure_full();
   } else if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-    handle_requested_gc(cause, ShenandoahHeap::heap()->young_generation());
+    ShenandoahGeneration* young = ShenandoahHeap::heap()->young_generation();
+    young->heuristics()->record_allocation_stall();
+    handle_requested_gc(cause, young);
   } else if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
     handle_requested_gc(cause, ShenandoahHeap::heap()->global_generation());
   }
@@ -691,7 +692,6 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
   const size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
     if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      _alloc_stalls.store_relaxed(true);
       _alloc_waiters_count.add_then_fetch(1UL);
       log_debug(gc, thread)("Alloc waiters count now: %zu", alloc_waiters_count());
     }

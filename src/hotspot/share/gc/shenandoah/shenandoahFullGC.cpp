@@ -57,6 +57,7 @@
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -124,8 +125,14 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
     heap->notify_gc_no_progress();
   }
 
-  // Regardless if progress was made, we record that we completed a "successful" full GC.
-  _generation->heuristics()->record_full_gc(cause);
+  // Regardless if progress was made, we record that we completed a full GC.
+  if (heap->mode()->is_generational()) {
+    // In generational mode, the young heuristics are responsible for this failure
+    heap->young_generation()->heuristics()->record_full_gc(cause);
+  } else {
+    _generation->heuristics()->record_full_gc(cause);
+  }
+
   heap->shenandoah_policy()->record_success_full();
 
   {

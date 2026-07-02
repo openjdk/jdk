@@ -55,7 +55,7 @@ public:
   // before we need to start the next GC.
   void start_idle_span() override;
 
-  void record_concurrent_completion(bool alloc_failures_during_cycle) override;
+  void record_concurrent_completion() override;
 
   bool should_start_gc() override;
 

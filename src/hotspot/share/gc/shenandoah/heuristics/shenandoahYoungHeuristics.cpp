@@ -199,7 +199,7 @@ size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(s
   const size_t anticipated_available = available + young_regions_to_be_reclaimed * ShenandoahHeapRegion::region_size_bytes();
 
   const size_t spike_headroom = capacity * ShenandoahAllocSpikeFactor / 100;
-  const size_t penalties      = capacity * _gc_time_penalties / 100;
+  const size_t penalties      = capacity * _gc_time_penalties.load_relaxed() / 100;
 
   // At what value of available, would avg rate trigger occur?
   //  if allocation_headroom < avg_cycle_time * avg_alloc_rate, then we experience avg trigger

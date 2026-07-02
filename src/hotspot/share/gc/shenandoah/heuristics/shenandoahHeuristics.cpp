@@ -180,6 +180,7 @@ void ShenandoahHeuristics::record_degenerated_cycle_start(bool out_of_cycle) {
 
 void ShenandoahHeuristics::record_cycle_start() {
   _cycle_start = os::elapsedTime();
+  cancel_trigger_request();
   log_info(gc)("Declined trigger count at start: %zu", _declined_trigger_count.load_relaxed());
 }
 
@@ -196,7 +197,7 @@ void ShenandoahHeuristics::record_cycle_end() {
 }
 
 bool ShenandoahHeuristics::should_start_gc() {
-  if (_start_gc_is_pending) {
+  if (_start_gc_is_pending.load_relaxed()) {
     log_trigger("GC start is already pending");
     return true;
   }
@@ -226,21 +227,15 @@ bool ShenandoahHeuristics::should_degenerate_cycle() {
 }
 
 void ShenandoahHeuristics::adjust_penalty(intx step) {
-  assert(Min_Penalty <= _gc_time_penalties && _gc_time_penalties <= Max_Penalty,
-         "In range before adjustment: %zd", _gc_time_penalties);
-
-  if (_declined_trigger_count.load_relaxed() <= Penalty_Free_Declinations && step > 0) {
-    // Don't penalize if heuristics are not responsible for a negative outcome.  Allow Penalty_Free_Declinations following
-    // previous GC for self calibration without penalty.
-    return;
+  while (true) {
+    const intx penalties = _gc_time_penalties.load_relaxed();
+    const intx new_value = clamp(penalties + step, Min_Penalty, Max_Penalty);
+    const intx old_value = _gc_time_penalties.compare_exchange(penalties, new_value);
+    if (old_value == penalties) {
+      log_info(gc, ergo)("Adjusted penalty: %zd", new_value);
+      break;
+    }
   }
-
-  log_info(gc, ergo)("Adjust penalty: %zd", step);
-  const intx new_val = _gc_time_penalties + step;
-  _gc_time_penalties = clamp(new_val, Min_Penalty, Max_Penalty);
-
-  assert(Min_Penalty <= _gc_time_penalties && _gc_time_penalties <= Max_Penalty,
-         "In range after adjustment: %zd", _gc_time_penalties);
 }
 
 void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
@@ -261,13 +256,24 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
   }
 }
 
-void ShenandoahHeuristics::record_concurrent_completion(bool alloc_failures_during_cycle) {
+void ShenandoahHeuristics::record_concurrent_completion() {
   _gc_times_learned++;
+  adjust_penalty(Concurrent_Adjust);
+}
 
-  if (alloc_failures_during_cycle) {
-    adjust_penalty(Degenerated_Penalty);
-  } else {
-    adjust_penalty(Concurrent_Adjust);
+void ShenandoahHeuristics::record_allocation_stall() {
+  size_t declinations = _declined_trigger_count.load_relaxed();
+  while (declinations > Penalty_Free_Declinations) {
+    // This heuristic has declined too many opportunities to start a gc cycle to avoid being penalized
+    const size_t old_value = _declined_trigger_count.compare_exchange(declinations, 0);
+    if (old_value == declinations) {
+      // If we let the regulator keep increasing the decline count, subsequent stalls could apply the penalty again. The
+      // control thread will be notified to start a cycle, so setting this flag is a precautionary measure.
+      accept_trigger();
+      adjust_penalty(Degenerated_Penalty);
+      break;
+    }
+    declinations = _declined_trigger_count.load_relaxed();
   }
 }
 
@@ -275,10 +281,6 @@ void ShenandoahHeuristics::record_full_gc(GCCause::Cause cause) {
   if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
     adjust_penalty(Full_Penalty);
   }
-}
-
-void ShenandoahHeuristics::record_allocation_failure_gc() {
-  // Do nothing.
 }
 
 void ShenandoahHeuristics::record_requested_gc() {

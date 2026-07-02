@@ -82,7 +82,7 @@ void ShenandoahAdaptiveHeuristics::compute_headroom_adjustment() {
   // our trigger.
   const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   const size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
-  const size_t penalties      = capacity / 100 * _gc_time_penalties;
+  const size_t penalties      = capacity / 100 * _gc_time_penalties.load_relaxed();
   _headroom_adjustment = spike_headroom + penalties;
 }
 
@@ -157,8 +157,8 @@ void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start,
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_concurrent_completion(bool alloc_failures_during_cycle) {
-  ShenandoahHeuristics::record_concurrent_completion(alloc_failures_during_cycle);
+void ShenandoahAdaptiveHeuristics::record_concurrent_completion() {
+  ShenandoahHeuristics::record_concurrent_completion();
 
   // We add this time even if it is a shortened cycle. There is a risk that this pulls
   // the gc time trend down, but it is still a more accurate view than excluding times
@@ -218,7 +218,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT,
                       PROPERFMTARGS(available), PROPERFMTARGS(capacity));
 
-  if (_start_gc_is_pending) {
+  if (_start_gc_is_pending.load_relaxed()) {
     log_trigger("GC start is already pending");
     return true;
   }
