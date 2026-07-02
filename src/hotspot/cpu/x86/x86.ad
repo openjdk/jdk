@@ -3932,10 +3932,6 @@ uint Matcher::vector_ideal_reg(int size) {
 }
 
 static bool clone_conv(Node* conv, Matcher* matcher, Matcher::MStack& mstack, VectorSet& address_visited) {
-  if (!UseNewCode) {
-    return false;
-  }
-
   if (conv->Opcode() == Op_ConvI2L &&
       conv->as_Type()->type()->is_long()->_lo >= 0 &&
       // Are there other uses besides address expressions?
