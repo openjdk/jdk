@@ -3439,6 +3439,12 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       information.  Objects which have not been tagged have a
       tag of zero.
       Setting a tag to zero makes the object untagged.
+      <p/>
+      If the <eventlink id="ObjectFree"/> event is enabled then an Object Free
+      event is sent for tagged objects when the garbage collector frees the object.
+      When preview features are enabled, the Object Free event is only sent for tagged
+      <externallink id="jni/functions.html#hasidentity">identity objects</externallink>.
+      <b>The event is not sent for tagged values objects.</b>
     </intro>
 
     <intro id="heapCallbacks" label="Heap Callback Functions">
@@ -14190,11 +14196,14 @@ myInit() {
       Events are only sent for tagged objects--see
       <internallink id="Heap">heap functions</internallink>.
       <p/>
+      When preview features are enabled, the Object Free event is only sent for tagged
+      <externallink id="jni/functions.html#hasidentity">identity objects</externallink>.
+      <b>The event is not sent for tagged values objects.</b>
+      <p/>
       The event handler must not use JNI functions and
       must not use <jvmti/> functions except those which
       specifically allow such use (see the raw monitor, memory management,
       and environment local storage functions).
-      When preview features are enabled, this event does not support value object allocations.
     </description>
     <origin>new</origin>
     <capabilities>
