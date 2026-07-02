@@ -550,6 +550,4 @@
     align_wiggle             =  1
   };
 
-  static jint interpreter_frame_expression_stack_direction() { return -1; }
-
 #endif // CPU_S390_FRAME_S390_HPP
