@@ -27,30 +27,38 @@
 
 TEST_VM(objArrayOop, osize) {
   static const struct {
-    int objal; bool coops; bool coh; int result;
+    int objal; bool coops; bool coh; bool aae; int result;
   } x[] = {
-//    ObjAligInB, UseCoops, UseCOH, object size in heap words
+//    ObjAligInB, UseCoops, UseCOH, AlignArrayElements, object size in heap words
 #ifdef _LP64
-    { 8,          false, false,   3 },  // 16 byte header, 8 byte oops
-    { 8,          true,  false,   3 },  // 16 byte header, 4 byte oops
-    { 8,          false, true,    3 },  // 12 byte header, 8 byte oops
-    { 8,          true,  true,    2 },  // 12 byte header, 4 byte oops
-    { 16,         false, false,   4 },  // 16 byte header, 8 byte oops, 16-byte align
-    { 16,         true,  false,   4 },  // 16 byte header, 4 byte oops, 16-byte align
-    { 16,         false, true,    4 },  // 12 byte header, 8 byte oops, 16-byte align
-    { 16,         true,  true,    2 },  // 12 byte header, 4 byte oops, 16-byte align
-    { 256,        false, false,  32 }, // 16 byte header, 8 byte oops, 256-byte align
-    { 256,        true,  false,  32 }, // 16 byte header, 4 byte oops, 256-byte align
-    { 256,        false, true,   32 }, // 12 byte header, 8 byte oops, 256-byte align
-    { 256,        true,  true,   32 }, // 12 byte header, 4 byte oops, 256-byte align
+    { 8,          false, false, true,  3 },  // 16 byte header, 8 byte oops
+    { 8,          true,  false, true,  3 },  // 16 byte header, 4 byte oops
+    { 8,          false, true,  false, 3 },  // 12 byte header, 8 byte oops
+    { 8,          false, true,  true,  3 },  // 16 byte header, 8 byte oops
+    { 8,          true,  true,  false, 2 },  // 12 byte header, 4 byte oops
+    { 8,          true,  true,  true,  3 },  // 16 byte header, 4 byte oops
+
+    { 16,         false, false, true,  4 },  // 16 byte header, 8 byte oops, 16-byte align
+    { 16,         true,  false, true,  4 },  // 16 byte header, 4 byte oops, 16-byte align
+    { 16,         false, true,  false, 4 },  // 12 byte header, 8 byte oops, 16-byte align
+    { 16,         false, true,  true,  4 },  // 16 byte header, 8 byte oops, 16-byte align
+    { 16,         true,  true,  false, 2 },  // 12 byte header, 4 byte oops, 16-byte align
+    { 16,         true,  true,  true,  3 },  // 16 byte header, 4 byte oops, 16-byte align
+
+    { 256,        false, false,  true, 32 }, // 16 byte header, 8 byte oops, 256-byte align
+    { 256,        true,  false,  true, 32 }, // 16 byte header, 4 byte oops, 256-byte align
+    { 256,        false, true,   false, 32 }, // 12 byte header, 8 byte oops, 256-byte align
+    { 256,        false, true,   true,  32 }, // 16 byte header, 8 byte oops, 256-byte align
+    { 256,        true,  true,   false, 32 }, // 12 byte header, 4 byte oops, 256-byte align
+    { 256,        true,  true,   true,  32 }, // 16 byte header, 4 byte oops, 256-byte align
 #else
-    { 8,          false, false,   4 }, // 12 byte header, 4 byte oops, wordsize 4
+    { 8,          false, false,  true, 4 }, // 12 byte header, 4 byte oops, wordsize 4
 #endif
-    { -1,         false, false,  -1 }
+    { -1,         false, false,  true, -1 }
   };
   for (int i = 0; x[i].result != -1; i++) {
     if (x[i].objal == (int)ObjectAlignmentInBytes && x[i].coops == UseCompressedOops &&
-        x[i].coh == UseCompactObjectHeaders) {
+        x[i].coh == UseCompactObjectHeaders && x[i].aae == AlignArrayElements) {
       EXPECT_EQ(objArrayOopDesc::object_size(1), (size_t)x[i].result);
     }
   }

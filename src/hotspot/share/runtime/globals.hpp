@@ -1991,6 +1991,11 @@ const int ObjectAlignmentInBytes = 8;
           "Minimal number of elements in a sorted collection to prefer"     \
           "binary search over simple linear search." )                      \
                                                                             \
+  product(bool, AlignArrayElements, true,                                   \
+          "Align the first element of arrays to long boundary"              \
+          " which can use more footprint but improves performance for "     \
+          " vectorization and intrinsics.")                                 \
+                                                                            \
 
 // end of RUNTIME_FLAGS
 

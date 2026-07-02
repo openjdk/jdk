@@ -54,7 +54,7 @@ private:
   }
 
   // Given a type, return true if elements of that type must be aligned to 64-bit.
-  static bool element_type_should_be_aligned(BasicType type) {
+  static bool first_element_should_be_aligned_to_long(BasicType type) {
 #ifdef _LP64
     if (type == T_OBJECT || type == T_ARRAY) {
       return !UseCompressedOops;
@@ -69,6 +69,9 @@ private:
   // This is not equivalent to sizeof(arrayOopDesc) which should not appear in the code.
   static int header_size_in_bytes() {
     int hs = length_offset_in_bytes() + (int)sizeof(int);
+    if (AlignArrayElements) {
+      hs = align_up(hs, BytesPerWord);
+    }
 #ifdef ASSERT
     // make sure it isn't called before UseCompressedOops is initialized.
     static int arrayoopdesc_hs = 0;
@@ -88,7 +91,7 @@ private:
   // Returns the offset of the first element.
   static int base_offset_in_bytes(BasicType type) {
     int hs = header_size_in_bytes();
-    return element_type_should_be_aligned(type) ? align_up(hs, BytesPerLong) : hs;
+    return first_element_should_be_aligned_to_long(type) ? align_up(hs, BytesPerLong) : hs;
   }
 
   // Returns the address of the first element. The elements in the array will not
