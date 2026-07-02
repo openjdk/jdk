@@ -867,12 +867,12 @@ public:
   }
 
   static int num_arguments() { return 1; }
-  static const char* name()        { return "VM.show_settings"; }
+  static const char* name() { return "VM.show_settings"; }
   static const char* description() {
     return "Print information similar to -XshowSettings, e.g. "
            "'VM.show_settings locale' or 'VM.show_settings security:tls'.";
   }
-  static const char* impact()      { return "Low"; }
+  static const char* impact() { return "Low"; }
 
   virtual void execute(DCmdSource source, TRAPS);
 };

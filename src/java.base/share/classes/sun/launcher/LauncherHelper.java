@@ -161,7 +161,7 @@ public final class LauncherHelper {
      *    line entirely.
      */
     static void showSettingsTo(String optionFlag,
-            long initialHeapSize, long maxHeapSize, long stackSize) {
+                               long initialHeapSize, long maxHeapSize, long stackSize) {
 
         Option component = validateOption(optionFlag);
         switch (component) {

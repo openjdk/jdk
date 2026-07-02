@@ -498,10 +498,12 @@ void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
   // resolve sun.launcher.LauncherHelper
   Symbol* klass_sym = vmSymbols::sun_launcher_LauncherHelper();
   Klass* k = SystemDictionary::resolve_or_fail(klass_sym, true, CHECK);
-  InstanceKlass* ik = InstanceKlass::cast(k);
-  if (ik->should_be_initialized()) {
-    ik->initialize(THREAD);
-  }
+
+  // call LauncherHelper.showSettingsBytes(String, long, long, long)
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+
+  Handle option_str = java_lang_String::create_from_str(flag_buf, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, output());
     output()->cr();
@@ -509,18 +511,13 @@ void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
     return;
   }
 
-  // call LauncherHelper.showSettingsBytes(String, long, long, long)
-  JavaValue result(T_OBJECT);
-  JavaCallArguments args;
-
-  Handle option_str = java_lang_String::create_from_str(flag_buf, CHECK);
   args.push_oop(option_str);
   args.push_long((jlong)InitialHeapSize);
   args.push_long((jlong)MaxHeapSize);
   args.push_long((jlong)ThreadStackSize * K);
 
   JavaCalls::call_static(&result,
-                         ik,
+                         k,
                          vmSymbols::showSettingsBytes_name(),
                          vmSymbols::showSettingsBytes_signature(),
                          &args,
@@ -537,9 +534,6 @@ void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
   if (res == nullptr) {
     return;
   }
-
-  assert(res->is_typeArray(), "LauncherHelper.showSettingsBytes must return byte[]");
-  assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "must be byte[]");
 
   typeArrayOop ba = typeArrayOop(res);
   jbyte* addr = ba->byte_at_addr(0);
