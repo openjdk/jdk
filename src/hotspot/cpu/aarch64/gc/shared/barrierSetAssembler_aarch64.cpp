@@ -389,7 +389,7 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ cbnz(tmp1, error);
 
   // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(obj, obj); // get klass
+  __ load_narrow_klass(obj, obj); // get klass
   __ cbz(obj, error);      // if klass is null it is broken
 }
 

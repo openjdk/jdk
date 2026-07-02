@@ -2578,7 +2578,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
-      __ load_klass(rscratch1, dst);
+      __ load_narrow_klass(rscratch1, dst);
       __ cbz(rscratch1, L1);     // this would be broken also
       BLOCK_COMMENT("} assert klasses not null done");
     }
