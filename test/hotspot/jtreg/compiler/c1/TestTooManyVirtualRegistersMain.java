@@ -29,7 +29,7 @@
  *          The test should bail out in C1.
  *
  * @compile TestTooManyVirtualRegisters.jasm
- * @run main/othervm -Xbatch -XX:CompileCommand=dontinline,${test.main.class}::*
+ * @run main/othervm -Xbatch -XX:CompileCommand=dontinline,compiler.c1.TestTooManyVirtualRegisters::*
  *                   ${test.main.class}
  */
 
