@@ -1587,8 +1587,12 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
   Register left  = op->left()->as_register();
   Register right = op->right()->as_register();
 
-  __ cmp(left, right);
-  __ br(Assembler::EQ, L_oops_equal);
+  if (left == right) {
+    __ b(L_oops_equal);
+  } else {
+    __ cmp(left, right);
+    __ br(Assembler::EQ, L_oops_equal);
+  }
 
   // (1) Null check -- if one of the operands is null, the other must not be null (because
   //     the two references are not equal), so they are not substitutable,
