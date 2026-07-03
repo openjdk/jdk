@@ -103,8 +103,6 @@
 
  public:
   enum {
-    pc_return_offset                                 =  0,
-
     // All frames
     link_offset                                      = -2,
     return_addr_offset                               = -1,

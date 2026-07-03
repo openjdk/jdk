@@ -542,14 +542,6 @@
                          unsigned long flags, int max_frames = 0);
 
   enum {
-    // This enum value specifies the offset from the pc remembered by
-    // call instructions to the location where control returns to
-    // after a normal return. Most architectures remember the return
-    // location directly, i.e. the offset is zero. This is the case
-    // for z/Architecture, too.
-    //
-    // Normal return address is the instruction following the branch.
-    pc_return_offset         = 0,
     metadata_words           = 0,
     metadata_words_at_bottom = 0,
     metadata_words_at_top    = 0,

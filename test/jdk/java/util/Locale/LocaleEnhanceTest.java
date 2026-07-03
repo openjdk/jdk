@@ -44,6 +44,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EmptySource;
 import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -57,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @test
  * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603
  *      7044019 8008577 8176853 8255086 8263202 8287868 8174269 8369452
- *      8369590 8387185
+ *      8369590 8387185 8387253
  * @summary test API changes to Locale
  * @modules jdk.localedata
  * @run junit/othervm -esa LocaleEnhanceTest
@@ -1394,6 +1395,19 @@ public class LocaleEnhanceTest {
                 .build();
         assertEquals(value, locale.getExtension(singleton));
         assertEquals(tag, locale.toLanguageTag());
+    }
+
+    // Ensure that extlang is only accepted after a 2*3ALPHA language subtag
+    // That is, the 4 ALPHA and 5*8 ALPHA language subtags should not accept extlangs
+    @ParameterizedTest
+    @ValueSource(strings = {"quux", "foobar"})
+    public void testExtlangAfterReservedLanguage(String lang) {
+        String tag = lang + "-baz";
+        // Locale.forLanguageTag is lenient and truncates the extlang
+        assertEquals(lang, Locale.forLanguageTag(tag).toLanguageTag());
+        // Locale.Builder is strict and should throw
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLanguageTag(tag));
     }
 
     private void checkCalendar(Locale loc, String expected) {

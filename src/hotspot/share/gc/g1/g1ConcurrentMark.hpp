@@ -569,6 +569,11 @@ public:
 
   uint worker_id_offset() const { return _worker_id_offset; }
 
+  // Fully allocates and initializes data structures for the concurrent cycle.
+  // Methods that use concurrent cycle state such as the concurrent mark threads,
+  // tasks, marking stack, statistics, TAMS or TARS require this initialization.
+  // Callers that run before the first concurrent start pause, which calls this,
+  // should guard calls with is_fully_initialized().
   void fully_initialize();
   bool is_fully_initialized() const { return _cm_thread != nullptr; }
 
