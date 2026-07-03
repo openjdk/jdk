@@ -2690,8 +2690,7 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
          layout_type->get_con() < static_cast<int>(LayoutKind::UNKNOWN),
          "invalid layoutKind %d", layout_type->get_con());
   LayoutKind layout = static_cast<LayoutKind>(layout_type->get_con());
-  assert(layout == LayoutKind::REFERENCE || layout == LayoutKind::NULL_FREE_NON_ATOMIC_FLAT ||
-         layout == LayoutKind::NULL_FREE_ATOMIC_FLAT || layout == LayoutKind::NULLABLE_ATOMIC_FLAT,
+  assert(layout == LayoutKind::REFERENCE || LayoutKindHelper::is_flat(layout),
          "unexpected layoutKind %d", layout_type->get_con());
 
   null_check(argument(0));
