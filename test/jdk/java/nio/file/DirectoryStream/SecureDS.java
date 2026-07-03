@@ -221,6 +221,7 @@ public class SecureDS {
                     assertEquals(permsFile, getPosixFilePermissions(file));
                 } catch (AccessDeniedException e) {
                     // Fails on older Linux systems without fchmodat AT_SYMLINK_NOFOLLOW support
+                    setPosixFilePermissions(file, permsFile);
                 }
 
                 // Test following link to file
