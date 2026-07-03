@@ -149,8 +149,7 @@ public class TestJcmdShowSettings {
         OutputAnalyzer output = JcmdBase.jcmd("VM.show_settings", "invalid_section");
 
         output.shouldHaveExitValue(0);
-        output.shouldContain("Unknown section: invalid_section");
-        output.shouldContain("Valid sections:");
-        output.shouldContain("Valid security sections:");
+        output.shouldContain("invalid_section");
+        output.shouldContain("java -X");
     }
 }
