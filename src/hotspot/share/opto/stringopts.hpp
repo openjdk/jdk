@@ -47,7 +47,7 @@ class PhaseStringOpts : public Phase {
   VectorSet _visited;
 
   // Collect a list of all SB.toString calls
-  Node_List collect_toString_calls();
+  Node_List_<CallStaticJavaNode> collect_toString_calls();
 
   // Examine the use of the SB alloc to see if it can be replace with
   // a single string construction.

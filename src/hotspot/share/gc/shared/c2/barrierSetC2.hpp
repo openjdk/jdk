@@ -68,7 +68,7 @@ class PhaseIdealLoop;
 class PhaseMacroExpand;
 class Type;
 class TypePtr;
-class Unique_Node_List;
+template <typename T> class Unique_Node_List_;
 
 // This class wraps a node and a type.
 class C2AccessValue: public StackObj {

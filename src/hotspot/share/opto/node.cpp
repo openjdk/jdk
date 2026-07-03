@@ -2840,32 +2840,36 @@ const RegMask &Node::in_RegMask(uint) const {
   return RegMask::EMPTY;
 }
 
-void Node_Array::grow(uint i) {
+template <typename T>
+void Node_Array_<T>::grow(uint i) {
   assert(i >= _max, "Should have been checked before, use maybe_grow?");
   assert(_max > 0, "invariant");
   uint old = _max;
   _max = next_power_of_2(i);
-  _nodes = (Node**)_a->Arealloc( _nodes, old*sizeof(Node*),_max*sizeof(Node*));
-  Copy::zero_to_bytes( &_nodes[old], (_max-old)*sizeof(Node*) );
+  _nodes = (T**)_a->Arealloc( _nodes, old*sizeof(T*),_max*sizeof(T*));
+  Copy::zero_to_bytes( &_nodes[old], (_max-old)*sizeof(T*) );
 }
 
-void Node_Array::insert(uint i, Node* n) {
+template <typename T>
+void Node_Array_<T>::insert(uint i, T* n) {
   if (_nodes[_max - 1]) {
     grow(_max);
   }
-  Copy::conjoint_words_to_higher((HeapWord*)&_nodes[i], (HeapWord*)&_nodes[i + 1], ((_max - i - 1) * sizeof(Node*)));
+  Copy::conjoint_words_to_higher((HeapWord*)&_nodes[i], (HeapWord*)&_nodes[i + 1], ((_max - i - 1) * sizeof(T*)));
   _nodes[i] = n;
 }
 
-void Node_Array::remove(uint i) {
-  Copy::conjoint_words_to_lower((HeapWord*)&_nodes[i + 1], (HeapWord*)&_nodes[i], ((_max - i - 1) * sizeof(Node*)));
+template <typename T>
+void Node_Array_<T>::remove(uint i) {
+  Copy::conjoint_words_to_lower((HeapWord*)&_nodes[i + 1], (HeapWord*)&_nodes[i], ((_max - i - 1) * sizeof(T*)));
   _nodes[_max - 1] = nullptr;
 }
 
-void Node_Array::dump() const {
+template <typename T>
+void Node_Array_<T>::dump() const {
 #ifndef PRODUCT
   for (uint i = 0; i < _max; i++) {
-    Node* nn = _nodes[i];
+    T* nn = _nodes[i];
     if (nn != nullptr) {
       tty->print("%5d--> ",i); nn->dump();
     }
@@ -3087,36 +3091,39 @@ bool Node::has_non_debug_uses() const {
 //=============================================================================
 //------------------------------yank-------------------------------------------
 // Find and remove
-void Node_List::yank( Node *n ) {
+template <typename T>
+void Node_List_<T>::yank(T* n) {
   uint i;
   for (i = 0; i < _cnt; i++) {
-    if (_nodes[i] == n) {
+    if (Base::_nodes[i] == n) {
       break;
     }
   }
 
   if (i < _cnt) {
-    _nodes[i] = _nodes[--_cnt];
+    Base::_nodes[i] = Base::_nodes[--_cnt];
   }
 }
 
 //------------------------------dump-------------------------------------------
-void Node_List::dump() const {
+template <typename T>
+void Node_List_<T>::dump() const {
 #ifndef PRODUCT
   for (uint i = 0; i < _cnt; i++) {
-    if (_nodes[i]) {
+    if (Base::_nodes[i]) {
       tty->print("%5d--> ", i);
-      _nodes[i]->dump();
+      Base::_nodes[i]->dump();
     }
   }
 #endif
 }
 
-void Node_List::dump_simple() const {
+template <typename T>
+void Node_List_<T>::dump_simple() const {
 #ifndef PRODUCT
   for (uint i = 0; i < _cnt; i++) {
-    if( _nodes[i] ) {
-      tty->print(" %d", _nodes[i]->_idx);
+    if (Base::_nodes[i]) {
+      tty->print(" %d", Base::_nodes[i]->_idx);
     } else {
       tty->print(" null");
     }
@@ -3126,11 +3133,12 @@ void Node_List::dump_simple() const {
 
 //=============================================================================
 //------------------------------remove-----------------------------------------
-void Unique_Node_List::remove(Node* n) {
+template <typename T>
+void Unique_Node_List_impl<T>::remove(T* n) {
   if (_in_worklist.test(n->_idx)) {
-    for (uint i = 0; i < size(); i++) {
-      if (_nodes[i] == n) {
-        map(i, Node_List::pop());
+    for (uint i = 0; i < Base::size(); i++) {
+      if (Base::_nodes[i] == n) {
+        Base::map(i, Base::pop());
         _in_worklist.remove(n->_idx);
         return;
       }
@@ -3141,13 +3149,14 @@ void Unique_Node_List::remove(Node* n) {
 
 //-----------------------remove_useless_nodes----------------------------------
 // Remove useless nodes from worklist
-void Unique_Node_List::remove_useless_nodes(const VectorSet& useful) {
-  for (uint i = 0; i < size(); ++i) {
-    Node *n = at(i);
+template <typename T>
+void Unique_Node_List_impl<T>::remove_useless_nodes(const VectorSet& useful) {
+  for (uint i = 0; i < Base::size(); ++i) {
+    T* n = Base::at(i);
     assert( n != nullptr, "Did not expect null entries in worklist");
     if (!useful.test(n->_idx)) {
       _in_worklist.remove(n->_idx);
-      map(i, Node_List::pop());
+      Base::map(i, Base::pop());
       --i;  // Visit popped node
       // If it was last entry, loop terminates since size() was also reduced
     }
@@ -3277,3 +3286,30 @@ Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   return Node::Ideal(phase, can_reshape);
 }
+
+#define INSTANCIATE_NODE_CONTAINERS(node)         \
+template class Node_Array_<node>;                 \
+template class Node_Array_<const node>;           \
+template class Node_List_<node>;                  \
+template class Node_List_<const node>;            \
+template class Unique_Node_List_impl<node>;       \
+template class Unique_Node_List_impl<const node>; \
+template class Unique_Node_List_<node>;           \
+template class Unique_Node_List_<const node>;     \
+
+template class Node_Array_<Node>;
+template class Node_Array_<const Node>;
+template class Node_List_<Node>;
+template class Node_List_<const Node>;
+template class Unique_Node_List_impl<Node>;
+template class Unique_Node_List_impl<const Node>;
+template class Unique_Node_List_<const Node>;
+
+INSTANCIATE_NODE_CONTAINERS(CallJavaNode)
+INSTANCIATE_NODE_CONTAINERS(CallStaticJavaNode)
+INSTANCIATE_NODE_CONTAINERS(IfProjNode)
+INSTANCIATE_NODE_CONTAINERS(PhiNode)
+INSTANCIATE_NODE_CONTAINERS(ReachabilityFenceNode)
+INSTANCIATE_NODE_CONTAINERS(SafePointNode)
+INSTANCIATE_NODE_CONTAINERS(SafePointScalarObjectNode)
+#undef INSTANCIATE_NODE_CONTAINERS

@@ -452,8 +452,8 @@ void StringConcat::eliminate_initialize(InitializeNode* init) {
   init->disconnect_inputs(C);
 }
 
-Node_List PhaseStringOpts::collect_toString_calls() {
-  Node_List string_calls;
+Node_List_<CallStaticJavaNode> PhaseStringOpts::collect_toString_calls() {
+  Node_List_<CallStaticJavaNode> string_calls;
   Node_List worklist;
 
   _visited.clear();
@@ -730,9 +730,9 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
   // if it's possible to fuse the usage of the SB into a single String
   // construction.
   GrowableArray<StringConcat*> concats;
-  Node_List toStrings = collect_toString_calls();
+  Node_List_<CallStaticJavaNode> toStrings = collect_toString_calls();
   while (toStrings.size() > 0) {
-    StringConcat* sc = build_candidate(toStrings.pop()->as_CallStaticJava());
+    StringConcat* sc = build_candidate(toStrings.pop());
     if (sc != nullptr) {
       concats.push(sc);
     }

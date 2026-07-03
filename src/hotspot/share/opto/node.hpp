@@ -152,8 +152,8 @@ class OpaqueTemplateAssertionPredicateNode;
 class OuterStripMinedLoopNode;
 class OuterStripMinedLoopEndNode;
 class Node;
-class Node_Array;
-class Node_List;
+template <typename T> class Node_Array_;
+template <typename T> class Node_List_;
 class Node_Stack;
 class OopMap;
 class ParmNode;
@@ -1311,7 +1311,7 @@ public:
     EncounteredDeadCode  // Result is undefined due to encountering dead code.
   };
   // Check if 'this' node dominates or equal to 'sub'.
-  DomResult dominates(Node* sub, Node_List &nlist);
+  DomResult dominates(Node* sub, Node_List_<Node> &nlist);
 
   bool remove_dead_region(PhaseGVN *phase, bool can_reshape);
 public:
@@ -1499,7 +1499,7 @@ public:
   // Print compact per-node info
   virtual void dump_compact_spec(outputStream *st) const { dump_spec(st); }
 
-  static void verify(int verify_depth, VectorSet& visited, Node_List& worklist);
+  static void verify(int verify_depth, VectorSet& visited, Node_List_<Node>& worklist);
 
   // This call defines a class-unique string used to identify class instances
   virtual const char *Name() const;
@@ -1797,11 +1797,12 @@ class SimpleDUIterator : public StackObj {
 // Abstractly provides an infinite array of Node*'s, initialized to null.
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
-class Node_Array : public AnyObj {
+template <typename T>
+class Node_Array_ : public AnyObj {
 protected:
   Arena* _a;                    // Arena to allocate in
   uint   _max;
-  Node** _nodes;
+  T** _nodes;
   ReallocMark _nesting;         // Safety checks for arena reallocation
 
   // Grow array to required capacity
@@ -1814,69 +1815,75 @@ protected:
   void grow(uint i);
 
 public:
-  Node_Array(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
-    _nodes = NEW_ARENA_ARRAY(a, Node*, max);
+  Node_Array_(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
+    _nodes = NEW_ARENA_ARRAY(a, T*, max);
     clear();
   }
-  Node_Array() : Node_Array(Thread::current()->resource_area()) {}
+  Node_Array_() : Node_Array_(Thread::current()->resource_area()) {}
 
-  NONCOPYABLE(Node_Array);
-  Node_Array& operator=(Node_Array&&) = delete;
+  NONCOPYABLE(Node_Array_);
+  Node_Array_& operator=(Node_Array_&&) = delete;
   // Allow move constructor for && (eg. capture return of function)
-  Node_Array(Node_Array&&) = default;
+  Node_Array_(Node_Array_&&) = default;
 
-  Node *operator[] ( uint i ) const // Lookup, or null for not mapped
-  { return (i<_max) ? _nodes[i] : (Node*)nullptr; }
-  Node* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
-  Node** adr() { return _nodes; }
+  T* operator[] (uint i) const // Lookup, or null for not mapped
+  { return (i<_max) ? _nodes[i] : (T*)nullptr; }
+  T* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
+  T** adr() { return _nodes; }
   // Extend the mapping: index i maps to Node *n.
-  void map( uint i, Node *n ) { maybe_grow(i); _nodes[i] = n; }
-  void insert( uint i, Node *n );
-  void remove( uint i );        // Remove, preserving order
+  void map(uint i, T* n) { maybe_grow(i); _nodes[i] = n; }
+  void insert(uint i, T* n);
+  void remove(uint i );        // Remove, preserving order
   // Clear all entries in _nodes to null but keep storage
   void clear() {
-    Copy::zero_to_bytes(_nodes, _max * sizeof(Node*));
+    Copy::zero_to_bytes(_nodes, _max * sizeof(T*));
   }
 
   uint max() const { return _max; }
   void dump() const;
 };
 
-class Node_List : public Node_Array {
+typedef Node_Array_<Node> Node_Array;
+
+template <typename T>
+class Node_List_ : public Node_Array_<T> {
+  typedef Node_Array_<T> Base;
   uint _cnt;
 public:
-  Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
-  Node_List(Arena *a, uint max = OptoNodeListSize) : Node_Array(a, max), _cnt(0) {}
+  Node_List_(uint max = OptoNodeListSize) : Base(Thread::current()->resource_area(), max), _cnt(0) {}
+  Node_List_(Arena* a, uint max = OptoNodeListSize) : Base(a, max), _cnt(0) {}
 
-  NONCOPYABLE(Node_List);
-  Node_List& operator=(Node_List&&) = delete;
+  NONCOPYABLE(Node_List_);
+  Node_List_& operator=(Node_List_&&) = delete;
   // Allow move constructor for && (eg. capture return of function)
-  Node_List(Node_List&&) = default;
+  Node_List_(Node_List_&&) = default;
 
-  bool contains(const Node* n) const {
+  bool contains(const T* n) const {
     for (uint e = 0; e < size(); e++) {
-      if (at(e) == n) return true;
+      if (Base::at(e) == n) return true;
     }
     return false;
   }
-  void insert( uint i, Node *n ) { Node_Array::insert(i,n); _cnt++; }
-  void remove( uint i ) { Node_Array::remove(i); _cnt--; }
-  void push( Node *b ) { map(_cnt++,b); }
-  void yank( Node *n );         // Find and remove
-  Node *pop() { return _nodes[--_cnt]; }
-  void clear() { _cnt = 0; Node_Array::clear(); } // retain storage
-  void copy(const Node_List& from) {
-    if (from._max > _max) {
-      grow(from._max);
+  void insert(uint i, T* n) { Base::insert(i,n); _cnt++; }
+  void remove(uint i) { Base::remove(i); _cnt--; }
+  void push(T* b) { Base::map(_cnt++,b); }
+  void yank(T* n);         // Find and remove
+  T* pop() { return Base::_nodes[--_cnt]; }
+  void clear() { _cnt = 0; Base::clear(); } // retain storage
+  void copy(const Node_List_<T>& from) {
+    if (from._max > Base::_max) {
+      Base::grow(from._max);
     }
     _cnt = from._cnt;
-    Copy::conjoint_words_to_higher((HeapWord*)&from._nodes[0], (HeapWord*)&_nodes[0], from._max * sizeof(Node*));
+    Copy::conjoint_words_to_higher((HeapWord*)&from._nodes[0], (HeapWord*)&Base::_nodes[0], from._max * sizeof(Node*));
   }
 
   uint size() const { return _cnt; }
   void dump() const;
   void dump_simple() const;
 };
+
+typedef Node_List_<Node> Node_List;
 
 // Definition must appear after complete type definition of Node_List
 template <typename Callback, typename Check>
@@ -1909,26 +1916,106 @@ void Node::visit_uses(Callback callback, Check is_boundary, bool always_callback
 
 
 //------------------------------Unique_Node_List-------------------------------
-class Unique_Node_List : public Node_List {
+template <typename T>
+class Unique_Node_List_impl : public Node_List_<T> {
+  typedef Node_List_<T> Base;
   VectorSet _in_worklist;
   uint _clock_index;            // Index in list where to pop from next
 public:
-  Unique_Node_List() : Node_List(), _clock_index(0) {}
-  Unique_Node_List(Arena *a) : Node_List(a), _in_worklist(a), _clock_index(0) {}
+  Unique_Node_List_impl() : Base(), _clock_index(0) {}
+  Unique_Node_List_impl(Arena* a) : Base(a), _in_worklist(a), _clock_index(0) {}
 
-  NONCOPYABLE(Unique_Node_List);
-  Unique_Node_List& operator=(Unique_Node_List&&) = delete;
+  NONCOPYABLE(Unique_Node_List_impl);
+  Unique_Node_List_impl& operator=(Unique_Node_List_impl&&) = delete;
   // Allow move constructor for && (eg. capture return of function)
-  Unique_Node_List(Unique_Node_List&&) = default;
+  Unique_Node_List_impl(Unique_Node_List_impl&&) = default;
 
-  void remove( Node *n );
-  bool member(const Node* n) const { return _in_worklist.test(n->_idx) != 0; }
+  void remove(T* n);
+  bool member(const T* n) const { return _in_worklist.test(n->_idx) != 0; }
   VectorSet& member_set(){ return _in_worklist; }
 
-  void push(Node* b) {
-    if( !_in_worklist.test_set(b->_idx) )
-      Node_List::push(b);
+  void push(T* b) {
+    if (!_in_worklist.test_set(b->_idx))
+      Base::push(b);
   }
+
+  T* pop() {
+    if( _clock_index >= Base::size() ) _clock_index = 0;
+    T* b = Base::at(_clock_index);
+    Base::map( _clock_index, Base::pop());
+    if (Base::size() != 0) _clock_index++; // Always start from 0
+    _in_worklist.remove(b->_idx);
+    return b;
+  }
+  T* remove(uint i) {
+    T* b = Base::at(i);
+    _in_worklist.remove(b->_idx);
+    Base::map(i,Base::pop());
+    return b;
+  }
+  void yank(T* n) {
+    _in_worklist.remove(n->_idx);
+    Base::yank(n);
+  }
+  void  clear() {
+    _in_worklist.clear();        // Discards storage but grows automatically
+    Base::clear();
+    _clock_index = 0;
+  }
+  void ensure_empty() {
+    assert(Base::size() == 0, "must be empty");
+    clear(); // just in case
+  }
+
+  // Used after parsing to remove useless nodes before Iterative GVN
+  void remove_useless_nodes(const VectorSet& useful);
+
+  // If the idx of the Nodes change, we must recompute the VectorSet
+  void recompute_idx_set() {
+    _in_worklist.clear();
+    for (uint i = 0; i < Base::size(); i++) {
+      T* n = Base::at(i);
+      _in_worklist.set(n->_idx);
+    }
+  }
+
+#ifdef ASSERT
+  bool is_subset_of(Unique_Node_List_<T>& other) {
+    for (uint i = 0; i < Base::size(); i++) {
+      T* n = Base::at(i);
+      if (!other.member(n)) {
+        return false;
+      }
+    }
+    return true;
+  }
+#endif
+
+  bool contains(const T* n) const {
+    fatal("use faster member() instead");
+    return false;
+  }
+
+#ifndef PRODUCT
+  void print_set() const { _in_worklist.print(); }
+#endif
+};
+
+template <typename T>
+class Unique_Node_List_ : public Unique_Node_List_impl<T> {
+  typedef Unique_Node_List_impl<T> Base;
+public:
+  Unique_Node_List_() : Base() {}
+  Unique_Node_List_(Arena* a) : Base(a) {}
+};
+
+template <>
+class Unique_Node_List_<Node> : public Unique_Node_List_impl<Node> {
+  typedef Unique_Node_List_impl<Node> Base;
+public:
+  Unique_Node_List_() : Base() {}
+  Unique_Node_List_(Arena* a) : Base(a) {}
+
   void push_non_cfg_inputs_of(const Node* node) {
     for (uint i = 1; i < node->req(); i++) {
       Node* input = node->in(i);
@@ -1944,68 +2031,9 @@ public:
       push(output);
     }
   }
-
-  Node *pop() {
-    if( _clock_index >= size() ) _clock_index = 0;
-    Node *b = at(_clock_index);
-    map( _clock_index, Node_List::pop());
-    if (size() != 0) _clock_index++; // Always start from 0
-    _in_worklist.remove(b->_idx);
-    return b;
-  }
-  Node *remove(uint i) {
-    Node *b = Node_List::at(i);
-    _in_worklist.remove(b->_idx);
-    map(i,Node_List::pop());
-    return b;
-  }
-  void yank(Node *n) {
-    _in_worklist.remove(n->_idx);
-    Node_List::yank(n);
-  }
-  void  clear() {
-    _in_worklist.clear();        // Discards storage but grows automatically
-    Node_List::clear();
-    _clock_index = 0;
-  }
-  void ensure_empty() {
-    assert(size() == 0, "must be empty");
-    clear(); // just in case
-  }
-
-  // Used after parsing to remove useless nodes before Iterative GVN
-  void remove_useless_nodes(const VectorSet& useful);
-
-  // If the idx of the Nodes change, we must recompute the VectorSet
-  void recompute_idx_set() {
-    _in_worklist.clear();
-    for (uint i = 0; i < size(); i++) {
-      Node* n = at(i);
-      _in_worklist.set(n->_idx);
-    }
-  }
-
-#ifdef ASSERT
-  bool is_subset_of(Unique_Node_List& other) {
-    for (uint i = 0; i < size(); i++) {
-      Node* n = at(i);
-      if (!other.member(n)) {
-        return false;
-      }
-    }
-    return true;
-  }
-#endif
-
-  bool contains(const Node* n) const {
-    fatal("use faster member() instead");
-    return false;
-  }
-
-#ifndef PRODUCT
-  void print_set() const { _in_worklist.print(); }
-#endif
 };
+
+typedef Unique_Node_List_<Node> Unique_Node_List;
 
 // Unique_Mixed_Node_List
 // unique: nodes are added only once

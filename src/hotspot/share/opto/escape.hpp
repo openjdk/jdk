@@ -565,13 +565,13 @@ private:
   // Helper methods for unique types split.
   bool split_AddP(Node *addp, Node *base);
 
-  PhiNode* create_split_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, bool& new_created);
-  PhiNode* split_memory_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth);
+  PhiNode* create_split_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List_<PhiNode>& orig_phi_worklist, bool& new_created);
+  PhiNode* split_memory_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List_<PhiNode>& orig_phi_worklist, uint rec_depth);
 
-  void  move_inst_mem(Node* n, Unique_Node_List& orig_phis);
+  void  move_inst_mem(Node* n, Unique_Node_List_<PhiNode>& orig_phis);
   bool flat_access_aliases_with(Node* flat_access, const TypeOopPtr *toop);
-  Node* find_inst_mem(Node* mem, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth = 0);
-  Node* find_inst_mem_assert_no_new_node(Node* mem, int alias_idx, Unique_Node_List& orig_phi_worklist);
+  Node* find_inst_mem(Node* mem, int alias_idx, Unique_Node_List_<PhiNode>& orig_phi_worklist, uint rec_depth = 0);
+  Node* find_inst_mem_assert_no_new_node(Node* mem, int alias_idx, Unique_Node_List_<PhiNode>& orig_phi_worklist);
   Node* step_through_mergemem(MergeMemNode *mmem, int alias_idx, const TypeOopPtr *toop);
 
   Node_Array _node_map; // used for bookkeeping during type splitting
@@ -631,7 +631,7 @@ private:
   void reduce_phi_on_castpp_field_load(CastPPNode* castpp, GrowableArray<Node*> &alloc_worklist);
   void reduce_phi_on_cmp(Node* cmp);
   bool reduce_phi_on_safepoints(PhiNode* ophi);
-  bool reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, Unique_Node_List& safepoints);
+  bool reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, Unique_Node_List_<SafePointNode>& safepoints);
   void reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_worklist);
 #ifdef ASSERT
   void verify_ram_after_reduce_phi(const Unique_Node_List &reducible_merges, const Unique_Node_List& reduced_merges);

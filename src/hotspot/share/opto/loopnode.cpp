@@ -847,7 +847,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
   assert(back_control->Opcode() == Op_IfTrue, "wrong projection for back edge");
 
-  Node_List range_checks;
+  Node_List_<IfProjNode> range_checks;
   iters_limit = extract_long_range_checks(loop, stride_con, iters_limit, phi, range_checks);
 
   if (bt == T_INT) {
@@ -1170,7 +1170,7 @@ Node* PhaseIdealLoop::new_assertion_predicate_opaque_init(Node* entry_control, N
 // - LongCountedLoop: Create LoopNode but keep the loop limit type with a CastLL node to avoid that we later try to
 //                    create a Loop Limit Check when turning the LoopNode into a CountedLoopNode.
 // - CountedLoop: Can be reused.
-bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List &range_checks,
+bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List_<IfProjNode>& range_checks,
                                                  const uint iters_limit) {
   if (!ShortRunningLongLoop) {
     return false;
@@ -1357,7 +1357,7 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
 }
 
 int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jint stride_con, int iters_limit, PhiNode* phi,
-                                              Node_List& range_checks) {
+                                              Node_List_<IfProjNode>& range_checks) {
   const jlong min_iters = 2;
   jlong reduced_iters_limit = iters_limit;
   jlong original_iters_limit = iters_limit;
@@ -1376,7 +1376,7 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jint st
             original_iters_limit / ABS(scale) >= min_iters * ABS(stride_con)) {
           assert(scale == (jint)scale, "scale should be an int");
           reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));
-          range_checks.push(c);
+          range_checks.push(if_proj);
         }
       }
     }
@@ -1517,7 +1517,7 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jint st
 // the type of that R node is non-negative.  Any "wild" R node that could be negative is not treated as an optimizable
 // R.C., but R values from a.length and inside checkIndex are good to go.
 //
-void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List &range_checks, Node* outer_phi,
+void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List_<IfProjNode>& range_checks, Node* outer_phi,
                                                  Node* inner_iters_actual_int, Node* inner_phi,
                                                  Node* iv_add, LoopNode* inner_head) {
   Node* long_zero = longcon(0);
@@ -1526,7 +1526,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
   Node* int_stride = intcon(checked_cast<int>(stride_con));
 
   for (uint i = 0; i < range_checks.size(); i++) {
-    ProjNode* proj = range_checks.at(i)->as_Proj();
+    IfProjNode* proj = range_checks.at(i);
     RangeCheckNode* rc = proj->in(0)->as_RangeCheck();
     jlong scale = 0;
     Node* offset = nullptr;

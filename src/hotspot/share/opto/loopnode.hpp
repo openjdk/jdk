@@ -777,8 +777,8 @@ public:
   bool policy_range_check(PhaseIdealLoop* phase, bool provisional, BasicType bt) const;
 
   // Return TRUE if "iff" is a range check.
-  bool is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoop* phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode* predicate_proj)) const;
-  bool is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoop* phase, BasicType bt, Node* iv, Node*& range, Node*& offset,
+  bool is_range_check_if(const IfProjNode* if_success_proj, PhaseIdealLoop* phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode* predicate_proj)) const;
+  bool is_range_check_if(const IfProjNode* if_success_proj, PhaseIdealLoop* phase, BasicType bt, Node* iv, Node*& range, Node*& offset,
                          jlong& scale) const;
 
   // Estimate the number of nodes required when cloning a loop (body).
@@ -1636,14 +1636,14 @@ public:
   bool expand_reachability_fences();
 
  private:
-  bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,
+  bool loop_predication_impl_helper(IdealLoopTree* loop, const IfProjNode* if_success_proj,
                                     ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl, ConNode* zero,
                                     Invariance& invar, Deoptimization::DeoptReason deopt_reason);
   bool can_create_loop_predicates(const PredicateBlock* profiled_loop_predicate_block) const;
   bool loop_predication_should_follow_branches(IdealLoopTree* loop, float& loop_trip_cnt);
   void loop_predication_follow_branches(Node *c, IdealLoopTree *loop, float loop_trip_cnt,
                                         PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
-                                        Node_List& if_proj_list);
+                                        Node_List_<const IfProjNode>& if_proj_list);
   IfTrueNode* create_template_assertion_predicate(CountedLoopNode* loop_head, ParsePredicateNode* parse_predicate,
                                                   IfProjNode* new_control, int scale, Node* offset, Node* range);
   void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
@@ -2022,9 +2022,9 @@ public:
 
 
   int extract_long_range_checks(const IdealLoopTree* loop, jint stride_con, int iters_limit, PhiNode* phi,
-                                Node_List &range_checks);
+                                Node_List_<IfProjNode>& range_checks);
 
-  void transform_long_range_checks(int stride_con, const Node_List &range_checks, Node* outer_phi,
+  void transform_long_range_checks(int stride_con, const Node_List_<IfProjNode>& range_checks, Node* outer_phi,
                                    Node* inner_iters_actual_int, Node* inner_phi,
                                    Node* iv_add, LoopNode* inner_head);
 
@@ -2083,7 +2083,7 @@ public:
 
   Node* new_assertion_predicate_opaque_init(Node* entry_control, Node* init, Node* int_zero);
 
-  bool try_make_short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List& range_checks, const uint iters_limit);
+  bool try_make_short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List_<IfProjNode>& range_checks, const uint iters_limit);
 
   ConINode* intcon(jint i);
 
