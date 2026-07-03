@@ -149,8 +149,8 @@ static char* get_user_tmp_dir(const char* user, int vmid, int nspid) {
     if (val >= (int)PATH_MAX) {
       log_warning(perf)("The temporary directory for perf data /proc/%d/root%s name is truncated",
                         vmid, tmpdir);
-      tmpdir = buffer;
     }
+    tmpdir = buffer;
   }
 #endif
 #ifdef __APPLE__

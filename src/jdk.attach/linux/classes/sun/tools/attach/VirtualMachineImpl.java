@@ -88,7 +88,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // Then we attempt to find the socket file again.
         final File socket_file = findSocketFile(pid, ns_pid);
         socket_path = socket_file.getPath();
-        if (!validateSocketFileLength(socket_file.getPath().length())) {
+        if (!validateSocketFileLength(socket_file.getPath())) {
             throw new AttachNotSupportedException("Socket file path too long: " + socket_path);
         }
         if (!socket_file.exists()) {
@@ -437,7 +437,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     static native void write(int fd, byte buf[], int off, int bufLen) throws IOException;
 
-    static native boolean validateSocketFileLength(int length);
+    static native boolean validateSocketFileLength(String socketPath);
 
     static {
         System.loadLibrary("attach");
