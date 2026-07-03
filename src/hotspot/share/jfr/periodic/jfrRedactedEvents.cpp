@@ -455,7 +455,6 @@ void JfrRedactedEvents::ensure_initialized() {
   StringArray* flags_args = make_jvm_args_array(Arguments::jvm_flags_array(), Arguments::num_jvm_flags());
   _redacted_flags_command_line = redact_command_line(flags_args);
   delete flags_args;
-  _redacted_arguments->sort();
   _initialized = true;
 }
 

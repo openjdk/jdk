@@ -146,15 +146,7 @@ class JfrRedactedEvents: public AllStatic {
     void add(const char* s, size_t length) {
       _array->append(new String(s, length));
     }
-    void sort() {
-      _array->sort(compare);
-    }
    private:
-    static int compare(String** a, String** b) {
-      size_t al = (*a)->length();
-      size_t bl = (*b)->length();
-      return al > bl ? -1 : (al < bl ? 1 : 0);
-    }
     GrowableArray<String*>* const _array;
   };
 
