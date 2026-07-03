@@ -475,23 +475,6 @@ void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
     sec = "all";
   }
 
-  if (strcmp(sec, "all") != 0 &&
-      strcmp(sec, "vm") != 0 &&
-      strcmp(sec, "properties") != 0 &&
-      strcmp(sec, "locale") != 0 &&
-      strcmp(sec, "security") != 0 &&
-      strcmp(sec, "security:all") != 0 &&
-      strcmp(sec, "security:properties") != 0 &&
-      strcmp(sec, "security:providers") != 0 &&
-      strcmp(sec, "security:tls") != 0 &&
-      strcmp(sec, "system") != 0) {
-    output()->print_cr("Unknown section: %s", sec);
-    output()->print_cr("Valid sections: all, vm, properties, locale, system");
-    output()->print_cr("Valid security sections: security, security:all, "
-                       "security:properties, security:providers, security:tls");
-    return;
-  }
-
   char flag_buf[64];
   jio_snprintf(flag_buf, sizeof(flag_buf), "-XshowSettings:%s", sec);
 

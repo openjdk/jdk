@@ -182,7 +182,11 @@ public final class LauncherHelper {
     static void showSettings(boolean printToStderr, String optionFlag,
                              long initialHeapSize, long maxHeapSize, long stackSize) {
         initOutput(printToStderr);
-        showSettingsTo(optionFlag, initialHeapSize, maxHeapSize, stackSize);
+        try {
+            showSettingsTo(optionFlag, initialHeapSize, maxHeapSize, stackSize);
+        } catch (IllegalArgumentException e) {
+            System.exit(1);
+        }
     }
 
     public static byte[] showSettingsBytes(String optionFlag,
@@ -193,6 +197,8 @@ public final class LauncherHelper {
             try {
                 ostream = ps;
                 showSettingsTo(optionFlag, initialHeapSize, maxHeapSize, stackSize);
+            } catch (IllegalArgumentException e) {
+                // the invalid option message has already been written to ostream.
             } finally {
                 ostream = old;
             }
@@ -203,7 +209,7 @@ public final class LauncherHelper {
     /*
      * Validate that the -XshowSettings value is allowed
      * If a valid option is parsed, return enum corresponding
-     * to that option. Abort if a bad option is parsed.
+     * to that option. Throw IllegalArgumentException if a bad option is parsed.
      */
     private static Option validateOption(String optionFlag) {
         if (optionFlag.equals("-XshowSettings")) {
@@ -211,7 +217,8 @@ public final class LauncherHelper {
         }
 
         if (optionFlag.equals("-XshowSetings:")) {
-            abort(null, "java.launcher.bad.option", ":");
+            ostream.println(getLocalizedMessage("java.launcher.bad.option", ":"));
+            throw new IllegalArgumentException();
         }
 
         Map<String, Option> validOpts = Arrays.stream(Option.values())
@@ -223,7 +230,8 @@ public final class LauncherHelper {
         String optStr = optionFlag.substring("-XshowSettings:".length());
         Option component = validOpts.get(optStr);
         if (component == null) {
-            abort(null, "java.launcher.bad.option", optStr);
+            ostream.println(getLocalizedMessage("java.launcher.bad.option", optStr));
+            throw new IllegalArgumentException();
         }
         return component;
     }

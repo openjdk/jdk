@@ -860,8 +860,8 @@ public:
   ShowSettingsDCmd(outputStream* output, bool heap) :
       DCmdWithParser(output, heap),
       _section("section",
-               "Settings section: all, vm, properties, locale, system, "
-               "security[:all|properties|providers|tls]",
+               "Optional -XshowSettings section. See 'java -X' for supported "
+               "-XshowSettings sections.",
                "STRING", false, "all") {
     _dcmdparser.add_dcmd_argument(&_section);
   }
@@ -869,8 +869,8 @@ public:
   static int num_arguments() { return 1; }
   static const char* name() { return "VM.show_settings"; }
   static const char* description() {
-    return "Print information similar to -XshowSettings, e.g. "
-           "'VM.show_settings locale' or 'VM.show_settings security:tls'.";
+    return "Print information similar to -XshowSettings e.g. 'VM.show_settings all'"
+           "See 'java -X' for supported -XshowSettings sections.";
   }
   static const char* impact() { return "Low"; }
 
