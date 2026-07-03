@@ -145,9 +145,12 @@ static char* get_user_tmp_dir(const char* user, int vmid, int nspid) {
   // The /tmp directory can be overridden with AltTempDir.
 
   if (nspid != -1) {
-    int val = jio_snprintf(buffer, PATH_MAX, "/proc/%d/root%s", vmid, tmpdir);
-    assert(val != -1, "should not truncate, because tmpdir length was already limited");
-    tmpdir = buffer;
+    int val = os::snprintf(buffer, PATH_MAX, "/proc/%d/root%s", vmid, tmpdir);
+    if (val >= (int)PATH_MAX) {
+      log_warning(perf)("The temporary directory for perf data /proc/%d/root%s name is truncated",
+                        vmid, tmpdir);
+      tmpdir = buffer;
+    }
   }
 #endif
 #ifdef __APPLE__

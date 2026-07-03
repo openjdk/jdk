@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,9 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_connect
         addr.sun_family = AF_UNIX;
         /* strncpy is safe because addr.sun_path was zero-initialized before. */
         strncpy(addr.sun_path, p, sizeof(addr.sun_path) - 1);
+        if (strlen(p) >= sizeof(addr.sun_path)) {
+            JNU_ThrowIOException(env, "Socket file path too long");
+        }
 
         if (connect(fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
             err = errno;
@@ -255,4 +258,18 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_write
         }
 
     } while (remaining > 0);
+}
+
+/*
+ * Class:     sun_tools_attach_VirtualMachineImpl
+ * Method:    validateSocketFileLength
+ * Signature: (I)B
+ */
+JNIEXPORT jboolean JNICALL Java_sun_tools_attach_VirtualMachineImpl_validateSocketFileLength
+  (JNIEnv *env, jclass cls, jint length)
+{
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    return length < (jint)sizeof(addr.sun_path);
 }

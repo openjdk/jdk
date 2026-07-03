@@ -70,21 +70,22 @@ public class JvmTempDirTest {
 
         // Run the test with all possible combinations of setting AltTempDir.
         // Different setting will cause the attach mechanism to fail.
-        runExperiment(null, null, true);
-        runExperiment(targetTmpDir, targetTmpDir, true);
-        runExperiment(clientTmpDir, clientTmpDir, true);
+        String notFound = "not found in VM list";
+        runExperiment(null, null, true, null);
+        runExperiment(targetTmpDir, targetTmpDir, true, null);
+        runExperiment(clientTmpDir, clientTmpDir, true, null);
 
-        runExperiment(clientTmpDir, null, false);
-        runExperiment(clientTmpDir, targetTmpDir, false);
-        runExperiment(null, targetTmpDir, false);
+        runExperiment(clientTmpDir, null, false, notFound);
+        runExperiment(clientTmpDir, targetTmpDir, false, notFound);
+        runExperiment(null, targetTmpDir, false, notFound);
+
+        String name = String.valueOf('a').repeat(200);
+        Path veryLongDir = Files.createTempDirectory(Path.of("/tmp"), name);
+        veryLongDir.toFile().deleteOnExit();
+        runExperiment(veryLongDir, veryLongDir, false, "Socket file path too long");
 
         Path noExist = Path.of("/tmp/noexist");
         runNoExistTest(noExist);
-
-        String name = String.valueOf('a').repeat(108-22);
-        Path veryLongDir = Files.createTempDirectory(Path.of("/tmp"), name);
-        veryLongDir.toFile().deleteOnExit();
-        runLongTest(veryLongDir);
 
         Path relativeDir = Files.createTempDirectory(Path.of("."), "a");
         relativeDir.toFile().deleteOnExit();
@@ -101,7 +102,7 @@ public class JvmTempDirTest {
      * 3. Launch the tests in nested class TestMain that will attach to the Application.
      * 4. Shut down the Application.
      */
-    public static void runExperiment(Path clientTmpDir, Path targetTmpDir, boolean shouldPass) throws Throwable {
+    public static void runExperiment(Path clientTmpDir, Path targetTmpDir, boolean shouldPass, String message) throws Throwable {
 
         System.out.print("### Running tests with overridden tmpdir for");
         System.out.print(" client: " + (clientTmpDir == null ? "no" : "yes"));
@@ -119,7 +120,7 @@ public class JvmTempDirTest {
                 tmpDirArg = new String[] {"-XX:AltTempDir=" + targetTmpDir};
             }
             processThread = RunnerUtil.startApplication(tmpDirArg);
-            launchTests(processThread.getPid(), clientTmpDir, shouldPass);
+            launchTests(processThread.getPid(), clientTmpDir, shouldPass, message);
         } catch (Throwable t) {
             System.out.println("JvmTempDirTest got unexpected exception: " + t);
             t.printStackTrace();
@@ -138,9 +139,9 @@ public class JvmTempDirTest {
      * Runs the actual tests in nested class TestMain.
      * The reason for running the tests in a separate process
      * is that we need to modify the class path and
-     * the -Djava.io.tmpdir property.
+     * the -XX:AltTempDir argument.
      */
-    private static void launchTests(long pid, Path clientTmpDir, boolean shouldPass) throws Throwable {
+    private static void launchTests(long pid, Path clientTmpDir, boolean shouldPass, String message) throws Throwable {
 
         String classpath =
             System.getProperty("test.class.path", "");
@@ -162,7 +163,7 @@ public class JvmTempDirTest {
         if (shouldPass) {
             output.shouldHaveExitValue(0);
         } else {
-            output.shouldContain("not found in VM list");
+            output.shouldContain(message);
             output.shouldNotHaveExitValue(0);
         }
     }
@@ -206,20 +207,11 @@ public class JvmTempDirTest {
         }
     }
 
-    private static void runLongTest(Path tmpDir) throws Throwable {
-        // Arguments : [-XX:AltTempDir=] -version
-        String[] args = new String[] { "-XX:AltTempDir=" + tmpDir, "-version" };
-        OutputAnalyzer output = ProcessTools.executeTestJava(args);
-        output.shouldMatch("\\[warning\\]\\[os *\\] Warning: AltTempDir is ignored because it is longer than .*bytes");
-        // Still passes, it's just a warning.
-        output.shouldHaveExitValue(0);
-    }
-
     private static void runNoExistTest(Path tmpDir) throws Throwable {
         // Arguments : [-XX:AltTempDir=] -version
         String[] args = new String[] { "-XX:AltTempDir=" + tmpDir, "-version" };
         OutputAnalyzer output = ProcessTools.executeTestJava(args);
-        output.shouldMatch("\\[warning\\]\\[os *\\] Warning: AltTempDir is ignored because it is not an existing or writable directory");
+        output.shouldMatch("\\[warning\\]\\[os *\\] Warning: AltTempDir is not an existing or writable directory");
         // Still passes, it's just a warning.
         output.shouldHaveExitValue(0);
     }

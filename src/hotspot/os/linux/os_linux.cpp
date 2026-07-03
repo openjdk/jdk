@@ -1554,19 +1554,11 @@ static bool is_writable_directory(const char* name) {
   return (ret_val != -1 && S_ISDIR(mystat.st_mode) > 0 && access(name, R_OK|W_OK|X_OK) == 0);
 }
 
-// We need to check that any given alternate temporary directory name isn't too long,
-// is a writable directory, and specifies an absolute path.  Revert back to hardcoded /tmp otherwise.
+// We need to check that any given alternate temporary directory name is is a writable directory,
+// and specifies an absolute path.  Revert back to hardcoded /tmp in the last case.
 // Since the attach mechanism uses the socket name length, this severely limits the length of the
-// alternate temporary directory name.
-
-// If in a containerized process, temp can be used to compose the dirname of
-// /proc/{vmid}/root/tmp/{PERFDATA_NAME_user}, otherwise /tmp/{PERFDATA_NAME_user}, so we allow
-// 22 characters for the prefix.
-const int CONTAINER_PREFIX_LEN = 22;
-
-#ifndef UNIX_PATH_MAX
-#define UNIX_PATH_MAX   sizeof(sockaddr_un::sun_path)
-#endif
+// alternate temporary directory name.  We don't check that here since the temporary directory is
+// used for many things. The perfData and attach code will check it.
 
 void os::pd_check_temp_directory() {
   if (AltTempDir != nullptr && AltTempDir[0] != '\0') {
@@ -1574,13 +1566,8 @@ void os::pd_check_temp_directory() {
       log_warning(os)("Warning: AltTempDir is ignored because it must be an absolute pathname");
       AltTempDir = nullptr;
     } else {
-      size_t safe_max = UNIX_PATH_MAX - CONTAINER_PREFIX_LEN;
-      if (strlen(AltTempDir) > safe_max) {
-        log_warning(os)("Warning: AltTempDir is ignored because it is longer than %zd bytes", safe_max);
-        AltTempDir = nullptr;
-      } else if (!is_writable_directory(AltTempDir)) {
-        log_warning(os)("Warning: AltTempDir is ignored because it is not an existing or writable directory");
-        AltTempDir = nullptr;
+      if (!is_writable_directory(AltTempDir)) {
+        log_warning(os)("Warning: AltTempDir is not an existing or writable directory");
       }
     }
   } else {
