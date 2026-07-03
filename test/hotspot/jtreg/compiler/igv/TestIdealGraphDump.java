@@ -115,6 +115,7 @@ public class TestIdealGraphDump {
     private static void testLevel5() throws Exception {
         String content = getCachedContent(5);
         assertContainsPhase(content, "After Iter GVN Step", 5);
+        assertNotContainsPhase(content, "Bytecode", 5);
     }
 
     private static void testLevel6() throws Exception {
@@ -175,10 +176,10 @@ public class TestIdealGraphDump {
 
         int computeFinalCode = countMethodPhase(content, "TestMethods.compute", "Final Code");
         int branchFinalCode = countMethodPhase(content, "TestMethods.branchyMethod", "Final Code");
-        Asserts.assertTrue(computeFinalCode >= 1,
-            "compute must emit at least one 'Final Code' graph, got " + computeFinalCode);
-        Asserts.assertTrue(branchFinalCode >= 1,
-            "branchyMethod must emit at least one 'Final Code' graph, got " + branchFinalCode);
+        Asserts.assertEquals(computeFinalCode, 1,
+            "compute must emit exactly one 'Final Code' graph, got " + computeFinalCode);
+        Asserts.assertEquals(branchFinalCode, 1,
+            "branchyMethod must emit exactly one 'Final Code' graph, got " + branchFinalCode);
     }
 
     private static void testIGVPrintLevelDirective() throws Exception {
@@ -201,6 +202,8 @@ public class TestIdealGraphDump {
             "Per-method IGVPrintLevel directive must produce output even with system level 0");
         Asserts.assertTrue(content.contains("TestMethods.compute"),
             "Directive-based dump must contain the target method");
+        Asserts.assertFalse(content.contains("TestMethods.branchyMethod"),
+            "Directive-based dump must NOT contain non-targeted method");
         assertContainsPhase(content, "After Parsing", 2);
     }
 
@@ -278,7 +281,9 @@ public class TestIdealGraphDump {
         int groupStart = 0;
         while ((groupStart = content.indexOf("<group>", groupStart)) != -1) {
             int groupEnd = content.indexOf("</group>", groupStart);
-            if (groupEnd == -1) break;
+            if (groupEnd == -1) {
+                break;
+            }
             String group = content.substring(groupStart, groupEnd);
             if (group.contains(methodName) && containsPhase(group, phaseName)) {
                 count++;
