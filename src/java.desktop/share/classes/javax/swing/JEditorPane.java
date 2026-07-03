@@ -1721,7 +1721,16 @@ public class JEditorPane extends JTextComponent {
          * @return the accessible text
          */
         public AccessibleText getAccessibleText() {
-            return new JEditorPaneAccessibleHypertextSupport();
+            JEditorPaneAccessibleHypertextSupport axText = (JEditorPaneAccessibleHypertextSupport) getClientProperty("JEditorPaneAccessibleHypertextSupport");
+            if (axText != null && axText.doc != getDocument()) {
+                axText.doc.removeDocumentListener(axText);
+                axText = null;
+            }
+            if (axText == null) {
+                axText = new JEditorPaneAccessibleHypertextSupport();
+                putClientProperty("JEditorPaneAccessibleHypertextSupport", axText);
+            }
+            return axText;
         }
 
         /**
@@ -1999,25 +2008,32 @@ public class JEditorPane extends JTextComponent {
             linksValid = true;
         }
 
+        private final Document doc;
+
         /**
          * Constructs a {@code JEditorPaneAccessibleHypertextSupport}.
          */
         public JEditorPaneAccessibleHypertextSupport() {
             hyperlinks = new LinkVector();
-            Document d = JEditorPane.this.getDocument();
-            if (d != null) {
-                d.addDocumentListener(new DocumentListener() {
-                    public void changedUpdate(DocumentEvent theEvent) {
-                        linksValid = false;
-                    }
-                    public void insertUpdate(DocumentEvent theEvent) {
-                        linksValid = false;
-                    }
-                    public void removeUpdate(DocumentEvent theEvent) {
-                        linksValid = false;
-                    }
-                });
-            }
+            doc = JEditorPane.this.getDocument();
+        }
+
+        @Override
+        public void changedUpdate(DocumentEvent theEvent) {
+            linksValid = false;
+            super.changedUpdate(theEvent);
+        }
+
+        @Override
+        public void insertUpdate(DocumentEvent theEvent) {
+            linksValid = false;
+            super.insertUpdate(theEvent);
+        }
+
+        @Override
+        public void removeUpdate(DocumentEvent theEvent) {
+            linksValid = false;
+            super.removeUpdate(theEvent);
         }
 
         /**

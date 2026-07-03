@@ -32,7 +32,7 @@
   assert(is_valid((tag)), "invalid HR type: %u", (uint) (tag))
 
 class G1HeapRegionType {
-friend class VMStructs;
+  friend class VMStructs;
 
 private:
   // We encode the value of the heap region type so the generation can be

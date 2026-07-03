@@ -157,7 +157,6 @@ private:
     const char*          msg;
     bool                 isa_oop;
     uint                 ideal_reg;
-    relocInfo::relocType reloc;
   } TypeInfo;
 
   // Dictionary of types shared among compilations.
@@ -459,7 +458,6 @@ public:
   uint ideal_reg() const             { return _type_info[_base].ideal_reg; }
   const char* msg() const            { return _type_info[_base].msg; }
   bool isa_oop_ptr() const           { return _type_info[_base].isa_oop; }
-  relocInfo::relocType reloc() const { return _type_info[_base].reloc; }
 
   // Mapping from CI type system to compiler type:
   static const Type* get_typeflow_type(ciType* type);
@@ -784,6 +782,7 @@ protected:
 
 public:
   typedef jint NativeType;
+  typedef juint NativeUType;
   virtual bool eq(const Type* t) const;
   virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
@@ -797,6 +796,7 @@ public:
   static const TypeInt* make(jint con);
   // must always specify w
   static const TypeInt* make(jint lo, jint hi, int widen);
+  static const TypeInt* make_unsigned(juint ulo, juint uhi, int widen);
   static const Type* make_or_top(const TypeIntPrototype<jint, juint>& t, int widen);
   static const TypeInt* make(const TypeIntPrototype<jint, juint>& t, int widen) { return make_or_top(t, widen)->is_int(); }
   static const TypeInt* make(const TypeIntMirror<jint, juint>& t, int widen) {
@@ -873,6 +873,7 @@ protected:
   virtual const Type* filter_helper(const Type* kills, bool include_speculative) const;
 public:
   typedef jlong NativeType;
+  typedef julong NativeUType;
   virtual bool eq( const Type *t ) const;
   virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
@@ -887,6 +888,7 @@ public:
   static const TypeLong* make(jlong con);
   // must always specify w
   static const TypeLong* make(jlong lo, jlong hi, int widen);
+  static const TypeLong* make_unsigned(julong ulo, julong uhi, int widen);
   static const Type* make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen);
   static const TypeLong* make(const TypeIntPrototype<jlong, julong>& t, int widen) { return make_or_top(t, widen)->is_long(); }
   static const TypeLong* make(const TypeIntMirror<jlong, julong>& t, int widen) {
@@ -908,7 +910,7 @@ public:
 #endif // ASSERT
 
   // Check for positive 32-bit value.
-  int is_positive_int() const { return _lo >= 0 && _hi <= (jlong)max_jint; }
+  bool is_positive_int() const { return _lo >= 0 && _hi <= (jlong)max_jint; }
 
   virtual bool        is_finite() const;  // Has a finite value
 
@@ -1139,6 +1141,7 @@ public:
   static const TypeInterfaces* make(GrowableArray<ciInstanceKlass*>* interfaces = nullptr);
   bool eq(const Type* other) const;
   bool eq(ciInstanceKlass* k) const;
+  bool is_subset(ciInstanceKlass* k) const;
   uint hash() const;
   const Type *xdual() const;
   void dump(outputStream* st) const;
@@ -1176,10 +1179,11 @@ public:
   enum PTR { TopPTR, AnyNull, Constant, Null, NotNull, BotPTR, lastPTR };
 protected:
   TypePtr(TYPES t, PTR ptr, int offset,
+          relocInfo::relocType reloc,
           const TypePtr* speculative = nullptr,
           int inline_depth = InlineDepthBottom) :
     Type(t), _speculative(speculative), _inline_depth(inline_depth), _offset(offset),
-    _ptr(ptr) {}
+    _ptr(ptr), _reloc(reloc) {}
   static const PTR ptr_meet[lastPTR][lastPTR];
   static const PTR ptr_dual[lastPTR];
   static const char * const ptr_msg[lastPTR];
@@ -1247,13 +1251,16 @@ protected:
 public:
   const int _offset;            // Offset into oop, with TOP & BOT
   const PTR _ptr;               // Pointer equivalence class
+  const relocInfo::relocType _reloc;
 
   int offset() const { return _offset; }
   PTR ptr()    const { return _ptr; }
+  relocInfo::relocType reloc() const { return _reloc; }
 
   static const TypePtr *make(TYPES t, PTR ptr, int offset,
                              const TypePtr* speculative = nullptr,
-                             int inline_depth = InlineDepthBottom);
+                             int inline_depth = InlineDepthBottom,
+                             relocInfo::relocType reloc = relocInfo::none);
 
   // Return a 'ptr' version of this type
   virtual const TypePtr* cast_to_ptr_type(PTR ptr) const;
@@ -1316,15 +1323,15 @@ public:
 // include the stack pointer, top of heap, card-marking area, handles, etc.
 class TypeRawPtr : public TypePtr {
 protected:
-  TypeRawPtr( PTR ptr, address bits ) : TypePtr(RawPtr,ptr,0), _bits(bits){}
+  TypeRawPtr(PTR ptr, address bits, relocInfo::relocType reloc) : TypePtr(RawPtr, ptr, 0, reloc), _bits(bits){}
 public:
   virtual bool eq( const Type *t ) const;
   virtual uint hash() const;    // Type specific hashing
 
   const address _bits;          // Constant value, if applicable
 
-  static const TypeRawPtr *make( PTR ptr );
-  static const TypeRawPtr *make( address bits );
+  static const TypeRawPtr* make(PTR ptr);
+  static const TypeRawPtr* make(address bits, relocInfo::relocType reloc = relocInfo::external_word_type);
 
   // Return a 'ptr' version of this type
   virtual const TypeRawPtr* cast_to_ptr_type(PTR ptr) const;
@@ -2506,7 +2513,7 @@ inline const TypeLong* Type::try_cast<TypeLong>() const {
 #define RShiftXNode  RShiftLNode
 // For card marks and hashcodes
 #define URShiftXNode URShiftLNode
-// For shenandoahSupport
+// For pointer-sized accesses
 #define LoadXNode    LoadLNode
 #define StoreXNode   StoreLNode
 // Opcodes
@@ -2552,7 +2559,7 @@ inline const TypeLong* Type::try_cast<TypeLong>() const {
 #define RShiftXNode  RShiftINode
 // For card marks and hashcodes
 #define URShiftXNode URShiftINode
-// For shenandoahSupport
+// For pointer-sized accesses
 #define LoadXNode    LoadINode
 #define StoreXNode   StoreINode
 // Opcodes

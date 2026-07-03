@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,6 +261,8 @@ public:
   void preserve(Register reg);
   // Do not preserve the value in reg across runtime calls in this barrier.
   void dont_preserve(Register reg);
+  // Check if register is in preserved set.
+  bool is_preserved(Register reg) const;
   // Set of registers whose value needs to be preserved across runtime calls in this barrier.
   const RegMask& preserve_set() const;
 };
@@ -339,6 +341,7 @@ public:
   // If the BarrierSetC2 state has barrier nodes in its compilation
   // unit state to be expanded later, then now is the time to do so.
   virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const { return false; }
+  virtual void final_refinement(Compile* C) const { }
   virtual bool optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, VectorSet& visited, Node_Stack& nstack, Node_List& worklist) const { return false; }
   virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return false; }
   virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return false; }
@@ -370,7 +373,7 @@ public:
   // Whether the given phi node joins OOPs from fast and slow allocation paths.
   static bool is_allocation(const Node* node);
   // Elide GC barriers from a Mach node according to elide_dominated_barriers().
-  virtual void elide_dominated_barrier(MachNode* mach) const { }
+  virtual void elide_dominated_barrier(MachNode* mach, MachNode* dominator) const { }
   // Elide GC barriers from instructions in 'accesses' if they are dominated by
   // instructions in 'access_dominators' (according to elide_mach_barrier()) and
   // there is no safepoint poll in between.

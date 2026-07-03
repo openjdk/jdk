@@ -45,19 +45,19 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
-ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation) :
+ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
   ShenandoahGC(generation),
   _degen_point(degen_point),
-  _abbreviated(false) {
+  _abbreviated(false),
+  _do_old_gc_bootstrap(do_old_gc_bootstrap) {
 }
 
 bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
   vmop_degenerated();
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
-    bool is_bootstrap_gc = heap->young_generation()->is_bootstrap_cycle();
     FormatBuffer<32> buf("Degenerated %s GC", _generation->name());
-    const char* msg = is_bootstrap_gc ? "Degenerated Bootstrap Old GC" : buf.buffer();
+    const char* msg = _do_old_gc_bootstrap ? "Degenerated Bootstrap Old GC" : buf.buffer();
     heap->mmu_tracker()->record_degenerated(GCId::current(), msg);
     heap->log_heap_status(FormatBuffer<64>("At end of %s", msg));
   }
@@ -331,13 +331,13 @@ void ShenandoahDegenGC::op_degenerated() {
   policy->record_degenerated(_generation->is_young(), _abbreviated, progress);
   if (progress) {
     heap->notify_gc_progress();
-    _generation->heuristics()->record_degenerated();
+    _generation->heuristics()->record_degenerated(heap->mode()->is_generational() && _generation->is_global());
     heap->start_idle_span();
   } else if (policy->should_upgrade_degenerated_gc()) {
     // Upgrade to full GC, register full-GC impact on heuristics.
     op_degenerated_futile();
   } else {
-    _generation->heuristics()->record_degenerated();
+    _generation->heuristics()->record_degenerated(heap->mode()->is_generational() && _generation->is_global());
   }
 }
 
@@ -347,7 +347,7 @@ void ShenandoahDegenGC::op_reset() {
 
 void ShenandoahDegenGC::op_mark() {
   assert(!_generation->is_concurrent_mark_in_progress(), "Should be reset");
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_stw_mark);
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_mark);
   ShenandoahSTWMark mark(_generation, false /*full gc*/);
   mark.mark();
 }
@@ -410,7 +410,7 @@ void ShenandoahDegenGC::op_cleanup_early() {
 }
 
 void ShenandoahDegenGC::op_evacuate() {
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_stw_evac);
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_evac);
   ShenandoahHeap::heap()->evacuate_collection_set(_generation, false /* concurrent*/);
 }
 
