@@ -28,6 +28,7 @@
  * @enablePreview
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-BackgroundCompilation -XX:-TieredCompilation
  *                   -XX:-UseOnStackReplacement -XX:+AlwaysIncrementalInline ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 package compiler.valhalla.inlinetypes;
