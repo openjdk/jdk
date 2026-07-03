@@ -40,10 +40,7 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions
- *                   -XX:-TieredCompilation
- *                   -XX:-UseFieldFlattening
- *                   compiler.valhalla.inlinetypes.TestInlineFieldNonFlattened
+ * @run driver ${test.main.class}
  */
 
 public class TestInlineFieldNonFlattened {

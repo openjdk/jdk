@@ -32,7 +32,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestFlatInArraysFolding serial
+ * @run driver ${test.main.class} serial
  */
 
 /*
@@ -45,7 +45,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestFlatInArraysFolding
+ * @run driver ${test.main.class}
  */
 
 package compiler.valhalla.inlinetypes;

@@ -29,6 +29,7 @@
  *
  * @enablePreview
  * @run main/othervm/native -agentlib:SampledObjectAllocValue SampledObjectAllocValue
+ * @run main/othervm/native -agentlib:SampledObjectAllocValue=can_support_value_objects SampledObjectAllocValue
  */
 
 public class SampledObjectAllocValue {

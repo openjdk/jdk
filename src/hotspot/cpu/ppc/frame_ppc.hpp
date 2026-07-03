@@ -391,8 +391,6 @@
   }
 
   enum {
-    // normal return address is 1 bundle past PC
-    pc_return_offset                       = 0,
     // size, in words, of frame metadata (e.g. pc and link)
     metadata_words                         = sizeof(java_abi) >> LogBytesPerWord,
     // size, in words, of metadata at frame bottom, i.e. it is not part of the

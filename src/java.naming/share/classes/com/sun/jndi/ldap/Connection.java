@@ -1173,8 +1173,14 @@ public final class Connection implements Runnable {
                 tlsHandshakeCompleted.complete(tlsServerCert);
             } catch (SSLPeerUnverifiedException ex) {
                 CommunicationException ce = new CommunicationException();
-                ce.setRootCause(closureReason);
-                tlsHandshakeCompleted.completeExceptionally(ex);
+                IOException priorFailure = closureReason;
+                if (priorFailure != null) {
+                    ce.setRootCause(priorFailure);
+                    ce.addSuppressed(ex);
+                } else {
+                    ce.setRootCause(ex);
+                }
+                tlsHandshakeCompleted.completeExceptionally(ce);
             }
         }
     }

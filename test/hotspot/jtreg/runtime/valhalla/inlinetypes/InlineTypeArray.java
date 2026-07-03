@@ -636,7 +636,7 @@ public class InlineTypeArray {
         expected3b[2] = null;
         checkArrayElementsEqual(exceedingRangeCopy, expected3b);
 
-        // Range starting after the end of the original array, must suceed for nullable arrays
+        // Range starting after the end of the original array, must succeed for nullable arrays
         MyInt[] farRangeCopy = (MyInt[]) Arrays.copyOfRange(myInts, myInts.length, myInts.length + 1);
         MyInt[] expected3c = (MyInt[])ValueClass.newNullableAtomicArray(MyInt.class, 1);
         expected3c[0] = null;

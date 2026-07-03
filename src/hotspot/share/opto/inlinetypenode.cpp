@@ -865,6 +865,8 @@ Node* InlineTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node
 
       Node* cur_lhs_field = cur_lhs->field_value(field_idx);
       Node* cur_rhs_field = cur_rhs->field_value(field_idx);
+      InlineTypeNode* cur_lhs_inline = cur_lhs_field->isa_InlineType();
+      InlineTypeNode* cur_rhs_inline = cur_rhs_field->isa_InlineType();
 
       Node* preprocess = emit_substitutability_check_pointer(kit, result, cur_lhs_field, cur_rhs_field);
       if (kit->stopped()) {
@@ -951,21 +953,30 @@ Node* InlineTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node
       Node* vk_klass = igvn.makecon(vk_klass_type);
 
       // Both must be vk
-      Node* not_vk = kit->top();
-      cur_lhs_field = kit->gen_checkcast(cur_lhs_field, vk_klass, &not_vk);
-      if (!not_vk->is_top()) {
-        region->add_req(not_vk);
-        result->add_req(igvn.intcon(0));
+      // InlineTypeNodes need no (new) field loads, so we can use the uncasted value below.
+      if (cur_lhs_inline != nullptr && cur_lhs_inline->inline_klass() == vk) {
+        cur_lhs_field = cur_lhs_inline;
+      } else {
+        Node* not_vk = kit->top();
+        cur_lhs_field = kit->gen_checkcast(cur_lhs_field, vk_klass, &not_vk);
+        if (!not_vk->is_top()) {
+          region->add_req(not_vk);
+          result->add_req(igvn.intcon(0));
+        }
+        cur_lhs_field = InlineTypeNode::make_from_oop(kit, cur_lhs_field, vk);
       }
-      cur_lhs_field = InlineTypeNode::make_from_oop(kit, cur_lhs_field, vk);
 
-      not_vk = kit->top();
-      cur_rhs_field = kit->gen_checkcast(cur_rhs_field, vk_klass, &not_vk);
-      if (!not_vk->is_top()) {
-        region->add_req(not_vk);
-        result->add_req(igvn.intcon(0));
+      if (cur_rhs_inline != nullptr && cur_rhs_inline->inline_klass() == vk) {
+        cur_rhs_field = cur_rhs_inline;
+      } else {
+        Node* not_vk = kit->top();
+        cur_rhs_field = kit->gen_checkcast(cur_rhs_field, vk_klass, &not_vk);
+        if (!not_vk->is_top()) {
+          region->add_req(not_vk);
+          result->add_req(igvn.intcon(0));
+        }
+        cur_rhs_field = InlineTypeNode::make_from_oop(kit, cur_rhs_field, vk);
       }
-      cur_rhs_field = InlineTypeNode::make_from_oop(kit, cur_rhs_field, vk);
 
       if (!kit->stopped()) {
         // Push the expanded InlineTypeNodes for processing later
@@ -2275,4 +2286,12 @@ const Type* StoreFlatNode::Value(PhaseGVN* phase) const {
     return Type::TOP;
   }
   return bottom_type();
+}
+
+bool LoadFlatNode::is_mismatched() const {
+  return (_decorators & C2_MISMATCHED) != 0;
+}
+
+bool StoreFlatNode::is_mismatched() const {
+  return (_decorators & C2_MISMATCHED) != 0;
 }

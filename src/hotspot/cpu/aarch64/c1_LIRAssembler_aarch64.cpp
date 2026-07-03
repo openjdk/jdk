@@ -1654,12 +1654,12 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
 
 
 void LIR_Assembler::casw(Register addr, Register newval, Register cmpval) {
-  __ cmpxchg(addr, cmpval, newval, Assembler::word, /* acquire*/ true, /* release*/ true, /* weak*/ false, rscratch1);
+  __ cmpxchg(addr, cmpval, newval, Assembler::word, memory_order_seq_cst, rscratch1);
   __ cset(rscratch1, Assembler::NE);
 }
 
 void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
-  __ cmpxchg(addr, cmpval, newval, Assembler::xword, /* acquire*/ true, /* release*/ true, /* weak*/ false, rscratch1);
+  __ cmpxchg(addr, cmpval, newval, Assembler::xword, memory_order_seq_cst, rscratch1);
   __ cset(rscratch1, Assembler::NE);
 }
 

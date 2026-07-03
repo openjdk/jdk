@@ -564,6 +564,7 @@ private:
   PhiNode* split_memory_phi(PhiNode* orig_phi, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth);
 
   void  move_inst_mem(Node* n, Unique_Node_List& orig_phis);
+  bool flat_access_aliases_with(Node* flat_access, const TypeOopPtr *toop);
   Node* find_inst_mem(Node* mem, int alias_idx, Unique_Node_List& orig_phi_worklist, uint rec_depth = 0);
   Node* step_through_mergemem(MergeMemNode *mmem, int alias_idx, const TypeOopPtr *toop);
 

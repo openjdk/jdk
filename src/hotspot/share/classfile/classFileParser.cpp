@@ -2250,6 +2250,7 @@ void ClassFileParser::copy_method_annotations(ConstMethod* cm,
 
 Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                                       bool is_interface,
+                                      bool is_identity_class,
                                       const ConstantPool* cp,
                                       bool* const has_localvariable_table,
                                       TRAPS) {
@@ -2826,7 +2827,8 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
   if (InstanceKlass::is_finalization_enabled() &&
       name == vmSymbols::finalize_method_name() &&
-      signature == vmSymbols::void_method_signature()) {
+      signature == vmSymbols::void_method_signature() &&
+      is_identity_class) {
     if (m->is_empty_method()) {
       _has_empty_finalizer = true;
     } else {
@@ -2866,6 +2868,7 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
     for (int index = 0; index < length; index++) {
       Method* method = parse_method(cfs,
                                     is_interface,
+                                    is_identity_class(),
                                     _cp,
                                     has_localvariable_table,
                                     CHECK);
@@ -4157,7 +4160,8 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   const Method* const m = ik->lookup_method(vmSymbols::finalize_method_name(),
                                            vmSymbols::void_method_signature());
   if (InstanceKlass::is_finalization_enabled() &&
-      (m != nullptr) && !m->is_empty_method()) {
+      (m != nullptr) && !m->is_empty_method() &&
+      m->method_holder()->access_flags().is_identity_class()) {
       f = true;
   }
 

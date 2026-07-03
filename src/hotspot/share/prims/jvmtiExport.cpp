@@ -1282,6 +1282,7 @@ bool              JvmtiExport::_can_post_frame_pop                        = fals
 bool              JvmtiExport::_can_pop_frame                             = false;
 bool              JvmtiExport::_can_force_early_return                    = false;
 bool              JvmtiExport::_can_support_virtual_threads               = false;
+bool              JvmtiExport::_can_support_value_objects                 = false;
 bool              JvmtiExport::_can_get_owned_monitor_info                = false;
 
 bool              JvmtiExport::_early_vmstart_recorded                    = false;
@@ -2967,6 +2968,10 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
   if (thread->should_hide_jvmti_events()) {
     return;
   }
+  const bool is_inline = object->is_inline();
+  if (is_inline && !JvmtiExport::can_support_value_objects()) {
+    return;
+  }
   HandleMark hm(thread);
   Handle h(thread, object);
 
@@ -2974,10 +2979,11 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
                       JvmtiTrace::safe_get_thread_name(thread)));
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
-    if (env->is_enabled(JVMTI_EVENT_VM_OBJECT_ALLOC)) {
+    if (env->is_enabled(JVMTI_EVENT_VM_OBJECT_ALLOC) &&
+        (!is_inline || env->get_capabilities()->can_support_value_objects != 0)) {
       EVT_TRACE(JVMTI_EVENT_VM_OBJECT_ALLOC, ("[%s] Evt vmobject alloc sent %s",
                                          JvmtiTrace::safe_get_thread_name(thread),
-                                         object==nullptr? "null" : object->klass()->external_name()));
+                                         object->klass()->external_name()));
 
       JvmtiObjectAllocEventMark jem(thread, h());
       JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
@@ -3004,19 +3010,24 @@ void JvmtiExport::post_sampled_object_alloc(JavaThread *thread, oop object) {
   if (thread->should_hide_jvmti_events()) {
     return;
   }
+  const bool is_inline = object->is_inline();
+  if (is_inline && !JvmtiExport::can_support_value_objects()) {
+    return;
+  }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC,
                  ("[%s] Trg sampled object alloc triggered",
                   JvmtiTrace::safe_get_thread_name(thread)));
   JvmtiEnvThreadStateIterator it(state);
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
-    if (ets->is_enabled(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC)) {
+    JvmtiEnv *env = ets->get_env();
+    if (ets->is_enabled(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC) &&
+        (!is_inline || env->get_capabilities()->can_support_value_objects != 0)) {
       EVT_TRACE(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC,
                 ("[%s] Evt sampled object alloc sent %s",
                  JvmtiTrace::safe_get_thread_name(thread),
-                 object == nullptr ? "null" : object->klass()->external_name()));
+                 object->klass()->external_name()));
 
-      JvmtiEnv *env = ets->get_env();
       JvmtiObjectAllocEventMark jem(thread, h());
       JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventSampledObjectAlloc callback = env->callbacks()->SampledObjectAlloc;

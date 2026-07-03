@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,14 @@ Java_ValueGetObjectMonitorUsage_nTestGetObjectMonitorUsage(JNIEnv *jni, jclass t
 
   if (info.owner != nullptr) {
     LOG("ERROR: owner is not nullptr\n");
+    result = false;
+  }
+  if (info.waiters != nullptr) {
+    LOG("ERROR: waiters is not nullptr\n");
+    result = false;
+  }
+  if (info.notify_waiters != nullptr) {
+    LOG("ERROR: notify_waiters is not nullptr\n");
     result = false;
   }
   if (info.entry_count != 0) {

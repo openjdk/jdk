@@ -871,10 +871,6 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         f.load_argument(0, x11); // x11,: index
         int call_offset = __ call_RT(x10, noreg, CAST_FROM_FN_PTR(address, load_flat_array), x10, x11);
 
-        // Ensure the stores that initialize the buffer are visible
-        // before many subsequent store that publishes this reference.
-        __ membar(MacroAssembler::StoreStore);
-
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
         restore_live_registers_except_r10(sasm);

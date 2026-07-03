@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1709,16 +1709,7 @@ public class TestNewAcmp {
         return a != a;
     }
 
-    static int get_full_opt_level() {
-        int n = (int)TieredStopAtLevel;
-        if (n >= 4) {
-            n = 4;
-        }
-        return n;
-    }
     protected static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-    protected static final long TieredStopAtLevel = (Long)WHITE_BOX.getVMFlag("TieredStopAtLevel");
-    protected static final int COMP_LEVEL_FULL_OPTIMIZATION = get_full_opt_level();
 
     public void runTest(Method m, Object[] args, int warmup, int nullMode, boolean[][] equalities) throws Exception {
         Class<?>[] parameterTypes = m.getParameterTypes();
