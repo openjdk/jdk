@@ -3353,16 +3353,18 @@ void MacroAssembler::test_field_is_flat(Register flags, Label& is_flat) {
 
 void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set,
                                             Label& jmp_label, bool maybe_far) {
-  Label test_mark_word;
   // load mark word
   ld(temp_reg, oopDesc::mark_offset_in_bytes(), oop);
-  // if unlocked bit is set we can directly use the mark word
-  andi_(R0, temp_reg, markWord::unlocked_value);
-  bne(CR0, test_mark_word);
-  // slow path use klass prototype
-  load_prototype_header(temp_reg, oop);
+  if (!UseObjectMonitorTable) {
+    Label test_mark_word;
+    // if unlocked bit is set we can directly use the mark word
+    andi_(R0, temp_reg, markWord::unlocked_value);
+    bne(CR0, test_mark_word);
+    // slow path use klass prototype
+    load_prototype_header(temp_reg, oop);
 
-  bind(test_mark_word);
+    bind(test_mark_word);
+  }
   andi_(R0, temp_reg, test_bit);
   if (maybe_far) {
     bc_far_optimized(jmp_set ? Assembler::bcondCRbiIs0 : Assembler::bcondCRbiIs1,

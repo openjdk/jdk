@@ -282,8 +282,6 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
 
   // "lock" stores the address of the monitor stack slot, so this is not an oop
   LIR_Opr lock = new_register(T_INT);
-  // Need a scratch register for inline types on x86
-  LIR_Opr scratch = new_register(T_ADDRESS);
 
   CodeEmitInfo* info_for_exception = nullptr;
   if (x->needs_null_check()) {
@@ -298,7 +296,8 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   // this CodeEmitInfo must not have the xhandlers because here the
   // object is already locked (xhandlers expect object to be unlocked)
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  monitor_enter(obj.result(), lock, syncTempOpr(), scratch,
+  LIR_Opr tmp = new_register(T_ADDRESS);
+  monitor_enter(obj.result(), lock, syncTempOpr(), tmp,
                 x->monitor_no(), info_for_exception, info, throw_ie_stub);
 }
 
@@ -1213,7 +1212,8 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
     BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
   }
   klass2reg_with_patching(klass_reg, obj, patching_info);
-  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, T_OBJECT, klass_reg, slow_path, true, is_null_free || is_flat);
+  bool always_slow_path = is_null_free || is_flat;
+  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, T_OBJECT, klass_reg, slow_path, true /*zero_array*/, always_slow_path);
 
   LIR_Opr result = rlock_result(x);
   __ move(reg, result);

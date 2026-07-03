@@ -55,10 +55,11 @@ class RecordComponent;
 
 //  InstanceKlass embedded field layout (after declared fields):
 //    [EMBEDDED Java vtable             ] size in words = vtable_len
+//    [EMBEDDED Java itable             ] size in words = itable_len
 //    [EMBEDDED nonstatic oop-map blocks] size in words = nonstatic_oop_map_size
 //      The embedded nonstatic oop-map blocks are short pairs (offset, length)
 //      indicating where oops are located in instances of this klass.
-//    [EMBEDDED implementor of the interface] only exist for interface
+//    [EMBEDDED implementor of the interface] only exists for interface
 //    [EMBEDDED InlineKlass::Members] only if is an InlineKlass instance
 
 
@@ -334,19 +335,6 @@ class InstanceKlass: public Klass {
 
   // Located here because sub-klasses can't have their own C++ fields
   address _adr_inline_klass_members;
-
-  // embedded Java vtable follows here
-  // embedded Java itables follows here
-  // embedded static fields follows here
-  // embedded nonstatic oop-map blocks follows here
-  // embedded implementor of this interface follows here
-  //   The embedded implementor only exists if the current klass is an
-  //   interface. The possible values of the implementor fall into following
-  //   three cases:
-  //     null: no implementor.
-  //     A Klass* that's not itself: one implementor.
-  //     Itself: more than one implementors.
-  //
 
   friend class SystemDictionary;
 
@@ -1006,6 +994,13 @@ public:
 #endif
 
   // Access to the implementor of an interface.
+  //   The embedded implementor only exists if the current klass is an
+  //   interface. The possible values of the implementor fall into following
+  //   three cases:
+  //     null: no implementor.
+  //     A Klass* that's not itself: one implementor.
+  //     Itself: more than one implementors.
+  //
   InstanceKlass* implementor() const;
   void set_implementor(InstanceKlass* ik);
   int  nof_implementors() const;

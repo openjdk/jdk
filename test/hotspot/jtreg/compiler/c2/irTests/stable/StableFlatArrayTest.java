@@ -27,12 +27,10 @@
  * @summary Check stable flat array field folding
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
- * @build jdk.test.whitebox.WhiteBox
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.c2.irTests.stable.StableFlatArrayTest
+ * @run driver ${test.main.class}
  */
 
 package compiler.c2.irTests.stable;

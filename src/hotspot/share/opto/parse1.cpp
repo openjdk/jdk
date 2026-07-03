@@ -1442,7 +1442,7 @@ void Parse::do_method_entry() {
       }
 
       ciObjArrayKlass* spec_citype = ciObjArrayKlass::make(parm_citype->as_obj_array_klass()->element_klass(), true);
-      const Type* improved_spec_type = TypeKlassPtr::make(spec_citype, Type::trust_interfaces)->as_instance_type();
+      const Type* improved_spec_type = TypeKlassPtr::make(spec_citype, Type::trust_interfaces)->as_exact_instance_type();
       improved_spec_type = improved_spec_type->join(spec_type)->join(TypePtr::NOTNULL);
       if (improved_spec_type->empty()) {
         continue;

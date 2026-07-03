@@ -3108,22 +3108,11 @@ private:
 
   Node* do_transform(PhiNode* phi) {
     assert(_inline_klass != nullptr, "must be");
-    InlineTypeNode *vt = InlineTypeNode::make_null(*_phase, _inline_klass, /* transform = */ false)->clone_with_phis(
+    InlineTypeNode* vt = InlineTypeNode::make_null(*_phase, _inline_klass, /* transform = */ false)->clone_with_phis(
       _phase, phi->in(0), nullptr, !phi->type()->maybe_null(), true);
-    if (_can_reshape) {
-      // Replace phi right away to be able to use the inline
-      // type node when reaching the phi again through data loops.
-      PhaseIterGVN* igvn = _phase->is_IterGVN();
-      for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
-        Node* u = phi->fast_out(i);
-        igvn->rehash_node_delayed(u);
-        imax -= u->replace_edge(phi, vt);
-        --i;
-      }
-      igvn->rehash_node_delayed(phi);
-      assert(phi->outcnt() == 0, "should be dead now");
-    }
-    ResourceMark rm;
+    // Record that vt was created to replace phi to be able to use the inline type node when reaching the phi again
+    // through data loops.
+    _clones.map(phi->_idx, vt);
     Node_List casts;
     for (uint i = 1; i < phi->req(); ++i) {
       Node* n = phi->in(i);
@@ -3138,7 +3127,12 @@ private:
         n = InlineTypeNode::make_null(*_phase, _inline_klass);
       } else if (n->is_Phi()) {
         assert(_can_reshape, "can only handle phis during IGVN");
-        n = _phase->transform(do_transform(n->as_Phi()));
+        Node* clone = get_clone(n);
+        if (clone != nullptr) {
+          n = clone;
+        } else {
+          n = _phase->transform(do_transform(n->as_Phi()));
+        }
       }
       while (casts.size() != 0) {
         // Push the cast(s) through the InlineTypeNode
@@ -3233,10 +3227,10 @@ public:
 
   Node* do_it() {
     if (_can_reshape) {
-      Node_List clones;
       collect_nodes_to_clone();
       clone_subgraph();
       DEBUG_ONLY(verify_clone());
+      _clones.clear();
     }
     return do_transform(_root_phi);
   }

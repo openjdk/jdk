@@ -44,7 +44,7 @@ import jdk.test.lib.Asserts;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @compile GetfieldChains.jcod
- * @run main/timeout=300 compiler.valhalla.inlinetypes.TestGetfieldChains
+ * @run driver/timeout=300 ${test.main.class}
  */
 
 @LooselyConsistentValue

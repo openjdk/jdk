@@ -32,7 +32,7 @@
  * @run driver jdk.test.lib.helpers.StrictProcessor
  *             compiler.valhalla.inlinetypes.TestStrictFinalExitMemBar$StrictFinalHolder
  *             compiler.valhalla.inlinetypes.TestStrictFinalExitMemBar$StrictNonFinalHolder
- * @run main ${test.main.class}
+ * @run driver ${test.main.class}
  */
 
 package compiler.valhalla.inlinetypes;

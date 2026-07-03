@@ -334,7 +334,7 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
       flatArrayHandle sh(THREAD, sa);
       for (int i = 0; i < length; i++) {
         oop o = sh->obj_at(src_pos + i, CHECK);
-        dh->obj_at_put(dst_pos + i, o);
+        dh->obj_at_put(dst_pos + i, o, CHECK);
       }
     }
   } else {

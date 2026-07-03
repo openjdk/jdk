@@ -60,7 +60,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run main compiler.valhalla.inlinetypes.TestNullableInlineTypes 0
+ * @run driver ${test.main.class} 0
  */
 
 /*
@@ -74,7 +74,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run main compiler.valhalla.inlinetypes.TestNullableInlineTypes 1
+ * @run driver ${test.main.class} 1
  */
 
 /*
@@ -88,7 +88,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run main compiler.valhalla.inlinetypes.TestNullableInlineTypes 2
+ * @run driver ${test.main.class} 2
  */
 
 /*
@@ -102,7 +102,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run main/othervm/timeout=300 compiler.valhalla.inlinetypes.TestNullableInlineTypes 3
+ * @run driver/timeout=300 ${test.main.class} 3
  */
 
 /*
@@ -116,7 +116,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run main compiler.valhalla.inlinetypes.TestNullableInlineTypes 4
+ * @run driver ${test.main.class} 4
  */
 
 /*
@@ -130,7 +130,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run main compiler.valhalla.inlinetypes.TestNullableInlineTypes 5
+ * @run driver ${test.main.class} 5
  */
 
 /*
@@ -144,7 +144,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run main compiler.valhalla.inlinetypes.TestNullableInlineTypes 6
+ * @run driver ${test.main.class} 6
  */
 
 @ForceCompileClassInitializer

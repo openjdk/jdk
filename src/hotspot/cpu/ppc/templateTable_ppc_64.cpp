@@ -3417,7 +3417,8 @@ void TemplateTable::fast_accessfield(TosState state) {
       if (support_IRIW_for_not_multiple_copy_atomic_cpu) { __ fence(); }
       __ read_flat_field(Rcache, R17_tos);
       __ verify_oop(R17_tos);
-      // memory barrier in read_flat_field
+      __ twi_0(R17_tos);
+      __ isync();
       break;
     }
     case Bytecodes::_fast_agetfield:

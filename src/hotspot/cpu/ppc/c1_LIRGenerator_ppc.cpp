@@ -584,18 +584,13 @@ inline bool can_handle_logic_op_as_uimm(ValueType *type, Bytecodes::Code bc) {
       Assembler::is_uimm((jlong)((julong)int_or_long_const >> 16), 16)) return true;
 
   // see Assembler::andi
-  if (bc == Bytecodes::_iand &&
-      (is_power_of_2(int_or_long_const+1) ||
-       is_power_of_2(int_or_long_const) ||
-       is_power_of_2(-int_or_long_const))) return true;
-  if (bc == Bytecodes::_land &&
-      (is_power_of_2((unsigned long)int_or_long_const+1) ||
-       (Assembler::is_uimm(int_or_long_const, 32) && is_power_of_2(int_or_long_const)) ||
-       (int_or_long_const != min_jlong && is_power_of_2(-int_or_long_const)))) return true;
+  if ((bc == Bytecodes::_iand || bc == Bytecodes::_land))
+    return Assembler::andi_supports(int_or_long_const);
 
   // special case: xor -1
-  if ((bc == Bytecodes::_ixor || bc == Bytecodes::_lxor) &&
-      int_or_long_const == -1) return true;
+  if ((bc == Bytecodes::_ixor || bc == Bytecodes::_lxor))
+    return (int_or_long_const == -1);
+
   return false;
 }
 
@@ -930,7 +925,8 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
     BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
   }
   klass2reg_with_patching(klass_reg, obj, patching_info);
-  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, T_OBJECT, klass_reg, slow_path, true, is_null_free || is_flat);
+  bool always_slow_path = is_null_free || is_flat;
+  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, T_OBJECT, klass_reg, slow_path, true /*zero_array*/, always_slow_path);
 
   // Must prevent reordering of stores for object initialization
   // with stores that publish the new object.

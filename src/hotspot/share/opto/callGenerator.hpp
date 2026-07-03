@@ -47,6 +47,8 @@ class CallGenerator : public ArenaObj {
   virtual bool           do_late_inline_check(Compile* C, JVMState* jvms) { ShouldNotReachHere(); return false; }
   virtual bool           is_pure_call() const                             { ShouldNotReachHere(); return false; }
 
+  void mark_projs_not_dead_loop_safe(Node* ret) const;
+
  public:
   // Accessors
   ciMethod*          method() const             { return _method; }

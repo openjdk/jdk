@@ -38,7 +38,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.rL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestJNICalls 0
+ * @run driver ${test.main.class} 0
  */
 
 /*
@@ -50,7 +50,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.rL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestJNICalls 1
+ * @run driver ${test.main.class} 1
  */
 
 /*
@@ -62,7 +62,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.rL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestJNICalls 2
+ * @run driver ${test.main.class} 2
  */
 
 /*
@@ -74,7 +74,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.rL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestJNICalls 3
+ * @run driver ${test.main.class} 3
  */
 
 /*
@@ -86,7 +86,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.rL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestJNICalls 4
+ * @run driver ${test.main.class} 4
  */
 
 /*
@@ -98,7 +98,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.rL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestJNICalls 5
+ * @run driver ${test.main.class} 5
  */
 
 /*
@@ -110,7 +110,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.rL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestJNICalls 6
+ * @run driver ${test.main.class} 6
  */
 
 @ForceCompileClassInitializer

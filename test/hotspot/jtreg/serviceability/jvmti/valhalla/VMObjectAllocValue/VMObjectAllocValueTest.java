@@ -26,7 +26,8 @@
  * @summary Verifies that a VMObjectAlloc event is generated for a value object created using MethodHandle
  * @requires vm.jvmti
  * @enablePreview
- * @run main/othervm/native -agentlib:VMObjectAllocValueTest VMObjectAllocValueTest
+ * @run main/othervm/native -agentlib:VMObjectAllocValueTest VMObjectAllocValueTest 0
+ * @run main/othervm/native -agentlib:VMObjectAllocValueTest=can_support_value_objects VMObjectAllocValueTest 1
  */
 
 import java.lang.invoke.MethodHandle;
@@ -47,8 +48,11 @@ public value class VMObjectAllocValueTest {
         MethodHandle mh = publicLookup.findConstructor(VMObjectAllocValueTest.class, mt);
         mh.invoke("str"); // to trigger a VMObjectAlloc event invoke ctor not from Java
 
-        if (getNumberOfAllocation() != 1) {
-            throw new Exception("Number of allocation != 1");
+        int expected = Integer.parseInt(args[0]);
+        int actual = getNumberOfAllocation();
+
+        if (actual != expected) {
+            throw new Exception("Number of allocation: expected: " + expected + ", got: " + actual);
         }
     }
 }

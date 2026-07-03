@@ -73,7 +73,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run main compiler.valhalla.inlinetypes.TestLWorld 0
+ * @run driver ${test.main.class} 0
  */
 
 /*
@@ -86,7 +86,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run main compiler.valhalla.inlinetypes.TestLWorld 1
+ * @run driver ${test.main.class} 1
  */
 
 /*
@@ -99,7 +99,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run main compiler.valhalla.inlinetypes.TestLWorld 2
+ * @run driver ${test.main.class} 2
  */
 
 /*
@@ -112,7 +112,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run main compiler.valhalla.inlinetypes.TestLWorld 3
+ * @run driver ${test.main.class} 3
  */
 
 /*
@@ -125,21 +125,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run main compiler.valhalla.inlinetypes.TestLWorld 4
- */
-
-/*
- * @test
- * @key randomness
- * @summary Test inline types in LWorld.
- * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
- * @enablePreview
- * @modules java.base/jdk.internal.value
- *          java.base/jdk.internal.vm.annotation
- * @build test.java.lang.invoke.lib.InstructionHelper
- * @run main compiler.valhalla.inlinetypes.TestLWorld 5
+ * @run driver ${test.main.class} 4
  */
 
 /*
@@ -153,7 +139,21 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run main compiler.valhalla.inlinetypes.TestLWorld 6
+ * @run driver ${test.main.class} 5
+ */
+
+/*
+ * @test
+ * @key randomness
+ * @summary Test inline types in LWorld.
+ * @library /test/lib /test/jdk/java/lang/invoke/common /
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
+ * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @build test.java.lang.invoke.lib.InstructionHelper
+ * @run driver ${test.main.class} 6
  */
 
 public class TestLWorld {
@@ -5478,5 +5478,37 @@ public class TestLWorld {
         } catch (NullPointerException e) {
             // expected
         }
+    }
+
+    // TODO 8376254: C1 bails out if the type of the nullable flat field is uninitialized
+    static ObjectHolderHolder objectHolderHolder = new ObjectHolderHolder();
+
+    static value class ObjectHolder {
+        Object obj = new Object();
+    }
+
+    static value class ObjectHolderHolder {
+        ObjectHolder objectHolder = new ObjectHolder();
+    }
+
+    // Test that acmp expansion works with field of exact Object type
+    @Test
+    @IR(failOn = {STATIC_CALL_OF_METHOD, "isSubstitutable.*"},
+        counts = {IRNode.ALLOC, "= 2"}) // The two Object allocations
+    static boolean testAcmp() {
+        Object lhs = null;
+        Object rhs = null;
+        for (int i = 0; i < 10; i++) {
+            if ((i & 1) == 0) {
+                lhs = new ObjectHolderHolder();
+                rhs = new ObjectHolderHolder();
+            }
+        }
+        return lhs == rhs;
+    }
+
+    @Run(test = "testAcmp")
+    public void runTestAcmp() {
+        Asserts.assertFalse(testAcmp());
     }
 }

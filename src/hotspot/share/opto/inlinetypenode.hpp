@@ -195,6 +195,8 @@ public:
   Node* Identity(PhaseGVN* phase) override { return this; }
   const Type* Value(PhaseGVN* phase) const override;
 
+  bool is_mismatched() const;
+
 private:
   LoadFlatNode(ciInlineKlass* vk, const TypeTuple* type, bool null_free, DecoratorSet decorators)
     : SafePointNode(TypeFunc::Parms + 2, nullptr, TypePtr::BOTTOM), _vk(vk), _type(type), _null_free(null_free), _decorators(decorators) {
@@ -233,6 +235,8 @@ public:
   Node* Ideal(PhaseGVN* phase, bool can_reshape) override { return nullptr; }
   Node* Identity(PhaseGVN* phase) override { return this; }
   const Type* Value(PhaseGVN* phase) const override;
+
+  bool is_mismatched() const;
 
 private:
   StoreFlatNode(bool null_free, DecoratorSet decorators)

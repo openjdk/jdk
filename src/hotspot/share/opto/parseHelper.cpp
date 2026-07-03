@@ -230,7 +230,7 @@ Node* Parse::array_store_check(Node*& adr, const Type*& elemtype) {
         // Cast array klass to exactness
         replace_in_map(array_klass, con);
         array_klass = con;
-        Node* cast = _gvn.transform(new CheckCastPPNode(control(), ary, extak->as_instance_type()));
+        Node* cast = _gvn.transform(new CheckCastPPNode(control(), ary, extak->as_exact_instance_type()));
         replace_in_map(ary, cast);
         ary = cast;
 

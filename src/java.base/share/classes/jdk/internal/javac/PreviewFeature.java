@@ -69,7 +69,7 @@ public @interface PreviewFeature {
      * Values should be annotated with the feature's {@code JEP}.
      */
     public enum Feature {
-        @JEP(number = 8350458, title = "Strict Field Initialization in the JVM", status = "Preview")
+        @JEP(number = 539, title = "Strict Field Initialization in the JVM", status = "Preview")
         STRICT_FIELDS,
         @JEP(number=401, title="Value Classes and Objects", status = "Preview")
         VALUE_OBJECTS,

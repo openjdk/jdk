@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,11 @@ import jdk.internal.misc.CDS;
  * remove entries automatically when the key is garbage collected. This is
  * accomplished by using a backing map where the keys are either a
  * {@link WeakReference} or a {@link SoftReference}.
- * Keys must be {@linkplain Class#isIdentity() identity objects.}
  * <p>
- * To create a {@link ReferencedKeyMap} the user must provide a {@link Supplier}
+ * Keys in {@code ReferencedKeyMap} must be
+ * {@linkplain java.util.Objects#hasIdentity identity objects}.
+ * <p>
+ * To create a {@code ReferencedKeyMap} the user must provide a {@link Supplier}
  * of the backing map and whether {@link WeakReference} or
  * {@link SoftReference} is to be used.
  *
