@@ -501,7 +501,7 @@ intptr_t* frame::interpreter_frame_local_at(int index) const {
 
 intptr_t* frame::interpreter_frame_expression_stack_at(jint offset) const {
   const int n = offset * Interpreter::stackElementWords;
-  return &(interpreter_frame_expression_stack()[-n]);
+  return interpreter_frame_expression_stack() - n;
 }
 
 jint frame::interpreter_frame_expression_stack_size() const {
