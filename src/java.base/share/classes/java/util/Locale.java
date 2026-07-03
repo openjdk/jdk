@@ -120,9 +120,13 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   {@code Locale} always canonicalizes to lower case.</dd>
  *
  *   <dd> <em>Syntax:</em> Well-formed {@code language} values have the form {@code [a-zA-Z]{2,8}}.</dd>
- *   <dd> <em> BCP 47 deviation:</em> this is not the full BCP 47 language production, since it excludes
+ *   <dd> <em> BCP 47 deviation:</em> {@code Locale} does not retain the
  *   <a href="https://www.rfc-editor.org/rfc/rfc5646#section-2.2.2">extlang</a>
- *   (as modern three-letter language codes are preferred).</dd>
+ *   subtag. This is because three-letter language codes are preferred over extlang
+ *   subtags. When a {@code Locale} is created from a language tag containing an
+ *   extlang subtag, the first extlang subtag is interpreted as the <i>language</i>
+ *   field. The primary language subtag and any subsequent extlang subtags
+ *   are ignored.</dd>
  *
  *   <dd> <em>Example:</em> "en" (English), "ja" (Japanese), "kok" (Konkani)</dd>
  *

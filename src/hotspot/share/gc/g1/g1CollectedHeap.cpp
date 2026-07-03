@@ -1654,6 +1654,9 @@ void G1CollectedHeap::stop() {
   // that are destroyed during shutdown.
   _cr->stop();
   _service_thread->stop();
+  VM_G1StopMarking op;
+  VMThread::execute(&op);
+
   _cm->stop();
 }
 

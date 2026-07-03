@@ -6387,7 +6387,7 @@ void os::jfr_report_memory_info() {
     // Send the RSS JFR event
     EventResidentSetSize event;
     event.set_size(pmex.WorkingSetSize);
-    event.set_peak(pmex.PeakWorkingSetSize);
+    event.set_peak(MAX2(pmex.PeakWorkingSetSize, pmex.WorkingSetSize));
     event.commit();
   } else {
     // Log a warning
