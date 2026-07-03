@@ -150,21 +150,12 @@ class NativeSocketAddress {
      * @return the byte offset of the first mismatch or -1 if no mismatch
      */
     private int mismatch(NativeSocketAddress other) {
-        int i = ArraysSupport.vectorizedMismatch(null,
+        return ArraysSupport.vectorizedMismatch(null,
                 this.address,
                 null,
                 other.address,
                 SIZEOF_SOCKETADDRESS,
                 ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
-        if (i >= 0)
-            return i;
-        i = SIZEOF_SOCKETADDRESS - ~i;
-        for (; i < SIZEOF_SOCKETADDRESS; i++) {
-            if (UNSAFE.getByte(this.address + i) != UNSAFE.getByte(other.address + i)) {
-                return i;
-            }
-        }
-        return -1;
     }
 
     @Override
