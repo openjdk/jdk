@@ -2486,15 +2486,15 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   temp->destruct(this);     // reuse the _idx of this little guy
 }
 
+// Replaces n with m in all uses, including self-loops.
 void PhaseIterGVN::replace_in_uses(Node* n, Node* m) {
   assert(n != nullptr, "sanity");
+  add_users_to_worklist(n);
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* u = n->fast_out(i);
-    if (u != n) {
-      rehash_node_delayed(u);
-      int nb = u->replace_edge(n, m);
-      --i, imax -= nb;
-    }
+    rehash_node_delayed(u);
+    int nb = u->replace_edge(n, m);
+    --i, imax -= nb;
   }
   assert(n->outcnt() == 0, "all uses must be deleted");
 }

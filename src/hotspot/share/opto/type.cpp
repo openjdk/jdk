@@ -1148,7 +1148,7 @@ const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
   if (isa_narrowklass() || t->isa_narrowklass()) {
     return mt;
   }
-  // TODO 8350865 This currently triggers a verification failure, the code around "// Even though MyValue is final" needs adjustments
+  // TODO 8387653 This currently triggers a verification failure, the code around "// Even though MyValue is final" needs adjustments
   if ((this_t->isa_ptr() && this_t->is_ptr()->is_not_flat()) ||
       (this_t->_dual->isa_ptr() && this_t->_dual->is_ptr()->is_not_flat())) return mt;
   this_t->check_symmetrical(t, mt, verify);
@@ -2629,7 +2629,7 @@ bool TypeAry::ary_must_be_exact() const {
     if (tinst->instance_klass()->is_final()) {
       // Even though MyValue is final, [LMyValue is only exact if the array
       // is (not) null-free due to null-free [LMyValue <: null-able [LMyValue.
-      // TODO 8350865 If we know that the array can't be null-free, it's allowed to be exact, right?
+      // TODO 8387653 If we know that the array can't be null-free, it's allowed to be exact, right?
       // If so, we should add '&& !_not_null_free'
       if (tinst->is_inlinetypeptr() && (tinst->ptr() != TypePtr::NotNull)) {
         return false;
@@ -6415,7 +6415,7 @@ bool TypeInstKlassPtr::must_be_exact() const {
 }
 
 //-----------------------------cast_to_exactness-------------------------------
-const TypeKlassPtr* TypeInstKlassPtr::cast_to_exactness(bool klass_is_exact) const {
+const TypeInstKlassPtr* TypeInstKlassPtr::cast_to_exactness(bool klass_is_exact) const {
   if (klass_is_exact == (_ptr == Constant)) return this;
   if (must_be_exact()) return this;
   ciKlass* k = klass();
@@ -6427,7 +6427,7 @@ const TypeKlassPtr* TypeInstKlassPtr::cast_to_exactness(bool klass_is_exact) con
 //-----------------------------as_instance_type--------------------------------
 // Corresponding type for an instance of the given class.
 // It will be NotNull, and exact if and only if the klass type is exact.
-const TypeOopPtr* TypeInstKlassPtr::as_instance_type(bool klass_change) const {
+const TypeInstPtr* TypeInstKlassPtr::as_exact_instance_type(bool klass_change) const {
   ciKlass* k = klass();
   bool xk = klass_is_exact();
   Compile* C = Compile::current();
@@ -6455,6 +6455,10 @@ const TypeOopPtr* TypeInstKlassPtr::as_instance_type(bool klass_change) const {
 
   FlatInArray flat_in_array = compute_flat_in_array_if_unknown(ik, xk, _flat_in_array);
   return TypeInstPtr::make(TypePtr::BotPTR, k, interfaces, xk, nullptr, Offset(0), flat_in_array);
+}
+
+const TypeInstPtr* TypeInstKlassPtr::as_subtype_instance_type(bool klass_change) const {
+  return cast_to_exactness(false)->as_exact_instance_type(klass_change);
 }
 
 //------------------------------xmeet------------------------------------------
@@ -6950,7 +6954,7 @@ bool TypeAryKlassPtr::must_be_exact() const {
 }
 
 //-----------------------------cast_to_exactness-------------------------------
-const TypeKlassPtr *TypeAryKlassPtr::cast_to_exactness(bool klass_is_exact) const {
+const TypeAryKlassPtr* TypeAryKlassPtr::cast_to_exactness(bool klass_is_exact) const {
   if (klass_is_exact == this->klass_is_exact()) {
     return this;
   }
@@ -6981,12 +6985,12 @@ const TypeKlassPtr *TypeAryKlassPtr::cast_to_exactness(bool klass_is_exact) cons
 //-----------------------------as_instance_type--------------------------------
 // Corresponding type for an instance of the given class.
 // It will be NotNull, and exact if and only if the klass type is exact.
-const TypeOopPtr* TypeAryKlassPtr::as_instance_type(bool klass_change) const {
+const TypeAryPtr* TypeAryKlassPtr::as_exact_instance_type(bool klass_change) const {
   ciKlass* k = klass();
   bool    xk = klass_is_exact();
   const Type* el = nullptr;
   if (elem()->isa_klassptr()) {
-    el = elem()->is_klassptr()->as_instance_type(false)->cast_to_exactness(false);
+    el = elem()->is_klassptr()->as_subtype_instance_type(false);
     k = nullptr;
   } else {
     el = elem();
@@ -7020,6 +7024,10 @@ const TypeOopPtr* TypeAryKlassPtr::as_instance_type(bool klass_change) const {
   return TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(el, TypeInt::POS, false, flat, not_flat, not_null_free, atomic), k, xk, Offset(0));
 }
 
+// Corresponding type for instances that subtype the given class
+const TypeAryPtr* TypeAryKlassPtr::as_subtype_instance_type(bool klass_change) const {
+  return cast_to_exactness(false)->as_exact_instance_type(klass_change);
+}
 
 //------------------------------xmeet------------------------------------------
 // Compute the MEET of two types, return a new Type object.

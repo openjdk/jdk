@@ -29,7 +29,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 0
+ * @run driver ${test.main.class} 0
  */
 
 /*
@@ -40,7 +40,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 1
+ * @run driver ${test.main.class} 1
  */
 
 /*
@@ -51,7 +51,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 2
+ * @run driver ${test.main.class} 2
  */
 
 /*
@@ -62,7 +62,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 3
+ * @run driver ${test.main.class} 3
  */
 
 /*
@@ -73,7 +73,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 4
+ * @run driver ${test.main.class} 4
  */
 
 /*
@@ -84,7 +84,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 5
+ * @run driver ${test.main.class} 5
  */
 
 /*
@@ -95,7 +95,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 6
+ * @run driver ${test.main.class} 6
  */
 
 /*
@@ -106,7 +106,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 7
+ * @run driver ${test.main.class} 7
  */
 
 /*
@@ -117,7 +117,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 8
+ * @run driver ${test.main.class} 8
  */
 
 /*
@@ -128,7 +128,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 9
+ * @run driver ${test.main.class} 9
  */
 
 /*
@@ -139,7 +139,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 10
+ * @run driver ${test.main.class} 10
  */
 
 /*
@@ -150,7 +150,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 11
+ * @run driver ${test.main.class} 11
  */
 
 /*
@@ -161,7 +161,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 12
+ * @run driver ${test.main.class} 12
  */
 
 /*
@@ -172,7 +172,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main ${test.main.class} 13
+ * @run driver ${test.main.class} 13
  */
 
 package compiler.valhalla.inlinetypes;

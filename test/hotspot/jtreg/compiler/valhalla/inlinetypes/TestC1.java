@@ -45,7 +45,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.rL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main/timeout=300 compiler.valhalla.inlinetypes.TestC1
+ * @run driver/timeout=300 ${test.main.class}
  */
 
 public class TestC1 {

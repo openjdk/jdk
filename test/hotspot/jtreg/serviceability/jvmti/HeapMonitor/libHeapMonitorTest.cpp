@@ -529,11 +529,6 @@ static void event_storage_add(EventStorage* storage,
   jint count;
   jvmtiError err;
 
-  if (!jni->HasIdentity(object)) {
-    // weak references are prohibited for non-identity objects, skip them
-    return;
-  }
-
   err = jvmti->GetStackTrace(thread, 0, 64, frames, &count);
   if (err == JVMTI_ERROR_NONE && count >= 1) {
     ObjectTrace* live_object;

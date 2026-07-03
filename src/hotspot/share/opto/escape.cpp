@@ -4548,6 +4548,44 @@ void ConnectionGraph::move_inst_mem(Node* n, Unique_Node_List& orig_phis) {
 // is the specified alias index.
 //
 #define FIND_INST_MEM_RECURSION_DEPTH_LIMIT 1000
+
+// Does LoadFlat/StoreFlat flat_access alias with memory access with type toop?
+// toop is the type for some field of some known instance
+bool ConnectionGraph::flat_access_aliases_with(Node* flat_access, const TypeOopPtr* toop) {
+  Node* base = flat_access->is_StoreFlat() ? flat_access->as_StoreFlat()->base() : flat_access->as_LoadFlat()->base();
+  uint idx = base->_idx;
+  if (idx >= nodes_size()) {
+    return false;
+  }
+  PointsToNode* ptn = ptnode_adr(idx);
+  if (ptn == nullptr) {
+    return false;
+  }
+  PointsToNode::EscapeState es = ptn->escape_state();
+  if (es >= PointsToNode::GlobalEscape) {
+    return false;
+  }
+  if (ptn->is_JavaObject()) {
+    Node* jobj_base = get_map(ptn->idx());
+    if (jobj_base == nullptr || !_igvn->type(jobj_base)->is_oopptr()->same_instance_as(toop)) {
+      assert(!_igvn->type(base)->is_oopptr()->same_instance_as(toop), "should not alias");
+      return false;
+    }
+    return true;
+  }
+  assert(ptn->is_LocalVar(), "sanity");
+  for (EdgeIterator i(ptn); i.has_next(); i.next()) {
+    if (i.get()->is_JavaObject()) {
+      Node* jobj_base = get_map(i.get()->idx());
+      if (jobj_base != nullptr && _igvn->type(jobj_base)->is_oopptr()->same_instance_as(toop)) {
+        return true;
+      }
+    }
+  }
+  assert(!_igvn->type(base)->is_oopptr()->same_instance_as(toop), "should not alias");
+  return false;
+}
+
 Node* ConnectionGraph::find_inst_mem(Node* orig_mem, int alias_idx, Unique_Node_List& orig_phis, uint rec_depth) {
   if (rec_depth > FIND_INST_MEM_RECURSION_DEPTH_LIMIT) {
     _compile->record_failure(_invocation > 0 ? C2Compiler::retry_no_iterative_escape_analysis() : C2Compiler::retry_no_escape_analysis());
@@ -4625,7 +4663,25 @@ Node* ConnectionGraph::find_inst_mem(Node* orig_mem, int alias_idx, Unique_Node_
         }
         result = proj_in->in(TypeFunc::Memory);
       } else if (proj_in->is_LoadFlat()) {
-        result = proj_in->in(TypeFunc::Memory);
+        // Either:
+        // 1- this is a non mismatched LoadFlat for alias_idx's non escaping allocation: it will get removed by
+        // ConnectionGraph::optimize_flat_accesses() and has no effect on the memory state
+        // 2- or it is a LoadFlat for some object unrelated to alias_idx
+        // 3- this is mismatched LoadFlat for alias_idx's non escaping allocation: it won't get removed by
+        // ConnectionGraph::optimize_flat_accesses()
+        // In cases 1- and 2-, it's safe to assume this LoadFlat doesn't modify the memory for alias_idx
+        // If the LoadFlat is mismatched, it's not removed so don't step over it if it's a flat access to the alias_idx
+        // known instance
+        if (!proj_in->as_LoadFlat()->is_mismatched() || !flat_access_aliases_with(proj_in, toop)) {
+          result = proj_in->in(TypeFunc::Memory);
+        }
+      } else if (proj_in->is_StoreFlat()) {
+        // Either:
+        // - this is a StoreFlat for alias_idx's non escaping allocation that does modify the memory state for alias_idx
+        // - or it is a StoreFlat for some object unrelated to alias_idx that can't modify the memory state for alias_idx
+        if (!flat_access_aliases_with(proj_in, toop)) {
+          result = proj_in->in(TypeFunc::Memory);
+        }
       }
     } else if (result->is_MergeMem()) {
       MergeMemNode *mmem = result->as_MergeMem();

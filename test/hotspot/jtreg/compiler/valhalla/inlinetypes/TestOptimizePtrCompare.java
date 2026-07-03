@@ -28,7 +28,7 @@
  * @library /test/lib /
  * @enablePreview
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
- * @run main ${test.main.class}
+ * @run driver ${test.main.class}
  */
 
 package compiler.valhalla.inlinetypes;
@@ -164,6 +164,7 @@ public class TestOptimizePtrCompare {
         return v;
     }
 
+    // TODO 8376254: C1 bails out if the type of the nullable flat field is uninitialized
     @Test(allowNotCompilable = true)
     @IR(applyIfAnd = {"InlineTypePassFieldsAsArgs", "true", "InlineTypeReturnedAsFields", "true"}, failOn = {IRNode.CMP_P_OR_N})
     @IR(applyIfAnd = {"InlineTypePassFieldsAsArgs", "false", "InlineTypeReturnedAsFields", "true"}, counts = {IRNode.CMP_P_OR_N, "4", IRNode.CMP_I, "2"})

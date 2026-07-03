@@ -2183,7 +2183,7 @@ Node* PhaseMacroExpand::initialize_object(AllocateNode* alloc,
     // conservatively small header size:
     header_size = arrayOopDesc::base_offset_in_bytes(T_BYTE);
     if (_igvn.type(klass_node)->isa_aryklassptr()) {   // we know the exact header size in most cases:
-      BasicType elem = _igvn.type(klass_node)->is_klassptr()->as_instance_type()->isa_aryptr()->elem()->array_element_basic_type();
+      BasicType elem = _igvn.type(klass_node)->is_klassptr()->as_exact_instance_type()->isa_aryptr()->elem()->array_element_basic_type();
       if (is_reference_type(elem, true)) {
         elem = T_OBJECT;
       }

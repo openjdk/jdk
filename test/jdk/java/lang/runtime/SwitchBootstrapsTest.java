@@ -42,40 +42,25 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
+/*
  * @test
  * @bug 8318144
  * @enablePreview
  * @compile SwitchBootstrapsTest.java
- * @run junit/othervm SwitchBootstrapsTest
+ * @run junit SwitchBootstrapsTest
  */
 public class SwitchBootstrapsTest {
 
-    public static final MethodHandle BSM_TYPE_SWITCH;
-    public static final MethodHandle BSM_ENUM_SWITCH;
-
-    static {
-        try {
-            BSM_TYPE_SWITCH = MethodHandles.lookup().findStatic(SwitchBootstraps.class, "typeSwitch",
-                                                                MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class));
-            BSM_ENUM_SWITCH = MethodHandles.lookup().findStatic(SwitchBootstraps.class, "enumSwitch",
-                                                                MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, Object[].class));
-        }
-        catch (ReflectiveOperationException e) {
-            throw new AssertionError("Should not happen", e);
-        }
-    }
-
     private void testType(Object target, int start, int result, Object... labels) throws Throwable {
         MethodType switchType = MethodType.methodType(int.class, Object.class, int.class);
-        MethodHandle indy = ((CallSite) BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType, labels)).dynamicInvoker();
+        MethodHandle indy = SwitchBootstraps.typeSwitch(MethodHandles.lookup(), "", switchType, labels).dynamicInvoker();
         assertEquals(result, (int) indy.invoke(target, start));
         assertEquals(-1, (int) indy.invoke(null, start));
     }
 
     private void testPrimitiveType(Object target, Class<?> targetType, int start, int result, Object... labels) throws Throwable {
         MethodType switchType = MethodType.methodType(int.class, targetType, int.class);
-        MethodHandle indy = ((CallSite) BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType, labels)).dynamicInvoker();
+        MethodHandle indy = SwitchBootstraps.typeSwitch(MethodHandles.lookup(), "", switchType, labels).dynamicInvoker();
         assertEquals(result, (int) indy.invoke(target, start));
     }
 
@@ -85,7 +70,7 @@ public class SwitchBootstrapsTest {
 
     private void testEnum(Class<?> targetClass, Enum<?> target, int start, int result, Object... labels) throws Throwable {
         MethodType switchType = MethodType.methodType(int.class, targetClass, int.class);
-        MethodHandle indy = ((CallSite) BSM_ENUM_SWITCH.invoke(MethodHandles.lookup(), "", switchType, labels)).dynamicInvoker();
+        MethodHandle indy = SwitchBootstraps.enumSwitch(MethodHandles.lookup(), "", switchType, labels).dynamicInvoker();
         assertEquals(result, (int) indy.invoke(target, start));
         assertEquals(-1, (int) indy.invoke(null, start));
     }
@@ -188,7 +173,7 @@ public class SwitchBootstrapsTest {
 
         //null invocation name:
         MethodType switchType = MethodType.methodType(int.class, E1.class, int.class);
-        MethodHandle indy = ((CallSite) BSM_ENUM_SWITCH.invoke(MethodHandles.lookup(), null, switchType)).dynamicInvoker();
+        MethodHandle indy = SwitchBootstraps.enumSwitch(MethodHandles.lookup(), null, switchType).dynamicInvoker();
         assertEquals(0, (int) indy.invoke(E1.A, 0));
     }
 
@@ -229,7 +214,7 @@ public class SwitchBootstrapsTest {
         };
         for (MethodType switchType : switchTypes) {
             assertThrows(IllegalArgumentException.class, () ->
-                BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType)
+                SwitchBootstraps.typeSwitch(MethodHandles.lookup(), "", switchType)
             );
         }
         MethodType[] enumSwitchTypes = new MethodType[] {
@@ -240,7 +225,7 @@ public class SwitchBootstrapsTest {
         };
         for (MethodType enumSwitchType : enumSwitchTypes) {
             assertThrows(IllegalArgumentException.class, () ->
-                BSM_ENUM_SWITCH.invoke(MethodHandles.lookup(), "", enumSwitchType)
+                SwitchBootstraps.enumSwitch(MethodHandles.lookup(), "", enumSwitchType)
             );
         }
     }
@@ -270,23 +255,23 @@ public class SwitchBootstrapsTest {
     public void testNullLabels() throws Throwable {
         MethodType switchType = MethodType.methodType(int.class, Object.class, int.class);
         assertThrows(NullPointerException.class, () ->
-            BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType, (Object[]) null)
+            SwitchBootstraps.typeSwitch(MethodHandles.lookup(), "", switchType, (Object[]) null)
         );
         assertThrows(IllegalArgumentException.class, () ->
-            BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType,
+            SwitchBootstraps.typeSwitch(MethodHandles.lookup(), "", switchType,
                     new Object[] {1, null, String.class})
         );
         MethodType enumSwitchType = MethodType.methodType(int.class, E1.class, int.class);
         assertThrows(NullPointerException.class, () ->
-            BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", enumSwitchType, (Object[]) null)
+            SwitchBootstraps.typeSwitch(MethodHandles.lookup(), "", enumSwitchType, (Object[]) null)
         );
         assertThrows(IllegalArgumentException.class, () ->
-            BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", enumSwitchType,
+            SwitchBootstraps.typeSwitch(MethodHandles.lookup(), "", enumSwitchType,
                     new Object[] {1, null, String.class})
         );
         //null invocationName is OK:
-        BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), null, switchType,
-                               new Object[] {Object.class});
+        SwitchBootstraps.typeSwitch(MethodHandles.lookup(), null, switchType,
+                Object.class);
     }
 
     private static AtomicBoolean enumInitialized = new AtomicBoolean();
@@ -304,7 +289,7 @@ public class SwitchBootstrapsTest {
 
         MethodType enumSwitchType = MethodType.methodType(int.class, E.class, int.class);
 
-        CallSite invocation = (CallSite) BSM_ENUM_SWITCH.invoke(MethodHandles.lookup(), "", enumSwitchType, new Object[] {"A"});
+        CallSite invocation = SwitchBootstraps.enumSwitch(MethodHandles.lookup(), "", enumSwitchType, "A");
         assertFalse(enumInitialized.get());
         assertEquals(-1, invocation.dynamicInvoker().invoke(null, 0));
         assertFalse(enumInitialized.get());
@@ -330,7 +315,7 @@ public class SwitchBootstrapsTest {
             EnumDesc.of(ClassDesc.of(E.class.getName()), "A"),
             "test"
         };
-        CallSite invocation = (CallSite) BSM_TYPE_SWITCH.invoke(MethodHandles.lookup(), "", switchType, labels);
+        CallSite invocation = (CallSite) SwitchBootstraps.typeSwitch(MethodHandles.lookup(), "", switchType, labels);
         assertFalse(enumInitialized.get());
         assertEquals(-1, invocation.dynamicInvoker().invoke(null, 0));
         assertFalse(enumInitialized.get());
@@ -402,21 +387,37 @@ public class SwitchBootstrapsTest {
     }
 
     @Test
-    public void testNullLookup() throws Throwable {
+    public void testNullLookup() {
         assertThrows(NullPointerException.class, () -> {
             MethodType switchType = MethodType.methodType(int.class, Object.class, int.class);
-            BSM_TYPE_SWITCH.invoke(null, "", switchType, Object.class);
+            SwitchBootstraps.typeSwitch(null, "", switchType, Object.class);
         });
         enum E {}
         assertThrows(NullPointerException.class, () -> {
             MethodType switchType = MethodType.methodType(int.class, E.class, int.class);
-            BSM_ENUM_SWITCH.invoke(null, "", switchType,
-                    new Object[] {});
+            SwitchBootstraps.enumSwitch(null, "", switchType);
         });
         assertThrows(NullPointerException.class, () -> {
             MethodType switchType = MethodType.methodType(int.class, E.class, int.class);
-            BSM_ENUM_SWITCH.invoke(null, "", switchType,
-                    new Object[] {"A"});
+            SwitchBootstraps.enumSwitch(null, "", switchType, "A");
+        });
+    }
+
+    @Test
+    public void testUnprivilegedLookup() {
+        var lookup = MethodHandles.lookup().dropLookupMode(MethodHandles.Lookup.PRIVATE);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodType switchType = MethodType.methodType(int.class, Object.class, int.class);
+            SwitchBootstraps.typeSwitch(lookup, "", switchType, Object.class);
+        });
+        enum E {}
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodType switchType = MethodType.methodType(int.class, E.class, int.class);
+            SwitchBootstraps.enumSwitch(lookup, "", switchType);
+        });
+        assertThrows(IllegalArgumentException.class, () -> {
+            MethodType switchType = MethodType.methodType(int.class, E.class, int.class);
+            SwitchBootstraps.enumSwitch(lookup, "", switchType, "A");
         });
     }
 }

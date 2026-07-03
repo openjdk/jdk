@@ -55,7 +55,7 @@ import java.util.Arrays;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestNullableArrays 0
+ * @run driver ${test.main.class} 0
  */
 
 /*
@@ -67,7 +67,7 @@ import java.util.Arrays;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestNullableArrays 1
+ * @run driver ${test.main.class} 1
  */
 
 /*
@@ -79,7 +79,7 @@ import java.util.Arrays;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestNullableArrays 2
+ * @run driver ${test.main.class} 2
  */
 
 /*
@@ -91,7 +91,7 @@ import java.util.Arrays;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestNullableArrays 3
+ * @run driver ${test.main.class} 3
  */
 
 /*
@@ -103,7 +103,7 @@ import java.util.Arrays;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestNullableArrays 4
+ * @run driver ${test.main.class} 4
  */
 
 /*
@@ -115,7 +115,7 @@ import java.util.Arrays;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestNullableArrays 5
+ * @run driver ${test.main.class} 5
  */
 
 /*
@@ -127,7 +127,7 @@ import java.util.Arrays;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestNullableArrays 6
+ * @run driver ${test.main.class} 6
  */
 
 @ForceCompileClassInitializer

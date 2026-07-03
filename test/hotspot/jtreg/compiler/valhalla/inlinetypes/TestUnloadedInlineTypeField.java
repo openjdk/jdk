@@ -42,7 +42,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.rI;
  *          java.base/jdk.internal.vm.annotation
  * @compile hack/GetUnresolvedInlineFieldWrongSignature.java
  * @compile TestUnloadedInlineTypeField.java
- * @run main/othervm/timeout=300 compiler.valhalla.inlinetypes.TestUnloadedInlineTypeField
+ * @run driver/timeout=300 ${test.main.class}
  */
 
 public class TestUnloadedInlineTypeField {

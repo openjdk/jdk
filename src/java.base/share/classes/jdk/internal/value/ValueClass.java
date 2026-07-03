@@ -172,7 +172,16 @@ public final class ValueClass {
     @IntrinsicCandidate
     private static native boolean isFlatArray0(Object[] array);
 
+    @ForceInline
+    private static void validateSpecialArray(Object[] array) {
+        Objects.requireNonNull(array);
+        if (!isConcreteValueClass(array.getClass().getComponentType())) {
+          throw new IllegalArgumentException("Element class is not a concrete value class");
+        }
+    }
+
     public static Object[] copyOfSpecialArray(Object[] array, int newLength) {
+        validateSpecialArray(array);
         if (newLength < 0) {
             throw new NegativeArraySizeException("" + newLength);
         }
@@ -180,6 +189,7 @@ public final class ValueClass {
     }
 
     public static Object[] copyOfRangeSpecialArray(Object[] array, int from, int to) {
+        validateSpecialArray(array);
         int length = array.length;
         if (from < 0 || from > length) {
             throw new ArrayIndexOutOfBoundsException("source index " + from + " out of bounds for object array[" + length + "]");

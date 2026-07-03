@@ -1551,6 +1551,15 @@ public:
   bool is_known_instance()       const { return _instance_id > 0; }
   int  instance_id()             const { return _instance_id; }
   bool is_known_instance_field() const { return is_known_instance() && _offset.get() >= 0; }
+  bool same_instance_as(const TypeOopPtr* t) const {
+    assert(is_known_instance() || t->is_known_instance(), "known instance expected");
+    // Once EA has run, some node's TypeOopPtrs are assigned a "known instance" instance_id. Others are left with
+    // an unknown instance instance_id: InstanceBot. The nodes with InstanceBot are from any instance other than the
+    // ones that are known, that is, InstanceBot and "known instance" instance_ids don't alias. As a consequence,
+    // comparing an InstanceBot type with a known instance type is valid and this method correctly returns false in that
+    // case.
+    return instance_id() == t->instance_id();
+  }
 
   virtual bool can_be_inline_type() const { return (_klass == nullptr || _klass->can_be_inline_klass(_klass_is_exact)); }
   virtual bool can_be_inline_array() const { ShouldNotReachHere(); return false; }
@@ -1998,7 +2007,9 @@ public:
   virtual const TypeKlassPtr *cast_to_exactness(bool klass_is_exact) const { ShouldNotReachHere(); return nullptr; }
 
   // corresponding pointer to instance, for a given class
-  virtual const TypeOopPtr* as_instance_type(bool klass_change = true) const { ShouldNotReachHere(); return nullptr; }
+  virtual const TypeOopPtr* as_exact_instance_type(bool klass_change = true) const { ShouldNotReachHere(); return nullptr; }
+  // corresponding pointer to instances which subtype a given class
+  virtual const TypeOopPtr* as_subtype_instance_type(bool klass_change = true) const = 0;
 
   virtual const TypePtr *add_offset( intptr_t offset ) const { ShouldNotReachHere(); return nullptr; }
   virtual const Type    *xmeet( const Type *t ) const { ShouldNotReachHere(); return nullptr; }
@@ -2081,10 +2092,11 @@ public:
 
   virtual const TypeInstKlassPtr* cast_to_ptr_type(PTR ptr) const;
 
-  virtual const TypeKlassPtr *cast_to_exactness(bool klass_is_exact) const;
+  virtual const TypeInstKlassPtr *cast_to_exactness(bool klass_is_exact) const;
 
   // corresponding pointer to instance, for a given class
-  virtual const TypeOopPtr* as_instance_type(bool klass_change = true) const;
+  virtual const TypeInstPtr* as_exact_instance_type(bool klass_change = true) const;
+  virtual const TypeInstPtr* as_subtype_instance_type(bool klass_change = true) const;
   virtual uint hash() const;
   virtual bool eq(const Type *t) const;
 
@@ -2184,6 +2196,7 @@ public:
   static const TypeAryKlassPtr* make(ciKlass* klass, InterfaceHandling interface_handling);
 
   const TypeAryKlassPtr* cast_to_non_refined() const;
+  const TypeAryKlassPtr* cast_to_default_refined() const;
   const TypeAryKlassPtr* cast_to_refined_array_klass_ptr(bool refined = true) const;
 
   const Type *elem() const { return _elem; }
@@ -2193,10 +2206,11 @@ public:
 
   virtual const TypeAryKlassPtr* cast_to_ptr_type(PTR ptr) const;
 
-  virtual const TypeKlassPtr *cast_to_exactness(bool klass_is_exact) const;
+  virtual const TypeAryKlassPtr* cast_to_exactness(bool klass_is_exact) const;
 
   // corresponding pointer to instance, for a given class
-  virtual const TypeOopPtr* as_instance_type(bool klass_change = true) const;
+  virtual const TypeAryPtr* as_exact_instance_type(bool klass_change = true) const;
+  virtual const TypeAryPtr* as_subtype_instance_type(bool klass_change = true) const;
 
   virtual const TypePtr *add_offset( intptr_t offset ) const;
   virtual const Type    *xmeet( const Type *t ) const;

@@ -65,7 +65,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @run main compiler.valhalla.inlinetypes.TestArrays 0
+ * @run driver ${test.main.class} 0
  */
 
 /*
@@ -77,7 +77,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @run main compiler.valhalla.inlinetypes.TestArrays 1
+ * @run driver ${test.main.class} 1
  */
 
 /*
@@ -89,7 +89,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @run main compiler.valhalla.inlinetypes.TestArrays 2
+ * @run driver ${test.main.class} 2
  */
 
 /*
@@ -101,7 +101,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @run main compiler.valhalla.inlinetypes.TestArrays 3
+ * @run driver ${test.main.class} 3
  */
 
 /*
@@ -113,7 +113,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @run main compiler.valhalla.inlinetypes.TestArrays 4
+ * @run driver ${test.main.class} 4
  */
 
 /*
@@ -125,7 +125,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @run main compiler.valhalla.inlinetypes.TestArrays 5
+ * @run driver ${test.main.class} 5
  */
 
 /*
@@ -137,7 +137,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @run main compiler.valhalla.inlinetypes.TestArrays 6
+ * @run driver ${test.main.class} 6
  */
 
 @ForceCompileClassInitializer
@@ -3901,10 +3901,50 @@ public class TestArrays {
         }
     }
 
+    @LooselyConsistentValue
+    static value class BadCastV3 {
+        byte a;
+        byte b;
+        byte c;
+        byte d;
+
+        BadCastV3(int i) {
+            a = (byte)i;
+            b = (byte)(i + 1);
+            c = (byte)(i + 2);
+            d = (byte)(i + 3);
+        }
+
+        BadCastV3() {
+            this(1);
+        }
+    }
+
+    @LooselyConsistentValue
+    static value class BadCastV4 {
+        byte a;
+        byte b;
+        byte c;
+        byte d;
+
+        BadCastV4(int i) {
+            a = (byte)i;
+            b = (byte)(i + 1);
+            c = (byte)(i + 2);
+            d = (byte)(i + 3);
+        }
+
+        BadCastV4() {
+            this(1);
+        }
+    }
+
     static BadCastV1 badCastv1 = new BadCastV1(11);
     static BadCastV1 badCastv11 =  new BadCastV1(21);
     static BadCastV2 badCastv2 =  new BadCastV2(31);
     static BadCastV2 badCastv22 =  new BadCastV2(41);
+    static BadCastV3 badCastv3 = new BadCastV3(11);
+    static BadCastV4 badCastv4 = new BadCastV4(11);
     static int badCastLen = Math.abs(rI) % 10;
 
     @Test
@@ -3959,10 +3999,101 @@ public class TestArrays {
         return aArr2;
     }
 
+    // Needs -XX:-ReduceInitialCardMarks to trigger.
+    @Test
+    static BadCastA[] testBadCastAbstractArray5(boolean flag) {
+        BadCastA[] aArr;
+        if (flag) {
+            aArr = (BadCastA[]) ValueClass.newNullRestrictedNonAtomicArray(BadCastV1.class, badCastLen, badCastv1);
+        } else {
+            aArr = (BadCastA[]) ValueClass.newNullRestrictedNonAtomicArray(BadCastV2.class, badCastLen, badCastv2);
+        }
+
+        return Arrays.copyOf(aArr, badCastLen, BadCastA[].class);
+    }
+
+    @Test
+    static BadCastA[] testBadCastAbstractArray5a(boolean flag) {
+        BadCastA[] aArr;
+        if (flag) {
+            aArr = (BadCastA[]) ValueClass.newNullRestrictedNonAtomicArray(BadCastV1.class, badCastLen, badCastv1);
+        } else {
+            aArr = (BadCastA[]) ValueClass.newNullRestrictedNonAtomicArray(BadCastV2.class, badCastLen, badCastv2);
+        }
+
+        return Arrays.copyOfRange(aArr, 0, badCastLen, BadCastA[].class);
+    }
+
+    @Test
+    static BadCastA[] testBadCastAbstractArray6(boolean flag) {
+        BadCastA[] aArr;
+        Class<? extends BadCastA[]> c;
+        if (flag) {
+            aArr = (BadCastA[]) ValueClass.newNullRestrictedNonAtomicArray(BadCastV1.class, badCastLen, badCastv1);
+            c = BadCastV1[].class;
+        } else {
+            aArr = (BadCastA[]) ValueClass.newNullRestrictedNonAtomicArray(BadCastV2.class, badCastLen, badCastv2);
+            c = BadCastV2[].class;
+        }
+
+        return Arrays.copyOf(aArr, badCastLen, c);
+    }
+
+    @Test
+    static BadCastA[] testBadCastAbstractArray6a(boolean flag) {
+        BadCastA[] aArr;
+        Class<? extends BadCastA[]> c;
+        if (flag) {
+            aArr = (BadCastA[]) ValueClass.newNullRestrictedNonAtomicArray(BadCastV1.class, badCastLen, badCastv1);
+            c = BadCastV1[].class;
+        } else {
+            aArr = (BadCastA[]) ValueClass.newNullRestrictedNonAtomicArray(BadCastV2.class, badCastLen, badCastv2);
+            c = BadCastV2[].class;
+        }
+
+        return Arrays.copyOfRange(aArr, 0, badCastLen, c);
+    }
+
+    @Test
+    static Object[] testBadCastAbstractArray7(boolean flag) {
+        Object[] oArr;
+        Class<? extends Object[]> c;
+        if (flag) {
+            oArr = ValueClass.newNullRestrictedNonAtomicArray(BadCastV3.class, badCastLen, badCastv3);
+            c = BadCastV3[].class;
+        } else {
+            oArr = ValueClass.newNullRestrictedNonAtomicArray(BadCastV4.class, badCastLen, badCastv4);
+            c = BadCastV4[].class;
+        }
+
+        return Arrays.copyOf(oArr, badCastLen, c);
+    }
+
+    @Test
+    static Object[] testBadCastAbstractArray7a(boolean flag) {
+        Object[] oArr;
+        Class<? extends Object[]> c;
+        if (flag) {
+            oArr = ValueClass.newNullRestrictedNonAtomicArray(BadCastV3.class, badCastLen, badCastv3);
+            c = BadCastV3[].class;
+        } else {
+            oArr = ValueClass.newNullRestrictedNonAtomicArray(BadCastV4.class, badCastLen, badCastv4);
+            c = BadCastV4[].class;
+        }
+
+        return Arrays.copyOfRange(oArr, 0, badCastLen, c);
+    }
+
     @Run(test = {"testBadCastAbstractArray1",
                  "testBadCastAbstractArray2",
                  "testBadCastAbstractArray3",
-                 "testBadCastAbstractArray4"})
+                 "testBadCastAbstractArray4",
+                 "testBadCastAbstractArray5",
+                 "testBadCastAbstractArray5a",
+                 "testBadCastAbstractArray6",
+                 "testBadCastAbstractArray6a",
+                 "testBadCastAbstractArray7",
+                 "testBadCastAbstractArray7a"})
     @Warmup(0)
     static void testBadCastAbstractArray_verifier() {
         boolean flag = true;
@@ -3996,6 +4127,37 @@ public class TestArrays {
             for (int j = 0; j < badCastLen; ++j) {
                 Asserts.assertEQ(src[j], dst[j]);
             }
+
+            dst = testBadCastAbstractArray5(flag);
+            for (int j = 0; j < badCastLen; ++j) {
+                Asserts.assertEQ(src[j], dst[j]);
+            }
+
+            dst = testBadCastAbstractArray5a(flag);
+            for (int j = 0; j < badCastLen; ++j) {
+                Asserts.assertEQ(src[j], dst[j]);
+            }
+
+            dst = testBadCastAbstractArray6(flag);
+            for (int j = 0; j < badCastLen; ++j) {
+                Asserts.assertEQ(src[j], dst[j]);
+            }
+
+            dst = testBadCastAbstractArray6a(flag);
+            for (int j = 0; j < badCastLen; ++j) {
+                Asserts.assertEQ(src[j], dst[j]);
+            }
+
+            Object[] srcObj = flag ? resetBadCastV3() : resetBadCastV4();
+            Object[] dstObj = testBadCastAbstractArray7(flag);
+            for (int j = 0; j < badCastLen; ++j) {
+                Asserts.assertEQ(srcObj[j], dstObj[j]);
+            }
+
+            dstObj = testBadCastAbstractArray7a(flag);
+            for (int j = 0; j < badCastLen; ++j) {
+                Asserts.assertEQ(srcObj[j], dstObj[j]);
+            }
             flag = !flag;
         }
     }
@@ -4014,5 +4176,13 @@ public class TestArrays {
 
     static BadCastA[] resetBadCastV22() {
         return (BadCastA[])ValueClass.newNullRestrictedNonAtomicArray(BadCastV2.class, badCastLen, badCastv22);
+    }
+
+    static Object[] resetBadCastV3() {
+        return ValueClass.newNullRestrictedNonAtomicArray(BadCastV3.class, badCastLen, badCastv3);
+    }
+
+    static Object[] resetBadCastV4() {
+        return ValueClass.newNullRestrictedNonAtomicArray(BadCastV4.class, badCastLen, badCastv4);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Ranges can be proven to be disjoint but not orderable (thanks to unsigned range)
  *          Comparing such values in such range with != should always be true.
  * @library /test/lib /
- * @run main compiler.igvn.CmpDisjointButNonOrderedRangesLong
+ * @run driver ${test.main.class}
  */
 package compiler.igvn;
 

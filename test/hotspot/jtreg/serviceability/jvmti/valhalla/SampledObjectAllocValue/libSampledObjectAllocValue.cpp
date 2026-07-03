@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include <string.h>
 #include "jvmti.h"
 #include "jvmti_common.hpp"
 
@@ -31,6 +32,7 @@ extern "C" {
 static std::atomic<int> events_counter(0);
 static jvmtiEnv* jvmti;
 static jclass expected_class;
+static bool expect_events = false;
 
 static bool
 is_test_class(jvmtiEnv* jvmti, JNIEnv* jni, jclass cls) {
@@ -78,13 +80,18 @@ VMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
   jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, nullptr);
   check_jvmti_error(err, "SetEventNotificationMode for SAMPLED_OBJECT_ALLOC");
 
-  if (events_counter == 0) {
+  LOG("VMDeath: expect_events: %d events_counter: %d\n", expect_events, events_counter.load());
+
+  if (expect_events && events_counter == 0) {
     fatal(jni, "SampledObjectAlloc events counter shouldn't be zero");
   }
-  LOG("VMDeath: events_counter: %d\n", events_counter.load());
+  if (!expect_events && events_counter != 0) {
+    fatal(jni, "SampledObjectAlloc events counter should be zero");
+  }
 }
 
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
+  bool support_value_objects = options != nullptr && strcmp(options, "can_support_value_objects") == 0;
   jvmtiCapabilities caps;
   jvmtiEventCallbacks callbacks;
   jvmtiError err;
@@ -99,6 +106,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
   memset(&caps, 0, sizeof(caps));
   caps.can_generate_sampled_object_alloc_events = 1;
+  if (support_value_objects) {
+    caps.can_support_value_objects = 1;
+    expect_events = true;
+  }
+
   if (jvmti->AddCapabilities(&caps) != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
@@ -110,7 +122,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
   check_jvmti_error(err, "SetEventCallbacks");
 
-  // Interval should be small enough to triggger sampling event.
+  // Interval should be small enough to trigger sampling event.
   err = jvmti->SetHeapSamplingInterval(100);
   check_jvmti_error(err, "SetHeapSamplingInterval");
 

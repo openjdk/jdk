@@ -71,6 +71,7 @@ Java_VMObjectAllocValueTest_getNumberOfAllocation(JNIEnv *env, jclass cls) {
 
 extern JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+  bool support_value_objects = options != nullptr && strcmp(options, "can_support_value_objects") == 0;
   jvmtiEventCallbacks callbacks;
   jvmtiError err;
   jvmtiCapabilities caps;
@@ -90,6 +91,9 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   callbacks.VMDeath = &VMDeath;
   memset(&caps, 0, sizeof(caps));
   caps.can_generate_vm_object_alloc_events = 1;
+  if (support_value_objects) {
+    caps.can_support_value_objects = 1;
+  }
 
   err = jvmti->AddCapabilities( &caps);
   if (err != JVMTI_ERROR_NONE) {

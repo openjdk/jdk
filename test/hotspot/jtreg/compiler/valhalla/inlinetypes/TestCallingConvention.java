@@ -52,12 +52,10 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @summary Test value class calling convention optimizations.
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @build jdk.test.whitebox.WhiteBox
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.valhalla.inlinetypes.TestCallingConvention 0
+ * @run driver ${test.main.class} 0
  */
 
 /*
@@ -66,12 +64,10 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @summary Test value class calling convention optimizations.
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @build jdk.test.whitebox.WhiteBox
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.valhalla.inlinetypes.TestCallingConvention 1
+ * @run driver ${test.main.class} 1
  */
 
 /*
@@ -80,12 +76,10 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @summary Test value class calling convention optimizations.
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @build jdk.test.whitebox.WhiteBox
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.valhalla.inlinetypes.TestCallingConvention 2
+ * @run driver ${test.main.class} 2
  */
 
 /*
@@ -94,12 +88,10 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @summary Test value class calling convention optimizations.
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @build jdk.test.whitebox.WhiteBox
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.valhalla.inlinetypes.TestCallingConvention 3
+ * @run driver ${test.main.class} 3
  */
 
 /*
@@ -108,12 +100,10 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @summary Test value class calling convention optimizations.
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @build jdk.test.whitebox.WhiteBox
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.valhalla.inlinetypes.TestCallingConvention 4
+ * @run driver ${test.main.class} 4
  */
 
 /*
@@ -122,12 +112,10 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @summary Test value class calling convention optimizations.
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @build jdk.test.whitebox.WhiteBox
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.valhalla.inlinetypes.TestCallingConvention 5
+ * @run driver ${test.main.class} 5
  */
 
 /*
@@ -136,18 +124,14 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @summary Test value class calling convention optimizations.
  * @library /test/lib /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
- * @build jdk.test.whitebox.WhiteBox
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.valhalla.inlinetypes.TestCallingConvention 6
+ * @run driver ${test.main.class} 6
  */
 
 @ForceCompileClassInitializer
 public class TestCallingConvention {
-
-    private final static WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     static {
         try {
@@ -1422,17 +1406,16 @@ public class TestCallingConvention {
         }
     }
 
-    static boolean expectedUseArrayFlattening = WHITE_BOX.getBooleanVMFlag("UseArrayFlattening");
-
-    // Test value class return from native method
+    // Test value class (Boolean) return from native method
     @Test
-    public boolean test57() {
-        return WHITE_BOX.getBooleanVMFlag("UseArrayFlattening");
+    public boolean test57(WhiteBox wb) {
+        return wb.getBooleanVMFlag("UseArrayFlattening");
     }
 
     @Run(test = "test57")
     public void test57_verifier() {
-        Asserts.assertEQ(test57(), expectedUseArrayFlattening);
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        Asserts.assertEQ(test57(wb), wb.getBooleanVMFlag("UseArrayFlattening"));
     }
 
     // Test abstract value class with flat fields

@@ -430,56 +430,48 @@ JVM_END
 JVM_ENTRY(jarray, JVM_CopyOfSpecialArray(JNIEnv *env, jarray orig, jint from, jint to))
   oop o = JNIHandles::resolve_non_null(orig);
   assert(o->is_array(), "Must be");
-  oop array = nullptr;
+  objArrayOop dest = nullptr;
   arrayOop org = (arrayOop)o;
   arrayHandle oh(THREAD, org);
   ObjArrayKlass* ak = ObjArrayKlass::cast(org->klass());
-  InlineKlass* vk = InlineKlass::cast(ak->element_klass());
   int len = to - from;  // length of the new array
+  assert(len >= 0, "Java caller checks that from <= to");
+  int orig_length = org->length();
   if (ak->is_null_free_array_klass()) {
-    if ((len != 0) && (from >= org->length() || to > org->length())) {
+    if ((len != 0) && (from >= orig_length || to > orig_length)) {
       THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Copying of null-free array with uninitialized elements");
     }
   }
-  if (ak->is_flatArray_klass()) {
-    // The whole JVM_CopyOfSpecialArray is currently broken. Fix this in a separate bugfix.
-    int org_length = org->length();
-    int copy_len = MIN2(to, org_length) - MIN2(from, org_length);
-    FlatArrayKlass* const fak = FlatArrayKlass::cast(org->klass());
-    flatArrayOop dst = fak->allocate_instance(len, CHECK_NULL);
-    assert(!ak->is_null_free_array_klass() || copy_len == len,
-           "Failed to throw the IllegalArgumentException");
-    if (copy_len != 0) {
-      int start = MIN2(from, org_length - 1);
-      FlatArrayPayload src_payload(flatArrayOop(oh()), start, fak);
-      FlatArrayPayload dst_payload(dst, 0, fak);
-      int end = to < oh()->length() ? to : oh()->length();
-      for (int i = from; i < end; i++) {
-        // Copy a value
-        src_payload.copy_to(dst_payload);
 
-        // Advance to the next element
-        src_payload.next_element();
-        dst_payload.next_element();
-      }
-    }
-    array = dst;
+  if (ak->is_flatArray_klass()) {
+    FlatArrayKlass* const fak = FlatArrayKlass::cast(org->klass());
+    dest = fak->allocate_instance(len, CHECK_NULL);
   } else {
     const ArrayProperties props = ArrayProperties::Default().with_null_restricted(ak->is_null_free_array_klass());
+    InlineKlass* vk = InlineKlass::cast(ak->element_klass());
+    dest = oopFactory::new_objArray(vk, len, props,  CHECK_NULL);
+  }
 
-    array = oopFactory::new_objArray(vk, len, props,  CHECK_NULL);
-    int end = to < oh()->length() ? to : oh()->length();
-    for (int i = from; i < end; i++) {
-      if (i < ((objArrayOop)oh())->length()) {
-        oop val = ((objArrayOop)oh())->obj_at(i, CHECK_NULL);
-        ((objArrayOop)array)->obj_at_put(i - from, val);
-      } else {
-        assert(!ak->is_null_free_array_klass(), "Must be a nullable array");
-        ((objArrayOop)array)->obj_at_put(i - from, nullptr);
-      }
+  objArrayHandle dh(THREAD, dest);
+
+  int copy_len = MIN2(to, orig_length) - MIN2(from, orig_length);
+  if (copy_len != 0) {
+    assert(!ak->is_null_free_array_klass() || copy_len == len,
+           "Failed to throw the IllegalArgumentException");
+    ak->copy_array(oh(), from, dh(), 0, copy_len, CHECK_NULL);
+    // Null out values past the length of the copy
+    for (int i = copy_len; i < len; i++) {
+      dh()->obj_at_put(i, nullptr);
+    }
+  } else {
+    for (int i = 0; i < len; i++) {
+      assert(!dh()->is_null_free_array(), "Should have thrown an IAE above");
+      dh()->obj_at_put(i, nullptr);
     }
   }
-  return (jarray) JNIHandles::make_local(THREAD, array);
+
+  return (jarray) JNIHandles::make_local(THREAD, dh());
+
 JVM_END
 
 #ifdef ASSERT
