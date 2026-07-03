@@ -3607,10 +3607,6 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   const Register rax_lh = rax;  // layout helper
   __ movl(rax_lh, Address(r10_src_klass, lh_offset));
 
-  // Check for flat inline type array -> return -1
-  __ testl(rax_lh, Klass::_lh_array_tag_flat_value_bit_inplace);
-  __ jcc(Assembler::notZero, L_failed);
-
   //  if (!src->is_Array()) return -1;
   __ cmpl(rax_lh, Klass::_lh_neutral_value);
   __ jcc(Assembler::greaterEqual, L_failed);

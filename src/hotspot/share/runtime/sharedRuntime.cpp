@@ -1909,7 +1909,7 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   nmethod* caller = cb->as_nmethod();
 
   // Get the return PC for the passed caller PC.
-  address return_pc = caller_pc + frame::pc_return_offset;
+  address return_pc = caller_pc;
 
   if (!caller->is_in_use() || !NativeCall::is_call_before(return_pc)) {
     return;
@@ -2928,9 +2928,9 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
         if (vk != nullptr && vk->can_be_passed_as_fields() && (link_time || _method->is_scalarized_arg(arg_num))) {
           // Check for a calling convention mismatch with super method(s)
           if (link_time && check_supers_and_deoptimize(arg_num)) {
-             // Fall back to non-scalarized calling convention
-             SigEntry::add_entry(_sig_cc, T_OBJECT, ss.as_symbol());
-             SigEntry::add_entry(_sig_cc_ro, T_OBJECT, ss.as_symbol());
+            // Fall back to non-scalarized calling convention
+            SigEntry::add_entry(_sig_cc, T_OBJECT, ss.as_symbol());
+            SigEntry::add_entry(_sig_cc_ro, T_OBJECT, ss.as_symbol());
           } else {
             _num_inline_args++;
             has_scalarized = true;

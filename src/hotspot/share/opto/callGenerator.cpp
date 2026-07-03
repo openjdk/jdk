@@ -62,6 +62,34 @@ bool CallGenerator::is_inlined_method_handle_intrinsic(ciMethod* symbolic_info, 
   return symbolic_info->is_method_handle_intrinsic() && !m->is_method_handle_intrinsic();
 }
 
+// If late inlining for this call happens in a dead part of the graph it can leave a dead loop behind
+void CallGenerator::mark_projs_not_dead_loop_safe(Node* ret) const {
+  if (!is_late_inline()) {
+    return;
+  }
+  CallNode* call = call_node();
+  if (ret->is_Proj() && ret->in(0) == call) {
+    ret->mark_not_dead_loop_safe();
+  } else if (ret->isa_InlineType()) {
+    InlineTypeNode* vt = ret->as_InlineType();
+    Node* oop = vt->get_oop();
+    if (oop->is_Proj() && oop->in(0) == call) {
+      oop->mark_not_dead_loop_safe();
+    }
+    Node* null_marker = vt->get_null_marker();
+    if (null_marker->is_Proj() && null_marker->in(0) == call) {
+      null_marker->mark_not_dead_loop_safe();
+    }
+
+    for (uint i = 0; i < vt->field_count(); i++) {
+      Node* field = vt->field_value(i);
+      if (field->is_Proj() && field->in(0) == call) {
+        field->mark_not_dead_loop_safe();
+      }
+    }
+  }
+}
+
 //-----------------------------ParseGenerator---------------------------------
 // Internal class which handles all direct bytecode traversal.
 class ParseGenerator : public InlineCallGenerator {
@@ -184,9 +212,8 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call, false, _separate_io_proj);
   Node* ret = kit.set_results_for_java_call(call, _separate_io_proj);
-  if (is_late_inline() && !call->is_boxing_method() && ret->is_Proj() && ret->in(0) == call) {
-    // If late inlining for this call happens in a dead part of the graph it can leave a dead loop behind
-    ret->mark_not_dead_loop_safe();
+  if (!call->is_boxing_method()) {
+    mark_projs_not_dead_loop_safe(ret);
   }
   kit.push_node(method()->return_type()->basic_type(), ret);
   return kit.transfer_exceptions_into_jvms();
@@ -285,10 +312,7 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call, false /*must_throw*/, _separate_io_proj);
   Node* ret = kit.set_results_for_java_call(call, _separate_io_proj);
-  if (is_late_inline() && ret->is_Proj() && ret->in(0) == call) {
-    // If late inlining for this call happens in a dead part of the graph it can leave a dead loop behind
-    ret->mark_not_dead_loop_safe();
-  }
+  mark_projs_not_dead_loop_safe(ret);
   kit.push_node(method()->return_type()->basic_type(), ret);
 
   // Represent the effect of an implicit receiver null_check

@@ -304,6 +304,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_subtype_check();
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
+  void bail_out_from_array_copyOf(RegionNode* bailout_region);
+  static bool should_bail_out_on_non_ref_arrays(const TypeAryPtr* src_type, const TypeKlassPtr* dest_klass_type);
   bool inline_array_equals(StrIntrinsicNode::ArgEnc ae);
   bool inline_preconditions_checkIndex(BasicType bt);
   void copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, bool is_array);

@@ -54,7 +54,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestBasicFunctionality 0
+ * @run driver ${test.main.class} 0
  */
 
 /*
@@ -67,7 +67,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestBasicFunctionality 1
+ * @run driver ${test.main.class} 1
  */
 
 /*
@@ -80,7 +80,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestBasicFunctionality 2
+ * @run driver ${test.main.class} 2
  */
 
 /*
@@ -93,7 +93,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestBasicFunctionality 3
+ * @run driver ${test.main.class} 3
  */
 
 /*
@@ -106,7 +106,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestBasicFunctionality 4
+ * @run driver ${test.main.class} 4
  */
 
 /*
@@ -119,7 +119,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestBasicFunctionality 5
+ * @run driver ${test.main.class} 5
  */
 
 /*
@@ -132,7 +132,7 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestBasicFunctionality 6
+ * @run driver ${test.main.class} 6
  */
 
 @ForceCompileClassInitializer

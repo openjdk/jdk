@@ -311,6 +311,7 @@ class ClassFileParser {
   // Method parsing
   Method* parse_method(const ClassFileStream* const cfs,
                        bool is_interface,
+                       bool is_identity_class,
                        const ConstantPool* cp,
                        bool* const has_localvariable_table,
                        TRAPS);

@@ -3763,16 +3763,18 @@ void MacroAssembler::test_oop_is_not_inline_type(Register object, Register tmp, 
 
 void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int32_t tst_bit, bool jmp_set, Label& jmp_label) {
   assert_different_registers(temp_reg, t0);
-  Label test_mark_word;
   // load mark word
   ld(temp_reg, Address(oop, oopDesc::mark_offset_in_bytes()));
-  // check displaced
-  test_bit(t0, temp_reg, exact_log2(markWord::unlocked_value));
-  bnez(t0, test_mark_word);
-  // slow path use klass prototype
-  load_prototype_header(temp_reg, oop);
+  if (!UseObjectMonitorTable) {
+    Label test_mark_word;
+    // check displaced
+    test_bit(t0, temp_reg, exact_log2(markWord::unlocked_value));
+    bnez(t0, test_mark_word);
+    // slow path use klass prototype
+    load_prototype_header(temp_reg, oop);
 
-  bind(test_mark_word);
+    bind(test_mark_word);
+  }
   andi(temp_reg, temp_reg, tst_bit);
   if (jmp_set) {
     bnez(temp_reg, jmp_label, /* is_far */ true);

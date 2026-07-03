@@ -55,9 +55,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.*;
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.valhalla.inlinetypes.TestIntrinsics 0
+ * @run driver ${test.main.class} 0
  */
 
 /*
@@ -70,9 +68,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.*;
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.valhalla.inlinetypes.TestIntrinsics 1
+ * @run driver ${test.main.class} 1
  */
 
 /*
@@ -85,9 +81,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.*;
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.valhalla.inlinetypes.TestIntrinsics 2
+ * @run driver ${test.main.class} 2
  */
 
 /*
@@ -100,9 +94,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.*;
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.valhalla.inlinetypes.TestIntrinsics 3
+ * @run driver ${test.main.class} 3
  */
 
 /*
@@ -115,9 +107,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.*;
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.valhalla.inlinetypes.TestIntrinsics 4
+ * @run driver ${test.main.class} 4
  */
 
 /*
@@ -130,9 +120,7 @@ import static compiler.valhalla.inlinetypes.InlineTypes.*;
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.valhalla.inlinetypes.TestIntrinsics 5
+ * @run driver ${test.main.class} 5
  */
 
 /*
@@ -145,18 +133,19 @@ import static compiler.valhalla.inlinetypes.InlineTypes.*;
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.valhalla.inlinetypes.TestIntrinsics 6
+ * @run driver ${test.main.class} 6
  */
 
 @ForceCompileClassInitializer
 public class TestIntrinsics {
 
-    private static final WhiteBox WHITEBOX = WhiteBox.getWhiteBox();
-    private static final boolean UseArrayFlattening = WHITEBOX.getBooleanVMFlag("UseArrayFlattening");
-    private static final boolean UseFieldFlattening = WHITEBOX.getBooleanVMFlag("UseFieldFlattening");
-    private static final boolean PreloadClasses = WHITEBOX.getBooleanVMFlag("PreloadClasses");
+    // Make sure the WhiteBox API is only loaded in the Test VM such that we can run this test in driver mode
+    static class Flags {
+        private static final WhiteBox WHITEBOX = WhiteBox.getWhiteBox();
+        private static final boolean UseArrayFlattening = WHITEBOX.getBooleanVMFlag("UseArrayFlattening");
+        private static final boolean UseFieldFlattening = WHITEBOX.getBooleanVMFlag("UseFieldFlattening");
+        private static final boolean PreloadClasses = WHITEBOX.getBooleanVMFlag("PreloadClasses");
+    }
 
     public TestIntrinsics() {
         test24_vt = MyValue1.createWithFieldsInline(rI, rL);
@@ -1280,10 +1269,10 @@ public class TestIntrinsics {
     @Test
     public boolean test63(SmallValue oldVal, SmallValue newVal) {
         if (TEST63_VT_FLATTENED) {
-            Asserts.assertTrue(UseFieldFlattening && PreloadClasses);
+            Asserts.assertTrue(Flags.UseFieldFlattening && Flags.PreloadClasses);
             return U.compareAndSetFlatValue(this, TEST63_VT_OFFSET, TEST63_VT_LAYOUT, SmallValue.class, oldVal, newVal);
         } else {
-            Asserts.assertFalse(UseFieldFlattening && PreloadClasses);
+            Asserts.assertFalse(Flags.UseFieldFlattening && Flags.PreloadClasses);
             return U.compareAndSetReference(this, TEST63_VT_OFFSET, oldVal, newVal);
         }
     }
@@ -1291,7 +1280,7 @@ public class TestIntrinsics {
     @Run(test = "test63")
     public void test63_verifier() {
         // Unsafe::compareAndSetFlatValue needs UseArrayFlattening.
-        if (UseFieldFlattening && !UseArrayFlattening) return;
+        if (Flags.UseFieldFlattening && !Flags.UseArrayFlattening) return;
         SmallValue vt = SmallValue.createWithFieldsInline(rI, rL);
         test63_vt = SmallValue.createDefaultInline();
 
@@ -1333,10 +1322,10 @@ public class TestIntrinsics {
     @Test
     public boolean test64(SmallValue[] arr, SmallValue oldVal, SmallValue newVal) {
         if (TEST64_FLATTENED_ARRAY) {
-            Asserts.assertTrue(UseArrayFlattening);
+            Asserts.assertTrue(Flags.UseArrayFlattening);
             return U.compareAndSetFlatValue(arr, TEST64_BASE_OFFSET + TEST64_INDEX_SCALE, TEST64_LAYOUT, SmallValue.class, oldVal, newVal);
         } else {
-            Asserts.assertFalse(UseArrayFlattening);
+            Asserts.assertFalse(Flags.UseArrayFlattening);
             return U.compareAndSetReference(arr, TEST64_BASE_OFFSET + TEST64_INDEX_SCALE, oldVal, newVal);
         }
     }
@@ -1366,10 +1355,10 @@ public class TestIntrinsics {
     @Test
     public boolean test65(Object o, Object oldVal, SmallValue newVal) {
         if (TEST63_VT_FLATTENED) {
-            Asserts.assertTrue(UseFieldFlattening && PreloadClasses);
+            Asserts.assertTrue(Flags.UseFieldFlattening && Flags.PreloadClasses);
             return U.compareAndSetFlatValue(o, TEST63_VT_OFFSET, TEST63_VT_LAYOUT, SmallValue.class, oldVal, newVal);
         } else {
-            Asserts.assertFalse(UseFieldFlattening && PreloadClasses);
+            Asserts.assertFalse(Flags.UseFieldFlattening && Flags.PreloadClasses);
             return U.compareAndSetReference(o, TEST63_VT_OFFSET, oldVal, newVal);
         }
     }
@@ -1377,7 +1366,7 @@ public class TestIntrinsics {
     @Run(test = "test65")
     public void test65_verifier() {
         // Unsafe::compareAndSetFlatValue needs UseArrayFlattening.
-        if (UseFieldFlattening && !UseArrayFlattening) return;
+        if (Flags.UseFieldFlattening && !Flags.UseArrayFlattening) return;
         SmallValue vt = SmallValue.createWithFieldsInline(rI, rL);
         test63_vt = SmallValue.createDefaultInline();
 
@@ -1394,10 +1383,10 @@ public class TestIntrinsics {
     @Test
     public boolean test66(Object oldVal, Object newVal) {
         if (TEST63_VT_FLATTENED) {
-            Asserts.assertTrue(UseFieldFlattening && PreloadClasses);
+            Asserts.assertTrue(Flags.UseFieldFlattening && Flags.PreloadClasses);
             return U.compareAndSetFlatValue(this, TEST63_VT_OFFSET, TEST63_VT_LAYOUT, SmallValue.class, oldVal, newVal);
         } else {
-            Asserts.assertFalse(UseFieldFlattening && PreloadClasses);
+            Asserts.assertFalse(Flags.UseFieldFlattening && Flags.PreloadClasses);
             return U.compareAndSetReference(this, TEST63_VT_OFFSET, oldVal, newVal);
         }
     }
@@ -1405,7 +1394,7 @@ public class TestIntrinsics {
     @Run(test = "test66")
     public void test66_verifier() {
         // Unsafe::compareAndSetFlatValue needs UseArrayFlattening.
-        if (UseFieldFlattening && !UseArrayFlattening) return;
+        if (Flags.UseFieldFlattening && !Flags.UseArrayFlattening) return;
         SmallValue vt = SmallValue.createWithFieldsInline(rI, rL);
         test63_vt = SmallValue.createDefaultInline();
 
@@ -1422,10 +1411,10 @@ public class TestIntrinsics {
     @Test
     public Object test67(SmallValue oldVal, SmallValue newVal) {
         if (TEST63_VT_FLATTENED) {
-            Asserts.assertTrue(UseFieldFlattening && PreloadClasses);
+            Asserts.assertTrue(Flags.UseFieldFlattening && Flags.PreloadClasses);
             return U.compareAndExchangeFlatValue(this, TEST63_VT_OFFSET, TEST63_VT_LAYOUT, SmallValue.class, oldVal, newVal);
         } else {
-            Asserts.assertFalse(UseFieldFlattening && PreloadClasses);
+            Asserts.assertFalse(Flags.UseFieldFlattening && Flags.PreloadClasses);
             return U.compareAndExchangeReference(this, TEST63_VT_OFFSET, oldVal, newVal);
         }
     }
@@ -1433,7 +1422,7 @@ public class TestIntrinsics {
     @Run(test = "test67")
     public void test67_verifier() {
         // Unsafe::compareAndExchangeFlatValue needs UseArrayFlattening.
-        if (UseFieldFlattening && !UseArrayFlattening) return;
+        if (Flags.UseFieldFlattening && !Flags.UseArrayFlattening) return;
         SmallValue vt = SmallValue.createWithFieldsInline(rI, rL);
         SmallValue oldVal = SmallValue.createDefaultInline();
         test63_vt = oldVal;
@@ -1457,10 +1446,10 @@ public class TestIntrinsics {
     @Test
     public Object test68(SmallValue[] arr, SmallValue oldVal, Object newVal) {
         if (TEST64_FLATTENED_ARRAY) {
-            Asserts.assertTrue(UseArrayFlattening);
+            Asserts.assertTrue(Flags.UseArrayFlattening);
             return U.compareAndExchangeFlatValue(arr, TEST64_BASE_OFFSET + TEST64_INDEX_SCALE, TEST64_LAYOUT, SmallValue.class, oldVal, newVal);
         } else {
-            Asserts.assertFalse(UseArrayFlattening);
+            Asserts.assertFalse(Flags.UseArrayFlattening);
             return U.compareAndExchangeReference(arr, TEST64_BASE_OFFSET + TEST64_INDEX_SCALE, oldVal, newVal);
         }
     }
@@ -1490,10 +1479,10 @@ public class TestIntrinsics {
     @Test
     public Object test69(Object o, Object oldVal, SmallValue newVal) {
         if (TEST63_VT_FLATTENED) {
-            Asserts.assertTrue(UseFieldFlattening && PreloadClasses);
+            Asserts.assertTrue(Flags.UseFieldFlattening && Flags.PreloadClasses);
             return U.compareAndExchangeFlatValue(o, TEST63_VT_OFFSET, TEST63_VT_LAYOUT, SmallValue.class, oldVal, newVal);
         } else {
-            Asserts.assertFalse(UseFieldFlattening && PreloadClasses);
+            Asserts.assertFalse(Flags.UseFieldFlattening && Flags.PreloadClasses);
             return U.compareAndExchangeReference(o, TEST63_VT_OFFSET, oldVal, newVal);
         }
     }
@@ -1501,7 +1490,7 @@ public class TestIntrinsics {
     @Run(test = "test69")
     public void test69_verifier() {
         // Unsafe::compareAndExchangeFlatValue needs UseArrayFlattening.
-        if (UseFieldFlattening && !UseArrayFlattening) return;
+        if (Flags.UseFieldFlattening && !Flags.UseArrayFlattening) return;
         SmallValue vt = SmallValue.createWithFieldsInline(rI, rL);
         SmallValue oldVal = SmallValue.createDefaultInline();
         test63_vt = oldVal;
@@ -1519,10 +1508,10 @@ public class TestIntrinsics {
     @Test
     public Object test70(Object oldVal, Object newVal) {
         if (TEST63_VT_FLATTENED) {
-            Asserts.assertTrue(UseFieldFlattening && PreloadClasses);
+            Asserts.assertTrue(Flags.UseFieldFlattening && Flags.PreloadClasses);
             return U.compareAndExchangeFlatValue(this, TEST63_VT_OFFSET, TEST63_VT_LAYOUT, SmallValue.class, oldVal, newVal);
         } else {
-            Asserts.assertFalse(UseFieldFlattening && PreloadClasses);
+            Asserts.assertFalse(Flags.UseFieldFlattening && Flags.PreloadClasses);
             return U.compareAndExchangeReference(this, TEST63_VT_OFFSET, oldVal, newVal);
         }
     }
@@ -1530,7 +1519,7 @@ public class TestIntrinsics {
     @Run(test = "test70")
     public void test70_verifier() {
         // Unsafe::compareAndExchangeFlatValue needs UseArrayFlattening.
-        if (UseFieldFlattening && !UseArrayFlattening) return;
+        if (Flags.UseFieldFlattening && !Flags.UseArrayFlattening) return;
         SmallValue vt = SmallValue.createWithFieldsInline(rI, rL);
         SmallValue oldVal = SmallValue.createDefaultInline();
         test63_vt = oldVal;

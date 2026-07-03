@@ -53,7 +53,7 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestMethodHandles 0
+ * @run driver ${test.main.class} 0
  */
 
 /*
@@ -67,7 +67,7 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestMethodHandles 1
+ * @run driver ${test.main.class} 1
  */
 
 /*
@@ -81,7 +81,7 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestMethodHandles 2
+ * @run driver ${test.main.class} 2
  */
 
 /*
@@ -95,7 +95,7 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestMethodHandles 3
+ * @run driver ${test.main.class} 3
  */
 
 /*
@@ -109,7 +109,7 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestMethodHandles 4
+ * @run driver ${test.main.class} 4
  */
 
 /*
@@ -123,7 +123,7 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestMethodHandles 5
+ * @run driver ${test.main.class} 5
  */
 
 /*
@@ -137,7 +137,7 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL;
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run main compiler.valhalla.inlinetypes.TestMethodHandles 6
+ * @run driver ${test.main.class} 6
  */
 
 @ForceCompileClassInitializer

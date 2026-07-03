@@ -212,7 +212,6 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
 
 void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field), obj, entry);
-  membar(Assembler::StoreStore);
 }
 
 void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_offset,

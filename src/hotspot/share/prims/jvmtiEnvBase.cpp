@@ -2171,6 +2171,12 @@ JvmtiEnvBase::check_top_frame(Thread* current_thread, JavaThread* java_thread,
     return JVMTI_ERROR_OPAQUE_FRAME;
   }
 
+  // Prevent ForceEarlyReturnVoid from returning early from value class constructor as
+  // the instance fields are strictly-initialized fields.
+  if ((tos == vtos) && jvf->method()->is_object_constructor() && jvf->method()->method_holder()->is_inline_klass()) {
+    return JVMTI_ERROR_OPAQUE_FRAME;
+  }
+
   // If the frame is a compiled one, need to deoptimize it.
   if (jvf->is_compiled_frame()) {
     if (!jvf->fr().can_be_deoptimized()) {

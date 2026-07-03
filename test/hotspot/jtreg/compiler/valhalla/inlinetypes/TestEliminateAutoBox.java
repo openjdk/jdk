@@ -33,7 +33,7 @@ import jdk.test.lib.Asserts;
  * @library /test/lib /
  * @requires vm.compiler2.enabled & vm.flagless
  * @enablePreview
- * @run main compiler.valhalla.inlinetypes.TestEliminateAutoBox
+ * @run driver ${test.main.class}
  */
 public class TestEliminateAutoBox {
     private static final int INT_VALUE = 1000;

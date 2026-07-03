@@ -40,6 +40,7 @@
 
 package compiler.valhalla.inlinetypes;
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
 public class TestAcmpEdgeCases {
@@ -337,6 +338,12 @@ public class TestAcmpEdgeCases {
         return v1 == v2;
     }
 
+    public static Integer thirtyFour = 34;
+
+    public static boolean testNeRegionDeadInAcmp(Integer i) {
+        return i == 34 && i == thirtyFour;
+    }
+
     public static void main(String[] args) {
 
         for (int k = 0; k < 10_000; ++k) {
@@ -459,6 +466,11 @@ public class TestAcmpEdgeCases {
                     }
                 }
             }
+        }
+
+        for (int k = 0; k < 10_000; k++) {
+            Asserts.assertTrue(testNeRegionDeadInAcmp(34));
+            Asserts.assertFalse(testNeRegionDeadInAcmp(35));
         }
     }
 }

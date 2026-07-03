@@ -2432,7 +2432,6 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method, TosSta
 
 void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field), obj, entry);
-  membar(Assembler::StoreStore | Assembler::LoadLoad); // for allocation and volatile load
 }
 
 void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1, Register tmp2,

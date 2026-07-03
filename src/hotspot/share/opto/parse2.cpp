@@ -255,12 +255,14 @@ void Parse::array_store(BasicType bt) {
              (!array_type->klass_is_exact() || array_type->is_flat()), "array can't be a flat array");
       // TODO 8350865 Depending on the available layouts, we can avoid this check in below flat/not-flat branches. Also the safe_for_replace arg is now always true.
       array = inline_array_null_guard(array, stored_value_casted, 3, true);
+      // Reload array type which could have been updated by inline_array_null_guard().
+      array_type = _gvn.type(array)->is_aryptr();
       IdealKit ideal(this);
       ideal.if_then(flat_array_test(array, /* flat = */ false)); {
         // Non-flat array
         if (!array_type->is_flat()) {
           sync_kit(ideal);
-          assert(array_type->is_flat() || ideal.ctrl()->in(0)->as_If()->is_flat_array_check(&_gvn), "Should be found");
+          assert(array_type->is_not_flat() || ideal.ctrl()->in(0)->as_If()->is_flat_array_check(&_gvn), "Should be found");
           inc_sp(3);
           access_store_at(array, adr, adr_type, stored_value_casted, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY, false);
           dec_sp(3);
@@ -2412,6 +2414,7 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
   Node* io_taken = nullptr;
   if (btest == BoolTest::eq) {
     PreserveJVMState pjvms(this);
+    // Also merges branch block.
     do_if(btest, subst_cmp, can_trap, false, nullptr, &mem_taken, &io_taken);
     if (!stopped()) {
       ctl = control();
@@ -2432,18 +2435,25 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
   ne_io_phi->init_req(5, io_taken);
   ne_mem_phi->init_req(5, mem_taken);
 
+  // BoolTest::eq: ne_region is fall-through block.
+  // BoolTest::ne: ne_region is branch block -> merge below.
   record_for_igvn(ne_region);
   set_control(_gvn.transform(ne_region));
   set_i_o(_gvn.transform(ne_io_phi));
   set_all_memory(_gvn.transform(ne_mem_phi));
 
   if (btest == BoolTest::ne) {
-    {
+    int target_bci = iter().get_dest();
+    if (!stopped()) {
       PreserveJVMState pjvms(this);
-      int target_bci = iter().get_dest();
       merge(target_bci);
+    } else if (C->eliminate_boxing()) {
+      // Mark the branch block as parsed.
+      Block* branch_block = successor_for_bci(target_bci);
+      branch_block->next_path_num();
     }
 
+    // Fall-through block.
     record_for_igvn(eq_region);
     set_control(_gvn.transform(eq_region));
     set_i_o(_gvn.transform(eq_io_phi));
@@ -2706,7 +2716,7 @@ static bool match_type_check(PhaseGVN& gvn,
     // These patterns with nullable klasses arise from example from
     // load_array_klass_from_mirror.
     if (*obj == nullptr) { return false; }
-    (*cast_type) = tcon->isa_klassptr()->as_instance_type();
+    (*cast_type) = tcon->isa_klassptr()->as_exact_instance_type();
     return true; // found
   }
 
@@ -2757,7 +2767,7 @@ static bool match_type_check(PhaseGVN& gvn,
           const TypeKlassPtr* improved_klass_ptr_type = klass_ptr_type->try_improve();
 
           (*obj) = obj_or_subklass;
-          (*cast_type) = improved_klass_ptr_type->cast_to_exactness(false)->as_instance_type();
+          (*cast_type) = improved_klass_ptr_type->as_subtype_instance_type();
           return true; // found
         }
       }

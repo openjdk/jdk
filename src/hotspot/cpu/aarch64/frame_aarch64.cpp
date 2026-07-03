@@ -625,7 +625,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
       ret_pc_loc = fp() + return_addr_offset;
       fp_loc = fp();
     } else {
-      if (cb()->is_nmethod() && cb()->as_nmethod_or_null()->needs_stack_repair()) {
+      if (cb()->is_nmethod() && cb()->as_nmethod()->needs_stack_repair()) {
         values.describe(frame_no, real_fp() - sender_sp_offset - 1, err_msg("fsize for #%d", frame_no), 1);
       }
       frame::CompiledFramePointers cfp = compiled_frame_details();

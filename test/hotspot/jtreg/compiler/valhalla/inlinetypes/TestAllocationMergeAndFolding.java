@@ -27,7 +27,7 @@
  * @summary Test that removing allocation merges of non-value and value object at EA is working properly.
  * @library /test/lib /
  * @enablePreview
- * @run main compiler.valhalla.inlinetypes.TestAllocationMergeAndFolding 0
+ * @run driver ${test.main.class} 0
  */
 
 /*
@@ -36,7 +36,7 @@
  * @summary Test that removing allocation merges of non-value and value object at EA is working properly.
  * @library /test/lib /
  * @enablePreview
- * @run main compiler.valhalla.inlinetypes.TestAllocationMergeAndFolding 1
+ * @run driver ${test.main.class} 1
  */
 
 /*
@@ -45,7 +45,7 @@
  * @summary Test that removing allocation merges of non-value and value object at EA is working properly.
  * @library /test/lib /
  * @enablePreview
- * @run main compiler.valhalla.inlinetypes.TestAllocationMergeAndFolding 2
+ * @run driver ${test.main.class} 2
  */
 
 /*
@@ -54,7 +54,7 @@
  * @summary Test that removing allocation merges of non-value and value object at EA is working properly.
  * @library /test/lib /
  * @enablePreview
- * @run main compiler.valhalla.inlinetypes.TestAllocationMergeAndFolding 3
+ * @run driver ${test.main.class} 3
  */
 
 /*
@@ -63,7 +63,7 @@
  * @summary Test that removing allocation merges of non-value and value object at EA is working properly.
  * @library /test/lib /
  * @enablePreview
- * @run main compiler.valhalla.inlinetypes.TestAllocationMergeAndFolding 4
+ * @run driver ${test.main.class} 4
  */
 
 /*
@@ -72,7 +72,7 @@
  * @summary Test that removing allocation merges of non-value and value object at EA is working properly.
  * @library /test/lib /
  * @enablePreview
- * @run main compiler.valhalla.inlinetypes.TestAllocationMergeAndFolding 5
+ * @run driver ${test.main.class} 5
  */
 
 /*
@@ -81,7 +81,7 @@
  * @summary Test that removing allocation merges of non-value and value object at EA is working properly.
  * @library /test/lib /
  * @enablePreview
- * @run main compiler.valhalla.inlinetypes.TestAllocationMergeAndFolding 6
+ * @run driver ${test.main.class} 6
  */
 
 /*
@@ -90,7 +90,7 @@
  * @summary Test that removing allocation merges of non-value and value object at EA is working properly.
  * @library /test/lib /
  * @enablePreview
- * @run main compiler.valhalla.inlinetypes.TestAllocationMergeAndFolding 7
+ * @run driver ${test.main.class} 7
  */
 
 /*
@@ -99,7 +99,7 @@
  * @summary Test that removing allocation merges of non-value and value object at EA is working properly.
  * @library /test/lib /
  * @enablePreview
- * @run main compiler.valhalla.inlinetypes.TestAllocationMergeAndFolding 8
+ * @run driver ${test.main.class} 8
  */
 package compiler.valhalla.inlinetypes;
 

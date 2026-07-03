@@ -294,6 +294,123 @@ public class TestArrayFactories {
         } catch (NullPointerException e) { }
     }
 
+    // Test arguments validation in copyOfSpecialArray()
+
+    static void test_26() {
+        try {
+            var a = ValueClass.copyOfSpecialArray(null, 0);
+            throw new RuntimeException("Missing NullPointerException");
+        } catch (NullPointerException e) {}
+    }
+
+    static void test_27() {
+        var array = ValueClass.newNullRestrictedNonAtomicArray(MyVal.class, 1, new MyVal());
+        try {
+            var a = ValueClass.copyOfSpecialArray(array, -1);
+            throw new RuntimeException("Missing NegativeArraySizeException");
+        } catch (NegativeArraySizeException e) {}
+    }
+
+    static void test_28() {
+        var array = new Object[1];
+        try {
+            var a = ValueClass.copyOfSpecialArray(array, 0);
+            throw new RuntimeException("Missing IllegalArgumentException");
+        } catch (IllegalArgumentException e) {}
+    }
+
+    static void test_29() {
+        var array = ValueClass.newNullRestrictedNonAtomicArray(MyVal.class, 2, new MyVal());
+        try {
+            var a = ValueClass.copyOfSpecialArray(array, 4);
+            throw new RuntimeException("Missing IllegalArgumentException");
+        } catch (IllegalArgumentException e) {}
+    }
+
+    static void test_30() {
+        var array = ValueClass.newNullRestrictedAtomicArray(MyVal.class, 2, new MyVal());
+        try {
+            var a = ValueClass.copyOfSpecialArray(array, 4);
+            throw new RuntimeException("Missing IllegalArgumentException");
+        } catch (IllegalArgumentException e) {}
+    }
+
+    static void test_31() {
+        var array = ValueClass.newNullableAtomicArray(MyVal.class, 2);
+        try {
+            var a = ValueClass.copyOfSpecialArray(array, 4);
+            Asserts.assertEquals(a.length, 4);
+        } catch (Throwable e) {
+            throw new RuntimeException("Unexpected exception " + e);
+        }
+    }
+
+    // Test arguments validation in copyOfRangeSpecialArray()
+
+    static void test_32() {
+        try {
+            var a = ValueClass.copyOfRangeSpecialArray(null, 0, 1);
+            throw new RuntimeException("Missing NullPointerException");
+        } catch (NullPointerException e) {}
+    }
+
+    static void test_33() {
+        var array = ValueClass.newNullRestrictedNonAtomicArray(MyVal.class, 2, new MyVal());
+        try {
+            var a = ValueClass.copyOfRangeSpecialArray(array, -1, 1);
+            throw new RuntimeException("Missing ArrayIndexOutOfBoundsException");
+        } catch (ArrayIndexOutOfBoundsException e) {}
+    }
+
+    static void test_34() {
+        var array = ValueClass.newNullRestrictedNonAtomicArray(MyVal.class, 2, new MyVal());
+        try {
+            var a = ValueClass.copyOfRangeSpecialArray(array, 3, 4);
+            throw new RuntimeException("Missing ArrayIndexOutOfBoundsException");
+        } catch (ArrayIndexOutOfBoundsException e) {}
+    }
+
+    static void test_35() {
+        var array = ValueClass.newNullRestrictedNonAtomicArray(MyVal.class, 2, new MyVal());
+        try {
+            var a = ValueClass.copyOfRangeSpecialArray(array, 1, 0);
+            throw new RuntimeException("Missing IllegalArgumentException");
+        } catch (IllegalArgumentException e) {}
+    }
+
+    static void test_36() {
+        var array = ValueClass.newNullRestrictedNonAtomicArray(MyVal.class, 2, new MyVal());
+        try {
+            var a = ValueClass.copyOfRangeSpecialArray(array, 2, 4);
+            throw new RuntimeException("Missing IllegalArgumentException");
+        } catch (IllegalArgumentException e) {}
+    }
+
+    static void test_37() {
+        var array = ValueClass.newNullRestrictedAtomicArray(MyVal.class, 2, new MyVal());
+        try {
+            var a = ValueClass.copyOfRangeSpecialArray(array, 2, 4);
+            throw new RuntimeException("Missing IllegalArgumentException");
+        } catch (IllegalArgumentException e) {}
+    }
+
+    static void test_38() {
+        var array = ValueClass.newNullableAtomicArray(MyVal.class, 2);
+        try {
+            var a = ValueClass.copyOfRangeSpecialArray(array, 2, 4);
+        } catch (Throwable e) {
+            throw new RuntimeException("Unexpected exception " + e);
+        }
+    }
+
+    static void test_39() {
+      var array = new Object[1];
+        try {
+            var a = ValueClass.copyOfRangeSpecialArray(array, 0, 0);
+            throw new RuntimeException("Missing IllegalArgumentException");
+        } catch (IllegalArgumentException e) {}
+    }
+
     public static void main(String[] args) {
         var test = new TestArrayFactories();
         Class c = test.getClass();
