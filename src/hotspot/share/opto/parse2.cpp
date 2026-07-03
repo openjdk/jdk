@@ -2414,6 +2414,7 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
   Node* io_taken = nullptr;
   if (btest == BoolTest::eq) {
     PreserveJVMState pjvms(this);
+    // Also merges branch block.
     do_if(btest, subst_cmp, can_trap, false, nullptr, &mem_taken, &io_taken);
     if (!stopped()) {
       ctl = control();
@@ -2434,18 +2435,25 @@ void Parse::do_acmp(BoolTest::mask btest, Node* left, Node* right) {
   ne_io_phi->init_req(5, io_taken);
   ne_mem_phi->init_req(5, mem_taken);
 
+  // BoolTest::eq: ne_region is fall-through block.
+  // BoolTest::ne: ne_region is branch block -> merge below.
   record_for_igvn(ne_region);
   set_control(_gvn.transform(ne_region));
   set_i_o(_gvn.transform(ne_io_phi));
   set_all_memory(_gvn.transform(ne_mem_phi));
 
   if (btest == BoolTest::ne) {
-    {
+    int target_bci = iter().get_dest();
+    if (!stopped()) {
       PreserveJVMState pjvms(this);
-      int target_bci = iter().get_dest();
       merge(target_bci);
+    } else if (C->eliminate_boxing()) {
+      // Mark the branch block as parsed.
+      Block* branch_block = successor_for_bci(target_bci);
+      branch_block->next_path_num();
     }
 
+    // Fall-through block.
     record_for_igvn(eq_region);
     set_control(_gvn.transform(eq_region));
     set_i_o(_gvn.transform(eq_io_phi));
