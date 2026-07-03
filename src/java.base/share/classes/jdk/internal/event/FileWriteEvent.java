@@ -59,7 +59,7 @@ public final class FileWriteEvent extends Event {
      *
      * @param start  the start time
      * @param path  the path
-     * @param bytesRead  the number of bytes that were written, or -1 if the end of the file was reached
+     * @param bytesWritten  the number of bytes that were written
      */
     public static void offer(long start, String path, long bytesWritten) {
         long end = timestamp();
