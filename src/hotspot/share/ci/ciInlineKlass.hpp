@@ -66,6 +66,7 @@ public:
   bool can_be_returned_as_fields() const;
 
   bool is_empty();
+  bool is_cloneable() const;
   int inline_arg_length() const;
   int inline_arg_slots() const;
   bool contains_oops() const;

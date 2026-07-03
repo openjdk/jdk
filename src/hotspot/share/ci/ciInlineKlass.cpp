@@ -62,6 +62,10 @@ bool ciInlineKlass::is_empty() {
   return nof_declared_nonstatic_fields() == 0;
 }
 
+bool ciInlineKlass::is_cloneable() const {
+  GUARDED_VM_ENTRY(return get_InlineKlass()->is_cloneable();)
+}
+
 int ciInlineKlass::inline_arg_length() const {
   VM_ENTRY_MARK;
   return get_InlineKlass()->extended_sig()->length();
