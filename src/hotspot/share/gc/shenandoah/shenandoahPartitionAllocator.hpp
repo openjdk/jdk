@@ -50,8 +50,11 @@ public:
 private:
   ShenandoahFreeSet* const _free_set;
 
-  // Number of alloc-region stripe slots for this partition (>= 1). Fixed for the allocator's life.
-  const uint _alloc_region_count;
+  // Number of alloc-region stripe slots in use for this partition (>= 1). For the mutator this is
+  // fixed at construction. For the collector/old-collector partitions it is (re)sized per evacuation
+  // to match the evac worker count -- see set_alloc_region_count / grow_alloc_region_count, which are
+  // only called at a safepoint while these slots are released (or, for grow, monotonically increased).
+  uint _alloc_region_count;
 
   // Stripe array of cached alloc regions. Each slot holds a region with remaining capacity that is
   // bump-allocated lock-free via CAS, or nullptr when the slot is empty. A slot is cleared when its
@@ -107,6 +110,19 @@ public:
   // Drop all cached alloc regions. Must be called before the free set is rebuilt,
   // since rebuild can change region affiliation/membership and invalidate the cache.
   void release_alloc_regions();
+
+  // Set the number of active stripe slots (clamped to [1, MAX_ALLOC_REGIONS]). Must be called at a
+  // safepoint while all slots are released (empty), because it may lower the count: a non-empty slot
+  // at an index >= the new count would be stranded (never scanned, never retired). Used to size the
+  // collector partitions to the evac worker count before evacuation begins.
+  void set_alloc_region_count(uint count);
+
+  // Raise the number of active stripe slots to at least `count` (clamped to MAX_ALLOC_REGIONS);
+  // never lowers it. Must be called at a safepoint. Unlike set_alloc_region_count this does not
+  // require the slots to be empty: existing occupied slots keep serving, and only higher-indexed
+  // slots become newly reachable. Used when a degenerated cycle escalates to more workers than the
+  // in-flight concurrent evacuation was sized for.
+  void grow_alloc_region_count(uint count);
 
   // Read-time accounting correction for the cached alloc regions.
   //

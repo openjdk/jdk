@@ -66,6 +66,17 @@ public:
   // update watermark before update-refs iterates the heap, while mutators keep allocating.
   void release_collector_alloc_regions();
 
+  // Size the collector and old-collector stripe slots to the number of evacuation workers, so the
+  // slot count tracks actual evac contention instead of a fixed default. Call at a safepoint before
+  // evacuation begins, while the collector alloc regions are released (they are, at the
+  // evac-enabling safepoint). See ShenandoahPartitionAllocator::set_alloc_region_count.
+  void set_collector_alloc_region_count(uint workers);
+
+  // Grow-only variant for a degenerated cycle that escalates to more workers than the in-flight
+  // concurrent evacuation was sized for. Safe to call while collector alloc regions are still
+  // occupied. See ShenandoahPartitionAllocator::grow_alloc_region_count.
+  void grow_collector_alloc_region_count(uint workers);
+
   // Read-time accounting correction term for the given partition's cached alloc region: the
   // bytes that were pre-charged to the partition's used at reserve time but are not yet
   // actually consumed (the region's current free()). Returns 0 if no region is cached.

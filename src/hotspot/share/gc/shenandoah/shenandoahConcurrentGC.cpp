@@ -28,6 +28,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -808,6 +809,11 @@ void ShenandoahConcurrentGC::op_final_mark() {
         ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_mark_verify);
         heap->verifier()->verify_before_evacuation(_generation);
       }
+
+      // Size the collector CAS alloc-region stripes to the concurrent evac worker count, so the slot
+      // count tracks actual evac contention. Safe here: we are at the final-mark safepoint and the
+      // collector alloc regions were released above, so no slot is occupied.
+      heap->allocator()->set_collector_alloc_region_count(ShenandoahWorkerPolicy::calc_workers_for_conc_evac());
 
       heap->set_evacuation_in_progress(true);
       // From here on, we need to update references.

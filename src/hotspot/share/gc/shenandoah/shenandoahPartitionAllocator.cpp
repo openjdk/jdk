@@ -49,24 +49,28 @@ uint ShenandoahPartitionAllocator<PARTITION>::alloc_region_slot(Thread* thread) 
   if (_alloc_region_count <= 1u) {
     return 0u;
   }
-  // Mutator and (old-)collector partitions keep separate per-thread slots. The collector
-  // and old-collector partitions share one slot since a given worker only allocates in one of them.
-  uint slot = (PARTITION == ShenandoahFreeSetPartitionId::Mutator)
-                 ? ShenandoahThreadLocalData::mutator_alloc_region_slot(thread)
-                 : ShenandoahThreadLocalData::collector_alloc_region_slot(thread);
-  if (slot == UINT_MAX) {
-    // Assign a stable per-thread slot. GC workers stripe by worker id; other threads by a
-    // pseudo-random value.
-    if (PARTITION != ShenandoahFreeSetPartitionId::Mutator && thread->is_Worker_thread()) {
-      slot = WorkerThread::worker_id() % _alloc_region_count;
-    } else {
-      slot = (uint)(os::random() & 0x7fffffff) % _alloc_region_count;
+  if constexpr (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
+    // Collector/old-collector slots are sized per evacuation to the worker count, and that count can
+    // change between phases (set before concurrent evac, grown when a degenerated cycle escalates).
+    // GC workers therefore derive their slot fresh from worker_id() each time rather than caching it
+    // in thread-local state, so a stale cached slot can never fall outside the current count. The
+    // modulo is trivial, and a given worker only ever allocates in one collector partition.
+    if (thread->is_Worker_thread()) {
+      return WorkerThread::worker_id() % _alloc_region_count;
     }
-    if (PARTITION == ShenandoahFreeSetPartitionId::Mutator) {
-      ShenandoahThreadLocalData::set_mutator_alloc_region_slot(thread, slot);
-    } else {
+    // Non-worker collector allocations (rare) use a stable pseudo-random slot.
+    uint slot = ShenandoahThreadLocalData::collector_alloc_region_slot(thread);
+    if (slot == UINT_MAX || slot >= _alloc_region_count) {
+      slot = (uint)(os::random() & 0x7fffffff) % _alloc_region_count;
       ShenandoahThreadLocalData::set_collector_alloc_region_slot(thread, slot);
     }
+    return slot;
+  }
+  // Mutator: stable per-thread slot, assigned once, count is fixed for the allocator's life.
+  uint slot = ShenandoahThreadLocalData::mutator_alloc_region_slot(thread);
+  if (slot == UINT_MAX) {
+    slot = (uint)(os::random() & 0x7fffffff) % _alloc_region_count;
+    ShenandoahThreadLocalData::set_mutator_alloc_region_slot(thread, slot);
   }
   assert(slot < _alloc_region_count, "slot in range");
   return slot;
@@ -402,6 +406,38 @@ void ShenandoahPartitionAllocator<PARTITION>::release_alloc_regions() {
   for (uint i = 0; i < _alloc_region_count; i++) {
     release_alloc_region(i);
   }
+}
+
+template<ShenandoahFreeSetPartitionId PARTITION>
+void ShenandoahPartitionAllocator<PARTITION>::set_alloc_region_count(uint count) {
+  shenandoah_assert_heaplocked_or_safepoint();
+  count = MIN2(MAX2(count, 1u), MAX_ALLOC_REGIONS);
+#ifdef ASSERT
+  // Lowering the count would strand any occupied slot at index >= count (never scanned, never
+  // retired), so all slots must be released before we resize. Callers guarantee this.
+  for (uint i = 0; i < MAX_ALLOC_REGIONS; i++) {
+    assert(_alloc_regions[i].load_relaxed() == nullptr, "All slots must be released before resizing");
+  }
+#endif
+  _alloc_region_count = count;
+}
+
+template<ShenandoahFreeSetPartitionId PARTITION>
+void ShenandoahPartitionAllocator<PARTITION>::grow_alloc_region_count(uint count) {
+  shenandoah_assert_heaplocked_or_safepoint();
+  const uint new_count = MAX2(_alloc_region_count, MIN2(count, MAX_ALLOC_REGIONS));
+#ifdef ASSERT
+  // The slots being newly exposed (index in [_alloc_region_count, new_count)) must be empty: they
+  // were outside the active range, so no allocation could have installed a region there. A non-null
+  // slot here would mean a region was stranded above the old count and is about to become reachable
+  // with stale accounting.
+  for (uint i = _alloc_region_count; i < new_count; i++) {
+    assert(_alloc_regions[i].load_relaxed() == nullptr, "Newly exposed slot %u must be empty", i);
+  }
+#endif
+  // Grow only: existing occupied slots keep serving; only higher-indexed slots become newly
+  // reachable. Never lower the count here, which would strand an occupied slot.
+  _alloc_region_count = new_count;
 }
 
 template<ShenandoahFreeSetPartitionId PARTITION>
