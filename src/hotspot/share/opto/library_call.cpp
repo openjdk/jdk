@@ -5596,13 +5596,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
       Node* is_not_value = inline_type_test(obj, false);
       generate_slow_guard(is_not_value, slow_region);
       if (!stopped()) {
-        /* load 8 bytes from appropriate offset
-         * mask to keep 1, 2, 4 or 8 bytes if mask is 0 => slow path
-         * load hash from klass if none => slow path
-         * shift by 7, 6, 4 or 0 bytes
-         * if shift is 0 => 31 * (31 * klass_hash + shifted[31:0]) + shifted[63:32]
-         * else => 31 * klass_hash + shifted
-         */
+        // See InlineKlass::Members::_fast_hashcode_offset et seqq. for details on the fast path logic
         Node* members_addr = off_heap_plus_addr(obj_klass, in_bytes(InlineKlass::adr_members_offset()));
         Node* members = make_load(control(), members_addr, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
         Node* offset_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_offset_offset()));
@@ -5614,7 +5608,6 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
             fast_path_iff = control()->in(0)->as_If();
           }
 
-          // See ClassFileParser::set_fast_hashcode_members
           Node* obj_payload_addr = basic_plus_adr(obj, ConvI2L(offset));
           Node* obj_payload = make_load(control(), obj_payload_addr, TypeLong::LONG, T_LONG, MemNode::unordered, LoadNNode::DependsOnlyOnTest, false, true, true, true);
 #ifdef VM_LITTLE_ENDIAN
