@@ -224,11 +224,7 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
     __ load_klass(dst, dst);
     __ check_klass_subtype_fast_path(src, dst, tmp, &cont, &slow, nullptr);
 
-    PUSH(src, dst);
-    __ far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_slow_subtype_check_id)));
-    POP(src, dst);
-    __ bnez(dst, cont);
-
+    __ check_klass_subtype_slow_path(src, dst, tmp, noreg, &cont, &slow);
     __ bind(slow);
     POP(src, dst);
 
