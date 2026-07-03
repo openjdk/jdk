@@ -5607,54 +5607,51 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
           if (control()->is_IfFalse()) {
             fast_path_iff = control()->in(0)->as_If();
           }
-
-          Node* obj_payload_addr = basic_plus_adr(obj, ConvI2L(offset));
-          Node* obj_payload = make_load(control(), obj_payload_addr, TypeLong::LONG, T_LONG, MemNode::unordered, LoadNNode::DependsOnlyOnTest, false, true, true, true);
-#ifdef VM_LITTLE_ENDIAN
-          // *(obj + offset) >>> shift
-          Node* shift_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_shift_offset()));
-          Node* shift = make_load(control(), shift_addr, TypeInt::INT, T_INT, MemNode::unordered);
-          Node* obj_extracted = URShiftL(obj_payload, shift);
-#else
-          // *(obj + offset) & mask
-          Node* mask_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_mask_offset()));
-          Node* mask = make_load(control(), mask_addr, TypeLong::LONG, T_LONG, MemNode::unordered);
-          Node* obj_extracted = AndL(obj_payload, mask);
-#endif
-
           Node* klass_header_addr = off_heap_plus_addr(load_mirror_from_klass(obj_klass), oopDesc::mark_offset_in_bytes());
           Node* klass_header = make_load(no_ctrl, klass_header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
           hashcode_is_safe_to_read(klass_header, slow_region);
           if (!stopped()) {
-            Node* result = get_hashcode_from_header(klass_header, slow_region);
+            Node* result_empty = get_hashcode_from_header(klass_header, slow_region);
+            if (!stopped()) {
+              RegionNode* unmasked_region = new RegionNode(4);
+              Node* unmasked_result = new PhiNode(unmasked_region, TypeInt::INT);
 
-            RegionNode* long_not_long_region = new RegionNode(4);
-            Node* fast_path_result = new PhiNode(long_not_long_region, TypeInt::INT);
+              Node* bol_empty_object = BoolCmpI(offset, BoolTest::eq, zerocon(T_INT));
+              IfNode* iff_is_empty_object = create_and_map_if(control(), bol_empty_object, PROB_FAIR, COUNT_UNKNOWN);
+              unmasked_region->init_req(1, IfTrue(iff_is_empty_object));
+              unmasked_result->init_req(1, result_empty);
 
-            Node* bol_empty_object = BoolCmpI(offset, BoolTest::eq, zerocon(T_INT));
+              set_control(IfFalse(iff_is_empty_object));
+
+              Node* obj_payload_addr = basic_plus_adr(obj, ConvI2L(offset));
+              Node* obj_payload = make_load(control(), obj_payload_addr, TypeLong::LONG, T_LONG, MemNode::unordered, LoadNNode::DependsOnlyOnTest, false, true, true, true);
 #ifdef VM_LITTLE_ENDIAN
-            Node* is_long_payload_bol = BoolCmpI(shift, BoolTest::eq, intcon(0));
+              // *(obj + offset) >>> shift
+              Node* shift_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_shift_offset()));
+              Node* shift = make_load(control(), shift_addr, TypeInt::INT, T_INT, MemNode::unordered);
+              Node* obj_extracted = URShiftL(obj_payload, shift);
+              Node* is_long_payload_bol = BoolCmpI(shift, BoolTest::eq, intcon(0));
 #else
-            Node* is_long_payload_bol = BoolCmpI(mask, BoolTest::eq, longcon(-1));
+              // *(obj + offset) & mask
+              Node* mask_addr = off_heap_plus_addr(members, in_bytes(InlineKlass::fast_hashcode_mask_offset()));
+              Node* mask = make_load(control(), mask_addr, TypeLong::LONG, T_LONG, MemNode::unordered);
+              Node* obj_extracted = AndL(obj_payload, mask);
+              Node* is_long_payload_bol = BoolCmpI(mask, BoolTest::eq, longcon(-1));
 #endif
-            IfNode* iff_is_empty_object = create_and_map_if(control(), bol_empty_object, PROB_FAIR, COUNT_UNKNOWN);
-            IfNode* iff_is_long_payload = create_and_map_if(IfFalse(iff_is_empty_object), is_long_payload_bol, PROB_FAIR, COUNT_UNKNOWN);
+              IfNode* iff_is_long_payload = create_and_map_if(control(), is_long_payload_bol, PROB_FAIR, COUNT_UNKNOWN);
 
-            fast_path_result->init_req(1, result);
-            long_not_long_region->init_req(1, IfTrue(iff_is_empty_object));
+              Node* result_int = AddI(MulI(intcon(31), result_empty), ConvL2I(obj_extracted));
+              unmasked_region->init_req(2, IfFalse(iff_is_long_payload));
+              unmasked_result->init_req(2, result_int);
 
-            result = AddI(MulI(intcon(31), result), ConvL2I(obj_extracted));
-            fast_path_result->init_req(2, result);
-            long_not_long_region->init_req(2, IfFalse(iff_is_long_payload));
+              Node* result_long = AddI(MulI(intcon(31), result_int), ConvL2I(URShiftL(obj_extracted, intcon(32))));
+              unmasked_region->init_req(3, IfTrue(iff_is_long_payload));
+              unmasked_result->init_req(3, result_long);
 
-            result = AddI(MulI(intcon(31), result), ConvL2I(URShiftL(obj_extracted, intcon(32))));
-            fast_path_result->init_req(3, result);
-            long_not_long_region->init_req(3, IfTrue(iff_is_long_payload));
-
-            fast_path_result = AndI(_gvn.transform(fast_path_result), intcon(markWord::hash_mask));
-
-            result_reg->init_req(_inline_fast_path, _gvn.transform(long_not_long_region));
-            result_val->init_req(_inline_fast_path, fast_path_result);
+              Node* fast_path_result = AndI(_gvn.transform(unmasked_result), intcon(markWord::hash_mask));
+              result_reg->init_req(_inline_fast_path, _gvn.transform(unmasked_region));
+              result_val->init_req(_inline_fast_path, fast_path_result);
+            }
           }
         }
       }
