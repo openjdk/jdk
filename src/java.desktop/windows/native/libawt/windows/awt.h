@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,12 +155,8 @@ typedef AwtObject* PDATA;
 /*  /NEW JNI */
 
 /*
- * IS_WIN2000 returns TRUE on 2000, XP and Vista
- * IS_WINXP returns TRUE on XP and Vista
  * IS_WINVISTA returns TRUE on Vista
  */
-#define IS_WIN2000 (LOBYTE(LOWORD(::GetVersion())) >= 5)
-#define IS_WINXP ((IS_WIN2000 && HIBYTE(LOWORD(::GetVersion())) >= 1) || LOBYTE(LOWORD(::GetVersion())) > 5)
 #define IS_WINVISTA (LOBYTE(LOWORD(::GetVersion())) >= 6)
 #define IS_WIN8 (                                                              \
     (IS_WINVISTA && (HIBYTE(LOWORD(::GetVersion())) >= 2)) ||                  \
