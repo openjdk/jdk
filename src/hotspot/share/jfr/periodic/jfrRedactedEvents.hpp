@@ -95,11 +95,6 @@ class JfrRedactedEvents: public AllStatic {
       assert(index < _length, "out of bounds");
       _text[index] = c;
     }
-    void set_length(size_t length) {
-      assert(length <= _length, "out of bounds");
-      _text[length] = '\0';
-      _length = length;
-    }
     size_t length() const {
       return _length;
     }
@@ -110,7 +105,7 @@ class JfrRedactedEvents: public AllStatic {
       return s == nullptr ? nullptr : s->text();
     }
    private:
-    size_t _length;
+    const size_t _length;
     char* _text;
   };
 
