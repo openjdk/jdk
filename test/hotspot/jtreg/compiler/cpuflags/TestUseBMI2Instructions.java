@@ -27,7 +27,7 @@
  * @bug 8386475
  * @summary Verify no assertions with -XX:+UseBMI2Instructions
  * @requires os.simpleArch == "x64"
- * @run main/othervm -Xbatch -Xcomp -XX:+UseBMI2Instructions ${test.main.class}
+ * @run main/othervm -Xcomp -XX:+UseBMI2Instructions ${test.main.class}
  */
 
 /*
@@ -35,7 +35,7 @@
  * @bug 8386475
  * @summary Verify no assertions with -XX:-UseBMI2Instructions
  * @requires os.simpleArch == "x64"
- * @run main/othervm -Xbatch -Xcomp -XX:-UseBMI2Instructions ${test.main.class}
+ * @run main/othervm -Xcomp -XX:-UseBMI2Instructions ${test.main.class}
  */
 
 /*
