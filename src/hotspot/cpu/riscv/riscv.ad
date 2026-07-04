@@ -1066,6 +1066,10 @@ public:
 
 bool is_CAS(int opcode, bool maybe_volatile);
 
+// predicate controlling emit of fence before and after CAS
+bool unnecessary_acquire(const Node *barrier);
+bool unnecessary_release(const Node *barrier);
+
 // predicate controlling translation of CompareAndSwapX
 bool needs_acquiring_load_reserved(const Node *load);
 
@@ -1172,6 +1176,48 @@ bool is_CAS(int opcode, bool maybe_volatile)
     default:
       return false;
   }
+}
+
+// predicates controlling emit of fence before and after CAS
+
+bool unnecessary_acquire(const Node *barrier)
+{
+  assert(barrier->is_MemBar(), "expecting a membar");
+
+  MemBarNode* mb = barrier->as_MemBar();
+
+  if (mb->trailing_load_store()) {
+    Node* load_store = mb->in(MemBarNode::Precedent);
+    assert(load_store->is_LoadStore(), "unexpected graph shape");
+    return is_CAS(load_store->Opcode(), true);
+  }
+
+  return false;
+}
+
+bool unnecessary_release(const Node *barrier)
+{
+  assert((barrier->is_MemBar() &&
+          barrier->Opcode() == Op_MemBarRelease),
+          "expecting a release membar");
+
+  MemBarNode *mb = barrier->as_MemBar();
+  if (!mb->leading()) {
+    return false;
+  } else {
+    Node* trailing = mb->trailing_membar();
+    MemBarNode* trailing_mb = trailing->as_MemBar();
+    assert(trailing_mb->trailing(), "Not a trailing membar?");
+    assert(trailing_mb->leading_membar() == barrier, "inconsistent leading/trailing membars");
+
+    Node* mem = trailing_mb->in(MemBarNode::Precedent);
+    if (!mem->is_Store()) {
+      assert(mem->is_LoadStore(), "");
+      assert(trailing_mb->Opcode() == Op_MemBarAcquire, "");
+      return is_CAS(mem->Opcode(), true);
+    }
+  }
+  return false;
 }
 
 constexpr uint64_t MAJIK_DWORD = 0xabbaabbaabbaabbaull;
@@ -8206,25 +8252,79 @@ instruct membar_full_rvtso() %{
 
 // RVWMO
 
-instruct membar_aqcuire_rvwmo() %{
+instruct load_fence_rvwmo() %{
   predicate(!UseZtso);
   match(LoadFence);
-  match(MemBarAcquire);
   ins_cost(VOLATILE_REF_COST);
 
-  format %{ "#@membar_aqcuire_rvwmo\n\t"
+  format %{ "#@load_fence_rvwmo\n\t"
             "fence r, rw" %}
 
   ins_encode %{
-    __ block_comment("membar_aqcuire_rvwmo");
+    __ block_comment("load_fence_rvwmo");
     __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   %}
   ins_pipe(pipe_serial);
 %}
 
-instruct membar_release_rvwmo() %{
+instruct unnecessary_membar_acquire_rvwmo() %{
+  predicate(!UseZtso && unnecessary_acquire(n));
+  match(MemBarAcquire);
+  ins_cost(0);
+
+  size(0);
+  format %{ "#@unnecessary_membar_acquire_rvwmo (elided)" %}
+  ins_encode %{
+    __ block_comment("unnecessary_membar_acquire_rvwmo (elided)");
+  %}
+  ins_pipe(real_empty);
+%}
+
+instruct membar_acquire_rvwmo() %{
+  predicate(!UseZtso);
+  match(MemBarAcquire);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "#@membar_acquire_rvwmo\n\t"
+            "fence r, rw" %}
+
+  ins_encode %{
+    __ block_comment("membar_acquire_rvwmo");
+    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct store_fence_rvwmo() %{
   predicate(!UseZtso);
   match(StoreFence);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "#@store_fence_rvwmo\n\t"
+            "fence rw, w" %}
+
+  ins_encode %{
+    __ block_comment("store_fence_rvwmo");
+    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct unnecessary_membar_release_rvwmo() %{
+  predicate(!UseZtso && unnecessary_release(n));
+  match(MemBarRelease);
+  ins_cost(0);
+
+  size(0);
+  format %{ "#@unnecessary_membar_release_rvwmo (elided)" %}
+  ins_encode %{
+    __ block_comment("unnecessary_membar_release_rvwmo (elided)");
+  %}
+  ins_pipe(real_empty);
+%}
+
+instruct membar_release_rvwmo() %{
+  predicate(!UseZtso);
   match(MemBarRelease);
   ins_cost(VOLATILE_REF_COST);
 
