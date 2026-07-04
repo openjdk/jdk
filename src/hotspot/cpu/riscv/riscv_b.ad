@@ -609,6 +609,41 @@ instruct ornL_reg_reg_b(iRegLNoSp dst, iRegL src1, iRegL src2, immL_M1 m1) %{
   ins_pipe(ialu_reg_reg);
 %}
 
+// Xor Not (Xnor)
+// RISC-V Zbb xnor rd, rs1, rs2 = ~(rs1 ^ rs2).
+// This matches Commutative XorI(XorI(...), -1) = ~(a ^ b) = xnor(a, b).
+instruct xnorI_reg_reg_b(iRegINoSp dst, iRegI src1, iRegI src2, immI_M1 m1) %{
+  predicate(UseZbb);
+  match(Set dst (XorI (XorI src1 src2) m1));
+
+  format %{ "xnor  $dst, $src1, $src2\t#@xnorI_reg_reg_b" %}
+
+  ins_cost(ALU_COST);
+  ins_encode %{
+    __ xnor(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            as_Register($src2$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct xnorL_reg_reg_b(iRegLNoSp dst, iRegL src1, iRegL src2, immL_M1 m1) %{
+  predicate(UseZbb);
+  match(Set dst (XorL (XorL src1 src2) m1));
+
+  format %{ "xnor  $dst, $src1, $src2\t#@xnorL_reg_reg_b" %}
+
+  ins_cost(ALU_COST);
+  ins_encode %{
+    __ xnor(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            as_Register($src2$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
 // AndI 0b0..010..0 + ConvI2B
 instruct convI2Bool_andI_reg_immIpowerOf2(iRegINoSp dst, iRegIorL2I src, immIpowerOf2 mask) %{
   predicate(UseZbs);
