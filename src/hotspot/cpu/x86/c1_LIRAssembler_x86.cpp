@@ -1632,8 +1632,10 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
   } else {
     Register tmp1 = op->tmp1()->as_register();
     Register tmp2 = op->tmp2()->as_register();
-    __ cmp_klasses_from_objects(left, right, tmp1, tmp2);
-    __ jcc(Assembler::equal, *op->stub()->entry()); // same klass -> do slow check
+    if (left != right) {
+      __ cmp_klasses_from_objects(left, right, tmp1, tmp2);
+      __ jcc(Assembler::equal, *op->stub()->entry()); // same klass -> do slow check
+    }
     // fall through to L_oops_not_equal
   }
 
