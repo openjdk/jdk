@@ -563,7 +563,7 @@ public final class DerOutputStream
 
         DateTimeFormatter dateTimeFormatter =
                 DateTimeFormatter.ofPattern(pattern, Locale.US);
-        byte[] time = (d.atZone(ZoneId.of("GMT")).format(dateTimeFormatter))
+        byte[] time = d.atZone(ZoneId.of("GMT")).format(dateTimeFormatter)
                 .getBytes(ISO_8859_1);
 
         /*

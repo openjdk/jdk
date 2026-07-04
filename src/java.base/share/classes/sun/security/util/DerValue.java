@@ -1107,7 +1107,7 @@ public class DerValue {
             throw new IOException("DerValue.getUTCTime, not a UtcTime: " + tag);
         }
         if (end - start < 11 || end - start > 17)
-            throw new IOException("DER UTC Time Instant length error");
+            throw new IOException("DER UTC Time length error");
 
         data.pos = data.end; // Compatibility. Reach end.
         return getTimeInternal(false);
@@ -1133,7 +1133,7 @@ public class DerValue {
                 "DerValue.getGeneralizedTime, not a GeneralizedTime: " + tag);
         }
         if (end - start < 13)
-            throw new IOException("DER Generalized Instant length error");
+            throw new IOException("DER Generalized Time length error");
 
         data.pos = data.end; // Compatibility. Reach end.
         return getTimeInternal(true);

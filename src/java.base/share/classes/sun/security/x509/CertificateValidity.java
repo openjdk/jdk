@@ -168,11 +168,7 @@ public class CertificateValidity implements DerEncoder {
      */
     public void valid(Instant now)
     throws CertificateNotYetValidException, CertificateExpiredException {
-        /*
-         * we use the internal Instants rather than the passed in Instant
-         * because someone could override the Instant methods isAfter()
-         * and isBefore() to do something entirely different.
-         */
+
         if (notBefore.isAfter(now)) {
             throw new CertificateNotYetValidException("NotBefore: " +
                                                       notBefore.toString());

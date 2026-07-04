@@ -130,8 +130,7 @@ public abstract non-sealed class X509Certificate extends Certificate
      * <p>
      * The validity period consists of two dates, defined as two time values:
      * the first and last dates (and times) on which the certificate
-     * is valid. It is defined in
-     * ASN.1 as:
+     * is valid. It is defined in ASN.1 as:
      * <pre>
      * validity             Validity
      *
@@ -170,9 +169,9 @@ public abstract non-sealed class X509Certificate extends Certificate
         throws CertificateExpiredException, CertificateNotYetValidException;
 
     /**
-     * Checks that the given instant is within the certificate's
-     * validity period. In other words, this determines whether the
-     * certificate would be valid at the given instant.
+     * Checks that the given date (represented as an {@code Instant}) is within
+     * the certificate's validity period. In other words, this determines
+     * whether the certificate would be valid at the given instant.
      *
      * @apiNote Subclasses should override this method to directly process an
      * instant.
@@ -185,13 +184,13 @@ public abstract non-sealed class X509Certificate extends Certificate
      *                certificate is valid at that instant.
      *
      * @throws    CertificateExpiredException if the certificate has expired
-     * with respect to {@code Instant} supplied.
+     * with respect to the {@code instant} supplied.
      * @throws    CertificateNotYetValidException if the certificate is not
-     * yet valid with respect to {@code Instant} supplied.
-     * @throws    NullPointerException if the supplied instant is null.
+     * yet valid with respect to the {@code instant} supplied.
+     * @throws    NullPointerException if the supplied instant is {@code null}.
      *
      * @see #checkValidity()
-     * @since 27
+     * @since 28
      */
     public void checkValidity(Instant instant)
         throws CertificateExpiredException, CertificateNotYetValidException {
@@ -349,20 +348,14 @@ public abstract non-sealed class X509Certificate extends Certificate
      *
      * @implSpec
      * The default implementation calls {@code getNotBefore()}
-     * and returns the output as an {@code Instant} value.
-     * If {@code getNotBefore()} returns {@code null}, this method throws a
-     * {@code NullPointerException}
+     * and returns the output as an {@code Instant}.
      *
-     * @return the start date of the validity period (never {@code null}).
+     * @return the start date of the validity period.
      * @see #checkValidity()
-     * @since 27
+     * @since 28
      */
     public Instant getNotBeforeInstant() {
-        final Date date = getNotBefore();
-        if (date == null) {
-            throw new NullPointerException("notBefore is null");
-        }
-        return date.toInstant();
+        return getNotBefore().toInstant();
     }
 
     /**
@@ -384,20 +377,14 @@ public abstract non-sealed class X509Certificate extends Certificate
      *
      * @implSpec
      * The default implementation calls {@code getNotAfter()}
-     * and returns the output as an {@code Instant} value.
-     * If {@code getNotAfter()} returns {@code null}, this method throws a
-     * {@code NullPointerException}
+     * and returns the output as an {@code Instant}.
      *
-     * @return the end date of the validity period (never {@code null}).
+     * @return the end date of the validity period.
      * @see #checkValidity()
-     * @since 27
+     * @since 28
      */
     public Instant getNotAfterInstant() {
-        final Date date = getNotAfter();
-        if (date == null) {
-            throw new NullPointerException("notAfter is null");
-        }
-        return date.toInstant();
+        return getNotAfter().toInstant();
     }
 
     /**

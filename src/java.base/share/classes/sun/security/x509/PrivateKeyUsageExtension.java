@@ -199,7 +199,7 @@ public class PrivateKeyUsageExtension extends Extension {
     }
 
     /**
-     * Verify that the passed time is within the validity period.
+     * Verify that the passed in time is within the validity period.
      *
      * @exception CertificateExpiredException if the certificate has expired
      * with respect to the {@code Instant} supplied.
@@ -210,11 +210,7 @@ public class PrivateKeyUsageExtension extends Extension {
     public void valid(Instant now)
     throws CertificateNotYetValidException, CertificateExpiredException {
         Objects.requireNonNull(now);
-        /*
-         * we use the internal Dates rather than the passed in Date
-         * because someone could override the Date methods after()
-         * and before() to do something entirely different.
-         */
+
         if (notBefore != null && notBefore.isAfter(now)) {
             throw new CertificateNotYetValidException("NotBefore: " +
                                                       notBefore.toString());
@@ -226,7 +222,7 @@ public class PrivateKeyUsageExtension extends Extension {
     }
 
     /**
-     * Verify that the passed time is within the validity period.
+     * Verify that the passed in time is within the validity period.
      *
      * @exception CertificateExpiredException if the certificate has expired
      * with respect to the <code>Date</code> supplied.
