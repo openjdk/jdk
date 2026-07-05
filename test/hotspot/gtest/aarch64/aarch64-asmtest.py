@@ -95,7 +95,7 @@ class LowFloatRegister(Register):
         return self
 
     def nextReg(self):
-        next = FloatRegister()
+        next = LowFloatRegister()
         next.number = (self.number + 1) % 16
         return next
 
@@ -974,6 +974,7 @@ class LoadStoreOp(InstructionWithModes):
 
     def __init__(self, args):
         name, self.asmname, self.kind, mode = args
+        assert ((mode != 'd') & (mode != 's'))
         InstructionWithModes.__init__(self, name, mode)
 
     def generate(self):
@@ -985,18 +986,15 @@ class LoadStoreOp(InstructionWithModes):
             shift = 0
         elif (self.mode == 'h') | (self.asmname.endswith("h")):
             shift = 1
-        elif (self.mode == 'w') | (self.asmname.endswith("w")) \
-                | (self.mode == 's') :
+        elif (self.mode == 'w') | (self.asmname.endswith("w")):
             shift = 2
 
         self.adr = Address().generate(self.kind, shift)
 
-        isFloat = (self.mode == 'd') | (self.mode == 's')
-
-        regMode = FloatRegister if isFloat else GeneralRegister
+        regMode = GeneralRegister
         self.reg = regMode().generate()
         kindStr = Address.kindToStr(self.kind);
-        if (not isFloat) and (kindStr is "pre" or kindStr is "post"):
+        if (kindStr is "pre" or kindStr is "post"):
             (self.reg.number, self.adr.base.number) = random.sample(list(set(range(31)) - set([18])), 2)
         return self
 
@@ -1020,6 +1018,28 @@ class LoadStoreOp(InstructionWithModes):
          #      result = result.replace("ld", "ldu", 1)
          #      result = result.replace("st", "stu", 1)
          return result
+
+class LoadStoreFPOp(Instruction):
+
+    def __init__(self, args):
+        name, self._type, self.kind= args
+        assert ((self._type == 's') | (self._type == 'd'))
+        self._size = 2 if (self._type == 's') else 3
+        self._width = RegVariant(self._size, self._size)
+        Instruction.__init__(self, name)
+
+    def generate(self):
+        self.adr = Address().generate(self.kind, self._size)
+        self.reg = FloatRegister().generate()
+        kindStr = Address.kindToStr(self.kind);
+        return self
+
+    def cstr(self):
+        return "%s%s, %s, %s);" % (Instruction.cstr(self), str(self.reg), self._width.cstr(), str(self.adr))
+
+    def astr(self):
+        return "%s\t%s, %s" % (self.aname(), self.reg.astr(self._type),
+                                     self.adr.astr("x"))
 
 class LoadStorePairOp(InstructionWithModes):
 
@@ -1655,8 +1675,6 @@ for kind in range(6):
                    ["ldr", "ldrb", kind, "b"], ["ldr", "ldrh", kind, "h"],
                    ["ldrsb", "ldrsb", kind, "x"], ["ldrsh", "ldrsh", kind, "x"],
                    ["ldrsh", "ldrsh", kind, "w"], ["ldrsw", "ldrsw", kind, "x"],
-                   ["ldr", "ldr", kind, "d"], ["ldr", "ldr", kind, "s"],
-                   ["str", "str", kind, "d"], ["str", "str", kind, "s"],
                    ])
     else:
         generate (LoadStoreOp,
@@ -1667,6 +1685,14 @@ for kind in (Address.base_plus_unscaled_offset, Address.pcrel, Address.base_plus
                  Address.base_plus_scaled_offset):
     generate (LoadStoreOp,
               [["prfm", "prfm\tPLDL1KEEP,", kind, "x"]])
+
+for kind in (Address.base_plus_unscaled_offset, Address.pre, Address.post, \
+             Address.base_plus_reg, Address.base_plus_scaled_offset):
+    sys.stdout.write("\n// " + Address.kindToStr(kind))
+    generate (LoadStoreFPOp,
+              [["ldr", "s", kind], ["ldr", "d", kind],
+               ["str", "s", kind], ["str", "d", kind],
+              ])
 
 generate(AddSubCarryOp, ["adcw", "adcsw", "sbcw", "sbcsw", "adc", "adcs", "sbc", "sbcs"])
 

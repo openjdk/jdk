@@ -739,6 +739,8 @@ public:
 
   enum { instruction_size = 4 };
 
+  enum AccessDir { LOAD = false, STORE = true };
+
   //---<  calculate length of instruction  >---
   // We just use the values set above.
   // instruction must start at passed address
@@ -1432,36 +1434,6 @@ public:
 #undef INSN
 
 #define INSN(NAME, opc, V)                                              \
-  void NAME(FloatRegister Rt, address dest) {                           \
-    int64_t offset = (dest - pc()) >> 2;                                \
-    starti;                                                             \
-    f(opc, 31, 30), f(0b011, 29, 27), f(V, 26), f(0b00, 25, 24),        \
-      sf(offset, 23, 5);                                                \
-    rf(as_Register(Rt), 0);                                             \
-  }
-
-  INSN(ldrs, 0b00, 1);
-  INSN(ldrd, 0b01, 1);
-  INSN(ldrq, 0b10, 1);
-
-#undef INSN
-
-#define INSN(NAME, size, opc)                                           \
-  void NAME(FloatRegister Rt, Register Rn) {                            \
-    starti;                                                             \
-    f(size, 31, 30), f(0b111100, 29, 24), f(opc, 23, 22), f(0, 21);     \
-    f(0, 20, 12), f(0b01, 11, 10);                                      \
-    rf(Rn, 5), rf(as_Register(Rt), 0);                                  \
-  }
-
-  INSN(ldrs, 0b10, 0b01);
-  INSN(ldrd, 0b11, 0b01);
-  INSN(ldrq, 0b00, 0b11);
-
-#undef INSN
-
-
-#define INSN(NAME, opc, V)                                              \
   void NAME(address dest, prfop op = PLDL1KEEP) {                       \
     int64_t offset = (dest - pc()) >> 2;                                \
     starti;                                                             \
@@ -1490,38 +1462,64 @@ public:
     }
   }
 
-  // Load/store register pair (offset)
-#define INSN(NAME, size, p1, V, L, no_allocate)         \
-  void NAME(Register Rt1, Register Rt2, Address adr) {  \
-    ld_st1(size, p1, V, L, Rt1, Rt2, adr, no_allocate); \
-   }
+#define INSN(NAME, op)                                                   \
+  void NAME(Register Rt1, Register Rt2, Address adr,                     \
+            const unsigned size_in_bytes,                                \
+            const bool no_allocate = false) {                            \
+    assert(size_in_bytes == 4 || size_in_bytes == 8, "");                \
+    int size = (size_in_bytes == 4)? 0b00 : 0b10;                        \
+    ld_st1(size, 0b101, 0, op, Rt1, Rt2, adr, no_allocate);              \
+  }
 
-  INSN(stpw,  0b00, 0b101, 0, 0, false);
-  INSN(ldpw,  0b00, 0b101, 0, 1, false);
-  INSN(ldpsw, 0b01, 0b101, 0, 1, false);
-  INSN(stp,   0b10, 0b101, 0, 0, false);
-  INSN(ldp,   0b10, 0b101, 0, 1, false);
-
-  // Load/store no-allocate pair (offset)
-  INSN(stnpw, 0b00, 0b101, 0, 0, true);
-  INSN(ldnpw, 0b00, 0b101, 0, 1, true);
-  INSN(stnp,  0b10, 0b101, 0, 0, true);
-  INSN(ldnp,  0b10, 0b101, 0, 1, true);
+  INSN(load_pair,  1);
+  INSN(store_pair, 0);
 
 #undef INSN
 
-#define INSN(NAME, size, p1, V, L, no_allocate)                         \
-  void NAME(FloatRegister Rt1, FloatRegister Rt2, Address adr) {        \
-    ld_st1(size, p1, V, L,                                              \
-           as_Register(Rt1), as_Register(Rt2), adr, no_allocate);       \
-   }
+#define INSN(NAME1, NAME2, size, no_allocate)                            \
+  void NAME1(Register Rt1, Register Rt2, Address adr) {                  \
+    load_pair(Rt1, Rt2, adr, size, no_allocate);                         \
+  }                                                                      \
+  void NAME2(Register Rt1, Register Rt2, Address adr) {                  \
+    store_pair(Rt1, Rt2, adr, size, no_allocate);                        \
+  }
 
-  INSN(stps, 0b00, 0b101, 1, 0, false);
-  INSN(ldps, 0b00, 0b101, 1, 1, false);
-  INSN(stpd, 0b01, 0b101, 1, 0, false);
-  INSN(ldpd, 0b01, 0b101, 1, 1, false);
-  INSN(stpq, 0b10, 0b101, 1, 0, false);
-  INSN(ldpq, 0b10, 0b101, 1, 1, false);
+  INSN(ldpw,  stpw,  4, false);
+  INSN(ldp,   stp,   8, false);
+  INSN(ldnpw, stnpw, 4, true);
+  INSN(ldnp,  stnp,  8, true);
+
+#undef INSN
+
+  void ldpsw(Register Rt1, Register Rt2, Address adr) {
+    ld_st1(0b01, 0b101, 0, 1, Rt1, Rt2, adr, false);
+  }
+
+#define INSN(NAME, op)                                                    \
+  void NAME(FloatRegister Rt1, FloatRegister Rt2, Address adr,            \
+            const unsigned size_in_bytes) {                               \
+    assert(size_in_bytes == 4 || size_in_bytes == 8 ||                    \
+           size_in_bytes == 16, "");                                      \
+    ld_st1(exact_log2(size_in_bytes) - 2, 0b101, 1, op, as_Register(Rt1), \
+           as_Register(Rt2), adr, false);                                 \
+  }
+
+  INSN(load_pair,  1);
+  INSN(store_pair, 0);
+
+#undef INSN
+
+#define INSN(NAME1, NAME2, size)                                          \
+  void NAME1(FloatRegister Rt1, FloatRegister Rt2, Address adr) {         \
+    load_pair(Rt1, Rt2, adr, size);                                       \
+  }                                                                       \
+  void NAME2(FloatRegister Rt1, FloatRegister Rt2, Address adr) {         \
+    store_pair(Rt1, Rt2, adr, size);                                      \
+  }
+
+  INSN(ldps, stps, 4);
+  INSN(ldpd, stpd, 8);
+  INSN(ldpq, stpq, 16);
 
 #undef INSN
 
@@ -1537,9 +1535,9 @@ public:
     // instruction is too different from all of the other forms to
     // make it worth sharing.
     if (adr.getMode() == Address::literal) {
-      assert(size == 0b10 || size == 0b11, "bad operand size in ldr");
-      assert(op == 0b01, "literal form can only be used with loads");
-      f(size & 0b01, 31, 30), f(0b011, 29, 27), f(0b00, 25, 24);
+      assert(size == 0b10 || size == 0b11 || size == 0b00, "bad operand size in ldr");
+      assert(op == 0b01 || op == 0b11, "literal form can only be used with loads");
+      f(size ^ 0b10, 31, 30), f(0b011, 29, 27), f(0b00, 25, 24);
       int64_t offset = (adr.target() - pc()) >> 2;
       sf(offset, 23, 5);
       code_section()->relocate(pc(), adr.rspec());
@@ -1571,20 +1569,6 @@ public:
   INSN(ldrsh,  0b01, 0b10);
   INSN(ldrshw, 0b01, 0b11);
   INSN(ldrsw,  0b10, 0b10);
-
-#undef INSN
-
-#define INSN(NAME, size, op)                            \
-  void NAME(FloatRegister Rt, const Address &adr) {     \
-    ld_st2(as_Register(Rt), adr, size, op, 1);          \
-  }
-
-  INSN(strd, 0b11, 0b00);
-  INSN(strs, 0b10, 0b00);
-  INSN(ldrd, 0b11, 0b01);
-  INSN(ldrs, 0b10, 0b01);
-  INSN(strq, 0b00, 0b10);
-  INSN(ldrq, 0x00, 0b11);
 
 #undef INSN
 
