@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,22 +106,21 @@ public class LocalizedMessage {
         // Classes like StringTokenizer may not be loaded, so parsing
         //   is performed with String methods
         StringBuilder sb = new StringBuilder();
-        int nextBraceIndex;
-        while ((nextBraceIndex = value.indexOf('{')) >= 0) {
+        int pos = 0;
+        int leftBraceIndex;
+        while ((leftBraceIndex = value.indexOf('{', pos)) >= 0) {
 
-            String firstPart = value.substring(0, nextBraceIndex);
-            sb.append(firstPart);
-            value = value.substring(nextBraceIndex + 1);
+            sb.append(value, pos, leftBraceIndex);
 
             // look for closing brace and argument index
-            nextBraceIndex = value.indexOf('}');
-            if (nextBraceIndex < 0) {
+            int rightBraceIndex = value.indexOf('}', leftBraceIndex + 1);
+            if (rightBraceIndex < 0) {
                 // no closing brace
                 // MessageFormat would throw IllegalArgumentException, but
                 //   that exception class may not be loaded yet
                 throw new RuntimeException("Unmatched braces");
             }
-            String indexStr = value.substring(0, nextBraceIndex);
+            String indexStr = value.substring(leftBraceIndex + 1, rightBraceIndex);
             try {
                 int index = Integer.parseInt(indexStr);
                 sb.append(arguments[index]);
@@ -129,9 +128,10 @@ public class LocalizedMessage {
                 // argument index is not an integer
                 throw new RuntimeException("not an integer: " + indexStr);
             }
-            value = value.substring(nextBraceIndex + 1);
+
+            pos = rightBraceIndex + 1;
         }
-        sb.append(value);
+        sb.append(value, pos, value.length());
         return sb.toString();
     }
 
