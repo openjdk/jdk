@@ -285,8 +285,8 @@ public class TestIdealGraphDump {
                 break;
             }
             String group = content.substring(groupStart, groupEnd);
-            if (group.contains(methodName) && containsPhase(group, phaseName)) {
-                count++;
+            if (group.contains(methodName)) {
+                count += countOccurrences(group, "<graph name='" + phaseName + "'>");
             }
             groupStart = groupEnd;
         }
