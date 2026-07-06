@@ -1379,6 +1379,8 @@ void G1ConcurrentMark::remark() {
   if (mark_finished) {
     weak_refs_work();
 
+    CodeCache::on_gc_marking_cycle_finish();
+
     // Unload Klasses, String, Code Cache, etc.
     if (ClassUnloadingWithConcurrentMark) {
       G1CMIsAliveClosure is_alive(this);
@@ -1447,7 +1449,6 @@ void G1ConcurrentMark::remark() {
     // Completely reset the marking state (except bitmaps) since marking completed.
     reset_at_marking_complete();
 
-    CodeCache::on_gc_marking_cycle_finish();
     CodeCache::arm_all_nmethods();
 
     {
