@@ -2399,10 +2399,9 @@ perform extensive debugging.
     The directory path must of course be writable and accessible to both the target and tool VM, so the simplest arrangement
     is to always run both in the same container.
 
-    The value for `AltTempDir` must be an absolute directory path starting with `/`. The length of the `AltTempDir` path should be 
+    The value for `AltTempDir` must be an absolute directory path starting with `/`. The length of the `AltTempDir` path should be
     fairly small (less than approximately 80 characters) if it is to be used with the attach protocol due to path length limits
     for socket files.
-
 
 ## Advanced Garbage Collection Options for Java
 
