@@ -3571,8 +3571,8 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
     __ bind(L1);
     __ stop("broken null klass");
     __ bind(L2);
-    __ load_klass(rax, dst, rklass_tmp);
-    __ cmpq(rax, 0);
+    __ load_narrow_klass(rax, dst);
+    __ testl(rax, rax);
     __ jcc(Assembler::equal, L1);     // this would be broken also
     BLOCK_COMMENT("} assert klasses not null done");
   }

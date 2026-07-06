@@ -924,6 +924,7 @@ public:
 
   // oop manipulations
   void load_narrow_klass_compact(Register dst, Register src);
+  void load_narrow_klass(Register dst, Register src);
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
   void cmp_klass(Register obj, Register klass, Register tmp);
