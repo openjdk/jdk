@@ -42,14 +42,14 @@ inline void G1CollectorState::set_in_full_gc() {
 
 inline void G1CollectorState::set_in_concurrent_start_gc() {
   _phase = Phase::YoungConcurrentStart;
-  _initiate_conc_mark_if_possible = false;
+  set_initiate_conc_mark_if_possible(false);
 }
 inline void G1CollectorState::set_in_prepare_mixed_gc() {
   _phase = Phase::YoungPrepareMixed;
 }
 
 inline void G1CollectorState::set_initiate_conc_mark_if_possible(bool v) {
-  _initiate_conc_mark_if_possible = v;
+  _initiate_conc_mark_if_possible.store_relaxed(v);
 }
 
 inline bool G1CollectorState::is_in_young_only_phase() const {
@@ -72,7 +72,7 @@ inline bool G1CollectorState::is_in_concurrent_start_gc() const {
 }
 
 inline bool G1CollectorState::initiate_conc_mark_if_possible() const {
-  return _initiate_conc_mark_if_possible;
+  return _initiate_conc_mark_if_possible.load_relaxed();
 }
 
 inline bool G1CollectorState::is_in_concurrent_cycle() const {

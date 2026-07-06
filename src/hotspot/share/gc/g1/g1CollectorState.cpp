@@ -26,6 +26,17 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 
+G1CollectorState::G1CollectorState(const G1CollectorState& other) :
+  _phase(other._phase), _initiate_conc_mark_if_possible(other.initiate_conc_mark_if_possible()) { }
+
+G1CollectorState& G1CollectorState::operator=(G1CollectorState const& other) {
+  if (this != &other) {
+    _phase = other._phase;
+    set_initiate_conc_mark_if_possible(other.initiate_conc_mark_if_possible());
+  }
+  return *this;
+}
+
 G1CollectorState::Pause G1CollectorState::gc_pause_type(bool concurrent_operation_is_full_mark) const {
   assert(SafepointSynchronize::is_at_safepoint(), "must be");
   switch (_phase) {
