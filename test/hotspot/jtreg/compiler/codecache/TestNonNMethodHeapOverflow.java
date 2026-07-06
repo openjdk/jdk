@@ -27,6 +27,7 @@
  * @summary Reproduces a RuntimeStub::resolve_static_call_blob pd_patch_instruction_size guarantee
  *          - forces adapters to be allocated outside the NonNMethod heap
  *          - puts c2i adapter and compiled method at 128+ MB distance
+ * @requires vm.flagless
  * @requires os.arch == "aarch64"
  * @requires vm.debug == false
  * @library /test/lib
@@ -117,6 +118,9 @@ public class TestNonNMethodHeapOverflow {
 
         NMethod nm = NMethod.get(methodB, false);
         System.out.println("b() at 0x" + Long.toHexString(nm.address) + " heap=" + nm.code_blob_type);
+        if (nm.code_blob_type != BlobType.MethodProfiled) {
+            throw new RuntimeException("b() is expected to be in MethodProfiled heap, got: " + nm.code_blob_type);
+        }
 
         // invoke compiled b(): triggers resolve_static_call_blob to patch the static call stub
         // in nmethod to point to the c2i adapter for a()
