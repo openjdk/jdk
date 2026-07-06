@@ -120,7 +120,8 @@ class outputStream;
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_update_refs_gross,                         "Pause Final Update Refs (G)")     \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_update_refs,                               "Pause Final Update Refs (N)")     \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_update_refs_verify,                        "  Verify")                        \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, final_update_refs_self_forwards,                 "  Reset Self Forwarding")         \
+  SHENANDOAH_WORKER_PHASE_DEF(f, final_update_refs_self_forwards,                 "  Reset Self Forwarding",         \
+                                                                                  "    SF: ")                        \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_update_refs_update_region_states,          "  Update Region States")          \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_update_refs_transfer_satb,                 "  Transfer Old From SATB")        \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_update_refs_trash_cset,                    "  Trash Collection Set")          \
