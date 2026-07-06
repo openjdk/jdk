@@ -2676,7 +2676,12 @@ bool Compile::has_vbox_nodes() {
 //---------------------------- Bitwise operation packing optimization ---------------------------
 
 static bool is_vector_unary_bitwise_op(Node* n) {
+  // A masked XorV not-pattern is NOT unary: on inactive lanes the masked
+  // operation keeps its first operand, so both inputs must be preserved (and
+  // their order matters, since in(1) becomes the masked MacroLogicV
+  // passthrough). Only an unmasked not-pattern is genuinely unary.
   return n->Opcode() == Op_XorV &&
+         !n->is_predicated_vector() &&
          VectorNode::is_vector_bitwise_not_pattern(n);
 }
 
@@ -2720,7 +2725,7 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& inputs) {
   uint cnt = 0;
   if (is_vector_bitwise_op(n)) {
     uint inp_cnt = n->is_predicated_vector() ? n->req()-1 : n->req();
-    if (VectorNode::is_vector_bitwise_not_pattern(n)) {
+    if (is_vector_unary_bitwise_op(n)) {
       assert(n->req() == (n->is_predicated_vector() ? 4 : 3), "must have 2 data inputs");
       Node* opnd = VectorNode::is_all_ones_vector(n->in(1)) ? n->in(2) : n->in(1);
       if (!inputs.member(opnd)) {
@@ -2881,7 +2886,7 @@ uint Compile::compute_truth_table(Unique_Node_List& partition, Unique_Node_List&
         res = func1 & func2;
         break;
       case Op_XorV:
-        if (VectorNode::is_vector_bitwise_not_pattern(n)) {
+        if (is_vector_unary_bitwise_op(n)) {
           assert(func2 == 0 && func3 == 0, "not unary");
           res = (~func1) & 0xFF;
         } else {
