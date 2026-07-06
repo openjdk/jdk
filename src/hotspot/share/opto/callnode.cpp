@@ -767,7 +767,7 @@ const Type* CallNode::Value(PhaseGVN* phase) const {
 
 //------------------------------calling_convention-----------------------------
 void CallNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
-  if (_entry_point == StubRoutines::store_inline_type_fields_to_buf()) {
+  if (InlineTypeReturnedAsFields && _entry_point == SharedRuntime::store_inline_type_fields_to_buf_entry()) {
     // The call to that stub is a special case: its inputs are
     // multiple values returned from a call and so it should follow
     // the return convention.

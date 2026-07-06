@@ -128,6 +128,11 @@ void SharedRuntime::generate_initial_stubs() {
   _throw_StackOverflowError_blob =
     generate_throw_exception(StubId::shared_throw_StackOverflowError_id,
                              CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
+
+  if (InlineTypeReturnedAsFields) {
+    _store_inline_type_fields_to_buf_blob =
+      generate_return_value_stub(CAST_FROM_FN_PTR(address, SharedRuntime::store_inline_type_fields_to_buf));
+  }
 }
 
 void SharedRuntime::generate_stubs() {
@@ -4149,100 +4154,6 @@ JRT_ENTRY(void, SharedRuntime::allocate_inline_types(JavaThread* current, Method
   methodHandle callee(current, callee_method);
   oop array = SharedRuntime::allocate_inline_types_impl(current, callee, allocate_receiver, false, CHECK);
   current->set_vm_result_oop(array);
-JRT_END
-
-// We're returning from an interpreted method: load each field into a
-// register following the calling convention
-JRT_LEAF(void, SharedRuntime::load_inline_type_fields_in_regs(JavaThread* current, oopDesc* res))
-{
-  assert(res->klass()->is_inline_klass(), "only inline types here");
-  ResourceMark rm;
-  RegisterMap reg_map(current,
-                      RegisterMap::UpdateMap::include,
-                      RegisterMap::ProcessFrames::include,
-                      RegisterMap::WalkContinuation::skip);
-  frame stubFrame = current->last_frame();
-  frame callerFrame = stubFrame.sender(&reg_map);
-  assert(callerFrame.is_interpreted_frame(), "should be coming from interpreter");
-
-  InlineKlass* vk = InlineKlass::cast(res->klass());
-
-  const Array<SigEntry>* sig_vk = vk->extended_sig();
-  const Array<VMRegPair>* regs = vk->return_regs();
-
-  if (regs == nullptr) {
-    // The fields of the inline klass don't fit in registers, bail out
-    return;
-  }
-
-  int j = 1;
-  for (int i = 0; i < sig_vk->length(); i++) {
-    BasicType bt = sig_vk->at(i)._bt;
-    if (bt == T_METADATA) {
-      continue;
-    }
-    if (bt == T_VOID) {
-      if (sig_vk->at(i-1)._bt == T_LONG ||
-          sig_vk->at(i-1)._bt == T_DOUBLE) {
-        j++;
-      }
-      continue;
-    }
-    int off = sig_vk->at(i)._offset;
-    assert(off > 0, "offset in object should be positive");
-    VMRegPair pair = regs->at(j);
-    address loc = reg_map.location(pair.first(), nullptr);
-    guarantee(loc != nullptr, "bad register save location");
-    switch(bt) {
-    case T_BOOLEAN:
-      *(jboolean*)loc = res->bool_field(off);
-      break;
-    case T_CHAR:
-      *(jchar*)loc = res->char_field(off);
-      break;
-    case T_BYTE:
-      *(jbyte*)loc = res->byte_field(off);
-      break;
-    case T_SHORT:
-      *(jshort*)loc = res->short_field(off);
-      break;
-    case T_INT: {
-      *(jint*)loc = res->int_field(off);
-      break;
-    }
-    case T_LONG:
-#ifdef _LP64
-      *(intptr_t*)loc = res->long_field(off);
-#else
-      Unimplemented();
-#endif
-      break;
-    case T_OBJECT:
-    case T_ARRAY: {
-      *(oop*)loc = res->obj_field(off);
-      break;
-    }
-    case T_FLOAT:
-      *(jfloat*)loc = res->float_field(off);
-      break;
-    case T_DOUBLE:
-      *(jdouble*)loc = res->double_field(off);
-      break;
-    default:
-      ShouldNotReachHere();
-    }
-    j++;
-  }
-  assert(j == regs->length(), "missed a field?");
-
-#ifdef ASSERT
-  VMRegPair pair = regs->at(0);
-  address loc = reg_map.location(pair.first(), nullptr);
-  assert(*(oopDesc**)loc == res, "overwritten object");
-#endif
-
-  current->set_vm_result_oop(res);
-}
 JRT_END
 
 // We've returned to an interpreted method, the interpreter needs a

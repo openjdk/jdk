@@ -7134,9 +7134,9 @@ int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from
   mov(r0, r0_preserved);
 
   if (from_interpreter) {
-    super_call_VM_leaf(StubRoutines::store_inline_type_fields_to_buf());
+    super_call_VM_leaf(SharedRuntime::store_inline_type_fields_to_buf_entry());
   } else {
-    far_call(RuntimeAddress(StubRoutines::store_inline_type_fields_to_buf()));
+    far_call(RuntimeAddress(SharedRuntime::store_inline_type_fields_to_buf_entry()));
     call_offset = offset();
   }
   membar(Assembler::StoreStore);

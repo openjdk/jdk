@@ -142,6 +142,13 @@ int SharedRuntime::vector_calling_convention(VMRegPair *regs,
   return 0;
 }
 
+// Call here from the interpreter or compiled code to store returned
+// values to a newly allocated inline type instance.
+RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
+  Unimplemented();
+  return nullptr;
+}
+
 #if INCLUDE_JFR
 RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
   return nullptr;

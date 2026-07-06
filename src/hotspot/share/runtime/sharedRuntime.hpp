@@ -95,6 +95,7 @@ class SharedRuntime: AllStatic {
   static SafepointBlob* generate_handler_blob(StubId id, address call_ptr);
   static RuntimeStub*   generate_resolve_blob(StubId id, address destination);
   static RuntimeStub*   generate_throw_exception(StubId id, address runtime_entry);
+  static RuntimeStub*   generate_return_value_stub(address destination);
  public:
   static void generate_initial_stubs(void);
   static void generate_stubs(void);
@@ -298,6 +299,12 @@ class SharedRuntime: AllStatic {
   static address throw_delayed_StackOverflowError_entry()   {
     assert(_throw_delayed_StackOverflowError_blob != nullptr, "");
     return _throw_delayed_StackOverflowError_blob->entry_point();
+  }
+
+  // Value types
+  static address store_inline_type_fields_to_buf_entry()   {
+    assert(_store_inline_type_fields_to_buf_blob != nullptr, "");
+    return _store_inline_type_fields_to_buf_blob->entry_point();
   }
 
 #if INCLUDE_JFR
