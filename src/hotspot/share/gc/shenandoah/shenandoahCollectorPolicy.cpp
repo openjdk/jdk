@@ -26,9 +26,9 @@
 
 
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahGC.hpp"
+#include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "runtime/os.hpp"
+#include "utilities/ostream.hpp"
 
 ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _success_concurrent_gcs(0),
@@ -40,7 +40,7 @@ ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _interrupted_old_gcs(0),
   _alloc_failure_full(0) {
 
-  Copy::zero_to_bytes(_degen_point_counts, sizeof(size_t) * ShenandoahGC::_DEGENERATED_LIMIT);
+  Copy::zero_to_bytes(_stall_counts, sizeof(size_t) * ShenandoahController::PHASE_LIMIT);
   Copy::zero_to_bytes(_collection_cause_counts, sizeof(size_t) * GCCause::_last_gc_cause);
 
   _tracer = new ShenandoahTracer();
@@ -55,9 +55,9 @@ void ShenandoahCollectorPolicy::record_alloc_failure_to_full() {
   _alloc_failure_full++;
 }
 
-void ShenandoahCollectorPolicy::record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point) {
-  assert(point < ShenandoahGC::_DEGENERATED_LIMIT, "sanity");
-  _degen_point_counts[point]++;
+void ShenandoahCollectorPolicy::record_allocation_stall(ShenandoahController::ShenandoahCollectorPhase phase) {
+  assert(phase < ShenandoahController::PHASE_LIMIT, "Invalid phase: %d", phase);
+  _stall_counts[phase]++;
 }
 
 void ShenandoahCollectorPolicy::record_success_concurrent(bool is_young, bool is_abbreviated) {
@@ -169,6 +169,15 @@ bool ShenandoahCollectorPolicy::should_handle_requested_gc(GCCause::Cause cause)
   return true;
 }
 
+template<typename T>
+size_t shenandoah_sum_array(T* a, size_t length) {
+  size_t sum = 0;
+  for (size_t i = 0; i < length; i++) {
+    sum += a[i];
+  }
+  return sum;
+}
+
 void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   out->print_cr("Under allocation pressure, concurrent cycles may cancel, and either continue cycle");
   out->print_cr("under stop-the-world pause or result in stop-the-world Full GC. Increase heap size,");
@@ -220,12 +229,12 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
     out->cr();
   }
 
-  size_t degenerated_gcs = 0;
-  out->print_cr("%5zu Stalls (%.2f%%)", degenerated_gcs, percent_of(degenerated_gcs, completed_gcs));
-  for (int c = 0; c < ShenandoahGC::_DEGENERATED_LIMIT; c++) {
-    if (_degen_point_counts[c] > 0) {
-      const char* desc = ShenandoahGC::degen_point_to_string((ShenandoahGC::ShenandoahDegenPoint)c);
-      out->print_cr("    %5zu happened at %s", _degen_point_counts[c], desc);
+  const size_t total_stalls = shenandoah_sum_array(_stall_counts, ShenandoahController::PHASE_LIMIT);
+  out->print_cr("%5zu Stalls", total_stalls);
+  for (int c = 0; c < ShenandoahController::PHASE_LIMIT; c++) {
+    if (_stall_counts[c] > 0) {
+      const char* desc = ShenandoahController::collector_phase_to_string((ShenandoahController::ShenandoahCollectorPhase)c);
+      out->print_cr("    %5zu happened at %s", _stall_counts[c], desc);
     }
   }
   out->cr();

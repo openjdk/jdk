@@ -36,11 +36,24 @@
  * with the threads responsible for driving the collection cycle.
  */
 class ShenandoahController: public ConcurrentGCThread {
+public:
+  enum ShenandoahCollectorPhase {
+    UNSET,
+    INITIALIZING,
+    ROOTS,
+    MARK,
+    EVAC,
+    UPDATE_REFS,
+    PHASE_LIMIT
+  };
+
 private:
   shenandoah_padding(0);
   // A monotonically increasing GC count.
   Atomic<size_t> _gc_id;
   shenandoah_padding(1);
+
+  ShenandoahCollectorPhase _phase;
 
 protected:
   const Mutex::Rank WAITERS_LOCK_RANK = Mutex::safepoint - 5;
@@ -57,8 +70,10 @@ protected:
   void notify_gc_waiters();
 
 public:
+
   ShenandoahController():
     _gc_id(0),
+    _phase(UNSET),
     _gc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahGCWaiters_lock", true),
     _alloc_waiters_count(0)
   { }
@@ -78,5 +93,15 @@ public:
 
   // Return the value of a monotonic increasing GC count, maintained by the control thread.
   size_t get_gc_id();
+
+  ShenandoahCollectorPhase get_phase() const {
+    return _phase;
+  }
+
+  void set_phase(ShenandoahCollectorPhase phase) {
+    _phase = phase;
+  }
+
+  static const char* collector_phase_to_string(ShenandoahCollectorPhase phase);
 };
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLLER_HPP

@@ -32,32 +32,11 @@
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 
-const char* ShenandoahGC::degen_point_to_string(ShenandoahDegenPoint point) {
-  switch(point) {
-    case _degenerated_unset:
-      return "<UNSET>";
-    case _degenerated_outside_cycle:
-      return "Outside of Cycle";
-    case _degenerated_roots:
-      return "Roots";
-    case _degenerated_mark:
-      return "Mark";
-    case _degenerated_evac:
-      return "Evacuation";
-    case _degenerated_update_refs:
-      return "Update References";
-    default:
-      ShouldNotReachHere();
-      return "ERROR";
-   }
-}
-
 void ShenandoahGC::update_roots() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress(), "Only for full GC");
 
-  ShenandoahPhaseTimings::Phase p = ShenandoahPhaseTimings::full_gc_update_roots;
-  ShenandoahGCPhase phase(p);
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_update_roots);
 #ifdef COMPILER2
   DerivedPointerTable::clear();
 #endif // COMPILER2
@@ -66,7 +45,7 @@ void ShenandoahGC::update_roots() {
   WorkerThreads* workers = heap->workers();
   uint nworkers = workers->active_workers();
 
-  ShenandoahRootUpdater root_updater(nworkers, p);
+  ShenandoahRootUpdater root_updater(nworkers, ShenandoahPhaseTimings::full_gc_update_roots);
   ShenandoahUpdateRootsTask update_roots(&root_updater, /* check_alive = */ false);
   workers->run_task(&update_roots);
 

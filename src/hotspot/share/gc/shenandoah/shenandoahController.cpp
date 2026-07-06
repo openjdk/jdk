@@ -53,3 +53,16 @@ void ShenandoahController::notify_gc_waiters() {
   MonitorLocker ml(&_gc_waiters_lock);
   ml.notify_all();
 }
+
+const char* ShenandoahController::collector_phase_to_string(ShenandoahCollectorPhase phase) {
+  switch(phase) {
+    case UNSET:        return "Outside of Cycle";
+    case INITIALIZING: return "Initializing";
+    case ROOTS:        return "Roots";
+    case MARK:         return "Mark";
+    case EVAC:         return "Evacuation";
+    case UPDATE_REFS:  return "Update References";
+    default:
+      ShouldNotReachHere();
+  }
+}

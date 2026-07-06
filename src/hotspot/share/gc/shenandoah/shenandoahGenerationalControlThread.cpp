@@ -415,7 +415,7 @@ void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
   // We can only tolerate being cancelled during concurrent marking or during preparation for mixed
   // evacuation. This flag here (passed by reference) is used to control precisely where the regulator
   // is allowed to cancel a GC.
-  ShenandoahOldGC gc(generation, _allow_old_preemption);
+  ShenandoahOldGC gc(this, generation, _allow_old_preemption);
   if (gc.collect(cause)) {
     _heap->notify_gc_progress();
     generation->heuristics()->record_concurrent_completion();
@@ -473,7 +473,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
 
   assert(!generation->is_old(), "Old GC takes a different control path");
 
-  ShenandoahConcurrentGC gc(generation, do_old_gc_bootstrap);
+  ShenandoahConcurrentGC gc(this, generation, do_old_gc_bootstrap);
   _heap->increment_total_collections(false);
   if (gc.collect(cause)) {
     // Cycle is complete
@@ -484,7 +484,6 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
     _heap->shenandoah_policy()->record_success_concurrent(generation->is_young(), gc.abbreviated());
   } else {
     assert(_heap->cancelled_gc(), "Must have been cancelled");
-    check_cancellation_or_degen(gc.degen_point());
   }
 
   const char* msg;
@@ -519,7 +518,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
   _heap->log_heap_status(msg);
 }
 
-bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point) {
+bool ShenandoahGenerationalControlThread::check_cancellation() const {
   if (!_heap->cancelled_gc()) {
     return false;
   }
@@ -545,8 +544,10 @@ void ShenandoahGenerationalControlThread::request_gc(GCCause::Cause cause) {
   if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
     handle_alloc_failure_full();
   } else if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-    ShenandoahGeneration* young = ShenandoahHeap::heap()->young_generation();
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    ShenandoahGeneration* young = heap->young_generation();
     young->heuristics()->record_allocation_stall();
+    heap->shenandoah_policy()->record_allocation_stall(get_phase());
     handle_requested_gc(cause, young);
   } else if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
     handle_requested_gc(cause, ShenandoahHeap::heap()->global_generation());

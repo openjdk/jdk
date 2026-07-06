@@ -37,33 +37,21 @@
  *                            |
  *                            | <upgrade>
  *                            v
- * ("passive" mode) ---> Degenerated GC ---> (finish)
- *                            |
- *                            | <upgrade>
- *                            v
- *                         Full GC --------> (finish)
+ * ("passive" mode) ---> Full GC --------> (finish)
  */
 
+class ShenandoahController;
 class ShenandoahGeneration;
 
 class ShenandoahGC : public StackObj {
 public:
   // Fail point from concurrent GC
-  enum ShenandoahDegenPoint {
-    _degenerated_unset,
-    _degenerated_outside_cycle,
-    _degenerated_roots,
-    _degenerated_mark,
-    _degenerated_evac,
-    _degenerated_update_refs,
-    _DEGENERATED_LIMIT
-  };
 
-  explicit ShenandoahGC(ShenandoahGeneration* generation) : _generation(generation) {}
+  explicit ShenandoahGC(ShenandoahGeneration* generation)
+    : _generation(generation) { }
 
   // Returns false if the collection was cancelled, true otherwise.
   virtual bool collect(GCCause::Cause cause) = 0;
-  static const char* degen_point_to_string(ShenandoahDegenPoint point);
 
   ShenandoahGeneration* generation() const { return _generation; }
 protected:

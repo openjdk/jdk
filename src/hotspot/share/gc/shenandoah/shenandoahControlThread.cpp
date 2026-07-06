@@ -55,7 +55,6 @@ void ShenandoahControlThread::run_service() {
 
   double last_sleep_adjust_time = os::elapsedTime();
 
-  ShenandoahCollectorPolicy* const policy = heap->shenandoah_policy();
   ShenandoahHeuristics* const heuristics = heap->heuristics();
   double most_recent_wake_time = os::elapsedTime();
   while (!should_terminate()) {
@@ -72,7 +71,6 @@ void ShenandoahControlThread::run_service() {
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
     GCCause::Cause cause = GCCause::_last_gc_cause;
-    ShenandoahGC::ShenandoahDegenPoint degen_point = ShenandoahGC::_degenerated_unset;
 
     if (alloc_failure_pending) {
       // Allocation failure takes precedence: we have to deal with it first thing
@@ -256,7 +254,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   //                                      Full GC  --------------------------/
   //
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) {
+  if (check_cancellation_or_degen()) {
     log_info(gc)("Cancelled");
     return;
   }
@@ -266,7 +264,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
 
-  ShenandoahConcurrentGC gc(heap->global_generation(), false);
+  ShenandoahConcurrentGC gc(this, heap->global_generation(), false);
   if (gc.collect(cause)) {
     heap->notify_gc_progress();
     heap->global_generation()->heuristics()->record_concurrent_completion();
@@ -274,12 +272,12 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
     heap->log_heap_status("At end of GC");
   } else {
     assert(heap->cancelled_gc(), "Must have been cancelled");
-    check_cancellation_or_degen(gc.degen_point());
+    check_cancellation_or_degen();
     heap->log_heap_status("At end of cancelled GC");
   }
 }
 
-bool ShenandoahControlThread::check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point) {
+bool ShenandoahControlThread::check_cancellation_or_degen() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->cancelled_gc()) {
     if (heap->cancelled_cause() == GCCause::_shenandoah_stop_vm) {
@@ -310,7 +308,9 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
     handle_alloc_failure_full();
   } else if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
     if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      ShenandoahHeap::heap()->global_generation()->heuristics()->record_allocation_stall();
+      ShenandoahHeap* heap = ShenandoahHeap::heap();
+      heap->global_generation()->heuristics()->record_allocation_stall();
+      heap->shenandoah_policy()->record_allocation_stall(get_phase());
     }
     handle_requested_gc(cause);
   }

@@ -27,11 +27,10 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTORPOLICY_HPP
 
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shenandoah/shenandoahGC.hpp"
+#include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
 #include "memory/allocation.hpp"
-#include "utilities/ostream.hpp"
 
 class ShenandoahCollectorPolicy : public CHeapObj<mtGC> {
 private:
@@ -45,7 +44,7 @@ private:
   size_t _interrupted_old_gcs;
   size_t _alloc_failure_full;
   size_t _collection_cause_counts[GCCause::_last_gc_cause];
-  size_t _degen_point_counts[ShenandoahGC::_DEGENERATED_LIMIT];
+  size_t _stall_counts[ShenandoahController::PHASE_LIMIT];
 
   ShenandoahSharedFlag _in_shutdown;
   ShenandoahTracer* _tracer;
@@ -71,7 +70,7 @@ public:
   void record_success_concurrent(bool is_young, bool is_abbreviated);
 
   void record_success_full();
-  void record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point);
+  void record_allocation_stall(ShenandoahController::ShenandoahCollectorPhase phase);
   void record_alloc_failure_to_full();
   void record_collection_cause(GCCause::Cause cause);
 

@@ -27,13 +27,14 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
-#include "gc/shenandoah/shenandoahVerifier.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
+class ShenandoahController;
 class ShenandoahOldGeneration;
 
 class ShenandoahOldGC : public ShenandoahConcurrentGC {
  public:
-  ShenandoahOldGC(ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption);
+  ShenandoahOldGC(ShenandoahController* controller, ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption);
   bool collect(GCCause::Cause cause) override;
 
  protected:

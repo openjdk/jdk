@@ -27,11 +27,11 @@
 
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectorCounters.hpp"
-#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
+#include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -90,16 +90,17 @@ public:
   }
 };
 
-ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
+ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahController* controller, ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
   ShenandoahGC(generation),
   _mark(generation),
-  _degen_point(ShenandoahDegenPoint::_degenerated_unset),
+  _controller(controller),
   _abbreviated(false),
   _do_old_gc_bootstrap(do_old_gc_bootstrap) {
+  _controller->set_phase(ShenandoahController::INITIALIZING);
 }
 
-ShenandoahGC::ShenandoahDegenPoint ShenandoahConcurrentGC::degen_point() const {
-  return _degen_point;
+ShenandoahConcurrentGC::~ShenandoahConcurrentGC() {
+  _controller->set_phase(ShenandoahController::UNSET);
 }
 
 void ShenandoahConcurrentGC::entry_concurrent_update_refs_prepare(ShenandoahHeap* const heap) {
@@ -156,13 +157,13 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
     // Concurrent mark roots
     entry_mark_roots();
-    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_roots)) {
+    if (check_cancellation_and_abort()) {
       return false;
     }
 
     // Continue concurrent mark
     entry_mark();
-    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_mark)) {
+    if (check_cancellation_and_abort()) {
       return false;
     }
   }
@@ -175,7 +176,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // after final mark, then we've entered the evacuation phase and must resume the degenerated cycle
   // from that phase.
   if (_generation->is_concurrent_mark_in_progress()) {
-    bool cancelled = check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_mark);
+    bool cancelled = check_cancellation_and_abort();
     assert(cancelled, "GC must have been cancelled between concurrent and final mark");
     return false;
   }
@@ -218,7 +219,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   if (heap->is_evacuation_in_progress()) {
     // Concurrently evacuate
     entry_evacuate();
-    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
+    if (check_cancellation_and_abort()) {
       return false;
     }
 
@@ -234,13 +235,13 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     }
 
     entry_update_refs();
-    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_update_refs)) {
+    if (check_cancellation_and_abort()) {
       return false;
     }
 
     // Concurrent update thread roots
     entry_update_thread_roots();
-    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_update_refs)) {
+    if (check_cancellation_and_abort()) {
       return false;
     }
 
@@ -251,7 +252,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   } else {
     _abbreviated = true;
     if (!entry_final_roots()) {
-      assert(_degen_point != _degenerated_unset, "Need to know where to start degenerated cycle");
       return false;
     }
 
@@ -292,7 +292,7 @@ bool ShenandoahConcurrentGC::complete_abbreviated_cycle() {
     // cancellation would be failing to restore top for these regions and leaving
     // them unable to serve allocations for the old generation.This will leave the weak
     // roots flag set (the degenerated cycle will unset it).
-    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
+    if (check_cancellation_and_abort()) {
       return false;
     }
   }
@@ -455,6 +455,7 @@ void ShenandoahConcurrentGC::entry_mark_roots() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
                               "concurrent marking roots");
 
+  _controller->set_phase(ShenandoahController::ROOTS);
   heap->try_inject_alloc_failure();
   op_mark_roots();
 }
@@ -470,6 +471,7 @@ void ShenandoahConcurrentGC::entry_mark() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
                               "concurrent marking");
 
+  _controller->set_phase(ShenandoahController::MARK);
   heap->try_inject_alloc_failure();
   op_mark();
 }
@@ -579,6 +581,7 @@ void ShenandoahConcurrentGC::entry_evacuate() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
                               "concurrent evacuation");
 
+  _controller->set_phase(ShenandoahController::EVAC);
   heap->try_inject_alloc_failure();
   op_evacuate();
 }
@@ -617,6 +620,7 @@ void ShenandoahConcurrentGC::entry_update_refs() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_update_ref(),
                               "concurrent reference update");
 
+  _controller->set_phase(ShenandoahController::UPDATE_REFS);
   heap->try_inject_alloc_failure();
   op_update_refs();
 }
@@ -1290,12 +1294,8 @@ void ShenandoahConcurrentGC::op_reset_after_collect() {
   }
 }
 
-bool ShenandoahConcurrentGC::check_cancellation_and_abort(ShenandoahDegenPoint point) {
-  if (ShenandoahHeap::heap()->cancelled_gc()) {
-    _degen_point = point;
-    return true;
-  }
-  return false;
+bool ShenandoahConcurrentGC::check_cancellation_and_abort() {
+  return ShenandoahHeap::heap()->cancelled_gc();
 }
 
 const char* ShenandoahConcurrentGC::init_mark_event_message() const {
