@@ -26,9 +26,8 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "gc/shenandoah/shenandoahStripedCounter.hpp"
 #include "gc/shenandoah/shenandoahWeightedSeq.hpp"
-#include "memory/allocation.hpp"
-#include "memory/padded.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -112,52 +111,19 @@ class ShenandoahAllocRate {
   static constexpr size_t ALLOC_SAMPLE_MIN = M;
   static constexpr size_t ALLOC_SAMPLE_MAX = G;
 
-  // Bytes allocated since the last sample, striped to remove the cache-line contention that a single
-  // shared counter suffers on the hot allocation path when many mutator threads allocate
-  // concurrently. Each mutator adds to its assigned stripe; the sampling path sums the stripes.
-  // PaddedArray gives each stripe its own cache line (both the array base and the per-element stride
-  // are aligned), so there is no false sharing between stripes.
-  typedef PaddedEnd<Atomic<size_t>> PaddedCounter;
-
-  // A thread's stripe is chosen lazily and cached in thread-local state, so the hot path does not
-  // query the current CPU (os::processor_id()/sched_getcpu() is a syscall/vDSO call that dominated
-  // the allocation path when called per-allocation). The affinity table records which thread most
-  // recently claimed each stripe; the fast path just checks whether the caller still owns its cached
-  // stripe (a plain load), and only re-picks (the slow path) when it does not -- i.e. when another
-  // thread has since claimed that stripe (Linux: because it migrated CPUs; elsewhere: a random
-  // collision). Any assignment is correct because sampling sums all stripes; the table only spreads
-  // threads to reduce contention. Mirrors ZGC's ZCPU affinity scheme.
-  struct StripeAffinity {
-    Thread* _thread;
-  };
-
+  // Bytes allocated since the last sample. A striped counter absorbs the contention that a single
+  // shared counter would suffer on the hot allocation path when many mutator threads allocate
+  // concurrently (see ShenandoahStripedCounter).
   PaddedMonitor _sample_lock;
   shenandoah_padding(0);
-  PaddedCounter* _allocated_bytes_since_last_sample; // one stripe per CPU
-  PaddedEnd<StripeAffinity>* _stripe_affinity;       // owner of each stripe (perf heuristic only)
-  uint const _num_stripes;
+  ShenandoahStripedCounter _unsampled;
   shenandoah_padding(1);
   Atomic<size_t> _minimum_sample_size; // bytes, read by mutator, updated by gc
   jlong _last_sample_time;
 
-  // Per-thread cached identity and stripe. Sentinels ensure the fast-path ownership check never
-  // spuriously matches before the thread has claimed a stripe.
-  static THREAD_LOCAL Thread* _self;
-  static THREAD_LOCAL uint    _cached_stripe;
-
-  // Index of the stripe the current thread should use. Fast path returns the cached stripe when the
-  // caller still owns it; slow path (current_stripe_slow) re-picks and claims. Always in
-  // [0, _num_stripes).
-  uint current_stripe();
-  uint current_stripe_slow();
-  // Add allocated_bytes to the current stripe and return that stripe's new running total.
-  size_t add_to_stripe(size_t allocated_bytes);
-  // Sum the running totals across all stripes (no reset).
-  size_t sum_stripes() const;
-  // Sum the stripes and atomically reset each to zero, returning the total consumed. Used when a
-  // sample is committed under the lock; concurrent adds after each stripe's exchange are preserved
-  // in that stripe for the next sample.
-  size_t drain_stripes();
+  // Try to take a sample now, given a lower bound on the current unsampled total. Acquires the
+  // sample lock, re-checks the true total against the threshold, and records a sample if due.
+  void maybe_take_sample(size_t unsampled_hint);
 
   ShenandoahWeightedSeq _baseline;
   ShenandoahWeightedSeq _recent;
@@ -169,19 +135,12 @@ public:
                                const uint recent_window_size = ShenandoahRecentAllocRateSampleWindow,
                                const uint momentary_window_size = ShenandoahMomentaryAllocRateSampleWindow)
     : _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
-    , _num_stripes((uint) MAX2(os::processor_count(), 1))
     , _minimum_sample_size(minimum_sample_size)
     , _last_sample_time(Clock::elapsed_counter())
     , _baseline(baseline_window_size)
     , _recent(recent_window_size)
     , _momentary(momentary_window_size)
   {
-    _allocated_bytes_since_last_sample =
-        PaddedArray<Atomic<size_t>, mtGC>::create_unfreeable(_num_stripes);
-    _stripe_affinity = PaddedArray<StripeAffinity, mtGC>::create_unfreeable(_num_stripes);
-    for (uint i = 0; i < _num_stripes; i++) {
-      _stripe_affinity[i]._thread = nullptr;
-    }
   }
 
   // Update minimum sample size based on the given available bytes
@@ -229,12 +188,6 @@ private:
     return _baseline.weighted_average() + standard_deviations * _baseline.weighted_sd();
   }
 };
-
-// Per-thread cached identity and stripe (see current_stripe). Defined here as templated statics;
-// there is a single instantiation (ShenandoahAllocationRate), so one definition per translation
-// unit collapses at link time like an inline variable.
-template<typename Clock> THREAD_LOCAL Thread* ShenandoahAllocRate<Clock>::_self = nullptr;
-template<typename Clock> THREAD_LOCAL uint    ShenandoahAllocRate<Clock>::_cached_stripe = UINT_MAX;
 
 typedef ShenandoahAllocRate<> ShenandoahAllocationRate;
 
