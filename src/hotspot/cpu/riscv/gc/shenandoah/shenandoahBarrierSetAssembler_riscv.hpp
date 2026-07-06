@@ -33,7 +33,7 @@
 
 #ifdef COMPILER1
 class LIR_Assembler;
-class ShenandoahPreBarrierStub;
+class ShenandoahKeepaliveBarrierStub;
 class ShenandoahLoadReferenceBarrierStub;
 class StubAssembler;
 #endif
@@ -54,8 +54,6 @@ private:
 
   void card_barrier(MacroAssembler* masm, Register obj);
 
-  void resolve_forward_pointer(MacroAssembler* masm, Register dst, Register tmp = noreg);
-  void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp = noreg);
   void load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr, DecoratorSet decorators);
 
   void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
@@ -81,14 +79,13 @@ public:
                                              Register obj, Register tmp, Label& slowpath);
   virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
                                                Register tmp, Label& slow_path);
-  void cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
-                   Assembler::Aqrl acquire, Assembler::Aqrl release, bool is_cae, Register result);
 
 #ifdef COMPILER1
-  void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
-  void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
-  void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
-  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, DecoratorSet decorators);
+  void keepalive_barrier_c1_stub(LIR_Assembler* ce, ShenandoahKeepaliveBarrierStub* stub);
+  void keepalive_barrier_c1_runtime_stub(StubAssembler* sasm);
+
+  void load_reference_barrier_c1_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
+  void load_reference_barrier_c1_runtime_stub(StubAssembler* sasm, DecoratorSet decorators);
 #endif
 
 #ifdef COMPILER2

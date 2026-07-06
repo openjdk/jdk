@@ -97,7 +97,9 @@ void HotCodeCollector::thread_entry(JavaThread* thread, TRAPS) {
       ThreadSampler sampler;
       uint64_t start_time = os::javaTimeMillis();
       while (os::javaTimeMillis() - start_time <= HotCodeSampleSeconds * 1000) {
-        sampler.sample_all_java_threads();
+        if (!sampler.sample_all_java_threads()) {
+          break;
+        }
         thread->sleep(rand_sampling_period_ms());
       }
 

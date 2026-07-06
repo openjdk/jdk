@@ -104,8 +104,8 @@ Mutex*   G1MarkStackChunkList_lock    = nullptr;
 Mutex*   G1MarkStackFreeList_lock     = nullptr;
 Monitor* G1OldGCCount_lock            = nullptr;
 Mutex*   G1OldSets_lock               = nullptr;
-Mutex*   G1ReviseYoungLength_lock     = nullptr;
 Mutex*   G1RareEvent_lock             = nullptr;
+Mutex*   G1ReviseNumYoungRegions_lock = nullptr;
 Mutex*   G1Uncommit_lock              = nullptr;
 #endif
 
@@ -121,6 +121,7 @@ Mutex*   Verify_lock                  = nullptr;
 Mutex*   JfrStacktrace_lock           = nullptr;
 Monitor* JfrMsg_lock                  = nullptr;
 Mutex*   JfrBuffer_lock               = nullptr;
+Mutex*   SuspendedThreadTask_lock     = nullptr;
 #endif
 
 Mutex*   CodeHeapStateAnalytics_lock  = nullptr;
@@ -280,6 +281,7 @@ void mutex_init() {
   MUTEX_DEFN(JfrBuffer_lock                  , PaddedMutex  , event);
   MUTEX_DEFN(JfrMsg_lock                     , PaddedMonitor, event);
   MUTEX_DEFN(JfrStacktrace_lock              , PaddedMutex  , event);
+  MUTEX_DEFN(SuspendedThreadTask_lock        , PaddedMutex  , nosafepoint);
 #endif
 
   MUTEX_DEFN(ContinuationRelativize_lock     , PaddedMonitor, nosafepoint-3);
@@ -333,7 +335,7 @@ void mutex_init() {
   if (UseG1GC) {
     MUTEX_DEFL(G1OldGCCount_lock            , PaddedMonitor, Threads_lock, true);
     MUTEX_DEFL(G1RareEvent_lock             , PaddedMutex  , Threads_lock, true);
-    MUTEX_DEFL(G1ReviseYoungLength_lock     , PaddedMutex  , Threads_lock, true);
+    MUTEX_DEFL(G1ReviseNumYoungRegions_lock , PaddedMutex  , Threads_lock, true);
   }
 #endif
 

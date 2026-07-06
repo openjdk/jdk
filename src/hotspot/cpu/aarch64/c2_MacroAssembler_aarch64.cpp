@@ -204,8 +204,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
     // Try to lock. Transition lock-bits 0b01 => 0b00
     orr(t1_mark, t1_mark, markWord::unlocked_value);
     eor(t3_t, t1_mark, markWord::unlocked_value);
-    cmpxchg(/*addr*/ obj, /*expected*/ t1_mark, /*new*/ t3_t, Assembler::xword,
-            /*acquire*/ true, /*release*/ false, /*weak*/ false, noreg);
+    cmpxchg(/*addr*/ obj, /*expected*/ t1_mark, /*new*/ t3_t, Assembler::xword, memory_order_acquire);
     br(Assembler::NE, slow_path);
 
     bind(push);
@@ -285,8 +284,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
 
     // Try to CAS owner (no owner => current thread's _monitor_owner_id).
     ldr(rscratch2, Address(rthread, JavaThread::monitor_owner_id_offset()));
-    cmpxchg(t2_owner_addr, zr, rscratch2, Assembler::xword, /*acquire*/ true,
-            /*release*/ false, /*weak*/ false, t3_owner);
+    cmpxchg(t2_owner_addr, zr, rscratch2, Assembler::xword, memory_order_acquire, t3_owner);
     br(Assembler::EQ, monitor_locked);
 
     // Check if recursive.
@@ -371,8 +369,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box, Register t1,
     // Try to unlock. Transition lock bits 0b00 => 0b01
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
     orr(t3_t, t1_mark, markWord::unlocked_value);
-    cmpxchg(/*addr*/ obj, /*expected*/ t1_mark, /*new*/ t3_t, Assembler::xword,
-            /*acquire*/ false, /*release*/ true, /*weak*/ false, noreg);
+    cmpxchg(/*addr*/ obj, /*expected*/ t1_mark, /*new*/ t3_t, Assembler::xword, memory_order_release);
     br(Assembler::EQ, unlocked);
 
     bind(push_and_slow_path);
