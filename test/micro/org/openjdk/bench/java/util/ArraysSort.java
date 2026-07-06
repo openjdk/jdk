@@ -45,21 +45,21 @@ import org.openjdk.jmh.annotations.Warmup;
  *
  * @author Vladimir Yaroslavskiy
  *
- * @version 2025.06.14
+ * @version 2026.06.14
  *
- * @since 27
+ * @since 28
  */
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @Warmup(iterations = 2, time = 4, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 4, time = 5, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 4, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 1, jvmArgsAppend = {"-XX:CompileThreshold=1", "-XX:-TieredCompilation"})
 public class ArraysSort {
 
     private static final int PARALLELISM = java.util.concurrent.ForkJoinPool.getCommonPoolParallelism();
 
-    @Param({ "600", "3000", "50000", "200000", "7000000" })
+    @Param({ "600", "4000", "80000", "200000", "9000000" })
     int size;
 
     @Param
@@ -76,47 +76,47 @@ public class ArraysSort {
 
         REPEATED {
             @Override
-            void build(int[] b) {
-                Random random = new Random(0x555);
+            void build(int[] a) {
+                Random random = new Random(555);
 
-                for (int i = 0; i < b.length; ++i) {
-                    b[i] = random.nextInt(9);
+                for (int i = 0; i < a.length; ++i) {
+                    a[i] = random.nextInt(10);
                 }
             }
         },
 
         STAGGER {
             @Override
-            void build(int[] b) {
-                for (int i = 0; i < b.length; ++i) {
-                    b[i] = (i * 8) % b.length;
+            void build(int[] a) {
+                for (int i = 0; i < a.length; ++i) {
+                    a[i] = (i * 8) % a.length;
                 }
             }
         },
 
         SHUFFLE {
             @Override
-            void build(int[] b) {
-                Random random = new Random(0x999);
+            void build(int[] a) {
+                Random random = new Random(8888);
 
-                for (int i = 0, j = 0, k = 1; i < b.length; ++i) {
-                    b[i] = random.nextInt(6) > 0 ? (j += 2) : (k += 2);
+                for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
+                    a[i] = random.nextInt(2) > 0 ? (j += 2) : (k += 2);
                 }
             }
         },
 
         RANDOM {
             @Override
-            void build(int[] b) {
-                Random random = new Random(0x777);
+            void build(int[] a) {
+                Random random = new Random(8888);
 
-                for (int i = 0; i < b.length; ++i) {
-                    b[i] = random.nextInt();
+                for (int i = 0; i < a.length; ++i) {
+                    a[i] = random.nextInt();
                 }
             }
         };
 
-        abstract void build(int[] b);
+        abstract void build(int[] a);
     }
 
     public static class Int extends ArraysSort {

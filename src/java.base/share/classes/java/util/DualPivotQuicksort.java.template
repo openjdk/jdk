@@ -42,16 +42,16 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * There are also additional algorithms, invoked from the Dual-Pivot
  * Quicksort such as merging sort, sorting network, heap sort, mixed
- * insertion sort, counting sort and parallel merge sort.
+ * insertion sort, counting sort{#if[WithRadixSort]?, Radix sort} and parallel merge sort.
  *
  * @author Vladimir Yaroslavskiy
  * @author Jon Bentley
  * @author Josh Bloch
  * @author Doug Lea
  *
- * @version 2025.06.14
+ * @version 2026.06.14
  *
- * @since 1.7 * 14 ^ 27
+ * @since 1.7 * 14 ^ 28
  */
 final class DualPivotQuicksort {
 
@@ -115,6 +115,13 @@ final class DualPivotQuicksort {
     private static final int MAX_RUN_CAPACITY = 10 << 10;
 
     /* ------------------------ Digital sort ------------------------ */
+#if[WithRadixSort]
+
+    /**
+     * Min size of array to use Radix sort.
+     */
+    private static final int MIN_RADIX_SORT_SIZE = 640;
+#end[WithRadixSort]
 
     /**
      * Min size of array to use counting sort (the best on random data).
@@ -124,9 +131,9 @@ final class DualPivotQuicksort {
     /* ----------------------- Parallel sort ------------------------ */
 
     /**
-     * Min size of array to perform sorting in parallel (the best on stagger data).
+     * Min size of array to perform sorting in parallel (the best on repeated data).
      */
-    private static final int MIN_PARALLEL_SORT_SIZE = 3 << 10;
+    private static final int MIN_PARALLEL_SORT_SIZE = 4 << 10;
 
     /* ----------------------- Infrastructure ----------------------- */
 
@@ -140,7 +147,7 @@ final class DualPivotQuicksort {
      *      limited by max_heap / 16 or 2 GB max.
      */
     private static final int MAX_BUFFER_SIZE =
-        Math.clamp(Runtime.getRuntime().maxMemory() >>> 4, 0, Integer.MAX_VALUE);
+        Math.clamp(Runtime.getRuntime().maxMemory() >> 4, 0, Integer.MAX_VALUE);
 
     /**
      * Represents a function that accepts the array and sorts
@@ -167,7 +174,7 @@ final class DualPivotQuicksort {
      * don't change the signature.
      *
      * @param <T> the class of array
-     * @param elemType the class of the elements of the array to be sorted
+     * @param arrayType the class of the elements of the array to be sorted
      * @param a the array to be sorted
      * @param offset the relative offset, in bytes, from the base
      *        address of the array to partition, otherwise if the
@@ -179,7 +186,7 @@ final class DualPivotQuicksort {
      */
     @ForceInline
     @IntrinsicCandidate
-    private static <T> void sort(Class<?> elemType, T a, long offset,
+    private static <T> void sort(Class<?> arrayType, T a, long offset,
             int low, int high, SortOperation<T> so) {
         so.sort(a, low, high);
     }
@@ -198,9 +205,9 @@ final class DualPivotQuicksort {
          * @param a the array for partitioning
          * @param low the index of the first element, inclusive, for partitioning
          * @param high the index of the last element, exclusive, for partitioning
-         * @param pivotIndex1 the index of pivot1, the first pivot
-         * @param pivotIndex2 the index of pivot2, the second pivot
-         * @return indices of parts after partitioning
+         * @param pivotIndex1 the index of the first pivot
+         * @param pivotIndex2 the index of the second pivot
+         * @return indices of the parts after partitioning
          */
         int[] partition(T a, int low, int high, int pivotIndex1, int pivotIndex2);
     }
@@ -212,7 +219,7 @@ final class DualPivotQuicksort {
      * don't change the signature.
      *
      * @param <T> the class of array
-     * @param elemType the class of the array for partitioning
+     * @param arrayType the class of the array for partitioning
      * @param a the array for partitioning
      * @param offset the relative offset, in bytes, from the base
      *        address of the array to partition, otherwise if the
@@ -220,14 +227,14 @@ final class DualPivotQuicksort {
      *        to the first element to partition from
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
+     * @param pivotIndex1 the index of the first pivot
+     * @param pivotIndex2 the index of the second pivot
      * @param po the method reference for the fallback implementation
-     * @return indices of parts after partitioning
+     * @return indices of the parts after partitioning
      */
     @ForceInline
     @IntrinsicCandidate
-    private static <T> int[] partition(Class<?> elemType, T a, long offset,
+    private static <T> int[] partition(Class<?> arrayType, T a, long offset,
             int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<T> po) {
         return po.partition(a, low, high, pivotIndex1, pivotIndex2);
     }
@@ -255,7 +262,7 @@ final class DualPivotQuicksort {
      */
     static void sort($type$[] a, int parallelism, int low, int high) {
         if (parallelism > 1 && high - low > MIN_PARALLEL_SORT_SIZE) {
-            new Sorter<>(a, parallelism, low, high - low).invoke();
+            new Sorter<>(a, parallelism, low, high).invoke();
         } else {
             sort(null, a, 0, low, high);
         }
@@ -308,7 +315,7 @@ final class DualPivotQuicksort {
          * which are already in place.
          */
         if (parallelism > 1 && high - low > MIN_PARALLEL_SORT_SIZE) {
-            new Sorter<>(a, parallelism, low, high - low).invoke();
+            new Sorter<>(a, parallelism, low, high).invoke();
         } else {
             sort(null, a, 0, low, high);
         }
@@ -360,6 +367,13 @@ final class DualPivotQuicksort {
             int size = high - low;
 
             /*
+             * Check trivial cases.
+             */
+            if (size < 2) {
+                return;
+            }
+
+            /*
              * Run adaptive mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
@@ -396,13 +410,27 @@ final class DualPivotQuicksort {
              * Five elements around (and including) the central element
              * will be used for pivot selection as described below. The
              * unequal choice of spacing these elements was empirically
-             * determined to work well on a wide variety of inputs.
+             * determined to work well on a wide variety of many inputs.
+             *
+             * Choose the first and fifth of the elements as the pivots
+             * for partitioning with two pivots. The third element will
+             * be the pivot for partitioning with one pivot.
              */
             int e1 = low + step;
             int e5 = high - step;
             int e3 = (e1 + e5) >>> 1;
             int e2 = (e1 + e3) >>> 1;
             int e4 = (e3 + e5) >>> 1;
+#if[WithRadixSort]
+
+            /*
+             * Check if part is large and contains random
+             * data, taking into account parallel context.
+             */
+            boolean isLargeRandom =
+                size > MIN_RADIX_SORT_SIZE && (sorter == null || bits > 0) &&
+                (a[e1] > a[e2] || a[e2] > a[e3] || a[e3] > a[e4] || a[e4] > a[e5]);
+#end[WithRadixSort]
 
             /*
              * Sort these elements in-place by the combination
@@ -412,34 +440,47 @@ final class DualPivotQuicksort {
              *              |               |
              *   2 ---------|-------o-------o-------o---------
              *              |       |               |
-             *   3 ---------|-------|---------------|---------
-             *              |       |               |
              *   4 ---------o-------|-------o-------o---------
              *                      |       |
              *   5 -----------------o-------o-----------------
              */
             if (a[e1] > a[e4]) { $type$ t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
             if (a[e2] > a[e5]) { $type$ t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
-            if (a[e4] > a[e5]) { $type$ t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
             if (a[e1] > a[e2]) { $type$ t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
+            if (a[e4] > a[e5]) { $type$ t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
             if (a[e2] > a[e4]) { $type$ t = a[e2]; a[e2] = a[e4]; a[e4] = t; }
 
             /*
              * Insert the third element.
              */
             if (a[e3] < a[e2]) {
-                if (a[e3] < a[e1]) {
-                    $type$ t = a[e3]; a[e3] = a[e2]; a[e2] = a[e1]; a[e1] = t;
+                $type$ ae3 = a[e3]; a[e3] = a[e2];
+
+                if (ae3 < a[e1]) {
+                    a[e2] = a[e1]; a[e1] = ae3;
                 } else {
-                    $type$ t = a[e3]; a[e3] = a[e2]; a[e2] = t;
+                    a[e2] = ae3;
                 }
             } else if (a[e3] > a[e4]) {
-                if (a[e3] > a[e5]) {
-                    $type$ t = a[e3]; a[e3] = a[e4]; a[e4] = a[e5]; a[e5] = t;
+                $type$ ae3 = a[e3]; a[e3] = a[e4];
+
+                if (ae3 > a[e5]) {
+                    a[e4] = a[e5]; a[e5] = ae3;
                 } else {
-                    $type$ t = a[e3]; a[e3] = a[e4]; a[e4] = t;
+                    a[e4] = ae3;
                 }
             }
+#if[WithRadixSort]
+
+            /*
+             * Try Radix sort on large fully random data.
+             */
+            if (isLargeRandom
+                    && a[e1] < a[e2] && a[e2] < a[e4] && a[e4] < a[e5]
+                    && tryRadixSort(sorter, a, low, high)) {
+                return;
+            }
+#end[WithRadixSort]
 
             /*
              * Switch to heap sort to avoid quadratic time.
@@ -449,11 +490,7 @@ final class DualPivotQuicksort {
                 return;
             }
 
-            /*
-             * indices[0] - the index of the last element of the left part
-             * indices[1] - the index of the first element of the right part
-             */
-            int[] indices;
+            int[] indices; // Indices define the parts after partitioning
 
             /*
              * Partitioning with two pivots on array of fully random elements.
@@ -494,8 +531,6 @@ final class DualPivotQuicksort {
             high = indices[0]; // Iterate along the left part
         }
     }
-#end[IntLongFloatDouble]
-#if[IntLongFloatDouble]
 
     /**
      * Partitions the specified range of the array using two given pivots.
@@ -503,22 +538,21 @@ final class DualPivotQuicksort {
      * @param a the array for partitioning
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
-     * @return indices of parts after partitioning
+     * @param pivotIndex1 the index of the first pivot
+     * @param pivotIndex2 the index of the second pivot
+     * @return indices of the parts after partitioning
      */
     private static int[] partitionWithTwoPivots(
             $type$[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
         /*
-         * Pointers to the right and left parts.
+         * Pointers to the left and right parts.
          */
-        int upper = --high;
         int lower = low;
+        int upper = --high;
 
         /*
-         * Use the first and fifth of the five sorted elements as
-         * the pivots. These values are inexpensive approximation
-         * of tertiles. Note, that pivot1 < pivot2.
+         * The pivots are inexpensive approximation of tertiles.
+         * Note, that pivot1 < pivot2.
          */
         $type$ pivot1 = a[pivotIndex1];
         $type$ pivot2 = a[pivotIndex2];
@@ -542,28 +576,32 @@ final class DualPivotQuicksort {
         /*
          * Backward 3-interval partitioning
          *
-         *     left part                     central part          right part
-         * +--------------+----------+--------------------------+--------------+
-         * |   < pivot1   |    ?     |  pivot1 <= .. <= pivot2  |   > pivot2   |
-         * +--------------+----------+--------------------------+--------------+
-         *               ^          ^                            ^
-         *               |          |                            |
-         *             lower        k                          upper
+         *     left part                        central part          right part
+         * +---------------+-----------+--------------------------+---------------+
+         * |  ai < pivot1  |     ?     |  pivot1 <= ai <= pivot2  |  ai > pivot2  |
+         * +---------------+-----------+--------------------------+---------------+
+         *                ^           ^                            ^
+         *                |           |                            |
+         *              lower         k                          upper
          *
          * Pointer k is the last index of ?-part
-         * Pointer lower is the last index of left part
-         * Pointer upper is the first index of right part
+         * Pointer lower is the last index of the left part
+         * Pointer upper is the first index of the right part
          */
         for (int unused = --lower, k = ++upper; --k > lower; ) {
             $type$ ak = a[k];
 
-            if (ak < pivot1) { // Move a[k] to the left part
+            if (ak > pivot2) { // Move a[k] to the right part
+                a[k] = a[--upper];
+                a[upper] = ak;
+            } else if (ak < pivot1) { // Move a[k] to the left part
+                /*
+                 * Set the first pivot as the sentinel.
+                 */
+                a[k] = pivot1;
+
                 while (a[++lower] < pivot1);
 
-                if (lower > k) {
-                    lower = k;
-                    break;
-                }
                 if (a[lower] > pivot2) {
                     a[k] = a[--upper];
                     a[upper] = a[lower];
@@ -571,9 +609,6 @@ final class DualPivotQuicksort {
                     a[k] = a[lower];
                 }
                 a[lower] = ak;
-            } else if (ak > pivot2) { // Move a[k] to the right part
-                a[k] = a[--upper];
-                a[upper] = ak;
             }
         }
 
@@ -592,77 +627,53 @@ final class DualPivotQuicksort {
      * @param a the array for partitioning
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of single pivot
-     * @param pivotIndex2 the index of single pivot
-     * @return indices of parts after partitioning
+     * @param pivotIndex1 the index of the single pivot
+     * @param pivotIndex2 the index of the single pivot
+     * @return indices of the parts after partitioning
      */
     private static int[] partitionWithOnePivot(
             $type$[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
         /*
-         * Pointers to the right and left parts.
-         */
-        int upper = high;
-        int lower = low;
-
-        /*
-         * Use the third of the five sorted elements as the pivot.
-         * This value is inexpensive approximation of the median.
+         * The pivot is inexpensive approximation of the median.
          */
         $type$ pivot = a[pivotIndex1];
 
         /*
-         * The first element to be sorted is moved to the
-         * location formerly occupied by the pivot. After
-         * completion of partitioning the pivot is swapped
-         * back into its final position, and excluded from
-         * the next subsequent sorting.
-         */
-        a[pivotIndex1] = a[lower];
-
-        /*
          * Dutch National Flag partitioning
          *
-         *     left part               central part    right part
-         * +--------------+----------+--------------+-------------+
-         * |   < pivot    |    ?     |   == pivot   |   > pivot   |
-         * +--------------+----------+--------------+-------------+
-         *               ^          ^                ^
-         *               |          |                |
-         *             lower        k              upper
+         *     left part     central part                right part
+         * +--------------+---------------+-----------+--------------+
+         * |  ai < pivot  |  ai == pivot  |     ?     |  ai > pivot  |
+         * +--------------+---------------+-----------+--------------+
+         *                 ^               ^           ^
+         *                 |               |           |
+         *                low              k          high
          *
-         * Pointer k is the last index of ?-part
-         * Pointer lower is the last index of left part
-         * Pointer upper is the first index of right part
+         * Pointer k is the first index of ?-part
+         * Pointer low is the first index of the central part
+         * Pointer high is the first index of the right part
          */
-        for (int k = upper; --k > lower; ) {
+        for (int k = low; k < high; ++k) {
             $type$ ak = a[k];
 
-            if (ak == pivot) {
-                continue;
-            }
-            a[k] = pivot;
+            if (ak != pivot) {
+                a[k] = pivot;
 
-            if (ak < pivot) { // Move a[k] to the left part
-                while (a[++lower] < pivot);
+                if (ak < pivot) { // Move a[k] to the left part
+                    a[low++] = ak;
+                } else { // ak > pivot - Move a[k] to the right part
+                    while (a[--high] > pivot);
 
-                if (a[lower] > pivot) {
-                    a[--upper] = a[lower];
+                    if (a[high] < pivot) {
+                        a[low++] = a[high];
+                    }
+                    a[high] = ak;
                 }
-                a[lower] = ak;
-            } else { // ak > pivot - Move a[k] to the right part
-                a[--upper] = ak;
             }
         }
 
-        /*
-         * Swap the pivot into its final position.
-         */
-        a[low] = a[lower]; a[lower] = pivot;
-
-        return new int[] { lower, upper };
+        return new int[] { low, high };
     }
-#end[IntLongFloatDouble]
-#if[IntLongFloatDouble]
 
     /**
      * Sorts the specified range of the array using mixed insertion sort.<p>
@@ -684,7 +695,7 @@ final class DualPivotQuicksort {
         /*
          * Split the array for pin and pair insertion sorts.
          */
-        int end = high - (((high - low) * 3 >> 3) << 1);
+        int end = high - ((high - low) * 3 >> 3 << 1);
 
         /*
          * Start with pin insertion sort.
@@ -750,8 +761,7 @@ final class DualPivotQuicksort {
 #if[ByteCharShort]
 
     /**
-     * Sorts the specified range of the array using counting sort
-     * or insertion sort.
+     * Sorts the specified range of the array using insertion sort or counting sort.
      *
      * @param a the array to be sorted
      * @param low the index of the first element, inclusive, to be sorted
@@ -883,7 +893,7 @@ final class DualPivotQuicksort {
             run[count] = (last = k);
 
             /*
-             * Check single-element run at the end.
+             * Check the single element at the end.
              */
             if (++k == high) {
                 --k;
@@ -1105,6 +1115,288 @@ final class DualPivotQuicksort {
         System.arraycopy(src, lo1, dst, k, hi1 - lo1);
         System.arraycopy(src, lo2, dst, k + hi1 - lo1, hi2 - lo2);
     }
+#if[WithRadixSort]
+
+    /**
+     * Tries to sort the specified range of the array
+     * using LSD (The Least Significant Digit) Radix sort.
+     *
+     * @param sorter the parallel context
+     * @param a the array to be sorted
+     * @param low the index of the first element, inclusive, to be sorted
+     * @param high the index of the last element, exclusive, to be sorted
+     * @return {@code true} if the array is finally sorted, otherwise {@code false}
+     */
+    static boolean tryRadixSort(Sorter<$type$[]> sorter, $type$[] a, int low, int high) {
+        $type$[] b; int offset = low, size = high - low;
+
+        /*
+         * Allocate additional buffer.
+         */
+        if (sorter != null && (b = sorter.b) != null) {
+            offset = sorter.offset;
+        } else if ((b = tryAllocate($type$[].class, size)) == null) {
+            return false;
+        }
+
+        /*
+         * Count the number of all digits.
+         */
+#if[IntFloat]
+        int[] count1 = new int[1 << 10];
+        int[] count2 = new int[1 << 11];
+        int[] count3 = new int[1 << 11];
+
+        for (int i = low; i < high; ++i) {
+            ++count1[{#if[Int]?a[i]        & 0x3FF}{#if[Float]?f2i(a[i],  0, 0x3FF)}];
+            ++count2[{#if[Int]?a[i] >>  10 & 0x7FF}{#if[Float]?f2i(a[i], 10, 0x7FF)}];
+            ++count3[{#if[Int]?a[i] >>> 21 ^ 0x400}{#if[Float]?f2i(a[i])}];{#if[Int]? // Flip the sign bit}
+        }
+
+        /*
+         * Check digits to be processed.
+         */
+        boolean processDigit1 = processDigit(count1, size, low);
+        boolean processDigit2 = processDigit(count2, size, low);
+        boolean processDigit3 = processDigit(count3, size, low);
+
+        int start = low - offset;
+        int last = high - offset;
+
+        /*
+         * Process the 1-st digit.
+         */
+        if (processDigit1) {
+            for (int i = high; i > low; ) {
+                b[--count1[{#if[Int]?a[--i] & 0x3FF}{#if[Float]?f2i(a[--i], 0 , 0x3FF)}] - offset] = a[i];
+            }
+        }
+
+        /*
+         * Process the 2-nd digit.
+         */
+        if (processDigit2) {
+            if (processDigit1) {
+                for (int i = last; i > start; ) {
+                    a[--count2[{#if[Int]?b[--i] >> 10 & 0x7FF}{#if[Float]?f2i(b[--i], 10, 0x7FF)}]] = b[i];
+                }
+            } else {
+                for (int i = high; i > low; ) {
+                    b[--count2[{#if[Int]?a[--i] >> 10 & 0x7FF}{#if[Float]?f2i(a[--i], 10, 0x7FF)}] - offset] = a[i];
+                }
+            }
+        }
+
+        /*
+         * Process the 3-rd digit.
+         */
+        if (processDigit3) {
+            if (processDigit1 ^ processDigit2) {
+                for (int i = last; i > start; ) {
+                    a[--count3[{#if[Int]?b[--i] >>> 21 ^ 0x400}{#if[Float]?f2i(b[--i])}]] = b[i];
+                }
+            } else {
+                for (int i = high; i > low; ) {
+                    b[--count3[{#if[Int]?a[--i] >>> 21 ^ 0x400}{#if[Float]?f2i(a[--i])}] - offset] = a[i];
+                }
+            }
+        }
+
+        /*
+         * Copy the buffer to original array, if we process ood number of digits.
+         */
+        if (processDigit1 ^ processDigit2 ^ processDigit3) {
+#end[IntFloat]
+#if[LongDouble]
+        int[] count1 = new int[1 << 10];
+        int[] count2 = new int[1 << 10];
+        int[] count3 = new int[1 << 11];
+        int[] count4 = new int[1 << 11];
+        int[] count5 = new int[1 << 11];
+        int[] count6 = new int[1 << 11];
+
+        for (int i = low; i < high; ++i) {
+            ++count1[{#if[Long]?(int) (a[i]        & 0x3FF)}{#if[Double]?d2i(a[i],  0, 0x3FF)}];
+            ++count2[{#if[Long]?(int) (a[i] >>  10 & 0x3FF)}{#if[Double]?d2i(a[i], 10, 0x3FF)}];
+            ++count3[{#if[Long]?(int) (a[i] >>  20 & 0x7FF)}{#if[Double]?d2i(a[i], 20, 0x7FF)}];
+            ++count4[{#if[Long]?(int) (a[i] >>  31 & 0x7FF)}{#if[Double]?d2i(a[i], 31, 0x7FF)}];
+            ++count5[{#if[Long]?(int) (a[i] >>  42 & 0x7FF)}{#if[Double]?d2i(a[i], 42, 0x7FF)}];
+            ++count6[{#if[Long]?(int) (a[i] >>> 53 ^ 0x400)}{#if[Double]?d2i(a[i])}];{#if[Long]? // Flip the sign bit}
+        }
+
+        /*
+         * Check digits to be processed.
+         */
+        boolean processDigit1 = processDigit(count1, size, low);
+        boolean processDigit2 = processDigit(count2, size, low);
+        boolean processDigit3 = processDigit(count3, size, low);
+        boolean processDigit4 = processDigit(count4, size, low);
+        boolean processDigit5 = processDigit(count5, size, low);
+        boolean processDigit6 = processDigit(count6, size, low);
+
+        int start = low - offset;
+        int last = high - offset;
+
+        /*
+         * Process the 1-st digit.
+         */
+        if (processDigit1) {
+            for (int i = high; i > low; ) {
+                b[--count1[{#if[Long]?(int) (a[--i] & 0x3FF)}{#if[Double]?d2i(a[--i], 0, 0x3FF)}] - offset] = a[i];
+            }
+        }
+
+        /*
+         * Process the 2-nd digit.
+         */
+        if (processDigit2) {
+            if (processDigit1) {
+                for (int i = last; i > start; ) {
+                    a[--count2[{#if[Long]?(int) (b[--i] >> 10 & 0x3FF)}{#if[Double]?d2i(b[--i], 10, 0x3FF)}]] = b[i];
+                }
+            } else {
+                for (int i = high; i > low; ) {
+                    b[--count2[{#if[Long]?(int) (a[--i] >> 10 & 0x3FF)}{#if[Double]?d2i(a[--i], 10, 0x3FF)}] - offset] = a[i];
+                }
+            }
+        }
+
+        /*
+         * Process the 3-rd digit.
+         */
+        if (processDigit3) {
+            if (processDigit1 ^ processDigit2) {
+                for (int i = last; i > start; ) {
+                    a[--count3[{#if[Long]?(int) (b[--i] >> 20 & 0x7FF)}{#if[Double]?d2i(b[--i], 20, 0x7FF)}]] = b[i];
+                }
+            } else {
+                for (int i = high; i > low; ) {
+                    b[--count3[{#if[Long]?(int) (a[--i] >> 20 & 0x7FF)}{#if[Double]?d2i(a[--i], 20, 0x7FF)}] - offset] = a[i];
+                }
+            }
+        }
+
+        /*
+         * Process the 4-th digit.
+         */
+        if (processDigit4) {
+            if (processDigit1 ^ processDigit2 ^ processDigit3) {
+                for (int i = last; i > start; ) {
+                    a[--count4[{#if[Long]?(int) (b[--i] >> 31 & 0x7FF)}{#if[Double]?d2i(b[--i], 31, 0x7FF)}]] = b[i];
+                }
+            } else {
+                for (int i = high; i > low; ) {
+                    b[--count4[{#if[Long]?(int) (a[--i] >> 31 & 0x7FF)}{#if[Double]?d2i(a[--i], 31, 0x7FF)}] - offset] = a[i];
+                }
+            }
+        }
+
+        /*
+         * Process the 5-th digit.
+         */
+        if (processDigit5) {
+            if (processDigit1 ^ processDigit2 ^ processDigit3 ^ processDigit4) {
+                for (int i = last; i > start; ) {
+                    a[--count5[{#if[Long]?(int) (b[--i] >> 42 & 0x7FF)}{#if[Double]?d2i(b[--i], 42, 0x7FF)}]] = b[i];
+                }
+            } else {
+                for (int i = high; i > low; ) {
+                    b[--count5[{#if[Long]?(int) (a[--i] >> 42 & 0x7FF)}{#if[Double]?d2i(a[--i], 42, 0x7FF)}] - offset] = a[i];
+                }
+            }
+        }
+
+        /*
+         * Process the 6-th digit.
+         */
+        if (processDigit6) {
+            if (processDigit1 ^ processDigit2 ^ processDigit3 ^ processDigit4 ^ processDigit5) {
+                for (int i = last; i > start; ) {
+                    a[--count6[{#if[Long]?(int) (b[--i] >>> 53 ^ 0x400)}{#if[Double]?d2i(b[--i])}]] = b[i];
+                }
+            } else {
+                for (int i = high; i > low; ) {
+                    b[--count6[{#if[Long]?(int) (a[--i] >>> 53 ^ 0x400)}{#if[Double]?d2i(a[--i])}] - offset] = a[i];
+                }
+            }
+        }
+
+        /*
+         * Copy the buffer to original array, if we process ood number of digits.
+         */
+        if (processDigit1 ^ processDigit2 ^ processDigit3 ^ processDigit4 ^ processDigit5 ^ processDigit6) {
+#end[LongDouble]
+            System.arraycopy(b, low - offset, a, low, size);
+        }
+        return true;
+    }
+#if[Float]
+
+    private static final int SIGN_32_BIT = 1 << 31;
+
+    /**
+     * This is a bitwise transformation to prepare 32-bit IEEE 754
+     * floating-point numbers for Radix sort: shifts and flips all
+     * bits if the value is negative, and then applies the mask.
+     *
+     * @param f the given float value
+     * @return prepared bits
+     */
+    @ForceInline
+    private static int f2i(float f, int shift, int mask) {
+        int x = Float.floatToRawIntBits(f);
+        return ((x >> 31) ^ (x >> shift)) & mask;
+    }
+
+    /**
+     * This is a bitwise transformation to prepare 32-bit IEEE 754
+     * floating-point numbers for Radix sort: shifts and flips the
+     * bits if the value is negative, otherwise flips the sign bit
+     * if the value is positive, and then applies the mask.
+     *
+     * @param f the given float value
+     * @return prepared bits
+     */
+    @ForceInline
+    private static int f2i(float f) {
+        int x = Float.floatToRawIntBits(f);
+        return (x ^ (SIGN_32_BIT | (x >> 11))) >>> 21;
+    }
+#end[Float]
+#if[Double]
+
+    private static final long SIGN_64_BIT = 1L << 63;
+
+    /**
+     * This is a bitwise transformation to prepare 64-bit IEEE 754
+     * floating-point numbers for Radix sort: shifts and flips all
+     * bits if the value is negative, and then applies the mask.
+     *
+     * @param d the given double value
+     * @return prepared bits
+     */
+    @ForceInline
+    private static int d2i(double d, int shift, int mask) {
+        long x = Double.doubleToRawLongBits(d);
+        return (int) (((x >> 63) ^ (x >> shift)) & mask);
+    }
+
+    /**
+     * This is a bitwise transformation to prepare 64-bit IEEE 754
+     * floating-point numbers for Radix sort: shifts and flips the
+     * bits if the value is negative, otherwise flips the sign bit
+     * if the value is positive, and then applies the mask.
+     *
+     * @param d the given double value
+     * @return prepared bits
+     */
+    @ForceInline
+    private static int d2i(double d) {
+        long x = Double.doubleToRawLongBits(d);
+        return (int) ((x ^ (SIGN_64_BIT | (x >> 11))) >>> 53);
+    }
+#end[Double]
+#end[WithRadixSort]
 
     /**
      * Sorts the specified range of the array using heap sort.
@@ -1240,8 +1532,8 @@ final class DualPivotQuicksort {
             int[] count2 = new int[1 << 8];
 
             for (int i = low; i < high; ++i) {
-                ++count1[  a[i]        & 0xFF];
-                ++count2[((a[i] >>> 8) & 0xFF){#if[Short]? ^ 0x80}];{#if[Short]? // Flip the sign bit}
+                ++count1[a[i] {#if[Char]?& 0xFF}{#if[Short]?     & 0xFF       }];
+                ++count2[a[i] {#if[Char]?>>> 8 }{#if[Short]?>> 8 & 0xFF ^ 0x80}];{#if[Short]? // Flip the sign bit}
             }
 
             /*
@@ -1265,11 +1557,11 @@ final class DualPivotQuicksort {
             if (processDigit2) {
                 if (processDigit1) {
                     for (int i = size; i > 0; ) {
-                        a[--count2[((b[--i] >>> 8) & 0xFF){#if[Short]? ^ 0x80}]] = b[i];
+                        a[--count2[b[--i] {#if[Char]?>>> 8}{#if[Short]?>> 8 & 0xFF ^ 0x80}]] = b[i];
                     }
                 } else {
                     for (int i = high; i > low; ) {
-                        b[--count2[((a[--i] >>> 8) & 0xFF){#if[Short]? ^ 0x80}] - low] = a[i];
+                        b[--count2[a[--i] {#if[Char]?>>> 8}{#if[Short]?>> 8 & 0xFF ^ 0x80}] - low] = a[i];
                     }
                 }
             }
@@ -1332,25 +1624,25 @@ final class DualPivotQuicksort {
 
         @SuppressWarnings("serial")
         private final T a, b;
-        private final int low, size, offset, depth;
+        private final int low, high, offset, depth;
 
         @SuppressWarnings("unchecked")
-        private Sorter(T a, int parallelism, int low, int size) {
+        private Sorter(T a, int parallelism, int low, int high) {
             this.a = a;
             this.low = low;
-            this.size = size;
+            this.high = high;
             this.offset = low;
-            this.b = (T) tryAllocate(a.getClass(), size);
-            this.depth = b == null ? 0 : ((parallelism >> 7) + 2) * (-2);
+            this.b = (T) tryAllocate(a.getClass(), high - low);
+            this.depth = b == null ? 0 : ((parallelism >> 6) + 2) * (-2);
         }
 
         private Sorter(CountedCompleter<?> parent,
-                T a, T b, int low, int size, int offset, int depth) {
+                T a, T b, int low, int high, int offset, int depth) {
             super(parent);
             this.a = a;
             this.b = b;
             this.low = low;
-            this.size = size;
+            this.high = high;
             this.offset = offset;
             this.depth = depth;
         }
@@ -1360,15 +1652,15 @@ final class DualPivotQuicksort {
         public void compute() {
             if (depth < 0) {
                 setPendingCount(2);
-                int half = size >> 1;
-                new Sorter<>(this, b, a, low, half, offset, depth + 1).fork();
-                new Sorter<>(this, b, a, low + half, size - half, offset, depth + 1).compute();
+                int mid = (low + high) >>> 1;
+                new Sorter<>(this, b, a, low, mid, offset, depth + 1).fork();
+                new Sorter<>(this, b, a, mid, high, offset, depth + 1).compute();
             } else {
                 switch(a) {
-                    case int[] ai -> sort((Sorter<int[]>) this, ai, depth, low, low + size);
-                    case long[] al -> sort((Sorter<long[]>) this, al, depth, low, low + size);
-                    case float[] af -> sort((Sorter<float[]>) this, af, depth, low, low + size);
-                    case double[] ad -> sort((Sorter<double[]>) this, ad, depth, low, low + size);
+                    case int[] ai -> sort((Sorter<int[]>) this, ai, depth, low, high);
+                    case long[] al -> sort((Sorter<long[]>) this, al, depth, low, high);
+                    case float[] af -> sort((Sorter<float[]>) this, af, depth, low, high);
+                    case double[] ad -> sort((Sorter<double[]>) this, ad, depth, low, high);
                     default -> throw new IllegalArgumentException("Unknown array: " + a.getClass().getName());
                 }
             }
@@ -1378,7 +1670,7 @@ final class DualPivotQuicksort {
         @Override
         public void onCompletion(CountedCompleter<?> caller) {
             if (depth < 0) {
-                int mi = low + (size >> 1);
+                int mid = (low + high) >>> 1;
                 boolean src = (depth & 1) == 0;
 
                 new Merger<>(null,
@@ -1386,9 +1678,9 @@ final class DualPivotQuicksort {
                     src ? low : low - offset,
                     b,
                     src ? low - offset : low,
-                    src ? mi - offset : mi,
-                    src ? mi - offset : mi,
-                    src ? low + size - offset : low + size
+                    src ? mid - offset : mid,
+                    src ? mid - offset : mid,
+                    src ? high - offset : high
                 ).invoke();
             }
         }
@@ -1404,7 +1696,7 @@ final class DualPivotQuicksort {
                 }
             } else {
                 addToPendingCount(1);
-                new Sorter<>(this, a, b, low, high - low, offset, depth).fork();
+                new Sorter<>(this, a, b, low, high, offset, depth).fork();
             }
         }
     }

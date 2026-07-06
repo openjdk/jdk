@@ -2,13 +2,16 @@
 
 javac -d . ../../../../../make/jdk/src/classes/build/tools/spp/Spp.java
 
+# NoRadixSort | WithRadixSort
+use_radix=NoRadixSort
+
 in=Sorting.java.template
 out=Sorting.java
 
 rm -rf $out
 
 gen() {
-    java build.tools.spp.Spp -nel -Dtype=$1 -DType=$2 -K$3 -K$4 -K$5 -K$6 -i$in -o$out
+    java build.tools.spp.Spp -nel -Dtype=$1 -DType=$2 -K$3 -K$4 -K$5 -K$6 -K$use_radix -i$in -o$out
 }
 
 gen ""     ""        Common1  ""                 ""          ""

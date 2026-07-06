@@ -113,6 +113,9 @@ public class Sorting {
 #end[AllTypes]
 #if[IntLongFloatDouble]
             set(SortingHelper.HEAP_SORT).testBase();
+#if[WithRadixSort]
+            set(SortingHelper.RADIX_SORT).testCore();
+#end[WithRadixSort]
 #end[IntLongFloatDouble]
 #if[ByteCharShort]
             set(SortingHelper.COUNTING_SORT).testCore();
@@ -356,7 +359,7 @@ public class Sorting {
         }
 
         private void print(String name, int m, Builder builder) {
-            out(name, "$Type$", test.length, sortingHelper, m, builder);
+            out(name, "$type$", test.length, sortingHelper, m, builder);
         }
 
         private static void swap($type$[] a, int i, int j) {

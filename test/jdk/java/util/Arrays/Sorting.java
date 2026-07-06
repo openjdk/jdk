@@ -320,7 +320,7 @@ public class Sorting {
         }
 
         private void print(String name, int m, Builder builder) {
-            out(name, "Integer", test.length, sortingHelper, m, builder);
+            out(name, "int", test.length, sortingHelper, m, builder);
         }
 
         private static void swap(int[] a, int i, int j) {
@@ -803,7 +803,7 @@ public class Sorting {
         }
 
         private void print(String name, int m, Builder builder) {
-            out(name, "Long", test.length, sortingHelper, m, builder);
+            out(name, "long", test.length, sortingHelper, m, builder);
         }
 
         private static void swap(long[] a, int i, int j) {
@@ -1283,7 +1283,7 @@ public class Sorting {
         }
 
         private void print(String name, int m, Builder builder) {
-            out(name, "Byte", test.length, sortingHelper, m, builder);
+            out(name, "byte", test.length, sortingHelper, m, builder);
         }
 
         private static void swap(byte[] a, int i, int j) {
@@ -1763,7 +1763,7 @@ public class Sorting {
         }
 
         private void print(String name, int m, Builder builder) {
-            out(name, "Character", test.length, sortingHelper, m, builder);
+            out(name, "char", test.length, sortingHelper, m, builder);
         }
 
         private static void swap(char[] a, int i, int j) {
@@ -2243,7 +2243,7 @@ public class Sorting {
         }
 
         private void print(String name, int m, Builder builder) {
-            out(name, "Short", test.length, sortingHelper, m, builder);
+            out(name, "short", test.length, sortingHelper, m, builder);
         }
 
         private static void swap(short[] a, int i, int j) {
@@ -2740,7 +2740,7 @@ public class Sorting {
         }
 
         private void print(String name, int m, Builder builder) {
-            out(name, "Float", test.length, sortingHelper, m, builder);
+            out(name, "float", test.length, sortingHelper, m, builder);
         }
 
         private static void swap(float[] a, int i, int j) {
@@ -3305,7 +3305,7 @@ public class Sorting {
         }
 
         private void print(String name, int m, Builder builder) {
-            out(name, "Double", test.length, sortingHelper, m, builder);
+            out(name, "double", test.length, sortingHelper, m, builder);
         }
 
         private static void swap(double[] a, int i, int j) {
