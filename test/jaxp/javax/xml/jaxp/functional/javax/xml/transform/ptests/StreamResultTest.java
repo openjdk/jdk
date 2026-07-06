@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,9 @@
  */
 package javax.xml.transform.ptests;
 
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Properties;
+import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -41,10 +35,14 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Properties;
 
-import org.testng.annotations.Test;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test a StreamResult using a file name that contains URL characters that need
@@ -53,7 +51,7 @@ import org.xml.sax.SAXException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.transform.ptests.StreamResultTest
+ * @run junit/othervm javax.xml.transform.ptests.StreamResultTest
  */
 public class StreamResultTest {
     /**
@@ -90,15 +88,15 @@ public class StreamResultTest {
                 DOMSource domSource = new DOMSource(document);
                 StreamSource streamSource = new StreamSource(new FileInputStream(xmlFile));
 
-                File streamResultFile = new File(USER_DIR + file);
+                File streamResultFile = new File(file);
                 StreamResult streamResult = new StreamResult(streamResultFile);
 
                 Transformer transformer = TransformerFactory.newInstance().newTransformer(domSource);
                 transformer.setOutputProperties(transformProperties);
                 transformer.transform(streamSource, streamResult);
             } catch (SAXException | IOException | ParserConfigurationException
-                    | TransformerException ex) {
-                failUnexpected(ex);
+                     | TransformerException ex) {
+                fail(ex);
             }
         });
     }

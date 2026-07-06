@@ -154,6 +154,7 @@ public:
   // entries for this region in other remsets.
   void clear(bool only_cardset = false, bool keep_tracked = false);
 
+  void reset_code_root_table_scanner();
   void reset_table_scanner();
 
   G1MonotonicArenaMemoryStats card_set_memory_stats() const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ void SATBMarkQueueSet::set_active_all_threads(bool active, bool expected_active)
       if (_active) {
         assert(queue.is_empty(), "queues should be empty when activated");
       } else {
-        queue.set_index(queue.current_capacity());
+        queue.set_empty();
       }
       queue.set_active(_active);
     }
@@ -363,7 +363,7 @@ size_t SATBMarkQueue::current_capacity() const {
 }
 
 void SATBMarkQueueSet::reset_queue(SATBMarkQueue& queue) {
-  queue.set_index(queue.current_capacity());
+  queue.set_empty();
 }
 
 void SATBMarkQueueSet::flush_queue(SATBMarkQueue& queue) {

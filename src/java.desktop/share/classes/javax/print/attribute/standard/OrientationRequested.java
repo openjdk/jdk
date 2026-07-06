@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,16 +73,17 @@ public final class OrientationRequested extends EnumSyntax
     private static final long serialVersionUID = -4447437289862822276L;
 
     /**
-     * The content will be imaged across the short edge of the medium.
+     * The content will be imaged across the default orientation of the medium.
+     * For almost all media this means across the short edge.
      */
     public static final OrientationRequested
         PORTRAIT = new OrientationRequested(3);
 
     /**
-     * The content will be imaged across the long edge of the medium. Landscape
-     * is defined to be a rotation of the print-stream page to be imaged by +90
+     * Landscape is defined to be a rotation of the print-stream page to be imaged by +90
      * degrees with respect to the medium (i.e. anti-clockwise) from the
-     * portrait orientation. <i>Note:</i> The +90 direction was chosen because
+     * portrait orientation. For almost all media this means across the long edge.
+     * <i>Note:</i> The +90 direction was chosen because
      * simple finishing on the long edge is the same edge whether portrait or
      * landscape.
      */
@@ -90,7 +91,7 @@ public final class OrientationRequested extends EnumSyntax
         LANDSCAPE = new OrientationRequested(4);
 
     /**
-     * The content will be imaged across the long edge of the medium, but in the
+     * The content will be imaged similarly, but in the
      * opposite manner from landscape. Reverse-landscape is defined to be a
      * rotation of the print-stream page to be imaged by -90 degrees with
      * respect to the medium (i.e. clockwise) from the portrait orientation.
@@ -102,7 +103,7 @@ public final class OrientationRequested extends EnumSyntax
         REVERSE_LANDSCAPE = new OrientationRequested(5);
 
     /**
-     * The content will be imaged across the short edge of the medium, but in
+     * The content will be imaged similarly to, but in
      * the opposite manner from portrait. Reverse-portrait is defined to be a
      * rotation of the print-stream page to be imaged by 180 degrees with
      * respect to the medium from the portrait orientation. <i>Note:</i> The
@@ -150,6 +151,7 @@ public final class OrientationRequested extends EnumSyntax
     /**
      * Returns the string table for class {@code OrientationRequested}.
      */
+    @Override
     protected String[] getStringTable() {
         return myStringTable;
     }
@@ -158,6 +160,7 @@ public final class OrientationRequested extends EnumSyntax
      * Returns the enumeration value table for class
      * {@code OrientationRequested}.
      */
+    @Override
     protected EnumSyntax[] getEnumValueTable() {
         return myEnumValueTable;
     }
@@ -166,6 +169,7 @@ public final class OrientationRequested extends EnumSyntax
      * Returns the lowest integer value used by class
      * {@code OrientationRequested}.
      */
+    @Override
     protected int getOffset() {
         return 3;
     }
@@ -180,6 +184,7 @@ public final class OrientationRequested extends EnumSyntax
      * @return printing attribute class (category), an instance of class
      *         {@link Class java.lang.Class}
      */
+    @Override
     public final Class<? extends Attribute> getCategory() {
         return OrientationRequested.class;
     }
@@ -193,6 +198,7 @@ public final class OrientationRequested extends EnumSyntax
      *
      * @return attribute category name
      */
+    @Override
     public final String getName() {
         return "orientation-requested";
     }

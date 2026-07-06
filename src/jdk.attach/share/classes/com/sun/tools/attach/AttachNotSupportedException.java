@@ -62,17 +62,4 @@ public class AttachNotSupportedException extends Exception {
         super(s);
     }
 
-    /**
-     * Constructs an <code>AttachNotSupportedException</code> with
-     * the specified cause.
-     *
-     * @param   message the detail message.
-     * @param   cause   the cause of this exception.
-     *
-     * @since 27
-     */
-    public AttachNotSupportedException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
 }

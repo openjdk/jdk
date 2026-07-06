@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/recordComponent.hpp"
+#include "oops/trainingData.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
@@ -273,6 +274,10 @@ void VM_RedefineClasses::doit() {
   for (int i = 0; i < _class_count; i++) {
     redefine_single_class(current, _class_defs[i].klass, _scratch_classes[i]);
   }
+
+#if INCLUDE_CDS
+  TrainingData::cleanup_after_redefinition();
+#endif
 
   // Flush all compiled code that depends on the classes redefined.
   flush_dependent_code();
@@ -1481,6 +1486,8 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
       } else {
         return JVMTI_ERROR_INTERNAL;
       }
+    } else if (res != JVMTI_ERROR_NONE) {
+      return res;
     }
 
 #ifdef ASSERT
@@ -2045,7 +2052,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_record_attribute(InstanceKlass* scra
       AnnotationArray* type_annotations = component->type_annotations();
       if (type_annotations != nullptr && type_annotations->length() != 0) {
         int byte_i = 0;  // byte index into annotations
-        if (!rewrite_cp_refs_in_annotations_typeArray(type_annotations, byte_i)) {
+        if (!rewrite_cp_refs_in_type_annotations_typeArray(type_annotations, byte_i, "record_info")) {
           log_debug(redefine, class, annotation)("bad record_component_type_annotations at %d", i);
           // propagate failure back to caller
           return false;
@@ -4537,7 +4544,7 @@ void VM_RedefineClasses::dump_methods() {
     LogStreamHandle(Trace, redefine, class, dump) log_stream;
     Method* m = _old_methods->at(j);
     log_stream.print("%4d  (%5d)  ", j, m->vtable_index());
-    m->access_flags().print_on(&log_stream);
+    m->print_access_flags(&log_stream);
     log_stream.print(" --  ");
     m->print_name(&log_stream);
     log_stream.cr();
@@ -4547,7 +4554,7 @@ void VM_RedefineClasses::dump_methods() {
     LogStreamHandle(Trace, redefine, class, dump) log_stream;
     Method* m = _new_methods->at(j);
     log_stream.print("%4d  (%5d)  ", j, m->vtable_index());
-    m->access_flags().print_on(&log_stream);
+    m->print_access_flags(&log_stream);
     log_stream.print(" --  ");
     m->print_name(&log_stream);
     log_stream.cr();
@@ -4557,14 +4564,14 @@ void VM_RedefineClasses::dump_methods() {
     LogStreamHandle(Trace, redefine, class, dump) log_stream;
     Method* m = _matching_old_methods[j];
     log_stream.print("%4d  (%5d)  ", j, m->vtable_index());
-    m->access_flags().print_on(&log_stream);
+    m->print_access_flags(&log_stream);
     log_stream.print(" --  ");
     m->print_name();
     log_stream.cr();
 
     m = _matching_new_methods[j];
     log_stream.print("      (%5d)  ", m->vtable_index());
-    m->access_flags().print_on(&log_stream);
+    m->print_access_flags(&log_stream);
     log_stream.cr();
   }
   log_trace(redefine, class, dump)("_deleted_methods --");
@@ -4572,7 +4579,7 @@ void VM_RedefineClasses::dump_methods() {
     LogStreamHandle(Trace, redefine, class, dump) log_stream;
     Method* m = _deleted_methods[j];
     log_stream.print("%4d  (%5d)  ", j, m->vtable_index());
-    m->access_flags().print_on(&log_stream);
+    m->print_access_flags(&log_stream);
     log_stream.print(" --  ");
     m->print_name(&log_stream);
     log_stream.cr();
@@ -4582,7 +4589,7 @@ void VM_RedefineClasses::dump_methods() {
     LogStreamHandle(Trace, redefine, class, dump) log_stream;
     Method* m = _added_methods[j];
     log_stream.print("%4d  (%5d)  ", j, m->vtable_index());
-    m->access_flags().print_on(&log_stream);
+    m->print_access_flags(&log_stream);
     log_stream.print(" --  ");
     m->print_name(&log_stream);
     log_stream.cr();

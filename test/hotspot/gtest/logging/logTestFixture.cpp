@@ -116,7 +116,7 @@ void LogTestFixture::clear_snapshot() {
   for (size_t i = 0; i < _n_snapshots; i++) {
     os::free(_configuration_snapshot[i]);
   }
-  FREE_C_HEAP_ARRAY(char*, _configuration_snapshot);
+  FREE_C_HEAP_ARRAY(_configuration_snapshot);
   _configuration_snapshot = nullptr;
   _n_snapshots = 0;
 }

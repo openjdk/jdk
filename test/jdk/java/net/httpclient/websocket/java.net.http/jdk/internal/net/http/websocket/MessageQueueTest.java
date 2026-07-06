@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,6 @@
 
 package jdk.internal.net.http.websocket;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -46,10 +43,14 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import static jdk.internal.net.http.websocket.MessageQueue.effectiveCapacityOf;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * A unit test for MessageQueue. The test is aware of the details of the queue
@@ -59,7 +60,6 @@ public class MessageQueueTest {
 
     private static final Random r = new SecureRandom();
 
-    @DataProvider(name = "illegalCapacities")
     public static Object[][] illegalCapacities() {
         return new Object[][]{
                 new Object[]{Integer.MIN_VALUE},
@@ -69,17 +69,20 @@ public class MessageQueueTest {
         };
     }
 
-    @Test(dataProvider = "illegalCapacities")
+    @ParameterizedTest
+    @MethodSource("illegalCapacities")
     public void illegalCapacity(int n) {
         assertThrows(IllegalArgumentException.class, () -> new MessageQueue(n));
     }
 
-    @Test(dataProvider = "capacities")
+    @ParameterizedTest
+    @MethodSource("capacities")
     public void emptiness(int n) {
         assertTrue(new MessageQueue(n).isEmpty());
     }
 
-    @Test(dataProvider = "capacities")
+    @ParameterizedTest
+    @MethodSource("capacities")
     public void fullness(int n) throws IOException {
         MessageQueue q = new MessageQueue(n);
         int cap = effectiveCapacityOf(n);
@@ -97,7 +100,7 @@ public class MessageQueueTest {
         for (int i = 0; i < cap; i++) {
             Message expected = referenceQueue.remove();
             Message actual = new Remover().removeFrom(q);
-            assertEquals(actual, expected);
+            assertEquals(expected, actual);
         }
     }
 
@@ -144,7 +147,8 @@ public class MessageQueueTest {
                            action, future);
     }
 
-    @Test(dataProvider = "capacities")
+    @ParameterizedTest
+    @MethodSource("capacities")
     public void caterpillarWalk(int n) throws IOException {
 //        System.out.println("n: " + n);
         int cap = effectiveCapacityOf(n);
@@ -164,7 +168,7 @@ public class MessageQueueTest {
                 for (int i = 0; i < p; i++) {
                     Message expected = referenceQueue.remove();
                     Message actual = remover.removeFrom(q);
-                    assertEquals(actual, expected);
+                    assertEquals(expected, actual);
                 }
                 assertTrue(q.isEmpty());
             }
@@ -243,7 +247,7 @@ public class MessageQueueTest {
                     f.get();    // Just to check for exceptions
                 }
                 consumer.get(); // Waiting for consumer to collect all the messages
-                assertEquals(actualList.size(), expectedList.size());
+                assertEquals(expectedList.size(), actualList.size());
                 for (Message m : expectedList) {
                     assertTrue(actualList.remove(m));
                 }
@@ -257,7 +261,8 @@ public class MessageQueueTest {
         }
     }
 
-    @Test(dataProvider = "capacities")
+    @ParameterizedTest
+    @MethodSource("capacities")
     public void testSingleThreaded(int n) throws IOException {
         Queue<Message> referenceQueue = new LinkedList<>();
         MessageQueue q = new MessageQueue(n);
@@ -271,13 +276,12 @@ public class MessageQueueTest {
         for (int i = 0; i < cap; i++) {
             Message expected = referenceQueue.remove();
             Message actual = new Remover().removeFrom(q);
-            assertEquals(actual, expected);
+            assertEquals(expected, actual);
         }
         assertTrue(q.isEmpty());
     }
 
-    @DataProvider(name = "capacities")
-    public Object[][] capacities() {
+    public static Object[][] capacities() {
         return new Object[][]{
                 new Object[]{  1},
                 new Object[]{  2},

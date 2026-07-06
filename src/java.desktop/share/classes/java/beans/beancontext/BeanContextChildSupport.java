@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * property
      * @throws PropertyVetoException if the change is rejected
      */
+    @Override
     public synchronized void setBeanContext(BeanContext bc) throws PropertyVetoException {
         if (bc == beanContext) return;
 
@@ -146,6 +147,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * @return the nesting {@code BeanContext} for
      * this {@code BeanContextChildSupport}.
      */
+    @Override
     public synchronized BeanContext getBeanContext() { return beanContext; }
 
     /**
@@ -159,6 +161,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * @param name The name of the property to listen on
      * @param pcl The {@code PropertyChangeListener} to be added
      */
+    @Override
     public void addPropertyChangeListener(String name, PropertyChangeListener pcl) {
         pcSupport.addPropertyChangeListener(name, pcl);
     }
@@ -176,6 +179,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * @param name The name of the property that was listened on
      * @param pcl The PropertyChangeListener to be removed
      */
+    @Override
     public void removePropertyChangeListener(String name, PropertyChangeListener pcl) {
         pcSupport.removePropertyChangeListener(name, pcl);
     }
@@ -191,6 +195,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * @param name The name of the property to listen on
      * @param vcl The {@code VetoableChangeListener} to be added
      */
+    @Override
     public void addVetoableChangeListener(String name, VetoableChangeListener vcl) {
         vcSupport.addVetoableChangeListener(name, vcl);
     }
@@ -208,6 +213,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * @param name The name of the property that was listened on
      * @param vcl The {@code VetoableChangeListener} to be removed
      */
+    @Override
     public void removeVetoableChangeListener(String name, VetoableChangeListener vcl) {
         vcSupport.removeVetoableChangeListener(name, vcl);
     }
@@ -220,6 +226,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * @param bcsre The {@code BeanContextServiceRevokedEvent} fired as a
      * result of a service being revoked
      */
+    @Override
     public void serviceRevoked(BeanContextServiceRevokedEvent bcsre) { }
 
     /**
@@ -231,6 +238,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * result of a service becoming available
      *
      */
+    @Override
     public void serviceAvailable(BeanContextServiceAvailableEvent bcsae) { }
 
     /**

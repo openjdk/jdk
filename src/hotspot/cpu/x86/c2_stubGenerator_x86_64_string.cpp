@@ -28,6 +28,7 @@
 #include "oops/arrayOop.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "runtime/stubRoutines.hpp"
 
 /******************************************************************************/
 //                     String handling intrinsics
@@ -98,7 +99,8 @@
     __ blsrl(mask, mask);    \
   }
 
-#define NUMBER_OF_CASES 10
+#define NUMBER_OF_CASES StubRoutines::x86::STRING_INDEXOF_NUMBER_OF_CASES
+#define TABLE_COUNT StubRoutines::x86::STRING_INDEXOF_TABLE_COUNT
 
 #undef STACK_SPACE
 #undef MAX_NEEDLE_LEN_TO_EXPAND
@@ -186,9 +188,9 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
 ////////////////////////////////////////////////////////////////////////////////////////
 
 void StubGenerator::generate_string_indexof(address *fnptrs) {
-  assert((int) StrIntrinsicNode::LL < 4, "Enum out of range");
-  assert((int) StrIntrinsicNode::UL < 4, "Enum out of range");
-  assert((int) StrIntrinsicNode::UU < 4, "Enum out of range");
+  assert((int) StrIntrinsicNode::LL < TABLE_COUNT, "Enum out of range");
+  assert((int) StrIntrinsicNode::UL < TABLE_COUNT, "Enum out of range");
+  assert((int) StrIntrinsicNode::UU < TABLE_COUNT, "Enum out of range");
   generate_string_indexof_stubs(this, fnptrs, StrIntrinsicNode::LL, _masm);
   generate_string_indexof_stubs(this, fnptrs, StrIntrinsicNode::UU, _masm);
   generate_string_indexof_stubs(this, fnptrs, StrIntrinsicNode::UL, _masm);
@@ -206,6 +208,33 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   assert(isLL || isUL || isUU, "Encoding not recognized");
 
   StubId stub_id = (isLL ?  StubId::stubgen_string_indexof_linear_ll_id : (isUL ? StubId::stubgen_string_indexof_linear_ul_id : StubId::stubgen_string_indexof_linear_uu_id));
+
+  // Addresses of the two jump tables used for small needle processing
+  address *big_jump_table = StubRoutines::x86::big_jump_table_base(ae);
+  address *small_jump_table = StubRoutines::x86::big_jump_table_base(ae);
+
+  // If the stub has been cached we can retrieve the stub entry.  The
+  // target addresses we need to install into the jump tables will
+  // also have been cached, as extra addresses rather than secondary
+  // entries because they are only used internally to this stub.
+
+  assert(StubInfo::entry_count(stub_id) == 1, "sanity check");
+  GrowableArray<address> extras;
+  const int expected_extra_count = 2 * NUMBER_OF_CASES;
+  address start = stubgen->load_archive_data(stub_id, nullptr, &extras);
+  if (start != nullptr) {
+    assert(extras.length() == expected_extra_count,
+           "expecting %d extra addresses but got %d!",
+           expected_extra_count,
+           extras.length());
+    fnptrs[ae] = start;
+    for (int i = 0; i < NUMBER_OF_CASES; i++) {
+      big_jump_table[i]= extras.at(i);
+      small_jump_table[i]= extras.at(NUMBER_OF_CASES + i);
+    }
+    return;
+  }
+
   StubCodeMark mark(stubgen, stub_id);
   // Keep track of isUL since we need to generate UU code in the main body
   // for the case where we expand the needle from bytes to words on the stack.
@@ -253,10 +282,6 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   const Register needle_p       = c_rarg2;
   const Register needle_len_p   = c_rarg3;
 
-  // Addresses of the two jump tables used for small needle processing
-  address big_jump_table;
-  address small_jump_table;
-
   Label L_begin;
 
   Label L_returnError, L_bigCaseFixupAndReturn;
@@ -265,7 +290,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   Label L_wcharBegin, L_continue, L_wideNoExpand, L_returnR11;
 
   __ align(CodeEntryAlignment);
-  fnptrs[ae] = __ pc();
+  start = __ pc();
   __ enter();  // required for proper stackwalking of RuntimeStub frame
 
   // Check for trivial cases
@@ -311,8 +336,8 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   }
 
   // Set up jump tables.  Used when needle size <= NUMBER_OF_CASES
-  setup_jump_tables(ae, L_returnError, L_returnR11, L_bigCaseFixupAndReturn, &big_jump_table,
-                    &small_jump_table, _masm);
+  setup_jump_tables(ae, L_returnError, L_returnR11, L_bigCaseFixupAndReturn, big_jump_table,
+                    small_jump_table, _masm);
 
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -422,7 +447,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   __ leaq(r13, Address(save_ndl_len, -1));
   __ cmpq(r13, NUMBER_OF_CASES - 1);
   __ ja(L_smallCaseDefault);
-  __ lea(r15, InternalAddress(small_jump_table));
+  __ lea(r15, ExternalAddress((address)small_jump_table));
   __ jmp(Address(r15, r13, Address::times_8));
 
   // Dispatch to handlers for small needle and large haystack
@@ -431,7 +456,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   __ leaq(rax, Address(save_ndl_len, -1));
   __ cmpq(rax, NUMBER_OF_CASES - 1);
   __ ja(L_bigCaseDefault);
-  __ lea(r15, InternalAddress(big_jump_table));
+  __ lea(r15, ExternalAddress((address)big_jump_table));
   __ jmp(Address(r15, rax, Address::times_8));
 
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -941,6 +966,23 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
       __ jmp(L_returnR11);
     }
   }
+
+  // Record and possibly cache the entry address. In the latter case
+  // the target addresses installed into the jump tables also need to
+  // be cached, as extra addresses rather than secondary entries
+  // because they are only used internally to this stub.
+
+  for (int i = 0; i < NUMBER_OF_CASES; i++) {
+    extras.append(big_jump_table[i]);
+  }
+  for (int i = 0; i < NUMBER_OF_CASES; i++) {
+    extras.append(small_jump_table[i]);
+  }
+  stubgen->store_archive_data(stub_id, start, __ pc(), nullptr, &extras);
+
+  // x86 consumes the stub via a shared (i.e. non-cpu specific) static
+  // array
+  fnptrs[ae] = start;
 
   return;
 }
@@ -1722,8 +1764,8 @@ static void copy_to_stack(Register haystack, Register haystack_len, bool isU,
 // L_error - Label to branch to if no match found
 // L_checkRange - label to jump to when match found.  Checks validity of returned index
 // L_fixup - Jump to here for big cases.  Return value is pointer to matching haystack byte
-// *big_jump_table - Address of pointer to the first element of big jump table
-// *small_jump_table - Address of pointer to the first element of small jump table
+// big_jump_table - jump table to be populated with jump addresses
+// small_jump_table - jump table to be populated with jump addresses
 // _masm - Current MacroAssembler instance pointer
 
 static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, Label &L_checkRange,
@@ -1734,8 +1776,6 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
   bool isU = isUL || isUU;  // At least one is UTF-16
   const XMMRegister byte_1 = XMM_BYTE_1;
 
-  address big_hs_jmp_table[NUMBER_OF_CASES];    // Jump table for large haystacks
-  address small_hs_jmp_table[NUMBER_OF_CASES];  // Jump table for small haystacks
   int jmp_ndx = 0;
 
   ////////////////////////////////////////////////
@@ -1786,7 +1826,7 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
     const Register rTmp = rax;
 
     for (int i = 6; i < NUMBER_OF_CASES; i++) {
-      small_hs_jmp_table[i] = __ pc();
+      small_jump_table[i] = __ pc();
       if (isU && ((i + 1) & 1)) {
         continue;
       } else {
@@ -1830,7 +1870,7 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
     const Register rTmp4 = r13;
 
     for (int i = 0; i < NUMBER_OF_CASES; i++) {
-      big_hs_jmp_table[i] = __ pc();
+      big_jump_table[i] = __ pc();
       if (isU && ((i + 1) & 1)) {
         continue;
       } else {
@@ -1842,24 +1882,6 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
                             rTmp4, ae, _masm);
       }
     }
-  }
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  // JUMP TABLES
-  __ align(8);
-
-  *big_jump_table = __ pc();
-
-  for (jmp_ndx = 0; jmp_ndx < NUMBER_OF_CASES; jmp_ndx++) {
-    __ emit_address(big_hs_jmp_table[jmp_ndx]);
-  }
-
-  *small_jump_table = __ pc();
-
-  for (jmp_ndx = 0; jmp_ndx < NUMBER_OF_CASES; jmp_ndx++) {
-    __ emit_address(small_hs_jmp_table[jmp_ndx]);
   }
 }
 

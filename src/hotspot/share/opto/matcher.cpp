@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2385,7 +2385,8 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       break;
     }
     case Op_VectorBlend:
-    case Op_VectorInsert: {
+    case Op_VectorInsert:
+    case Op_VectorBitwiseBlend: {
       Node* pair = new BinaryNode(n->in(1), n->in(2));
       n->set_req(1, pair);
       n->set_req(2, n->in(3));
@@ -2550,7 +2551,7 @@ bool Matcher::gen_narrow_oop_implicit_null_checks() {
   // Advice matcher to perform null checks on the narrow oop side.
   // Implicit checks are not possible on the uncompressed oop side anyway
   // (at least not for read accesses).
-  // Performs significantly better (especially on Power 6).
+  // Performs significantly better.
   if (!os::zero_page_read_protected()) {
     return true;
   }

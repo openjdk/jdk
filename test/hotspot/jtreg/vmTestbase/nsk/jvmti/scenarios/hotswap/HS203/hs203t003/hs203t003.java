@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public class hs203t003 extends RedefineAgent {
                 Thread.sleep(100);
             }
             // Wait for the thread to be suspended.
-            while (!isSuspended(mt)) {
+            while (!isSuspended(mt.getThread())) {
                 if (!agentStatus()) {
                     System.out.println("Failed to suspend thread");
                     return passed;
@@ -101,12 +101,12 @@ public class hs203t003 extends RedefineAgent {
                 Thread.sleep(100);
             }
             // Pop the frame.
-            if (!popThreadFrame(mt)) {
+            if (!popThreadFrame(mt.getThread())) {
                 System.out.println("Failed to pop a frame = "
                                    + mt.threadState);
             }
             // Resume the thread.
-            if(!resumeThread(mt)) {
+            if(!resumeThread(mt.getThread())) {
                 System.out.println("Failed to resume the thread = "
                                    + mt.threadState);
             }

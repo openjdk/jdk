@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @build jdk.test.lib.net.SimpleSSLContext
  * @run junit/othervm
  *            -Djdk.httpclient.HttpClient.log=errors,headers,quic:hs,http3
- *            H3GoAwayTest
+ *            ${test.main.class}
  */
 public class H3GoAwayTest {
 

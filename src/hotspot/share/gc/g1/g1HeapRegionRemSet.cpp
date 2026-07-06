@@ -87,8 +87,12 @@ void G1HeapRegionRemSet::clear(bool only_cardset, bool keep_tracked) {
   }
 }
 
-void G1HeapRegionRemSet::reset_table_scanner() {
+void G1HeapRegionRemSet::reset_code_root_table_scanner() {
   _code_roots.reset_table_scanner();
+}
+
+void G1HeapRegionRemSet::reset_table_scanner() {
+  reset_code_root_table_scanner();
   if (has_cset_group()) {
     card_set()->reset_table_scanner();
   }

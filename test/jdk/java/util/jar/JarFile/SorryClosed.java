@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,43 +24,49 @@
 /* @test
  * @bug 4910572
  * @summary Accessing a closed jar file should generate IllegalStateException.
- * @author Martin Buchholz
+ * @run junit SorryClosed
 */
+
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.File;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class SorryClosed {
-    public static void main(String args[]) throws IOException {
 
-        File file = new File(System.getProperty("test.src","."), "test.jar");
-        String testEntryName = "test.class";
+    private static final File file = new File(System.getProperty("test.src", "."), "test.jar");
+    private static final String testEntryName = "test.class";
 
-        try {
-            JarFile f = new JarFile(file);
-            ZipEntry e = f.getEntry(testEntryName);
-            f.close();
-            f.getInputStream(e);
-        } catch (IllegalStateException e) {} // OK
+    @Test
+    void getInputStreamTest() throws IOException {
+        JarFile f = new JarFile(file);
+        ZipEntry e = f.getEntry(testEntryName);
+        f.close();
+        assertThrows(IllegalStateException.class, () -> f.getInputStream(e));
+    }
 
-        try {
-            JarFile f = new JarFile(file);
-            f.close();
-            f.getEntry(testEntryName);
-        } catch (IllegalStateException e) {} // OK
+    @Test
+    void getEntryTest() throws IOException {
+        JarFile f = new JarFile(file);
+        f.close();
+        assertThrows(IllegalStateException.class, () -> f.getEntry(testEntryName));
+    }
 
-        try {
-            JarFile f = new JarFile(file);
-            f.close();
-            f.getJarEntry(testEntryName);
-        } catch (IllegalStateException e) {} // OK
+    @Test
+    void getJarEntryTest() throws IOException {
+        JarFile f = new JarFile(file);
+        f.close();
+        assertThrows(IllegalStateException.class, () -> f.getJarEntry(testEntryName));
+    }
 
-        try {
-            JarFile f = new JarFile(file);
-            f.close();
-            f.getManifest();
-        } catch (IllegalStateException e) {} // OK
+    @Test
+    void getManifestTest() throws IOException {
+        JarFile f = new JarFile(file);
+        f.close();
+        assertThrows(IllegalStateException.class, f::getManifest);
     }
 }

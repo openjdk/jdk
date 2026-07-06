@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,10 @@
 
 EXPORT void set_errno_V(int value) {
     errno = value;
+}
+
+EXPORT int noset_errno_V(int value) {
+    return 42;
 }
 
 EXPORT int set_errno_I(int value) {
@@ -71,6 +75,14 @@ struct SLLL {
 
 EXPORT struct SLLL set_errno_SLLL(int value) {
     errno = value;
+    struct SLLL s;
+    s.x = 42;
+    s.y = 42;
+    s.z = 42;
+    return s;
+}
+
+EXPORT struct SLLL noset_errno_SLLL(int value) {
     struct SLLL s;
     s.x = 42;
     s.y = 42;

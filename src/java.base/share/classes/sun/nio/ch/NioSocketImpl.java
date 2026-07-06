@@ -103,8 +103,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     private volatile boolean nonBlocking;
 
     // used by connect/read/write/accept, protected by stateLock
-    private long readerThread;
-    private long writerThread;
+    private Thread readerThread;
+    private Thread writerThread;
 
     // used when SO_REUSEADDR is emulated, protected by stateLock
     private boolean isReuseAddress;
@@ -218,7 +218,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     private FileDescriptor beginRead() throws SocketException {
         synchronized (stateLock) {
             ensureOpenAndConnected();
-            readerThread = NativeThread.current();
+            readerThread = NativeThread.threadToSignal();
             return fd;
         }
     }
@@ -229,7 +229,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
      */
     private void endRead(boolean completed) throws SocketException {
         synchronized (stateLock) {
-            readerThread = 0;
+            readerThread = null;
             int state = this.state;
             if (state == ST_CLOSING)
                 tryFinishClose();
@@ -370,7 +370,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     private FileDescriptor beginWrite() throws SocketException {
         synchronized (stateLock) {
             ensureOpenAndConnected();
-            writerThread = NativeThread.current();
+            writerThread = NativeThread.threadToSignal();
             return fd;
         }
     }
@@ -381,7 +381,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
      */
     private void endWrite(boolean completed) throws SocketException {
         synchronized (stateLock) {
-            writerThread = 0;
+            writerThread = null;
             int state = this.state;
             if (state == ST_CLOSING)
                 tryFinishClose();
@@ -511,7 +511,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             this.address = address;
             this.port = port;
 
-            readerThread = NativeThread.current();
+            readerThread = NativeThread.threadToSignal();
             return fd;
         }
     }
@@ -522,7 +522,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
      */
     private void endConnect(FileDescriptor fd, boolean completed) throws IOException {
         synchronized (stateLock) {
-            readerThread = 0;
+            readerThread = null;
             int state = this.state;
             if (state == ST_CLOSING)
                 tryFinishClose();
@@ -666,7 +666,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             ensureOpen();
             if (localport == 0)
                 throw new SocketException("Not bound");
-            readerThread = NativeThread.current();
+            readerThread = NativeThread.threadToSignal();
             return fd;
         }
     }
@@ -678,7 +678,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     private void endAccept(boolean completed) throws SocketException {
         synchronized (stateLock) {
             int state = this.state;
-            readerThread = 0;
+            readerThread = null;
             if (state == ST_CLOSING)
                 tryFinishClose();
             if (!completed && state >= ST_CLOSING)
@@ -844,7 +844,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
      */
     private boolean tryClose() throws IOException {
         assert Thread.holdsLock(stateLock) && state == ST_CLOSING;
-        if (readerThread == 0 && writerThread == 0) {
+        if (readerThread == null && writerThread == null) {
             try {
                 cleaner.clean();
             } catch (UncheckedIOException ioe) {
@@ -1143,8 +1143,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             ensureOpenAndConnected();
             if (!isInputClosed) {
                 Net.shutdown(fd, Net.SHUT_RD);
-                if (NativeThread.isVirtualThread(readerThread)) {
-                    Poller.stopPoll(fdVal(fd), Net.POLLIN);
+                if (readerThread != null && readerThread.isVirtual()) {
+                    Poller.stopPoll(readerThread);
                 }
                 isInputClosed = true;
             }
@@ -1157,8 +1157,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             ensureOpenAndConnected();
             if (!isOutputClosed) {
                 Net.shutdown(fd, Net.SHUT_WR);
-                if (NativeThread.isVirtualThread(writerThread)) {
-                    Poller.stopPoll(fdVal(fd), Net.POLLOUT);
+                if (writerThread != null && writerThread.isVirtual()) {
+                    Poller.stopPoll(writerThread);
                 }
                 isOutputClosed = true;
             }

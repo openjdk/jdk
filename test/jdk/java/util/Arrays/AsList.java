@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8155600
  * @summary Tests for Arrays.asList()
- * @run testng AsList
+ * @run junit AsList
  */
 
 import java.util.Arrays;
@@ -33,46 +33,35 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.stream.IntStream;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.fail;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AsList {
     /*
      * Iterator contract test
      */
-    @Test(dataProvider = "Arrays")
+    @ParameterizedTest
+    @MethodSource("arrays")
     public void testIterator(Object[] array) {
         Iterator<Object> itr = Arrays.asList(array).iterator();
-        for (int i = 0; i < array.length; i++) {
+        for (Object o : array) {
             assertTrue(itr.hasNext());
             assertTrue(itr.hasNext()); // must be idempotent
-            assertSame(array[i], itr.next());
-            try {
-                itr.remove();
-                fail("Remove must throw");
-            } catch (UnsupportedOperationException ex) {
-                // expected
-            }
+            assertSame(o, itr.next());
+            assertThrows(UnsupportedOperationException.class, itr::remove);
         }
-        assertFalse(itr.hasNext());
         for (int i = 0; i < 3; i++) {
             assertFalse(itr.hasNext());
-            try {
-                itr.next();
-                fail("Next succeed when there's no data left");
-            } catch (NoSuchElementException ex) {
-                // expected
-            }
+            assertThrows(NoSuchElementException.class, itr::next);
         }
     }
 
-    @DataProvider(name = "Arrays")
     public static Object[][] arrays() {
-        Object[][] arrays = {
+        return new Object[][] {
             { new Object[] { } },
             { new Object[] { 1 } },
             { new Object[] { null } },
@@ -87,7 +76,5 @@ public class AsList {
             { new Object[] { "a", "a", "a", "a" } },
             { IntStream.range(0, 100).boxed().toArray() }
         };
-
-        return arrays;
     }
 }

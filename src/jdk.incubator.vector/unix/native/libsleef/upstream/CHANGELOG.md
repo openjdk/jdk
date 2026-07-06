@@ -1,3 +1,52 @@
+## 3.8 - 2025-01-27
+The focus of this release has been to facilitate benchmarking in SLEEF.
+It does so by providing a benchmarking tool and a plotting tool to postprocess
+the results.
+AArch64 self-hosted runners have been added to CI. Following this, the Linux and
+compiler version have been updated.
+Fix inaccuracy issues in a few functions, failures with cpp checks and a few
+bugs.
+Finally, the project has been extended with a blog section and its first blog
+[post](https://sleef.org/2024/10/02/new-pulse.html).
+
+### Added
+- Add benchmark and plotting tool by @joanaxcruz in #589, #597, #608 and #609
+- Use Arm-hosted runners by @blapie in #581
+- Add blog section and first post. by @blapie in #582
+
+### Changed
+- Update GH runners to Ubuntu 24.04 and GCC14 by @blapie in #598, #599 and #601
+
+### Fixed
+- Fix cbrt on AArch32, and atanf(+-0) with gcc-13 by @shibatch in #592
+- Fix oflow bound in log1p(f), exp and pow by @blapie in #604 and #606
+- Work around removal of some PowerPC intrinsics in GCC 15 by @musicinmybrain in #612
+- Fix errors reported by cppcheck by @blapie in #595
+
+## 3.7 - 2024-09-17
+
+The focus of this release has been to meet open-source community standards.  It
+does so by providing Contributing Guidelines, Issues and Pull-Requests
+templates. Additionally, the documentation has been reworked to improve
+navigation (via search bar, side menu/panel, eased navigation on GitHub, ...)
+and maintainability (reduced line count, mostly markdown sources, ...). The
+website rendering is now delegated to a template customisable theme. See the
+new website at [sleef.org](https://sleef.org/), and [docs/](./docs) for the
+GitHub-rendered documentation. The release also provides various bug fixes on
+several targets, for CPU detection and in the benchmark infrastructure.
+
+### Added
+- Add issue and PR templates. by @blapie in https://github.com/shibatch/sleef/pull/565
+
+### Changed
+- Adjust scheduling of GHA workflows by @blapie in https://github.com/shibatch/sleef/pull/553
+- Port documentation from html to markdown by @blapie in https://github.com/shibatch/sleef/pull/564
+- Update acosh documentation by @joanaxcruz in https://github.com/shibatch/sleef/pull/572
+
+### Fixed
+- S/390: Use getauxval for detecting VXE2 to fix #560 by @Andreas-Krebbel in https://github.com/shibatch/sleef/pull/561
+- Revive micro-benchmarks for vector functions by @joanaxcruz in https://github.com/shibatch/sleef/pull/571
+
 ## 3.6.1 - 2024-06-10
 
 This patch release provides important bug fixes, including a fix

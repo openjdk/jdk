@@ -50,4 +50,9 @@ public final class ContainerMemoryUsageEvent extends AbstractPeriodicEvent {
     @Description("Amount of physical memory and swap space, in bytes, that is currently allocated in the current container")
     @DataAmount
     public long swapMemoryUsage;
+
+    @Label("Host Memory Usage")
+    @Description("Amount of physical memory, in bytes, that is currently allocated in the host system")
+    @DataAmount
+    public long hostMemoryUsage;
 }

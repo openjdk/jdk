@@ -483,7 +483,7 @@ the following standards:
     `-keystore` option is relevant for signing and verifying a JAR file. In
     addition, aliases are specified when signing and verifying a JAR file.
 
-`-keystore` *url*
+[`-keystore`]{#option-keystore} *url*
 :   Specifies the URL that tells the keystore location. This defaults to the
     file `.keystore` in the user's home directory, as determined by the
     `user.home` system property.
@@ -517,7 +517,7 @@ the following standards:
 
     >   `keytool -keystore NONE -storetype PKCS11 -list`
 
-`-storepass` \[`:env` \| `:file`\] *argument*
+[`-storepass`]{#option-storepass} \[`:env` \| `:file`\] *argument*
 :   Specifies the password that is required to access the keystore. This is
     only needed when signing (not verifying) a JAR file. In that case, if a
     `-storepass` option isn't provided at the command line, then the user is
@@ -536,7 +536,7 @@ the following standards:
     The password shouldn't be specified on the command line or in a script
     unless it is for testing purposes, or you are on a secure system.
 
-`-storetype` *storetype*
+[`-storetype`]{#option-storetype} *storetype*
 :   Specifies the type of keystore to be instantiated. The default keystore
     type is the one that is specified as the value of the `keystore.type`
     property in the security properties file, which is returned by the static
@@ -548,7 +548,7 @@ the following standards:
     (such as a dedicated PIN-pad or a biometric reader), then the `-protected`
     option must be specified and no password options can be specified.
 
-`-keypass` \[`:env` \| `:file`\] *argument* `-certchain` *file*
+[`-keypass`]{#option-keypass} \[`:env` \| `:file`\] *argument* `-certchain` *file*
 :   Specifies the password used to protect the private key of the keystore
     entry addressed by the alias specified on the command line. The password is
     required when using `jarsigner` to sign a JAR file. If no password is
@@ -568,7 +568,7 @@ the following standards:
     The password shouldn't be specified on the command line or in a script
     unless it is for testing purposes, or you are on a secure system.
 
-`-certchain` *file*
+[`-certchain`]{#option-certchain} *file*
 :   Specifies the certificate chain to be used when the certificate chain
     associated with the private key of the keystore entry that is addressed by
     the alias specified on the command line isn't complete. This can happen
@@ -579,7 +579,7 @@ the following standards:
     (also known as Base64 encoding) as defined by [Internet RFC 1421
     Certificate Encoding Standard](http://tools.ietf.org/html/rfc1421).
 
-`-sigfile` *file*
+[`-sigfile`]{#option-sigfile} *file*
 :   Specifies the base file name to be used for the generated `.SF` and signature block
     files. For example, if file is `DUKESIGN`, then the generated `.SF` and
     signature block files are named `DUKESIGN.SF` and `DUKESIGN.RSA`, and placed in the
@@ -598,10 +598,10 @@ the following standards:
     file name, then each such character is converted to an underscore (\_)
     character to form the file name.
 
-`-signedjar` *file*
+[`-signedjar`]{#option-signedjar} *file*
 :   Specifies the name of signed JAR file.
 
-`-digestalg` *algorithm*
+[`-digestalg`]{#option-digestalg} *algorithm*
 :   Specifies the name of the message digest algorithm to use when digesting
     the entries of a JAR file.
 
@@ -613,7 +613,7 @@ the following standards:
     specified algorithm or the user must specify one with the `-addprovider` or
     `-providerClass` options; otherwise, the command will not succeed.
 
-`-sigalg` *algorithm*
+[`-sigalg`]{#option-sigalg} *algorithm*
 :   Specifies the name of the signature algorithm to use to sign the JAR file.
 
     This algorithm must be compatible with the private key used to sign the
@@ -627,10 +627,10 @@ the following standards:
     For a list of standard signature algorithm names, see the Java Security
     Standard Algorithm Names Specification.
 
-`-verify`
+[`-verify`]{#option-verify}
 :   Verifies a signed JAR file.
 
-`-verbose`\[`:`*suboptions*\]
+[`-verbose`]{#option-verbose}\[`:`*suboptions*\]
 :   When the `-verbose` option appears on the command line, it indicates that
     the `jarsigner` use the verbose mode when signing or verifying with the
     suboptions determining how much information is shown. This causes the ,
@@ -654,7 +654,7 @@ the following standards:
     more)*. See [Example of Verifying a Signed JAR File] and [Example of
     Verification with Certificate Information].
 
-`-certs`
+[`-certs`]{#option-certs}
 :   If the `-certs` option appears on the command line with the `-verify` and
     `-verbose` options, then the output includes certificate information for
     each signer of the JAR file. This information includes the name of the type
@@ -669,14 +669,14 @@ the following standards:
     the alias name for the keystore entry for that signer is displayed in
     parentheses.
 
-`-revCheck`
+[`-revCheck`]{#option-revCheck}
 :   This option enables revocation checking of certificates when signing or
     verifying a JAR file. The `jarsigner` command attempts to make network
     connections to fetch OCSP responses and CRLs if the `-revCheck` option
     is specified on the command line. Note that revocation checks are not
     enabled unless this option is specified.
 
-`-tsa` *url*
+[`-tsa`]{#option-tsa} *url*
 :   If `-tsa http://example.tsa.url` appears on the command line when signing a
     JAR file then a time stamp is generated for the signature. The URL,
     `http://example.tsa.url`, identifies the location of the Time Stamping
@@ -689,7 +689,7 @@ the following standards:
     stamp token returned by the TSA is stored with the signature in the
     signature block file.
 
-`-tsacert` *alias*
+[`-tsacert`]{#option-tsacert} *alias*
 :   When `-tsacert` *alias* appears on the command line when signing a JAR
     file, a time stamp is generated for the signature. The alias identifies the
     TSA public key certificate in the keystore that is in effect. The entry's
@@ -699,7 +699,7 @@ the following standards:
     The TSA public key certificate must be present in the keystore when using
     the `-tsacert` option.
 
-`-tsapolicyid` *policyid*
+[`-tsapolicyid`]{#option-tsapolicyid} *policyid*
 :   Specifies the object identifier (OID) that identifies the policy ID to be
     sent to the TSA server. If this option isn't specified, no policy ID is
     sent and the TSA server will choose a default policy ID.
@@ -708,7 +708,7 @@ the following standards:
     Standardization Sector (ITU-T) standard. These identifiers are typically
     period-separated sets of non-negative digits like `1.2.3.4`, for example.
 
-`-tsadigestalg` *algorithm*
+[`-tsadigestalg`]{#option-tsadigestalg} *algorithm*
 :   Specifies the message digest algorithm that is used to generate the message
     imprint to be sent to the TSA server. If this option isn't specified,
     SHA-384 will be used.
@@ -718,7 +718,7 @@ the following standards:
     For a list of standard message digest algorithm names, see the Java Security
     Standard Algorithm Names Specification.
 
-`-internalsf`
+[`-internalsf`]{#option-internalsf}
 :   In the past, the signature block file generated when a JAR file
     was signed included a complete encoded copy of the `.SF` file (signature
     file) also generated. This behavior has been changed. To reduce the overall
@@ -728,7 +728,7 @@ the following standards:
     In practice, don't use the `-internalsf` option because it incurs higher
     overhead.
 
-`-sectionsonly`
+[`-sectionsonly`]{#option-sectionsonly}
 :   If the `-sectionsonly` option appears on the command line, then the `.SF`
     file (signature file) generated when a JAR file is signed doesn't include a
     header that contains a hash of the whole manifest file. It contains only
@@ -747,12 +747,12 @@ the following standards:
     The `-sectionsonly` option is primarily used for testing. It shouldn't be
     used other than for testing because using it incurs higher overhead.
 
-`-protected`
+[`-protected`]{#option-protected}
 :   Values can be either `true` or `false`. Specify `true` when a password must
     be specified through a protected authentication path such as a dedicated
     PIN reader.
 
-`-providerName` *providerName*
+[`-providerName`]{#option-providerName} *providerName*
 :   If more than one provider was configured in the `java.security` security
     properties file, then you can use the `-providerName` option to target a
     specific provider instance. The argument to this option is the name of the
@@ -768,7 +768,7 @@ the following standards:
     >   `jarsigner -keystore NONE -storetype PKCS11 -providerName
         SunPKCS11-SmartCard -list`
 
-`-addprovider` *name* \[`-providerArg` *arg*\]
+[`-addprovider`]{#option-addprovider} *name* \[`-providerArg` *arg*\]
 :   Adds a security provider by name (such as SunPKCS11) and an optional
     configure argument. The value of the security provider is the name of a
     security provider that is defined in a module.
@@ -782,7 +782,7 @@ the following standards:
     >   `jarsigner -keystore NONE -storetype PKCS11 -addprovider SunPKCS11
         -providerArg /mydir1/mydir2/token.config`
 
-`-providerClass` *provider-class-name* \[`-providerArg` *arg*\]
+[`-providerClass`]{#option-providerClass} *provider-class-name* \[`-providerArg` *arg*\]
 :   Used to specify the name of cryptographic service provider's master class
     file when the service provider isn't listed in the `java.security` security
     properties file. Adds a security provider by fully-qualified class name and
@@ -792,7 +792,7 @@ the following standards:
 
     The preferred way to load PKCS11 is by using modules. See `-addprovider`.
 
-`-providerPath` *classpath*
+[`-providerPath`]{#option-providerPath} *classpath*
 :   Used to specify the classpath for providers specified by the `-providerClass`
     option. Multiple paths should be separated by the system-dependent
     path-separator character.
@@ -804,13 +804,13 @@ the following standards:
     execution environment or memory usage. For a list of possible interpreter
     options, type `java -h` or `java -X` at the command line.
 
-`-strict`
+[`-strict`]{#option-strict}
 :   During the signing or verifying process, the command may issue warning
     messages. If you specify this option, the exit code of the tool reflects
     the severe warning messages that this command found. See [Errors and
     Warnings].
 
-`-conf` *url*
+[`-conf`]{#option-conf} *url*
 :   Specifies a pre-configured options file. Read the
     [keytool documentation](keytool.html#pre-configured-options-file) for
     details. The property keys supported are "jarsigner.all" for all actions,
@@ -818,7 +818,7 @@ the following standards:
     `jarsigner` arguments including the JAR file name and alias name(s) cannot
     be set in this file.
 
-`-version`
+[`-version`]{#option-version}
 :   Prints the program version.
 
 ## Errors and Warnings

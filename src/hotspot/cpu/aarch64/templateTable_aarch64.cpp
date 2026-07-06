@@ -96,10 +96,6 @@ static inline Address aaddress(Register r) {
   return iaddress(r);
 }
 
-static inline Address at_rsp() {
-  return Address(esp, 0);
-}
-
 // At top of Java expression stack which may be different than esp().  It
 // isn't for category 1 objects.
 static inline Address at_tos   () {
@@ -2626,7 +2622,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   // membar it's possible for a simple Dekker test to fail if loads
   // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only_no_jvmci()){
+  if (!CompilerConfig::is_c1_or_interpreter_only()){
     Label notVolatile;
     __ tbz(flags, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
@@ -3204,7 +3200,7 @@ void TemplateTable::fast_accessfield(TosState state)
   // membar it's possible for a simple Dekker test to fail if loads
   // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only_no_jvmci()) {
+  if (!CompilerConfig::is_c1_or_interpreter_only()) {
     Label notVolatile;
     __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
@@ -3267,7 +3263,7 @@ void TemplateTable::fast_xaccess(TosState state)
   // membar it's possible for a simple Dekker test to fail if loads
   // use LDR;DMB but stores use STLR.  This can happen if C2 compiles
   // the stores in one method and we interpret the loads in another.
-  if (!CompilerConfig::is_c1_or_interpreter_only_no_jvmci()) {
+  if (!CompilerConfig::is_c1_or_interpreter_only()) {
     Label notVolatile;
     __ load_unsigned_byte(r3, Address(r2, in_bytes(ResolvedFieldEntry::flags_offset())));
     __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
@@ -3370,7 +3366,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ load_klass(r0, recv);
 
   // profile this call
-  __ profile_virtual_call(r0, rlocals, r3);
+  __ profile_virtual_call(r0, rlocals);
 
   // get target Method & entry point
   __ lookup_virtual_method(r0, index, method);
@@ -3483,7 +3479,6 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ bind(notVFinal);
 
   // Get receiver klass into r3
-  __ restore_locals();
   __ load_klass(r3, r2);
 
   Label no_such_method;
@@ -3500,7 +3495,7 @@ void TemplateTable::invokeinterface(int byte_no) {
                              /*return_method=*/false);
 
   // profile this call
-  __ profile_virtual_call(r3, r13, r19);
+  __ profile_virtual_call(r3, r13);
 
   // Get declaring interface class from method, and itable index
 

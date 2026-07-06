@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,23 @@
 
 package datatype;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.testng.Assert;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm datatype.XMLGregorianCalendarTest
+ * @run junit/othervm datatype.XMLGregorianCalendarTest
  * @summary Test XMLGregorianCalendar.
  */
 public class XMLGregorianCalendarTest {
@@ -46,41 +50,26 @@ public class XMLGregorianCalendarTest {
 
     private static final int TEST_VALUE_PASS = 1;
 
+    private DatatypeFactory factory;
     private XMLGregorianCalendar calendar;
 
-    @BeforeMethod
-    public void setUp() {
-        try {
-            calendar = DatatypeFactory.newInstance().newXMLGregorianCalendar();
-        } catch (DatatypeConfigurationException dce) {
-            dce.printStackTrace();
-            Assert.fail("Failed to create instance of DatatypeFactory " + dce.getMessage());
-        }
+    @BeforeEach
+    public void setUp() throws DatatypeConfigurationException {
+        factory = DatatypeFactory.newInstance();
+        calendar = factory.newXMLGregorianCalendar();
     }
 
     @Test
     public final void testSetTime() {
 
-        /**
+        /*
          * Hour, minute, second values to test and expected result.
          */
         final int[] TEST_VALUES = { 24, 0, 0, TEST_VALUE_PASS, 24, 1, 0, TEST_VALUE_FAIL, 24, 0, 1, TEST_VALUE_FAIL, 24, DatatypeConstants.FIELD_UNDEFINED, 0,
                 TEST_VALUE_FAIL, 24, 0, DatatypeConstants.FIELD_UNDEFINED, TEST_VALUE_FAIL };
 
-        // create DatatypeFactory
-        DatatypeFactory datatypeFactory = null;
-        try {
-            datatypeFactory = DatatypeFactory.newInstance();
-        } catch (DatatypeConfigurationException datatypeConfigurationException) {
-            Assert.fail(datatypeConfigurationException.toString());
-        }
-
-        if (DEBUG) {
-            System.err.println("DatatypeFactory created: " + datatypeFactory.toString());
-        }
-
         // create XMLGregorianCalendar
-        XMLGregorianCalendar xmlGregorianCalendar = datatypeFactory.newXMLGregorianCalendar();
+        XMLGregorianCalendar xmlGregorianCalendar = factory.newXMLGregorianCalendar();
 
         // test each value
         for (int onTestValue = 0; onTestValue < TEST_VALUES.length; onTestValue = onTestValue + 4) {
@@ -95,24 +84,24 @@ public class XMLGregorianCalendarTest {
                 xmlGregorianCalendar.setTime(TEST_VALUES[onTestValue], TEST_VALUES[onTestValue + 1], TEST_VALUES[onTestValue + 2]);
 
                 if (DEBUG) {
-                    System.err.println("XMLGregorianCalendar created: \"" + xmlGregorianCalendar.toString() + "\"");
+                    System.err.println("XMLGregorianCalendar created: \"" + xmlGregorianCalendar + "\"");
                 }
 
                 // was this expected to fail?
                 if (TEST_VALUES[onTestValue + 3] == TEST_VALUE_FAIL) {
-                    Assert.fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2]
-                            + ") are invalid, " + "yet it created the XMLGregorianCalendar \"" + xmlGregorianCalendar.toString() + "\"");
+                    fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2]
+                            + ") are invalid, " + "yet it created the XMLGregorianCalendar \"" + xmlGregorianCalendar + "\"");
                 }
             } catch (Exception exception) {
 
                 if (DEBUG) {
-                    System.err.println("Exception in creating XMLGregorianCalendar: \"" + exception.toString() + "\"");
+                    System.err.println("Exception in creating XMLGregorianCalendar: \"" + exception + "\"");
                 }
 
                 // was this expected to succed?
                 if (TEST_VALUES[onTestValue + 3] == TEST_VALUE_PASS) {
-                    Assert.fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2]
-                            + ") are valid yet it failed with \"" + exception.toString() + "\"");
+                    fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2]
+                            + ") are valid yet it failed with \"" + exception + "\"");
                 }
                 // expected failure
             }
@@ -122,7 +111,7 @@ public class XMLGregorianCalendarTest {
     @Test
     public final void testSetHour() {
 
-        /**
+        /*
          * Hour values to test and expected result.
          */
         final int[] TEST_VALUES = {
@@ -133,20 +122,8 @@ public class XMLGregorianCalendarTest {
                 // violates Schema Errata
                 0, 0, 1, 24, TEST_VALUE_FAIL };
 
-        // create DatatypeFactory
-        DatatypeFactory datatypeFactory = null;
-        try {
-            datatypeFactory = DatatypeFactory.newInstance();
-        } catch (DatatypeConfigurationException datatypeConfigurationException) {
-            Assert.fail(datatypeConfigurationException.toString());
-        }
-
-        if (DEBUG) {
-            System.err.println("DatatypeFactory created: " + datatypeFactory.toString());
-        }
-
         // create XMLGregorianCalendar
-        XMLGregorianCalendar xmlGregorianCalendar = datatypeFactory.newXMLGregorianCalendar();
+        XMLGregorianCalendar xmlGregorianCalendar = factory.newXMLGregorianCalendar();
 
         // test each value
         for (int onTestValue = 0; onTestValue < TEST_VALUES.length; onTestValue = onTestValue + 5) {
@@ -163,25 +140,25 @@ public class XMLGregorianCalendarTest {
                 xmlGregorianCalendar.setHour(TEST_VALUES[onTestValue + 3]);
 
                 if (DEBUG) {
-                    System.err.println("XMLGregorianCalendar created: \"" + xmlGregorianCalendar.toString() + "\"");
+                    System.err.println("XMLGregorianCalendar created: \"" + xmlGregorianCalendar + "\"");
                 }
 
                 // was this expected to fail?
                 if (TEST_VALUES[onTestValue + 4] == TEST_VALUE_FAIL) {
-                    Assert.fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2] + ", "
-                            + TEST_VALUES[onTestValue + 3] + ") are invalid, " + "yet it created the XMLGregorianCalendar \"" + xmlGregorianCalendar.toString()
+                    fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2] + ", "
+                            + TEST_VALUES[onTestValue + 3] + ") are invalid, " + "yet it created the XMLGregorianCalendar \"" + xmlGregorianCalendar
                             + "\"");
                 }
             } catch (Exception exception) {
 
                 if (DEBUG) {
-                    System.err.println("Exception in creating XMLGregorianCalendar: \"" + exception.toString() + "\"");
+                    System.err.println("Exception in creating XMLGregorianCalendar: \"" + exception + "\"");
                 }
 
                 // was this expected to succed?
                 if (TEST_VALUES[onTestValue + 4] == TEST_VALUE_PASS) {
-                    Assert.fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2] + ", "
-                            + TEST_VALUES[onTestValue + 3] + ") are valid yet it failed with \"" + exception.toString() + "\"");
+                    fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2] + ", "
+                            + TEST_VALUES[onTestValue + 3] + ") are valid yet it failed with \"" + exception + "\"");
                 }
                 // expected failure
             }
@@ -190,38 +167,24 @@ public class XMLGregorianCalendarTest {
 
     @Test
     public void testEqualsWithDifferentObjectParam() {
-
-        Assert.assertFalse(calendar.equals(new Integer(0)), "equals method should return false for any object other" + " than XMLGregorianCalendar");
+        assertFalse(calendar.equals(new Integer(0)), "equals method should return false for any object other" + " than XMLGregorianCalendar");
     }
 
     @Test
     public void testEqualsWithNullObjectParam() {
-
-        Assert.assertFalse(calendar.equals(null), "equals method should return false for null parameter");
+        assertFalse(calendar.equals(null), "equals method should return false for null parameter");
     }
 
     @Test
     public void testEqualsWithEqualObjectParam() {
-
-        try {
-            Assert.assertTrue(calendar.equals(DatatypeFactory.newInstance().newXMLGregorianCalendar()), "equals method is expected to return true");
-        } catch (DatatypeConfigurationException dce) {
-            dce.printStackTrace();
-            Assert.fail("Failed to create instance of DatatypeFactory " + dce.getMessage());
-        }
+        assertTrue(calendar.equals(factory.newXMLGregorianCalendar()), "equals method is expected to return true");
     }
 
     @Test
     public void testToString() {
-        try {
-            String inputDateTime = "2006-10-23T22:15:01.000000135+08:00";
-            DatatypeFactory factory = DatatypeFactory.newInstance();
-            XMLGregorianCalendar calendar = factory.newXMLGregorianCalendar(inputDateTime);
-            String toStr = calendar.toString();
-            Assert.assertTrue(toStr.indexOf("E") == -1, "String value cannot contain exponent");
-        } catch (DatatypeConfigurationException dce) {
-            dce.printStackTrace();
-            Assert.fail("Failed to create instance of DatatypeFactory " + dce.getMessage());
-        }
+        String inputDateTime = "2006-10-23T22:15:01.000000135+08:00";
+        XMLGregorianCalendar calendar = factory.newXMLGregorianCalendar(inputDateTime);
+        String toStr = calendar.toString();
+        assertEquals(-1, toStr.indexOf("E"), "String value cannot contain exponent");
     }
 }

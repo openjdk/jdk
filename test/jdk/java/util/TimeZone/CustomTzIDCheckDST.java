@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,10 @@
  * @library /test/lib
  * @summary This test will ensure that daylight savings rules are followed
  * appropriately when setting a custom timezone ID via the TZ env variable.
- * @requires os.family != "windows"
+ * AIX is excluded because it uses a different timezone mapping mechanism
+ * through the tzmappings file; see AIXTzMappingTest.java for AIX-specific
+ * coverage.
+ * @requires os.family != "windows" & os.family != "aix"
  * @run main/othervm CustomTzIDCheckDST
  */
 

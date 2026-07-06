@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.AdditionalLauncher;
@@ -68,6 +69,22 @@ public class SigningAppImageTwoStepsTest {
         spec.test();
     }
 
+    @Test
+    public static void testAppStore() {
+
+        var sign = new SignKeyOptionWithKeychain(
+                SignKeyOption.Type.SIGN_KEY_USER_SHORT_NAME,
+                SigningBase.StandardCertificateRequest.CODESIGN,
+                SigningBase.StandardKeychain.MAIN.keychain());
+
+        var spec = new TestSpec(Optional.empty(), sign);
+
+        spec.signAppImage(spec.createAppImage(), Optional.of(cmd -> {
+            cmd.addArgument("--mac-app-store");
+        }));
+    }
+
+
     public record TestSpec(Optional<SignKeyOptionWithKeychain> signAppImage, SignKeyOptionWithKeychain sign) {
 
         public TestSpec {
@@ -91,6 +108,11 @@ public class SigningAppImageTwoStepsTest {
 
             TestSpec create() {
                 return new TestSpec(Optional.ofNullable(signAppImage), sign);
+            }
+
+            Builder keychain(SigningBase.StandardKeychain v) {
+                keychain = Objects.requireNonNull(v);
+                return this;
             }
 
             Builder certRequest(SigningBase.StandardCertificateRequest v) {
@@ -117,9 +139,10 @@ public class SigningAppImageTwoStepsTest {
                 return new SignKeyOptionWithKeychain(
                         signIdentityType,
                         certRequest,
-                        SigningBase.StandardKeychain.MAIN.keychain());
+                        keychain.keychain());
             }
 
+            private SigningBase.StandardKeychain keychain = SigningBase.StandardKeychain.MAIN;
             private SigningBase.StandardCertificateRequest certRequest = SigningBase.StandardCertificateRequest.CODESIGN;
             private SignKeyOption.Type signIdentityType = SignKeyOption.Type.SIGN_KEY_IDENTITY;
 
@@ -127,7 +150,7 @@ public class SigningAppImageTwoStepsTest {
             private SignKeyOptionWithKeychain sign;
         }
 
-        void test() {
+        JPackageCommand createAppImage() {
             var appImageCmd = JPackageCommand.helloAppImage()
                     .setFakeRuntime()
                     .setArgumentValue("--dest", TKit.createTempDirectory("appimage"));
@@ -144,17 +167,38 @@ public class SigningAppImageTwoStepsTest {
                 }, signOption.keychain());
             }, appImageCmd::execute);
 
-            var cmd = new JPackageCommand()
-                    .setPackageType(PackageType.IMAGE)
-                    .addArguments("--app-image", appImageCmd.outputBundle())
-                    .mutate(sign::addTo);
+            return appImageCmd;
+        }
 
-            cmd.executeAndAssertHelloAppImageCreated();
-            MacSignVerify.verifyAppImageSigned(cmd, sign.certRequest());
+        void signAppImage(JPackageCommand appImageCmd, Optional<Consumer<JPackageCommand>> mutator) {
+            Objects.requireNonNull(appImageCmd);
+            Objects.requireNonNull(mutator);
+
+            MacSign.withKeychain(keychain -> {
+                var cmd = new JPackageCommand()
+                        .setPackageType(PackageType.IMAGE)
+                        .usePredefinedAppImage(appImageCmd)
+                        .mutate(sign::addTo);
+
+                mutator.ifPresent(cmd::mutate);
+
+                cmd.executeAndAssertHelloAppImageCreated();
+                MacSignVerify.verifyAppImageSigned(cmd, sign.certRequest());
+            }, sign.keychain());
+        }
+
+        void test() {
+            signAppImage(createAppImage(), Optional.empty());
         }
     }
 
     public static Collection<Object[]> test() {
+
+        var signIdentityTypes = List.of(
+                SignKeyOption.Type.SIGN_KEY_USER_SHORT_NAME,
+                SignKeyOption.Type.SIGN_KEY_IDENTITY_APP_IMAGE,
+                SignKeyOption.Type.SIGN_KEY_IMPLICIT
+        );
 
         List<TestSpec> data = new ArrayList<>();
 
@@ -167,9 +211,12 @@ public class SigningAppImageTwoStepsTest {
                         .certRequest(SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD)
                         .signAppImage();
             });
-            for (var signIdentityType : SignKeyOption.Type.defaultValues()) {
+            for (var signIdentityType : signIdentityTypes) {
                 builder.signIdentityType(signIdentityType)
                         .certRequest(SigningBase.StandardCertificateRequest.CODESIGN);
+                if (signIdentityType == SignKeyOption.Type.SIGN_KEY_IMPLICIT) {
+                    builder.keychain(SigningBase.StandardKeychain.SINGLE);
+                }
                 data.add(builder.sign().create());
             }
         }

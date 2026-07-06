@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javax.swing.plaf.basic.BasicDesktopIconUI;
 /**
  * Windows icon for a minimized window on the desktop.
  */
-public final class WindowsDesktopIconUI extends BasicDesktopIconUI {
+public class WindowsDesktopIconUI extends BasicDesktopIconUI {
     private int width;
 
     public static ComponentUI createUI(JComponent c) {

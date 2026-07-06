@@ -53,8 +53,10 @@ public class SpecifySysLoaderProp {
         "-verbose:class",
         "-cp", appJar,
         "ReportMyLoader")
-      .assertNormalExit("[class,load] ReportMyLoader source: shared objects file",
-                        "ReportMyLoader's loader = jdk.internal.loader.ClassLoaders$AppClassLoader@");
+      .assertNormalExit(output -> {
+        output.shouldMatch(".class,load.*ReportMyLoader source: shared objects file");
+        output.shouldContain("ReportMyLoader's loader = jdk.internal.loader.ClassLoaders$AppClassLoader@");
+      });
 
     // (1) Try to execute the archive with -Djava.system.class.loader=no.such.Klass,
     //     it should fail
@@ -79,8 +81,8 @@ public class SpecifySysLoaderProp {
              "TestClassLoader.called = true", //<-but this proves that TestClassLoader was indeed called.
              "TestClassLoader: loadClass(\"ReportMyLoader\",") //<- this also proves that TestClassLoader was indeed called.
       .assertNormalExit(output -> {
-        output.shouldMatch(".class,load. TestClassLoader source: file:");
-        output.shouldMatch(".class,load. ReportMyLoader source: file:.*" + jarFileName);
+        output.shouldMatch(".class,load.*TestClassLoader source: file:");
+        output.shouldMatch(".class,load.*ReportMyLoader source: file:.*" + jarFileName);
         output.shouldContain("full module graph: disabled due to incompatible property: java.system.class.loader=");
         });
 
@@ -91,9 +93,11 @@ public class SpecifySysLoaderProp {
         "-verbose:class",
         "-cp", appJar,
         "TrySwitchMyLoader")
-      .assertNormalExit("[class,load] ReportMyLoader source: shared objects file",
-             "TrySwitchMyLoader's loader = jdk.internal.loader.ClassLoaders$AppClassLoader@",
-             "ReportMyLoader's loader = jdk.internal.loader.ClassLoaders$AppClassLoader@",
-             "TestClassLoader.called = false");
+      .assertNormalExit(output -> {
+        output.shouldMatch(".class,load.*ReportMyLoader source: shared objects file");
+        output.shouldContain("TrySwitchMyLoader's loader = jdk.internal.loader.ClassLoaders$AppClassLoader@");
+        output.shouldContain("ReportMyLoader's loader = jdk.internal.loader.ClassLoaders$AppClassLoader@");
+        output.shouldContain("TestClassLoader.called = false");
+      });
   }
 }

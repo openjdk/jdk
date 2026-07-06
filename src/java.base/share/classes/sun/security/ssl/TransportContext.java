@@ -269,7 +269,7 @@ final class TransportContext implements ConnectionContext {
             try {
                 outputRecord.encodeAlert(Alert.Level.WARNING.level, alert.id);
             } catch (IOException ioe) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning(
                         "Warning: failed to send warning alert " + alert, ioe);
                 }
@@ -329,7 +329,7 @@ final class TransportContext implements ConnectionContext {
         // so we'll do it here.
         if (closeReason != null) {
             if (cause == null) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning(
                             "Closed transport, general or untracked problem");
                 }
@@ -340,7 +340,7 @@ final class TransportContext implements ConnectionContext {
             if (cause instanceof SSLException) {
                 throw (SSLException)cause;
             } else {    // unlikely, but just in case.
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning(
                             "Closed transport, unexpected rethrowing", cause);
                 }
@@ -363,7 +363,7 @@ final class TransportContext implements ConnectionContext {
         }
 
         // shutdown the transport
-        if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
             SSLLogger.severe("Fatal (" + alert + "): " + diagnostic, cause);
         }
 
@@ -379,7 +379,7 @@ final class TransportContext implements ConnectionContext {
         try {
             inputRecord.close();
         } catch (IOException ioe) {
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.warning("Fatal: input record closure failed", ioe);
             }
 
@@ -410,7 +410,7 @@ final class TransportContext implements ConnectionContext {
             try {
                 outputRecord.encodeAlert(Alert.Level.FATAL.level, alert.id);
             } catch (IOException ioe) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning(
                         "Fatal: failed to send fatal alert " + alert, ioe);
                 }
@@ -423,7 +423,7 @@ final class TransportContext implements ConnectionContext {
         try {
             outputRecord.close();
         } catch (IOException ioe) {
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.warning("Fatal: output record closure failed", ioe);
             }
 
@@ -439,7 +439,7 @@ final class TransportContext implements ConnectionContext {
         try {
             transport.shutdown();
         } catch (IOException ioe) {
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.warning("Fatal: transport closure failed", ioe);
             }
 
@@ -525,7 +525,7 @@ final class TransportContext implements ConnectionContext {
                 passiveInboundClose();
             }
         } catch (IOException ioe) {
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.warning("inbound closure failed", ioe);
             }
         }
@@ -582,7 +582,7 @@ final class TransportContext implements ConnectionContext {
         try {
              initiateOutboundClose();
         } catch (IOException ioe) {
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                 SSLLogger.warning("outbound closure failed", ioe);
             }
         }

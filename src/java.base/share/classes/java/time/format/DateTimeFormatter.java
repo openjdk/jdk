@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -817,6 +817,7 @@ public final class DateTimeFormatter {
      * <li>The {@link #ISO_LOCAL_DATE}
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
+     *  The offset parsing is lenient, which allows the minutes and seconds to be optional.
      *  Parsing is case insensitive.
      * </ul>
      * <p>
@@ -829,7 +830,9 @@ public final class DateTimeFormatter {
         ISO_OFFSET_DATE = new DateTimeFormatterBuilder()
                 .parseCaseInsensitive()
                 .append(ISO_LOCAL_DATE)
+                .parseLenient()
                 .appendOffsetId()
+                .parseStrict()
                 .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 
@@ -846,6 +849,7 @@ public final class DateTimeFormatter {
      * <li>If the offset is not available then the format is complete.
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
+     *  The offset parsing is lenient, which allows the minutes and seconds to be optional.
      *  Parsing is case insensitive.
      * </ul>
      * <p>
@@ -862,7 +866,9 @@ public final class DateTimeFormatter {
                 .parseCaseInsensitive()
                 .append(ISO_LOCAL_DATE)
                 .optionalStart()
+                .parseLenient()
                 .appendOffsetId()
+                .parseStrict()
                 .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 
@@ -919,6 +925,7 @@ public final class DateTimeFormatter {
      * <li>The {@link #ISO_LOCAL_TIME}
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
+     *  The offset parsing is lenient, which allows the minutes and seconds to be optional.
      *  Parsing is case insensitive.
      * </ul>
      * <p>
@@ -930,7 +937,9 @@ public final class DateTimeFormatter {
         ISO_OFFSET_TIME = new DateTimeFormatterBuilder()
                 .parseCaseInsensitive()
                 .append(ISO_LOCAL_TIME)
+                .parseLenient()
                 .appendOffsetId()
+                .parseStrict()
                 .toFormatter(ResolverStyle.STRICT, null);
     }
 
@@ -947,6 +956,7 @@ public final class DateTimeFormatter {
      * <li>If the offset is not available then the format is complete.
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
+     *  The offset parsing is lenient, which allows the minutes and seconds to be optional.
      *  Parsing is case insensitive.
      * </ul>
      * <p>
@@ -962,7 +972,9 @@ public final class DateTimeFormatter {
                 .parseCaseInsensitive()
                 .append(ISO_LOCAL_TIME)
                 .optionalStart()
+                .parseLenient()
                 .appendOffsetId()
+                .parseStrict()
                 .toFormatter(ResolverStyle.STRICT, null);
     }
 
@@ -1075,6 +1087,7 @@ public final class DateTimeFormatter {
      * <li>If the offset is not available to format or parse then the format is complete.
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
+     *  The offset parsing is lenient, which allows the minutes and seconds to be optional.
      * <li>If the zone ID is not available or is a {@code ZoneOffset} then the format is complete.
      * <li>An open square bracket '['.
      * <li>The {@link ZoneId#getId() zone ID}. This is not part of the ISO-8601 standard.
@@ -1094,7 +1107,9 @@ public final class DateTimeFormatter {
         ISO_DATE_TIME = new DateTimeFormatterBuilder()
                 .append(ISO_LOCAL_DATE_TIME)
                 .optionalStart()
+                .parseLenient()
                 .appendOffsetId()
+                .parseStrict()
                 .optionalStart()
                 .appendLiteral('[')
                 .parseCaseSensitive()
@@ -1121,6 +1136,7 @@ public final class DateTimeFormatter {
      * <li>If the offset is not available to format or parse then the format is complete.
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
+     *  The offset parsing is lenient, which allows the minutes and seconds to be optional.
      *  Parsing is case insensitive.
      * </ul>
      * <p>
@@ -1139,7 +1155,9 @@ public final class DateTimeFormatter {
                 .appendLiteral('-')
                 .appendValue(DAY_OF_YEAR, 3)
                 .optionalStart()
+                .parseLenient()
                 .appendOffsetId()
+                .parseStrict()
                 .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 
@@ -1165,6 +1183,7 @@ public final class DateTimeFormatter {
      * <li>If the offset is not available to format or parse then the format is complete.
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
+     *  The offset parsing is lenient, which allows the minutes and seconds to be optional.
      *  Parsing is case insensitive.
      * </ul>
      * <p>
@@ -1185,7 +1204,9 @@ public final class DateTimeFormatter {
                 .appendLiteral('-')
                 .appendValue(DAY_OF_WEEK, 1)
                 .optionalStart()
+                .parseLenient()
                 .appendOffsetId()
+                .parseStrict()
                 .toFormatter(ResolverStyle.STRICT, IsoChronology.INSTANCE);
     }
 

@@ -31,8 +31,8 @@ import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.MatchableMatcher;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
-import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
 import compiler.lib.ir_framework.driver.network.testvm.java.IRRuleIds;
+import compiler.lib.ir_framework.driver.network.testvm.java.VMInfo;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
@@ -98,7 +98,7 @@ public class IRMethod implements IRMethodMatchable {
         List<MatchResult> match = matcher.match();
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
-        System.out.println("Verifying IR rules for " + name() + ": " + duration + " ns = " + (duration / 1000000) + " ms");
+        System.out.println("Verifying IR rules for " + name() + ": " + duration + " ns = " + (duration / 1_000_000) + " ms");
         return new IRMethodMatchResult(method, match);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.naming.ldap.LdapName;
 
 import java.util.Vector;
 import com.sun.jndi.toolkit.ctx.Continuation;
+import jdk.internal.misc.InnocuousThread;
 
 /**
   * Gathers information to generate events by using the Persistent Search
@@ -86,7 +87,7 @@ final class NamingEventNotifier implements Runnable {
         namingListeners = new Vector<>();
         namingListeners.addElement(firstListener);
 
-        worker = new Thread(this);
+        worker = InnocuousThread.newSystemThread("LDAP Event Notifier", this);
         worker.setDaemon(true);  // not a user thread
         worker.start();
     }
@@ -111,6 +112,7 @@ final class NamingEventNotifier implements Runnable {
      * For each result, create the appropriate NamingEvent and
      * queue to be dispatched to listeners.
      */
+    @Override
     public void run() {
         try {
             Continuation cont = new Continuation();

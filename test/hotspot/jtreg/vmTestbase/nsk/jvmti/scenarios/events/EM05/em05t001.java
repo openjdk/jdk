@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.io.PrintStream;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.lib.thread.ThreadWrapper;
 
 public class em05t001 extends DebugeeClass {
 
@@ -95,7 +96,7 @@ public class em05t001 extends DebugeeClass {
 /* =================================================================== */
 
 // tested threads
-class em05t001Thread extends Thread {
+class em05t001Thread extends ThreadWrapper {
     public void run() {
         // invoke methods in a loop to provoke compilation
         for (int i = 0; i < 100; i++) {

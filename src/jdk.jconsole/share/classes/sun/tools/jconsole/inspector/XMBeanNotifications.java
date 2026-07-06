@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,13 @@ public class XMBeanNotifications extends JTable implements NotificationListener 
         addKeyListener(new Utils.CopyKeyAdapter());
     }
 
+    @Override
+    public JToolTip createToolTip() {
+        JToolTip t = super.createToolTip();
+        t.putClientProperty("html.disable", Boolean.TRUE);
+        return t;
+    }
+
     // Call on EDT
     public void cancelCellEditing() {
         TableCellEditor tce = getCellEditor();
@@ -180,6 +187,8 @@ public class XMBeanNotifications extends JTable implements NotificationListener 
             renderer =
                     (DefaultTableCellRenderer) super.getCellRenderer(row, column);
         }
+
+        renderer.putClientProperty("html.disable", Boolean.TRUE);
 
         if (cell != null) {
             toolTip = Messages.DOUBLE_CLICK_TO_EXPAND_FORWARD_SLASH_COLLAPSE+

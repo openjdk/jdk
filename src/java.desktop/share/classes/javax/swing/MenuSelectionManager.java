@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.util.*;
 import java.awt.event.*;
 import javax.swing.event.*;
 
-import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
 import sun.swing.SwingUtilities2;
@@ -48,8 +47,7 @@ public class MenuSelectionManager {
     private static final boolean VERBOSE = false; // show reuse hits/misses
     private static final boolean DEBUG =   false;  // show bad params, misc.
 
-    private static final StringBuilder MENU_SELECTION_MANAGER_KEY =
-                       new StringBuilder("javax.swing.MenuSelectionManager");
+    private static final MenuSelectionManager DEFAULT_MSM = new MenuSelectionManager();
 
     /**
      * Constructs a {@code MenuSelectionManager}.
@@ -62,23 +60,7 @@ public class MenuSelectionManager {
      * @return a MenuSelectionManager object
      */
     public static MenuSelectionManager defaultManager() {
-        synchronized (MENU_SELECTION_MANAGER_KEY) {
-            AppContext context = AppContext.getAppContext();
-            MenuSelectionManager msm = (MenuSelectionManager)context.get(
-                                                 MENU_SELECTION_MANAGER_KEY);
-            if (msm == null) {
-                msm = new MenuSelectionManager();
-                context.put(MENU_SELECTION_MANAGER_KEY, msm);
-
-                // installing additional listener if found in the AppContext
-                Object o = context.get(SwingUtilities2.MENU_SELECTION_MANAGER_LISTENER_KEY);
-                if (o instanceof ChangeListener listener) {
-                    msm.addChangeListener(listener);
-                }
-            }
-
-            return msm;
-        }
+        return DEFAULT_MSM;
     }
 
     /**

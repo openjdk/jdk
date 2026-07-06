@@ -27,6 +27,7 @@
 
 #include "cppstdlib/cstddef.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "utilities/integerCast.hpp"
 
 // TODO: Merge the enhanced capabilities of ShenandoahSimpleBitMap into src/hotspot/share/utilities/bitMap.hpp
 //       and deprecate ShenandoahSimpleBitMap.  The key enhanced capabilities to be integrated include:
@@ -110,7 +111,7 @@ public:
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
     uintx bit_number = idx & (BitsPerWord - 1);
-    uintx the_bit = nth_bit(bit_number);
+    uintx the_bit = nth_bit(integer_cast<int>(bit_number));
     _bitmap[array_idx] |= the_bit;
   }
 
@@ -118,7 +119,7 @@ public:
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
     uintx bit_number = idx & (BitsPerWord - 1);
-    uintx the_bit = nth_bit(bit_number);
+    uintx the_bit = nth_bit(integer_cast<int>(bit_number));
     _bitmap[array_idx] &= ~the_bit;
   }
 
@@ -126,7 +127,7 @@ public:
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
     uintx bit_number = idx & (BitsPerWord - 1);
-    uintx the_bit = nth_bit(bit_number);
+    uintx the_bit = nth_bit(integer_cast<int>(bit_number));
     return (_bitmap[array_idx] & the_bit) != 0;
   }
 

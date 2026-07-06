@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *          downReader doesn't request any
  * @compile/module=java.net.http ../../../../../../lib/jdk/test/lib/net/SimpleSSLContext.java
  * @modules java.net.http/jdk.internal.net.http
- * @run testng/othervm  -Djdk.internal.httpclient.debug=true
+ * @run junit/othervm  -Djdk.internal.httpclient.debug=true
  *                      -Djavax.net.debug=ssl:handshake
  *                      java.net.http/jdk.internal.net.http.SSLFlowDelegateTest
  */

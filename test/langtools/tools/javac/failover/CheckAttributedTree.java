@@ -92,7 +92,6 @@ import com.sun.source.util.TaskEvent.Kind;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCBreak;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
@@ -367,8 +366,7 @@ public class CheckAttributedTree {
         private class NPETester extends TreeScanner {
             void test(JCCompilationUnit cut, JCTree tree) {
                 sourcefile = cut.sourcefile;
-                endPosTable = cut.endPositions;
-                encl = new Info(tree, endPosTable);
+                encl = new Info(tree);
                 tree.accept(this);
             }
 
@@ -379,7 +377,7 @@ public class CheckAttributedTree {
                     return;
                 }
 
-                Info self = new Info(tree, endPosTable);
+                Info self = new Info(tree);
                 if (mandatoryType(tree)) {
                     check(tree.type != null,
                             "'null' field 'type' found in tree ", self);
@@ -454,7 +452,6 @@ public class CheckAttributedTree {
             }
 
             JavaFileObject sourcefile;
-            EndPosTable endPosTable;
             Info encl;
         }
     }
@@ -498,12 +495,12 @@ public class CheckAttributedTree {
             end = Integer.MAX_VALUE;
         }
 
-        Info(JCTree tree, EndPosTable endPosTable) {
+        Info(JCTree tree) {
             this.tree = tree;
             tag = tree.getTag();
             start = TreeInfo.getStartPos(tree);
             pos = tree.pos;
-            end = TreeInfo.getEndPos(tree, endPosTable);
+            end = TreeInfo.getEndPos(tree);
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,15 @@
 package bcel;
 
 import com.sun.org.apache.bcel.internal.classfile.Utility;
+import org.junit.jupiter.api.Test;
+
 import java.util.Base64;
-import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8256919
  * @modules java.xml/com.sun.org.apache.bcel.internal.classfile
- * @run testng bcel.UtilityTest
+ * @run junit bcel.UtilityTest
  * @summary Tests the Utility.
  */
 public class UtilityTest {
@@ -42,7 +43,7 @@ public class UtilityTest {
      */
     @Test
     public void test() throws Exception {
-        /**
+        /*
          * public class Hello {
          *     public void hello(){
          *         System.out.println("Hello,world");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,6 @@ inline narrowKlass CompressedKlassPointers::encode(const Klass* v) {
 
 #ifdef ASSERT
 inline void CompressedKlassPointers::check_encodable(const void* addr) {
-  assert(UseCompressedClassPointers, "Only call for +UseCCP");
   assert(addr != nullptr, "Null Klass?");
   assert(is_encodable(addr),
          "Address " PTR_FORMAT " is not encodable (Klass range: " RANGEFMT ", klass alignment: %d)",
@@ -84,7 +83,6 @@ inline void CompressedKlassPointers::check_encodable(const void* addr) {
 
 inline void CompressedKlassPointers::check_valid_narrow_klass_id(narrowKlass nk) {
   check_init(_base);
-  assert(UseCompressedClassPointers, "Only call for +UseCCP");
   assert(nk > 0, "narrow Klass ID is 0");
   const uint64_t nk_mask = ~right_n_bits(narrow_klass_pointer_bits());
   assert(((uint64_t)nk & nk_mask) == 0, "narrow klass id bit spillover (%u)", nk);

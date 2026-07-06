@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,15 @@ class AccessFlags {
   bool is_synchronized() const         { return (_flags & JVM_ACC_SYNCHRONIZED) != 0; }
   bool is_super       () const         { return (_flags & JVM_ACC_SUPER       ) != 0; }
   bool is_volatile    () const         { return (_flags & JVM_ACC_VOLATILE    ) != 0; }
+  bool is_bridge      () const         { return (_flags & JVM_ACC_BRIDGE      ) != 0; }
   bool is_transient   () const         { return (_flags & JVM_ACC_TRANSIENT   ) != 0; }
+  bool is_varargs     () const         { return (_flags & JVM_ACC_VARARGS     ) != 0; }
   bool is_native      () const         { return (_flags & JVM_ACC_NATIVE      ) != 0; }
+  bool is_enum        () const         { return (_flags & JVM_ACC_ENUM        ) != 0; }
+  bool is_annotation  () const         { return (_flags & JVM_ACC_ANNOTATION  ) != 0; }
   bool is_interface   () const         { return (_flags & JVM_ACC_INTERFACE   ) != 0; }
   bool is_abstract    () const         { return (_flags & JVM_ACC_ABSTRACT    ) != 0; }
+  bool is_strictfp    () const         { return (_flags & JVM_ACC_STRICT      ) != 0; }
 
   // Attribute flags
   bool is_synthetic   () const         { return (_flags & JVM_ACC_SYNTHETIC   ) != 0; }
@@ -92,13 +97,6 @@ class AccessFlags {
     assert((_flags & JVM_RECOGNIZED_CLASS_MODIFIERS) == _flags, "only recognized flags");
     return _flags;
   }
-
-  // Printing/debugging
-#if INCLUDE_JVMTI
-  void print_on(outputStream* st) const;
-#else
-  void print_on(outputStream* st) const PRODUCT_RETURN;
-#endif
 };
 
 inline AccessFlags accessFlags_from(u2 flags) {

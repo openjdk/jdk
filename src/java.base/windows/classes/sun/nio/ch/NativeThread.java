@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,47 +25,29 @@
 
 package sun.nio.ch;
 
-
-// Signalling operations on native threads
+import java.util.concurrent.locks.LockSupport;
 
 public class NativeThread {
-    private static final long VIRTUAL_THREAD_ID = -1L;
+    private NativeThread() { }
 
     /**
-     * Returns the id of the current native thread if the platform can signal
-     * native threads, 0 if the platform can not signal native threads, or
-     * -1L if the current thread is a virtual thread.
+     * Returns the Thread to signal the current thread or {@code null} if the current
+     * thread cannot be signalled.
      */
-    public static long current() {
-        if (Thread.currentThread().isVirtual()) {
-            return VIRTUAL_THREAD_ID;
+    public static Thread threadToSignal() {
+        Thread thread = Thread.currentThread();
+        return thread.isVirtual() ? thread : null;
+    }
+
+    /**
+     * Signals the given thread.
+     * @throws UnsupportedOperationException is not supported
+     */
+    public static void signal(Thread thread) {
+        if (thread.isVirtual()) {
+            LockSupport.unpark(thread);
         } else {
-            // no support for signalling threads on Windows
-            return 0;
+            throw new UnsupportedOperationException();
         }
-    }
-
-    /**
-     * Signals the given native thread.
-     *
-     * @throws IllegalArgumentException if tid is not a token to a native thread
-     */
-    static void signal(long tid) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Returns true the tid is the id of a native thread.
-     */
-    static boolean isNativeThread(long tid) {
-        return false;
-    }
-
-    /**
-     * Returns true if tid is -1L.
-     * @see #current()
-     */
-    static boolean isVirtualThread(long tid) {
-        return (tid == VIRTUAL_THREAD_ID);
     }
 }

@@ -39,23 +39,18 @@ import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 import javax.security.auth.x500.X500Principal;
 import jdk.jpackage.internal.MacCertificateUtils.CertificateHash;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.SigningIdentity;
 
 final class SigningIdentityBuilder {
 
-    static class SigningConfigException extends ConfigException {
-        SigningConfigException(ConfigException ex) {
-            super(ex.getMessage(), ex.getAdvice(), ex.getCause());
+    static class SigningConfigException extends JPackageException {
+        public SigningConfigException(String msg) {
+            super(msg);
         }
 
-        private static final long serialVersionUID = 1L;
-    }
-
-    static class ExpiredCertificateException extends SigningConfigException {
-        ExpiredCertificateException(ConfigException ex) {
-            super(ex);
+        public SigningConfigException(String msg, Throwable cause) {
+            super(msg, cause);
         }
 
         private static final long serialVersionUID = 1L;
@@ -83,11 +78,12 @@ final class SigningIdentityBuilder {
         return this;
     }
 
-    Optional<SigningConfig> create() {
-        if (signingIdentity == null && certificateSelector == null) {
-            return Optional.empty();
+    SigningConfig create() {
+        if (Objects.isNull(certificateSelector) == Objects.isNull(signingIdentity)) {
+            // Either the signing certificate selector or the signing certificate must be configured.
+            throw new IllegalStateException();
         } else {
-            return Optional.of(new SigningConfig(validatedSigningIdentity(), validatedKeychain()));
+            return new SigningConfig(validatedSigningIdentity(), validatedKeychain());
         }
     }
 
@@ -133,8 +129,9 @@ final class SigningIdentityBuilder {
 
         try {
             cert.checkValidity();
-        } catch (CertificateExpiredException|CertificateNotYetValidException ex) {
-            throw new ExpiredCertificateException(I18N.buildConfigException("error.certificate.expired", findSubjectCNs(cert).getFirst()).create());
+        } catch (CertificateExpiredException | CertificateNotYetValidException ex) {
+            throw new SigningConfigException(I18N.format(
+                    "error.certificate.outside-validity-period", findSubjectCNs(cert).getFirst()), ex);
         }
 
         final var signingIdentityHash = CertificateHash.of(cert);
@@ -148,7 +145,7 @@ final class SigningIdentityBuilder {
         Objects.requireNonNull(keychain);
         switch (certs.size()) {
             case 0 -> {
-                throw new JPackageException(I18N.format("error.cert.not.found",
+                throw new SigningConfigException(I18N.format("error.cert.not.found",
                         certificateSelector.signingIdentities().getFirst(),
                         keychain.map(Keychain::name).orElse("")));
             }
@@ -156,10 +153,9 @@ final class SigningIdentityBuilder {
                 return certs.getFirst();
             }
             default -> {
-                throw I18N.buildConfigException("error.multiple.certs.found",
+                throw new SigningConfigException(I18N.format("error.multiple.certs.found",
                         certificateSelector.signingIdentities().getFirst(),
-                        keychain.map(Keychain::name).orElse("")
-                ).create();
+                        keychain.map(Keychain::name).orElse("")));
             }
         }
     }

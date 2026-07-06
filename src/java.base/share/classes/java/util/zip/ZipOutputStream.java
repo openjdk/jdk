@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,10 @@ import sun.nio.cs.UTF_8;
  * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
+ * <p> By default, the UTF-8 charset is used to encode entry names and comments.
+ * {@link #ZipOutputStream(OutputStream, Charset)} may be be used to specify
+ * an alternative charset.
+ *
  * @author      David Connelly
  * @since 1.1
  */
@@ -110,10 +114,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     public static final int DEFLATED = ZipEntry.DEFLATED;
 
     /**
-     * Creates a new ZIP output stream.
-     *
-     * <p>The UTF-8 {@link java.nio.charset.Charset charset} is used
-     * to encode the entry names and comments.
+     * Creates a new ZIP output stream using the UTF-8
+     * {@link Charset charset} to encode entry names and comments.
      *
      * @param out the actual output stream
      */
@@ -122,12 +124,13 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     }
 
     /**
-     * Creates a new ZIP output stream.
+     * Creates a new ZIP output stream using the specified
+     * {@link Charset charset} to encode entry names and comments.
      *
      * @param out the actual output stream
      *
      * @param charset the {@linkplain java.nio.charset.Charset charset}
-     *                to be used to encode the entry names and comments
+     *                to be used to encode entry names and comments
      *
      * @since 1.7
      */
@@ -140,10 +143,15 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     }
 
     /**
-     * Sets the ZIP file comment.
-     * @param     comment the comment string
-     * @throws    IllegalArgumentException if the length of the specified
-     *            ZIP file comment is greater than 0xFFFF bytes
+     * Sets the ZIP file comment. If {@code comment} is an empty string or
+     * {@code null} then the output will have no ZIP file comment.
+     *
+     * @param     comment the comment string, or an empty string or null for no comment
+     *
+     * @throws    IllegalArgumentException if the length of the specified ZIP file
+     *            comment is greater than 0xFFFF bytes or if the {@code comment}
+     *            contains characters that cannot be mapped by the {@code Charset}
+     *            used to encode entry names and comments
      */
     public void setComment(String comment) {
         byte[] bytes = null;
@@ -257,6 +265,11 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         default:
             throw new ZipException("unsupported compression method");
         }
+        // Verify that entry name and comment can be encoded
+        byte[] nameBytes = checkEncodable(e.name, "unmappable character in ZIP entry name");
+        if (e.comment != null) {
+            checkEncodable(e.comment, "unmappable character in ZIP entry comment");
+        }
         if (! names.add(e.name)) {
             throw new ZipException("duplicate entry: " + e.name);
         }
@@ -270,7 +283,16 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         }
         current = new XEntry(e, written);
         xentries.add(current);
-        writeLOC(current);
+        writeLOC(current, nameBytes);
+    }
+
+    // Throws ZipException if the given string cannot be encoded
+    private byte[] checkEncodable(String str, String msg) throws ZipException {
+        try {
+            return zc.getBytes(str);
+        } catch (IllegalArgumentException ex) {
+            throw (ZipException) new ZipException(msg).initCause(ex);
+        }
     }
 
     /**
@@ -424,7 +446,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     /*
      * Writes local file (LOC) header for specified entry.
      */
-    private void writeLOC(XEntry xentry) throws IOException {
+    private void writeLOC(XEntry xentry, byte[] nameBytes) throws IOException {
         ZipEntry e = xentry.entry;
         int flag = e.flag;
         boolean hasZip64 = false;
@@ -461,7 +483,6 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
                 writeInt(e.size);   // uncompressed size
             }
         }
-        byte[] nameBytes = zc.getBytes(e.name);
         writeShort(nameBytes.length);
 
         int elenEXTT = 0;         // info-zip extended timestamp

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ class JfrResolution : AllStatic {
   static void on_runtime_resolution(const CallInfo & info, TRAPS);
   static void on_c1_resolution(const GraphBuilder * builder, const ciKlass * holder, const ciMethod * target);
   static void on_c2_resolution(const Parse * parse, const ciKlass * holder, const ciMethod * target);
-  static void on_jvmci_resolution(const Method* caller, const Method* target, TRAPS);
   static void on_backpatching(const Method* callee_method, JavaThread* jt);
 };
 

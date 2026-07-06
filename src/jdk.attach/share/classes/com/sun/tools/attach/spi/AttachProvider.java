@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,8 @@ import java.util.ServiceLoader;
  * for example, ships with attach providers that use the package name <i>"sun"</i>
  * (for historical reasons). The
  * <i>type</i> typically corresponds to the attach mechanism. For example, an
- * implementation that uses the Doors inter-process communication mechanism
- * might use the type <i>"doors"</i>. The purpose of the name and type is to
+ * implementation that uses the UNIX Domain Socket inter-process communication mechanism
+ * might use the type <i>"socket"</i>. The purpose of the name and type is to
  * identify providers in environments where there are multiple providers
  * installed.
  *

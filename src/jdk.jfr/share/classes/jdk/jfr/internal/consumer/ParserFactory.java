@@ -132,9 +132,12 @@ final class ParserFactory {
             case "short" -> new ShortParser();
             case "byte" ->  new ByteParser();
             case "java.lang.String" -> {
-                ConstantMap pool = new ConstantMap(ObjectFactory.create(type, timeConverter), type);
-                ConstantLookup lookup = new ConstantLookup(pool, type);
-                constantLookups.put(type.getId(), lookup);
+                ConstantLookup lookup = constantLookups.get(type.getId());
+                if (lookup == null) {
+                    ConstantMap pool = new ConstantMap(ObjectFactory.create(type, timeConverter), type);
+                    lookup = new ConstantLookup(pool, type);
+                    constantLookups.put(type.getId(), lookup);
+                }
                 yield new StringParser(lookup, event);
             }
             default ->  throw new IOException("Unknown primitive type " + type.getName());

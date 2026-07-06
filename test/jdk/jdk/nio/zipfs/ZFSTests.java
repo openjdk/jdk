@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,20 @@
 /* @test
  * @bug 7156873 8040059 8028480 8034773 8153248 8061777 8197398 8210394
  * @summary ZipFileSystem regression tests
- *
  * @modules jdk.zipfs
- * @run main ZFSTests
- * @run main/othervm ZFSTests
+ * @run junit ZFSTests
+ * @run junit/othervm ZFSTests
  */
 
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.*;
@@ -45,16 +47,16 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 public class ZFSTests {
 
-    public static void main(String[] args) throws Throwable {
-        test8197398();
-        test7156873();
-        test8061777();
-        tests();
-    }
+    static final Charset ASCII = StandardCharsets.US_ASCII;
 
-    static void test8197398() throws Throwable {
+    @Test
+    void test8197398() throws Throwable {
 
         // root entry "/"
         Path path = Paths.get("rootdir.zip");
@@ -72,33 +74,29 @@ public class ZFSTests {
         }
         AtomicInteger cnt = new AtomicInteger();
         int max = 3;
-        try (FileSystem fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+        try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of())) {
             Files.walkFileTree(fs.getRootDirectories().iterator().next(),
                                 new SimpleFileVisitor<Path>() {
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                         throws IOException {
-                    if (cnt.incrementAndGet() > max)
-                        throw new RuntimeException("visited too many files/dirs");
+                    assertFalse(cnt.incrementAndGet() > max, "visited too many files/dirs");
                     files.remove(file.toString());
-                    if (!Arrays.equals(Files.readAllBytes(file), file.toString().getBytes()))
-                        throw new RuntimeException("visited files has wrong content: " + file);
+                    assertArrayEquals(file.toString().getBytes(), Files.readAllBytes(file),
+                            "visited files has wrong content: " + file);
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
-                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                        throws IOException {
-                    if (cnt.incrementAndGet() > max)
-                        throw new RuntimeException("visited too many files/dirs");
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                    assertFalse(cnt.incrementAndGet() > max, "visited too many files/dirs");
                     dirs.remove(dir.toString());
                     return FileVisitResult.CONTINUE;
                 }
             });
-            if (cnt.get() != max || dirs.size() != 0 || files.size() != 0)
-                throw new RuntimeException("walk files/dirs failed");
-
+            assertFalse(cnt.get() != max || dirs.size() != 0 || files.size() != 0,
+                    "walk files/dirs failed");
         } finally {
             Files.deleteIfExists(path);
         }
@@ -119,15 +117,15 @@ public class ZFSTests {
                 zos.write("/fooo/bar".getBytes());
             }
 
-            try (FileSystem fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+            try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of())) {
                 Files.walkFileTree(fs.getRootDirectories().iterator().next(),
                                     new SimpleFileVisitor<Path>() {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                             throws IOException {
                         files.remove(file.toString());
-                        if (!Arrays.equals(Files.readAllBytes(file), file.toString().getBytes()))
-                            throw new RuntimeException("visited files has wrong content: " + file);
+                        assertArrayEquals(file.toString().getBytes(), Files.readAllBytes(file),
+                                "visited files has wrong content: " + file);
                         return FileVisitResult.CONTINUE;
                     }
                     @Override
@@ -137,8 +135,8 @@ public class ZFSTests {
                         return FileVisitResult.CONTINUE;
                     }
                 });
-                if (dirs.size() != 0 || files.size() != 0)
-                    throw new RuntimeException("walk files/dirs failed");
+                assertFalse(dirs.size() != 0 || files.size() != 0,
+                        "walk files/dirs failed");
 
                 // for next test: updated any entry, the result zipfs file should have no
                 // absolute path entry
@@ -151,22 +149,22 @@ public class ZFSTests {
             files.add("/foo");
             files.add("/bar");
             files.add("/fooo/bar");
-            try (FileSystem fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+            try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of())) {
                     Files.walk(fs.getPath("/")).forEach( p -> {
                         if (Files.isDirectory(p)) {
                             dirs.remove(p.toString());
                         } else {
                             files.remove(p.toString());
                             try {
-                                if (!Arrays.equals(Files.readAllBytes(p), p.toString().getBytes()))
-                                    throw new RuntimeException("visited files has wrong content: " + p);
+                                assertArrayEquals(p.toString().getBytes(), Files.readAllBytes(p),
+                                        "visited files has wrong content: " + p);
                             } catch (IOException x) {
                                 throw new RuntimeException(x);
                             }
                         }
                     });
-                if (dirs.size() != 0 || files.size() != 0)
-                    throw new RuntimeException("walk files/dirs failed");
+                assertFalse(dirs.size() != 0 || files.size() != 0,
+                        "walk files/dirs failed");
 
             }
             // updated zip file should  not have "/" and entry with absolute path
@@ -175,17 +173,16 @@ public class ZFSTests {
                                      .map(ZipEntry::toString)
                                      .sorted()
                                      .toArray(String[]::new);
-                if (!Arrays.equals(entries, new String[] {"bar", "foo", "fooo/", "fooo/bar" })) {
-                    System.out.println("unexpeded: " + Arrays.toString(entries));
-                    throw new RuntimeException("unexpected entreis in updated zipfs file");
-                }
+                assertArrayEquals(new String[] {"bar", "foo", "fooo/", "fooo/bar" }, entries,
+                        "unexpected entreis in updated zipfs file");
             }
         } finally {
             Files.deleteIfExists(path);
         }
     }
 
-    static void test7156873() throws Throwable {
+    @Test
+    void test7156873() throws Throwable {
         String DIRWITHSPACE = "testdir with spaces";
         Path dir = Paths.get(DIRWITHSPACE);
         Path path = Paths.get(DIRWITHSPACE, "file.zip");
@@ -201,7 +198,8 @@ public class ZFSTests {
         }
     }
 
-    static void test8061777() throws Throwable {
+    @Test
+    void test8061777() throws Throwable {
         Path path = Paths.get("file.zip");
         try {
             URI uri = URI.create("jar:" + path.toUri());
@@ -212,24 +210,25 @@ public class ZFSTests {
                 FileSystemProvider fsp = fs.provider();
                 Path p = fs.getPath("/\u8868\u7533.txt");  // 0x95 0x5c 0x90 0x5c
                 try (OutputStream os = fsp.newOutputStream(p)) {
-                    os.write("Hello!".getBytes("ASCII"));
+                    os.write("Hello!".getBytes(ASCII));
                 }
                 Path dir = fs.getPath("/");
                 Files.list(dir)
                      .forEach( child -> {
                              System.out.println("child:" + child);
-                             if (!child.toString().equals(p.toString()))
-                                 throw new RuntimeException("wrong path name created");
+                             assertEquals(p.toString(), child.toString(),
+                                     "wrong path name created");
                           });
-                if (!"Hello!".equals(new String(Files.readAllBytes(p), "ASCII")))
-                    throw new RuntimeException("wrong content in newly created file");
+                assertEquals("Hello!", new String(Files.readAllBytes(p), ASCII),
+                        "wrong content in newly created file");
             }
         } finally {
             Files.deleteIfExists(path);
         }
     }
 
-    static void tests() throws Throwable {
+    @Test
+    void tests() throws Throwable {
         Path path = Paths.get("file.zip");
         try {
             URI uri = URI.create("jar:" + path.toUri());
@@ -245,16 +244,14 @@ public class ZFSTests {
                                      StandardOpenOption.WRITE,
                                      StandardOpenOption.APPEND);
                 try (FileChannel ch = fsp.newFileChannel(p, options)) {
-                    ch.write(ByteBuffer.wrap("Hello!".getBytes("ASCII")));
+                    ch.write(ByteBuffer.wrap("Hello!".getBytes(ASCII)));
                 }
                 // 8034773
                 try (OutputStream os = fsp.newOutputStream(p, new OpenOption[0])) {
-                    os.write("Hello2!".getBytes("ASCII"));
+                    os.write("Hello2!".getBytes(ASCII));
                 }
-                if (!"Hello2!".equals(new String(
-                        Files.readAllBytes(fs.getPath("test.txt"))))) {
-                    throw new RuntimeException("failed to open as truncate_existing");
-                }
+                assertEquals("Hello2!", new String(
+                        Files.readAllBytes(fs.getPath("test.txt"))), "failed to open as truncate_existing");
 
                 options = EnumSet.of(StandardOpenOption.CREATE,
                                      StandardOpenOption.APPEND,
@@ -273,8 +270,8 @@ public class ZFSTests {
                 Files.list(dir)
                      .forEach( child -> {
                              System.out.println("child:" + child);
-                             if (child.toString().endsWith("/"))
-                                 throw new RuntimeException("subdir names ends with /");
+                             assertFalse(child.toString().endsWith("/"),
+                                     "subdir names ends with /");
                           });
             }
         } finally {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,13 @@
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestServerConfigurator
  * @modules java.net.http/jdk.internal.net.http.common
  *          jdk.httpserver
- * @run testng/othervm -Djdk.internal.httpclient.debug=true WSHandshakeExceptionTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
 import com.sun.net.httpserver.HttpExchange;
-
-
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,10 +47,6 @@ import java.net.http.WebSocketHandshakeException;
 
 import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import javax.net.ssl.SSLContext;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -62,29 +56,33 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 import static java.lang.System.out;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class WSHandshakeExceptionTest {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpServer httpTestServer;         // HTTP/1.1    [ 2 servers ]
-    HttpsServer httpsTestServer;       // HTTPS/1.1
-    String httpURI;
-    String httpsURI;
-    String httpNonUtf8URI;
-    String httpsNonUtf8URI;
-    HttpClient sharedClient;
+    private static HttpServer httpTestServer;         // HTTP/1.1    [ 2 servers ]
+    private static HttpsServer httpsTestServer;       // HTTPS/1.1
+    private static String httpURI;
+    private static String httpsURI;
+    private static String httpNonUtf8URI;
+    private static String httpsNonUtf8URI;
+    private static HttpClient sharedClient;
 
     static final int ITERATION_COUNT = 4;
     // a shared executor helps reduce the amount of threads created by the test
     static final ExecutorService executor = Executors.newCachedThreadPool();
 
-    @DataProvider(name = "variants")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         return new Object[][]{
                 { httpURI,           false },
                 { httpsURI,          false },
@@ -106,7 +104,8 @@ public class WSHandshakeExceptionTest {
                          .build();
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void test(String uri, boolean sameClient) {
         HttpClient client = sharedClient;
         boolean pause;
@@ -132,7 +131,7 @@ public class WSHandshakeExceptionTest {
                 WebSocketHandshakeException wse = (WebSocketHandshakeException) t;
                 assertNotNull(wse.getResponse());
                 assertNotNull(wse.getResponse().body());
-                assertEquals(wse.getResponse().body().getClass(), String.class);
+                assertEquals(String.class, wse.getResponse().body().getClass());
                 String body = (String)wse.getResponse().body();
                 out.println("Status code is " + wse.getResponse().statusCode());
                 out.println("Response is " + body);
@@ -145,7 +144,7 @@ public class WSHandshakeExceptionTest {
                     // default HttpServer 404 body expected
                     assertTrue(body.contains("404"));
                 }
-                assertEquals(wse.getResponse().statusCode(), 404);
+                assertEquals(404, wse.getResponse().statusCode());
             }
         }
     }
@@ -159,8 +158,8 @@ public class WSHandshakeExceptionTest {
         }
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         // HTTP/1.1
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         httpTestServer = HttpServer.create(sa, 0);
@@ -178,8 +177,8 @@ public class WSHandshakeExceptionTest {
         httpsTestServer.start();
     }
 
-    @AfterTest
-    public void teardown() {
+    @AfterAll
+    public static void teardown() {
         sharedClient = null;
         gc(100);
         httpTestServer.stop(0);

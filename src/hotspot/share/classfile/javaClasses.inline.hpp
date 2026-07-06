@@ -91,6 +91,10 @@ bool java_lang_String::deduplication_requested(oop java_string) {
   return is_flag_set(java_string, _deduplication_requested_mask);
 }
 
+bool java_lang_String::deduplication_requested_or_forbidden(oop java_string) {
+  return is_flag_set(java_string, _deduplication_requested_mask | _deduplication_forbidden_mask);
+}
+
 void java_lang_String::set_deduplication_forbidden(oop java_string) {
   test_and_set_flag(java_string, _deduplication_forbidden_mask);
 }

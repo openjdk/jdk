@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +22,39 @@
  */
 package javax.xml.validation.ptests;
 
-import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
-import static javax.xml.validation.ptests.ValidationTestConst.XML_DIR;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertTrue;
-
-import java.io.File;
-
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.ValidatorHandler;
-
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.helpers.DefaultHandler;
+import org.junit.jupiter.api.BeforeAll;
+
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.ValidatorHandler;
+import java.io.File;
+
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+import static javax.xml.validation.ptests.ValidationTestConst.XML_DIR;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.validation.ptests.ValidatorHandlerTest
+ * @run junit/othervm javax.xml.validation.ptests.ValidatorHandlerTest
  * @summary Class containing the test cases for ValidatorHandler API
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ValidatorHandlerTest {
-    @BeforeClass
+    @BeforeAll
     public void setup() throws SAXException {
         schema = SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI).newSchema(new File(XML_DIR + "test.xsd"));
 
@@ -66,60 +68,57 @@ public class ValidatorHandlerTest {
 
         ErrorHandler handler = new MyErrorHandler();
         validatorHandler.setErrorHandler(handler);
-        assertSame(validatorHandler.getErrorHandler(), handler);
-
+        assertSame(handler, validatorHandler.getErrorHandler());
     }
 
-    @Test(expectedExceptions = SAXNotRecognizedException.class)
-    public void testGetUnrecognizedProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
+    @Test
+    public void testGetUnrecognizedProperty() {
         ValidatorHandler validatorHandler = getValidatorHandler();
-        validatorHandler.getProperty(FEATURE_NAME);
-
+        assertThrows(SAXNotRecognizedException.class, () -> validatorHandler.getProperty(FEATURE_NAME));
     }
 
-    @Test(expectedExceptions = SAXNotRecognizedException.class)
-    public void testSetUnrecognizedProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
+    @Test
+    public void testSetUnrecognizedProperty() {
         ValidatorHandler validatorHandler = getValidatorHandler();
-        validatorHandler.setProperty(FEATURE_NAME, "test");
+        assertThrows(SAXNotRecognizedException.class, () -> validatorHandler.setProperty(FEATURE_NAME, "test"));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testGetNullProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
+    @Test
+    public void testGetNullProperty() {
         ValidatorHandler validatorHandler = getValidatorHandler();
         assertNotNull(validatorHandler);
-        validatorHandler.getProperty(null);
+        assertThrows(NullPointerException.class, () -> validatorHandler.getProperty(null));
 
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testSetNullProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
+    @Test
+    public void testSetNullProperty() {
         ValidatorHandler validatorHandler = getValidatorHandler();
         assertNotNull(validatorHandler);
-        validatorHandler.setProperty(null, "test");
+        assertThrows(NullPointerException.class, () -> validatorHandler.setProperty(null, "test"));
     }
 
+    @Test
     public void testFeature() throws SAXNotRecognizedException, SAXNotSupportedException {
         ValidatorHandler validatorHandler = getValidatorHandler();
         assertFalse(validatorHandler.getFeature(FEATURE_NAME), "The feature should be false by default.");
 
         validatorHandler.setFeature(FEATURE_NAME, true);
         assertTrue(validatorHandler.getFeature(FEATURE_NAME), "The feature should be false by default.");
-
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testGetNullFeature() throws SAXNotRecognizedException, SAXNotSupportedException {
+    @Test
+    public void testGetNullFeature() {
         ValidatorHandler validatorHandler = getValidatorHandler();
         assertNotNull(validatorHandler);
-        validatorHandler.getFeature(null);
-
+        assertThrows(NullPointerException.class, () -> validatorHandler.getFeature(null));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testSetNullFeature() throws SAXNotRecognizedException, SAXNotSupportedException {
+    @Test
+    public void testSetNullFeature() {
         ValidatorHandler validatorHandler = getValidatorHandler();
         assertNotNull(validatorHandler);
-        validatorHandler.setFeature(null, true);
+        assertThrows(NullPointerException.class, () -> validatorHandler.setFeature(null, true));
     }
 
     @Test
@@ -129,11 +128,10 @@ public class ValidatorHandlerTest {
 
         ContentHandler handler = new DefaultHandler();
         validatorHandler.setContentHandler(handler);
-        assertSame(validatorHandler.getContentHandler(), handler);
+        assertSame(handler, validatorHandler.getContentHandler());
 
         validatorHandler.setContentHandler(null);
         assertNull(validatorHandler.getContentHandler());
-
     }
 
     private ValidatorHandler getValidatorHandler() {

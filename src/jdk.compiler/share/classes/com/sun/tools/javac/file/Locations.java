@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1952,13 +1952,19 @@ public class Locations {
                     if (isCurrentPlatform(systemJavaHome)) {
                         jrtfs = FileSystems.getFileSystem(jrtURI);
                     } else {
+                        ClassLoader currentLoader = Locations.class.getClassLoader();
                         try {
                             Map<String, String> attrMap =
                                     Collections.singletonMap("java.home", systemJavaHome.toString());
                             jrtfs = FileSystems.newFileSystem(jrtURI, attrMap);
+                            // Ensure the file system’s class loader is closed so that
+                            // the ${systemJavaHome}/lib/jrt-fs.jar is not left open.
+                            ClassLoader cl = jrtfs.provider().getClass().getClassLoader();
+                            if (cl != currentLoader && cl instanceof URLClassLoader urlcl) {
+                                closeables.add(urlcl);
+                            }
                         } catch (ProviderNotFoundException ex) {
                             URL jfsJar = resolveInJavaHomeLib(systemJavaHome, "jrt-fs.jar").toUri().toURL();
-                            ClassLoader currentLoader = Locations.class.getClassLoader();
                             URLClassLoader fsLoader =
                                     new URLClassLoader(new URL[] {jfsJar}, currentLoader);
 

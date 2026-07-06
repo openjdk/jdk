@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class NotifyFramePopTest {
         }
 
         // Sanity testing that FRAME_POP works.
-        test("sanity", true, () -> {
+        test("sanity", 2, () -> { // FramePop events expected: 2
             setFramePopNotificationMode(true);
             notifyFramePop(null);
         });
@@ -58,14 +58,14 @@ public class NotifyFramePopTest {
         // Request notification and then disable FRAME_POP event notification.
         // This should not prevent the notification for the frame being cleared
         // when we return from the method.
-        test("requestAndDisable", false, () -> {
+        test("requestAndDisable", 0, () -> { // FramePop events expected: 0
             setFramePopNotificationMode(true);
             notifyFramePop(null);
             setFramePopNotificationMode(false);
         });
 
         // Ensure there is no pending event
-        test("ensureCleared", false, () -> {
+        test("ensureCleared", 0, () -> { // FramePop events expected: 0
             setFramePopNotificationMode(true);
         });
 
@@ -75,7 +75,7 @@ public class NotifyFramePopTest {
     private native static boolean canGenerateFramePopEvents();
     private native static void setFramePopNotificationMode(boolean enabled);
     private native static void notifyFramePop(Thread thread);
-    private native static boolean framePopReceived();
+    private native static int framePopsReceived();
 
     private static void log(String msg) {
         System.out.println(msg);
@@ -85,16 +85,16 @@ public class NotifyFramePopTest {
         void test();
     }
 
-    private static void test(String name, boolean framePopExpected, Test theTest) {
+    private static void test(String name, int framePopExpected, Test theTest) {
         log("test: " + name);
         theTest.test();
-        boolean actual = framePopReceived();
+        int actual = framePopsReceived();
         if (framePopExpected != actual) {
             throw new RuntimeException("unexpected notification:"
-                    + " FramePop expected: " + (framePopExpected ? "yes" : "no")
-                    + ", actually received: " + (actual ? "yes" : "no"));
+                    + " FramePop expected: " + framePopExpected
+                    + ", actually received: " + actual);
         }
-        log("  - OK (" + (actual ? "received" : "NOT received") + ")");
+        log("  - OK (received: " + actual + ")");
     }
 
 }

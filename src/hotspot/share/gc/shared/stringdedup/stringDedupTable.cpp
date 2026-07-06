@@ -455,7 +455,7 @@ void StringDedup::Table::free_buckets(Bucket* buckets, size_t number_of_buckets)
   while (number_of_buckets > 0) {
     buckets[--number_of_buckets].~Bucket();
   }
-  FREE_C_HEAP_ARRAY(Bucket, buckets);
+  FREE_C_HEAP_ARRAY(buckets);
 }
 
 // Compute the hash code for obj using halfsiphash_32.  As this is a high

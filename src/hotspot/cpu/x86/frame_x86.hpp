@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@
 
  public:
   enum {
-    pc_return_offset                                 =  0,
     // All frames
     link_offset                                      =  0,
     return_addr_offset                               =  1,
@@ -101,8 +100,7 @@
     // between a callee frame and its stack arguments, where it is part
     // of the caller/callee overlap
     metadata_words_at_top                            = 0,
-    // size, in words, of frame metadata at the frame top that needs
-    // to be reserved for callee functions in the runtime
+    // in bytes
     frame_alignment                                  = 16,
     // size, in words, of maximum shift in frame position due to alignment
     align_wiggle                                     =  1

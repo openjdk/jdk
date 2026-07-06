@@ -93,7 +93,7 @@ Leap	2016	Dec	31	23:59:60	+	S
 # Any additional leap seconds will come after this.
 # This Expires line is commented out for now,
 # so that pre-2020a zic implementations do not reject this file.
-#Expires 2026	Jun	28	00:00:00
+#Expires 2026	Dec	28	00:00:00
 
 # Here are POSIX timestamps for the data in this file.
 # "#updated" gives the last time the leap seconds data changed
@@ -102,8 +102,8 @@ Leap	2016	Dec	31	23:59:60	+	S
 # "#expires" gives the first time this file might be wrong;
 # if this file was derived from the IERS leap-seconds.list,
 # this is typically a bit less than one year after "updated".
-#updated 1751846400 (2025-07-07 00:00:00 UTC)
-#expires 1782604800 (2026-06-28 00:00:00 UTC)
+#updated 1767698058 (2026-01-06 11:14:18 UTC)
+#expires 1798416000 (2026-12-28 00:00:00 UTC)
 
 #	Updated through IERS Bulletin C (https://hpiers.obspm.fr/iers/bul/bulc/bulletinc.dat)
-#	File expires on 28 June 2026
+#	File expires on 28 December 2026

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/trainingData.hpp"
 #include "runtime/handles.inline.hpp"
@@ -83,6 +84,7 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
                                  int expected_size)
                                  : _arena(arena),
                                    _ci_metadata(arena, expected_size, 0, nullptr),
+                                   _cached_init_state(arena, _shared_ident_limit, 0, (u1)0),
                                    _unloaded_methods(arena, 4, 0, nullptr),
                                    _unloaded_klasses(arena, 8, 0, nullptr),
                                    _unloaded_instances(arena, 4, 0, nullptr),
@@ -97,6 +99,28 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
   // If the shared ci objects exist append them to this factory's objects
   if (_shared_ci_metadata != nullptr) {
     _ci_metadata.appendAll(_shared_ci_metadata);
+    // ciInstanceKlass for well-known class is shared by all
+    // compiler threads and can be updated concurrently by
+    // other compiler threads during compilation.
+    // Make local copy of class state to avoid state change
+    // during compilation.
+    int len = _ci_metadata.length();
+    for (int i = 0; i < len; i++) {
+      ciMetadata* obj = _ci_metadata.at(i);
+      if (obj->is_loaded() && obj->is_instance_klass()) {
+        ciInstanceKlass* cik = obj->as_instance_klass();
+        precond(cik->is_shared());
+        InstanceKlass::ClassState current_state = cik->_init_state;
+        InstanceKlass::ClassState state = InstanceKlass::fully_initialized;
+        if (current_state != state) {
+          GUARDED_VM_ENTRY( state = cik->get_instanceKlass()->init_state(); )
+          // Update state of shared ciInstanceKlass
+          cik->_init_state = state;
+        }
+        // Cache state for current compilation
+        _cached_init_state.at_put_grow(cik->ident(), (u1)state, 0);
+      }
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,6 +277,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
          */
         TYPEIDENT,
 
+        /** 'var' type.
+         */
+        VARTYPE,
+
         /** Array types, of type TypeArray.
          */
         TYPEARRAY,
@@ -431,6 +435,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public int pos;
 
+    /* The (encoded) end position in the source file. @see util.Position.
+     */
+    public int endpos = Position.NOPOS;
+
     /* The type of this node.
      */
     public Type type;
@@ -514,8 +522,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     // for default DiagnosticPosition
-    public int getEndPosition(EndPosTable endPosTable) {
-        return noNoPos(TreeInfo.getEndPos(this, endPosTable));
+    public int getEndPosition() {
+        return noNoPos(TreeInfo.getEndPos(this));
     }
 
     private int noNoPos(int position) {
@@ -552,9 +560,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /** A table that stores all documentation comments indexed by the tree
          * nodes they refer to. defined only if option -s is set. */
         public DocCommentTable docComments = null;
-        /* An object encapsulating ending positions of source ranges indexed by
-         * the tree nodes they belong to. Defined only if option -Xjcov is set. */
-        public EndPosTable endPositions = null;
         protected JCCompilationUnit(List<JCTree> defs) {
             this.defs = defs;
         }
@@ -1011,9 +1016,16 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCVariableDecl extends JCStatement implements VariableTree {
 
         public enum DeclKind {
-            EXPLICIT,       // "SomeType name"
-            IMPLICIT,       // "name"
-            VAR,            // "var name"
+            EXPLICIT(0),                        // "SomeType name"
+            IMPLICIT(Flags.VAR_VARIABLE),       // "name"
+            VAR(Flags.VAR_VARIABLE),            // "var name"
+            ;
+
+            public final long additionalSymbolFlags;
+
+            private DeclKind(long additionalSymbolFlags) {
+                this.additionalSymbolFlags = additionalSymbolFlags;
+            }
         }
 
         /** variable modifiers */
@@ -1030,15 +1042,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public VarSymbol sym;
         /** how the variable's type was declared */
         public DeclKind declKind;
-        /** a source code position to use for "vartype" when null (can happen if declKind != EXPLICIT) */
-        public int typePos;
 
         protected JCVariableDecl(JCModifiers mods,
                          Name name,
                          JCExpression vartype,
                          JCExpression init,
                          VarSymbol sym) {
-            this(mods, name, vartype, init, sym, DeclKind.EXPLICIT, Position.NOPOS);
+            this(mods, name, vartype, init, sym, DeclKind.EXPLICIT);
         }
 
         protected JCVariableDecl(JCModifiers mods,
@@ -1046,21 +1056,19 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                                  JCExpression vartype,
                                  JCExpression init,
                                  VarSymbol sym,
-                                 DeclKind declKind,
-                                 int typePos) {
+                                 DeclKind declKind) {
             this.mods = mods;
             this.name = name;
             this.vartype = vartype;
             this.init = init;
             this.sym = sym;
             this.declKind = declKind;
-            this.typePos = typePos;
         }
 
         protected JCVariableDecl(JCModifiers mods,
                          JCExpression nameexpr,
                          JCExpression vartype) {
-            this(mods, null, vartype, null, null, DeclKind.EXPLICIT, Position.NOPOS);
+            this(mods, null, vartype, null, null, DeclKind.EXPLICIT);
             this.nameexpr = nameexpr;
             if (nameexpr.hasTag(Tag.IDENT)) {
                 this.name = ((JCIdent)nameexpr).name;
@@ -1070,8 +1078,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             }
         }
 
+        @DefinedBy(Api.COMPILER_TREE)
         public boolean isImplicitlyTyped() {
-            return vartype == null;
+            return declKind != DeclKind.EXPLICIT;
         }
 
         public boolean declaredUsingVar() {
@@ -2039,7 +2048,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             this.params = params;
             this.body = body;
             if (params.isEmpty() ||
-                params.head.vartype != null) {
+                !params.head.isImplicitlyTyped()) {
                 paramKind = ParameterKind.EXPLICIT;
             } else {
                 paramKind = ParameterKind.IMPLICIT;
@@ -2816,6 +2825,24 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public Tag getTag() {
             return TYPEIDENT;
+        }
+    }
+
+    public static class JCVarType extends JCExpression implements VarTypeTree {
+        public JCVarType() {}
+        @Override
+        public void accept(Visitor v) { v.visitVarType(this); }
+
+        @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() { return Kind.VAR_TYPE; }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
+            return v.visitVarType(this, d);
+        }
+        @Override
+        public Tag getTag() {
+            return VARTYPE;
         }
     }
 
@@ -3596,6 +3623,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitIdent(JCIdent that)                 { visitTree(that); }
         public void visitLiteral(JCLiteral that)             { visitTree(that); }
         public void visitTypeIdent(JCPrimitiveTypeTree that) { visitTree(that); }
+        public void visitVarType(JCVarType that)             { visitTree(that); }
         public void visitTypeArray(JCArrayTypeTree that)     { visitTree(that); }
         public void visitTypeApply(JCTypeApply that)         { visitTree(that); }
         public void visitTypeUnion(JCTypeUnion that)         { visitTree(that); }

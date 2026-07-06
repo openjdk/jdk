@@ -122,7 +122,7 @@ bool SubTasksDone::try_claim_task(uint t) {
 
 SubTasksDone::~SubTasksDone() {
   assert(_verification_done.load_relaxed(), "all_tasks_claimed must have been called.");
-  FREE_C_HEAP_ARRAY(Atomic<bool>, _tasks);
+  FREE_C_HEAP_ARRAY(_tasks);
 }
 
 // *** SequentialSubTasksDone

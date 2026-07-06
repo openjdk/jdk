@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,7 @@
  *        jdk.test.lib.JDKToolLauncher
  *        MultiThreadLoad FooService
  * @modules java.base/jdk.internal.access:+open
- * @run main MultiProviderTest
- * @run main MultiProviderTest sign
+ * @run junit MultiProviderTest
  */
 
 import java.io.File;
@@ -51,27 +50,33 @@ import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.Arrays.asList;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class MultiProviderTest {
 
     private static final String METAINFO = "META-INF/services/FooService";
-    private static String COMBO_CP = Utils.TEST_CLASS_PATH + File.pathSeparator;
     private static String TEST_CLASS_PATH = System.getProperty("test.classes", ".");
-    private static boolean signJars = false;
     static final int NUM_JARS = 5;
 
+    // Reset per each test run under JUnit default lifecycle
+    private boolean signJars = false;
+    private String COMBO_CP = Utils.TEST_CLASS_PATH + File.pathSeparator;
 
     private static final String KEYSTORE = "keystore.jks";
     private static final String ALIAS = "JavaTest";
     private static final String STOREPASS = "changeit";
     private static final String KEYPASS = "changeit";
 
-    public static void main(String[] args) throws Throwable {
-        signJars = args.length >=1 && args[0].equals("sign");
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void classLoadingTest(boolean sign) throws Throwable {
+        signJars = sign;
         initialize();
         List<String> cmds = new ArrayList<>();
         cmds.add(JDKToolFinder.getJDKTool("java"));
@@ -86,18 +91,16 @@ public class MultiProviderTest {
                 "MultiThreadLoad",
                 TEST_CLASS_PATH));
 
-        try {
+        assertDoesNotThrow(() -> {
             OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(cmds.stream()
-                    .filter(t -> !t.isEmpty())
-                    .toArray(String[]::new))
+                            .filter(t -> !t.isEmpty())
+                            .toArray(String[]::new))
                     .shouldHaveExitValue(0);
             System.out.println("Output:" + outputAnalyzer.getOutput());
-        } catch (Throwable t) {
-            throw new RuntimeException("Unexpected fail.", t);
-        }
+        });
     }
 
-    public static void initialize() throws Throwable {
+    public void initialize() throws Throwable {
         if (signJars) {
             genKey();
         }

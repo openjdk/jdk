@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,11 @@ import static java.lang.System.out;
 /**
  * @test
  * @summary Ensures that timeouts of multiple requests are handled in correct order
- * @run main/othervm TimeoutOrdering
+ * @run main/othervm ${test.main.class}
  */
 
 // To enable logging use
-// @run main/othervm -Djdk.httpclient.HttpClient.log=all,frames:all TimeoutOrdering
+// @run main/othervm -Djdk.httpclient.HttpClient.log=all,frames:all ${test.main.class}
 
 public class TimeoutOrdering {
 

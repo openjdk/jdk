@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,6 @@ public:
                                       TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_archived_modules(JavaThread* current, Handle h_platform_loader, Handle h_system_loader)
                                    NOT_CDS_JAVA_HEAP_RETURN;
-  static void verify_archived_modules() NOT_CDS_JAVA_HEAP_RETURN;
   static void dump_archived_module_info() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_archived_module_info(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 

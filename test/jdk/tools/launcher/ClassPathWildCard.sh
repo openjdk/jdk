@@ -149,7 +149,7 @@ CreateClassFiles D
 
 OS=`uname -s`
 case $OS in 
-    Windows*|CYGWIN*)
+    Windows*|CYGWIN*|MSYS*|MINGW*)
         PATHSEP=";"
         ExecJava "" "${PATHSEP}NOOPDIR"
         ExecJava "w" "${PATHSEP}NOOPDIR"

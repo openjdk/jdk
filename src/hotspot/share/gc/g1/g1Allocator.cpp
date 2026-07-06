@@ -63,8 +63,8 @@ G1Allocator::~G1Allocator() {
     _mutator_alloc_regions[i].~MutatorAllocRegion();
     _survivor_gc_alloc_regions[i].~SurvivorGCAllocRegion();
   }
-  FREE_C_HEAP_ARRAY(MutatorAllocRegion, _mutator_alloc_regions);
-  FREE_C_HEAP_ARRAY(SurvivorGCAllocRegion, _survivor_gc_alloc_regions);
+  FREE_C_HEAP_ARRAY(_mutator_alloc_regions);
+  FREE_C_HEAP_ARRAY(_survivor_gc_alloc_regions);
 }
 
 #ifdef ASSERT
@@ -315,7 +315,7 @@ G1PLABAllocator::PLABData::~PLABData() {
   for (uint node_index = 0; node_index < _num_alloc_buffers; node_index++) {
     delete _alloc_buffer[node_index];
   }
-  FREE_C_HEAP_ARRAY(PLAB*, _alloc_buffer);
+  FREE_C_HEAP_ARRAY(_alloc_buffer);
 }
 
 void G1PLABAllocator::PLABData::initialize(uint num_alloc_buffers, size_t desired_plab_size, size_t tolerated_refills) {

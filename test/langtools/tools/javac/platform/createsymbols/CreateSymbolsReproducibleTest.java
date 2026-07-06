@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
  * @summary verifies that the ct.sym file created by build.tools.symbolgenerator.CreateSymbols
  *          is reproducible
  * @library /test/lib
+ * @requires os.arch != "s390x"
  * @modules java.compiler
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.jvm

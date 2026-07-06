@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ extern "C" {
 
 /* constant names */
 #define DEBUGEE_CLASS_NAME      "nsk/jvmti/scenarios/sampling/SP01/sp01t001"
-#define THREAD_CLASS_NAME       "nsk/jvmti/scenarios/sampling/SP01/sp01t001Thread"
+#define THREAD_CLASS_NAME       "java/lang/Thread"
 #define THREADS_FIELD_NAME      "threads"
 #define THREADS_FIELD_SIG       "[L" THREAD_CLASS_NAME ";"
 

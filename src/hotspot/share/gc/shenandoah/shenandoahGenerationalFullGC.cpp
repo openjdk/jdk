@@ -144,7 +144,7 @@ void ShenandoahGenerationalFullGC::account_for_region(ShenandoahHeapRegion* r, s
 void ShenandoahGenerationalFullGC::maybe_coalesce_and_fill_region(ShenandoahHeapRegion* r) {
   if (r->is_pinned() && r->is_old() && r->is_active() && !r->is_humongous()) {
     r->begin_preemptible_coalesce_and_fill();
-    r->oop_coalesce_and_fill(false);
+    r->oop_coalesce_and_fill(/* cancellable = */ false, /* do_card_table_updates = */ false);
   }
 }
 
@@ -312,11 +312,7 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
 
     // After full gc compaction, all regions have age 0.  Embed the region's age into the object's age in order to preserve
     // tenuring progress.
-    if (_heap->is_aging_cycle()) {
-      ShenandoahHeap::increase_object_age(p, from_region_age + 1);
-    } else {
-      ShenandoahHeap::increase_object_age(p, from_region_age);
-    }
+    ShenandoahHeap::increase_object_age(p, from_region_age + 1);
 
     if (_young_compact_point + obj_size > _young_to_region->end()) {
       ShenandoahHeapRegion* new_to_region;

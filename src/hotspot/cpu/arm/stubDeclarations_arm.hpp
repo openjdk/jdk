@@ -29,7 +29,8 @@
 #define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
                                           do_arch_blob,                 \
                                           do_arch_entry,                \
-                                          do_arch_entry_init)           \
+                                          do_arch_entry_init,           \
+                                          do_arch_entry_array)          \
   do_arch_blob(preuniverse, 500)                                        \
   do_stub(preuniverse, atomic_load_long)                                \
   do_arch_entry(Arm, preuniverse, atomic_load_long,                     \
@@ -42,7 +43,8 @@
 #define STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub,                          \
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
-                                      do_arch_entry_init)               \
+                                      do_arch_entry_init,               \
+                                      do_arch_entry_array)              \
   do_arch_blob(initial, 9000)                                           \
   do_stub(initial, idiv_irem)                                           \
   do_arch_entry(Arm, initial, idiv_irem,                                \
@@ -51,14 +53,16 @@
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \
                                            do_arch_blob,                \
                                            do_arch_entry,               \
-                                           do_arch_entry_init)          \
+                                           do_arch_entry_init,          \
+                                           do_arch_entry_array)         \
   do_arch_blob(continuation, 2000)                                      \
 
 
 #define STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub,                         \
                                        do_arch_blob,                    \
                                        do_arch_entry,                   \
-                                       do_arch_entry_init)              \
+                                       do_arch_entry_init,              \
+                                       do_arch_entry_array)             \
   do_arch_blob(compiler, 22000)                                         \
   do_stub(compiler, partial_subtype_check)                              \
   do_arch_entry(Arm, compiler, partial_subtype_check,                   \
@@ -68,7 +72,8 @@
 #define STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,                            \
                                     do_arch_blob,                       \
                                     do_arch_entry,                      \
-                                    do_arch_entry_init)                 \
+                                    do_arch_entry_init,                 \
+                                    do_arch_entry_array)                \
   do_arch_blob(final, 22000)                                            \
 
 

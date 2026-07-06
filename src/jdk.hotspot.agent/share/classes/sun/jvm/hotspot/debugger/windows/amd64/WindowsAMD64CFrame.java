@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,43 +29,74 @@ import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
 import sun.jvm.hotspot.debugger.windbg.*;
+import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.runtime.amd64.*;
 
 public class WindowsAMD64CFrame extends BasicCFrame {
+  private JavaThread ownerThread;
+  private Address rsp;
   private Address rbp;
   private Address pc;
 
-  private static final int ADDRESS_SIZE = 8;
-
   /** Constructor for topmost frame */
-  public WindowsAMD64CFrame(WindbgDebugger dbg, Address rbp, Address pc) {
+  public WindowsAMD64CFrame(WindbgDebugger dbg, JavaThread ownerThread, Address rsp, Address rbp, Address pc) {
     super(dbg.getCDebugger());
+    this.ownerThread = ownerThread;
+    this.rsp = rsp;
     this.rbp = rbp;
     this.pc  = pc;
     this.dbg = dbg;
   }
 
+  @Override
   public CFrame sender(ThreadProxy thread) {
-    AMD64ThreadContext context = (AMD64ThreadContext) thread.getContext();
-    Address rsp = context.getRegisterAsAddress(AMD64ThreadContext.RSP);
+    return sender(thread, null, null, null);
+  }
 
-    if ( (rbp == null) || rbp.lessThan(rsp) ) {
-      return null;
-    }
+  @Override
+  public CFrame sender(ThreadProxy th, Address nextSP, Address nextFP, Address nextPC) {
+    if (nextSP == null && nextPC == null) {
+      // GetStackTrace() by Windows Debug API would unwind frame with given SP, FP, and PC.
+      // However it would not work for dynamic generated code like CodeBlob because
+      // HotSpot would not register unwind info like RtlAddFunctionTable().
+      // Thus SA should check whether current PC is in CodeCache at first when nextPC is null.
+      var cb = VM.getVM().getCodeCache().findBlob(pc);
+      if (cb != null) {
+        if (cb.getFrameSize() > 0) {
+          nextSP = rsp.addOffsetTo(cb.getFrameSize());
+          nextPC = nextSP.getAddressAt(-1 * VM.getVM().getAddressSize());
 
-    // Check alignment of rbp
-    if ( dbg.getAddressValue(rbp) % ADDRESS_SIZE != 0) {
+          // Set nextFP to null when PreserveFramePointer is disabled because We could not find out
+          // frame pointer of sender frame - it might be omitted.
+          nextFP = VM.getVM().getCommandLineBooleanFlag("PreserveFramePointer") ? rsp.getAddressAt(0) : null;
+        } else {
+          // Use Frame (AMD64Frame) to access slots on stack.
+          var frame = toFrame();
+          nextSP = frame.getSenderSP();
+          nextPC = frame.getSenderPC();
+          nextFP = frame.getLink();
+        }
+        return new WindowsAMD64CFrame(dbg, ownerThread, nextSP, nextFP, nextPC);
+      }
+
+      WindbgDebugger.SenderRegs senderRegs = dbg.getSenderRegs(rsp, rbp, pc);
+      if (senderRegs == null) {
         return null;
-    }
+      }
 
-    Address nextRBP = rbp.getAddressAt( 0 * ADDRESS_SIZE);
-    if (nextRBP == null || nextRBP.lessThanOrEqual(rbp)) {
-      return null;
+      if (senderRegs.nextSP() == null || senderRegs.nextSP().lessThanOrEqual(rsp)) {
+        return null;
+      }
+      nextSP = senderRegs.nextSP();
+
+      if (senderRegs.nextPC() == null) {
+        return null;
+      }
+      nextPC = senderRegs.nextPC();
+
+      nextFP = senderRegs.nextFP();
     }
-    Address nextPC  = rbp.getAddressAt( 1 * ADDRESS_SIZE);
-    if (nextPC == null) {
-      return null;
-    }
-    return new WindowsAMD64CFrame(dbg, nextRBP, nextPC);
+    return new WindowsAMD64CFrame(dbg, ownerThread, nextSP, nextFP, nextPC);
   }
 
   public Address pc() {
@@ -74,6 +105,22 @@ public class WindowsAMD64CFrame extends BasicCFrame {
 
   public Address localVariableBase() {
     return rbp;
+  }
+
+  @Override
+  public Frame toFrame() {
+    // Find the top of JavaVFrame related to this CFrame. The Windows  GetStackTrace DbgHelp API
+    // cannot get FP for java frames.
+    for (JavaVFrame vf = ownerThread.getLastJavaVFrameDbg(); vf != null; vf = vf.javaSender()) {
+      Frame f = vf.getFrame();
+      if (f.getSP().equals(rsp) && f.getPC().equals(pc)) {
+        return f;
+      } else if (f.getSP().greaterThanOrEqual(rsp)) {
+        return f;
+      }
+    }
+
+    return new AMD64Frame(rsp, localVariableBase(), pc);
   }
 
   private WindbgDebugger dbg;

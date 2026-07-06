@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,11 @@
  */
 package nsk.jvmti.scenarios.hotswap.HS103.hs103t002;
 
+import jdk.test.lib.thread.ThreadWrapper;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class MyThread extends Thread {
+public class MyThread extends ThreadWrapper {
     public static AtomicInteger ai = new AtomicInteger(0);
     public static final int size = 10;
 

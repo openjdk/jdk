@@ -41,7 +41,8 @@ import compiler.lib.ir_framework.TestFramework;
 public class OptionalFold {
 
     public static void main(String[] args) {
-        TestFramework.run();
+        // Somehow fails with -XX:-TieredCompilation
+        TestFramework.runWithFlags("-XX:+TieredCompilation");
     }
 
     // Ensure both present and empty values can fold

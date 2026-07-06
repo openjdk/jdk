@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@ package build.tools.cldrconverter;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -39,6 +42,10 @@ import org.xml.sax.SAXException;
 
 class TimeZoneParseHandler extends AbstractLDMLHandler<Object> {
     private static final String PREF_PREFIX = "preferred:";
+
+    // CLDR aliases to IANA ids map. The initial capacity is estimated
+    // from the number of aliases in timezone.xml as of CLDR v48
+    private final Map<String, String> ianaAliasMap = HashMap.newHashMap(32);
 
     @Override
     public InputSource resolveEntity(String publicID, String systemID) throws IOException, SAXException {
@@ -61,7 +68,16 @@ class TimeZoneParseHandler extends AbstractLDMLHandler<Object> {
                         put(attributes.getValue("name"), PREF_PREFIX + preferred);
                     }
                 } else {
-                    put(attributes.getValue("name"), attributes.getValue("alias"));
+                    var alias = attributes.getValue("alias");
+                    var iana = attributes.getValue("iana");
+                    if (iana != null) {
+                        for (var a : alias.split("\\s+")) {
+                            if (!a.equals(iana)) {
+                                ianaAliasMap.put(a, iana);
+                            }
+                        }
+                    }
+                    put(attributes.getValue("name"), alias);
                 }
             }
             break;
@@ -79,5 +95,9 @@ class TimeZoneParseHandler extends AbstractLDMLHandler<Object> {
             .filter(e -> e.getValue().toString().startsWith(PREF_PREFIX))
             .forEach(e -> map.put(e.getKey(),
                 map.get(e.getValue().toString().substring(PREF_PREFIX.length()))));
+    }
+
+    Map<String, String> getIanaAliasMap() {
+        return ianaAliasMap;
     }
 }

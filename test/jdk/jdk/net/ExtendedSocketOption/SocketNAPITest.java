@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @modules jdk.net
  * @summary Check ExtendedSocketOption NAPI_ID support for Socket and
  *          ServerSocket
- * @run testng SocketNAPITest
- * @run testng/othervm -Djava.net.preferIPv4Stack=true SocketNAPITest
+ * @run junit ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true ${test.main.class}
  */
 
 import java.io.BufferedReader;
@@ -42,26 +42,25 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
-import jdk.test.lib.net.IPSupport;
-import org.testng.SkipException;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static jdk.net.ExtendedSocketOptions.SO_INCOMING_NAPI_ID;
+import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SocketNAPITest {
-    private InetAddress hostAddr;
+    private static InetAddress hostAddr;
     private static final Class<SocketException> SE = SocketException.class;
     private static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
     private static final Class<UnsupportedOperationException> UOE = UnsupportedOperationException.class;
 
-    @BeforeTest
-    public void setup() throws IOException {
-        IPSupport.throwSkippedExceptionIfNonOperational();
+    @BeforeAll
+    public static void setup() throws IOException {
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
         try (var s = new Socket();
              var ss = new ServerSocket()) {
             if (!s.supportedOptions().contains(SO_INCOMING_NAPI_ID)) {
@@ -71,7 +70,7 @@ public class SocketNAPITest {
                 assertThrows(UOE, () -> ss.getOption(SO_INCOMING_NAPI_ID));
                 assertThrows(UOE, () -> ss.setOption(SO_INCOMING_NAPI_ID, 42));
                 assertThrows(UOE, () -> ss.setOption(SO_INCOMING_NAPI_ID, null));
-                throw new SkipException("NAPI ID not supported on this system");
+                Assumptions.abort("NAPI ID not supported on this system");
             }
         }
         hostAddr = InetAddress.getLocalHost();
@@ -80,7 +79,7 @@ public class SocketNAPITest {
     @Test
     public void testSetGetOptionSocket() throws IOException {
         try (var s = new Socket()) {
-            assertEquals((int) s.getOption(SO_INCOMING_NAPI_ID), 0);
+            assertEquals(0, (int) s.getOption(SO_INCOMING_NAPI_ID));
             assertThrows(SE, () -> s.setOption(SO_INCOMING_NAPI_ID, 42));
             assertThrows(IAE, () -> s.setOption(SO_INCOMING_NAPI_ID, null));
         }
@@ -89,7 +88,7 @@ public class SocketNAPITest {
     @Test
     public void testSetGetOptionServerSocket() throws IOException {
         try (var ss = new ServerSocket()) {
-            assertEquals((int) ss.getOption(SO_INCOMING_NAPI_ID), 0);
+            assertEquals(0, (int) ss.getOption(SO_INCOMING_NAPI_ID));
             assertThrows(SE, () -> ss.setOption(SO_INCOMING_NAPI_ID, 42));
             assertThrows(IAE, () -> ss.setOption(SO_INCOMING_NAPI_ID, null));
         }
@@ -98,8 +97,8 @@ public class SocketNAPITest {
     @Test
     public void testSocket() throws Exception {
         int cID, sID;
-        int temp_sID = 0, temp_cID = 0;
-        boolean initialRun = false;
+        int original_sID = 0, original_cID = 0;
+        boolean initialRun = true;
         // server socket
         try (var ss = new ServerSocket()) {
             ss.bind(new InetSocketAddress(hostAddr, 0));
@@ -131,16 +130,16 @@ public class SocketNAPITest {
                         // check ID remains consistent
                         sID = s.getOption(SO_INCOMING_NAPI_ID);
                         cID = c.getOption(SO_INCOMING_NAPI_ID);
-                        if(initialRun) {
+                        if (initialRun) {
                             assertTrue(sID >= 0, "Socket: Server");
                             assertTrue(cID >= 0, "Socket: Client");
-                        } else {
-                            assertEquals(temp_cID, cID);
-                            assertEquals(temp_sID, sID);
                             initialRun = false;
+                            original_sID = sID;
+                            original_cID = cID;
+                        } else {
+                            assertEquals(original_cID, cID);
+                            assertEquals(original_sID, sID);
                         }
-                        temp_sID = sID;
-                        temp_cID = cID;
                     }
                 }
             }

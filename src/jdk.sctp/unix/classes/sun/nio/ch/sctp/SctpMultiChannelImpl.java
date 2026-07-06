@@ -81,9 +81,9 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
     private final int fdVal;
 
-    /* IDs of native threads doing send and receives, for signalling */
-    private volatile long receiverThread;
-    private volatile long senderThread;
+    /* Threads doing send and receives, for signalling */
+    private volatile Thread receiverThread;
+    private volatile Thread senderThread;
 
     /* Lock held by current receiving thread */
     private final Object receiveLock = new Object();
@@ -265,7 +265,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
     private void receiverCleanup() throws IOException {
         synchronized (stateLock) {
-            receiverThread = 0;
+            receiverThread = null;
             if (state == ChannelState.KILLPENDING)
                 kill();
         }
@@ -273,7 +273,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
     private void senderCleanup() throws IOException {
         synchronized (stateLock) {
-            senderThread = 0;
+            senderThread = null;
             if (state == ChannelState.KILLPENDING)
                 kill();
         }
@@ -290,10 +290,10 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             if (state != ChannelState.KILLED)
                 SctpNet.preClose(fdVal);
 
-            if (receiverThread != 0)
+            if (receiverThread != null)
                 NativeThread.signal(receiverThread);
 
-            if (senderThread != 0)
+            if (senderThread != null)
                 NativeThread.signal(senderThread);
 
             if (!isRegistered())
@@ -378,7 +378,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             assert !isOpen() && !isRegistered();
 
             /* Postpone the kill if there is a thread sending or receiving. */
-            if (receiverThread == 0 && senderThread == 0) {
+            if (receiverThread == null && senderThread == null) {
                 state = ChannelState.KILLED;
                 SctpNet.close(fdVal);
             } else {
@@ -484,7 +484,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                         synchronized (stateLock) {
                             if(!isOpen())
                                 return null;
-                            receiverThread = NativeThread.current();
+                            receiverThread = NativeThread.threadToSignal();
                         }
 
                         do {
@@ -765,7 +765,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                 synchronized (stateLock) {
                     if(!isOpen())
                         return 0;
-                    senderThread = NativeThread.current();
+                    senderThread = NativeThread.threadToSignal();
 
                     /* Determine what address or association to send to */
                     Association assoc = messageInfo.association();

@@ -134,7 +134,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // return from here with weak roots in progress. This is not a valid gc state
   // for any young collections (or allocation failures) that interrupt the old
   // collection.
-  heap->concurrent_final_roots();
+  entry_final_roots();
 
   // After concurrent old marking finishes, we reclaim immediate garbage. Further, we may also want to expand OLD in order
   // to make room for anticipated promotions and/or for mixed evacuations.  Mixed evacuations are especially likely to

@@ -34,11 +34,14 @@ class ShenandoahTracer : public GCTracer, public CHeapObj<mtGC> {
 public:
   ShenandoahTracer() : GCTracer(Shenandoah) {}
 
-  // Sends a JFR event (if enabled) summarizing the composition of the collection set
+  // Sends a JFR event summarizing the composition of the collection set
   static void report_evacuation_info(const ShenandoahCollectionSet* cset,
-    size_t free_regions, size_t regions_promoted_humongous, size_t regions_promoted_regular,
-    size_t regular_promoted_garbage, size_t regular_promoted_free, size_t regions_immediate,
-    size_t immediate_size);
+    size_t free_regions, size_t regions_immediate, size_t immediate_size);
+
+  // Sends a JFR event summarizing in-place promotion activity (generational mode only)
+  static void report_promotion_info(const ShenandoahCollectionSet* cset,
+    size_t regions_promoted_humongous, size_t humongous_promoted_garbage, size_t humongous_promoted_free,
+    size_t regions_promoted_regular, size_t regular_promoted_garbage, size_t regular_promoted_free);
 };
 
 #endif

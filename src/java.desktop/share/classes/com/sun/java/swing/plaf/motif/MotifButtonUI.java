@@ -42,8 +42,6 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicButtonListener;
 import javax.swing.plaf.basic.BasicButtonUI;
 
-import sun.awt.AppContext;
-
 /**
  * MotifButton implementation
  *
@@ -55,20 +53,13 @@ public class MotifButtonUI extends BasicButtonUI {
 
     private boolean defaults_initialized = false;
 
-    private static final Object MOTIF_BUTTON_UI_KEY = new Object();
+    private static final ComponentUI UI = new MotifButtonUI();
 
     // ********************************
     //          Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent c) {
-        AppContext appContext = AppContext.getAppContext();
-        MotifButtonUI motifButtonUI =
-                (MotifButtonUI) appContext.get(MOTIF_BUTTON_UI_KEY);
-        if (motifButtonUI == null) {
-            motifButtonUI = new MotifButtonUI();
-            appContext.put(MOTIF_BUTTON_UI_KEY, motifButtonUI);
-        }
-        return motifButtonUI;
+        return UI;
     }
 
     // ********************************

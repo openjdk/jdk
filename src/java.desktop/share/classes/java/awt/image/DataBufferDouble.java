@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 
 package java.awt.image;
 
-import static sun.java2d.StateTrackable.State.*;
+import java.util.Objects;
+
+import static sun.java2d.StateTrackable.State.STABLE;
+import static sun.java2d.StateTrackable.State.UNTRACKABLE;
 
 /**
  * This class extends {@code DataBuffer} and stores data internally
@@ -62,6 +65,7 @@ public final class DataBufferDouble extends DataBuffer {
      * with a specified size.
      *
      * @param size The number of elements in the {@code DataBuffer}.
+     * @throws IllegalArgumentException if {@code size} is less than or equal to zero.
      */
     public DataBufferDouble(int size) {
         super(STABLE, TYPE_DOUBLE, size);
@@ -78,6 +82,8 @@ public final class DataBufferDouble extends DataBuffer {
      * @param size The number of elements in each bank of the
      *        {@code DataBuffer}.
      * @param numBanks The number of banks in the {@code DataBuffer}.
+     * @throws IllegalArgumentException if {@code size} or {@code numBanks}
+     *         is less than or equal to zero.
      */
     public DataBufferDouble(int size, int numBanks) {
         super(STABLE, TYPE_DOUBLE, size, numBanks);
@@ -103,9 +109,14 @@ public final class DataBufferDouble extends DataBuffer {
      * @param dataArray An array of {@code double}s to be used as the
      *                  first and only bank of this {@code DataBuffer}.
      * @param size The number of elements of the array to be used.
+     * @throws NullPointerException if {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if {@code size} is less than or equal
+     *         to zero, or is greater than the length of {@code dataArray}.
      */
     public DataBufferDouble(double[] dataArray, int size) {
         super(UNTRACKABLE, TYPE_DOUBLE, size);
+        Objects.requireNonNull(dataArray, "dataArray must not be null");
+        checkArraySize(size, dataArray.length);
         data = dataArray;
         bankdata = new double[1][];
         bankdata[0] = data;
@@ -128,9 +139,16 @@ public final class DataBufferDouble extends DataBuffer {
      * @param size The number of elements of the array to be used.
      * @param offset The offset of the first element of the array
      *               that will be used.
+     * @throws NullPointerException if {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException
+     *         if {@code size} is less than or equal to zero,
+     *         or {@code offset} is less than zero,
+     *         or {@code (offset + size)} is greater than the length of {@code dataArray}.
      */
     public DataBufferDouble(double[] dataArray, int size, int offset) {
         super(UNTRACKABLE, TYPE_DOUBLE, size, 1, offset);
+        Objects.requireNonNull(dataArray, "dataArray must not be null");
+        checkArraySize(size, offset, dataArray.length);
         data = dataArray;
         bankdata = new double[1][];
         bankdata[0] = data;
@@ -151,9 +169,19 @@ public final class DataBufferDouble extends DataBuffer {
      * @param dataArray An array of arrays of {@code double}s to be
      *        used as the banks of this {@code DataBuffer}.
      * @param size The number of elements of each array to be used.
+     * @throws NullPointerException if {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if {@code size} is less than or equal to zero.
+     * @throws IllegalArgumentException if {@code dataArray} does not have at least one bank.
+     * @throws NullPointerException if any bank of {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if the length of any bank of {@code dataArray}
+     *         is less than {@code size}.
      */
     public DataBufferDouble(double[][] dataArray, int size) {
         super(UNTRACKABLE, TYPE_DOUBLE, size, dataArray.length);
+        for (int b = 0; b < dataArray.length; b++) {
+            Objects.requireNonNull(dataArray[b], "bank must not be null");
+            checkBankSize(b, size, 0, dataArray[b].length);
+        }
         bankdata = dataArray.clone();
         data = bankdata[0];
     }
@@ -175,9 +203,22 @@ public final class DataBufferDouble extends DataBuffer {
      *        used as the banks of this {@code DataBuffer}.
      * @param size The number of elements of each array to be used.
      * @param offsets An array of integer offsets, one for each bank.
+     * @throws IllegalArgumentException if {@code size} is less than or equal to zero.
+     * @throws NullPointerException if {@code dataArray} is {@code null}.
+     * @throws NullPointerException if any bank of {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if {@code dataArray} does not have at least one bank.
+     * @throws NullPointerException if {@code offsets} is {@code null}.
+     * @throws IllegalArgumentException if any element of {@code offsets} is less than zero.
+     * @throws ArrayIndexOutOfBoundsException if the lengths of {@code dataArray} and {@code offsets} differ.
+     * @throws IllegalArgumentException if the length of any bank of {@code dataArray}
+     *         is less than {@code (size + offsets[bankIndex])}.
      */
     public DataBufferDouble(double[][] dataArray, int size, int[] offsets) {
         super(UNTRACKABLE, TYPE_DOUBLE, size, dataArray.length, offsets);
+        for (int b = 0; b < dataArray.length; b++) {
+            Objects.requireNonNull(dataArray[b], "bank must not be null");
+            checkBankSize(b, size, offsets[b], dataArray[b].length);
+        }
         bankdata = dataArray.clone();
         data = bankdata[0];
     }
@@ -207,8 +248,10 @@ public final class DataBufferDouble extends DataBuffer {
      *
      * @param bank the data array
      * @return the data array specified by {@code bank}.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index.
      */
     public double[] getData(int bank) {
+        checkBank(bank);
         theTrackable.setUntrackable();
         return bankdata[bank];
     }
@@ -234,10 +277,12 @@ public final class DataBufferDouble extends DataBuffer {
      *
      * @param i The desired data array element.
      * @return The data entry as an {@code int}.
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())} is not a valid index.
      * @see #setElem(int, int)
      * @see #setElem(int, int, int)
      */
     public int getElem(int i) {
+        checkIndex(i);
         return (int)(data[i+offset]);
     }
 
@@ -249,10 +294,13 @@ public final class DataBufferDouble extends DataBuffer {
      * @param i The desired data array element.
      *
      * @return The data entry as an {@code int}.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #setElem(int, int)
      * @see #setElem(int, int, int)
      */
     public int getElem(int bank, int i) {
+        checkIndex(bank, i);
         return (int)(bankdata[bank][i+offsets[bank]]);
     }
 
@@ -262,10 +310,12 @@ public final class DataBufferDouble extends DataBuffer {
      *
      * @param i The desired data array element.
      * @param val The value to be set.
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())} is not a valid index.
      * @see #getElem(int)
      * @see #getElem(int, int)
      */
     public void setElem(int i, int val) {
+        checkIndex(i);
         data[i+offset] = (double)val;
         theTrackable.markDirty();
     }
@@ -277,10 +327,13 @@ public final class DataBufferDouble extends DataBuffer {
      * @param bank The bank number.
      * @param i The desired data array element.
      * @param val The value to be set.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #getElem(int)
      * @see #getElem(int, int)
      */
     public void setElem(int bank, int i, int val) {
+        checkIndex(bank, i);
         bankdata[bank][i+offsets[bank]] = (double)val;
         theTrackable.markDirty();
     }
@@ -292,10 +345,12 @@ public final class DataBufferDouble extends DataBuffer {
      * @param i The desired data array element.
      *
      * @return The data entry as a {@code float}.
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())} is not a valid index.
      * @see #setElemFloat(int, float)
      * @see #setElemFloat(int, int, float)
      */
     public float getElemFloat(int i) {
+        checkIndex(i);
         return (float)data[i+offset];
     }
 
@@ -307,10 +362,13 @@ public final class DataBufferDouble extends DataBuffer {
      * @param i The desired data array element.
      *
      * @return The data entry as a {@code float}.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #setElemFloat(int, float)
      * @see #setElemFloat(int, int, float)
      */
     public float getElemFloat(int bank, int i) {
+        checkIndex(bank, i);
         return (float)bankdata[bank][i+offsets[bank]];
     }
 
@@ -320,10 +378,12 @@ public final class DataBufferDouble extends DataBuffer {
      *
      * @param i The desired data array element.
      * @param val The value to be set.
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())} is not a valid index.
      * @see #getElemFloat(int)
      * @see #getElemFloat(int, int)
      */
     public void setElemFloat(int i, float val) {
+        checkIndex(i);
         data[i+offset] = (double)val;
         theTrackable.markDirty();
     }
@@ -335,10 +395,13 @@ public final class DataBufferDouble extends DataBuffer {
      * @param bank The bank number.
      * @param i The desired data array element.
      * @param val The value to be set.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #getElemFloat(int)
      * @see #getElemFloat(int, int)
      */
     public void setElemFloat(int bank, int i, float val) {
+        checkIndex(bank, i);
         bankdata[bank][i+offsets[bank]] = (double)val;
         theTrackable.markDirty();
     }
@@ -350,10 +413,12 @@ public final class DataBufferDouble extends DataBuffer {
      * @param i The desired data array element.
      *
      * @return The data entry as a {@code double}.
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())} is not a valid index.
      * @see #setElemDouble(int, double)
      * @see #setElemDouble(int, int, double)
      */
     public double getElemDouble(int i) {
+        checkIndex(i);
         return data[i+offset];
     }
 
@@ -365,10 +430,13 @@ public final class DataBufferDouble extends DataBuffer {
      * @param i The desired data array element.
      *
      * @return The data entry as a {@code double}.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #setElemDouble(int, double)
      * @see #setElemDouble(int, int, double)
      */
     public double getElemDouble(int bank, int i) {
+        checkIndex(bank, i);
         return bankdata[bank][i+offsets[bank]];
     }
 
@@ -378,10 +446,12 @@ public final class DataBufferDouble extends DataBuffer {
      *
      * @param i The desired data array element.
      * @param val The value to be set.
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())} is not a valid index.
      * @see #getElemDouble(int)
      * @see #getElemDouble(int, int)
      */
     public void setElemDouble(int i, double val) {
+        checkIndex(i);
         data[i+offset] = val;
         theTrackable.markDirty();
     }
@@ -393,10 +463,13 @@ public final class DataBufferDouble extends DataBuffer {
      * @param bank The bank number.
      * @param i The desired data array element.
      * @param val The value to be set.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #getElemDouble(int)
      * @see #getElemDouble(int, int)
      */
     public void setElemDouble(int bank, int i, double val) {
+        checkIndex(bank, i);
         bankdata[bank][i+offsets[bank]] = val;
         theTrackable.markDirty();
     }

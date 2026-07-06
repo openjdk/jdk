@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import jtreg.SkippedException;
 
 public class OpensslArtifactFetcher {
 
-    private static final String OPENSSL_BUNDLE_VERSION = "3.5.1";
+    private static final String OPENSSL_BUNDLE_VERSION = "3.5.4";
     private static final String OPENSSL_ORG = "jpg.tests.jdk.openssl";
 
     /**

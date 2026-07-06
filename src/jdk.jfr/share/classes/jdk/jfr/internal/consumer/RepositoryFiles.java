@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,9 +181,9 @@ public final class RepositoryFiles {
             List<Path> added = new ArrayList<>();
             Set<Path> current = new HashSet<>();
             for (Path p : dirStream) {
-                if (!pathLookup.containsKey(p)) {
-                    String s = p.toString();
-                    if (s.endsWith(".jfr")) {
+                String s = p.toString();
+                if (s.endsWith(".jfr")) {
+                    if (!pathLookup.containsKey(p)) {
                         added.add(p);
                         Logger.log(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG, "New file found: " + p.toAbsolutePath());
                     }

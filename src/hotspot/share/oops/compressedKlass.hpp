@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,6 @@ class Klass;
 // If compressed klass pointers then use narrowKlass.
 typedef juint  narrowKlass;
 
-// For UseCompressedClassPointers.
 class CompressedKlassPointers : public AllStatic {
   friend class VMStructs;
   friend class ArchiveBuilder;
@@ -161,7 +160,6 @@ public:
 
   // Initialization sequence:
   // 1) Parse arguments. The following arguments take a role:
-  //      - UseCompressedClassPointers
   //      - UseCompactObjectHeaders
   //      - Xshare on off dump
   //      - CompressedClassSpaceSize
@@ -191,12 +189,6 @@ public:
   // Returns the maximum allowed klass range size. It is calculated from the length of the encoding range
   // resulting from the current encoding settings (base, shift), capped to a certain max. value.
   static size_t max_klass_range_size();
-
-  // On 64-bit, we need the class space to confine Klass structures to the encoding range, which is determined
-  // by bit size of narrowKlass IDs and the shift. On 32-bit, we support compressed class pointer only
-  // "pro-forma": narrowKlass have the same size as addresses (32 bits), and therefore the encoding range is
-  // equal to the address space size. Here, we don't need a class space.
-  static constexpr bool needs_class_space() { return LP64_ONLY(true) NOT_LP64(false); }
 
   // Reserve a range of memory that is to contain Klass strucutures which are referenced by narrow Klass IDs.
   // If optimize_for_zero_base is true, the implementation will attempt to reserve optimized for zero-based encoding.
@@ -231,7 +223,7 @@ public:
   // Returns the alignment a Klass* is guaranteed to have.
   // Note: *Not* the same as 1 << shift ! Klass are always guaranteed to be at least 64-bit aligned,
   // so this will return 8 even if shift is 0.
-  static int klass_alignment_in_bytes() { return nth_bit(MAX2(3, _shift)); }
+  static int klass_alignment_in_bytes() { return static_cast<int>(nth_bit(MAX2(3, _shift))); }
   static int klass_alignment_in_words() { return klass_alignment_in_bytes() / BytesPerWord; }
 
   // Returns the highest possible narrowKlass value given the current Klass range

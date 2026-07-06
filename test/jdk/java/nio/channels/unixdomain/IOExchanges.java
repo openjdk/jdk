@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,38 +21,45 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8245194
- * @run testng/othervm/timeout=480 IOExchanges
+ * @run junit/othervm/timeout=480 IOExchanges
  */
 
 import java.io.IOException;
-import java.net.*;
-import java.nio.channels.*;
+import java.net.ProtocolFamily;
+import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
+import java.util.List;
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.lang.System.out;
 import static java.net.StandardProtocolFamily.*;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class IOExchanges {
     static boolean unixDomainSupported = true;
 
 
-    @BeforeTest()
-    public void setup() {
+    @BeforeAll()
+    public static void setup() {
         try {
-            SocketChannel.open(UNIX);
+            SocketChannel.open(UNIX).close();
         } catch (IOException | UnsupportedOperationException e) {
             unixDomainSupported = false;
             out.println("Unix domain channels not supported");
@@ -72,8 +79,8 @@ public class IOExchanges {
     }
 
     public static void deleteFile(SocketAddress addr) throws Exception {
-        if (addr instanceof UnixDomainSocketAddress) {
-            Files.deleteIfExists(((UnixDomainSocketAddress) addr).getPath());
+        if (addr instanceof UnixDomainSocketAddress uaddr) {
+            Files.deleteIfExists(uaddr.getPath());
         }
     }
 
@@ -118,18 +125,12 @@ public class IOExchanges {
         SPINBAccep_NBConn_NBIO_RW_12a
     */
 
-    @DataProvider(name = "family")
-    public Object[][] family() {
-        return unixDomainSupported ?
-                new Object[][] {
-                    { UNIX },
-                    { INET }}
-                : new Object[][] {
-                    { INET }
-        };
+    public static List<ProtocolFamily> family() {
+        return unixDomainSupported ? List.of(INET, UNIX) : List.of(INET);
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void BAccep_BConn_BIO_WR_1(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -140,25 +141,26 @@ public class IOExchanges {
                 try (SocketChannel sc = openSocketChannel(family)) {
                     assertTrue(sc.connect(addr));
                     ByteBuffer bb = ByteBuffer.allocate(10).put((byte) 0x01).flip();
-                    assertEquals(sc.write(bb), 1);
+                    assertEquals(1, sc.write(bb));
                     out.printf("wrote: 0x%x%n", bb.get(0));
-                    assertEquals(sc.read(bb.clear()), -1);
+                    assertEquals(-1, sc.read(bb.clear()));
                 }
             });
             t.start();
 
             try (SocketChannel sc = ssc.accept()) {
                 ByteBuffer bb = ByteBuffer.allocate(10);
-                assertEquals(sc.read(bb), 1);
+                assertEquals(1, sc.read(bb));
                 out.printf("read:  0x%x%n", bb.get(0));
-                assertEquals(bb.get(0), 0x01);
+                assertEquals(0x01, bb.get(0));
             }
             t.awaitCompletion();
             deleteFile(addr);
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void BAccep_BConn_BIO_RW_2(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -169,25 +171,26 @@ public class IOExchanges {
                 try (SocketChannel sc = openSocketChannel(family)) {
                     assertTrue(sc.connect(addr));
                     ByteBuffer bb = ByteBuffer.allocate(10);
-                    assertEquals(sc.read(bb), 1);
+                    assertEquals(1, sc.read(bb));
                     out.printf("read:  0x%x%n", bb.get(0));
-                    assertEquals(bb.get(0), 0x02);
+                    assertEquals(0x02, bb.get(0));
                 }
             });
             t.start();
 
             try (SocketChannel sc = ssc.accept()) {
                 ByteBuffer bb = ByteBuffer.allocate(10).put((byte) 0x02).flip();
-                assertEquals(sc.write(bb), 1);
+                assertEquals(1, sc.write(bb));
                 out.printf("wrote: 0x%x%n", bb.get(0));
-                assertEquals(sc.read(bb.clear()), -1);
+                assertEquals(-1, sc.read(bb.clear()));
             }
             t.awaitCompletion();
             deleteFile(addr);
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SELNBAccep_BConn_BIO_WR_3(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family);
@@ -199,28 +202,29 @@ public class IOExchanges {
                 try (SocketChannel sc = openSocketChannel(family)) {
                     assertTrue(sc.connect(addr));
                     ByteBuffer bb = ByteBuffer.allocate(10).put((byte) 0x03).flip();
-                    assertEquals(sc.write(bb), 1);
+                    assertEquals(1, sc.write(bb));
                     out.printf("wrote: 0x%x%n", bb.get(0));
-                    assertEquals(sc.read(bb.clear()), -1);
+                    assertEquals(-1, sc.read(bb.clear()));
                 }
             });
             t.start();
 
             ssc.configureBlocking(false).register(selector, OP_ACCEPT);
-            assertEquals(selector.select(), 1);
+            assertEquals(1, selector.select());
 
             try (SocketChannel sc = ssc.accept()) {
                 ByteBuffer bb = ByteBuffer.allocate(10);
-                assertEquals(sc.read(bb), 1);
+                assertEquals(1, sc.read(bb));
                 out.printf("read:  0x%x%n", bb.get(0));
-                assertEquals(bb.get(0), 0x03);
+                assertEquals(0x03, bb.get(0));
             }
             t.awaitCompletion();
             deleteFile(addr);
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SELNBAccep_BConn_BIO_RW_4(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family);
@@ -232,21 +236,21 @@ public class IOExchanges {
                 try (SocketChannel sc = openSocketChannel(family)) {
                     assertTrue(sc.connect(addr));
                     ByteBuffer bb = ByteBuffer.allocate(10);
-                    assertEquals(sc.read(bb), 1);
+                    assertEquals(1, sc.read(bb));
                     out.printf("read:  0x%x%n", bb.get(0));
-                    assertEquals(bb.get(0), 0x04);
+                    assertEquals(0x04, bb.get(0));
                 }
             });
             t.start();
 
             ssc.configureBlocking(false).register(selector, OP_ACCEPT);
-            assertEquals(selector.select(), 1);
+            assertEquals(1, selector.select());
 
             try (SocketChannel sc = ssc.accept()) {
                 ByteBuffer bb = ByteBuffer.allocate(10).put((byte) 0x04).flip();
-                assertEquals(sc.write(bb), 1);
+                assertEquals(1, sc.write(bb));
                 out.printf("wrote: 0x%x%n", bb.get(0));
-                assertEquals(sc.read(bb.clear()), -1);
+                assertEquals(-1, sc.read(bb.clear()));
 
             }
             t.awaitCompletion();
@@ -254,7 +258,8 @@ public class IOExchanges {
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SPINNBAccep_BConn_BIO_WR_5(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -265,9 +270,9 @@ public class IOExchanges {
                 try (SocketChannel sc = openSocketChannel(family)) {
                     assertTrue(sc.connect(addr));
                     ByteBuffer bb = ByteBuffer.allocate(10).put((byte) 0x05).flip();
-                    assertEquals(sc.write(bb), 1);
+                    assertEquals(1, sc.write(bb));
                     out.printf("wrote: 0x%x%n", bb.get(0));
-                    assertEquals(sc.read(bb.clear()), -1);
+                    assertEquals(-1, sc.read(bb.clear()));
                 }
             });
             t.start();
@@ -284,16 +289,17 @@ public class IOExchanges {
 
             try (SocketChannel sc = accepted) {
                 ByteBuffer bb = ByteBuffer.allocate(10);
-                assertEquals(sc.read(bb), 1);
+                assertEquals(1, sc.read(bb));
                 out.printf("read:  0x%x%n", bb.get(0));
-                assertEquals(bb.get(0), 0x05);
+                assertEquals(0x05, bb.get(0));
             }
             t.awaitCompletion();
             deleteFile(addr);
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SPINNBAccep_BConn_BIO_RW_6(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -304,9 +310,9 @@ public class IOExchanges {
                 try (SocketChannel sc = openSocketChannel(family)) {
                     assertTrue(sc.connect(addr));
                     ByteBuffer bb = ByteBuffer.allocate(10);
-                    assertEquals(sc.read(bb), 1);
+                    assertEquals(1, sc.read(bb));
                     out.printf("read:  0x%x%n", bb.get(0));
-                    assertEquals(bb.get(0), 0x06);
+                    assertEquals(0x06, bb.get(0));
                 }
             });
             t.start();
@@ -323,9 +329,9 @@ public class IOExchanges {
 
             try (SocketChannel sc = accepted) {
                 ByteBuffer bb = ByteBuffer.allocate(10).put((byte) 0x06).flip();
-                assertEquals(sc.write(bb), 1);
+                assertEquals(1, sc.write(bb));
                 out.printf("wrote: 0x%x%n", bb.get(0));
-                assertEquals(sc.read(bb.clear()), -1);
+                assertEquals(-1, sc.read(bb.clear()));
 
             }
             t.awaitCompletion();
@@ -336,7 +342,8 @@ public class IOExchanges {
     // Similar to the previous six scenarios, but with same-thread
     // non-blocking connect.
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void BAccep_NBConn_BIO_WR_7(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -352,16 +359,16 @@ public class IOExchanges {
                     sc.configureBlocking(true);
                     TestThread t = TestThread.of("t7", () -> {
                         ByteBuffer bb = ByteBuffer.allocate(10).put((byte) 0x07).flip();
-                        assertEquals(sc.write(bb), 1);
+                        assertEquals(1, sc.write(bb));
                         out.printf("wrote: 0x%x%n", bb.get(0));
-                        assertEquals(sc.read(bb.clear()), -1);
+                        assertEquals(-1, sc.read(bb.clear()));
                     });
                     t.start();
 
                     ByteBuffer bb = ByteBuffer.allocate(10);
-                    assertEquals(sc2.read(bb), 1);
+                    assertEquals(1, sc2.read(bb));
                     out.printf("read:  0x%x%n", bb.get(0));
-                    assertEquals(bb.get(0), 0x07);
+                    assertEquals(0x07, bb.get(0));
                     sc2.shutdownOutput();
                     t.awaitCompletion();
                 }
@@ -370,7 +377,8 @@ public class IOExchanges {
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void BAccep_NBConn_BIO_RW_8(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -386,17 +394,17 @@ public class IOExchanges {
                     sc.configureBlocking(true);
                     TestThread t = TestThread.of("t8", () -> {
                         ByteBuffer bb = ByteBuffer.allocate(10);
-                        assertEquals(sc.read(bb), 1);
+                        assertEquals(1, sc.read(bb));
                         out.printf("read:  0x%x%n", bb.get(0));
-                        assertEquals(bb.get(0), 0x08);
+                        assertEquals(0x08, bb.get(0));
                         sc.shutdownOutput();
                     });
                     t.start();
 
                     ByteBuffer bb = ByteBuffer.allocate(10).put((byte) 0x08).flip();
-                    assertEquals(sc2.write(bb), 1);
+                    assertEquals(1, sc2.write(bb));
                     out.printf("wrote: 0x%x%n", bb.get(0));
-                    assertEquals(sc2.read(bb.clear()), -1);
+                    assertEquals(-1, sc2.read(bb.clear()));
                     t.awaitCompletion();
                 }
             }
@@ -404,7 +412,8 @@ public class IOExchanges {
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SELNBAccep_NBConn_BIO_WR_9(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -417,23 +426,23 @@ public class IOExchanges {
                 sc.connect(addr);
 
                 ssc.configureBlocking(false).register(selector, OP_ACCEPT);
-                assertEquals(selector.select(), 1);
+                assertEquals(1, selector.select());
 
                 try (SocketChannel sc2 = ssc.accept()) {
                     assertTrue(sc.finishConnect());
                     sc.configureBlocking(true);
                     TestThread t = TestThread.of("t9", () -> {
                         ByteBuffer bb = ByteBuffer.allocate(10).put((byte) 0x09).flip();
-                        assertEquals(sc.write(bb), 1);
+                        assertEquals(1, sc.write(bb));
                         out.printf("wrote: 0x%x%n", bb.get(0));
-                        assertEquals(sc.read(bb.clear()), -1);
+                        assertEquals(-1, sc.read(bb.clear()));
                     });
                     t.start();
 
                     ByteBuffer bb = ByteBuffer.allocate(10);
-                    assertEquals(sc2.read(bb), 1);
+                    assertEquals(1, sc2.read(bb));
                     out.printf("read:  0x%x%n", bb.get(0));
-                    assertEquals(bb.get(0), 0x09);
+                    assertEquals(0x09, bb.get(0));
                     sc2.shutdownOutput();
                     t.awaitCompletion();
                 }
@@ -442,7 +451,8 @@ public class IOExchanges {
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SELNBAccep_NBConn_BIO_RW_10(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -455,24 +465,24 @@ public class IOExchanges {
                 sc.connect(addr);
 
                 ssc.configureBlocking(false).register(selector, OP_ACCEPT);
-                assertEquals(selector.select(), 1);
+                assertEquals(1, selector.select());
 
                 try (SocketChannel sc2 = ssc.accept()) {
                     assertTrue(sc.finishConnect());
                     sc.configureBlocking(true);
                     TestThread t = TestThread.of("t10", () -> {
                         ByteBuffer bb = ByteBuffer.allocate(10);
-                        assertEquals(sc.read(bb), 1);
+                        assertEquals(1, sc.read(bb));
                         out.printf("read:  0x%x%n", bb.get(0));
-                        assertEquals(bb.get(0), 0x10);
+                        assertEquals(0x10, bb.get(0));
                         sc.shutdownOutput();
                     });
                     t.start();
 
                     ByteBuffer bb = ByteBuffer.allocate(10).put((byte) 0x10).flip();
-                    assertEquals(sc2.write(bb), 1);
+                    assertEquals(1, sc2.write(bb));
                     out.printf("wrote: 0x%x%n", bb.get(0));
-                    assertEquals(sc2.read(bb.clear()), -1);
+                    assertEquals(-1, sc2.read(bb.clear()));
                     t.awaitCompletion();
                 }
             }
@@ -480,7 +490,8 @@ public class IOExchanges {
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SPINNBAccep_NBConn_BIO_WR_11(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -506,16 +517,16 @@ public class IOExchanges {
                     sc.configureBlocking(true);
                     TestThread t = TestThread.of("t11", () -> {
                         ByteBuffer bb = ByteBuffer.allocate(10).put((byte) 0x11).flip();
-                        assertEquals(sc.write(bb), 1);
+                        assertEquals(1, sc.write(bb));
                         out.printf("wrote: 0x%x%n", bb.get(0));
-                        assertEquals(sc.read(bb.clear()), -1);
+                        assertEquals(-1, sc.read(bb.clear()));
                     });
                     t.start();
 
                     ByteBuffer bb = ByteBuffer.allocate(10);
-                    assertEquals(sc2.read(bb), 1);
+                    assertEquals(1, sc2.read(bb));
                     out.printf("read:  0x%x%n", bb.get(0));
-                    assertEquals(bb.get(0), 0x11);
+                    assertEquals(0x11, bb.get(0));
                     sc2.shutdownOutput();
                     t.awaitCompletion();
                 }
@@ -524,7 +535,8 @@ public class IOExchanges {
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SPINNBAccep_NBConn_BIO_RW_12(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -550,17 +562,17 @@ public class IOExchanges {
                     sc.configureBlocking(true);
                     TestThread t = TestThread.of("t12", () -> {
                         ByteBuffer bb = ByteBuffer.allocate(10);
-                        assertEquals(sc.read(bb), 1);
+                        assertEquals(1, sc.read(bb));
                         out.printf("read:  0x%x%n", bb.get(0));
-                        assertEquals(bb.get(0), 0x12);
+                        assertEquals(0x12, bb.get(0));
                         sc.shutdownOutput();
                     });
                     t.start();
 
                     ByteBuffer bb = ByteBuffer.allocate(10).put((byte) 0x12).flip();
-                    assertEquals(sc2.write(bb), 1);
+                    assertEquals(1, sc2.write(bb));
                     out.printf("wrote: 0x%x%n", bb.get(0));
-                    assertEquals(sc2.read(bb.clear()), -1);
+                    assertEquals(-1, sc2.read(bb.clear()));
                     t.awaitCompletion();
                 }
             }
@@ -572,7 +584,8 @@ public class IOExchanges {
     // Similar to the previous twelve scenarios but with non-blocking IO
     // ---
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void BAccep_BConn_NBIO_WR_1a(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -589,13 +602,13 @@ public class IOExchanges {
                     selector.select();
                     int c;
                     while ((c = sc.write(bb)) < 1) ;
-                    assertEquals(c, 1);
+                    assertEquals(1, c);
                     out.printf("wrote: 0x%x%n", bb.get(0));
                     k.interestOps(OP_READ);
                     selector.select();
                     bb.clear();
                     while ((c = sc.read(bb)) == 0) ;
-                    assertEquals(c, -1);
+                    assertEquals(-1, c);
                 }
             });
             t.start();
@@ -608,16 +621,17 @@ public class IOExchanges {
                 selector.select();
                 int c;
                 while ((c = sc.read(bb)) == 0) ;
-                assertEquals(c, 1);
+                assertEquals(1, c);
                 out.printf("read:  0x%x%n", bb.get(0));
-                assertEquals(bb.get(0), 0x1A);
+                assertEquals(0x1A, bb.get(0));
             }
             t.awaitCompletion();
             deleteFile(addr);
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void BAccep_BConn_NBIO_RW_2a(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -634,9 +648,9 @@ public class IOExchanges {
                     selector.select();
                     int c;
                     while ((c = sc.read(bb)) == 0) ;
-                    assertEquals(c, 1);
+                    assertEquals(1, c);
                     out.printf("read:  0x%x%n", bb.get(0));
-                    assertEquals(bb.get(0), 0x2A);
+                    assertEquals(0x2A, bb.get(0));
                 }
             });
             t.start();
@@ -649,20 +663,21 @@ public class IOExchanges {
                 selector.select();
                 int c;
                 while ((c = sc.write(bb)) < 1) ;
-                assertEquals(c, 1);
+                assertEquals(1, c);
                 out.printf("wrote: 0x%x%n", bb.get(0));
                 k.interestOps(OP_READ);
                 selector.select();
                 bb.clear();
                 while ((c = sc.read(bb)) == 0) ;
-                assertEquals(c, -1);
+                assertEquals(-1, c);
             }
             t.awaitCompletion();
             deleteFile(addr);
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SELNBAccep_BConn_NBIO_WR_3a(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family);
@@ -680,19 +695,19 @@ public class IOExchanges {
                     selector.select();
                     int c;
                     while ((c = sc.write(bb)) < 1) ;
-                    assertEquals(c, 1);
+                    assertEquals(1, c);
                     out.printf("wrote: 0x%x%n", bb.get(0));
                     k.interestOps(OP_READ);
                     selector.select();
                     bb.clear();
                     while ((c = sc.read(bb)) == 0) ;
-                    assertEquals(c, -1);
+                    assertEquals(-1, c);
                 }
             });
             t.start();
 
             ssc.configureBlocking(false).register(aselector, OP_ACCEPT);
-            assertEquals(aselector.select(), 1);
+            assertEquals(1, aselector.select());
 
             try (SocketChannel sc = ssc.accept();
                  Selector selector = Selector.open()) {
@@ -702,16 +717,17 @@ public class IOExchanges {
                 selector.select();
                 int c;
                 while ((c = sc.read(bb)) == 0) ;
-                assertEquals(c, 1);
+                assertEquals(1, c);
                 out.printf("read:  0x%x%n", bb.get(0));
-                assertEquals(bb.get(0), 0x3A);
+                assertEquals(0x3A, bb.get(0));
             }
             t.awaitCompletion();
             deleteFile(addr);
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SELNBAccep_BConn_NBIO_RW_4a(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family);
@@ -729,15 +745,15 @@ public class IOExchanges {
                     selector.select();
                     int c;
                     while ((c = sc.read(bb)) == 0) ;
-                    assertEquals(c, 1);
+                    assertEquals(1, c);
                     out.printf("read:  0x%x%n", bb.get(0));
-                    assertEquals(bb.get(0), 0x4A);
+                    assertEquals(0x4A, bb.get(0));
                 }
             });
             t.start();
 
             ssc.configureBlocking(false).register(aselector, OP_ACCEPT);
-            assertEquals(aselector.select(), 1);
+            assertEquals(1, aselector.select());
 
             try (SocketChannel sc = ssc.accept();
                  Selector selector = Selector.open()) {
@@ -747,20 +763,21 @@ public class IOExchanges {
                 selector.select();
                 int c;
                 while ((c = sc.write(bb)) < 1) ;
-                assertEquals(c, 1);
+                assertEquals(1, c);
                 out.printf("wrote: 0x%x%n", bb.get(0));
                 k.interestOps(OP_READ);
                 selector.select();
                 bb.clear();
                 while ((c = sc.read(bb)) == 0) ;
-                assertEquals(c, -1);
+                assertEquals(-1, c);
             }
             t.awaitCompletion();
             deleteFile(addr);
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SPINNBAccep_BConn_NBIO_WR_5a(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -777,13 +794,13 @@ public class IOExchanges {
                     selector.select();
                     int c;
                     while ((c = sc.write(bb)) < 1) ;
-                    assertEquals(c, 1);
+                    assertEquals(1, c);
                     out.printf("wrote: 0x%x%n", bb.get(0));
                     k.interestOps(OP_READ);
                     selector.select();
                     bb.clear();
                     while ((c = sc.read(bb)) == 0) ;
-                    assertEquals(c, -1);
+                    assertEquals(-1, c);
                 }
             });
             t.start();
@@ -806,16 +823,17 @@ public class IOExchanges {
                 selector.select();
                 int c;
                 while ((c = sc.read(bb)) == 0) ;
-                assertEquals(c, 1);
+                assertEquals(1, c);
                 out.printf("read:  0x%x%n", bb.get(0));
-                assertEquals(bb.get(0), 0x5A);
+                assertEquals(0x5A, bb.get(0));
             }
             t.awaitCompletion();
             deleteFile(addr);
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SPINNBAccep_BConn_NBIO_RW_6a(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -832,9 +850,9 @@ public class IOExchanges {
                     selector.select();
                     int c;
                     while ((c = sc.read(bb)) == 0) ;
-                    assertEquals(c, 1);
+                    assertEquals(1, c);
                     out.printf("read:  0x%x%n", bb.get(0));
-                    assertEquals(bb.get(0), 0x6A);
+                    assertEquals(0x6A, bb.get(0));
                 }
             });
             t.start();
@@ -857,13 +875,13 @@ public class IOExchanges {
                 selector.select();
                 int c;
                 while ((c = sc.write(bb)) < 1) ;
-                assertEquals(c, 1);
+                assertEquals(1, c);
                 out.printf("wrote: 0x%x%n", bb.get(0));
                 k.interestOps(OP_READ);
                 selector.select();
                 bb.clear();
                 while ((c = sc.read(bb)) == 0) ;
-                assertEquals(c, -1);
+                assertEquals(-1, c);
 
             }
             t.awaitCompletion();
@@ -874,7 +892,8 @@ public class IOExchanges {
     // Similar to the previous six scenarios but with same-thread
     // non-blocking connect.
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void BAccep_NBConn_NBIO_WR_7a(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -895,13 +914,13 @@ public class IOExchanges {
                             selector.select();
                             int c;
                             while ((c = sc.write(bb)) < 1) ;
-                            assertEquals(c, 1);
+                            assertEquals(1, c);
                             out.printf("wrote: 0x%x%n", bb.get(0));
                             k.interestOps(OP_READ);
                             selector.select();
                             bb.clear();
                             while ((c = sc.read(bb)) == 0) ;
-                            assertEquals(c, -1);
+                            assertEquals(-1, c);
                         }
                     });
                     t.start();
@@ -913,9 +932,9 @@ public class IOExchanges {
                         selector.select();
                         int c;
                         while ((c = sc2.read(bb)) == 0) ;
-                        assertEquals(c, 1);
+                        assertEquals(1, c);
                         out.printf("read:  0x%x%n", bb.get(0));
-                        assertEquals(bb.get(0), 0x7A);
+                        assertEquals(0x7A, bb.get(0));
                         sc2.shutdownOutput();
                     }
                     t.awaitCompletion();
@@ -925,7 +944,8 @@ public class IOExchanges {
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void BAccep_NBConn_NBIO_RW_8a(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -945,9 +965,9 @@ public class IOExchanges {
                             selector.select();
                             int c;
                             while ((c = sc.read(bb)) == 0) ;
-                            assertEquals(c, 1);
+                            assertEquals(1, c);
                             out.printf("read:  0x%x%n", bb.get(0));
-                            assertEquals(bb.get(0), (byte) 0x8A);
+                            assertEquals((byte) 0x8A, bb.get(0));
                             sc.shutdownOutput();
                         }
                     });
@@ -960,13 +980,13 @@ public class IOExchanges {
                         selector.select();
                         int c;
                         while ((c = sc2.write(bb)) < 1) ;
-                        assertEquals(c, 1);
+                        assertEquals(1, c);
                         out.printf("wrote: 0x%x%n", bb.get(0));
                         k.interestOps(OP_READ);
                         selector.select();
                         bb.clear();
                         while ((c = sc2.read(bb)) == 0) ;
-                        assertEquals(c, -1);
+                        assertEquals(-1, c);
                     }
                     t.awaitCompletion();
                 }
@@ -975,7 +995,8 @@ public class IOExchanges {
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SELNBAccep_NBConn_NBIO_WR_9a(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -988,7 +1009,7 @@ public class IOExchanges {
 
                 Selector aselector = Selector.open();
                 ssc.configureBlocking(false).register(aselector, OP_ACCEPT);
-                assertEquals(aselector.select(), 1);
+                assertEquals(1, aselector.select());
 
                 try (SocketChannel sc2 = ssc.accept()) {
                     assertTrue(sc.finishConnect());
@@ -1000,13 +1021,13 @@ public class IOExchanges {
                             selector.select();
                             int c;
                             while ((c = sc.write(bb)) < 1) ;
-                            assertEquals(c, 1);
+                            assertEquals(1, c);
                             out.printf("wrote: 0x%x%n", bb.get(0));
                             k.interestOps(OP_READ);
                             selector.select();
                             bb.clear();
                             while ((c = sc.read(bb)) == 0) ;
-                            assertEquals(c, -1);
+                            assertEquals(-1, c);
                         }
                     });
                     t.start();
@@ -1018,9 +1039,9 @@ public class IOExchanges {
                         selector.select();
                         int c;
                         while ((c = sc2.read(bb)) == 0) ;
-                        assertEquals(c, 1);
+                        assertEquals(1, c);
                         out.printf("read:  0x%x%n", bb.get(0));
-                        assertEquals(bb.get(0), (byte) 0x9A);
+                        assertEquals((byte) 0x9A, bb.get(0));
                         sc2.shutdownOutput();
                     }
                     t.awaitCompletion();
@@ -1030,7 +1051,8 @@ public class IOExchanges {
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SELNBAccep_NBConn_NBIO_RW_10a(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -1043,7 +1065,7 @@ public class IOExchanges {
 
                 Selector aselector = Selector.open();
                 ssc.configureBlocking(false).register(aselector, OP_ACCEPT);
-                assertEquals(aselector.select(), 1);
+                assertEquals(1, aselector.select());
 
                 try (SocketChannel sc2 = ssc.accept()) {
                     assertTrue(sc.finishConnect());
@@ -1054,9 +1076,9 @@ public class IOExchanges {
                             selector.select();
                             int c;
                             while ((c = sc.read(bb)) == 0) ;
-                            assertEquals(c, 1);
+                            assertEquals(1, c);
                             out.printf("read:  0x%x%n", bb.get(0));
-                            assertEquals(bb.get(0), (byte) 0xAA);
+                            assertEquals((byte) 0xAA, bb.get(0));
                             sc.shutdownOutput();
                         }
                     });
@@ -1069,13 +1091,13 @@ public class IOExchanges {
                         selector.select();
                         int c;
                         while ((c = sc2.write(bb)) < 1) ;
-                        assertEquals(c, 1);
+                        assertEquals(1, c);
                         out.printf("wrote: 0x%x%n", bb.get(0));
                         k.interestOps(OP_READ);
                         selector.select();
                         bb.clear();
                         while ((c = sc2.read(bb)) == 0) ;
-                        assertEquals(c, -1);
+                        assertEquals(-1, c);
                     }
                     t.awaitCompletion();
                 }
@@ -1084,7 +1106,8 @@ public class IOExchanges {
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SPINBAccep_NBConn_NBIO_WR_11a(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -1115,13 +1138,13 @@ public class IOExchanges {
                             selector.select();
                             int c;
                             while ((c = sc.write(bb)) < 1) ;
-                            assertEquals(c, 1);
+                            assertEquals(1, c);
                             out.printf("wrote: 0x%x%n", bb.get(0));
                             k.interestOps(OP_READ);
                             selector.select();
                             bb.clear();
                             while ((c = sc.read(bb)) == 0) ;
-                            assertEquals(c, -1);
+                            assertEquals(-1, c);
                         }
                     });
                     t.start();
@@ -1133,9 +1156,9 @@ public class IOExchanges {
                         selector.select();
                         int c;
                         while ((c = sc2.read(bb)) == 0) ;
-                        assertEquals(c, 1);
+                        assertEquals(1, c);
                         out.printf("read:  0x%x%n", bb.get(0));
-                        assertEquals(bb.get(0), (byte) 0xBA);
+                        assertEquals((byte) 0xBA, bb.get(0));
                         sc2.shutdownOutput();
                     }
                     t.awaitCompletion();
@@ -1145,7 +1168,8 @@ public class IOExchanges {
         }
     }
 
-    @Test(dataProvider = "family")
+    @ParameterizedTest
+    @MethodSource("family")
     public void SPINBAccep_NBConn_NBIO_RW_12a(ProtocolFamily family)
             throws Throwable {
         try (ServerSocketChannel ssc = openServerSocketChannel(family)) {
@@ -1175,9 +1199,9 @@ public class IOExchanges {
                             selector.select();
                             int c;
                             while ((c = sc.read(bb)) == 0) ;
-                            assertEquals(c, 1);
+                            assertEquals(1, c);
                             out.printf("read:  0x%x%n", bb.get(0));
-                            assertEquals(bb.get(0), (byte) 0xCA);
+                            assertEquals((byte) 0xCA, bb.get(0));
                             sc.shutdownOutput();
                         }
                     });
@@ -1190,13 +1214,13 @@ public class IOExchanges {
                         selector.select();
                         int c;
                         while ((c = sc2.write(bb)) < 1) ;
-                        assertEquals(c, 1);
+                        assertEquals(1, c);
                         out.printf("wrote: 0x%x%n", bb.get(0));
                         k.interestOps(OP_READ);
                         selector.select();
                         bb.clear();
                         while ((c = sc2.read(bb)) == 0) ;
-                        assertEquals(c, -1);
+                        assertEquals(-1, c);
                     }
                     t.awaitCompletion();
                 }

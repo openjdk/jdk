@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key randomness
  * @bug 8365206
  * @summary Verify NaN sign and significand bits are preserved across conversions,
  *          float -> float16 -> float
@@ -55,6 +56,7 @@ import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.whitebox.WhiteBox;
 import java.lang.reflect.Method;
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class Binary16ConversionNaN_2 {
 
@@ -77,7 +79,7 @@ public class Binary16ConversionNaN_2 {
         float[] nVal = new float[1024];
         float[] nRes = new float[1024];
 
-        Random rand = new Random();
+        Random rand = Utils.getRandomInstance();
 
         // A NaN has a nonzero significand
         for (int i = 1; i <= 0x3ff; i++) {

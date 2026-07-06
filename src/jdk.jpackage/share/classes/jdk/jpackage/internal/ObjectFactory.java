@@ -28,38 +28,38 @@ import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.util.CompositeProxy;
 
-interface ObjectFactory extends ExecutorFactory, RetryExecutorFactory {
+public interface ObjectFactory extends ExecutorFactory, RetryExecutorFactory {
 
-    static ObjectFactory.Builder build() {
+    public static ObjectFactory.Builder build() {
         return new Builder();
     }
 
-    static ObjectFactory.Builder build(ObjectFactory from) {
+    public static ObjectFactory.Builder build(ObjectFactory from) {
         return build().initFrom(from);
     }
 
-    static final class Builder {
+    public static final class Builder {
         private Builder() {
         }
 
-        ObjectFactory create() {
+        public ObjectFactory create() {
             return CompositeProxy.build().invokeTunnel(CompositeProxyTunnel.INSTANCE).create(
                     ObjectFactory.class,
                     Optional.ofNullable(executorFactory).orElse(ExecutorFactory.DEFAULT),
                     Optional.ofNullable(retryExecutorFactory).orElse(RetryExecutorFactory.DEFAULT));
         }
 
-        Builder initFrom(ObjectFactory of) {
+        public Builder initFrom(ObjectFactory of) {
             Objects.requireNonNull(of);
             return executorFactory(of).retryExecutorFactory(of);
         }
 
-        Builder executorFactory(ExecutorFactory v) {
+        public Builder executorFactory(ExecutorFactory v) {
             executorFactory = v;
             return this;
         }
 
-        Builder retryExecutorFactory(RetryExecutorFactory v) {
+        public Builder retryExecutorFactory(RetryExecutorFactory v) {
             retryExecutorFactory = v;
             return this;
         }
@@ -68,5 +68,5 @@ interface ObjectFactory extends ExecutorFactory, RetryExecutorFactory {
         private RetryExecutorFactory retryExecutorFactory;
     }
 
-    static final ObjectFactory DEFAULT = build().create();
+    public static final ObjectFactory DEFAULT = build().create();
 }

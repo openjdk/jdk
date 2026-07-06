@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package javax.swing.plaf.basic;
 
-import sun.awt.AppContext;
-
 import javax.swing.*;
 
 import java.awt.*;
@@ -51,7 +49,7 @@ import java.io.Serializable;
  */
 public class BasicCheckBoxUI extends BasicRadioButtonUI {
 
-    private static final Object BASIC_CHECK_BOX_UI_KEY = new Object();
+    private static final ComponentUI UI = new BasicCheckBoxUI();
 
     private static final String propertyPrefix = "CheckBox" + ".";
 
@@ -71,14 +69,7 @@ public class BasicCheckBoxUI extends BasicRadioButtonUI {
      * @return an instance of {@code BasicCheckBoxUI}
      */
     public static ComponentUI createUI(JComponent b) {
-        AppContext appContext = AppContext.getAppContext();
-        BasicCheckBoxUI checkboxUI =
-                (BasicCheckBoxUI) appContext.get(BASIC_CHECK_BOX_UI_KEY);
-        if (checkboxUI == null) {
-            checkboxUI = new BasicCheckBoxUI();
-            appContext.put(BASIC_CHECK_BOX_UI_KEY, checkboxUI);
-        }
-        return checkboxUI;
+        return UI;
     }
 
     public String getPropertyPrefix() {

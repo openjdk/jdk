@@ -100,7 +100,7 @@ public:
   }
 
   ~SparseArray() {
-    FREE_C_HEAP_ARRAY(T, _slots);
+    FREE_C_HEAP_ARRAY(_slots);
   }
 
   T at(int i)              { return _slots[i]; }
@@ -165,4 +165,3 @@ public:
 };
 
 #endif // GTEST_METASPACE_METASPACEGTESTSPARSEARRAY_HPP
-

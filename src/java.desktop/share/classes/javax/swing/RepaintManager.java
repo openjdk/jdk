@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.SunToolkit;
 import sun.java2d.SunGraphicsEnvironment;
@@ -118,8 +117,6 @@ public class RepaintManager
      * Object responsible for handling core paint functionality.
      */
     private PaintManager paintManager;
-
-    private static final Object repaintManagerKey = RepaintManager.class;
 
     // Whether or not a VolatileImage should be used for double-buffered painting
     static boolean volatileImageBufferEnabled = true;
@@ -236,8 +233,10 @@ public class RepaintManager
         }
     }
 
+    private static RepaintManager repaintManager;
+
     /**
-     * Return the RepaintManager for the calling thread given a Component.
+     * Return the RepaintManager given a Component.
      *
      * @param c a Component -- unused in the default implementation, but could
      *          be used by an overridden version to return a different RepaintManager
@@ -249,21 +248,15 @@ public class RepaintManager
         // component is ever used to determine the current
         // RepaintManager, DisplayChangedRunnable will need to be modified
         // accordingly.
-        return currentManager(AppContext.getAppContext());
-    }
 
-    /**
-     * Returns the RepaintManager for the specified AppContext.  If
-     * a RepaintManager has not been created for the specified
-     * AppContext this will return null.
-     */
-    static RepaintManager currentManager(AppContext appContext) {
-        RepaintManager rm = (RepaintManager)appContext.get(repaintManagerKey);
-        if (rm == null) {
-            rm = new RepaintManager(BUFFER_STRATEGY_TYPE);
-            appContext.put(repaintManagerKey, rm);
+        synchronized (RepaintManager.class) {
+            RepaintManager rm = repaintManager;
+            if (rm == null) {
+                rm = new RepaintManager(BUFFER_STRATEGY_TYPE);
+                repaintManager = rm;
+            }
+            return rm;
         }
-        return rm;
     }
 
     /**
@@ -282,16 +275,12 @@ public class RepaintManager
 
 
     /**
-     * Set the RepaintManager that should be used for the calling
-     * thread. <b>aRepaintManager</b> will become the current RepaintManager
-     * for the calling thread's thread group.
+     * Set the RepaintManager.
      * @param aRepaintManager  the RepaintManager object to use
      */
     public static void setCurrentManager(RepaintManager aRepaintManager) {
-        if (aRepaintManager != null) {
-            SwingUtilities.appContextPut(repaintManagerKey, aRepaintManager);
-        } else {
-            SwingUtilities.appContextRemove(repaintManagerKey);
+        synchronized (RepaintManager.class) {
+            repaintManager = aRepaintManager;
         }
     }
 
@@ -373,7 +362,7 @@ public class RepaintManager
 
         // Queue a Runnable to invoke paintDirtyRegions and
         // validateInvalidComponents.
-        scheduleProcessingRunnable(SunToolkit.targetToAppContext(invalidComponent));
+        scheduleProcessingRunnable();
     }
 
 
@@ -390,7 +379,13 @@ public class RepaintManager
             return;
         }
         if (invalidComponents != null) {
-            invalidComponents.remove(component);
+            int n = invalidComponents.size();
+            for (int i = 0; i < n; i++) {
+                if (component == invalidComponents.get(i)) {
+                    invalidComponents.remove(i);
+                    break;
+                }
+            }
         }
     }
 
@@ -460,7 +455,7 @@ public class RepaintManager
 
         // Queue a Runnable to invoke paintDirtyRegions and
         // validateInvalidComponents.
-        scheduleProcessingRunnable(SunToolkit.targetToAppContext(c));
+        scheduleProcessingRunnable();
     }
 
     /**
@@ -530,8 +525,7 @@ public class RepaintManager
     // This is called from the toolkit thread when a native expose is
     // received.
     //
-    void nativeAddDirtyRegion(AppContext appContext, Container c,
-                              int x, int y, int w, int h) {
+    void nativeAddDirtyRegion(Container c, int x, int y, int w, int h) {
         if (w > 0 && h > 0) {
             synchronized(this) {
                 Rectangle dirty = hwDirtyComponents.get(c);
@@ -543,7 +537,7 @@ public class RepaintManager
                                               x, y, w, h, dirty));
                 }
             }
-            scheduleProcessingRunnable(appContext);
+            scheduleProcessingRunnable();
         }
     }
 
@@ -551,8 +545,7 @@ public class RepaintManager
     // This is called from the toolkit thread when awt needs to run a
     // Runnable before we paint.
     //
-    void nativeQueueSurfaceDataRunnable(AppContext appContext,
-                                        final Component c, final Runnable r)
+    void nativeQueueSurfaceDataRunnable(final Component c, final Runnable r)
     {
         synchronized(this) {
             if (runnableList == null) {
@@ -560,7 +553,7 @@ public class RepaintManager
             }
             runnableList.add(r);
         }
-        scheduleProcessingRunnable(appContext);
+        scheduleProcessingRunnable();
     }
 
     /**
@@ -1033,7 +1026,7 @@ public class RepaintManager
 
         // If the window is non-opaque, it's double-buffered at peer's level
         Window w = (c instanceof Window) ? (Window)c : SwingUtilities.getWindowAncestor(c);
-        if (!w.isOpaque()) {
+        if (w != null && !w.isOpaque()) {
             Toolkit tk = Toolkit.getDefaultToolkit();
             if ((tk instanceof SunToolkit) && (((SunToolkit)tk).needUpdateWindow())) {
                 return null;
@@ -1411,11 +1404,11 @@ public class RepaintManager
         return paintManager;
     }
 
-    private void scheduleProcessingRunnable(AppContext context) {
+    private void scheduleProcessingRunnable() {
         if (processingRunnable.markPending()) {
             Toolkit tk = Toolkit.getDefaultToolkit();
             if (tk instanceof SunToolkit) {
-                SunToolkit.getSystemEventQueueImplPP(context).
+                SunToolkit.getSystemEventQueueImplPP().
                   postEvent(new InvocationEvent(Toolkit.getDefaultToolkit(),
                                                 processingRunnable));
             } else {
@@ -1733,8 +1726,7 @@ public class RepaintManager
     /**
      * Listener installed to detect display changes. When display changes,
      * schedules a callback to notify all RepaintManagers of the display
-     * changes. Only one DisplayChangedHandler is ever installed. The
-     * singleton instance will schedule notification for all AppContexts.
+     * changes. Only one DisplayChangedHandler is ever installed.
      */
     private static final class DisplayChangedHandler implements
                                              DisplayChangedListener {
@@ -1746,21 +1738,14 @@ public class RepaintManager
         }
 
         private static void scheduleDisplayChanges() {
-            // To avoid threading problems, we notify each RepaintManager
+            // To avoid threading problems, we notify the RepaintManager
             // on the thread it was created on.
-            for (AppContext context : AppContext.getAppContexts()) {
-                synchronized(context) {
-                    if (!context.isDisposed()) {
-                        EventQueue eventQueue = (EventQueue)context.get(
-                            AppContext.EVENT_QUEUE_KEY);
-                        if (eventQueue != null) {
-                            eventQueue.postEvent(new InvocationEvent(
-                                Toolkit.getDefaultToolkit(),
-                                new DisplayChangedRunnable()));
-                        }
-                    }
-                }
-            }
+            EventQueue eventQueue = Toolkit.getDefaultToolkit().getSystemEventQueue();
+            eventQueue.postEvent(
+                new InvocationEvent(
+                    Toolkit.getDefaultToolkit(),
+                    new DisplayChangedRunnable())
+            );
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,54 +101,67 @@ public final class AttributeSetUtilities {
             attrset = attributeSet;
         }
 
+        @Override
         public Attribute get(Class<?> key) {
             return attrset.get(key);
         }
 
+        @Override
         public boolean add(Attribute attribute) {
             throw new UnmodifiableSetException();
         }
 
+        @Override
         public synchronized boolean remove(Class<?> category) {
             throw new UnmodifiableSetException();
         }
 
+        @Override
         public boolean remove(Attribute attribute) {
             throw new UnmodifiableSetException();
         }
 
+        @Override
         public boolean containsKey(Class<?> category) {
             return attrset.containsKey(category);
         }
 
+        @Override
         public boolean containsValue(Attribute attribute) {
             return attrset.containsValue(attribute);
         }
 
+        @Override
         public boolean addAll(AttributeSet attributes) {
             throw new UnmodifiableSetException();
         }
 
+        @Override
         public int size() {
             return attrset.size();
         }
 
+        @Override
         public Attribute[] toArray() {
             return attrset.toArray();
         }
 
+        @Override
         public void clear() {
             throw new UnmodifiableSetException();
         }
 
+        @Override
         public boolean isEmpty() {
             return attrset.isEmpty();
         }
 
+        @Override
         public boolean equals(Object o) {
             return attrset.equals (o);
         }
 
+        @Override
         public int hashCode() {
             return attrset.hashCode();
         }
@@ -366,54 +379,67 @@ public final class AttributeSetUtilities {
             attrset = attributeSet;
         }
 
+        @Override
         public synchronized Attribute get(Class<?> category) {
             return attrset.get(category);
         }
 
+        @Override
         public synchronized boolean add(Attribute attribute) {
             return attrset.add(attribute);
         }
 
+        @Override
         public synchronized boolean remove(Class<?> category) {
             return attrset.remove(category);
         }
 
+        @Override
         public synchronized boolean remove(Attribute attribute) {
             return attrset.remove(attribute);
         }
 
+        @Override
         public synchronized boolean containsKey(Class<?> category) {
             return attrset.containsKey(category);
         }
 
+        @Override
         public synchronized boolean containsValue(Attribute attribute) {
             return attrset.containsValue(attribute);
         }
 
+        @Override
         public synchronized boolean addAll(AttributeSet attributes) {
             return attrset.addAll(attributes);
         }
 
+        @Override
         public synchronized int size() {
             return attrset.size();
         }
 
+        @Override
         public synchronized Attribute[] toArray() {
             return attrset.toArray();
         }
 
+        @Override
         public synchronized void clear() {
             attrset.clear();
         }
 
+        @Override
         public synchronized boolean isEmpty() {
             return attrset.isEmpty();
         }
 
+        @Override
         public synchronized boolean equals(Object o) {
             return attrset.equals (o);
         }
 
+        @Override
         public synchronized int hashCode() {
             return attrset.hashCode();
         }

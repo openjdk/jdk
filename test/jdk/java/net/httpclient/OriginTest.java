@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @test
  * @summary verify the behaviour of jdk.internal.net.http.Origin
  * @modules java.net.http/jdk.internal.net.http
- * @run junit OriginTest
+ * @run junit ${test.main.class}
  */
 class OriginTest {
 

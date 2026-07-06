@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@
  * and we use it to {@linkplain java.lang.foreign.SymbolLookup#findOrThrow(java.lang.String) look up}
  * the {@code strlen} function in the standard C library; a <em>downcall method handle</em>
  * targeting said function is subsequently
- * {@linkplain java.lang.foreign.Linker#downcallHandle(FunctionDescriptor, Linker.Option...) obtained}.
+ * {@linkplain java.lang.foreign.Linker#downcallHandle(MemorySegment, FunctionDescriptor, Linker.Option...) obtained}.
  * To complete the linking successfully, we must provide a
  * {@link java.lang.foreign.FunctionDescriptor} instance, describing the signature of the
  * {@code strlen} function. From this information, the linker will uniquely determine

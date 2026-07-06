@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ class VM_G1TryInitiateConcMark : public VM_GC_Collect_Operation {
   bool _transient_failure;
   bool _mark_in_progress;
   bool _cycle_already_in_progress;
-  bool _whitebox_attached;
+  bool _whitebox_controlled;
   // The concurrent start pause may be cancelled for some reasons. Keep track of
   // this.
   bool _gc_succeeded;
@@ -63,7 +63,7 @@ public:
   bool transient_failure() const { return _transient_failure; }
   bool mark_in_progress() const { return _mark_in_progress; }
   bool cycle_already_in_progress() const { return _cycle_already_in_progress; }
-  bool whitebox_attached() const { return _whitebox_attached; }
+  bool whitebox_controlled() const { return _whitebox_controlled; }
   bool gc_succeeded() const { return _gc_succeeded && VM_GC_Operation::gc_succeeded(); }
 };
 
@@ -80,13 +80,18 @@ public:
 // Concurrent G1 stop-the-world operations such as remark and cleanup.
 class VM_G1PauseConcurrent : public VM_Operation {
   uint         _gc_id;
+  bool         _is_shutting_down;
   const char*  _message;
 
 protected:
   VM_G1PauseConcurrent(const char* message) :
-    _gc_id(GCId::current()), _message(message) { }
+    _gc_id(GCId::current()), _is_shutting_down(false), _message(message) { }
   virtual void work() = 0;
 
+  // Does this concurrent pause affect the memory pools? If so, update the collectionUsage()
+  // MemoryMXBean for the old gen memory pool (which is the only pool registered for concurrent
+  // pauses).
+  virtual bool affects_memory_pools() const = 0;
 public:
   bool doit_prologue() override;
   void doit_epilogue() override;
@@ -95,6 +100,8 @@ public:
 };
 
 class VM_G1PauseRemark : public VM_G1PauseConcurrent {
+  bool affects_memory_pools() const override { return true; }
+
 public:
   VM_G1PauseRemark() : VM_G1PauseConcurrent("Pause Remark") { }
   VMOp_Type type() const override { return VMOp_G1PauseRemark; }
@@ -102,10 +109,23 @@ public:
 };
 
 class VM_G1PauseCleanup : public VM_G1PauseConcurrent {
+  bool affects_memory_pools() const override { return false; }
+
 public:
   VM_G1PauseCleanup() : VM_G1PauseConcurrent("Pause Cleanup") { }
   VMOp_Type type() const override { return VMOp_G1PauseCleanup; }
   void work() override;
+};
+
+class VM_G1StopMarking : public VM_Operation {
+public:
+  VM_G1StopMarking() : VM_Operation() { }
+  VMOp_Type type() const override { return VMOp_G1StopMarking; }
+
+  bool doit_prologue() override;
+  void doit() override;
+
+  bool is_gc_operation() const override { return true; }
 };
 
 #endif // SHARE_GC_G1_G1VMOPERATIONS_HPP

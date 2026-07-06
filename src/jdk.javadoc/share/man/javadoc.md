@@ -485,10 +485,10 @@ The following options are provided by the standard doclet.
     ```
 
 <span id="option-docfilessubdirs">`-docfilessubdirs`</span>
-:   Enables deep copying of `doc-files` directories. Subdirectories and all
-    contents are recursively copied to the destination. For example, the
-    directory `doc-files/example/images` and all of its contents are copied.
-    Use the [`-excludedocfilessubdir`](#option-excludedocfilessubdir) option to
+:   This option is no longer required and may be removed in a future release.
+    The `javadoc` tool now recursively copies subdirectories of `doc-files`
+    directories by default. Use the
+    [`-excludedocfilessubdir`](#option-excludedocfilessubdir) option to
     restrict the subdirectories to be copied.
 
 <span id="option-doctitle">`-doctitle` *html-code*</span>
@@ -501,9 +501,9 @@ The following options are provided by the standard doclet.
     `javadoc -doctitle "<b>My Library</b><br>v1.0" com.mypackage`.
 
 <span id="option-excludedocfilessubdir">`-excludedocfilessubdir` *name1*`,`*name2...*</span>
-:   Excludes any subdirectories with the given names
-    when recursively copying `doc-files` subdirectories.
-    See [`-docfilessubdirs`](#option-docfilessubdirs).
+:   Excludes any subdirectories with the given names when recursively copying
+    `doc-files` subdirectories. You can use `*` to exclude all subdirectories
+    from being copied, but note that `*` must be quoted or escaped in the shell.
     For historical reasons, `:` can be used anywhere in the argument as a
     separator instead of `,`.
 

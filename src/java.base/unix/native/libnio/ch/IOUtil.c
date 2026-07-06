@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,10 +77,9 @@ configureBlocking(int fd, jboolean blocking)
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_IOUtil_configureBlocking(JNIEnv *env, jclass clazz,
-                                         jobject fdo, jboolean blocking)
+Java_sun_nio_ch_IOUtil_configureBlocking(JNIEnv *env, jclass clazz, jint fd, jboolean blocking)
 {
-    if (configureBlocking(fdval(env, fdo), blocking) < 0)
+    if (configureBlocking(fd, blocking) < 0)
         JNU_ThrowIOExceptionWithLastError(env, "Configure blocking failed");
 }
 

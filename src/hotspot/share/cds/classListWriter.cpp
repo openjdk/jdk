@@ -49,7 +49,7 @@ void ClassListWriter::init() {
     _classlist_file->print_cr("# This file is generated via the -XX:DumpLoadedClassList=<class_list_file> option");
     _classlist_file->print_cr("# and is used at CDS archive dump time (see -Xshare:dump).");
     _classlist_file->print_cr("#");
-    FREE_C_HEAP_ARRAY(char, list_name);
+    FREE_C_HEAP_ARRAY(list_name);
   }
 }
 

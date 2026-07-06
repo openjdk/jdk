@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@ import java.lang.reflect.Field;
 import java.net.http.HttpClient;
 import java.util.Objects;
 import java.util.Set;
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.Map;
 
 public final class HttpClientImplAccess {
 
@@ -63,5 +66,30 @@ public final class HttpClientImplAccess {
         }
         openedConnections.setAccessible(true);
         return (Set<?>) openedConnections.get(clientImpl);
+    }
+
+    /**
+     * Returns all connections in the client's HTTP/2 pool.
+     */
+    public static Collection<?> getHttp2Connections(final HttpClient client) {
+        Objects.requireNonNull(client, "client");
+        final HttpClientImpl clientImpl = impl(client);
+        if (clientImpl == null) {
+            throw new IllegalStateException("Unsupported HttpClient implementation");
+        }
+        Http2ClientImpl client2 = clientImpl.client2();
+        Map<String, Http2Connection> connections = client2.getConnections();
+        return connections.values();
+    }
+
+    /**
+     * Returns the cached header encoding buffer for the given Http2Connection.
+     */
+    public static ByteBuffer getCachedHeaderBuffer(final Object conn) {
+        // The argument to this method is of type Object and not
+        // Http2Connection because callers outside the module cannot reference
+        // the package-private Http2Connection class.
+        Objects.requireNonNull(conn, "conn");
+        return ((Http2Connection) conn).getCachedHeaderBuffer();
     }
 }

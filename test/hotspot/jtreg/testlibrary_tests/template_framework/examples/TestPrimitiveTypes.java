@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.addDataName;
 import static compiler.lib.template_framework.DataName.Mutability.MUTABLE;
+import static compiler.lib.template_framework.DataName.Mutability.MUTABLE_OR_IMMUTABLE;
 
 import compiler.lib.template_framework.library.Hooks;
 import compiler.lib.template_framework.library.CodeGenerationDataNameType;
@@ -129,7 +130,8 @@ public class TestPrimitiveTypes {
         }
 
         // Finally, test the type by creating some DataNames (variables), and sampling
-        // from them. There should be no cross-over between the types.
+        // from them. Sampling exactly should not lead to any conversion and sampling
+        // subtypes should only lead to widening conversions.
         // IMPORTANT: since we are adding the DataName via an inserted Template, we
         //            must chose a "transparentScope", so that the DataName escapes. If we
         //            instead chose "scope", the test would fail, because it later
@@ -150,6 +152,14 @@ public class TestPrimitiveTypes {
             """
         ));
 
+        var assignmentTemplate = Template.make("lhsType", (PrimitiveType lhsType) -> scope(
+            dataNames(MUTABLE).exactOf(lhsType).sampleAndLetAs("lhs"),
+            dataNames(MUTABLE_OR_IMMUTABLE).subtypeOf(lhsType).sampleAndLetAs("rhs"),
+            """
+            #lhs = #rhs;
+            """
+        ));
+
         var namesTemplate = Template.make(() -> scope(
             """
             public static void test_names() {
@@ -161,10 +171,16 @@ public class TestPrimitiveTypes {
                     ).toList()
                 ),
                 """
-                // Now sample:
+                // Sample exactly:
                 """,
                 Collections.nCopies(10,
                     CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(sampleTemplate::asToken).toList()
+                ),
+                """
+                // Sample subtypes:
+                """,
+                Collections.nCopies(10,
+                    CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(assignmentTemplate::asToken).toList()
                 )
             )),
             """
@@ -173,6 +189,46 @@ public class TestPrimitiveTypes {
         ));
 
         tests.put("test_names", namesTemplate.asToken());
+
+        var abbrevDefTemplate = Template.make("type", (PrimitiveType type) -> scope(
+            let("CON1", type.con()),
+            let("CON2", type.con()),
+            let("abbrev", type.abbrev()),
+            let("fieldDesc", type.fieldDesc()),
+            """
+            static #type varAbbrev#abbrev = #CON1;
+            static #type varFieldDesc#fieldDesc = #CON2;
+            """
+        ));
+        var swapTemplate = Template.make("type", (PrimitiveType type) -> scope(
+            let("abbrev", type.abbrev()),
+            let("fieldDesc", type.fieldDesc()),
+            """
+            #type tmp#abbrev = varAbbrev#abbrev;
+            varAbbrev#abbrev = varFieldDesc#fieldDesc;
+            varFieldDesc#fieldDesc = tmp#abbrev;
+            """
+        ));
+        var abbrevTemplate = Template.make(() -> scope(
+            """
+            public static void test_abbrev() {
+            """,
+            Hooks.CLASS_HOOK.insert(scope(
+                // Create fields that would collide if the abbrev() or fieldDesc() methods produced colliding
+                // strings for different types
+                CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type ->
+                    abbrevDefTemplate.asToken(type)
+                ).toList()
+            )),
+                CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(type ->
+                    swapTemplate.asToken(type)
+                ).toList(),
+            """
+            }
+            """
+        ));
+
+        tests.put("test_abbrev", abbrevTemplate.asToken());
 
         // Test runtime random value generation with LibraryRNG
         // Runtime random number generation of a given primitive type can be very helpful
@@ -189,6 +245,18 @@ public class TestPrimitiveTypes {
             "       a[i] = ", type.callLibraryRNG(), ";\n",
             """
                 }
+                boolean allSame = true;
+                for (int i = 0; i < a.length; i++) {
+                    if (a[i] != a[0]) {
+                        allSame = false;
+                        break;
+                    }
+                }
+                if (allSame) { throw new RuntimeException("all values were the same for #type"); }
+            }
+            {
+                #type[] a = new #type[1_000];
+                LibraryRNG.fill(a);
                 boolean allSame = true;
                 for (int i = 0; i < a.length; i++) {
                     if (a[i] != a[0]) {
@@ -231,6 +299,9 @@ public class TestPrimitiveTypes {
             import compiler.lib.generators.*;
 
             public class InnerTest {
+            """,
+            Hooks.CLASS_HOOK.anchor(scope(
+            """
                 public static void main() {
             """,
             // Call all test methods from main.
@@ -241,7 +312,8 @@ public class TestPrimitiveTypes {
                 }
             """,
             // Now add all the test methods.
-            tests.values().stream().toList(),
+            tests.values().stream().toList()
+            )),
             """
             }
             """

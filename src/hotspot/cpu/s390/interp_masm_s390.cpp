@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -411,7 +411,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   // Load pointer for resolved_references[] objArray.
   z_lg(result, in_bytes(ConstantPool::cache_offset()), result);
   z_lg(result, in_bytes(ConstantPoolCache::resolved_references_offset()), result);
-  resolve_oop_handle(result); // Load resolved references array itself.
+  resolve_oop_handle(result, Z_R0_scratch, Z_R1_scratch); // Load resolved references array itself.
 #ifdef ASSERT
   NearLabel index_ok;
   z_lgf(Z_R0, Address(result, arrayOopDesc::length_offset_in_bytes()));
@@ -1259,151 +1259,20 @@ void InterpreterMacroAssembler::profile_final_call(Register mdp) {
 
 void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
                                                      Register mdp,
-                                                     Register reg2,
-                                                     bool receiver_can_be_null) {
+                                                     Register reg2) {
   if (ProfileInterpreter) {
     NearLabel profile_continue;
 
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(mdp, profile_continue);
 
-    NearLabel skip_receiver_profile;
-    if (receiver_can_be_null) {
-      NearLabel not_null;
-      compareU64_and_branch(receiver, (intptr_t)0L, bcondNotEqual, not_null);
-      // We are making a call. Increment the count for null receiver.
-      increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-      z_bru(skip_receiver_profile);
-      bind(not_null);
-    }
-
     // Record the receiver type.
-    record_klass_in_profile(receiver, mdp, reg2);
-    bind(skip_receiver_profile);
+    profile_receiver_type(receiver, mdp, 0, reg2);
 
     // The method data pointer needs to be updated to reflect the new target.
     update_mdp_by_constant(mdp, in_bytes(VirtualCallData::virtual_call_data_size()));
     bind(profile_continue);
   }
-}
-
-// This routine creates a state machine for updating the multi-row
-// type profile at a virtual call site (or other type-sensitive bytecode).
-// The machine visits each row (of receiver/count) until the receiver type
-// is found, or until it runs out of rows. At the same time, it remembers
-// the location of the first empty row. (An empty row records null for its
-// receiver, and can be allocated for a newly-observed receiver type.)
-// Because there are two degrees of freedom in the state, a simple linear
-// search will not work; it must be a decision tree. Hence this helper
-// function is recursive, to generate the required tree structured code.
-// It's the interpreter, so we are trading off code space for speed.
-// See below for example code.
-void InterpreterMacroAssembler::record_klass_in_profile_helper(
-                                        Register receiver, Register mdp,
-                                        Register reg2, int start_row,
-                                        Label& done) {
-  if (TypeProfileWidth == 0) {
-    increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-    return;
-  }
-
-  int last_row = VirtualCallData::row_limit() - 1;
-  assert(start_row <= last_row, "must be work left to do");
-  // Test this row for both the receiver and for null.
-  // Take any of three different outcomes:
-  //   1. found receiver => increment count and goto done
-  //   2. found null => keep looking for case 1, maybe allocate this cell
-  //   3. found something else => keep looking for cases 1 and 2
-  // Case 3 is handled by a recursive call.
-  for (int row = start_row; row <= last_row; row++) {
-    NearLabel next_test;
-    bool test_for_null_also = (row == start_row);
-
-    // See if the receiver is receiver[n].
-    int recvr_offset = in_bytes(VirtualCallData::receiver_offset(row));
-    test_mdp_data_at(mdp, recvr_offset, receiver,
-                     (test_for_null_also ? reg2 : noreg),
-                     next_test);
-    // (Reg2 now contains the receiver from the CallData.)
-
-    // The receiver is receiver[n]. Increment count[n].
-    int count_offset = in_bytes(VirtualCallData::receiver_count_offset(row));
-    increment_mdp_data_at(mdp, count_offset);
-    z_bru(done);
-    bind(next_test);
-
-    if (test_for_null_also) {
-      Label found_null;
-      // Failed the equality check on receiver[n]... Test for null.
-      z_ltgr(reg2, reg2);
-      if (start_row == last_row) {
-        // The only thing left to do is handle the null case.
-        z_brz(found_null);
-        // Receiver did not match any saved receiver and there is no empty row for it.
-        // Increment total counter to indicate polymorphic case.
-        increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-        z_bru(done);
-        bind(found_null);
-        break;
-      }
-      // Since null is rare, make it be the branch-taken case.
-      z_brz(found_null);
-
-      // Put all the "Case 3" tests here.
-      record_klass_in_profile_helper(receiver, mdp, reg2, start_row + 1, done);
-
-      // Found a null. Keep searching for a matching receiver,
-      // but remember that this is an empty (unused) slot.
-      bind(found_null);
-    }
-  }
-
-  // In the fall-through case, we found no matching receiver, but we
-  // observed the receiver[start_row] is null.
-
-  // Fill in the receiver field and increment the count.
-  int recvr_offset = in_bytes(VirtualCallData::receiver_offset(start_row));
-  set_mdp_data_at(mdp, recvr_offset, receiver);
-  int count_offset = in_bytes(VirtualCallData::receiver_count_offset(start_row));
-  load_const_optimized(reg2, DataLayout::counter_increment);
-  set_mdp_data_at(mdp, count_offset, reg2);
-  if (start_row > 0) {
-    z_bru(done);
-  }
-}
-
-// Example state machine code for three profile rows:
-//   // main copy of decision tree, rooted at row[1]
-//   if (row[0].rec == rec) { row[0].incr(); goto done; }
-//   if (row[0].rec != nullptr) {
-//     // inner copy of decision tree, rooted at row[1]
-//     if (row[1].rec == rec) { row[1].incr(); goto done; }
-//     if (row[1].rec != nullptr) {
-//       // degenerate decision tree, rooted at row[2]
-//       if (row[2].rec == rec) { row[2].incr(); goto done; }
-//       if (row[2].rec != nullptr) { count.incr(); goto done; } // overflow
-//       row[2].init(rec); goto done;
-//     } else {
-//       // remember row[1] is empty
-//       if (row[2].rec == rec) { row[2].incr(); goto done; }
-//       row[1].init(rec); goto done;
-//     }
-//   } else {
-//     // remember row[0] is empty
-//     if (row[1].rec == rec) { row[1].incr(); goto done; }
-//     if (row[2].rec == rec) { row[2].incr(); goto done; }
-//     row[0].init(rec); goto done;
-//   }
-//   done:
-
-void InterpreterMacroAssembler::record_klass_in_profile(Register receiver,
-                                                        Register mdp, Register reg2) {
-  assert(ProfileInterpreter, "must be profiling");
-  Label done;
-
-  record_klass_in_profile_helper(receiver, mdp, reg2, 0, done);
-
-  bind (done);
 }
 
 void InterpreterMacroAssembler::profile_ret(Register return_bci, Register mdp) {
@@ -1474,7 +1343,7 @@ void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass, 
       mdp_delta = in_bytes(VirtualCallData::virtual_call_data_size());
 
       // Record the object type.
-      record_klass_in_profile(klass, mdp, reg2);
+      profile_receiver_type(klass, mdp, 0, reg2);
     }
     update_mdp_by_constant(mdp, mdp_delta);
 
@@ -2014,13 +1883,22 @@ void InterpreterMacroAssembler::notify_method_exit(bool native_method,
   // entry/exit events are sent for that thread to track stack
   // depth. If it is possible to enter interp_only_mode we add
   // the code to check if the event should be sent.
-  if (mode == NotifyJVMTI && JvmtiExport::can_post_interpreter_events()) {
-    Label jvmti_post_done;
-    MacroAssembler::load_and_test_int(Z_R0, Address(Z_thread, JavaThread::interp_only_mode_offset()));
-    z_bre(jvmti_post_done);
+  if (mode == NotifyJVMTI && (JvmtiExport::can_post_interpreter_events() || JvmtiExport::can_post_frame_pop())) {
+    NearLabel jvmti_post_done;
+
+    // if (thread->jvmti_thread_state() == nullptr) exit;
+    z_ltg(Z_R1_scratch, Address(Z_thread, JavaThread::jvmti_thread_state_offset()));
+    z_brz(jvmti_post_done);
+
+    // if (interp_only_mode() == false && frame_pop_cnt() == 0) exit;
+    z_lgf(Z_R1_scratch, Address(Z_R1_scratch, JvmtiThreadState::frame_pop_cnt_offset()));
+    z_o(Z_R1_scratch, Address(Z_thread, JavaThread::interp_only_mode_offset()));
+    z_brz(jvmti_post_done);
+
     if (!native_method) push(state); // see frame::interpreter_frame_result()
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit));
     if (!native_method) pop(state);
+
     bind(jvmti_post_done);
   }
 }

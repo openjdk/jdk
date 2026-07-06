@@ -1744,8 +1744,8 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // And since abs(C_pre) < aw, the solutions of (4a, b, c) can now only be constrained or empty.
   // But since we already handled the empty case, the solutions are now all constrained.
   assert(eq4a_state == EQ4::State::CONSTRAINED &&
-         eq4a_state == EQ4::State::CONSTRAINED &&
-         eq4a_state == EQ4::State::CONSTRAINED, "all must be constrained now");
+         eq4b_state == EQ4::State::CONSTRAINED &&
+         eq4c_state == EQ4::State::CONSTRAINED, "all must be constrained now");
 
   // And since they are all constrained, we must have:
   //

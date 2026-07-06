@@ -36,7 +36,7 @@ void CHeapStringHolder::set(const char* string) {
 
 void CHeapStringHolder::clear() {
   if (_string != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _string);
+    FREE_C_HEAP_ARRAY(_string);
     _string = nullptr;
   }
 }

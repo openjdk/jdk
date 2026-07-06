@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,19 +30,17 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamWriter;
-import jdk.jpackage.internal.util.XmlConsumer;
 import jdk.internal.util.Architecture;
 import jdk.jpackage.internal.WixSourceConverter.ResourceGroup;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.WinMsiPackage;
+import jdk.jpackage.internal.util.XmlConsumer;
 import jdk.jpackage.internal.util.XmlUtils;
 
 /**
@@ -66,20 +64,14 @@ abstract class WixFragmentBuilder {
     }
 
     void initFromParams(BuildEnv env, WinMsiPackage pkg) {
-        wixVariables = null;
+        wixVariables = new WixVariables();
         additionalResources = null;
         configRoot = env.configDir();
         fragmentResource = env.createResource(defaultResourceName).setPublicName(outputFileName);
     }
 
-    List<String> getLoggableWixFeatures() {
-        return List.of();
-    }
-
     void configureWixPipeline(WixPipeline.Builder wixPipeline) {
-        wixPipeline.addSource(configRoot.resolve(outputFileName),
-                Optional.ofNullable(wixVariables).map(WixVariables::getValues).orElse(
-                        null));
+        wixPipeline.addSource(configRoot.resolve(outputFileName), wixVariables);
     }
 
     void addFilesToConfigRoot() throws IOException {
@@ -152,14 +144,11 @@ abstract class WixFragmentBuilder {
     protected abstract Collection<XmlConsumer> getFragmentWriters();
 
     protected final void defineWixVariable(String variableName) {
-        setWixVariable(variableName, "yes");
+        wixVariables.define(variableName);
     }
 
     protected final void setWixVariable(String variableName, String variableValue) {
-        if (wixVariables == null) {
-            wixVariables = new WixVariables();
-        }
-        wixVariables.setWixVariable(variableName, variableValue);
+        wixVariables.put(variableName, variableValue);
     }
 
     protected final void addResource(OverridableResource resource, String saveAsName) {

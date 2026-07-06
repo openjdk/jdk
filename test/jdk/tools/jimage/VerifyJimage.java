@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,15 +145,9 @@ public abstract class VerifyJimage implements Runnable {
                         pool.execute(new ModuleResourceComparator(rootDir, modName, jimage));
                     }
                 }
-                pool.shutdown();
-                if (!pool.awaitTermination(20, TimeUnit.SECONDS)) {
-                    failed.add("Directory verification timed out");
-                }
+                pool.close();
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
-            } catch (InterruptedException e) {
-                failed.add("Directory verification was interrupted");
-                Thread.currentThread().interrupt();
             }
         }
 
@@ -266,7 +260,8 @@ public abstract class VerifyJimage implements Runnable {
              */
             private boolean isJimageOnly(String entryName) {
                 return entryName.startsWith("/java.base/jdk/internal/module/SystemModules$")
-                        || entryName.startsWith("/java.base/java/lang/invoke/BoundMethodHandle$Species_");
+                        || entryName.startsWith("/java.base/java/lang/invoke/BoundMethodHandle$Species_")
+                        || entryName.startsWith("/jdk.jlink/jdk/tools/jlink/internal/runtimelink/");
             }
 
             private String getEntryName(Path path) {

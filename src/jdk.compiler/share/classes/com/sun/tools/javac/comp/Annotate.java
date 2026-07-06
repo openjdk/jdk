@@ -861,7 +861,6 @@ public class Annotate {
                 if (!chk.validateAnnotationDeferErrors(annoTree))
                     log.error(annoTree.pos(), Errors.DuplicateAnnotationInvalidRepeated(origAnnoType));
 
-                c = attributeAnnotation(annoTree, targetContainerType, ctx.env);
                 c.setSynthesized(true);
 
                 @SuppressWarnings("unchecked")

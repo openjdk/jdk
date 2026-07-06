@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,22 +34,19 @@
  *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
  *        Default
- * @run testng DefaultCharsetTest
+ * @run junit DefaultCharsetTest
  */
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DefaultCharsetTest {
 
@@ -58,28 +55,27 @@ public class DefaultCharsetTest {
     private static final Map<String, String> env = pb.environment();
     private static String UNSUPPORTED = null;
 
-    @BeforeClass
+    @BeforeAll
     public static void checkSupports() throws Exception {
         UNSUPPORTED = runWithLocale("nonexist");
     }
 
-    @DataProvider
-    public static Iterator<Object[]> locales() {
-        List<Object[]> data = new ArrayList<>();
-        data.add(new String[]{"en_US", "iso-8859-1"});
-        data.add(new String[]{"ja_JP.utf8", "utf-8"});
-        data.add(new String[]{"tr_TR", "iso-8859-9"});
-        data.add(new String[]{"C", "us-ascii"});
-        data.add(new String[]{"ja_JP", "x-euc-jp-linux"});
-        data.add(new String[]{"ja_JP.eucjp", "x-euc-jp-linux"});
-        data.add(new String[]{"ja_JP.ujis", "x-euc-jp-linux"});
-        data.add(new String[]{"ja_JP.utf8", "utf-8"});
-        return data.iterator();
+    public static Stream<Arguments> locales() {
+        return Stream.of(
+                Arguments.of("en_US", "iso-8859-1"),
+                Arguments.of("ja_JP.utf8", "utf-8"),
+                Arguments.of("tr_TR", "iso-8859-9"),
+                Arguments.of("C", "us-ascii"),
+                Arguments.of("ja_JP", "x-euc-jp-linux"),
+                Arguments.of("ja_JP.eucjp", "x-euc-jp-linux"),
+                Arguments.of("ja_JP.ujis", "x-euc-jp-linux"),
+                Arguments.of("ja_JP.utf8", "utf-8")
+        );
     }
 
-    @Test(dataProvider = "locales")
-    public void testDefaultCharset(String locale, String expectedCharset)
-            throws Exception {
+    @ParameterizedTest
+    @MethodSource("locales")
+    public void testDefaultCharset(String locale, String expectedCharset) throws Exception {
         String actual = runWithLocale(locale);
         if (UNSUPPORTED.equals(actual)) {
             System.out.println(locale + ": Locale not supported, skipping...");

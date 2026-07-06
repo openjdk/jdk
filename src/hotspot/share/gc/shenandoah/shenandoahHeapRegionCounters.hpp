@@ -28,6 +28,7 @@
 
 #include "logging/logFileStreamOutput.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 /**
  * This provides the following in JVMStat:
@@ -88,7 +89,7 @@ private:
   PerfLongVariable** _regions_data;
   PerfLongVariable* _timestamp;
   PerfLongVariable* _status;
-  volatile jlong _last_sample_millis;
+  Atomic<jlong> _last_sample_millis;
 
   void write_snapshot(PerfLongVariable** regions,
                       PerfLongVariable* ts,

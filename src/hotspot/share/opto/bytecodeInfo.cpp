@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,7 +234,7 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     return false;
   }
 
-  if (C->directive()->should_not_inline(callee_method)) {
+  if (C->directive()->should_not_inline(callee_method, CompLevel_full_optimization)) {
     set_msg("disallowed by CompileCommand");
     return true;
   }
@@ -295,32 +295,34 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     return false;
   }
 
-  // don't use counts with -Xcomp
-  if (UseInterpreter) {
-    if (!callee_method->has_compiled_code() &&
-        !callee_method->was_executed_more_than(0)) {
-      set_msg("never executed");
+  // accept cold methods in CTW or -Xcomp
+  if (InlineColdMethods) {
+    return false;
+  }
+
+  if (!callee_method->has_compiled_code() &&
+      !callee_method->was_executed_more_than(0)) {
+    set_msg("never executed");
+    return true;
+  }
+
+  if (is_init_with_ea(callee_method, caller_method, C)) {
+    // Escape Analysis: inline all executed constructors
+    return false;
+  }
+
+  if (MinInlineFrequencyRatio > 0) {
+    int call_site_count  = caller_method->scale_count(profile.count());
+    int invoke_count     = caller_method->interpreter_invocation_count();
+    assert(invoke_count != 0, "require invocation count greater than zero");
+    double freq = (double)call_site_count / (double)invoke_count;
+    // avoid division by 0, set divisor to at least 1
+    int cp_min_inv = MAX2(1, CompilationPolicy::min_invocations());
+    double min_freq = MAX2(MinInlineFrequencyRatio, 1.0 / cp_min_inv);
+
+    if (freq < min_freq) {
+      set_msg("low call site frequency");
       return true;
-    }
-
-    if (is_init_with_ea(callee_method, caller_method, C)) {
-      // Escape Analysis: inline all executed constructors
-      return false;
-    }
-
-    if (MinInlineFrequencyRatio > 0) {
-      int call_site_count  = caller_method->scale_count(profile.count());
-      int invoke_count     = caller_method->interpreter_invocation_count();
-      assert(invoke_count != 0, "require invocation count greater than zero");
-      double freq = (double)call_site_count / (double)invoke_count;
-      // avoid division by 0, set divisor to at least 1
-      int cp_min_inv = MAX2(1, CompilationPolicy::min_invocations());
-      double min_freq = MAX2(MinInlineFrequencyRatio, 1.0 / cp_min_inv);
-
-      if (freq < min_freq) {
-        set_msg("low call site frequency");
-        return true;
-      }
     }
   }
 
@@ -328,8 +330,8 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
 }
 
 bool InlineTree::is_not_reached(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile) {
-  if (!UseInterpreter) {
-    return false; // -Xcomp
+  if (InlineColdMethods) {
+    return false; // CTW or -Xcomp
   }
   if (profile.count() > 0) {
     return false; // reachable according to profile
@@ -391,11 +393,13 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
 
   // suppress a few checks for accessors and trivial methods
   if (callee_method->code_size() > MaxTrivialSize) {
-
-    // don't inline into giant methods
+    // We don't want to inline a call into a sufficiently large graph. However, this cannot be
+    // decided during parsing because there are more bytecodes in the caller that need parsing, and
+    // determining dead nodes is hard. As a result, we stop parse inlining at a relatively
+    // conservative threshold, and resume during incremental inlining, when there is no more
+    // parsing in the caller, and node liveness is more easily determined.
     if (C->over_inlining_cutoff()) {
-      if ((!callee_method->force_inline() && !caller_method->is_compiled_lambda_form())
-          || !IncrementalInline) {
+      if (!C->should_delay_after_inlining_cutoff(callee_method, caller_method)) {
         set_msg("NodeCountInliningCutoff");
         return false;
       } else {
@@ -403,7 +407,7 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
       }
     }
 
-    if (!UseInterpreter &&
+    if (InlineColdMethods &&
         is_init_with_ea(callee_method, caller_method, C)) {
       // Escape Analysis stress testing when running Xcomp:
       // inline constructors even if they are not reached.

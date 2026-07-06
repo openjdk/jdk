@@ -61,7 +61,7 @@ public class TestPrintRegionRememberedSetInfo {
             "-XX:+ExplicitGCInvokesConcurrent",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:G1HeapRegionSize=1M",
-            "-XX:InitiatingHeapOccupancyPercent=0",
+            "-XX:G1IHOP=0",
         };
 
         finalargs.addAll(Arrays.asList(defaultArgs));

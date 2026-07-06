@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_OPTO_MULNODE_HPP
 #define SHARE_OPTO_MULNODE_HPP
 
+#include "opto/multnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
@@ -32,6 +33,7 @@
 // Portions of code courtesy of Clifford Click
 
 class PhaseTransform;
+class Matcher;
 
 //------------------------------MulNode----------------------------------------
 // Classic MULTIPLY functionality.  This covers all the usual 'multiply'
@@ -203,6 +205,31 @@ public:
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
   friend const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot);
+};
+
+//------------------------------MulHiLoLNode-----------------------------------
+// Lower and upper 64-bit results of a signed 64x64->128 multiply.
+class MulHiLoLNode : public BinaryMultiNode {
+protected:
+  MulHiLoLNode(Node* ctrl, Node* in1, Node* in2) : BinaryMultiNode(ctrl, in1, in2) {}
+
+public:
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeTuple::LONG_PAIR; }
+
+  virtual Node* match(const ProjNode* proj, const Matcher* m);
+
+  static MulHiLoLNode* make(Node* mul_hi);
+};
+
+//------------------------------UMulHiLoLNode----------------------------------
+// Lower and upper 64-bit results of an unsigned 64x64->128 multiply.
+class UMulHiLoLNode : public MulHiLoLNode {
+public:
+  UMulHiLoLNode(Node* ctrl, Node* in1, Node* in2) : MulHiLoLNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+
+  static UMulHiLoLNode* make(Node* umul_hi);
 };
 
 //------------------------------AndINode---------------------------------------

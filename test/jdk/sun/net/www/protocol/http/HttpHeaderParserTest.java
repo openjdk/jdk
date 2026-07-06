@@ -1,7 +1,7 @@
 
 
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,12 @@
  * @library /test/lib
  * @summary Sanity check that HttpHeaderParser works same as MessageHeader
  * @modules java.base/sun.net.www java.base/sun.net.www.protocol.http:open
- * @run testng/othervm HttpHeaderParserTest
+ * @run junit/othervm ${test.main.class}
  */
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -45,20 +44,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import jdk.test.lib.net.HttpHeaderParser;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import sun.net.www.MessageHeader;
 
 public class HttpHeaderParserTest {
-    @DataProvider(name = "responses")
-    public Object[][] responses() {
+    public static List<String> responses() {
         List<String> responses = new ArrayList<>();
-
-        String[] basic =
-                { "HTTP/1.1 200 OK\r\n\r\n",
+        List<String> basic = List.of(
+                 "HTTP/1.1 200 OK\r\n\r\n",
 
                         "HTTP/1.1 200 OK\r\n" +
                                 "Date: Mon, 15 Jan 2001 12:18:21 GMT\r\n" +
@@ -142,11 +142,11 @@ public class HttpHeaderParserTest {
                                 "Vary: Host,Accept-Encoding,User-Agent\r\n" +
                                 "X-Mod-Pagespeed: 1.12.34.2-0\r\n" +
                                 "Connection: keep-alive\r\n\r\n"
-                };
-        Arrays.stream(basic).forEach(responses::add);
+        );
+        responses.addAll(basic);
         // add some tests where some of the CRLF are replaced
         // by a single LF
-        Arrays.stream(basic)
+        basic.stream()
                 .map(HttpHeaderParserTest::mixedCRLF)
                 .forEach(responses::add);
 
@@ -211,8 +211,8 @@ public class HttpHeaderParserTest {
                 responses.add(mixedCRLF(template).replace("$NEWLINE", newLineChar));
         }
 
-        String[] bad = // much of this is to retain parity with legacy MessageHeaders
-                { "HTTP/1.1 200 OK\r\n" +
+        List<String> bad = List.of( // much of this is to retain parity with legacy MessageHeaders
+                "HTTP/1.1 200 OK\r\n" +
                         "Connection:\r\n\r\n",   // empty value, no body
 
                         "HTTP/1.1 200 OK\r\n" +
@@ -258,12 +258,11 @@ public class HttpHeaderParserTest {
 
                         "HTTP/1.0 404 Not Found\r\n" +
                                 "header-without-colon\r\n\r\n" +
-                                "SOMEBODY",
+                                "SOMEBODY"
 
-                };
-        Arrays.stream(bad).forEach(responses::add);
-
-        return responses.stream().map(p -> new Object[] { p }).toArray(Object[][]::new);
+                );
+        responses.addAll(bad);
+        return responses;
     }
 
     static final AtomicInteger index = new AtomicInteger();
@@ -318,8 +317,8 @@ public class HttpHeaderParserTest {
         return res.toString();
     }
 
-
-    @Test(dataProvider = "responses")
+    @ParameterizedTest
+    @MethodSource("responses")
     public void verifyHeaders(String respString) throws Exception {
         System.out.println("\ntesting:\n\t" + respString
                 .replace("\r\n", "<CRLF>")
@@ -344,7 +343,7 @@ public class HttpHeaderParserTest {
         String statusLine1 = messageHeaderMap.get(null).get(0);
         String statusLine2 = decoder.getRequestDetails();
         if (statusLine1.startsWith("HTTP")) {// skip the case where MH's messes up the status-line
-            assertEquals(statusLine2, statusLine1, "Status-line not equal");
+            assertEquals(statusLine1, statusLine2, "Status-line not equal");
         } else {
             assertTrue(statusLine2.startsWith("HTTP/1."), "Status-line not HTTP/1.");
         }
@@ -366,91 +365,86 @@ public class HttpHeaderParserTest {
                         availableBytes, headerStream.available()));
     }
 
-    @DataProvider(name = "errors")
-    public Object[][] errors() {
-        List<String> responses = new ArrayList<>();
-
+    public static List<String> errors() {
         // These responses are parsed, somewhat, by MessageHeaders but give
         // nonsensible results. They, correctly, fail with the Http1HeaderParser.
-        String[] bad =
-                {// "HTTP/1.1 402 Payment Required\r\n" +
-                        // "Content-Length: 65\r\n\r",   // missing trailing LF   //TODO: incomplete
+        List<String> responses  = List.of(
+                // "HTTP/1.1 402 Payment Required\r\n" +
+                // "Content-Length: 65\r\n\r",   // missing trailing LF   //TODO: incomplete
 
-                        "HTTP/1.1 402 Payment Required\r\n" +
-                                "Content-Length: 65\r\n\rT\r\n\r\nGGGGGG",
+                "HTTP/1.1 402 Payment Required\r\n" +
+                        "Content-Length: 65\r\n\rT\r\n\r\nGGGGGG",
 
-                        "HTTP/1.1 200OK\r\n\rT",
+                "HTTP/1.1 200OK\r\n\rT",
 
-                        "HTTP/1.1 200OK\rT",
+                "HTTP/1.1 200OK\rT",
 
-                        "HTTP/1.0 FOO\r\n",
+                "HTTP/1.0 FOO\r\n",
 
-                        "HTTP/1.1 BAR\r\n",
+                "HTTP/1.1 BAR\r\n",
 
-                        "HTTP/1.1 +99\r\n",
+                "HTTP/1.1 +99\r\n",
 
-                        "HTTP/1.1 -22\r\n",
+                "HTTP/1.1 -22\r\n",
 
-                        "HTTP/1.1 -20 \r\n",
+                "HTTP/1.1 -20 \r\n",
 
+                "HTTP/1.1 200 OK\r\n" +
+                        "X-fo\u00ffo: foo\r\n" +     // invalid char in name
+                        "Content-Length: 5\r\n" +
+                        "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
+                        "XXXXX",
+
+                "HTTP/1.1 200 OK\r\n" +
                         "HTTP/1.1 200 OK\r\n" +
-                                "X-fo\u00ffo: foo\r\n" +     // invalid char in name
-                                "Content-Length: 5\r\n" +
-                                "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
-                                "XXXXX",
+                        "X-foo : bar\r\n" +          //  trim space after name
+                        "Content-Length: 5\r\n" +
+                        "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
+                        "XXXXX",
 
-                        "HTTP/1.1 200 OK\r\n" +
-                                "HTTP/1.1 200 OK\r\n" +
-                                "X-foo : bar\r\n" +          //  trim space after name
-                                "Content-Length: 5\r\n" +
-                                "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
-                                "XXXXX",
+                "HTTP/1.1 200 OK\r\n" +
+                        " X-foo: bar\r\n" +          // trim space before name
+                        "Content-Length: 5\r\n" +
+                        "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
+                        "XXXXX",
 
-                        "HTTP/1.1 200 OK\r\n" +
-                                " X-foo: bar\r\n" +          // trim space before name
-                                "Content-Length: 5\r\n" +
-                                "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
-                                "XXXXX",
+                "HTTP/1.1 200 OK\r\n" +
+                        "X foo: bar\r\n" +           // invalid space in name
+                        "Content-Length: 5\r\n" +
+                        "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
+                        "XXXXX",
 
-                        "HTTP/1.1 200 OK\r\n" +
-                                "X foo: bar\r\n" +           // invalid space in name
-                                "Content-Length: 5\r\n" +
-                                "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
-                                "XXXXX",
+                "HTTP/1.1 200 OK\r\n" +
+                        "Content-Length: 5\r\n" +
+                        "Content Type: text/html; charset=UTF-8\r\n\r\n" + // invalid space in name
+                        "XXXXX",
 
-                        "HTTP/1.1 200 OK\r\n" +
-                                "Content-Length: 5\r\n" +
-                                "Content Type: text/html; charset=UTF-8\r\n\r\n" + // invalid space in name
-                                "XXXXX",
+                "HTTP/1.1 200 OK\r\n" +
+                        "Conte\r" +
+                        " nt-Length: 9\r\n" +    // fold results in space in header name
+                        "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
+                        "XXXXX",
 
-                        "HTTP/1.1 200 OK\r\n" +
-                                "Conte\r" +
-                                " nt-Length: 9\r\n" +    // fold results in space in header name
-                                "Content-Type: text/html; charset=UTF-8\r\n\r\n" +
-                                "XXXXX",
+                "HTTP/1.1 200 OK\r\n" +
+                        " : no header\r\n" +  // all blank header-name (not fold)
+                        "Content-Length: 65\r\n\r\n" +
+                        "XXXXX",
 
-                        "HTTP/1.1 200 OK\r\n" +
-                                " : no header\r\n" +  // all blank header-name (not fold)
-                                "Content-Length: 65\r\n\r\n" +
-                                "XXXXX",
+                "HTTP/1.1 200 OK\r\n" +
+                        " \t : no header\r\n" +  // all blank header-name (not fold)
+                        "Content-Length: 65\r\n\r\n" +
+                        "XXXXX");
 
-                        "HTTP/1.1 200 OK\r\n" +
-                                " \t : no header\r\n" +  // all blank header-name (not fold)
-                                "Content-Length: 65\r\n\r\n" +
-                                "XXXXX",
-
-                };
-        Arrays.stream(bad).forEach(responses::add);
-
-        return responses.stream().map(p -> new Object[] { p }).toArray(Object[][]::new);
+        return responses;
     }
 
-    @Test(dataProvider = "errors", expectedExceptions = IOException.class)
+    @ParameterizedTest
+    @MethodSource("errors")
     public void errors(String respString) throws IOException {
         byte[] bytes = respString.getBytes(US_ASCII);
         HttpHeaderParser decoder = new HttpHeaderParser();
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        decoder.parse(bais);
+        assertThrows(IOException.class, () -> decoder.parse(bais));
     }
 
     void assertHeadersEqual(Map<String,List<String>> expected,
@@ -477,7 +471,7 @@ public class HttpHeaderParserTest {
                             format("%s. Expected list size %d, actual size %s",
                                     msg, values.size(), otherValues.size()));
                     if (!(values.containsAll(otherValues) && otherValues.containsAll(values)))
-                        assertTrue(false, format("Lists are unequal [%s] [%s]", values, otherValues));
+                        fail(format("Lists are unequal [%s] [%s]", values, otherValues));
                     break;
                 }
             }

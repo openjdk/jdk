@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,11 +73,11 @@ abstract class LValue {
             setValue0(value);
         } catch (InvalidTypeException exc) {
             throw new ParseException(
-                "Attempt to set value of incorrect type" +
+                "Attempt to set value of incorrect type: " +
                 exc);
         } catch (ClassNotLoadedException exc) {
             throw new ParseException(
-                "Attempt to set value before " + exc.className() + " was loaded" +
+                "Attempt to set value before " + exc.className() + " was loaded: " +
                 exc);
         }
     }

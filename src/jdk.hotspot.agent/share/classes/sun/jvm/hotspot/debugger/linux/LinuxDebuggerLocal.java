@@ -133,7 +133,7 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     @Override
     public boolean isSignalTrampoline(Address pc) {
       var sym = lookup(getAddressValue(pc));
-      return sym == null ? false : SIGHANDLER_NAMES.contains(sym.getName());
+      return sym == null ? false : SIGTRAMP_NAMES.contains(sym.getName());
     }
 
     // Note on Linux threads are really processes. When target process is

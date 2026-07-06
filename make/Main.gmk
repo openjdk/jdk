@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -478,11 +478,6 @@ $(eval $(call SetupTarget, static-libs-image, \
     TARGET := static-libs-image, \
 ))
 
-$(eval $(call SetupTarget, static-libs-graal-image, \
-    MAKEFILE := StaticLibsImage, \
-    TARGET := static-libs-graal-image, \
-))
-
 $(eval $(call SetupTarget, mac-jdk-bundle, \
     MAKEFILE := MacBundles, \
     TARGET := jdk-bundle, \
@@ -504,11 +499,6 @@ $(eval $(call SetupTarget, exploded-image-optimize, \
     MAKEFILE := ExplodedImageOptimize, \
     DEPS := java copy gendata java.base-libs java.base-launchers \
         buildtools-modules, \
-))
-
-$(eval $(call SetupTarget, graal-builder-image, \
-    MAKEFILE := GraalBuilderImage, \
-    DEPS := jdk-image static-libs-graal-image, \
 ))
 
 ifeq ($(JCOV_ENABLED), true)
@@ -877,12 +867,6 @@ $(eval $(call SetupTarget, static-libs-bundles, \
     DEPS := static-libs-image, \
 ))
 
-$(eval $(call SetupTarget, static-libs-graal-bundles, \
-    MAKEFILE := Bundles, \
-    TARGET := static-libs-graal-bundles, \
-    DEPS := static-libs-graal-image, \
-))
-
 $(eval $(call SetupTarget, static-jdk-bundles, \
     MAKEFILE := Bundles, \
     TARGET := static-jdk-bundles, \
@@ -1123,8 +1107,6 @@ else
   symbols-image: $(LIBS_TARGETS) $(LAUNCHER_TARGETS)
 
   static-libs-image: hotspot-static-libs static-libs
-
-  static-libs-graal-image: static-libs
 
   bootcycle-images: jdk-image
 

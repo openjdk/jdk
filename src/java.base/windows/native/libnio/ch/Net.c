@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -733,7 +733,7 @@ Java_sun_nio_ch_Net_pollConnect(JNIEnv* env, jclass this, jobject fdo, jlong tim
                 NET_ThrowNew(env, lastError, "getsockopt");
             }
         } else if (optError != NO_ERROR) {
-            NET_ThrowNew(env, optError, "getsockopt");
+            NET_ThrowNew(env, optError, NULL);
         }
         return JNI_FALSE;
     }

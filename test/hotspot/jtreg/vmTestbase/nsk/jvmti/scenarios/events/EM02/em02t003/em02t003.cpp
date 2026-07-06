@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,8 +325,9 @@ cbVMObjectAlloc(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
     changeCount(JVMTI_EVENT_VM_OBJECT_ALLOC, &eventCount[0]);
 }
 
+/* Sanity check of method id. */
 void
-handlerMC2(jvmtiEvent event, jvmtiEnv* jvmti, jmethodID method) {
+handlerMC2(jvmtiEnv* jvmti, jmethodID method) {
 
     char *name;
     char *sign;
@@ -338,7 +339,6 @@ handlerMC2(jvmtiEvent event, jvmtiEnv* jvmti, jmethodID method) {
     }
 
     NSK_DISPLAY2("\tMethod: %s, signature: %s\n", name, sign);
-    changeCount(event, &newEventCount[0]);
 
     if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)name))) {
         nsk_jvmti_setFailStatus();
@@ -358,7 +358,9 @@ cbNewCompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method, jint code_size,
                 const jvmtiAddrLocationMap* map, const void* compile_info) {
 
     loadEvents++;
-    handlerMC2(JVMTI_EVENT_COMPILED_METHOD_LOAD, jvmti_env, method);
+    changeCount(JVMTI_EVENT_COMPILED_METHOD_LOAD, &newEventCount[0]);
+    NSK_DISPLAY0(">>>JVMTI_EVENT_COMPILED_METHOD_LOAD received for\n");
+    handlerMC2(jvmti_env, method);
 }
 
 void JNICALL
@@ -366,8 +368,8 @@ cbNewCompiledMethodUnload(jvmtiEnv *jvmti_env, jmethodID method,
                 const void* code_addr) {
 
     unloadEvents++;
-    NSK_DISPLAY0(">>>JVMTI_EVENT_COMPILED_METHOD_UNLOAD received for\n");
     changeCount(JVMTI_EVENT_COMPILED_METHOD_UNLOAD, &newEventCount[0]);
+    NSK_DISPLAY0(">>>JVMTI_EVENT_COMPILED_METHOD_UNLOAD received for\n");
 }
 
 /* ============================================================================= */
@@ -465,26 +467,24 @@ static bool setCallBacks(int step) {
             break;
 
         case 2:
-            for (i = 0; i < JVMTI_EVENT_COUNT; i++) {
-                newEventCount[i] = 0;
-            }
-
             eventCallbacks.CompiledMethodLoad   = cbNewCompiledMethodLoad;
             eventCallbacks.CompiledMethodUnload = cbNewCompiledMethodUnload;
             break;
 
         case 3:
-
-            for (i = 0; i < JVMTI_EVENT_COUNT; i++) {
-                newEventCount[i] = 0;
-            }
-
             eventCallbacks.VMDeath                   = cbVMDeath;
             break;
 
     }
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
         return false;
+
+    /* Give some time to complete already processing cbNewCompiledMethodLoad/Unload events. */
+    nsk_jvmti_sleep(100);
+    for (i = 0; i < JVMTI_EVENT_COUNT; i++) {
+        newEventCount[i] = 0;
+    }
+
 
     return true;
 }

@@ -55,7 +55,7 @@ class VM_Version : public Abstract_VM_Version {
 
    public:
     RVFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
-      _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit(linux_bit_num)) {
+      _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit<uint64_t>(linux_bit_num)) {
     }
     virtual void enable_feature(int64_t value = 0) = 0;
     virtual void disable_feature() = 0;

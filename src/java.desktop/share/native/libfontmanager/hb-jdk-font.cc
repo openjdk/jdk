@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,6 @@ hb_jdk_get_glyph_h_advance (hb_font_t *font HB_UNUSED,
         return 0;
     }
     fadv = env->GetFloatField(pt, sunFontIDs.xFID);
-    fadv *= jdkFontInfo->devScale;
     env->DeleteLocalRef(pt);
 
     return HBFloatToFixed(fadv);
@@ -398,8 +397,7 @@ JNIEXPORT void JNICALL Java_sun_font_SunLayoutEngine_disposeFace(JNIEnv *env,
 } // extern "C"
 
 static hb_font_t* _hb_jdk_font_create(hb_face_t* face,
-                                      JDKFontInfo *jdkFontInfo,
-                                      hb_destroy_func_t destroy) {
+                                      JDKFontInfo *jdkFontInfo) {
 
     hb_font_t *font;
 
@@ -408,14 +406,13 @@ static hb_font_t* _hb_jdk_font_create(hb_face_t* face,
                        _hb_jdk_get_font_funcs (),
                        jdkFontInfo, (hb_destroy_func_t) _do_nothing);
     hb_font_set_scale (font,
-                      HBFloatToFixed(jdkFontInfo->ptSize*jdkFontInfo->devScale),
-                      HBFloatToFixed(jdkFontInfo->ptSize*jdkFontInfo->devScale));
+                      HBFloatToFixed(jdkFontInfo->xPtSize),
+                      HBFloatToFixed(jdkFontInfo->yPtSize));
   return font;
 }
 
 hb_font_t* hb_jdk_font_create(hb_face_t* hbFace,
-                             JDKFontInfo *jdkFontInfo,
-                             hb_destroy_func_t destroy) {
+                             JDKFontInfo *jdkFontInfo) {
 
-    return _hb_jdk_font_create(hbFace, jdkFontInfo, destroy);
+    return _hb_jdk_font_create(hbFace, jdkFontInfo);
 }

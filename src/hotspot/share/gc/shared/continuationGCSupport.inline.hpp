@@ -43,7 +43,11 @@ inline bool ContinuationGCSupport::relativize_stack_chunk(oop obj) {
 }
 
 inline void ContinuationGCSupport::transform_stack_chunk(oop obj) {
-  if (!obj->is_stackChunk()) {
+  transform_stack_chunk(obj, obj->klass());
+}
+
+inline void ContinuationGCSupport::transform_stack_chunk(oop obj, Klass* klass) {
+  if (!klass->is_stack_chunk_instance_klass()) {
     return;
   }
 

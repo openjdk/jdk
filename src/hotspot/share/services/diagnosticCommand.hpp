@@ -94,6 +94,15 @@ public:
     virtual void execute(DCmdSource source, TRAPS);
 };
 
+class PrintSecurityPropertiesDCmd : public DCmd {
+public:
+  PrintSecurityPropertiesDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+  static const char* name() { return "VM.security_properties"; }
+  static const char* description() { return "Print java.security.Security properties."; }
+  static const char* impact() { return "Low"; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 // See also: print_flag in attachListener.cpp
 class PrintVMFlagsDCmd : public DCmdWithParser {
 protected:
@@ -645,17 +654,20 @@ public:
 //   VM.systemdictionary -verbose: for dumping the system dictionary table
 //
 class VM_DumpHashtable : public VM_Operation {
+public:
+  enum DumpKind {
+    DumpSymbols,
+    DumpStrings,
+    DumpSysDict
+  };
+
 private:
   outputStream* _out;
-  int _which;
+  DumpKind _which;
   bool _verbose;
+
 public:
-  enum {
-    DumpSymbols = 1 << 0,
-    DumpStrings = 1 << 1,
-    DumpSysDict = 1 << 2  // not implemented yet
-  };
-  VM_DumpHashtable(outputStream* out, int which, bool verbose) {
+  VM_DumpHashtable(outputStream* out, DumpKind which, bool verbose) {
     _out = out;
     _which = which;
     _verbose = verbose;

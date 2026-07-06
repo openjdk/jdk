@@ -211,4 +211,22 @@ public class SimpleCDSAppTester {
         tester.run(args);
         return this;
     }
+
+    public SimpleCDSAppTester rerunProduction(String... extraVmArgs) throws Exception {
+        tester.productionRun(extraVmArgs);
+        return this;
+    }
+
+    public SimpleCDSAppTester rerunProduction(String[] extraVmArgs, String... extraAppArgs) throws Exception {
+        tester.productionRun(extraVmArgs, extraAppArgs);
+        return this;
+    }
+
+    public String aotCacheFile() {
+        return tester.aotCacheFile();
+    }
+
+    public void setCheckExitValue(boolean b) {
+        tester.setCheckExitValue(b);
+    }
 }

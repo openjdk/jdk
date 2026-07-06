@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,9 @@ VMReg   VtableStub::_receiver_location = VMRegImpl::Bad();
 void* VtableStub::operator new(size_t size, int code_size) throw() {
   assert_lock_strong(VtableStubs_lock);
   assert(size == sizeof(VtableStub), "mismatched size");
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+
   // compute real VtableStub size (rounded to nearest word)
   const int real_size = align_up(code_size + (int)sizeof(VtableStub), wordSize);
   // malloc them in chunks to minimize header overhead
@@ -315,15 +318,6 @@ VtableStub* VtableStubs::stub_containing(address pc) {
 void vtableStubs_init() {
   VtableStubs::initialize();
 }
-
-void VtableStubs::vtable_stub_do(void f(VtableStub*)) {
-  for (int i = 0; i < N; i++) {
-    for (VtableStub* s = AtomicAccess::load_acquire(&_table[i]); s != nullptr; s = s->next()) {
-      f(s);
-    }
-  }
-}
-
 
 //-----------------------------------------------------------------------------------------------------
 // Non-product code

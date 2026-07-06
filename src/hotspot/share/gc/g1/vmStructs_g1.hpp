@@ -28,6 +28,7 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
 
 #define VM_STRUCTS_G1GC(nonstatic_field,                                      \
@@ -39,9 +40,9 @@
                                                                               \
   nonstatic_field(G1HeapRegion, _type,           G1HeapRegionType)            \
   nonstatic_field(G1HeapRegion, _bottom,         HeapWord* const)             \
-  nonstatic_field(G1HeapRegion, _top,            HeapWord* volatile)          \
+  nonstatic_field(G1HeapRegion, _top,            Atomic<HeapWord*>)           \
   nonstatic_field(G1HeapRegion, _end,            HeapWord* const)             \
-  volatile_nonstatic_field(G1HeapRegion, _pinned_object_count, size_t)        \
+  volatile_nonstatic_field(G1HeapRegion, _pinned_object_count, Atomic<size_t>)\
                                                                               \
   nonstatic_field(G1HeapRegionType, _tag,   G1HeapRegionType::Tag volatile)   \
                                                                               \

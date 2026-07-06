@@ -28,8 +28,9 @@
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/shenandoahVerifier.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
 
 const char* ShenandoahGlobalGeneration::name() const {
@@ -49,10 +50,6 @@ size_t ShenandoahGlobalGeneration::used() const {
   return _free_set->global_used();
 }
 
-size_t ShenandoahGlobalGeneration::bytes_allocated_since_gc_start() const {
-  return _free_set->get_bytes_allocated_since_gc_start();
-}
-
 size_t ShenandoahGlobalGeneration::get_affiliated_region_count() const {
   return _free_set->global_affiliated_regions();
 }
@@ -60,7 +57,6 @@ size_t ShenandoahGlobalGeneration::get_affiliated_region_count() const {
 size_t ShenandoahGlobalGeneration::get_humongous_waste() const {
   return _free_set->total_humongous_waste();
 }
-
 
 size_t ShenandoahGlobalGeneration::used_regions() const {
   return _free_set->global_affiliated_regions();

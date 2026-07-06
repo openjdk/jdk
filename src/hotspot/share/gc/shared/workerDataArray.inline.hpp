@@ -72,7 +72,7 @@ WorkerDataArray<T>::~WorkerDataArray() {
   for (uint i = 0; i < MaxThreadWorkItems; i++) {
     delete _thread_work_items[i];
   }
-  FREE_C_HEAP_ARRAY(T, _data);
+  FREE_C_HEAP_ARRAY(_data);
 }
 
 template <typename T>

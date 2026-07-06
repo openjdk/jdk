@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,19 +30,19 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jshell/jdk.internal.shellsupport.doc
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
- * @run testng/timeout=900/othervm -Xmx1024m FullJavadocHelperTest
+ * @run junit/timeout=900/othervm -Xmx1024m FullJavadocHelperTest
  */
 
 import java.io.IOException;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class FullJavadocHelperTest {
 
     /*
      * Long-running test to retrieve doc comments for enclosed elements of all JDK classes.
      */
+    @Test
     public void testAllDocs() throws IOException {
         new JavadocHelperTest().retrieveDocComments(Boolean.TRUE::booleanValue);
     }

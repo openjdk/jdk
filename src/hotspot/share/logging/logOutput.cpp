@@ -181,7 +181,7 @@ static void add_selections(LogSelection** selections,
     // Ensure there's enough room for both wildcard_match and exact_match
     if (*n_selections + 2 > *selections_cap) {
       *selections_cap *= 2;
-      *selections = REALLOC_C_HEAP_ARRAY(LogSelection, *selections, *selections_cap, mtLogging);
+      *selections = REALLOC_C_HEAP_ARRAY(*selections, *selections_cap, mtLogging);
     }
 
     // Add found matching selections to the result array
@@ -317,8 +317,8 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
       break;
     }
   }
-  FREE_C_HEAP_ARRAY(LogTagSet*, deviates);
-  FREE_C_HEAP_ARRAY(Selection, selections);
+  FREE_C_HEAP_ARRAY(deviates);
+  FREE_C_HEAP_ARRAY(selections);
 }
 
 bool LogOutput::parse_options(const char* options, outputStream* errstream) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,16 +189,18 @@ public final class Util {
 
     public static List<ClassEntry> entryList(List<? extends ClassDesc> list) {
         var result = new Object[list.size()]; // null check
-        for (int i = 0; i < result.length; i++) {
-            result[i] = TemporaryConstantPool.INSTANCE.classEntry(list.get(i));
+        int i = 0;
+        for (var entry : list) {
+            result[i++] = TemporaryConstantPool.INSTANCE.classEntry(entry);
         }
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(result);
     }
 
     public static List<ModuleEntry> moduleEntryList(List<? extends ModuleDesc> list) {
         var result = new Object[list.size()]; // null check
-        for (int i = 0; i < result.length; i++) {
-            result[i] = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(list.get(i).name()));
+        int i = 0;
+        for (var entry : list) {
+            result[i++] = TemporaryConstantPool.INSTANCE.moduleEntry(entry);
         }
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(result);
     }

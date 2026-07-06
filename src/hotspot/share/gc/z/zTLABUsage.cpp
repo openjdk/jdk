@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,23 @@
 
 #include "gc/z/zTLABUsage.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomicAccess.hpp"
 
 ZTLABUsage::ZTLABUsage()
   : _used(0),
     _used_history() {}
 
 void ZTLABUsage::increase_used(size_t size) {
-  AtomicAccess::add(&_used, size, memory_order_relaxed);
+  _used.add_then_fetch(size, memory_order_relaxed);
 }
 
 void ZTLABUsage::decrease_used(size_t size) {
-  precond(size <= _used);
+  precond(size <= _used.load_relaxed());
 
-  AtomicAccess::sub(&_used, size, memory_order_relaxed);
+  _used.sub_then_fetch(size, memory_order_relaxed);
 }
 
 void ZTLABUsage::reset() {
-  const size_t used = AtomicAccess::xchg(&_used, (size_t) 0);
+  const size_t used = _used.exchange(0u);
 
   // Avoid updates when nothing has been allocated since the last YC
   if (used == 0) {

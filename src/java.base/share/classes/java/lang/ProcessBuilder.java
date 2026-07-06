@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -929,6 +929,12 @@ public final class ProcessBuilder
      * This gives behavior equivalent to most operating system
      * command interpreters, or the standard C library function
      * {@code system()}.
+     *
+     * @implNote
+     * When the process is {@link #start started},
+     * if {#code System.out} and/or {#code System.err} have been
+     * closed in the current process, the corresponding output
+     * in the subprocess will be discarded.
      *
      * @return this process builder
      * @since  1.7

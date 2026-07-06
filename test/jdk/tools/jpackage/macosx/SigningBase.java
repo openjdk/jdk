@@ -38,7 +38,7 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary Setup the environment for jpackage macos signing tests.
  *          Creates required keychains and signing identities.
- *          Does NOT run any jpackag tests.
+ *          Does NOT run any jpackage tests.
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror SigningBase.java
@@ -51,7 +51,7 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary Tear down the environment for jpackage macos signing tests.
  *          Deletes required keychains and signing identities.
- *          Does NOT run any jpackag tests.
+ *          Does NOT run any jpackage tests.
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror SigningBase.java
@@ -83,7 +83,7 @@ public class SigningBase {
         }
 
         private static CertificateRequest.Builder cert() {
-            return new CertificateRequest.Builder();
+            return CertificateRequest.build();
         }
 
         private final CertificateRequest spec;
@@ -118,6 +118,12 @@ public class SigningBase {
                 StandardCertificateRequest.PKG,
                 StandardCertificateRequest.CODESIGN_COPY,
                 StandardCertificateRequest.PKG_COPY),
+        /**
+         * A keychain with a single certificate for each role.
+         */
+        SINGLE("jpackagerTest-single.keychain",
+                StandardCertificateRequest.CODESIGN,
+                StandardCertificateRequest.PKG),
         ;
 
         StandardKeychain(String keychainName, StandardCertificateRequest... certs) {
@@ -145,7 +151,7 @@ public class SigningBase {
         }
 
         private static KeychainWithCertsSpec.Builder keychain(String name) {
-            return new KeychainWithCertsSpec.Builder().name(name);
+            return KeychainWithCertsSpec.build().name(name);
         }
 
         private static List<KeychainWithCertsSpec> signingEnv() {
@@ -164,13 +170,13 @@ public class SigningBase {
     }
 
     public static void verifySignTestEnvReady() {
-        if (!Inner.SIGN_ENV_READY) {
+        if (!SignEnvReady.VALUE) {
             TKit.throwSkippedException(new IllegalStateException("Misconfigured signing test environment"));
         }
     }
 
-    private final class Inner {
-        private static final boolean SIGN_ENV_READY = MacSign.isDeployed(StandardKeychain.signingEnv());
+    private final class SignEnvReady {
+        static final boolean VALUE = MacSign.isDeployed(StandardKeychain.signingEnv());
     }
 
     private static final String NAME_ASCII = "jpackage.openjdk.java.net";

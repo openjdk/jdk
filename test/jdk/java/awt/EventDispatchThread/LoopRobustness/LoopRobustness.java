@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,19 +27,17 @@
  * @key headful
  * @summary Checks that an Error which propogates up to the EventDispatch
  * loop does not crash AWT.
- * @author Andrei Dmitriev: area=awt.event
- * @library ../../regtesthelpers
- * @modules java.desktop/sun.awt
- * @build Util
  * @run main LoopRobustness
  */
 
-import java.awt.*;
-import java.awt.event.*;
-
-import sun.awt.SunToolkit;
-
-import test.java.awt.regtesthelpers.Util;
+import java.awt.AWTException;
+import java.awt.Button;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.Robot;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 
 public class LoopRobustness {
 
@@ -50,15 +48,15 @@ public class LoopRobustness {
     public static volatile boolean notifyOccured = false;
     public static volatile boolean otherExceptionsCaught = false;
 
-    public static void main(String [] args) throws Exception {
-        SunToolkit.createNewAppContext();
+    public static void main(String[] args) throws Exception {
 
         ThreadGroup mainThreadGroup = Thread.currentThread().getThreadGroup();
 
+        Impl impl = new Impl();
         long at;
         //wait for a TIMEOUT giving a chance to a new Thread above to accomplish its stuff.
         synchronized (LoopRobustness.LOCK) {
-            new Thread(new TestThreadGroup(mainThreadGroup, "TestGroup"), new Impl()).start();
+            new Thread(new TestThreadGroup(mainThreadGroup, "TestGroup"), impl).start();
             at = System.currentTimeMillis();
             try {
                 while (!notifyOccured && (System.currentTimeMillis() - at < TIMEOUT)) {
@@ -76,7 +74,7 @@ public class LoopRobustness {
 
         //now wait for two clicks
         at = System.currentTimeMillis();
-        while(System.currentTimeMillis() - at < TIMEOUT && clicks < 2) {
+        while (System.currentTimeMillis() - at < TIMEOUT && clicks < 2) {
             try {
                 Thread.sleep(100);
             } catch(InterruptedException e) {
@@ -89,16 +87,26 @@ public class LoopRobustness {
         if (otherExceptionsCaught) {
             throw new RuntimeException("Test FAILED: unexpected exceptions caught");
         }
+        Frame f = impl.getFrame();
+        if (f != null) {
+            EventQueue.invokeAndWait(() -> f.dispose());
+        }
     }
 }
 
-class Impl implements Runnable{
+class Impl implements Runnable {
     static Robot robot;
-    public void run() {
-        SunToolkit.createNewAppContext();
+    volatile Button b;
+    volatile Frame lr;
 
-        Button b = new Button("Press me to test the AWT-Event Queue thread");
-        Frame lr = new Frame("ROBUST FRAME");
+    public Frame getFrame() {
+        return lr;
+    }
+
+    void createUI() {
+
+        b = new Button("Press me to test the AWT-Event Queue thread");
+        lr = new Frame("ROBUST FRAME");
         lr.setBounds(100, 100, 300, 100);
         b.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
@@ -109,13 +117,19 @@ class Impl implements Runnable{
             });
         lr.add(b);
         lr.setVisible(true);
+    }
+
+    public void run() {
 
         try {
+            EventQueue.invokeAndWait(() -> createUI());
             robot = new Robot();
         } catch (AWTException e) {
             throw new RuntimeException("Test interrupted.", e);
+        } catch (Exception e) {
+            throw new RuntimeException("UI creation failed.", e);
         }
-        Util.waitForIdle(robot);
+        robot.waitForIdle();
 
         synchronized (LoopRobustness.LOCK){
             LoopRobustness.LOCK.notify();
@@ -126,11 +140,11 @@ class Impl implements Runnable{
         while (i < 2) {
             robot.mouseMove(b.getLocationOnScreen().x + b.getWidth()/2,
                             b.getLocationOnScreen().y + b.getHeight()/2);
-            Util.waitForIdle(robot);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            Util.waitForIdle(robot);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
-            Util.waitForIdle(robot);
+            robot.waitForIdle();
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
             i++;
         }
     }

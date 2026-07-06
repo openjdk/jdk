@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,6 @@ import javax.net.ssl.SSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
 
 import static java.lang.System.err;
 import static java.lang.System.out;
@@ -49,8 +46,16 @@ import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
-import static org.testng.Assert.assertEquals;
 
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+
+// Use TestInstance.Lifecycle.PER_CLASS because we need access
+// to this.getClass() in methods that are called from
+// @BeforeAll and @AfterAll
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractNoBody implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
@@ -76,7 +81,6 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
     // a shared executor helps reduce the amount of threads created by the test
     static final ExecutorService executor = Executors.newFixedThreadPool(ITERATION_COUNT * 2);
     static final ExecutorService serverExecutor = Executors.newFixedThreadPool(ITERATION_COUNT * 4);
-    static final AtomicLong serverCount = new AtomicLong();
     static final AtomicLong clientCount = new AtomicLong();
     static final long start = System.nanoTime();
     public static String now() {
@@ -87,7 +91,6 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
         return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
     }
 
-    @DataProvider(name = "variants")
     public Object[][] variants() {
         return new Object[][]{
                 { http3URI_fixed,   false,},
@@ -145,8 +148,8 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
         var request = newRequestBuilder(http3URI_head)
                 .HEAD().version(HTTP_2).build();
         var response = client.send(request, BodyHandlers.ofString());
-        assertEquals(response.statusCode(), 200);
-        assertEquals(response.version(), HTTP_2);
+        assertEquals(200, response.statusCode());
+        assertEquals(HTTP_2, response.version());
         out.println("\n" + now() + "--- HEAD request succeeded ----\n");
         err.println("\n" + now() + "--- HEAD request succeeded ----\n");
         return response;
@@ -182,7 +185,7 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
         }
     }
 
-    @BeforeTest
+    @BeforeAll
     public void setup() throws Exception {
         printStamp(START, "setup");
         HttpServerAdapters.enableServerLogging();
@@ -252,7 +255,7 @@ public abstract class AbstractNoBody implements HttpServerAdapters {
         printStamp(END,"setup");
     }
 
-    @AfterTest
+    @AfterAll
     public void teardown() throws Exception {
         printStamp(START, "teardown");
         sharedClient.close();

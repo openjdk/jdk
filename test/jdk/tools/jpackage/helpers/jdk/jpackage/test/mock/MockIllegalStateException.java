@@ -22,13 +22,15 @@
  */
 package jdk.jpackage.test.mock;
 
+import java.util.Objects;
+
 /**
  * Indicates command mock internal error.
  */
 public final class MockIllegalStateException extends IllegalStateException {
 
     public MockIllegalStateException(String msg) {
-        super(msg);
+        super(Objects.requireNonNull(msg));
     }
 
     private static final long serialVersionUID = 1L;

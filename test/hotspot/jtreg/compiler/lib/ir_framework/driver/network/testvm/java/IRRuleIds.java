@@ -49,6 +49,10 @@ public class IRRuleIds implements Iterable<Integer> {
         return ruleIds.getLast();
     }
 
+    public static IRRuleIds createEmpty() {
+        return new IRRuleIds(new ArrayList<>());
+    }
+
     public boolean isEmpty() {
         return ruleIds.isEmpty();
     }

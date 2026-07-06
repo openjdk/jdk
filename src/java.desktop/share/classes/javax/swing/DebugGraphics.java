@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1492,14 +1492,12 @@ public class DebugGraphics extends Graphics {
     /** Returns DebugGraphicsInfo, or creates one if none exists.
       */
     static DebugGraphicsInfo info() {
-        DebugGraphicsInfo debugGraphicsInfo = (DebugGraphicsInfo)
-            SwingUtilities.appContextGet(debugGraphicsInfoKey);
-        if (debugGraphicsInfo == null) {
-            debugGraphicsInfo = new DebugGraphicsInfo();
-            SwingUtilities.appContextPut(debugGraphicsInfoKey,
-                                         debugGraphicsInfo);
+        synchronized (DebugGraphicsInfo.class) {
+            if (debugGraphicsInfo == null) {
+                debugGraphicsInfo = new DebugGraphicsInfo();
+            }
+            return debugGraphicsInfo;
         }
-        return debugGraphicsInfo;
     }
-    private static final Class<DebugGraphicsInfo> debugGraphicsInfoKey = DebugGraphicsInfo.class;
+    private static DebugGraphicsInfo debugGraphicsInfo;
 }

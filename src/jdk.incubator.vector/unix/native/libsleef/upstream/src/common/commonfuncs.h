@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2023.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -415,7 +415,7 @@ static INLINE CONST vquad add128_vq_vq_vq(vquad x, vquad y) {
 static INLINE CONST vquad imdvq_vq_vm_vm(vmask x, vmask y) { vquad r = vqsetxy_vq_vm_vm(x, y); return r; }
 
 // imm must be smaller than 64
-#define srl128_vq_vq_i(m, imm)                                  \
+#define srl128_vq_vq_i(m, imm)                                        \
   imdvq_vq_vm_vm(vor_vm_vm_vm(vsrl64_vm_vm_i(vqgetx_vm_vq(m), imm), vsll64_vm_vm_i(vqgety_vm_vq(m), 64-imm)), vsrl64_vm_vm_i(vqgety_vm_vq(m), imm))
 
 // This function is equivalent to :

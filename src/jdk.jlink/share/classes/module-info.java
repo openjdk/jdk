@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,5 +81,6 @@ module jdk.jlink {
         jdk.tools.jlink.internal.plugins.VendorVMBugURLPlugin,
         jdk.tools.jlink.internal.plugins.VendorVersionPlugin,
         jdk.tools.jlink.internal.plugins.CDSPlugin,
-        jdk.tools.jlink.internal.plugins.SaveJlinkArgfilesPlugin;
+        jdk.tools.jlink.internal.plugins.SaveJlinkArgfilesPlugin,
+        jdk.tools.jlink.internal.plugins.CACertsPlugin;
 }

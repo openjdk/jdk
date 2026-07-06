@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ JNI_COCOA_ENTER(env);
     dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(NSEC_PER_SEC)); // 1 second timeout
 
     // Asynchronous call to openURL
+    dispatch_retain(semaphore);
     [[NSWorkspace sharedWorkspace] openURLs:urls
                                     withApplicationAtURL:appURI
                                     configuration:configuration
@@ -78,9 +79,11 @@ JNI_COCOA_ENTER(env);
             status = (OSStatus) error.code;
         }
         dispatch_semaphore_signal(semaphore);
+        dispatch_release(semaphore);
     }];
 
     dispatch_semaphore_wait(semaphore, timeout);
+    dispatch_release(semaphore);
 
 JNI_COCOA_EXIT(env);
     return status;
@@ -120,6 +123,7 @@ JNI_COCOA_ENTER(env);
         if (appURI == nil
             || [[urlToOpen absoluteString] containsString:[appURI absoluteString]]
             || [[defaultTerminalApp absoluteString] containsString:[appURI absoluteString]]) {
+            [urlToOpen release];
             return -1;
         }
         // Additionally set forPrinting=TRUE for print
@@ -129,6 +133,7 @@ JNI_COCOA_ENTER(env);
     } else if (action == sun_lwawt_macosx_CDesktopPeer_EDIT) {
         if (appURI == nil
             || [[urlToOpen absoluteString] containsString:[appURI absoluteString]]) {
+            [urlToOpen release];
             return -1;
         }
         // for EDIT: if (defaultApp = TerminalApp) then set appURI = DefaultTextEditor
@@ -144,6 +149,7 @@ JNI_COCOA_ENTER(env);
     dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(NSEC_PER_SEC)); // 1 second timeout
 
     // Asynchronous call - openURLs:withApplicationAtURL
+    dispatch_retain(semaphore);
     [[NSWorkspace sharedWorkspace] openURLs:urls
                                    withApplicationAtURL:appURI
                                    configuration:configuration
@@ -152,10 +158,13 @@ JNI_COCOA_ENTER(env);
             status = (OSStatus) error.code;
         }
         dispatch_semaphore_signal(semaphore);
+        dispatch_release(semaphore);
     }];
 
     dispatch_semaphore_wait(semaphore, timeout);
+    dispatch_release(semaphore);
 
+    [urlToOpen release];
 JNI_COCOA_EXIT(env);
     return status;
 }

@@ -68,7 +68,7 @@ public class CipherSuiteOrder {
     /*
      * Turn on SSL debugging?
      */
-    static boolean debug = false;
+    static boolean debug = Boolean.getBoolean("test.debug");
 
     /*
      * If the client or server is doing some kind of object creation

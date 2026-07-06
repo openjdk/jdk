@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ import org.junit.jupiter.api.Test;
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=10
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
- *                     -Djdk.httpclient.HttpClient.log=quic,errors PacketLossTest
+ *                     -Djdk.httpclient.HttpClient.log=quic,errors ${test.main.class}
  */
 public class PacketLossTest {
 
@@ -158,7 +158,7 @@ public class PacketLossTest {
 
     private static void startServer(final QuicStandaloneServer server) throws IOException {
         // add a handler which deals with incoming connections
-        server.addHandler(new EchoHandler(HELLO_MSG.length));
+        server.setHandler(new EchoHandler(HELLO_MSG.length));
         server.start();
         System.out.println("Server " + server.name() + " started at " + server.getAddress());
     }

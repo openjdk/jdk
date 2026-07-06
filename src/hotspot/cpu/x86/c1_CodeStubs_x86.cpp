@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,7 +293,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
       address ptr = (address)(_pc_start + i);
       int a_byte = (*ptr) & 0xFF;
       __ emit_int8(a_byte);
-      *ptr = 0x90; // make the site look like a nop
+      *ptr = NativeInstruction::nop_instruction_code; // make the site look like a nop
     }
   }
 
@@ -342,6 +342,38 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   assert(patch_info_pc - end_of_patch == bytes_to_skip, "incorrect patch info");
 
   address entry = __ pc();
+  // NativeGeneralJump::insert_unconditional will be writing a jmp rel32 at _pc_start over the existing instructions.
+  // There are 2 cases:
+  // - the existing instruction is a mov r64 imm64 from LIR_Assembler::klass2reg_with_patching
+  // - or there are nops there (from higher in this function).
+  // In the first case, since a jmp rel32 is 5-byte long, but a mov r64 imm64 is 10-byte long
+  // (resp. 11 if using a REX2 prefix), so we are left with the last 5 (resp. 6) bytes of the
+  // immediate operand (which are all 0x00). When debugging, this confuses the disassembler
+  // because it tries to recognize an instruction starting immediately after the jmp rel32,
+  // leading to wrong instructions, and possibly failure to disassemble further the whole function.
+  //
+  // To be disassembler-friendly, let's replace the leftover 0x00 with nops.
+  // There are 2 shapes:
+  // - without REX2 prefix: REX prefix | MOV r64
+  // - with REX2 prefix: REX2 prefix | REX prefix | MOV r64
+  // then, we know the 8 bytes after are the immediate operand.
+  if (NativeInstruction* ni = nativeInstruction_at(_pc_start); ni->is_mov_literal64()) {
+    int length_before_immediate = ni->has_rex2_prefix() ? 3 : 2;
+    assert(*(long long int*)(_pc_start + length_before_immediate) == 0, "imm64 must be 0 in mov r64, imm64");
+    // We don't need to replace the NativeGeneralJump::instruction_size first bytes, since insert_unconditional
+    // will overwrite.
+    for (int i = NativeGeneralJump::instruction_size; i < length_before_immediate + BytesPerLong; ++i) {
+      _pc_start[i] = NativeInstruction::nop_instruction_code;
+    }
+  }
+#ifdef ASSERT
+  else {  // and we make sure otherwise, we indeed have just nops.
+    for (int i = 0; i < NativeGeneralJump::instruction_size; ++i) {
+      assert(_pc_start[i] == NativeInstruction::nop_instruction_code, "patching over an unexpected instruction");
+    }
+  }
+#endif
+
   NativeGeneralJump::insert_unconditional((address)_pc_start, entry);
   address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;

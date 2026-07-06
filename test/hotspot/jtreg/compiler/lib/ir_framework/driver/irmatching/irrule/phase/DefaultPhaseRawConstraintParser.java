@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.FailOn;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
-import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
+import compiler.lib.ir_framework.driver.network.testvm.java.VMInfo;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 
 import java.util.ArrayList;
@@ -71,7 +71,7 @@ class DefaultPhaseRawConstraintParser {
         for (RawConstraint rawConstraint : rawConstraints) {
             CompilePhase compilePhase = rawConstraint.defaultCompilePhase();
             List<Constraint> checkAttribute =
-                    matchableForCompilePhase.computeIfAbsent(compilePhase, k -> new ArrayList<>());
+                    matchableForCompilePhase.computeIfAbsent(compilePhase, _ -> new ArrayList<>());
             checkAttribute.add(rawConstraint.parse(compilePhase, compilation.output(compilePhase), vmInfo));
         }
         return replaceConstraintsWithCheckAttribute(matchableForCompilePhase, checkAttributeType);
@@ -113,7 +113,7 @@ class DefaultPhaseRawConstraintParser {
     private static void addCheckAttribute(Map<CompilePhase, Matchable> failOnForCompilePhase,
                                           Map<CompilePhase, List<Matchable>> result) {
         failOnForCompilePhase.forEach((compilePhase, matchable) -> {
-            List<Matchable> list = result.computeIfAbsent(compilePhase, k -> new ArrayList<>());
+            List<Matchable> list = result.computeIfAbsent(compilePhase, _ -> new ArrayList<>());
             list.add(matchable);
         });
     }

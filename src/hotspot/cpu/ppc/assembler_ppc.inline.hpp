@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,8 +252,6 @@ inline void Assembler::brnop2()                           { Assembler::mcrf(CR4,
 inline void Assembler::mr(      Register d, Register s)   { Assembler::orr(d, s, s); }
 inline void Assembler::ori_opt( Register d, int ui16)     { if (ui16!=0) Assembler::ori( d, d, ui16); }
 inline void Assembler::oris_opt(Register d, int ui16)     { if (ui16!=0) Assembler::oris(d, d, ui16); }
-
-inline void Assembler::endgroup()                         { Assembler::ori(R1, R1, 0); }
 
 // count instructions
 inline void Assembler::cntlzw(  Register a, Register s)              { emit_int32(CNTLZW_OPCODE | rta(a) | rs(s) | rc(0)); }
@@ -644,7 +642,6 @@ inline void Assembler::crorc( ConditionRegister crdst, Condition cdst, Condition
   crorc(dst_bit, src_bit, dst_bit);
 }
 
-// Conditional move (>= Power7)
 inline void Assembler::isel(Register d, ConditionRegister cr, Condition cc, bool inv, Register a, Register b) {
   if (b == noreg) {
     b = d; // Can be omitted if old value should be kept in "else" case.
@@ -691,7 +688,7 @@ inline void Assembler::elemental_membar(int e) { assert(0 < e && e < 16, "invali
 
 // Wait instructions for polling.
 inline void Assembler::wait()    { emit_int32( WAIT_OPCODE); }
-inline void Assembler::waitrsv() { emit_int32( WAIT_OPCODE | 1<<(31-10)); } // WC=0b01 >=Power7
+inline void Assembler::waitrsv() { emit_int32( WAIT_OPCODE | 1<<(31-10)); } // WC=0b01
 
 // atomics
 // Use ra0mem to disallow R0 as base.
@@ -711,19 +708,16 @@ inline void Assembler::stwcx_(Register s, Register a, Register b)               
 inline void Assembler::stdcx_(Register s, Register a, Register b)                             { emit_int32( STDCX_OPCODE | rs(s) | ra0mem(a) | rb(b) | rc(1)); }
 inline void Assembler::stqcx_(Register s, Register a, Register b)                             { emit_int32( STQCX_OPCODE | rs(s) | ra0mem(a) | rb(b) | rc(1)); }
 
-// Instructions for adjusting thread priority
-// for simultaneous multithreading (SMT) on >= POWER5.
+// Instructions for adjusting thread priority for simultaneous multithreading (SMT).
 inline void Assembler::smt_prio_very_low()    { Assembler::or_unchecked(R31, R31, R31); }
 inline void Assembler::smt_prio_low()         { Assembler::or_unchecked(R1,  R1,  R1); }
 inline void Assembler::smt_prio_medium_low()  { Assembler::or_unchecked(R6,  R6,  R6); }
 inline void Assembler::smt_prio_medium()      { Assembler::or_unchecked(R2,  R2,  R2); }
 inline void Assembler::smt_prio_medium_high() { Assembler::or_unchecked(R5,  R5,  R5); }
-inline void Assembler::smt_prio_high()        { Assembler::or_unchecked(R3,  R3,  R3); }
-// >= Power7
+inline void Assembler::smt_prio_high()        { Assembler::or_unchecked(R3,  R3,  R3); }  // Restricted to supervisor state since Power9.
 inline void Assembler::smt_yield()            { Assembler::or_unchecked(R27, R27, R27); } // never actually implemented
-inline void Assembler::smt_mdoio()            { Assembler::or_unchecked(R29, R29, R29); } // never actually implemetned
+inline void Assembler::smt_mdoio()            { Assembler::or_unchecked(R29, R29, R29); } // never actually implemented
 inline void Assembler::smt_mdoom()            { Assembler::or_unchecked(R30, R30, R30); } // never actually implemented
-// Power8
 inline void Assembler::smt_miso()             { Assembler::or_unchecked(R26, R26, R26); } // never actually implemented
 
 inline void Assembler::twi_0(Register a)      { twi_unchecked(0, a, 0);}
@@ -768,10 +762,6 @@ inline void Assembler::frin( FloatRegister d, FloatRegister b) { emit_int32( FRI
 inline void Assembler::frip( FloatRegister d, FloatRegister b) { emit_int32( FRIP_OPCODE | frt(d) | frb(b) | rc(0)); }
 inline void Assembler::frim( FloatRegister d, FloatRegister b) { emit_int32( FRIM_OPCODE | frt(d) | frb(b) | rc(0)); }
 
-// These are special Power6 opcodes, reused for "lfdepx" and "stfdepx"
-// on Power7.  Do not use.
-//inline void Assembler::mffgpr( FloatRegister d, Register b)   { emit_int32( MFFGPR_OPCODE | frt(d) | rb(b) | rc(0)); }
-//inline void Assembler::mftgpr( Register d, FloatRegister b)   { emit_int32( MFTGPR_OPCODE | rt(d) | frb(b) | rc(0)); }
 // add cmpb and popcntb to detect ppc power version.
 inline void Assembler::cmpb(   Register a, Register s, Register b) { emit_int32( CMPB_OPCODE    | rta(a) | rs(s) | rb(b) | rc(0)); }
 inline void Assembler::popcntb(Register a, Register s)             { emit_int32( POPCNTB_OPCODE | rta(a) | rs(s)); };
@@ -839,7 +829,7 @@ inline void Assembler::fcmpu( ConditionRegister crx, FloatRegister a, FloatRegis
 inline void Assembler::fsqrt( FloatRegister d, FloatRegister b) { emit_int32( FSQRT_OPCODE  | frt(d) | frb(b) | rc(0)); }
 inline void Assembler::fsqrts(FloatRegister d, FloatRegister b) { emit_int32( FSQRTS_OPCODE | frt(d) | frb(b) | rc(0)); }
 
-// Vector instructions for >= Power6.
+// Vector instructions.
 inline void Assembler::lvebx( VectorRegister d, Register s1, Register s2) { emit_int32( LVEBX_OPCODE  | vrt(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::lvehx( VectorRegister d, Register s1, Register s2) { emit_int32( LVEHX_OPCODE  | vrt(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::lvewx( VectorRegister d, Register s1, Register s2) { emit_int32( LVEWX_OPCODE  | vrt(d) | ra0mem(s1) | rb(s2)); }
@@ -908,6 +898,9 @@ inline void Assembler::xvrdpic(   VectorSRegister d, VectorSRegister b)         
 inline void Assembler::xvrdpim(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIM_OPCODE | vsrt(d) | vsrb(b)); }
 inline void Assembler::xvrdpip(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIP_OPCODE | vsrt(d) | vsrb(b)); }
 
+inline void Assembler::xsminjdp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XSMINJDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xsmaxjdp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XSMAXJDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+
 inline void Assembler::xvminsp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMINSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvmindp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMINDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvmaxsp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMAXSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
@@ -922,6 +915,10 @@ inline void Assembler::xxpermdi(VectorSRegister d, VectorSRegister a, VectorSReg
 inline void Assembler::xxmrghw( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XXMRGHW_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xxmrglw( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XXMRGHW_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xxsel(   VectorSRegister d, VectorSRegister a, VectorSRegister b, VectorSRegister c) { emit_int32( XXSEL_OPCODE | vsrt(d) | vsra(a) | vsrb(b) | vsrc(c)); }
+
+inline void Assembler::xscmpeqdp(VectorSRegister t, VectorSRegister a, VectorSRegister b) { emit_int32( XSCMPEQDP_OPCODE | vsrt(t) | vsra(a) | vsrb(b) );}
+inline void Assembler::xscmpgedp(VectorSRegister t, VectorSRegister a, VectorSRegister b) { emit_int32( XSCMPGEDP_OPCODE | vsrt(t) | vsra(a) | vsrb(b) );}
+inline void Assembler::xscmpgtdp(VectorSRegister t, VectorSRegister a, VectorSRegister b) { emit_int32( XSCMPGTDP_OPCODE | vsrt(t) | vsra(a) | vsrb(b) );}
 
 // VSX Extended Mnemonics
 inline void Assembler::xxspltd( VectorSRegister d, VectorSRegister a, int x)             { xxpermdi(d, a, a, x ? 3 : 0); }

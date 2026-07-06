@@ -23,38 +23,38 @@
 
 package catalog;
 
-import static catalog.CatalogTestUtils.PREFER_PUBLIC;
-import static catalog.CatalogTestUtils.PREFER_SYSTEM;
-import static catalog.CatalogTestUtils.catalogResolver;
-import static javax.xml.catalog.CatalogFeatures.Feature.PREFER;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogResolver;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static catalog.CatalogTestUtils.PREFER_PUBLIC;
+import static catalog.CatalogTestUtils.PREFER_SYSTEM;
+import static catalog.CatalogTestUtils.catalogResolver;
+import static javax.xml.catalog.CatalogFeatures.Feature.PREFER;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm catalog.PreferFeatureTest
+ * @run junit/othervm catalog.PreferFeatureTest
  * @summary This case tests how does the feature affect the catalog resolution,
  *          and tests the priority between this feature and attribute prefer
  *          in catalog file.
  */
 public class PreferFeatureTest {
 
-    @Test(dataProvider = "prefer-publicId-systemId",
-            expectedExceptions = CatalogException.class)
-    public void testPreferFeature(String prefer, String systemId,
-            String publicId) {
-        createResolver(prefer).resolveEntity(systemId, publicId);
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testPreferFeature(String prefer, String systemId, String publicId) {
+        CatalogResolver resolver = createResolver(prefer);
+        assertThrows(CatalogException.class, () -> resolver.resolveEntity(systemId, publicId));
     }
 
-    @DataProvider(name = "prefer-publicId-systemId")
-    public Object[][] data() {
+    public static Object[][] data() {
         return new Object[][] {
                 // The feature prefer is system. There's a match for the
                 // specified public id, and no match for the specified system id.
@@ -72,7 +72,7 @@ public class PreferFeatureTest {
                          "http://remote/dtd/bob/docBobDummy.dtd"} };
     }
 
-    private CatalogResolver createResolver(String prefer) {
+    private static CatalogResolver createResolver(String prefer) {
         return catalogResolver(
                 CatalogFeatures.builder().with(PREFER, prefer).build(),
                 "preferFeature.xml");

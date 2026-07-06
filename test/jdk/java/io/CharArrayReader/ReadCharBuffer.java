@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,8 @@
  * @test
  * @bug 4926314
  * @summary Test for CharArrayReader#read(CharBuffer).
- * @run testng ReadCharBuffer
+ * @run junit ReadCharBuffer
  */
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
 
 import java.io.CharArrayReader;
 import java.io.IOException;
@@ -39,43 +35,46 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.util.Arrays;
 
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReadCharBuffer {
 
     private static final int BUFFER_SIZE = 7;
 
-    @DataProvider(name = "buffers")
-    public Object[][] createBuffers() {
+    public static CharBuffer[] buffers() {
         // test both on-heap and off-heap buffers as they may use different code paths
-        return new Object[][]{
-                new Object[]{CharBuffer.allocate(BUFFER_SIZE)},
-                new Object[]{ByteBuffer.allocateDirect(BUFFER_SIZE * 2).asCharBuffer()}
+        return new CharBuffer[] {
+            CharBuffer.allocate(BUFFER_SIZE),
+            ByteBuffer.allocateDirect(BUFFER_SIZE * 2).asCharBuffer()
         };
     }
 
-    @Test(dataProvider = "buffers")
+    @ParameterizedTest
+    @MethodSource("buffers")
     public void read(CharBuffer buffer) throws IOException {
         fillBuffer(buffer);
 
         try (Reader reader = new CharArrayReader("ABCD".toCharArray())) {
             buffer.limit(3);
             buffer.position(1);
-            assertEquals(reader.read(buffer), 2);
-            assertEquals(buffer.position(), 3);
-            assertEquals(buffer.limit(), 3);
+            assertEquals(2, reader.read(buffer));
+            assertEquals(3, buffer.position());
+            assertEquals(3, buffer.limit());
 
             buffer.limit(7);
             buffer.position(4);
-            assertEquals(reader.read(buffer), 2);
-            assertEquals(buffer.position(), 6);
-            assertEquals(buffer.limit(), 7);
+            assertEquals(2, reader.read(buffer));
+            assertEquals(6, buffer.position());
+            assertEquals(7, buffer.limit());
 
-            assertEquals(reader.read(buffer), -1);
+            assertEquals(-1, reader.read(buffer));
         }
 
         buffer.clear();
-        assertEquals(buffer.toString(), "xABxCDx");
+        assertEquals("xABxCDx", buffer.toString());
     }
 
     private void fillBuffer(CharBuffer buffer) {

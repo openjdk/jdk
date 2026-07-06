@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,9 +76,7 @@ void AwtDesktopProperties::GetWindowsParameters() {
     GetOtherParameters();
     GetSoundEvents();
     GetSystemProperties();
-    if (IS_WINXP) {
-        GetXPStyleProperties();
-    }
+    GetXPStyleProperties();
 }
 
 void getInvScale(float &invScaleX, float &invScaleY) {
@@ -423,12 +421,8 @@ void CheckFontSmoothingSettings(HWND hWnd) {
 
     if (firstTime) {
         SystemParametersInfo(SPI_GETFONTSMOOTHING, 0, &fontSmoothing, 0);
-        if (IS_WINXP) {
-            SystemParametersInfo(SPI_GETFONTSMOOTHINGTYPE, 0,
-                                 &fontSmoothingType, 0);
-            SystemParametersInfo(SPI_GETFONTSMOOTHINGCONTRAST, 0,
-                                 &fontSmoothingContrast, 0);
-        }
+        SystemParametersInfo(SPI_GETFONTSMOOTHINGTYPE, 0, &fontSmoothingType, 0);
+        SystemParametersInfo(SPI_GETFONTSMOOTHINGCONTRAST, 0, &fontSmoothingContrast, 0);
         lastFontSmoothing = fontSmoothing;
         lastFontSmoothingType = fontSmoothingType;
         lastFontSmoothingContrast = fontSmoothingContrast;
@@ -441,28 +435,18 @@ void CheckFontSmoothingSettings(HWND hWnd) {
             /* no need to check the other settings in this case. */
             return;
         }
-        if (IS_WINXP) {
-            SystemParametersInfo(SPI_GETFONTSMOOTHINGTYPE, 0,
-                                 &fontSmoothingType, 0);
-            settingsChanged |= fontSmoothingType != lastFontSmoothingType;
-            if (!settingsChanged &&
-                fontSmoothingType == FONTSMOOTHING_STANDARD) {
-                /* No need to check any LCD specific settings */
-                return;
-            } else {
-                SystemParametersInfo(SPI_GETFONTSMOOTHINGCONTRAST, 0,
-                                     &fontSmoothingContrast, 0);
-                settingsChanged |=
-                    fontSmoothingContrast != lastFontSmoothingContrast;
-                if (fontSmoothingType == FONTSMOOTHING_LCD) {
-                    // Order is a registry entry so more expensive to check.x
-                    subPixelOrder = GetLCDSubPixelOrder();
-                    settingsChanged |= subPixelOrder != lastSubpixelOrder;
-                }
-            }
+        SystemParametersInfo(SPI_GETFONTSMOOTHINGTYPE, 0, &fontSmoothingType, 0);
+        settingsChanged |= fontSmoothingType != lastFontSmoothingType;
+        if (!settingsChanged && fontSmoothingType == FONTSMOOTHING_STANDARD) {
+            /* No need to check any LCD specific settings */
+            return;
         } else {
-            if (settingsChanged && fontSmoothing == FONTSMOOTHING_ON) {
-                fontSmoothingType = FONTSMOOTHING_STANDARD;
+            SystemParametersInfo(SPI_GETFONTSMOOTHINGCONTRAST, 0, &fontSmoothingContrast, 0);
+            settingsChanged |= fontSmoothingContrast != lastFontSmoothingContrast;
+            if (fontSmoothingType == FONTSMOOTHING_LCD) {
+                // Order is a registry entry so more expensive to check.x
+                subPixelOrder = GetLCDSubPixelOrder();
+                settingsChanged |= subPixelOrder != lastSubpixelOrder;
             }
         }
     }
@@ -519,13 +503,7 @@ void AwtDesktopProperties::GetColorParameters() {
     SetColorProperty(TEXT("win.mdi.backgroundColor"), GetSysColor(COLOR_APPWORKSPACE));
     SetColorProperty(TEXT("win.menu.backgroundColor"), GetSysColor(COLOR_MENU));
     SetColorProperty(TEXT("win.menu.textColor"), GetSysColor(COLOR_MENUTEXT));
-    // COLOR_MENUBAR is only defined on WindowsXP. Our binaries are
-    // built on NT, hence the below ifdef.
-#ifndef COLOR_MENUBAR
-#define COLOR_MENUBAR 30
-#endif
-    SetColorProperty(TEXT("win.menubar.backgroundColor"),
-                                GetSysColor(IS_WINXP ? COLOR_MENUBAR : COLOR_MENU));
+    SetColorProperty(TEXT("win.menubar.backgroundColor"), GetSysColor(COLOR_MENUBAR));
     SetColorProperty(TEXT("win.scrollbar.backgroundColor"), GetSysColor(COLOR_SCROLLBAR));
     SetColorProperty(TEXT("win.text.grayedTextColor"), GetSysColor(COLOR_GRAYTEXT));
     SetColorProperty(TEXT("win.tooltip.backgroundColor"), GetSysColor(COLOR_INFOBK));
@@ -540,14 +518,9 @@ void AwtDesktopProperties::GetOtherParameters() {
     SetBooleanProperty(TEXT("win.text.fontSmoothingOn"), GetBooleanParameter(SPI_GETFONTSMOOTHING));
     // TODO END
 
-    if (IS_WINXP) {
-        SetIntegerProperty(TEXT("win.text.fontSmoothingType"),
-                           GetIntegerParameter(SPI_GETFONTSMOOTHINGTYPE));
-        SetIntegerProperty(TEXT("win.text.fontSmoothingContrast"),
-                           GetIntegerParameter(SPI_GETFONTSMOOTHINGCONTRAST));
-        SetIntegerProperty(TEXT("win.text.fontSmoothingOrientation"),
-                           GetLCDSubPixelOrder());
-    }
+    SetIntegerProperty(TEXT("win.text.fontSmoothingType"), GetIntegerParameter(SPI_GETFONTSMOOTHINGTYPE));
+    SetIntegerProperty(TEXT("win.text.fontSmoothingContrast"), GetIntegerParameter(SPI_GETFONTSMOOTHINGCONTRAST));
+    SetIntegerProperty(TEXT("win.text.fontSmoothingOrientation"), GetLCDSubPixelOrder());
 
     int cxdrag = GetSystemMetrics(SM_CXDRAG);
     int cydrag = GetSystemMetrics(SM_CYDRAG);

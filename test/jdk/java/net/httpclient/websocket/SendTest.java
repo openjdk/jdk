@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,10 @@
 /*
  * @test
  * @build DummyWebSocketServer
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.internal.httpclient.websocket.debug=true
- *       SendTest
+ *       ${test.main.class}
  */
-
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.http.WebSocket;
@@ -37,9 +35,11 @@ import java.net.http.WebSocket;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.newBuilder;
 import static java.net.http.WebSocket.NORMAL_CLOSURE;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SendTest {
 
@@ -90,7 +90,7 @@ public class SendTest {
             try {
                 webSocket.sendClose(NORMAL_CLOSURE, "").join();
                 assertTrue(webSocket.isOutputClosed());
-                assertEquals(webSocket.getSubprotocol(), "");
+                assertEquals("", webSocket.getSubprotocol());
                 webSocket.request(1); // No exceptions must be thrown
             } finally {
                 webSocket.abort();

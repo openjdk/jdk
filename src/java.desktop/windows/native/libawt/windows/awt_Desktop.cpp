@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,8 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_ShellExecute
     if (wcscmp(verb_c, L"open") == 0) {
         BOOL isExecutable = SaferiIsExecutableFileType(fileOrUri_c, FALSE);
         if (isExecutable) {
+            JNU_ReleaseStringPlatformChars(env, fileOrUri_j, fileOrUri_c);
+            JNU_ReleaseStringPlatformChars(env, verb_j, verb_c);
             return env->NewStringUTF("Unsupported URI content");
         }
     }

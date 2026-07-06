@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -428,6 +428,10 @@ innerclass innerClass java/util/concurrent/ConcurrentHashMap$EntrySetView outerC
 innerclass innerClass java/io/ObjectOutputStream$PutField outerClass java/io/ObjectOutputStream innerClassName PutField flags 409
 innerclass innerClass java/util/AbstractMap$SimpleImmutableEntry outerClass java/util/AbstractMap innerClassName SimpleImmutableEntry flags 9
 innerclass innerClass java/util/concurrent/ConcurrentHashMap$CollectionView outerClass java/util/concurrent/ConcurrentHashMap innerClassName CollectionView flags 408
+
+class name java/util/concurrent/CopyOnWriteArraySet
+header extends java/util/AbstractSet implements java/io/Serializable flags 21 signature <E:Ljava/lang/Object;>Ljava/util/AbstractSet<TE;>;Ljava/io/Serializable;
+innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
 
 class name java/util/concurrent/StructuredTaskScope
 -method name open descriptor (Ljava/util/concurrent/StructuredTaskScope$Joiner;Ljava/util/function/Function;)Ljava/util/concurrent/StructuredTaskScope;

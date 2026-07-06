@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,7 +46,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
 // Returns true iff objects were reallocated and relocked because of access through JVMTI
 bool EscapeBarrier::objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
@@ -373,4 +373,4 @@ bool EscapeBarrier::deoptimize_objects_internal(JavaThread* deoptee, intptr_t* f
   return !realloc_failures;
 }
 
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2

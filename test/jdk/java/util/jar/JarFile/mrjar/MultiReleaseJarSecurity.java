@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @build CreateMultiReleaseTestJars
  *        jdk.test.lib.compiler.Compiler
  *        jdk.test.lib.util.JarBuilder
- * @run testng MultiReleaseJarSecurity
+ * @run junit MultiReleaseJarSecurity
  */
 
 import java.io.File;
@@ -38,45 +38,45 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.security.CodeSigner;
 import java.security.cert.Certificate;
-import java.util.Arrays;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipFile;
 
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MultiReleaseJarSecurity {
 
     static final int MAJOR_VERSION = Runtime.version().major();
 
-    String userdir = System.getProperty("user.dir",".");
-    File multirelease = new File(userdir, "multi-release.jar");
-    File signedmultirelease = new File(userdir, "signed-multi-release.jar");
+    static final String USER_DIR = System.getProperty("user.dir", ".");
+    static final File MULTI_RELEASE = new File(USER_DIR, "multi-release.jar");
+    static final File SIGNED_MULTI_RELEASE = new File(USER_DIR, "signed-multi-release.jar");
 
-    @BeforeClass
-    public void initialize() throws Exception {
+    @BeforeAll
+    public static void initialize() throws Exception {
         CreateMultiReleaseTestJars creator =  new CreateMultiReleaseTestJars();
         creator.compileEntries();
         creator.buildMultiReleaseJar();
         creator.buildSignedMultiReleaseJar();
     }
 
-    @AfterClass
-    public void close() throws IOException {
-        Files.delete(multirelease.toPath());
-        Files.delete(signedmultirelease.toPath());
+    @AfterAll
+    public static void close() throws IOException {
+        Files.delete(MULTI_RELEASE.toPath());
+        Files.delete(SIGNED_MULTI_RELEASE.toPath());
     }
 
     @Test
     public void testCertsAndSigners() throws IOException {
-        try (JarFile jf = new JarFile(signedmultirelease, true, ZipFile.OPEN_READ, Runtime.version())) {
+        try (JarFile jf = new JarFile(SIGNED_MULTI_RELEASE, true, ZipFile.OPEN_READ, Runtime.version())) {
             CertsAndSigners vcas = new CertsAndSigners(jf, jf.getJarEntry("version/Version.class"));
             CertsAndSigners rcas = new CertsAndSigners(jf, jf.getJarEntry("META-INF/versions/" + MAJOR_VERSION + "/version/Version.class"));
-            Assert.assertTrue(Arrays.equals(rcas.getCertificates(), vcas.getCertificates()));
-            Assert.assertTrue(Arrays.equals(rcas.getCodeSigners(), vcas.getCodeSigners()));
+            assertArrayEquals(rcas.getCertificates(), vcas.getCertificates());
+            assertArrayEquals(rcas.getCodeSigners(), vcas.getCodeSigners());
         }
     }
 

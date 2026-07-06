@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Frame;
 import java.awt.GridLayout;
@@ -91,7 +92,7 @@ public abstract class InfoWindow extends Window {
     // Must be executed on EDT.
     @SuppressWarnings("deprecation")
     protected void show(Point corner, int indent) {
-        assert SunToolkit.isDispatchThreadForAppContext(this);
+        assert EventQueue.isDispatchThread();
 
         pack();
 
@@ -464,7 +465,7 @@ public abstract class InfoWindow extends Window {
                     ActionEvent aev = new ActionEvent(target, ActionEvent.ACTION_PERFORMED,
                                                       liveArguments.getActionCommand(),
                                                       e.getWhen(), e.getModifiers());
-                    XToolkit.postEvent(XToolkit.targetToAppContext(aev.getSource()), aev);
+                    XToolkit.postEvent(aev);
                 }
             }
         }

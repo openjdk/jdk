@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,10 +88,12 @@ public final class LocaleServiceProviderPool {
         java.text.spi.DateFormatSymbolsProvider.class,
         java.text.spi.DecimalFormatSymbolsProvider.class,
         java.text.spi.NumberFormatProvider.class,
+        java.time.format.DateTimeFormatterPatternProvider.class,
+        java.util.spi.CalendarDataProvider.class,
+        java.util.spi.CalendarNameProvider.class,
         java.util.spi.CurrencyNameProvider.class,
         java.util.spi.LocaleNameProvider.class,
         java.util.spi.TimeZoneNameProvider.class,
-        java.util.spi.CalendarDataProvider.class
     };
 
     /**

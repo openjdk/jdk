@@ -407,7 +407,7 @@ public abstract class BaseConfiguration {
      */
     public boolean shouldExcludeDocFileDir(String docfilesubdir) {
         Set<String> excludedDocFileDirs = getOptions().excludedDocFileDirs();
-        return excludedDocFileDirs.contains(docfilesubdir);
+        return excludedDocFileDirs.contains(docfilesubdir) || excludedDocFileDirs.contains("*");
     }
 
     /**

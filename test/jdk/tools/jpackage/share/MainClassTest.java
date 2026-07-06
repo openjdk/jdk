@@ -91,7 +91,7 @@ public final class MainClassTest {
         }
 
         Script expectedErrorMessage(String key, Object... args) {
-            expectedErrorMessage = JPackageStringBundle.MAIN.cannedFormattedString(key, args);
+            expectedErrorMessage = JPackageCommand.makeError(key, args);
             return this;
         }
 
@@ -222,7 +222,7 @@ public final class MainClassTest {
         if (script.expectedErrorMessage != null) {
             // This is the case when main class is not found nor in jar
             // file nor on command line.
-            cmd.validateOutput(script.expectedErrorMessage).execute(1);
+            cmd.validateErr(script.expectedErrorMessage).execute(1);
             return;
         }
 

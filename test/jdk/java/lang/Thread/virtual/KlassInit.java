@@ -79,7 +79,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
+import jdk.test.lib.thread.VThreadRunner;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.Arguments;
@@ -95,6 +98,12 @@ class KlassInit {
     private static final CountDownLatch finishGetStatic = new CountDownLatch(1);
     private static final CountDownLatch finishPutStatic = new CountDownLatch(1);
     private static final CountDownLatch finishFailedInit = new CountDownLatch(1);
+
+    @BeforeAll
+    static void setup() {
+        // need >=2 carriers for testing pinning
+        VThreadRunner.ensureParallelism(2);
+    }
 
     /**
      * Test that threads blocked waiting for klass to be initialized

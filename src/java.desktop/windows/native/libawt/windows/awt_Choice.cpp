@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,11 +179,7 @@ AwtChoice* AwtChoice::Create(jobject peer, jobject parent) {
             ::GetClientRect(c->GetHWnd(), &rc);
             env->SetIntField(target, AwtComponent::widthID, c->ScaleDownX(rc.right));
             env->SetIntField(target, AwtComponent::heightID, c->ScaleDownY(rc.bottom));
-
-            if (IS_WINXP) {
-                ::SendMessage(c->GetHWnd(), CB_SETMINVISIBLE, (WPARAM) MINIMUM_NUMBER_OF_VISIBLE_ITEMS, 0);
-            }
-
+            ::SendMessage(c->GetHWnd(), CB_SETMINVISIBLE, (WPARAM) MINIMUM_NUMBER_OF_VISIBLE_ITEMS, 0);
             env->DeleteLocalRef(dimension);
         }
     } catch (...) {

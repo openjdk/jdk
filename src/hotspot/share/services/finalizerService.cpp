@@ -93,7 +93,7 @@ FinalizerEntry::FinalizerEntry(const InstanceKlass* ik) :
     _total_finalizers_run(0) {}
 
 FinalizerEntry::~FinalizerEntry() {
-  FREE_C_HEAP_ARRAY(char, _codesource);
+  FREE_C_HEAP_ARRAY(_codesource);
 }
 
 const InstanceKlass* FinalizerEntry::klass() const {

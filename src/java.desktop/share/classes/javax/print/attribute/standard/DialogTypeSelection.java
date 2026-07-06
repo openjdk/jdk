@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ public final class DialogTypeSelection extends EnumSyntax
     /**
      * Returns the string table for class {@code DialogTypeSelection}.
      */
+    @Override
     protected String[] getStringTable() {
         return myStringTable;
     }
@@ -106,6 +107,7 @@ public final class DialogTypeSelection extends EnumSyntax
      * Returns the enumeration value table for class
      * {@code DialogTypeSelection}.
      */
+    @Override
     protected EnumSyntax[] getEnumValueTable() {
         return myEnumValueTable;
     }
@@ -120,6 +122,7 @@ public final class DialogTypeSelection extends EnumSyntax
      * @return printing attribute class (category), an instance of class
      *         {@link Class java.lang.Class}
      */
+    @Override
     public final Class<? extends Attribute> getCategory() {
         return DialogTypeSelection.class;
     }
@@ -133,6 +136,7 @@ public final class DialogTypeSelection extends EnumSyntax
      *
      * @return attribute category name
      */
+    @Override
     public final String getName() {
         return "dialog-type-selection";
     }

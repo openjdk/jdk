@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1045,7 +1045,7 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
         stringStream ss;
         ss.print("Update to %s final field %s.%s attempted from a different class (%s) than the field's declaring class",
                  is_static ? "static" : "non-static", resolved_klass->external_name(), fd.name()->as_C_string(),
-                current_klass->external_name());
+                 current_klass->external_name());
         THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), ss.as_string());
       }
 
@@ -1260,7 +1260,7 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
   methodHandle sel_method(THREAD, resolved_method());
 
   if (link_info.check_access() &&
-      // check if the method is not <init>
+      // check if the method is not <init>, which is never inherited
       resolved_method->name() != vmSymbols::object_initializer_name()) {
 
     Klass* current_klass = link_info.current_klass();
@@ -1724,8 +1724,8 @@ void LinkResolver::resolve_invoke(CallInfo& result, Handle recv, const constantP
 }
 
 void LinkResolver::resolve_invoke(CallInfo& result, Handle& recv,
-                             const methodHandle& attached_method,
-                             Bytecodes::Code byte, TRAPS) {
+                                  const methodHandle& attached_method,
+                                  Bytecodes::Code byte, TRAPS) {
   Klass* defc = attached_method->method_holder();
   Symbol* name = attached_method->name();
   Symbol* type = attached_method->signature();

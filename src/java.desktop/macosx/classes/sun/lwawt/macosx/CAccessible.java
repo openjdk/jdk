@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,12 @@
 
 package sun.lwawt.macosx;
 
+import java.awt.AWTEvent;
 import java.awt.Component;
+import java.awt.Container;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
+import java.awt.event.ContainerEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Objects;
@@ -52,6 +57,16 @@ import sun.awt.AWTAccessor;
 final class CAccessible extends CFRetainedResource implements Accessible {
 
     public static CAccessible getCAccessible(final Accessible a) {
+        return getCAccessible(a, true);
+    }
+
+    /**
+     * @param createIfUndefined if there is not yet a cached CAccessible for
+     *                          the given Accessible, then this boolean
+     *                          controls whether this method creates a new
+     *                          CAccessible or returns null.
+     */
+    private static CAccessible getCAccessible(final Accessible a, final boolean createIfUndefined) {
         if (a == null) return null;
         AccessibleContext context = a.getAccessibleContext();
         AWTAccessor.AccessibleContextAccessor accessor
@@ -60,9 +75,40 @@ final class CAccessible extends CFRetainedResource implements Accessible {
         if (cachedCAX != null) {
             return cachedCAX;
         }
-        final CAccessible newCAX = new CAccessible(a);
-        accessor.setNativeAXResource(context, newCAX);
-        return newCAX;
+        if (createIfUndefined) {
+            final CAccessible newCAX = new CAccessible(a);
+            accessor.setNativeAXResource(context, newCAX);
+            return newCAX;
+        }
+        return null;
+    }
+
+    static {
+        // Call CAccessible.dispose() as objects are removed from the AWT hierarchy.
+        AWTEventListener componentRemovedListener = new AWTEventListener() {
+            @Override
+            public void eventDispatched(AWTEvent event) {
+                if (event.getID() == ContainerEvent.COMPONENT_REMOVED) {
+                    ContainerEvent containerEvent = (ContainerEvent) event;
+                    disposeRecursively(containerEvent.getChild());
+                }
+            }
+
+            private void disposeRecursively(Component c) {
+                if (c instanceof Container container) {
+                    for (Component child : container.getComponents()) {
+                        disposeRecursively(child);
+                    }
+                }
+                if (c instanceof Accessible ax) {
+                    CAccessible ca = getCAccessible(ax, false);
+                    if (ca != null) {
+                        ca.dispose();
+                    }
+                }
+            }
+        };
+        Toolkit.getDefaultToolkit().addAWTEventListener(componentRemovedListener, ContainerEvent.CONTAINER_EVENT_MASK);
     }
 
     private static native void unregisterFromCocoaAXSystem(long ptr);
@@ -188,10 +234,6 @@ final class CAccessible extends CFRetainedResource implements Accessible {
 
                     // Do send check box state changes to native side
                     if (thisRole == AccessibleRole.CHECK_BOX) {
-                        if (!Objects.equals(newValue, oldValue)) {
-                            valueChanged(ptr);
-                        }
-
                         // Notify native side to handle check box style menuitem
                         if (parentRole == AccessibleRole.POPUP_MENU && newValue != null
                                 && ((AccessibleState)newValue) == AccessibleState.FOCUSED) {
@@ -201,21 +243,10 @@ final class CAccessible extends CFRetainedResource implements Accessible {
 
                     // Do send radio button state changes to native side
                     if (thisRole == AccessibleRole.RADIO_BUTTON) {
-                        if (newValue != null && !newValue.equals(oldValue)) {
-                            valueChanged(ptr);
-                        }
-
                         // Notify native side to handle radio button style menuitem
                         if (parentRole == AccessibleRole.POPUP_MENU && newValue != null
                             && ((AccessibleState)newValue) == AccessibleState.FOCUSED) {
                             menuItemSelected(ptr);
-                        }
-                    }
-
-                    // Do send toggle button state changes to native side
-                    if (thisRole == AccessibleRole.TOGGLE_BUTTON) {
-                        if (!Objects.equals(newValue, oldValue)) {
-                            valueChanged(ptr);
                         }
                     }
                 } else if (name.equals(ACCESSIBLE_NAME_PROPERTY)) {
@@ -227,7 +258,10 @@ final class CAccessible extends CFRetainedResource implements Accessible {
                     AccessibleRole thisRole = accessible.getAccessibleContext()
                                                         .getAccessibleRole();
                     if (thisRole == AccessibleRole.SLIDER ||
-                            thisRole == AccessibleRole.PROGRESS_BAR) {
+                            thisRole == AccessibleRole.PROGRESS_BAR ||
+                            thisRole == AccessibleRole.CHECK_BOX ||
+                            thisRole == AccessibleRole.RADIO_BUTTON ||
+                            thisRole == AccessibleRole.TOGGLE_BUTTON ) {
                         valueChanged(ptr);
                     }
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,13 @@
  * questions.
  */
 
+import org.junit.jupiter.api.Test;
+
 import java.net.InetAddress;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 import static impl.WithBootstrapResolverUsageProvider.numberOfGetCalls;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @test
@@ -35,7 +36,7 @@ import static impl.WithBootstrapResolverUsageProvider.numberOfGetCalls;
  * InetAddressResolverProvider.get method uses InetAddress lookup API.
  * @library providers/bootstrapUsage
  * @build bootstrap.usage.provider/impl.WithBootstrapResolverUsageProvider
- * @run testng/othervm BootstrapResolverUsageTest
+ * @run junit/othervm BootstrapResolverUsageTest
  */
 
 public class BootstrapResolverUsageTest {
@@ -43,7 +44,6 @@ public class BootstrapResolverUsageTest {
     @Test
     public void testSuccessfulProviderInstantiationTest() throws Exception {
         System.err.println(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName()));
-        Assert.assertEquals(numberOfGetCalls, 1,
-                "InetAddressResolverProvider.get was called more than once");
+        assertEquals(1, numberOfGetCalls, "InetAddressResolverProvider.get was called more than once");
     }
 }

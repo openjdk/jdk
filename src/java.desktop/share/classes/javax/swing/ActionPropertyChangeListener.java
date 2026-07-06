@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ abstract class ActionPropertyChangeListener<T extends JComponent>
         while ((r = (OwnedWeakReference)queue.poll()) != null) {
             ActionPropertyChangeListener<?> oldPCL = r.getOwner();
             Action oldAction = oldPCL.getAction();
-            if (oldAction!=null) {
+            if (oldAction != null) {
                 oldAction.removePropertyChangeListener(oldPCL);
             }
         }

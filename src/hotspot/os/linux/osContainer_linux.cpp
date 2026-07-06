@@ -59,6 +59,11 @@ void OSContainer::init() {
   if (cgroup_subsystem == nullptr) {
     return; // Required subsystem files not found or other error
   }
+  // Adjust controller paths once subsystem is initialized
+  physical_memory_size_type phys_mem = os::Linux::physical_memory();
+  int host_cpus = os::Linux::active_processor_count();
+  cgroup_subsystem->adjust_controllers(phys_mem, host_cpus);
+
   /*
    * In order to avoid a false positive on is_containerized() on
    * Linux systems outside a container *and* to ensure compatibility
@@ -74,9 +79,12 @@ void OSContainer::init() {
    * that limits enforced by other means (e.g. systemd slice) are properly
    * detected.
    */
-  const char *reason;
-  bool any_mem_cpu_limit_present = false;
+  const char* reason;
   bool controllers_read_only = cgroup_subsystem->is_containerized();
+
+  bool any_mem_limit_present = false;
+  bool cpu_limit_present = false;
+
   if (controllers_read_only) {
     // in-container case
     reason = " because all controllers are mounted read-only (container case)";
@@ -84,19 +92,30 @@ void OSContainer::init() {
     // We can be in one of two cases:
     //  1.) On a physical Linux system without any limit
     //  2.) On a physical Linux system with a limit enforced by other means (like systemd slice)
+
     physical_memory_size_type mem_limit_val = value_unlimited;
-    (void)memory_limit_in_bytes(mem_limit_val);  // discard error and use default
-    double host_cpus = os::Linux::active_processor_count();
+    any_mem_limit_present = any_mem_limit_present || (memory_limit_in_bytes(mem_limit_val) &&
+                                                      mem_limit_val != value_unlimited);
+
+    physical_memory_size_type throttle_limit_val = value_unlimited;
+    any_mem_limit_present = any_mem_limit_present || (memory_throttle_limit_in_bytes(throttle_limit_val) &&
+                                                      throttle_limit_val != value_unlimited);
+
+    physical_memory_size_type soft_limit_val = value_unlimited;
+    any_mem_limit_present = any_mem_limit_present || (memory_soft_limit_in_bytes(soft_limit_val) &&
+                                                     (soft_limit_val != value_unlimited && soft_limit_val != 0));
+
+    const double host_cpus = os::Linux::active_processor_count();
     double cpus = host_cpus;
-    (void)active_processor_count(cpus);  // discard error and use default
-    any_mem_cpu_limit_present = mem_limit_val != value_unlimited || host_cpus != cpus;
-    if (any_mem_cpu_limit_present) {
+    cpu_limit_present = active_processor_count(cpus) && host_cpus != cpus;
+
+    if (any_mem_limit_present || cpu_limit_present) {
       reason = " because either a cpu or a memory limit is present";
     } else {
       reason = " because no cpu or memory limit is present";
     }
   }
-  _is_containerized = controllers_read_only || any_mem_cpu_limit_present;
+  _is_containerized = controllers_read_only || any_mem_limit_present || cpu_limit_present;
   log_debug(os, container)("OSContainer::init: is_containerized() = %s%s",
                                                             _is_containerized ? "true" : "false",
                                                             reason);
@@ -252,7 +271,7 @@ char * OSContainer::cpu_cpuset_memory_nodes() {
 
 bool OSContainer::active_processor_count(double& value) {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  return cgroup_subsystem->active_processor_count(value);
+  return cgroup_subsystem->active_processor_count(&os::Linux::active_processor_count, value);
 }
 
 bool OSContainer::cpu_quota(int& value) {

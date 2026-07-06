@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8275721 8174269
  * @modules jdk.localedata
  * @summary Checks Chinese time zone names for `UTC` using CLDR are consistent
- * @run testng ChineseTimeZoneNameTest
+ * @run junit ChineseTimeZoneNameTest
  */
 
 import java.time.Instant;
@@ -35,11 +35,10 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
-import static org.testng.Assert.assertEquals;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Test
 public class ChineseTimeZoneNameTest {
 
     private static final Locale SIMPLIFIED_CHINESE = Locale.forLanguageTag("zh-Hans");
@@ -47,8 +46,7 @@ public class ChineseTimeZoneNameTest {
     private static final ZonedDateTime EPOCH_UTC =
         ZonedDateTime.ofInstant(Instant.ofEpochSecond (0), ZoneId.of ("UTC"));
 
-    @DataProvider(name="locales")
-    Object[][] data() {
+    private static Object[][] data() {
         return new Object[][] {
             {Locale.CHINESE,                        SIMPLIFIED_CHINESE},
             {Locale.SIMPLIFIED_CHINESE,             SIMPLIFIED_CHINESE},
@@ -61,11 +59,12 @@ public class ChineseTimeZoneNameTest {
         };
     }
 
-    @Test(dataProvider="locales")
+    @ParameterizedTest
+    @MethodSource("data")
     public void test_ChineseTimeZoneNames(Locale testLoc, Locale resourceLoc) {
-        assertEquals(DateTimeFormatter.ofPattern("z", testLoc).format(EPOCH_UTC),
-                DateTimeFormatter.ofPattern("z", resourceLoc).format(EPOCH_UTC));
-        assertEquals(DateTimeFormatter.ofPattern("zzzz", testLoc).format(EPOCH_UTC),
-                DateTimeFormatter.ofPattern("zzzz", resourceLoc).format(EPOCH_UTC));
+        assertEquals(DateTimeFormatter.ofPattern("z", resourceLoc).format(EPOCH_UTC),
+            DateTimeFormatter.ofPattern("z", testLoc).format(EPOCH_UTC));
+        assertEquals(DateTimeFormatter.ofPattern("zzzz", resourceLoc).format(EPOCH_UTC),
+            DateTimeFormatter.ofPattern("zzzz", testLoc).format(EPOCH_UTC));
     }
 }

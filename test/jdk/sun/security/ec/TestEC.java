@@ -36,7 +36,7 @@
  * @library ../pkcs11/sslecc
  * @library ../../../javax/net/ssl/TLSCommon
  * @modules jdk.crypto.cryptoki/sun.security.pkcs11.wrapper
- * @run main/othervm -Djdk.tls.namedGroups="secp256r1" TestEC
+ * @run main/othervm -Dtest.debug=true -Djdk.tls.namedGroups="secp256r1" TestEC
  */
 
 import java.security.NoSuchProviderException;
@@ -62,7 +62,7 @@ public class TestEC {
     /*
      * Turn on SSL debugging
      */
-    private static final boolean debug = true;
+    private static final boolean debug = Boolean.getBoolean("test.debug");
 
     public static void main(String[] args) throws Exception {
         // reset security properties to make sure that the algorithms

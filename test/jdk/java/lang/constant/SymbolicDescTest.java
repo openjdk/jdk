@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Base class for XxxDesc tests
@@ -106,7 +106,7 @@ public abstract class SymbolicDescTest {
         if (desc instanceof Constable) {
             Optional<ConstantDesc> opt = (Optional<ConstantDesc>) ((Constable) desc).describeConstable();
             ConstantDesc sr = (ConstantDesc) opt.orElseThrow().resolveConstantDesc(LOOKUP);
-            assertEquals(sr, desc);
+            assertEquals(desc, sr);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ public record LanguageTag(String language,
         List<String> extensions;
         // langtag must start with either language or privateuse
         if (!language.isEmpty()) {
-            extlangs = parseExtlangs(itr, pp);
+            extlangs = parseExtlangs(itr, pp, language);
             script = parseScript(itr, pp);
             region = parseRegion(itr, pp);
             variants = parseVariants(itr, pp);
@@ -170,8 +170,11 @@ public record LanguageTag(String language,
         return EMPTY_SUBTAG;
     }
 
-    private static List<String> parseExtlangs(StringTokenIterator itr, ParsePosition pp) {
-        if (itr.isDone() || pp.getErrorIndex() != -1) {
+    private static List<String> parseExtlangs(StringTokenIterator itr, ParsePosition pp, String lang) {
+        var langLen = lang.length();
+        if (itr.isDone() || pp.getErrorIndex() != -1
+                // Extlangs only accepted after 2*3ALPHA lang
+                || (langLen != 2 && langLen != 3)) {
             return EMPTY_SUBTAGS;
         }
         List<String> extlangs = null;
@@ -601,7 +604,7 @@ public record LanguageTag(String language,
         //               / %x79-7A             ; y - z
 
         return (s.length() == 1)
-                && LocaleUtils.isAlphaString(s)
+                && LocaleUtils.isAlphaNumericString(s)
                 && !LocaleUtils.caseIgnoreMatch(PRIVATEUSE, s);
     }
 

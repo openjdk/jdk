@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "logging/log.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -56,9 +57,9 @@ class ArchivedClassLoaderData {
 public:
   ArchivedClassLoaderData() : _packages(nullptr), _modules(nullptr), _unnamed_module(nullptr) {}
 
-  void iterate_symbols(ClassLoaderData* loader_data, MetaspaceClosure* closure);
-  void allocate(ClassLoaderData* loader_data);
-  void init_archived_entries(ClassLoaderData* loader_data);
+  void iterate_roots(MetaspaceClosure* closure);
+  void build_tables(ClassLoaderData* loader_data, TRAPS);
+  void remove_unshareable_info();
   ModuleEntry* unnamed_module() {
     return _unnamed_module;
   }
@@ -80,17 +81,14 @@ static ModuleEntry* _archived_javabase_moduleEntry = nullptr;
 static int _platform_loader_root_index = -1;
 static int _system_loader_root_index = -1;
 
-void ArchivedClassLoaderData::iterate_symbols(ClassLoaderData* loader_data, MetaspaceClosure* closure) {
+void ArchivedClassLoaderData::iterate_roots(MetaspaceClosure* it) {
   assert(CDSConfig::is_dumping_full_module_graph(), "must be");
-  assert_valid(loader_data);
-  if (loader_data != nullptr) {
-    loader_data->packages()->iterate_symbols(closure);
-    loader_data->modules() ->iterate_symbols(closure);
-    loader_data->unnamed_module()->iterate_symbols(closure);
-  }
+  it->push(&_packages);
+  it->push(&_modules);
+  it->push(&_unnamed_module);
 }
 
-void ArchivedClassLoaderData::allocate(ClassLoaderData* loader_data) {
+void ArchivedClassLoaderData::build_tables(ClassLoaderData* loader_data, TRAPS) {
   assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   assert_valid(loader_data);
   if (loader_data != nullptr) {
@@ -98,19 +96,28 @@ void ArchivedClassLoaderData::allocate(ClassLoaderData* loader_data) {
     // address of the Symbols, which may be relocated at runtime due to ASLR.
     // So we store the packages/modules in Arrays. At runtime, we create
     // the hashtables using these arrays.
-    _packages = loader_data->packages()->allocate_archived_entries();
-    _modules  = loader_data->modules() ->allocate_archived_entries();
-    _unnamed_module = loader_data->unnamed_module()->allocate_archived_entry();
+    _packages = loader_data->packages()->build_aot_table(loader_data, CHECK);
+    _modules  = loader_data->modules()->build_aot_table(loader_data, CHECK);
+    _unnamed_module = loader_data->unnamed_module();
   }
 }
 
-void ArchivedClassLoaderData::init_archived_entries(ClassLoaderData* loader_data) {
-  assert(CDSConfig::is_dumping_full_module_graph(), "must be");
-  assert_valid(loader_data);
-  if (loader_data != nullptr) {
-    loader_data->packages()->init_archived_entries(_packages);
-    loader_data->modules() ->init_archived_entries(_modules);
-    _unnamed_module->init_as_archived_entry();
+void ArchivedClassLoaderData::remove_unshareable_info() {
+  if (_packages != nullptr) {
+    _packages = ArchiveBuilder::current()->get_buffered_addr(_packages);
+    for (int i = 0; i < _packages->length(); i++) {
+      _packages->at(i)->remove_unshareable_info();
+    }
+  }
+  if (_modules != nullptr) {
+    _modules = ArchiveBuilder::current()->get_buffered_addr(_modules);
+    for (int i = 0; i < _modules->length(); i++) {
+      _modules->at(i)->remove_unshareable_info();
+    }
+  }
+  if (_unnamed_module != nullptr) {
+    _unnamed_module = ArchiveBuilder::current()->get_buffered_addr(_unnamed_module);
+    _unnamed_module->remove_unshareable_info();
   }
 }
 
@@ -153,7 +160,6 @@ void ArchivedClassLoaderData::clear_archived_oops() {
 // ------------------------------
 
 void ClassLoaderDataShared::load_archived_platform_and_system_class_loaders() {
-#if INCLUDE_CDS_JAVA_HEAP
   // The streaming object loader prefers loading the class loader related objects before
   //  the CLD constructor which has a NoSafepointVerifier.
   if (!HeapShared::is_loading_streaming_mode()) {
@@ -178,7 +184,6 @@ void ClassLoaderDataShared::load_archived_platform_and_system_class_loaders() {
   if (system_loader_module_entry != nullptr) {
     system_loader_module_entry->preload_archived_oops();
   }
-#endif
 }
 
 static ClassLoaderData* null_class_loader_data() {
@@ -210,28 +215,27 @@ void ClassLoaderDataShared::ensure_module_entry_table_exists(oop class_loader) {
   assert(met != nullptr, "sanity");
 }
 
-void ClassLoaderDataShared::iterate_symbols(MetaspaceClosure* closure) {
+void ClassLoaderDataShared::build_tables(TRAPS) {
   assert(CDSConfig::is_dumping_full_module_graph(), "must be");
-  _archived_boot_loader_data.iterate_symbols    (null_class_loader_data(), closure);
-  _archived_platform_loader_data.iterate_symbols(java_platform_loader_data_or_null(), closure);
-  _archived_system_loader_data.iterate_symbols  (java_system_loader_data_or_null(), closure);
+  _archived_boot_loader_data.build_tables(null_class_loader_data(), CHECK);
+  _archived_platform_loader_data.build_tables(java_platform_loader_data_or_null(), CHECK);
+  _archived_system_loader_data.build_tables(java_system_loader_data_or_null(), CHECK);
 }
 
-void ClassLoaderDataShared::allocate_archived_tables() {
+void ClassLoaderDataShared::iterate_roots(MetaspaceClosure* it) {
   assert(CDSConfig::is_dumping_full_module_graph(), "must be");
-  _archived_boot_loader_data.allocate    (null_class_loader_data());
-  _archived_platform_loader_data.allocate(java_platform_loader_data_or_null());
-  _archived_system_loader_data.allocate  (java_system_loader_data_or_null());
+  _archived_boot_loader_data.iterate_roots(it);
+  _archived_platform_loader_data.iterate_roots(it);
+  _archived_system_loader_data.iterate_roots(it);
 }
 
-void ClassLoaderDataShared::init_archived_tables() {
+void ClassLoaderDataShared::remove_unshareable_info() {
   assert(CDSConfig::is_dumping_full_module_graph(), "must be");
+  _archived_boot_loader_data.remove_unshareable_info();
+  _archived_platform_loader_data.remove_unshareable_info();
+  _archived_system_loader_data.remove_unshareable_info();
 
-  _archived_boot_loader_data.init_archived_entries    (null_class_loader_data());
-  _archived_platform_loader_data.init_archived_entries(java_platform_loader_data_or_null());
-  _archived_system_loader_data.init_archived_entries  (java_system_loader_data_or_null());
-
-  _archived_javabase_moduleEntry = ModuleEntry::get_archived_entry(ModuleEntryTable::javabase_moduleEntry());
+  _archived_javabase_moduleEntry = ArchiveBuilder::current()->get_buffered_addr(ModuleEntryTable::javabase_moduleEntry());
 
   _platform_loader_root_index = HeapShared::append_root(SystemDictionary::java_platform_loader());
   _system_loader_root_index = HeapShared::append_root(SystemDictionary::java_system_loader());
@@ -270,7 +274,6 @@ ModuleEntry* ClassLoaderDataShared::archived_unnamed_module(ClassLoaderData* loa
 
   return archived_module;
 }
-
 
 void ClassLoaderDataShared::clear_archived_oops() {
   assert(!CDSConfig::is_using_full_module_graph(), "must be");

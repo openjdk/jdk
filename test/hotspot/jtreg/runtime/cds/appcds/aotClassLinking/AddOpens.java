@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class AddOpens {
         {{"-Xlog:cds", "-Xlog:cds"},
          {"--add-opens", addOpensArg}};
     private static String expectedOutput[] =
-        { "[class,load] com.simple.Main source: shared objects file",
+        { "\\[class,load *\\] com\\.simple\\.Main source: shared objects file",
           "method.setAccessible succeeded!"};
 
     public static void buildTestModule() throws Exception {
@@ -103,7 +103,7 @@ public class AddOpens {
                     out.shouldContain("Full module graph = enabled");
                     })
             .setProductionChecker((OutputAnalyzer out) -> {
-                    out.shouldContain(expectedOutput[0]);
+                    out.shouldMatch(expectedOutput[0]);
                     out.shouldContain(expectedOutput[1]);
                     })
             .runStaticWorkflow()
@@ -154,10 +154,10 @@ public class AddOpens {
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (runMode == RunMode.PRODUCTION) {
-                out.shouldContain(expectedOutput[0]);
+                out.shouldMatch(expectedOutput[0]);
                 out.shouldContain(expectedOutput[1]);
             } else if (runMode == RunMode.ASSEMBLY) {
-                out.shouldContain("full module graph: enabled");
+                out.shouldMatch("(full module graph: enabled)|(Full module graph = enabled)");
             }
         }
     }
@@ -197,10 +197,10 @@ public class AddOpens {
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (runMode == RunMode.PRODUCTION) {
-                out.shouldContain(expectedOutput[0]);
+                out.shouldMatch(expectedOutput[0]);
                 out.shouldContain(expectedOutput[1]);
             } else if (runMode == RunMode.ASSEMBLY) {
-                out.shouldContain("full module graph: enabled");
+                out.shouldMatch("(full module graph: enabled)|(Full module graph = enabled)");
             }
         }
     }

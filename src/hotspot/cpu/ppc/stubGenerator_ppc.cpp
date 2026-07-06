@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -5038,9 +5038,8 @@ void generate_lookup_secondary_supers_table_stub() {
   }
 
   void generate_compiler_stubs() {
-#if COMPILER2_OR_JVMCI
-
 #ifdef COMPILER2
+
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
     }
@@ -5058,7 +5057,6 @@ void generate_lookup_secondary_supers_table_stub() {
       StubRoutines::_montgomerySquare
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
     }
-#endif
 
     // data cache line writeback
     if (VM_Version::supports_data_cache_line_flush()) {
@@ -5091,11 +5089,11 @@ void generate_lookup_secondary_supers_table_stub() {
       StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
     }
 #endif
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
   }
 
  public:
-  StubGenerator(CodeBuffer* code, BlobId blob_id) : StubCodeGenerator(code, blob_id) {
+  StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData *stub_data) : StubCodeGenerator(code, blob_id, stub_data) {
     switch(blob_id) {
     case BlobId::stubgen_preuniverse_id:
       generate_preuniverse_stubs();
@@ -5119,7 +5117,7 @@ void generate_lookup_secondary_supers_table_stub() {
   }
 };
 
-void StubGenerator_generate(CodeBuffer* code, BlobId blob_id) {
-  StubGenerator g(code, blob_id);
+void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData *stub_data) {
+  StubGenerator g(code, blob_id, stub_data);
 }
 

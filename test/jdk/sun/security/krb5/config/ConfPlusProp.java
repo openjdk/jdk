@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
  * @bug 6857795
  * @bug 6858589
  * @bug 6972005
+ * @library /test/lib/
  * @modules java.security.jgss/sun.security.krb5
  * @compile -XDignore.symbol.file ConfPlusProp.java
  * @run main/othervm ConfPlusProp
  * @summary krb5.conf ignored if system properties on realm and kdc are provided
  */
 
+import jtreg.SkippedException;
 import sun.security.krb5.Config;
 
 public class ConfPlusProp {
@@ -38,9 +40,8 @@ public class ConfPlusProp {
     public static void main(String[] args) throws Exception {
         if (System.getenv("USERDNSDOMAIN") != null ||
                 System.getenv("LOGONSERVER") != null) {
-            System.out.println(
-                    "Looks like a Windows machine in a domain. Skip test.");
-            return;
+            throw new SkippedException(
+                    "Test cannot run in a domain.");
         }
         new ConfPlusProp().run();
     }

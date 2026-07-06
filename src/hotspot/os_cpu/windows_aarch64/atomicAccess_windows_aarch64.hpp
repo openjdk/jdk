@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,9 +27,7 @@
 #define OS_CPU_WINDOWS_AARCH64_ATOMICACCESS_WINDOWS_AARCH64_HPP
 
 #include <intrin.h>
-#include "runtime/os.hpp"
-#include "runtime/vm_version.hpp"
-
+#include <windows.h>
 
 // As per atomicAccess.hpp all read-modify-write operations have to provide two-way
 // barriers semantics. The memory_order parameter is ignored - we always provide

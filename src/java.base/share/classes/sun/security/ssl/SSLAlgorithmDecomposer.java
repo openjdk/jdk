@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,8 +173,17 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
             case B_AES_128_GCM:
                 components.add("AES_128_GCM");
                 break;
+            case B_AES_128_GCM_IV:
+                components.add("AES_128_GCM");
+                break;
             case B_AES_256_GCM:
                 components.add("AES_256_GCM");
+                break;
+            case B_AES_256_GCM_IV:
+                components.add("AES_256_GCM");
+                break;
+            case B_CC20_P1305:
+                components.add("CHACHA20_POLY1305");
                 break;
         }
 

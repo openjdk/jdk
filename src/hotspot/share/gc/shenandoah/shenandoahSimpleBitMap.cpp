@@ -35,7 +35,7 @@ ShenandoahSimpleBitMap::ShenandoahSimpleBitMap(idx_t num_bits) :
 
 ShenandoahSimpleBitMap::~ShenandoahSimpleBitMap() {
   if (_bitmap != nullptr) {
-    FREE_C_HEAP_ARRAY(uintx, _bitmap);
+    FREE_C_HEAP_ARRAY(_bitmap);
   }
 }
 

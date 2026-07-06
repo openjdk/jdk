@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,8 @@ public class hs203t001 extends RedefineAgent {
             mt.start();
             while(!MyThread.resume.get());
             Thread.sleep(10000);
-            popThreadFrame(mt);
-            resumeThread(mt);
+            popThreadFrame(mt.getThread());
+            resumeThread(mt.getThread());
             mt.join();
             log.println(" ..."+mt.threadState);
         } catch(Exception ie) {

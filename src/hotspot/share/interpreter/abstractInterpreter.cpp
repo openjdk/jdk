@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -425,11 +425,11 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
 address AbstractInterpreter::deopt_reexecute_entry(Method* method, address bcp) {
   assert(method->contains(bcp), "just checkin'");
   Bytecodes::Code code   = Bytecodes::java_code_at(method, bcp);
-#if defined(COMPILER1) || INCLUDE_JVMCI
+#if defined(COMPILER1)
   if(code == Bytecodes::_athrow ) {
     return Interpreter::rethrow_exception_entry();
   }
-#endif /* COMPILER1 || INCLUDE_JVMCI */
+#endif // COMPILER1
   return Interpreter::deopt_entry(vtos, 0);
 }
 

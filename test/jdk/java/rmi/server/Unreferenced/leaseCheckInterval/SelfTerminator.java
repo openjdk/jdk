@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,32 @@
  * questions.
  */
 
-/*
- *
- */
-
 import java.rmi.Remote;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.time.Instant;
 
 public class SelfTerminator {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         try {
+            log("main() invoked");
             int registryPort =
                 Integer.parseInt(System.getProperty("rmi.registry.port"));
             Registry registry =
                 LocateRegistry.getRegistry("", registryPort);
             Remote stub = registry.lookup(LeaseCheckInterval.BINDING);
+            log("looked up binding, now terminating the process");
             Runtime.getRuntime().halt(0);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Throwable t) {
+            log("failure: " + t);
+            t.printStackTrace();
+            throw t; // propagate any failures and fail the process
         }
+    }
+
+    private static void log(final String message) {
+        final Instant now = Instant.now();
+        System.err.println("[" + now + "] " + SelfTerminator.class.getName() + " - " + message);
     }
 }

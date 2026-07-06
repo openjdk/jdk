@@ -122,7 +122,7 @@ public class DigestOptionsBase extends CommandLineOptionTest {
             case DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION:
                 return IntrinsicPredicates.isSHA512IntrinsicAvailable();
             case DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION:
-                return IntrinsicPredicates.SHA3_INSTRUCTION_AVAILABLE;
+                return IntrinsicPredicates.SHA3_INTRINSIC_AVAILABLE;
             default:
                 throw new Error("Unexpected option " + optionName);
         }

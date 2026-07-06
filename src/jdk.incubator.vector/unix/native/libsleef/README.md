@@ -4,15 +4,15 @@ This directory contains the source code for the SLEEF library, the
 **SIMD Library for Evaluating Elementary Functions**. For more information on
 SLEEF, see https://sleef.org/.
 
-The currently imported libsleef sources is version 3.6.1, which has
-git tag `3.6.1` and git commit hash `6ee14bcae5fe92c2ff8b000d5a01102dab08d774`.
+The currently imported libsleef sources are version 3.9.0, which has
+git tag `3.9.0` and git commit hash `906ca7512ee483296780a81a21b9ca715d40dfe1`.
 
 # About the libsleef integration in the JDK
 
 The upstream original source code is available in
 `src/jdk.incubator.vector/unix/native/libsleef/upstream`. However, this code is
 not directly usable in the JDK build system, but is instead used as the base for
-the generation of additional souce code files. This generation is done by
+the generation of additional source code files. This generation is done by
 the libsleef CMake files. If this should have been done at build time, it would
 have meant adding CMake as a required dependency to build the JDK.
 
@@ -25,7 +25,7 @@ the JDK source tree. The generated files reside in
 
 To update the version of libsleef that is used in the JDK, clone
 `https://github.com/shibatch/sleef.git`, and copy all files, except the `docs`,
-`.github` and `.git` directories, into
+`.github` and `.git` directories, and the `.nojekyll` file, into
 `src/jdk.incubator.vector/unix/native/libsleef/upstream`.
 
 The libsleef source code does not follow the JDK whitespace rules as enforced by

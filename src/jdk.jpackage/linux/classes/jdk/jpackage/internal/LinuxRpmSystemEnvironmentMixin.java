@@ -44,7 +44,9 @@ interface LinuxRpmSystemEnvironmentMixin {
         final var errors = Stream.of(
                 Internal.createRpmbuildToolValidator(),
                 new ToolValidator(Internal.TOOL_RPM)
-        ).map(ToolValidator::validate).filter(Objects::nonNull).toList();
+        ).map(v -> {
+            return v.setCommandLine("--version");
+        }).map(ToolValidator::validate).filter(Objects::nonNull).toList();
 
         if (errors.isEmpty()) {
             return Result.ofValue(new Stub(Internal.TOOL_RPM, Internal.TOOL_RPMBUILD));

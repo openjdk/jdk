@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,23 @@
 
 package org.w3c.dom.ptests;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
-import static org.w3c.dom.ptests.DOMTestUtil.createDOM;
-
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.w3c.dom.ptests.DOMTestUtil.createDOM;
+
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.w3c.dom.ptests.AttrTest
+ * @run junit/othervm org.w3c.dom.ptests.AttrTest
  * @summary Test for the Attr Interface
  */
 public class AttrTest {
@@ -51,12 +51,12 @@ public class AttrTest {
         Document document = createDOM("Attr01.xml");
         //test a new created Attr
         Attr attr = document.createAttribute("newAttribute");
-        assertEquals(attr.getName(), "newAttribute");
+        assertEquals("newAttribute", attr.getName());
 
         //test a Attr loaded from xml file
         Element elemNode = (Element) document.getElementsByTagName("book").item(1);
         Attr attr2 = (Attr) elemNode.getAttributes().item(0);
-        assertEquals(attr2.getName(), "category1");
+        assertEquals("category1", attr2.getName());
     }
 
     /*
@@ -71,7 +71,7 @@ public class AttrTest {
         NamedNodeMap nnMap = elemNode.getAttributes();
         for (int i = 0; i < nnMap.getLength(); i++) {
             Attr attr = (Attr) nnMap.item(i);
-            assertEquals(attr.getOwnerElement().getNodeName(), "book");
+            assertEquals("book", attr.getOwnerElement().getNodeName());
         }
 
         //test an Attr without owner node
@@ -143,8 +143,7 @@ public class AttrTest {
         Document document = createDOM("Attr01.xml");
         Attr attr = document.createAttribute("newAttribute");
         attr.setValue("newVal");
-        assertEquals(attr.getValue(), "newVal");
-
+        assertEquals("newVal", attr.getValue());
     }
 
 }

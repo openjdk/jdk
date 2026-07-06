@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ JVMFlag::Error G1RemSetHowlMaxNumBucketsConstraintFunc(uint value, bool verbose)
   }
   if (!is_power_of_2(G1RemSetHowlMaxNumBuckets)) {
     JVMFlag::printError(verbose,
-                        "G1RemSetMaxHowlNumBuckets (%u) must be a power of two.\n",
+                        "G1RemSetHowlMaxNumBuckets (%u) must be a power of two.\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -165,7 +165,7 @@ JVMFlag::Error GCPauseIntervalMillisConstraintFuncG1(uintx value, bool verbose) 
 
 JVMFlag::Error NewSizeConstraintFuncG1(size_t value, bool verbose) {
 #ifdef _LP64
-  // Overflow would happen for uint type variable of YoungGenSizer::_min_desired_young_length
+  // Overflow would happen for uint type variable of YoungGenSizer::_min_desired_num_regions
   // when the value to be assigned exceeds uint range.
   // i.e. result of '(uint)(NewSize / region size(1~32MB))'
   // So maximum of NewSize should be 'max_juint * 1M'

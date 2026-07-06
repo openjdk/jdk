@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
             if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
                 focusLog.finer("Posting focus event: " + fl);
             }
-            SunToolkit.postEvent(SunToolkit.targetToAppContext(currentOwner), fl);
+            SunToolkit.postEvent(fl);
         }
 
         FocusEvent fg = new FocusEvent(lightweightChild, FocusEvent.FOCUS_GAINED,
@@ -136,7 +136,7 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
         if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
             focusLog.finer("Posting focus event: " + fg);
         }
-        SunToolkit.postEvent(SunToolkit.targetToAppContext(lightweightChild), fg);
+        SunToolkit.postEvent(fg);
         return true;
     }
 

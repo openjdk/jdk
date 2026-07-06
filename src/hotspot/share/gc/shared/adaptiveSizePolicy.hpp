@@ -133,9 +133,6 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
 
   const double _gc_pause_goal_sec; // Goal for maximum GC pause
 
-  // Flag indicating that the adaptive policy is ready to use
-  bool _young_gen_policy_is_ready;
-
   // Accessors
   double gc_pause_goal_sec() const { return _gc_pause_goal_sec; }
 
@@ -159,8 +156,6 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
     assert(gc_percent >= 0, "inv");
     return gc_percent;
   }
-
-  bool young_gen_policy_is_ready() { return _young_gen_policy_is_ready; }
 
   size_t eden_increment(size_t cur_eden);
   size_t eden_increment(size_t cur_eden, uint percent_change);

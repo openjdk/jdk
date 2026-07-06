@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,6 @@ import java.util.function.IntUnaryOperator;
  * of <a href="Vector.html#ETYPE">element type</a> ({@code ETYPE})
  * and {@link VectorShape shape}.
  *
- * @apiNote
- * User code should not implement this interface.  A future release of
- * this type may restrict implementations to be members of the same
- * package.
- *
  * @implNote
  * The string representation of an instance of this interface will
  * be of the form "Species[ETYPE, VLENGTH, SHAPE]", where {@code
@@ -57,7 +52,7 @@ import java.util.function.IntUnaryOperator;
  * @param <E> the boxed version of {@code ETYPE},
  *           the element type of a vector
  */
-public interface VectorSpecies<E> {
+public sealed interface VectorSpecies<E> permits AbstractSpecies {
     /**
      * Returns the primitive element type of vectors of this
      * species.

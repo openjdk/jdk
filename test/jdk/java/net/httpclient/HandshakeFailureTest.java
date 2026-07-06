@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,15 +50,15 @@ import javax.net.ssl.SSLSocket;
 /**
  * @test
  * @bug 8238990 8258951
- * @run main/othervm -Djdk.internal.httpclient.debug=true HandshakeFailureTest TLSv1.2
- * @run main/othervm -Djdk.internal.httpclient.debug=true HandshakeFailureTest TLSv1.3
+ * @run main/othervm -Djdk.internal.httpclient.debug=true ${test.main.class} TLSv1.2
+ * @run main/othervm -Djdk.internal.httpclient.debug=true ${test.main.class} TLSv1.3
  * @summary Verify SSLHandshakeException is received when the handshake fails,
  * either because the server closes (EOF) the connection during handshaking,
  * or no cipher suite can be negotiated (TLSv1.2) or no available authentication
  * scheme (TLSv1.3).
  */
 // To switch on debugging use:
-// @run main/othervm -Djdk.internal.httpclient.debug=true HandshakeFailureTest
+// @run main/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
 public class HandshakeFailureTest {
 
     // The number of iterations each testXXXClient performs. Can be increased

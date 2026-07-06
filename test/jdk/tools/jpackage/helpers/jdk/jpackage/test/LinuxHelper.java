@@ -26,6 +26,7 @@ import static java.util.Collections.unmodifiableSortedSet;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.internal.util.MemoizingSupplier.runOnce;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -36,7 +37,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -46,35 +46,34 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import jdk.internal.util.Architecture;
 import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.Result;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.LauncherShortcut.InvokeShortcutSpec;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 
 public final class LinuxHelper {
-    private static String getReleaseSuffix(JPackageCommand cmd) {
-        final String value;
-        final PackageType packageType = cmd.packageType();
-        switch (packageType) {
-            case LINUX_DEB:
-                value = Optional.ofNullable(cmd.getArgumentValue(
-                        "--linux-app-release", () -> null)).map(v -> "-" + v).orElse(
-                        "");
-                break;
 
-            case LINUX_RPM:
-                value = "-" + cmd.getArgumentValue("--linux-app-release",
-                        () -> "1");
-                break;
-
-            default:
-                value = null;
+    static String getReleaseSuffix(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX);
+        var release = Optional.ofNullable(cmd.getArgumentValue("--linux-app-release"));
+        switch (cmd.packageType()) {
+            case LINUX_DEB -> {
+                return release.map(v -> "-" + v).orElse("");
+            }
+            case LINUX_RPM -> {
+                return "-" + release.orElse("1");
+            }
+            default -> {
+                throw new UnsupportedOperationException();
+            }
         }
-        return value;
     }
 
     public static String getPackageName(JPackageCommand cmd) {
@@ -333,10 +332,14 @@ public final class LinuxHelper {
         long packageSize = getInstalledPackageSizeKB(cmd);
         TKit.trace("InstalledPackageSize: " + packageSize);
         TKit.assertNotEquals(0, packageSize, String.format(
-                "Check installed size of [%s] package in not zero", packageName));
+                "Check installed size of [%s] package is not zero", packageName));
 
         final boolean checkPrerequisites;
-        if (cmd.isRuntime()) {
+        if (NativePackageType.VALUE != cmd.packageType()) {
+            // Alien packaging (DEB packaging on RPM Linux or RPM packaging on Debian).
+            // Don't validate required packages.
+            checkPrerequisites = false;
+        } else if (cmd.isRuntime()) {
             Path runtimeDir = cmd.appRuntimeDirectory();
             Set<Path> expectedCriticalRuntimePaths = CRITICAL_RUNTIME_FILES.stream().map(
                     runtimeDir::resolve).collect(toSet());
@@ -582,17 +585,14 @@ public final class LinuxHelper {
         var appLayout = cmd.appLayout();
 
         LauncherShortcut.LINUX_SHORTCUT.expectShortcut(cmd, predefinedAppImage, launcherName).map(shortcutWorkDirType -> {
-            switch (shortcutWorkDirType) {
+            return switch (shortcutWorkDirType) {
                 case DEFAULT -> {
-                    return (Path)null;
+                    yield (Path)null;
                 }
                 case APP_DIR -> {
-                    return cmd.pathToPackageFile(appLayout.appDirectory());
+                    yield cmd.pathToPackageFile(appLayout.appDirectory());
                 }
-                default -> {
-                    throw new AssertionError();
-                }
-            }
+            };
         }).map(Path::toString).ifPresentOrElse(shortcutWorkDir -> {
             var actualShortcutWorkDir = data.find("Path");
             TKit.assertTrue(actualShortcutWorkDir.isPresent(), "Check [Path] key exists");
@@ -850,29 +850,7 @@ public final class LinuxHelper {
     }
 
     public static String getDefaultPackageArch(PackageType type) {
-        if (archs == null) {
-            archs = new HashMap<>();
-        }
-
-        String arch = archs.get(type);
-        if (arch == null) {
-            final Executor exec;
-            switch (type) {
-                case LINUX_DEB:
-                    exec = Executor.of("dpkg", "--print-architecture");
-                    break;
-
-                case LINUX_RPM:
-                    exec = Executor.of("rpmbuild", "--eval=%{_target_cpu}");
-                    break;
-
-                default:
-                    throw new UnsupportedOperationException();
-            }
-            arch = exec.executeAndGetFirstLineOfOutput();
-            archs.put(type, arch);
-        }
-        return arch;
+        return LinuxPackageArchitecture.get(type);
     }
 
     private static String getServiceUnitFileName(String packageName, String launcherName) {
@@ -960,7 +938,62 @@ public final class LinuxHelper {
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "lib/server/libjvm.so"));
 
-    private static Map<PackageType, String> archs;
+    private enum LinuxPackageArchitecture implements Supplier<String> {
+        RPM("rpmbuild", "--eval=%{_target_cpu}"),
+        DEB("dpkg", "--print-architecture"),
+        ;
+
+        LinuxPackageArchitecture(String... cmdline) {
+            this.cmdline = List.of(cmdline);
+        }
+
+        static String get(PackageType type) {
+            Objects.requireNonNull(type);
+            if (type.isSupported()) {
+                return ARCHS.get(type).get();
+            } else {
+                return Architecture.current().name().toLowerCase();
+            }
+        }
+
+        @Override
+        public String get() {
+            return Executor.of(cmdline).executeAndGetFirstLineOfOutput();
+        }
+
+        private final List<String> cmdline;
+
+        private static final Map<PackageType, Supplier<String>> ARCHS = Map.of(
+                PackageType.LINUX_RPM, runOnce(RPM),
+                PackageType.LINUX_DEB, runOnce(DEB));
+    }
+
+    private static final class NativePackageType {
+
+        static final PackageType VALUE;
+
+        private static boolean isDebian() {
+            // we are just going to run "dpkg -s coreutils" and assume Debian
+            // or derivative if no error is returned.
+            return Result.of(Executor.of("dpkg", "-s", "coreutils")::execute).hasValue();
+        }
+
+        private static boolean isRpm() {
+            // we are just going to run "rpm -q rpm" and assume RPM
+            // or derivative if no error is returned.
+            return Result.of(Executor.of("rpm", "-q", "rpm")::execute).hasValue();
+        }
+
+        static {
+            if (isDebian()) {
+                VALUE = PackageType.LINUX_DEB;
+            } else if (isRpm()) {
+                VALUE = PackageType.LINUX_RPM;
+            } else {
+                VALUE = null;
+            }
+        }
+    }
 
     private static final Pattern XDG_CMD_ICON_SIZE_PATTERN = Pattern.compile("\\s--size\\s+(\\d+)\\b");
 

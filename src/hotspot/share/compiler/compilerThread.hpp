@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,6 @@ class CompilerThreadTimeoutGeneric : public CHeapObj<mtCompiler> {
 // A thread used for Compilation.
 class CompilerThread : public JavaThread {
   friend class VMStructs;
-  JVMCI_ONLY(friend class CompilerThreadCanCallJava;)
 
 #ifdef LINUX
   typedef CompilerThreadTimeoutLinux Timeout;
@@ -75,7 +74,6 @@ class CompilerThread : public JavaThread {
   CompileTask* volatile _task;  // print_threads_compiling can read this concurrently.
   CompileQueue*         _queue;
   BufferBlob*           _buffer_blob;
-  bool                  _can_call_java;
 
   AbstractCompiler*     _compiler;
   TimeStamp             _idle_time;
@@ -99,11 +97,9 @@ class CompilerThread : public JavaThread {
 
   bool is_Compiler_thread() const                { return true; }
 
-  virtual bool can_call_java() const             { return _can_call_java; }
-
-  // Returns true if this CompilerThread is hidden from JVMTI and FlightRecorder.  C1 and C2 are
-  // always hidden but JVMCI compiler threads might be hidden.
-  virtual bool is_hidden_from_external_view() const;
+  // Compiler threads are hidden by default.
+  virtual bool is_hidden_from_external_view() const { return true; }
+  virtual bool can_call_java() const             { return false; }
 
   void set_compiler(AbstractCompiler* c);
   AbstractCompiler* compiler() const             { return _compiler; }

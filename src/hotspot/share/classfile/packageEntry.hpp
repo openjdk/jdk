@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_CLASSFILE_PACKAGEENTRY_HPP
 
 #include "classfile/moduleEntry.hpp"
+#include "memory/metaspaceClosureType.hpp"
 #include "oops/symbol.hpp"
 #include "oops/symbolHandle.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -205,14 +206,24 @@ public:
   void purge_qualified_exports();
   void delete_qualified_exports();
 
+  void pack_qualified_exports(); // used by AOT
+
+  // methods required by MetaspaceClosure
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  int size_in_heapwords() const { return (int)heap_word_size(sizeof(PackageEntry)); }
+  MetaspaceClosureType type() const { return MetaspaceClosureType::PackageEntryType; }
+  static bool is_read_only_by_default() { return false; }
+
   void print(outputStream* st = tty);
+
+  char* name_as_C_string() const {
+    assert(_name != nullptr, "name can't be null");
+    return name()->as_C_string();
+  }
 
 #if INCLUDE_CDS_JAVA_HEAP
   bool should_be_archived() const;
-  void iterate_symbols(MetaspaceClosure* closure);
-  PackageEntry* allocate_archived_entry() const;
-  void init_as_archived_entry();
-  static PackageEntry* get_archived_entry(PackageEntry* orig_entry);
+  void remove_unshareable_info();
   void load_from_archive();
 #endif
 
@@ -271,9 +282,7 @@ public:
   void print(outputStream* st = tty);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  void iterate_symbols(MetaspaceClosure* closure);
-  Array<PackageEntry*>* allocate_archived_entries();
-  void init_archived_entries(Array<PackageEntry*>* archived_packages);
+  Array<PackageEntry*>* build_aot_table(ClassLoaderData* loader_data, TRAPS);
   void load_archived_entries(Array<PackageEntry*>* archived_packages);
 #endif
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,10 @@ public:
   void set_index(size_t new_index) {
     assert(new_index <= current_capacity(), "precondition");
     _index = index_to_byte_index(new_index);
+  }
+
+  void set_empty() {
+    set_index(current_capacity());
   }
 
   // Returns the capacity of the buffer, or 0 if the queue doesn't currently

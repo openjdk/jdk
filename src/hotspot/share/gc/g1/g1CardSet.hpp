@@ -185,13 +185,11 @@ public:
 // it.
 // See its description below for more information.
 class G1CardSet : public CHeapObj<mtGCCardSet> {
-  friend class G1CardSetTest;
   friend class G1CardSetMtTestTask;
+  friend class G1CardSetTest;
   friend class G1CheckCardClosure;
-
-  friend class G1TransferCard;
-
   friend class G1ReleaseCardsets;
+  friend class G1TransferCard;
 
   // When splitting addresses into region and card within that region, the logical
   // shift value to get the region.

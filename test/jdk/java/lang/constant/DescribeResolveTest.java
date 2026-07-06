@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,19 @@
 
 /*
  * @test
- * @run testng DescribeResolveTest
+ * @run junit DescribeResolveTest
  */
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.lang.invoke.MethodHandles;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class DescribeResolveTest {
 
-    @DataProvider
     public static Object[][] constables() {
         return new Object[][]{
             { true },
@@ -48,7 +46,8 @@ public class DescribeResolveTest {
         };
     }
 
-    @Test(dataProvider = "constables")
+    @ParameterizedTest
+    @MethodSource("constables")
     public void testDescribeResolve(Constable constable) throws ReflectiveOperationException {
         ConstantDesc desc = constable.describeConstable().orElseThrow();
         Object resolved = desc.resolveConstantDesc(MethodHandles.lookup());

@@ -118,9 +118,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
                 methodContent.add(div);
                 memberList.add(writer.getMemberListItem(methodContent));
                 writer.tableOfContents.addLink(htmlIds.forMember(currentMethod).getFirst(),
-                        Text.of(utils.getSimpleName(method)
-                                + utils.makeSignature(currentMethod, typeElement, false, true)),
-                        TableOfContents.Level.SECOND);
+                        getTOCLabel(currentMethod), TableOfContents.Level.SECOND);
             }
             Content methodDetails = getMethodDetails(methodDetailsHeader, memberList);
             detailsList.add(methodDetails);

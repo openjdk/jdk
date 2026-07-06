@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import javax.tools.JavaFileObject;
 import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
@@ -364,10 +363,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         /** Get the position within the file that most accurately defines the
          *  location for the diagnostic. */
         int getPreferredPosition();
-        /** If there is a tree node, and if endPositions are available, get
-         *  the end position of the tree node. Otherwise, just returns the
-         *  same as getPreferredPosition(). */
-        int getEndPosition(EndPosTable endPosTable);
+        /** If there is a tree node, get the end position of the tree node. */
+        int getEndPosition();
         /** Get the position that determines which Lint configuration applies. */
         default int getLintPosition() {
             return getStartPosition();
@@ -389,8 +386,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
                     return orig.getPreferredPosition();
                 }
                 @Override
-                public int getEndPosition(EndPosTable endPosTable) {
-                    return orig.getEndPosition(endPosTable);
+                public int getEndPosition() {
+                    return orig.getEndPosition();
                 }
                 @Override
                 public int getLintPosition() {
@@ -421,7 +418,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             return pos;
         }
 
-        public int getEndPosition(EndPosTable endPosTable) {
+        public int getEndPosition() {
             return pos;
         }
 
@@ -439,6 +436,10 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          *  is not explicitly enabled, as long as it is not explicitly suppressed.
          */
         DEFAULT_ENABLED,
+        /** Flag for warnings that are automatically suppressed when they occur inside
+         *  a declaration that is itself annotated as @Deprecated. See JLS 9.6.4.6.
+         */
+        DEPRECATION_SENSITIVE,
         /** Flags mandatory warnings that should pass through a mandatory warning aggregator.
          */
         AGGREGATE,
@@ -747,7 +748,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     }
 
     protected int getIntEndPosition() {
-        return (position == null ? Position.NOPOS : position.getEndPosition(source.getEndPosTable()));
+        return (position == null ? Position.NOPOS : position.getEndPosition());
     }
 
     @DefinedBy(Api.COMPILER)

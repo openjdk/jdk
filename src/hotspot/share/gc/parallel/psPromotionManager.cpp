@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/partialArraySplitter.inline.hpp"
 #include "gc/shared/partialArrayState.hpp"
@@ -43,6 +44,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "utilities/checkedCast.hpp"
 
 PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = nullptr;
@@ -137,13 +139,13 @@ bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
 #if TASKQUEUE_STATS
 
 void PSPromotionManager::print_and_reset_taskqueue_stats() {
-  stack_array_depth()->print_and_reset_taskqueue_stats("Oop Queue");
+  stack_array_depth()->print_and_reset_taskqueue_stats("Young GC");
 
   auto get_pa_stats = [&](uint i) {
     return manager_array(i)->partial_array_task_stats();
   };
   PartialArrayTaskStats::log_set(ParallelGCThreads, get_pa_stats,
-                                 "Partial Array Task Stats");
+                                 "Young GC Partial Array");
   for (uint i = 0; i < ParallelGCThreads; ++i) {
     get_pa_stats(i)->reset();
   }
@@ -157,16 +159,10 @@ PartialArrayTaskStats* PSPromotionManager::partial_array_task_stats() {
 
 // Most members are initialized either by initialize() or reset().
 PSPromotionManager::PSPromotionManager()
-  : _partial_array_splitter(_partial_array_state_manager, ParallelGCThreads, ParGCArrayScanChunk)
+  : _partial_array_splitter(_partial_array_state_manager, ParallelGCThreads)
 {
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());
-
-  if (ParallelGCThreads == 1) {
-    _target_stack_size = 0;
-  } else {
-    _target_stack_size = GCDrainStackTargetSize;
-  }
 
   // let's choose 1.5x the chunk size
   _min_array_size_for_chunking = (3 * ParGCArrayScanChunk / 2);
@@ -203,10 +199,7 @@ void PSPromotionManager::restore_preserved_marks() {
   _preserved_marks_set->restore(&ParallelScavengeHeap::heap()->workers());
 }
 
-void PSPromotionManager::drain_stacks(bool totally_drain) {
-  const uint threshold = totally_drain ? 0
-                                       : _target_stack_size;
-
+void PSPromotionManager::trim_stacks_to_threshold(uint threshold) {
   PSScannerTasksQueue* const tq = claimed_stack_depth();
   do {
     ScannerTask task;
@@ -224,9 +217,22 @@ void PSPromotionManager::drain_stacks(bool totally_drain) {
     }
   } while (!tq->overflow_empty());
 
-  assert(!totally_drain || tq->taskqueue_empty(), "Sanity");
-  assert(totally_drain || tq->size() <= _target_stack_size, "Sanity");
+  assert(tq->size() <= threshold, "Sanity");
   assert(tq->overflow_empty(), "Sanity");
+}
+
+void PSPromotionManager::trim_stacks() {
+  const uint target_stack_size = GCDrainStackTargetSize;
+  const uint max_stack_size = target_stack_size * 2 + 1;
+
+  PSScannerTasksQueue* const tq = claimed_stack_depth();
+  if (!tq->overflow_empty() || tq->size() > max_stack_size) {
+    trim_stacks_to_threshold(target_stack_size);
+  }
+}
+
+void PSPromotionManager::drain_stacks() {
+  trim_stacks_to_threshold(0);
 }
 
 void PSPromotionManager::flush_labs() {
@@ -248,30 +254,19 @@ void PSPromotionManager::flush_labs() {
   }
 }
 
-template <class T>
-void PSPromotionManager::process_array_chunk_work(oop obj, int start, int end) {
-  assert(start <= end, "invariant");
-  T* const base      = (T*)objArrayOop(obj)->base();
-  T* p               = base + start;
-  T* const chunk_end = base + end;
-  while (p < chunk_end) {
-    claim_or_forward_depth(p);
-    ++p;
-  }
+void PSPromotionManager::process_array_chunk(objArrayOop obj, size_t start, size_t end) {
+  PSPushContentsClosure pcc(this);
+  obj->oop_iterate_elements_range(&pcc,
+                                  checked_cast<int>(start),
+                                  checked_cast<int>(end));
 }
 
 void PSPromotionManager::process_array_chunk(PartialArrayState* state, bool stolen) {
   // Access before release by claim().
-  oop new_obj = state->destination();
+  objArrayOop to_array = objArrayOop(state->destination());
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, &_claimed_stack_depth, stolen);
-  int start = checked_cast<int>(claim._start);
-  int end = checked_cast<int>(claim._end);
-  if (UseCompressedOops) {
-    process_array_chunk_work<narrowOop>(new_obj, start, end);
-  } else {
-    process_array_chunk_work<oop>(new_obj, start, end);
-  }
+  process_array_chunk(to_array, claim._start, claim._end);
 }
 
 void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
@@ -283,13 +278,9 @@ void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
   size_t array_length = to_array->length();
   size_t initial_chunk_size =
     // The source array is unused when processing states.
-    _partial_array_splitter.start(&_claimed_stack_depth, nullptr, to_array, array_length);
-  int end = checked_cast<int>(initial_chunk_size);
-  if (UseCompressedOops) {
-    process_array_chunk_work<narrowOop>(to_array, 0, end);
-  } else {
-    process_array_chunk_work<oop>(to_array, 0, end);
-  }
+    _partial_array_splitter.start(&_claimed_stack_depth, nullptr, to_array, array_length, ParGCArrayScanChunk);
+
+  process_array_chunk(to_array, 0, initial_chunk_size);
 }
 
 oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
@@ -308,7 +299,7 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
 
     ContinuationGCSupport::transform_stack_chunk(obj);
 
-    push_contents(obj);
+    push_contents(obj, obj->klass());
 
     // Save the markWord of promotion-failed objs in _preserved_marks for later
     // restoration. This way we don't have to walk the young-gen to locate

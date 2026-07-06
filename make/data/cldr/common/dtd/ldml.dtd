@@ -1,5 +1,5 @@
 <!--
-Copyright © 1991-2025 Unicode, Inc.
+Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -454,7 +454,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!-- ######################################################### -->
 
-<!ELEMENT characters ( alias | ( exemplarCharacters*, ellipsis*, moreInformation*, stopwords*, indexLabels*, mapping*, parseLenients*, special* ) ) >
+<!ELEMENT characters ( alias | ( exemplarCharacters*, ellipsis*, nestedBracketReplacement*, moreInformation*, stopwords*, indexLabels*, mapping*, parseLenients*, special* ) ) >
 <!ATTLIST characters draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
@@ -491,6 +491,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST ellipsis draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
 <!ATTLIST ellipsis references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT nestedBracketReplacement ( #PCDATA ) >
+<!ATTLIST nestedBracketReplacement bracket CDATA #REQUIRED >
+    <!--@MATCH:any-->
+<!ATTLIST nestedBracketReplacement alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST nestedBracketReplacement draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST nestedBracketReplacement references CDATA #IMPLIED >
     <!--@METADATA-->
 
 <!ELEMENT moreInformation ( #PCDATA ) >

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.ThreadMXBean;
 
+import jtreg.SkippedException;
+
 public class StressGetTotalGcCpuTimeDuringShutdown {
     static final ThreadMXBean mxThreadBean = ManagementFactory.getThreadMXBean();
     static final MemoryMXBean mxMemoryBean = ManagementFactory.getMemoryMXBean();
@@ -86,7 +88,7 @@ public class StressGetTotalGcCpuTimeDuringShutdown {
     public static void main(String[] args) throws Exception {
         try {
             if (!mxThreadBean.isThreadCpuTimeEnabled()) {
-                return;
+                throw new SkippedException("Thread CPU time is not enabled");
             }
         } catch (UnsupportedOperationException e) {
             if (mxMemoryBean.getTotalGcCpuTime() != -1) {
@@ -95,7 +97,8 @@ public class StressGetTotalGcCpuTimeDuringShutdown {
             return;
         }
 
-        final int numberOfThreads = Runtime.getRuntime().availableProcessors() * 8;
+        final int cpuCount = Runtime.getRuntime().availableProcessors() * 8;
+        final int numberOfThreads = Math.min(cpuCount, 128);
         for (int i = 0; i < numberOfThreads; i++) {
             Thread t = new Thread(() -> {
                 while (true) {
@@ -103,6 +106,7 @@ public class StressGetTotalGcCpuTimeDuringShutdown {
                     if (gcCpuTimeFromThread < -1) {
                         throw new RuntimeException("GC CPU time should never be less than -1 but was " + gcCpuTimeFromThread);
                     }
+                    Thread.onSpinWait();
                 }
             });
             t.setDaemon(true);

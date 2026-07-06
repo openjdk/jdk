@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,49 +25,51 @@
  * @summary Unit test for forName(String, Charset)
  * @bug 8270490
  * @modules jdk.charsets
- * @run testng ForName
+ * @run junit ForName
  */
 
 import java.nio.charset.Charset;
-import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@Test
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class ForName {
 
-    @DataProvider
-    Object[][] params() {
-        return new Object[][] {
-                {"UTF-8", null, StandardCharsets.UTF_8},
-                {"UTF-8", StandardCharsets.US_ASCII, StandardCharsets.UTF_8},
-                {"windows-31j", StandardCharsets.US_ASCII, Charset.forName("windows-31j")},
-                {"foo", StandardCharsets.US_ASCII, StandardCharsets.US_ASCII},
-                {"foo", null, null},
-                {"\u3042", null, null},
-                {"\u3042", StandardCharsets.UTF_8, StandardCharsets.UTF_8},
-        };
+    static Stream<Arguments> params() {
+        return Stream.of(
+                Arguments.of("UTF-8", null, StandardCharsets.UTF_8),
+                Arguments.of("UTF-8", StandardCharsets.US_ASCII, StandardCharsets.UTF_8),
+                Arguments.of("windows-31j", StandardCharsets.US_ASCII, Charset.forName("windows-31j")),
+                Arguments.of("foo", StandardCharsets.US_ASCII, StandardCharsets.US_ASCII),
+                Arguments.of("foo", null, null),
+                Arguments.of("\u3042", null, null),
+                Arguments.of("\u3042", StandardCharsets.UTF_8, StandardCharsets.UTF_8)
+        );
     }
 
-    @DataProvider
-    Object[][] paramsIAE() {
-        return new Object[][] {
-                {null, null},
-                {null, StandardCharsets.UTF_8},
-        };
+    static Stream<Arguments> paramsIAE() {
+        return Stream.of(
+                Arguments.of(null, null),
+                Arguments.of(null, StandardCharsets.UTF_8)
+        );
     }
 
-    @Test(dataProvider="params")
-    public void testForName_2arg(String name, Charset fallback, Charset expected) throws Exception {
+    @ParameterizedTest
+    @MethodSource("params")
+    public void testForName_2arg(String name, Charset fallback, Charset expected) {
         var cs = Charset.forName(name, fallback);
-        assertEquals(cs, expected);
+        assertEquals(expected, cs);
     }
 
-    @Test(dataProvider="paramsIAE", expectedExceptions=IllegalArgumentException.class)
-    public void testForName_2arg_IAE(String name, Charset fallback) throws Exception {
-        Charset.forName(name, fallback);
+    @ParameterizedTest
+    @MethodSource("paramsIAE")
+    public void testForName_2arg_IAE(String name, Charset fallback) {
+        assertThrows(IllegalArgumentException.class, () -> Charset.forName(name, fallback));
     }
 }

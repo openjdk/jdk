@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -181,6 +182,7 @@ class ConsoleIOContext extends IOContext {
 
         setupReader.accept(reader);
         reader.setOpt(Option.DISABLE_EVENT_EXPANSION);
+        reader.setVariable(LineReader.WORDCHARS, "_$");
 
         reader.setParser((line, cursor, context) -> {
             if (!ConsoleIOContext.this.allowIncompleteInputs && !repl.isComplete(line)) {
@@ -201,6 +203,7 @@ class ConsoleIOContext extends IOContext {
               .filter(key -> key.startsWith(HISTORY_LINE_PREFIX))
               .sorted()
               .map(key -> repl.prefs.get(key))
+              .filter(Objects::nonNull)
               .forEach(loadHistory::add);
 
         for (ListIterator<String> it = loadHistory.listIterator(); it.hasNext(); ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,18 @@
 
 package test.gaptest;
 
-import java.io.StringReader;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamSource;
-
-import org.testng.annotations.Test;
+import java.io.StringReader;
 
 /*
  * @test
  * @bug 4511326
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm test.gaptest.Bug4511326
+ * @run junit/othervm test.gaptest.Bug4511326
  * @summary In forwards-compatible mode the attribute isn't ignored
  */
 public class Bug4511326 {

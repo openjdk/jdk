@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,8 @@ class TextBlockSupport {
         // No need to check indentation if opting out (last line is empty.)
         char lastChar = string.charAt(string.length() - 1);
         boolean optOut = lastChar == '\n' || lastChar == '\r';
-        // Split string based at line terminators.
-        String[] lines = string.split("\\R");
+        // Split string using JLS text block line terminators: CRLF, CR, or LF.
+        String[] lines = string.split("\\r\\n|\\r|\\n");
         int length = lines.length;
         // Extract last line.
         String lastLine = length == 0 ? "" : lines[length - 1];

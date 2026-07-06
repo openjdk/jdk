@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,10 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8245194
- * @run testng NullTest
+ * @run junit NullTest
  */
 
 import java.net.ProtocolFamily;
@@ -32,8 +32,9 @@ import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.*;
 import java.nio.file.Path;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertThrows;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Check for NPE
@@ -45,7 +46,7 @@ public class NullTest {
         NullPointerException.class;
 
     @Test
-    public static void runTest() throws Exception {
+    public void runTest() throws Exception {
         assertThrows(NPE, () -> SocketChannel.open((ProtocolFamily)null));
         assertThrows(NPE, () -> SocketChannel.open((SocketAddress)null));
         assertThrows(NPE, () -> ServerSocketChannel.open((ProtocolFamily)null));

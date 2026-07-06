@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8163561
  * @library /test/lib
  * @summary Verify that Proxy-Authenticate header is correctly handled
- * @run main/othervm ProxyAuthTest
+ * @run main/othervm ${test.main.class}
  */
 
 import java.io.BufferedWriter;

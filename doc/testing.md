@@ -198,8 +198,8 @@ use a fully qualified test descriptor, add `jtreg:`, e.g.
 
 **Note:** To be able to run the Gtest suite, you need to configure your build
 to be able to find a proper version of the gtest source. For details, see the
-section ["Running Tests" in the build
-documentation](building.html#running-tests).
+section **"Running Tests" in the build
+documentation** ([html](building.html#running-tests), [markdown](building.md#running-tests)).
 
 Since the Hotspot Gtest suite is so quick, the default is to run all tests.
 This is specified by just `gtest`, or as a fully qualified test descriptor

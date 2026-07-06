@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,9 @@ class ZipFileSystem extends FileSystem {
     private static final String COMPRESSION_METHOD_DEFLATED = "DEFLATED";
     // Value specified for compressionMethod property to not compress Zip entries
     private static final String COMPRESSION_METHOD_STORED = "STORED";
+    // CEN size is limited to the maximum array size in the JDK
+    // See ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
+    private static final int MAX_CEN_SIZE = Integer.MAX_VALUE - 8;
 
     private final ZipFileSystemProvider provider;
     private final Path zfpath;
@@ -1233,7 +1236,7 @@ class ZipFileSystem extends FileSystem {
 
     private volatile boolean isOpen = true;
     private final SeekableByteChannel ch; // channel to the zipfile
-    final byte[]  cen;     // CEN & ENDHDR
+    final byte[]  cen;     // CEN
     private END  end;
     private long locpos;   // position of first LOC header (usually 0)
 
@@ -1243,7 +1246,11 @@ class ZipFileSystem extends FileSystem {
     private LinkedHashMap<IndexNode, IndexNode> inodes;
 
     final byte[] getBytes(String name) {
-        return zc.getBytes(name);
+        try {
+            return zc.getBytes(name);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidPathException(name, "unmappable character in path name");
+        }
     }
 
     final String getString(byte[] name) {
@@ -1353,7 +1360,7 @@ class ZipFileSystem extends FileSystem {
                     // to use the end64 values
                     end.cenlen = cenlen64;
                     end.cenoff = cenoff64;
-                    end.centot = (int)centot64; // assume total < 2g
+                    end.centot = centot64;
                     end.endpos = end64pos;
                     return end;
                 }
@@ -1575,25 +1582,36 @@ class ZipFileSystem extends FileSystem {
             buildNodeTree();
             return null;         // only END header present
         }
-        if (end.cenlen > end.endpos)
-            throw new ZipException("invalid END header (bad central directory size)");
+        // Validate END header
+        if (end.cenlen > end.endpos) {
+            zerror("invalid END header (bad central directory size)");
+        }
         long cenpos = end.endpos - end.cenlen;     // position of CEN table
-
         // Get position of first local file (LOC) header, taking into
-        // account that there may be a stub prefixed to the zip file.
+        // account that there may be a stub prefixed to the ZIP file.
         locpos = cenpos - end.cenoff;
-        if (locpos < 0)
-            throw new ZipException("invalid END header (bad central directory offset)");
+        if (locpos < 0) {
+            zerror("invalid END header (bad central directory offset)");
+        }
+        if (end.cenlen > MAX_CEN_SIZE) {
+            zerror("invalid END header (central directory size too large)");
+        }
+        if (end.centot < 0 || end.centot > end.cenlen / CENHDR) {
+            zerror("invalid END header (total entries count too large)");
+        }
+        // Validation ensures these are <= Integer.MAX_VALUE
+        int cenlen = Math.toIntExact(end.cenlen);
+        int centot = Math.toIntExact(end.centot);
 
-        // read in the CEN and END
-        byte[] cen = new byte[(int)(end.cenlen + ENDHDR)];
-        if (readNBytesAt(cen, 0, cen.length, cenpos) != end.cenlen + ENDHDR) {
-            throw new ZipException("read CEN tables failed");
+        // read in the CEN
+        byte[] cen = new byte[cenlen];
+        if (readNBytesAt(cen, 0, cen.length, cenpos) != cenlen) {
+            zerror("read CEN tables failed");
         }
         // Iterate through the entries in the central directory
-        inodes = LinkedHashMap.newLinkedHashMap(end.centot + 1);
+        inodes = LinkedHashMap.newLinkedHashMap(centot + 1);
         int pos = 0;
-        int limit = cen.length - ENDHDR;
+        int limit = cen.length;
         while (pos < limit) {
             if (!cenSigAt(cen, pos))
                 throw new ZipException("invalid CEN header (bad signature)");
@@ -1641,7 +1659,7 @@ class ZipFileSystem extends FileSystem {
             // skip ext and comment
             pos += (CENHDR + nlen + elen + clen);
         }
-        if (pos + ENDHDR != cen.length) {
+        if (pos != cen.length) {
             throw new ZipException("invalid CEN header (bad header size)");
         }
         buildNodeTree();
@@ -1671,7 +1689,7 @@ class ZipFileSystem extends FileSystem {
         }
         // CEN Offset where this Extra field ends
         int extraEndOffset = startingOffset + extraFieldLen;
-        if (extraEndOffset > cen.length - ENDHDR) {
+        if (extraEndOffset > cen.length) {
             zerror("Invalid CEN header (extra data field size too long)");
         }
         int currentOffset = startingOffset;
@@ -2666,7 +2684,7 @@ class ZipFileSystem extends FileSystem {
         // int  disknum;
         // int  sdisknum;
         // int  endsub;
-        int  centot;        // 4 bytes
+        long centot;        // 4 bytes
         long cenlen;        // 4 bytes
         long cenoff;        // 4 bytes
         // int  comlen;     // comment length
@@ -2689,7 +2707,7 @@ class ZipFileSystem extends FileSystem {
                 xoff = ZIP64_MINVAL;
                 hasZip64 = true;
             }
-            int count = centot;
+            int count = Math.toIntExact(centot);
             if (count >= ZIP64_MINVAL32) {
                 count = ZIP64_MINVAL32;
                 hasZip64 = true;

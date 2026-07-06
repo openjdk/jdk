@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,6 +366,8 @@ provider hotspot_jni {
   probe IsInstanceOf__return(uintptr_t);
   probe IsSameObject__entry(void*, void*, void*);
   probe IsSameObject__return(uintptr_t);
+  probe IsVirtualThread__entry(void*, void*);
+  probe IsVirtualThread__return(uintptr_t);
   probe MonitorEnter__entry(void*, void*);
   probe MonitorEnter__return(uint32_t);
   probe MonitorExit__entry(void*, void*);

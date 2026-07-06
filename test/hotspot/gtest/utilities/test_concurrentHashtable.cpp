@@ -609,7 +609,7 @@ class ValueSaver {
     _vals[_it++] = *val;
     if (_it == _size) {
       _size *= 2;
-      _vals = REALLOC_RESOURCE_ARRAY(uintptr_t, _vals, _size/2, _size);
+      _vals = REALLOC_RESOURCE_ARRAY(_vals, _size/2, _size);
     }
     return true;
   }
@@ -888,7 +888,6 @@ public:
   virtual ~RunnerGSInserterThread(){}
 
   void premain() {
-    volatile bool timeout = false;
     _start = START;
     _range = RANGE;
     CHTTestThread* tt[GSTEST_THREAD_COUNT];

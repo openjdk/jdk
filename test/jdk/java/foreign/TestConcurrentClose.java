@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,11 @@ import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
 
 public class TestConcurrentClose {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -72,7 +70,6 @@ public class TestConcurrentClose {
 
     static final int ITERATIONS = 5;
     static final int SEGMENT_SIZE = 10_000;
-    static final int MAX_EXECUTOR_WAIT_SECONDS = 60;
     static final int NUM_ACCESSORS = 50;
 
     static final AtomicLong start = new AtomicLong();
@@ -82,25 +79,24 @@ public class TestConcurrentClose {
     public void testHandshake() throws InterruptedException {
         for (int it = 0; it < ITERATIONS; it++) {
             System.out.println("ITERATION " + it + " - starting");
-            ExecutorService accessExecutor = Executors.newCachedThreadPool();
-            start.set(System.currentTimeMillis());
-            started.set(false);
-            CountDownLatch startClosureLatch = new CountDownLatch(1);
+            try (ExecutorService accessExecutor = Executors.newCachedThreadPool()) {
+                start.set(System.currentTimeMillis());
+                started.set(false);
+                CountDownLatch startClosureLatch = new CountDownLatch(1);
 
-            for (int i = 0; i < NUM_ACCESSORS ; i++) {
-                Arena arena = Arena.ofShared();
-                MemorySegment segment = arena.allocate(SEGMENT_SIZE, 1);
-                accessExecutor.execute(new SegmentAccessor(i, segment));
-                accessExecutor.execute(new Closer(i, startClosureLatch, arena));
+                for (int i = 0; i < NUM_ACCESSORS; i++) {
+                    Arena arena = Arena.ofShared();
+                    MemorySegment segment = arena.allocate(SEGMENT_SIZE, 1);
+                    accessExecutor.execute(new SegmentAccessor(i, segment));
+                    accessExecutor.execute(new Closer(i, startClosureLatch, arena));
+                }
+
+                awaitCompilation();
+
+                long closeDelay = System.currentTimeMillis() - start.get();
+                System.out.println("Starting closers after delay of " + closeDelay + " millis");
+                startClosureLatch.countDown();
             }
-
-            awaitCompilation();
-
-            long closeDelay = System.currentTimeMillis() - start.get();
-            System.out.println("Starting closers after delay of " + closeDelay + " millis");
-            startClosureLatch.countDown();
-            accessExecutor.shutdown();
-            assertTrue(accessExecutor.awaitTermination(MAX_EXECUTOR_WAIT_SECONDS, TimeUnit.SECONDS));
             long finishDelay = System.currentTimeMillis() - start.get();
             System.out.println("ITERATION " + it + " - finished, after " + finishDelay + "milis");
         }

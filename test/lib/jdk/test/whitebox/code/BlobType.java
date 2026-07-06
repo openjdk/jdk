@@ -46,8 +46,16 @@ public enum BlobType {
                     || type == BlobType.MethodNonProfiled;
         }
     },
+    MethodHot(2, "CodeHeap 'hot nmethods'", "HotCodeHeapSize") {
+        @Override
+        public boolean allowTypeWhenOverflow(BlobType type) {
+            return super.allowTypeWhenOverflow(type)
+                    || type == BlobType.MethodNonProfiled
+                    || type == BlobType.MethodProfiled;
+        }
+    },
     // Non-nmethods like Buffers, Adapters and Runtime Stubs
-    NonNMethod(2, "CodeHeap 'non-nmethods'", "NonNMethodCodeHeapSize") {
+    NonNMethod(3, "CodeHeap 'non-nmethods'", "NonNMethodCodeHeapSize") {
         @Override
         public boolean allowTypeWhenOverflow(BlobType type) {
             return super.allowTypeWhenOverflow(type)
@@ -56,7 +64,7 @@ public enum BlobType {
         }
     },
     // All types (No code cache segmentation)
-    All(3, "CodeCache", "ReservedCodeCacheSize");
+    All(4, "CodeCache", "ReservedCodeCacheSize");
 
     public final int id;
     public final String sizeOptionName;
@@ -98,6 +106,10 @@ public enum BlobType {
                 || whiteBox.getIntxVMFlag("TieredStopAtLevel") <= 1) {
             // there is no MethodProfiled in non tiered world or pure C1
             result.remove(MethodProfiled);
+        }
+
+        if (Long.valueOf(0).equals(whiteBox.getVMFlag("HotCodeHeapSize"))) {
+            result.remove(MethodHot);
         }
         return result;
     }

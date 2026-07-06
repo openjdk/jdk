@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1060,7 +1060,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="d0" type="npinyin">𑄚𑄘𑄝𑄝𑄧𑄖𑄳𑄠</type>
 			<type key="hc" type="h11">𑄷𑄸 𑄊𑄧𑄚𑄴𑄑𑄢𑄴 𑄦𑄨𑄏𑄬𑄛𑄴 (𑄶-𑄷𑄷)</type>
 			<type key="hc" type="h12">𑄷𑄸 𑄊𑄧𑄚𑄴𑄑𑄢𑄴 𑄦𑄨𑄏𑄬𑄛𑄴 (𑄷-𑄷𑄸)</type>
-			<type key="hc" type="h23">𑄸𑄺 𑄊𑄧𑄚𑄴𑄑𑄢𑄴 𑄦𑄨𑄏𑄬𑄛𑄴(𑄷-𑄸𑄹)</type>
+			<type key="hc" type="h23">𑄸𑄺 𑄊𑄧𑄚𑄴𑄑𑄢𑄴 𑄦𑄨𑄏𑄬𑄛𑄴 (𑄷-𑄸𑄹)</type>
 			<type key="hc" type="h24">𑄸𑄺 𑄊𑄧𑄚𑄴𑄑𑄢𑄴 𑄦𑄨𑄏𑄬𑄛𑄴 (𑄷-𑄸𑄺)</type>
 			<type key="lb" type="loose">𑄃𑄣𑄴𑄉 𑄣𑄭𑄚𑄴 𑄜𑄢𑄧𑄉𑄧𑄢𑄴 𑄚𑄨𑄠𑄮𑄟𑄴</type>
 			<type key="lb" type="normal">𑄃𑄧𑄎𑄬𑄃𑄧𑄌𑄴 𑄣𑄭𑄚𑄴 𑄜𑄢𑄧𑄉𑄧𑄢𑄴 𑄚𑄨𑄠𑄮𑄟𑄴</type>

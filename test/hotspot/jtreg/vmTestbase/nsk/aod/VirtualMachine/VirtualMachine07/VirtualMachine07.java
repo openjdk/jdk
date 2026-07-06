@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@
  *          /test/lib
  * @build nsk.share.aod.TargetApplicationWaitingAgents
  * @run main/othervm/native
- *      -XX:+UsePerfData
  *      nsk.aod.VirtualMachine.VirtualMachine07.VirtualMachine07
  *      -jdk ${test.jdk}
  *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"

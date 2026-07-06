@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1632,16 +1632,15 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Places the input stream for this socket at "end of stream".
-     * Any data sent to the input stream side of the socket is acknowledged
-     * and then silently discarded.
+     * Shutdown the connection for reading without closing the socket.
      * <p>
-     * If you read from a socket input stream after invoking this method on the
-     * socket, the stream's {@code available} method will return 0, and its
-     * {@code read} methods will return {@code -1} (end of stream).
+     * If you read from a {@linkplain Socket#getInputStream() socket input stream}
+     * after invoking this method, the stream's {@code available} method will
+     * return {@code 0}, and its {@code read} methods will return {@code -1} (end of stream).
      *
      * @throws IOException if an I/O error occurs when shutting down this socket, the
-     *         socket is not connected or the socket is closed.
+     *         socket is not connected, the socket is already shutdown for reading,
+     *         or the socket is closed.
      *
      * @since 1.3
      * @see java.net.Socket#shutdownOutput()
@@ -1662,16 +1661,14 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Disables the output stream for this socket.
-     * For a TCP socket, any previously written data will be sent
-     * followed by TCP's normal connection termination sequence.
+     * Shutdown the connection for writing without closing the socket.
+     * <p>
+     * If you write to a {@linkplain Socket#getOutputStream() socket output stream}
+     * after invoking this method, the stream will throw an {@code IOException}.
      *
-     * If you write to a socket output stream after invoking
-     * shutdownOutput() on the socket, the stream will throw
-     * an IOException.
-     *
-     * @throws IOException if an I/O error occurs when shutting down this socket, the socket
-     *         is not connected or the socket is closed.
+     * @throws IOException if an I/O error occurs when shutting down this socket, the
+     *         socket is not connected, the socket is already shutdown for writing,
+     *         or the socket is closed.
      *
      * @since 1.3
      * @see java.net.Socket#shutdownInput()
@@ -1710,10 +1707,9 @@ public class Socket implements java.io.Closeable {
     /**
      * Returns the connection state of the socket.
      * <p>
-     * Note: Closing a socket doesn't clear its connection state, which means
+     * {@linkplain #close() Closing} a socket doesn't clear its connection state, which means
      * this method will return {@code true} for a closed socket
-     * (see {@link #isClosed()}) if it was successfully connected prior
-     * to being closed.
+     * if it was successfully connected prior to being closed.
      *
      * @return true if the socket was successfully connected to a server
      * @since 1.4
@@ -1725,10 +1721,9 @@ public class Socket implements java.io.Closeable {
     /**
      * Returns the binding state of the socket.
      * <p>
-     * Note: Closing a socket doesn't clear its binding state, which means
+     * {@linkplain #close() Closing} a socket doesn't clear its binding state, which means
      * this method will return {@code true} for a closed socket
-     * (see {@link #isClosed()}) if it was successfully bound prior
-     * to being closed.
+     * if it was successfully bound prior to being closed.
      *
      * @return true if the socket was successfully bound to an address
      * @since 1.4
@@ -1750,22 +1745,22 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Returns whether the read-half of the socket connection is closed.
+     * Returns {@code true} if the socket was shutdown for reading.
      *
-     * @return true if the input of the socket has been shutdown
+     * @return true only if a prior call to {@link #shutdownInput()} completed successfully,
+     *         false otherwise
      * @since 1.4
-     * @see #shutdownInput
      */
     public boolean isInputShutdown() {
         return isInputShutdown(state);
     }
 
     /**
-     * Returns whether the write-half of the socket connection is closed.
+     * Returns {@code true} if the socket was shutdown for writing.
      *
-     * @return true if the output of the socket has been shutdown
+     * @return true only if a prior call to {@link #shutdownOutput()} completed successfully,
+     *         false otherwise
      * @since 1.4
-     * @see #shutdownOutput
      */
     public boolean isOutputShutdown() {
         return isOutputShutdown(state);

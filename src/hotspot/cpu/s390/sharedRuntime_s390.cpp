@@ -402,9 +402,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
         break;
     }
 
-    // Second set_callee_saved is really a waste but we'll keep things as they were for now
     map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2), live_regs[i].vmreg);
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size) >> 2), live_regs[i].vmreg->next());
   }
   assert(first != noreg, "Should spill at least one int reg.");
   __ z_stmg(first, last, first_offset, Z_SP);
@@ -416,12 +414,6 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
 
     map->set_callee_saved(VMRegImpl::stack2reg(offset>>2),
                    RegisterSaver_LiveVRegs[i].vmreg);
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size ) >> 2),
-                   RegisterSaver_LiveVRegs[i].vmreg->next());
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + (half_reg_size * 2)) >> 2),
-                   RegisterSaver_LiveVRegs[i].vmreg->next(2));
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + (half_reg_size * 3)) >> 2),
-                   RegisterSaver_LiveVRegs[i].vmreg->next(3));
   }
 
   assert(offset == frame_size_in_bytes, "consistency check");
@@ -473,7 +465,6 @@ OopMap* RegisterSaver::generate_oop_map(MacroAssembler* masm, RegisterSet reg_se
   for (int i = 0; i < regstosave_num; i++) {
     if (live_regs[i].reg_type < RegisterSaver::excluded_reg) {
       map->set_callee_saved(VMRegImpl::stack2reg(offset>>2), live_regs[i].vmreg);
-      map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size)>>2), live_regs[i].vmreg->next());
     }
     offset += reg_size;
   }
@@ -580,10 +571,12 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg
 
 
 // Pop the current frame and restore the registers that might be holding a result.
-void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
+void RegisterSaver::restore_result_registers(MacroAssembler* masm, bool save_vectors) {
   const int regstosave_num       = sizeof(RegisterSaver_LiveRegs) /
                                    sizeof(RegisterSaver::LiveRegType);
-  const int register_save_offset = live_reg_frame_size(all_registers) - live_reg_save_size(all_registers);
+  const int vecregstosave_num    = save_vectors ?  calculate_vregstosave_num() : 0;
+  const int vreg_save_size   = vecregstosave_num * v_reg_size;
+  const int register_save_offset = live_reg_frame_size(all_registers, save_vectors) - (live_reg_save_size(all_registers) + vreg_save_size);
 
   // Restore all result registers (ints and floats).
   int offset = register_save_offset;
@@ -609,7 +602,7 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
         ShouldNotReachHere();
     }
   }
-  assert(offset == live_reg_frame_size(all_registers), "consistency check");
+  assert(offset == live_reg_frame_size(all_registers, save_vectors) - (save_vectors ? vreg_save_size : 0) , "consistency check");
 }
 
 // ---------------------------------------------------------------------------
@@ -2557,7 +2550,7 @@ void SharedRuntime::generate_deopt_blob() {
   // nmethod that was valid just before the nmethod was deoptimized.
   // save R14 into the deoptee frame.  the `fetch_unroll_info'
   // procedure called below will read it from there.
-  map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers);
+  map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers, Z_R14, /* save_vectors= */ SuperwordUseVX);
 
   // note the entry point.
   __ load_const_optimized(exec_mode_reg, Deoptimization::Unpack_deopt);
@@ -2573,7 +2566,7 @@ void SharedRuntime::generate_deopt_blob() {
   int reexecute_offset = __ offset() - start_off;
 
   // No need to update map as each call to save_live_registers will produce identical oopmap
-  (void) RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers);
+  (void) RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers, Z_R14, /* save_vectors= */ SuperwordUseVX);
 
   __ load_const_optimized(exec_mode_reg, Deoptimization::Unpack_reexecute);
   __ z_bru(exec_mode_initialized);
@@ -2611,7 +2604,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ z_lg(Z_R1_scratch, Address(Z_thread, JavaThread::exception_pc_offset()));
 
   // Save everything in sight.
-  (void) RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers, Z_R1_scratch);
+  (void) RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers, Z_R1_scratch, /* save_vectors= */ SuperwordUseVX);
 
   // Now it is safe to overwrite any register
 
@@ -2661,7 +2654,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ z_lgr(unroll_block_reg, Z_RET);
   // restore the return registers that have been saved
   // (among other registers) by save_live_registers(...).
-  RegisterSaver::restore_result_registers(masm);
+  RegisterSaver::restore_result_registers(masm, /* save_vectors= */ SuperwordUseVX);
 
   // reload the exec mode from the UnrollBlock (it might have changed)
   __ z_llgf(exec_mode_reg, Address(unroll_block_reg, Deoptimization::UnrollBlock::unpack_kind_offset()));
@@ -2737,7 +2730,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Make sure all code is generated
   masm->flush();
 
-  _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers)/wordSize);
+  _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers, SuperwordUseVX)/wordSize);
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
 }
 

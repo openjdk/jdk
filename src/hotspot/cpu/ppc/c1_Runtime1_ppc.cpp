@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -760,22 +760,9 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
       break;
 
     case StubId::c1_dtrace_object_alloc_id:
-      { // O0: object
+      {
         __ unimplemented("stub dtrace_object_alloc_id");
         __ set_info("dtrace_object_alloc", dont_gc_arguments);
-//        // We can't gc here so skip the oopmap but make sure that all
-//        // the live registers get saved.
-//        save_live_registers(sasm);
-//
-//        __ save_thread(L7_thread_cache);
-//        __ call(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)),
-//                relocInfo::runtime_call_type);
-//        __ delayed()->mov(I0, O0);
-//        __ restore_thread(L7_thread_cache);
-//
-//        restore_live_registers(sasm);
-//        __ ret();
-//        __ delayed()->restore();
       }
       break;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,13 @@
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run main/othervm -Djdk.http.auth.proxying.disabledSchemes=Basic,Digest
  *                   -Djdk.http.auth.tunneling.disabledSchemes=Digest,Basic
- *                   ProxyAuthDisabledSchemes
+ *                   ${test.main.class}
  * @run main/othervm -Djdk.http.auth.proxying.disabledSchemes=Basic
  *                   -Djdk.http.auth.tunneling.disabledSchemes=Basic
- *                   ProxyAuthDisabledSchemes CLEAR PROXY
+ *                   ${test.main.class} CLEAR PROXY
  * @run main/othervm -Djdk.http.auth.proxying.disabledSchemes=Digest
  *                   -Djdk.http.auth.tunneling.disabledSchemes=Digest
- *                   ProxyAuthDisabledSchemes CLEAR PROXY
+ *                   ${test.main.class} CLEAR PROXY
  */
 
 public class ProxyAuthDisabledSchemes {

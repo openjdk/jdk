@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,9 @@ define_pd_global(intx, CompileThreshold,             10000);
 
 define_pd_global(intx, OnStackReplacePercentage,     140);
 define_pd_global(intx, ConditionalMoveLimit,         3);
-define_pd_global(intx, FreqInlineSize,               175);
+define_pd_global(intx, FreqInlineSize,               325);
 define_pd_global(intx, MinJumpTableSize,             10);
 define_pd_global(intx, InteriorEntryAlignment,       16);
-define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 define_pd_global(intx, RegisterCostAreaRatio,        16000);
 define_pd_global(intx, LoopUnrollLimit,              60);
 define_pd_global(intx, LoopPercentProfileLimit,      10);
@@ -90,8 +89,5 @@ define_pd_global(size_t,   CodeCacheMinBlockLength,      6);
 define_pd_global(size_t,   CodeCacheMinimumUseSpace,     400*K);
 
 define_pd_global(bool,     TrapBasedRangeChecks,          true);
-
-// Ergonomics related flags
-define_pd_global(bool,     NeverActAsServerClassMachine, false);
 
 #endif // CPU_PPC_C2_GLOBALS_PPC_HPP

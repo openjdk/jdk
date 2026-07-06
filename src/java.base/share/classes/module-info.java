@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@
  * @uses java.text.spi.NumberFormatProvider
  * @uses java.time.chrono.AbstractChronology
  * @uses java.time.chrono.Chronology
+ * @uses java.time.format.DateTimeFormatterPatternProvider
  * @uses java.time.zone.ZoneRulesProvider
  * @uses java.util.spi.CalendarDataProvider
  * @uses java.util.spi.CalendarNameProvider
@@ -135,7 +136,6 @@ module java.base {
     exports javax.security.auth.x500;
     exports javax.security.cert;
 
-
     // additional qualified exports may be inserted at build time
     // see make/gensrc/GenModuleInfo.gmk
 
@@ -147,11 +147,11 @@ module java.base {
         java.security.sasl;
     exports jdk.internal to
         jdk.incubator.vector;
-    // Note: all modules in the exported list participate in preview  features
-    // and therefore if they use preview features they do not need to be
-    // compiled with "--enable-preview".
+    // Note: all modules in the exported list participate in preview features,
+    // normal or reflective.  They do not need to be compiled with "--enable-preview"
+    // to use preview features and do not need to suppress "preview" warnings.
     // It is recommended for any modules that do participate that their
-    // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview
+    // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview.
     exports jdk.internal.javac to
         java.compiler,
         jdk.compiler;
@@ -212,9 +212,7 @@ module java.base {
         jdk.jfr,
         jdk.jshell,
         jdk.nio.mapmode,
-        jdk.unsupported,
-        jdk.internal.vm.ci,
-        jdk.graal.compiler;
+        jdk.unsupported;
     exports jdk.internal.module to
         java.instrument,
         java.management.rmi,
@@ -239,18 +237,15 @@ module java.base {
         java.sql,
         java.sql.rowset,
         jdk.dynalink,
-        jdk.internal.vm.ci,
         jdk.unsupported;
     exports jdk.internal.vm to
         java.management,
         jdk.internal.jvmstat,
         jdk.management,
         jdk.management.agent,
-        jdk.internal.vm.ci,
         jdk.jfr;
     exports jdk.internal.vm.annotation to
         java.instrument,
-        jdk.internal.vm.ci,
         jdk.incubator.vector,
         jdk.jfr,
         jdk.unsupported;
@@ -270,7 +265,6 @@ module java.base {
         java.net.http,
         jdk.charsets,
         jdk.incubator.vector,
-        jdk.internal.vm.ci,
         jdk.httpserver,
         jdk.jlink,
         jdk.jpackage,
@@ -381,6 +375,7 @@ module java.base {
     uses java.text.spi.NumberFormatProvider;
     uses java.time.chrono.AbstractChronology;
     uses java.time.chrono.Chronology;
+    uses java.time.format.DateTimeFormatterPatternProvider;
     uses java.time.zone.ZoneRulesProvider;
     uses java.util.spi.CalendarDataProvider;
     uses java.util.spi.CalendarNameProvider;
@@ -396,7 +391,6 @@ module java.base {
 
     uses jdk.internal.io.JdkConsoleProvider;
     uses jdk.internal.logger.DefaultLoggerFinder;
-    uses sun.text.spi.JavaTimeDateTimePatternProvider;
     uses sun.util.spi.CalendarProvider;
     uses sun.util.locale.provider.LocaleDataMetaInfo;
     uses sun.util.resources.LocaleData.LocaleDataResourceBundleProvider;

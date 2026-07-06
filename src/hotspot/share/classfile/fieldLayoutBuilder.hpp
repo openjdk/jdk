@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ class LayoutRawBlock : public ResourceObj {
  private:
   LayoutRawBlock* _next_block;
   LayoutRawBlock* _prev_block;
-  Kind _kind;
+  Kind _block_kind;
   int _offset;
   int _alignment;
   int _size;
@@ -79,7 +79,7 @@ class LayoutRawBlock : public ResourceObj {
   void set_next_block(LayoutRawBlock* next) { _next_block = next; }
   LayoutRawBlock* prev_block() const { return _prev_block; }
   void set_prev_block(LayoutRawBlock* prev) { _prev_block = prev; }
-  Kind kind() const { return _kind; }
+  Kind block_kind() const { return _block_kind; }
   int offset() const {
     assert(_offset >= 0, "Must be initialized");
     return _offset;
@@ -173,7 +173,7 @@ class FieldLayout : public ResourceObj {
 
   LayoutRawBlock* first_empty_block() {
     LayoutRawBlock* block = _start;
-    while (block->kind() != LayoutRawBlock::EMPTY) {
+    while (block->block_kind() != LayoutRawBlock::EMPTY) {
       block = block->next_block();
     }
     return block;
@@ -250,7 +250,7 @@ class FieldLayoutBuilder : public ResourceObj {
 
   void build_layout();
   void compute_regular_layout();
-  void insert_contended_padding(LayoutRawBlock* slot);
+  LayoutRawBlock* insert_contended_padding(LayoutRawBlock* slot);
 
  private:
   void prologue();

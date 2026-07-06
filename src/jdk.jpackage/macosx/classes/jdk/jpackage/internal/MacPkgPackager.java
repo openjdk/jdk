@@ -34,7 +34,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,7 +50,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.internal.util.Architecture;
-import jdk.internal.util.OSVersion;
 import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.MacPkgPackage;
@@ -217,6 +215,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
         pipelineBuilder
                 .task(PkgPackageTaskID.PREPARE_MAIN_SCRIPTS)
                         .action(this::prepareMainScripts)
+                        .logActionBegin("message.preparing-scripts")
                         .addDependent(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
                         .add()
                 .task(PkgPackageTaskID.LOG_NO_MAIN_SCRIPTS)
@@ -224,6 +223,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
                         .addDependent(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
                         .add()
                 .task(PkgPackageTaskID.CREATE_DISTRIBUTION_XML_FILE)
+                        .logActionBegin("message.preparing-distribution-dist", distributionXmlFile())
                         .action(this::prepareDistributionXMLFile)
                         .addDependent(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
                         .add()
@@ -351,7 +351,6 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
     }
 
     private void prepareMainScripts() throws IOException {
-        Log.verbose(I18N.getString("message.preparing-scripts"));
 
         final var scriptsRoot = scriptsRoot().orElseThrow();
 
@@ -371,9 +370,6 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
 
     private void prepareDistributionXMLFile() throws IOException {
         final var f = distributionXmlFile();
-
-        Log.verbose(MessageFormat.format(I18N.getString(
-                "message.preparing-distribution-dist"), f.toAbsolutePath().toString()));
 
         XmlUtils.createXml(f, xml -> {
             xml.writeStartElement("installer-gui-script");
@@ -509,11 +505,6 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
 
         // maybe sign
         if (pkg.sign()) {
-            if (OSVersion.current().compareTo(new OSVersion(10, 12)) >= 0) {
-                // we need this for OS X 10.12+
-                Log.verbose(I18N.getString("message.signing.pkg"));
-            }
-
             final var pkgSigningConfig = pkg.signingConfig().orElseThrow();
 
             commandLine.add("--sign");

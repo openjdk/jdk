@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,6 @@ jfieldID AwtComponent::parentID;
 jfieldID AwtComponent::graphicsConfigID;
 jfieldID AwtComponent::peerGCID;
 jfieldID AwtComponent::focusableID;
-jfieldID AwtComponent::appContextID;
 jfieldID AwtComponent::cursorID;
 jfieldID AwtComponent::hwndID;
 
@@ -6572,11 +6571,6 @@ Java_java_awt_Component_initIDs(JNIEnv *env, jclass cls)
     AwtComponent::focusableID = env->GetFieldID(cls, "focusable", "Z");
     DASSERT(AwtComponent::focusableID);
     CHECK_NULL(AwtComponent::focusableID);
-
-    AwtComponent::appContextID = env->GetFieldID(cls, "appContext",
-                                                 "Lsun/awt/AppContext;");
-    DASSERT(AwtComponent::appContextID);
-    CHECK_NULL(AwtComponent::appContextID);
 
     AwtComponent::peerGCID = env->GetFieldID(peerCls, "winGraphicsConfig",
                                         "Lsun/awt/Win32GraphicsConfig;");

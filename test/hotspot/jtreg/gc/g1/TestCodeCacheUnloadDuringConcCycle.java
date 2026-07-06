@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ package gc.g1;
  * during concurrent mark, and verify that after the concurrent cycle additional code
  * cache gc requests start more concurrent cycles.
  * @requires vm.gc.G1
+ * @requires vm.flagless
  * @library /test/lib /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -41,7 +41,6 @@ import jdk.test.whitebox.WhiteBox;
  * @test
  * @requires vm.flagless
  * @requires vm.hasJFR & vm.gc.Z
- * @requires vm.flagless
  * @library /test/lib /test/jdk
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

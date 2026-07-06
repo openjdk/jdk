@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,6 +235,9 @@ private:
                                 ciInstanceKlass* accessor) {
     ciInstanceKlass* declared_holder = get_instance_klass_for_declared_method_holder(holder);
     return _factory->get_unloaded_method(declared_holder, name, signature, accessor);
+  }
+  InstanceKlass::ClassState get_cached_init_state(uint id) {
+    return (InstanceKlass::ClassState)_factory->cached_init_state(id);
   }
 
   // Get a ciKlass representing an unloaded klass.

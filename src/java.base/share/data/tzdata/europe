@@ -1064,9 +1064,19 @@ Zone Atlantic/Faroe	-0:27:04 -	LMT	1908 Jan 11 # Tórshavn
 
 # Greenland
 #
-# From Paul Eggert (2004-10-31):
+# From Paul Eggert (2026-01-22):
+# During World War II, Greenland was effectively independent of Denmark and
+# observed daylight saving time.  TIME, volume 37, page 23 (1941-04-21)
+# <https://time.com/archive/6770243/war-peace-greenlands-icy-mountains/> says,
+# "Penfield and West made their way to the U.S.'s most northerly consulate.
+# They were astonished to find that Greenlanders, with almost 24 hours of
+# sunlight a day during the summer, have daylight saving time."
+# As the details are unknown they are omitted from the data for now.
+#
 # During World War II, Germany maintained secret manned weather stations in
 # East Greenland and Franz Josef Land, but we don't know their time zones.
+# Also, they're likely out of scope for the database
+# as we lack resources to track every bit of military activity.
 # My source for this is Wilhelm Dege's book mentioned under Svalbard.
 #
 # From Paul Eggert (2017-12-10):
@@ -1980,7 +1990,6 @@ Zone	Europe/Malta	0:58:04 -	LMT	1893 Nov  2 # Valletta
 
 # From Stepan Golosunov (2016-03-07):
 # the act of the government of the Republic of Moldova Nr. 132 from 1990-05-04
-# http://lex.justice.md/viewdoc.php?action=view&view=doc&id=298782&lang=2
 # ... says that since 1990-05-06 on the territory of the Moldavian SSR
 # time would be calculated as the standard time of the second time belt
 # plus one hour of the "summer" time. To implement that clocks would be
@@ -2035,9 +2044,61 @@ Zone	Europe/Malta	0:58:04 -	LMT	1893 Nov  2 # Valletta
 # says the 2014-03-30 spring-forward transition was at 02:00 local time.
 # Guess that since 1997 Moldova has switched one hour before the EU.
 
+# From Heitor David Pinto (2026-02-22):
+# Soviet Moldovan resolution 132 of 1990 defined the summer time period from
+# the last Sunday in March at 2:00 to the last Sunday in September at 3:00,
+# matching the dates used in most of Europe at the time:
+# https://web.archive.org/web/20211107050832/http://lex.justice.md/viewdoc.php?action=view&view=doc&id=298782&lang=1
+#
+# It seems that in 1996 Moldova changed the end date to October like most of
+# Europe, but kept the transitions at 2:00 and 3:00 rather than 1:00 UTC,
+# which would have been locally 3:00 and 4:00....
+#
+# The notices in the Moldovan government website and broadcaster showed the
+# transitions at 2:00 and 3:00 until 2021:
+# 2015 https://old.gov.md/en/node/7304
+# 2016 https://old.gov.md/en/node/12587
+# 2017 https://old.gov.md/en/node/20654
+# 2017 https://old.gov.md/en/content/moldova-upholds-winter-time-night-28-29-october
+# 2018 https://old.gov.md/en/content/moldova-switch-summer-time
+# 2018 https://old.gov.md/en/content/cabinet-ministers-informs-about-switch-winter-time-28-october
+# 2019 https://old.gov.md/en/content/moldova-switch-summer-time-31-march
+# 2019 https://old.gov.md/en/node/31122
+# 2020 https://old.gov.md/en/node/32771
+# 2020 https://old.gov.md/en/node/34497
+# 2021 https://trm.md/ro/social/moldova-trece-in-aceasta-noapte-la-ora-de-vara
+# 2021 https://trm.md/en/social/republica-moldova-trece-la-ora-de-iarna1
+#
+# However, since 2022, the notices showed the transitions at 3:00 and 4:00,
+# matching the EU rule at 1:00 UTC:
+# 2022 https://trm.md/en/social/in-acest-weekend-republica-moldova-trece-la-ora-de-vara
+# 2022 https://old.gov.md/en/content/moldova-switch-winter-time
+# 2023 https://moldova1.md/p/6587/ora-de-vara-2023-cum-schimbam-acele-ceasornicelor-si-cand-trecem-la-ora-de-vara
+# 2023 https://old.gov.md/en/node/46662
+# 2024 https://moldova1.md/p/26535/republica-moldova-trece-la-ora-de-vara-in-acest-weekend
+# 2024 https://moldova1.md/p/37768/republica-moldova-trece-in-aceasta-noapte-la-ora-de-iarna
+# 2025 https://moldova1.md/p/46349/republica-moldova-trece-la-ora-de-vara-pe-30-martie-cum-ne-afecteaza-si-ce-recomanda-medicii
+# 2025 https://moldova1.md/p/60469/republica-moldova-trece-la-ora-de-iarna-ceasurile-se-dau-inapoi-cu-o-ora
+#
+# It seems that the changes to the end date and transition times were just
+# done in practice without formally changing the resolution. In late 2025, the
+# government said that the Soviet resolution was still in force, and proposed
+# a new resolution to replace it and formally establish the EU rule:
+# ... based on the notices, it seems that in practice Moldova already
+# uses the EU rule since 2022. This was also the year when Moldova applied to
+# join the EU.
+#
+# From Robert Bastian (2026-02-26):
+# This has been approved and published in the government gazette:
+# https://monitorul.gov.md/ro/monitorul/view/pdf/3234/part/2#page=27
+#
+# From Paul Eggert (2026-02-24):
+# Also see Svetlana Rudenko, "Moldova abandons the 'Soviet era'", Logos Press,
+# 2026-02-21 <https://logos-pres.md/en/news/moldova-abandons-the-soviet-era/>.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Moldova	1997	max	-	Mar	lastSun	 2:00	1:00	S
-Rule	Moldova	1997	max	-	Oct	lastSun	 3:00	0	-
+Rule	Moldova	1997	2021	-	Mar	lastSun	 2:00	1:00	S
+Rule	Moldova	1997	2021	-	Oct	lastSun	 3:00	0	-
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Chisinau	1:55:20 -	LMT	1880
@@ -2050,7 +2111,8 @@ Zone	Europe/Chisinau	1:55:20 -	LMT	1880
 			2:00	Russia	EE%sT	1992
 			2:00	E-Eur	EE%sT	1997
 # See Romania commentary for the guessed 1997 transition to EU rules.
-			2:00	Moldova	EE%sT
+			2:00	Moldova	EE%sT	2022
+			2:00	EU	EE%sT
 
 # Poland
 
@@ -2436,7 +2498,7 @@ Zone Atlantic/Madeira	-1:07:36 -	LMT	1884        # Funchal
 # Nine O'clock <http://www.nineoclock.ro/POL/1778pol.html>
 # (1998-10-23) reports that the switch occurred at
 # 04:00 local time in fall 1998.  For lack of better info,
-# assume that Romania and Moldova switched to EU rules in 1997,
+# assume that Romania switched to EU rules in 1997,
 # the same year as Bulgaria.
 #
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S

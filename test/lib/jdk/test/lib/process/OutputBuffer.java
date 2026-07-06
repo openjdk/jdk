@@ -89,12 +89,20 @@ public interface OutputBuffer {
    */
   public long pid();
 
+  public static OutputBuffer of(Process p, boolean quiet) {
+    return of(p, null, quiet);
+  }
+
   public static OutputBuffer of(Process p, Charset cs) {
-    return new LazyOutputBuffer(p, cs);
+    return of(p, cs, false);
   }
 
   public static OutputBuffer of(Process p) {
-    return new LazyOutputBuffer(p, null);
+    return of(p, null, false);
+  }
+
+  public static OutputBuffer of(Process p, Charset cs, boolean quiet) {
+    return new LazyOutputBuffer(p, cs, quiet);
   }
 
   public static OutputBuffer of(String stdout, String stderr, int exitValue) {
@@ -130,19 +138,23 @@ public interface OutputBuffer {
       }
     }
 
+    private final boolean verbose;
     private final StreamTask outTask;
     private final StreamTask errTask;
     private final Process p;
     private volatile Integer exitValue; // null implies we don't yet know
 
     private final void logProgress(String state) {
+      if (verbose) {
         System.out.println("[" + Instant.now().toString() + "] " + state
-                           + " for process " + p.pid());
+                + " for process " + p.pid());
         System.out.flush();
+      }
     }
 
-    private LazyOutputBuffer(Process p, Charset cs) {
+    private LazyOutputBuffer(Process p, Charset cs, boolean verbose) {
       this.p = p;
+      this.verbose = verbose;
       logProgress("Gathering output");
       outTask = new StreamTask(p.getInputStream(), cs);
       errTask = new StreamTask(p.getErrorStream(), cs);

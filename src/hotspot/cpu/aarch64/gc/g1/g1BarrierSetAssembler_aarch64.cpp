@@ -23,6 +23,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
@@ -243,9 +244,25 @@ static void generate_post_barrier(MacroAssembler* masm,
   assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, noreg, rscratch1);
 
   // Does store cross heap regions?
-  __ eor(tmp1, store_addr, new_val);                     // tmp1 := store address ^ new value
-  __ lsr(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);   // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
-  __ cbz(tmp1, done);
+ #if INCLUDE_CDS
+  // AOT code needs to load the barrier grain shift from the aot
+  // runtime constants area in the code cache otherwise we can compile
+  // it as an immediate operand
+  if (AOTCodeCache::is_on_for_dump()) {
+    address grain_shift_address = (address)AOTRuntimeConstants::grain_shift_address();
+    __ eor(tmp1, store_addr, new_val);
+    __ lea(tmp2, ExternalAddress(grain_shift_address));
+    __ ldrb(tmp2, tmp2);
+    __ lsrv(tmp1, tmp1, tmp2);
+    __ cbz(tmp1, done);
+  } else
+#endif
+  {
+    __ eor(tmp1, store_addr, new_val);                     // tmp1 := store address ^ new value
+    __ lsr(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);   // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
+    __ cbz(tmp1, done);
+  }
+
   // Crosses regions, storing null?
   if (new_val_may_be_null) {
     __ cbz(new_val, done);

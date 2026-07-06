@@ -69,7 +69,7 @@ public:
   }
 
   ~G1FindCardsInRange() {
-    FREE_C_HEAP_ARRAY(mtGC, _cards_found);
+    FREE_C_HEAP_ARRAY(_cards_found);
   }
   void operator()(uint card) {
     ASSERT_TRUE((card - _range_min) < _num_cards);
@@ -185,7 +185,7 @@ void G1CardSetContainersTest::cardset_array_test(uint cards_per_array) {
     found.verify_all_found();
   }
 
-  FREE_C_HEAP_ARRAY(mtGC, cardset_data);
+  FREE_C_HEAP_ARRAY(cardset_data);
 }
 
 void G1CardSetContainersTest::cardset_bitmap_test(uint threshold, uint size_in_bits) {
@@ -232,7 +232,7 @@ void G1CardSetContainersTest::cardset_bitmap_test(uint threshold, uint size_in_b
     found.verify_part_found(threshold);
   }
 
-  FREE_C_HEAP_ARRAY(mtGC, cardset_data);
+  FREE_C_HEAP_ARRAY(cardset_data);
 }
 
 TEST_VM_F(G1CardSetContainersTest, basic_cardset_inptr_test) {

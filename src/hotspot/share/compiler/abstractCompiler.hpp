@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,11 +146,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // Compiler type queries.
   bool is_c1() const                     { return _type == compiler_c1; }
   bool is_c2() const                     { return _type == compiler_c2; }
-  bool is_jvmci() const                  { return _type == compiler_jvmci; }
   CompilerType type() const              { return _type; }
-
-  // Compiler threads are hidden by default.
-  virtual bool is_hidden_from_external_view() const { return true; }
 
   // Customization
   virtual void initialize () = 0;
@@ -166,18 +162,6 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // Compilation entry point for methods
   virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive) {
     ShouldNotReachHere();
-  }
-
-  // Notifies this compiler that the current thread (`current`) is about to stop.
-  // The current thread currently holds the CompileThread_lock.
-  virtual void stopping_compiler_thread(CompilerThread* current) {
-    // Do nothing
-  }
-
-  // Notifies this compiler that queue is empty just prior to waiting on
-  // MethodCompileQueue_lock which is held by the current thread (`thread`).
-  virtual void on_empty_queue(CompileQueue* queue, CompilerThread* thread) {
-    // Do nothing
   }
 
   // Print compilation timers and statistics

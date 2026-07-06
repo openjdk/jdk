@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,10 +203,10 @@ public interface TemporalUnit {
      * The second is to use {@link Temporal#plus(long, TemporalUnit)}:
      * <pre>
      *   // these two lines are equivalent, but the second approach is recommended
-     *   temporal = thisUnit.addTo(temporal);
-     *   temporal = temporal.plus(thisUnit);
+     *   temporal = thisUnit.addTo(temporal, amount);
+     *   temporal = temporal.plus(amount, thisUnit);
      * </pre>
-     * It is recommended to use the second approach, {@code plus(TemporalUnit)},
+     * It is recommended to use the second approach, {@code plus(amount, thisUnit)},
      * as it is a lot clearer to read in code.
      * <p>
      * Implementations should perform any queries or calculations using the units

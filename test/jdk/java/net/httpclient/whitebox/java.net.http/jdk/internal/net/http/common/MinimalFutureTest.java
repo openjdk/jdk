@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,19 @@
 
 package jdk.internal.net.http.common;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static org.testng.Assert.assertThrows;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class MinimalFutureTest {
 
-    @Test(dataProvider = "futures")
+    @ParameterizedTest
+    @MethodSource("futures")
     public void test(CompletableFuture<Object> mf) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
@@ -134,8 +134,7 @@ public class MinimalFutureTest {
     }
 
 
-    @DataProvider(name = "futures")
-    public Object[][] futures() {
+    public static Object[][] futures() {
 
         MinimalFuture<Object> mf = new MinimalFuture<>();
         mf.completeExceptionally(new Throwable());

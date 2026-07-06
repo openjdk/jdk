@@ -1,0 +1,184 @@
+# git blame ignore revs file
+#
+# The list of revisions below will be ignored by git-blame (1) if this file gets
+# passed via the --ignore-revs-file command line option or is configured using
+# the blame.ignoreRevsFile key.
+#
+# Only add commits that obviously do not change semantics, e.g. mechanical refactorings
+# or formatting. Always add the commit message as a comment above the revision
+# to keep the file readable.
+
+# 8299973: Replace NULL with nullptr in share/utilities/
+1084fd24eb118d4131538c2a3ead714db7d0357b
+
+# 8299974: Replace NULL with nullptr in share/adlc/
+62537d200f01d58ff1c236f31f71c5839316db9e
+
+# 8300081: Replace NULL with nullptr in share/asm/
+9d5bab11f08a992803399f422d75b17f8607df72
+
+# 8300086: Replace NULL with nullptr in share/c1/
+90d5041b6a055d6266140ffea2aa9a3b08b32209
+
+# 8300087: Replace NULL with nullptr in share/cds/
+eca64795be63c599a637ce2a7f740b2d0a1ec9bc
+
+# 8300222: Replace NULL with nullptr in share/logging
+bd5ca953058704087da4bc5796b3ce28ce2a8f78
+
+# 8300240: Replace NULL with nullptr in share/ci/
+f52d35c84b7333809156d201c866793854143888
+
+# 8300241: Replace NULL with nullptr in share/classfile/
+49ff52087be8b95cbf369518281312ecc9d83618
+
+# 8300242: Replace NULL with nullptr in share/code/
+cfe57466ddecb93b528478d0b053b089dd1ed285
+
+# 8300243: Replace NULL with nullptr in share/compiler/
+fcbf9d052efd16821750fb20813f8030ee828472
+
+# 8300244: Replace NULL with nullptr in share/interpreter/
+a5d8e12872d9de399fa97b33896635d101b71372
+
+# 8300245: Replace NULL with nullptr in share/jfr/
+cc396895e5a1dac49f4e341ce91c04b8c092d0af
+
+# 8300651: Replace NULL with nullptr in share/runtime/
+71107f4648d8f31a7bcc0aa5202ef46230df583f
+
+# 8301068: Replace NULL with nullptr in share/jvmci/
+90ec19efeda90f13a918b4481fe6ee552ab2af66
+
+# 8301069: Replace NULL with nullptr in share/libadt/
+b0376a5f4421fb58c0feeddfce2c2083314e400c
+
+# 8301070: Replace NULL with nullptr in share/memory/
+d98a323a8b972c17a066c597a81b164681ad5589
+
+# 8301072: Replace NULL with nullptr in share/oops/
+c8ace482edead720c865cf996729a316025d937e
+
+# 8301074: Replace NULL with nullptr in share/opto/
+5726d31e56530bbe7dee61ae04b126e20cb3611d
+
+# 8301076: Replace NULL with nullptr in share/prims/
+b76a52f2104b63e84e5d09f47ce01dd0cb3935d7
+
+# 8301077: Replace NULL with nullptr in share/services/
+5c1ec82656323872c4628026662fe5b62e7a61e3
+
+# 8301178: Replace NULL with nullptr in share/gc/epsilon/
+b77abc6a0daed0e01a9003d42493320376dc98bc
+
+# 8301179: Replace NULL with nullptr in share/gc/serial/
+107e184d59c0bbed6441a3c1a9bfd4527da3bce5
+
+# 8301180: Replace NULL with nullptr in share/gc/parallel/
+3758487fda61b27e7e684413793ed28c0b9e64d3
+
+# 8301223: Replace NULL with nullptr in share/gc/g1/
+75a4edca6b9fa6b3e66b564aeb4d7ca8acf02491
+
+# 8301225: Replace NULL with nullptr in share/gc/shenandoah/
+0c9658446d111ec944f06b7a8a4e3ae7bf53ee8d
+
+# 8301477: Replace NULL with nullptr in os/aix
+43288bbd684abfcefdf385ed1e0307070399ccbf
+
+# 8301478: Replace NULL with nullptr in os/bsd
+716f1df609e7f0aa7b3b9383d23dde5c71017d02
+
+# 8301479: Replace NULL with nullptr in os/linux
+ac9e046748a9bb6ee065dc473d82135ce36043b7
+
+# 8301480: Replace NULL with nullptr in os/posix
+4539899c55c77771b951d005c17550ef9ac94819
+
+# 8301481: Replace NULL with nullptr in os/windows
+c91cd2814baa8dee2af8af0fecf9185d4a0a44cf
+
+# 8301493: Replace NULL with nullptr in cpu/aarch64
+948f3b3c24709eca3aa6c3f0db6adb9226d6f9ac
+
+# 8301494: Replace NULL with nullptr in cpu/arm
+c4ffe4bf6369d5b271aa8689b8648f3fe8dcabed
+
+# 8301495: Replace NULL with nullptr in cpu/ppc
+0826ceee65ab83f643a77716f8f12d0060369923
+
+# 8301496: Replace NULL with nullptr in cpu/riscv
+d2ce04bb101002abfdb7c8adb3fa8ea267903c36
+
+# 8301497: Replace NULL with nullptr in cpu/s390
+54f7b6ca34986cc26c5b91c6724b9a1754c94391
+
+# 8301498: Replace NULL with nullptr in cpu/x86
+4154a980ca28c1ae56db26e3dce64c07c225de12
+
+# 8301499: Replace NULL with nullptr in cpu/zero
+4e327db1d127c652ef39e31c164e36ae429a0065
+
+# 8301500: Replace NULL with nullptr in os_cpu/aix_ppc
+c8307e37fdf4453cade84efc113d93dd14333fd0
+
+# 8301501: Replace NULL with nullptr in os_cpu/bsd_aarch64
+218223e4a31d485935655cb3f186a752defd8fa8
+
+# 8301502: Replace NULL with nullptr in os_cpu/bsd_x86
+6daff6b26946748360d59a12e9069a08ab5ca06d
+
+# 8301503: Replace NULL with nullptr in os_cpu/bsd_zero
+8cc399b672c6ce08037685b3a3a2db3c53a87b50
+
+# 8301504: Replace NULL with nullptr in os_cpu/linux_aarch64
+13fcd602d37eb0095f169255128588b872639571
+
+# 8301505: Replace NULL with nullptr in os_cpu/linux_arm
+b81f0ff43ac8d1431f2f5dccb7499a3a1503823d
+
+# 8301506: Replace NULL with nullptr in os_cpu/linux_ppc
+b1e96989b693aadea082a01576e25f85ed28ff0d
+
+# 8301507: Replace NULL with nullptr in os_cpu/linux_riscv
+182d1b2fb7034b6e9177dc360cbea43d548c3ff0
+
+# 8301508: Replace NULL with nullptr in os_cpu/linux_s390
+d097b5e6285e1a59632211e006592fedf2047c09
+
+# 8301509: Replace NULL with nullptr in os_cpu/linux_x86
+5d1f71daf06870810c9ca24e911d6191cc4f3006
+
+# 8301511: Replace NULL with nullptr in os_cpu/linux_zero
+42a286a15862d9a05ea3477a9eeab46e7b33e599
+
+# 8301512: Replace NULL with nullptr in os_cpu/windows_aarch64
+ad79e49141f063a61090eda69d96dc580db88949
+
+# 8301513: Replace NULL with nullptr in os_cpu/windows_x86
+c109dae48c61c6fbeacadf59d509d37d2c4d2bb8
+
+# 8308092: Replace NULL with nullptr in gc/x
+599fa774b875da971d66f79e5e43ede2b5ce18aa
+
+# 8309044: Replace NULL with nullptr, final sweep of hotspot code
+4f16161607edbf69f423ced1d3c24f7af058d46b
+
+# 8324286: Fix backsliding on use of nullptr instead of NULL
+bcb340da091e3287da8d2ecfcd017ebcc6613cae
+
+# 8324678: Replace NULL with nullptr in HotSpot gtests
+c1281e6b45ed167df69d29a6039d81854c145ae6
+
+# 8324679: Replace NULL with nullptr in HotSpot .ad files
+b3ecd55601d483359819d02e70789bbd412b13da
+
+# 8324680: Replace NULL with nullptr in JVMTI generated code
+267780bf0adf4bfd831fbc04347e297fa8f3bb01
+
+# 8324681: Replace NULL with nullptr in HotSpot jtreg test native code files
+a6bdee48f39993128d8095d40ab417f0102af0f4
+
+# 8324799: Use correct extension for C++ test headers
+998d0baab0fd051c38d9fd6021628eb863b80554
+

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2022 SAP SE. All rights reserved.ights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @requires vm.compMode == "Xmixed"
  * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
  * @requires vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4
+ * @requires vm.compiler2.enabled
  * @summary test allocation failure of method handle intrinsic in profiled/non-profiled space
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -38,6 +39,11 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
  *                   -XX:ReservedCodeCacheSize=16m -XX:+SegmentedCodeCache
+ *                   compiler.codecache.MHIntrinsicAllocFailureTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
+ *                   -XX:ReservedCodeCacheSize=20m -XX:+SegmentedCodeCache
+ *                   -XX:+TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=4M
  *                   compiler.codecache.MHIntrinsicAllocFailureTest
  */
 
@@ -73,7 +79,7 @@ public class MHIntrinsicAllocFailureTest {
         // JIT compilers should be off, now.
         Asserts.assertNotEquals(WHITE_BOX.getCompilationActivityMode(), 1);
         System.out.println("Code cache segments for non-profiled and profiled nmethods are full.");
-        // Generate and use a MH itrinsic. Should not trigger one of the following:
+        // Generate and use a MH intrinsic. Should not trigger one of the following:
         // - VirtualMachineError: Out of space in CodeCache for method handle intrinsic
         // - InternalError: java.lang.NoSuchMethodException: no such method:
         //   java.lang.invoke.MethodHandle.linkToStatic(int,int,Object,MemberName)int/invokeStatic

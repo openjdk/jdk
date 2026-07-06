@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.io.PrintStream;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.lib.thread.ThreadWrapper;
 
 public class em02t001 extends DebugeeClass {
 
@@ -65,7 +66,7 @@ public class em02t001 extends DebugeeClass {
         logger.display("Timeout = " + timeout + " msc.");
 
         for (int i = 0; i < 3; i++) {
-            debuggeeThread = new em02t001Thread("Debuggee Thread");
+            debuggeeThread = new em02t001Thread("Debuggee Thread").getThread();
 
             generateEvents();
 
@@ -113,7 +114,7 @@ public class em02t001 extends DebugeeClass {
     }
 
     // tested threads
-    class em02t001Thread extends Thread {
+    class em02t001Thread extends ThreadWrapper {
 
         public em02t001Thread(String name) {
             super(name);

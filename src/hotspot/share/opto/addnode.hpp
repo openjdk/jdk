@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,17 +221,19 @@ public:
 // So not really an AddNode.  Lives here, because people associate it with
 // an add.
 class AddPNode : public Node {
+private:
+  AddPNode(Node* base, Node* ptr, Node* off) : Node(nullptr, base, ptr, off) {
+    init_class_id(Class_AddP);
+    assert((ptr->bottom_type() == Type::TOP) ||
+           ((base == Compile::current()->top()) == (ptr->bottom_type()->make_ptr()->isa_oopptr() == nullptr)),
+           "base input only needed for heap addresses");
+  }
+
 public:
   enum { Control,               // When is it safe to do this add?
          Base,                  // Base oop, for GC purposes
          Address,               // Actually address, derived from base
          Offset } ;             // Offset added to address
-  AddPNode(Node *base, Node *ptr, Node *off) : Node(nullptr,base,ptr,off) {
-    init_class_id(Class_AddP);
-    assert((ptr->bottom_type() == Type::TOP) ||
-      ((base == Compile::current()->top()) == (ptr->bottom_type()->make_ptr()->isa_oopptr() == nullptr)),
-      "base input only needed for heap addresses");
-  }
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
@@ -242,6 +244,18 @@ public:
   static Node* Ideal_base_and_offset(Node* ptr, PhaseValues* phase,
                                      // second return value:
                                      intptr_t& offset);
+
+  static AddPNode* make_with_base(Node* base, Node* ptr, Node* offset) {
+    return new AddPNode(base, ptr, offset);
+  }
+
+  static AddPNode* make_with_base(Node* base, Node* offset) {
+    return make_with_base(base, base, offset);
+  }
+
+  static AddPNode* make_off_heap(Node* ptr, Node* offset) {
+    return make_with_base(Compile::current()->top(), ptr, offset);
+  }
 
   // Collect the AddP offset values into the elements array, giving up
   // if there are more than length.

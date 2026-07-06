@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
+import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
@@ -1366,9 +1367,7 @@ public class ClassReader {
         else
             self.fullname = ClassSymbol.formFullName(self.name, self.owner);
 
-        if (m != null) {
-            ((ClassType)sym.type).setEnclosingType(m.type);
-        } else if ((self.flags_field & STATIC) == 0) {
+        if ((self.flags_field & STATIC) == 0 && (m == null || (m.flags_field & STATIC) == 0)) {
             ((ClassType)sym.type).setEnclosingType(c.type);
         } else {
             ((ClassType)sym.type).setEnclosingType(Type.noType);
@@ -2043,15 +2042,27 @@ public class ClassReader {
         }
 
         Attribute.Compound deproxyCompound(CompoundAnnotationProxy a) {
-            Type annotationType = resolvePossibleProxyType(a.type);
-            ListBuffer<Pair<Symbol.MethodSymbol,Attribute>> buf = new ListBuffer<>();
-            for (List<Pair<Name,Attribute>> l = a.values;
-                 l.nonEmpty();
-                 l = l.tail) {
-                MethodSymbol meth = findAccessMethod(annotationType, l.head.fst);
-                buf.append(new Pair<>(meth, deproxy(meth.type.getReturnType(), l.head.snd)));
+            DeferredDiagnosticHandler deferred = log.new DeferredDiagnosticHandler();
+            Type annotationType = syms.objectType;
+            try {
+                annotationType = resolvePossibleProxyType(a.type);
+                ListBuffer<Pair<Symbol.MethodSymbol,Attribute>> buf = new ListBuffer<>();
+                for (List<Pair<Name,Attribute>> l = a.values;
+                     l.nonEmpty();
+                     l = l.tail) {
+                    MethodSymbol meth = findAccessMethod(annotationType, l.head.fst);
+                    buf.append(new Pair<>(meth, deproxy(meth.type.getReturnType(), l.head.snd)));
+                }
+                return new Attribute.Compound(annotationType, buf.toList());
+            } finally {
+                if (!annotationType.tsym.type.hasTag(TypeTag.ERROR)) {
+                    //if the annotation type does not exists
+                    //throw away warnings reported while de-proxying the annotation,
+                    //as the annotation's library is probably missing from the classpath:
+                    deferred.reportDeferredDiagnostics();
+                }
+                log.popDiagnosticHandler(deferred);
             }
-            return new Attribute.Compound(annotationType, buf.toList());
         }
 
         MethodSymbol findAccessMethod(Type container, Name name) {
@@ -2146,15 +2157,21 @@ public class ClassReader {
                 failure = ex;
             }
             if (enumerator == null) {
-                if (failure != null) {
-                    log.warning(Warnings.UnknownEnumConstantReason(currentClassFile,
-                                                                   enumTypeSym,
-                                                                   proxy.enumerator,
-                                                                   failure.getDiagnostic()));
-                } else {
-                    log.warning(Warnings.UnknownEnumConstant(currentClassFile,
-                                                             enumTypeSym,
-                                                             proxy.enumerator));
+                // The enumerator wasn't found: emit a warning and recover
+                JavaFileObject prevSource = log.useSource(requestingOwner.classfile);
+                try {
+                    if (failure != null) {
+                        log.warning(LintWarnings.UnknownEnumConstantReason(currentClassFile,
+                                                                       enumTypeSym,
+                                                                       proxy.enumerator,
+                                                                       failure.getDiagnostic()));
+                    } else {
+                        log.warning(LintWarnings.UnknownEnumConstant(currentClassFile,
+                                                                 enumTypeSym,
+                                                                 proxy.enumerator));
+                    }
+                } finally {
+                    log.useSource(prevSource);
                 }
                 result = new Attribute.Enum(enumTypeSym.type,
                         new VarSymbol(0, proxy.enumerator, syms.botType, enumTypeSym));
@@ -2668,6 +2685,7 @@ public class ClassReader {
             // won't pass the "hasOuterInstance" check above, but those that don't have an
             // enclosing method (i.e. from initializers) will pass that check.
             boolean local = forceLocal =
+                    currentOwner.owner.kind != TYP ||
                     !currentOwner.owner.members().includes(currentOwner, LookupKind.NON_RECURSIVE);
             if (!currentOwner.name.isEmpty() && !local)
                 type = new MethodType(adjustMethodParams(flags, type.getParameterTypes()),
@@ -3019,7 +3037,9 @@ public class ClassReader {
      *  `typevars'.
      */
     protected void enterTypevars(Symbol sym, Type t) {
-        if (t.getEnclosingType() != null) {
+        if (sym.owner.kind == MTH) {
+            enterTypevars(sym.owner, sym.owner.type);
+        } else if (t.getEnclosingType() != null) {
             if (!t.getEnclosingType().hasTag(TypeTag.NONE)) {
                 enterTypevars(sym.owner, t.getEnclosingType());
             }

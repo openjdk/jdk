@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,21 +27,21 @@
  * @summary Test JavadocFormatter
  * @library /tools/lib
  * @modules jdk.jshell/jdk.internal.shellsupport.doc
- * @run testng JavadocFormatterTest
+ * @run junit JavadocFormatterTest
  */
 
 import java.util.Objects;
 
 import jdk.internal.shellsupport.doc.JavadocFormatter;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class JavadocFormatterTest {
 
     private static final String CODE_RESET = "\033[0m";
     private static final String CODE_HIGHLIGHT = "\033[1m";
     private static final String CODE_UNDERLINE = "\033[4m";
 
+    @Test
     public void testReflow() {
         String actual;
         String expected;
@@ -401,6 +401,7 @@ public class JavadocFormatterTest {
         }
     }
 
+    @Test
     public void testSpaceAtEndOfLine() {
         String header = "Class<?> Class<T>.forName(Module module, String name)";
         String javadoc = """

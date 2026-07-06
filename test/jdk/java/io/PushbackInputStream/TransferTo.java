@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,21 +32,21 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.testng.annotations.Test;
+import static java.lang.String.format;
 
 import jdk.test.lib.RandomFactory;
 
-import static java.lang.String.format;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run testng/othervm/timeout=180 TransferTo
+ * @run junit/othervm/timeout=180 TransferTo
  * @bug 8296431
  * @summary Tests whether java.io.PushbackInputStream.transferTo conforms to the
  *          InputStream.transferTo specification
@@ -162,7 +162,7 @@ public class TransferTo {
             long reported = in.transferTo(out);
             int count = inBytes.length - posIn;
 
-            assertEquals(reported, count,
+            assertEquals(count, reported,
                     format("reported %d bytes but should report %d", reported, count));
 
             byte[] outBytes = recorder.get().get();

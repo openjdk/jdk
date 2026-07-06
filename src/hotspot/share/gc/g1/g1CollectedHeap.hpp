@@ -34,7 +34,6 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacStats.hpp"
-#include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/g1/g1HeapRegionSet.hpp"
@@ -76,7 +75,7 @@ class G1GCPhaseTimes;
 class G1HeapSizingPolicy;
 class G1NewTracer;
 class G1RemSet;
-class G1ReviseYoungLengthTask;
+class G1ReviseNumYoungRegionsTask;
 class G1ServiceTask;
 class G1ServiceThread;
 class GCMemoryManager;
@@ -147,27 +146,20 @@ public:
 };
 
 class G1CollectedHeap : public CollectedHeap {
+  friend class G1CheckRegionAttrTableClosure;
+  friend class G1EvacuateRegionsTask;
+  friend class G1FullCollector;
+  friend class G1GCAllocRegion;
+  friend class G1HeapPrinterMark;
+  friend class G1HeapRegionClaimer;
+  friend class G1HeapVerifier;
+  friend class G1PLABAllocator;
+  friend class G1YoungGCVerifierMark;
+  friend class MutatorAllocRegion;
   friend class VM_G1CollectForAllocation;
   friend class VM_G1CollectFull;
   friend class VM_G1TryInitiateConcMark;
   friend class VMStructs;
-  friend class MutatorAllocRegion;
-  friend class G1FullCollector;
-  friend class G1GCAllocRegion;
-  friend class G1HeapVerifier;
-
-  friend class G1YoungGCVerifierMark;
-
-  // Closures used in implementation.
-  friend class G1EvacuateRegionsTask;
-  friend class G1PLABAllocator;
-
-  // Other related classes.
-  friend class G1HeapPrinterMark;
-  friend class G1HeapRegionClaimer;
-
-  // Testing classes.
-  friend class G1CheckRegionAttrTableClosure;
 
 private:
   // GC Overhead Limit functionality related members.
@@ -184,7 +176,7 @@ private:
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
   G1MonotonicArenaFreeMemoryTask* _free_arena_memory_task;
-  G1ReviseYoungLengthTask* _revise_young_length_task;
+  G1ReviseNumYoungRegionsTask* _revise_num_young_regions_task;
 
   WorkerThreads* _workers;
 
@@ -321,11 +313,11 @@ private:
 
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or
   // concurrent cycles) we have started.
-  volatile uint _old_marking_cycles_started;
+  Atomic<uint> _old_marking_cycles_started;
 
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or
   // concurrent cycles) we have completed.
-  volatile uint _old_marking_cycles_completed;
+  Atomic<uint> _old_marking_cycles_completed;
 
   // Create a memory mapper for auxiliary data structures of the given size and
   // translation factor.
@@ -402,7 +394,6 @@ private:
 #define assert_used_and_recalculate_used_equal(g1h) do {} while(0)
 #endif
 
-  // The young region list.
   G1EdenRegions _eden;
   G1SurvivorRegions _survivor;
 
@@ -532,7 +523,7 @@ private:
   // Internal helpers used during full GC to split it up to
   // increase readability.
   bool abort_concurrent_cycle();
-  void verify_before_full_collection();
+  void verify_before_full_collection(bool concurrent_cycle_aborted);
   void prepare_heap_for_full_collection();
   void prepare_for_mutator_after_full_collection(size_t allocation_word_size);
   void abort_refinement();
@@ -699,11 +690,11 @@ public:
   void increment_old_marking_cycles_completed(bool concurrent, bool whole_heap_examined);
 
   uint old_marking_cycles_started() const {
-    return _old_marking_cycles_started;
+    return _old_marking_cycles_started.load_relaxed();
   }
 
   uint old_marking_cycles_completed() const {
-    return _old_marking_cycles_completed;
+    return _old_marking_cycles_completed.load_relaxed();
   }
 
   // Allocates a new heap region instance.
@@ -736,12 +727,10 @@ public:
   void iterate_regions_in_range(MemRegion range, const Func& func);
 
   // Commit the required number of G1 region(s) according to the size requested
-  // and mark them as 'old' region(s). Preferred address is treated as a hint for
-  // the location of the archive space in the heap. The returned address may or may
-  // not be same as the preferred address.
+  // and mark them as 'old' region(s).
   // This API is only used for allocating heap space for the archived heap objects
   // in the CDS archive.
-  HeapWord* alloc_archive_region(size_t word_size, HeapWord* preferred_addr);
+  HeapWord* alloc_archive_region(size_t word_size);
 
   // Populate the G1BlockOffsetTable for archived regions with the given
   // memory range.
@@ -825,7 +814,6 @@ public:
 
   // The concurrent marker (and the thread it runs in.)
   G1ConcurrentMark* _cm;
-  G1ConcurrentMarkThread* _cm_thread;
 
   // The concurrent refiner.
   G1ConcurrentRefine* _cr;
@@ -917,9 +905,6 @@ public:
   // maximum sizes and remembered and barrier sets
   // specified by the policy object.
   jint initialize() override;
-
-  // Returns whether concurrent mark threads (and the VM) are about to terminate.
-  bool concurrent_mark_is_terminating() const;
 
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
@@ -1039,7 +1024,7 @@ public:
   // Returns how much memory there is assigned to non-young heap that can not be
   // allocated into any more without garbage collection after a hypothetical
   // allocation of allocation_word_size.
-  size_t non_young_occupancy_after_allocation(size_t allocation_word_size);
+  size_t non_young_occupancy_after_allocation(size_t allocation_word_size) const;
 
   // Determine whether the given region is one that we are using as an
   // old GC alloc region.
@@ -1251,7 +1236,7 @@ public:
 
   G1SurvivorRegions* survivor() { return &_survivor; }
 
-  inline uint eden_target_length() const;
+  inline uint target_num_eden_regions() const;
   uint eden_regions_count() const { return _eden.length(); }
   uint eden_regions_count(uint node_index) const { return _eden.regions_on_node(node_index); }
   uint survivor_regions_count() const { return _survivor.length(); }
@@ -1263,7 +1248,7 @@ public:
   uint humongous_regions_count() const { return _humongous_set.length(); }
 
 #ifdef ASSERT
-  bool check_young_list_empty();
+  bool check_no_young_regions();
 #endif
 
   bool is_marked(oop obj) const;
@@ -1282,7 +1267,7 @@ public:
   inline bool is_obj_dead_full(const oop obj) const;
 
   // Mark the live object that failed evacuation in the bitmap.
-  void mark_evac_failure_object(uint worker_id, oop obj, size_t obj_size) const;
+  void mark_evac_failure_object(oop obj) const;
 
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 

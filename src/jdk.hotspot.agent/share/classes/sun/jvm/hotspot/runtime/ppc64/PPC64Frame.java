@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,6 +198,11 @@ public class PPC64Frame extends Frame {
   public Address getSP() { return raw_sp; }
   public Address getID() { return raw_sp; }
 
+  @Override
+  public void setSP(Address newSP) {
+    raw_sp = newSP;
+  }
+
   // FIXME: not implemented yet (should be done for Solaris/PPC64)
   public boolean isSignalHandlerFrameDbg() { return false; }
   public int     getSignalNumberDbg()      { return 0;     }
@@ -260,9 +265,7 @@ public class PPC64Frame extends Frame {
     if (cb != null) {
       if (cb.isUpcallStub()) {
         return senderForUpcallStub(map, (UpcallStub)cb);
-      } else if (cb.isContinuationStub()) {
-        return senderForContinuationStub(map, cb);
-      } else {
+      } else if (cb.getFrameSize() > 0) {
         return senderForCompiledFrame(map, cb);
       }
     }
@@ -337,16 +340,6 @@ public class PPC64Frame extends Frame {
     return new PPC64Frame(sp, unextendedSP, getLink(), getSenderPC());
   }
 
-  private Frame senderForContinuationStub(PPC64RegisterMap map, CodeBlob cb) {
-    var contEntry = map.getThread().getContEntry();
-
-    Address sp = contEntry.getEntrySP();
-    Address pc = contEntry.getEntryPC();
-    Address fp = contEntry.getEntryFP();
-
-    return new PPC64Frame(sp, fp, pc);
-  }
-
   private Frame senderForCompiledFrame(PPC64RegisterMap map, CodeBlob cb) {
     if (DEBUG) {
       System.out.println("senderForCompiledFrame");
@@ -377,6 +370,22 @@ public class PPC64Frame extends Frame {
       if (cb.getOopMaps() != null) {
         ImmutableOopMapSet.updateRegisterMap(this, cb, map, true);
       }
+    }
+
+    if (Continuation.isReturnBarrierEntry(senderPC)) {
+      // We assume WalkContinuation is "WalkContinuation::skip".
+      // It is same with c'tor arguments of RegisterMap in frame::next_frame().
+      //
+      // HotSpot code in cpu/ppc/frame_ppc.inline.hpp:
+      //
+      //   if (Continuation::is_return_barrier_entry(sender_pc)) {
+      //     if (map->walk_cont()) { // about to walk into an h-stack
+      //       return Continuation::top_frame(*this, map);
+      //     } else {
+      //       return Continuation::continuation_bottom_sender(map->thread(), *this, l_sender_sp);
+      //     }
+      //   }
+      return Continuation.continuationBottomSender(map.getThread(), this, senderSP);
     }
 
     return new PPC64Frame(senderSP, getLink(), senderPC);

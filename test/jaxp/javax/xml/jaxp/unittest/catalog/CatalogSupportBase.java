@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,17 @@
 
 package catalog;
 
-import static jaxp.library.JAXPTestUtilities.getSystemProperty;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.ls.LSInput;
+import org.w3c.dom.ls.LSResourceResolver;
+import org.xml.sax.Attributes;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.ext.DefaultHandler2;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.nio.file.Paths;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogResolver;
@@ -68,17 +60,26 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import org.testng.Assert;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.ls.LSInput;
-import org.w3c.dom.ls.LSResourceResolver;
-import org.xml.sax.Attributes;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.ext.DefaultHandler2;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Paths;
+import java.security.CodeSource;
+import java.security.Permission;
+import java.security.PermissionCollection;
+import java.security.Permissions;
+import java.security.Policy;
+import java.security.ProtectionDomain;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Base class:
@@ -99,7 +100,7 @@ public class CatalogSupportBase {
 
     protected void setUp() {
         String file1 = getClass().getResource("CatalogSupport.xml").getFile();
-        if (getSystemProperty("os.name").contains("Windows")) {
+        if (System.getProperty("os.name").contains("Windows")) {
             filepath = file1.substring(1, file1.lastIndexOf("/") + 1);
             slash = "/";
         } else {
@@ -285,7 +286,7 @@ public class CatalogSupportBase {
         SAXParser parser = getSAXParser(setUseCatalog, useCatalog, catalog);
 
         parser.parse(xml, handler);
-        Assert.assertEquals(handler.getResult().trim(), expected);
+        assertEquals(expected, handler.getResult().trim());
     }
 
     /*
@@ -298,7 +299,7 @@ public class CatalogSupportBase {
         reader.setContentHandler(handler);
         reader.setEntityResolver(handler);
         reader.parse(xml);
-        Assert.assertEquals(handler.getResult().trim(), expected);
+        assertEquals(expected, handler.getResult().trim());
     }
 
     /*
@@ -312,7 +313,7 @@ public class CatalogSupportBase {
         // is thrown if handler == null.
         if (handler != null) {
             debugPrint("handler.result:" + handler.getResult());
-            Assert.assertEquals(handler.getResult().trim(), expected);
+            assertEquals(expected, handler.getResult().trim());
         }
     }
 
@@ -327,7 +328,7 @@ public class CatalogSupportBase {
 
         Node node = doc.getElementsByTagName(elementInSystem).item(0);
         String result = node.getFirstChild().getTextContent();
-        Assert.assertEquals(result.trim(), expected);
+        assertEquals(expected, result.trim());
     }
 
     /*
@@ -336,10 +337,10 @@ public class CatalogSupportBase {
     public void testStAX(boolean setUseCatalog, boolean useCatalog, String catalog,
             String xml, XMLResolver resolver, String expected) throws Exception {
 
-            XMLStreamReader streamReader = getStreamReader(
-                    setUseCatalog, useCatalog, catalog, xml, resolver);
-            String text = getText(streamReader, XMLStreamConstants.CHARACTERS);
-            Assert.assertEquals(text.trim(), expected);
+        XMLStreamReader streamReader = getStreamReader(
+                setUseCatalog, useCatalog, catalog, xml, resolver);
+        String text = getText(streamReader, XMLStreamConstants.CHARACTERS);
+        assertEquals(expected, text.trim());
     }
 
     /*
@@ -349,10 +350,10 @@ public class CatalogSupportBase {
     public void testStAXNegative(boolean setUseCatalog, boolean useCatalog, String catalog,
             String xml, XMLResolver resolver, String expected) throws Exception {
 
-            XMLStreamReader streamReader = getStreamReader(
-                    setUseCatalog, useCatalog, catalog, xml, resolver);
-            String text = getText(streamReader, XMLStreamConstants.ENTITY_REFERENCE);
-            Assert.assertEquals(text.trim(), expected);
+        XMLStreamReader streamReader = getStreamReader(
+                setUseCatalog, useCatalog, catalog, xml, resolver);
+        String text = getText(streamReader, XMLStreamConstants.ENTITY_REFERENCE);
+        assertEquals(expected, text.trim());
     }
 
     /*
@@ -381,7 +382,6 @@ public class CatalogSupportBase {
         } else {
             Schema schema = factory.newSchema(new StreamSource(new StringReader(xsd)));
         }
-        success("XMLSchema.dtd and datatypes.dtd are resolved.");
     }
 
     /**
@@ -439,8 +439,7 @@ public class CatalogSupportBase {
 
         StringWriter out = new StringWriter();
         transformer.transform(xml, new StreamResult(out));
-        debugPrint("out:\n" + out.toString());
-        Assert.assertTrue(out.toString().contains(expected), "testXSLImport");
+        assertTrue(out.toString().contains(expected), "Output did not contain '" + expected + "':\n" + out);
     }
 
     /*
@@ -455,7 +454,7 @@ public class CatalogSupportBase {
         Transformer transformer = factory.newTemplates(xsl).newTransformer();
         StringWriter out = new StringWriter();
         transformer.transform(xml, new StreamResult(out));
-        Assert.assertTrue(out.toString().contains(expected), "testXSLImportWTemplates");
+        assertTrue(out.toString().contains(expected), "Output did not contain '" + expected + "':\n" + out);
     }
 
     /**
@@ -686,16 +685,6 @@ public class CatalogSupportBase {
         }
 
         return factory;
-    }
-
-    void fail(String msg) {
-        System.out.println("Test failed:");
-        System.out.println(msg);
-    }
-
-    void success(String msg) {
-        System.out.println("Test succeded:");
-        System.out.println(msg);
     }
 
     void debugPrint(String msg) {

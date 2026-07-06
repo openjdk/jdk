@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ private:
 
 protected:
   bool g1_can_remove_pre_barrier(GraphKit* kit,
-                                 PhaseValues* phase,
+                                 PhaseGVN* phase,
                                  Node* adr,
                                  BasicType bt,
                                  uint adr_idx) const;
@@ -103,7 +103,7 @@ public:
                                   ArrayCopyNode* ac) const;
   virtual void* create_barrier_state(Arena* comp_arena) const;
   virtual void emit_stubs(CodeBuffer& cb) const;
-  virtual void elide_dominated_barrier(MachNode* mach) const;
+  virtual void elide_dominated_barrier(MachNode* mach, MachNode* dominator) const;
   virtual void late_barrier_analysis() const;
 
 #ifndef PRODUCT

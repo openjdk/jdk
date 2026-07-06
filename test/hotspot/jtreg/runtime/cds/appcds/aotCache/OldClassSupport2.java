@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,11 +53,6 @@ public class OldClassSupport2 {
         // This will disable AOT class linking.
         Tester tester2 = new Tester("-Djdk.module.showModuleResolution=true");
         tester2.run(new String[] {"AOT", "--two-step-training"} );
-
-        // Heap archiving is disable with -XX:-UseCompressedClassPointers.
-        // This will disable AOT class linking.
-        Tester tester3 = new Tester("-XX:-UseCompressedClassPointers");
-        tester3.run(new String[] {"AOT", "--two-step-training"} );
     }
 
     static class Tester extends CDSAppTester {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,6 @@ class APITest {
             "resource-files/copy.svg",
             "resource-files/down.svg",
             "resource-files/glass.svg",
-            "resource-files/jquery-ui.min.css",
             "resource-files/left.svg",
             "resource-files/link.svg",
             "resource-files/moon.svg",
@@ -241,11 +240,8 @@ class APITest {
             "resource-files/fonts/DejaVuLGCSerif-Italic.woff2",
             "resource-files/fonts/DejaVuLGCSerif.woff",
             "resource-files/fonts/DejaVuLGCSerif.woff2",
-            "script-files/jquery-3.7.1.min.js",
-            "script-files/jquery-ui.min.js",
             "script-files/script.js",
             "script-files/search.js",
-            "script-files/search-page.js",
             "tag-search-index.js",
             "type-search-index.js"
     ));
@@ -255,11 +251,8 @@ class APITest {
                             !s.endsWith("-search-index.js")
                          && !s.equals("index-all.html")
                          && !s.equals("resource-files/glass.svg")
-                         && !s.equals("resource-files/jquery-ui.min.css")
                          && !s.equals("resource-files/x.svg")
-                         && !s.startsWith("script-files/jquery-")
                          && !s.equals("script-files/search.js")
-                         && !s.equals("script-files/search-page.js")
                          && !s.equals("search.html")
                          && !s.equals("allclasses-index.html")
                          && !s.equals("allpackages-index.html")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,6 +154,14 @@ public abstract class JavacTemplateTestBase {
         }
     }
 
+    protected void assertCompileSucceededWithWarning(String warning, int numberOfWarnings) {
+        if (diags.errorsFound())
+            fail("Expected successful compilation");
+        if (!diags.containsWarningKey(warning, numberOfWarnings)) {
+            fail(String.format("Expected compilation warning with %s, found %s", warning, diags.keys()));
+        }
+    }
+
     /**
      * If the provided boolean is true, assert all previous compiles succeeded,
      * otherwise assert that a compile failed.
@@ -237,18 +245,17 @@ public abstract class JavacTemplateTestBase {
             if (classpaths.size() > 0)
                 fm.setLocation(StandardLocation.CLASS_PATH, classpaths);
             JavacTask ct = (JavacTask) systemJavaCompiler.getTask(null, fm, diags, compileOptions, null, files);
+            File destDir;
             if (generate) {
-                File destDir = new File(root, Integer.toString(counter.incrementAndGet()));
+                destDir = new File(root, Integer.toString(counter.incrementAndGet()));
                 // @@@ Assert that this directory didn't exist, or start counter at max+1
                 destDir.mkdirs();
                 fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(destDir));
-                ct.generate();
-                return destDir;
+            } else {
+                destDir = nullDir;
             }
-            else {
-                ct.analyze();
-                return nullDir;
-            }
+            ct.generate(); // throws ISE if javac crashes
+            return destDir;
         }
     }
 
