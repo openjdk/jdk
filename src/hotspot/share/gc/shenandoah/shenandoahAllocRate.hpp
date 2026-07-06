@@ -27,6 +27,8 @@
 
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahWeightedSeq.hpp"
+#include "memory/allocation.hpp"
+#include "memory/padded.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -110,12 +112,32 @@ class ShenandoahAllocRate {
   static constexpr size_t ALLOC_SAMPLE_MIN = M;
   static constexpr size_t ALLOC_SAMPLE_MAX = G;
 
+  // Bytes allocated since the last sample, striped per-CPU to remove the cache-line contention that
+  // a single shared counter suffers on the hot allocation path when many mutator threads allocate
+  // concurrently. Each mutator adds to the stripe for the CPU it is running on (os::processor_id());
+  // the sampling path sums the stripes. PaddedArray gives each stripe its own cache line (both the
+  // array base and the per-element stride are aligned), so there is no false sharing between stripes.
+  typedef PaddedEnd<Atomic<size_t>> PaddedCounter;
+
   PaddedMonitor _sample_lock;
   shenandoah_padding(0);
-  Atomic<size_t> _allocated_bytes_since_last_sample;
+  PaddedCounter* _allocated_bytes_since_last_sample; // one stripe per CPU
+  uint const _num_stripes;
   shenandoah_padding(1);
   Atomic<size_t> _minimum_sample_size; // bytes, read by mutator, updated by gc
   jlong _last_sample_time;
+
+  // Index of the stripe the current thread should use (per-CPU where supported; a thread-pointer
+  // hash on platforms where os::processor_id() is unavailable). Always in [0, _num_stripes).
+  uint current_stripe() const;
+  // Add allocated_bytes to the current stripe and return that stripe's new running total.
+  size_t add_to_stripe(size_t allocated_bytes);
+  // Sum the running totals across all stripes (no reset).
+  size_t sum_stripes() const;
+  // Sum the stripes and atomically reset each to zero, returning the total consumed. Used when a
+  // sample is committed under the lock; concurrent adds after each stripe's exchange are preserved
+  // in that stripe for the next sample.
+  size_t drain_stripes();
 
   ShenandoahWeightedSeq _baseline;
   ShenandoahWeightedSeq _recent;
@@ -127,13 +149,15 @@ public:
                                const uint recent_window_size = ShenandoahRecentAllocRateSampleWindow,
                                const uint momentary_window_size = ShenandoahMomentaryAllocRateSampleWindow)
     : _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
-    , _allocated_bytes_since_last_sample(0)
+    , _num_stripes((uint) MAX2(os::processor_count(), 1))
     , _minimum_sample_size(minimum_sample_size)
     , _last_sample_time(Clock::elapsed_counter())
     , _baseline(baseline_window_size)
     , _recent(recent_window_size)
     , _momentary(momentary_window_size)
   {
+    _allocated_bytes_since_last_sample =
+        PaddedArray<Atomic<size_t>, mtGC>::create_unfreeable(_num_stripes);
   }
 
   // Update minimum sample size based on the given available bytes
