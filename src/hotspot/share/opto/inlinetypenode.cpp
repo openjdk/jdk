@@ -995,29 +995,21 @@ Node* InlineTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node
   return result;
 }
 
-// Check if a substitutability check between 'lhs' and 'rhs' can be implemented in IR
+// Check if a substitutability check between 'lhs' and 'rhs' can be implemented in IR.
+// Set klass_hash to be used as the seed of the hash. It might not be available later,
+// and we want emit_identity_hash_code not to fail on that.
 bool InlineTypeNode::can_emit_identity_hash_code(const PhaseIterGVN& igvn, Node* arg, intptr_t& klass_hash) {
   const Type* arg_type = igvn.type(arg);
   if (!arg_type->is_inlinetypeptr()) {
     return false;
   }
   ciInlineKlass* vk = arg_type->inline_klass();
+  if (vk->number_of_oop_entries_in_acmp_map() > 0) {
+    return false;
+  }
   klass_hash = vk->java_mirror()->hash();
   if (klass_hash == markWord::no_hash) {
-    if (UseNewCode2) {
-      tty->print_cr("In %s: no hash", igvn.C->method()->name()->as_quoted_ascii());
-    }
     return false;
-  }
-  if (vk->number_of_oop_entries_in_acmp_map() > 0) {
-    if (UseNewCode2) {
-      tty->print_cr("In %s: oops", igvn.C->method()->name()->as_quoted_ascii());
-    }
-    return false;
-  }
-
-  if (UseNewCode2) {
-    tty->print_cr("In %s: going to expand", igvn.C->method()->name()->as_quoted_ascii());
   }
   return true;
 }
@@ -1088,10 +1080,6 @@ Node* InlineTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t
     }
   }
   result = kit->AndI(result, kit->intcon(markWord::hash_mask));
-
-  if (UseNewCode2) {
-    tty->print_cr("In %s, expanded hashcode of %s.", igvn.C->method()->name()->as_quoted_ascii(), vk->name()->as_quoted_ascii());
-  }
 
   return result;
 }

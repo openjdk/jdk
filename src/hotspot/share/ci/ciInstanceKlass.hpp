@@ -267,7 +267,6 @@ public:
   int number_of_nonoop_entries_in_acmp_map() const;
   AcmpMapSegment get_nonoop_segment_of_acmp_map(int i) const;
 
-
   ciInstanceKlass* unique_concrete_subklass();
   bool has_finalizable_subclass();
 

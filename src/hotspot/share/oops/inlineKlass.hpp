@@ -264,15 +264,15 @@ class InlineKlass: public InstanceKlass {
   int64_t fast_acmp_mask() const                              { return members()._fast_acmp_mask; }
   void set_fast_acmp_mask(int64_t mask)                       { members()._fast_acmp_mask = mask; }
 
-  int fast_hashcode_offset() const                                { return members()._fast_hashcode_offset; }
-  void set_fast_hashcode_offset(int offset)                       { members()._fast_hashcode_offset = offset; }
+  int fast_hashcode_offset() const                            { return members()._fast_hashcode_offset; }
+  void set_fast_hashcode_offset(int offset)                   { members()._fast_hashcode_offset = offset; }
 
 #ifdef VM_LITTLE_ENDIAN
-  int fast_hashcode_shift() const                              { return members()._fast_hashcode_shift; }
-  void set_fast_hashcode_shift(int shift)                       { members()._fast_hashcode_shift = shift; }
+  int fast_hashcode_shift() const                             { return members()._fast_hashcode_shift; }
+  void set_fast_hashcode_shift(int shift)                     { members()._fast_hashcode_shift = shift; }
 #else
-  int64_t fast_hashcode_mask() const                              { return members()._fast_hashcode_mask; }
-  void set_fast_hashcode_mask(int64_t mask)                       { members()._fast_hashcode_mask = mask; }
+  int64_t fast_hashcode_mask() const                          { return members()._fast_hashcode_mask; }
+  void set_fast_hashcode_mask(int64_t mask)                   { members()._fast_hashcode_mask = mask; }
 #endif
 
   bool supports_nullable_layouts() const {
