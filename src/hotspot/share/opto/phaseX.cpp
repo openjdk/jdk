@@ -2816,10 +2816,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_CastP2X) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
+#if 0
       // TODO 8350865 Still needed? Yes, I think this is from PhaseMacroExpand::expand_mh_intrinsic_return
       if (u->Opcode() == Op_AndX) {
         worklist.push(u);
       }
+#endif
       // Search for CmpL(OrL(CastP2X(..), CastP2X(..)), 0L)
       if (u->Opcode() == Op_OrL) {
         for (DUIterator_Fast i3max, i3 = u->fast_outs(i3max); i3 < i3max; i3++) {
@@ -3235,6 +3237,7 @@ void PhaseCCP::push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, c
 
 // TODO 8350865 Still needed? Yes, I think this is from PhaseMacroExpand::expand_mh_intrinsic_return
 void PhaseCCP::push_cast(Unique_Node_List& worklist, const Node* use) {
+#if 0
   uint use_op = use->Opcode();
   if (use_op == Op_CastP2X) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
@@ -3244,6 +3247,7 @@ void PhaseCCP::push_cast(Unique_Node_List& worklist, const Node* use) {
       }
     }
   }
+#endif
 }
 
 // Loading the java mirror from a Klass requires two loads and the type of the mirror load depends on the type of 'n'.
