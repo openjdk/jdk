@@ -945,10 +945,15 @@ AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
 [
   # Is branch protection available?
   BRANCH_PROTECTION_AVAILABLE=false
-  BRANCH_PROTECTION_FLAG="-mbranch-protection=standard"
+  BRANCH_PROTECTION_FLAG=""
 
   if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
     if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+      BRANCH_PROTECTION_FLAG="-mbranch-protection=standard"
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$BRANCH_PROTECTION_FLAG],
+          IF_TRUE: [BRANCH_PROTECTION_AVAILABLE=true])
+    elif test "x$TOOLCHAIN_TYPE" = xmicrosoft && test "x$OPENJDK_TARGET_OS" = xwindows; then
+      BRANCH_PROTECTION_FLAG="/guard:signret"
       FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$BRANCH_PROTECTION_FLAG],
           IF_TRUE: [BRANCH_PROTECTION_AVAILABLE=true])
     fi

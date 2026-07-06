@@ -210,7 +210,9 @@ AC_DEFUN([FLAGS_SETUP_ASFLAGS_CPU_DEP],
     $2JVM_ASFLAGS="${$2JVM_ASFLAGS} $ARM_ARCH_TYPE_ASFLAGS $ARM_FLOAT_TYPE_ASFLAGS"
   fi
 
-  if test "x$BRANCH_PROTECTION_ENABLED" = "xtrue"; then
+  if test "x$BRANCH_PROTECTION_ENABLED" = "xtrue" && \
+      # MSVC's assembler does not support branch protection flags.
+      test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
     $2JVM_ASFLAGS="${$2JVM_ASFLAGS} $BRANCH_PROTECTION_FLAG"
   fi
 

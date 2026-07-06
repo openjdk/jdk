@@ -171,9 +171,11 @@ possible to use [cross-compiling](#cross-compiling).
 
 In order to use Branch Protection features in the VM,
 `--enable-branch-protection` must be used. This option requires C++ compiler
-support (GCC 9.1.0+ or Clang 10+). The resulting build can be run on both
-machines with and without support for branch protection in hardware. Branch
-Protection is only supported for Linux targets.
+support for `-mbranch-protection=standard` in GCC 9.1.0+ or Clang 10+ on
+Linux/AArch64 or for `/guard:signret` in Visual Studio 2019+ on Windows/ARM64.
+The resulting build can be run on both machines with and without support for
+branch protection in hardware. Branch Protection is only supported for
+Linux/AArch64 and Windows/ARM64 targets.
 
 ### Building on 32-bit ARM
 
