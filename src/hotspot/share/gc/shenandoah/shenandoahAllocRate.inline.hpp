@@ -57,33 +57,43 @@ void ShenandoahAllocRate<Clock>::update_minimum_sample_size(const size_t availab
 }
 
 template<typename Clock>
-uint ShenandoahAllocRate<Clock>::current_stripe() const {
+uint ShenandoahAllocRate<Clock>::current_stripe() {
+  // Fast path: no syscall, no atomics. If we still own our cached stripe, use it. Ownership is a
+  // plain load of the affinity slot; a stale read only risks an occasional needless slow-path call,
+  // never incorrect accounting (sampling sums all stripes).
+  if (_cached_stripe < _num_stripes && _stripe_affinity[_cached_stripe]._thread == _self) {
+    return _cached_stripe;
+  }
+  return current_stripe_slow();
+}
+
+template<typename Clock>
+uint ShenandoahAllocRate<Clock>::current_stripe_slow() {
+  // First call on this thread: cache our identity.
+  if (_self == nullptr) {
+    _self = Thread::current();
+  }
+
 #if defined(__APPLE__) && defined(AARCH64)
   // os::processor_id() has no real implementation on macOS/aarch64 (it always returns 0), which
-  // would collapse every thread onto stripe 0 and reintroduce the contention we are removing. Fall
-  // back to hashing the current thread pointer: it does not track CPU locality, but it spreads
-  // threads across stripes, which is what removes the cache-line contention. The hot production
-  // target (Linux) uses the real per-CPU id below.
-  //
-  // The thread pointer is stable for a thread's lifetime, so cache the computed stripe in a
-  // thread_local to avoid the Thread::current() load, the hash, and the (relatively expensive)
-  // modulo on every allocation. This caching is valid ONLY here: on Linux the stripe deliberately
-  // follows the current CPU and must be recomputed each call, so it is never cached. _num_stripes
-  // is fixed for the process lifetime, so a cached value never becomes stale.
-  static thread_local uint cached_stripe = UINT_MAX;
-  if (cached_stripe == UINT_MAX) {
-    const uintptr_t t = (uintptr_t) Thread::current();
-    // Mix the pointer bits; low bits are ~constant due to allocation alignment.
-    const uint h = (uint) (t ^ (t >> 20) ^ (t >> 9));
-    cached_stripe = h % _num_stripes;
-  }
-  return cached_stripe;
+  // would collapse every thread onto stripe 0. Pick a stripe from a per-thread pseudo-random value
+  // instead: it does not track CPU locality, but spreading threads across stripes is all that is
+  // needed to remove the cache-line contention.
+  const uintptr_t t = (uintptr_t) _self;
+  uint stripe = (uint) ((t ^ (t >> 20) ^ (t >> 9)) % _num_stripes);
 #else
-  // Index by the CPU the caller is running on. os::processor_id() is guaranteed to be in
-  // [0, processor_count()) == [0, _num_stripes). Threads on different CPUs touch different
-  // cache lines, so there is no cross-CPU contention on the hot path.
-  return os::processor_id();
+  // Linux and friends: index by the CPU we are running on. This is the (relatively expensive)
+  // syscall/vDSO call, but the fast path above keeps it off the per-allocation path -- we only get
+  // here on the first allocation or after migrating to a CPU whose stripe we no longer own.
+  uint stripe = os::processor_id();
 #endif
+
+  // Claim the stripe. Whoever writes last owns it; a losing writer will simply miss the fast path on
+  // its next allocation and re-claim (possibly a different stripe). This is a best-effort spreading
+  // heuristic, so a plain store is sufficient -- no atomic needed.
+  _stripe_affinity[stripe]._thread = _self;
+  _cached_stripe = stripe;
+  return stripe;
 }
 
 template<typename Clock>

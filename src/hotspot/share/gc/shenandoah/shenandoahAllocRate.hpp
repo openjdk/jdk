@@ -112,24 +112,44 @@ class ShenandoahAllocRate {
   static constexpr size_t ALLOC_SAMPLE_MIN = M;
   static constexpr size_t ALLOC_SAMPLE_MAX = G;
 
-  // Bytes allocated since the last sample, striped per-CPU to remove the cache-line contention that
-  // a single shared counter suffers on the hot allocation path when many mutator threads allocate
-  // concurrently. Each mutator adds to the stripe for the CPU it is running on (os::processor_id());
-  // the sampling path sums the stripes. PaddedArray gives each stripe its own cache line (both the
-  // array base and the per-element stride are aligned), so there is no false sharing between stripes.
+  // Bytes allocated since the last sample, striped to remove the cache-line contention that a single
+  // shared counter suffers on the hot allocation path when many mutator threads allocate
+  // concurrently. Each mutator adds to its assigned stripe; the sampling path sums the stripes.
+  // PaddedArray gives each stripe its own cache line (both the array base and the per-element stride
+  // are aligned), so there is no false sharing between stripes.
   typedef PaddedEnd<Atomic<size_t>> PaddedCounter;
+
+  // A thread's stripe is chosen lazily and cached in thread-local state, so the hot path does not
+  // query the current CPU (os::processor_id()/sched_getcpu() is a syscall/vDSO call that dominated
+  // the allocation path when called per-allocation). The affinity table records which thread most
+  // recently claimed each stripe; the fast path just checks whether the caller still owns its cached
+  // stripe (a plain load), and only re-picks (the slow path) when it does not -- i.e. when another
+  // thread has since claimed that stripe (Linux: because it migrated CPUs; elsewhere: a random
+  // collision). Any assignment is correct because sampling sums all stripes; the table only spreads
+  // threads to reduce contention. Mirrors ZGC's ZCPU affinity scheme.
+  struct StripeAffinity {
+    Thread* _thread;
+  };
 
   PaddedMonitor _sample_lock;
   shenandoah_padding(0);
   PaddedCounter* _allocated_bytes_since_last_sample; // one stripe per CPU
+  PaddedEnd<StripeAffinity>* _stripe_affinity;       // owner of each stripe (perf heuristic only)
   uint const _num_stripes;
   shenandoah_padding(1);
   Atomic<size_t> _minimum_sample_size; // bytes, read by mutator, updated by gc
   jlong _last_sample_time;
 
-  // Index of the stripe the current thread should use (per-CPU where supported; a thread-pointer
-  // hash on platforms where os::processor_id() is unavailable). Always in [0, _num_stripes).
-  uint current_stripe() const;
+  // Per-thread cached identity and stripe. Sentinels ensure the fast-path ownership check never
+  // spuriously matches before the thread has claimed a stripe.
+  static THREAD_LOCAL Thread* _self;
+  static THREAD_LOCAL uint    _cached_stripe;
+
+  // Index of the stripe the current thread should use. Fast path returns the cached stripe when the
+  // caller still owns it; slow path (current_stripe_slow) re-picks and claims. Always in
+  // [0, _num_stripes).
+  uint current_stripe();
+  uint current_stripe_slow();
   // Add allocated_bytes to the current stripe and return that stripe's new running total.
   size_t add_to_stripe(size_t allocated_bytes);
   // Sum the running totals across all stripes (no reset).
@@ -158,6 +178,10 @@ public:
   {
     _allocated_bytes_since_last_sample =
         PaddedArray<Atomic<size_t>, mtGC>::create_unfreeable(_num_stripes);
+    _stripe_affinity = PaddedArray<StripeAffinity, mtGC>::create_unfreeable(_num_stripes);
+    for (uint i = 0; i < _num_stripes; i++) {
+      _stripe_affinity[i]._thread = nullptr;
+    }
   }
 
   // Update minimum sample size based on the given available bytes
@@ -205,6 +229,12 @@ private:
     return _baseline.weighted_average() + standard_deviations * _baseline.weighted_sd();
   }
 };
+
+// Per-thread cached identity and stripe (see current_stripe). Defined here as templated statics;
+// there is a single instantiation (ShenandoahAllocationRate), so one definition per translation
+// unit collapses at link time like an inline variable.
+template<typename Clock> THREAD_LOCAL Thread* ShenandoahAllocRate<Clock>::_self = nullptr;
+template<typename Clock> THREAD_LOCAL uint    ShenandoahAllocRate<Clock>::_cached_stripe = UINT_MAX;
 
 typedef ShenandoahAllocRate<> ShenandoahAllocationRate;
 
