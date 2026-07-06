@@ -57,7 +57,6 @@ public:
   int payload_offset() const;
 
   bool maybe_flat_in_array() const override;
-  bool is_always_flat_in_array() const;
 
   // Scalarized calling convention support: pass/return this inline type as its
   // field components in the calling convention (registers/stack), not as a single oop.

@@ -40,11 +40,6 @@ bool ciInlineKlass::maybe_flat_in_array() const {
   GUARDED_VM_ENTRY(return to_InlineKlass()->maybe_flat_in_array();)
 }
 
-// Are arrays containing an instance of this value class always flat?
-bool ciInlineKlass::is_always_flat_in_array() const {
-  GUARDED_VM_ENTRY(return to_InlineKlass()->is_always_flat_in_array();)
-}
-
 // Can this inline type be passed as multiple values?
 bool ciInlineKlass::can_be_passed_as_fields() const {
   GUARDED_VM_ENTRY(return to_InlineKlass()->can_be_passed_as_fields();)
