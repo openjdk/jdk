@@ -44,7 +44,7 @@
 #define PREFERENCES_TAG  42
 
 // Custom event that is emitted by AWT to let libraries like JavaFX awtEmbeddedEvent
-// know that it is ready to receive embedded events. Until this event is 
+// know that it is ready to receive embedded events. Until this event is
 // emitted libraries should buffer the already received events.
 static NSString* awtEmbeddedEventReady = @"AWTEmbeddedEventReady";
 
