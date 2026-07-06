@@ -89,7 +89,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
     @Test
     @IR(counts = {IRNode.AND_VL, " >0 ",
                   IRNode.MUL_VL, " >0 "},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @IR(failOn = {IRNode.X86_VMULUDQ_REG},
         phase = CompilePhase.MATCHING,
         applyIfCPUFeature = {"avx", "true"})
@@ -119,7 +119,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
     @Test
     @IR(counts = {IRNode.AND_VL, " >0 ",
                   IRNode.MUL_VL, " >0 "},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @IR(failOn = {IRNode.X86_VMULUDQ_REG},
         phase = CompilePhase.MATCHING,
         applyIfCPUFeature = {"avx", "true"})
@@ -147,7 +147,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
     @Test
     @IR(counts = {IRNode.AND_VL, " >0 ",
                   IRNode.MUL_VL, " >0 "},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @IR(failOn = {IRNode.X86_VMULUDQ_REG},
         phase = CompilePhase.MATCHING,
         applyIfCPUFeature = {"avx", "true"})
@@ -176,7 +176,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
     // Case 5: Mask = 0xFFFF_FFFFL (exactly uint max, boundary valid case).
     @Test
     @IR(counts = {IRNode.MUL_VL, " >0 "},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.X86_VMULUDQ_REG, " >0 "},
         phase = CompilePhase.MATCHING,
         applyIfCPUFeature = {"avx", "true"})
@@ -205,7 +205,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
     // Case 6: Small mask (0xFFFFL), clearly fits in uint.
     @Test
     @IR(counts = {IRNode.MUL_VL, " >0 "},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.X86_VMULUDQ_REG, " >0 "},
         phase = CompilePhase.MATCHING,
         applyIfCPUFeature = {"avx", "true"})
@@ -235,7 +235,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
     @Test
     @IR(counts = {IRNode.MUL_VL, " >0 ",
                   IRNode.URSHIFT_VL, " >0 "},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.X86_VMULUDQ_REG, " >0 "},
         phase = CompilePhase.MATCHING,
         applyIfCPUFeature = {"avx", "true"})
@@ -265,7 +265,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
     @Test
     @IR(counts = {IRNode.AND_VL, " >0 ",
                   IRNode.MUL_VL, " >0 "},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @IR(failOn = {IRNode.X86_VMULUDQ_REG},
         phase = CompilePhase.MATCHING,
         applyIfCPUFeature = {"avx", "true"})
@@ -297,7 +297,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
     @IR(counts = {IRNode.URSHIFT_VL, " >0 ",
                   IRNode.AND_VL, " >0 ",
                   IRNode.MUL_VL, " >0 "},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     @IR(failOn = {IRNode.X86_VMULUDQ_REG},
         phase = CompilePhase.MATCHING,
         applyIfCPUFeature = {"avx", "true"})
@@ -327,7 +327,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
     @Test
     @IR(counts = {IRNode.AND_VL, " >0 ",
                   IRNode.MUL_VL, " >0 "},
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     @IR(failOn = {IRNode.X86_VMULUDQ_REG},
         phase = CompilePhase.MATCHING,
         applyIfCPUFeature = {"avx512f", "true"})
@@ -359,7 +359,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
     @Test
     @IR(counts = {IRNode.URSHIFT_VL, " >0 ",
                   IRNode.MUL_VL, " >0 "},
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     @IR(failOn = {IRNode.X86_VMULUDQ_REG},
         phase = CompilePhase.MATCHING,
         applyIfCPUFeature = {"avx512f", "true"})
@@ -391,7 +391,7 @@ public class TestVectorMulLongToSignedUnsignedInt {
     @Test
     @IR(counts = {IRNode.RSHIFT_VL, " >0 ",
                   IRNode.MUL_VL, " >0 "},
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
     @IR(failOn = {IRNode.X86_VMULDQ_REG},
         phase = CompilePhase.MATCHING,
         applyIfCPUFeature = {"avx512f", "true"})
