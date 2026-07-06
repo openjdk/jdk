@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,7 @@ public class Jps {
                     // reasonable message to indicate that the requested
                     // info is not available.
 
+                    errorString = " -- process information unavailable";
                     VmIdentifier id = new VmIdentifier(vmidString);
                     vm = monitoredHost.getMonitoredVm(id, 0);
 
