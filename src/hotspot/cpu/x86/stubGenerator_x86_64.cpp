@@ -311,6 +311,9 @@ address StubGenerator::generate_call_stub(address& return_address) {
   return_address = __ pc();
   entries.append(return_address);
 
+  // All of j_rargN + rax may be used to return inline type fields so be careful
+  // not to clobber those.  See SharedRuntime::java_return_convention().
+
   // store result depending on type (everything that is not
   // T_OBJECT, T_LONG, T_FLOAT or T_DOUBLE is treated as T_INT)
   __ movptr(r13, result);

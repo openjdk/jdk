@@ -820,8 +820,8 @@ static void gen_c2i_adapter_helper(MacroAssembler* masm,
   // 3    8 T_BOOL
   // -    0 return address
   //
-  // However to make thing extra confusing. Because we can fit a long/double in
-  // a single slot on a 64 bt vm and it would be silly to break them up, the interpreter
+  // However to make things extra confusing. Because we can fit a long/double in
+  // a single slot on a 64 bit vm and it would be silly to break them up, the interpreter
   // leaves one slot empty and only stores to a single slot. In this case the
   // slot that is occupied is the T_VOID slot. See I said it was confusing.
 

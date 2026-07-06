@@ -532,8 +532,8 @@ static void gen_c2i_adapter_helper(MacroAssembler* masm,
   // 3    8 T_BOOL
   // -    0 return address
   //
-  // However to make thing extra confusing. Because we can fit a Java long/double in
-  // a single slot on a 64 bt vm and it would be silly to break them up, the interpreter
+  // However to make things extra confusing. Because we can fit a Java long/double in
+  // a single slot on a 64 bit vm and it would be silly to break them up, the interpreter
   // leaves one slot empty and only stores to a single slot. In this case the
   // slot that is occupied is the T_VOID slot. See I said it was confusing.
 
@@ -549,7 +549,7 @@ static void gen_c2i_adapter_helper(MacroAssembler* masm,
   if (!r_1->is_FloatRegister()) {
     Register val = r25;
     if (r_1->is_stack()) {
-      // memory to memory use r25 (scratch registers is used by store_heap_oop)
+      // memory to memory use r25 (scratch registers are used by store_heap_oop)
       int ld_off = r_1->reg2stack() * VMRegImpl::stack_slot_size + extraspace;
       __ load_sized_value(val, Address(sp, ld_off), size_in_bytes, /* is_signed */ false);
     } else {
