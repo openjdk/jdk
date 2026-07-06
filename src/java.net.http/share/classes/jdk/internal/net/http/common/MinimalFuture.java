@@ -103,6 +103,7 @@ public final class MinimalFuture<T> extends CompletableFuture<T> {
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         if  (!super.cancel(mayInterruptIfRunning)) {
+            assert isDone();
             return false;
         }
         if (cancelable != null) {
