@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "gc/shenandoah/shenandoahStripedCounter.hpp"
 #include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
@@ -112,10 +113,19 @@ class ShenandoahAllocRate {
 
   PaddedMonitor _sample_lock;
   shenandoah_padding(0);
-  Atomic<size_t> _allocated_bytes_since_last_sample;
+  // Bytes allocated since the last sample. A striped counter absorbs the contention that a single
+  // shared counter would suffer on the hot allocation path when many mutator threads allocate
+  // concurrently (see ShenandoahStripedCounter).
+  ShenandoahStripedCounter _unsampled;
   shenandoah_padding(1);
   Atomic<size_t> _minimum_sample_size; // bytes, read by mutator, updated by gc
   jlong _last_sample_time;
+
+  // Try to take a sample now. Acquires the sample lock, re-checks the calling thread's own stripe
+  // against per_stripe_threshold (a cheap O(1) proxy for "the aggregate is near the sample size"),
+  // and records a sample if still due. Called from allocated() right after this thread's stripe
+  // crossed its per-stripe share of the sample threshold.
+  void maybe_take_sample(size_t per_stripe_threshold);
 
   ShenandoahWeightedSeq _baseline;
   ShenandoahWeightedSeq _recent;
@@ -127,7 +137,6 @@ public:
                                const uint recent_window_size = ShenandoahRecentAllocRateSampleWindow,
                                const uint momentary_window_size = ShenandoahMomentaryAllocRateSampleWindow)
     : _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
-    , _allocated_bytes_since_last_sample(0)
     , _minimum_sample_size(minimum_sample_size)
     , _last_sample_time(Clock::elapsed_counter())
     , _baseline(baseline_window_size)

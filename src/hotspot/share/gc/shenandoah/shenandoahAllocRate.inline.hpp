@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
 
+#include "gc/shenandoah/shenandoahStripedCounter.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
 
@@ -56,38 +57,54 @@ void ShenandoahAllocRate<Clock>::update_minimum_sample_size(const size_t availab
 }
 
 template<typename Clock>
-void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
-  size_t unsampled = _allocated_bytes_since_last_sample.add_then_fetch(allocated_bytes, memory_order_relaxed);
-  const size_t minimum_sample_size = _minimum_sample_size.load_relaxed();
-  if (unsampled < minimum_sample_size) {
-    // Not enough to sample yet
-    return;
-  }
-
+void ShenandoahAllocRate<Clock>::maybe_take_sample(const size_t per_stripe_threshold) {
   if (!_sample_lock.try_lock()) {
-    // Another thread has the lock and will take the sample
+    // Another thread has the lock and will take the sample.
     return;
   }
-
-  unsampled = _allocated_bytes_since_last_sample.load_relaxed();
-  if (unsampled < minimum_sample_size) {
-    // Another thread has sampled and reset the allocated bytes under the lock
+  // Re-check this thread's own stripe under the lock against the per-stripe threshold. Using the
+  // caller's stripe (O(1)) rather than sum() over all stripes (O(N)) keeps the locked path cheap;
+  // the caller only reaches here right after its stripe crossed the threshold in add().
+  const size_t unsampled_stripe = _unsampled.current_stripe_value();
+  if (unsampled_stripe < per_stripe_threshold) {
+    // Stripe fell back below its share (another thread already sampled and drained the counter).
     _sample_lock.unlock();
     return;
   }
-
   const jlong now = Clock::elapsed_counter();
   const jlong elapsed = now - _last_sample_time;
-
   if (elapsed <= 0) {
-    // Avoid sampling nonsense allocation rates
+    // Avoid sampling nonsense allocation rates.
     _sample_lock.unlock();
     return;
   }
-
-  take_sample(now, elapsed, unsampled);
-
+  take_sample(now, elapsed, _unsampled.drain());
   _sample_lock.unlock();
+}
+
+template<typename Clock>
+void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
+  // The striped counter absorbs allocation-path contention; add() returns a cheap lower bound on the
+  // running total (this thread's own stripe once striped). We edge-trigger a sample when this stripe
+  // crosses its per-stripe share of the threshold, then re-check under the lock in maybe_take_sample.
+  // Even if a skewed distribution never trips that check, the periodic force_update() (every 100ms)
+  // samples unconditionally, so nothing is missed.
+  bool striped = false;
+  const size_t unsampled = _unsampled.add(allocated_bytes, striped);
+  const size_t minimum_sample_size = _minimum_sample_size.load_relaxed();
+  // The hint returned by add() is this thread's own stripe total once striped, i.e. ~1/N of the
+  // aggregate. Scale the trigger threshold to a per-stripe share so a stripe crossing its share still
+  // fires the (locked) aggregate re-check. Shift by log2(N) instead of dividing. Clamp to >= 1 so a
+  // small minimum_sample_size can never make the share 0 (which would disable the fast-path check).
+  size_t per_stripe_threshold = minimum_sample_size;
+  if (striped) {
+    per_stripe_threshold = MAX2(minimum_sample_size >> _unsampled.log_num_stripes(), (size_t) 1);
+  }
+  // Edge-trigger: fire only on the single add that pushes this stripe across its share, not on every
+  // add while it sits above (which would hammer the sample lock).
+  if (unsampled >= per_stripe_threshold && unsampled - allocated_bytes < per_stripe_threshold) {
+    maybe_take_sample(per_stripe_threshold);
+  }
 }
 
 template<typename Clock>
@@ -97,7 +114,6 @@ void ShenandoahAllocRate<Clock>::force_update() {
     return;
   }
 
-  const size_t unsampled = _allocated_bytes_since_last_sample.load_relaxed();
   const jlong now = Clock::elapsed_counter();
   const jlong elapsed = now - _last_sample_time;
 
@@ -107,7 +123,7 @@ void ShenandoahAllocRate<Clock>::force_update() {
     return;
   }
 
-  take_sample(now, elapsed, unsampled);
+  take_sample(now, elapsed, _unsampled.drain());
 
   _sample_lock.unlock();
 }
@@ -117,10 +133,6 @@ void ShenandoahAllocRate<Clock>::take_sample(jlong now, jlong elapsed, size_t un
   assert(_sample_lock.owned_by_self(), "Caller must hold lock");
 
   _last_sample_time = now;
-
-  // We are recording this sample, deduct it from the counter. It may be increased
-  // concurrently by other threads outside the lock, so we still use an atomic access.
-  _allocated_bytes_since_last_sample.sub_then_fetch(unsampled, memory_order_relaxed);
 
   const double timestamp = static_cast<double>(_last_sample_time) / Clock::elapsed_frequency();
   const double rate_seconds = static_cast<double>(unsampled) * Clock::elapsed_frequency() / elapsed;
