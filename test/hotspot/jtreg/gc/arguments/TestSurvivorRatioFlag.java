@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package gc.arguments;
 /*
  * @test TestSurvivorRatioFlag
  * @summary Verify that actual survivor ratio is equal to specified SurvivorRatio value
- * @requires vm.gc != "Z" & vm.gc != "Shenandoah" & vm.gc != "Parallel"
+ * @requires vm.gc == "Serial" | vm.gc == "G1"
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc
@@ -115,8 +115,7 @@ public class TestSurvivorRatioFlag {
          * Verify that actual survivor ratio is equal to expected.
          * Depending on selected young GC we verify that:
          * - for DefNew: eden_size / survivor_size is close to expectedRatio;
-         * - for G1:      survivor_regions <= young_list_length / expectedRatio.
-         * - for PSNew:   skipped (dynamic gen-boundary breaks fixed ratio constraint)
+         * - for G1:     survivor_regions <= num_young_regions / expectedRatio.
          */
         public static Void verifySurvivorRatio(int expectedRatio) {
             GCTypes.YoungGCType type = GCTypes.YoungGCType.getYoungGCType();
@@ -128,7 +127,7 @@ public class TestSurvivorRatioFlag {
                     verifyG1SurvivorRatio(expectedRatio);
                     break;
                 default:
-                    break;
+                    throw new RuntimeException("Unexpected young GC type");
             }
             return null;
         }
@@ -148,8 +147,8 @@ public class TestSurvivorRatioFlag {
             MemoryUsage survivorUsage = HeapRegionUsageTool.getSurvivorUsage();
 
             int regionSize = wb.g1RegionSize();
-            int youngListLength = (int) Math.max(NEW_SIZE / regionSize, 1);
-            int expectedSurvivorRegions = (int) Math.ceil(youngListLength / (double) expectedRatio);
+            int numYoungRegions = (int) Math.max(NEW_SIZE / regionSize, 1);
+            int expectedSurvivorRegions = (int) Math.ceil(numYoungRegions / (double) expectedRatio);
             int observedSurvivorRegions = (int) (survivorUsage.getCommitted() / regionSize);
 
             if (expectedSurvivorRegions < observedSurvivorRegions) {

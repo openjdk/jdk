@@ -306,10 +306,24 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
 
   for (uint try_count = 1; /* break */; try_count++) {
     {
+      // This lock is needed to sync with the VM-init expansion below.
       ConditionalMutexLocker locker(Heap_lock, !is_init_completed());
       result = mem_allocate_cas_noexpand(size, is_tlab);
       if (result != nullptr) {
         break;
+      }
+
+      // Ensure that is_init_completed() does not transition while expanding the heap.
+      ConditionalMutexLocker ml_init(InitCompleted_lock, !is_init_completed(), Mutex::_no_safepoint_check_flag);
+      if (!is_init_completed()) {
+        // Rechecked !is_init_completed() implies we have mutual exclusion via
+        // `Heap_lock` and `InitCompleted_lock`
+        result = expand_heap_and_allocate(size, is_tlab);
+        // Return the result if it's tlab-allocation. If the result is null,
+        // callers will retry non-tlab allocation.
+        if (result != nullptr || is_tlab) {
+          return result;
+        }
       }
     }
     uint gc_count_before;  // Read inside the Heap_lock locked region.
@@ -321,19 +335,6 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
       result = mem_allocate_cas_noexpand(size, is_tlab);
       if (result != nullptr) {
         break;
-      }
-
-      if (!is_init_completed()) {
-        // Double checked locking, this ensure that is_init_completed() does not
-        // transition while expanding the heap.
-        MonitorLocker ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
-        if (!is_init_completed()) {
-          // Can't do GC; try heap expansion to satisfy the request.
-          result = expand_heap_and_allocate(size, is_tlab);
-          if (result != nullptr) {
-            return result;
-          }
-        }
       }
 
       gc_count_before = total_collections();
