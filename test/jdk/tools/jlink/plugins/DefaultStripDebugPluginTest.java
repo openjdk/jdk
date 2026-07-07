@@ -23,6 +23,7 @@
 
 import java.util.Map;
 
+import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin;
 import jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin.NativePluginFactory;
@@ -165,11 +166,21 @@ public class DefaultStripDebugPluginTest {
 
         private static final String NATIVE_PATH = "/foo/lib/test.so.debug";
         private static final String JAVA_PATH = "/foo/TestClass.class";
-        static final String DEBUGINFO_PATH = "/foo/lib/libfoo.so.debuginfo";
+        // Platform-appropriate debug file paths, matching the patterns chosen by
+        // DefaultStripDebugPlugin.debugFilePattern() for the runtime platform.
+        static final String DEBUGINFO_PATH = platformDebugPath();
         static final String DIZ_PATH = "/foo/lib/libfoo.diz";
         private static final String STRIP_NATIVE_NAME = "strip-native-debug-symbols";
         private static final String OMIT_ARG = "exclude-debuginfo-files";
         private final boolean isNative;
+
+        private static String platformDebugPath() {
+            return switch (Platform.runtime().os()) {
+                case WINDOWS -> "/foo/bin/libfoo.pdb";
+                case MACOS   -> "/foo/lib/libfoo.dylib.dSYM/Contents/Resources/DWARF/libfoo.dylib";
+                default      -> "/foo/lib/libfoo.so.debuginfo";
+            };
+        }
 
         MockStripPlugin(boolean isNative) {
             this.isNative = isNative;
