@@ -116,6 +116,7 @@ final class BufferMismatch {
                         length,
                         ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE);
             }
+            // Mismatched
             if (i >= 0) {
                 // Check if mismatch is not associated with two NaN values; and
                 // is not associated with +0 and -0
@@ -125,8 +126,12 @@ final class BufferMismatch {
                     return i;
 
                 // Fall back to slow mechanism
+                // ISSUE: Consider looping over vectorizedMismatch adjusting ranges
+                // However, requires that returned value be relative to input ranges
                 i++;
-            } else {
+            }
+            // Matched
+            else {
                 return -1;
             }
         }
@@ -143,12 +148,11 @@ final class BufferMismatch {
         if (length > 0 && a.order() == b.order()) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            int i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.session(), b.session(),
+            return SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.session(), b.session(),
                     a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE),
                     b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE),
                     length,
                     ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE);
-            return i;
         }
         for (int i = 0; i < length; i++) {
             if (a.get(aOff + i) != b.get(bOff + i))
@@ -167,6 +171,7 @@ final class BufferMismatch {
                         length,
                         ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE);
             }
+            // Mismatched
             if (i >= 0) {
                 // Check if mismatch is not associated with two NaN values; and
                 // is not associated with +0 and -0
@@ -176,8 +181,12 @@ final class BufferMismatch {
                     return i;
 
                 // Fall back to slow mechanism
+                // ISSUE: Consider looping over vectorizedMismatch adjusting ranges
+                // However, requires that returned value be relative to input ranges
                 i++;
-            } else {
+            }
+            // Matched
+            else {
                 return -1;
             }
         }
