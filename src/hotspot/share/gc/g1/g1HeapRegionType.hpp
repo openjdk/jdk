@@ -78,8 +78,9 @@ class G1HeapRegionType {
   static bool is_valid(Tag tag);
 
   Tag get() const {
-    hrt_assert_is_valid(_tag.load_relaxed());
-    return _tag.load_relaxed();
+    Tag result = _tag.load_relaxed();
+    hrt_assert_is_valid(result);
+    return result;
   }
 
   // Sets the type to 'tag'.
