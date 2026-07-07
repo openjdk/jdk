@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_G1_G1COLLECTORSTATE_HPP
 #define SHARE_GC_G1_G1COLLECTORSTATE_HPP
 
-#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -60,15 +59,12 @@ class G1CollectorState {
   // has been in progress when the request came in.
   //
   // This flag remembers that there is an unfullfilled request.
-  Atomic<bool> _initiate_conc_mark_if_possible;
+  bool _initiate_conc_mark_if_possible;
 
 public:
   G1CollectorState() :
     _phase(Phase::YoungNormal),
     _initiate_conc_mark_if_possible(false) { }
-
-  G1CollectorState(const G1CollectorState& other);
-  G1CollectorState& operator=(const G1CollectorState& other);
 
   // Phase setters
   inline void set_in_normal_young_gc();
