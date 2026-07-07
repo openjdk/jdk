@@ -10364,6 +10364,43 @@ instruct cmovI_cmpP(iRegINoSp dst, iRegI src, iRegP op1, iRegP op2, cmpOpU cop) 
   ins_pipe(pipe_class_compare);
 %}
 
+// Special cases where one arg is zero
+// These are selected in preference to the rules above because they
+// avoid loading constant 0 into a source register
+
+// CMoveI (signed compare) with zero as second operand
+// Pattern: dst = cond ? dst : 0 (conditional clear)
+instruct cmovI_cmpI_zero(iRegINoSp dst, immI0 src, iRegI op1, iRegI op2, cmpOp cop) %{
+  match(Set dst (CMoveI (Binary cop (CmpI op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{ "CMoveI $dst, ($op1 $cop $op2), $dst, zr\t#@cmovI_cmpI_zero\n\t" %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), zr);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+// CMoveI (unsigned compare) with zero as second operand
+instruct cmovI_cmpU_zero(iRegINoSp dst, immI0 src, iRegI op1, iRegI op2, cmpOpU cop) %{
+  match(Set dst (CMoveI (Binary cop (CmpU op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{ "CMoveI $dst, ($op1 $cop $op2), $dst, zr\t#@cmovI_cmpU_zero\n\t" %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), zr);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
 // --------- CMoveL ---------
 
 instruct cmovL_cmpL(iRegLNoSp dst, iRegL src, iRegL op1, iRegL op2, cmpOp cop) %{
@@ -10497,6 +10534,38 @@ instruct cmovL_cmpP(iRegLNoSp dst, iRegL src, iRegP op1, iRegP op2, cmpOpU cop) 
     __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
                  as_Register($op1$$reg), as_Register($op2$$reg),
                  as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+// CMoveL (signed compare) with zero as second operand
+instruct cmovL_cmpL_zero(iRegLNoSp dst, immL0 src, iRegL op1, iRegL op2, cmpOp cop) %{
+  match(Set dst (CMoveL (Binary cop (CmpL op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{ "CMoveL $dst, ($op1 $cop $op2), $dst, zr\t#@cmovL_cmpL_zero\n\t" %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), zr);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+// CMoveL (unsigned compare) with zero as second operand
+instruct cmovL_cmpUL_zero(iRegLNoSp dst, immL0 src, iRegL op1, iRegL op2, cmpOpU cop) %{
+  match(Set dst (CMoveL (Binary cop (CmpUL op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{ "CMoveL $dst, ($op1 $cop $op2), $dst, zr\t#@cmovL_cmpUL_zero\n\t" %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), zr);
   %}
 
   ins_pipe(pipe_class_compare);
