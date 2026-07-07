@@ -3707,9 +3707,13 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
      * in lane order.
      *
      * The string is produced as if by a call to {@link
-     * java.util.Arrays#toString(short[]) Arrays.toString()},
-     * as appropriate to the {@code short} array returned by
-     * {@link #toArray this.toArray()}.
+     * java.util.Arrays#toString(Object[]) Arrays.toString()},
+     * as appropriate to the {@link Float16} array whose elements are
+     * the lane values of this vector boxed as {@link Float16} values.
+     * Each lane is rendered by {@link Float16#toString(Float16)}, which
+     * produces a human-readable floating-point value and canonical text
+     * for special values (for example {@code "NaN"} and {@code "Infinity"})
+     * regardless of the underlying bit encoding.
      *
      * @return a string of the form {@code "[0,1,2...]"}
      * reporting the lane values of this vector
@@ -3718,8 +3722,10 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     @ForceInline
     public final
     String toString() {
-        // now that toArray is strongly typed, we can define this
-        return Arrays.toString(toArray());
+        // Render the lanes as Float16 values; Float16.toString produces
+        // human-readable text and canonicalizes NaN, Infinity and -0.0
+        // independent of the underlying bit encoding.
+        return Arrays.toString(toFloat16Array());
     }
 
     /**
