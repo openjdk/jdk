@@ -2636,7 +2636,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
       }
     }
 
-    if (overflow_stub) {
+    if (overflow_stub != nullptr) {
       guarantee(step->is_valid(), "must be");
       if (!freq_opr->is_valid()) {
         if (!step->is_constant()) {
@@ -2660,22 +2660,29 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
           __ andw(dest, dest, rscratch1);
         }
 
-        if (step->is_register()) {
-          __ subsw(zr, dest, as_reg(step), __ LSL, ratio_shift);
-        } else {
-          __ mov(rscratch1, step->as_constant_ptr()->as_jint_bits() << ratio_shift);
-          __ subsw(zr, dest, rscratch1);
-        }
+        // If (dest & mask) < step, we just overflowed.
+        switch (ProfileCaptureRatio) {
+          case 1:
+            __ cbzw(rscratch1, *overflow_stub->entry());
+            break;
+          default:
+            if (step->is_register()) {
+              __ subsw(zr, dest, as_reg(step), __ LSL, ratio_shift);
+            } else {
+              __ mov(rscratch1, step->as_constant_ptr()->as_jint_bits() << ratio_shift);
+              __ subsw(zr, dest, rscratch1);
+            }
 #ifndef PRODUCT
-        Label nope;
-        __ br(~ __ LO, nope);
-        __ lea(rscratch2, Address((address)&tier3_overflows));
-        __ mov(rscratch1, 1);
-        __ ldadd(Assembler::xword, rscratch1, rscratch1, rscratch2);
-        __ nop();
-        __ bind(nope);
+            Label nope;
+            __ br(~ __ LO, nope);
+            __ lea(rscratch2, Address((address)&tier3_overflows));
+            __ mov(rscratch1, 1);
+            __ ldadd(Assembler::xword, rscratch1, rscratch1, rscratch2);
+            __ bind(nope);
 #endif
-        __ br(__ LO, *overflow_stub->entry());
+            __ br(__ LO, *overflow_stub->entry());
+            break;
+        }
       }
     }
 
@@ -2683,12 +2690,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
       __ b(*counter_stub->continuation());
     }
   };
-
-  if (step->is_register()) {
-    __ mov(rscratch1, step->as_register());
-  } else {
-    __ mov(rscratch1, step->as_constant_ptr()->as_jint_bits());
-  }
 
   if (counter_stub != nullptr) {
     __ ubfx(rscratch1, r_profile_rng, 28 - ratio_shift, ratio_shift);

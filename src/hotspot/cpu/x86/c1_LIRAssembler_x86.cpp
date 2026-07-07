@@ -2905,6 +2905,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
                   InvocationCounter::count_increment * ProfileCaptureRatio);
           __ cmovl(Assembler::equal, dest, step_opr->as_register());
         }
+
         // If (dest & mask) < step, we just overflowed.
         __ andl(dest, freq_opr->as_jint());
         switch (ProfileCaptureRatio) {

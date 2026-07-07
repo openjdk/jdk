@@ -2555,22 +2555,30 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
       } else {
         if (!step->is_constant()) {
           // If step is 0, make sure the stub check below always fails
-          __ cmp(step->as_register(), (u1)0);
+          __ cmp(step->as_register(), 0);
           __ mov(Rtemp, InvocationCounter::count_increment * ProfileCaptureRatio);
           __ mov(dest, Rtemp, eq);
         }
         juint mask = freq_opr->as_jint();
         __ mov_slow(Rtemp, mask);
-        __ andr(dest, dest, Rtemp);
+        __ andrs(dest, dest, Rtemp);
 
-        if (step->is_register()) {
-          __ cmp(dest, AsmOperand(step->as_register(), lsl, ratio_shift));
-        } else {
-          __ mov(Rtemp, step->as_constant_ptr()->as_jint_bits() << ratio_shift);
-          __ cmp(dest, Rtemp);
+        // If (dest & mask) < step, we just overflowed.
+        switch (ProfileCaptureRatio) {
+          case 1:
+            __ b(*overflow_stub->entry(), eq);
+            break;
+          default:
+            if (step->is_register()) {
+              __ cmp(dest, AsmOperand(step->as_register(), lsl, ratio_shift));
+            } else {
+              __ mov(Rtemp, step->as_constant_ptr()->as_jint_bits() << ratio_shift);
+              __ cmp(dest, Rtemp);
+            }
+            __ b(*overflow_stub->entry(), lo);
+            break;
         }
       }
-      __ b(*overflow_stub->entry(), lo);
     }
 
     if (counter_stub != nullptr) {
