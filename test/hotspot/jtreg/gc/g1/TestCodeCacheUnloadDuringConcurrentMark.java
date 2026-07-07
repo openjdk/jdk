@@ -28,6 +28,7 @@ package gc.g1;
  * @summary Tests that G1 concurrent marking unloads a freshly not-entrant nmethod.
  * @requires vm.gc.G1
  * @requires vm.compiler1.enabled
+ * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.ClassUnloadingWithConcurrentMark != false
  * @requires vm.opt.MethodFlushing != false
  * @library /test/lib

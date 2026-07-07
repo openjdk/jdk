@@ -28,6 +28,7 @@ package gc;
  * @summary Tests that one full GC unloads a freshly not-entrant nmethod.
  * @requires vm.gc.Serial
  * @requires vm.compiler1.enabled
+ * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
@@ -44,6 +45,7 @@ package gc;
  * @summary Tests that one full GC unloads a freshly not-entrant nmethod.
  * @requires vm.gc.Parallel
  * @requires vm.compiler1.enabled
+ * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
@@ -60,6 +62,7 @@ package gc;
  * @summary Tests that one full GC unloads a freshly not-entrant nmethod.
  * @requires vm.gc.G1
  * @requires vm.compiler1.enabled
+ * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
@@ -76,6 +79,7 @@ package gc;
  * @summary Tests that one full GC unloads a freshly not-entrant nmethod.
  * @requires vm.gc.Shenandoah
  * @requires vm.compiler1.enabled
+ * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
@@ -92,6 +96,7 @@ package gc;
  * @summary Tests that one full GC unloads a freshly not-entrant nmethod.
  * @requires vm.gc.Z
  * @requires vm.compiler1.enabled
+ * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
