@@ -183,6 +183,16 @@ void OpaqueInitializedAssertionPredicateNode::dump_spec(outputStream* st) const 
 }
 #endif // NOT PRODUCT
 
+//=============================================================================
+//------------------------------Identity---------------------------------------
+// Do NOT remove the opaque node until subsequent IGVN pass.
+Node* OpaqueParseNode::Identity(PhaseGVN* phase) {
+  if (phase->is_IterGVN()) {
+    return in(1);
+  }
+  return this;
+}
+
 uint ProfileBooleanNode::hash() const { return NO_HASH; }
 bool ProfileBooleanNode::cmp( const Node &n ) const {
   return (&n == this);
