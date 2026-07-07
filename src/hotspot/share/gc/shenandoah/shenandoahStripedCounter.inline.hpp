@@ -37,8 +37,8 @@ inline uint ShenandoahStripedCounter::current_stripe() {
   // Per-thread probe into [0, _num_stripes). Hashing the thread pointer spreads threads across
   // stripes with no syscall or per-CPU query. This is a pure, stable function of (thread pointer,
   // _num_stripes) -- the same thread always maps to the same stripe for this instance -- so there is
-  // nothing to cache, and the result is always in range. Correctness does not depend on the choice
-  // because reads sum all stripes.
+  // nothing to cache, and the result is always in range. Correctness does not depend on which stripe
+  // a thread gets: every stripe is accounted for when the counter is read (sum/drain).
   const uintptr_t t = (uintptr_t) Thread::current();
   return (uint) ((t ^ (t >> 20) ^ (t >> 9)) & _stripe_mask);
 }

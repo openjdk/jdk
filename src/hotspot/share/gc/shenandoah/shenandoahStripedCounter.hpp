@@ -88,11 +88,13 @@ public:
   // trigger threshold accordingly. The exact total is only observable via sum().
   size_t add(size_t bytes, bool& striped);
 
-  // Sum the current total across all stripes. No reset. Approximate under concurrent writes.
+  // Current total (only stripe 0 while uncontended, otherwise the sum of all stripes). No reset.
+  // Approximate under concurrent writes.
   size_t sum() const;
 
-  // Sum the total and atomically reset every stripe to zero, returning the total consumed.
-  // Concurrent adds racing with the drain accumulate toward the next epoch rather than being lost.
+  // Read the total and atomically reset it to zero, returning the amount consumed (only stripe 0
+  // while uncontended, otherwise all stripes). Concurrent adds racing with the drain accumulate
+  // toward the next epoch rather than being lost.
   size_t drain();
 
   // Value currently held in the calling thread's own stripe (no reset). Before striping every writer
