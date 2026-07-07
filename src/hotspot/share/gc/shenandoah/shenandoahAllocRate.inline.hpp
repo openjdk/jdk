@@ -57,18 +57,17 @@ void ShenandoahAllocRate<Clock>::update_minimum_sample_size(const size_t availab
 }
 
 template<typename Clock>
-void ShenandoahAllocRate<Clock>::maybe_take_sample(const size_t unsampled_hint) {
-  const size_t minimum_sample_size = _minimum_sample_size.load_relaxed();
-  if (unsampled_hint < minimum_sample_size) {
-    return;
-  }
+void ShenandoahAllocRate<Clock>::maybe_take_sample(const size_t per_stripe_threshold) {
   if (!_sample_lock.try_lock()) {
     // Another thread has the lock and will take the sample.
     return;
   }
-  const size_t unsampled = _unsampled.sum();
-  if (unsampled < minimum_sample_size) {
-    // Not enough in aggregate yet (or another thread already sampled and reset the counter).
+  // Re-check this thread's own stripe under the lock against the per-stripe threshold. Using the
+  // caller's stripe (O(1)) rather than sum() over all stripes (O(N)) keeps the locked path cheap;
+  // the caller only reaches here right after its stripe crossed the threshold in add().
+  const size_t unsampled_stripe = _unsampled.current_stripe_value();
+  if (unsampled_stripe < per_stripe_threshold) {
+    // Stripe fell back below its share (another thread already sampled and drained the counter).
     _sample_lock.unlock();
     return;
   }
@@ -86,11 +85,26 @@ void ShenandoahAllocRate<Clock>::maybe_take_sample(const size_t unsampled_hint) 
 template<typename Clock>
 void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
   // The striped counter absorbs allocation-path contention; add() returns a cheap lower bound on the
-  // running total (this thread's view). maybe_take_sample re-checks the true total under the lock.
+  // running total (this thread's own stripe once striped). We edge-trigger a sample when this stripe
+  // crosses its per-stripe share of the threshold, then re-check under the lock in maybe_take_sample.
   // Even if a skewed distribution never trips that check, the periodic force_update() (every 100ms)
   // samples unconditionally, so nothing is missed.
-  const size_t unsampled = _unsampled.add(allocated_bytes);
-  maybe_take_sample(unsampled);
+  bool striped = false;
+  const size_t unsampled = _unsampled.add(allocated_bytes, striped);
+  const size_t minimum_sample_size = _minimum_sample_size.load_relaxed();
+  // The hint returned by add() is this thread's own stripe total once striped, i.e. ~1/N of the
+  // aggregate. Scale the trigger threshold to a per-stripe share so a stripe crossing its share still
+  // fires the (locked) aggregate re-check. Shift by log2(N) instead of dividing. Clamp to >= 1 so a
+  // small minimum_sample_size can never make the share 0 (which would disable the fast-path check).
+  size_t per_stripe_threshold = minimum_sample_size;
+  if (striped) {
+    per_stripe_threshold = MAX2(minimum_sample_size >> _unsampled.log_num_stripes(), (size_t) 1);
+  }
+  // Edge-trigger: fire only on the single add that pushes this stripe across its share, not on every
+  // add while it sits above (which would hammer the sample lock).
+  if (unsampled >= per_stripe_threshold && unsampled - allocated_bytes < per_stripe_threshold) {
+    maybe_take_sample(per_stripe_threshold);
+  }
 }
 
 template<typename Clock>

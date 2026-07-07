@@ -121,9 +121,11 @@ class ShenandoahAllocRate {
   Atomic<size_t> _minimum_sample_size; // bytes, read by mutator, updated by gc
   jlong _last_sample_time;
 
-  // Try to take a sample now, given a lower bound on the current unsampled total. Acquires the
-  // sample lock, re-checks the true total against the threshold, and records a sample if due.
-  void maybe_take_sample(size_t unsampled_hint);
+  // Try to take a sample now. Acquires the sample lock, re-checks the calling thread's own stripe
+  // against per_stripe_threshold (a cheap O(1) proxy for "the aggregate is near the sample size"),
+  // and records a sample if still due. Called from allocated() right after this thread's stripe
+  // crossed its per-stripe share of the sample threshold.
+  void maybe_take_sample(size_t per_stripe_threshold);
 
   ShenandoahWeightedSeq _baseline;
   ShenandoahWeightedSeq _recent;

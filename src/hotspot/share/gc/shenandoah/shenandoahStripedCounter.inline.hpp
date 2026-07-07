@@ -37,7 +37,8 @@ inline ShenandoahStripedCounter::ShenandoahStripedCounter()
     // Round the CPU count down to a power of two so current_stripe() can mask instead of modulo.
     // Rounding down keeps the count <= number of cores. At least 1 stripe.
   , _num_stripes(round_down_power_of_2((uint) MAX2(os::processor_count(), 1)))
-  , _stripe_mask(_num_stripes - 1) {
+  , _stripe_mask(_num_stripes - 1)
+  , _log_num_stripes(log2i_exact(_num_stripes)) {
   // create_unfreeable aligns both the base and per-element stride to a cache line and
   // default-constructs each Atomic to 0.
   _stripes = PaddedArray<Atomic<size_t>, mtGC>::create_unfreeable(_num_stripes);
@@ -58,7 +59,7 @@ inline uint ShenandoahStripedCounter::current_stripe() {
   return (uint) ((t ^ (t >> 20) ^ (t >> 9)) & _stripe_mask);
 }
 
-inline size_t ShenandoahStripedCounter::add(const size_t bytes) {
+inline size_t ShenandoahStripedCounter::add(const size_t bytes, bool& striped) {
   // LongAdder-style fast path: while uncontended, accumulate in stripe 0 with a single CAS. The
   // first thread to lose that CAS latches _striped, after which everyone routes to their own stripe
   // (a relaxed fetch-add on its own cache line). Stripe 0 keeps accumulating either way.
@@ -71,6 +72,7 @@ inline size_t ShenandoahStripedCounter::add(const size_t bytes) {
     // Lost the CAS: contention. Latch striped mode and fall through to record in our stripe.
     _striped.store_relaxed(true);
   }
+  striped = true;
   const uint stripe = current_stripe();
   // Lower bound on the aggregate: this writer's own stripe total.
   return _stripes[stripe].add_then_fetch(bytes, memory_order_relaxed);

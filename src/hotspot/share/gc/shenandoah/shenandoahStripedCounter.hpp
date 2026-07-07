@@ -68,6 +68,7 @@ class ShenandoahStripedCounter : public CHeapObj<mtGC> {
   // allocate more stripes than cores.
   uint const      _num_stripes;
   uint const      _stripe_mask; // _num_stripes - 1
+  uint const      _log_num_stripes;
 
   // The stripe this thread uses: a per-thread probe into [0, _num_stripes). Computed inline from the
   // thread pointer each call -- a pure, stable function of (thread, _num_stripes), so it needs no
@@ -79,17 +80,28 @@ public:
   ShenandoahStripedCounter();
   ~ShenandoahStripedCounter();
 
-  // Add `bytes` to the counter and return a lower bound on the resulting total (this writer's view:
-  // _base plus its own stripe). The exact total is only observable via sum(); the return value is
-  // meant as a cheap trigger hint for a caller that will re-check under a lock.
-  size_t add(size_t bytes);
+  // Add `bytes` to the counter and return a lower bound on the resulting total. Before striping this
+  // is the exact total (stripe 0); once striped it is this writer's own stripe total (~1/N of the
+  // aggregate). `striped` is set to whether the counter is in striped mode, so the caller can scale a
+  // trigger threshold accordingly. The exact total is only observable via sum().
+  size_t add(size_t bytes, bool& striped);
 
-  // Sum the current total (_base plus every stripe). No reset. Approximate under concurrent writes.
+  // Sum the current total across all stripes. No reset. Approximate under concurrent writes.
   size_t sum() const;
 
-  // Sum the total and atomically reset _base and every stripe to zero, returning the total consumed.
+  // Sum the total and atomically reset every stripe to zero, returning the total consumed.
   // Concurrent adds racing with the drain accumulate toward the next epoch rather than being lost.
   size_t drain();
+
+  // Value currently held in the calling thread's own stripe (no reset). Before striping every writer
+  // uses stripe 0, so this returns that shared total; once striped it is this thread's stripe. Lets a
+  // caller re-check a per-stripe trigger threshold in O(1) rather than summing all stripes.
+  size_t current_stripe_value() { return _stripes[_striped.load_relaxed() ? current_stripe() : 0].load_relaxed(); }
+
+  // Number of stripes (a power of two, <= CPU count), and its base-2 log. Exposed so a caller can
+  // scale a threshold to a per-stripe share with a shift (>> log_num_stripes) instead of a divide.
+  uint num_stripes() const     { return _num_stripes; }
+  uint log_num_stripes() const { return _log_num_stripes; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTRIPEDCOUNTER_HPP
