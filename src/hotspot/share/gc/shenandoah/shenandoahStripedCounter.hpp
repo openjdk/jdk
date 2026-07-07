@@ -97,11 +97,6 @@ public:
   // toward the next epoch rather than being lost.
   size_t drain();
 
-  // Value currently held in the calling thread's own stripe (no reset). Before striping every writer
-  // uses stripe 0, so this returns that shared total; once striped it is this thread's stripe. Lets a
-  // caller re-check a per-stripe trigger threshold in O(1) rather than summing all stripes.
-  size_t current_stripe_value();
-
   // Number of stripes (a power of two, <= CPU count), and its base-2 log. Exposed so a caller can
   // scale a threshold to a per-stripe share with a shift (>> log_num_stripes) instead of a divide.
   uint num_stripes() const;

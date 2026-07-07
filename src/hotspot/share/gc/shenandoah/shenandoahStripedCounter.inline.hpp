@@ -43,10 +43,6 @@ inline uint ShenandoahStripedCounter::current_stripe() {
   return (uint) ((t ^ (t >> 20) ^ (t >> 9)) & _stripe_mask);
 }
 
-inline size_t ShenandoahStripedCounter::current_stripe_value() {
-  return _stripes[_striped.load_relaxed() ? current_stripe() : 0].load_relaxed();
-}
-
 inline uint ShenandoahStripedCounter::num_stripes() const     { return _num_stripes; }
 inline uint ShenandoahStripedCounter::log_num_stripes() const { return _log_num_stripes; }
 
