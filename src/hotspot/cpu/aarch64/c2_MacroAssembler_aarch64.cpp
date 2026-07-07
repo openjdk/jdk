@@ -1806,19 +1806,19 @@ void C2_MacroAssembler::neon_reduce_mul_integral(Register dst, BasicType bt,
         if (isQ) {
           // Multiply the lower half and higher half of vector iteratively.
           // vtmp1 = vsrc[8:15]
-          ins(vtmp1, D, vsrc, 0, 1);
+          ext(vtmp1, T16B, vsrc, vsrc, 8);
           // vtmp1[n] = vsrc[n] * vsrc[n + 8], where n=[0, 7]
           mulv(vtmp1, T8B, vtmp1, vsrc);
           // vtmp2 = vtmp1[4:7]
-          ins(vtmp2, S, vtmp1, 0, 1);
+          ext(vtmp2, T8B, vtmp1, vtmp1, 4);
           // vtmp1[n] = vtmp1[n] * vtmp1[n + 4], where n=[0, 3]
           mulv(vtmp1, T8B, vtmp2, vtmp1);
         } else {
-          ins(vtmp1, S, vsrc, 0, 1);
+          ext(vtmp1, T8B, vsrc, vsrc, 4);
           mulv(vtmp1, T8B, vtmp1, vsrc);
         }
         // vtmp2 = vtmp1[2:3]
-        ins(vtmp2, H, vtmp1, 0, 1);
+        ext(vtmp2, T8B, vtmp1, vtmp1, 2);
         // vtmp2[n] = vtmp1[n] * vtmp1[n + 2], where n=[0, 1]
         mulv(vtmp2, T8B, vtmp2, vtmp1);
         // dst = vtmp2[0] * isrc * vtmp2[1]
@@ -1831,12 +1831,12 @@ void C2_MacroAssembler::neon_reduce_mul_integral(Register dst, BasicType bt,
         break;
       case T_SHORT:
         if (isQ) {
-          ins(vtmp2, D, vsrc, 0, 1);
+          ext(vtmp2, T16B, vsrc, vsrc, 8);
           mulv(vtmp2, T4H, vtmp2, vsrc);
-          ins(vtmp1, S, vtmp2, 0, 1);
+          ext(vtmp1, T8B, vtmp2, vtmp2, 4);
           mulv(vtmp1, T4H, vtmp1, vtmp2);
         } else {
-          ins(vtmp1, S, vsrc, 0, 1);
+          ext(vtmp1, T8B, vsrc, vsrc, 4);
           mulv(vtmp1, T4H, vtmp1, vsrc);
         }
         umov(rscratch1, vtmp1, H, 0);
@@ -1848,7 +1848,7 @@ void C2_MacroAssembler::neon_reduce_mul_integral(Register dst, BasicType bt,
         break;
       case T_INT:
         if (isQ) {
-          ins(vtmp1, D, vsrc, 0, 1);
+          ext(vtmp1, T16B, vsrc, vsrc, 8);
           mulv(vtmp1, T2S, vtmp1, vsrc);
         } else {
           vtmp1 = vsrc;
@@ -1904,19 +1904,19 @@ void C2_MacroAssembler::neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
         break;
       case T_FLOAT:
         fmuls(dst, fsrc, vsrc);
-        ins(vtmp, S, vsrc, 0, 1);
+        ext(vtmp, T8B, vsrc, vsrc, 4);
         fmuls(dst, dst, vtmp);
         if (isQ) {
-          ins(vtmp, S, vsrc, 0, 2);
+          ext(vtmp, T16B, vsrc, vsrc, 8);
           fmuls(dst, dst, vtmp);
-          ins(vtmp, S, vsrc, 0, 3);
+          ext(vtmp, T16B, vsrc, vsrc, 12);
           fmuls(dst, dst, vtmp);
          }
         break;
       case T_DOUBLE:
         assert(isQ, "unsupported");
         fmuld(dst, fsrc, vsrc);
-        ins(vtmp, D, vsrc, 0, 1);
+        ext(vtmp, T16B, vsrc, vsrc, 8);
         fmuld(dst, dst, vtmp);
         break;
       default:
