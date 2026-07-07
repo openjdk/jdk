@@ -27,7 +27,7 @@
  * @bug 8386475
  * @summary Verify no assertions with -XX:+UseBMI2Instructions
  * @requires os.simpleArch == "x64"
- * @run main/othervm -Xcomp -XX:+UseBMI2Instructions ${test.main.class}
+ * @run main/othervm -XX:+UseBMI2Instructions ${test.main.class}
  */
 
 /*
@@ -35,7 +35,7 @@
  * @bug 8386475
  * @summary Verify no assertions with -XX:-UseBMI2Instructions
  * @requires os.simpleArch == "x64"
- * @run main/othervm -Xcomp -XX:-UseBMI2Instructions ${test.main.class}
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,java.lang.CharacterDataLatin1::<clinit> -XX:+UnlockDiagnosticVMOptions -XX:CopyAVX3Threshold=0 -XX:-UseBMI2Instructions ${test.main.class}
  */
 
 /*
@@ -43,7 +43,7 @@
  * @bug 8386475
  * @summary Verify no assertions when generating vectorizedMismatch stub with -XX:-UseBMI2Instructions
  * @requires os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*"
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:AVX3Threshold=0 -XX:-UseBMI2Instructions ${test.main.class}
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:AVX3Threshold=0 -XX:-UseBMI2Instructions ${test.main.class}
  */
 
 /*
@@ -51,7 +51,7 @@
  * @bug 8386475
  * @summary Verify no assertions when generating string_indexof stub with -XX:-UseBMI2Instructions
  * @requires os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*"
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:UseAVX=2 -XX:+EnableX86ECoreOpts -XX:-UseBMI2Instructions ${test.main.class}
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseAVX=2 -XX:+EnableX86ECoreOpts -XX:-UseBMI2Instructions ${test.main.class}
  */
 
 package compiler.cpuflags;
