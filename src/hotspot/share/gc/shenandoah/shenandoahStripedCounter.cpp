@@ -28,16 +28,10 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-// The constructor and destructor are defined out-of-line (rather than in the .inline.hpp) so that
-// translation units which construct or destroy a ShenandoahStripedCounter -- possibly only via an
-// enclosing object such as ShenandoahHeap -- resolve them without having to include the inline
-// header. The hot-path methods (add/sum/drain/current_stripe) remain inline.
-
 ShenandoahStripedCounter::ShenandoahStripedCounter()
-  : _striped(false)
     // Round the CPU count down to a power of two so current_stripe() can mask instead of modulo.
     // Rounding down keeps the count <= number of cores. At least 1 stripe.
-  , _num_stripes(round_down_power_of_2((uint) MAX2(os::processor_count(), 1)))
+  : _num_stripes(round_down_power_of_2((uint) MAX2(os::processor_count(), 1)))
   , _stripe_mask(_num_stripes - 1)
   , _log_num_stripes(log2i_exact(_num_stripes)) {
   // create_unfreeable aligns both the base and per-element stride to a cache line and
@@ -46,6 +40,5 @@ ShenandoahStripedCounter::ShenandoahStripedCounter()
 }
 
 ShenandoahStripedCounter::~ShenandoahStripedCounter() {
-  // _stripes is created "unfreeable" (raw chunk not tracked); nothing to free. Counters live as long
-  // as the owner, which for the sole current user (per-heap alloc rate) is the process lifetime.
+  // _stripes is created "unfreeable" (raw chunk not tracked); nothing to free.
 }
