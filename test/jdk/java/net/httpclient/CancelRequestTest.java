@@ -79,6 +79,7 @@ import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Assumptions;
@@ -394,11 +395,8 @@ public class CancelRequestTest implements HttpServerAdapters {
                 requestLatch.countDown();
             }
 
-            try {
-                cf1.get();
-            } catch (CancellationException x) {
-                out.println(now() + "Got expected exception: " + x);
-            }
+            assertThrows(CancellationException.class, cf1::get);
+            assertThrows(cf1.isCancelled());
 
             // because it's cf1 that was cancelled then response might not have
             // completed yet - so wait for it here...
@@ -524,11 +522,8 @@ public class CancelRequestTest implements HttpServerAdapters {
                 requestLatch.countDown();
             }
 
-            try {
-                cf1.get();
-            } catch (CancellationException x) {
-                out.println(now() + "Got expected exception: " + x);
-            }
+            assertThrows(CancellationException.class, cf1::get);
+            assertTrue(cf1.isCancelled());
 
             // because it's cf1 that was cancelled then response might not have
             // completed yet - so wait for it here...
