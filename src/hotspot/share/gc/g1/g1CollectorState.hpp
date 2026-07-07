@@ -68,7 +68,7 @@ public:
     _initiate_conc_mark_if_possible(false) { }
 
   G1CollectorState(const G1CollectorState& other);
-  G1CollectorState& operator=(G1CollectorState const& other);
+  G1CollectorState& operator=(const G1CollectorState& other);
 
   // Phase setters
   inline void set_in_normal_young_gc();

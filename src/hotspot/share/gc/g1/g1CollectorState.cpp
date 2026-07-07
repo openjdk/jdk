@@ -29,7 +29,7 @@
 G1CollectorState::G1CollectorState(const G1CollectorState& other) :
   _phase(other._phase), _initiate_conc_mark_if_possible(other.initiate_conc_mark_if_possible()) { }
 
-G1CollectorState& G1CollectorState::operator=(G1CollectorState const& other) {
+G1CollectorState& G1CollectorState::operator=(const G1CollectorState& other) {
   if (this != &other) {
     _phase = other._phase;
     set_initiate_conc_mark_if_possible(other.initiate_conc_mark_if_possible());
