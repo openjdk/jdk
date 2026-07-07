@@ -23,7 +23,6 @@
  */
 
 #include "gc/shenandoah/shenandoahStripedCounter.hpp"
-
 #include "memory/padded.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
