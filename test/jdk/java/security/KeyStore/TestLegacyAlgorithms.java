@@ -150,7 +150,11 @@ public class TestLegacyAlgorithms {
                 shouldWarn, () -> LoadStoreParamKS.run(jksFile));
 
         Provider[] providers = Security.getProviders("KeyStore.JKS");
-        for (Provider p : providers) {
+        if (providers.length > 0) {
+            // First provider should warn, and later provider for the same
+            // algorithm will not warn. This is because warning is determined
+            // by caller class and algorithm string, not by provider.
+            Provider p = providers[0];
             for (String a : ALG_LIST) {
                 checkWarn("provider object " + p.getName() + ": alg " + a,
                         a, shouldWarn, () -> ProvObjKS.run(a, p));

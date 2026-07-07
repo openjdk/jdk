@@ -133,18 +133,26 @@ public class TestLegacyAlgorithms {
                     () -> DefaultCipher.run(a));
         }
 
-        Provider[] providers = Security.getProviders();
-        for (Provider p : providers) {
+        Provider provider = null;
+        for (Provider p : Security.getProviders()) {
+            // First provider should warn, and later provider for the same
+            // algorithm will not warn. This is because warning is determined
+            // by caller class and algorithm string, not by provider.
             if (p.getService("Cipher", "RSA") != null) {
-                for (String a : ALG_LIST) {
-                    checkWarn("provider object " + p.getName() +
-                            ": alg " + a, a, shouldWarn,
-                            () -> ProvObjCipher.run(a, p));
+                provider = p;
+                break;
+            }
+        }
+        if (provider != null) {
+            final Provider fp = provider;
+            for (String a : ALG_LIST) {
+                checkWarn("provider object " + fp.getName() +
+                        ": alg " + a, a, shouldWarn,
+                        () -> ProvObjCipher.run(a, fp));
 
-                    checkWarn("provider name " + p.getName() +
-                            ": alg " + a, a, shouldWarn,
-                            () -> ProvNameCipher.run(a, p));
-                }
+                checkWarn("provider name " + fp.getName() +
+                        ": alg " + a, a, shouldWarn,
+                        () -> ProvNameCipher.run(a, fp));
             }
         }
     }

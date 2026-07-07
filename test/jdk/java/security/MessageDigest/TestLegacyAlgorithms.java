@@ -133,7 +133,11 @@ public class TestLegacyAlgorithms {
         }
 
         Provider[] providers = Security.getProviders("MessageDigest.SHA-512");
-        for (Provider p : providers) {
+        if (providers.length > 0) {
+            // First provider should warn, and later provider for the same
+            // algorithm will not warn. This is because warning is determined
+            // by caller class and algorithm string, not by provider.
+            Provider p = providers[0];
             for (String a : ALG_LIST) {
                 checkwarn("provider object " + p.getName() + ": alg " + a,
                         a, shouldWarn, () -> ProvObjMD.run(a, p));
