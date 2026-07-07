@@ -111,9 +111,6 @@ class ShenandoahAllocRate {
   static constexpr size_t ALLOC_SAMPLE_MAX = G;
 
   PaddedMonitor _sample_lock;
-  // Bytes allocated since the last sample. A striped counter absorbs the contention that a single
-  // shared counter would suffer on the hot allocation path when many mutator threads allocate
-  // concurrently (see ShenandoahStripedCounter).
   ShenandoahStripedCounter _unsampled;
   Atomic<size_t> _minimum_sample_size; // bytes, read by mutator, updated by gc
   jlong _last_sample_time;
