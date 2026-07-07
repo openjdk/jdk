@@ -30,8 +30,8 @@
  * @library /test/lib
  *          /javax/net/ssl/TLSCommon
  *          /javax/net/ssl/templates
- * @run main/othervm/timeout=2400 BulkCipherDisabledAlgorithms visibility
- * @run main/othervm/timeout=2400 BulkCipherDisabledAlgorithms handshake
+ * @run main/othervm/timeout=480 BulkCipherDisabledAlgorithms visibility
+ * @run main/othervm/timeout=480 BulkCipherDisabledAlgorithms handshake
  */
 
 import java.util.ArrayList;
