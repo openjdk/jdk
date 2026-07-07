@@ -29,7 +29,7 @@ import javax.net.ssl.SSLParameters;
 
 /*
  * @test
- * @bug <TBD>
+ * @bug 8387802
  * @summary Verify tls-unique channel binding (RFC 5929) via ExtendedSSLSession
  * @library /javax/net/ssl/templates /test/lib
  * @build SSLEngineTemplate
