@@ -27,27 +27,11 @@
 
 #include "gc/shenandoah/shenandoahStripedCounter.hpp"
 
-#include "memory/padded.inline.hpp"
-#include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
-#include "utilities/powerOfTwo.hpp"
+#include "runtime/thread.hpp"
 
-inline ShenandoahStripedCounter::ShenandoahStripedCounter()
-  : _striped(false)
-    // Round the CPU count down to a power of two so current_stripe() can mask instead of modulo.
-    // Rounding down keeps the count <= number of cores. At least 1 stripe.
-  , _num_stripes(round_down_power_of_2((uint) MAX2(os::processor_count(), 1)))
-  , _stripe_mask(_num_stripes - 1)
-  , _log_num_stripes(log2i_exact(_num_stripes)) {
-  // create_unfreeable aligns both the base and per-element stride to a cache line and
-  // default-constructs each Atomic to 0.
-  _stripes = PaddedArray<Atomic<size_t>, mtGC>::create_unfreeable(_num_stripes);
-}
-
-inline ShenandoahStripedCounter::~ShenandoahStripedCounter() {
-  // _stripes is created "unfreeable" (raw chunk not tracked); nothing to free. Counters live as long
-  // as the owner, which for the sole current user (per-heap alloc rate) is the process lifetime.
-}
+// The constructor and destructor are defined out-of-line in shenandoahStripedCounter.cpp so that
+// translation units which construct/destroy the counter (possibly only via an enclosing object) do
+// not need to include this inline header. Only the hot-path methods are inline here.
 
 inline uint ShenandoahStripedCounter::current_stripe() {
   // Per-thread probe into [0, _num_stripes). Hashing the thread pointer spreads threads across
@@ -58,6 +42,13 @@ inline uint ShenandoahStripedCounter::current_stripe() {
   const uintptr_t t = (uintptr_t) Thread::current();
   return (uint) ((t ^ (t >> 20) ^ (t >> 9)) & _stripe_mask);
 }
+
+inline size_t ShenandoahStripedCounter::current_stripe_value() {
+  return _stripes[_striped.load_relaxed() ? current_stripe() : 0].load_relaxed();
+}
+
+inline uint ShenandoahStripedCounter::num_stripes() const     { return _num_stripes; }
+inline uint ShenandoahStripedCounter::log_num_stripes() const { return _log_num_stripes; }
 
 inline size_t ShenandoahStripedCounter::add(const size_t bytes, bool& striped) {
   // LongAdder-style fast path: while uncontended, accumulate in stripe 0 with a single CAS. The
