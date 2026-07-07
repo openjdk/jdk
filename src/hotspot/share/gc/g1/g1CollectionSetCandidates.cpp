@@ -134,7 +134,7 @@ void G1CSetCandidateGroupList::append(G1CSetCandidateGroup* group) {
   assert(group->length() > 0, "Do not add empty groups");
   assert(!_groups.contains(group), "Already added to list");
   _groups.append(group);
-  _num_regions += group->length();
+  _num_regions.store_relaxed(num_regions() + group->length());
 }
 
 G1CSetCandidateGroup* G1CSetCandidateGroupList::at(uint index) {
@@ -147,7 +147,7 @@ void G1CSetCandidateGroupList::clear(bool uninstall_group_cardset) {
     delete gr;
   }
   _groups.clear();
-  _num_regions = 0;
+  _num_regions.store_relaxed(0);
 }
 
 void G1CSetCandidateGroupList::prepare_for_scan() {
@@ -156,9 +156,9 @@ void G1CSetCandidateGroupList::prepare_for_scan() {
   }
 }
 
-void G1CSetCandidateGroupList::remove_selected(uint count, uint num_regions) {
+void G1CSetCandidateGroupList::remove_selected(uint count, uint num_regions_to_remove) {
   _groups.remove_till(count);
-  _num_regions -= num_regions;
+  _num_regions.store_relaxed(num_regions() - num_regions_to_remove);
 }
 
 void G1CSetCandidateGroupList::remove(G1CSetCandidateGroupList* other) {
@@ -172,7 +172,7 @@ void G1CSetCandidateGroupList::remove(G1CSetCandidateGroupList* other) {
   // Create a list from scratch, copying over the elements from the candidate
   // list not in the other list. Finally deallocate and overwrite the old list.
   int new_length = _groups.length() - other->length();
-  _num_regions = num_regions() - other->num_regions();
+  _num_regions.store_relaxed(num_regions() - other->num_regions());
   GrowableArray<G1CSetCandidateGroup*> new_list(new_length, mtGC);
 
   uint other_idx = 0;
