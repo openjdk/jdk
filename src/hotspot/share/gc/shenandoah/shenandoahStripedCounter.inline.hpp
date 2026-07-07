@@ -51,16 +51,25 @@ inline uint ShenandoahStripedCounter::num_stripes() const     { return _num_stri
 inline uint ShenandoahStripedCounter::log_num_stripes() const { return _log_num_stripes; }
 
 inline size_t ShenandoahStripedCounter::add(const size_t bytes, bool& striped) {
-  // LongAdder-style fast path: while uncontended, accumulate in stripe 0 with a single CAS. The
-  // first thread to lose that CAS latches _striped, after which everyone routes to their own stripe
-  // (a relaxed fetch-add on its own cache line). Stripe 0 keeps accumulating either way.
+  // LongAdder-style fast path: while uncontended, accumulate in stripe 0 with a single CAS. A thread
+  // that loses that CAS to a competing writer latches _striped, after which everyone routes to their
+  // own stripe (a relaxed fetch-add on its own cache line). Stripe 0 keeps accumulating either way.
   if (!_striped.load_relaxed()) {
     const size_t base = _stripes[0].load_relaxed();
-    if (_stripes[0].compare_exchange(base, base + bytes, memory_order_relaxed) == base) {
+    size_t prev;
+    if ((prev = _stripes[0].compare_exchange(base, base + bytes, memory_order_relaxed)) == base) {
       // Won the stripe-0 CAS -- uncontended.
       return base + bytes;
     }
-    // Lost the CAS: contention. Latch striped mode and fall through to record in our stripe.
+    // The counter is add-only, so stripe 0 only ever decreases via drain()/exchange() resetting it
+    // to 0. A CAS failure with prev == 0 therefore means a drain raced between our load and our CAS,
+    // not a competing writer, so retry once into the freshly-zeroed stripe rather than latch
+    // striped mode and permanently lose the fast path over a benign drain race.
+    if (prev == 0 && _stripes[0].compare_exchange(0, bytes, memory_order_relaxed) == 0) {
+      return bytes;
+    }
+    // Lost the CAS to a competing writer: real contention. Latch striped mode and fall through to
+    // record in our stripe.
     _striped.store_relaxed(true);
   }
   striped = true;
