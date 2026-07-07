@@ -46,13 +46,13 @@ import jdk.test.lib.security.CertificateBuilder;
 
 /*
  * @test
- * @bug 8372526
+ * @bug 8372526 8386953
  * @summary Check CompressedCertificate message cache.
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  * @library /javax/net/ssl/templates
  *          /test/lib
- * @run main/othervm CompressedCertMsgCache
+ * @run main/othervm -Djdk.tls.server.newSessionTicketCount=0 CompressedCertMsgCache
  */
 
 public class CompressedCertMsgCache extends SSLSocketTemplate {
