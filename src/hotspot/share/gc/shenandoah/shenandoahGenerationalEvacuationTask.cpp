@@ -49,27 +49,22 @@ public:
 ShenandoahGenerationalEvacuationTask::ShenandoahGenerationalEvacuationTask(ShenandoahGenerationalHeap* heap,
                                                                            ShenandoahGeneration* generation,
                                                                            ShenandoahRegionIterator* iterator,
-                                                                           bool concurrent, bool only_promote_regions) :
+                                                                           bool only_promote_regions) :
   WorkerTask("Shenandoah Evacuation"),
   _heap(heap),
   _generation(generation),
   _regions(iterator),
   _collection_set(_heap->collection_set()),
-  _concurrent(concurrent),
   _only_promote_regions(only_promote_regions)
 {
   shenandoah_assert_generational();
 }
 
 void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
-  if (_concurrent) {
-    ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    SuspendibleThreadSetJoiner stsj;
-    do_work();
-  } else {
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    do_work();
-  }
+  ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac, ShenandoahPhaseTimings::Work, worker_id, true);
+  ShenandoahConcurrentWorkerSession worker_session(worker_id);
+  SuspendibleThreadSetJoiner stsj;
+  do_work();
 }
 
 void ShenandoahGenerationalEvacuationTask::do_work() {
@@ -102,7 +97,7 @@ void ShenandoahGenerationalEvacuationTask::promote_regions() {
 
     promoter.maybe_promote_region(r);
 
-    if (_heap->check_cancelled_gc_and_yield(_concurrent)) {
+    if (_heap->check_cancelled_gc_and_yield()) {
       break;
     }
   }
@@ -125,7 +120,7 @@ void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
       break;
     }
 
-    if (_heap->check_cancelled_gc_and_yield(_concurrent)) {
+    if (_heap->check_cancelled_gc_and_yield()) {
       // GC is cancelled (vm is stopping), no further work
       assert(_heap->cancelled_cause() == GCCause::_shenandoah_stop_vm,
         "Evacuation should not be cancelled for: %s", GCCause::to_string(_heap->cancelled_cause()));

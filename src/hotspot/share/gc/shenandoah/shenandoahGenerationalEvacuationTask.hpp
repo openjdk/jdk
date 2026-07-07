@@ -41,14 +41,13 @@ private:
   ShenandoahGeneration* const _generation;
   ShenandoahRegionIterator* _regions;
   ShenandoahCollectionSet* _collection_set;
-  bool _concurrent;
   bool _only_promote_regions;
 
 public:
   ShenandoahGenerationalEvacuationTask(ShenandoahGenerationalHeap* sh,
                                        ShenandoahGeneration* generation,
                                        ShenandoahRegionIterator* iterator,
-                                       bool concurrent, bool only_promote_regions);
+                                       bool only_promote_regions);
   void work(uint worker_id) override;
 private:
   void do_work();

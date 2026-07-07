@@ -85,8 +85,8 @@ public:
 
   // In the generational mode, we will use these two functions for young, mixed, and global collections.
   // For young and mixed, the generation argument will be the young generation, otherwise it will be the global generation.
-  void evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent) override;
-  void promote_regions_in_place(ShenandoahGeneration* generation, bool concurrent);
+  void evacuate_collection_set(ShenandoahGeneration* generation) override;
+  void promote_regions_in_place(ShenandoahGeneration* generation);
 
   size_t plab_min_size() const { return _min_plab_size; }
   size_t plab_max_size() const { return _max_plab_size; }

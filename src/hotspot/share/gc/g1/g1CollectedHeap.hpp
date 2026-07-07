@@ -75,7 +75,7 @@ class G1GCPhaseTimes;
 class G1HeapSizingPolicy;
 class G1NewTracer;
 class G1RemSet;
-class G1ReviseYoungLengthTask;
+class G1ReviseNumYoungRegionsTask;
 class G1ServiceTask;
 class G1ServiceThread;
 class GCMemoryManager;
@@ -176,7 +176,7 @@ private:
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
   G1MonotonicArenaFreeMemoryTask* _free_arena_memory_task;
-  G1ReviseYoungLengthTask* _revise_young_length_task;
+  G1ReviseNumYoungRegionsTask* _revise_num_young_regions_task;
 
   WorkerThreads* _workers;
 
@@ -313,11 +313,11 @@ private:
 
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or
   // concurrent cycles) we have started.
-  volatile uint _old_marking_cycles_started;
+  Atomic<uint> _old_marking_cycles_started;
 
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or
   // concurrent cycles) we have completed.
-  volatile uint _old_marking_cycles_completed;
+  Atomic<uint> _old_marking_cycles_completed;
 
   // Create a memory mapper for auxiliary data structures of the given size and
   // translation factor.
@@ -394,7 +394,6 @@ private:
 #define assert_used_and_recalculate_used_equal(g1h) do {} while(0)
 #endif
 
-  // The young region list.
   G1EdenRegions _eden;
   G1SurvivorRegions _survivor;
 
@@ -524,7 +523,7 @@ private:
   // Internal helpers used during full GC to split it up to
   // increase readability.
   bool abort_concurrent_cycle();
-  void verify_before_full_collection();
+  void verify_before_full_collection(bool concurrent_cycle_aborted);
   void prepare_heap_for_full_collection();
   void prepare_for_mutator_after_full_collection(size_t allocation_word_size);
   void abort_refinement();
@@ -691,11 +690,11 @@ public:
   void increment_old_marking_cycles_completed(bool concurrent, bool whole_heap_examined);
 
   uint old_marking_cycles_started() const {
-    return _old_marking_cycles_started;
+    return _old_marking_cycles_started.load_relaxed();
   }
 
   uint old_marking_cycles_completed() const {
-    return _old_marking_cycles_completed;
+    return _old_marking_cycles_completed.load_relaxed();
   }
 
   // Allocates a new heap region instance.
@@ -1237,7 +1236,7 @@ public:
 
   G1SurvivorRegions* survivor() { return &_survivor; }
 
-  inline uint eden_target_length() const;
+  inline uint target_num_eden_regions() const;
   uint eden_regions_count() const { return _eden.length(); }
   uint eden_regions_count(uint node_index) const { return _eden.regions_on_node(node_index); }
   uint survivor_regions_count() const { return _survivor.length(); }
@@ -1249,7 +1248,7 @@ public:
   uint humongous_regions_count() const { return _humongous_set.length(); }
 
 #ifdef ASSERT
-  bool check_young_list_empty();
+  bool check_no_young_regions();
 #endif
 
   bool is_marked(oop obj) const;

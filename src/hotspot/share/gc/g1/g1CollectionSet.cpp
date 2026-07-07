@@ -33,7 +33,6 @@
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "logging/logStream.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -128,8 +127,11 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 
   _g1h->register_old_collection_set_region_with_region_attr(hr);
 
-  assert(num_regions() < _max_num_regions, "Collection set now larger than maximum size.");
-  _regions[_num_regions++] = hr->hrm_index();
+  uint local_num_regions = num_regions();
+  assert(local_num_regions < _max_num_regions, "Collection set now larger than maximum size.");
+  _regions[local_num_regions] = hr->hrm_index();
+  _num_regions.store_relaxed(local_num_regions + 1);
+
   _num_initial_old_regions++;
 
   _g1h->old_set_remove(hr);
@@ -162,14 +164,13 @@ void G1CollectionSet::stop_incremental_building() {
 
 void G1CollectionSet::clear() {
   assert_at_safepoint_on_vm_thread();
-  _num_regions = 0;
+  _num_regions.store_relaxed(0);
   _groups.clear();
   assert(_optional_groups.length() == 0, "must be");
 }
 
 void G1CollectionSet::iterate(G1HeapRegionClosure* cl) const {
-  uint len = _num_regions;
-  OrderAccess::loadload();
+  uint len = _num_regions.load_acquire();
 
   for (uint i = 0; i < len; i++) {
     G1HeapRegion* r = _g1h->region_at(_regions[i]);
@@ -233,8 +234,7 @@ void G1CollectionSet::add_young_region_common(G1HeapRegion* hr) {
   _regions[index] = hr->hrm_index();
   // Concurrent readers must observe the store of the value in the array before an
   // update to the _num_regions field.
-  OrderAccess::storestore();
-  _num_regions++;
+  _num_regions.fetch_then_add(1u, memory_order_release);
 }
 
 void G1CollectionSet::add_survivor_regions(G1HeapRegion* hr) {
@@ -299,7 +299,7 @@ public:
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
     _st->print_cr("  " HR_FORMAT ", TAMS: " PTR_FORMAT " PB: " PTR_FORMAT ", age: %4d",
                   HR_FORMAT_PARAMS(r),
-                  p2i(cm->top_at_mark_start(r)),
+                  p2i(cm->top_at_mark_start_or_bottom(r)),
                   p2i(r->parsable_bottom()),
                   r->has_surv_rate_group() ? checked_cast<int>(r->age_in_surv_rate_group()) : -1);
     return false;
@@ -332,9 +332,9 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   log_trace(gc, ergo, cset)("Start choosing CSet. Pending cards: %zu target pause time: %1.2fms",
                             pending_cards, target_pause_time_ms);
 
-  // The young list is laid with the survivor regions from the previous
-  // pause are appended to the RHS of the young list, i.e.
-  //   [Newly Young Regions ++ Survivors from last pause].
+  // Young region indexes are assigned with eden regions first, followed by
+  // survivor regions from the previous pause:
+  //   [Eden regions ++ Survivors from last pause].
 
   uint num_eden_regions = _g1h->eden_regions_count();
   uint num_survivor_regions = survivors->length();
@@ -355,7 +355,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
                             num_eden_regions, num_survivor_regions,
                             predicted_eden_time, predicted_base_time_ms, target_pause_time_ms, remaining_time_ms);
 
-  // Clear the fields that point to the survivor list - they are all young now.
+  // Set survivor regions as eden and clear survivor tracking for this pause.
   survivors->convert_to_eden();
 
   phase_times()->record_young_cset_choice_time_ms((Ticks::now() - start_time).seconds() * 1000.0);
@@ -426,7 +426,7 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 
   uint min_old_cset_length = _policy->calc_min_old_cset_length(candidates()->last_marking_candidates_length());
   uint max_old_cset_length = MAX2(min_old_cset_length, _policy->calc_max_old_cset_length());
-  bool check_time_remaining = _policy->use_adaptive_young_list_length();
+  bool check_time_remaining = _policy->use_adaptive_num_young_regions();
 
   G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();
 

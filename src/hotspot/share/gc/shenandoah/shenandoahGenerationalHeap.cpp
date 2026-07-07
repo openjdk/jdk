@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalControlThread.hpp"
@@ -182,9 +183,9 @@ bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
   return false;
 }
 
-void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent) {
+void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* generation) {
   ShenandoahRegionIterator regions;
-  ShenandoahGenerationalEvacuationTask task(this, generation, &regions, concurrent, false /* only promote regions */);
+  ShenandoahGenerationalEvacuationTask task(this, generation, &regions, false /* only promote regions */);
   workers()->run_task(&task);
 
   if (_has_self_forwarded_objects.load_relaxed()) {
@@ -194,9 +195,9 @@ void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* g
   }
 }
 
-void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* generation, bool concurrent) {
+void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* generation) {
   ShenandoahRegionIterator regions;
-  ShenandoahGenerationalEvacuationTask task(this, generation, &regions, concurrent, true /* only promote regions */);
+  ShenandoahGenerationalEvacuationTask task(this, generation, &regions, true /* only promote regions */);
   workers()->run_task(&task);
 }
 
@@ -228,7 +229,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
     markWord mark = p->mark();
     if (mark.is_forwarded()) {
       // Already forwarded.
-      return ShenandoahBarrierSet::resolve_forwarded(p);
+      return ShenandoahForwarding::get_forwardee(p);
     }
 
     if (mark.has_displaced_mark_helper()) {
@@ -737,6 +738,7 @@ public:
   }
 
   void work(uint worker_id) override {
+    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     SuspendibleThreadSetJoiner stsj;
     do_work<ShenandoahConcUpdateRefsClosure>(worker_id);

@@ -132,16 +132,18 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues)
 
 void ShenandoahOldGeneration::set_promoted_reserve(size_t new_val) {
   shenandoah_assert_heaplocked_or_safepoint();
-  _promoted_reserve = new_val;
+  _promoted_reserve.store_relaxed(new_val);
 }
 
 size_t ShenandoahOldGeneration::get_promoted_reserve() const {
-  return _promoted_reserve;
+  return _promoted_reserve.load_relaxed();
 }
 
 void ShenandoahOldGeneration::augment_promoted_reserve(size_t increment) {
   shenandoah_assert_heaplocked_or_safepoint();
-  _promoted_reserve += increment;
+  // Writers are serialized by the heap lock, so relaxed ordering is sufficient; the atomic RMW
+  // only guards against tearing the concurrent lock-free reader (get_promoted_reserve).
+  _promoted_reserve.fetch_then_add(increment, memory_order_relaxed);
 }
 
 void ShenandoahOldGeneration::reset_promoted_expended() {
@@ -194,6 +196,8 @@ void ShenandoahOldGeneration::maybe_log_promotion_failure_stats(bool concurrent)
 }
 
 bool ShenandoahOldGeneration::try_expend_promoted(size_t increment) {
+  // The promote reserve rarely changes during evacuation(only when there is PIP region), so snapshot it once;
+  // only _promoted_expended is contended and re-read on CAS failure.
   const size_t reserve = get_promoted_reserve();
   size_t cur = _promoted_expended.load_relaxed();
   while (cur + increment <= reserve) {

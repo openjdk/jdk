@@ -120,7 +120,7 @@ inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
     // Ignore pointers to forwarded objects, the pointer is already correct. The pointee
     // wasn't moved during evacution.
     shenandoah_assert_forwarded(p, obj);
-    oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+    oop fwd = ShenandoahForwarding::get_forwardee(obj);
     // Unconditionally store the update: no concurrent updates expected.
     RawAccess<IS_NOT_NULL>::oop_store(p, fwd);
   }
@@ -144,7 +144,7 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
   // in which objects that _should_ be evacuated were ignored.
   if (!obj->is_self_forwarded()) {
     shenandoah_assert_forwarded(p, obj);
-    oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+    oop fwd = ShenandoahForwarding::get_forwardee(obj);
     atomic_update_oop(fwd, p, obj);
   }
 }

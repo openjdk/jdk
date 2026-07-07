@@ -1061,11 +1061,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // so the bitmap for the regions in the collection set must be cleared if not already.
       if (should_clear_region(hr)) {
         _g1h->clear_bitmap_for_region(hr);
-        _g1h->concurrent_mark()->reset_top_at_mark_start(hr);
       } else {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }
-      _g1h->concurrent_mark()->clear_statistics(hr);
+      _g1h->concurrent_mark()->reset_region_marking_state(hr);
       _scan_state->add_all_dirty_region(hr->hrm_index());
       return false;
     }

@@ -493,7 +493,7 @@ private:
 
   // GC support
   // Evacuation
-  virtual void evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent);
+  virtual void evacuate_collection_set(ShenandoahGeneration* generation);
   // Concurrent root processing
   void prepare_concurrent_roots();
   void finish_concurrent_roots();
@@ -503,8 +503,8 @@ private:
   // Retires LABs used for evacuation
   void concurrent_prepare_for_update_refs();
 
-  // Turn off weak roots flag, purge old satb buffers in generational mode
-  void concurrent_final_roots(HandshakeClosure* handshake_closure = nullptr);
+  // Turn off weak roots flag
+  void concurrent_final_roots();
 
   virtual void update_heap_references(ShenandoahGeneration* generation);
   // Final update region states
