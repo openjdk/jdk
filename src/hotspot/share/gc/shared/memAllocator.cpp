@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -398,15 +398,14 @@ oop ObjArrayAllocator::initialize(HeapWord* mem) const {
   assert(_length >= 0, "length should be non-negative");
   if (_do_zero) {
     mem_clear(mem);
-    mem_zap_start_padding(mem);
     mem_zap_end_padding(mem);
   }
+  mem_zero_start_padding(mem);
   arrayOopDesc::set_length(mem, _length);
   return finish(mem);
 }
 
-#ifndef PRODUCT
-void ObjArrayAllocator::mem_zap_start_padding(HeapWord* mem) const {
+void ObjArrayAllocator::mem_zero_start_padding(HeapWord* mem) const {
   const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
   const size_t base_offset_in_bytes = arrayOopDesc::base_offset_in_bytes(element_type);
   const size_t header_size_in_bytes = arrayOopDesc::header_size_in_bytes();
@@ -416,10 +415,11 @@ void ObjArrayAllocator::mem_zap_start_padding(HeapWord* mem) const {
 
   if (header_end < base) {
     const size_t padding_in_bytes = base - header_end;
-    Copy::fill_to_bytes(header_end, padding_in_bytes, heapPaddingByteVal);
+    Copy::fill_to_bytes(header_end, padding_in_bytes, 0);
   }
 }
 
+#ifndef PRODUCT
 void ObjArrayAllocator::mem_zap_end_padding(HeapWord* mem) const {
   const size_t length_in_bytes = static_cast<size_t>(_length) << ArrayKlass::cast(_klass)->log2_element_size();
   const BasicType element_type = ArrayKlass::cast(_klass)->element_type();

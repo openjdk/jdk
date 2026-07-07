@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,8 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
   assert(_length >= 0, "length should be non-negative");
   arrayOopDesc::set_length(mem, _length);
 
+  mem_zero_start_padding(mem);
+
   // Keep the array alive across safepoints through an invisible
   // root. Invisible roots are not visited by the heap iterator
   // and the marking logic will not attempt to follow its elements.
@@ -142,8 +144,6 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
     }
     return true;
   };
-
-  mem_zap_start_padding(mem);
 
   if (!initialize_memory()) {
     // Re-color with 11 remset bits if we got intercepted by a GC safepoint

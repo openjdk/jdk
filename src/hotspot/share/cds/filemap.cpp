@@ -216,6 +216,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _obj_alignment = ObjectAlignmentInBytes;
   _compact_strings = CompactStrings;
   _compact_headers = UseCompactObjectHeaders;
+  _align_array_elements = AlignArrayElements;
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     _object_streaming_mode = HeapShared::is_writing_streaming_mode();
@@ -286,6 +287,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- narrow_oop_shift                          %d", _narrow_oop_shift);
   st->print_cr("- compact_strings:                          %d", _compact_strings);
   st->print_cr("- compact_headers:                          %d", _compact_headers);
+  st->print_cr("- align_array_elements:                     %d", _align_array_elements);
   st->print_cr("- max_heap_size:                            %zu", _max_heap_size);
   st->print_cr("- narrow_oop_mode:                          %d", _narrow_oop_mode);
   st->print_cr("- compressed_oops:                          %d", _compressed_oops);
@@ -1929,6 +1931,14 @@ bool FileMapHeader::validate() {
                      " does not equal the current UseCompactObjectHeaders setting (%s).", file_type, file_type,
                      _compact_headers          ? "enabled" : "disabled",
                      UseCompactObjectHeaders   ? "enabled" : "disabled");
+    return false;
+  }
+
+  if (align_array_elements() != AlignArrayElements) {
+    aot_log_warning(aot)("Unable to use %s.\nThe %s's AlignArrayElements setting (%s)"
+                     " does not equal the current AlignArrayElements setting (%s).", file_type, file_type,
+                     _align_array_elements ? "enabled" : "disabled",
+                     AlignArrayElements    ? "enabled" : "disabled");
     return false;
   }
 

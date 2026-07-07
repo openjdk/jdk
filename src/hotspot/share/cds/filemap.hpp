@@ -116,6 +116,7 @@ private:
   int    _narrow_oop_shift;                       // compressed oop encoding shift
   bool   _compact_strings;                        // value of CompactStrings
   bool   _compact_headers;                        // value of UseCompactObjectHeaders
+  bool   _align_array_elements;                   // value of AlignArrayElements
   uintx  _max_heap_size;                          // java max heap size during dumping
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
   bool    _object_streaming_mode;                 // dump was created for object streaming
@@ -187,6 +188,7 @@ public:
   int narrow_oop_shift()                   const { return _narrow_oop_shift; }
   bool compact_strings()                   const { return _compact_strings; }
   bool compact_headers()                   const { return _compact_headers; }
+  bool align_array_elements()              const { return _align_array_elements; }
   uintx max_heap_size()                    const { return _max_heap_size; }
   CompressedOops::Mode narrow_oop_mode()   const { return _narrow_oop_mode; }
   char* cloned_vtables()                   const { return decode<char*>(_cloned_vtables); }

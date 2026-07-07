@@ -5934,11 +5934,18 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   // then we align it down. This is valid because the new
   // offset will always be the klass which is the same
   // for type arrays.
-  int start_offset = align_down(length_offset, BytesPerWord);
-  int extra_length = base_offset - start_offset;
-  assert(start_offset == length_offset || start_offset == klass_offset,
-         "start offset must be 8-byte-aligned or be the klass offset");
-  assert(base_offset != start_offset, "must include the length field");
+  int start_offset;
+  int extra_length;
+  if (length_offset + BytesPerInt != base_offset) {
+    // Don't compare the alignment gap
+    start_offset = base_offset;
+    extra_length = 0;
+  } else {
+    start_offset = align_down(length_offset, BytesPerWord);
+    extra_length = base_offset - start_offset;
+  }
+  assert(is_aligned(start_offset, BytesPerWord),
+         "start offset must be 8-byte-aligned");
   extra_length = extra_length / elem_size; // We count in elements, not bytes.
   int stubBytesThreshold = 3 * 64 + (UseSIMDForArrayEquals ? 0 : 16);
 

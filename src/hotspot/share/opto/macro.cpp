@@ -1855,7 +1855,8 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
 
   // Array length
   if (length != nullptr) {         // Arrays need length field
-    rawmem = make_store_raw(control, rawmem, object, arrayOopDesc::length_offset_in_bytes(), length, T_INT);
+    const int length_offset = arrayOopDesc::length_offset_in_bytes();
+    rawmem = make_store_raw(control, rawmem, object, length_offset, length, T_INT);
     // conservatively small header size:
     header_size = arrayOopDesc::base_offset_in_bytes(T_BYTE);
     if (_igvn.type(klass_node)->isa_aryklassptr()) {   // we know the exact header size in most cases:
@@ -1864,6 +1865,13 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
         elem = T_OBJECT;
       }
       header_size = Klass::layout_helper_header_size(Klass::array_layout_helper(elem));
+    }
+
+    const int header_end = length_offset + BytesPerInt;
+    if (header_end < header_size) {
+      assert(header_size - header_end == BytesPerInt, "unexpected array alignment gap");
+      rawmem = make_store_raw(control, rawmem, object,
+                              header_end, _igvn.intcon(0), T_INT);
     }
   }
 
