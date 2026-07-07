@@ -1106,6 +1106,22 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
       }
       Node* base = get_addp_base(new_addp);
 
+      if (base->Opcode() == Op_CastPP) {
+        Node* previous_base = get_addp_base(previous_addp);
+        if (previous_base->Opcode() == Op_CastPP) {
+          assert(previous_base != base, "");
+          _nodes.at_grow(base->_idx, nullptr);
+          PointsToNode* curr_castpp_ptn = ptnode_adr(previous_base->_idx);
+          add_local_var(base, curr_castpp_ptn->escape_state());
+          add_edge(ptnode_adr(base->_idx), ptnode_adr(base->in(1)->_idx));
+          JavaObjectNode* java_object = unique_java_object(base->in(1));
+          if (java_object != nullptr) {
+            add_edge(ptnode_adr(base->_idx), java_object);
+          }
+          base = base->in(1);
+        }
+      }
+
       // The base might not be something that we can create an unique
       // type for. If that's the case we are done with that input.
       PointsToNode* jobj_ptn = unique_java_object(base);
