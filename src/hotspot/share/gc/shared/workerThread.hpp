@@ -88,6 +88,10 @@ private:
   const char* const    _name;
   WorkerThread**       _workers;
   const uint           _max_workers;
+  // _created_workers publishes the initialized prefix of _workers.
+  // Writers release-store to it after initializing an entry. Readers
+  // load-acquire before accessing _workers to not access uninitalized
+  // data.
   Atomic<uint>         _created_workers;
   uint                 _active_workers;
   WorkerTaskDispatcher _dispatcher;
