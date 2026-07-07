@@ -160,7 +160,8 @@ public class PlatformSupportImpl extends PlatformSupport {
             File containerFile = new File(containerTmpDir);
 
             if (containerFile.exists() && containerFile.isDirectory() &&
-                containerFile.canRead()) {
+                containerFile.canRead() &&
+                !tempDirectoryEquals(containerFile.toPath())) {
                 v.add(containerTmpDir);
             }
         }
