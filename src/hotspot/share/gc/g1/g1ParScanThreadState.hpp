@@ -300,7 +300,7 @@ class G1ParScanThreadStateSet : public StackObj {
   void par_iterate_nmethod_regions_to_add(G1HeapRegionClosure* cl,
                                           G1HeapRegionClaimer* claimer,
                                           uint worker_id);
-  uint num_nmethod_regions_to_add() const { return _num_nmethod_regions_to_add.load_relaxed(); };
+  uint num_nmethod_regions_to_add() const { return _num_nmethod_regions_to_add.load_relaxed(); }
 
   void record_unused_optional_region(G1HeapRegion* hr);
 #if TASKQUEUE_STATS
