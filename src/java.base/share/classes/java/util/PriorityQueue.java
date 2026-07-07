@@ -85,7 +85,7 @@ import jdk.internal.util.ArraysSupport;
  */
 @SuppressWarnings("unchecked")
 public class PriorityQueue<E> extends AbstractQueue<E>
-        implements java.io.Serializable {
+    implements java.io.Serializable {
 
     @java.io.Serial
     private static final long serialVersionUID = -7720805057305804111L;
