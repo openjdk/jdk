@@ -298,6 +298,10 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     private Object[] prepareElements(Object[] es, Class<?> cClass) {
+        // If the collection is a PriorityQueue, we can skip the null check
+        if (cClass == PriorityQueue.class)
+            return es;
+
         int len = es.length;
         if (cClass != ArrayList.class)
             es = Arrays.copyOf(es, len, Object[].class);
