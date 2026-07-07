@@ -175,11 +175,14 @@ public class DefaultStripDebugPluginTest {
         private final boolean isNative;
 
         private static String platformDebugPath() {
-            return switch (Platform.runtime().os()) {
-                case WINDOWS -> "/foo/bin/libfoo.pdb";
-                case MACOS   -> "/foo/lib/libfoo.dylib.dSYM/Contents/Resources/DWARF/libfoo.dylib";
-                default      -> "/foo/lib/libfoo.so.debuginfo";
-            };
+            String platform = Platform.runtime().toString();
+            if (platform.startsWith("windows")) {
+                return "/foo/bin/libfoo.pdb";
+            } else if (platform.startsWith("macos")) {
+                return "/foo/lib/libfoo.dylib.dSYM/Contents/Resources/DWARF/libfoo.dylib";
+            } else {
+                return "/foo/lib/libfoo.so.debuginfo";
+            }
         }
 
         MockStripPlugin(boolean isNative) {
