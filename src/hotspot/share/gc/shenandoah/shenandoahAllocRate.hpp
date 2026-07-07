@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 
-#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahStripedCounter.hpp"
 #include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "runtime/atomic.hpp"
@@ -111,13 +110,11 @@ class ShenandoahAllocRate {
   static constexpr size_t ALLOC_SAMPLE_MIN = M;
   static constexpr size_t ALLOC_SAMPLE_MAX = G;
 
+  PaddedMonitor _sample_lock;
   // Bytes allocated since the last sample. A striped counter absorbs the contention that a single
   // shared counter would suffer on the hot allocation path when many mutator threads allocate
   // concurrently (see ShenandoahStripedCounter).
-  PaddedMonitor _sample_lock;
-  shenandoah_padding(0);
   ShenandoahStripedCounter _unsampled;
-  shenandoah_padding(1);
   Atomic<size_t> _minimum_sample_size; // bytes, read by mutator, updated by gc
   jlong _last_sample_time;
 
