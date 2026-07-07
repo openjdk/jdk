@@ -287,9 +287,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     private void initElementsFromCollection(Collection<? extends E> c) {
-        Object[] es = c.toArray();
-        es = prepareElements(es, c.getClass());
-        initElementsFromArray(es);
+        initElementsFromArray(prepareElements(c));
     }
 
     private void initElementsFromArray(Object[] es) {
@@ -297,8 +295,10 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         this.size = es.length;
     }
 
-    private Object[] prepareElements(Object[] es, Class<?> cClass) {
-        // If the collection is a PriorityQueue, we can skip the null check
+    private Object[] prepareElements(Collection<? extends E> c) {
+        Object[] es = c.toArray();
+        Class<?> cClass = c.getClass();
+        // If the collection is a PriorityQueue, we can skip the null check.
         if (cClass == PriorityQueue.class)
             return es;
 
@@ -372,12 +372,11 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             throw new IllegalArgumentException();
 
         if (size == 0 && getClass() == PriorityQueue.class) {
-            Object[] es = c.toArray();
+            Object[] es = prepareElements(c);
             int len = es.length;
             if (len == 0)
                 return false;
 
-            es = prepareElements(es, c.getClass());
             heapify(es, len);
             initElementsFromArray(es);
 
