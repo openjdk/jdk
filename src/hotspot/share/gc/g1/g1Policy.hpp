@@ -79,11 +79,11 @@ class G1Policy: public CHeapObj<mtGC> {
 
   double _cur_pause_start_sec;
 
-  // Desired young gen length without taking actually available free regions into
+  // Desired number of young regions without taking actually available free regions into
   // account.
-  Atomic<uint> _young_list_desired_length;
-  // Actual target length given available free memory.
-  Atomic<uint> _young_list_target_length;
+  Atomic<uint> _desired_num_young_regions;
+  // Actual target number of young regions given available free memory.
+  Atomic<uint> _target_num_young_regions;
 
   // The survivor rate groups below must be initialized after the predictor because they
   // indirectly use it through the "this" object passed to their constructor.
@@ -193,44 +193,45 @@ private:
   // Lazily initialized
   mutable G1GCPhaseTimes* _phase_times;
 
-  // Updates the internal young gen maximum and target and desired lengths.
+  // Updates the internal young gen maximum and target and desired number of young regions.
   // If no parameters are passed, predict pending cards, card set remset length and
   // code root remset length using the prediction model.
-  void update_young_length_bounds();
-  void update_young_length_bounds(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length);
+  void update_young_regions_bounds();
+  void update_young_regions_bounds(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length);
 
-  // Calculate and return the minimum desired eden length based on the MMU target.
-  uint calculate_desired_eden_length_by_mmu() const;
+  // Calculate and return the minimum desired number of eden regions based on the MMU target.
+  uint calculate_desired_num_eden_regions_by_mmu() const;
 
-  // Calculate the desired eden length meeting the pause time goal.
-  // Min_eden_length and max_eden_length are the bounds
+  // Calculate the desired number of eden regions meeting the pause time goal.
+  // min_num_eden_regions and max_num_eden_regions are the bounds
   // (inclusive) within which eden can grow.
-  uint calculate_desired_eden_length_by_pause(double base_time_ms,
-                                              uint min_eden_length,
-                                              uint max_eden_length) const;
+  uint calculate_desired_num_eden_regions_by_pause(double base_time_ms,
+                                                   uint min_num_eden_regions,
+                                                   uint max_num_eden_regions) const;
 
-  // Calculate the desired eden length that can fit into the pause time
+  // Calculate the desired number of eden regions that can fit into the pause time
   // goal before young only gcs.
-  uint calculate_desired_eden_length_before_young_only(double base_time_ms,
-                                                       uint min_eden_length,
-                                                       uint max_eden_length) const;
+  uint calculate_desired_num_eden_regions_before_young_only(double base_time_ms,
+                                                            uint min_num_eden_regions,
+                                                            uint max_num_eden_regions) const;
 
-  // Calculates the desired eden length before mixed gc so that after adding the
+  // Calculates the desired number of eden regions before mixed gc so that after adding the
   // minimum amount of old gen regions from the collection set, the eden fits into
   // the pause time goal.
-  uint calculate_desired_eden_length_before_mixed(double base_time_ms,
-                                                  uint min_eden_length,
-                                                  uint max_eden_length) const;
+  uint calculate_desired_num_eden_regions_before_mixed(double base_time_ms,
+                                                       uint min_num_eden_regions,
+                                                       uint max_num_eden_regions) const;
 
-  // Calculate desired young length based on current situation without taking actually
+  // Calculate desired number of young regions based on current situation without taking actually
   // available free regions into account.
-  uint calculate_young_desired_length(size_t pending_cards,
-                                      size_t card_rs_length,
-                                      size_t code_root_rs_length,
-                                      uint min_young_length_by_sizer,
-                                      uint max_young_length_by_sizer) const;
-  // Limit the given desired young length to available free regions.
-  uint calculate_young_target_length(uint desired_young_length, uint min_young_length_by_sizer) const;
+  uint calculate_desired_num_young_regions(size_t pending_cards,
+                                           size_t card_rs_length,
+                                           size_t code_root_rs_length,
+                                           uint min_num_young_regions_by_sizer,
+                                           uint max_num_young_regions_by_sizer) const;
+  // Limit the given desired number of young regions to available free regions.
+  uint calculate_target_num_young_regions(uint desired_num_young_regions,
+                                          uint min_num_young_regions_by_sizer) const;
 
   double predict_survivor_regions_evac_time() const;
   double predict_retained_regions_evac_time() const;
@@ -283,10 +284,10 @@ public:
 
   G1GCPhaseTimes* phase_times() const;
 
-  // Check the current value of the young list RSet length and
+  // Check the current value of the young generation RSet length and
   // compare it against the last prediction. If the current value is
-  // higher, recalculate the young list target length prediction.
-  void revise_young_list_target_length(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length);
+  // higher, recalculate the target number of young regions prediction.
+  void revise_target_num_young_regions(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length);
 
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
@@ -334,9 +335,8 @@ private:
 
 public:
   // This sets the initiate_conc_mark_if_possible() flag to start a
-  // new cycle, as long as we are not already in one. It's best if it
-  // is called during a safepoint when the test whether a cycle is in
-  // progress or not is stable.
+  // new cycle, as long as we are not already in one. It is called
+  // at a safepoint.
   bool force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause);
 
   // Decide whether this garbage collection pause should be a concurrent start
@@ -347,13 +347,13 @@ public:
   // This must be called at the very beginning of an evacuation pause.
   void decide_on_concurrent_start_pause();
 
-  uint young_list_desired_length() const { return _young_list_desired_length.load_relaxed(); }
-  uint young_list_target_length() const { return _young_list_target_length.load_relaxed(); }
+  uint desired_num_young_regions() const { return _desired_num_young_regions.load_relaxed(); }
+  uint target_num_young_regions() const { return _target_num_young_regions.load_relaxed(); }
 
   bool should_allocate_mutator_region() const;
   bool should_expand_on_mutator_allocation() const;
 
-  bool use_adaptive_young_list_length() const;
+  bool use_adaptive_num_young_regions() const;
 
   // Try to get an estimate of the currently available bytes in the young gen. This
   // operation considers itself low-priority: if other threads need the resources
@@ -389,10 +389,7 @@ public:
                              size_t next_pending_cards_from_gc,
                              size_t next_to_collection_set_cards);
 
-  bool should_retain_evac_failed_region(G1HeapRegion* r) const {
-    return should_retain_evac_failed_region(r->hrm_index());
-  }
-  bool should_retain_evac_failed_region(uint index) const;
+  bool should_retain_evac_failed_region(G1HeapRegion* r) const;
 
 private:
   //
