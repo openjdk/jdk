@@ -70,6 +70,10 @@ inline size_t ShenandoahStripedCounter::add(const size_t bytes, bool& striped) {
 }
 
 inline size_t ShenandoahStripedCounter::sum() const {
+  // Fast path while uncontended (or single-stripe): all writes are in stripe 0, so it holds the total.
+  if (_num_stripes == 1 || !_striped.load_relaxed()) {
+    return _stripes[0].load_relaxed();
+  }
   size_t total = 0;
   for (uint i = 0; i < _num_stripes; i++) {
     total += _stripes[i].load_relaxed();
@@ -78,7 +82,11 @@ inline size_t ShenandoahStripedCounter::sum() const {
 }
 
 inline size_t ShenandoahStripedCounter::drain() {
-  // exchange(0) so concurrent adds after this point accumulate toward the next epoch rather than being lost.
+  // Fast path while uncontended (or single-stripe): all writes are in stripe 0, so drain only that.
+  // A stripe written concurrently with a stale _striped==false read is just drained next time.
+  if (_num_stripes == 1 || !_striped.load_relaxed()) {
+    return _stripes[0].exchange(0, memory_order_relaxed);
+  }
   size_t total = 0;
   for (uint i = 0; i < _num_stripes; i++) {
     total += _stripes[i].exchange(0, memory_order_relaxed);
