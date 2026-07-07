@@ -85,7 +85,7 @@ import jdk.internal.util.ArraysSupport;
  */
 @SuppressWarnings("unchecked")
 public class PriorityQueue<E> extends AbstractQueue<E>
-    implements java.io.Serializable {
+        implements java.io.Serializable {
 
     @java.io.Serial
     private static final long serialVersionUID = -7720805057305804111L;
@@ -289,12 +289,12 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     private void initElementsFromCollection(Collection<? extends E> c) {
         Object[] es = c.toArray();
         es = prepareElements(es, c.getClass());
-        initElementsFromArray(es, es.length);
+        initElementsFromArray(es);
     }
 
-    private void initElementsFromArray(Object[] es, int size) {
+    private void initElementsFromArray(Object[] es) {
         this.queue = ensureNonEmpty(es);
-        this.size = size;
+        this.size = es.length;
     }
 
     private Object[] prepareElements(Object[] es, Class<?> cClass) {
@@ -374,8 +374,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
                 return false;
 
             es = prepareElements(es, c.getClass());
-            initElementsFromArray(es, len);
-            heapify();
+            heapify(es, len);
+            initElementsFromArray(es);
 
             this.modCount++;
             return true;
@@ -796,8 +796,11 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * This classic algorithm due to Floyd (1964) is known to be O(size).
      */
     private void heapify() {
-        final Object[] es = queue;
-        int n = size, i = (n >>> 1) - 1;
+        heapify(queue, size);
+    }
+
+    private void heapify(Object[] es, int n) {
+        int i = (n >>> 1) - 1;
         final Comparator<? super E> cmp;
         if ((cmp = comparator) == null)
             for (; i >= 0; i--)
