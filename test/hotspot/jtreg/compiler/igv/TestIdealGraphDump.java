@@ -26,8 +26,8 @@
  * @bug 8370870
  * @summary Verify that IGV graph dumping produces well-structured XML at different print levels
  * @library /test/lib
- * @requires vm.debug == true & vm.compiler2.enabled
- * @run driver compiler.igv.TestIdealGraphDump
+ * @requires vm.debug == true & vm.compiler2.enabled & vm.flagless
+ * @run driver ${test.main.class}
  */
 
 package compiler.igv;
@@ -95,7 +95,7 @@ public class TestIdealGraphDump {
         String content = getCachedContent(2);
         assertContainsPhase(content, "After Parsing", 2);
         assertContainsPhase(content, "Final Code", 2);
-        assertContainsPhase(content, "After Iter GVN 1", 2);
+        assertContainsPhase(content, "Iter GVN 1", 2);
         assertContainsPhase(content, "PhaseCCP 1", 2);
         assertNotContainsPhase(content, "Before Macro Expansion", 2);
     }
