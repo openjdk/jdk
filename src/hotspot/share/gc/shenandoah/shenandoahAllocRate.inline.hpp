@@ -57,17 +57,21 @@ void ShenandoahAllocRate<Clock>::update_minimum_sample_size(const size_t availab
 }
 
 template<typename Clock>
-void ShenandoahAllocRate<Clock>::maybe_take_sample(const size_t per_stripe_threshold) {
+void ShenandoahAllocRate<Clock>::maybe_take_sample(const size_t minimum_sample_size) {
   if (!_sample_lock.try_lock()) {
     // Another thread has the lock and will take the sample.
     return;
   }
-  // Re-check this thread's own stripe under the lock against the per-stripe threshold. Using the
-  // caller's stripe (O(1)) rather than sum() over all stripes (O(N)) keeps the locked path cheap;
-  // the caller only reaches here right after its stripe crossed the threshold in add().
-  const size_t unsampled_stripe = _unsampled.current_stripe_value();
-  if (unsampled_stripe < per_stripe_threshold) {
-    // Stripe fell back below its share (another thread already sampled and drained the counter).
+  // Re-check the aggregate unsampled bytes under the lock against the full minimum_sample_size. The
+  // per-stripe edge-trigger in allocated() is only an O(1) approximation of the aggregate (exact
+  // under an even distribution, but a lone hot stripe would otherwise sample ~N times too often), so
+  // enforce the floor exactly here with sum(). The O(N) sum() is cheap on this off-hot-path locked
+  // branch. If a skewed distribution never re-arms the edge-trigger, force_update() still samples on
+  // its periodic cadence, so nothing is missed.
+  const size_t unsampled = _unsampled.sum();
+  if (unsampled < minimum_sample_size) {
+    // Below the floor: either another thread already sampled and drained, or this thread's stripe
+    // crossed its share while the aggregate is still short (skewed distribution). Wait for more.
     _sample_lock.unlock();
     return;
   }
@@ -103,7 +107,7 @@ void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
   // Edge-trigger: fire only on the single add that pushes this stripe across its share, not on every
   // add while it sits above (which would hammer the sample lock).
   if (unsampled >= per_stripe_threshold && unsampled - allocated_bytes < per_stripe_threshold) {
-    maybe_take_sample(per_stripe_threshold);
+    maybe_take_sample(minimum_sample_size);
   }
 }
 
