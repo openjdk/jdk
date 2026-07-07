@@ -225,8 +225,9 @@ public:
 
     size_t prev_log2size = _table.get_size_log2(Thread::current());
     size_t new_log2_table_size = log2_target_size(new_size);
-    // If there is nothing in the table, we can reset directly. Otherwise there
-    // is nothing but increase in powers of two.
+    // If there is nothing in the table, we can reset directly. Otherwise double
+    // the table in size until the target is reached, which is the only grow
+    // operation CHT supports.
     if ((prev_log2size != new_log2_table_size) && (number_of_entries() == 0)) {
       _table.unsafe_reset(new_log2_table_size);
     } else {
