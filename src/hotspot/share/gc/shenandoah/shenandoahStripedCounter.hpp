@@ -38,12 +38,14 @@
 // eliminating the cache-line ping-pong a shared counter suffers when many threads increment at once.
 //
 // Differences from LongAdder, all intentional for this use:
-//  - The stripe table is fixed at NCPU stripes; it never grows or re-hashes. Stripes use atomic
-//    fetch-add (add_then_fetch), so an update can never "fail" and there is no per-op signal to
-//    drive resizing. A fixed NCPU-wide table with a per-thread probe spreads threads well enough.
-//  - The stripe index is a per-thread pseudo-random probe (a hash of the thread pointer) computed
-//    once and cached in thread-local state. It never queries the current CPU, so there is no
-//    os::processor_id()/sched_getcpu() syscall on the hot path.
+//  - The stripe count is fixed for the counter's life (a power of two, rounded down from the CPU
+//    count); the table never grows or re-hashes. Stripes use atomic fetch-add (add_then_fetch), so
+//    an update can never "fail" and there is no per-op signal to drive resizing. A fixed table with
+//    a per-thread probe spreads threads well enough.
+//  - The stripe index is a per-thread pseudo-random probe (a hash of the thread pointer), recomputed
+//    on each call -- it is a pure function of the thread pointer and the stripe count, so it needs no
+//    caching. It never queries the current CPU, so there is no os::processor_id()/sched_getcpu()
+//    syscall on the hot path. The power-of-two count lets the probe use a mask instead of a modulo.
 //  - Once striped, the counter stays striped for its lifetime (LongAdder likewise never abandons its
 //    cell table). There is no reset back to base-only mode.
 //
