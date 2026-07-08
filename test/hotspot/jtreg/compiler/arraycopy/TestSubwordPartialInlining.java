@@ -24,46 +24,128 @@
 /**
  * @test
  * @bug 8387073
- * @summary Arrays.copyOf must pad overized elements with 0 with partial inlining as well.
- * @modules jdk.incubator.vector
+ * @key randomness
+ * @summary Arrays.copyOf(Range) must pad overized elements with 0 with partial inlining as well.
  * @library /test/lib /
- * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,${test.main.class}::test*
- *                   ${test.main.class}
- * @run main ${test.main.class}
+ * @run driver ${test.main.class}
  */
 
-import java.util.Arrays;
+package compiler.arraycopy;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.*;
+
+
+import jdk.test.lib.Utils;
+import compiler.lib.compile_framework.*;
+import compiler.lib.template_framework.*;
+import static compiler.lib.template_framework.Template.scope;
+import static compiler.lib.template_framework.Template.let;
+import compiler.lib.template_framework.library.*;
 
 public class TestSubwordPartialInlining {
-    static boolean[] boolArr = new boolean[] {true, true};
-    static byte[] byteArr = new byte[] {(byte)42};
-
-    static boolean[] testBool() {
-        return Arrays.copyOf(boolArr, 4);
-    }
-
-    static byte[] testByte() {
-        // Should be zero-padded, but we seem to get non-zero values.
-        return Arrays.copyOf(byteArr, 4);
-    }
+    private static final Random RANDOM = Utils.getRandomInstance();
+    private static final String PACKAGE = "compiler.arraycopy.generated";
+    private static final String CLASS_NAME = "TestSubwordPartialInliningGenerated";
 
     public static void main(String[] args) {
-        boolean[] boolGold = testBool();
-        byte[] byteGold = testByte();
-        for (int i = 0; i < 10_000; i++) {
-            testBool();
-            testByte();
-        }
-        boolean[] boolComp = testBool();
-        byte[] byteComp = testByte();
+        final CompileFramework comp = new CompileFramework();
+        comp.addJavaSourceCode(PACKAGE + "." + CLASS_NAME, generate(comp));
+        comp.compile();
+        comp.invoke(PACKAGE + "." + CLASS_NAME, "main", new Object[] { args });
+    }
 
-        if (!Arrays.equals(boolGold, boolComp)) {
-            throw new RuntimeException("wrong result: interpreter result = " + Arrays.toString(boolGold) +
-                                       " compiler result = " + Arrays.toString(boolComp));
+    private static String generate(CompileFramework comp) {
+        final Set<String> imports = Set.of("java.util.Arrays",
+                                           "java.util.Random",
+                                           "jdk.test.lib.Utils",
+                                           "compiler.lib.generators.*");
+
+        final List<TemplateToken> tests = new ArrayList<>();
+        tests.addAll(Stream.of(CodeGenerationDataNameType.booleans(), CodeGenerationDataNameType.bytes(), CodeGenerationDataNameType.shorts(), CodeGenerationDataNameType.chars())
+                           .map(pty -> new TestPerType(pty).generate())
+                           .toList());
+        tests.add(PrimitiveType.generateLibraryRNG());
+
+        return TestFrameworkClass.render(PACKAGE, CLASS_NAME, imports, comp.getEscapedClassPathOfCompiledClasses(), tests);
+    }
+
+    enum Operation {
+        COPY_OF,
+        COPY_OF_RANGE
+    }
+
+    record TestPerType(PrimitiveType pty) {
+        private String getTestName(Operation op) {
+            return switch (op) {
+                case COPY_OF       -> "CopyOf" + pty.boxedTypeName();
+                case COPY_OF_RANGE -> "CopyOfRange" + pty.boxedTypeName();
+            };
         }
-        if (!Arrays.equals(byteGold, byteComp)) {
-            throw new RuntimeException("wrong result: interpreter result = " + Arrays.toString(byteGold) +
-                                       " compiler result = " + Arrays.toString(byteComp));
+
+        TemplateToken generate() {
+            final int inputSize = RANDOM.nextInt(1,4);
+            final int copySize = RANDOM.nextInt(inputSize + 1, 5);
+
+
+            var runTemplate = Template.make("op", (Operation op) -> scope(
+                let("pty", pty),
+                let("testName", getTestName(op)),
+                """
+                    @Run(test = "test#{testName}", mode = RunMode.STANDALONE)
+                    static void run#{testName}() {
+                        final #pty[] intRes = test#{testName}();
+                        for (int i = 0; i < 10_000; i++) {
+                            test#{testName}();
+                        }
+                        final #pty[] compRes = test#{testName}();
+                        if (!Arrays.equals(intRes, compRes)) {
+                            throw new RuntimeException("wrong result:\\n" +
+                                                       "  interpreter result: " + Arrays.toString(intRes) + "\\n" +
+                                                       "  compiled result: " + Arrays.toString(compRes));
+                        }
+                    }
+                """
+            ));
+
+            var testTemplate = Template.make("op", (Operation op) -> scope(
+                let("pty", pty),
+                let("testName", getTestName(op)),
+                let("len", copySize),
+                """
+                    @Test
+                    static #pty[] test#{testName}() {
+                """,
+                "       return ",
+                switch (op) {
+                    case COPY_OF       -> "Arrays.copyOf(#{pty}Arr, #len)";
+                    case COPY_OF_RANGE -> "Arrays.copyOfRange(#{pty}Arr, 0, #len)";
+                },
+                ";\n",
+                """
+                    }
+
+                """
+            ));
+
+            return Template.make(() -> scope(
+                Stream.of(Operation.COPY_OF, Operation.COPY_OF_RANGE)
+                      .map(op -> scope(runTemplate.asToken(op), testTemplate.asToken(op)))
+                      .toList(),
+                Hooks.CLASS_HOOK.insert(scope(
+                    let("pty", pty),
+                    let("arr", Stream.iterate(0, n -> n + 1)
+                                     .limit(inputSize)
+                                     .map(_ -> (String) pty.callLibraryRNG())
+                                     .reduce("", (String l, String r) -> l.length() == 0 || l.endsWith(", ") ? l + r : l + ", " + r)),
+                    """
+                        private static #pty[] #{pty}Arr = { #arr };
+                    """
+                ))
+            )).asToken();
         }
     }
 }
