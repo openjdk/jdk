@@ -383,8 +383,7 @@ public final class InternalLocaleBuilder {
         if (script.isEmpty()) {
             // Exception 1 - ja_JP_JP
             if (language.equals("ja") && region.equals("JP") && variant.equals("JP")
-                    && localeExtensions != null
-                    && "japanese".equals(localeExtensions.getUnicodeLocaleType("ca"))) {
+                    && LocaleExtensions.CALENDAR_JAPANESE.equals(localeExtensions)) {
                 // When locale ja_JP_JP is created, ca-japanese is always added.
                 // If the extension exists, the builder ignores the variant "JP"
                 // otherwise "JP" is merely an ill-formed variant
@@ -392,15 +391,15 @@ public final class InternalLocaleBuilder {
             }
             // Exception 2 - th_TH_TH
             else if (language.equals("th") && region.equals("TH") && variant.equals("TH")
-                    && localeExtensions != null
-                    && "thai".equals(localeExtensions.getUnicodeLocaleType("nu"))) {
+                    && LocaleExtensions.NUMBER_THAI.equals(localeExtensions)){
                 // When locale th_TH_TH is created, nu-thai is always added.
                 // If the extension exists, the builder ignores the variant "TH"
                 // otherwise "TH" is merely an ill-formed variant
                 variant = "";
             }
             // Exception 3 - no_NO_NY
-            else if (language.equals("no") && region.equals("NO") && variant.equals("NY")) {
+            else if (language.equals("no") && region.equals("NO") && variant.equals("NY")
+                    && localeExtensions == null) {
                 // no_NO_NY is a valid locale and used by Java 6 or older versions.
                 // The builder ignores the variant "NY" and changes the language to "nn".
                 language = "nn";

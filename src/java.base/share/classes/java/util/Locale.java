@@ -519,25 +519,24 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>For compatibility reasons, two
  * non-conforming locales are treated as special cases.  These are
  * <b>{@code ja_JP_JP}</b> and <b>{@code th_TH_TH}</b>. These are ill-formed
- * in BCP 47 since the {@linkplain ##def_variant variants} are too short. To ease migration to BCP 47,
- * these are treated specially during construction.  These two cases (and only
- * these) cause a constructor to generate an extension, all other values behave
- * exactly as they did prior to Java 7.
+ * in BCP 47 since the {@linkplain ##def_variant variants} are too short. To ease
+ * migration to BCP 47, these are treated specially during construction. Creation
+ * of these two cases generates a compatibility extension.
  *
  * <p>Java has used {@code ja_JP_JP} to represent Japanese as used in
  * Japan together with the Japanese Imperial calendar. This is now
  * representable using a Unicode locale extension, by specifying the
  * Unicode locale key {@code ca} (for "calendar") and type
- * {@code japanese}. When the Locale constructor is called with the
- * arguments "ja", "JP", "JP", the extension "u-ca-japanese" is
- * automatically added.
+ * {@code japanese}. When a {@code Locale} is created with language "ja", an
+ * empty script, region "JP", variant "JP", and no extensions, the extension
+ * "u-ca-japanese" is automatically added.
  *
  * <p>Java has used {@code th_TH_TH} to represent Thai as used in
  * Thailand together with Thai digits. This is also now representable using
  * a Unicode locale extension, by specifying the Unicode locale key
- * {@code nu} (for "number") and value {@code thai}. When the Locale
- * constructor is called with the arguments "th", "TH", "TH", the
- * extension "u-nu-thai" is automatically added.
+ * {@code nu} (for "number") and value {@code thai}. When a {@code Locale} is
+ * created with language "th", an empty script, region "TH", variant "TH", and
+ * no extensions, the extension "u-nu-thai" is automatically added.
  *
  * <h3><a id="legacy_language_codes">Legacy language codes</a></h3>
  *
@@ -1608,9 +1607,9 @@ public final class Locale implements Cloneable, Serializable {
      * <li>Deprecated ISO language codes "iw", "ji", and "in" are
      * converted to "he", "yi", and "id", respectively.
      *
-     * <li>A locale with language "no", country "NO", and variant
-     * "NY", representing Norwegian Nynorsk (Norway), is converted
-     * to a language tag "nn-NO".</li></ul>
+     * <li>A locale with language "no", an empty script, country "NO", variant
+     * "NY", and no extensions, representing Norwegian Nynorsk (Norway), is
+     * converted to a language tag "nn-NO".</li></ul>
      *
      * <p><b>Note:</b> Although the language tag obtained by this
      * method is well-formed (satisfies the syntax requirements
@@ -2690,11 +2689,11 @@ public final class Locale implements Cloneable, Serializable {
          * <li>Locale("no", "NO", "NY") is treated as "nn-NO"</ul>
          *
          * <p>For all three cases, compatibility handling only applies when the script
-         * is empty. Additionally, the Japanese case requires the Unicode
-         * locale keyword {@code ca=japanese}, and the Thai case requires
-         * {@code nu=thai}. If these conditions are not met, the two-letter
-         * variant is treated as ill-formed, and an {@code IllformedLocaleException}
-         * is thrown.
+         * is empty. Additionally, the Japanese case requires exactly the
+         * {@code u-ca-japanese} extension, the Thai case requires
+         * exactly the {@code u-nu-thai} extension, and the Norwegian case
+         * requires no extensions. If these conditions are not met, the two-letter
+         * variant is treated as ill-formed, and an {@code IllformedLocaleException} is thrown.
          *
          * @param locale the locale
          * @return This builder.

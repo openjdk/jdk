@@ -498,6 +498,23 @@ public class LocaleEnhanceTest {
                 // private use only language tag is preserved (no extra "und")
                 {"x-elmer", "x-elmer"},
                 {"x-lvariant-JP", "x-lvariant-JP"},
+                // Legacy locale cases
+                // no/NO/NY case is normalized during `toLanguageTag`
+                // ja/JP/JP & th/TH/TH case is normalized during `forLanguageTag`
+                    // Script prevents the legacy conversions
+                {"no-Latn-NO-x-lvariant-NY",
+                        "no-Latn-NO-x-lvariant-NY"},
+                {"ja-Jpan-JP-x-lvariant-JP",
+                        "ja-Jpan-JP-x-lvariant-JP"},
+                {"th-Thai-TH-x-lvariant-TH",
+                        "th-Thai-TH-x-lvariant-TH"},
+                    // Unexpected extensions prevent the legacy conversions
+                {"no-NO-a-foo-x-lvariant-NY",
+                        "no-NO-a-foo-x-lvariant-NY"},
+                {"ja-JP-a-foo-x-lvariant-JP",
+                        "ja-JP-a-foo-x-lvariant-JP"},
+                {"th-TH-a-foo-x-lvariant-TH",
+                        "th-TH-a-foo-x-lvariant-TH"},
         };
         for (String[] test : tests1) {
             Locale locale = Locale.forLanguageTag(test[0]);
@@ -735,11 +752,19 @@ public class LocaleEnhanceTest {
         assertThrows(IllformedLocaleException.class,
                 () -> new Builder().setLocale(Locale.of("th", "TH", "TH").stripExtensions()));
 
-        // Legacy locales without the correct compatibility extensions are invalid
+        // Legacy locales without the correct Unicode locale extension value are invalid
         assertThrows(IllformedLocaleException.class,
                 () -> new Builder().setLocale(Locale.forLanguageTag("ja-JP-u-ca-foobar-x-lvariant-JP")));
         assertThrows(IllformedLocaleException.class,
                 () -> new Builder().setLocale(Locale.forLanguageTag("th-TH-u-nu-foobar-x-lvariant-TH")));
+
+        // Legacy locales with additional extensions are invalid
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLocale(Locale.forLanguageTag("no-NO-a-foo-x-lvariant-NY")));
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLocale(Locale.forLanguageTag("ja-JP-a-foo-x-lvariant-JP")));
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLocale(Locale.forLanguageTag("th-TH-a-foo-x-lvariant-TH")));
 
         // Legacy locales with non-empty script are invalid
         assertThrows(IllformedLocaleException.class,
