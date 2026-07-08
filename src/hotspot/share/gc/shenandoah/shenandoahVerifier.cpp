@@ -1172,8 +1172,7 @@ void ShenandoahVerifier::verify_before_update_refs(ShenandoahGeneration* generat
           verify_remembered_set,        // verify read-write remembered set
           _verify_forwarded_allow,     // forwarded references allowed
           _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
-          _verify_cset_disable,        // TODO: For evacuation failures, we could have self forwarded or objects that just weren't evacuated
-                                       // TODO: We should probably have a separate region state for 'failed evac'
+          _verify_cset_disable,        // self forwarded objects will exist in cset regions
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash,     // trash regions have been recycled already
           _verify_size_exact,          // expect generation and heap sizes to match exactly
