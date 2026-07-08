@@ -370,12 +370,11 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      */
     @Override
     public boolean addAll(Collection<? extends E> c) {
-        if (c == null)
-            throw new NullPointerException();
-        if (c == this)
-            throw new IllegalArgumentException();
-
         if (size == 0 && getClass() == PriorityQueue.class) {
+            if (c == null)
+                throw new NullPointerException();
+            if (c == this)
+                throw new IllegalArgumentException();
             if (c.isEmpty())
                 return false;
 
