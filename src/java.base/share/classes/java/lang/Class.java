@@ -631,6 +631,13 @@ public final class Class<T> implements java.io.Serializable,
      * {@code Class} object represents an interface, array type, primitive type,
      * or {@code void}, the result is {@code false}.
      *
+     * <p>This method returns {@code true} if and only if this {@code Class}
+     * object represents a class that uses preview features, and the class does
+     * not have the {@link AccessFlag#IDENTITY ACC_IDENTITY} flag set.
+     * The {@code ACC_IDENTITY} flag is considered always set for a class that
+     * does not use preview features; consequently, this method always returns
+     * {@code false} when preview features are disabled.
+     *
      * @jls value-objects-8.1.1.5 {@code value} Classes
      * @see AccessFlag#IDENTITY
      * @since 28
@@ -1369,7 +1376,7 @@ public final class Class<T> implements java.io.Serializable,
      *      {@code true}
      * <li> its interface modifier is always {@code false}, even when
      *      the component type is an interface
-     * <li> when preview features are enabled, its {@linkplain
+     * <li> when preview features are enabled, its {@link
      *      AccessFlag#IDENTITY identity} modifier is always true
      * </ul>
      * If this {@code Class} object represents a primitive type or
@@ -1379,8 +1386,38 @@ public final class Class<T> implements java.io.Serializable,
      * arrays, the values of other modifiers are {@code false} other
      * than as specified above.
      *
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          When preview features are enabled and this {@code Class} object
+     *          either represents a class whose {@code class} file does not
+     *          depend on preview features or represents an array type, its
+     *          {@code identity} modifier is always true.
+     *          <p>
+     *          When preview features are disabled, the {@code Class} object
+     *          does not have its {@code identity} modifier set.
+     *      </div>
+     * </div>
+     *
      * <p> The modifier encodings are defined in section {@jvms 4.1}
      * of <cite>The Java Virtual Machine Specification</cite>.
+     *
+     * @apiNote
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          Developers should be aware that the presence of the {@code
+     *          identity} modifier is dependent on whether preview features are
+     *          enabled.  Use the {@link #isValue() Class.isValue()} method to
+     *          test if a class is an identity class or a value class.
+     *          <p>
+     *          This snippet below checks whether a given {@code Class<?> clazz}
+     *          would have its {@code identity} modifier set when preview
+     *          features are enabled, yet behaves consistently regardless of
+     *          whether preview features are enabled.
+     *          {@snippet lang=java :
+     *          !clazz.isPrimitive() && !clazz.isValue() && !clazz.isInterface()
+     *          }
+     *      </div>
+     * </div>
      *
      * @return the {@code int} representing the modifiers for this class
      * @see     java.lang.reflect.Modifier
@@ -1414,6 +1451,36 @@ public final class Class<T> implements java.io.Serializable,
      * {@code FINAL}.
      * For {@code Class} objects representing void, primitive types, and
      * arrays, access flags are absent other than as specified above.
+     *
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          When preview features are enabled and this {@code Class} object
+     *          either represents a class whose {@code class} file does not
+     *          depend on preview features or represents an array type, its
+     *          flags always include {@code IDENTITY}.
+     *          <p>
+     *          When preview features are disabled, the {@code Class} object
+     *          does not have the {@code IDENTITY} flag set.
+     *      </div>
+     * </div>
+     *
+     * @apiNote
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          Developers should be aware that the presence of the {@code
+     *          identity} modifier is dependent on whether preview features are
+     *          enabled.  Use the {@link #isValue() Class.isValue()} method to
+     *          test if a class is an identity class or a value class.
+     *          <p>
+     *          This snippet below checks whether a given {@code Class<?> clazz}
+     *          would have its {@code IDENTITY} modifier set when preview
+     *          features are enabled, yet behaves consistently regardless of
+     *          whether preview features are enabled.
+     *          {@snippet lang=java :
+     *          !clazz.isPrimitive() && !clazz.isValue() && !clazz.isInterface()
+     *          }
+     *      </div>
+     * </div>
      *
      * @see #getModifiers()
      * @jvms 4.1 The ClassFile Structure

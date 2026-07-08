@@ -82,6 +82,11 @@ public sealed interface StackMapFrameInfo
 
     /**
      * {@return the expanded unset fields}
+     * <p>
+     * If this stack map frame is declared in a {@code class} file that does not
+     * depend on preview features, the list of unset fields is always empty.
+     * If the {@code class} file depends on preview features, this method
+     * returns the list of unset fields.
      *
      * @jvms strict-fields-4.7.4 The {@code StackMapTable} Attribute
      * @since 28
@@ -107,6 +112,12 @@ public sealed interface StackMapFrameInfo
 
     /**
      * {@return a new stack map frame}
+     * <p>
+     * If this stack map frame is declared in a {@code class} file that does not
+     * depend on preview features, the list of unset fields must be empty;
+     * otherwise, the {@code class} file must declare that it depends on preview
+     * features if the unset fields list contains any item.
+     *
      * @param target the location of the frame
      * @param locals the complete list of frame locals
      * @param stack the complete frame stack
