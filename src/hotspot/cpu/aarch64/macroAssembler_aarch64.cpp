@@ -5115,9 +5115,9 @@ void MacroAssembler::load_narrow_klass(Register dst, Register src) {
   }
 }
 
-void MacroAssembler::load_klass(Register dst, Register src) {
+void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   load_narrow_klass(dst, src);
-  decode_klass_not_null(dst);
+  decode_klass_not_null(dst, dst, tmp);
 }
 
 void MacroAssembler::restore_cpu_control_state_after_jni(Register tmp1, Register tmp2) {
@@ -5167,8 +5167,8 @@ void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, R
   resolve_oop_handle(dst, tmp1, tmp2);
 }
 
-void MacroAssembler::cmp_klass(Register obj, Register klass, Register tmp) {
-  assert_different_registers(obj, klass, tmp);
+void MacroAssembler::cmp_klass(Register obj, Register klass, Register tmp, Register tmp2) {
+  assert_different_registers(obj, klass, tmp, tmp2);
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(tmp, obj);
   } else {
@@ -5184,7 +5184,7 @@ void MacroAssembler::cmp_klass(Register obj, Register klass, Register tmp) {
     cmpw(klass, tmp);
     return;
   }
-  decode_klass_not_null(tmp);
+  decode_klass_not_null(tmp, tmp, tmp2);
   cmp(klass, tmp);
 }
 
@@ -5199,11 +5199,11 @@ void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Regi
   cmpw(tmp1, tmp2);
 }
 
-void MacroAssembler::store_klass(Register dst, Register src) {
+void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
   // FIXME: Should this be a store release?  concurrent gcs assumes
   // klass length is valid if klass field is not null.
   assert(!UseCompactObjectHeaders, "not with compact headers");
-  encode_klass_not_null(src);
+  encode_klass_not_null(src, src, tmp);
   strw(src, Address(dst, oopDesc::klass_offset_in_bytes()));
 }
 
@@ -5356,8 +5356,6 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
 }
 
 MacroAssembler::KlassDecodeMode  MacroAssembler::klass_decode_mode(address base, int shift, const size_t range) {
-  // KlassDecodeMode shouldn't be set already.
-  assert(_klass_decode_mode == KlassDecodeNone, "set once");
 
   if (base == nullptr) {
     return KlassDecodeZero;
@@ -5377,18 +5375,14 @@ MacroAssembler::KlassDecodeMode  MacroAssembler::klass_decode_mode(address base,
     return KlassDecodeMovk;
   }
 
-  // No valid encoding.
-  return KlassDecodeNone;
+  return KlassDecodeFallback;
 }
 
-// Check if one of the above decoding modes will work for given base, shift and range.
-bool MacroAssembler::check_klass_decode_mode(address base, int shift, const size_t range) {
-  return klass_decode_mode(base, shift, range) != KlassDecodeNone;
-}
-
-bool MacroAssembler::set_klass_decode_mode(address base, int shift, const size_t range) {
+void MacroAssembler::initialize_klass_decode_mode(address base, int shift, const size_t range) {
+  // KlassDecodeMode shouldn't be set already.
+  assert(_klass_decode_mode == KlassDecodeNone, "set once");
   _klass_decode_mode = klass_decode_mode(base, shift, range);
-  return _klass_decode_mode != KlassDecodeNone;
+  log_info(metaspace)("Klass Decode Mode: %d", (int)_klass_decode_mode);
 }
 
 static Register pick_different_tmp(Register dst, Register src) {
@@ -5420,46 +5414,74 @@ void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src) {
   }
 }
 
-void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
+void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register tmp) {
+  emit_encode_klass_not_null(dst, src, tmp, CompressedKlassPointers::base(),
+                             CompressedKlassPointers::shift(), klass_decode_mode());
+}
+
+void MacroAssembler::emit_encode_klass_not_null(Register dst, Register src, Register tmp,
+                                                address base, int shift, KlassDecodeMode decode_mode) {
   if (CompressedKlassPointers::base() != nullptr && AOTCodeCache::is_on_for_dump()) {
     encode_klass_not_null_for_aot(dst, src);
     return;
   }
 
-  switch (klass_decode_mode()) {
+  assert_different_registers(tmp, src);
+  assert(tmp != noreg, "valid tmp required");
+
+  bool tmp_used = false;
+
+  switch (decode_mode) {
   case KlassDecodeZero:
-    if (CompressedKlassPointers::shift() != 0) {
-      lsr(dst, src, CompressedKlassPointers::shift());
+    if (shift != 0) {
+      lsr(dst, src, shift);
     } else {
       if (dst != src) mov(dst, src);
     }
     break;
 
   case KlassDecodeXor:
-    if (CompressedKlassPointers::shift() != 0) {
-      eor(dst, src, (uint64_t)CompressedKlassPointers::base());
-      lsr(dst, dst, CompressedKlassPointers::shift());
+    if (shift != 0) {
+      eor(dst, src, (uint64_t)base);
+      lsr(dst, dst, shift);
     } else {
-      eor(dst, src, (uint64_t)CompressedKlassPointers::base());
+      eor(dst, src, (uint64_t)base);
     }
     break;
 
   case KlassDecodeMovk:
-    if (CompressedKlassPointers::shift() != 0) {
-      ubfx(dst, src, CompressedKlassPointers::shift(), 32);
+    if (shift != 0) {
+      ubfx(dst, src, shift, 32);
     } else {
       movw(dst, src);
     }
     break;
 
+  case KlassDecodeFallback: {
+    Register reg_base = dst;
+    if (src == dst) {
+      tmp_used = true;
+      reg_base = tmp;
+    }
+    mov(reg_base, base);
+    sub(dst, src, reg_base);
+    if (shift != 0) {
+      lsr(dst, dst, shift);
+    }
+    break;
+  }
+
   case KlassDecodeNone:
     ShouldNotReachHere();
     break;
   }
-}
 
-void MacroAssembler::encode_klass_not_null(Register r) {
-  encode_klass_not_null(r, r);
+#ifdef ASSERT
+  if (!tmp_used && tmp != dst) {
+    mov(tmp, 0xdead);
+  }
+#endif // ASSERT
+
 }
 
 void MacroAssembler::decode_klass_not_null_for_aot(Register dst, Register src) {
@@ -5484,41 +5506,73 @@ void MacroAssembler::decode_klass_not_null_for_aot(Register dst, Register src) {
   }
 }
 
-void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
+void  MacroAssembler::decode_klass_not_null(Register dst, Register src, Register tmp) {
+  emit_decode_klass_not_null(dst, src, tmp,
+                             CompressedKlassPointers::base(),
+                             CompressedKlassPointers::shift(),
+                             klass_decode_mode());
+}
+
+void MacroAssembler::emit_decode_klass_not_null(Register dst, Register src, Register tmp,
+                                                address base, int shift, KlassDecodeMode decode_mode) {
+
   if (AOTCodeCache::is_on_for_dump()) {
     decode_klass_not_null_for_aot(dst, src);
     return;
   }
 
-  switch (klass_decode_mode()) {
-  case KlassDecodeZero:
-    if (CompressedKlassPointers::shift() != 0) {
-      lsl(dst, src, CompressedKlassPointers::shift());
+  assert_different_registers(tmp, src);
+  assert(tmp != noreg, "valid tmp required");
+
+  bool tmp_used = false;
+
+  switch (decode_mode) {
+  case KlassDecodeZero: // 0-1 instructions
+    if (shift != 0) {
+      lsl(dst, src, shift);
     } else {
       if (dst != src) mov(dst, src);
     }
     break;
 
-  case KlassDecodeXor:
-    if (CompressedKlassPointers::shift() != 0) {
-      lsl(dst, src, CompressedKlassPointers::shift());
-      eor(dst, dst, (uint64_t)CompressedKlassPointers::base());
+  case KlassDecodeXor: // 1-2 instructions
+    if (shift != 0) {
+      lsl(dst, src, shift);
+      eor(dst, dst, (uint64_t)base);
     } else {
-      eor(dst, src, (uint64_t)CompressedKlassPointers::base());
+      eor(dst, src, (uint64_t)base);
     }
     break;
 
-  case KlassDecodeMovk: {
+  case KlassDecodeMovk: { // 1-3 instructions
     const uint64_t shifted_base =
-      (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
+      (uint64_t)base >> shift;
 
     if (dst != src) movw(dst, src);
     movk(dst, shifted_base >> 32, 32);
 
-    if (CompressedKlassPointers::shift() != 0) {
-      lsl(dst, dst, CompressedKlassPointers::shift());
+    if (shift != 0) {
+      lsl(dst, dst, shift);
     }
 
+    break;
+  }
+
+  case KlassDecodeFallback: { // 3-4 instructions
+    Register reg_base = dst;
+    if (src == dst) {
+      tmp_used = true;
+      reg_base = tmp;
+    }
+    // Note: base will always be aligned to Metaspace granularity (16MB). Address
+    // spaces are 47(macOS)/48(Linux)/52 (Linux with LVA, rare) bits. Therefore,
+    // loading the base will cost typically two, rarely three movk/movz
+    mov(reg_base, base);
+    if (shift != 0) {
+      add(dst, reg_base, src, LSL, shift);
+    } else {
+      add(dst, reg_base, src);
+    }
     break;
   }
 
@@ -5526,10 +5580,14 @@ void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
     ShouldNotReachHere();
     break;
   }
-}
 
-void  MacroAssembler::decode_klass_not_null(Register r) {
-  decode_klass_not_null(r, r);
+#ifdef ASSERT
+  // Always clobber tmp
+  if (!tmp_used && tmp != dst) {
+    mov(tmp, 0xdead);
+  }
+#endif // ASSERT
+
 }
 
 void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
@@ -7181,7 +7239,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register t1, R
   }
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(t1, obj);
+    load_klass(t1, obj, rscratch1);
     ldrb(t1, Address(t1, Klass::misc_flags_offset()));
     tst(t1, KlassFlags::_misc_is_value_based_class);
     br(Assembler::NE, slow);

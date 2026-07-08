@@ -38,6 +38,7 @@
 #include "utilities/powerOfTwo.hpp"
 
 class OopMap;
+struct GtestFriendToMacroAssembler;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -46,6 +47,7 @@ class OopMap;
 
 class MacroAssembler: public Assembler {
   friend class LIR_Assembler;
+  friend struct GtestFriendToMacroAssembler;
 
  public:
   using Assembler::mov;
@@ -91,28 +93,31 @@ class MacroAssembler: public Assembler {
 
   void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions = true);
 
+ private:
+
   enum KlassDecodeMode {
     KlassDecodeNone,
+    KlassDecodeFallback,
     KlassDecodeZero,
     KlassDecodeXor,
     KlassDecodeMovk
   };
 
-  // Calculate decoding mode based on given parameters, used for checking then ultimately setting.
-  static KlassDecodeMode klass_decode_mode(address base, int shift, const size_t range);
-
- private:
   static KlassDecodeMode _klass_decode_mode;
 
   // Returns above setting with asserts
   static KlassDecodeMode klass_decode_mode();
 
- public:
-  // Checks the decode mode and returns false if not compatible with preferred decoding mode.
-  static bool check_klass_decode_mode(address base, int shift, const size_t range);
+  // Calculate decoding mode based on given parameters, used for checking then ultimately setting.
+  static KlassDecodeMode klass_decode_mode(address base, int shift, const size_t range);
 
-  // Sets the decode mode and returns false if cannot be set.
-  static bool set_klass_decode_mode(address base, int shift, const size_t range);
+  void emit_encode_klass_not_null(Register dst, Register src, Register tmp,
+                                  address base, int shift, KlassDecodeMode decode_mode);
+  void emit_decode_klass_not_null(Register dst, Register src, Register tmp,
+                                  address base, int shift, KlassDecodeMode decode_mode);
+ public:
+  // Determines the decode mode best suited for the given encoding parameters.
+  static void initialize_klass_decode_mode(address base, int shift, const size_t range);
 
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
@@ -925,9 +930,9 @@ public:
   // oop manipulations
   void load_narrow_klass_compact(Register dst, Register src);
   void load_narrow_klass(Register dst, Register src);
-  void load_klass(Register dst, Register src);
-  void store_klass(Register dst, Register src);
-  void cmp_klass(Register obj, Register klass, Register tmp);
+  void load_klass(Register dst, Register src, Register tmp);
+  void store_klass(Register dst, Register src, Register tmp);
+  void cmp_klass(Register obj, Register klass, Register tmp, Register tmp2);
   void cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2);
 
   void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
@@ -974,10 +979,8 @@ public:
 
   void decode_klass_not_null_for_aot(Register dst, Register src);
   void encode_klass_not_null_for_aot(Register dst, Register src);
-  void encode_klass_not_null(Register r);
-  void decode_klass_not_null(Register r);
-  void encode_klass_not_null(Register dst, Register src);
-  void decode_klass_not_null(Register dst, Register src);
+  void encode_klass_not_null(Register dst, Register src, Register tmp);
+  void decode_klass_not_null(Register dst, Register src, Register tmp);
 
   void set_narrow_klass(Register dst, Klass* k);
 

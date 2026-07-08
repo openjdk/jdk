@@ -167,7 +167,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
   }
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(t1, obj);
+    load_klass(t1, obj, rscratch2);
     ldrb(t1, Address(t1, Klass::misc_flags_offset()));
     tst(t1, KlassFlags::_misc_is_value_based_class);
     br(Assembler::NE, slow_path);
