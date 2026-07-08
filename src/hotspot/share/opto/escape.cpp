@@ -4830,14 +4830,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     if (visited.test_set(n->_idx)) {
       continue;
     }
-    if (n->is_Phi()) {
-      if ((uint) _compile->get_alias_index(n->adr_type()) < new_index_start) {
-        // Push memory phis on the orig_phis worklist to update
-        // during Phase 4 if needed.
-        orig_phis.push(n);
-      }
-    } else if (n->is_ClearArray()) {
-     // we don't need to do anything, but the users must be pushed
+    if (n->is_Phi() || n->is_ClearArray()) {
+      // we don't need to do anything, but the users must be pushed
     } else if (n->is_MemBar()) { // MemBar nodes
       if (!n->is_Initialize()) { // memory projections for Initialize pushed below (so we get to all their uses)
         // we don't need to do anything, but the users must be pushed
