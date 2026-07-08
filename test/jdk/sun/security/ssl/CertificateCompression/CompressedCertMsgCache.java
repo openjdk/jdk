@@ -46,7 +46,7 @@ import jdk.test.lib.security.CertificateBuilder;
 
 /*
  * @test
- * @bug 8372526 8386953
+ * @bug 8372526
  * @summary Check CompressedCertificate message cache.
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
