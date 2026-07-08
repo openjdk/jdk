@@ -35,6 +35,7 @@ import java.lang.foreign.*;
 /*
  * @test
  * @bug 8343685 8331659
+ * @key randomness
  * @summary Test vectorization with various invariants that are equivalent, but not trivially so,
  *          i.e. where the invariants have the same summands, but in a different order.
  * @modules java.base/jdk.internal.misc

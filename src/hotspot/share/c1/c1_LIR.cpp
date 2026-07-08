@@ -501,7 +501,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       assert(opConvert->_info == nullptr, "must be");
       if (opConvert->_opr->is_valid())       do_input(opConvert->_opr);
       if (opConvert->_result->is_valid())    do_output(opConvert->_result);
-      do_stub(opConvert->_stub);
 
       break;
     }
@@ -709,11 +708,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       }
 
       if (opJavaCall->_info)                     do_info(opJavaCall->_info);
-      if (FrameMap::method_handle_invoke_SP_save_opr() != LIR_OprFact::illegalOpr &&
-          opJavaCall->is_method_handle_invoke()) {
-        opJavaCall->_method_handle_invoke_SP_save_opr = FrameMap::method_handle_invoke_SP_save_opr();
-        do_temp(opJavaCall->_method_handle_invoke_SP_save_opr);
-      }
       do_call();
       if (opJavaCall->_result->is_valid())       do_output(opJavaCall->_result);
 
@@ -1014,9 +1008,6 @@ void LIR_OpBranch::emit_code(LIR_Assembler* masm) {
 
 void LIR_OpConvert::emit_code(LIR_Assembler* masm) {
   masm->emit_opConvert(this);
-  if (stub() != nullptr) {
-    masm->append_code_stub(stub());
-  }
 }
 
 void LIR_Op2::emit_code(LIR_Assembler* masm) {

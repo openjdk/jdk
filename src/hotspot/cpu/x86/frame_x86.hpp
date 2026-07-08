@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@
 
  public:
   enum {
-    pc_return_offset                                 =  0,
     // All frames
     link_offset                                      =  0,
     return_addr_offset                               =  1,
@@ -80,8 +79,7 @@
     interpreter_frame_monitor_block_bottom_offset    = interpreter_frame_initial_sp_offset,
 
     // Entry frames
-#ifdef AMD64
-#ifdef _WIN64
+#ifdef _WINDOWS
     entry_frame_after_call_words                     =  28,
     entry_frame_call_wrapper_offset                  =  2,
 
@@ -91,10 +89,7 @@
     entry_frame_call_wrapper_offset                  = -6,
 
     arg_reg_save_area_bytes                          =  0,
-#endif // _WIN64
-#else
-    entry_frame_call_wrapper_offset                  =  2,
-#endif // AMD64
+#endif // _WINDOWS
 
     // size, in words, of frame metadata (e.g. pc and link)
     metadata_words                                   = sender_sp_offset,
@@ -105,8 +100,7 @@
     // between a callee frame and its stack arguments, where it is part
     // of the caller/callee overlap
     metadata_words_at_top                            = 0,
-    // size, in words, of frame metadata at the frame top that needs
-    // to be reserved for callee functions in the runtime
+    // in bytes
     frame_alignment                                  = 16,
     // size, in words, of maximum shift in frame position due to alignment
     align_wiggle                                     =  1
@@ -138,16 +132,9 @@
     int _offset_unextended_sp; // for use in stack-chunk frames
   };
 
-  void adjust_unextended_sp() NOT_DEBUG_RETURN;
-
   intptr_t* ptr_at_addr(int offset) const {
     return (intptr_t*) addr_at(offset);
   }
-
-#ifdef ASSERT
-  // Used in frame::sender_for_{interpreter,compiled}_frame
-  static void verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp);
-#endif
 
  public:
   // Constructors

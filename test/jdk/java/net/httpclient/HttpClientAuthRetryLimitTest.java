@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@
  * @summary Auth retry limit system property
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
- * @run junit HttpClientAuthRetryLimitTest
- * @run junit/othervm -Djdk.httpclient.auth.retrylimit=1 HttpClientAuthRetryLimitTest
- * @run junit/othervm -Djdk.httpclient.auth.retrylimit=0 HttpClientAuthRetryLimitTest
- * @run junit/othervm -Djdk.httpclient.auth.retrylimit=-1 HttpClientAuthRetryLimitTest
+ * @run junit ${test.main.class}
+ * @run junit/othervm -Djdk.httpclient.auth.retrylimit=1 ${test.main.class}
+ * @run junit/othervm -Djdk.httpclient.auth.retrylimit=0 ${test.main.class}
+ * @run junit/othervm -Djdk.httpclient.auth.retrylimit=-1 ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
@@ -56,15 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HttpClientAuthRetryLimitTest implements HttpServerAdapters {
 
-    private static final SSLContext SSL_CONTEXT = createSslContext();
-
-    private static SSLContext createSslContext() {
-        try {
-            return new SimpleSSLContext().get();
-        } catch (IOException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
+    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
     // This is the system default value for jdk.httpclient.auth.retrylimit
     private static final int DEFAULT_RETRY_LIMIT = 3;

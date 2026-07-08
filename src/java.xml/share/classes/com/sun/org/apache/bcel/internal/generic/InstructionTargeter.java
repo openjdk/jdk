@@ -22,7 +22,7 @@
 package com.sun.org.apache.bcel.internal.generic;
 
 /**
- * Denote that a class targets InstructionHandles within an InstructionList. Namely the following implementers:
+ * Denotes that a class targets InstructionHandles within an InstructionList.
  *
  * @see BranchHandle
  * @see LocalVariableGen
@@ -33,9 +33,12 @@ public interface InstructionTargeter {
     // static final InstructionTargeter[] EMPTY_ARRAY = new InstructionTargeter[0];
 
     /**
-     * Checks whether this targeter targets the specified instruction handle.
+     * Tests whether this targeter targets the specified instruction handle.
+     *
+     * @param instructionHandle the instruction handle to test.
+     * @return whether this targeter targets the specified instruction handle.
      */
-    boolean containsTarget(InstructionHandle ih);
+    boolean containsTarget(InstructionHandle instructionHandle);
 
     /**
      * Replaces the target of this targeter from this old handle to the new handle.

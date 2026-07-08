@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
 
 /*
  * @test
- * @bug 8354522 8358880
+ * @bug 8354522 8358880 8367324
  * @summary Check for cloning interference
  * @library /test/lib
  * @run junit/othervm --add-opens=java.base/java.text=ALL-UNNAMED CloneTest
  */
 
-import jtreg.SkippedException;
 import org.junit.jupiter.api.Test;
+import org.opentest4j.TestAbortedException;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
@@ -78,7 +78,7 @@ public class CloneTest {
 
                 digitListClass = digitList.getClass();
             } catch (ReflectiveOperationException e) {
-                throw new SkippedException("reflective access in white-box test failed", e);
+                throw new TestAbortedException("reflective access in white-box test failed", e);
             }
         }
 
@@ -89,15 +89,9 @@ public class CloneTest {
                 Object digits = valFromDigitList(original, "digits");
                 assertNotSame(digits, valFromDigitList(dfClone, "digits"));
 
-
-                Object data = valFromDigitList(original, "data");
-                if (data != null) {
-                    assertNotSame(data, valFromDigitList(dfClone, "data"));
-                }
-
                 assertEquals(digitListField.get(original), digitListField.get(dfClone));
             } catch (ReflectiveOperationException e) {
-                throw new SkippedException("reflective access in white-box test failed", e);
+                throw new TestAbortedException("reflective access in white-box test failed", e);
             }
         }
 

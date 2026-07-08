@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,8 @@ package org.openjdk.tests.vm;
 
 import java.util.*;
 
-import org.testng.ITestResult;
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.AfterSuite;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 
 import org.openjdk.tests.separate.*;
 import org.openjdk.tests.separate.Compiler;
@@ -41,7 +38,10 @@ import org.openjdk.tests.shapegen.Hierarchy;
 import org.openjdk.tests.shapegen.HierarchyGenerator;
 import org.openjdk.tests.shapegen.ClassCase;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.openjdk.tests.separate.SourceModel.*;
 import static org.openjdk.tests.separate.SourceModel.Class;
 import static org.openjdk.tests.separate.SourceModel.Method;
@@ -55,7 +55,6 @@ public class FDSeparateCompilationTest extends TestHarness {
         super(false, true);
     }
 
-    @DataProvider(name = "allShapes", parallel = true)
     public Object[][] hierarchyGenerator() {
         ArrayList<Object[]> allCases = new ArrayList<>();
 
@@ -92,7 +91,9 @@ public class FDSeparateCompilationTest extends TestHarness {
     private static final ConcreteMethod canonicalMethod = new ConcreteMethod(
             "String", "m", "returns " + EMPTY + ";", AccessFlag.PUBLIC);
 
-    @Test(enabled = false, groups = "vm", dataProvider = "allShapes")
+    @Disabled
+    @ParameterizedTest
+    @MethodSource("hierarchyGenerator")
     public void separateCompilationTest(Hierarchy hs) {
         ClassCase cc = hs.root;
         Type type = sourceTypeFrom(hs.root);
@@ -118,17 +119,8 @@ public class FDSeparateCompilationTest extends TestHarness {
         }
     }
 
-    @AfterMethod
-    public void printCaseError(ITestResult result) {
-        if (result.getStatus() == ITestResult.FAILURE) {
-            Hierarchy hs = (Hierarchy)result.getParameters()[0];
-            System.out.println("Separate compilation case " + hs);
-            printCaseDetails(hs);
-        }
-    }
-
-    @AfterSuite
-    public void cleanupCompilerCache() {
+    @AfterAll
+    public static void cleanupCompilerCache() {
         Compiler.purgeCache();
     }
 

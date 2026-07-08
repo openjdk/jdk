@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,12 +206,9 @@ address frame::raw_pc() const {
   if (is_deoptimized_frame()) {
     nmethod* nm = cb()->as_nmethod_or_null();
     assert(nm != nullptr, "only nmethod is expected here");
-    if (nm->is_method_handle_return(pc()))
-      return nm->deopt_mh_handler_begin() - pc_return_offset;
-    else
-      return nm->deopt_handler_begin() - pc_return_offset;
+    return nm->deopt_handler_entry();
   } else {
-    return (pc() - pc_return_offset);
+    return pc();
   }
 }
 
@@ -358,9 +355,7 @@ void frame::deoptimize(JavaThread* thread) {
 
   // If the call site is a MethodHandle call site use the MH deopt handler.
   nmethod* nm = _cb->as_nmethod();
-  address deopt = nm->is_method_handle_return(pc()) ?
-                        nm->deopt_mh_handler_begin() :
-                        nm->deopt_handler_begin();
+  address deopt = nm->deopt_handler_entry();
 
   NativePostCallNop* inst = nativePostCallNop_at(pc());
 
@@ -371,19 +366,41 @@ void frame::deoptimize(JavaThread* thread) {
 
 #ifdef ASSERT
   if (thread != nullptr) {
-    frame check = thread->last_frame();
-    if (is_older(check.id())) {
-      RegisterMap map(thread,
-                      RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::include,
-                      RegisterMap::WalkContinuation::skip);
-      while (id() != check.id()) {
-        check = check.sender(&map);
+    frame fr = thread->last_frame();
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::include,
+                    !is_heap_frame() ? RegisterMap::WalkContinuation::skip : RegisterMap::WalkContinuation::include);
+    intptr_t* fr_id = fr.id();
+    while (id() != fr_id) {
+      fr = fr.sender(&map);
+      if (fr.is_heap_frame()) {
+        assert(is_heap_frame(), "");
+        frame derel_fr = map.stack_chunk()->derelativize(fr);
+        fr_id = derel_fr.id();
+      } else {
+        fr_id = fr.id();
       }
-      assert(check.is_deoptimized_frame(), "missed deopt");
     }
+    assert(fr.is_deoptimized_frame(), "missed deopt");
   }
 #endif // ASSERT
+}
+
+void frame::deoptimize(JavaThread* thread, stackChunkOop chunk) {
+  assert(is_heap_frame() && _frame_index >= 0, "wrong frame type");
+
+  // Fast path does not expect deopted frames
+  chunk->force_slow_path();
+
+  frame fr = chunk->derelativize(*this);
+  fr.deoptimize(nullptr);
+
+  // Fix chunk pc if deopted frame is the top one
+  bool is_top = fr.sp() == chunk->sp_address();
+  if (is_top) {
+    chunk->set_pc(fr.raw_pc());
+  }
 }
 
 frame frame::java_sender() const {
@@ -711,12 +728,6 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
         }
         st->print(" (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+" INTPTR_FORMAT "]",
                   m->code_size(), p2i(_pc), p2i(_cb->code_begin()), _pc - _cb->code_begin());
-#if INCLUDE_JVMCI
-        const char* jvmciName = nm->jvmci_name();
-        if (jvmciName != nullptr) {
-          st->print(" (%s)", jvmciName);
-        }
-#endif
       } else {
         st->print("J  " PTR_FORMAT, p2i(pc()));
       }
@@ -896,7 +907,8 @@ oop frame::interpreter_callee_receiver(Symbol* signature) {
   return *interpreter_callee_receiver_addr(signature);
 }
 
-void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache) const {
+template <typename RegisterMapT>
+void frame::oops_interpreted_do(OopClosure* f, const RegisterMapT* map, bool query_oop_map_cache) const {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   Thread *thread = Thread::current();
   methodHandle m (thread, interpreter_frame_method());
@@ -933,33 +945,19 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
 
   int max_locals = m->is_native() ? m->size_of_parameters() : m->max_locals();
 
-  Symbol* signature = nullptr;
-  bool has_receiver = false;
-
   // Process a callee's arguments if we are at a call site
   // (i.e., if we are at an invoke bytecode)
   // This is used sometimes for calling into the VM, not for another
   // interpreted or compiled frame.
-  if (!m->is_native()) {
+  if (!m->is_native() && map != nullptr && map->include_argument_oops()) {
     Bytecode_invoke call = Bytecode_invoke_check(m, bci);
-    if (map != nullptr && call.is_valid()) {
-      signature = call.signature();
-      has_receiver = call.has_receiver();
-      if (map->include_argument_oops() &&
-          interpreter_frame_expression_stack_size() > 0) {
-        ResourceMark rm(thread);  // is this right ???
-        // we are at a call site & the expression stack is not empty
-        // => process callee's arguments
-        //
-        // Note: The expression stack can be empty if an exception
-        //       occurred during method resolution/execution. In all
-        //       cases we empty the expression stack completely be-
-        //       fore handling the exception (the exception handling
-        //       code in the interpreter calls a blocking runtime
-        //       routine which can cause this code to be executed).
-        //       (was bug gri 7/27/98)
-        oops_interpreted_arguments_do(signature, has_receiver, f);
-      }
+    if (call.is_valid() && interpreter_frame_expression_stack_size() > 0) {
+      ResourceMark rm(thread);  // is this right ???
+      Symbol* signature = call.signature();
+      bool has_receiver = call.has_receiver();
+      // We are at a call site & the expression stack is not empty
+      // so we might have callee arguments we need to process.
+      oops_interpreted_arguments_do(signature, has_receiver, f);
     }
   }
 
@@ -975,6 +973,9 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
   mask.iterate_oop(&blk);
 }
 
+template void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache) const;
+template void frame::oops_interpreted_do(OopClosure* f, const SmallRegisterMapNoArgs* map, bool query_oop_map_cache) const;
+template void frame::oops_interpreted_do(OopClosure* f, const SmallRegisterMapWithArgs* map, bool query_oop_map_cache) const;
 
 void frame::oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f) const {
   InterpretedArgumentOopFinder finder(signature, has_receiver, this, f);
@@ -1148,22 +1149,6 @@ void frame::oops_upcall_do(OopClosure* f, const RegisterMap* map) const {
   _cb->as_upcall_stub()->oops_do(f, *this);
 }
 
-bool frame::is_deoptimized_frame() const {
-  assert(_deopt_state != unknown, "not answerable");
-  if (_deopt_state == is_deoptimized) {
-    return true;
-  }
-
-  /* This method only checks if the frame is deoptimized
-   * as in return address being patched.
-   * It doesn't care if the OP that we return to is a
-   * deopt instruction */
-  /*if (_cb != nullptr && _cb->is_nmethod()) {
-    return NativeDeoptInstruction::is_deopt_at(_pc);
-  }*/
-  return false;
-}
-
 void frame::oops_do_internal(OopClosure* f, NMethodClosure* cf,
                              DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
                              const RegisterMap* map, bool use_interpreter_oop_map_cache) const {
@@ -1219,9 +1204,9 @@ void frame::verify(const RegisterMap* map) const {
       // make sure we have the right receiver type
     }
   }
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   assert(DerivedPointerTable::is_empty(), "must be empty before verify");
-#endif
+#endif // COMPILER2
 
   if (map->update_map()) { // The map has to be up-to-date for the current frame
     oops_do_internal(&VerifyOopClosure::verify_oop, nullptr, nullptr, DerivedPointerIterationMode::_ignore, map, false);
@@ -1268,9 +1253,6 @@ void frame::interpreter_frame_verify_monitor(BasicObjectLock* value) const {
 
 #ifndef PRODUCT
 
-// Returns true iff the address p is readable and *(intptr_t*)p != errvalue
-extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue);
-
 class FrameValuesOopClosure: public OopClosure, public DerivedOopClosure {
 private:
   GrowableArray<oop*>* _oops;
@@ -1300,17 +1282,13 @@ public:
     _derived->push(derived_loc);
   }
 
-  bool is_good(oop* p) {
-    return *p == nullptr || (dbg_is_safe(*p, -1) && dbg_is_safe((*p)->klass(), -1) && oopDesc::is_oop_or_null(*p));
-  }
   void describe(FrameValues& values, int frame_no) {
     for (int i = 0; i < _oops->length(); i++) {
       oop* p = _oops->at(i);
-      values.describe(frame_no, (intptr_t*)p, err_msg("oop%s for #%d", is_good(p) ? "" : " (BAD)", frame_no));
+      values.describe(frame_no, (intptr_t*)p, err_msg("oop for #%d", frame_no));
     }
     for (int i = 0; i < _narrow_oops->length(); i++) {
       narrowOop* p = _narrow_oops->at(i);
-      // we can't check for bad compressed oops, as decoding them might crash
       values.describe(frame_no, (intptr_t*)p, err_msg("narrow oop for #%d", frame_no));
     }
     assert(_base->length() == _derived->length(), "should be the same");

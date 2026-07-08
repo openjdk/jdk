@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,27 +33,24 @@
 
 class BasicLock {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
  private:
   // Used as a cache of the ObjectMonitor* used when locking. Must either
   // be nullptr or the ObjectMonitor* used when locking.
-  volatile uintptr_t _metadata;
+  ObjectMonitor* volatile _monitor;
 
-  uintptr_t get_metadata() const { return AtomicAccess::load(&_metadata); }
-  void set_metadata(uintptr_t value) { AtomicAccess::store(&_metadata, value); }
-  static int metadata_offset_in_bytes() { return (int)offset_of(BasicLock, _metadata); }
+  ObjectMonitor* get_monitor() const { return AtomicAccess::load(&_monitor); }
+  void set_monitor(ObjectMonitor* mon) { AtomicAccess::store(&_monitor, mon); }
+  static int monitor_offset_in_bytes() { return (int)offset_of(BasicLock, _monitor); }
 
  public:
-  BasicLock() : _metadata(0) {}
+  BasicLock() : _monitor(nullptr) {}
 
-  void set_bad_metadata_deopt() { set_metadata(badDispHeaderDeopt); }
-
-  static int displaced_header_offset_in_bytes() { return metadata_offset_in_bytes(); }
+  void set_bad_monitor_deopt() { set_monitor(reinterpret_cast<ObjectMonitor*>(badDispHeaderDeopt)); }
 
   inline ObjectMonitor* object_monitor_cache() const;
   inline void clear_object_monitor_cache();
   inline void set_object_monitor_cache(ObjectMonitor* mon);
-  static int object_monitor_cache_offset_in_bytes() { return metadata_offset_in_bytes(); }
+  static int object_monitor_cache_offset_in_bytes() { return monitor_offset_in_bytes(); }
 
   void print_on(outputStream* st, oop owner) const;
 

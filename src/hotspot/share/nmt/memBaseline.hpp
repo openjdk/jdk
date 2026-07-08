@@ -89,6 +89,10 @@ class MemBaseline {
     _baseline_type(Not_baselined) {
   }
 
+  ~MemBaseline() {
+    delete _vma_allocations;
+  }
+
   void baseline(bool summaryOnly = true);
 
   BaselineType baseline_type() const { return _baseline_type; }

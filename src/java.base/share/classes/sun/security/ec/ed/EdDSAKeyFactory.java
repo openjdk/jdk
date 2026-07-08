@@ -26,6 +26,7 @@
 package sun.security.ec.ed;
 
 import sun.security.pkcs.PKCS8Key;
+import sun.security.util.KeyUtil;
 
 import java.security.*;
 import java.security.interfaces.*;
@@ -152,11 +153,17 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
                 yield new EdDSAPublicKeyImpl(params, publicKeySpec.getPoint());
             }
             case PKCS8EncodedKeySpec p8 -> {
-                PKCS8Key p8key = new EdDSAPrivateKeyImpl(p8.getEncoded());
-                if (!p8key.hasPublicKey()) {
-                    throw new InvalidKeySpecException("No public key found.");
+                byte[] encoded = p8.getEncoded();
+                PKCS8Key p8key = null;
+                try {
+                     p8key = new EdDSAPrivateKeyImpl(encoded);
+                    if (!p8key.hasPublicKey()) {
+                        throw new InvalidKeySpecException("No public key found.");
+                    }
+                    yield new EdDSAPublicKeyImpl(p8key.getPubKeyEncoded());
+                } finally {
+                    KeyUtil.clear(encoded, p8key);
                 }
-                yield new EdDSAPublicKeyImpl(p8key.getPubKeyEncoded());
             }
             case null -> throw new InvalidKeySpecException(
                 "keySpec must not be null");

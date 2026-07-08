@@ -79,7 +79,12 @@ public class PrintJob2D extends PrintJob {
          * needs to implement PrintGraphics, so we wrap
          * the Graphics2D instance.
          */
-        return new ProxyPrintGraphics(printJobDelegate.getGraphics(), this);
+        Graphics g = printJobDelegate.getGraphics();
+        if (g == null) { // PrintJob.end() has been called.
+            return null;
+        } else {
+            return new ProxyPrintGraphics(g, this);
+        }
     }
 
     /**

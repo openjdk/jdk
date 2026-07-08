@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ final class Utilities {
                 Pattern.compile("\\r\\n|\\n|\\r");
     private static final HexFormat HEX_FORMATTER =
             HexFormat.of().withUpperCase();
+    static final String LINE_SEP = System.lineSeparator();
 
     /**
      * Puts {@code hostname} into the {@code serverNames} list.
@@ -69,7 +70,7 @@ final class Utilities {
             SNIServerName serverName = sniList.get(i);
             if (serverName.getType() == StandardConstants.SNI_HOST_NAME) {
                 sniList.set(i, sniHostName);
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                      SSLLogger.fine(
                         "the previous server name in SNI (" + serverName +
                         ") was replaced with (" + sniHostName + ")");
@@ -115,7 +116,7 @@ final class Utilities {
                 return new SNIHostName(hostname);
             } catch (IllegalArgumentException iae) {
                 // don't bother to handle illegal host_name
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                      SSLLogger.fine(hostname + "\" " +
                         "is not a legal HostName for  server name indication");
                 }
@@ -150,7 +151,7 @@ final class Utilities {
     static String indent(String source, String prefix) {
         StringBuilder builder = new StringBuilder();
         if (source == null) {
-             builder.append("\n").append(prefix).append("<blank message>");
+             builder.append(LINE_SEP).append(prefix).append("<blank message>");
         } else {
             String[] lines = lineBreakPatern.split(source);
             boolean isFirst = true;
@@ -158,13 +159,42 @@ final class Utilities {
                 if (isFirst) {
                     isFirst = false;
                 } else {
-                    builder.append("\n");
+                    builder.append(LINE_SEP);
                 }
                 builder.append(prefix).append(line);
             }
         }
 
         return builder.toString();
+    }
+
+    static String wrapText(String text, int maxWidth) {
+        if (text == null || text.isEmpty() || maxWidth <= 0) {
+            return "";
+        }
+        StringBuilder result = new StringBuilder();
+        String[] values = text.split(",\\s*");
+        StringBuilder line = new StringBuilder();
+
+        for (int i = 0; i < values.length; i++) {
+            String value = values[i];
+            // If adding this value would exceed maxWidth
+            if (line.length() > 0) {
+                // +1 for the comma
+                if (line.length() + 1 + value.length() > maxWidth) {
+                    result.append(line).append(LINE_SEP);
+                    line.setLength(0);
+                } else {
+                    line.append(",");
+                }
+            }
+            line.append(value);
+        }
+        // Append any remaining line
+        if (line.length() > 0) {
+            result.append(line);
+        }
+        return result.toString();
     }
 
     static String byte16HexString(int id) {

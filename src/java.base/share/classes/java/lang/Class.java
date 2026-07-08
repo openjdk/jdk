@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
+import java.lang.reflect.GenericSignatureFormatError;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -84,12 +85,11 @@ import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
+import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.Wrapper;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.repository.ClassRepository;
-import sun.reflect.generics.repository.MethodRepository;
-import sun.reflect.generics.repository.ConstructorRepository;
 import sun.reflect.generics.scope.ClassScope;
 import sun.reflect.annotation.*;
 
@@ -160,6 +160,10 @@ import sun.reflect.annotation.*;
  * other members are the classes and interfaces whose declarations are
  * enclosed within the top-level class declaration.
  *
+ * <p> Unless otherwise specified, methods in this class throw a
+ * {@link NullPointerException} when they are called with {@code null}
+ * or an array that contains {@code null} as an argument.
+ *
  * <h2><a id=hiddenClasses>Hidden Classes</a></h2>
  * A class or interface created by the invocation of
  * {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
@@ -220,17 +224,16 @@ public final class Class<T> implements java.io.Serializable,
                               AnnotatedElement,
                               TypeDescriptor.OfField<Class<?>>,
                               Constable {
-    private static final int ANNOTATION= 0x00002000;
-    private static final int ENUM      = 0x00004000;
-    private static final int SYNTHETIC = 0x00001000;
+    private static final int ANNOTATION = 0x00002000;
+    private static final int ENUM       = 0x00004000;
+    private static final int SYNTHETIC  = 0x00001000;
 
     private static native void registerNatives();
     static {
         runtimeSetup();
     }
 
-    /// No significant static final fields; [#resetArchivedStates()] handles
-    /// prevents storing [#reflectionFactory] into AOT image.
+    /// No significant static final fields
     @AOTRuntimeSetup
     private static void runtimeSetup() {
         registerNatives();
@@ -319,17 +322,18 @@ public final class Class<T> implements java.io.Serializable,
                 } while (component.isArray());
                 sb.append(component.getName());
             } else {
-                // Class modifiers are a superset of interface modifiers
-                int modifiers = getModifiers() & Modifier.classModifiers();
-                if (modifiers != 0) {
-                    sb.append(Modifier.toString(modifiers));
-                    sb.append(' ');
-                }
+                int modifiers = getModifiers();
+                Reflection.appendAccessControlModifiers(sb, modifiers);
+                if (Modifier.isAbstract(modifiers))
+                    sb.append("abstract "); // Intentionally printed for interfaces
+                if (Modifier.isStatic(modifiers))
+                    sb.append("static ");
+                if (Modifier.isFinal(modifiers))
+                    sb.append("final ");
 
-                // A class cannot be strictfp and sealed/non-sealed so
-                // it is sufficient to check for sealed-ness after all
-                // modifiers are printed.
                 addSealingInfo(modifiers, sb);
+
+                // Note: class strictfp modifier is not recoverable from a class file
 
                 if (isAnnotation()) {
                     sb.append('@');
@@ -471,7 +475,7 @@ public final class Class<T> implements java.io.Serializable,
         validateClassNameLength(className);
         ClassLoader loader = (caller == null) ? ClassLoader.getSystemClassLoader()
                                               : ClassLoader.getClassLoader(caller);
-        return forName0(className, true, loader, caller);
+        return forName0(className, true, loader);
     }
 
     /**
@@ -530,7 +534,8 @@ public final class Class<T> implements java.io.Serializable,
      *                   (which implies linking). See Section {@jls
      *                   12.4} of <cite>The Java Language
      *                   Specification</cite>.
-     * @param loader     class loader from which the class must be loaded
+     * @param loader     class loader from which the class must be loaded,
+     *                   may be {@code null}
      * @return           class object representing the desired class
      *
      * @throws    LinkageError if the linkage fails
@@ -552,13 +557,12 @@ public final class Class<T> implements java.io.Serializable,
         throws ClassNotFoundException
     {
         validateClassNameLength(name);
-        return forName0(name, initialize, loader, null);
+        return forName0(name, initialize, loader);
     }
 
     /** Called after security check for system loader access checks have been made. */
     private static native Class<?> forName0(String name, boolean initialize,
-                                            ClassLoader loader,
-                                            Class<?> caller)
+                                            ClassLoader loader)
         throws ClassNotFoundException;
 
 
@@ -590,8 +594,6 @@ public final class Class<T> implements java.io.Serializable,
      * @return {@code Class} object of the given name defined in the given module;
      *         {@code null} if not found.
      *
-     * @throws NullPointerException if the given module or name is {@code null}
-     *
      * @throws LinkageError if the linkage fails
      *
      * @jls 12.2 Loading of Classes and Interfaces
@@ -620,8 +622,6 @@ public final class Class<T> implements java.io.Serializable,
      * null} is returned.
      *
      * @param primitiveName the name of the primitive type to find
-     *
-     * @throws NullPointerException if the argument is {@code null}
      *
      * @jls 4.2 Primitive Types and Values
      * @jls 15.8.2 Class Literals
@@ -709,7 +709,7 @@ public final class Class<T> implements java.io.Serializable,
             }
             try {
                 Class<?>[] empty = {};
-                final Constructor<T> c = getReflectionFactory().copyConstructor(
+                final Constructor<T> c = ReflectionFactory.getReflectionFactory().copyConstructor(
                     getConstructor0(empty, Member.DECLARED));
                 // Disable accessibility checks on the constructor
                 // access check is done with the true caller
@@ -723,7 +723,8 @@ public final class Class<T> implements java.io.Serializable,
 
         try {
             Class<?> caller = Reflection.getCallerClass();
-            return getReflectionFactory().newInstance(tmpConstructor, null, caller);
+            return ReflectionFactory.getReflectionFactory().newInstance(tmpConstructor,
+                                                                        null, caller);
         } catch (InvocationTargetException e) {
             Unsafe.getUnsafe().throwException(e.getTargetException());
             // Not reached
@@ -758,7 +759,7 @@ public final class Class<T> implements java.io.Serializable,
      * this {@code Class} object represents a primitive type, this method
      * returns {@code false}.
      *
-     * @param   obj the object to check
+     * @param   obj the object to check, may be {@code null}
      * @return  true if {@code obj} is an instance of this class
      *
      * @since 1.1
@@ -788,8 +789,6 @@ public final class Class<T> implements java.io.Serializable,
      * @param     cls the {@code Class} object to be checked
      * @return    the {@code boolean} value indicating whether objects of the
      *            type {@code cls} can be assigned to objects of this class
-     * @throws    NullPointerException if the specified Class parameter is
-     *            null.
      * @since     1.1
      */
     @IntrinsicCandidate
@@ -1392,12 +1391,14 @@ public final class Class<T> implements java.io.Serializable,
         // INNER_CLASS forbids. INNER_CLASS allows PRIVATE, PROTECTED,
         // and STATIC, which are not allowed on Location.CLASS.
         // Use getClassFileAccessFlags to expose SUPER status.
+        // Arrays need to use PRIVATE/PROTECTED from its component modifiers.
         var location = (isMemberClass() || isLocalClass() ||
                         isAnonymousClass() || isArray()) ?
             AccessFlag.Location.INNER_CLASS :
             AccessFlag.Location.CLASS;
-        return getReflectionFactory().parseAccessFlags((location == AccessFlag.Location.CLASS) ?
-                        getClassFileAccessFlags() : getModifiers(), location, this);
+        return ReflectionFactory.getReflectionFactory().parseAccessFlags(
+            (location == AccessFlag.Location.CLASS) ? getClassFileAccessFlags() : getModifiers(),
+            location, this);
     }
 
     /**
@@ -1447,17 +1448,9 @@ public final class Class<T> implements java.io.Serializable,
             if (!enclosingInfo.isMethod())
                 return null;
 
-            MethodRepository typeInfo = MethodRepository.make(enclosingInfo.getDescriptor(),
-                                                              getFactory());
-            Class<?>   returnType       = toClass(typeInfo.getReturnType());
-            Type []    parameterTypes   = typeInfo.getParameterTypes();
-            Class<?>[] parameterClasses = new Class<?>[parameterTypes.length];
-
-            // Convert Types to Classes; returned types *should*
-            // be class objects since the methodDescriptor's used
-            // don't have generics information
-            for(int i = 0; i < parameterClasses.length; i++)
-                parameterClasses[i] = toClass(parameterTypes[i]);
+            List<Class<?>> types = BytecodeDescriptor.parseMethod(enclosingInfo.getDescriptor(), getClassLoader());
+            Class<?>   returnType       = types.removeLast();
+            Class<?>[] parameterClasses = types.toArray(EMPTY_CLASS_ARRAY);
 
             final Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
             Method[] candidates = enclosingCandidate.privateGetDeclaredMethods(false);
@@ -1468,7 +1461,7 @@ public final class Class<T> implements java.io.Serializable,
              * type.  Matching return type is also necessary
              * because of covariant returns, etc.
              */
-            ReflectionFactory fact = getReflectionFactory();
+            ReflectionFactory fact = ReflectionFactory.getReflectionFactory();
             for (Method m : candidates) {
                 if (m.getName().equals(enclosingInfo.getName()) &&
                     arrayContentsEq(parameterClasses,
@@ -1542,8 +1535,15 @@ public final class Class<T> implements java.io.Serializable,
 
         String getName() { return name; }
 
-        String getDescriptor() { return descriptor; }
-
+        String getDescriptor() {
+            // hotspot validates this descriptor to be either a field or method
+            // descriptor as the "type" in a NameAndType in verification.
+            // So this can still be a field descriptor
+            if (descriptor.isEmpty() || descriptor.charAt(0) != '(') {
+                throw new GenericSignatureFormatError("Bad method signature: " + descriptor);
+            }
+            return descriptor;
+        }
     }
 
     private static Class<?> toClass(Type o) {
@@ -1576,17 +1576,9 @@ public final class Class<T> implements java.io.Serializable,
             if (!enclosingInfo.isConstructor())
                 return null;
 
-            ConstructorRepository typeInfo = ConstructorRepository.make(enclosingInfo.getDescriptor(),
-                                                                        getFactory());
-            Type []    parameterTypes   = typeInfo.getParameterTypes();
-            Class<?>[] parameterClasses = new Class<?>[parameterTypes.length];
-
-            // Convert Types to Classes; returned types *should*
-            // be class objects since the methodDescriptor's used
-            // don't have generics information
-            for (int i = 0; i < parameterClasses.length; i++)
-                parameterClasses[i] = toClass(parameterTypes[i]);
-
+            List<Class<?>> types = BytecodeDescriptor.parseMethod(enclosingInfo.getDescriptor(), getClassLoader());
+            types.removeLast();
+            Class<?>[] parameterClasses = types.toArray(EMPTY_CLASS_ARRAY);
 
             final Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
             Constructor<?>[] candidates = enclosingCandidate
@@ -1595,7 +1587,7 @@ public final class Class<T> implements java.io.Serializable,
              * Loop over all declared constructors; match number
              * of and type of parameters.
              */
-            ReflectionFactory fact = getReflectionFactory();
+            ReflectionFactory fact = ReflectionFactory.getReflectionFactory();
             for (Constructor<?> c : candidates) {
                 if (arrayContentsEq(parameterClasses,
                                     fact.getExecutableSharedParameterTypes(c))) {
@@ -1892,7 +1884,7 @@ public final class Class<T> implements java.io.Serializable,
             }
             currentClass = currentClass.getSuperclass();
         }
-        return list.toArray(new Class<?>[0]);
+        return list.toArray(EMPTY_CLASS_ARRAY);
     }
 
 
@@ -2067,7 +2059,6 @@ public final class Class<T> implements java.io.Serializable,
      *         {@code name}
      * @throws NoSuchFieldException if a field with the specified name is
      *         not found.
-     * @throws NullPointerException if {@code name} is {@code null}
      *
      * @since 1.1
      * @jls 8.2 Class Members
@@ -2079,7 +2070,7 @@ public final class Class<T> implements java.io.Serializable,
         if (field == null) {
             throw new NoSuchFieldException(name);
         }
-        return getReflectionFactory().copyField(field);
+        return ReflectionFactory.getReflectionFactory().copyField(field);
     }
 
 
@@ -2158,13 +2149,13 @@ public final class Class<T> implements java.io.Serializable,
      * overriding method as it would have a more specific return type.
      *
      * @param name the name of the method
-     * @param parameterTypes the list of parameters
+     * @param parameterTypes the list of parameters, may be {@code null}
      * @return the {@code Method} object that matches the specified
      *         {@code name} and {@code parameterTypes}
-     * @throws NoSuchMethodException if a matching method is not found
+     * @throws NoSuchMethodException if a matching method is not found,
+     *         if {@code parameterTypes} contains {@code null},
      *         or if the name is {@value ConstantDescs#INIT_NAME} or
-     *         {@value ConstantDescs#CLASS_INIT_NAME}.
-     * @throws NullPointerException if {@code name} is {@code null}
+     *         {@value ConstantDescs#CLASS_INIT_NAME}
      *
      * @jls 8.2 Class Members
      * @jls 8.4 Method Declarations
@@ -2177,7 +2168,7 @@ public final class Class<T> implements java.io.Serializable,
         if (method == null) {
             throw new NoSuchMethodException(methodToString(name, parameterTypes));
         }
-        return getReflectionFactory().copyMethod(method);
+        return ReflectionFactory.getReflectionFactory().copyMethod(method);
     }
 
     /**
@@ -2195,19 +2186,20 @@ public final class Class<T> implements java.io.Serializable,
      * represented by this {@code Class} object whose formal parameter
      * types match those specified by {@code parameterTypes}.
      *
-     * @param parameterTypes the parameter array
+     * @param parameterTypes the parameter array, may be {@code null}
      * @return the {@code Constructor} object of the public constructor that
      *         matches the specified {@code parameterTypes}
      * @throws NoSuchMethodException if a matching constructor is not found,
-     *         including when this {@code Class} object represents
-     *         an interface, a primitive type, an array class, or void.
+     *         if this {@code Class} object represents an interface, a primitive
+     *         type, an array class, or void, or if {@code parameterTypes}
+     *         contains {@code null}
      *
      * @see #getDeclaredConstructor(Class[])
      * @since 1.1
      */
     public Constructor<T> getConstructor(Class<?>... parameterTypes)
             throws NoSuchMethodException {
-        return getReflectionFactory().copyConstructor(
+        return ReflectionFactory.getReflectionFactory().copyConstructor(
             getConstructor0(parameterTypes, Member.PUBLIC));
     }
 
@@ -2381,7 +2373,6 @@ public final class Class<T> implements java.io.Serializable,
      *          class
      * @throws  NoSuchFieldException if a field with the specified name is
      *          not found.
-     * @throws  NullPointerException if {@code name} is {@code null}
      *
      * @since 1.1
      * @jls 8.2 Class Members
@@ -2393,7 +2384,7 @@ public final class Class<T> implements java.io.Serializable,
         if (field == null) {
             throw new NoSuchFieldException(name);
         }
-        return getReflectionFactory().copyField(field);
+        return ReflectionFactory.getReflectionFactory().copyField(field);
     }
 
 
@@ -2416,11 +2407,13 @@ public final class Class<T> implements java.io.Serializable,
      * method does not find the {@code clone()} method.
      *
      * @param name the name of the method
-     * @param parameterTypes the parameter array
-     * @return  the {@code Method} object for the method of this class
-     *          matching the specified name and parameters
-     * @throws  NoSuchMethodException if a matching method is not found.
-     * @throws  NullPointerException if {@code name} is {@code null}
+     * @param parameterTypes the parameter array, may be {@code null}
+     * @return the {@code Method} object for the method of this class
+     *         matching the specified name and parameters
+     * @throws NoSuchMethodException if a matching method is not found,
+     *         if {@code parameterTypes} contains {@code null},
+     *         or if the name is {@value ConstantDescs#INIT_NAME} or
+     *         {@value ConstantDescs#CLASS_INIT_NAME}
      *
      * @jls 8.2 Class Members
      * @jls 8.4 Method Declarations
@@ -2433,7 +2426,7 @@ public final class Class<T> implements java.io.Serializable,
         if (method == null) {
             throw new NoSuchMethodException(methodToString(name, parameterTypes));
         }
-        return getReflectionFactory().copyMethod(method);
+        return ReflectionFactory.getReflectionFactory().copyMethod(method);
     }
 
     /**
@@ -2448,7 +2441,7 @@ public final class Class<T> implements java.io.Serializable,
      */
     List<Method> getDeclaredPublicMethods(String name, Class<?>... parameterTypes) {
         Method[] methods = privateGetDeclaredMethods(/* publicOnly */ true);
-        ReflectionFactory factory = getReflectionFactory();
+        ReflectionFactory factory = ReflectionFactory.getReflectionFactory();
         List<Method> result = new ArrayList<>();
         for (Method method : methods) {
             if (method.getName().equals(name)
@@ -2473,7 +2466,8 @@ public final class Class<T> implements java.io.Serializable,
      */
     Method findMethod(boolean publicOnly, String name, Class<?>... parameterTypes) {
         PublicMethods.MethodList res = getMethodsRecursive(name, parameterTypes, true, publicOnly);
-        return res == null ? null : getReflectionFactory().copyMethod(res.getMostSpecific());
+        return res == null ? null : ReflectionFactory.getReflectionFactory().copyMethod(
+            res.getMostSpecific());
     }
 
     /**
@@ -2487,19 +2481,20 @@ public final class Class<T> implements java.io.Serializable,
      * declared in a non-static context, the formal parameter types
      * include the explicit enclosing instance as the first parameter.
      *
-     * @param parameterTypes the parameter array
+     * @param parameterTypes the parameter array, may be {@code null}
      * @return  The {@code Constructor} object for the constructor with the
      *          specified parameter list
      * @throws  NoSuchMethodException if a matching constructor is not found,
-     *          including when this {@code Class} object represents
-     *          an interface, a primitive type, an array class, or void.
+     *          if this {@code Class} object represents an interface, a
+     *          primitive type, an array class, or void, or if
+     *          {@code parameterTypes} contains {@code null}
      *
      * @see #getConstructor(Class[])
      * @since 1.1
      */
     public Constructor<T> getDeclaredConstructor(Class<?>... parameterTypes)
             throws NoSuchMethodException {
-        return getReflectionFactory().copyConstructor(
+        return ReflectionFactory.getReflectionFactory().copyConstructor(
             getConstructor0(parameterTypes, Member.DECLARED));
     }
 
@@ -2551,7 +2546,6 @@ public final class Class<T> implements java.io.Serializable,
      *          resource with this name is found, or the resource is in a package
      *          that is not {@linkplain Module#isOpen(String, Module) open} to at
      *          least the caller module.
-     * @throws  NullPointerException If {@code name} is {@code null}
      *
      * @see Module#getResourceAsStream(String)
      * @since  1.1
@@ -2647,7 +2641,6 @@ public final class Class<T> implements java.io.Serializable,
      *         resource is in a package that is not
      *         {@linkplain Module#isOpen(String, Module) open} to at least the caller
      *         module.
-     * @throws NullPointerException If {@code name} is {@code null}
      * @since  1.1
      */
     @CallerSensitive
@@ -2906,7 +2899,7 @@ public final class Class<T> implements java.io.Serializable,
     // Since 1.8
     native byte[] getRawTypeAnnotations();
     static byte[] getExecutableTypeAnnotationBytes(Executable ex) {
-        return getReflectionFactory().getExecutableTypeAnnotationBytes(ex);
+        return ReflectionFactory.getReflectionFactory().getExecutableTypeAnnotationBytes(ex);
     }
 
     native ConstantPool getConstantPool();
@@ -3120,7 +3113,7 @@ public final class Class<T> implements java.io.Serializable,
                                         String name,
                                         Class<?>[] parameterTypes)
     {
-        ReflectionFactory fact = getReflectionFactory();
+        ReflectionFactory fact = ReflectionFactory.getReflectionFactory();
         Method res = null;
         for (Method m : methods) {
             if (m.getName().equals(name)
@@ -3188,7 +3181,7 @@ public final class Class<T> implements java.io.Serializable,
     private Constructor<T> getConstructor0(Class<?>[] parameterTypes,
                                         int which) throws NoSuchMethodException
     {
-        ReflectionFactory fact = getReflectionFactory();
+        ReflectionFactory fact = ReflectionFactory.getReflectionFactory();
         Constructor<T>[] constructors = privateGetDeclaredConstructors((which == Member.PUBLIC));
         for (Constructor<T> constructor : constructors) {
             if (arrayContentsEq(parameterTypes,
@@ -3227,7 +3220,7 @@ public final class Class<T> implements java.io.Serializable,
 
     private static Field[] copyFields(Field[] arg) {
         Field[] out = new Field[arg.length];
-        ReflectionFactory fact = getReflectionFactory();
+        ReflectionFactory fact = ReflectionFactory.getReflectionFactory();
         for (int i = 0; i < arg.length; i++) {
             out[i] = fact.copyField(arg[i]);
         }
@@ -3236,7 +3229,7 @@ public final class Class<T> implements java.io.Serializable,
 
     private static Method[] copyMethods(Method[] arg) {
         Method[] out = new Method[arg.length];
-        ReflectionFactory fact = getReflectionFactory();
+        ReflectionFactory fact = ReflectionFactory.getReflectionFactory();
         for (int i = 0; i < arg.length; i++) {
             out[i] = fact.copyMethod(arg[i]);
         }
@@ -3245,7 +3238,7 @@ public final class Class<T> implements java.io.Serializable,
 
     private static <U> Constructor<U>[] copyConstructors(Constructor<U>[] arg) {
         Constructor<U>[] out = arg.clone();
-        ReflectionFactory fact = getReflectionFactory();
+        ReflectionFactory fact = ReflectionFactory.getReflectionFactory();
         for (int i = 0; i < out.length; i++) {
             out[i] = fact.copyConstructor(out[i]);
         }
@@ -3399,25 +3392,6 @@ public final class Class<T> implements java.io.Serializable,
                 isRecord0();
     }
 
-    // Fetches the factory for reflective objects
-    private static ReflectionFactory getReflectionFactory() {
-        var factory = reflectionFactory;
-        if (factory != null) {
-            return factory;
-        }
-        return reflectionFactory = ReflectionFactory.getReflectionFactory();
-    }
-    private static ReflectionFactory reflectionFactory;
-
-    /**
-     * When CDS is enabled, the Class class may be aot-initialized. However,
-     * we can't archive reflectionFactory, so we reset it to null, so it
-     * will be allocated again at runtime.
-     */
-    private static void resetArchivedStates() {
-        reflectionFactory = null;
-    }
-
     /**
      * Returns the elements of this enum class or null if this
      * Class object does not represent an enum class.
@@ -3489,7 +3463,7 @@ public final class Class<T> implements java.io.Serializable,
      * Casts an object to the class or interface represented
      * by this {@code Class} object.
      *
-     * @param obj the object to be cast
+     * @param obj the object to be cast, may be {@code null}
      * @return the object after casting, or null if obj is null
      *
      * @throws ClassCastException if the object is not
@@ -3544,7 +3518,6 @@ public final class Class<T> implements java.io.Serializable,
      * <p>Note that any annotation returned by this method is a
      * declaration annotation.
      *
-     * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
     @Override
@@ -3557,7 +3530,6 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
     @Override
@@ -3570,7 +3542,6 @@ public final class Class<T> implements java.io.Serializable,
      * <p>Note that any annotations returned by this method are
      * declaration annotations.
      *
-     * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
     @Override
@@ -3600,7 +3571,6 @@ public final class Class<T> implements java.io.Serializable,
      * <p>Note that any annotation returned by this method is a
      * declaration annotation.
      *
-     * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
     @Override
@@ -3616,7 +3586,6 @@ public final class Class<T> implements java.io.Serializable,
      * <p>Note that any annotations returned by this method are
      * declaration annotations.
      *
-     * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
     @Override
@@ -3795,7 +3764,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.8
      */
     public AnnotatedType[] getAnnotatedInterfaces() {
-         return TypeAnnotationParser.buildAnnotatedInterfaces(getRawTypeAnnotations(), getConstantPool(), this);
+        return TypeAnnotationParser.buildAnnotatedInterfaces(getRawTypeAnnotations(), getConstantPool(), this);
     }
 
     private native Class<?> getNestHost0();
@@ -3847,6 +3816,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 11
      */
     public boolean isNestmateOf(Class<?> c) {
+        Objects.requireNonNull(c);
         if (this == c) {
             return true;
         }
@@ -3855,7 +3825,7 @@ public final class Class<T> implements java.io.Serializable,
             return false;
         }
 
-        return getNestHost() == c.getNestHost();
+        return Reflection.areNestMates(this, c);
     }
 
     private native Class<?>[] getNestMembers0();

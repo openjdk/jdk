@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,7 +478,7 @@ void LIRGenerator::klass2reg_with_patching(LIR_Opr r, ciMetadata* obj, CodeEmitI
   /* C2 relies on constant pool entries being resolved (ciTypeFlow), so if tiered compilation
    * is active and the class hasn't yet been resolved we need to emit a patch that resolves
    * the class. */
-  if ((!CompilerConfig::is_c1_only_no_jvmci() && need_resolve) || !obj->is_loaded() || PatchALot) {
+  if ((!CompilerConfig::is_c1_only() && need_resolve) || !obj->is_loaded() || PatchALot) {
     assert(info != nullptr, "info must be set if class is not loaded");
     __ klass2reg_patch(nullptr, r, info);
   } else {
@@ -635,7 +635,7 @@ void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, L
   // setup registers
   LIR_Opr hdr = lock;
   lock = new_hdr;
-  CodeStub* slow_path = new MonitorExitStub(lock, true, monitor_no);
+  CodeStub* slow_path = new MonitorExitStub(lock, monitor_no);
   __ load_stack_address_monitor(monitor_no, lock);
   __ unlock_object(hdr, object, lock, scratch, slow_path);
 }
@@ -644,7 +644,7 @@ void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, L
 void LIRGenerator::print_if_not_loaded(const NewInstance* new_instance) {
   if (PrintNotLoaded && !new_instance->klass()->is_loaded()) {
     tty->print_cr("   ###class not loaded at new bci %d", new_instance->printable_bci());
-  } else if (PrintNotLoaded && (!CompilerConfig::is_c1_only_no_jvmci() && new_instance->is_unresolved())) {
+  } else if (PrintNotLoaded && (!CompilerConfig::is_c1_only() && new_instance->is_unresolved())) {
     tty->print_cr("   ###class not resolved at new bci %d", new_instance->printable_bci());
   }
 }
@@ -2712,19 +2712,7 @@ void LIRGenerator::do_Invoke(Invoke* x) {
   // emit invoke code
   assert(receiver->is_illegal() || receiver->is_equal(LIR_Assembler::receiverOpr()), "must match");
 
-  // JSR 292
-  // Preserve the SP over MethodHandle call sites, if needed.
   ciMethod* target = x->target();
-  bool is_method_handle_invoke = (// %%% FIXME: Are both of these relevant?
-                                  target->is_method_handle_intrinsic() ||
-                                  target->is_compiled_lambda_form());
-  if (is_method_handle_invoke) {
-    info->set_is_method_handle_invoke(true);
-    if(FrameMap::method_handle_invoke_SP_save_opr() != LIR_OprFact::illegalOpr) {
-        __ move(FrameMap::stack_pointer(), FrameMap::method_handle_invoke_SP_save_opr());
-    }
-  }
-
   switch (x->code()) {
     case Bytecodes::_invokestatic:
       __ call_static(target, result_register,
@@ -2755,13 +2743,6 @@ void LIRGenerator::do_Invoke(Invoke* x) {
     default:
       fatal("unexpected bytecode: %s", Bytecodes::name(x->code()));
       break;
-  }
-
-  // JSR 292
-  // Restore the SP after MethodHandle call sites, if needed.
-  if (is_method_handle_invoke
-      && FrameMap::method_handle_invoke_SP_save_opr() != LIR_OprFact::illegalOpr) {
-    __ move(FrameMap::method_handle_invoke_SP_save_opr(), FrameMap::stack_pointer());
   }
 
   if (result_register->is_valid()) {

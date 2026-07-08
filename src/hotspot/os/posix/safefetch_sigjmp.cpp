@@ -67,6 +67,14 @@ ATTRIBUTE_NO_ASAN static bool _SafeFetchXX_internal(const T *adr, T* result) {
 
   T n = 0;
 
+#ifdef AIX
+  // AIX allows reading from nullptr without signalling
+  if (adr == nullptr) {
+    *result = 0;
+    return false;
+  }
+#endif
+
   // Set up a jump buffer. Anchor its pointer in TLS. Then read from the unsafe address.
   // If that address was invalid, we fault, and in the signal handler we will jump back
   // to the jump point.

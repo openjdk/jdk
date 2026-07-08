@@ -46,7 +46,8 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
 public class TestNumberOfContinuousZeros {
-    private static final int[] SPECIAL = { 0x01FFFFFF, 0x03FFFFFE, 0x07FFFFFC, 0x0FFFFFF8, 0x1FFFFFF0, 0x3FFFFFE0, 0xFFFFFFFF };
+    private static final int[] SPECIAL_INT = { 0, 0x01FFFFFF, 0x03FFFFFE, 0x07FFFFFC, 0x0FFFFFF8, 0x1FFFFFF0, 0x3FFFFFE0, 0xFFFFFFFF };
+    private static final long[] SPECIAL_LONG = { 0, 0xFF, 0xFFFF, 0x01FFFFFF, 0x03FFFFFE, 0x07FFFFFC, 0x0FFFFFF8, 0x1FFFFFF0, 0x3FFFFFE0, 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFFL, 0x7FFFFFFFFFFFFFFFL };
     private long[] inputLong;
     private int[] outputLong;
     private int[] inputInt;
@@ -134,7 +135,18 @@ public class TestNumberOfContinuousZeros {
         int[] res = new int[LEN];
 
         for (int i = 0; i < LEN; i++) {
-            res[i] = SPECIAL[i % SPECIAL.length];
+            res[i] = SPECIAL_INT[i % SPECIAL_INT.length];
+        }
+
+        return new Object[] { res };
+    }
+
+    @Setup
+    static Object[] setupSpecialLongArray() {
+        long[] res = new long[LEN];
+
+        for (int i = 0; i < LEN; i++) {
+            res[i] = SPECIAL_LONG[i % SPECIAL_LONG.length];
         }
 
         return new Object[] { res };
@@ -167,23 +179,52 @@ public class TestNumberOfContinuousZeros {
         }
     }
 
-    private static final VectorSpecies<Integer> SPECIES = IntVector.SPECIES_PREFERRED;
+    @Test
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.COUNT_LEADING_ZEROS_VL, "> 0"})
+    @Arguments(setup = "setupSpecialLongArray")
+    public Object[] testSpecialLongLeadingZeros(long[] longs) {
+        int[] res = new int[LEN];
+
+        for (int i = 0; i < LEN; ++i) {
+            res[i] = Long.numberOfLeadingZeros(longs[i]);
+        }
+
+        return new Object[] { longs, res };
+    }
+
+    @Check(test = "testSpecialLongLeadingZeros")
+    public void checkSpecialLongLeadingZeros(Object[] vals) {
+        long[] in = (long[]) vals[0];
+        int[] out = (int[]) vals[1];
+
+        for (int i = 0; i < LEN; ++i) {
+            int value = Long.numberOfLeadingZeros(in[i]);
+
+            if (out[i] != value) {
+                throw new IllegalStateException("Expected lzcnt(" + in[i] + ") to be " + value + " but got " + out[i]);
+            }
+        }
+    }
+
+    private static final VectorSpecies<Integer> SPECIES_INT = IntVector.SPECIES_PREFERRED;
+    private static final VectorSpecies<Long> SPECIES_LONG = LongVector.SPECIES_PREFERRED;
 
     @Test
     @IR(counts = {IRNode.COUNT_LEADING_ZEROS_VI, "> 0"})
     @Arguments(setup = "setupSpecialIntArray")
-    public Object[] checkSpecialIntLeadingZerosVector(int[] ints) {
+    public Object[] testIntLeadingZerosVector(int[] ints) {
         int[] res = new int[LEN];
 
-        for (int i = 0; i < ints.length; i += SPECIES.length()) {
-            IntVector av = IntVector.fromArray(SPECIES, ints, i);
+        for (int i = 0; i < ints.length; i += SPECIES_INT.length()) {
+            IntVector av = IntVector.fromArray(SPECIES_INT, ints, i);
             av.lanewise(VectorOperators.LEADING_ZEROS_COUNT).intoArray(res, i);
         }
 
         return new Object[] { ints, res };
     }
 
-    @Check(test = "checkSpecialIntLeadingZerosVector")
+    @Check(test = "testIntLeadingZerosVector")
     public void checkSpecialIntLeadingZerosVector(Object[] vals) {
         int[] ints = (int[]) vals[0];
         int[] res = (int[]) vals[1];
@@ -192,8 +233,44 @@ public class TestNumberOfContinuousZeros {
 
         int[] check = new int[LEN];
 
-        for (int i = 0; i < ints.length; i += SPECIES.length()) {
-            IntVector av = IntVector.fromArray(SPECIES, ints, i);
+        for (int i = 0; i < ints.length; i += SPECIES_INT.length()) {
+            IntVector av = IntVector.fromArray(SPECIES_INT, ints, i);
+            av.lanewise(VectorOperators.LEADING_ZEROS_COUNT).intoArray(check, i);
+        }
+
+        for (int i = 0; i < LEN; i++) {
+            if (res[i] != check[i]) {
+                throw new IllegalStateException("Expected " + check[i] + " but got " + res[i]);
+            }
+        }
+    }
+
+    @Test
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.COUNT_LEADING_ZEROS_VL, "> 0"})
+    @Arguments(setup = "setupSpecialLongArray")
+    public Object[] testLongLeadingZerosVector(long[] longs) {
+        long[] res = new long[LEN];
+
+        for (int i = 0; i < longs.length; i += SPECIES_LONG.length()) {
+            LongVector av = LongVector.fromArray(SPECIES_LONG, longs, i);
+            av.lanewise(VectorOperators.LEADING_ZEROS_COUNT).intoArray(res, i);
+        }
+
+        return new Object[] { longs, res };
+    }
+
+    @Check(test = "testLongLeadingZerosVector")
+    public void checkSpecialLongLeadingZerosVector(Object[] vals) {
+        long[] longs = (long[]) vals[0];
+        long[] res = (long[]) vals[1];
+
+        // Verification
+
+        long[] check = new long[LEN];
+
+        for (int i = 0; i < longs.length; i += SPECIES_LONG.length()) {
+            LongVector av = LongVector.fromArray(SPECIES_LONG, longs, i);
             av.lanewise(VectorOperators.LEADING_ZEROS_COUNT).intoArray(check, i);
         }
 

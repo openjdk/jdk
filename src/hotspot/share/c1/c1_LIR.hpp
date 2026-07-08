@@ -1176,7 +1176,6 @@ class LIR_OpJavaCall: public LIR_OpCall {
  private:
   ciMethod* _method;
   LIR_Opr   _receiver;
-  LIR_Opr   _method_handle_invoke_SP_save_opr;  // Used in LIR_OpVisitState::visit to store the reference to FrameMap::method_handle_invoke_SP_save_opr.
 
  public:
   LIR_OpJavaCall(LIR_Code code, ciMethod* method,
@@ -1186,7 +1185,6 @@ class LIR_OpJavaCall: public LIR_OpCall {
   : LIR_OpCall(code, addr, result, arguments, info)
   , _method(method)
   , _receiver(receiver)
-  , _method_handle_invoke_SP_save_opr(LIR_OprFact::illegalOpr)
   { assert(is_in_range(code, begin_opJavaCall, end_opJavaCall), "code check"); }
 
   LIR_OpJavaCall(LIR_Code code, ciMethod* method,
@@ -1195,7 +1193,6 @@ class LIR_OpJavaCall: public LIR_OpCall {
   : LIR_OpCall(code, (address)vtable_offset, result, arguments, info)
   , _method(method)
   , _receiver(receiver)
-  , _method_handle_invoke_SP_save_opr(LIR_OprFact::illegalOpr)
   { assert(is_in_range(code, begin_opJavaCall, end_opJavaCall), "code check"); }
 
   LIR_Opr receiver() const                       { return _receiver; }
@@ -1433,23 +1430,18 @@ class LIR_OpReturn: public LIR_Op1 {
   virtual LIR_OpReturn* as_OpReturn() { return this; }
 };
 
-class ConversionStub;
-
 class LIR_OpConvert: public LIR_Op1 {
  friend class LIR_OpVisitState;
 
  private:
    Bytecodes::Code _bytecode;
-   ConversionStub* _stub;
 
  public:
-   LIR_OpConvert(Bytecodes::Code code, LIR_Opr opr, LIR_Opr result, ConversionStub* stub)
+   LIR_OpConvert(Bytecodes::Code code, LIR_Opr opr, LIR_Opr result)
      : LIR_Op1(lir_convert, opr, result)
-     , _bytecode(code)
-     , _stub(stub)                               {}
+     , _bytecode(code)                           {}
 
   Bytecodes::Code bytecode() const               { return _bytecode; }
-  ConversionStub* stub() const                   { return _stub; }
 
   virtual void emit_code(LIR_Assembler* masm);
   virtual LIR_OpConvert* as_OpConvert() { return this; }
@@ -2174,7 +2166,7 @@ class LIR_List: public CompilationResourceObj {
   void safepoint(LIR_Opr tmp, CodeEmitInfo* info)  { append(new LIR_Op1(lir_safepoint, tmp, info)); }
   void return_op(LIR_Opr result)                   { append(new LIR_OpReturn(result)); }
 
-  void convert(Bytecodes::Code code, LIR_Opr left, LIR_Opr dst, ConversionStub* stub = nullptr/*, bool is_32bit = false*/) { append(new LIR_OpConvert(code, left, dst, stub)); }
+  void convert(Bytecodes::Code code, LIR_Opr left, LIR_Opr dst) { append(new LIR_OpConvert(code, left, dst)); }
 
   void logical_and (LIR_Opr left, LIR_Opr right, LIR_Opr dst) { append(new LIR_Op2(lir_logic_and,  left, right, dst)); }
   void logical_or  (LIR_Opr left, LIR_Opr right, LIR_Opr dst) { append(new LIR_Op2(lir_logic_or,   left, right, dst)); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,9 @@ public class GC extends nsk.share.test.Tests {
 
                 public GCTestRunner(Test test, String[] args) {
                         super(test, args);
+                        // GC tests often run at the brink of OOME, make sure
+                        // LocalRandom is loaded, initialized, and has enough memory.
+                        LocalRandom.init();
                 }
 
                 private GCParams getGCParams(String[] args) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "runtime/mutex.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/integerCast.hpp"
 
 class BytecodeStream;
 
@@ -77,7 +78,6 @@ class ProfileData;
 // Overlay for generic profiling data.
 class DataLayout {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
 private:
   // Every data layout begins with a header.  This header
@@ -206,7 +206,7 @@ public:
   }
 
   bool set_flag_at(u1 flag_number) {
-    const u1 bit = 1 << flag_number;
+    const u1 bit = integer_cast<u1>(1 << flag_number);
     u1 compare_value;
     do {
       compare_value = _header._struct._flags;
@@ -219,7 +219,7 @@ public:
   }
 
   bool clear_flag_at(u1 flag_number) {
-    const u1 bit = 1 << flag_number;
+    const u1 bit = integer_cast<u1>(1 << flag_number);
     u1 compare_value;
     u1 exchange_value;
     do {
@@ -513,7 +513,6 @@ public:
 // A BitData holds a flag or two in its header.
 class BitData : public ProfileData {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 protected:
   enum : u1 {
     // null_seen:
@@ -521,10 +520,6 @@ protected:
       null_seen_flag                  = DataLayout::first_flag + 0,
       exception_handler_entered_flag  = null_seen_flag + 1,
       deprecated_method_callsite_flag = exception_handler_entered_flag + 1
-#if INCLUDE_JVMCI
-    // bytecode threw any exception
-    , exception_seen_flag             = deprecated_method_callsite_flag + 1
-#endif
   };
   enum { bit_cell_count = 0 };  // no additional data fields needed.
 public:
@@ -551,12 +546,6 @@ public:
   bool set_deprecated_method_call_site() { return data()->set_flag_at(deprecated_method_callsite_flag); }
   bool clear_deprecated_method_call_site() { return data()->clear_flag_at(deprecated_method_callsite_flag); }
 
-#if INCLUDE_JVMCI
-  // true if an exception was thrown at the specific BCI
-  bool exception_seen() { return flag_at(exception_seen_flag); }
-  void set_exception_seen() { set_flag_at(exception_seen_flag); }
-#endif
-
   // true if a ex handler block at this bci was entered
   bool exception_handler_entered() { return flag_at(exception_handler_entered_flag); }
   void set_exception_handler_entered() { set_flag_at(exception_handler_entered_flag); }
@@ -578,7 +567,6 @@ public:
 // A CounterData corresponds to a simple counter.
 class CounterData : public BitData {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 protected:
   enum {
     count_off,
@@ -631,7 +619,6 @@ public:
 // the corresponding target bci.
 class JumpData : public ProfileData {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 protected:
   enum {
     taken_off_set,
@@ -1148,9 +1135,10 @@ public:
 // is seen. A per ReceiverTypeData counter is incremented on type
 // overflow (when there's no more room for a not yet profiled Klass*).
 //
+// Updated by platform-specific code, for example MacroAssembler::profile_receiver_type.
+//
 class ReceiverTypeData : public CounterData {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 protected:
   enum {
     receiver0_offset = counter_cell_count,
@@ -1281,7 +1269,6 @@ public:
     return cell_offset(static_cell_count());
   }
 
-  void print_method_data_on(outputStream* st) const NOT_JVMCI_RETURN;
   void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
@@ -1527,7 +1514,6 @@ public:
 // for the taken case.
 class BranchData : public JumpData {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 protected:
   enum {
     not_taken_off_set = jump_cell_count,
@@ -1591,7 +1577,6 @@ public:
 // and an array start.
 class ArrayData : public ProfileData {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 protected:
   friend class DataLayout;
 
@@ -1652,7 +1637,6 @@ public:
 // case was taken and specify the data displacement for each branch target.
 class MultiBranchData : public ArrayData {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 protected:
   enum {
     default_count_off_set,
@@ -1749,7 +1733,7 @@ public:
   virtual bool is_ArgInfoData() const { return true; }
 
 
-  int number_of_args() const {
+  int size_of_args() const {
     return array_len();
   }
 
@@ -1949,52 +1933,13 @@ public:
   virtual bool is_live(Method* m) = 0;
 };
 
-
-#if INCLUDE_JVMCI
-// Encapsulates an encoded speculation reason. These are linked together in
-// a list that is atomically appended to during deoptimization. Entries are
-// never removed from the list.
-// @see jdk.vm.ci.hotspot.HotSpotSpeculationLog.HotSpotSpeculationEncoding
-class FailedSpeculation: public CHeapObj<mtCompiler> {
- private:
-  // The length of HotSpotSpeculationEncoding.toByteArray(). The data itself
-  // is an array embedded at the end of this object.
-  int   _data_len;
-
-  // Next entry in a linked list.
-  FailedSpeculation* _next;
-
-  FailedSpeculation(address data, int data_len);
-
-  FailedSpeculation** next_adr() { return &_next; }
-
-  // Placement new operator for inlining the speculation data into
-  // the FailedSpeculation object.
-  void* operator new(size_t size, size_t fs_size) throw();
-
- public:
-  char* data()         { return (char*)(((address) this) + sizeof(FailedSpeculation)); }
-  int data_len() const { return _data_len; }
-  FailedSpeculation* next() const { return _next; }
-
-  // Atomically appends a speculation from nm to the list whose head is at (*failed_speculations_address).
-  // Returns false if the FailedSpeculation object could not be allocated.
-  static bool add_failed_speculation(nmethod* nm, FailedSpeculation** failed_speculations_address, address speculation, int speculation_len);
-
-  // Frees all entries in the linked list whose head is at (*failed_speculations_address).
-  static void free_failed_speculations(FailedSpeculation** failed_speculations_address);
-};
-#endif
-
 class ciMethodData;
 
 class MethodData : public Metadata {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class ProfileData;
   friend class TypeEntriesAtCall;
   friend class ciMethodData;
-  friend class VM_ReinitializeMDO;
 
   // If you add a new field that points to any metaspace object, you
   // must add this field to MethodData::metaspace_pointers_do().
@@ -2011,20 +1956,13 @@ class MethodData : public Metadata {
   Mutex* volatile _extra_data_lock;
 
   MethodData(const methodHandle& method);
-
-  void initialize();
-
 public:
   MethodData();
 
   static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
 
   virtual bool is_methodData() const { return true; }
-
-  // Safely reinitialize the data in the MDO.  This is intended as a testing facility as the
-  // reinitialization is performed at a safepoint so it's isn't cheap and it doesn't ensure that all
-  // readers will see consistent profile data.
-  void reinitialize();
+  void initialize();
 
   // Whole-method sticky bits and flags
   enum {
@@ -2036,15 +1974,13 @@ public:
   // Compiler-related counters.
   class CompilerCounters {
     friend class VMStructs;
-    friend class JVMCIVMStructs;
 
     uint _nof_decompiles;             // count of all nmethod removals
     uint _nof_overflow_recompiles;    // recompile count, excluding recomp. bits
     uint _nof_overflow_traps;         // trap count, excluding _trap_hist
     union {
       intptr_t _align;
-      // JVMCI separates trap history for OSR compilations from normal compilations
-      u1 _array[JVMCI_ONLY(2 *) MethodData::_trap_hist_limit];
+      u1 _array[MethodData::_trap_hist_limit];
     } _trap_hist;
 
   public:
@@ -2129,12 +2065,6 @@ private:
   // Does this method contain anything worth profiling?
   enum WouldProfile {unknown, no_profile, profile};
   WouldProfile      _would_profile;
-
-#if INCLUDE_JVMCI
-  // Support for HotSpotMethodData.setCompiledIRSize(int)
-  FailedSpeculation* _failed_speculations;
-  int                _jvmci_ir_size;
-#endif
 
   // Size of _data array in bytes.  (Excludes header and extra_data fields.)
   int _data_size;
@@ -2307,12 +2237,6 @@ public:
 
   InvocationCounter* invocation_counter()     { return &_invocation_counter; }
   InvocationCounter* backedge_counter()       { return &_backedge_counter;   }
-
-#if INCLUDE_JVMCI
-  FailedSpeculation** get_failed_speculations_address() {
-    return &_failed_speculations;
-  }
-#endif
 
 #if INCLUDE_CDS
   void remove_unshareable_info();
@@ -2530,7 +2454,7 @@ public:
 
   // Deallocation support
   void deallocate_contents(ClassLoaderData* loader_data);
-  void release_C_heap_structures();
+  void release_C_heap_structures() {}
 
   // GC support
   void set_size(int object_size_in_bytes) { _size = object_size_in_bytes; }

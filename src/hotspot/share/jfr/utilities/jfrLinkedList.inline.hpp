@@ -30,10 +30,10 @@
 #include "runtime/atomicAccess.hpp"
 
 template <typename NodeType, typename AllocPolicy>
-JfrLinkedList<NodeType, AllocPolicy>::JfrLinkedList() : _head(nullptr) {}
+inline JfrLinkedList<NodeType, AllocPolicy>::JfrLinkedList() : _head(nullptr) {}
 
 template <typename NodeType, typename AllocPolicy>
-bool JfrLinkedList<NodeType, AllocPolicy>::initialize() {
+inline bool JfrLinkedList<NodeType, AllocPolicy>::initialize() {
   return true;
 }
 
@@ -63,6 +63,13 @@ inline void JfrLinkedList<NodeType, AllocPolicy>::add(NodeType* node) {
 }
 
 template <typename NodeType, typename AllocPolicy>
+inline bool JfrLinkedList<NodeType, AllocPolicy>::try_add(NodeType* node, NodeType* next) {
+  assert(node != nullptr, "invariant");
+  assert(node->_next == next, "invariant");
+  return head() == next && AtomicAccess::cmpxchg(&_head, next, node) == next;
+}
+
+template <typename NodeType, typename AllocPolicy>
 inline NodeType* JfrLinkedList<NodeType, AllocPolicy>::remove() {
   NodePtr node;
   NodePtr next;
@@ -76,19 +83,24 @@ inline NodeType* JfrLinkedList<NodeType, AllocPolicy>::remove() {
 
 template <typename NodeType, typename AllocPolicy>
 template <typename Callback>
-void JfrLinkedList<NodeType, AllocPolicy>::iterate(Callback& cb) {
-  NodePtr current = head();
-  while (current != nullptr) {
-    NodePtr next = (NodePtr)current->_next;
-    if (!cb.process(current)) {
+inline void JfrLinkedList<NodeType, AllocPolicy>::iterate(Callback& cb) {
+  JfrLinkedList<NodeType, AllocPolicy>::iterate(head(), cb);
+}
+
+template <typename NodeType, typename AllocPolicy>
+template <typename Callback>
+inline void JfrLinkedList<NodeType, AllocPolicy>::iterate(NodeType* node, Callback& cb) {
+  while (node != nullptr) {
+    NodePtr next = (NodePtr)node->_next;
+    if (!cb.process(node)) {
       return;
     }
-    current = next;
+    node = next;
   }
 }
 
 template <typename NodeType, typename AllocPolicy>
-NodeType* JfrLinkedList<NodeType, AllocPolicy>::excise(NodeType* prev, NodeType* node) {
+inline NodeType* JfrLinkedList<NodeType, AllocPolicy>::excise(NodeType* prev, NodeType* node) {
   NodePtr next = (NodePtr)node->_next;
   if (prev == nullptr) {
     prev = AtomicAccess::cmpxchg(&_head, node, next);
@@ -106,7 +118,7 @@ NodeType* JfrLinkedList<NodeType, AllocPolicy>::excise(NodeType* prev, NodeType*
 }
 
 template <typename NodeType, typename AllocPolicy>
-bool JfrLinkedList<NodeType, AllocPolicy>::in_list(const NodeType* node) const {
+inline bool JfrLinkedList<NodeType, AllocPolicy>::in_list(const NodeType* node) const {
   assert(node != nullptr, "invariant");
   const NodeType* current = head();
   while (current != nullptr) {
@@ -119,7 +131,7 @@ bool JfrLinkedList<NodeType, AllocPolicy>::in_list(const NodeType* node) const {
 }
 
 template <typename NodeType, typename AllocPolicy>
-NodeType* JfrLinkedList<NodeType, AllocPolicy>::cut() {
+inline NodeType* JfrLinkedList<NodeType, AllocPolicy>::cut() {
   NodePtr node;
   do {
     node = head();
@@ -128,7 +140,7 @@ NodeType* JfrLinkedList<NodeType, AllocPolicy>::cut() {
 }
 
 template <typename NodeType, typename AllocPolicy>
-void JfrLinkedList<NodeType, AllocPolicy>::clear() {
+inline void JfrLinkedList<NodeType, AllocPolicy>::clear() {
   cut();
 }
 

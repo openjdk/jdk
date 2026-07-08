@@ -22,21 +22,25 @@
  *
  */
 
+#include "classfile/moduleEntry.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jni.h"
 #include "jvm.h"
+#include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/logStream.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/stackwalk.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "utilities/spinYield.hpp"
 
 template<typename Func>
-static bool for_scoped_method(JavaThread* jt, const Func& func) {
+static void for_scoped_methods(JavaThread* jt, bool agents_loaded, const Func& func) {
   ResourceMark rm;
 #ifdef ASSERT
   LogMessage(foreign) msg;
@@ -44,12 +48,26 @@ static bool for_scoped_method(JavaThread* jt, const Func& func) {
   if (ls.is_enabled()) {
     ls.print_cr("Walking thread: %s", jt->name());
   }
+
+  bool would_have_bailed = false;
 #endif
 
-  const int max_critical_stack_depth = 10;
-  int depth = 0;
   for (vframeStream stream(jt); !stream.at_end(); stream.next()) {
     Method* m = stream.method();
+
+    if (!agents_loaded &&
+      (m->method_holder()->module()->name() != vmSymbols::java_base())) {
+      // Stop walking if we see a frame outside of java.base.
+
+      // If any JVMTI agents are loaded, we also have to keep walking, since
+      // agents can add arbitrary Java frames to the stack inside a @Scoped method.
+#ifndef ASSERT
+      return;
+#else
+      would_have_bailed = true;
+#endif
+    }
+
     bool is_scoped = m->is_scoped();
 
 #ifdef ASSERT
@@ -60,36 +78,43 @@ static bool for_scoped_method(JavaThread* jt, const Func& func) {
 #endif
 
     if (is_scoped) {
-      assert(depth < max_critical_stack_depth, "can't have more than %d critical frames", max_critical_stack_depth);
-      return func(stream);
+      assert(!would_have_bailed, "would have missed scoped method on release build");
+      bool done = func(stream);
+      if (done || !agents_loaded) {
+        // We may also have to keep walking after finding a @Scoped method,
+        // since there may be multiple @Scoped methods active on the stack
+        // if a JVMTI agent callback runs during a scoped access and calls
+        // back into Java code that then itself does a scoped access.
+        return;
+      }
     }
-    depth++;
-
-#ifndef ASSERT
-    // On debug builds, just keep searching the stack
-    // in case we missed an @Scoped method further up
-    if (depth >= max_critical_stack_depth) {
-      break;
-    }
-#endif
   }
-  return false;
 }
 
 static bool is_accessing_session(JavaThread* jt, oop session, bool& in_scoped) {
-  return for_scoped_method(jt, [&](vframeStream& stream){
+  bool agents_loaded = JvmtiEnv::environments_might_exist();
+  if (!agents_loaded && jt->is_throwing_unsafe_access_error()) {
+    // Ignore this thread. It is in the process of throwing another exception
+    // already.
+    return false;
+  }
+
+  bool is_accessing_session = false;
+  for_scoped_methods(jt, agents_loaded, [&](vframeStream& stream){
     in_scoped = true;
     StackValueCollection* locals = stream.asJavaVFrame()->locals();
     for (int i = 0; i < locals->size(); i++) {
       StackValue* var = locals->at(i);
       if (var->type() == T_OBJECT) {
         if (var->get_obj() == session) {
+          is_accessing_session = true;
           return true;
         }
       }
     }
     return false;
   });
+  return is_accessing_session;
 }
 
 static frame get_last_frame(JavaThread* jt) {
@@ -105,19 +130,37 @@ static frame get_last_frame(JavaThread* jt) {
   return last_frame;
 }
 
+// There are two properties that we rely on for these handshakes to work correctly:
+// 1. Async handshakes are always 'self processed' by the target thread, which means they
+//    only run when the target thread is itself stopped at a safepoint poll, and not when
+//    the thread is actively executing code, such as a memory access.
+// 2. After the handshake sets the thread's pending exception, it will be thrown immediately
+//    when continuing execution. The important part is that no more code is executed, and
+//    the thread unwinds out of the scoped access it was in.
 class ScopedAsyncExceptionHandshakeClosure : public AsyncExceptionHandshakeClosure {
   OopHandle _session;
+  Atomic<int>* _async_exceptions;
+  bool _processed;
+
+  // non-copyable to make sure counter remains consistent
+  NONCOPYABLE(ScopedAsyncExceptionHandshakeClosure);
 
 public:
-  ScopedAsyncExceptionHandshakeClosure(OopHandle& session, OopHandle& error)
-    : AsyncExceptionHandshakeClosure(error),
-      _session(session) {}
+  ScopedAsyncExceptionHandshakeClosure(OopHandle& session, OopHandle& error, Atomic<int>* async_exceptions)
+    : AsyncExceptionHandshakeClosure(error, "ScopedAsyncExceptionHandshakeClosure"),
+      _session(session), _async_exceptions(async_exceptions), _processed(false) {
+    _async_exceptions->add_then_fetch(1);
+  }
 
   ~ScopedAsyncExceptionHandshakeClosure() {
+    guarantee(_processed, "must process to avoid hang");
     _session.release(Universe::vm_global());
   }
 
   virtual void do_thread(Thread* thread) {
+    _processed = true;
+    // We are stopped, safe to free memory.
+    _async_exceptions->sub_then_fetch(1);
     JavaThread* jt = JavaThread::cast(thread);
     bool ignored;
     if (is_accessing_session(jt, _session.resolve(), ignored)) {
@@ -130,12 +173,14 @@ public:
 class CloseScopedMemoryHandshakeClosure : public HandshakeClosure {
   jobject _session;
   jobject _error;
+  Atomic<int>* _async_exceptions;
 
 public:
-  CloseScopedMemoryHandshakeClosure(jobject session, jobject error)
-    : HandshakeClosure("CloseScopedMemory")
+  CloseScopedMemoryHandshakeClosure(jobject session, jobject error, Atomic<int>* async_exceptions)
+    : HandshakeClosure("CloseScopedMemoryHandshakeClosure")
     , _session(session)
-    , _error(error) {}
+    , _error(error)
+    , _async_exceptions(async_exceptions) {}
 
   void do_thread(Thread* thread) {
     JavaThread* jt = JavaThread::cast(thread);
@@ -157,9 +202,16 @@ public:
       // An asynchronous handshake is sent to the target thread, telling it
       // to throw an exception, which will unwind the target thread out from
       // the scoped access.
+      //
+      // Since CloseScopedMemoryHandshakeClosure::do_thread may run concurrently
+      // with the target thread, because the target thread might be in native
+      // code, we may not install the async exception directly. Instead, we
+      // install another handshake that will deliver the exception the next
+      // time the target thread stops at a safepoint poll and is able to handle
+      // async exceptions.
       OopHandle session(Universe::vm_global(), JNIHandles::resolve(_session));
       OopHandle error(Universe::vm_global(), JNIHandles::resolve(_error));
-      jt->install_async_exception(new ScopedAsyncExceptionHandshakeClosure(session, error));
+      jt->install_async_exception(new ScopedAsyncExceptionHandshakeClosure(session, error, _async_exceptions));
     } else if (!in_scoped) {
       frame last_frame = get_last_frame(jt);
       if (last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
@@ -207,14 +259,28 @@ public:
 
 /*
  * This function performs a thread-local handshake against all threads running at the time
- * the given session (deopt) was closed. If the handshake for a given thread is processed while
- * one or more threads is found inside a scoped method (that is, a method inside the ScopedMemoryAccess
- * class annotated with the '@Scoped' annotation), and whose local variables mention the session being
- * closed (deopt), this method returns false, signalling that the session cannot be closed safely.
+ * the given session was closed. If a thread is found to be accessing the given session,
+ * it is made to throw the given exception (error).
  */
 JVM_ENTRY(void, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, jobject session, jobject error))
-  CloseScopedMemoryHandshakeClosure cl(session, error);
+  Atomic<int> async_exceptions;
+  CloseScopedMemoryHandshakeClosure cl(session, error, &async_exceptions);
+  // We rely on the fact that executing a handshake
+  // synchronizes this thread with all other threads,
+  // which means that each thread will see any updates
+  // to the liveness bit of the session we made before
+  // this point, and will see the session as closed,
+  // after the handshake finishes.
   Handshake::execute(&cl);
+
+  // Wait until any async exceptions are delivered before continuing,
+  // because we will free the memory after this. This guarantees the target
+  // thread does not continue to access the memory.
+  ThreadBlockInVM tbivm(thread);
+  SpinYield spin_yield;
+  while (async_exceptions.load_acquire() > 0) {
+    spin_yield.wait();
+  }
 JVM_END
 
 /// JVM_RegisterUnsafeMethods

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,7 +366,11 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_PRNG_generateSeed
 
         } else {
 
-            if (length > 0) {
+            /*
+             * seed could be NULL here when SecureRandom.generateSeed() is
+             * called with a length of zero.
+             */
+            if ((length > 0) || (seed == NULL)) {
                 seed = env->NewByteArray(length);
                 if (seed == NULL) {
                     __leave;
@@ -1371,7 +1375,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_CKeyPairGenerator_00024RSA_ge
                 PROV_RSA_FULL,
                 CRYPT_NEWKEYSET) == FALSE)
             {
-                ThrowException(env, KEY_EXCEPTION, GetLastError());
+                ThrowExceptionWithMessageAndErrcode(env, KEY_EXCEPTION, "CryptAcquireContext failure", GetLastError());
                 __leave;
             }
         }
@@ -1383,7 +1387,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_CKeyPairGenerator_00024RSA_ge
            dwFlags,
            &hKeyPair) == FALSE)
         {
-            ThrowException(env, KEY_EXCEPTION, GetLastError());
+            ThrowExceptionWithMessageAndErrcode(env, KEY_EXCEPTION, "CryptGenKey failure", GetLastError());
             __leave;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -122,6 +123,10 @@ public:
     return _card_set_mm.memory_stats();
   }
 
+  size_t cards_occupied() const {
+    return _card_set.occupied();
+  }
+
   void clear(bool uninstall_group_cardset = false);
 
   G1CSetCandidateGroupIterator begin() const {
@@ -143,7 +148,7 @@ using G1CSetCandidateGroupListIterator = GrowableArrayIterator<G1CSetCandidateGr
 
 class G1CSetCandidateGroupList {
   GrowableArray<G1CSetCandidateGroup*> _groups;
-  volatile uint _num_regions;
+  Atomic<uint> _num_regions;
 
 public:
   G1CSetCandidateGroupList();
@@ -159,7 +164,7 @@ public:
 
   uint length() const { return (uint)_groups.length(); }
 
-  uint num_regions() const { return _num_regions; }
+  uint num_regions() const { return _num_regions.load_relaxed(); }
 
   void remove_selected(uint count, uint num_regions);
 
@@ -241,8 +246,7 @@ public:
 
   // Merge collection set candidates from marking into the current marking candidates
   // (which needs to be empty).
-  void set_candidates_from_marking(G1HeapRegion** candidates,
-                                   uint num_candidates);
+  void set_candidates_from_marking(GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected);
   // The most recent length of the list that had been merged last via
   // set_candidates_from_marking(). Used for calculating minimum collection set
   // regions.

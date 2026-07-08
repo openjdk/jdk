@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -390,7 +390,7 @@ final class Finished {
             // Change write cipher and delivery ChangeCipherSpec message.
             ChangeCipherSpec.t10Producer.produce(chc, message);
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Produced client Finished handshake message", fm);
             }
@@ -453,7 +453,7 @@ final class Finished {
             // Change write cipher and delivery ChangeCipherSpec message.
             ChangeCipherSpec.t10Producer.produce(shc, message);
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Produced server Finished handshake message", fm);
             }
@@ -542,7 +542,7 @@ final class Finished {
         private void onConsumeFinished(ClientHandshakeContext chc,
                 ByteBuffer message) throws IOException {
             FinishedMessage fm = new FinishedMessage(chc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Consuming server Finished handshake message", fm);
             }
@@ -562,7 +562,7 @@ final class Finished {
 
                 // handshake context cleanup.
                 chc.handshakeFinished = true;
-                recordEvent(chc.conContext.conSession);
+                recordEvent(chc);
 
                 // May need to retransmit the last flight for DTLS.
                 if (!chc.sslContext.isDTLS()) {
@@ -602,7 +602,7 @@ final class Finished {
             }
 
             FinishedMessage fm = new FinishedMessage(shc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Consuming client Finished handshake message", fm);
             }
@@ -623,7 +623,7 @@ final class Finished {
 
                 // handshake context cleanup.
                 shc.handshakeFinished = true;
-                recordEvent(shc.conContext.conSession);
+                recordEvent(shc);
 
                 // May need to retransmit the last flight for DTLS.
                 if (!shc.sslContext.isDTLS()) {
@@ -681,7 +681,7 @@ final class Finished {
             chc.handshakeHash.update();
 
             FinishedMessage fm = new FinishedMessage(chc);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Produced client Finished handshake message", fm);
             }
@@ -765,7 +765,7 @@ final class Finished {
             // handshake context cleanup.
             chc.handshakeFinished = true;
             chc.conContext.finishHandshake();
-            recordEvent(chc.conContext.conSession);
+            recordEvent(chc);
 
 
             // The handshake message has been delivered.
@@ -778,7 +778,7 @@ final class Finished {
             shc.handshakeHash.update();
 
             FinishedMessage fm = new FinishedMessage(shc);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Produced server Finished handshake message", fm);
             }
@@ -846,6 +846,16 @@ final class Finished {
 
                 // update the context for the following key derivation
                 shc.handshakeKeyDerivation = secretKD;
+                if (shc.sslConfig.isQuic) {
+                    QuicTLSEngineImpl engine =
+                            (QuicTLSEngineImpl) shc.conContext.transport;
+                    try {
+                        engine.deriveOneRTTKeys();
+                    } catch (IOException e) {
+                        throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                                "Failure to derive application secrets", e);
+                    }
+                }
             } catch (GeneralSecurityException gse) {
                 throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Failure to derive application secrets", gse);
@@ -920,7 +930,7 @@ final class Finished {
             }
 
             FinishedMessage fm = new FinishedMessage(chc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Consuming server Finished handshake message", fm);
             }
@@ -1010,6 +1020,16 @@ final class Finished {
 
                 // update the context for the following key derivation
                 chc.handshakeKeyDerivation = secretKD;
+                if (chc.sslConfig.isQuic) {
+                    QuicTLSEngineImpl engine =
+                            (QuicTLSEngineImpl) chc.conContext.transport;
+                    try {
+                        engine.deriveOneRTTKeys();
+                    } catch (IOException e) {
+                        throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                                "Failure to derive application secrets", e);
+                    }
+                }
             } catch (GeneralSecurityException gse) {
                 throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Failure to derive application secrets", gse);
@@ -1053,7 +1073,7 @@ final class Finished {
             }
 
             FinishedMessage fm = new FinishedMessage(shc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                         "Consuming client Finished handshake message", fm);
             }
@@ -1144,7 +1164,7 @@ final class Finished {
             if (!shc.sslContext.isDTLS()) {
                 shc.conContext.finishHandshake();
             }
-            recordEvent(shc.conContext.conSession);
+            recordEvent(shc);
 
             //
             // produce
@@ -1154,9 +1174,10 @@ final class Finished {
         }
     }
 
-    private static void recordEvent(SSLSessionImpl session) {
+    private static void recordEvent(HandshakeContext hc) {
         TLSHandshakeEvent event = new TLSHandshakeEvent();
         if (event.shouldCommit() || EventHelper.isLoggingSecurity()) {
+            SSLSessionImpl session = hc.conContext.conSession;
             int hash = 0;
             try {
                 // use hash code for Id
@@ -1167,12 +1188,20 @@ final class Finished {
                  // not verified msg
             }
             long peerCertificateId = Integer.toUnsignedLong(hash);
+            String namedGroup = "N/A";
+            for (SSLCredentials cred : hc.handshakeCredentials) {
+                if (cred instanceof NamedGroupCredentials ngCred) {
+                    namedGroup = ngCred.getNamedGroup().name;
+                    break;
+                }
+            }
             if (event.shouldCommit()) {
                 event.peerHost = session.getPeerHost();
                 event.peerPort = session.getPeerPort();
                 event.cipherSuite = session.getCipherSuite();
                 event.protocolVersion = session.getProtocol();
                 event.certificateId = peerCertificateId;
+                event.namedGroup = namedGroup;
                 event.commit();
             }
             if (EventHelper.isLoggingSecurity()) {
@@ -1181,6 +1210,7 @@ final class Finished {
                                 session.getPeerPort(),
                                 session.getCipherSuite(),
                                 session.getProtocol(),
+                                namedGroup,
                                 peerCertificateId);
             }
         }

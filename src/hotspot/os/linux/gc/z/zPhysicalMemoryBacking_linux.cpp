@@ -66,9 +66,6 @@
 #endif
 
 // open(2) flags
-#ifndef O_CLOEXEC
-#define O_CLOEXEC                        02000000
-#endif
 #ifndef O_TMPFILE
 #define O_TMPFILE                        (020000000 | O_DIRECTORY)
 #endif
@@ -629,7 +626,7 @@ retry:
 
 size_t ZPhysicalMemoryBacking::commit_numa_preferred(zbacking_offset offset, size_t length, uint32_t numa_id) const {
   // Setup NUMA policy to allocate memory from a preferred node
-  os::Linux::numa_set_preferred((int)numa_id);
+  os::Linux::numa_set_preferred(ZNUMA::numa_id_to_node(numa_id));
 
   const size_t committed = commit_default(offset, length);
 

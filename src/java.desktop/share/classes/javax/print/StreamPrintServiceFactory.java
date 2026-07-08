@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ import java.util.ServiceLoader;
 
 import javax.print.attribute.PrintRequestAttributeSet;
 
-import sun.awt.AppContext;
-
 /**
  * A {@code StreamPrintServiceFactory} is the factory for
  * {@link StreamPrintService} instances, which can print to an output stream in
@@ -63,24 +61,20 @@ public abstract class StreamPrintServiceFactory {
     static class Services {
 
         /**
-         * The list of factories which will be stored per appcontext.
+         * The list of factories.
          */
         private ArrayList<StreamPrintServiceFactory> listOfFactories = null;
     }
 
+    private static final Services SERVICES = new Services();
+
     /**
-     * Returns the services from the current appcontext.
+     * Returns the singleton Services instance.
      *
      * @return the services
      */
     private static Services getServices() {
-        Services services =
-            (Services)AppContext.getAppContext().get(Services.class);
-        if (services == null) {
-            services = new Services();
-            AppContext.getAppContext().put(Services.class, services);
-        }
-        return services;
+        return SERVICES;
     }
 
     /**

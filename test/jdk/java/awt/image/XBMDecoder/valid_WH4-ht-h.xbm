@@ -1,0 +1,3 @@
+#define ht  1
+#define h   8
+k[] = {0xAB};

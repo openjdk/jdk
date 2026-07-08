@@ -136,12 +136,14 @@ public class AsyncCloseStreams {
         try {
             Path path = Files.createTempFile(Path.of("."), "foo", "bar");
             path.toFile().deleteOnExit();
+            byte[] bytes = new byte[100_000];
+            Arrays.fill(bytes, (byte)27);
 
             do {
                 OutputStream out = Files.newOutputStream(path);
                 close.offer(out);
                 try {
-                    out.write(27);
+                    out.write(bytes);
                 } catch (AsynchronousCloseException ace) {
                     System.err.println("AsynchronousCloseException caught");
                     break;

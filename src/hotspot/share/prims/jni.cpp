@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 Red Hat, Inc.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -91,9 +91,6 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciCompiler.hpp"
-#endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -867,8 +864,7 @@ static void jni_invoke_static(JNIEnv *env, JavaValue* result, jobject receiver, 
   // Create object to hold arguments for the JavaCall, and associate it with
   // the jni parser
   ResourceMark rm(THREAD);
-  int number_of_parameters = method->size_of_parameters();
-  JavaCallArguments java_args(number_of_parameters);
+  JavaCallArguments java_args(method->size_of_parameters());
 
   assert(method->is_static(), "method should be static");
 
@@ -1867,6 +1863,32 @@ address jni_GetDoubleField_addr() {
   return (address)jni_GetDoubleField;
 }
 
+static void log_debug_if_final_static_field(JavaThread* current, const char* func_name, InstanceKlass* ik, int offset) {
+  if (log_is_enabled(Debug, jni)) {
+    fieldDescriptor fd;
+    bool found = ik->find_field_from_offset(offset, true, &fd);
+    assert(found, "bad field offset");
+    assert(fd.is_static(), "static/instance mismatch");
+    if (fd.is_final() && !fd.is_mutable_static_final()) {
+      ResourceMark rm(current);
+      log_debug(jni)("%s mutated final static field %s.%s", func_name, ik->external_name(), fd.name()->as_C_string());
+    }
+  }
+}
+
+static void log_debug_if_final_instance_field(JavaThread* current, const char* func_name, InstanceKlass* ik, int offset) {
+  if (log_is_enabled(Debug, jni)) {
+    fieldDescriptor fd;
+    bool found = ik->find_field_from_offset(offset, false, &fd);
+    assert(found, "bad field offset");
+    assert(!fd.is_static(), "static/instance mismatch");
+    if (fd.is_final()) {
+      ResourceMark rm(current);
+      log_debug(jni)("%s mutated final instance field %s.%s", func_name, ik->external_name(), fd.name()->as_C_string());
+    }
+  }
+}
+
 JNI_ENTRY_NO_PRESERVE(void, jni_SetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID, jobject value))
   HOTSPOT_JNI_SETOBJECTFIELD_ENTRY(env, obj, (uintptr_t) fieldID, value);
   oop o = JNIHandles::resolve_non_null(obj);
@@ -1879,6 +1901,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_SetObjectField(JNIEnv *env, jobject obj, jfieldI
     o = JvmtiExport::jni_SetField_probe(thread, obj, o, k, fieldID, false, JVM_SIGNATURE_CLASS, (jvalue *)&field_value);
   }
   HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(o, offset, JNIHandles::resolve(value));
+  log_debug_if_final_instance_field(thread, "SetObjectField", InstanceKlass::cast(k), offset);
   HOTSPOT_JNI_SETOBJECTFIELD_RETURN();
 JNI_END
 
@@ -1901,6 +1924,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_Set##Result##Field(JNIEnv *env, jobject obj, jfi
     o = JvmtiExport::jni_SetField_probe(thread, obj, o, k, fieldID, false, SigType, (jvalue *)&field_value); \
   } \
   o->Fieldname##_field_put(offset, value); \
+  log_debug_if_final_instance_field(thread, "Set<Type>Field", InstanceKlass::cast(k), offset); \
   ReturnProbe; \
 JNI_END
 
@@ -2072,6 +2096,7 @@ JNI_ENTRY(void, jni_SetStaticObjectField(JNIEnv *env, jclass clazz, jfieldID fie
     JvmtiExport::jni_SetField_probe(thread, nullptr, nullptr, id->holder(), fieldID, true, JVM_SIGNATURE_CLASS, (jvalue *)&field_value);
   }
   id->holder()->java_mirror()->obj_field_put(id->offset(), JNIHandles::resolve(value));
+  log_debug_if_final_static_field(THREAD, "SetStaticObjectField", id->holder(), id->offset());
   HOTSPOT_JNI_SETSTATICOBJECTFIELD_RETURN();
 JNI_END
 
@@ -2093,6 +2118,7 @@ JNI_ENTRY(void, jni_SetStatic##Result##Field(JNIEnv *env, jclass clazz, jfieldID
     JvmtiExport::jni_SetField_probe(thread, nullptr, nullptr, id->holder(), fieldID, true, SigType, (jvalue *)&field_value); \
   } \
   id->holder()->java_mirror()-> Fieldname##_field_put (id->offset(), value); \
+  log_debug_if_final_static_field(THREAD, "SetStatic<Type>Field", id->holder(), id->offset()); \
   ReturnProbe;\
 JNI_END
 
@@ -2806,6 +2832,10 @@ JNI_ENTRY(void*, jni_GetPrimitiveArrayCritical(JNIEnv *env, jarray array, jboole
   Handle a(thread, JNIHandles::resolve_non_null(array));
   assert(a->is_typeArray(), "just checking");
 
+  // We must defer JVM TI suspension while we have access to a Java object
+  // as it could surprise the debugger if we mutate it concurrently whilst
+  // logically suspended.
+  thread->enter_jni_deferred_suspension();
   // Pin object
   Universe::heap()->pin_object(thread, a());
 
@@ -2823,6 +2853,7 @@ JNI_ENTRY(void, jni_ReleasePrimitiveArrayCritical(JNIEnv *env, jarray array, voi
   HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_ENTRY(env, array, carray, mode);
   // Unpin object
   Universe::heap()->unpin_object(thread, JNIHandles::resolve_non_null(array));
+  thread->exit_jni_deferred_suspension();
 HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_RETURN();
 JNI_END
 
@@ -2830,6 +2861,13 @@ JNI_END
 JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jboolean *isCopy))
   HOTSPOT_JNI_GETSTRINGCRITICAL_ENTRY(env, string, (uintptr_t *) isCopy);
   oop s = JNIHandles::resolve_non_null(string);
+
+  // We must defer JVM TI suspension while we have access to a Java object.
+  // Even if we are taking a private copy we must not be considered
+  // suspended as the debugger could be mutating the string we are about
+  // to copy.
+  thread->enter_jni_deferred_suspension();
+
   jchar* ret;
   if (!java_lang_String::is_latin1(s)) {
     typeArrayHandle s_value(thread, java_lang_String::value(s));
@@ -2850,6 +2888,10 @@ JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jbool
         ret[i] = ((jchar) s_value->byte_at(i)) & 0xff;
       }
       ret[s_len] = 0;
+    } else {
+      // If we return null there should not be a paired release operation
+      // so we have to cancel suspension deferral here.
+      thread->exit_jni_deferred_suspension();
     }
     if (isCopy != nullptr) *isCopy = JNI_TRUE;
   }
@@ -2866,7 +2908,7 @@ JNI_ENTRY(void, jni_ReleaseStringCritical(JNIEnv *env, jstring str, const jchar 
   if (is_latin1) {
     // For latin1 string, free jchar array allocated by earlier call to GetStringCritical.
     // This assumes that ReleaseStringCritical bookends GetStringCritical.
-    FREE_C_HEAP_ARRAY(jchar, chars);
+    FREE_C_HEAP_ARRAY(chars);
   } else {
     // StringDedup can have replaced the value array, so don't fetch the array from 's'.
     // Instead, we calculate the address based on the jchar array exposed with GetStringCritical.
@@ -2875,6 +2917,7 @@ JNI_ENTRY(void, jni_ReleaseStringCritical(JNIEnv *env, jstring str, const jchar 
     // Unpin value array
     Universe::heap()->unpin_object(thread, value);
   }
+  thread->exit_jni_deferred_suspension();
 HOTSPOT_JNI_RELEASESTRINGCRITICAL_RETURN();
 JNI_END
 
@@ -3099,16 +3142,21 @@ JNI_END
 
 
 JNI_ENTRY(jobject, jni_GetModule(JNIEnv* env, jclass clazz))
-  return Modules::get_module(clazz, THREAD);
+  HOTSPOT_JNI_GETMODULE_ENTRY(env, clazz);
+  jobject ret = Modules::get_module(clazz, THREAD);
+  HOTSPOT_JNI_GETMODULE_RETURN(ret);
+  return ret;
 JNI_END
 
 JNI_ENTRY(jboolean, jni_IsVirtualThread(JNIEnv* env, jobject obj))
+  HOTSPOT_JNI_ISVIRTUALTHREAD_ENTRY(env, obj);
+  jboolean ret = JNI_FALSE;
   oop thread_obj = JNIHandles::resolve_external_guard(obj);
   if (thread_obj != nullptr && thread_obj->is_a(vmClasses::BaseVirtualThread_klass())) {
-    return JNI_TRUE;
-  } else {
-    return JNI_FALSE;
+    ret = JNI_TRUE;
   }
+  HOTSPOT_JNI_ISVIRTUALTHREAD_RETURN(ret);
+  return ret;
 JNI_END
 
 
@@ -3491,6 +3539,10 @@ enum VM_Creation_State {
 
 volatile VM_Creation_State vm_created = NOT_CREATED;
 
+bool is_vm_created() {
+  return AtomicAccess::load(&vm_created) == COMPLETE;
+}
+
 // Indicate whether it is safe to recreate VM. Recreation is only
 // possible after a failed initial creation attempt in some cases.
 volatile int safe_to_recreate_vm = 1;
@@ -3593,23 +3645,6 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     *(JNIEnv**)penv = thread->jni_environment();
     // mark creation complete for other JNI ops
     AtomicAccess::release_store(&vm_created, COMPLETE);
-
-#if INCLUDE_JVMCI
-    if (EnableJVMCI) {
-      if (UseJVMCICompiler) {
-        // JVMCI is initialized on a CompilerThread
-        if (BootstrapJVMCI) {
-          JavaThread* THREAD = thread; // For exception macros.
-          JVMCICompiler* compiler = JVMCICompiler::instance(true, CATCH);
-          compiler->bootstrap(THREAD);
-          if (HAS_PENDING_EXCEPTION) {
-            HandleMark hm(THREAD);
-            vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
-          }
-        }
-      }
-    }
-#endif
 
     // Notify JVMTI
     if (JvmtiExport::should_post_thread_life()) {

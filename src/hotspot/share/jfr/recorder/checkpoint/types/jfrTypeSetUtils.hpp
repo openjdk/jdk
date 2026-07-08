@@ -207,12 +207,12 @@ class JfrArtifactSet : public JfrCHeapObj {
   typedef JfrSet<JfrArtifactSetConfig> JfrKlassSet;
 
  private:
-  JfrSymbolTable* _symbol_table;
   JfrKlassSet* _klass_set;
   JfrKlassSet* _klass_loader_set;
   JfrKlassSet* _klass_loader_leakp_set;
   size_t _total_count;
   bool _class_unload;
+  bool _previous_epoch;
 
  public:
   JfrArtifactSet(bool class_unload, bool previous_epoch);
@@ -222,32 +222,20 @@ class JfrArtifactSet : public JfrCHeapObj {
   void initialize(bool class_unload, bool previous_epoch);
   void clear();
 
-  traceid mark(uintptr_t hash, const Symbol* sym, bool leakp);
   traceid mark(const Klass* klass, bool leakp);
   traceid mark(const Symbol* symbol, bool leakp);
-  traceid mark(uintptr_t hash, const char* const str, bool leakp);
-  traceid mark_hidden_klass_name(const Klass* klass, bool leakp);
   traceid bootstrap_name(bool leakp);
-
-  const JfrSymbolTable::SymbolEntry* map_symbol(const Symbol* symbol) const;
-  const JfrSymbolTable::SymbolEntry* map_symbol(uintptr_t hash) const;
-  const JfrSymbolTable::StringEntry* map_string(uintptr_t hash) const;
 
   bool has_klass_entries() const;
   size_t total_count() const;
   void register_klass(const Klass* k);
   bool should_do_cld_klass(const Klass* k, bool leakp);
-  void increment_checkpoint_id();
 
   template <typename T>
-  void iterate_symbols(T& functor) {
-    _symbol_table->iterate_symbols(functor);
-  }
+  void iterate_symbols(T& functor);
 
   template <typename T>
-  void iterate_strings(T& functor) {
-    _symbol_table->iterate_strings(functor);
-  }
+  void iterate_strings(T& functor);
 
   template <typename Writer>
   void tally(Writer& writer) {

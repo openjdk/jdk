@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -29,6 +29,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/vtableStubs.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
@@ -53,8 +54,11 @@
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/decoder.hpp"
 #include "utilities/events.hpp"
+#include "utilities/nativeStackPrinter.hpp"
 #include "utilities/vmError.hpp"
+#include "compiler/disassembler.hpp"
 
 // put OS-includes here
 # include <sys/types.h>
@@ -63,7 +67,6 @@
 # include <signal.h>
 # include <errno.h>
 # include <dlfcn.h>
-# include <stdlib.h>
 # include <stdio.h>
 # include <unistd.h>
 # include <sys/resource.h>
@@ -78,13 +81,11 @@
 # include <ucontext.h>
 #endif
 
-#if !defined(__APPLE__) && !defined(__NetBSD__)
-# include <pthread_np.h>
-#endif
-
 #define SPELL_REG_SP "sp"
 
 #ifdef __APPLE__
+WXMode DefaultWXWriteMode;
+
 // see darwin-xnu/osfmk/mach/arm/_structs.h
 
 // 10.5 UNIX03 member name prefixes
@@ -233,18 +234,55 @@ NOINLINE frame os::current_frame() {
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
-  // Enable WXWrite: this function is called by the signal handler at arbitrary
-  // point of execution.
-  ThreadWXEnable wx(WXWrite, thread);
-
   // decide if this trap can be handled by a stub
   address stub = nullptr;
-
-  address pc          = nullptr;
+  address pc   = nullptr;
 
   //%note os_trap_1
   if (info != nullptr && uc != nullptr && thread != nullptr) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
+
+#ifdef MACOS_AARCH64
+    // If we got a SIGBUS because we tried to write into the code
+    // cache, try enabling WXWrite mode.
+    if (sig == SIGBUS
+        && pc != info->si_addr
+        && CodeCache::contains(info->si_addr)
+        && os::address_is_in_vm(pc)) {
+      WXMode *entry_mode = thread->_cur_wx_mode;
+      if (entry_mode != nullptr && *entry_mode == WXArmedForWrite) {
+        if (TraceWXHealing) {
+          static const char *mode_names[3] = {"WXWrite", "WXExec", "WXArmedForWrite"};
+          tty->print("Healing WXMode %s at %p to WXWrite",
+                        mode_names[*entry_mode], entry_mode);
+          char name[128];
+          int offset = 0;
+          if (os::dll_address_to_function_name(pc, name, sizeof name, &offset)) {
+            tty->print_cr("  (%s+0x%x)", name, offset);
+          } else {
+            tty->cr();
+          }
+          if (Verbose) {
+            char buf[O_BUFLEN];
+            NativeStackPrinter nsp(thread);
+            nsp.print_stack(tty, buf, sizeof(buf), pc,
+                            true /* print_source_info */, -1 /* max stack */);
+          }
+        }
+#ifndef PRODUCT
+        guarantee(StressWXHealing,
+                  "We should not reach here unless StressWXHealing");
+#endif
+        *(thread->_cur_wx_mode) = WXWrite;
+        return thread->wx_enable_write();
+      }
+    }
+
+    // There may be cases where code after this point that we call
+    // from the signal handler changes WX state, so we protect against
+    // that by saving and restoring the state.
+    ThreadWXEnable wx(thread->get_wx_state(), thread);
+#endif
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV || sig == SIGBUS) {
@@ -373,49 +411,6 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
   return s;
 }
-void os::current_stack_base_and_size(address* base, size_t* size) {
-  address bottom;
-#ifdef __APPLE__
-  pthread_t self = pthread_self();
-  *base = (address) pthread_get_stackaddr_np(self);
-  *size = pthread_get_stacksize_np(self);
-  bottom = *base - *size;
-#elif defined(__OpenBSD__)
-  stack_t ss;
-  int rslt = pthread_stackseg_np(pthread_self(), &ss);
-
-  if (rslt != 0)
-    fatal("pthread_stackseg_np failed with error = %d", rslt);
-
-  *base = (address) ss.ss_sp;
-  *size = ss.ss_size;
-  bottom = *base - *size;
-#else
-  pthread_attr_t attr;
-
-  int rslt = pthread_attr_init(&attr);
-
-  // JVM needs to know exact stack location, abort if it fails
-  if (rslt != 0)
-    fatal("pthread_attr_init failed with error = %d", rslt);
-
-  rslt = pthread_attr_get_np(pthread_self(), &attr);
-
-  if (rslt != 0)
-    fatal("pthread_attr_get_np failed with error = %d", rslt);
-
-  if (pthread_attr_getstackaddr(&attr, (void **)&bottom) != 0 ||
-      pthread_attr_getstacksize(&attr, size) != 0) {
-    fatal("Can not locate current stack attributes!");
-  }
-
-  *base = bottom + *size;
-
-  pthread_attr_destroy(&attr);
-#endif
-  assert(os::current_stack_pointer() >= bottom &&
-         os::current_stack_pointer() < *base, "just checking");
-}
 
 /////////////////////////////////////////////////////////////////////////////
 // helper functions for fatal error handler
@@ -515,11 +510,42 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-#ifdef __APPLE__
+#ifdef MACOS_AARCH64
+THREAD_LOCAL bool os::_jit_exec_enabled;
+
+// This is a wrapper around the standard library function
+// pthread_jit_write_protect_np(3). We keep track of the state of
+// per-thread write protection on the MAP_JIT region in the
+// thread-local variable os::_jit_exec_enabled
 void os::current_thread_enable_wx(WXMode mode) {
-  pthread_jit_write_protect_np(mode == WXExec);
+  bool exec_enabled = mode != WXWrite;
+  if (exec_enabled != _jit_exec_enabled NOT_PRODUCT( || DefaultWXWriteMode == WXWrite)) {
+    permit_forbidden_function::pthread_jit_write_protect_np(exec_enabled);
+    _jit_exec_enabled = exec_enabled;
+  }
 }
-#endif
+
+// If the current thread is in the WX state WXArmedForWrite, change
+// the state to WXWrite.
+bool Thread::wx_enable_write() {
+  if (_wx_state == WXArmedForWrite) {
+    _wx_state = WXWrite;
+    os::current_thread_enable_wx(WXWrite);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// A wrapper around wx_enable_write() for when the current thread is
+// not known.
+void os::thread_wx_enable_write_impl() {
+  if (!StressWXHealing) {
+    Thread::current()->wx_enable_write();
+  }
+}
+
+#endif // MACOS_AARCH64
 
 static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
   *(jlong *) dst = *(const jlong *) src;
@@ -547,6 +573,8 @@ extern "C" {
       assert(VM_Version::supports_sb(), "current CPU does not support SB instruction");
       asm volatile(".inst 0xd50330ff" : : : "memory");
       break;
+    case SpinWait::WFET:
+      ShouldNotReachHere();
 #ifdef ASSERT
     default:
       ShouldNotReachHere();

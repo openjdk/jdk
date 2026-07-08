@@ -270,17 +270,16 @@ void Reflection::array_set(jvalue* value, arrayOop a, int index, BasicType value
   if (!a->is_within_bounds(index)) {
     THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
   }
-  if (a->is_objArray()) {
-    if (value_type == T_OBJECT) {
-      oop obj = cast_to_oop(value->l);
-      if (obj != nullptr) {
-        Klass* element_klass = ObjArrayKlass::cast(a->klass())->element_klass();
-        if (!obj->is_a(element_klass)) {
-          THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "array element type mismatch");
-        }
+  if (value_type == T_OBJECT) {
+    assert(a->is_objArray(), "just checking");
+    oop obj = cast_to_oop(value->l);
+    if (obj != nullptr) {
+      Klass* element_klass = ObjArrayKlass::cast(a->klass())->element_klass();
+      if (!obj->is_a(element_klass)) {
+        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "array element type mismatch");
       }
-      objArrayOop(a)->obj_at_put(index, obj);
     }
+    objArrayOop(a)->obj_at_put(index, obj);
   } else {
     assert(a->is_typeArray(), "just checking");
     BasicType array_type = TypeArrayKlass::cast(a->klass())->element_type();
@@ -546,7 +545,7 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
         size_t len = 100 + strlen(current_class_name) + 2*strlen(module_from_name) +
           strlen(new_class_name) + 2*strlen(module_to_name);
         msg = NEW_RESOURCE_ARRAY(char, len);
-        jio_snprintf(msg, len - 1,
+        jio_snprintf(msg, len,
           "class %s (in module %s) cannot access class %s (in module %s) because module %s does not read module %s",
           current_class_name, module_from_name, new_class_name,
           module_to_name, module_from_name, module_to_name);
@@ -557,7 +556,7 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
         size_t len = 160 + strlen(current_class_name) + 2*strlen(module_from_name) +
           strlen(new_class_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
-        jio_snprintf(msg, len - 1,
+        jio_snprintf(msg, len,
           "class %s (in module %s) cannot access class %s (in unnamed module @0x%zx) because module %s does not read unnamed module @0x%zx",
           current_class_name, module_from_name, new_class_name, uintx(identity_hash),
           module_from_name, uintx(identity_hash));
@@ -573,7 +572,7 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
         size_t len = 118 + strlen(current_class_name) + 2*strlen(module_from_name) +
           strlen(new_class_name) + 2*strlen(module_to_name) + strlen(package_name);
         msg = NEW_RESOURCE_ARRAY(char, len);
-        jio_snprintf(msg, len - 1,
+        jio_snprintf(msg, len,
           "class %s (in module %s) cannot access class %s (in module %s) because module %s does not export %s to module %s",
           current_class_name, module_from_name, new_class_name,
           module_to_name, module_to_name, package_name, module_from_name);
@@ -584,7 +583,7 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
         size_t len = 170 + strlen(current_class_name) + strlen(new_class_name) +
           2*strlen(module_to_name) + strlen(package_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
-        jio_snprintf(msg, len - 1,
+        jio_snprintf(msg, len,
           "class %s (in unnamed module @0x%zx) cannot access class %s (in module %s) because module %s does not export %s to unnamed module @0x%zx",
           current_class_name, uintx(identity_hash), new_class_name, module_to_name,
           module_to_name, package_name, uintx(identity_hash));

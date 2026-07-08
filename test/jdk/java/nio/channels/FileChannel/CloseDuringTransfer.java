@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,7 @@ class CloseDuringTransfer {
 
     /**
      * Waits for the interrupt task submitted by scheduleInterrupt, and clears the
-     * current thread's interrupt status.
+     * current thread's interrupted status.
      */
     private void finishInterrupt(Future<?> interrupter) throws Exception {
         boolean done = false;

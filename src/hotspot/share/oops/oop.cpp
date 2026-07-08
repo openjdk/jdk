@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,11 +83,23 @@ char* oopDesc::print_value_string() {
 
 void oopDesc::print_value_on(outputStream* st) const {
   oop obj = const_cast<oopDesc*>(this);
-  if (java_lang_String::is_instance(obj)) {
+  // We can't use java_lang_String::is_instance since that has klass assertions enabled.
+  // If the klass is garbage we want to just fail the check and continue printing, as
+  // opposed to aborting the VM entirely.
+  if (obj != nullptr && obj->klass_without_asserts() == vmClasses::String_klass()) {
     java_lang_String::print(obj, st);
     print_address_on(st);
   } else {
-    klass()->oop_print_value_on(obj, st);
+    Klass* k = klass_without_asserts();
+    if (k == nullptr) {
+      st->print("null klass");
+    } else if (!Metaspace::contains(k)) {
+      st->print("klass not in Metaspace");
+    } else if (!k->is_klass()) {
+      st->print("klass not a Klass");
+    } else {
+      k->oop_print_value_on(obj, st);
+    }
   }
 }
 
@@ -140,8 +152,7 @@ bool oopDesc::is_typeArray_noinline()   const { return is_typeArray();   }
 #if INCLUDE_CDS_JAVA_HEAP
 void oopDesc::set_narrow_klass(narrowKlass nk) {
   assert(CDSConfig::is_dumping_heap(), "Used by CDS only. Do not abuse!");
-  assert(UseCompressedClassPointers, "must be");
-  _metadata._compressed_klass = nk;
+  _compressed_klass = nk;
 }
 #endif
 

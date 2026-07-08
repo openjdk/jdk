@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.Serial;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.util.Arrays;
@@ -82,8 +83,8 @@ public class Ktab {
     }
 
     private static class ExitException extends RuntimeException {
-        @java.io.Serial
-        static final long serialVersionUID = 0L;
+        @Serial
+        private static final long serialVersionUID = 0L;
         private final int errorCode;
         public ExitException(int errorCode) {
             this.errorCode = errorCode;

@@ -38,7 +38,6 @@ import java.util.List;
  * @test
  * @summary jpackage with --type dmg --mac-dmg-content
  * @library /test/jdk/tools/jpackage/helpers
- * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build DmgContentTest
  * @requires (os.family == "mac")

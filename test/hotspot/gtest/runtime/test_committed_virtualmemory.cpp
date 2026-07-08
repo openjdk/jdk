@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,15 +45,14 @@ public:
       VirtualMemoryTracker::Instance::snapshot_thread_stacks();
     }
 
-    ReservedMemoryRegion rmr_found;
+    VirtualMemoryRegion rgn_found;
     {
       MemTracker::NmtVirtualMemoryLocker vml;
-      rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region(stack_end);
+      rgn_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region(stack_end);
     }
 
-    ASSERT_TRUE(rmr_found.is_valid());
-    ASSERT_EQ(rmr_found.base(), stack_end);
-
+    ASSERT_TRUE(rgn_found.is_valid());
+    ASSERT_EQ(rgn_found.base(), stack_end);
 
     int i = 0;
     address i_addr = (address)&i;
@@ -64,12 +63,12 @@ public:
     bool found_stack_top = false;
     {
       MemTracker::NmtVirtualMemoryLocker vml;
-      VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const CommittedMemoryRegion& cmr) {
-        if (cmr.base() + cmr.size() == stack_top) {
-          EXPECT_TRUE(cmr.size() <= stack_size);
+      VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rgn_found, [&](const VirtualMemoryRegion& rgn) {
+        if (rgn.base() + rgn.size() == stack_top) {
+          EXPECT_TRUE(rgn.size() <= stack_size);
           found_stack_top = true;
         }
-        if (i_addr < stack_top && i_addr >= cmr.base()) {
+        if (i_addr < stack_top && i_addr >= rgn.base()) {
           found_i_addr = true;
         }
         i++;
@@ -83,14 +82,21 @@ public:
     ASSERT_TRUE(found_stack_top);
   }
 
+  static const int PAGE_CONTAINED_IN_RANGE_TAG = -1;
+  static bool is_page_in_committed_region(int a) { return (a == PAGE_CONTAINED_IN_RANGE_TAG); }
+  static void set_page_as_contained_in_committed_region(int &a) { a = PAGE_CONTAINED_IN_RANGE_TAG; }
+
   static void check_covered_pages(address addr, size_t size, address base, size_t touch_pages, int* page_num) {
     const size_t page_sz = os::vm_page_size();
     size_t index;
     for (index = 0; index < touch_pages; index ++) {
+      if (is_page_in_committed_region(page_num[index])) { // Already tagged?
+        continue;
+      }
       address page_addr = base + page_num[index] * page_sz;
       // The range covers this page, marks the page
       if (page_addr >= addr && page_addr < addr + size) {
-        page_num[index] = -1;
+        set_page_as_contained_in_committed_region(page_num[index]);
       }
     }
   }
@@ -108,25 +114,25 @@ public:
     }
 
     // trigger the test
-    ReservedMemoryRegion rmr_found;
+    VirtualMemoryRegion rgn_found;
     {
       MemTracker::NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::Instance::snapshot_thread_stacks();
-      rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
+      rgn_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
     }
-    ASSERT_TRUE(rmr_found.is_valid());
-    ASSERT_EQ(rmr_found.base(), (address)base);
+    ASSERT_TRUE(rgn_found.is_valid());
+    ASSERT_EQ(rgn_found.base(), (address)base);
 
 
     bool precise_tracking_supported = false;
     {
       MemTracker::NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const CommittedMemoryRegion& cmr){
-        if (cmr.size() == size) {
+      VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rgn_found, [&](const VirtualMemoryRegion& rgn){
+        if (rgn.size() == size) {
           return false;
         } else {
           precise_tracking_supported = true;
-          check_covered_pages(cmr.base(), cmr.size(), (address)base, touch_pages, page_num);
+          check_covered_pages(rgn.base(), rgn.size(), (address)base, touch_pages, page_num);
         }
         return true;
       });
@@ -135,7 +141,7 @@ public:
     if (precise_tracking_supported) {
       // All touched pages should be committed
       for (size_t index = 0; index < touch_pages; index ++) {
-        ASSERT_EQ(page_num[index], -1);
+        ASSERT_TRUE(is_page_in_committed_region(page_num[index]));
       }
     }
 
@@ -144,9 +150,9 @@ public:
     {
       MemTracker::NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::Instance::remove_released_region((address)base, size);
-      rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
+      rgn_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
     }
-    ASSERT_TRUE(!rmr_found.is_valid());
+    ASSERT_TRUE(!rgn_found.is_valid());
   }
 
   static void test_committed_region() {
@@ -163,8 +169,8 @@ public:
 
   static void test_partial_region() {
     bool   result;
-    size_t committed_size;
-    address committed_start;
+    size_t resident_size;
+    address resident_start;
     size_t index;
 
     const size_t page_sz = os::vm_page_size();
@@ -181,36 +187,36 @@ public:
     }
 
     // Test whole range
-    result = os::committed_in_range((address)base, size, committed_start, committed_size);
+    result = os::first_resident_in_range((address)base, size, resident_start, resident_size);
     ASSERT_TRUE(result);
-    ASSERT_EQ(num_pages * page_sz, committed_size);
-    ASSERT_EQ(committed_start, (address)base);
+    ASSERT_EQ(num_pages * page_sz, resident_size);
+    ASSERT_EQ(resident_start, (address)base);
 
     // Test beginning of the range
-    result = os::committed_in_range((address)base, 2 * page_sz, committed_start, committed_size);
+    result = os::first_resident_in_range((address)base, 2 * page_sz, resident_start, resident_size);
     ASSERT_TRUE(result);
-    ASSERT_EQ(2 * page_sz, committed_size);
-    ASSERT_EQ(committed_start, (address)base);
+    ASSERT_EQ(2 * page_sz, resident_size);
+    ASSERT_EQ(resident_start, (address)base);
 
     // Test end of the range
-    result = os::committed_in_range((address)(base + page_sz), 3 * page_sz, committed_start, committed_size);
+    result = os::first_resident_in_range((address)(base + page_sz), 3 * page_sz, resident_start, resident_size);
     ASSERT_TRUE(result);
-    ASSERT_EQ(3 * page_sz, committed_size);
-    ASSERT_EQ(committed_start, (address)(base + page_sz));
+    ASSERT_EQ(3 * page_sz, resident_size);
+    ASSERT_EQ(resident_start, (address)(base + page_sz));
 
     // Test middle of the range
-    result = os::committed_in_range((address)(base + page_sz), 2 * page_sz, committed_start, committed_size);
+    result = os::first_resident_in_range((address)(base + page_sz), 2 * page_sz, resident_start, resident_size);
     ASSERT_TRUE(result);
-    ASSERT_EQ(2 * page_sz, committed_size);
-    ASSERT_EQ(committed_start, (address)(base + page_sz));
+    ASSERT_EQ(2 * page_sz, resident_size);
+    ASSERT_EQ(resident_start, (address)(base + page_sz));
 
     os::release_memory(base, size);
   }
 
-  static void test_committed_in_range(size_t num_pages, size_t pages_to_touch) {
+  static void test_first_resident_in_range(size_t num_pages, size_t pages_to_touch) {
     bool result;
-    size_t committed_size;
-    address committed_start;
+    size_t resident_size;
+    address resident_start;
     size_t index;
 
     const size_t page_sz = os::vm_page_size();
@@ -222,7 +228,7 @@ public:
     result = os::commit_memory(base, size, !ExecMem);
     ASSERT_TRUE(result);
 
-    result = os::committed_in_range((address)base, size, committed_start, committed_size);
+    result = os::first_resident_in_range((address)base, size, resident_start, resident_size);
     ASSERT_FALSE(result);
 
     // Touch pages
@@ -230,14 +236,14 @@ public:
       base[index * page_sz] = 'a';
     }
 
-    result = os::committed_in_range((address)base, size, committed_start, committed_size);
+    result = os::first_resident_in_range((address)base, size, resident_start, resident_size);
     ASSERT_TRUE(result);
-    ASSERT_EQ(pages_to_touch * page_sz, committed_size);
-    ASSERT_EQ(committed_start, (address)base);
+    ASSERT_EQ(pages_to_touch * page_sz, resident_size);
+    ASSERT_EQ(resident_start, (address)base);
 
     os::uncommit_memory(base, size, false);
 
-    result = os::committed_in_range((address)base, size, committed_start, committed_size);
+    result = os::first_resident_in_range((address)base, size, resident_start, resident_size);
     ASSERT_FALSE(result);
 
     os::release_memory(base, size);
@@ -260,9 +266,9 @@ TEST_VM(NMTCommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
 
 }
 
-#if !defined(_WINDOWS) && !defined(_AIX)
-TEST_VM(NMTCommittedVirtualMemory, test_committed_in_range){
-  CommittedVirtualMemoryTest::test_committed_in_range(1024, 1024);
-  CommittedVirtualMemoryTest::test_committed_in_range(2, 1);
+#if !defined(_AIX)
+TEST_VM(NMTCommittedVirtualMemory, test_first_resident_in_range){
+  CommittedVirtualMemoryTest::test_first_resident_in_range(1024, 1024);
+  CommittedVirtualMemoryTest::test_first_resident_in_range(2, 1);
 }
 #endif

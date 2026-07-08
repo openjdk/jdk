@@ -211,6 +211,11 @@ public class ReferenceParser {
             if (p.token().kind != TokenKind.EOF) {
                 throw new ParseException(beginIndex + p.token().pos, "dc.ref.unexpected.input");
             }
+            Tree typeAnno = new TypeAnnotationFinder().scan(tree, null);
+            if (typeAnno != null) {
+                int annoPos = ((JCTree) typeAnno).getStartPosition();
+                throw new ParseException(beginIndex + annoPos, "dc.ref.annotations.not.allowed");
+            }
             checkDiags(dh, beginIndex);
             return tree;
         } finally {

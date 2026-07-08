@@ -74,22 +74,22 @@ inline volatile uintptr_t* ObjectMonitor::metadata_addr() {
 }
 
 inline markWord ObjectMonitor::header() const {
-  assert(!UseObjectMonitorTable, "Lightweight locking with OM table does not use header");
+  assert(!UseObjectMonitorTable, "Locking with OM table does not use header");
   return markWord(metadata());
 }
 
 inline void ObjectMonitor::set_header(markWord hdr) {
-  assert(!UseObjectMonitorTable, "Lightweight locking with OM table does not use header");
+  assert(!UseObjectMonitorTable, "Locking with OM table does not use header");
   set_metadata(hdr.value());
 }
 
 inline intptr_t ObjectMonitor::hash() const {
-  assert(UseObjectMonitorTable, "Only used by lightweight locking with OM table");
+  assert(UseObjectMonitorTable, "Only used when locking with OM table");
   return metadata();
 }
 
 inline void ObjectMonitor::set_hash(intptr_t hash) {
-  assert(UseObjectMonitorTable, "Only used by lightweight locking with OM table");
+  assert(UseObjectMonitorTable, "Only used when locking with OM table");
   set_metadata(hash);
 }
 
@@ -141,6 +141,21 @@ inline void ObjectMonitor::set_recursions(size_t recursions) {
 inline void ObjectMonitor::increment_recursions(JavaThread* current) {
   assert(has_owner(current), "must be the owner");
   _recursions++;
+}
+
+inline void ObjectMonitor::inc_unmounted_vthreads() {
+  assert(_unmounted_vthreads >= 0, "invariant");
+  AtomicAccess::inc(&_unmounted_vthreads, memory_order_relaxed);
+}
+
+inline void ObjectMonitor::dec_unmounted_vthreads() {
+  assert(_unmounted_vthreads > 0, "invariant");
+  AtomicAccess::dec(&_unmounted_vthreads, memory_order_relaxed);
+}
+
+inline bool ObjectMonitor::has_unmounted_vthreads() const {
+  assert(_unmounted_vthreads >= 0, "invariant");
+  return AtomicAccess::load(&_unmounted_vthreads) > 0;
 }
 
 // Clear _owner field; current value must match old_value.

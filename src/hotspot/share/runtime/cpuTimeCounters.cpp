@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 Google LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,7 @@
 
 #include "runtime/atomicAccess.hpp"
 #include "runtime/cpuTimeCounters.hpp"
+#include "utilities/globalCounter.inline.hpp"
 
 const char* CPUTimeGroups::to_string(CPUTimeType val) {
   switch (val) {
@@ -36,6 +37,8 @@ const char* CPUTimeGroups::to_string(CPUTimeType val) {
       return "gc_conc_mark";
     case CPUTimeType::gc_conc_refine:
       return "gc_conc_refine";
+    case CPUTimeType::gc_conc_refine_control:
+      return "gc_conc_refine_control";
     case CPUTimeType::gc_service:
       return "gc_service";
     case CPUTimeType::vm:
@@ -53,6 +56,7 @@ bool CPUTimeGroups::is_gc_counter(CPUTimeType val) {
     case CPUTimeType::gc_parallel_workers:
     case CPUTimeType::gc_conc_mark:
     case CPUTimeType::gc_conc_refine:
+    case CPUTimeType::gc_conc_refine_control:
     case CPUTimeType::gc_service:
       return true;
     default:
@@ -74,6 +78,10 @@ void CPUTimeCounters::inc_gc_total_cpu_time(jlong diff) {
 }
 
 void CPUTimeCounters::publish_gc_total_cpu_time() {
+  GlobalCounter::CriticalSection cs(Thread::current());
+  if (!UsePerfData || !PerfDataManager::has_PerfData()) {
+    return;
+  }
   CPUTimeCounters* instance = CPUTimeCounters::get_instance();
   // Atomically fetch the current _gc_total_cpu_time_diff and reset it to zero.
   jlong new_value = 0;
@@ -100,6 +108,10 @@ PerfCounter* CPUTimeCounters::get_counter(CPUTimeGroups::CPUTimeType name) {
 }
 
 void CPUTimeCounters::update_counter(CPUTimeGroups::CPUTimeType name, jlong total) {
+  GlobalCounter::CriticalSection cs(Thread::current());
+  if (!UsePerfData || !PerfDataManager::has_PerfData()) {
+    return;
+  }
   CPUTimeCounters* instance = CPUTimeCounters::get_instance();
   PerfCounter* counter = instance->get_counter(name);
   jlong prev_value = counter->get_value();
@@ -115,8 +127,5 @@ ThreadTotalCPUTimeClosure::~ThreadTotalCPUTimeClosure() {
 }
 
 void ThreadTotalCPUTimeClosure::do_thread(Thread* thread) {
-  // The default code path (fast_thread_cpu_time()) asserts that
-  // pthread_getcpuclockid() and clock_gettime() must return 0. Thus caller
-  // must ensure the thread exists and has not terminated.
   _total += os::thread_cpu_time(thread);
 }

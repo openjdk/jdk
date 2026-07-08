@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@
 #include <grp.h>
 
 #ifdef __linux__
+#include <stdint.h> // For uintXX_t types used in statx support
 #include <sys/syscall.h>
 #include <sys/sysmacros.h> // makedev macros
 #endif
@@ -70,19 +71,12 @@
 // by defining binary compatible statx structs in this file and
 // not relying on included headers.
 
-#ifndef __GLIBC__
-// Alpine doesn't know these types, define them
-typedef unsigned int       __uint32_t;
-typedef unsigned short     __uint16_t;
-typedef unsigned long int  __uint64_t;
-#endif
-
 /*
  * Timestamp structure for the timestamps in struct statx.
  */
 struct my_statx_timestamp {
         int64_t   tv_sec;
-        __uint32_t  tv_nsec;
+        uint32_t  tv_nsec;
         int32_t   __reserved;
 };
 
@@ -92,27 +86,27 @@ struct my_statx_timestamp {
  */
 struct my_statx
 {
-  __uint32_t stx_mask;
-  __uint32_t stx_blksize;
-  __uint64_t stx_attributes;
-  __uint32_t stx_nlink;
-  __uint32_t stx_uid;
-  __uint32_t stx_gid;
-  __uint16_t stx_mode;
-  __uint16_t __statx_pad1[1];
-  __uint64_t stx_ino;
-  __uint64_t stx_size;
-  __uint64_t stx_blocks;
-  __uint64_t stx_attributes_mask;
+  uint32_t stx_mask;
+  uint32_t stx_blksize;
+  uint64_t stx_attributes;
+  uint32_t stx_nlink;
+  uint32_t stx_uid;
+  uint32_t stx_gid;
+  uint16_t stx_mode;
+  uint16_t __statx_pad1[1];
+  uint64_t stx_ino;
+  uint64_t stx_size;
+  uint64_t stx_blocks;
+  uint64_t stx_attributes_mask;
   struct my_statx_timestamp stx_atime;
   struct my_statx_timestamp stx_btime;
   struct my_statx_timestamp stx_ctime;
   struct my_statx_timestamp stx_mtime;
-  __uint32_t stx_rdev_major;
-  __uint32_t stx_rdev_minor;
-  __uint32_t stx_dev_major;
-  __uint32_t stx_dev_minor;
-  __uint64_t __statx_pad2[14];
+  uint32_t stx_rdev_major;
+  uint32_t stx_rdev_minor;
+  uint32_t stx_dev_major;
+  uint32_t stx_dev_minor;
+  uint64_t __statx_pad2[14];
 };
 
 // statx masks, flags, constants
@@ -394,17 +388,16 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_XATTR;
 #endif
 
-    return capabilities;
-}
-
-JNIEXPORT jboolean JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_fchmodatNoFollowSupported0(JNIEnv* env, jclass this) {
 #if defined(__linux__)
-    // Linux recognizes but does not support the AT_SYMLINK_NOFOLLOW flag
-    return JNI_FALSE;
+    // Linux 6.6+ supports AT_SYMLINK_NOFOLLOW. glibc 2.32+ also provides emulation for older kernels.
+    if (fchmodat(AT_FDCWD, "", 0, AT_SYMLINK_NOFOLLOW) == 0 || errno != ENOTSUP) {
+        capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FCHMODAT_NOFOLLOW;
+    }
 #else
-    return JNI_TRUE;
+    capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FCHMODAT_NOFOLLOW;
 #endif
+
+    return capabilities;
 }
 
 JNIEXPORT jbyteArray JNICALL

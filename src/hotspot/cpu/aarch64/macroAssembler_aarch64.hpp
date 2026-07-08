@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,9 @@
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/compressedKlass.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class OopMap;
@@ -81,6 +83,7 @@ class MacroAssembler: public Assembler {
     Register oop_result,               // where an oop-result ends up if any; use noreg otherwise
     Register java_thread,              // the thread if computed before     ; use noreg otherwise
     Register last_java_sp,             // to set up last_Java_frame in stubs; use noreg otherwise
+    Label*   return_pc,                // to set up last_Java_frame; use nullptr otherwise
     address  entry_point,              // the entry point
     int      number_of_arguments,      // the number of arguments (w/o thread) to pop after the call
     bool     check_exceptions          // whether to check for pending exceptions after return
@@ -166,7 +169,7 @@ class MacroAssembler: public Assembler {
 
   void bind(Label& L) {
     Assembler::bind(L);
-    code()->clear_last_insn();
+    code()->clear_last_merge_candidate();
     code()->set_last_label(pc());
   }
 
@@ -480,6 +483,25 @@ class MacroAssembler: public Assembler {
   WRAP(smaddl) WRAP(smsubl) WRAP(umaddl) WRAP(umsubl)
 #undef WRAP
 
+  using Assembler::andw, Assembler::andr;
+  void andw(Register Rd, Register Rn, uint64_t imm) {
+    if (operand_valid_for_logical_immediate(/*is32*/true, imm)) {
+      Assembler::andw(Rd, Rn, imm);
+    } else {
+      assert(Rd != Rn, "must be");
+      movw(Rd, imm);
+      andw(Rd, Rn, Rd);
+    }
+  }
+  void andr(Register Rd, Register Rn, uint64_t imm) {
+    if (operand_valid_for_logical_immediate(/*is32*/false, imm)) {
+      Assembler::andr(Rd, Rn, imm);
+    } else {
+      assert(Rd != Rn, "must be");
+      mov(Rd, imm);
+      andr(Rd, Rn, Rd);
+    }
+  }
 
   // macro assembly operations needed for aarch64
 
@@ -498,29 +520,20 @@ private:
   void mov_immediate64(Register dst, uint64_t imm64);
   void mov_immediate32(Register dst, uint32_t imm32);
 
-  int push(unsigned int bitset, Register stack);
-  int pop(unsigned int bitset, Register stack);
-
-  int push_fp(unsigned int bitset, Register stack, FpPushPopMode mode);
-  int pop_fp(unsigned int bitset, Register stack, FpPushPopMode mode);
-
-  int push_p(unsigned int bitset, Register stack);
-  int pop_p(unsigned int bitset, Register stack);
-
   void mov(Register dst, Address a);
 
 public:
 
-  void push(RegSet regs, Register stack) { if (regs.bits()) push(regs.bits(), stack); }
-  void pop(RegSet regs, Register stack) { if (regs.bits()) pop(regs.bits(), stack); }
+  int push(RegSet regset, Register stack);
+  int pop(RegSet regset, Register stack);
 
-  void push_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) push_fp(regs.bits(), stack, mode); }
-  void pop_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) pop_fp(regs.bits(), stack, mode); }
+  int push_fp(FloatRegSet regset, Register stack, FpPushPopMode mode = PushPopFull);
+  int pop_fp(FloatRegSet regset, Register stack, FpPushPopMode mode = PushPopFull);
 
   static RegSet call_clobbered_gp_registers();
 
-  void push_p(PRegSet regs, Register stack) { if (regs.bits()) push_p(regs.bits(), stack); }
-  void pop_p(PRegSet regs, Register stack) { if (regs.bits()) pop_p(regs.bits(), stack); }
+  int push_p(PRegSet regset, Register stack);
+  int pop_p(PRegSet regset, Register stack);
 
   // Push and pop everything that might be clobbered by a native
   // runtime call except rscratch1 and rscratch2.  (They are always
@@ -659,6 +672,14 @@ public:
     msr(0b011, 0b0100, 0b0010, 0b000, reg);
   }
 
+  // CNTVCTSS_EL0:   op1 == 011
+  //                 CRn == 1110
+  //                 CRm == 0000
+  //                 op2 == 110
+  inline void get_cntvctss_el0(Register reg) {
+    mrs(0b011, 0b1110, 0b0000, 0b110, reg);
+  }
+
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register ra, Register rb,
                       bool want_remainder, Register tmp = rscratch1);
@@ -676,16 +697,7 @@ public:
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
 
-  static address target_addr_for_insn(address insn_addr, unsigned insn);
-  static address target_addr_for_insn_or_null(address insn_addr, unsigned insn);
-  static address target_addr_for_insn(address insn_addr) {
-    unsigned insn = *(unsigned*)insn_addr;
-    return target_addr_for_insn(insn_addr, insn);
-  }
-  static address target_addr_for_insn_or_null(address insn_addr) {
-    unsigned insn = *(unsigned*)insn_addr;
-    return target_addr_for_insn_or_null(insn_addr, insn);
-  }
+  static address target_addr_for_insn(address insn_addr);
 
   // Required platform-specific helpers for Label::patch_instructions.
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.
@@ -701,7 +713,6 @@ public:
 #endif
 
   static int patch_oop(address insn_addr, address o);
-  static int patch_narrow_klass(address insn_addr, narrowKlass n);
 
   // Return whether code is emitted to a scratch blob.
   virtual bool in_scratch_emit_size() {
@@ -728,6 +739,9 @@ public:
   // Support for sign-extension (hi:lo = extend_sign(lo))
   void extend_sign(Register hi, Register lo);
 
+  // Clean up a subword typed value to the representation in compliance with JVMS §2.3
+  void narrow_subword_type(Register reg, BasicType bt);
+
   // Load and store values by size and signed-ness
   void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
   void store_sized_value(Address dst, Register src, size_t size_in_bytes);
@@ -749,7 +763,7 @@ public:
   // n.b. increment/decrement calls with an Address destination will
   // need to use a scratch register to load the value to be
   // incremented. increment/decrement calls which add or subtract a
-  // constant value greater than 2^12 will need to use a 2nd scratch
+  // constant value greater than 2^24 will need to use a 2nd scratch
   // register to hold the constant. so, a register increment/decrement
   // may trash rscratch2 and an address increment/decrement trash
   // rscratch and rscratch2
@@ -760,11 +774,11 @@ public:
   void decrement(Register reg, int value = 1);
   void decrement(Address dst, int value = 1);
 
-  void incrementw(Address dst, int value = 1);
+  void incrementw(Address dst, int value = 1, Register result = rscratch1);
   void incrementw(Register reg, int value = 1);
 
   void increment(Register reg, int value = 1);
-  void increment(Address dst, int value = 1);
+  void increment(Address dst, int value = 1, Register result = rscratch1);
 
 
   // Alignment
@@ -899,10 +913,6 @@ public:
   // thread in the default location (rthread)
   void reset_last_Java_frame(bool clear_fp);
 
-  // Stores
-  void store_check(Register obj);                // store check for obj - register is destroyed afterwards
-  void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
-
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
   void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
 
@@ -914,6 +924,7 @@ public:
 
   // oop manipulations
   void load_narrow_klass_compact(Register dst, Register src);
+  void load_narrow_klass(Register dst, Register src);
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
   void cmp_klass(Register obj, Register klass, Register tmp);
@@ -982,9 +993,6 @@ public:
 
   void push_cont_fastpath(Register java_thread = rthread);
   void pop_cont_fastpath(Register java_thread = rthread);
-
-  void inc_held_monitor_count(Register tmp);
-  void dec_held_monitor_count(Register tmp);
 
   // Round up to a power of two
   void round_to(Register reg, int modulus);
@@ -1132,6 +1140,8 @@ public:
 
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset);
+
   void verify_sve_vector_length(Register tmp = rscratch1);
   void reinitialize_ptrue() {
     if (UseSVE > 0) {
@@ -1210,16 +1220,6 @@ public:
 
   void cmpoop(Register obj1, Register obj2);
 
-  // Various forms of CAS
-
-  void cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
-                          Label &succeed, Label *fail);
-  void cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
-                  Label &succeed, Label *fail);
-
-  void cmpxchgw(Register oldv, Register newv, Register addr, Register tmp,
-                  Label &succeed, Label *fail);
-
   void atomic_add(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addw(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addal(Register prev, RegisterOrConstant incr, Register addr);
@@ -1241,12 +1241,25 @@ public:
     str(rscratch1, adr);
   }
 
+private:
   // A generic CAS; success or failure is in the EQ flag.
   // Clobbers rscratch1
   void cmpxchg(Register addr, Register expected, Register new_val,
-               enum operand_size size,
-               bool acquire, bool release, bool weak,
-               Register result);
+               enum operand_size size, enum atomic_memory_order order,
+               bool weak, Register result);
+
+public:
+  void cmpxchg(Register addr, Register expected, Register new_val,
+               enum operand_size size, enum atomic_memory_order order,
+               Register result = noreg) {
+    cmpxchg(addr, expected, new_val, size, order, /* weak */ false, result);
+  }
+
+  void cmpxchg_weak(Register addr, Register expected, Register new_val,
+                    enum operand_size size, enum atomic_memory_order order,
+                    Register result = noreg) {
+    cmpxchg(addr, expected, new_val, size, order, /* weak */ true, result);
+  }
 
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline
@@ -1495,6 +1508,9 @@ public:
   // Load the base of the cardtable byte map into reg.
   void load_byte_map_base(Register reg);
 
+  // Load a constant address in the AOT Runtime Constants area
+  void load_aotrc_address(Register reg, address a);
+
   // Prolog generator routines to support switch between x86 code and
   // generated ARM code
 
@@ -1644,6 +1660,10 @@ public:
           const FloatRegister (&stateVectors)[16], int idx1, int idx2,
           int idx3, int idx4);
 
+  // Rotate using ORR (for identity) or USHR + SLI.
+  void neon_vector_rotate(FloatRegister dst, SIMD_Arrangement T,
+                          FloatRegister src, int shift_amount);
+
   // Place an ISB after code may have been modified due to a safepoint.
   void safepoint_isb();
 
@@ -1740,14 +1760,117 @@ public:
 
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
+  void spin_wait_wfet(int delay_ns);
 
-  void lightweight_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow);
-  void lightweight_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow);
+  void fast_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow);
+  void fast_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow);
 
 private:
   // Check the current thread doesn't need a cross modify fence.
   void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
+  void try_to_replace_prev_vector_copy_with_movprfx(FloatRegister dst);
 
+public:
+  void maybe_movprfx(FloatRegister dst, FloatRegister src) {
+    if (dst != src) {
+      sve_movprfx(dst, src);
+    }
+  }
+
+// Wrappers for SVE explicit destructive instructions, overriding the
+// same-signature Assembler entry points to enable movprfx fusion optimization.
+//
+// Implicit destructive instructions (e.g. predicated unary ops like sve_abs/
+// sve_neg/sve_not, whose ISA encoding allows Zd != Zn but whose use as a Java
+// Vector API masked operation requires pass-through of the first source) are
+// not covered here. For those, the .ad file is responsible for emitting
+// movprfx explicitly via maybe_movprfx() before the destructive op.
+#define SVE_DESTRUCTIVE_BINARY_INS(NAME)                                       \
+  using Assembler::NAME;                                                       \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg,                 \
+            FloatRegister Zm) {                                                \
+    if (Zd != Zm) {                                                            \
+      try_to_replace_prev_vector_copy_with_movprfx(Zd);                        \
+    }                                                                          \
+    Assembler::NAME(Zd, T, Pg, Zm);                                            \
+  }
+
+#define SVE_DESTRUCTIVE_BINARY_5(I1, I2, I3, I4, I5)                           \
+  SVE_DESTRUCTIVE_BINARY_INS(I1); SVE_DESTRUCTIVE_BINARY_INS(I2);              \
+  SVE_DESTRUCTIVE_BINARY_INS(I3); SVE_DESTRUCTIVE_BINARY_INS(I4);              \
+  SVE_DESTRUCTIVE_BINARY_INS(I5);
+
+  SVE_DESTRUCTIVE_BINARY_5(sve_add,  sve_and,   sve_asr,   sve_bic,   sve_eor)
+  SVE_DESTRUCTIVE_BINARY_5(sve_fabd, sve_fadd,  sve_fdiv,  sve_fmax,  sve_fmin)
+  SVE_DESTRUCTIVE_BINARY_5(sve_fmul, sve_fsub,  sve_lsl,   sve_lsr,   sve_mul)
+  SVE_DESTRUCTIVE_BINARY_5(sve_orr,  sve_smax,  sve_smin,  sve_sqadd, sve_sqsub)
+  SVE_DESTRUCTIVE_BINARY_5(sve_sub,  sve_uqadd, sve_uqsub, sve_umax,  sve_umin)
+
+#undef SVE_DESTRUCTIVE_BINARY_INS
+#undef SVE_DESTRUCTIVE_BINARY_5
+
+#define SVE_DESTRUCTIVE_SHIFT_IMM_INS(NAME)                                    \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int shift) {    \
+    try_to_replace_prev_vector_copy_with_movprfx(Zd);                          \
+    Assembler::NAME(Zd, T, Pg, shift);                                         \
+  }
+
+  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_asr);
+  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_lsl);
+  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_lsr);
+
+#undef SVE_DESTRUCTIVE_SHIFT_IMM_INS
+
+#define SVE_DESTRUCTIVE_UNPRED_IMM_INS(NAME, IMM_TYPE)                         \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, IMM_TYPE imm) {               \
+    try_to_replace_prev_vector_copy_with_movprfx(Zd);                          \
+    Assembler::NAME(Zd, T, imm);                                               \
+  }
+
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_add, unsigned);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_sub, unsigned);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_and, uint64_t);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_eor, uint64_t);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_orr, uint64_t);
+
+#undef SVE_DESTRUCTIVE_UNPRED_IMM_INS
+
+#define SVE_DESTRUCTIVE_TERNARY_INS(NAME)                                      \
+  using Assembler::NAME;                                                       \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg,                 \
+            FloatRegister Zn, FloatRegister Zm) {                              \
+    if (Zd != Zn && Zd != Zm) {                                                \
+      try_to_replace_prev_vector_copy_with_movprfx(Zd);                        \
+    }                                                                          \
+    Assembler::NAME(Zd, T, Pg, Zn, Zm);                                        \
+  }
+
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fmad);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fmla);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fmls);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fmsb);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fnmad);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fnmla);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fnmls);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fnmsb);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_mla);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_mls);
+
+#undef SVE_DESTRUCTIVE_TERNARY_INS
+
+#define SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(NAME)                               \
+  using Assembler::NAME;                                                       \
+  void NAME(FloatRegister Zd, FloatRegister Zm, FloatRegister Zk) {            \
+    if (Zd != Zm && Zd != Zk) {                                                \
+      try_to_replace_prev_vector_copy_with_movprfx(Zd);                        \
+    }                                                                          \
+    Assembler::NAME(Zd, Zm, Zk);                                               \
+  }
+
+  SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(sve_bsl);
+  SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(sve_eor3);
+
+#undef SVE_DESTRUCTIVE_TERNARY_UNPRED_INS
 };
 
 #ifdef ASSERT

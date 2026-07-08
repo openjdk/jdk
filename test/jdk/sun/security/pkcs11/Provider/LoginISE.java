@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,22 @@
  * questions.
  */
 
-import java.io.*;
-import java.util.*;
-import java.security.*;
-import javax.security.auth.callback.*;
+import jtreg.SkippedException;
+
+import java.io.IOException;
+import java.security.AuthProvider;
+import java.security.Provider;
+import java.security.Security;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.UnsupportedCallbackException;
 
 /**
  * @test
  * @bug 8130648
  * @summary make sure IllegalStateException is thrown for uninitialized
  * SunPKCS11 provider instance
+ * @library /test/lib
  */
 public class LoginISE {
 
@@ -38,8 +44,7 @@ public class LoginISE {
 
         Provider p = Security.getProvider("SunPKCS11");
         if (p == null) {
-            System.out.println("No un-initialized PKCS11 provider available; skip");
-            return;
+            throw new SkippedException("No un-initialized PKCS11 provider available; skip");
         }
         if (!(p instanceof AuthProvider)) {
             throw new RuntimeException("Error: expect AuthProvider!");

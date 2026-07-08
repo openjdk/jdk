@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,8 @@ final class ViewPanel extends javax.swing.JPanel {
         jLabel5 = new javax.swing.JLabel();
         nodeTinyTextField = new javax.swing.JTextField();
         defaultViewComboBox = new javax.swing.JComboBox<>();
+        graphNameSuffixField = new javax.swing.JTextField();
+        jLabel6 = new javax.swing.JLabel();
 
         org.openide.awt.Mnemonics.setLocalizedText(jLabel1, "Node Text");
 
@@ -70,16 +72,18 @@ final class ViewPanel extends javax.swing.JPanel {
 
         org.openide.awt.Mnemonics.setLocalizedText(jLabel4, "Short Node Text");
 
-        nodeShortTextField.setBackground(new java.awt.Color(255, 255, 255));
         nodeShortTextField.setToolTipText("Single-line format string for nodes in edge tooltips, slot tooltips, and node search bar. Properties are specified with brackets  (example: \"[idx]\").");
 
         org.openide.awt.Mnemonics.setLocalizedText(jLabel5, "Tiny Node Text");
 
-        nodeTinyTextField.setBackground(new java.awt.Color(255, 255, 255));
         nodeTinyTextField.setToolTipText("Single-line format string for node input lists. Properties are specified with brackets  (example: \"[idx]\").");
 
         defaultViewComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Sea of nodes", "Clustered sea of nodes", "Control-flow graph" }));
         defaultViewComboBox.setToolTipText("View shown by default when a graph is opened.");
+
+        graphNameSuffixField.setToolTipText("Single-line format string for node input lists. Properties are specified with brackets (example: \"[method]\").");
+
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel6, "Graph Name Suffix");
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -92,14 +96,16 @@ final class ViewPanel extends javax.swing.JPanel {
                     .add(jLabel3)
                     .add(jLabel2)
                     .add(jLabel4)
-                    .add(jLabel5))
-                .add(39, 39, 39)
+                    .add(jLabel5)
+                    .add(jLabel6))
+                .add(18, 18, 18)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
                     .add(nodeShortTextField)
-                    .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 470, Short.MAX_VALUE)
+                    .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 663, Short.MAX_VALUE)
                     .add(portSpinner)
-                    .add(nodeTinyTextField)
-                    .add(defaultViewComboBox, 0, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .add(defaultViewComboBox, 0, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .add(graphNameSuffixField)
+                    .add(nodeTinyTextField))
                 .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
@@ -111,20 +117,25 @@ final class ViewPanel extends javax.swing.JPanel {
                     .add(jLabel1))
                 .add(27, 27, 27)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jLabel4)
-                    .add(nodeShortTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(nodeShortTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 18, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 27, Short.MAX_VALUE)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel5)
+                    .add(jLabel5, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 24, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(nodeTinyTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .add(27, 27, 27)
-                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel2)
-                    .add(defaultViewComboBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 27, Short.MAX_VALUE)
-                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(graphNameSuffixField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabel6, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 18, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .add(27, 27, 27)
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(defaultViewComboBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 18, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .add(27, 27, 27)
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(portSpinner, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel3)))
+                    .add(jLabel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 18, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
         );
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
@@ -141,13 +152,14 @@ final class ViewPanel extends javax.swing.JPanel {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(29, Short.MAX_VALUE))
+                .addContainerGap(15, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
     void load() {
         nodeTextArea.setText(Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT));
         nodeShortTextField.setText(Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT));
         nodeTinyTextField.setText(Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
+        graphNameSuffixField.setText(Settings.get().get(Settings.GRAPH_NAME_SUFFIX, Settings.GRAPH_NAME_SUFFIX_DEFAULT));
         defaultViewComboBox.setSelectedIndex(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DefaultView.SEA_OF_NODES));
         portSpinner.setValue(Integer.parseInt(Settings.get().get(Settings.PORT, Settings.PORT_DEFAULT)));
     }
@@ -156,6 +168,7 @@ final class ViewPanel extends javax.swing.JPanel {
         Settings.get().put(Settings.NODE_TEXT, nodeTextArea.getText());
         Settings.get().put(Settings.NODE_SHORT_TEXT, nodeShortTextField.getText());
         Settings.get().put(Settings.NODE_TINY_TEXT, nodeTinyTextField.getText());
+        Settings.get().put(Settings.GRAPH_NAME_SUFFIX, graphNameSuffixField.getText());
         Settings.get().putInt(Settings.DEFAULT_VIEW, defaultViewComboBox.getSelectedIndex());
         Settings.get().put(Settings.PORT, portSpinner.getValue().toString());
     }
@@ -165,11 +178,13 @@ final class ViewPanel extends javax.swing.JPanel {
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JComboBox<String> defaultViewComboBox;
+    private javax.swing.JTextField graphNameSuffixField;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextField nodeShortTextField;

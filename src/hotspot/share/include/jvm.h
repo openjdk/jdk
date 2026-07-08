@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,9 @@ JVM_InternString(JNIEnv *env, jstring str);
 /*
  * java.lang.System
  */
+JNIEXPORT jboolean JNICALL
+JVM_AOTEndRecording(JNIEnv *env);
+
 JNIEXPORT jlong JNICALL
 JVM_CurrentTimeMillis(JNIEnv *env, jclass ignored);
 
@@ -298,7 +301,7 @@ JVM_Interrupt(JNIEnv *env, jobject thread);
 JNIEXPORT jboolean JNICALL
 JVM_HoldsLock(JNIEnv *env, jclass threadClass, jobject obj);
 
-JNIEXPORT jobject JNICALL
+JNIEXPORT jobjectArray JNICALL
 JVM_GetStackTrace(JNIEnv *env, jobject thread);
 
 JNIEXPORT jobject JNICALL
@@ -433,12 +436,10 @@ JVM_FindClassFromBootLoader(JNIEnv *env, const char *name);
  *  init:   whether initialization is done
  *  loader: class loader to look up the class. This may not be the same as the caller's
  *          class loader.
- *  caller: initiating class. The initiating class may be null when a security
- *          manager is not installed.
  */
 JNIEXPORT jclass JNICALL
-JVM_FindClassFromCaller(JNIEnv *env, const char *name, jboolean init,
-                        jobject loader, jclass caller);
+JVM_FindClassFromLoader(JNIEnv *env, const char *name, jboolean init,
+                        jobject loader);
 
 /*
  * Find a class from a given class.
@@ -1102,16 +1103,16 @@ JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass);
  * Virtual thread support.
  */
 JNIEXPORT void JNICALL
-JVM_VirtualThreadStart(JNIEnv* env, jobject vthread);
+JVM_VirtualThreadEndFirstTransition(JNIEnv* env, jobject vthread);
 
 JNIEXPORT void JNICALL
-JVM_VirtualThreadEnd(JNIEnv* env, jobject vthread);
+JVM_VirtualThreadStartFinalTransition(JNIEnv* env, jobject vthread);
 
 JNIEXPORT void JNICALL
-JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hide);
+JVM_VirtualThreadStartTransition(JNIEnv* env, jobject vthread, jboolean is_mount);
 
 JNIEXPORT void JNICALL
-JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide);
+JVM_VirtualThreadEndTransition(JNIEnv* env, jobject vthread, jboolean is_mount);
 
 JNIEXPORT void JNICALL
 JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jboolean enter);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,14 +36,11 @@
 #include <unistd.h>
 #endif
 
+// POSIX puts _exit in <unistd.h>.
+FORBID_IMPORTED_NORETURN_C_FUNCTION(void _exit(int), /* not noexcept */, "use os::exit")
+
 // If needed, add os::strndup and use that instead.
 FORBID_C_FUNCTION(char* strndup(const char*, size_t), noexcept, "don't use");
-
-// These are unimplementable for Windows, and they aren't useful for a
-// POSIX implementation of NMT either.
-// https://stackoverflow.com/questions/62962839/stdaligned-alloc-missing-from-visual-studio-2019
-FORBID_C_FUNCTION(int posix_memalign(void**, size_t, size_t), noexcept, "don't use");
-FORBID_C_FUNCTION(void* aligned_alloc(size_t, size_t), noexcept, "don't use");
 
 // realpath with a null second argument mallocs a string for the result.
 // With a non-null second argument, there is a risk of buffer overrun.

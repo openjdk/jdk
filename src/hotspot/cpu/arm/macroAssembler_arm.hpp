@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1010,23 +1010,23 @@ public:
   void cas_for_lock_acquire(Register oldval, Register newval, Register base, Register tmp, Label &slow_case, bool allow_fallthrough_on_failure = false, bool one_shot = false);
   void cas_for_lock_release(Register oldval, Register newval, Register base, Register tmp, Label &slow_case, bool allow_fallthrough_on_failure = false, bool one_shot = false);
 
-  // Attempt to lightweight-lock an object
+  // Attempt to fast-lock an object
   // Registers:
   //  - obj: the object to be locked
   //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
   // Result:
   //  - Success: fallthrough
   //  - Error:   break to slow, Z cleared.
-  void lightweight_lock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow);
+  void fast_lock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow);
 
-  // Attempt to lightweight-unlock an object
+  // Attempt to fast-unlock an object
   // Registers:
   //  - obj: the object to be unlocked
   //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
   // Result:
   //  - Success: fallthrough
   //  - Error:   break to slow, Z cleared.
-  void lightweight_unlock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow);
+  void fast_unlock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow);
 
 #ifndef PRODUCT
   // Preserves flags and all registers.

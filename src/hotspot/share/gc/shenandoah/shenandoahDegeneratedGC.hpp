@@ -34,13 +34,12 @@ class ShenandoahDegenGC : public ShenandoahGC {
   friend class VM_ShenandoahDegeneratedGC;
 private:
   const ShenandoahDegenPoint  _degen_point;
-  ShenandoahGeneration* _generation;
   bool _abbreviated;
-  size_t _consecutive_degen_with_bad_progress;
+  const bool _do_old_gc_bootstrap;
 
 public:
-  ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation);
-  bool collect(GCCause::Cause cause);
+  ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation, bool do_old_gc_bootstrap = false);
+  bool collect(GCCause::Cause cause) override;
 
 private:
   void vmop_degenerated();

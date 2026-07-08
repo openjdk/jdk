@@ -2308,7 +2308,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public Unmounte
       for (int i = 0; i < _thread_dumpers_count; i++) {
         delete _thread_dumpers[i];
       }
-      FREE_C_HEAP_ARRAY(ThreadDumper*, _thread_dumpers);
+      FREE_C_HEAP_ARRAY(_thread_dumpers);
     }
 
     if (_dumper_controller != nullptr) {
@@ -2610,7 +2610,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     // (DumpWriter buffer, DumperClassCacheTable, GZipCompressor buffers).
     // For the OOM handling we may already be limited in memory.
     // Lets ensure we have at least 20MB per thread.
-    size_t free_memory = 0;
+    physical_memory_size_type free_memory = 0;
     // Return value ignored - defaulting to 0 on failure.
     (void)os::free_memory(free_memory);
     julong max_threads = free_memory / (20 * M);

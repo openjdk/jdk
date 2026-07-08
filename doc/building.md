@@ -195,8 +195,8 @@ time of writing.
 
 | Operating system  | Vendor/version used                |
 | ----------------- | ---------------------------------- |
-| Linux/x64         | Oracle Enterprise Linux 6.4 / 8.x  |
-| Linux/aarch64     | Oracle Enterprise Linux 7.6 / 8.x  |
+| Linux/x64         | Oracle Linux 6.4 / 8.x             |
+| Linux/aarch64     | Oracle Linux 7.6 / 8.x             |
 | macOS             | macOS 14.x                         |
 | Windows           | Windows Server 2016                |
 
@@ -352,6 +352,11 @@ on some strategies to deal with this.
 It is recommended that you use at least macOS 14 and Xcode 15.4, but
 earlier versions may also work.
 
+Starting with Xcode 26, introduced in macOS 26, the Metal toolchain no longer
+comes bundled with Xcode, so it needs to be installed separately. This can
+either be done via the Xcode's Settings/Components UI, or in the command line
+calling `xcodebuild -downloadComponent MetalToolchain`.
+
 The standard macOS environment contains the basic tooling needed to build, but
 for external libraries a package manager is recommended. The JDK uses
 [homebrew](https://brew.sh/) in the examples, but feel free to use whatever
@@ -468,7 +473,7 @@ available for this update.
 The minimum accepted version is Visual Studio 2019 version 16.8. (Note that
 this version is often presented as "MSVC 14.28", and reported by cl.exe as
 19.28.) Older versions will not be accepted by `configure` and will not work.
-The maximum accepted version of Visual Studio is 2022.
+The maximum accepted version of Visual Studio is 2026.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
@@ -1173,10 +1178,8 @@ Note that alsa is needed even if you only want to build a headless JDK.
 
 #### X11
 
-You will need X11 libraries suitable for your *target* system. In most cases,
-using Debian's pre-built libraries work fine.
-
-Note that X11 is needed even if you only want to build a headless JDK.
+When not building a headless JDK, you will need X11 libraries suitable for your
+*target* system. In most cases, using Debian's pre-built libraries work fine.
 
 * Go to [Debian Package Search](https://www.debian.org/distrib/packages),
   search for the following packages for your *target* system, and download them
@@ -1285,27 +1288,26 @@ at least the following targets are known to work:
 | riscv64-linux-gnu        |
 | s390x-linux-gnu          |
 
-`BASE_OS` must be one of `OL` for Oracle Enterprise Linux or `Fedora`. If the
-base OS is `Fedora` the corresponding Fedora release can be specified with the
-help of the `BASE_OS_VERSION` option. If the build is successful, the new
-devkits can be found in the `build/devkit/result` subdirectory:
+`BASE_OS` must be one of `OL` for Oracle Linux or `Fedora`. The release/version
+of the base OS can be specified using the `BASE_OS_VERSION` option. If the build
+is successful, the new devkits can be found in the `build/devkit/result`
+subdirectory:
 
 ```
 cd make/devkit
-make TARGETS="ppc64le-linux-gnu aarch64-linux-gnu" BASE_OS=Fedora BASE_OS_VERSION=21
+make TARGETS="ppc64le-linux-gnu aarch64-linux-gnu" BASE_OS=Fedora
 ls -1 ../../build/devkit/result/
 x86_64-linux-gnu-to-aarch64-linux-gnu
 x86_64-linux-gnu-to-ppc64le-linux-gnu
 ```
 
 Notice that devkits are not only useful for targeting different build
-platforms. Because they contain the full build dependencies for a system (i.e.
-compiler and root file system), they can easily be used to build well-known,
-reliable and reproducible build environments. You can for example create and
-use a devkit with GCC 7.3 and a Fedora 12 sysroot environment (with glibc 2.11)
-on Ubuntu 14.04 (which doesn't have GCC 7.3 by default) to produce JDK binaries
-which will run on all Linux systems with runtime libraries newer than the ones
-from Fedora 12 (e.g. Ubuntu 16.04, SLES 11 or RHEL 6).
+platforms. Because they contain the full build dependencies for a system (i.e.,
+compiler and root file system/sysroot), they can easily be used to build
+well-known, reliable, and reproducible build environments. You can, for example,
+create and use a devkit with a version of the GCC compiler not provided by the
+host OS, using a sysroot from an older Linux distribution to produce JDK
+binaries which will run on all Linux systems with newer runtime libraries.
 
 #### Using Debian debootstrap
 

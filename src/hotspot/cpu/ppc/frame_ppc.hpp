@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -215,7 +215,7 @@
     uint64_t bcp;
     uint64_t esp;
     uint64_t mdx;
-    uint64_t top_frame_sp; // Maybe define parent_frame_abi and move there.
+    uint64_t top_frame_sp; // Original sp to be restored when returning from an i2i call
     uint64_t sender_sp;
     // Slots only needed for native calls. Maybe better to move elsewhere.
     uint64_t oop_tmp;
@@ -391,8 +391,6 @@
   }
 
   enum {
-    // normal return address is 1 bundle past PC
-    pc_return_offset                       = 0,
     // size, in words, of frame metadata (e.g. pc and link)
     metadata_words                         = sizeof(java_abi) >> LogBytesPerWord,
     // size, in words, of metadata at frame bottom, i.e. it is not part of the
@@ -402,8 +400,7 @@
     // between a callee frame and its stack arguments, where it is part
     // of the caller/callee overlap
     metadata_words_at_top                  = sizeof(java_abi) >> LogBytesPerWord,
-    // size, in words, of frame metadata at the frame top that needs
-    // to be reserved for callee functions in the runtime
+    // in bytes
     frame_alignment                        = 16,
     frame_alignment_in_words               = frame_alignment >> LogBytesPerWord,
     // size, in words, of maximum shift in frame position due to alignment

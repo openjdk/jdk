@@ -74,7 +74,7 @@ void BasicLock::move_to(oop obj, BasicLock* dest) {
   }
 #ifdef ASSERT
   else {
-    dest->set_bad_metadata_deopt();
+    dest->set_bad_monitor_deopt();
   }
 #endif
 }

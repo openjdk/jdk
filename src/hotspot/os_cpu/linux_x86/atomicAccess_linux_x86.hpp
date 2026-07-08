@@ -53,6 +53,9 @@ inline D AtomicAccess::PlatformAdd<4>::fetch_then_add(D volatile* dest, I add_va
 }
 
 template<>
+struct AtomicAccess::PlatformXchg<1> : AtomicAccess::XchgUsingCmpxchg<1> {};
+
+template<>
 template<typename T>
 inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
                                                    T exchange_value,
@@ -92,8 +95,6 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
                     : "cc", "memory");
   return exchange_value;
 }
-
-#ifdef AMD64
 
 template<>
 template<typename D, typename I>
@@ -135,51 +136,6 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
   return exchange_value;
 }
 
-#else // !AMD64
-
-extern "C" {
-  // defined in linux_x86.s
-  int64_t _Atomic_cmpxchg_long(int64_t, volatile int64_t*, int64_t);
-  void _Atomic_move_long(const volatile int64_t* src, volatile int64_t* dst);
-}
-
-template<>
-template<typename T>
-inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
-                                                      T compare_value,
-                                                      T exchange_value,
-                                                      atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(T));
-  return cmpxchg_using_helper<int64_t>(_Atomic_cmpxchg_long, dest, compare_value, exchange_value);
-}
-
-// No direct support for 8-byte xchg; emulate using cmpxchg.
-template<>
-struct AtomicAccess::PlatformXchg<8> : AtomicAccess::XchgUsingCmpxchg<8> {};
-
-// No direct support for 8-byte add; emulate using cmpxchg.
-template<>
-struct AtomicAccess::PlatformAdd<8> : AtomicAccess::AddUsingCmpxchg<8> {};
-
-template<>
-template<typename T>
-inline T AtomicAccess::PlatformLoad<8>::operator()(T const volatile* src) const {
-  STATIC_ASSERT(8 == sizeof(T));
-  volatile int64_t dest;
-  _Atomic_move_long(reinterpret_cast<const volatile int64_t*>(src), reinterpret_cast<volatile int64_t*>(&dest));
-  return PrimitiveConversions::cast<T>(dest);
-}
-
-template<>
-template<typename T>
-inline void AtomicAccess::PlatformStore<8>::operator()(T volatile* dest,
-                                                       T store_value) const {
-  STATIC_ASSERT(8 == sizeof(T));
-  _Atomic_move_long(reinterpret_cast<const volatile int64_t*>(&store_value), reinterpret_cast<volatile int64_t*>(dest));
-}
-
-#endif // AMD64
-
 template<>
 struct AtomicAccess::PlatformOrderedStore<1, RELEASE_X_FENCE>
 {
@@ -216,7 +172,6 @@ struct AtomicAccess::PlatformOrderedStore<4, RELEASE_X_FENCE>
   }
 };
 
-#ifdef AMD64
 template<>
 struct AtomicAccess::PlatformOrderedStore<8, RELEASE_X_FENCE>
 {
@@ -228,6 +183,5 @@ struct AtomicAccess::PlatformOrderedStore<8, RELEASE_X_FENCE>
                       : "memory");
   }
 };
-#endif // AMD64
 
 #endif // OS_CPU_LINUX_X86_ATOMICACCESS_LINUX_X86_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2138,10 +2138,12 @@ public class TreeMap<K,V>
                 return null;
             }
             public void forEachRemaining(Consumer<? super K> action) {
+                Objects.requireNonNull(action);
                 while (hasNext())
                     action.accept(next());
             }
             public boolean tryAdvance(Consumer<? super K> action) {
+                Objects.requireNonNull(action);
                 if (hasNext()) {
                     action.accept(next());
                     return true;
@@ -2176,10 +2178,12 @@ public class TreeMap<K,V>
                 return null;
             }
             public void forEachRemaining(Consumer<? super K> action) {
+                Objects.requireNonNull(action);
                 while (hasNext())
                     action.accept(next());
             }
             public boolean tryAdvance(Consumer<? super K> action) {
+                Objects.requireNonNull(action);
                 if (hasNext()) {
                     action.accept(next());
                     return true;

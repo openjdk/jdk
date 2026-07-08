@@ -43,9 +43,6 @@ private:
   static ZNMethodTableIteration            _iteration_secondary;
   static ZSafeDelete<ZNMethodTableEntry[]> _safe_delete;
 
-  static ZNMethodTableEntry* create(size_t size);
-  static void destroy(ZNMethodTableEntry* table);
-
   static size_t first_index(const nmethod* nm, size_t size);
   static size_t next_index(size_t prev_index, size_t size);
 
@@ -67,9 +64,6 @@ public:
   static void nmethods_do_begin(bool secondary);
   static void nmethods_do_end(bool secondary);
   static void nmethods_do(bool secondary, NMethodClosure* cl);
-
-  static void unlink(ZWorkers* workers, bool unloading_occurred);
-  static void purge(ZWorkers* workers);
 };
 
 #endif // SHARE_GC_Z_ZNMETHODTABLE_HPP

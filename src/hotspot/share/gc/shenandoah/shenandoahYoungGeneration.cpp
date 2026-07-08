@@ -30,15 +30,16 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
-ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues, size_t max_capacity) :
-  ShenandoahGeneration(YOUNG, max_queues, max_capacity),
+ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues) :
+  ShenandoahGeneration(YOUNG, max_queues),
   _old_gen_task_queues(nullptr) {
+  assert(type() == ShenandoahGenerationType::YOUNG, "OO sanity");
 }
 
 void ShenandoahYoungGeneration::set_concurrent_mark_in_progress(bool in_progress) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->set_concurrent_young_mark_in_progress(in_progress);
-  if (is_bootstrap_cycle() && in_progress && !heap->is_prepare_for_old_mark_in_progress()) {
+  if (is_old_marking_active() && in_progress && !heap->is_prepare_for_old_mark_in_progress()) {
     // This is not a bug. When the bootstrapping marking phase is complete,
     // the old generation marking is still in progress, unless it's not.
     // In the case that old-gen preparation for mixed evacuation has been
@@ -78,7 +79,7 @@ bool ShenandoahYoungGeneration::is_concurrent_mark_in_progress() {
 
 void ShenandoahYoungGeneration::reserve_task_queues(uint workers) {
   ShenandoahGeneration::reserve_task_queues(workers);
-  if (is_bootstrap_cycle()) {
+  if (is_old_marking_active()) {
     _old_gen_task_queues->reserve(workers);
   }
 }
@@ -95,6 +96,44 @@ ShenandoahHeuristics* ShenandoahYoungGeneration::initialize_heuristics(Shenandoa
   return _heuristics;
 }
 
+size_t ShenandoahYoungGeneration::used() const {
+  return _free_set->young_used();
+}
+
+size_t ShenandoahYoungGeneration::get_affiliated_region_count() const {
+  return _free_set->young_affiliated_regions();
+}
+
+size_t ShenandoahYoungGeneration::get_humongous_waste() const {
+  return _free_set->humongous_waste_in_mutator();
+}
+
+size_t ShenandoahYoungGeneration::used_regions() const {
+  return _free_set->young_affiliated_regions();
+}
+
+size_t ShenandoahYoungGeneration::used_regions_size() const {
+  size_t used_regions = _free_set->young_affiliated_regions();
+  return used_regions * ShenandoahHeapRegion::region_size_bytes();
+}
+
+size_t ShenandoahYoungGeneration::max_capacity() const {
+  size_t total_regions = _free_set->total_young_regions();
+  return total_regions * ShenandoahHeapRegion::region_size_bytes();
+}
+
+size_t ShenandoahYoungGeneration::free_unaffiliated_regions() const {
+  return _free_set->young_unaffiliated_regions();
+}
+
+size_t ShenandoahYoungGeneration::available_with_reserve() const {
+  shenandoah_assert_heaplocked();
+  ShenandoahFreeSet* free_set = ShenandoahHeap::heap()->free_set();
+  size_t mutator_available = free_set->available_locked();
+  size_t collector_available = free_set->collector_available_locked();
+  return mutator_available + collector_available;
+}
+
 size_t ShenandoahYoungGeneration::available() const {
   // The collector reserve may eat into what the mutator is allowed to use. Make sure we are looking
   // at what is available to the mutator when reporting how much memory is available.
@@ -102,8 +141,8 @@ size_t ShenandoahYoungGeneration::available() const {
   return MIN2(available, ShenandoahHeap::heap()->free_set()->available());
 }
 
-size_t ShenandoahYoungGeneration::soft_available() const {
-  size_t available = this->ShenandoahGeneration::soft_available();
+size_t ShenandoahYoungGeneration::soft_mutator_available() const {
+  size_t available = this->ShenandoahGeneration::soft_mutator_available();
   return MIN2(available, ShenandoahHeap::heap()->free_set()->available());
 }
 

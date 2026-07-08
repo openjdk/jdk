@@ -55,10 +55,10 @@ class TenuredGeneration;
 //                                              +-- generation boundary (fixed after startup)
 //                                              |
 // |<-    young gen (reserved MaxNewSize)     ->|<- old gen (reserved MaxOldSize) ->|
-// +-----------------+--------+--------+--------+---------------+-------------------+
-// |       eden      |  from  |   to   |        |      old      |                   |
-// |                 |  (to)  | (from) |        |               |                   |
-// +-----------------+--------+--------+--------+---------------+-------------------+
+// +--------+--------+-----------------+--------+---------------+-------------------+
+// |  from  |   to   |       eden      |        |      old      |                   |
+// |  (to)  | (from) |                 |        |               |                   |
+// +--------+--------+-----------------+--------+---------------+-------------------+
 // |<-          committed            ->|        |<- committed ->|
 //
 class SerialHeap : public CollectedHeap {
@@ -76,6 +76,8 @@ class SerialHeap : public CollectedHeap {
 private:
   DefNewGeneration* _young_gen;
   TenuredGeneration* _old_gen;
+
+  // Used during young-gc
   HeapWord* _young_gen_saved_top;
   HeapWord* _old_gen_saved_top;
 
@@ -94,6 +96,10 @@ private:
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
 
+  MemoryPool* _eden_pool;
+  MemoryPool* _survivor_pool;
+  MemoryPool* _old_pool;
+
   // Indicate whether heap is almost or approaching full.
   // Usually, there is some memory headroom for application/gc to run properly.
   // However, in extreme cases, e.g. young-gen is non-empty after a full gc, we
@@ -110,6 +116,21 @@ private:
 
   void print_tracing_info() const override;
   void stop() override {};
+
+  static void verify_not_in_native_if_java_thread() NOT_DEBUG_RETURN;
+
+  // Try to allocate space by expanding the heap.
+  HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
+
+  HeapWord* mem_allocate_cas_noexpand(size_t size, bool is_tlab);
+  HeapWord* mem_allocate_work(size_t size, bool is_tlab);
+
+  void initialize_serviceability() override;
+
+  // Set the saved marks of generations, if that makes sense.
+  // In particular, if any generation might iterate over the oops
+  // in other generations, it should call this method.
+  void save_marks();
 
 public:
   // Returns JNI_OK on success
@@ -139,9 +160,6 @@ public:
   // Callback from VM_SerialGCCollect.
   void collect_at_safepoint(bool full);
 
-  // Perform a full collection of the heap; intended for use in implementing
-  // "System.gc". This implies as full a collection as the CollectedHeap
-  // supports. Caller does not hold the Heap_lock on entry.
   void collect(GCCause::Cause cause) override;
 
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
@@ -189,9 +207,9 @@ public:
   bool block_is_obj(const HeapWord* addr) const;
 
   // Section on TLAB's.
-  size_t tlab_capacity(Thread* thr) const override;
-  size_t tlab_used(Thread* thr) const override;
-  size_t unsafe_max_tlab_alloc(Thread* thr) const override;
+  size_t tlab_capacity() const override;
+  size_t tlab_used() const override;
+  size_t unsafe_max_tlab_alloc() const override;
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
                               size_t* actual_size) override;
@@ -212,26 +230,6 @@ public:
   // generations in a fully generational heap.
   CardTableRS* rem_set() { return _rem_set; }
 
- public:
-  // Set the saved marks of generations, if that makes sense.
-  // In particular, if any generation might iterate over the oops
-  // in other generations, it should call this method.
-  void save_marks();
-
-private:
-  // Try to allocate space by expanding the heap.
-  HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
-
-  HeapWord* mem_allocate_cas_noexpand(size_t size, bool is_tlab);
-  HeapWord* mem_allocate_work(size_t size, bool is_tlab);
-
-  MemoryPool* _eden_pool;
-  MemoryPool* _survivor_pool;
-  MemoryPool* _old_pool;
-
-  void initialize_serviceability() override;
-
-public:
   static SerialHeap* heap();
 
   SerialHeap();
@@ -257,9 +255,6 @@ public:
 
   void scan_evacuated_objs(YoungGenScanClosure* young_cl,
                            OldGenScanClosure* old_cl);
-
-  void safepoint_synchronize_begin() override;
-  void safepoint_synchronize_end() override;
 
   // Support for loading objects from CDS archive into the heap
   bool can_load_archived_objects() const override { return true; }

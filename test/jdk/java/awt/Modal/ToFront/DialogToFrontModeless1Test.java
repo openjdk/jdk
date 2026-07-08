@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,27 @@
  * @build Flag
  * @build TestDialog
  * @build TestFrame
+ * @build jdk.test.lib.Platform
  * @run main DialogToFrontModeless1Test
  */
+
+import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 
 public class DialogToFrontModeless1Test {
 
     public static void main(String[] args) throws Exception {
+        if (Platform.isOnWayland()) {
+            // Some tested systems are still use XTEST(X11 protocol)
+            // for key and mouse press emulation, but this will not work
+            // outside of X11.
+            // An emulated input event will reach X11 clients, but not the
+            // Wayland compositor, which is responsible for window restacking.
+            //
+            // This skip can be removed later once all systems switch to
+            // the default remote desktop XDG portal.
+             throw new SkippedException("SKIPPED: robot functionality is limited on the current platform.");
+        }
         (new DialogToFrontModelessTest()).doTest();
     }
 }

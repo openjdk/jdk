@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,18 +31,20 @@
  * @summary Disable MD2 support
  *          new CertPathValidatorException.BasicReason enum constant for
  *     constrained algorithm
+ * @enablePreview
  * @run main/othervm CPValidatorIntermediate
  * @author Xuelei Fan
  */
 
-import java.io.*;
-import java.net.SocketException;
+import java.security.PEMDecoder;
 import java.util.*;
 import java.security.Security;
 import java.security.cert.*;
 import java.security.cert.CertPathValidatorException.*;
 
 public class CPValidatorIntermediate {
+
+    private static final PEMDecoder PEM_DECODER = PEMDecoder.of();
 
     // SHA1withRSA 1024
     static String trustAnchor_SHA1withRSA_1024 =
@@ -183,10 +185,7 @@ public class CPValidatorIntermediate {
         // generate certificate from cert strings
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
-        ByteArrayInputStream is;
-
-        is = new ByteArrayInputStream(certStr.getBytes());
-        Certificate cert = cf.generateCertificate(is);
+        Certificate cert = PEM_DECODER.decode(certStr, X509Certificate.class);
 
         // generate certification path
         List<Certificate> list = Arrays.asList(new Certificate[] {cert});
@@ -196,19 +195,15 @@ public class CPValidatorIntermediate {
 
     private static Set<TrustAnchor> generateTrustAnchors()
             throws CertificateException {
-        // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        HashSet<TrustAnchor> anchors = new HashSet<TrustAnchor>();
 
-        ByteArrayInputStream is =
-            new ByteArrayInputStream(trustAnchor_SHA1withRSA_1024.getBytes());
-        Certificate cert = cf.generateCertificate(is);
-        TrustAnchor anchor = new TrustAnchor((X509Certificate)cert, null);
+        HashSet<TrustAnchor> anchors = new HashSet<TrustAnchor>();
+        // generate certificate from cert string
+        X509Certificate cert = PEM_DECODER.decode(trustAnchor_SHA1withRSA_1024, X509Certificate.class);
+        TrustAnchor anchor = new TrustAnchor(cert, null);
         anchors.add(anchor);
 
-        is = new ByteArrayInputStream(trustAnchor_SHA1withRSA_512.getBytes());
-        cert = cf.generateCertificate(is);
-        anchor = new TrustAnchor((X509Certificate)cert, null);
+        cert = PEM_DECODER.decode(trustAnchor_SHA1withRSA_512, X509Certificate.class);
+        anchor = new TrustAnchor(cert, null);
         anchors.add(anchor);
 
         return anchors;

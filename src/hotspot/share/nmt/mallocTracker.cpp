@@ -45,7 +45,7 @@
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 
-MallocMemorySnapshot MallocMemorySummary::_snapshot;
+DeferredStatic<MallocMemorySnapshot> MallocMemorySummary::_snapshot;
 
 void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
@@ -65,7 +65,11 @@ void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
   // Use lock to make sure that mtChunks don't get deallocated while the
   // copy is going on, because their size is adjusted using this
   // buffer in make_adjustment().
-  ChunkPoolLocker lock;
+  ChunkPoolLocker::LockStrategy ls = ChunkPoolLocker::LockStrategy::Lock;
+  if (VMError::is_error_reported() && VMError::is_error_reported_in_current_thread()) {
+    ls = ChunkPoolLocker::LockStrategy::Try;
+  }
+  ChunkPoolLocker cpl(ls);
   s->_all_mallocs = _all_mallocs;
   size_t total_size = 0;
   size_t total_count = 0;
@@ -97,7 +101,7 @@ void MallocMemorySnapshot::make_adjustment() {
 }
 
 void MallocMemorySummary::initialize() {
-  // Uses placement new operator to initialize static area.
+  _snapshot.initialize();
   MallocLimitHandler::initialize(MallocLimit);
 }
 
@@ -195,7 +199,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemTag mem_ta
     assert(header2->mem_tag() == mem_tag, "Wrong memory tag");
   }
 #endif
-
+  MallocHeader::revive_block(memblock);
   return memblock;
 }
 
@@ -203,7 +207,7 @@ void* MallocTracker::record_free_block(void* memblock) {
   assert(MemTracker::enabled(), "Sanity");
   assert(memblock != nullptr, "precondition");
 
-  MallocHeader* header = MallocHeader::resolve_checked(memblock);
+  MallocHeader* header = MallocHeader::kill_block(memblock);
 
   deaccount(header->free_info());
 
@@ -214,7 +218,6 @@ void* MallocTracker::record_free_block(void* memblock) {
   }
 
   header->mark_block_as_dead();
-
   return (void*)header;
 }
 

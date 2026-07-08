@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
@@ -242,6 +243,16 @@ static LPVOID virtualAllocExNuma(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSiz
   return result;
 }
 
+void* os::win32::lookup_kernelbase_symbol(const char* name) {
+  // Pass a small ebuf so dll_load logs failures, but don't use it here to avoid redundancy.
+  char ebuf[1024];
+  static void* const handle = os::dll_load("KernelBase", ebuf, sizeof(ebuf));
+  if (handle == nullptr) {
+    return nullptr;
+  }
+  return os::dll_lookup(handle, name);
+}
+
 // Logging wrapper for MapViewOfFileEx
 static LPVOID mapViewOfFileEx(HANDLE hFileMappingObject, DWORD  dwDesiredAccess, DWORD  dwFileOffsetHigh,
                               DWORD  dwFileOffsetLow, SIZE_T dwNumberOfBytesToMap, LPVOID lpBaseAddress) {
@@ -333,14 +344,14 @@ void os::init_system_properties_values() {
     home_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + 1, mtInternal);
     strcpy(home_path, home_dir);
     Arguments::set_java_home(home_path);
-    FREE_C_HEAP_ARRAY(char, home_path);
+    FREE_C_HEAP_ARRAY(home_path);
 
     dll_path = NEW_C_HEAP_ARRAY(char, strlen(home_dir) + strlen(bin) + 1,
                                 mtInternal);
     strcpy(dll_path, home_dir);
     strcat(dll_path, bin);
     Arguments::set_dll_dir(dll_path);
-    FREE_C_HEAP_ARRAY(char, dll_path);
+    FREE_C_HEAP_ARRAY(dll_path);
 
     if (!set_boot_path('\\', ';')) {
       vm_exit_during_initialization("Failed setting boot class path.", nullptr);
@@ -395,7 +406,7 @@ void os::init_system_properties_values() {
     strcat(library_path, ";.");
 
     Arguments::set_library_path(library_path);
-    FREE_C_HEAP_ARRAY(char, library_path);
+    FREE_C_HEAP_ARRAY(library_path);
   }
 
   // Default extensions directory
@@ -464,36 +475,63 @@ void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   *stack_size = size;
 }
 
-bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
-  MEMORY_BASIC_INFORMATION minfo;
-  committed_start = nullptr;
-  committed_size = 0;
-  address top = start + size;
-  const address start_addr = start;
-  while (start < top) {
-    VirtualQuery(start, &minfo, sizeof(minfo));
-    if ((minfo.State & MEM_COMMIT) == 0) {  // not committed
-      if (committed_start != nullptr) {
-        break;
-      }
-    } else {  // committed
-      if (committed_start == nullptr) {
-        committed_start = start;
-      }
-      size_t offset = start - (address)minfo.BaseAddress;
-      committed_size += minfo.RegionSize - offset;
-    }
-    start = (address)minfo.BaseAddress + minfo.RegionSize;
-  }
+bool os::first_resident_in_range(address start, size_t size, address& resident_start, size_t& resident_size) {
+  constexpr size_t stripe = 1024;  // query this many pages each time
+  PSAPI_WORKING_SET_EX_INFORMATION wsinfo[stripe];
 
-  if (committed_start == nullptr) {
-    assert(committed_size == 0, "Sanity");
-    return false;
-  } else {
-    assert(committed_start >= start_addr && committed_start < top, "Out of range");
-    // current region may go beyond the limit, trim to the limit
-    committed_size = MIN2(committed_size, size_t(top - committed_start));
+  size_t page_sz = os::vm_page_size();
+  uintx pages_left = size / page_sz;
+
+  assert(is_aligned(start, page_sz), "Start address must be page aligned");
+  assert(is_aligned(size, page_sz), "Size must be page aligned");
+
+  resident_start = nullptr;
+
+  uintx loops = (pages_left + stripe - 1) / stripe;
+  uintx resident_pages = 0;
+  address pos = start;
+  bool found_range = false;
+
+  for (uintx index = 0; index < loops && !found_range; index++) {
+    assert(pages_left > 0, "Nothing to do");
+    uintx pages_to_query = MIN2(pages_left, stripe);
+    pages_left -= pages_to_query;
+
+    for (uintx i = 0; i < pages_to_query; i++) {
+      wsinfo[i].VirtualAddress = (PVOID)(pos + i * page_sz);
+    }
+
+    BOOL success = QueryWorkingSetEx(GetCurrentProcess(), wsinfo, pages_to_query * sizeof(PSAPI_WORKING_SET_EX_INFORMATION));
+    if (!success) {
+      return false;
+    }
+
+    for (uintx i = 0; i < pages_to_query; i++) {
+      if (wsinfo[i].VirtualAttributes.Valid == 0) {
+        if (resident_start != nullptr) {
+          found_range = true;
+          break;
+        }
+        // Still searching for start of resident region
+      } else {
+        if (resident_start == nullptr) {
+          // Found first resident page in region
+          resident_start = pos + i * page_sz;
+        }
+        resident_pages++;
+      }
+    }
+    pos += pages_to_query * page_sz;
+  }
+  if (resident_start != nullptr) {
+    assert(resident_pages > 0, "Must have a resident region");
+    assert(resident_pages <= size / page_sz, "Resident size exceeds region size");
+    assert(resident_start >= start && resident_start < start + size, "Out of range");
+    resident_size = page_sz * resident_pages;
     return true;
+  } else {
+    assert(resident_pages == 0, "Should not have a resident region");
+    return false;
   }
 }
 
@@ -533,13 +571,6 @@ static unsigned thread_native_entry(void* t) {
 
   OSThread* osthr = thread->osthread();
   assert(osthr->get_state() == RUNNABLE, "invalid os thread state");
-
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
 
   // Diagnostic code to investigate JDK-6573254
   int res = 30115;  // non-java thread
@@ -597,13 +628,6 @@ static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
   // Store info on the Win32 thread into the OSThread
   osthread->set_thread_handle(thread_handle);
   osthread->set_thread_id(thread_id);
-
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
 
   // Initial thread state is INITIALIZED, not SUSPENDED
   osthread->set_state(INITIALIZED);
@@ -848,22 +872,30 @@ jlong os::elapsed_frequency() {
 }
 
 
-bool os::available_memory(size_t& value) {
+bool os::available_memory(physical_memory_size_type& value) {
   return win32::available_memory(value);
 }
 
-bool os::free_memory(size_t& value) {
+bool os::Machine::available_memory(physical_memory_size_type& value) {
   return win32::available_memory(value);
 }
 
-bool os::win32::available_memory(size_t& value) {
+bool os::free_memory(physical_memory_size_type& value) {
+  return win32::available_memory(value);
+}
+
+bool os::Machine::free_memory(physical_memory_size_type& value) {
+  return win32::available_memory(value);
+}
+
+bool os::win32::available_memory(physical_memory_size_type& value) {
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (res == TRUE) {
-    value = static_cast<size_t>(ms.ullAvailPhys);
+    value = static_cast<physical_memory_size_type>(ms.ullAvailPhys);
     return true;
   } else {
     assert(false, "GlobalMemoryStatusEx failed in os::win32::available_memory(): %lu", ::GetLastError());
@@ -871,12 +903,16 @@ bool os::win32::available_memory(size_t& value) {
   }
 }
 
-bool os::total_swap_space(size_t& value) {
+bool os::total_swap_space(physical_memory_size_type& value)  {
+  return Machine::total_swap_space(value);
+}
+
+bool os::Machine::total_swap_space(physical_memory_size_type& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (res == TRUE) {
-    value = static_cast<size_t>(ms.ullTotalPageFile);
+    value = static_cast<physical_memory_size_type>(ms.ullTotalPageFile);
     return true;
   } else {
     assert(false, "GlobalMemoryStatusEx failed in os::total_swap_space(): %lu", ::GetLastError());
@@ -884,12 +920,16 @@ bool os::total_swap_space(size_t& value) {
   }
 }
 
-bool os::free_swap_space(size_t& value) {
+bool os::free_swap_space(physical_memory_size_type& value) {
+  return Machine::free_swap_space(value);
+}
+
+bool os::Machine::free_swap_space(physical_memory_size_type& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (res == TRUE) {
-    value = static_cast<size_t>(ms.ullAvailPageFile);
+    value = static_cast<physical_memory_size_type>(ms.ullAvailPageFile);
     return true;
   } else {
     assert(false, "GlobalMemoryStatusEx failed in os::free_swap_space(): %lu", ::GetLastError());
@@ -897,7 +937,11 @@ bool os::free_swap_space(size_t& value) {
   }
 }
 
-size_t os::physical_memory() {
+physical_memory_size_type os::physical_memory() {
+  return win32::physical_memory();
+}
+
+physical_memory_size_type os::Machine::physical_memory() {
   return win32::physical_memory();
 }
 
@@ -924,6 +968,10 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
+  return Machine::active_processor_count();
+}
+
+int os::Machine::active_processor_count() {
   bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
   if (UseAllWindowsProcessorGroups && !schedules_all_processor_groups && !win32::processor_group_warning_displayed()) {
     win32::set_processor_group_warning_displayed(true);
@@ -1068,7 +1116,7 @@ void os::set_native_thread_name(const char *name) {
       HRESULT hr = _SetThreadDescription(current, unicode_name);
       if (FAILED(hr)) {
         log_debug(os, thread)("set_native_thread_name: SetThreadDescription failed - falling back to debugger method");
-        FREE_C_HEAP_ARRAY(WCHAR, unicode_name);
+        FREE_C_HEAP_ARRAY(unicode_name);
       } else {
         log_trace(os, thread)("set_native_thread_name: SetThreadDescription succeeded - new name: %s", name);
 
@@ -1091,7 +1139,7 @@ void os::set_native_thread_name(const char *name) {
           LocalFree(thread_name);
         }
 #endif
-        FREE_C_HEAP_ARRAY(WCHAR, unicode_name);
+        FREE_C_HEAP_ARRAY(unicode_name);
         return;
       }
     } else {
@@ -1729,6 +1777,8 @@ static int _print_module(const char* fname, address base_address,
 // same architecture as Hotspot is running on
 void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", name);
+  Events::log_dll_message(nullptr, "Attempting to load shared library %s", name);
+
   void* result;
   JFR_ONLY(NativeLibraryLoadEvent load_event(name, &result);)
   result = LoadLibrary(name);
@@ -1841,12 +1891,12 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch_str != nullptr) {
-    os::snprintf_checked(ebuf, ebuflen - 1,
+    os::snprintf_checked(ebuf, ebuflen,
                          "Can't load %s-bit .dll on a %s-bit platform",
                          lib_arch_str, running_arch_str);
   } else {
     // don't know what architecture this dll was build for
-    os::snprintf_checked(ebuf, ebuflen - 1,
+    os::snprintf_checked(ebuf, ebuflen,
                          "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
                          lib_arch, running_arch_str);
   }
@@ -2515,12 +2565,6 @@ LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
-
-// Used for PostMortemDump
-extern "C" void safepoints();
-extern "C" void find(int x);
-extern "C" void events();
-
 // According to Windows API documentation, an illegal instruction sequence should generate
 // the 0xC000001C exception code. However, real world experience shows that occasionnaly
 // the execution of an illegal instruction can generate the exception code 0xC000001E. This
@@ -2644,14 +2688,13 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   DWORD exception_code = exception_record->ExceptionCode;
 #if defined(_M_ARM64)
   address pc = (address) exceptionInfo->ContextRecord->Pc;
+
+  if (handle_safefetch(exception_code, pc, (void*)exceptionInfo->ContextRecord)) {
+    return EXCEPTION_CONTINUE_EXECUTION;
+  }
 #elif defined(_M_AMD64)
   address pc = (address) exceptionInfo->ContextRecord->Rip;
-#else
-  #error unknown architecture
-#endif
-  Thread* t = Thread::current_or_null_safe();
 
-#if defined(_M_AMD64)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr(pc)) {
     // Verify that OS save/restore AVX registers.
@@ -2664,6 +2707,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     VM_Version::clear_apx_test_state();
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
   }
+#else
+  #error unknown architecture
 #endif
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -2674,6 +2719,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   }
 #endif
 
+  Thread* t = Thread::current_or_null_safe();
   if (t != nullptr && t->is_Java_thread()) {
     JavaThread* thread = JavaThread::cast(t);
     bool in_java = thread->thread_state() == _thread_in_Java;
@@ -2704,10 +2750,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         // Fatal red zone violation.
         overflow_state->disable_stack_red_zone();
         tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
-#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
         report_error(t, exception_code, pc, exception_record,
                       exceptionInfo->ContextRecord);
-#endif
         return EXCEPTION_CONTINUE_SEARCH;
       }
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
@@ -2759,10 +2803,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       }
 
       // Stack overflow or null pointer exception in native code.
-#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
       report_error(t, exception_code, pc, exception_record,
                    exceptionInfo->ContextRecord);
-#endif
       return EXCEPTION_CONTINUE_SEARCH;
     } // /EXCEPTION_ACCESS_VIOLATION
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2811,9 +2853,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         if (cb != nullptr && cb->is_nmethod()) {
           nmethod* nm = cb->as_nmethod();
           frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
-          address deopt = nm->is_method_handle_return(pc) ?
-            nm->deopt_mh_handler_begin() :
-            nm->deopt_handler_begin();
+          address deopt = nm->deopt_handler_entry();
           assert(nm->insts_contains_inclusive(pc), "");
           nm->set_original_pc(&fr, pc);
           // Set pc to handler
@@ -2824,41 +2864,21 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     }
   }
 
-#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
-  if (exception_code != EXCEPTION_BREAKPOINT) {
+  bool should_report_error = (exception_code != EXCEPTION_BREAKPOINT);
+
+#if defined(_M_ARM64)
+  should_report_error = should_report_error &&
+                        FAILED(exception_code) &&
+                        (exception_code != EXCEPTION_UNCAUGHT_CXX_EXCEPTION);
+#endif
+
+  if (should_report_error) {
     report_error(t, exception_code, pc, exception_record,
                  exceptionInfo->ContextRecord);
   }
-#endif
-  return EXCEPTION_CONTINUE_SEARCH;
-}
-
-#if defined(USE_VECTORED_EXCEPTION_HANDLING)
-LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-#if defined(_M_ARM64)
-  address pc = (address) exceptionInfo->ContextRecord->Pc;
-#elif defined(_M_AMD64)
-  address pc = (address) exceptionInfo->ContextRecord->Rip;
-#else
-  #error unknown architecture
-#endif
-
-  // Fast path for code part of the code cache
-  if (CodeCache::low_bound() <= pc && pc < CodeCache::high_bound()) {
-    return topLevelExceptionFilter(exceptionInfo);
-  }
-
-  // If the exception occurred in the codeCache, pass control
-  // to our normal exception handler.
-  CodeBlob* cb = CodeCache::find_blob(pc);
-  if (cb != nullptr) {
-    return topLevelExceptionFilter(exceptionInfo);
-  }
 
   return EXCEPTION_CONTINUE_SEARCH;
 }
-#endif
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
 LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
@@ -2914,7 +2934,7 @@ class NUMANodeListHolder {
   int _numa_used_node_count;
 
   void free_node_list() {
-    FREE_C_HEAP_ARRAY(int, _numa_used_node_list);
+    FREE_C_HEAP_ARRAY(_numa_used_node_list);
   }
 
  public:
@@ -3188,7 +3208,6 @@ void os::large_page_init() {
   _large_page_size = os::win32::large_page_init_decide_size();
   const size_t default_page_size = os::vm_page_size();
   if (_large_page_size > default_page_size) {
-#if !defined(IA32)
     if (EnableAllLargePageSizesForWindows) {
       size_t min_size = GetLargePageMinimum();
 
@@ -3197,7 +3216,6 @@ void os::large_page_init() {
         _page_sizes.add(page_size);
       }
     }
-#endif
 
     _page_sizes.add(_large_page_size);
   }
@@ -3242,9 +3260,9 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
   assert(fd != -1, "File descriptor is not valid");
 
   HANDLE fh = (HANDLE)_get_osfhandle(fd);
-  HANDLE fileMapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,
+  HANDLE file_mapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,
     (DWORD)(size >> 32), (DWORD)(size & 0xFFFFFFFF), nullptr);
-  if (fileMapping == nullptr) {
+  if (file_mapping == nullptr) {
     if (GetLastError() == ERROR_DISK_FULL) {
       vm_exit_during_initialization(err_msg("Could not allocate sufficient disk space for Java heap"));
     }
@@ -3255,9 +3273,9 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
     return nullptr;
   }
 
-  LPVOID addr = mapViewOfFileEx(fileMapping, FILE_MAP_WRITE, 0, 0, size, base);
+  LPVOID addr = mapViewOfFileEx(file_mapping, FILE_MAP_WRITE, 0, 0, size, base);
 
-  CloseHandle(fileMapping);
+  CloseHandle(file_mapping);
 
   return (char*)addr;
 }
@@ -3270,47 +3288,159 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   return map_memory_to_file(base, size, fd);
 }
 
+// VirtualAlloc2 / MapViewOfFile3 (Windows 1803+). Resolved in os::init_2() via lookup_kernelbase_symbol.
+os::win32::VirtualAlloc2Fn os::win32::VirtualAlloc2 = nullptr;
+
+os::win32::MapViewOfFile3Fn os::win32::MapViewOfFile3 = nullptr;
+
+static bool is_VirtualAlloc2_supported() {
+  return os::win32::VirtualAlloc2 != nullptr;
+}
+
+static bool is_MapViewOfFile3_supported() {
+  return os::win32::MapViewOfFile3 != nullptr;
+}
+
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
+static char* reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
-      "Alignment must be a multiple of allocation granularity (page size)");
+      "Alignment must be a multiple of allocation granularity");
   assert(is_aligned(size, os::vm_allocation_granularity()),
-      "Size must be a multiple of allocation granularity (page size)");
+      "Size must be a multiple of allocation granularity");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
 
   char* aligned_base = nullptr;
-  static const int max_attempts = 20;
+  constexpr int max_attempts = 20;
 
   for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
-    char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc, mem_tag) :
-                                         os::reserve_memory(extra_size, mem_tag);
+    char* extra_base = os::reserve_memory(extra_size, mem_tag);
     if (extra_base == nullptr) {
       return nullptr;
     }
-    // Do manual alignment
     aligned_base = align_up(extra_base, alignment);
+    os::release_memory(extra_base, extra_size);
 
-    bool rc = (file_desc != -1) ? os::unmap_memory(extra_base, extra_size) :
-                                  os::release_memory(extra_base, extra_size);
-    assert(rc, "release failed");
-    if (!rc) {
+    // A racing thread may have taken this region instead of us, which is why we loop and retry.
+    aligned_base = os::attempt_reserve_memory_at(aligned_base, size, mem_tag);
+  }
+
+  assert(aligned_base != nullptr,
+      "Did not manage to reserve after %d attempts (size %zu, alignment %zu)", max_attempts, size, alignment);
+
+  return aligned_base;
+}
+
+// Similar to reserve_memory_aligned, other reservation/mapping requests can race with this function.
+static char* map_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
+      "Alignment must be a multiple of allocation granularity");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+      "Size must be a multiple of allocation granularity");
+
+  size_t extra_size = size + alignment;
+  assert(extra_size >= size, "overflow, size is too large to allow alignment");
+
+  char* aligned_base = nullptr;
+  constexpr int max_attempts = 20;
+
+  for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
+    char* extra_base = os::map_memory_to_file(extra_size, file_desc, mem_tag);
+    if (extra_base == nullptr) {
       return nullptr;
     }
+    aligned_base = align_up(extra_base, alignment);
+    os::unmap_memory(extra_base, extra_size);
 
-    // Attempt to map, into the just vacated space, the slightly smaller aligned area.
-    // Which may fail, hence the loop.
-    aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, mem_tag) :
-                                     os::attempt_reserve_memory_at(aligned_base, size, mem_tag);
+    // A racing thread may have taken this region instead of us, which is why we loop and retry.
+    aligned_base = os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, mem_tag);
   }
 
   assert(aligned_base != nullptr,
       "Did not manage to re-map after %d attempts (size %zu, alignment %zu, file descriptor %d)", max_attempts, size, alignment, file_desc);
 
   return aligned_base;
+}
+
+// MapViewOfFile3 supports alignment natively.
+static char* map_memory_aligned_va2(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
+  assert(file_desc != -1, "File descriptor should not be -1");
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
+         "Alignment must be a multiple of allocation granularity");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+         "Size must be a multiple of allocation granularity");
+
+  MEM_ADDRESS_REQUIREMENTS requirements = {0};
+  requirements.Alignment = alignment;
+
+  MEM_EXTENDED_PARAMETER param = {0};
+  param.Type = MemExtendedParameterAddressRequirements;
+  param.Pointer = &requirements;
+
+  char* aligned_base = nullptr;
+
+  // File-backed aligned mapping.
+  HANDLE fh = (HANDLE)_get_osfhandle(file_desc);
+  HANDLE file_mapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,(DWORD)(size >> 32), (DWORD)(size & 0xFFFFFFFF), nullptr);
+  DWORD err = GetLastError();
+  if (file_mapping != nullptr) {
+    aligned_base = (char*)os::win32::MapViewOfFile3(
+            file_mapping,
+            GetCurrentProcess(),
+            nullptr,  // let the system choose an aligned address
+            0,        // offset
+            size,
+            0,        // no special allocation type flags
+            PAGE_READWRITE,
+            &param, 1);
+    err = GetLastError();
+    CloseHandle(file_mapping);
+  }
+
+  if (aligned_base != nullptr) {
+    assert(is_aligned(aligned_base, alignment), "Result must be aligned");
+    MemTracker::record_virtual_memory_reserve_and_commit(aligned_base, size, CALLER_PC, mem_tag);
+    return aligned_base;
+  }
+  log_trace(os)("Aligned allocation via MapViewOfFile3 failed, falling back to retry loop. GetLastError->%lu.", err);
+  return map_memory_aligned(size, alignment, file_desc, mem_tag);
+}
+
+// VirtualAlloc2 supports alignment natively.
+static char* reserve_memory_aligned_va2(size_t size, size_t alignment, MemTag mem_tag) {
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
+         "Alignment must be a multiple of allocation granularity");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+         "Size must be a multiple of allocation granularity");
+
+  MEM_ADDRESS_REQUIREMENTS requirements = {0};
+  requirements.Alignment = alignment;
+
+  MEM_EXTENDED_PARAMETER param = {0};
+  param.Type = MemExtendedParameterAddressRequirements;
+  param.Pointer = &requirements;
+
+  char* aligned_base = nullptr;
+
+  // Anonymous aligned reservation.
+  aligned_base = (char*)os::win32::VirtualAlloc2(
+          GetCurrentProcess(),
+          nullptr,  // let the system choose an aligned address
+          size,
+          MEM_RESERVE,
+          PAGE_READWRITE,
+          &param, 1);
+
+  if (aligned_base != nullptr) {
+    assert(is_aligned(aligned_base, alignment), "Result must be aligned");
+    MemTracker::record_virtual_memory_reserve(aligned_base, size, CALLER_PC, mem_tag);
+    return aligned_base;
+  }
+  log_trace(os)("Aligned allocation via VirtualAlloc2 failed, falling back to retry loop. GetLastError->%lu.", GetLastError());
+  return reserve_memory_aligned(size, alignment, mem_tag);
 }
 
 size_t os::commit_memory_limit() {
@@ -3360,11 +3490,17 @@ size_t os::reserve_memory_limit() {
 
 char* os::reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag, bool exec) {
   // exec can be ignored
-  return map_or_reserve_memory_aligned(size, alignment, -1/* file_desc */, mem_tag);
+  if (is_VirtualAlloc2_supported()) {
+    return reserve_memory_aligned_va2(size, alignment, mem_tag);
+  }
+  return reserve_memory_aligned(size, alignment, mem_tag);
 }
 
 char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag) {
-  return map_or_reserve_memory_aligned(size, alignment, fd, mem_tag);
+  if (is_MapViewOfFile3_supported()) {
+    return map_memory_aligned_va2(size, alignment, fd, mem_tag);
+  }
+  return map_memory_aligned(size, alignment, fd, mem_tag);
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
@@ -3531,11 +3667,6 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
   return reserve_large_pages(bytes, addr, exec);
 }
 
-bool os::pd_release_memory_special(char* base, size_t bytes) {
-  assert(base != nullptr, "Sanity check");
-  return pd_release_memory(base, bytes);
-}
-
 static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec) {
   int err = os::get_last_error();
   char buf[256];
@@ -3694,8 +3825,8 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
   return os::commit_memory(addr, size, !ExecMem);
 }
 
-bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  return os::uncommit_memory(addr, size);
+void os::remove_stack_guard_pages(char* addr, size_t size) {
+  os::uncommit_memory(addr, size);
 }
 
 static bool protect_pages_individually(char* addr, size_t bytes, unsigned int p, DWORD *old_status) {
@@ -3792,6 +3923,7 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   return page_size;
 }
 
+void os::numa_set_thread_affinity(Thread *thread, int node) { }
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 size_t os::numa_get_groups_num()                       { return MAX2(numa_node_list_holder.get_count(), 1); }
@@ -3961,25 +4093,25 @@ int os::current_process_id() {
   return (_initial_pid ? _initial_pid : _getpid());
 }
 
-int    os::win32::_processor_type            = 0;
+int                       os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
-int    os::win32::_processor_level           = 0;
-size_t os::win32::_physical_memory           = 0;
+int                       os::win32::_processor_level           = 0;
+physical_memory_size_type os::win32::_physical_memory           = 0;
 
-bool   os::win32::_is_windows_server         = false;
+bool                      os::win32::_is_windows_server         = false;
 
 // 6573254
 // Currently, the bug is observed across all the supported Windows releases,
 // including the latest one (as of this writing - Windows Server 2012 R2)
-bool   os::win32::_has_exit_bug              = true;
+bool                      os::win32::_has_exit_bug              = true;
 
-int    os::win32::_major_version             = 0;
-int    os::win32::_minor_version             = 0;
-int    os::win32::_build_number              = 0;
-int    os::win32::_build_minor               = 0;
+int                       os::win32::_major_version             = 0;
+int                       os::win32::_minor_version             = 0;
+int                       os::win32::_build_number              = 0;
+int                       os::win32::_build_minor               = 0;
 
-bool   os::win32::_processor_group_warning_displayed = false;
-bool   os::win32::_job_object_processor_group_warning_displayed = false;
+bool                      os::win32::_processor_group_warning_displayed = false;
+bool                      os::win32::_job_object_processor_group_warning_displayed = false;
 
 void getWindowsInstallationType(char* buffer, int bufferSize) {
   HKEY hKey;
@@ -4198,12 +4330,7 @@ void os::win32::initialize_system_info() {
   if (res != TRUE) {
     assert(false, "GlobalMemoryStatusEx failed in os::win32::initialize_system_info(): %lu", ::GetLastError());
   }
-  _physical_memory = static_cast<size_t>(ms.ullTotalPhys);
-
-  if (FLAG_IS_DEFAULT(MaxRAM)) {
-    // Adjust MaxRAM according to the maximum virtual address space available.
-    FLAG_SET_DEFAULT(MaxRAM, MIN2(MaxRAM, (uint64_t) ms.ullTotalVirtual));
-  }
+  _physical_memory = static_cast<physical_memory_size_type>(ms.ullTotalPhys);
 
   _is_windows_server = IsWindowsServer();
 
@@ -4535,7 +4662,7 @@ jint os::init_2(void) {
   // Setup Windows Exceptions
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
-  topLevelVectoredExceptionHandler = AddVectoredExceptionHandler(1, topLevelVectoredExceptionFilter);
+  topLevelVectoredExceptionHandler = AddVectoredExceptionHandler(1, topLevelExceptionFilter);
   previousUnhandledExceptionFilter = SetUnhandledExceptionFilter(topLevelUnhandledExceptionFilter);
 #endif
 
@@ -4590,21 +4717,21 @@ jint os::init_2(void) {
 
   // Lookup SetThreadDescription - the docs state we must use runtime-linking of
   // kernelbase.dll, so that is what we do.
-  HINSTANCE _kernelbase = LoadLibrary(TEXT("kernelbase.dll"));
-  if (_kernelbase != nullptr) {
-    _SetThreadDescription =
-      reinterpret_cast<SetThreadDescriptionFnPtr>(
-                                                  GetProcAddress(_kernelbase,
-                                                                 "SetThreadDescription"));
+  _SetThreadDescription = reinterpret_cast<SetThreadDescriptionFnPtr>(
+      os::win32::lookup_kernelbase_symbol("SetThreadDescription"));
 #ifdef ASSERT
-    _GetThreadDescription =
-      reinterpret_cast<GetThreadDescriptionFnPtr>(
-                                                  GetProcAddress(_kernelbase,
-                                                                 "GetThreadDescription"));
+  _GetThreadDescription = reinterpret_cast<GetThreadDescriptionFnPtr>(
+      os::win32::lookup_kernelbase_symbol("GetThreadDescription"));
 #endif
-  }
   log_info(os, thread)("The SetThreadDescription API is%s available.", _SetThreadDescription == nullptr ? " not" : "");
 
+  // Prepare KernelBase APIs (VirtualAlloc2, MapViewOfFile3) if available (Windows version 1803).
+  os::win32::VirtualAlloc2 = reinterpret_cast<os::win32::VirtualAlloc2Fn>(
+      os::win32::lookup_kernelbase_symbol("VirtualAlloc2"));
+  os::win32::MapViewOfFile3 = reinterpret_cast<os::win32::MapViewOfFile3Fn>(
+      os::win32::lookup_kernelbase_symbol("MapViewOfFile3"));
+  log_debug(os)("VirtualAlloc2 is%s available.", os::win32::VirtualAlloc2 == nullptr ? " not" : "");
+  log_debug(os)("MapViewOfFile3 is%s available.", os::win32::MapViewOfFile3 == nullptr ? " not" : "");
 
   return JNI_OK;
 }
@@ -4773,7 +4900,7 @@ static wchar_t* wide_abs_unc_path(char const* path, errno_t & err, int additiona
 
   LPWSTR unicode_path = nullptr;
   err = convert_to_unicode(buf, &unicode_path);
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
   if (err != ERROR_SUCCESS) {
     return nullptr;
   }
@@ -4801,9 +4928,9 @@ static wchar_t* wide_abs_unc_path(char const* path, errno_t & err, int additiona
   }
 
   if (converted_path != unicode_path) {
-    FREE_C_HEAP_ARRAY(WCHAR, converted_path);
+    FREE_C_HEAP_ARRAY(converted_path);
   }
-  FREE_C_HEAP_ARRAY(WCHAR, unicode_path);
+  FREE_C_HEAP_ARRAY(unicode_path);
 
   return static_cast<wchar_t*>(result); // LPWSTR and wchat_t* are the same type on Windows.
 }
@@ -4824,8 +4951,8 @@ int os::stat(const char *path, struct stat *sbuf) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr) {
       // it is a symbolic link, but we failed to resolve it
-      errno = ENOENT;
       os::free(wide_path);
+      errno = ENOENT;
       return -1;
     }
   }
@@ -4836,14 +4963,14 @@ int os::stat(const char *path, struct stat *sbuf) {
   // if getting attributes failed, GetLastError should be called immediately after that
   if (!bret) {
     DWORD errcode = ::GetLastError();
+    log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%lu.", errcode);
+    os::free(wide_path);
+    os::free(path_to_target);
     if (errcode == ERROR_FILE_NOT_FOUND || errcode == ERROR_PATH_NOT_FOUND) {
       errno = ENOENT;
     } else {
       errno = 0;
     }
-    log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%lu.", errcode);
-    os::free(wide_path);
-    os::free(path_to_target);
     return -1;
   }
 
@@ -5042,8 +5169,8 @@ int os::open(const char *path, int oflag, int mode) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr) {
       // it is a symbolic link, but we failed to resolve it
-      errno = ENOENT;
       os::free(wide_path);
+      errno = ENOENT;
       return -1;
     }
   }
@@ -5137,6 +5264,13 @@ jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::_lseeki64(fd, (__int64)offset, SEEK_SET);
 }
 
+int64_t os::ftell(FILE* file) {
+  return ::_ftelli64(file);
+}
+
+int os::fseek(FILE* file, int64_t offset, int whence) {
+  return ::_fseeki64(file,offset, whence);
+}
 
 jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) ::_lseeki64(fd, offset, whence);
@@ -5317,6 +5451,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
+    ErrnoPreserver ep;
     permit_forbidden_function::free(p); // *not* os::free
   }
   return result;
@@ -5848,7 +5983,7 @@ int os::fork_and_exec(const char* cmd) {
     exit_code = -1;
   }
 
-  FREE_C_HEAP_ARRAY(char, cmd_string);
+  FREE_C_HEAP_ARRAY(cmd_string);
   return (int)exit_code;
 }
 
@@ -5923,6 +6058,11 @@ static inline HANDLE get_thread_handle_for_extended_context(DWORD tid) {
 // Thread sampling implementation
 //
 void SuspendedThreadTask::internal_do_task() {
+#if INCLUDE_JFR
+  assert(NOT_COMPILER2(true) COMPILER2_PRESENT(!HotCodeHeap) ||
+         SuspendedThreadTask_lock->owned_by_self(),
+         "suspend/resume must be serialized when HotCodeHeap is enabled");
+#endif
   const HANDLE h = get_thread_handle_for_extended_context(_thread->osthread()->thread_id());
   if (h == nullptr) {
     return;
@@ -6247,7 +6387,7 @@ void os::jfr_report_memory_info() {
     // Send the RSS JFR event
     EventResidentSetSize event;
     event.set_size(pmex.WorkingSetSize);
-    event.set_peak(pmex.PeakWorkingSetSize);
+    event.set_peak(MAX2(pmex.PeakWorkingSetSize, pmex.WorkingSetSize));
     event.commit();
   } else {
     // Log a warning
@@ -6296,4 +6436,111 @@ const void* os::get_saved_assert_context(const void** sigInfo) {
   }
   *sigInfo = nullptr;
   return nullptr;
+}
+
+void os::print_open_file_descriptors(outputStream* st) {
+  // File descriptor counting not supported on Windows.
+}
+
+/*
+ * Windows/x64 does not use stack frames the way expected by Java:
+ * [1] in most cases, there is no frame pointer. All locals are addressed via RSP
+ * [2] in rare cases, when alloca() is used, a frame pointer is used, but this may
+ *     not be RBP.
+ * See http://msdn.microsoft.com/en-us/library/ew5tede7.aspx
+ *
+ * So it's not possible to print the native stack using the
+ *     while (...) {...  fr = os::get_sender_for_C_frame(&fr); }
+ * loop in vmError.cpp. We need to roll our own loop.
+ * This approach works for Windows AArch64 as well.
+ */
+bool os::win32::platform_print_native_stack(outputStream* st, const void* context,
+                                            char* buf, int buf_size, address& lastpc)
+{
+  CONTEXT ctx;
+  if (context != nullptr) {
+    memcpy(&ctx, context, sizeof(ctx));
+  } else {
+    RtlCaptureContext(&ctx);
+  }
+
+  st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
+
+  DWORD machine_type;
+  STACKFRAME stk;
+  memset(&stk, 0, sizeof(stk));
+  stk.AddrStack.Mode      = AddrModeFlat;
+  stk.AddrFrame.Mode      = AddrModeFlat;
+  stk.AddrPC.Mode         = AddrModeFlat;
+
+#if defined(_M_AMD64)
+  stk.AddrStack.Offset    = ctx.Rsp;
+  stk.AddrFrame.Offset    = ctx.Rbp;
+  stk.AddrPC.Offset       = ctx.Rip;
+  machine_type            = IMAGE_FILE_MACHINE_AMD64;
+#elif defined(_M_ARM64)
+  stk.AddrStack.Offset    = ctx.Sp;
+  stk.AddrFrame.Offset    = ctx.Fp;
+  stk.AddrPC.Offset       = ctx.Pc;
+  machine_type            = IMAGE_FILE_MACHINE_ARM64;
+#else
+  #error unknown architecture
+#endif
+
+  // Ensure we consider dynamically loaded DLLs
+  SymbolEngine::refreshModuleList();
+
+  int count = 0;
+  address lastpc_internal = 0;
+  while (count++ < StackPrintLimit) {
+    intptr_t* sp = (intptr_t*)stk.AddrStack.Offset;
+    intptr_t* fp = (intptr_t*)stk.AddrFrame.Offset; // NOT necessarily the same as ctx.Rbp!
+    address pc = (address)stk.AddrPC.Offset;
+
+    if (pc != nullptr) {
+      if (count == 2 && lastpc_internal == pc) {
+        // Skip it -- StackWalk64() may return the same PC
+        // (but different SP) on the first try.
+      } else {
+        // Don't try to create a frame(sp, fp, pc) -- on WinX64, stk.AddrFrame
+        // may not contain what Java expects, and may cause the frame() constructor
+        // to crash. Let's just print out the symbolic address.
+        frame::print_C_frame(st, buf, buf_size, pc);
+        // print source file and line, if available
+        char buf[128];
+        int line_no;
+        if (SymbolEngine::get_source_info(pc, buf, sizeof(buf), &line_no)) {
+          st->print("  (%s:%d)", buf, line_no);
+        } else {
+          st->print("  (no source info available)");
+        }
+        st->cr();
+      }
+      lastpc_internal = pc;
+    }
+
+    PVOID p = WindowsDbgHelp::symFunctionTableAccess64(GetCurrentProcess(), stk.AddrPC.Offset);
+    if (p == nullptr) {
+      // StackWalk64() can't handle this PC. Calling StackWalk64 again may cause crash.
+      lastpc = lastpc_internal;
+      break;
+    }
+
+    BOOL result = WindowsDbgHelp::stackWalk64(
+        machine_type,              // __in      DWORD MachineType,
+        GetCurrentProcess(),       // __in      HANDLE hProcess,
+        GetCurrentThread(),        // __in      HANDLE hThread,
+        &stk,                      // __inout   LP STACKFRAME64 StackFrame,
+        &ctx);                     // __inout   PVOID ContextRecord,
+
+    if (!result) {
+      break;
+    }
+  }
+  if (count > StackPrintLimit) {
+    st->print_cr("...<more frames>...");
+  }
+  st->cr();
+
+  return true;
 }

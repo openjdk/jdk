@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@ import jtreg.SkippedException;
  * @bug 8265505
  * @summary Test clhsdb command which should be run on debugd server
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires os.family != "windows"
  * @library /test/lib

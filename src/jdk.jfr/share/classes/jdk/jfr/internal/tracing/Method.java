@@ -31,7 +31,7 @@ import jdk.jfr.internal.Logger;
 /**
  * Class that holds information about an instrumented method.
  */
-record Method(long methodId, Modification modification, String name) {
+record Method(long methodId, Modification modification, boolean constructor, String name) {
     @Override
     public String toString() {
         return name + (modification.timing() ? " +timing" : " -timing") + (modification.tracing() ? " +tracing" : " -tracing") + " (Method ID: " + String.format("0x%08X)", methodId);
