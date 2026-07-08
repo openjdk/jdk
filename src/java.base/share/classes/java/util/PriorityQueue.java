@@ -372,12 +372,11 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             throw new IllegalArgumentException();
 
         if (size == 0 && getClass() == PriorityQueue.class) {
-            Object[] es = prepareElements(c);
-            int len = es.length;
-            if (len == 0)
+            if (c.isEmpty())
                 return false;
 
-            heapify(es, len);
+            Object[] es = prepareElements(c);
+            heapify(es, es.length);
             initElementsFromArray(es);
 
             this.modCount++;
