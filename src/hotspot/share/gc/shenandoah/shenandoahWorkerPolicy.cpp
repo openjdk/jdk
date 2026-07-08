@@ -24,7 +24,7 @@
 
 
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 
 uint ShenandoahWorkerPolicy::calc_workers_for_init_marking() {
