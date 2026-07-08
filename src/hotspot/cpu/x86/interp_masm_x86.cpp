@@ -1026,9 +1026,11 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     notify_method_exit(state, SkipNotifyJVMTI); // preserve TOSCA
   }
 
+  // remove activation
+  // get sender sp
+  movptr(rbx,
+         Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize));
   if (StackReservedPages > 0) {
-    movptr(rbx,
-               Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize));
     // testing if reserved zone needs to be re-enabled
     Register rthread = r15_thread;
     Label no_reserved_zone_enabling;
@@ -1051,11 +1053,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 
     bind(no_reserved_zone_enabling);
   }
-
-  // remove activation
-  // get sender sp
-  movptr(rbx,
-         Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize));
 
   if (state == atos && InlineTypeReturnedAsFields) {
     Label skip;
@@ -1124,9 +1121,8 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
 }
 
 void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field),
+  call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field),
           obj, entry);
-  get_vm_result_oop(obj);
 }
 
 void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1, Register tmp2,

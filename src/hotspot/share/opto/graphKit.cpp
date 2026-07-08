@@ -2148,7 +2148,7 @@ Node* GraphKit::set_results_for_java_call(CallJavaNode* call, bool separate_io_p
 
           Node* store_to_buf_call = make_runtime_call(RC_NO_LEAF | RC_NO_IO,
                                                       OptoRuntime::store_inline_type_fields_Type(),
-                                                      StubRoutines::store_inline_type_fields_to_buf(),
+                                                      SharedRuntime::store_inline_type_fields_to_buf_entry(),
                                                       nullptr, TypePtr::BOTTOM, ret);
 
           // We don't know how many values are returned. This assumes the

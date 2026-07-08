@@ -238,6 +238,8 @@ ciType* Constant::exact_type() const {
 
 ciType* LoadIndexed::exact_type() const {
   ciType* array_type = array()->exact_type();
+  // A delayed load produces a field within the array element. Let
+  // Instruction::exact_type() below derive its type from declared_type().
   if (delayed() == nullptr && array_type != nullptr) {
     assert(array_type->is_array_klass(), "what else?");
     ciArrayKlass* ak = (ciArrayKlass*)array_type;
@@ -254,6 +256,8 @@ ciType* LoadIndexed::exact_type() const {
 
 ciType* LoadIndexed::declared_type() const {
   if (delayed() != nullptr) {
+    // The LoadIndexed is fused with one or more following getfield bytecodes
+    // and produces the final field value instead of the array element.
     return delayed()->field()->type();
   }
   ciType* array_type = array()->declared_type();
@@ -270,7 +274,9 @@ bool StoreIndexed::is_exact_flat_array_store() const {
     ciKlass* element_klass = array()->declared_type()->as_flat_array_klass()->element_klass();
     ciKlass* actual_klass = value()->declared_type()->as_klass();
 
-    // The following check can fail with inlining:
+    // Inlining can expose more specific types than the callee's signature. In
+    // this example, element_klass is MyValue1 and actual_klass is MyValue2, so
+    // the array store check must be kept:
     //     void test45_inline(Object[] oa, Object o, int index) { oa[index] = o; }
     //     void test45(MyValue1[] va, int index, MyValue2 v) { test45_inline(va, v, index); }
     if (element_klass == actual_klass) {
@@ -290,7 +296,8 @@ ciType* NewTypeArray::exact_type() const {
 }
 
 ciType* NewObjectArray::exact_type() const {
-  // Returns the refined type
+  // Resolve the default array properties used by anewarray to a concrete
+  // layout klass (reference or flat), which is the exact type of the allocation.
   return ciObjArrayKlass::make(klass());
 }
 
@@ -405,32 +412,6 @@ void BlockBegin::state_values_do(ValueVisitor* f) {
 }
 
 
-StoreField::StoreField(Value obj, int offset, ciField* field, Value value, bool is_static,
-                       ValueStack* state_before, bool needs_patching)
-  : AccessField(obj, offset, field, is_static, state_before, needs_patching)
-  , _value(value)
-  , _enclosing_field(nullptr)
-{
-#ifdef ASSERT
-  AssertValues assert_value;
-  values_do(&assert_value);
-#endif
-  pin();
-}
-
-StoreIndexed::StoreIndexed(Value array, Value index, Value length, BasicType elt_type, Value value,
-                           ValueStack* state_before, bool check_boolean, bool mismatched)
-  : AccessIndexed(array, index, length, elt_type, state_before, mismatched)
-  , _value(value), _check_boolean(check_boolean)
-{
-#ifdef ASSERT
-  AssertValues assert_value;
-  values_do(&assert_value);
-#endif
-  pin();
-}
-
-
 // Implementation of Invoke
 
 
@@ -458,8 +439,7 @@ Invoke::Invoke(Bytecodes::Code code, ciType* return_type, Value recv, Values* ar
     _signature->append(as_BasicType(receiver()->type()));
   }
   for (int i = 0; i < number_of_arguments(); i++) {
-    Value v = argument_at(i);
-    ValueType* t = v->type();
+    ValueType* t = argument_at(i)->type();
     BasicType bt = as_BasicType(t);
     _signature->append(bt);
   }
@@ -1102,4 +1082,3 @@ void RangeCheckPredicate::check_state() {
 void ProfileInvoke::state_values_do(ValueVisitor* f) {
   if (state() != nullptr) state()->values_do(f);
 }
-

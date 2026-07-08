@@ -2016,6 +2016,7 @@ JNI_OnUnload(JavaVM *vm, void *reserved);
 #define JNI_VERSION_20  0x00140000
 #define JNI_VERSION_21  0x00150000
 #define JNI_VERSION_24  0x00180000
+#define JNI_VERSION_28  0x001C0000
 
 #ifdef __cplusplus
 } /* extern "C" */
