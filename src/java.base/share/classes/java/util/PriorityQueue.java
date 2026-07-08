@@ -380,7 +380,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
                 return false;
 
             Object[] es = prepareElements(c, comparator);
-            heapify(es, es.length);
+            heapify(es, es.length, comparator);
             initElementsFromArray(es);
 
             this.modCount++;
@@ -802,18 +802,17 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * This classic algorithm due to Floyd (1964) is known to be O(size).
      */
     private void heapify() {
-        heapify(queue, size);
+        heapify(queue, size, comparator);
     }
 
-    private void heapify(Object[] es, int n) {
+    private static <T> void heapify(Object[] es, int n, Comparator<? super T> cmp) {
         int i = (n >>> 1) - 1;
-        final Comparator<? super E> cmp;
-        if ((cmp = comparator) == null)
+        if (cmp == null)
             for (; i >= 0; i--)
-                siftDownComparable(i, (E) es[i], es, n);
+                siftDownComparable(i, (T) es[i], es, n);
         else
             for (; i >= 0; i--)
-                siftDownUsingComparator(i, (E) es[i], es, n, cmp);
+                siftDownUsingComparator(i, (T) es[i], es, n, cmp);
     }
 
     /**
