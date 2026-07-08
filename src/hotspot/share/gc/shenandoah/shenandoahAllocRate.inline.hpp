@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahStripedCounter.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 
 inline size_t ShenandoahAnticipatedConsumption::baseline_consumption() const {
@@ -57,14 +58,28 @@ void ShenandoahAllocRate<Clock>::update_minimum_sample_size(const size_t availab
 }
 
 template<typename Clock>
-void ShenandoahAllocRate<Clock>::maybe_take_sample(const size_t minimum_sample_size) {
+uint ShenandoahAllocRate<Clock>::log_per_stripe_threshold_for(const size_t minimum_sample_size) const {
+  // Floor-log2 of the per-stripe share. Clamps to 0 for a 1-byte trigger.
+  const int log_threshold = log2i(minimum_sample_size) - (int) _unsampled.log_num_stripes();
+  return log_threshold > 0 ? (uint) log_threshold : 0u;
+}
+
+template<typename Clock>
+void ShenandoahAllocRate<Clock>::set_minimum_sample_size(const size_t minimum_sample_size) {
+  assert(minimum_sample_size > 0, "minimum sample size must be non-zero");
+  assert(minimum_sample_size <= UINT32_MAX, "minimum sample size must fit in packed params");
+  _sample_params.store_relaxed(encode_sample_params(minimum_sample_size, log_per_stripe_threshold_for(minimum_sample_size)));
+}
+
+template<typename Clock>
+void ShenandoahAllocRate<Clock>::maybe_take_sample(const size_t minimum_sample_size, const size_t striped_unsampled) {
   if (!_sample_lock.try_lock()) {
     // Another thread has the lock and will take the sample.
     return;
   }
-  // Re-check the aggregate unsampled bytes under the lock against the full minimum_sample_size.
-  const size_t unsampled = _unsampled.sum();
-  if (unsampled < minimum_sample_size) {
+
+  if ((_unsampled.num_stripes() > 1 && _unsampled.current_stripe_value() < striped_unsampled) ||
+      _unsampled.sum() < minimum_sample_size) {
     // Below the floor: either another thread already sampled and drained, or this thread's stripe
     // crossed its share while the aggregate is still short (skewed distribution). Wait for more.
     _sample_lock.unlock();
@@ -85,14 +100,15 @@ template<typename Clock>
 void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
   // The striped counter absorbs allocation-path contention;
   const size_t striped_unsampled = _unsampled.add(allocated_bytes);
-  const size_t minimum_sample_size = _minimum_sample_size.load_relaxed();
-  // The striped_unsampled returned by add() is this thread's own stripe total,
-  // scale the trigger threshold to a per-stripe share.
-  size_t per_stripe_threshold = MAX2(minimum_sample_size >> _unsampled.log_num_stripes(), (size_t) 1);
-  // Edge-trigger: fire only on the single add that pushes this stripe across its share, not on every
-  // add while it sits above (which would hammer the sample lock).
-  if (striped_unsampled >= per_stripe_threshold && striped_unsampled - allocated_bytes < per_stripe_threshold) {
-    maybe_take_sample(minimum_sample_size);
+  const size_t previous_striped_unsampled = striped_unsampled - allocated_bytes;
+
+  const uint64_t params = _sample_params.load_relaxed();
+  const uint log_per_stripe_threshold = decode_log_per_stripe_threshold(params);
+
+  // Re-arm the trigger at every per-stripe threshold crossing (i.e. whenever the bits above the
+  // threshold increment).
+  if ((striped_unsampled >> log_per_stripe_threshold) > (previous_striped_unsampled >> log_per_stripe_threshold)) {
+    maybe_take_sample(decode_min_sample_size(params), striped_unsampled);
   }
 }
 

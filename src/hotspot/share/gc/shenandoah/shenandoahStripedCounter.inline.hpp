@@ -29,7 +29,10 @@
 
 #include "runtime/thread.hpp"
 
-inline uint ShenandoahStripedCounter::current_stripe() {
+inline uint ShenandoahStripedCounter::current_stripe() const {
+  if (_num_stripes == 1u) {
+    return 0u;
+  }
   // Per-thread probe into [0, _num_stripes). Hashing the thread pointer spreads threads across
   // stripes. This is a pure, stable function of (thread pointer,  _num_stripes)
   const uintptr_t t = (uintptr_t) Thread::current();
@@ -49,6 +52,10 @@ inline size_t ShenandoahStripedCounter::sum() const {
     total += _stripes[i].load_relaxed();
   }
   return total;
+}
+
+inline size_t ShenandoahStripedCounter::current_stripe_value() const {
+  return _stripes[current_stripe()].load_relaxed();
 }
 
 inline size_t ShenandoahStripedCounter::drain() {

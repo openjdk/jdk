@@ -26,6 +26,9 @@
 #include "gc/shared/gc_globals.hpp"
 
 #include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
+#include "gc/shenandoah/shenandoahStripedCounter.inline.hpp"
+#include "runtime/atomic.hpp"
+#include "threadHelper.inline.hpp"
 
 class ShenandoahMockClock {
 public:
@@ -118,6 +121,84 @@ TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_momentary_spike)
   EXPECT_DOUBLE_EQ(consumption.momentary_rate(), 2048);
   EXPECT_EQ(consumption.momentary_consumption(), 204800UL);
   EXPECT_EQ(consumption.accelerated_consumption(), 0UL);
+}
+
+TEST_VM_F(ShenandoahAllocationRateTest, event_driven_sampling_single_dominant_allocator) {
+  // Single mutator: one stripe allocates, other stripes stay empty.
+  ShenandoahStripedCounter stripes;
+  if (stripes.num_stripes() == 1) {
+    // Regression requires multiple stripes.
+    return;
+  }
+
+  ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
+  // Multiple epochs prove the allocation-path trigger re-fires without force_update().
+  constexpr size_t alloc_size = 64;
+  constexpr size_t epochs = 4;
+  for (size_t allocated = 0; allocated < MINIMUM_SAMPLE_SIZE * epochs; allocated += alloc_size) {
+    allocate(rate, alloc_size);
+  }
+
+  // Old one-shot trigger left the average at zero until force_update().
+  EXPECT_GT(rate.weighted_average(), 0.0);
+}
+
+TEST_VM_F(ShenandoahAllocationRateTest, event_driven_sampling_rearms_when_floor_lowered) {
+  // Lowering the floor must re-arm a stripe that crossed the old share.
+  constexpr size_t high_floor = 1 * M;
+  constexpr size_t low_floor = 1024;
+  constexpr size_t alloc_size = 64;
+
+  ShenandoahAllocRate<ShenandoahMockClock> rate(high_floor, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
+
+  // Accumulate below the high floor, but above the later lowered share.
+  constexpr size_t phase1_bytes = high_floor / 4;
+  for (size_t allocated = 0; allocated < phase1_bytes; allocated += alloc_size) {
+    allocate(rate, alloc_size);
+  }
+  EXPECT_DOUBLE_EQ(rate.weighted_average(), 0.0);  // nothing drained yet
+
+  // A GC lowers the floor.
+  rate.set_minimum_sample_size(low_floor);
+
+  // New crossings under the lowered floor must sample without force_update().
+  for (size_t allocated = 0; allocated < low_floor * 16; allocated += alloc_size) {
+    allocate(rate, alloc_size);
+  }
+
+  EXPECT_GT(rate.weighted_average(), 0.0);
+}
+
+// Skewed allocation must still sample on allocation volume, without force_update().
+// Static light residuals stay below the floor; the heavy stream must re-fire sampling.
+class SkewedAllocators {
+public:
+  static constexpr int kLightThreads = 7;
+  static constexpr size_t kLightBytes = 8;    // one sub-share residual per light stripe
+  static constexpr size_t kHeavyEpochs = 200;
+  static constexpr size_t kAllocSize = 64;
+};
+
+TEST_VM_F(ShenandoahAllocationRateTest, event_driven_sampling_skewed_distribution) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
+
+  // Seed light residuals below the aggregate floor.
+  auto light = [&](Thread*, int) {
+    rate.allocated(SkewedAllocators::kLightBytes);
+  };
+  TestThreadGroup<decltype(light)> ttg(light, SkewedAllocators::kLightThreads);
+  ttg.doit();
+  ttg.join();
+  EXPECT_DOUBLE_EQ(rate.weighted_average(), 0.0);  // residuals never reach the aggregate floor
+
+  // Heavy stream must trigger samples from allocation crossings.
+  const size_t heavy_bytes = MINIMUM_SAMPLE_SIZE * SkewedAllocators::kHeavyEpochs;
+  for (size_t allocated = 0; allocated < heavy_bytes; allocated += SkewedAllocators::kAllocSize) {
+    allocate(rate, SkewedAllocators::kAllocSize);
+  }
+
+  // No force_update(): samples came from allocation crossings.
+  EXPECT_GT(rate.weighted_average(), 0.0);
 }
 
 TEST_VM_F(ShenandoahAllocationRateTest, accelerated_consumption_accelerating) {

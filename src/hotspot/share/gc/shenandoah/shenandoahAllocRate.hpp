@@ -112,10 +112,17 @@ class ShenandoahAllocRate {
 
   PaddedMonitor _sample_lock;
   ShenandoahStripedCounter _unsampled;
-  Atomic<size_t> _minimum_sample_size; // bytes, read by mutator, updated by gc
+  // Packed minimum_sample_size and log_per_stripe_threshold for one alloc-path load.
+  Atomic<uint64_t> _sample_params;
   jlong _last_sample_time;
 
-  void maybe_take_sample(size_t minimum_sample_size);
+  static uint64_t encode_sample_params(const size_t minimum_sample_size, const uint log_per_stripe_threshold) {
+    return (static_cast<uint64_t>(log_per_stripe_threshold) << 32) | static_cast<uint32_t>(minimum_sample_size);
+  }
+  static size_t decode_min_sample_size(const uint64_t params)        { return static_cast<uint32_t>(params); }
+  static uint   decode_log_per_stripe_threshold(const uint64_t params) { return static_cast<uint>(params >> 32); }
+
+  void maybe_take_sample(size_t minimum_sample_size, size_t striped_unsampled);
 
   ShenandoahWeightedSeq _baseline;
   ShenandoahWeightedSeq _recent;
@@ -127,7 +134,7 @@ public:
                                const uint recent_window_size = ShenandoahRecentAllocRateSampleWindow,
                                const uint momentary_window_size = ShenandoahMomentaryAllocRateSampleWindow)
     : _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
-    , _minimum_sample_size(minimum_sample_size)
+    , _sample_params(encode_sample_params(minimum_sample_size, log_per_stripe_threshold_for(minimum_sample_size)))
     , _last_sample_time(Clock::elapsed_counter())
     , _baseline(baseline_window_size)
     , _recent(recent_window_size)
@@ -138,10 +145,8 @@ public:
   // Update minimum sample size based on the given available bytes
   void update_minimum_sample_size(size_t available);
 
-  // Set minimum sample size in bytes
-  void set_minimum_sample_size(const size_t minimum_sample_size) {
-    _minimum_sample_size.store_relaxed(minimum_sample_size);
-  }
+  // Set minimum sample size and its per-stripe trigger shift.
+  void set_minimum_sample_size(size_t minimum_sample_size);
 
   // Indicate that this many bytes have been allocated (by the mutator).
   void allocated(size_t allocated_bytes);
@@ -172,6 +177,9 @@ public:
   }
 
 private:
+  // Log2 of the per-stripe trigger threshold.
+  uint log_per_stripe_threshold_for(size_t minimum_sample_size) const;
+
   // Record the sample under the sample lock
   void take_sample(jlong now, jlong elapsed, size_t unsampled);
 

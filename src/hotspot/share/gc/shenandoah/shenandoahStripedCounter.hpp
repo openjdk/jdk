@@ -49,7 +49,7 @@ class ShenandoahStripedCounter : public CHeapObj<mtGC> {
   uint const      _log_num_stripes;
 
   // The stripe this thread uses.
-  uint current_stripe();
+  uint current_stripe() const;
 
 public:
   ShenandoahStripedCounter();
@@ -61,6 +61,9 @@ public:
   // Current total of all stripes of the counter. No reset.
   // Approximate under concurrent writes.
   size_t sum() const;
+
+  // Current value of the calling thread's own stripe. O(1), no reset.
+  size_t current_stripe_value() const;
 
   // Read the total and atomically reset it to zero, returning the amount consumed.
   // Concurrent adds racing with the drain accumulate toward the next epoch rather than being lost.
