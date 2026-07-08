@@ -1549,7 +1549,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     }
     __ relocate(relocInfo::static_call_type);
     __ z_nop();
-    __ z_brasl(Z_R14, SharedRuntime::get_resolve_static_call_stub());
+    __ z_brasl(Z_R14, resolve_static_call);
     oop_maps->add_gc_map(__ pc() - start, map);
     __ post_call_nop();
     __ branch_optimized(Assembler::bcondAlways, L_exit);
@@ -1591,7 +1591,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   // Continuation.enter(Continuation c, boolean isContinue).
   __ relocate(relocInfo::static_call_type);
   __ z_nop();
-  __ z_brasl(Z_R14, SharedRuntime::get_resolve_static_call_stub());
+  __ z_brasl(Z_R14, resolve_static_call);
   oop_maps->add_gc_map(__ pc() - start, map);
   __ post_call_nop();
 
