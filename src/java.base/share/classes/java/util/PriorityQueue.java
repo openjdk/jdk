@@ -388,7 +388,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
 
             heapify(es, es.length, comparator);
             modCount++;
-            queue = ensureNonEmpty(es);
+            queue = es;
             size = es.length;
 
             return true;
