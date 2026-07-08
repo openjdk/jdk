@@ -2887,7 +2887,7 @@ void PhaseMacroExpand::expand_mh_intrinsic_return(CallStaticJavaNode* call) {
 
   // Allocation failed, fall back to a runtime call
   CallStaticJavaNode* slow_call = new CallStaticJavaNode(OptoRuntime::store_inline_type_fields_Type(),
-                                                         StubRoutines::store_inline_type_fields_to_buf(),
+                                                         SharedRuntime::store_inline_type_fields_to_buf_entry(),
                                                          "store_inline_type_fields",
                                                          TypePtr::BOTTOM);
   slow_call->init_req(TypeFunc::Control, needgc_ctrl);

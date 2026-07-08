@@ -3901,6 +3901,12 @@ BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(con
   return nullptr;
 }
 
+// Call here from the interpreter or compiled code to store returned
+// values to a newly allocated inline type instance.
+RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
+  Unimplemented();
+  return nullptr;
+}
 #if INCLUDE_JFR
 
 // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.

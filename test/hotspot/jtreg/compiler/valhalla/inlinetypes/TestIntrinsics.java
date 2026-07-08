@@ -1863,6 +1863,129 @@ public class TestIntrinsics {
         }
     }
 
+    static abstract value class AbstractValueCloneable implements Cloneable {
+        @Override
+        public Object clone() throws CloneNotSupportedException {
+            return super.clone();
+        }
+    }
+
+    static value class ValueCloneable extends AbstractValueCloneable {
+        int x;
+
+        ValueCloneable(int x) {
+            this.x = x;
+        }
+    }
+
+    static class RefCloneable extends AbstractValueCloneable {
+        int x;
+
+        RefCloneable(int x) {
+            this.x = x;
+        }
+    }
+
+    @Test
+    public Object testCloneAbstract(AbstractValueCloneable o) throws CloneNotSupportedException {
+        return o.clone();
+    }
+
+    @Run(test = "testCloneAbstract")
+    public void testCloneAbstract_verifier() {
+        ValueCloneable val = new ValueCloneable(3);
+        RefCloneable ref = new RefCloneable(3);
+        try {
+            Asserts.assertEQ(testCloneAbstract(val), val);
+            RefCloneable res = (RefCloneable)testCloneAbstract(ref);
+            Asserts.assertEQ(res.x, ref.x);
+        } catch (Exception e) {
+            Asserts.fail("testCloneAbstract() failed", e);
+        }
+    }
+
+    @Test
+    public Object testCloneAbstractVal() throws CloneNotSupportedException {
+        ValueCloneable val = new ValueCloneable(3);
+        RefCloneable ref = new RefCloneable(4);
+        int a = 50;
+        int b = 0;
+        do {
+            a--;
+            b++;
+        } while (a > 0);
+        // b == 50 known after first loop opts pass -> take val.
+        AbstractValueCloneable o = b == 50 ? val : ref;
+        return o.clone();
+    }
+
+    @Run(test = "testCloneAbstractVal")
+    @Warmup(1)
+    public void testCloneAbstractVal_verifier() {
+        try {
+            ValueCloneable res = (ValueCloneable)testCloneAbstractVal();
+            Asserts.assertEQ(res, new ValueCloneable(3));
+        } catch (Exception e) {
+            Asserts.fail("testCloneAbstractVal() failed", e);
+        }
+    }
+
+    @Test
+    public Object testCloneAbstractRef() throws CloneNotSupportedException {
+        ValueCloneable val = new ValueCloneable(3);
+        RefCloneable ref = new RefCloneable(4);
+        int a = 50;
+        int b = 0;
+        do {
+            a--;
+            b++;
+        } while (a > 0);
+        // b == 50 known after first loop opts pass -> take ref.
+        AbstractValueCloneable o = b == 50 ? ref : val;
+        return o.clone();
+    }
+
+    @Run(test = "testCloneAbstractRef")
+    @Warmup(1)
+    public void testCloneAbstractRef_verifier() {
+        try {
+            RefCloneable res = (RefCloneable)testCloneAbstractRef();
+            Asserts.assertEQ(res.x, 4);
+        } catch (Exception e) {
+            Asserts.fail("testCloneAbstractRef() failed", e);
+        }
+    }
+
+    static value class MyValueNotCloneable {
+        int x;
+
+        MyValueNotCloneable(int x) {
+            this.x = x;
+        }
+
+        @Override
+        public Object clone() throws CloneNotSupportedException {
+            return super.clone();
+        }
+    }
+
+    @Test
+    public Object testCloneNotCloneable() throws CloneNotSupportedException {
+        MyValueNotCloneable obj = new MyValueNotCloneable(3);
+        // Throws CloneNotSupportedException because MyValueNotCloneable does not implement Cloneable.
+        return obj.clone();
+    }
+
+    @Run(test = "testCloneNotCloneable")
+    public void testCloneNotCloneable_verifier() {
+        try {
+            testCloneNotCloneable();
+            Asserts.fail("should throw");
+        } catch (CloneNotSupportedException e) {
+            // Expected.
+        }
+    }
+
     // Test correctness of the ValueClass::isNullRestrictedArray intrinsic
     @Test
     @IR(failOn = {STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isNullRestrictedArray",

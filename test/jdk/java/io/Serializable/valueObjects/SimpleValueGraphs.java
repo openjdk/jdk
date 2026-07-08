@@ -360,7 +360,9 @@ public class SimpleValueGraphs implements Serializable {
     void testExternalizableNotSer() {
         var obj = new ValueExt();
         var ex = Assertions.assertThrows(InvalidClassException.class, () -> serialize(obj));
-        Assertions.assertEquals("SimpleValueGraphs$ValueExt; cannot serialize value class", ex.getMessage());
+        Assertions.assertEquals("SimpleValueGraphs$ValueExt; " +
+                "cannot serialize due to final value class or strictly-initialized instance fields",
+                ex.getMessage());
     }
 
     @Test
@@ -369,7 +371,8 @@ public class SimpleValueGraphs implements Serializable {
         byte[] bytes = serialize(obj);
         byte[] newBytes = patchBytes(bytes, "IdentExt", "ValueExt");
         var ex = Assertions.assertThrows(InvalidClassException.class, () -> deserialize(newBytes));
-        Assertions.assertTrue(ex.getMessage().contains("cannot serialize value class"));
+        Assertions.assertTrue(ex.getMessage().contains(
+                "cannot serialize due to final value class or strictly-initialized instance fields"));
     }
 
     // Exception trying to serialize

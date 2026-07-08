@@ -5873,6 +5873,11 @@ class C2 extends C1 implements I2 {
         This function can be used to retrieve the value of a local
         variable whose type is <code>Object</code> or a subclass of <code>Object</code>.
         <p/>
+        When preview features are enabled, if the local is the "<code>this</code>"
+        object and "<code>this</code>" is a value object under construction, the
+        function retrieves a snapshot of the "<code>this</code>" object representing
+        the value object's state at the point the snapshot is taken.
+        <p/>
         The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
@@ -5902,11 +5907,11 @@ class C2 extends C1 implements I2 {
           <outptr><jobject/></outptr>
             <description>
               On return, points to the variable's value.
-              When preview features are enabled, if the requested local is the
-              "<code>this</code>" object, and "<code>this</code>" is a value
-              object under construction, the value_ptr is set to a snapshot
-              of the "<code>this</code>" object that represents the value
-              object's state at the point the snapshot is taken.
+              When preview features are enabled, if the local is the "<code>this</code>"
+              object and "<code>this</code>" is a value object under construction,
+              <code>value_ptr</code> will point to a snapshot of the "<code>this</code>"
+              object representing the value object's state at the point the snapshot
+              is taken.
             </description>
         </param>
       </parameters>
@@ -5937,6 +5942,11 @@ class C2 extends C1 implements I2 {
         native method frames, whereas <code>GetLocalObject()</code> would
         return <code>JVMTI_ERROR_OPAQUE_FRAME</code> in those cases.
         <p/>
+        When preview features are enabled and the "<code>this</code>" object is
+        a value object under construction, the function retrieves a snapshot of the
+        "<code>this</code>" object that represents the value object's state at
+        the point the snapshot is taken.
+        <p/>
         The specified thread must be suspended or must be the current thread.
       </description>
       <origin>new</origin>
@@ -5960,9 +5970,9 @@ class C2 extends C1 implements I2 {
           <outptr><jobject/></outptr>
             <description>
               On return, points to the variable's value.
-              When preview features are enabled, and the local instance is a value
-              object under construction, the value_ptr is set to a snapshot
-              of the "<code>this</code>" object that represents the value
+              When preview features are enabled, and the "<code>this</code>" object is
+              a value object under construction, <code>value_ptr</code> will point to
+              a snapshot of the "<code>this</code>" object representing the value
               object's state at the point the snapshot is taken.
             </description>
         </param>

@@ -532,8 +532,8 @@ static void gen_c2i_adapter_helper(MacroAssembler* masm,
   // 3    8 T_BOOL
   // -    0 return address
   //
-  // However to make thing extra confusing. Because we can fit a Java long/double in
-  // a single slot on a 64 bt vm and it would be silly to break them up, the interpreter
+  // However to make things extra confusing. Because we can fit a Java long/double in
+  // a single slot on a 64 bit vm and it would be silly to break them up, the interpreter
   // leaves one slot empty and only stores to a single slot. In this case the
   // slot that is occupied is the T_VOID slot. See I said it was confusing.
 
@@ -549,7 +549,7 @@ static void gen_c2i_adapter_helper(MacroAssembler* masm,
   if (!r_1->is_FloatRegister()) {
     Register val = r25;
     if (r_1->is_stack()) {
-      // memory to memory use r25 (scratch registers is used by store_heap_oop)
+      // memory to memory use r25 (scratch registers are used by store_heap_oop)
       int ld_off = r_1->reg2stack() * VMRegImpl::stack_slot_size + extraspace;
       __ load_sized_value(val, Address(sp, ld_off), size_in_bytes, /* is_signed */ false);
     } else {
@@ -3178,6 +3178,151 @@ RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_
                                   oop_maps, false);
   AOTCodeCache::store_code_blob(*stub, AOTCodeEntry::SharedBlob, StubInfo::blob(id));
 
+  return stub;
+}
+
+// Call here from the interpreter or compiled code to store returned
+// values to a newly allocated inline type instance.
+RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
+  StubId id = StubId::shared_store_inline_type_fields_to_buf_id;
+
+  const char* name = SharedRuntime::stub_name(id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, StubInfo::blob(id));
+  if (blob != nullptr) {
+    return blob->as_runtime_stub();
+  }
+
+  // We need to save all registers the calling convention may use so
+  // the runtime calls read or update those registers. This needs to
+  // be in sync with SharedRuntime::java_return_convention().
+  // n.b. aarch64 asserts that frame::arg_reg_save_area_bytes == 0
+  enum layout {
+    j_rarg7_off = 0, j_rarg7_2,    // j_rarg7 is r0
+    j_rarg6_off, j_rarg6_2,
+    j_rarg5_off, j_rarg5_2,
+    j_rarg4_off, j_rarg4_2,
+    j_rarg3_off, j_rarg3_2,
+    j_rarg2_off, j_rarg2_2,
+    j_rarg1_off, j_rarg1_2,
+    j_rarg0_off, j_rarg0_2,
+
+    j_farg7_off, j_farg7_2,
+    j_farg6_off, j_farg6_2,
+    j_farg5_off, j_farg5_2,
+    j_farg4_off, j_farg4_2,
+    j_farg3_off, j_farg3_2,
+    j_farg2_off, j_farg2_2,
+    j_farg1_off, j_farg1_2,
+    j_farg0_off, j_farg0_2,
+
+    rfp_off, rfp_off2,
+    return_off, return_off2,
+
+    framesize // inclusive of return address
+  };
+
+
+  ResourceMark rm;
+  CodeBuffer code(name, 512, 64);
+  MacroAssembler* masm = new MacroAssembler(&code);
+
+  int frame_size_in_bytes = align_up(framesize*BytesPerInt, 16);
+  assert(frame_size_in_bytes == framesize*BytesPerInt, "misaligned");
+  int frame_size_in_slots = frame_size_in_bytes / BytesPerInt;
+  int frame_size_in_words = frame_size_in_bytes / wordSize;
+
+  OopMapSet* oop_maps = new OopMapSet();
+  OopMap* map = new OopMap(frame_size_in_slots, 0);
+
+  map->set_callee_saved(VMRegImpl::stack2reg(j_rarg7_off), j_rarg7->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_rarg6_off), j_rarg6->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_rarg5_off), j_rarg5->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_rarg4_off), j_rarg4->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_rarg3_off), j_rarg3->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_rarg2_off), j_rarg2->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_rarg1_off), j_rarg1->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_rarg0_off), j_rarg0->as_VMReg());
+
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg0_off), j_farg0->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg1_off), j_farg1->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg2_off), j_farg2->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg3_off), j_farg3->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg4_off), j_farg4->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg5_off), j_farg5->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg6_off), j_farg6->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg7_off), j_farg7->as_VMReg());
+
+  address start = __ pc();
+
+  __ enter(); // Save FP and LR before call
+
+  __ stpd(j_farg1, j_farg0, Address(__ pre(sp, -2 * wordSize)));
+  __ stpd(j_farg3, j_farg2, Address(__ pre(sp, -2 * wordSize)));
+  __ stpd(j_farg5, j_farg4, Address(__ pre(sp, -2 * wordSize)));
+  __ stpd(j_farg7, j_farg6, Address(__ pre(sp, -2 * wordSize)));
+
+  __ stp(j_rarg1, j_rarg0, Address(__ pre(sp, -2 * wordSize)));
+  __ stp(j_rarg3, j_rarg2, Address(__ pre(sp, -2 * wordSize)));
+  __ stp(j_rarg5, j_rarg4, Address(__ pre(sp, -2 * wordSize)));
+  __ stp(j_rarg7, j_rarg6, Address(__ pre(sp, -2 * wordSize)));
+
+  int frame_complete = __ offset();
+
+  // Set up last_Java_sp and last_Java_fp
+  address the_pc = __ pc();
+  __ set_last_Java_frame(sp, noreg, the_pc, rscratch1);
+
+  // Call runtime
+  __ mov(c_rarg1, r0);
+  __ mov(c_rarg0, rthread);
+
+  __ lea(rscratch1, ExternalAddress(destination));
+  __ blr(rscratch1);
+
+  oop_maps->add_gc_map(the_pc - start, map);
+
+  __ reset_last_Java_frame(false);
+
+  __ ldp(j_rarg7, j_rarg6, Address(__ post(sp, 2 * wordSize)));
+  __ ldp(j_rarg5, j_rarg4, Address(__ post(sp, 2 * wordSize)));
+  __ ldp(j_rarg3, j_rarg2, Address(__ post(sp, 2 * wordSize)));
+  __ ldp(j_rarg1, j_rarg0, Address(__ post(sp, 2 * wordSize)));
+
+  __ ldpd(j_farg7, j_farg6, Address(__ post(sp, 2 * wordSize)));
+  __ ldpd(j_farg5, j_farg4, Address(__ post(sp, 2 * wordSize)));
+  __ ldpd(j_farg3, j_farg2, Address(__ post(sp, 2 * wordSize)));
+  __ ldpd(j_farg1, j_farg0, Address(__ post(sp, 2 * wordSize)));
+
+  // check for pending exceptions
+  Label pending;
+  __ ldr(rscratch1, Address(rthread, in_bytes(Thread::pending_exception_offset())));
+  __ cbnz(rscratch1, pending);
+
+  // We just called SharedRuntime::store_inline_type_fields_to_buf. Check if we still
+  // need to initialize the buffer and if so, call the inline class specific pack handler.
+  Label skip_pack;
+  __ get_vm_result_oop(r0, rthread);
+  __ get_vm_result_metadata(rscratch1, rthread);
+  __ cbz(rscratch1, skip_pack);
+  __ ldr(rscratch1, Address(rscratch1, InlineKlass::adr_members_offset()));
+  __ ldr(rscratch1, Address(rscratch1, InlineKlass::pack_handler_offset()));
+  __ blr(rscratch1);
+  __ membar(Assembler::StoreStore);
+  __ bind(skip_pack);
+
+  __ leave();
+  __ ret(lr);
+
+  __ bind(pending);
+  __ leave();
+  __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+
+  // -------------
+  // make sure all code is generated
+  masm->flush();
+
+  RuntimeStub* stub = RuntimeStub::new_runtime_stub(name, &code, frame_complete, frame_size_in_words, oop_maps, false);
+  AOTCodeCache::store_code_blob(*stub, AOTCodeEntry::SharedBlob, StubInfo::blob(id));
   return stub;
 }
 

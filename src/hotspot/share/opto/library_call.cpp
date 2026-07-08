@@ -6026,6 +6026,10 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
 // can be sharply typed as an object array, a type array, or an instance.
 //
 bool LibraryCallKit::inline_native_clone(bool is_virtual) {
+  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+    return false;
+  }
+
   PhiNode* result_val;
 
   // Set the reexecute bit for the interpreter to reexecute
@@ -6040,8 +6044,14 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
     const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
     if (obj_type->is_inlinetypeptr()) {
       // If the object to clone is an inline type, we can simply return it (i.e. a nop) since inline types have
-      // no identity.
-      set_result(obj);
+      // no identity. But we first need to check whether the value class is actually implementing the Cloneable
+      // interface. If not, we trap.
+      if (obj_type->inline_klass()->is_cloneable()) {
+        set_result(obj);
+      } else {
+        uncommon_trap(Deoptimization::Reason_intrinsic,
+                      Deoptimization::Action_maybe_recompile);
+      }
       return true;
     }
 

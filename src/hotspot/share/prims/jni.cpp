@@ -99,7 +99,7 @@
 #include "jfr/jfr.hpp"
 #endif
 
-static jint CurrentVersion = JNI_VERSION_24;
+static jint CurrentVersion = JNI_VERSION_28;
 
 #if defined(_WIN32) && !defined(USE_VECTORED_EXCEPTION_HANDLING)
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );

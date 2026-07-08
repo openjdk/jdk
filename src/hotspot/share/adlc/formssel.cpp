@@ -847,6 +847,9 @@ uint InstructForm::oper_input_base(FormDict &globals) {
       strcmp(_matrule->_opType,"ForwardException")==0 ||
       strcmp(_matrule->_opType,"SafePoint" )==0 ||
       strcmp(_matrule->_opType,"Halt"      )==0 ||
+      // This is required because PhaseMacroExpand::expand_mh_intrinsic_return() uses
+      // a special version of CallLeafNoFP that takes the target of the call as first
+      // argument
       strcmp(_matrule->_opType,"CallLeafNoFP")==0)
     return AdlcVMDeps::Parms;   // Skip the machine-state edges
 
