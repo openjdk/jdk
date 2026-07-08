@@ -93,7 +93,7 @@ void ShenandoahRegulatorThread::regulate_young_and_global_cycles() {
   while (!should_terminate()) {
     SuspendibleThreadSetJoiner joiner;
     if (_control_thread->gc_mode() == ShenandoahGenerationalControlThread::none) {
-      if (start_global_cycle()) {
+      if (_old_heuristics->should_start_gc() && _control_thread->request_concurrent_gc(_heap->global_generation())) {
         log_debug(gc, thread)("Heuristics request for global collection accepted.");
       } else if (start_young_cycle()) {
         log_debug(gc, thread)("Heuristics request for young collection accepted.");
