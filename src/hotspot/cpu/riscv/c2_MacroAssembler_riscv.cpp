@@ -2013,38 +2013,6 @@ void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Regis
   bool is_unsigned = (cmpFlag & unsigned_branch_mask) == unsigned_branch_mask;
   int op_select = cmpFlag & (~unsigned_branch_mask);
 
-  if (UseZicond && src == zr) {
-    switch (op_select) {
-      case BoolTest::eq:
-        xorr(t0, op1, op2);
-        czero_eqz(dst, dst, t0);
-        return;
-      case BoolTest::ne:
-        xorr(t0, op1, op2);
-        czero_nez(dst, dst, t0);
-        return;
-      case BoolTest::le:
-        is_unsigned ? sltu(t0, op2, op1) : slt(t0, op2, op1);
-        czero_eqz(dst, dst, t0);
-        return;
-      case BoolTest::ge:
-        is_unsigned ? sltu(t0, op1, op2) : slt(t0, op1, op2);
-        czero_eqz(dst, dst, t0);
-        return;
-      case BoolTest::lt:
-        is_unsigned ? sltu(t0, op1, op2) : slt(t0, op1, op2);
-        czero_nez(dst, dst, t0);
-        return;
-      case BoolTest::gt:
-        is_unsigned ? sltu(t0, op2, op1) : slt(t0, op2, op1);
-        czero_nez(dst, dst, t0);
-        return;
-      default:
-        assert(false, "unsupported compare condition");
-        ShouldNotReachHere();
-    }
-  }
-
   switch (op_select) {
     case BoolTest::eq:
       cmov_eq(op1, op2, dst, src);
