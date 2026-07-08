@@ -1201,6 +1201,11 @@ void PhaseIterGVN::optimize(bool deep) {
     return;
   }
 
+  clean_up_memory_phis();
+  if (drain_worklist()) {
+    return;
+  }
+
   if (deep && UseDeepIGVNRevisit) {
     deep_revisit_converged = deep_revisit();
     if (C->failing()) {
@@ -1210,6 +1215,56 @@ void PhaseIterGVN::optimize(bool deep) {
 
   NOT_PRODUCT(verify_PhaseIterGVN(deep_revisit_converged);)
   C->print_method(PHASE_AFTER_ITER_GVN, 3);
+}
+
+// Remove dead memory Phis. This function solves the cases where local IGVN cannot.
+void PhaseIterGVN::clean_up_memory_phis() {
+  ResourceMark rm;
+  Unique_Node_List control_graph;
+  Unique_Node_List memory_phis;
+
+  control_graph.push(C->root());
+  for (uint i = 0; i < control_graph.size(); i++) {
+    Node* n = control_graph.at(i);
+    for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
+      Node* out = n->fast_out(k);
+      if (out->is_CFG()) {
+        control_graph.push(out);
+      } else if (out->is_memory_phi()) {
+        memory_phis.push(out);
+      }
+    }
+  }
+
+  // Cannot process at the same time as we collect these nodes because the operations may kill the
+  // nodes in an unexpected manner
+  Unique_Node_List tmp_worklist;
+  Node_Array tmp_node_map;
+  for (uint i = 0; i < memory_phis.size(); i++) {
+    PhiNode* mem_phi = memory_phis.at(i)->as_Phi();
+    try_kill_dead_memory_phi(mem_phi, tmp_worklist);
+  }
+}
+
+// If a Phi has no transitive use other than other Phis, then it is dead. Note that the memory Phi
+// of an infinite loop still has a Safepoint use, so the previous statement still holds.
+bool PhaseIterGVN::try_kill_dead_memory_phi(PhiNode* mem_phi, Unique_Node_List& worklist) {
+  worklist.clear();
+  worklist.push(mem_phi);
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist.at(i);
+    for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
+      Node* out = n->fast_out(k);
+      if (!out->is_Phi()) {
+        return false;
+      }
+
+      worklist.push(out);
+    }
+  }
+
+  remove_globally_dead_node(mem_phi, NodeOrigin::Graph);
+  return true;
 }
 
 #ifdef ASSERT

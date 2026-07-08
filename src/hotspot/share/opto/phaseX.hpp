@@ -489,6 +489,9 @@ private:
   // changes happen far away.
   bool needs_deep_revisit(const Node* n) const;
 
+  void clean_up_memory_phis();
+  bool try_kill_dead_memory_phi(PhiNode* phi, Unique_Node_List& worklist);
+
   // Subsume users of node 'old' into node 'nn'
   void subsume_node( Node *old, Node *nn );
 
