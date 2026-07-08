@@ -23,10 +23,11 @@
 
 /**
  * @test
- * @bug 8035968
+ * @bug 8035968 8374452
  * @summary Verify UseSHA512Intrinsics option processing on unsupported CPU.
  * @library /test/lib /
  * @requires vm.flagless
+ * @requires !(os.arch == "aarch64" & vm.cpu.features ~= ".*sha512.*")
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
