@@ -1050,17 +1050,20 @@ void GraphBuilder::store_local(ValueStack* state, Value x, int index) {
 }
 
 
-void GraphBuilder::load_indexed(BasicType type) {
-  // In case of in block code motion in range check elimination
-  ValueStack* state_before = nullptr;
-  int array_idx = state()->stack_size() - 2;
+ValueStack* GraphBuilder::state_before_for_indexed_access(BasicType type, int array_idx) {
   if (type == T_OBJECT && state()->stack_at(array_idx)->maybe_flat_array()) {
     // Save the entire state and re-execute on deopt when accessing flat arrays
-    state_before = copy_state_before();
+    ValueStack* state_before = copy_state_before();
     state_before->set_should_reexecute(true);
-  } else {
-    state_before = copy_state_indexed_access();
+    return state_before;
   }
+  return copy_state_indexed_access();
+}
+
+void GraphBuilder::load_indexed(BasicType type) {
+  // In case of in block code motion in range check elimination
+  int array_idx = state()->stack_size() - 2;
+  ValueStack* state_before = state_before_for_indexed_access(type, array_idx);
   compilation()->set_has_access_indexed(true);
   Value index = ipop();
   Value array = apop();
@@ -1135,15 +1138,8 @@ void GraphBuilder::load_indexed(BasicType type) {
 
 void GraphBuilder::store_indexed(BasicType type) {
   // In case of in block code motion in range check elimination
-  ValueStack* state_before = nullptr;
   int array_idx = state()->stack_size() - 3;
-  if (type == T_OBJECT && state()->stack_at(array_idx)->maybe_flat_array()) {
-    // Save the entire state and re-execute on deopt when accessing flat arrays
-    state_before = copy_state_before();
-    state_before->set_should_reexecute(true);
-  } else {
-    state_before = copy_state_indexed_access();
-  }
+  ValueStack* state_before = state_before_for_indexed_access(type, array_idx);
   compilation()->set_has_access_indexed(true);
   Value value = pop(as_ValueType(type));
   Value index = ipop();
@@ -1807,7 +1803,7 @@ void GraphBuilder::copy_inline_content(ciInlineKlass* vk, Value src, int src_off
     if (field->is_flat()) {
       copy_inline_content(field->type()->as_inline_klass(), src, src_off + offset, dest, dest_off + offset, state_before, enclosing_field);
       if (!field->is_null_free()) {
-        // Nullable, copy the null marker using Unsafe because null markers are no real fields
+        // Nullable, copy the null marker using Unsafe because null markers are not real fields
         int null_marker_offset = field->null_marker_offset() - vk->payload_offset();
         Value offset = append(new Constant(new LongConstant(src_off + null_marker_offset)));
         Value nm = append(new UnsafeGet(T_BOOLEAN, src, offset, false));
@@ -1901,9 +1897,8 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
         null_check(val);
 
         ciType* field_type = field->type();
-        if (field_type->is_loaded() && field_type->is_inlinetype() && field_type->as_inline_klass()->is_empty() &&
-            (!method()->is_class_initializer() || field->is_flat())) {
-          // Storing to a field of an empty, null-free inline type that is already initialized. Ignore.
+        if (field_type->is_loaded() && field->empty_null_free_initialized_value_field(!method()->is_class_initializer())) {
+          // Storing to an empty, null-free inline type field that is already initialized. Ignore.
           break;
         }
       }
@@ -2013,6 +2008,8 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
             }
 
             if (can_delay_access) {
+              // Flat fields contain the nested value's payload but not its object header,
+              // so accumulate the field offset relative to the holder's payload.
               if (has_pending_load_indexed()) {
                 pending_load_indexed()->update(field, offset - field->holder()->as_inline_klass()->payload_offset());
               } else if (has_pending_field_access()) {
@@ -2099,9 +2096,8 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
       }
 
       ciType* field_type = field->type();
-      if (field->is_null_free() && field_type->is_loaded() && field_type->is_inlinetype() &&
-          field_type->as_inline_klass()->is_empty() && (!method()->is_object_constructor() || field->is_flat())) {
-        // Storing to a field of an empty, null-free inline type that is already initialized. Ignore.
+      if (field_type->is_loaded() && field->empty_null_free_initialized_value_field(!method()->is_object_constructor())) {
+        // Storing to an empty, null-free inline type field that is already initialized. Ignore.
         null_check(obj);
         null_check(val);
       } else if (!field->is_flat()) {

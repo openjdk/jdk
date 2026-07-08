@@ -3226,9 +3226,6 @@ TypePtr::FlatInArray TypePtr::compute_flat_in_array(ciInstanceKlass* instance_kl
     return NotFlat;
   }
   if (instance_klass->is_inlinetype()) {
-    if (instance_klass->as_inline_klass()->is_always_flat_in_array()) {
-      return Flat;
-    }
     if (instance_klass->as_inline_klass()->maybe_flat_in_array()) {
       return MaybeFlat;
     }

@@ -123,7 +123,9 @@ public final class ObjectStreamClass implements Serializable {
     /** true if represents record type */
     private boolean isRecord;
     /** true if represented class cannot use allocate-and-fill deserialization,
-     * due to value class or strict field initialization restrictions. */
+     * due to value class or strict field initialization restrictions.
+     * Such a class either has a deserializer or has both serialize/deserialize
+     * exceptions once initialized. */
     private boolean requiresDeserializer;
     /** true if represented class implements Serializable */
     private boolean serializable;
@@ -350,13 +352,25 @@ public final class ObjectStreamClass implements Serializable {
         isProxy = Proxy.isProxyClass(cl);
         isEnum = Enum.class.isAssignableFrom(cl);
         isRecord = cl.isRecord();
-        requiresDeserializer = cl.isValue() || ValueClass.hasStrictInstanceField(cl);
         serializable = Serializable.class.isAssignableFrom(cl);
         externalizable = Externalizable.class.isAssignableFrom(cl);
+
+        // Non-serializable superclasses may declare strictly-initialized instance
+        // fields while their subclasses remain serializable through default
+        // serialization, because the superclass constructors that initialize
+        // those fields are called by default serialization.
+        // Abstract value classes that do not declare any strictly-initialized
+        // instance field, like java.lang.Number, are allowed because no field
+        // initialization is skipped by default serialization.
+        requiresDeserializer = serializable && (ValueClass.isConcreteValueClass(cl) || ValueClass.hasStrictInstanceField(cl));
 
         Class<?> superCl = cl.getSuperclass();
         superDesc = (superCl != null) ? lookup(superCl, false) : null;
         localDesc = this;
+
+        if (superDesc != null) {
+            requiresDeserializer |= superDesc.requiresDeserializer;
+        }
 
         if (serializable) {
             if (isEnum) {
@@ -379,14 +393,15 @@ public final class ObjectStreamClass implements Serializable {
                     canonicalCtr = canonicalRecordCtr(cl);
                     cachedRecordConstructors = new RecordConstructorsCache();
                 } else if (requiresDeserializer) {
-                    if (!Modifier.isAbstract(cl.getModifiers())) {
-                        // Serializable value classes that appear in streams should
-                        // have a factory annotated with @Deserializer
-                        deserializer = findDeserializer(cl, fields);
-                    }
+                    // Concrete value classes and classes with strict instance
+                    // fields must not breach their integrity with the serializable
+                    // constructor. Make sure they fail also upon serialization
+                    // in addition to deserialization if they don't have a
+                    // correct internal @Deserializer
+                    deserializer = findDeserializer(cl, fields);
                     if (deserializer == null) {
                         serializeEx = deserializeEx = new ExceptionInfo(cl.getName(),
-                                                                        "cannot serialize value class");
+                                "cannot serialize due to final value class or strictly-initialized instance fields");
                     }
                 } else if (externalizable) {
                     cons = getExternalizableConstructor(cl);
@@ -422,7 +437,7 @@ public final class ObjectStreamClass implements Serializable {
         if (deserializeEx == null) {
             if (isEnum) {
                 deserializeEx = new ExceptionInfo(name, "enum type");
-            } else if (cons == null && !(isRecord || requiresDeserializer)) {
+            } else if (cons == null && !isRecord && deserializer == null) {
                 deserializeEx = new ExceptionInfo(name, "no valid constructor");
             }
         }
