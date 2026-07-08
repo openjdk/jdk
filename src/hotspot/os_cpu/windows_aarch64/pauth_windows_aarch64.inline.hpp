@@ -28,9 +28,7 @@
 // OS specific Support for ROP Protection in VM code.
 // For more details on PAC see pauth_aarch64.hpp.
 
-#if defined(_M_ARM64)
 extern "C" address pauth_drop_signature_win_arm64(address p);
-#endif
 
 inline address pauth_strip_pointer(address ptr) {
   return pauth_drop_signature_win_arm64(ptr);
