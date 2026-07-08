@@ -55,12 +55,6 @@
 // Explicit NOINLINE to block ATTRIBUTE_FLATTENing.
 #define MAYBE_INLINE_EVACUATION NOT_DEBUG(inline) DEBUG_ONLY(NOINLINE)
 
-// Good estimate for the initial table size.
-static uint initial_nmethod_table_size(G1CollectedHeap* g1h) {
-  // The +1 is both to consider the retained old region likely to be added, and avoid zero-sized initial tables.
-  return MIN3(g1h->collection_set()->num_regions(), g1h->max_num_regions() / 2, g1h->num_available_regions()) + 1;
-}
-
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            G1ParScanThreadStateSet* per_thread_states,
                                            uint worker_id,
@@ -91,10 +85,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _max_num_optional_regions(collection_set->num_optional_regions()),
     _numa(g1h->numa()),
     _obj_alloc_stat(nullptr),
-    // The initial size estimate is relatively conservative, assuming that all regions
-    // in the collection set get evacuated into the same amount of new regions.
-    _nmethods_to_add(initial_nmethod_table_size(g1h),
-                     MAX2(initial_nmethod_table_size(g1h), _g1h->max_num_regions() / 2)),
+    _code_root_pairs(32),
     ALLOCATION_FAILURE_INJECTOR_ONLY(_allocation_failure_inject_counter(0) COMMA)
     _evacuation_failed_info(),
     _evac_failure_regions(evac_failure_regions),
@@ -141,12 +132,6 @@ size_t G1ParScanThreadState::flush_stats(size_t* surviving_young_words, uint num
 }
 
 G1ParScanThreadState::~G1ParScanThreadState() {
-  auto delete_all = [&] (uint region, G1NmethodSet* nmethods) -> bool {
-    delete nmethods;
-    return true;
-  };
-  _nmethods_to_add.iterate(delete_all);
-
   delete _plab_allocator;
   delete _closures;
   FREE_C_HEAP_ARRAY(_surviving_young_words_base);
@@ -645,39 +630,6 @@ void G1ParScanThreadStateSet::destroy_worker_states() {
   }
 }
 
-void G1ParScanThreadStateSet::update_nmethod_regions_to_add(G1NmethodsToAdd* nmethods) {
-  if (nmethods->number_of_entries() == 0) {
-    return;
-  }
-
-  // Take the key set, look which are not yet in the global set, and update the necessary ones.
-  ResourceMark rm;
-  GrowableArray<uint> regions_to_add = GrowableArray<uint>(nmethods->table_size());
-
-  nmethods->iterate_all([&] (uint& region, void*) {
-    if (_has_nmethods_to_add.par_set_bit(region, memory_order_relaxed)) {
-      regions_to_add.push(region);
-    }
-  });
-
-  uint num_regions_to_add = (uint)regions_to_add.length();
-
-  if (num_regions_to_add == 0) {
-    return;
-  }
-
-  uint first_index = _num_nmethod_regions_to_add.fetch_then_add(num_regions_to_add, memory_order_relaxed);
-  guarantee(first_index + num_regions_to_add <= _g1h->max_num_regions(), "must be");
-
-  memcpy(&_nmethod_regions_to_add[first_index], regions_to_add.adr_at(0), num_regions_to_add * sizeof(uint));
-}
-
-void G1ParScanThreadStateSet::par_iterate_nmethod_regions_to_add(G1HeapRegionClosure* cl,
-                                                                 G1HeapRegionClaimer* claimer,
-                                                                 uint worker_id) {
-  _g1h->par_iterate_regions_array(cl, claimer, _nmethod_regions_to_add, num_nmethod_regions_to_add(), worker_id);
-}
-
 void G1ParScanThreadStateSet::record_unused_optional_region(G1HeapRegion* hr) {
   for (uint worker_index = 0; worker_index < _num_workers; ++worker_index) {
     G1ParScanThreadState* pss = _states[worker_index];
@@ -733,10 +685,6 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, Kla
   }
 }
 
-void G1ParScanThreadState::update_nmethod_regions_to_add() {
-  _per_thread_states->update_nmethod_regions_to_add(&_nmethods_to_add);
-}
-
 void G1ParScanThreadState::initialize_numa_stats() {
   if (_numa->is_enabled()) {
     LogTarget(Info, gc, heap, numa) lt;
@@ -781,10 +729,7 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
     _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, collection_set->num_young_regions() + 1, mtGC)),
     _num_workers(num_workers),
     _flushed(false),
-    _evac_failure_regions(evac_failure_regions),
-    _has_nmethods_to_add(g1h->max_num_regions(), mtGC),
-    _num_nmethod_regions_to_add(0),
-    _nmethod_regions_to_add(NEW_C_HEAP_ARRAY(uint, g1h->max_num_regions(), mtGC)) // Conservative length estimation.
+    _evac_failure_regions(evac_failure_regions)
 {
   for (uint i = 0; i < num_workers; ++i) {
     _states[i] = nullptr;
@@ -796,7 +741,6 @@ G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
   for (uint i = 0; i < _num_workers; i++) {
     assert(_states[i] == nullptr, "must be");
   }
-  FREE_C_HEAP_ARRAY(_nmethod_regions_to_add);
   FREE_C_HEAP_ARRAY(_states);
   FREE_C_HEAP_ARRAY(_surviving_young_words_total);
 }

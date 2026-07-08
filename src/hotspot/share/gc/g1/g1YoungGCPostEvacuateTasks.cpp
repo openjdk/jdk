@@ -122,52 +122,49 @@ public:
 class G1PostEvacuateCollectionSetCleanupTask1::UpdateCodeRootsTask
   : public G1AbstractSubTask
 {
-  class ProcessRegionClosure : public G1HeapRegionClosure {
-    G1ParScanThreadStateSet* _psss;
-
-  public:
-    ProcessRegionClosure(G1ParScanThreadStateSet* psss) : _psss(psss) { }
-
-    bool do_heap_region(G1HeapRegion* r) override {
-      uint index = r->hrm_index();
-
-      size_t num_nmethods = 0;
-      for (uint i = 0; i < _psss->num_workers(); i++) {
-        G1ParScanThreadState* pss = _psss->state_for_worker(i);
-        num_nmethods += pss->num_nmethods(index);
-      }
-      if (num_nmethods != 0) {
-        // Notify the code root sets that we are going to add code roots.
-        r->rem_set()->prepare_for_adding_code_roots(num_nmethods);
-
-        // Add roots.
-        for (uint i = 0; i < _psss->num_workers(); i++) {
-          G1ParScanThreadState* pss = _psss->state_for_worker(i);
-          pss->iterate_nmethods(index, [&] (nmethod* nm) { r->add_code_root(nm); });
-        }
-      }
-      return false;
-    }
-  };
-
   G1ParScanThreadStateSet* _psss;
-  G1HeapRegionClaimer _claimer;
 
 public:
   UpdateCodeRootsTask(G1ParScanThreadStateSet* per_thread_states)
-    : G1AbstractSubTask(G1GCPhaseTimes::UpdateCodeRoots), _psss(per_thread_states), _claimer(0) { }
+    : G1AbstractSubTask(G1GCPhaseTimes::UpdateCodeRoots), _psss(per_thread_states) { }
 
-  double worker_cost() const override {
-    return _psss->num_nmethod_regions_to_add();
-  }
+  double worker_cost() const override { return 1.0; }
 
-  void set_max_workers(uint max_workers) override {
-    _claimer.set_n_workers(max_workers);
-  }
-
+  // Add code roots serially to avoid lock and resize contention.
   void do_work(uint worker_id) override {
-    ProcessRegionClosure cl(_psss);
-    _psss->par_iterate_nmethod_regions_to_add(&cl, &_claimer, worker_id);
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    uint max_regions = g1h->max_num_regions();
+
+    uint* counts = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
+    memset(counts, 0, max_regions * sizeof(uint));
+
+    // Pass 1: count the number of nmethods to add per region across all workers.
+    for (uint i = 0; i < _psss->num_workers(); i++) {
+      G1ParScanThreadState* pss = _psss->state_for_worker(i);
+      const GrowableArrayCHeap<G1CodeRootPair, mtGC>* pairs = pss->code_root_pairs();
+      for (int j = 0; j < pairs->length(); j++) {
+        counts[pairs->at(j)._region_idx]++;
+      }
+    }
+
+    // Pass 2: pre-size each region's code root set once, then add all nmethods.
+    for (uint i = 0; i < _psss->num_workers(); i++) {
+      G1ParScanThreadState* pss = _psss->state_for_worker(i);
+      const GrowableArrayCHeap<G1CodeRootPair, mtGC>* pairs = pss->code_root_pairs();
+      for (int j = 0; j < pairs->length(); j++) {
+        G1CodeRootPair pair = pairs->at(j);
+        uint region_idx = pair._region_idx;
+        if (counts[region_idx] > 0) {
+          // First occurrence of this region: pre-size its code root set to the
+          // final size so it never needs to grow under the (single-threaded) add.
+          g1h->region_at(region_idx)->rem_set()->prepare_for_adding_code_roots(counts[region_idx]);
+          counts[region_idx] = 0;
+        }
+        g1h->region_at(region_idx)->add_code_root(pair._nmethod);
+      }
+    }
+
+    FREE_C_HEAP_ARRAY(counts);
   }
 };
 
@@ -384,7 +381,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   if (SampleCollectionSetCandidatesTask::should_execute()) {
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
-  add_parallel_task(new UpdateCodeRootsTask(per_thread_states));
+  add_serial_task(new UpdateCodeRootsTask(per_thread_states));
 
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
   if (evac_failed) {
