@@ -137,11 +137,15 @@ private:
   // the `prepare` methods are used to configure the heap and update heuristics accordingly.
   void check_for_request(ShenandoahGCRequest& request);
 
-  GCMode prepare_for_explicit_gc(ShenandoahGCRequest &request) const;
-  GCMode prepare_for_concurrent_gc(const ShenandoahGCRequest &request) const;
+  GCMode prepare_for_concurrent_gc(ShenandoahGCRequest &request) const;
+  GCMode prepare_for_full_gc(ShenandoahGCRequest& request) const;
+  void prepare_for_explicit_gc(ShenandoahGCRequest &request) const;
 
   // Print table for young region ages if log is enabled
   void maybe_print_young_region_ages() const;
+
+  // Returns true if we should run a full gc
+  bool should_run_full_gc(GCCause::Cause cause) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP

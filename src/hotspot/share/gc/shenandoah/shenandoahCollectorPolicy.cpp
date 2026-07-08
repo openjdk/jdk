@@ -154,7 +154,7 @@ bool ShenandoahCollectorPolicy::is_requested_gc(GCCause::Cause cause) {
 }
 
 bool ShenandoahCollectorPolicy::should_run_full_gc(GCCause::Cause cause) {
-  if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
+  if (cause == GCCause::_shenandoah_upgrade_to_full_gc || cause == GCCause::_shenandoah_humongous_allocation_failure) {
     return true;
   }
   return is_explicit_gc(cause) ? !ExplicitGCInvokesConcurrent : !ShenandoahImplicitGCInvokesConcurrent;

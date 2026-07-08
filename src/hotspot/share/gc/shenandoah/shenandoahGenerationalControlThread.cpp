@@ -98,6 +98,11 @@ void ShenandoahGenerationalControlThread::stop_service() {
   // to reach a safepoint (this runs on a java thread).
 }
 
+bool ShenandoahGenerationalControlThread::should_run_full_gc(GCCause::Cause cause) const {
+  const bool old_evacs_failed = _heap->old_generation()->has_failed_evacuations();
+  return old_evacs_failed || ShenandoahCollectorPolicy::should_run_full_gc(cause);
+}
+
 void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest& request) {
   // Hold the lock while we read request cause and generation
   MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
@@ -108,6 +113,7 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
   request.cause = _requested_gc_cause;
   request.generation = _requested_generation;
 
+  // If the cause was an allocation failure or an explicit request, override the generation
   if (ShenandoahCollectorPolicy::is_allocation_failure(request.cause)) {
     if (_heap->old_generation()->is_concurrent_mark_in_progress()) {
       // We know we can't allocate in young, and we know we need to collect old.
@@ -118,9 +124,6 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
     } else if (_requested_generation == nullptr) {
       request.generation = _heap->young_generation();
     }
-
-    // This used to happen in preparation for a degenerated cycle.
-    _heap->old_generation()->clear_failed_evacuation();
   }
 
   log_debug(gc, thread)("request.cause: %s, request.generation: %s",
@@ -137,37 +140,43 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
   assert(request.generation != nullptr, "request.generation cannot be null, cause is: %s", GCCause::to_string(request.cause));
 
   GCMode mode;
-  if (ShenandoahCollectorPolicy::is_explicit_gc(request.cause) || request.cause == GCCause::_shenandoah_upgrade_to_full_gc) {
-    mode = prepare_for_explicit_gc(request);
+  if (should_run_full_gc(request.cause)) {
+    mode = prepare_for_full_gc(request);
   } else {
     mode = prepare_for_concurrent_gc(request);
   }
   set_gc_mode(ml, mode);
 }
 
-ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRequest &request) const {
-  ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
-  request.generation = _heap->global_generation();
-  global_heuristics->log_trigger("GC request (%s)", GCCause::to_string(request.cause));
-  global_heuristics->record_requested_gc();
-
-  if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
+ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_full_gc(ShenandoahGCRequest &request) const {
+  if (ShenandoahCollectorPolicy::is_explicit_gc(request.cause)) {
+    prepare_for_explicit_gc(request);
     return stw_full;
-  } else {
-    // Unload and clean up everything. Note that this is an _explicit_ request and so does not use
-    // the same `should_unload_classes` call as the regulator's concurrent gc request.
-    _heap->set_unload_classes(global_heuristics->can_unload_classes());
-    return concurrent_normal;
   }
+
+  request.generation = _heap->global_generation();
+  request.generation->heuristics()->log_trigger("Handle Allocation Failure: %s", GCCause::to_string(request.cause));
+  return stw_full;
 }
 
-ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_concurrent_gc(const ShenandoahGCRequest &request) const {
+void ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRequest &request) const {
+  request.generation = _heap->global_generation();
+  request.generation->heuristics()->record_requested_gc();
+  request.generation->heuristics()->log_trigger("GC request (%s)", GCCause::to_string(request.cause));
+  _heap->set_unload_classes(request.generation->heuristics()->can_unload_classes());
+}
+
+ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_concurrent_gc(ShenandoahGCRequest &request) const {
   assert(!(request.generation->is_old() && _heap->old_generation()->is_doing_mixed_evacuations()),
              "Old heuristic should not request cycles while it waits for mixed evacuations");
 
+  if (ShenandoahCollectorPolicy::is_explicit_gc(request.cause)) {
+    prepare_for_explicit_gc(request);
+    return concurrent_normal;
+  }
+
   if (request.generation->is_global()) {
-    ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
-    _heap->set_unload_classes(global_heuristics->should_unload_classes());
+    _heap->set_unload_classes(request.generation->heuristics()->should_unload_classes());
   } else {
     _heap->set_unload_classes(false);
   }

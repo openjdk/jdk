@@ -186,6 +186,11 @@ public:
     return _failed_evacuation.try_unset();
   }
 
+  // Test if the cycle recorded evacuation failures in old
+  bool has_failed_evacuations() const {
+    return _failed_evacuation.is_set();
+  }
+
   // Transition to the next state after mixed evacuations have completed
   void complete_mixed_evacuations();
 

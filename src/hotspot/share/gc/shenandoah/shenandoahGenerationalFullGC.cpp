@@ -66,6 +66,7 @@ void ShenandoahGenerationalFullGC::handle_completion(ShenandoahHeap* heap) {
   ShenandoahOldGeneration* old = gen_heap->old_generation();
   young->heuristics()->record_cycle_end();
   old->heuristics()->record_cycle_end();
+  old->clear_failed_evacuation();
 
   gen_heap->mmu_tracker()->record_full(GCId::current());
   gen_heap->log_heap_status("At end of Full GC");
