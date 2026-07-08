@@ -372,10 +372,20 @@ public class PriorityQueue<E> extends AbstractQueue<E>
                 throw new NullPointerException();
             if (c == this)
                 throw new IllegalArgumentException();
-            if (c.isEmpty())
-                return false;
 
-            Object[] es = prepareElements(c, comparator);
+            // If c is an exact PriorityQueue, its elements are known to be non-null
+            // and its backing array can be copied directly.
+            Object[] es;
+            if (c.getClass() == PriorityQueue.class) {
+                if (c.isEmpty())
+                    return false;
+                es = c.toArray();
+            } else {
+                es = prepareElements(c, comparator);
+                if (es.length == 0)
+                    return false;
+            }
+
             heapify(es, es.length, comparator);
             modCount++;
             queue = ensureNonEmpty(es);
