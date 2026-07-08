@@ -951,6 +951,7 @@ void InterpreterMacroAssembler::narrow(Register result, Register ret_type) {
 
 // remove activation
 //
+// Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
 // Unlock any Java monitors from synchronized blocks.
 // Remove the activation from the stack.
@@ -969,6 +970,22 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
                                                   bool notify_jvmti) {
   BLOCK_COMMENT("remove_activation {");
   unlock_if_synchronized_method(state, throw_monitor_exception, install_monitor_exception);
+
+  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
+  // that would normally not be safe to use. Such bad returns into unsafe territory of
+  // the stack, will call InterpreterRuntime::at_unwind.
+  Label slow_path, fast_path;
+  safepoint_poll(slow_path, Z_R0_scratch, true /* at_return */, false /* in_nmethod */);
+  branch_optimized(Assembler::bcondAlways, fast_path);
+  bind (slow_path);
+  push(state);
+  // TODO: I have followed ppc, but double check this
+  set_last_Java_frame(Z_SP, noreg);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), Z_thread);
+  reset_last_Java_frame();
+  pop(state);
+  align(32);
+  bind(fast_path);
 
   // Save result (push state before jvmti call and pop it afterwards) and notify jvmti.
   notify_method_exit(false, state, notify_jvmti ? NotifyJVMTI : SkipNotifyJVMTI);
