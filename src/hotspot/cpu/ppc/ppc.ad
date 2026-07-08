@@ -3078,13 +3078,6 @@ encode %{
     __ bind(done);
   %}
 
-  enc_class enc_cmove_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
-    Label done;
-    __ bso($crx$$CondRegister, done);
-    __ mffprd($dst$$Register, $src$$FloatRegister);
-    __ bind(done);
-  %}
-
   enc_class enc_bc(flagsRegSrc crx, cmpOp cmp, Label lbl) %{
     Label d;   // dummy
     __ bind(d);
@@ -9155,61 +9148,14 @@ instruct andI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Left shifted Immediate And
-instruct andI_reg_immIhi16(iRegIdst dst, iRegIsrc src1, immIhi16  src2, flagsRegCR0 cr0) %{
+instruct andI_reg_immI(iRegIdst dst, iRegIsrc src1, immI src2, flagsRegCR0 cr0) %{
   match(Set dst (AndI src1 src2));
+  predicate(Assembler::andi_supports((juint)(n->in(2)->get_int())));
   effect(KILL cr0);
-  format %{ "ANDIS   $dst, $src1, $src2.hi" %}
-  size(4);
-  ins_encode %{
-    __ andis_($dst$$Register, $src1$$Register, (int)((unsigned short)(($src2$$constant & 0xFFFF0000) >> 16)));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Immediate And
-instruct andI_reg_uimm16(iRegIdst dst, iRegIsrc src1, uimmI16 src2, flagsRegCR0 cr0) %{
-  match(Set dst (AndI src1 src2));
-  effect(KILL cr0);
-
   format %{ "ANDI    $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // FIXME: avoid andi_ ?
-    __ andi_($dst$$Register, $src1$$Register, $src2$$constant);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Immediate And where the immediate is a negative power of 2.
-instruct andI_reg_immInegpow2(iRegIdst dst, iRegIsrc src1, immInegpow2 src2) %{
-  match(Set dst (AndI src1 src2));
-  format %{ "ANDWI   $dst, $src1, $src2" %}
-  size(4);
-  ins_encode %{
-    __ clrrdi($dst$$Register, $src1$$Register, log2i_exact(-(juint)$src2$$constant));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct andI_reg_immIpow2minus1(iRegIdst dst, iRegIsrc src1, immIpow2minus1 src2) %{
-  match(Set dst (AndI src1 src2));
-  format %{ "ANDWI   $dst, $src1, $src2" %}
-  size(4);
-  ins_encode %{
-    __ clrldi($dst$$Register, $src1$$Register, 64 - log2i_exact((juint)$src2$$constant + 1u));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct andI_reg_immIpowerOf2(iRegIdst dst, iRegIsrc src1, immIpowerOf2 src2) %{
-  match(Set dst (AndI src1 src2));
-  predicate(UseRotateAndMaskInstructionsPPC64);
-  format %{ "ANDWI   $dst, $src1, $src2" %}
-  size(4);
-  ins_encode %{
-    int bitpos = 31 - log2i_exact((juint)$src2$$constant);
-    __ rlwinm($dst$$Register, $src1$$Register, 0, bitpos, bitpos);
+    __ andi($dst$$Register, $src1$$Register, (juint)$src2$$constant); // optimized version
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9227,50 +9173,27 @@ instruct andL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Immediate And long
-instruct andL_reg_uimm16(iRegLdst dst, iRegLsrc src1, uimmL16 src2, flagsRegCR0 cr0) %{
+instruct andL_reg_immL(iRegLdst dst, iRegLsrc src1, immL src2, flagsRegCR0 cr0) %{
   match(Set dst (AndL src1 src2));
+  predicate(Assembler::andi_supports(n->in(2)->get_long()));
   effect(KILL cr0);
-
   format %{ "ANDI    $dst, $src1, $src2 \t// long" %}
   size(4);
   ins_encode %{
-    // FIXME: avoid andi_ ?
-    __ andi_($dst$$Register, $src1$$Register, $src2$$constant);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Immediate And Long where the immediate is a negative power of 2.
-instruct andL_reg_immLnegpow2(iRegLdst dst, iRegLsrc src1, immLnegpow2 src2) %{
-  match(Set dst (AndL src1 src2));
-  format %{ "ANDDI   $dst, $src1, $src2" %}
-  size(4);
-  ins_encode %{
-    __ clrrdi($dst$$Register, $src1$$Register, log2i_exact(-(julong)$src2$$constant));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct andL_reg_immLpow2minus1(iRegLdst dst, iRegLsrc src1, immLpow2minus1 src2) %{
-  match(Set dst (AndL src1 src2));
-  format %{ "ANDDI   $dst, $src1, $src2" %}
-  size(4);
-  ins_encode %{
-    __ clrldi($dst$$Register, $src1$$Register, 64 - log2i_exact((julong)$src2$$constant + 1ull));
+    __ andi($dst$$Register, $src1$$Register, $src2$$constant); // optimized version
   %}
   ins_pipe(pipe_class_default);
 %}
 
 // AndL + ConvL2I.
-instruct convL2I_andL_reg_immLpow2minus1(iRegIdst dst, iRegLsrc src1, immLpow2minus1 src2) %{
+instruct convL2I_andL_reg_immL(iRegIdst dst, iRegLsrc src1, immL src2, flagsRegCR0 cr0) %{
   match(Set dst (ConvL2I (AndL src1 src2)));
-  ins_cost(DEFAULT_COST);
-
-  format %{ "ANDDI   $dst, $src1, $src2 \t// long + l2i" %}
+  predicate(Assembler::andi_supports(n->in(1)->in(2)->get_long()));
+  effect(KILL cr0);
+  format %{ "ANDI    $dst, $src1, $src2 \t// long + l2i" %}
   size(4);
   ins_encode %{
-    __ clrldi($dst$$Register, $src1$$Register, 64 - log2i_exact((julong)$src2$$constant + 1ull));
+    __ andi($dst$$Register, $src1$$Register, $src2$$constant); // optimized version
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -10015,6 +9938,34 @@ instruct convL2I_reg(iRegIdst dst, iRegLsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE crx, USE src);
+  predicate(false);
+
+  format %{ "CMOVI   $crx, $dst, $src" %}
+  size(8);
+  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovI_bso_reg_con0(iRegIdst dst, flagsRegSrc crx, regD src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE crx, USE src);
+  predicate(false);
+
+  format %{ "CMOVI   $dst, $crx, $src, 0 \t// set to 0 if unordered" %}
+  size(12);
+  ins_encode %{
+    Label done;
+    __ li($dst$$Register, 0);
+    __ bso($crx$$CondRegister, done);
+    __ mffprd($dst$$Register, $src$$FloatRegister);
+    __ bind(done);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct convD2IRaw_regD(regD dst, regD src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE src);
@@ -10028,84 +9979,6 @@ instruct convD2IRaw_regD(regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVI   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovI_bso_reg(iRegIdst dst, flagsRegSrc crx, regD src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVI   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_reg(dst, crx, src) );
-  ins_pipe(pipe_class_default);
-%}
-
-
-instruct cmovI_bso_reg_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, regD src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVI   $dst, $crx, $src \t// postalloc expanded" %}
-  postalloc_expand %{
-    //
-    // replaces
-    //
-    //   region  dst  crx  src
-    //    \       |    |   /
-    //     dst=cmovI_bso_reg_conLvalue0
-    //
-    // with
-    //
-    //   region  dst
-    //    \       /
-    //     dst=loadConI16(0)
-    //      |
-    //      ^  region  dst  crx  src
-    //      |   \       |    |    /
-    //      dst=cmovI_bso_reg
-    //
-
-    // Create new nodes.
-    MachNode *m1 = new loadConI16Node();
-    MachNode *m2 = new cmovI_bso_regNode();
-
-    // inputs for new nodes
-    m1->add_req(n_region);
-    m2->add_req(n_region, n_crx, n_src);
-
-    // precedences for new nodes
-    m2->add_prec(m1);
-
-    // operands for new nodes
-    m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = new immI16Oper(0);
-
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_crx;
-    m2->_opnds[2] = op_src;
-
-    // registers for new nodes
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-
-    // Insert new nodes.
-    nodes->push(m1);
-    nodes->push(m2);
-  %}
-%}
-
-
 // Double to Int conversion, NaN is mapped to 0. Special version for Power8.
 instruct convD2I_reg_mffprd_ExEx(iRegIdst dst, regD src) %{
   match(Set dst (ConvD2I src));
@@ -10116,7 +9989,7 @@ instruct convD2I_reg_mffprd_ExEx(iRegIdst dst, regD src) %{
     flagsReg crx;
     cmpDUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
     convD2IRaw_regD(tmpD, src);                         // Convert float to int (speculated).
-    cmovI_bso_reg_conLvalue0_Ex(dst, crx, tmpD);        // Cmove based on NaN check.
+    cmovI_bso_reg_con0(dst, crx, tmpD);                 // Cmove based on NaN check.
   %}
 %}
 
@@ -10144,7 +10017,7 @@ instruct convF2I_regF_mffprd_ExEx(iRegIdst dst, regF src) %{
     flagsReg crx;
     cmpFUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
     convF2IRaw_regF(tmpF, src);                         // Convert float to int (speculated).
-    cmovI_bso_reg_conLvalue0_Ex(dst, crx, tmpF);        // Cmove based on NaN check.
+    cmovI_bso_reg_con0(dst, crx, tmpF);                 // Cmove based on NaN check.
   %}
 %}
 
@@ -10186,6 +10059,34 @@ instruct zeroExtendL_regL(iRegLdst dst, iRegLsrc src, immL_32bits mask) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE crx, USE src);
+  predicate(false);
+
+  format %{ "CMOVL   $crx, $dst, $src" %}
+  size(8);
+  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovL_bso_reg_con0(iRegLdst dst, flagsRegSrc crx, regD src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE crx, USE src);
+  predicate(false);
+
+  format %{ "CMOVL   $dst, $crx, $src, 0 \t// set to 0 if unordered" %}
+  size(12);
+  ins_encode %{
+    Label done;
+    __ li($dst$$Register, 0);
+    __ bso($crx$$CondRegister, done);
+    __ mffprd($dst$$Register, $src$$FloatRegister);
+    __ bind(done);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct convF2LRaw_regF(regF dst, regF src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE src);
@@ -10199,81 +10100,6 @@ instruct convF2LRaw_regF(regF dst, regF src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVL   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovL_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVL   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_reg(dst, crx, src) );
-  ins_pipe(pipe_class_default);
-%}
-
-
-instruct cmovL_bso_reg_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, regD src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVL   $dst, $crx, $src \t// postalloc expanded" %}
-  postalloc_expand %{
-    //
-    // replaces
-    //
-    //   region  dst  crx  src
-    //    \       |    |   /
-    //     dst=cmovL_bso_reg_conLvalue0
-    //
-    // with
-    //
-    //   region  dst
-    //    \       /
-    //     dst=loadConL16(0)
-    //      |
-    //      ^  region  dst  crx  src
-    //      |   \       |    |    /
-    //      dst=cmovL_bso_reg
-    //
-
-    // Create new nodes.
-    MachNode *m1 = new loadConL16Node();
-    MachNode *m2 = new cmovL_bso_regNode();
-
-    // inputs for new nodes
-    m1->add_req(n_region);
-    m2->add_req(n_region, n_crx, n_src);
-    m2->add_prec(m1);
-
-    // operands for new nodes
-    m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = new immL16Oper(0);
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_crx;
-    m2->_opnds[2] = op_src;
-
-    // registers for new nodes
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-
-    // Insert new nodes.
-    nodes->push(m1);
-    nodes->push(m2);
-  %}
-%}
-
-
 // Float to Long conversion, NaN is mapped to 0. Special version for Power8.
 instruct convF2L_reg_mffprd_ExEx(iRegLdst dst, regF src) %{
   match(Set dst (ConvF2L src));
@@ -10284,7 +10110,7 @@ instruct convF2L_reg_mffprd_ExEx(iRegLdst dst, regF src) %{
     flagsReg crx;
     cmpFUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
     convF2LRaw_regF(tmpF, src);                         // Convert float to long (speculated).
-    cmovL_bso_reg_conLvalue0_Ex(dst, crx, tmpF);        // Cmove based on NaN check.
+    cmovL_bso_reg_con0(dst, crx, tmpF);                 // Cmove based on NaN check.
   %}
 %}
 
@@ -10301,7 +10127,6 @@ instruct convD2LRaw_regD(regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-
 // Double to Long conversion, NaN is mapped to 0. Special version for Power8.
 instruct convD2L_reg_mffprd_ExEx(iRegLdst dst, regD src) %{
   match(Set dst (ConvD2L src));
@@ -10312,7 +10137,7 @@ instruct convD2L_reg_mffprd_ExEx(iRegLdst dst, regD src) %{
     flagsReg crx;
     cmpDUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
     convD2LRaw_regD(tmpD, src);                         // Convert float to long (speculated).
-    cmovL_bso_reg_conLvalue0_Ex(dst, crx, tmpD);        // Cmove based on NaN check.
+    cmovL_bso_reg_con0(dst, crx, tmpD);                 // Cmove based on NaN check.
   %}
 %}
 

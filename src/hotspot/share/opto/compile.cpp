@@ -3497,22 +3497,38 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       ResourceMark rm;
       Unique_Node_List wq;
       wq.push(n);
+
+
+      // When we remove a CastPP, we need to pin all of its transitive users under the control of
+      // the removed node. The simplest approach is to pin all of the uses of the removed CastPP,
+      // but it is overly conservative, as an AddP does not really need pinning. As a result, we
+      // look through those nodes that do not need pinning and only pin memory access nodes under
+      // n->in(0).
       for (uint next = 0; next < wq.size(); ++next) {
         Node *m = wq.at(next);
         for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
           Node* use = m->fast_out(i);
-          if (use->is_Mem() || use->is_EncodeNarrowPtr()) {
+          int use_op = use->Opcode();
+          if (use->is_CFG() || use->pinned() ||                               // already pinned at the exact control
+              use->is_Cmp() || use_op == Op_CastP2X || use_op == Op_Conv2B) { // pure computations
+            continue;
+          } else if (use->is_EncodeNarrowPtr() ||        // EncodeP remembers whether its input is nullable, so it must be pinned
+                     use_op == Op_PartialSubtypeCheck || // This accesses its pointer inputs, so it must depend on them being not-null
+                     use->is_Mem() || use->is_memory_access_intrinsic()) {
             use->ensure_control_or_add_prec(n->in(0));
+          } else if (use_op == Op_AddP    ||
+                     use_op == Op_CastPP  || use_op == Op_CheckCastPP  ||
+                     use_op == Op_CMoveP  || use_op == Op_CMoveN       ||
+                     use_op == Op_DecodeN || use_op == Op_DecodeNKlass ||
+                     use_op == Op_VerifyVectorAlignment) {
+            // Look through use to find memory accesses if use does not need pinning
+            wq.push(use);
           } else {
-            switch(use->Opcode()) {
-            case Op_AddP:
-            case Op_DecodeN:
-            case Op_DecodeNKlass:
-            case Op_CheckCastPP:
-            case Op_CastPP:
-              wq.push(use);
-              break;
-            }
+            // Should have handled all kinds of nodes, verify that we do not unexpectedly arrive
+            // here
+            assert(false, "unexpected node %s", use->Name());
+            // Be conservative in product and pin the unexpected use
+            use->ensure_control_or_add_prec(n->in(0));
           }
         }
       }

@@ -597,8 +597,14 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
 
   ShenandoahBarrierStubC2::load_store_pre(masm, node, addr, tmp1, tmp2, tmp3, narrow);
 
+  atomic_memory_order order = acquire ? memory_order_seq_cst : memory_order_release;
+
   // CAS!
-  __ cmpxchg(addr, oldval, newval, op_size, acquire, /* release */ true, weak, exchange ? res : noreg);
+  if (weak) {
+    __ cmpxchg_weak(addr, oldval, newval, op_size, order, exchange ? res : noreg);
+  } else {
+    __ cmpxchg(addr, oldval, newval, op_size, order, exchange ? res : noreg);
+  }
 
   // If we need a boolean result out of CAS, set the flag appropriately and promote the result.
   if (!exchange) {

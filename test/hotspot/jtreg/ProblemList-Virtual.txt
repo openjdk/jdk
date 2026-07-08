@@ -29,6 +29,10 @@ serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8308026 generic-al
 serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java 8264699 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 8308367 generic-all
 
+vmTestbase/nsk/jvmti/unit/functions/Dispose/JvmtiTest/TestDescription.java 8387429 generic-all
+vmTestbase/nsk/jvmti/scenarios/capability/CM02/cm02t001/TestDescription.java 8299217 generic-all
+
+
 ####
 ## Classes not unloaded as expected (TODO, need to check if FJ keeps a reference)
 
