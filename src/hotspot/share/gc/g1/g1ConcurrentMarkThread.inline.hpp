@@ -48,31 +48,31 @@ inline bool G1ConcurrentMarkThread::is_in_full_concurrent_cycle() const {
 inline void G1ConcurrentMarkThread::set_idle() {
   // Concurrent cycle may be aborted any time.
   assert(!is_idle(), "must not be idle");
-  _state.store_relaxed(Idle);
+  set_state(Idle);
 }
 
 inline void G1ConcurrentMarkThread::start_full_cycle() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be");
   assert(is_idle(), "cycle in progress");
-  _state.store_relaxed(FullCycleMarking);
+  set_state(FullCycleMarking);
 }
 
 inline void G1ConcurrentMarkThread::start_undo_cycle() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be");
   assert(is_idle(), "cycle in progress");
-  _state.store_relaxed(UndoCycleResetForNextCycle);
+  set_state(UndoCycleResetForNextCycle);
 }
 
 inline void G1ConcurrentMarkThread::set_full_cycle_rebuild_and_scrub() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be");
   assert(state() == FullCycleMarking, "must be");
-  _state.store_relaxed(FullCycleRebuildOrScrub);
+  set_state(FullCycleRebuildOrScrub);
 }
 
 inline void G1ConcurrentMarkThread::set_full_cycle_reset_for_next_cycle() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be");
   assert(state() == FullCycleRebuildOrScrub, "must be");
-  _state.store_relaxed(FullCycleResetForNextCycle);
+  set_state(FullCycleResetForNextCycle);
 }
 
 inline bool G1ConcurrentMarkThread::is_in_marking() const {

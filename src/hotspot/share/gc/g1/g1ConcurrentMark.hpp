@@ -213,8 +213,8 @@ private:
   Atomic<TaskQueueEntryChunk*> _free_list;  // Linked list of free chunks that can be allocated by users.
   char _pad1[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*)];
   Atomic<TaskQueueEntryChunk*> _chunk_list; // List of chunks currently containing data.
-  volatile size_t _chunks_in_chunk_list;
-  char _pad2[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
+  Atomic<size_t> _chunks_in_chunk_list;
+  char _pad2[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(_chunks_in_chunk_list)];
 
   // Atomically add the given chunk to the list.
   void add_chunk_to_list(Atomic<TaskQueueEntryChunk*>* list, TaskQueueEntryChunk* elem);
@@ -265,7 +265,7 @@ private:
 
   // Return the approximate number of oops on this mark stack. Racy due to
   // unsynchronized access to _chunks_in_chunk_list.
-  size_t size() const { return _chunks_in_chunk_list * EntriesPerChunk; }
+  size_t size() const { return _chunks_in_chunk_list.load_relaxed() * EntriesPerChunk; }
 
   void set_empty();
 
@@ -569,6 +569,11 @@ public:
 
   uint worker_id_offset() const { return _worker_id_offset; }
 
+  // Fully allocates and initializes data structures for the concurrent cycle.
+  // Methods that use concurrent cycle state such as the concurrent mark threads,
+  // tasks, marking stack, statistics, TAMS or TARS require this initialization.
+  // Callers that run before the first concurrent start pause, which calls this,
+  // should guard calls with is_fully_initialized().
   void fully_initialize();
   bool is_fully_initialized() const { return _cm_thread != nullptr; }
 
@@ -603,6 +608,8 @@ public:
   bool mark_stack_empty() const                 { return _global_mark_stack.is_empty(); }
 
   void concurrent_cycle_start();
+  bool shutdown_cleanup_needed() const;
+  void shutdown_concurrent_cycle();
   // Abandon current marking iteration due to a Full GC.
   bool concurrent_cycle_abort();
   void concurrent_cycle_end(bool mark_cycle_completed);

@@ -206,9 +206,9 @@ address frame::raw_pc() const {
   if (is_deoptimized_frame()) {
     nmethod* nm = cb()->as_nmethod_or_null();
     assert(nm != nullptr, "only nmethod is expected here");
-    return nm->deopt_handler_entry() - pc_return_offset;
+    return nm->deopt_handler_entry();
   } else {
-    return (pc() - pc_return_offset);
+    return pc();
   }
 }
 

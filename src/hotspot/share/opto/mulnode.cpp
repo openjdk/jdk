@@ -26,6 +26,8 @@
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
@@ -604,6 +606,36 @@ const Type* UMulHiLNode::Value(PhaseGVN* phase) const {
   const Type *t2 = phase->type( in(2) );
   const Type *bot = bottom_type();
   return MulHiValue(t1, t2, bot);
+}
+
+MulHiLoLNode* MulHiLoLNode::make(Node* mul_hi) {
+  assert(mul_hi->Opcode() == Op_MulHiL, "expected MulHiL");
+
+  MulHiLoLNode* mul_hi_lo = new MulHiLoLNode(mul_hi->in(0), mul_hi->in(1), mul_hi->in(2));
+  [[maybe_unused]] Node* lo_proj = new ProjNode(mul_hi_lo, MulHiLoLNode::first_proj_num);
+  [[maybe_unused]] Node* hi_proj = new ProjNode(mul_hi_lo, MulHiLoLNode::second_proj_num);
+  return mul_hi_lo;
+}
+
+UMulHiLoLNode* UMulHiLoLNode::make(Node* umul_hi) {
+  assert(umul_hi->Opcode() == Op_UMulHiL, "expected UMulHiL");
+
+  UMulHiLoLNode* umul_hi_lo = new UMulHiLoLNode(umul_hi->in(0), umul_hi->in(1), umul_hi->in(2));
+  [[maybe_unused]] Node* lo_proj = new ProjNode(umul_hi_lo, MulHiLoLNode::first_proj_num);
+  [[maybe_unused]] Node* hi_proj = new ProjNode(umul_hi_lo, MulHiLoLNode::second_proj_num);
+  return umul_hi_lo;
+}
+
+Node* MulHiLoLNode::match(const ProjNode* proj, const Matcher* match) {
+  uint ideal_reg = proj->ideal_reg();
+  RegMask rm;
+  if (proj->_con == first_proj_num) {
+    rm.assignFrom(match->firstL_proj_mask());
+  } else {
+    assert(proj->_con == second_proj_num, "must be lo or hi projection");
+    rm.assignFrom(match->secondL_proj_mask());
+  }
+  return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
 
 // A common routine used by UMulHiLNode and MulHiLNode

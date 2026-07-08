@@ -299,7 +299,7 @@ void G1CMMarkStack::add_chunk_to_list(Atomic<TaskQueueEntryChunk*>* list, TaskQu
 void G1CMMarkStack::add_chunk_to_chunk_list(TaskQueueEntryChunk* elem) {
   MutexLocker x(G1MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
   add_chunk_to_list(&_chunk_list, elem);
-  _chunks_in_chunk_list++;
+  _chunks_in_chunk_list.add_then_fetch(1u, memory_order_relaxed);
 }
 
 void G1CMMarkStack::add_chunk_to_free_list(TaskQueueEntryChunk* elem) {
@@ -319,7 +319,7 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::remove_chunk_from_chunk_list(
   MutexLocker x(G1MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
   TaskQueueEntryChunk* result = remove_chunk_from_list(&_chunk_list);
   if (result != nullptr) {
-    _chunks_in_chunk_list--;
+    _chunks_in_chunk_list.sub_then_fetch(1u, memory_order_relaxed);
   }
   return result;
 }
@@ -363,7 +363,7 @@ bool G1CMMarkStack::par_pop_chunk(G1TaskQueueEntry* ptr_arr) {
 }
 
 void G1CMMarkStack::set_empty() {
-  _chunks_in_chunk_list = 0;
+  _chunks_in_chunk_list.store_relaxed(0);
   _chunk_list.store_relaxed(nullptr);
   _free_list.store_relaxed(nullptr);
   _chunk_allocator.reset();
@@ -2034,6 +2034,26 @@ void G1ConcurrentMark::print_stats() {
     _tasks[i]->print_stats();
     log_debug(gc, stats)("---------------------------------------------------------------------");
   }
+}
+
+bool G1ConcurrentMark::shutdown_cleanup_needed() const {
+  // Cleanup (aborting threads, setting abort flags) is needed throughout the whole cycle before
+  // stopping the CM thread.
+  return is_fully_initialized() && is_in_concurrent_cycle();
+}
+
+void G1ConcurrentMark::shutdown_concurrent_cycle() {
+  assert_at_safepoint_on_vm_thread();
+
+  abort_root_region_scan_at_safepoint();
+  abort_marking_threads();
+
+  SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
+  satb_mq_set.abandon_partial_marking();
+  // This can be called either during or outside marking, we'll read
+  // the expected_active value from the SATB queue set.
+  satb_mq_set.set_active_all_threads(false, /* new active value */
+                                     satb_mq_set.is_active() /* expected_active */);
 }
 
 bool G1ConcurrentMark::concurrent_cycle_abort() {
