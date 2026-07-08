@@ -289,7 +289,8 @@ void C1_MacroAssembler::step_random(Register state, Register temp, Register data
     // linear feedback shift register.
     crc32h(state, state, data);
   } else {
-    /* LCG from glibc. */
+    /* LCG by Marsaglia. From Karl Entacher,
+       https://www.researchgate.net/publication/2683298_A_Collection_of_Selected_Pseudorandom_Number_Generators_With_Linear_Structures */
     mov(temp, 69069);
     mulw(state, state, temp);
     addw(state, state, 1);
@@ -298,10 +299,14 @@ void C1_MacroAssembler::step_random(Register state, Register temp, Register data
 
 void C1_MacroAssembler::save_profile_rng() {
   if (ProfileCaptureRatio > 1) {
-    Label not_zero;
-    cbnzw(r_profile_rng, not_zero);
-    stop("non-zero required before save");
-    bind(not_zero);
+#ifndef PRODUCT
+    if (VM_Version::supports_crc32()) {
+      Label not_zero;
+      cbnzw(r_profile_rng, not_zero);
+      stop("non-zero required before save");
+      bind(not_zero);
+    }
+#endif
     strw(r_profile_rng, Address(rthread, JavaThread::profile_rng_offset()));
   }
 }
@@ -309,10 +314,14 @@ void C1_MacroAssembler::save_profile_rng() {
 void C1_MacroAssembler::restore_profile_rng() {
   if (ProfileCaptureRatio > 1) {
     ldrw(r_profile_rng, Address(rthread, JavaThread::profile_rng_offset()));
-    Label not_zero;
-    cbnzw(r_profile_rng, not_zero);
-    stop("non-zero required after restore");
-    bind(not_zero);
+#ifndef PRODUCT
+    if (VM_Version::supports_crc32()) {
+      Label not_zero;
+      cbnzw(r_profile_rng, not_zero);
+      stop("non-zero required after restore");
+      bind(not_zero);
+    }
+#endif
   }
 }
 
