@@ -918,7 +918,6 @@ public:
       }
 
       if (_previous != current) {
-        // TODO: Keep track of largest unmarked extent within region, consider using it instead
         CollectedHeap::fill_with_object(_previous, pointer_delta(current, _previous));
         if (_cards != nullptr) {
           // We created a filler object that could span multiple original objects, we know there are
