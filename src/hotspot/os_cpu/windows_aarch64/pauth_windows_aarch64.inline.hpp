@@ -33,7 +33,6 @@ extern "C" address pauth_drop_signature_win_arm64(address p);
 #endif
 
 inline address pauth_strip_pointer(address ptr) {
-  // No PAC support in windows as of yet.
   return pauth_drop_signature_win_arm64(ptr);
 }
 
