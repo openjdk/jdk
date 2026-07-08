@@ -9272,16 +9272,14 @@ instruct cmpL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
 %{
   match(Set dst (CmpL3 op1 op2));
 
-  ins_cost(ALU_COST * 3 + BRANCH_COST);
-  format %{ "slt   $dst, $op2, $op1\t#@cmpL3_reg_reg\n\t"
-            "bnez  $dst, done\n\t"
-            "slt   $dst, $op1, $op2\n\t"
+  ins_cost(ALU_COST * 4);
+  format %{ "slt   t0, $op2, $op1\t# gt\n\t"
+            "slt   $dst, $op1, $op2\t# lt\n\t"
             "neg   $dst, $dst\n\t"
-            "done:"
+            "add   $dst, t0, $dst\t#@cmpL3_reg_reg (branch-free)"
   %}
   ins_encode %{
-    __ cmp_l2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
-    __ mv(as_Register($dst$$reg), t0);
+    __ cmp_l2i(as_Register($dst$$reg), as_Register($op1$$reg), as_Register($op2$$reg));
   %}
 
   ins_pipe(pipe_class_default);
@@ -9291,16 +9289,14 @@ instruct cmpUL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
 %{
   match(Set dst (CmpUL3 op1 op2));
 
-  ins_cost(ALU_COST * 3 + BRANCH_COST);
-  format %{ "sltu  $dst, $op2, $op1\t#@cmpUL3_reg_reg\n\t"
-            "bnez  $dst, done\n\t"
-            "sltu  $dst, $op1, $op2\n\t"
+  ins_cost(ALU_COST * 4);
+  format %{ "sltu  t0, $op2, $op1\t# gt\n\t"
+            "sltu  $dst, $op1, $op2\t# lt\n\t"
             "neg   $dst, $dst\n\t"
-            "done:"
+            "add   $dst, t0, $dst\t#@cmpUL3_reg_reg (branch-free)"
   %}
   ins_encode %{
-    __ cmp_ul2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
-    __ mv(as_Register($dst$$reg), t0);
+    __ cmp_ul2i(as_Register($dst$$reg), as_Register($op1$$reg), as_Register($op2$$reg));
   %}
 
   ins_pipe(pipe_class_default);
@@ -9310,16 +9306,14 @@ instruct cmpU3_reg_reg(iRegINoSp dst, iRegI op1, iRegI op2)
 %{
   match(Set dst (CmpU3 op1 op2));
 
-  ins_cost(ALU_COST * 3 + BRANCH_COST);
-  format %{ "sltu  $dst, $op2, $op1\t#@cmpU3_reg_reg\n\t"
-            "bnez  $dst, done\n\t"
-            "sltu  $dst, $op1, $op2\n\t"
+  ins_cost(ALU_COST * 4);
+  format %{ "sltu  t0, $op2, $op1\t# gt\n\t"
+            "sltu  $dst, $op1, $op2\t# lt\n\t"
             "neg   $dst, $dst\n\t"
-            "done:"
+            "add   $dst, t0, $dst\t#@cmpU3_reg_reg (branch-free)"
   %}
   ins_encode %{
-    __ cmp_uw2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
-    __ mv(as_Register($dst$$reg), t0);
+    __ cmp_uw2i(as_Register($dst$$reg), as_Register($op1$$reg), as_Register($op2$$reg));
   %}
 
   ins_pipe(pipe_class_default);
