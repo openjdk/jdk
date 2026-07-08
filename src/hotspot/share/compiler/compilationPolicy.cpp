@@ -348,7 +348,7 @@ double CompilationPolicy::threshold_scale(CompLevel level, int feedback_k) {
     // than specified by IncreaseFirstTierCompileThresholdAt percentage.
     // The main intention is to keep enough free space for C2 compiled code
     // to achieve peak performance if the code cache is under stress.
-    if (CompilerConfig::is_tiered() && !CompilationModeFlag::disable_intermediate() && is_c1_compile(level))  {
+    if (CompilerConfig::is_tiered() && is_c1_compile(level)) {
       double current_reverse_free_ratio = CodeCache::reverse_free_ratio();
       if (current_reverse_free_ratio > _increase_threshold_at_ratio) {
         k *= exp(current_reverse_free_ratio - _increase_threshold_at_ratio);
@@ -602,14 +602,7 @@ bool CompilationPolicy::verify_level(CompLevel level) {
   if (level == CompLevel_none) {
     return true;
   }
-  if (CompilationModeFlag::normal()) {
-    return true;
-  } else if (CompilationModeFlag::quick_only()) {
-    return level == CompLevel_simple;
-  } else if (CompilationModeFlag::high_only()) {
-    return level == CompLevel_full_optimization;
-  }
-  return false;
+  return is_compile(level);
 }
 #endif
 
@@ -634,20 +627,8 @@ CompLevel CompilationPolicy::highest_compile_level() {
   }
 
   // Fix it up if after the clamping it has become invalid.
-  // Bring it monotonically down depending on the next available level for
-  // the compilation mode.
-  if (!CompilationModeFlag::normal()) {
-    // a) quick_only - levels 2,3,4 are invalid; levels -1,0,1 are valid;
-    // b) high_only - levels 1,2,3 are invalid; levels -1,0,4 are valid;
-    if (CompilationModeFlag::quick_only()) {
-      if (level == CompLevel_limited_profile || level == CompLevel_full_profile || level == CompLevel_full_optimization) {
-        level = CompLevel_simple;
-      }
-    } else if (CompilationModeFlag::high_only()) {
-      if (level == CompLevel_simple || level == CompLevel_limited_profile || level == CompLevel_full_profile) {
-        level = CompLevel_none;
-      }
-    }
+  if (CompilerConfig::is_c2_only() && is_c1_compile(level)) {
+    level = CompLevel_none;
   }
 
   assert(verify_level(level), "Invalid highest compilation level: %d", level);
@@ -661,15 +642,7 @@ CompLevel CompilationPolicy::limit_level(CompLevel level) {
 }
 
 CompLevel CompilationPolicy::initial_compile_level(const methodHandle& method) {
-  CompLevel level = CompLevel_any;
-  if (CompilationModeFlag::normal()) {
-    level = CompLevel_full_profile;
-  } else if (CompilationModeFlag::quick_only()) {
-    level = CompLevel_simple;
-  } else if (CompilationModeFlag::high_only()) {
-    level = CompLevel_full_optimization;
-  }
-  assert(level != CompLevel_any, "Unhandled compilation mode");
+  CompLevel level = CompilerConfig::is_c2_only() ? CompLevel_full_optimization : CompLevel_full_profile;
   return limit_level(level);
 }
 
@@ -813,7 +786,7 @@ nmethod* CompilationPolicy::event(const methodHandle& method, const methodHandle
     method_back_branch_event(method, inlinee, bci, comp_level, nm, THREAD);
     // Check if event led to a higher level OSR compilation
     CompLevel expected_comp_level = MIN2(CompLevel_full_optimization, static_cast<CompLevel>(comp_level + 1));
-    if (!CompilationModeFlag::disable_intermediate() && inlinee->is_not_osr_compilable(expected_comp_level)) {
+    if (!CompilerConfig::is_c2_only() && inlinee->is_not_osr_compilable(expected_comp_level)) {
       // It's not possible to reach the expected level so fall back to simple.
       expected_comp_level = CompLevel_simple;
     }
@@ -860,14 +833,14 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
   // see common() ). If the method cannot be compiled with C2 but still can with C1, compile it with
   // pure C1.
   if ((bci == InvocationEntryBci && !can_be_compiled(mh, level))) {
-    if (!CompilationModeFlag::disable_intermediate() &&
+    if (!CompilerConfig::is_c2_only() &&
         level == CompLevel_full_optimization && can_be_compiled(mh, CompLevel_simple)) {
       compile(mh, bci, CompLevel_simple, THREAD);
     }
     return;
   }
   if ((bci != InvocationEntryBci && !can_be_osr_compiled(mh, level))) {
-    if (!CompilationModeFlag::disable_intermediate() &&
+    if (!CompilerConfig::is_c2_only() &&
         level == CompLevel_full_optimization && can_be_osr_compiled(mh, CompLevel_simple)) {
       nmethod* osr_nm = mh->lookup_osr_nmethod_for(bci, CompLevel_simple, false);
       if (osr_nm != nullptr && osr_nm->comp_level() > CompLevel_simple) {
@@ -1002,7 +975,7 @@ bool CompilationPolicy::is_mature(MethodData* mdo) {
 // start profiling without waiting for the compiled method to arrive.
 // We also take the load on compilers into the account.
 bool CompilationPolicy::should_create_mdo(const methodHandle& method, CompLevel cur_level) {
-  if (cur_level != CompLevel_none || CompilationModeFlag::quick_only() || !ProfileInterpreter) {
+  if (cur_level != CompLevel_none || CompilerConfig::is_c1_simple_only() || !ProfileInterpreter) {
     return false;
   }
 
@@ -1184,8 +1157,8 @@ CompLevel CompilationPolicy::trained_transition(const methodHandle& method, Comp
       break;
   }
 
-  // We don't have any special strategies for the C2-only compilation modes, so just fix up the levels for now.
-  if (CompilationModeFlag::high_only() && next_level < CompLevel_full_optimization) {
+  // We don't have any special strategies for C2-only compilation, so just fix up the levels for now.
+  if (CompilerConfig::is_c2_only() && next_level < CompLevel_full_optimization) {
     return CompLevel_none;
   }
   return (cur_level != next_level) ? limit_level(next_level) : cur_level;
@@ -1236,7 +1209,7 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
 
   if (is_trivial(method) || method->is_native()) {
     // We do not care if there is profiling data for these methods, throw them to compiler.
-    next_level = CompilationModeFlag::disable_intermediate() ? CompLevel_full_optimization : CompLevel_simple;
+    next_level = CompilerConfig::is_c2_only() ? CompLevel_full_optimization : CompLevel_simple;
   } else if (MethodTrainingData::have_data()) {
     MethodTrainingData* mtd = MethodTrainingData::find_fast(method);
     if (mtd == nullptr) {
@@ -1306,7 +1279,7 @@ CompLevel CompilationPolicy::transition_from_none(const methodHandle& method, Co
   // If we were at full profile level, would we switch to full opt?
   if (transition_from_full_profile<Predicate>(method, CompLevel_full_profile) == CompLevel_full_optimization) {
     next_level = CompLevel_full_optimization;
-  } else if (!CompilationModeFlag::disable_intermediate() && Predicate::apply(method, cur_level, i, b)) {
+  } else if (!CompilerConfig::is_c2_only() && Predicate::apply(method, cur_level, i, b)) {
     // C1-generated fully profiled code is about 30% slower than the limited profile
     // code that has only invocation and backedge counters. The observation is that
     // if C2 queue is large enough we can spend too much time in the fully profiled code
@@ -1329,7 +1302,7 @@ CompLevel CompilationPolicy::transition_from_full_profile(const methodHandle& me
   CompLevel next_level = cur_level;
   MethodData* mdo = method->method_data();
   if (mdo != nullptr) {
-    if (mdo->would_profile() || CompilationModeFlag::disable_intermediate()) {
+    if (mdo->would_profile() || CompilerConfig::is_c2_only()) {
       int mdo_i = mdo->invocation_count_delta();
       int mdo_b = mdo->backedge_count_delta();
       if (Predicate::apply(method, cur_level, mdo_i, mdo_b)) {
@@ -1495,4 +1468,3 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
     }
   }
 }
-

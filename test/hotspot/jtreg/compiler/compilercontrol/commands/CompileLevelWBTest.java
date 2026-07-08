@@ -28,7 +28,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -44,7 +43,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -61,7 +59,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -78,7 +75,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -95,7 +91,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -112,7 +107,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -129,7 +123,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -146,7 +139,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -163,7 +155,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -180,7 +171,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -197,7 +187,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -214,7 +203,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -231,7 +219,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -248,7 +235,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -265,7 +251,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -282,7 +267,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -299,7 +283,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -316,7 +299,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -333,7 +315,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -350,7 +331,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -367,7 +347,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -384,7 +363,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -401,7 +379,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -418,7 +395,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -435,7 +411,6 @@
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -451,7 +426,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -468,7 +442,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -485,7 +458,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -502,7 +474,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -519,7 +490,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -536,7 +506,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -553,7 +522,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -570,7 +538,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -587,7 +554,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -604,7 +570,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -621,7 +586,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -638,7 +602,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -655,7 +618,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -672,7 +634,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -689,7 +650,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -706,7 +666,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -723,7 +682,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -740,7 +698,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -757,7 +714,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -774,7 +730,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -791,7 +746,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -808,7 +762,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -825,7 +778,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -842,7 +794,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -859,7 +810,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -876,7 +826,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -893,7 +842,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -910,7 +858,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -927,7 +874,6 @@
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

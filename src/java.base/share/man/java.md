@@ -3035,7 +3035,6 @@ These `java` options have been removed in JDK @@VERSION_SPECIFICATION@@ and usin
 
     ```
     -XX:{+|-}TieredCompilation
-    -XX:CompilationMode=mode
     -XX:TieredStopAtLevel=n
     -XX:{+|-}EnableJVMCI
     -XX:{+|-}UseJVMCICompiler

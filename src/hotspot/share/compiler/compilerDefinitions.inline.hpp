@@ -43,8 +43,7 @@ inline bool CompilerConfig::is_c1_only() {
   if (!is_interpreter_only() && has_c1()) {
     const bool c1_only = !has_c2();
     const bool tiered_degraded_to_c1_only = TieredCompilation && TieredStopAtLevel >= CompLevel_simple && TieredStopAtLevel < CompLevel_full_optimization;
-    const bool c1_only_compilation_mode = CompilationModeFlag::quick_only();
-    return c1_only || tiered_degraded_to_c1_only || c1_only_compilation_mode;
+    return c1_only || tiered_degraded_to_c1_only;
   }
   return false;
 }
@@ -57,9 +56,8 @@ inline bool CompilerConfig::is_c1_or_interpreter_only() {
 inline bool CompilerConfig::is_c1_simple_only() {
   if (is_c1_only()) {
     const bool tiered_degraded_to_level_1 = TieredCompilation && TieredStopAtLevel == CompLevel_simple;
-    const bool c1_only_compilation_mode = CompilationModeFlag::quick_only();
     const bool tiered_off = !TieredCompilation;
-    return tiered_degraded_to_level_1 || c1_only_compilation_mode || tiered_off;
+    return tiered_degraded_to_level_1 || tiered_off;
   }
   return false;
 }
@@ -72,10 +70,8 @@ inline bool CompilerConfig::is_c2_enabled() {
 inline bool CompilerConfig::is_c2_only() {
   if (is_c2_enabled()) {
     const bool c2_only = !has_c1();
-    // The user (or ergonomics) is forcing C1 off.
-    const bool c2_only_compilation_mode = CompilationModeFlag::high_only();
     const bool tiered_off = !TieredCompilation;
-    return c2_only || c2_only_compilation_mode || tiered_off;
+    return c2_only || tiered_off;
   }
   return false;
 }

@@ -28,7 +28,7 @@
  *
  * @compile TestC1PhiPlacementPathology.jasm
  * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,TestC1PhiPlacementPathology::test
- *                   -XX:CompilationMode=quick-only -XX:-UseOnStackReplacement TestC1PhiPlacementPathologyMain
+ *                   -XX:TieredStopAtLevel=1 -XX:-UseOnStackReplacement TestC1PhiPlacementPathologyMain
  */
 
 public class TestC1PhiPlacementPathologyMain {

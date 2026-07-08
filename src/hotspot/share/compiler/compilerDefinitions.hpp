@@ -62,23 +62,6 @@ enum CompLevel : s1 {
   CompLevel_count             = 5
 };
 
-class CompilationModeFlag : AllStatic {
-  enum class Mode {
-    NORMAL,
-    QUICK_ONLY,
-    HIGH_ONLY
-  };
-  static Mode _mode;
-  static void print_error();
-public:
-  static bool initialize();
-  static bool normal()                   { return _mode == Mode::NORMAL;     }
-  static bool quick_only()               { return _mode == Mode::QUICK_ONLY; }
-  static bool high_only()                { return _mode == Mode::HIGH_ONLY;  }
-
-  static bool disable_intermediate()     { return high_only(); }
-};
-
 inline bool is_c1_compile(int comp_level) {
   return comp_level > CompLevel_none && comp_level < CompLevel_full_optimization;
 }

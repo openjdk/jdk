@@ -53,7 +53,7 @@
 // In the rare case of the non-nmethod code heap getting full, non-nmethod code
 // will be stored in the non-profiled code heap as a fallback solution.
 //
-// Depending on the availability of compilers and compilation mode there
+// Depending on the availability of compilers and compiler configuration there
 // may be fewer heaps. The size of the code heaps depends on the values of
 // ReservedCodeCacheSize, NonProfiledCodeHeapSize and ProfiledCodeHeapSize
 // (see CodeCache::heap_available(..) and CodeCache::initialize_heaps(..)

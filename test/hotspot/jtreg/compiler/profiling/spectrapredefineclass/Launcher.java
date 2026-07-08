@@ -32,7 +32,7 @@
  * @build compiler.profiling.spectrapredefineclass.Agent
  * @run driver jdk.test.lib.helpers.ClassFileInstaller compiler.profiling.spectrapredefineclass.Agent
  * @run driver compiler.profiling.spectrapredefineclass.Launcher
- * @run main/othervm/timeout=480 -XX:CompilationMode=high-only -XX:-BackgroundCompilation -XX:CompileThreshold=10000
+ * @run main/othervm/timeout=480 -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:CompileThreshold=10000
  *                               -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222
  *                               -XX:ReservedCodeCacheSize=3M -Djdk.attach.allowAttachSelf
  *                               compiler.profiling.spectrapredefineclass.Agent

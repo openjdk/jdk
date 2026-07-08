@@ -2634,11 +2634,6 @@ jint Arguments::finalize_vm_init_args() {
   UNSUPPORTED_OPTION(ProfileInterpreter);
 #endif // !COMPILER2
 
-  // Parse the CompilationMode flag
-  if (!CompilationModeFlag::initialize()) {
-    return JNI_ERR;
-  }
-
   // Called after ClassLoader::lookup_vm_options() but before class loading begins.
   // TODO: Obtain and pass correct preview mode flag value here.
   ClassLoader::set_preview_mode(false);

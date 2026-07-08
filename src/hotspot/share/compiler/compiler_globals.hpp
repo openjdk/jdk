@@ -272,12 +272,6 @@
           "Compile at tier 4 instead of tier 2 in training replay "         \
           "mode if posssible")                                              \
                                                                             \
-  product(ccstr, CompilationMode, "default",                                \
-          "Compilation modes: "                                             \
-          "default: normal tiered compilation; "                            \
-          "quick-only: C1-only mode; "                                      \
-          "high-only: C2-only mode.")                                       \
-                                                                            \
   product(bool, PrintTieredEvents, false,                                   \
           "Print tiered events notifications")                              \
                                                                             \

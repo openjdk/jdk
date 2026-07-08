@@ -42,62 +42,6 @@ const char* compilertype2name_tab[compiler_number_of_types] = {
   "c2"
 };
 
-CompilationModeFlag::Mode CompilationModeFlag::_mode = CompilationModeFlag::Mode::NORMAL;
-
-static void print_mode_unavailable(const char* mode_name, const char* reason) {
-  warning("%s compilation mode unavailable because %s.", mode_name, reason);
-}
-
-bool CompilationModeFlag::initialize() {
-  _mode = Mode::NORMAL;
-  // During parsing we want to be very careful not to use any methods of CompilerConfig that depend on
-  // CompilationModeFlag.
-  if (CompilationMode != nullptr) {
-    if (strcmp(CompilationMode, "default") == 0 || strcmp(CompilationMode, "normal") == 0) {
-      assert(_mode == Mode::NORMAL, "Precondition");
-    } else if (strcmp(CompilationMode, "quick-only") == 0) {
-      if (!CompilerConfig::has_c1()) {
-        print_mode_unavailable("quick-only", "there is no c1 present");
-      } else {
-        _mode = Mode::QUICK_ONLY;
-      }
-    } else if (strcmp(CompilationMode, "high-only") == 0) {
-      if (!CompilerConfig::has_c2()) {
-        print_mode_unavailable("high-only", "there is no c2 compiler present");
-      } else {
-        _mode = Mode::HIGH_ONLY;
-      }
-    } else {
-      print_error();
-      return false;
-    }
-  }
-
-  // Now that the flag is parsed, we can use any methods of CompilerConfig.
-  if (normal()) {
-    if (CompilerConfig::is_c1_simple_only()) {
-      _mode = Mode::QUICK_ONLY;
-    } else if (CompilerConfig::is_c2_only()) {
-      _mode = Mode::HIGH_ONLY;
-    }
-  }
-  return true;
-}
-
-void CompilationModeFlag::print_error() {
-  jio_fprintf(defaultStream::error_stream(), "Unsupported compilation mode '%s', available modes are:", CompilationMode);
-  bool comma = false;
-  if (CompilerConfig::has_c1()) {
-    jio_fprintf(defaultStream::error_stream(), "%s quick-only", comma ? "," : "");
-    comma = true;
-  }
-  if (CompilerConfig::has_c2()) {
-    jio_fprintf(defaultStream::error_stream(), "%s high-only", comma ? "," : "");
-    comma = true;
-  }
-  jio_fprintf(defaultStream::error_stream(), "\n");
-}
-
 // Returns threshold scaled with CompileThresholdScaling
 intx CompilerConfig::scaled_compile_threshold(intx threshold) {
   return scaled_compile_threshold(threshold, CompileThresholdScaling);
@@ -305,7 +249,7 @@ void CompilerConfig::set_compilation_policy_flags() {
     vm_exit_during_initialization("Negative value specified for CompileThresholdScaling");
   }
 
-  if (CompilationModeFlag::disable_intermediate()) {
+  if (CompilerConfig::is_c2_only()) {
     if (FLAG_IS_DEFAULT(Tier0ProfilingStartPercentage)) {
       FLAG_SET_DEFAULT(Tier0ProfilingStartPercentage, 33);
     }

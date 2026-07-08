@@ -29,7 +29,6 @@
  *          monitoring compilation events in VM -XX:+PrintCompilation and -XX:+PrintTieredEvents output
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  *          & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
- *          & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @run main ${test.main.class} runner
  */

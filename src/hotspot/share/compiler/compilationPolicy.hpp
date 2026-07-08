@@ -253,7 +253,7 @@ class CompilationPolicy : AllStatic {
   // Set carry flags in the counters (in Method* and MDO).
   inline static void handle_counter_overflow(const methodHandle& method);
 #ifdef ASSERT
-  // Verify that a level is consistent with the compilation mode
+  // Verify that a level is consistent with the compiler configuration.
   static bool verify_level(CompLevel level);
 #endif
   // Clamp the request level according to various constraints.
@@ -356,7 +356,7 @@ class CompilationPolicy : AllStatic {
   static bool can_be_osr_compiled(const methodHandle& m, int comp_level = CompLevel_any);
   static bool is_compilation_enabled();
 
-  // Return initial compile level to use with Xcomp (depends on compilation mode).
+  // Return initial compile level to use with Xcomp.
   static void reprofile(ScopeDesc* trap_scope, bool is_osr);
   static nmethod* event(const methodHandle& method, const methodHandle& inlinee,
                         int branch_bci, int bci, CompLevel comp_level, nmethod* nm, TRAPS);
