@@ -117,7 +117,8 @@ class ShenandoahAllocRate {
   jlong _last_sample_time;
 
   static uint64_t encode_sample_params(const uint32_t minimum_sample_size, const uint32_t log_per_stripe_threshold) {
-    return (static_cast<uint64_t>(log_per_stripe_threshold) << 32) | minimum_sample_size;
+    return (static_cast<uint64_t>(log_per_stripe_threshold) << 32) |
+           minimum_sample_size;
   }
 
   static size_t decode_min_sample_size(const uint64_t params) {
