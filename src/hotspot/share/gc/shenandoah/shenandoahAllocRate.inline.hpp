@@ -58,17 +58,16 @@ void ShenandoahAllocRate<Clock>::update_minimum_sample_size(const size_t availab
 }
 
 template<typename Clock>
-uint ShenandoahAllocRate<Clock>::log_per_stripe_threshold_for(const size_t minimum_sample_size) const {
+uint32_t ShenandoahAllocRate<Clock>::log_per_stripe_threshold_for(const size_t minimum_sample_size) const {
   // Floor-log2 of the per-stripe share. Clamps to 0 for a 1-byte trigger.
   const int log_threshold = log2i(minimum_sample_size) - (int) _unsampled.log_num_stripes();
-  return log_threshold > 0 ? (uint) log_threshold : 0u;
+  return log_threshold > 0 ? (uint32_t) log_threshold : 0u;
 }
 
 template<typename Clock>
 void ShenandoahAllocRate<Clock>::set_minimum_sample_size(const size_t minimum_sample_size) {
   assert(minimum_sample_size > 0, "minimum sample size must be non-zero");
-  assert(minimum_sample_size <= UINT32_MAX, "minimum sample size must fit in packed params");
-  _sample_params.store_relaxed(encode_sample_params(minimum_sample_size, log_per_stripe_threshold_for(minimum_sample_size)));
+  _sample_params.store_relaxed(encode_sample_params(checked_cast<uint32_t>(minimum_sample_size), log_per_stripe_threshold_for(minimum_sample_size)));
 }
 
 template<typename Clock>

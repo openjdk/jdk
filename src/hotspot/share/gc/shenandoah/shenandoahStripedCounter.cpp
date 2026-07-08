@@ -29,7 +29,7 @@
 #include "utilities/powerOfTwo.hpp"
 
 ShenandoahStripedCounter::ShenandoahStripedCounter()
-  : _num_stripes(round_down_power_of_2((uint) MAX2(os::processor_count(), 1)))
+  : _num_stripes(round_down_power_of_2((uint32_t) MAX2(os::processor_count(), 1)))
   , _stripe_mask(_num_stripes - 1)
   , _log_num_stripes(log2i_exact(_num_stripes)) {
   _stripes = PaddedArray<Atomic<size_t>, mtGC>::create_unfreeable(_num_stripes);

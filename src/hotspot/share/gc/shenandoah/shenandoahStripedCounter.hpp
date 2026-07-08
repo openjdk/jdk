@@ -44,12 +44,12 @@ class ShenandoahStripedCounter : public CHeapObj<mtGC> {
   // Number of stripes: a power of two, rounded down from the CPU count. Keeping it a power of two
   // lets current_stripe() map a thread hash into range with a mask (& _stripe_mask) instead of a
   // modulo on the hot path.
-  uint const      _num_stripes;
-  uint const      _stripe_mask; // _num_stripes - 1
-  uint const      _log_num_stripes;
+  uint32_t const      _num_stripes;
+  uint32_t const      _stripe_mask; // _num_stripes - 1
+  uint32_t const      _log_num_stripes;
 
   // The stripe this thread uses.
-  uint current_stripe() const;
+  uint32_t current_stripe() const;
 
 public:
   ShenandoahStripedCounter();
@@ -71,8 +71,8 @@ public:
 
   // Number of stripes (a power of two, <= CPU count), and its base-2 log. Exposed so a caller can
   // scale a threshold to a per-stripe share with a shift (>> log_num_stripes) instead of a divide.
-  uint num_stripes() const;
-  uint log_num_stripes() const;
+  uint32_t num_stripes() const;
+  uint32_t log_num_stripes() const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTRIPEDCOUNTER_HPP
