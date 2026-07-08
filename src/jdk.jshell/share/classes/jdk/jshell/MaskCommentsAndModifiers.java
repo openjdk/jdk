@@ -219,7 +219,8 @@ class MaskCommentsAndModifiers {
                         read();
                         boolean mask;
                         if (maskDocComments || c != '*') {
-                            writeMask("/**");
+                            writeMask("/*");
+                            writeMask(c);
                             mask = true;
                         } else {
                             read();
