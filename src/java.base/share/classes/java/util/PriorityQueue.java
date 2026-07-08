@@ -381,9 +381,9 @@ public class PriorityQueue<E> extends AbstractQueue<E>
 
             Object[] es = prepareElements(c, comparator);
             heapify(es, es.length, comparator);
+            modCount++;
             initElementsFromArray(es);
 
-            this.modCount++;
             return true;
         }
 
