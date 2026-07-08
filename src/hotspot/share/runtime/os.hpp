@@ -502,6 +502,8 @@ class os: AllStatic {
 
   // Returns the lowest address the process is allowed to map against.
   static size_t vm_min_address();
+  // Returns the highest address the process is allowed to access, +1
+  static size_t vm_max_address();
 
   // Some kernels (e.g. s390x) can dynamically expand the page table. This function returns
   // the lowest user space address that will expand the page table for the first time.
