@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8382536
- * @summary "C2: sharpen_type_after_if: assert(val->find_edge(con) > 0) failed: mismatch"
+ * @summary C2: sharpen_type_after_if: assert(val->find_edge(con) > 0) failed: mismatch
  *
  * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,${test.main.class}::test ${test.main.class}
  */

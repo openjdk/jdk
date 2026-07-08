@@ -1749,6 +1749,11 @@ static bool match_type_check(PhaseGVN& gvn,
                              Node* con, const Type* tcon,
                              Node* val, const Type* tval,
                              Node** obj, const TypeOopPtr** cast_type) { // out-parameters
+  assert(tcon->singleton(), "not a constant: %s", Type::str(tcon));
+  assert(tcon->base() == tval->base(), "mismatch: %s vs %s", Type::str(tcon), Type::str(tval));
+  assert(tcon == gvn.type(con), "mismatch: %s != %s", Type::str(tcon), Type::str(gvn.type(con)));
+  assert(tval == gvn.type(val), "mismatch: %s != %s", Type::str(tval), Type::str(gvn.type(val)));
+
   // Look for opportunities to sharpen the type of a node whose klass is compared with a constant klass.
   // The constant klass being tested against can come from many bytecode instructions (implicitly or explicitly),
   // and also from profile data used by speculative casts.
@@ -1783,17 +1788,14 @@ static bool match_type_check(PhaseGVN& gvn,
   //              Region
   //                 \  ConI ConI
   //                  \  |  /
-  //            val ->  Phi  con
-  //                      \  /
-  //                      CmpI
-  //                       |
-  //                     Bool [btest]
-  //                       |
+  //            val ->  Phi   ConI|CastII <- con
+  //                      \     /
+  //                       CmpI
+  //                        |
+  //                      Bool [btest]
+  //                        |
   //
-  if (tcon->isa_int() && tcon->singleton() && val->is_Phi() && val->in(0)->as_Region()->is_diamond()) {
-    assert(tcon == gvn.type(con), "mismatch: %s != %s", Type::str(tcon), Type::str(gvn.type(con)));
-    assert(tval->isa_int(), "not an int: %s", Type::str(tval));
-
+  if (tcon->isa_int() && val->is_Phi() && val->in(0)->as_Region()->is_diamond()) {
     RegionNode* diamond = val->in(0)->as_Region();
     IfNode* if1 = diamond->in(1)->in(0)->as_If();
     BoolNode* b1 = if1->in(1)->isa_Bool();
@@ -1806,6 +1808,8 @@ static bool match_type_check(PhaseGVN& gvn,
       assert(success_idx == 1 || success_idx == 2, "");
       assert(val->req() == 3, "not a diamond");
 
+      // gen_instanceof() emits 1 on success and 0 on failure.
+      // Check whether current comparison selects the success value.
       const Type* success_tval = gvn.type(val->in(success_idx));
       assert(success_tval->isa_int(), "not an int: %s", Type::str(success_tval));
       if ((btest == BoolTest::eq && tcon == success_tval) ||
