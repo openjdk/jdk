@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,7 +357,7 @@ public final class KrbAsReqBuilder {
                     preAuthFailedOnce = true;
                     KRBError kerr = ke.getError();
                     int paEType = PAData.getPreferredEType(kerr.getPA(),
-                            EType.getDefaults("default_tkt_enctypes")[0]);
+                            req.getMessage().reqBody.eType);
                     if (password == null) {
                         EncryptionKey[] ks = Krb5Util.keysFromJavaxKeyTab(ktab, cname);
                         pakey = EncryptionKey.findKey(paEType, ks);
