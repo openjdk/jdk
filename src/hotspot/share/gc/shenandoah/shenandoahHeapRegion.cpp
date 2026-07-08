@@ -961,7 +961,7 @@ void ShenandoahHeapRegion::partially_recycle() {
   heap->marking_context()->reset_top_at_mark_start(this);
   clear_has_self_forwards();
 
-  // Adjust top to the end of our last encounted self-forwarded object. Everything above this is reusable memory.
+  // Adjust top to the end of our last encountered self-forwarded object. Everything above this is reusable memory.
   set_top(reclaimer.last_self_forwarded_object());
   const size_t reclaimed_bytes = pointer_delta(old_top, top()) * HeapWordSize;
 
