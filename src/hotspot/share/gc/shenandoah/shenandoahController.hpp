@@ -64,18 +64,26 @@ protected:
   // The number of threads blocked in allocation
   Atomic<size_t> _alloc_waiters_count;
 
+  // Only read/written by control thread, clamped between ConcGCThreads and ParallelGCThreads.
+  size_t _concurrent_worker_count;
+
   // Increments the internal GC count.
   void update_gc_id();
 
+  // Notify threads that a cycle has completed
   void notify_gc_waiters();
 
+  // Rapidly increase worker count if stalls were detected during the cycle.
+  // Slowly decrease worker count if no stalls were detected.
+  void adjust_concurrent_worker_count();
 public:
 
   ShenandoahController():
     _gc_id(0),
     _phase(UNSET),
     _gc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahGCWaiters_lock", true),
-    _alloc_waiters_count(0)
+    _alloc_waiters_count(0),
+    _concurrent_worker_count(ConcGCThreads)
   { }
 
   // Request a collection cycle. This handles "explicit" gc requests
@@ -91,8 +99,13 @@ public:
     return _alloc_waiters_count.load_relaxed();
   }
 
+  // Return suggested number of concurrent worker threads
+  size_t concurrent_worker_count() const {
+    return _concurrent_worker_count;
+  }
+
   // Return the value of a monotonic increasing GC count, maintained by the control thread.
-  size_t get_gc_id();
+  size_t get_gc_id() const;
 
   ShenandoahCollectorPhase get_phase() const {
     return _phase;

@@ -263,7 +263,6 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
   // If this cycle completed successfully, notify threads waiting for gc
   notify_gc_waiters();
 
-
   _heap->free_set()->log_status_under_lock();
 
   // Notify Universe about new heap usage. This has implications for

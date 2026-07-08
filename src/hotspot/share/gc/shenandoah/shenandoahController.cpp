@@ -30,10 +30,10 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 
 void ShenandoahController::update_gc_id() {
-  _gc_id.add_then_fetch((size_t)1);
+  _gc_id.add_then_fetch(1UL);
 }
 
-size_t ShenandoahController::get_gc_id() {
+size_t ShenandoahController::get_gc_id() const {
   return _gc_id.load_relaxed();
 }
 
@@ -43,13 +43,26 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
   const bool is_humongous = ShenandoahHeapRegion::requires_humongous(req.size());
   const GCCause::Cause cause = is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_allocation_failure;
 
-  size_t req_byte = req.size() * HeapWordSize;
+  const size_t req_byte = req.size() * HeapWordSize;
   log_info(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req_byte));
   AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(get_gc_id()));
   request_gc(cause);
 }
 
+void ShenandoahController::adjust_concurrent_worker_count() {
+  const size_t stalls = _alloc_waiters_count.load_relaxed();
+  if (stalls > 0) {
+    _concurrent_worker_count = MIN2(stalls, checked_cast<size_t>(ParallelGCThreads));
+  } else {
+    // no stalls, backoff slowly. Making this a little 'sticky' allows us to use
+    // more threads during a mark phase that follows a cycle which had allocation stalls.
+    _concurrent_worker_count = MAX2(_concurrent_worker_count - 1, checked_cast<size_t>(ConcGCThreads));
+  }
+}
+
 void ShenandoahController::notify_gc_waiters() {
+  adjust_concurrent_worker_count();
+
   MonitorLocker ml(&_gc_waiters_lock);
   ml.notify_all();
 }

@@ -50,11 +50,6 @@ private:
   ShenandoahTracer* _tracer;
 
 public:
-  // The most common scenario for lack of good progress following a degenerated GC is an accumulation of floating
-  // garbage during the most recently aborted concurrent GC effort.  Usually, it is far more effective to
-  // reclaim this floating garbage with another degenerated cycle (which focuses on young generation and might require
-  // a pause of 200 ms) rather than a full GC cycle (which may require multiple seconds with a 10 GB old generation).
-  static constexpr size_t CONSECUTIVE_BAD_DEGEN_PROGRESS_THRESHOLD = 2;
 
   ShenandoahCollectorPolicy();
 

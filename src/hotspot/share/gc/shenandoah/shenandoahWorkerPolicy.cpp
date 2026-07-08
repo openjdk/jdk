@@ -32,11 +32,11 @@ uint ShenandoahWorkerPolicy::calc_workers_for_init_marking() {
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_marking() {
-  return MIN2(alloc_waiters_count() + ConcGCThreads, ParallelGCThreads);
+  return concurrent_workers_count();
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_rs_scanning() {
-  return MIN2(alloc_waiters_count() + ConcGCThreads, ParallelGCThreads);
+  return concurrent_workers_count();
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_final_marking() {
@@ -44,15 +44,15 @@ uint ShenandoahWorkerPolicy::calc_workers_for_final_marking() {
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_refs_processing() {
-  return MIN2(alloc_waiters_count() + ConcGCThreads, ParallelGCThreads);
+  return concurrent_workers_count();
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing() {
-  return MIN2(alloc_waiters_count() + ConcGCThreads, ParallelGCThreads);
+  return concurrent_workers_count();
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_evac() {
-  return MIN2(alloc_waiters_count() + ConcGCThreads, ParallelGCThreads);
+  return concurrent_workers_count();
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_fullgc() {
@@ -64,7 +64,7 @@ uint ShenandoahWorkerPolicy::calc_workers_for_stw_degenerated() {
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_update_ref() {
-  return MIN2(alloc_waiters_count() + ConcGCThreads, ParallelGCThreads);
+  return concurrent_workers_count();
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_final_update_ref() {
@@ -72,13 +72,13 @@ uint ShenandoahWorkerPolicy::calc_workers_for_final_update_ref() {
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_reset() {
-  return MIN2(alloc_waiters_count() + ConcGCThreads, ParallelGCThreads);
+  return concurrent_workers_count();
 }
 
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup() {
-  return MIN2(alloc_waiters_count() + ConcGCThreads, ParallelGCThreads);
+  return concurrent_workers_count();
 }
 
-uint ShenandoahWorkerPolicy::alloc_waiters_count() {
-  return checked_cast<uint>(ShenandoahHeap::heap()->control_thread()->alloc_waiters_count());
+uint ShenandoahWorkerPolicy::concurrent_workers_count() {
+  return checked_cast<uint>(ShenandoahHeap::heap()->control_thread()->concurrent_worker_count());
 }
