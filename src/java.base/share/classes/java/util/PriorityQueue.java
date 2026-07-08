@@ -287,7 +287,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     private void initElementsFromCollection(Collection<? extends E> c) {
-        initElementsFromArray(prepareElements(c));
+        initElementsFromArray(prepareElements(c, comparator));
     }
 
     private void initElementsFromArray(Object[] es) {
@@ -295,7 +295,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         this.size = es.length;
     }
 
-    private Object[] prepareElements(Collection<? extends E> c) {
+    private static <E> Object[] prepareElements(Collection<? extends E> c,
+                                                Comparator<? super E> cmp) {
         Object[] es = c.toArray();
         Class<?> cClass = c.getClass();
         // If the collection is a PriorityQueue, we can skip the null check.
@@ -305,7 +306,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         int len = es.length;
         if (cClass != ArrayList.class)
             es = Arrays.copyOf(es, len, Object[].class);
-        if (len == 1 || this.comparator != null)
+        if (len == 1 || cmp != null)
             for (Object e : es)
                 if (e == null)
                     throw new NullPointerException();
@@ -375,7 +376,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             if (c.isEmpty())
                 return false;
 
-            Object[] es = prepareElements(c);
+            Object[] es = prepareElements(c, comparator);
             heapify(es, es.length);
             initElementsFromArray(es);
 
