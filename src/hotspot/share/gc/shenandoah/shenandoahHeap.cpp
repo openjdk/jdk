@@ -570,7 +570,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _gc_state_changed(false),
   _gc_no_progress_count(0),
   _cancel_requested_time(0),
-  _update_refs_iterator(this),
   _has_self_forwarded_objects(false),
   _global_generation(nullptr),
   _control_thread(nullptr),
@@ -1306,8 +1305,6 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
 
   // Now retire gclabs and plabs and propagate gc_state for mutator threads
   Handshake::execute(&prepare_for_update_refs);
-
-  _update_refs_iterator.reset();
 }
 
 void ShenandoahHeap::concurrent_final_roots() {
@@ -2599,7 +2596,7 @@ private:
     if (worker_id == 0) {
       // We ask the first worker to replenish the Mutator free set by moving regions previously reserved to hold the
       // results of evacuation.  These reserves are no longer necessary because evacuation has completed.
-      size_t cset_regions = _heap->collection_set()->count();
+      const size_t cset_regions = _heap->collection_set()->count();
 
       // Now that evacuation is done, we can reassign any regions that had been reserved to hold the results of evacuation
       // to the mutator free set.  At the end of GC, we will have cset_regions newly evacuated fully empty regions from
@@ -2607,17 +2604,15 @@ private:
       // next GC cycle.
       _heap->free_set()->move_regions_from_collector_to_mutator(cset_regions);
     }
-    // If !CONCURRENT, there's no value in expanding Mutator free set
+
     T cl;
     ShenandoahHeapRegion* r = _regions->next();
     while (r != nullptr) {
-      // Regions put into service after final mark will not have an update watermark. Without degenerated
-      // cycles we cannot guarantee that references into the collection set won't point at objects that
-      // are forwarded.
+      // Regions put into service after final mark will not have an update watermark. Regions with self forwarded objects
+      // must also have the references in these objects be updated.
       HeapWord* update_watermark = r->get_update_watermark();
       assert (update_watermark >= r->bottom(), "sanity");
       if ((r->is_active() && !r->is_cset()) || r->has_self_forwards()) {
-        // TODO: Some of the marked objects we iterate might be evacuated, would rather not update them
         _heap->marked_object_oop_iterate(r, &cl, update_watermark);
       }
       if (_heap->check_cancelled_gc_and_yield(true)) {
@@ -2631,7 +2626,8 @@ private:
 void ShenandoahHeap::update_heap_references(ShenandoahGeneration* generation) {
   assert(generation->is_global(), "Should only get global generation here");
   assert(!is_full_gc_in_progress(), "Only for concurrent GC");
-  ShenandoahUpdateHeapRefsTask task(&_update_refs_iterator);
+  ShenandoahRegionIterator update_refs_iterator(this);
+  ShenandoahUpdateHeapRefsTask task(&update_refs_iterator);
   workers()->run_task(&task);
 }
 

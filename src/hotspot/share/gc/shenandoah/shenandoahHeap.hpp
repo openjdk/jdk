@@ -481,11 +481,6 @@ public:
   }
 
 protected:
-  // TODO: Should be able to remove this field
-  // This is shared between shConcurrentGC and shDegenerateGC so that degenerated
-  // GC can resume update refs from where the concurrent GC was cancelled. It is
-  // also used in shGenerationalHeap, which uses a different closure for update refs.
-  ShenandoahRegionIterator _update_refs_iterator;
 
   Atomic<bool> _has_self_forwarded_objects;
 private:

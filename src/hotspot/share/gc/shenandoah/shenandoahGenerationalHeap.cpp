@@ -827,7 +827,6 @@ private:
       if (r->is_active() && (!r->is_cset() || r->has_self_forwards()) && r->is_old()) {
         // allocations into old (i.e., promotions or evacuations) do _not_ update references
         // when they copy, so we move the UWM up for each such allocation.
-        // TODO: could we just use 'top' here and ignore the uwm on the allocation path?
         HeapWord* start_of_range = r->bottom() + assignment._chunk_offset;
         HeapWord* end_of_range = r->get_update_watermark();
         if (end_of_range > start_of_range + assignment._chunk_size) {
@@ -927,7 +926,8 @@ void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* ge
   assert(!is_full_gc_in_progress(), "Only for concurrent GC");
   const uint nworkers = workers()->active_workers();
   ShenandoahRegionChunkIterator work_list(nworkers);
-  ShenandoahGenerationalUpdateHeapRefsTask task(generation, &_update_refs_iterator, &work_list);
+  ShenandoahRegionIterator update_refs_iterator(this);
+  ShenandoahGenerationalUpdateHeapRefsTask task(generation, &update_refs_iterator, &work_list);
   workers()->run_task(&task);
 
   if (ShenandoahEnableCardStats) {
