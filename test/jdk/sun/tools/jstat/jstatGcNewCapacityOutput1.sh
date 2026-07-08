@@ -23,6 +23,7 @@
 
 # @test
 # @bug 4990825
+# @requires vm.gc.Parallel
 # @run shell jstatGcNewCapacityOutput1.sh
 # @summary Test that output of 'jstat -gcnewcapacity 0' has expected line counts
 

@@ -23,6 +23,7 @@
 
 # @test
 # @bug 4990825
+# @requires vm.gc.Parallel
 # @run shell jstatLineCounts3.sh
 # @summary Test that output of 'jstat -gcutil -h 10 250 10' has expected line counts
 
