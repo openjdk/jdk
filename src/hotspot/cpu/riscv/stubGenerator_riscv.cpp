@@ -3114,7 +3114,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // in = c_rarg0
   // input_len = c_rarg1
-  // ct = c_rarg2 - ciphertext that ghash will read (in for encrypt, out for decrypt)
+  // ct = c_rarg2 - ciphertext that ghash will read (out for encrypt, in for decrypt)
   // out = c_rarg3
   // key = c_rarg4
   // state = c_rarg5 - GHASH.state
@@ -3154,7 +3154,7 @@ class StubGenerator: public StubCodeGenerator {
     __ enter();
 
     Label L_exit;
-    // Requires PARALLEN_LEN (512) bytes to efficiently use the intrinsic
+    // Requires input_len (512) bytes to efficiently use the intrinsic
     __ andi(input_len, input_len, -512);
     __ beqz(input_len, L_exit);
 
