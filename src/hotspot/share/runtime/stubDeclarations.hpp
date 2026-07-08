@@ -107,6 +107,8 @@
   do_blob(throw_NullPointerException_at_call, RuntimeStub)             \
   do_blob(throw_StackOverflowError, RuntimeStub)                       \
   do_blob(throw_delayed_StackOverflowError, RuntimeStub)               \
+  /* value types stub */                                               \
+  do_blob(store_inline_type_fields_to_buf, RuntimeStub)                \
   /* other stubs */                                                    \
   SHARED_JFR_STUBS_DO(do_blob)                                         \
 
@@ -681,14 +683,6 @@
   do_entry(initial, dcbrt, dcbrt, dcbrt)                                \
   do_stub(initial, fmod)                                                \
   do_entry(initial, fmod, fmod, fmod)                                   \
-  do_stub(initial, load_inline_type_fields_in_regs)                     \
-  do_entry(initial, load_inline_type_fields_in_regs,                    \
-                    load_inline_type_fields_in_regs,                    \
-                    load_inline_type_fields_in_regs)                    \
-  do_stub(initial, store_inline_type_fields_to_buf)                     \
-  do_entry(initial, store_inline_type_fields_to_buf,                    \
-                    store_inline_type_fields_to_buf,                    \
-                    store_inline_type_fields_to_buf)                    \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub, do_arch_blob,                  \
                                 do_arch_entry, do_arch_entry_init,      \

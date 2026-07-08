@@ -173,10 +173,6 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
   }
 }
 
-void InterpreterRuntime::SignatureHandlerGenerator::pass_valuetype() {
-   pass_object();
-}
-
 void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprint) {
   // generate code to handle arguments
   iterate(fingerprint);

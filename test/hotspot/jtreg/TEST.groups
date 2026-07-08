@@ -227,6 +227,14 @@ tier1_compiler_3 = \
   -compiler/runtime/Test6826736.java \
   -compiler/valhalla/inlinetypes/TestVirtualThreads.java
 
+tier1_compiler_3_no_valhalla = \
+  :tier1_compiler_3 \
+  -compiler/valhalla
+
+tier1_compiler_3_valhalla = \
+  :tier1_compiler_3 \
+  -:tier1_compiler_3_no_valhalla
+
 tier2_compiler = \
   compiler/allocation/ \
   compiler/arguments/ \
@@ -261,8 +269,7 @@ tier3_compiler = \
 tier1_compiler_no_valhalla = \
   :tier1_compiler_1 \
   :tier1_compiler_2 \
-  :tier1_compiler_3 \
-  -compiler/valhalla
+  :tier1_compiler_3_no_valhalla
 
 ctw_1 = \
   applications/ctw/modules/ \

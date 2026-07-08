@@ -508,6 +508,12 @@ bool ciField::is_autobox_cache() {
             klass_name == ciSymbols::java_lang_Long_LongCache()));
 }
 
+bool ciField::empty_null_free_initialized_value_field(bool method_is_safe) {
+  ciType* field_type = type();
+  return is_null_free() && field_type->is_inlinetype() && field_type->as_inline_klass()->is_empty() &&
+         (method_is_safe || is_flat());
+}
+
 // ------------------------------------------------------------------
 // ciField::print
 void ciField::print() const {

@@ -262,6 +262,9 @@ class GraphBuilder {
   void load_local(ValueType* type, int index);
   void store_local(ValueType* type, int index);
   void store_local(ValueStack* state, Value value, int index);
+
+  ValueStack* state_before_for_indexed_access(BasicType type, int array_idx);
+
   void load_indexed (BasicType type);
   void store_indexed(BasicType type);
   void stack_op(Bytecodes::Code code);
