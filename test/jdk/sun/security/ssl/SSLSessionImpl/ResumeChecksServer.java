@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8206929 8333857 8387578
+ * @bug 8206929 8333857
  * @summary ensure that server only resumes a session if certain properties
  *    of the session are compatible with the new connection
  * @modules java.base/sun.security.x509
