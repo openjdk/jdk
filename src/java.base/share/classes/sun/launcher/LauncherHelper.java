@@ -185,6 +185,7 @@ public final class LauncherHelper {
         try {
             showSettingsTo(optionFlag, initialHeapSize, maxHeapSize, stackSize);
         } catch (IllegalArgumentException e) {
+            // the invalid option message has already been written to ostream.
             System.exit(1);
         }
     }
