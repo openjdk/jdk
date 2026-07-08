@@ -520,7 +520,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * non-conforming locales are treated as special cases.  These are
  * <b>{@code ja_JP_JP}</b> and <b>{@code th_TH_TH}</b>. These are ill-formed
  * in BCP 47 since the {@linkplain ##def_variant variants} are too short. To ease
- * migration to BCP 47, these are treated specially during construction. Creation
+ * migration to BCP 47, these are treated specially during creation. Creation
  * of these two cases generates a compatibility extension.
  *
  * <p>Java has used {@code ja_JP_JP} to represent Japanese as used in
@@ -528,14 +528,14 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * representable using a Unicode locale extension, by specifying the
  * Unicode locale key {@code ca} (for "calendar") and type
  * {@code japanese}. When a {@code Locale} is created with language "ja", an
- * empty script, region "JP", variant "JP", and no extensions, the extension
+ * empty script, country "JP", variant "JP", and no extensions, the extension
  * "u-ca-japanese" is automatically added.
  *
  * <p>Java has used {@code th_TH_TH} to represent Thai as used in
  * Thailand together with Thai digits. This is also now representable using
  * a Unicode locale extension, by specifying the Unicode locale key
  * {@code nu} (for "number") and value {@code thai}. When a {@code Locale} is
- * created with language "th", an empty script, region "TH", variant "TH", and
+ * created with language "th", an empty script, country "TH", variant "TH", and
  * no extensions, the extension "u-nu-thai" is automatically added.
  *
  * <h3><a id="legacy_language_codes">Legacy language codes</a></h3>

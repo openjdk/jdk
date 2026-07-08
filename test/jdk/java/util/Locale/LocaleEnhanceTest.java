@@ -501,14 +501,14 @@ public class LocaleEnhanceTest {
                 // Legacy locale cases
                 // no/NO/NY case is normalized during `toLanguageTag`
                 // ja/JP/JP & th/TH/TH case is normalized during `forLanguageTag`
-                    // Script prevents the legacy conversions
+                // Script prevents the legacy conversions
                 {"no-Latn-NO-x-lvariant-NY",
                         "no-Latn-NO-x-lvariant-NY"},
                 {"ja-Jpan-JP-x-lvariant-JP",
                         "ja-Jpan-JP-x-lvariant-JP"},
                 {"th-Thai-TH-x-lvariant-TH",
                         "th-Thai-TH-x-lvariant-TH"},
-                    // Unexpected extensions prevent the legacy conversions
+                // Unexpected extensions prevent the legacy conversions
                 {"no-NO-a-foo-x-lvariant-NY",
                         "no-NO-a-foo-x-lvariant-NY"},
                 {"ja-JP-a-foo-x-lvariant-JP",
