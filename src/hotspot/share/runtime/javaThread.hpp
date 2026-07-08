@@ -233,7 +233,7 @@ class JavaThread: public Thread {
   friend class AsyncExceptionHandshakeClosure;
   friend class HandshakeState;
 
-  int _at_no_async_entry_count;
+  int _at_no_async_entry_count;  // Tracks JRT_xxx_NO_ASYNC entry points
 
   void handle_async_exception(oop java_throwable);
  public:
@@ -1351,11 +1351,15 @@ public:
   }
 };
 
+// Tracks Java->VM entry points that defer async exception
+// processing on the transition back to Java (except the
+// safepoint poll from compiled code which is already
+// tracked by JavaThread::is_at_poll_safepoint()).
 class AtNoAsyncEntryMark : public StackObj {
-  JavaThread *_target;
+  JavaThread* _target;
   bool _count;
  public:
-  AtNoAsyncEntryMark(JavaThread *t, bool b)
+  AtNoAsyncEntryMark(JavaThread* t, bool b)
     : _target(t), _count(!b) {
     if (_count) {
       _target->inc_at_no_async_entry_count();

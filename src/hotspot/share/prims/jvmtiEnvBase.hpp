@@ -541,8 +541,8 @@ public:
   StopThreadClosure(JavaThread* thread, oop exception)
     : JvmtiUnitedHandshakeClosure("StopThread"),
      _exception(thread, exception) {}
-  void doit(JavaThread *target);
-  void do_thread(Thread *target);
+  void doit(JavaThread* target);
+  void do_thread(Thread* target);
   void do_vthread(Handle target_h);
 };
 

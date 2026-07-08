@@ -2399,10 +2399,10 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
 
 
 static bool is_async_unsafe_method(Method* m) {
-  if (m == nullptr) return false;
-  return m->method_holder() == vmClasses::VirtualThread_klass()
+  return m != nullptr &&
+         (m->method_holder() == vmClasses::VirtualThread_klass() ||
          // Checks for VirtualThread$VThreadContinuation$1.run
-         || (m->name() == vmSymbols::run_method_name() && m->jvmti_hide_events());
+         (m->name() == vmSymbols::run_method_name() && m->jvmti_hide_events()));
 }
 
 static bool is_downcall_stub(CodeBlob* cb) {
@@ -2425,14 +2425,14 @@ public:
 };
 
 void
-StopThreadClosure::doit(JavaThread *target) {
+StopThreadClosure::doit(JavaThread* target) {
   OopHandle e(Universe::vm_global(), _exception());
   target->install_async_exception(new StopThreadAsyncClosure(e));
   _result = JVMTI_ERROR_NONE;
 }
 
 void
-StopThreadClosure::do_thread(Thread *target) {
+StopThreadClosure::do_thread(Thread* target) {
   assert(_target_jt == JavaThread::cast(target), "sanity check");
 
   oop target_oop = _target_jt->threadObj();

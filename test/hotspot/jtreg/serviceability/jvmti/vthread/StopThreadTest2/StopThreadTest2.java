@@ -60,7 +60,7 @@ public class StopThreadTest2 {
 
         suspendAllVirtualThreads();
         for (Thread vthread : vthreads) {
-            stopThread(vthread, new ThreadDeath());
+            stopThread(vthread, new RuntimeException("Sent by JVMTI StopThread"));
         }
         resumeAllVirtualThreads();
         done = true;
