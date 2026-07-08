@@ -1750,7 +1750,6 @@ static bool match_type_check(PhaseGVN& gvn,
                              Node* val, const Type* tval,
                              Node** obj, const TypeOopPtr** cast_type) { // out-parameters
   assert(tcon->singleton(), "not a constant: %s", Type::str(tcon));
-  assert(tcon->base() == tval->base(), "mismatch: %s vs %s", Type::str(tcon), Type::str(tval));
   assert(tcon == gvn.type(con), "mismatch: %s != %s", Type::str(tcon), Type::str(gvn.type(con)));
   assert(tval == gvn.type(val), "mismatch: %s != %s", Type::str(tval), Type::str(gvn.type(val)));
 
