@@ -306,9 +306,9 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         int len = es.length;
         if (cClass != ArrayList.class)
             es = Arrays.copyOf(es, len, Object[].class);
-        // heapify() will not examine a single element.
-        // If a comparator is used, null must be rejected before it is
-        // passed to the comparator.
+        // A single element is not examined by heapify(), and a comparator
+        // may permit nulls, so explicitly reject null before committing the
+        // new array.
         if (len == 1 || cmp != null)
             for (Object e : es)
                 if (e == null)
