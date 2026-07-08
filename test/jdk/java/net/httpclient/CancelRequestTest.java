@@ -397,7 +397,7 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             var cancelX = assertThrows(CancellationException.class, cf1::get);
             out.println(now() + "Got expected exception: " + cancelX);
-            assertThrows(cf1.isCancelled());
+            assertTrue(cf1.isCancelled());
 
             // because it's cf1 that was cancelled then response might not have
             // completed yet - so wait for it here...
