@@ -354,7 +354,7 @@ static void print_properties(Symbol* method_name, outputStream* out, TRAPS) {
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
   Symbol* signature = vmSymbols::void_byte_array_signature();
-  JavaCalls::call_static(&result, ik, method_name, signature, &args, THREAD);
+  JavaCalls::call_static(&result, ik, method_name, signature, &args, CHECK);
 
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, out);
@@ -486,13 +486,7 @@ void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
 
-  Handle option_str = java_lang_String::create_from_str(flag_buf, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, output());
-    output()->cr();
-    CLEAR_PENDING_EXCEPTION;
-    return;
-  }
+  Handle option_str = java_lang_String::create_from_str(flag_buf, CHECK);
 
   args.push_oop(option_str);
   args.push_long((jlong)InitialHeapSize);
@@ -504,14 +498,7 @@ void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
                          vmSymbols::showSettingsBytes_name(),
                          vmSymbols::showSettingsBytes_signature(),
                          &args,
-                         THREAD);
-
-  if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, output());
-    output()->cr();
-    CLEAR_PENDING_EXCEPTION;
-    return;
-  }
+                         CHECK);
 
   oop res = result.get_oop();
   if (res == nullptr) {
