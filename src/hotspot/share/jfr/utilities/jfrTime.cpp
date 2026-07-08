@@ -24,57 +24,75 @@
 
 #include "jfr/utilities/jfrTime.hpp"
 #include "runtime/os.inline.hpp"
-#if defined(X86) && !defined(ZERO)
-#include "rdtsc_x86.hpp"
-#elif defined(AARCH64) && !defined(ZERO)
-#include "cntvctss_aarch64.hpp"
-#endif
 
 bool JfrTime::_ft_enabled = false;
+
+#if defined(X86) && !defined(ZERO)
+
+#include "rdtsc_x86.hpp"
 
 bool JfrTime::initialize() {
   static bool initialized = false;
   if (!initialized) {
-#if defined(X86) && !defined(ZERO)
     _ft_enabled = Rdtsc::enabled();
-#elif defined(AARCH64) && !defined(ZERO)
-    _ft_enabled = Cntvctss::enabled();
-#else
-    _ft_enabled = false;
-#endif
     initialized = true;
   }
   return initialized;
 }
 
 bool JfrTime::is_ft_supported() {
-#if defined(X86) && !defined(ZERO)
   return Rdtsc::is_supported();
-#elif defined(AARCH64) && !defined(ZERO)
-  return Cntvctss::is_supported();
-#else
-  return false;
-#endif
 }
 
-
 const void* JfrTime::time_function() {
-#if defined(X86) && !defined(ZERO)
   return _ft_enabled ? (const void*)Rdtsc::elapsed_counter : (const void*)os::elapsed_counter;
-#elif defined(AARCH64) && !defined(ZERO)
-  return _ft_enabled ? (const void*)Cntvctss::elapsed_counter : (const void*)os::elapsed_counter;
-#else
-  return (const void*)os::elapsed_counter;
-#endif
 }
 
 jlong JfrTime::frequency() {
-#if defined(X86) && !defined(ZERO)
   return _ft_enabled ? Rdtsc::frequency() : os::elapsed_frequency();
-#elif defined(AARCH64) && !defined(ZERO)
-  return _ft_enabled ? Cntvctss::frequency() : os::elapsed_frequency();
-#else
-  return os::elapsed_frequency();
-#endif
 }
 
+#elif defined(AARCH64) && !defined(ZERO)
+
+#include "cntvctss_aarch64.hpp"
+
+bool JfrTime::initialize() {
+  static bool initialized = false;
+  if (!initialized) {
+    _ft_enabled = Cntvctss::enabled();
+    initialized = true;
+  }
+  return initialized;
+}
+
+bool JfrTime::is_ft_supported() {
+  return Cntvctss::is_supported();
+}
+
+const void* JfrTime::time_function() {
+  return _ft_enabled ? (const void*)Cntvctss::elapsed_counter : (const void*)os::elapsed_counter;
+}
+
+jlong JfrTime::frequency() {
+  return _ft_enabled ? Cntvctss::frequency() : os::elapsed_frequency();
+}
+
+#else
+
+bool JfrTime::initialize() {
+  return true;
+}
+
+bool JfrTime::is_ft_supported() {
+  return false;
+}
+
+const void* JfrTime::time_function() {
+  return (const void*)os::elapsed_counter;
+}
+
+jlong JfrTime::frequency() {
+  return os::elapsed_frequency();
+}
+
+#endif

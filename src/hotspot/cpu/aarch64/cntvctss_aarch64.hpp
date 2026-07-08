@@ -47,6 +47,7 @@ class Cntvctss : AllStatic {
   static jlong raw();
   static jlong epoch();
   static bool  enabled();
+  static bool  ergonomics();
 };
 
 #endif // CPU_AARCH64_CNTVCTSS_AARCH64_HPP

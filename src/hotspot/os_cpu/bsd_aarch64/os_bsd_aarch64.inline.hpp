@@ -34,4 +34,10 @@ inline jlong os::cntvctss() {
   return (jlong)res;
 }
 
+inline jlong os::cntfrq() {
+  uint64_t res;
+  __asm__ volatile("mrs %0, CNTFRQ_EL0" : "=r"(res));
+  return (jlong)res;
+}
+
 #endif // OS_CPU_BSD_AARCH64_OS_BSD_AARCH64_INLINE_HPP

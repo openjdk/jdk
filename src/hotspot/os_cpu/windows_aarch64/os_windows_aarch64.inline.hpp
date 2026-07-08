@@ -44,4 +44,9 @@ inline jlong os::cntvctss() {
   return (jlong)_ReadStatusReg(CNTVCTSS_EL0);
 }
 
+inline jlong os::cntfrq() {
+  const int CNTFRQ_EL0 = ARM64_SYSREG(3, 3, 14, 0, 0);
+  return (jlong)_ReadStatusReg(CNTFRQ_EL0);
+}
+
 #endif // OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_INLINE_HPP
