@@ -39,10 +39,10 @@ import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import jdk.jshell.Snippet.Status;
 
 import org.junit.jupiter.api.Test;
 
@@ -208,7 +208,7 @@ public class JavadocTest extends KullaTesting {
                    }
                    """);
         assertEval("""
-                   ///topLevel Method.
+                   ///topLevel method.
                    public static void topLevel(SnippetClazz clazz) {}
                    """);
         assertEval("""
@@ -231,9 +231,64 @@ public class JavadocTest extends KullaTesting {
                       """
                       void SnippetClazz.SnippetClazzNested.nestedMethod()
                       Nested method javadoc.""");
+        assertJavadoc("topLevel(|",
+                      """
+                      void topLevel(SnippetClazz clazz)
+                      topLevel method.""");
         assertJavadoc("variable|",
                       """
                       variable:int
+                      topLevel variable.""");
+    }
+
+    @Test
+    public void testOverrideSnippet() {
+        var originalClass =
+            classKey(assertEval("""
+                                ///bad javadoc
+                                class SnippetClazz {
+                                }
+                                """));
+        assertEval("""
+                   ///SnippetClazz top level.
+                   class SnippetClazz implements java.io.Serializable {
+                   }
+                   """,
+                   ste(MAIN_SNIPPET, Status.VALID, Status.VALID, true, null),
+                   ste(originalClass, Status.VALID, Status.OVERWRITTEN, false, MAIN_SNIPPET));
+        var originalMethod=
+            methodKey(assertEval("""
+                                 ///bad javadoc
+                                 public static void topLevel(SnippetClazz clazz) {}
+                                 """));
+        assertEval("""
+                   ///topLevel method.
+                   public static String topLevel(SnippetClazz clazz) { return ""; }
+                   """,
+                   ste(MAIN_SNIPPET, Status.VALID, Status.VALID, true, null),
+                   ste(originalMethod, Status.VALID, Status.OVERWRITTEN, false, MAIN_SNIPPET));
+        var originalVar =
+            varKey(assertEval("""
+                              ///bad javadoc
+                              int variable = 0;
+                              """));
+        assertEval("""
+                   ///topLevel variable.
+                   String variable = "";
+                   """,
+                   ste(MAIN_SNIPPET, Status.VALID, Status.VALID, true, null),
+                   ste(originalVar, Status.VALID, Status.OVERWRITTEN, false, MAIN_SNIPPET));
+        assertJavadoc("SnippetClazz|",
+                      """
+                      SnippetClazz
+                      SnippetClazz top level.""");
+        assertJavadoc("topLevel(|",
+                      """
+                      String topLevel(SnippetClazz clazz)
+                      topLevel method.""");
+        assertJavadoc("variable|",
+                      """
+                      variable:java.lang.String
                       topLevel variable.""");
     }
 
