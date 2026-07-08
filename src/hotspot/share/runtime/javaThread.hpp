@@ -1357,16 +1357,16 @@ public:
 // tracked by JavaThread::is_at_poll_safepoint()).
 class AtNoAsyncEntryMark : public StackObj {
   JavaThread* _target;
-  bool _count;
+  bool _do_count;
  public:
-  AtNoAsyncEntryMark(JavaThread* t, bool b)
-    : _target(t), _count(!b) {
-    if (_count) {
+  AtNoAsyncEntryMark(JavaThread* jt, bool do_count)
+    : _target(jt), _do_count(do_count) {
+    if (_do_count) {
       _target->inc_at_no_async_entry_count();
     }
   }
   ~AtNoAsyncEntryMark() {
-    if (_count) {
+    if (_do_count) {
       _target->dec_at_no_async_entry_count();
     }
   }

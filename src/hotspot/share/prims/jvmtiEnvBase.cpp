@@ -2410,7 +2410,7 @@ static bool is_downcall_stub(CodeBlob* cb) {
 }
 
 class StopThreadAsyncClosure : public AsyncExceptionHandshakeClosure {
-public:
+ public:
   StopThreadAsyncClosure(OopHandle& exception)
     : AsyncExceptionHandshakeClosure(exception, "StopThreadAsyncClosure") {}
 
