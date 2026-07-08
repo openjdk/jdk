@@ -78,13 +78,7 @@ protected:
   void adjust_concurrent_worker_count();
 public:
 
-  ShenandoahController():
-    _gc_id(0),
-    _phase(UNSET),
-    _gc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahGCWaiters_lock", true),
-    _alloc_waiters_count(0),
-    _concurrent_worker_count(ConcGCThreads)
-  { }
+  ShenandoahController();
 
   // Request a collection cycle. This handles "explicit" gc requests
   // like System.gc and "implicit" gc requests, like metaspace oom.

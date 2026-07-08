@@ -29,6 +29,13 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 
+ShenandoahController::ShenandoahController():
+  _gc_id(0),
+  _phase(UNSET),
+  _gc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahGCWaiters_lock", true),
+  _alloc_waiters_count(0),
+  _concurrent_worker_count(ConcGCThreads) { }
+
 void ShenandoahController::update_gc_id() {
   _gc_id.add_then_fetch(1UL);
 }
