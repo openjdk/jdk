@@ -1538,10 +1538,9 @@ static void gen_continuation_enter(MacroAssembler* masm,
     // See also corresponding call below.
     // Make sure the call is patchable
 
-    address c2i_call_pc = __ pc();
-    while ((__ offset() + NativeCall::call_far_pcrelative_displacement_offset) % NativeCall::call_far_pcrelative_displacement_alignment != 0) {
-      __ nop();
-    }
+    __ align(NativeCall::call_far_pcrelative_displacement_alignment,
+        __ offset() + NativeCall::call_far_pcrelative_displacement_offset);
+
     // Emit stub for static call
     address stub = CompiledDirectCall::emit_to_interp_stub(masm, __ pc());
     if (stub == nullptr) {
@@ -1576,7 +1575,8 @@ static void gen_continuation_enter(MacroAssembler* masm,
   // --- call Continuation.enter(Continuation c, boolean isContinue)
 
   // Make sure the call is patchable
-  __ align(BytesPerWord, __ offset() + NativeCall::call_far_pcrelative_displacement_alignment);
+  __ align(NativeCall::call_far_pcrelative_displacement_alignment,
+      __ offset() + NativeCall::call_far_pcrelative_displacement_offset);
 
   // Emit stub for static call
   address stub = CompiledDirectCall::emit_to_interp_stub(masm, __ pc());

@@ -48,12 +48,12 @@ inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
   if (hf.is_interpreted_frame()) {
     patch_callee_link_relative(hf, hf.fp());
   }
-#ifdef ASSERT
   else {
+#ifdef ASSERT
     // See also FreezeBase::patch_pd()
     patch_callee_link(hf, (intptr_t*)badAddress);
-  }
 #endif
+  }
 }
 
 template<typename FKind>
@@ -95,7 +95,6 @@ template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& calle
     // - subtract locals_offset (distance from FP to locals in the original frame)
     // - add overlap (to account for shared stack args when caller is interpreted or empty)
     // This positions FP such that locals are correctly placed relative to the caller's frame.
-    // See diagram at line 91-118 for the frame layout.
     fp = caller.unextended_sp() - 1 - locals_offset + overlap;
 
     // esp points one slot below the last argument
