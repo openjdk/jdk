@@ -287,10 +287,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     private void initElementsFromCollection(Collection<? extends E> c) {
-        initElementsFromArray(prepareElements(c, comparator));
-    }
-
-    private void initElementsFromArray(Object[] es) {
+        Object[] es = prepareElements(c, comparator);
         this.queue = ensureNonEmpty(es);
         this.size = es.length;
     }
@@ -381,7 +378,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             Object[] es = prepareElements(c, comparator);
             heapify(es, es.length, comparator);
             modCount++;
-            initElementsFromArray(es);
+            queue = ensureNonEmpty(es);
+            size = es.length;
 
             return true;
         }
