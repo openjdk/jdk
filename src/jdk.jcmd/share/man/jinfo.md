@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,10 @@ command-line flags. If the specified process is running on a 64-bit JVM, then
 you might need to specify the `-J-d64` option, for example:
 
 >   `jinfo -J-d64 -sysprops` *pid*
+
+If the target JVM is started with an alternate temporary file location, `jinfo` must
+use the same temporary file location for communication; this is true by default
+but see the [`-XX:AltTempDir`](./java.html#-XX_AltTempDir) option.
 
 This command is unsupported and might not be available in future releases of
 the JDK. In Windows Systems where `dbgeng.dll` is not present, the Debugging

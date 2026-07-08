@@ -99,9 +99,8 @@ permissions granted to the principal running the command. The command lists
 only the JVMs for which the principal has access rights as determined by
 operating system-specific access control mechanisms.
 
-If the target JVM is started with an alternate temporary file location, `jps` must
-use the same temporary file location for communication; this is true by default
-but see the [`-XX:AltTempDir`](./java.html#-XX_AltTempDir) option.
+The list of JVMs is also limited to those that use the same temporary file location as the `jps`
+command.  That is normally the case but see the [`-XX:AltTempDir`](./java.html#-XX_AltTempDir) option.
 
 ## Host Identifier
 

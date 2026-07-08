@@ -1554,8 +1554,8 @@ static bool is_writable_directory(const char* name) {
   return (ret_val != -1 && S_ISDIR(mystat.st_mode) > 0 && access(name, R_OK|W_OK|X_OK) == 0);
 }
 
-// Check that any given alternate temporary directory name is is a writable directory,
-// and specifies an absolute path.  Revert back to hardcoded /tmp if its not an absolute path, but
+// Check that any given alternate temporary directory name is a writable directory,
+// and specifies an absolute path.  Revert back to hardcoded /tmp if it is not an absolute path, but
 // use AltTempDir even if it doesn't exist since it may be connecting to a process inside a container.
 // Since the attach mechanism uses the socket name length, this severely limits the length of the
 // alternate temporary directory name.  We don't check that here since the temporary directory is

@@ -216,12 +216,15 @@ public class PlatformSupportImpl extends PlatformSupport {
             }
             if (seenPerf) {
                 // Parse pid or nspid after seeing "hsperfdata_"
-                if (hostpid == -1) {
-                    hostpid = Integer.parseInt(s);
-                } else {
-                    nspid = Integer.parseInt(s);
+                try {
+                    if (hostpid == -1) {
+                        hostpid = Integer.parseInt(s);
+                    } else {
+                        nspid = Integer.parseInt(s);
+                    }
+                } catch (NumberFormatException nfe) {
+                    // e.g. Extra "hsperfdata_" found in path from AltTempDir.
                 }
-                break;
             }
         }
 

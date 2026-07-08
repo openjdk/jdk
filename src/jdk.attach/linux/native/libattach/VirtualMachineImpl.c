@@ -264,7 +264,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_write
 /*
  * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    validateSocketFileLength
- * Signature: (I)B
+ * Signature: (Ljava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL Java_sun_tools_attach_VirtualMachineImpl_validateSocketFileLength
   (JNIEnv *env, jclass cls, jstring path)
