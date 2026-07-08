@@ -217,11 +217,24 @@ class MaskCommentsAndModifiers {
                 switch (c) {
                     case '*' -> {
                         read();
-                        boolean mask = maskDocComments || c != '*'; //do not mask javadoc comments
-                        writeMaskOrNotMask('/', mask);
-                        writeMaskOrNotMask('*', mask);
-                        writeMaskOrNotMask(c, mask);
-                        int prevc = 0;
+                        boolean mask;
+                        if (maskDocComments || c != '*') {
+                            writeMask("/**");
+                            mask = true;
+                        } else {
+                            read();
+                            if (c == '/') {
+                                //special case: /**/
+                                writeMask("/**/");
+                                openToken = false;
+                                break;
+                            }
+                            write("/**");
+                            write(c);
+                            mask = false; //do not mask javadoc comments
+                        }
+
+                        int prevc = c;
                         while (read() >= 0 && (c != '/' || prevc != '*')) {
                             writeMaskOrNotMask(c, mask);
                             prevc = c;

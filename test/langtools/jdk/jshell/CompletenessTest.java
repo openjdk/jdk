@@ -232,11 +232,13 @@ public class CompletenessTest extends KullaTesting {
     static final String[] empty = new String[] {
         "    ",
         "/*comment*/",
+        "/**/",
         "//",
     };
 
     static final String[] prefix = new String[] {
         "/**comment*/",
+        "/***/",
         "///comment",
     };
 
