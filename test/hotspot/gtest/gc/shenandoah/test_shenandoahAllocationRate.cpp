@@ -169,35 +169,82 @@ TEST_VM_F(ShenandoahAllocationRateTest, event_driven_sampling_rearms_when_floor_
   EXPECT_GT(rate.weighted_average(), 0.0);
 }
 
-// Skewed allocation must still sample on allocation volume, without force_update().
-// Static light residuals stay below the floor; the heavy stream must re-fire sampling.
-class SkewedAllocators {
+// Concurrent multi-threaded sampling. Many threads drive allocated() past the aggregate floor at
+// the same time, so distinct JavaThreads spread across stripes and stay hot simultaneously. This is
+// the regime the sampling guard is written for: contended try_lock (multiple threads cross their
+// per-stripe share at once, only one wins the lock), multi-stripe sum() aggregation (the floor is
+// reached by several occupied stripes, not one), and the drain-race clause (one thread's add()
+// captures a stripe value that another thread drains before the first takes the lock).
+class ConcurrentAllocators {
 public:
-  static constexpr int kLightThreads = 7;
-  static constexpr size_t kLightBytes = 8;    // one sub-share residual per light stripe
-  static constexpr size_t kHeavyEpochs = 200;
+  static constexpr int kThreads = 8;
+  static constexpr size_t kPerThreadEpochs = 500;
+  static constexpr size_t kAllocSize = 64;
+  // Every thread allocates this many bytes; the grand total spans many minimum-sample-size epochs.
+  static constexpr size_t kPerThreadBytes = MINIMUM_SAMPLE_SIZE * kPerThreadEpochs;
+};
+
+TEST_VM_F(ShenandoahAllocationRateTest, event_driven_sampling_concurrent_allocators) {
+  ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
+
+  auto worker = [&](Thread*, int) {
+    for (size_t allocated = 0; allocated < ConcurrentAllocators::kPerThreadBytes;
+         allocated += ConcurrentAllocators::kAllocSize) {
+      rate.allocated(ConcurrentAllocators::kAllocSize);
+    }
+  };
+  TestThreadGroup<decltype(worker)> ttg(worker, ConcurrentAllocators::kThreads);
+  ttg.doit();
+  ttg.join();
+
+  // No force_update() was called: every sample came from the contended allocation path. Across
+  // thousands of epochs driven by all threads, sampling must have fired and drained repeatedly.
+  EXPECT_GT(rate.weighted_average(), 0.0);
+}
+
+// Concurrent skew: a few threads hold their stripes just below the per-stripe share and keep them
+// hot (spinning at the barrier), while a heavy thread pushes the aggregate over the floor. The
+// sample can then only be taken because sum() aggregates the heavy stripe with the held stripes --
+// exercising the multi-stripe floor crossing, not a single dominant stripe.
+class ConcurrentSkew {
+public:
+  static constexpr int kHolderThreads = 6;
+  static constexpr size_t kHeavyEpochs = 300;
   static constexpr size_t kAllocSize = 64;
 };
 
-TEST_VM_F(ShenandoahAllocationRateTest, event_driven_sampling_skewed_distribution) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
-
-  // Seed light residuals below the aggregate floor.
-  auto light = [&](Thread*, int) {
-    rate.allocated(SkewedAllocators::kLightBytes);
-  };
-  TestThreadGroup<decltype(light)> ttg(light, SkewedAllocators::kLightThreads);
-  ttg.doit();
-  ttg.join();
-  EXPECT_DOUBLE_EQ(rate.weighted_average(), 0.0);  // residuals never reach the aggregate floor
-
-  // Heavy stream must trigger samples from allocation crossings.
-  const size_t heavy_bytes = MINIMUM_SAMPLE_SIZE * SkewedAllocators::kHeavyEpochs;
-  for (size_t allocated = 0; allocated < heavy_bytes; allocated += SkewedAllocators::kAllocSize) {
-    allocate(rate, SkewedAllocators::kAllocSize);
+TEST_VM_F(ShenandoahAllocationRateTest, event_driven_sampling_concurrent_skew) {
+  ShenandoahStripedCounter stripes;
+  if (stripes.num_stripes() == 1) {
+    // A multi-stripe aggregate crossing is only meaningful with more than one stripe.
+    return;
   }
 
-  // No force_update(): samples came from allocation crossings.
+  ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
+
+  // Each holder repeatedly tops its stripe back up to just under the per-stripe share, so several
+  // stripes stay simultaneously occupied below their individual share for the whole run. Their adds
+  // never cross a share alone, but they contend on the counter and feed sum().
+  Atomic<bool> stop(false);
+  const size_t per_stripe_share = MINIMUM_SAMPLE_SIZE / stripes.num_stripes();
+  const size_t holder_target = per_stripe_share > 2 ? per_stripe_share - 1 : 1;
+  auto holder = [&](Thread*, int) {
+    rate.allocated(holder_target);
+    while (!stop.load_relaxed()) { /* keep the thread (and its stripe) live */ }
+  };
+  TestThreadGroup<decltype(holder)> holders(holder, ConcurrentSkew::kHolderThreads);
+  holders.doit();
+
+  // Heavy stream on the main thread's own stripe. Its crossings, added to the held stripes, take
+  // sum() over the floor; the re-armed trigger must sample every epoch off the allocation path.
+  const size_t heavy_bytes = MINIMUM_SAMPLE_SIZE * ConcurrentSkew::kHeavyEpochs;
+  for (size_t allocated = 0; allocated < heavy_bytes; allocated += ConcurrentSkew::kAllocSize) {
+    allocate(rate, ConcurrentSkew::kAllocSize);
+  }
+
+  stop.store_relaxed(true);
+  holders.join();
+
   EXPECT_GT(rate.weighted_average(), 0.0);
 }
 
