@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   __ mtctr(R12_scratch2);
   __ bctr();
 
-  masm->flush();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
 
   return s;
@@ -224,7 +224,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ mtctr(R11_scratch1);
   __ bctr();
 
-  masm->flush();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, 0);
 
   return s;

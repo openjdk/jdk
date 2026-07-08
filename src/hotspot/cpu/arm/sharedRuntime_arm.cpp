@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -752,7 +752,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                          in_sig_bt,
                          in_regs);
     int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
-    __ flush();
+    __ invalidate_icache();
     int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
     return nmethod::new_native_nmethod(method,
                                        compile_id,
@@ -1284,7 +1284,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ b(unlock_done);
   }
 
-  __ flush();
+  __ invalidate_icache();
   return nmethod::new_native_nmethod(method,
                                      compile_id,
                                      masm->code(),
@@ -1553,7 +1553,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ pop(RegisterSet(FP) | RegisterSet(PC));
 
-  __ flush();
+  __ invalidate_icache();
 
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset,
                                            reexecute_offset, frame_size_in_words);
@@ -1633,7 +1633,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
 
   __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
 
-  __ flush();
+  __ invalidate_icache();
 
   return SafepointBlob::create(&buffer, oop_maps, frame_size_words);
 }
@@ -1693,7 +1693,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination
   __ mov(Rexception_pc, LR);
   __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
 
-  __ flush();
+  __ invalidate_icache();
 
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_words, oop_maps, true);
 }

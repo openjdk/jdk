@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -133,7 +133,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   __ ld(t1, Address(xmethod, Method::from_compiled_offset()));
   __ jr(t1);
 
-  masm->flush();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
 
   return s;
@@ -238,7 +238,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   assert(SharedRuntime::get_handle_wrong_method_stub() != nullptr, "check initialization order");
   __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
-  masm->flush();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, 0);
 
   return s;
