@@ -29,16 +29,10 @@
 #include "utilities/powerOfTwo.hpp"
 
 ShenandoahStripedCounter::ShenandoahStripedCounter()
-    // Round the CPU count down to a power of two so current_stripe() can mask instead of modulo.
-    // Rounding down keeps the count <= number of cores. At least 1 stripe.
   : _num_stripes(round_down_power_of_2((uint) MAX2(os::processor_count(), 1)))
   , _stripe_mask(_num_stripes - 1)
   , _log_num_stripes(log2i_exact(_num_stripes)) {
-  // create_unfreeable aligns both the base and per-element stride to a cache line and
-  // default-constructs each Atomic to 0.
   _stripes = PaddedArray<Atomic<size_t>, mtGC>::create_unfreeable(_num_stripes);
 }
 
-ShenandoahStripedCounter::~ShenandoahStripedCounter() {
-  // _stripes is created "unfreeable" (raw chunk not tracked); nothing to free.
-}
+ShenandoahStripedCounter::~ShenandoahStripedCounter() { }
