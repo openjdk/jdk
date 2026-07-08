@@ -47,8 +47,7 @@ inline void FreezeBase::set_top_frame_metadata_pd(const frame& hf) {
   hf.own_abi()->return_pc = (uint64_t)hf.pc();
   if (hf.is_interpreted_frame()) {
     patch_callee_link_relative(hf, hf.fp());
-  }
-  else {
+  } else {
 #ifdef ASSERT
     // See also FreezeBase::patch_pd()
     patch_callee_link(hf, (intptr_t*)badAddress);
