@@ -229,7 +229,7 @@ void FrameMap::initialize() {
   map_register(i, r8); r8_opr = LIR_OprFact::single_cpu(i); i++;   // rscratch1
   map_register(i, r9); r9_opr = LIR_OprFact::single_cpu(i); i++;   // rscratch2
   if (ProfileCaptureRatio > 1) {
-    map_register(i, r_profile_rng); // r_profile_rng_opr = LIR_OprFact::single_cpu(i); 
+    map_register(i, r_profile_rng); // r_profile_rng_opr = LIR_OprFact::single_cpu(i);
     i++;
   }
 
