@@ -192,53 +192,37 @@ public class PlatformSupportImpl extends PlatformSupport {
      */
     public int getLocalVmId(File file) throws NumberFormatException {
         String p = file.getAbsolutePath();
-        String parts[] = p.split("\\/");
+        String procParts[] = p.split("\\/"); // "/proc/hostpid/root/<tempDir>/hsperfdata_user/nsid"
 
-        boolean seenProc = false;
-        boolean seenPerf = false;
         int hostpid = -1;
         int nspid = -1;
 
-        // Step through, as format is flexible given -XX:AltTempDir settings.
-        for (String s : parts) {
-            if (!seenProc && s.equals("proc")) {
-                seenProc = true;
-                continue;
-            }
-            if (seenProc && hostpid == -1) {
-                // host pid immediately follows "proc".
-                hostpid = Integer.parseInt(s);
-                continue;
-            }
-            if (s.startsWith("hsperfdata_")) {
-                seenPerf = true;
-                continue;
-            }
-            if (seenPerf) {
-                // Parse pid or nspid after seeing "hsperfdata_"
-                try {
-                    if (hostpid == -1) {
-                        hostpid = Integer.parseInt(s);
-                    } else {
-                        nspid = Integer.parseInt(s);
-                    }
-                } catch (NumberFormatException nfe) {
-                    // e.g. Extra "hsperfdata_" found in path from AltTempDir.
-                }
-            }
+        // ["", "proc", "hostpid", "root", "tmpdir" .. "tmpdir", "hsperfdata_user", "nsid"]
+        if (procParts.length > 4 && procParts[1].equals("proc") && procParts[3].equals("root")) {
+            hostpid = Integer.parseInt(procParts[2]);
         }
 
-        if (seenPerf) {
-            if (nspid == -1) {
-                return hostpid;
-            } else {
-                // We have both pids.
-                if (nspid == getNamespaceVmId(hostpid)) {
-                    return hostpid;
-                }
-            }
+        // Some invalid path.
+        if (procParts.length < 2) {
+            return -1;
         }
-        return -1;
+
+        // Path at the end after tmp dir is: "hsperfdata_username/PID"
+        int end = procParts.length - 1;
+        if (!procParts[end-1].startsWith("hsperfdata_")) {
+            return -1;
+        }
+        if (hostpid == -1) {
+            hostpid = Integer.parseInt(procParts[end]);
+        } else {
+            nspid = Integer.parseInt(procParts[end]);
+        }
+        if (nspid == -1) {
+            return hostpid;
+        } else {
+            // We have both pids.
+            return nspid == getNamespaceVmId(hostpid) ? hostpid : -1;
+        }
     }
 
     /*

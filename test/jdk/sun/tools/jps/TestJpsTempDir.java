@@ -40,12 +40,12 @@ import java.util.List;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.util.FileUtils;
 
 public class TestJpsTempDir {
 
     public static void main(java.lang.String[] unused) throws Exception {
         Path clientTmpDir = Files.createTempDirectory(Path.of("/tmp"), "c");
-        clientTmpDir.toFile().deleteOnExit();
         String tmpdirString = "-XX:AltTempDir=" + clientTmpDir.toString();
 
         LingeredAppForJps app = new LingeredAppForJps();
@@ -66,6 +66,7 @@ public class TestJpsTempDir {
             output.shouldHaveExitValue(0);
         } finally {
             LingeredApp.stopApp(app);
+            FileUtils.deleteFileTreeWithRetry(clientTmpDir);
         }
     }
 }

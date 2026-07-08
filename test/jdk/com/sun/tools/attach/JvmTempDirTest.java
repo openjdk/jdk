@@ -55,6 +55,8 @@ import jdk.test.lib.process.ProcessTools;
  * when starting many processes.
  */
 
+import jdk.test.lib.util.FileUtils;
+
 public class JvmTempDirTest {
 
     private static long startTime;
@@ -64,32 +66,64 @@ public class JvmTempDirTest {
         startTime = System.currentTimeMillis();
 
         Path clientTmpDir = Files.createTempDirectory(Path.of("/tmp"), "c");
-        clientTmpDir.toFile().deleteOnExit();
         Path targetTmpDir = Files.createTempDirectory(Path.of("/tmp"), "t");
-        targetTmpDir.toFile().deleteOnExit();
 
-        // Run the test with all possible combinations of setting AltTempDir.
-        // Different setting will cause the attach mechanism to fail.
-        String notFound = "not found in VM list";
-        runExperiment(null, null, true, null);
-        runExperiment(targetTmpDir, targetTmpDir, true, null);
-        runExperiment(clientTmpDir, clientTmpDir, true, null);
+        try {
+            // Run the test with all possible combinations of setting AltTempDir.
+            // Different setting will cause the attach mechanism to fail.
+            String notFound = "not found in VM list";
+            runExperiment(null, null, true, null);
+            runExperiment(targetTmpDir, targetTmpDir, true, null);
+            runExperiment(clientTmpDir, clientTmpDir, true, null);
 
-        runExperiment(clientTmpDir, null, false, notFound);
-        runExperiment(clientTmpDir, targetTmpDir, false, notFound);
-        runExperiment(null, targetTmpDir, false, notFound);
+            runExperiment(clientTmpDir, null, false, notFound);
+            runExperiment(clientTmpDir, targetTmpDir, false, notFound);
+            runExperiment(null, targetTmpDir, false, notFound);
+        } finally {
+            FileUtils.deleteFileTreeWithRetry(clientTmpDir);
+            FileUtils.deleteFileTreeWithRetry(targetTmpDir);
+        }
 
         String name = String.valueOf('a').repeat(200);
         Path veryLongDir = Files.createTempDirectory(Path.of("/tmp"), name);
-        veryLongDir.toFile().deleteOnExit();
-        runExperiment(veryLongDir, veryLongDir, false, "Socket file path too long");
+        try {
+            runExperiment(veryLongDir, veryLongDir, false, "Socket file path too long");
+        } finally {
+            FileUtils.deleteFileTreeWithRetry(veryLongDir);
+        }
 
-        Path noExist = Path.of("/tmp/noexist");
-        runNoExistTest(noExist);
+        // Test a directory with only proc in one part of the name.
+        Path procTempDir = Files.createTempDirectory(Path.of("/tmp"), "proc");
+        Path procDir = Files.createDirectory(procTempDir.resolve("proc"));
+        try {
+            runExperiment(procDir, procDir, true, null);
+        } finally {
+            FileUtils.deleteFileTreeWithRetry(procDir);
+            FileUtils.deleteFileTreeWithRetry(procTempDir);
+        }
+
+        Path hsperfDir = Files.createTempDirectory(Path.of("/tmp"), "hsperfdata_");
+        try {
+            runExperiment(hsperfDir, hsperfDir, true, null);
+        } finally {
+            FileUtils.deleteFileTreeWithRetry(hsperfDir);
+        }
+
+        // Create /tmp/tmp<tempdir>, and try to use /tmp/tmp<tempdir>/noexist
+        Path tmpDir = Files.createTempDirectory(Path.of("/tmp"), "tmp");
+        try {
+            Path noExist = tmpDir.resolve("noexist");
+            runNoExistTest(noExist);
+        } finally {
+            FileUtils.deleteFileTreeWithRetry(tmpDir);
+        }
 
         Path relativeDir = Files.createTempDirectory(Path.of("."), "a");
-        relativeDir.toFile().deleteOnExit();
-        runRelativeTest(relativeDir);
+        try {
+            runRelativeTest(relativeDir);
+        } finally {
+            FileUtils.deleteFileTreeWithRetry(relativeDir);
+        }
     }
 
     private static int counter = 0;

@@ -287,8 +287,6 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                 return tmpOnProcPidRoot.toString();
             } else if (Files.isSameFile(tmpOnProcPidRoot, TMPDIR)) {
                 return TMPDIR.toString();
-            } else if (Files.isWritable(TMPDIR)) {
-                return TMPDIR.toString();
             } else {
                 throw new AttachOperationFailedException("Unable to access the filesystem of the target process");
             }
