@@ -109,9 +109,10 @@ public class TestMaskedStoreIdealization {
                 let("idx", idx),
                 let("boxedTy", vec.elementType.boxedTypeName()),
                 let("species", vec.speciesName),
-                """
-                        VectorMask<#boxedTy> mask = VectorMask.fromLong(#species, -1 - (1 << #idx));
-                """
+                "        VectorMask<#boxedTy> mask = VectorMask.fromLong(#species, ",
+                // 1
+                RANDOM.nextInt(0, 10) == 0 ? RANDOM.nextLong() : "-1 - (1 << #idx)",
+                ");\n"
             ));
 
             var indexMapGeneration = Template.make(() -> {
