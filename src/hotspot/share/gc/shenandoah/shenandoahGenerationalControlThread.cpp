@@ -680,10 +680,10 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
   // opportunities for cleanup that were made available before the caller
   // requested the GC.
   //
-  // TODO: We may have spurious wakeups here when an old gc cycle completes
+  // Note: We may have spurious wakeups here when an old gc cycle completes.
   // We don't have a mechanism to wait for specific types of cycles to complete.
   // In general though, nobody should be notified when an old mark increment
-  // completes. That is not the GC you are looking for.
+  // completes.
   MonitorLocker ml(&_gc_waiters_lock);
   size_t current_gc_id = get_gc_id();
   const size_t required_gc_id = current_gc_id + 1;
