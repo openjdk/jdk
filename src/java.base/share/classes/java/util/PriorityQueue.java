@@ -373,24 +373,36 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             if (c == this)
                 throw new IllegalArgumentException();
 
-            // For an exact PriorityQueue source, the array is trusted to contain
-            // no null elements, so it can be copied directly without additional checks.
             Object[] es;
-            if (c.getClass() == PriorityQueue.class) {
+            int len;
+
+            Class<?> cClass = c.getClass();
+            if (cClass == PriorityQueue.class) {
                 PriorityQueue<?> pq = (PriorityQueue<?>) c;
-                if (pq.size == 0)
+                if ((len = pq.size) == 0)
                     return false;
-                es = Arrays.copyOf(pq.queue, pq.size);
+                es = Arrays.copyOf(pq.queue, len);
+                if (pq.comparator != comparator)
+                    heapify(es, len, comparator);
             } else {
-                es = prepareElements(c, comparator);
-                if (es.length == 0)
+                es = c.toArray();
+                if ((len = es.length) == 0)
                     return false;
+                if (cClass != ArrayList.class)
+                    es = Arrays.copyOf(es, len, Object[].class);
+                // A single element is not examined by heapify(), and a comparator
+                // may permit nulls, so explicitly reject null before committing the
+                // new array.
+                if (len == 1 || comparator != null)
+                    for (Object e : es)
+                        if (e == null)
+                            throw new NullPointerException();
+                heapify(es, len, comparator);
             }
 
-            heapify(es, es.length, comparator);
             modCount++;
             queue = es;
-            size = es.length;
+            size = len;
 
             return true;
         }
