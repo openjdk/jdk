@@ -373,13 +373,14 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             if (c == this)
                 throw new IllegalArgumentException();
 
-            // If c is an exact PriorityQueue, its elements are known to be non-null
-            // and its backing array can be copied directly.
+            // For an exact PriorityQueue source, the array is trusted to contain
+            // no null elements, so it can be copied directly without additional checks.
             Object[] es;
             if (c.getClass() == PriorityQueue.class) {
-                if (c.isEmpty())
+                PriorityQueue<?> pq = (PriorityQueue<?>) c;
+                if (pq.size == 0)
                     return false;
-                es = c.toArray();
+                es = Arrays.copyOf(pq.queue, pq.size);
             } else {
                 es = prepareElements(c, comparator);
                 if (es.length == 0)
