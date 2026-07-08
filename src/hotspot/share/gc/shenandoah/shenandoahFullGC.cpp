@@ -143,6 +143,7 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 
 void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->release_injected_pins();
 
   // A full GC must be entered directly.
   // TODO: All of the 'recover from evacuation failures' should be safe to remove now
