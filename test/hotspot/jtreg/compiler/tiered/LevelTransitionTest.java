@@ -38,6 +38,15 @@
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
  *                   -XX:CompileCommand=compileonly,compiler.tiered.LevelTransitionTest$ExtendedTestCase$CompileMethodHolder::*
  *                   compiler.tiered.LevelTransitionTest
+ *
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="arm" | os.arch=="aarch64"
+ * @run main/othervm/timeout=240 -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+UnlockExperimentalVMOptions -XX:ProfileCaptureRatio=64
+ *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation
+ *                   -XX:-BackgroundCompilation
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
+ *                   -XX:CompileCommand=compileonly,compiler.tiered.LevelTransitionTest$ExtendedTestCase$CompileMethodHolder::*
+ *                   compiler.tiered.LevelTransitionTest
  */
 
 package compiler.tiered;
