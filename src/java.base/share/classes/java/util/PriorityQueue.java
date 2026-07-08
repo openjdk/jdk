@@ -287,30 +287,16 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     private void initElementsFromCollection(Collection<? extends E> c) {
-        Object[] es = prepareElements(c, comparator);
-        this.queue = ensureNonEmpty(es);
-        this.size = es.length;
-    }
-
-    private static <E> Object[] prepareElements(Collection<? extends E> c,
-                                                Comparator<? super E> cmp) {
         Object[] es = c.toArray();
-        Class<?> cClass = c.getClass();
-        // If the collection is a PriorityQueue, we can skip the null check.
-        if (cClass == PriorityQueue.class)
-            return es;
-
         int len = es.length;
-        if (cClass != ArrayList.class)
+        if (c.getClass() != ArrayList.class)
             es = Arrays.copyOf(es, len, Object[].class);
-        // A single element is not examined by heapify(), and a comparator
-        // may permit nulls, so explicitly reject null before committing the
-        // new array.
-        if (len == 1 || cmp != null)
+        if (len == 1 || this.comparator != null)
             for (Object e : es)
                 if (e == null)
                     throw new NullPointerException();
-        return es;
+        this.queue = ensureNonEmpty(es);
+        this.size = len;
     }
 
     /**
