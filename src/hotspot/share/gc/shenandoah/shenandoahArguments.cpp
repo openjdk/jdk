@@ -198,12 +198,6 @@ void ShenandoahArguments::initialize() {
     FLAG_SET_ERGO(ShenandoahGCHeuristics, "adaptive");
   }
 
-  // We need to use the object monitor table to support self-forwarding
-  FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
-  if (!UseObjectMonitorTable) {
-    vm_exit_during_initialization("Shenandoah is not compatible with -XX:-UseObjectMonitorTable");
-  }
-
   if (ShenandoahMomentaryAllocRateSampleWindow > ShenandoahRecentAllocRateSampleWindow
     || ShenandoahRecentAllocRateSampleWindow > ShenandoahAllocRateSampleWindow) {
     vm_exit_during_initialization(
