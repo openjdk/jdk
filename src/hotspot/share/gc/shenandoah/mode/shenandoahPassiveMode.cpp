@@ -34,7 +34,10 @@ void ShenandoahPassiveMode::initialize_flags() const {
   FLAG_SET_DEFAULT(ShenandoahImplicitGCInvokesConcurrent, false);
 
   // No need for evacuation reserve with Full GC
-  FLAG_SET_DEFAULT(ShenandoahEvacReserve, 0);
+  if (FLAG_IS_DEFAULT(ShenandoahEvacReserve)) {
+    log_info(gc)("Heuristics sets -XX:ShenandoahEvacReserve=0");
+    FLAG_SET_DEFAULT(ShenandoahEvacReserve, 0);
+  }
 
   // Disable known barriers by default.
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahLoadRefBarrier);
