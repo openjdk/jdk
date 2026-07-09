@@ -32,11 +32,11 @@
  * @run driver ${test.main.class}
  */
 
-package compiler.c2.irTests;
+package compiler.escapeAnalysis;
 
 import compiler.lib.ir_framework.*;
 
-public class StressEliminateAllocationsTest {
+public class StressEliminateAllocationsIRTest {
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:+UnlockDiagnosticVMOptions",
                                    "-XX:+StressEliminateAllocations",
@@ -52,6 +52,7 @@ public class StressEliminateAllocationsTest {
 
     @Test
     @IR(counts = { IRNode.ALLOC , "1"})
+    @Arguments( values = { Argument.NUMBER_42 })
     private static int test(int i) {
         // Even though the object is scalar replaceable,
         // allocation elimination unconditionally fails in stress mode.
@@ -64,10 +65,4 @@ public class StressEliminateAllocationsTest {
 
     @DontInline
     private static void dontInline() {}
-
-    @Run(test = "test")
-    @Warmup(10000)
-    private static void testRunner1() {
-        test(1);
-    }
 }
