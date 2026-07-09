@@ -1249,7 +1249,7 @@ public:
 };
 
 ShenandoahSelfForwardTask::ShenandoahSelfForwardTask(ShenandoahHeap* heap, ShenandoahCollectionSet* cs) :
-  WorkerTask("Shenandoah Un-Self-Forward"),
+  WorkerTask("Shenandoah Self-Forward"),
   _heap(heap),
   _cs(cs) {
   _cs->clear_current_index();
