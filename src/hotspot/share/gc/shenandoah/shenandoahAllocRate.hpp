@@ -187,6 +187,21 @@ private:
   // Log2 of the per-stripe trigger threshold.
   uint32_t log_per_stripe_threshold_for(size_t minimum_sample_size) const;
 
+  // Fast, lock-free: did this add carry the calling thread's stripe across a per-stripe threshold
+  // multiple? The threshold is a power of two, so a crossing is a change in the bits above it.
+  static bool striped_threshold_exceeded(size_t striped_unsampled, size_t previous_striped_unsampled, uint32_t log_per_stripe_threshold) {
+    return (striped_unsampled >> log_per_stripe_threshold) > (previous_striped_unsampled >> log_per_stripe_threshold);
+  }
+
+  // Whether the unsampled bytes are still below the sampling floor. Must be called under the sample
+  // lock: drains only happen under the lock, so reading the live stripe value and sum() here filters
+  // out false positives from a concurrent drain that already reset the counter.
+  bool unsampled_below_floor(size_t minimum_sample_size, size_t striped_unsampled) const {
+    assert(_sample_lock.owned_by_self(), "Caller must hold lock");
+    return (_unsampled.num_stripes() > 1 && _unsampled.current_stripe_value() < striped_unsampled) ||
+           _unsampled.sum() < minimum_sample_size;
+  }
+
   // Record the sample under the sample lock
   void take_sample(jlong now, jlong elapsed, size_t unsampled);
 

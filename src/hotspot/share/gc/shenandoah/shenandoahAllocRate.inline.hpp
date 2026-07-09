@@ -77,10 +77,9 @@ void ShenandoahAllocRate<Clock>::maybe_take_sample(const size_t minimum_sample_s
     return;
   }
 
-  if ((_unsampled.num_stripes() > 1 && _unsampled.current_stripe_value() < striped_unsampled) ||
-      _unsampled.sum() < minimum_sample_size) {
-    // Below the floor: either another thread already sampled and drained, or this thread's stripe
-    // crossed its share while the aggregate is still short (skewed distribution). Wait for more.
+  if (unsampled_below_floor(minimum_sample_size, striped_unsampled)) {
+    // Either another thread already sampled and drained, or this thread's stripe crossed its share
+    // while the aggregate is still short (skewed distribution). Wait for more.
     _sample_lock.unlock();
     return;
   }
@@ -102,11 +101,10 @@ void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
   const size_t previous_striped_unsampled = striped_unsampled - allocated_bytes;
 
   const uint64_t params = _sample_params.load_relaxed();
-  const uint log_per_stripe_threshold = decode_log_per_stripe_threshold(params);
+  const uint32_t log_per_stripe_threshold = decode_log_per_stripe_threshold(params);
 
-  // Re-arm the trigger at every per-stripe threshold crossing (i.e. whenever the bits above the
-  // threshold increment).
-  if ((striped_unsampled >> log_per_stripe_threshold) > (previous_striped_unsampled >> log_per_stripe_threshold)) {
+  // Re-arm the trigger at every per-stripe threshold crossing.
+  if (striped_threshold_exceeded(striped_unsampled, previous_striped_unsampled, log_per_stripe_threshold)) {
     maybe_take_sample(decode_min_sample_size(params), striped_unsampled);
   }
 }
