@@ -1238,8 +1238,10 @@ public:
   void do_object(oop obj) override {
     markWord m = obj->mark();
     if (!m.is_forwarded()) {
-      obj->set_mark(m.set_self_forwarded());
-      _self_forwarded = true;
+      oop fwd = ShenandoahForwarding::try_forward_to_self(obj, m);
+      if (fwd == obj) {
+        _self_forwarded = true;
+      }
     }
   }
 
