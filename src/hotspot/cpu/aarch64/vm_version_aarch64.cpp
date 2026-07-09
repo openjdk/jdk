@@ -454,6 +454,10 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
+  if (FLAG_IS_DEFAULT(UseIntPolyIntrinsics)) {
+     UseIntPolyIntrinsics = true;
+  }
+
   if (supports_feature(CPU_ASIMD)) {
       if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
           UseKyberIntrinsics = true;
@@ -655,6 +659,10 @@ void VM_Version::initialize() {
 
   if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
     FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseIntPoly25519Intrinsics)) {
+    FLAG_SET_DEFAULT(UseIntPoly25519Intrinsics, true);
   }
 
   if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {

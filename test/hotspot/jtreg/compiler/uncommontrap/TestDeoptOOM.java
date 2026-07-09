@@ -41,7 +41,8 @@
  *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::main
  *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::m9_1
  *      -XX:+UnlockDiagnosticVMOptions
- *      -XX:+UseZGC -XX:+LogCompilation -XX:+PrintDeoptimizationDetails -XX:+TraceDeoptimization -XX:+Verbose
+ *      -XX:-DisplayVMOutput -XX:+UseZGC -XX:+LogCompilation
+ *      -XX:+PrintDeoptimizationDetails -XX:+TraceDeoptimization -XX:+Verbose
  *      compiler.uncommontrap.TestDeoptOOM
  */
 
