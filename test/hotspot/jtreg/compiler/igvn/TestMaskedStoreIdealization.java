@@ -277,7 +277,7 @@ public class TestMaskedStoreIdealization {
             return Template.make(() -> scope(
                 Stream.of(Operation.STORE_SCATTER, Operation.STORE_MASK, Operation.STORE_SCATTER_MASK)
                          .map(op -> testCase.asToken(op))
-                         .collect(Collectors.toList())
+                         .toList()
             )).asToken();
         }
     }

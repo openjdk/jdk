@@ -33,6 +33,7 @@
 package compiler.arraycopy;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -137,10 +138,7 @@ public class TestSubwordPartialInlining {
                       .toList(),
                 Hooks.CLASS_HOOK.insert(scope(
                     let("pty", pty),
-                    let("arr", Stream.iterate(0, n -> n + 1)
-                                     .limit(inputSize)
-                                     .map(_ -> (String) pty.callLibraryRNG())
-                                     .reduce("", (String l, String r) -> l.length() == 0 || l.endsWith(", ") ? l + r : l + ", " + r)),
+                    let("arr", String.join(", ", Collections.nCopies(inputSize, (String) pty.callLibraryRNG()))),
                     """
                         private static #pty[] #{pty}Arr = { #arr };
                     """

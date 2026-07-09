@@ -3520,8 +3520,9 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* address = in(MemNode::Address);
   Node* value   = in(MemNode::ValueIn);
   // Back-to-back stores to same address?  Fold em up.  Generally
-  // unsafe if I have intervening uses.
-  {
+  // unsafe if I have intervening uses. Also unsafe for masked or
+  // scatter vector stores as the wider store.
+  if (!this->is_StoreVector() || this->Opcode() == Op_StoreVector) {
     Node* st = mem;
     // If Store 'st' has more than one use, we cannot fold 'st' away.
     // For example, 'st' might be the final state at a conditional
@@ -3545,9 +3546,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
              "no mismatched stores, except on raw memory: %s %s", NodeClassNames[Opcode()], NodeClassNames[st->Opcode()]);
 
       if (st->in(MemNode::Address)->eqv_uncast(address) &&
-          st->as_Store()->memory_size() <= this->memory_size() &&
-          (!this->is_StoreVector() || this->Opcode() == Op_StoreVector)
-          ) {
+          st->as_Store()->memory_size() <= this->memory_size()) {
         assert(!is_predicated_vector() && !is_StoreVectorMasked() && !is_StoreVectorScatter() && !is_StoreVectorScatterMasked(),
           "optimization only correct with full-width stores without holes");
         Node* use = st->raw_out(0);
