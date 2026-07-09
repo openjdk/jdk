@@ -1788,9 +1788,10 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                 if (more > 16) {
                     // the server doesn't seem to take into account our
                     // connection close frame. Just stop responding
-                    updatedDeadline = Deadline.MIN;
+                    updated = updatedDeadline = Deadline.MIN;
                 } else {
-                    updatedDeadline = updated.plusMillis(maxIdleTimeMs);
+                    updated = updatedDeadline = timeSource().instant()
+                            .plusMillis(maxIdleTimeMs);
                 }
                 handleIncoming(source, destConnId, headersType, buffer);
             } else {
@@ -1798,7 +1799,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                 dropIncoming(source, destConnId, headersType, buffer);
             }
 
-            timer().reschedule(this, updatedDeadline);
+            timer().reschedule(this, updated);
         }
 
         protected void handleIncoming(SocketAddress source, ByteBuffer idbytes,
@@ -1821,8 +1822,8 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         }
 
         public final void startTimer() {
-            deadline = updatedDeadline = timeSource().instant().plusMillis(maxIdleTimeMs);
-            timer().offer(this);
+            Deadline deadline = updatedDeadline = timeSource().instant().plusMillis(maxIdleTimeMs);
+            timer().reschedule(this, deadline);
         }
 
         @Override

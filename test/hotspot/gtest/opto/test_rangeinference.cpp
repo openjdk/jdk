@@ -22,6 +22,7 @@
  *
  */
 
+#include "opto/intrinsicnode.hpp"
 #include "opto/rangeinference.hpp"
 #include "opto/type.hpp"
 #include "runtime/os.hpp"
@@ -223,12 +224,6 @@ TypeIntMirror<S, U> TypeIntMirror<S, U>::make(const TypeIntMirror<S, U>& t, int 
 template <class S, class U>
 const TypeIntMirror<S, U>* TypeIntMirror<S, U>::operator->() const {
   return this;
-}
-
-template <class S, class U>
-bool TypeIntMirror<S, U>::contains(U u) const {
-  S s = S(u);
-  return s >= _lo && s <= _hi && u >= _ulo && u <= _uhi && _bits.is_satisfied_by(u);
 }
 
 template <class S, class U>
@@ -745,9 +740,31 @@ public:
   }
 };
 
+template <class U>
+class OpCompressBits {
+public:
+  U operator()(U v1, U v2) const {
+    constexpr int W = HotSpotNumerics::type_width<U>();
+    if constexpr (W == 64) {
+      return CompressBitsNode::compress_bits(v1, v2, W);
+    } else {
+      return U(uint(CompressBitsNode::compress_bits(uint(v1), uint(v2), W)));
+    }
+  }
+};
+
+template <class CTP>
+class InferCompressBits {
+public:
+  CTP operator()(CTP t1, CTP t2) const {
+    return RangeInference::infer_compress_bits(t1, t2);
+  }
+};
+
 TEST(opto, range_inference) {
   test_binary<OpAnd, InferAnd>();
   test_binary<OpOr, InferOr>();
   test_binary<OpXor, InferXor>();
+  test_binary<OpCompressBits, InferCompressBits>();
   test_lshift();
 }

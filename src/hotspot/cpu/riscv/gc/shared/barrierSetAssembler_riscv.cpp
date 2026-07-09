@@ -352,8 +352,8 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ bne(tmp1, tmp2, error);
 
   // Make sure klass is 'reasonable', which is not zero.
-  __ load_klass(obj, obj, tmp1); // get klass
-  __ beqz(obj, error);           // if klass is null it is broken
+  __ load_narrow_klass(tmp1, obj); // get klass
+  __ beqz(tmp1, error);           // if klass is null it is broken
 }
 
 void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,

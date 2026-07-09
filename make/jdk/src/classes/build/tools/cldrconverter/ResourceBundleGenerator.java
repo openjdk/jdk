@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Formatter;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
+import static java.util.ResourceBundle.Control;
 
 class ResourceBundleGenerator implements BundleGenerator {
     // preferred timezones - keeping compatibility with JDK1.1 3 letter abbreviations
@@ -69,6 +71,9 @@ class ResourceBundleGenerator implements BundleGenerator {
     // For duplicated values
     private static final String META_VALUE_PREFIX = "metaValue_";
 
+    // locales in the base module
+    private final Set<Locale> baseModuleLocales = new HashSet<>();
+
     @Override
     public void generateBundle(String packageName, String baseName, String localeID,
                                Map<String, ?> map, BundleType type) throws IOException {
@@ -80,8 +85,15 @@ class ResourceBundleGenerator implements BundleGenerator {
             return;
         }
 
-        // Assume that non-base resources go into jdk.localedata
-        if (!CLDRConverter.isBaseModule) {
+        if (CLDRConverter.isBaseModule) {
+            if (!localeID.equals("root")) {
+                baseModuleLocales.addAll(
+                    Control.getControl(Control.FORMAT_DEFAULT)
+                        .getCandidateLocales("",
+                            Locale.forLanguageTag(CLDRConverter.toLanguageTag(localeID))));
+            }
+        } else {
+            // Assume that non-base resources go into jdk.localedata
             dirName = dirName + File.separator + "ext";
             packageName = packageName + ".ext";
         }
@@ -284,6 +296,7 @@ class ResourceBundleGenerator implements BundleGenerator {
                 import java.util.HashMap;
                 import java.util.Locale;
                 import java.util.Map;
+                import java.util.Set;
                 import sun.util.locale.provider.LocaleDataMetaInfo;
                 import sun.util.locale.provider.LocaleProviderAdapter;
 
@@ -296,6 +309,7 @@ class ResourceBundleGenerator implements BundleGenerator {
                 out.printf("""
                         private static final Map<Locale, String[]> parentLocalesMap = HashMap.newHashMap(%d);
                         private static final Map<String, String> languageAliasMap = HashMap.newHashMap(%d);
+                        private static final Set<Locale> baseModuleLocales;
                         static final boolean nonlikelyScript = %s; // package access from CLDRLocaleProviderAdapter
 
                         static {
@@ -322,7 +336,23 @@ class ResourceBundleGenerator implements BundleGenerator {
                 CLDRConverter.handlerSupplMeta.getLanguageAliasData().forEach((key, value) -> {
                     out.printf("        languageAliasMap.put(\"%s\", \"%s\");\n", CLDRConverter.escape(key), CLDRConverter.escape(value));
                 });
-                out.printf("    }\n\n");
+                out.println();
+
+                // for baseModuleLocales
+                out.printf("        baseModuleLocales = Set.of(\n");
+                out.printf("            %s",
+                    baseModuleLocales.stream()
+                        .map(Locale::toLanguageTag)
+                        .sorted(Comparator.comparing(l -> l.equals("und") ? "" : l))
+                        .map(l -> switch(l) {
+                                case "und"   -> "Locale.ROOT";
+                                case "en"    -> "Locale.ENGLISH";
+                                case "en-US" -> "Locale.US";
+                                default      -> "Locale.forLanguageTag(\"" + l + "\")";
+                            })
+                        .collect(Collectors.joining(",\n            ")));
+                out.printf("\n        );");
+                out.println("\n    }\n");
 
                 // end of static initializer block.
 
@@ -389,6 +419,10 @@ class ResourceBundleGenerator implements BundleGenerator {
 
                     public Map<Locale, String[]> parentLocales() {
                         return parentLocalesMap;
+                    }
+
+                    public Set<Locale> baseModuleLocales() {
+                        return baseModuleLocales;
                     }
 
                     // package access from CLDRLocaleProviderAdapter

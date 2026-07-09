@@ -630,6 +630,8 @@ void G1RemSet::scan_collection_set_code_roots(G1ParScanThreadState* pss,
     // set regions for all threads.
     _g1h->collection_set_iterate_increment_from(&cl, worker_id);
 
+    pss->update_nmethod_regions_to_add();
+
     p->record_or_add_thread_work_item(coderoots_phase, worker_id, cl.code_roots_scanned(), G1GCPhaseTimes::CodeRootsScannedNMethods);
   }
 
@@ -1061,11 +1063,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // so the bitmap for the regions in the collection set must be cleared if not already.
       if (should_clear_region(hr)) {
         _g1h->clear_bitmap_for_region(hr);
-        _g1h->concurrent_mark()->reset_top_at_mark_start(hr);
       } else {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }
-      _g1h->concurrent_mark()->clear_statistics(hr);
+      _g1h->concurrent_mark()->reset_region_marking_state(hr);
       _scan_state->add_all_dirty_region(hr->hrm_index());
       return false;
     }
@@ -1232,14 +1233,14 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   {
     WorkerThreads* workers = g1h->workers();
 
-    size_t const increment_length = g1h->collection_set()->groups_increment_length();
+    uint const num_groups_in_increment = g1h->collection_set()->num_groups_in_increment();
 
     uint const num_workers = initial_evacuation ? workers->active_workers() :
-                                                  MIN2(workers->active_workers(), (uint)increment_length);
+                                                  MIN2(workers->active_workers(), num_groups_in_increment);
 
     G1MergeHeapRootsTask cl(_scan_state, num_workers, initial_evacuation);
-    log_debug(gc, ergo)("Running %s using %u workers for %zu regions",
-                        cl.name(), num_workers, increment_length);
+    log_debug(gc, ergo)("Running %s using %u workers for %u groups",
+                        cl.name(), num_workers, num_groups_in_increment);
     workers->run_task(&cl, num_workers);
   }
 

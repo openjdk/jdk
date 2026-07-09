@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.ResourceBundleProvider;
 import sun.util.locale.provider.JRELocaleProviderAdapter;
@@ -180,9 +179,6 @@ public class LocaleData {
 
     private static class LocaleDataStrategy implements Bundles.Strategy {
         private static final LocaleDataStrategy INSTANCE = new LocaleDataStrategy();
-        // TODO: avoid hard-coded Locales
-        private static final Set<Locale> JAVA_BASE_LOCALES
-            = Set.of(Locale.ROOT, Locale.ENGLISH, Locale.US, Locale.of("en", "US", "POSIX"));
 
         private LocaleDataStrategy() {
         }
@@ -202,11 +198,8 @@ public class LocaleData {
             String key = baseName + '-' + locale.toLanguageTag();
             List<Locale> candidates = CANDIDATES_MAP.get(key);
             if (candidates == null) {
-                LocaleProviderAdapter.Type type = baseName.contains(DOTCLDR) ? CLDR : JRE;
-                LocaleProviderAdapter adapter = LocaleProviderAdapter.forType(type);
-                candidates = adapter instanceof ResourceBundleBasedAdapter rbba ?
-                    rbba.getCandidateLocales(baseName, locale) :
-                    defaultControl.getCandidateLocales(baseName, locale);
+                var adapter = getAdapter(baseName);
+                candidates = adapter.getCandidateLocales(baseName, locale);
 
                 // Weed out Locales which are known to have no resource bundles
                 int lastDot = baseName.lastIndexOf('.');
@@ -227,7 +220,13 @@ public class LocaleData {
         }
 
         boolean inJavaBaseModule(String baseName, Locale locale) {
-            return JAVA_BASE_LOCALES.contains(locale);
+            return getAdapter(baseName).baseModuleLocales().contains(locale);
+        }
+
+        private static ResourceBundleBasedAdapter getAdapter(String baseName) {
+            return (ResourceBundleBasedAdapter)(baseName.contains(DOTCLDR) ?
+                LocaleProviderAdapter.forType(CLDR) :
+                LocaleProviderAdapter.forType(JRE));
         }
 
         @Override

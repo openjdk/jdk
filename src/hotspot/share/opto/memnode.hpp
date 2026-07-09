@@ -880,6 +880,10 @@ public:
   uint8_t barrier_data() { return _barrier_data; }
   void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
 
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const;
+#endif
+
 private:
   virtual bool depends_only_on_test_impl() const { return false; }
 };

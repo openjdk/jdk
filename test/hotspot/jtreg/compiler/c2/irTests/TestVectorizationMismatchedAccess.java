@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Utils;
-import jdk.test.whitebox.WhiteBox;
 import jdk.internal.misc.Unsafe;
 import java.util.Random;
 import java.util.Arrays;
@@ -40,15 +39,12 @@ import java.util.List;
  * @summary C2: vectorization fails on simple ByteBuffer loop
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.c2.irTests.TestVectorizationMismatchedAccess
+ * @run driver ${test.main.class}
  */
 
 public class TestVectorizationMismatchedAccess {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final Random RANDOM = Utils.getRandomInstance();
-    private final static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();

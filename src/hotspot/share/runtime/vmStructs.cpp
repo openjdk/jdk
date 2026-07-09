@@ -1709,8 +1709,6 @@
   /**********************/                                                \
   NOT_ZERO(PPC64_ONLY(declare_constant(frame::entry_frame_locals_size)))  \
                                                                           \
-  declare_constant(frame::pc_return_offset)                               \
-                                                                          \
   /*************/                                                         \
   /* vmSymbols */                                                         \
   /*************/                                                         \

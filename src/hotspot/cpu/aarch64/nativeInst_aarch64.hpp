@@ -107,10 +107,22 @@ public:
 
   static bool is_adrp_at(address instr);
 
-  static bool is_ldr_literal_at(address instr);
+  static bool is_load_literal_at(address instr);
 
-  bool is_ldr_literal() {
-    return is_ldr_literal_at(addr_at(0));
+  bool is_load_literal() {
+    return is_load_literal_at(addr_at(0));
+  }
+
+  static bool is_ldr_gpr_literal_at(address instr);
+
+  bool is_ldr_gpr_literal() {
+    return is_ldr_gpr_literal_at(addr_at(0));
+  }
+
+  static bool is_ldrw_gpr_literal_at(address instr);
+
+  bool is_ldrw_gpr_literal() {
+    return is_ldrw_gpr_literal_at(addr_at(0));
   }
 
   static bool is_ldrw_to_zr(address instr);
@@ -125,7 +137,7 @@ public:
   }
 
   static bool maybe_cpool_ref(address instr) {
-    return is_adrp_at(instr) || is_ldr_literal_at(instr);
+    return is_adrp_at(instr) || is_load_literal_at(instr);
   }
 
   bool is_Membar() {
@@ -267,7 +279,7 @@ public:
       return addr_at(instruction_size);
     else if (is_adrp_at(instruction_address()))
       return addr_at(2*4);
-    else if (is_ldr_literal_at(instruction_address()))
+    else if (is_load_literal_at(instruction_address()))
       return(addr_at(4));
     assert(false, "Unknown instruction in NativeMovConstReg");
     return nullptr;

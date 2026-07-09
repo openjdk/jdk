@@ -283,10 +283,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // If we get this far, we know there is a young raw null value in the field.
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeMov);
     __ movzw(rtmp1, barrier_Relocation::unpatched);
-    __ cmpxchg(rtmp2, zr, rtmp1,
-               Assembler::xword,
-               false /* acquire */, false /* release */, true /* weak */,
-               rtmp3);
+    __ cmpxchg_weak(rtmp2, zr, rtmp1, Assembler::xword, memory_order_relaxed, rtmp3);
     __ br(Assembler::NE, slow_path);
 
     __ bind(slow_path_continuation);
@@ -1388,9 +1385,8 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   __ bind(check_oop);
 
   // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(tmp1, obj);  // get klass
-  __ tst(tmp1, tmp1);
-  __ br(Assembler::EQ, error); // if klass is null it is broken
+  __ load_narrow_klass(tmp1, obj); // get narrow klass
+  __ cbz(tmp1, error);      // if klass is null it is broken
 
   __ bind(check_zaddress);
   // Check if the oop is in the right area of memory

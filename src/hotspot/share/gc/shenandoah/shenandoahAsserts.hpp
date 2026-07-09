@@ -31,6 +31,8 @@
 #include "runtime/mutex.hpp"
 #include "utilities/formatBuffer.hpp"
 
+class ShenandoahHeapRegion;
+
 typedef FormatBuffer<8192> ShenandoahMessageBuffer;
 
 class ShenandoahAsserts {
@@ -65,6 +67,7 @@ public:
   static void assert_marked(void* interior_loc, oop obj, const char* file, int line);
   static void assert_marked_weak(void* interior_loc, oop obj, const char* file, int line);
   static void assert_marked_strong(void* interior_loc, oop obj, const char* file, int line);
+  static void assert_bitmap_clear_above_top(ShenandoahHeapRegion* region);
 
   // Assert that marking is complete for the generation where this obj resides
   static void assert_mark_complete(HeapWord* obj, const char* file, int line);
@@ -136,6 +139,9 @@ public:
   if (!(exception)) ShenandoahAsserts::assert_marked_strong(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_marked_strong(interior_loc, obj) \
                     ShenandoahAsserts::assert_marked_strong(interior_loc, obj, __FILE__, __LINE__)
+
+#define shenandoah_assert_clear_above_top(region) \
+                    ShenandoahAsserts::assert_bitmap_clear_above_top(region)
 
 #define shenandoah_assert_mark_complete(obj) \
                     ShenandoahAsserts::assert_mark_complete(obj, __FILE__, __LINE__)
@@ -227,6 +233,7 @@ public:
 #define shenandoah_assert_marked_strong_except(interior_loc, obj, exception)
 #define shenandoah_assert_marked_strong(interior_loc, obj)
 
+#define shenandoah_assert_clear_above_top(region)
 #define shenandoah_assert_mark_complete(obj)
 
 #define shenandoah_assert_in_cset_if(interior_loc, obj, condition)

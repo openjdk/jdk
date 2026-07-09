@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1SURVIVORREGIONS_HPP
 
 #include "gc/g1/g1RegionsOnNodes.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -36,7 +37,7 @@ class G1HeapRegion;
 // Set of current survivor regions.
 class G1SurvivorRegions {
   GrowableArray<G1HeapRegion*> _regions;
-  volatile size_t _used_bytes;
+  Atomic<size_t> _used_bytes;
   G1RegionsOnNodes _regions_on_node;
 
 public:
@@ -56,7 +57,7 @@ public:
   }
 
   // Used bytes of all survivor regions.
-  size_t used_bytes() const { return _used_bytes; }
+  size_t used_bytes() const { return _used_bytes.load_relaxed(); }
 
   void add_used_bytes(size_t used_bytes);
 };

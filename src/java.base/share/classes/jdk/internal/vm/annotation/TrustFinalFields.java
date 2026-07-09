@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
 ///
 /// The compiler already treats static final fields and instance final fields in
 /// record classes and hidden classes as constant.  All classes in select
-/// packages (Defined in `trust_final_non_static_fields` in `ciField.cpp`) in
+/// packages (Defined in `trust_final_nonstatic_fields` in `ciField.cpp`) in
 /// the boot class loader also have their instance final fields trusted.  This
 /// annotation is not necessary in these cases.
 ///

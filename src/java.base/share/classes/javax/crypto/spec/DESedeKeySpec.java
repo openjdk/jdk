@@ -86,11 +86,11 @@ public class DESedeKeySpec implements java.security.spec.KeySpec {
         if (key == null) {
             throw new NullPointerException("null key");
         }
-        if (key.length - offset < DES_EDE_KEY_LEN) {
-            throw new InvalidKeyException("Wrong key size");
-        }
         if (offset < 0) {
             throw new ArrayIndexOutOfBoundsException("offset is negative");
+        }
+        if (key.length - offset < DES_EDE_KEY_LEN) {
+            throw new InvalidKeyException("Wrong key size");
         }
         this.key = new byte[24];
         System.arraycopy(key, offset, this.key, 0, DES_EDE_KEY_LEN);
@@ -117,7 +117,7 @@ public class DESedeKeySpec implements java.security.spec.KeySpec {
      *
      * @exception InvalidKeyException if the given key material is
      * <code>null</code>, or starting at <code>offset</code> inclusive, is
-     * shorter than 8 bytes.
+     * shorter than 24 bytes.
      * @exception ArrayIndexOutOfBoundsException if <code>offset</code> is
      * negative.
      */
@@ -126,11 +126,11 @@ public class DESedeKeySpec implements java.security.spec.KeySpec {
         if (key == null) {
             throw new InvalidKeyException("null key");
         }
-        if (key.length - offset < DES_EDE_KEY_LEN) {
-            throw new InvalidKeyException("Wrong key size");
-        }
         if (offset < 0) {
             throw new ArrayIndexOutOfBoundsException("offset is negative");
+        }
+        if (key.length - offset < DES_EDE_KEY_LEN) {
+            throw new InvalidKeyException("Wrong key size");
         }
         return DESKeySpec.isParityAdjusted(key, offset)
                 && DESKeySpec.isParityAdjusted(key, offset + 8)

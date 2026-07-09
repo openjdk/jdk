@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,9 @@
  * @test
  * @summary Vectorization test on loops with live out nodes
  * @library /test/lib /
- *
- * @build jdk.test.whitebox.WhiteBox
- *        compiler.vectorization.runner.VectorizationTestRunner
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.LoopLiveOutNodesTest
- *
  * @requires vm.compiler2.enabled
+ *
+ * @run driver ${test.main.class}
  */
 
 package compiler.vectorization.runner;

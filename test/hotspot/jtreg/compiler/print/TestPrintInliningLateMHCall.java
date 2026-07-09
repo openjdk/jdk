@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, Red Hat and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +26,9 @@
  * @test
  * @bug 8335843
  * @summary C2 hits assert(_print_inlining_stream->size() > 0) failed: missing inlining msg
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BackgroundCompilation -XX:+PrintCompilation -XX:+PrintInlining TestPrintInliningLateMHCall
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-DisplayVMOutput
+ *                   -XX:-BackgroundCompilation -XX:+PrintCompilation -XX:+PrintInlining
+ *                   TestPrintInliningLateMHCall
  */
 
 import java.lang.invoke.MethodHandle;

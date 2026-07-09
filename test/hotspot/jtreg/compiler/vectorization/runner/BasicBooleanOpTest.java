@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,9 @@
  * @summary Vectorization test on basic boolean operations
  * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
  * @library /test/lib /
- *
- * @build jdk.test.whitebox.WhiteBox
- *        compiler.vectorization.runner.VectorizationTestRunner
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.BasicBooleanOpTest
- *
  * @requires vm.compiler2.enabled
+ *
+ * @run driver ${test.main.class}
  */
 
 package compiler.vectorization.runner;

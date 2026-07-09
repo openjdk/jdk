@@ -57,6 +57,7 @@
   } while (0)
 
 class ShenandoahCollectionSet;
+class ShenandoahHeap;
 class ShenandoahHeapRegion;
 
 /*
@@ -81,6 +82,9 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
 private:
   double _most_recent_trigger_evaluation_time;
   double _most_recent_planned_sleep_interval;
+
+  // When we decide to do an abbreviated cycle, withdraw reserves so memory can be made available to mutators.
+  void adjust_reserves_for_abbreviated(ShenandoahHeap* heap);
 
 protected:
   static constexpr uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
@@ -195,8 +199,6 @@ protected:
   virtual void adjust_penalty(intx step);
 
   inline void accept_trigger() {
-    _most_recent_declined_trigger_count = _declined_trigger_count;
-    _declined_trigger_count = 0;
     _start_gc_is_pending = true;
   }
 
@@ -254,7 +256,7 @@ public:
 
   virtual void record_success_concurrent();
 
-  virtual void record_degenerated();
+  virtual void record_degenerated(bool is_generational_global);
 
   virtual void record_success_full();
 

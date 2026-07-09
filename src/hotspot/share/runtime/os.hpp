@@ -601,7 +601,7 @@ class os: AllStatic {
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
   static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
-                                       char* addr, bool executable);
+                                       char* addr, MemTag mem_tag, bool executable);
   static void   large_page_init();
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();

@@ -608,6 +608,7 @@ void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause 
   ShenandoahFullGC gc;
   gc.collect(cause);
   _degen_point = ShenandoahGC::_degenerated_unset;
+  _do_old_gc_bootstrap = false;
 }
 
 void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const ShenandoahGCRequest& request) {

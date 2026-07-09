@@ -310,8 +310,8 @@ public class TestTargetSurvivorRatioFlag {
          */
         public static long getMaxSurvivorSize() {
             if (GCTypes.YoungGCType.getYoungGCType() == GCTypes.YoungGCType.G1) {
-                int youngLength = (int) Math.max(MAX_NEW_SIZE / wb.g1RegionSize(), 1);
-                return (long) Math.ceil(youngLength / (double) SURVIVOR_RATIO) * wb.g1RegionSize();
+                int numYoungRegions = (int) Math.max(MAX_NEW_SIZE / wb.g1RegionSize(), 1);
+                return (long) Math.ceil(numYoungRegions / (double) SURVIVOR_RATIO) * wb.g1RegionSize();
             } else {
                 return HeapRegionUsageTool.getSurvivorUsage().getMax();
             }

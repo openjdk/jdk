@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import static com.sun.tools.jdeps.Module.trace;
 import static java.util.stream.Collectors.*;
 
 import java.io.BufferedInputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -41,6 +42,7 @@ import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
+import java.net.URLClassLoader;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -282,6 +284,7 @@ public class JdepsConfiguration implements AutoCloseable {
             archive.close();
         for (Module module : nameToModule.values())
             module.close();
+        system.close();
     }
 
     static class SystemModuleFinder implements ModuleFinder {
@@ -290,6 +293,7 @@ public class JdepsConfiguration implements AutoCloseable {
         private final FileSystem fileSystem;
         private final Path root;
         private final Map<String, ModuleReference> systemModules;
+        private final List<Closeable> closeables = new ArrayList<>();
 
         SystemModuleFinder() {
             if (Files.isRegularFile(Paths.get(JAVA_HOME, "lib", "modules"))) {
@@ -321,6 +325,11 @@ public class JdepsConfiguration implements AutoCloseable {
                 env.put("java.home", javaHome);
                 // a remote run-time image
                 this.fileSystem = FileSystems.newFileSystem(URI.create("jrt:/"), env);
+                closeables.add(fileSystem);
+                ClassLoader cl = fileSystem.provider().getClass().getClassLoader();
+                if (cl instanceof URLClassLoader urlcl) {
+                    closeables.add(urlcl);
+                }
                 this.root = fileSystem.getPath("/modules");
                 this.systemModules = walk(root);
             }
@@ -419,6 +428,24 @@ public class JdepsConfiguration implements AutoCloseable {
                         .isPresent())
                 .map(ModuleDescriptor::name)
                 .collect(Collectors.toSet());
+        }
+
+        public void close() throws IOException {
+            IOException ioe = null;
+            for (Closeable closeable : closeables) {
+                try {
+                    closeable.close();
+                } catch (IOException ex) {
+                    if (ioe == null) {
+                        ioe = ex;
+                    } else {
+                        ioe.addSuppressed(ex);
+                    }
+                }
+            }
+            if (ioe != null) {
+                throw ioe;
+            }
         }
     }
 

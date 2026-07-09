@@ -158,6 +158,42 @@ import sun.swing.SwingAccessor;
  * expects certain defaults, so that in general
  * a {@code ComponentUI} provided by one look and feel will not
  * work with another look and feel.
+ *
+ * <h2>System Look and Feels</h2>
+ *
+ * [The terms "System", "Native" and "Platform" may be used interchangeably in this context].
+ * <p>
+ * A System Look And Feel is intended to implement the native Look and Feel of the desktop.
+ * <p>
+ * There is no requirement for the standard Java Look And Feel to be the default,
+ * therefore the System Look and Feel may be the default.
+ * <p>
+ * A desktop may not have a consistent Look and Feel, for example if there are
+ * multiple platform-native toolkits provided to create applications for the desktop.
+ * Swing may elect any one of these to be its native Look and Feel.
+ * <p>
+ * Installation of the native Look and Feel may depend on platform resources being available.
+ * In the event that required resources are not available, Swing may be unable to install
+ * the System Look and Feel.
+ * <p>
+ * Swing's emulation of the native Look and Feel takes precedence over any component-specific
+ * indication of rendering.
+ * This means that a native Look and Feel should render in a way that is consistent with the platform,
+ * even if it contradicts component setting-specific documentation.
+ * Examples include
+ * <ul>
+ * <li>specified rendering of painted borders may be ignored
+ * <li>specified rendering of highlighting effects may be ignored
+ * <li>specified rendering of painted backgrounds and foregrounds may be ignored
+ * <li>specified rendering of selected vs unselected components may be ignored
+ * <li>specified rendering of enabled vs disabled components may be ignored
+ * </ul>
+ * These are just examples. Not an exhaustive list.
+ * <p>
+ * These caveats must not be construed as an excuse to arbitrarily ignore these properties.
+ * They are intended to support the requirement that the platform Look and Feel be as
+ * consistent with the native rendering as is practical.
+ *
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with

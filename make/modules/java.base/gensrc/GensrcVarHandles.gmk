@@ -111,7 +111,7 @@ define GenerateVarHandleMemorySegment
     $1_KEYS += CAS
   endif
   ifneq ($$(filter boolean byte, $1),)
-    $1_KEYS += byte
+    $1_KEYS += ByteOrBoolean
   endif
   ifneq ($$(filter float double, $1),)
     $1_KEYS += floatingPoint

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -717,13 +717,31 @@ address TemplateInterpreterGenerator::generate_safept_entry_for (TosState state,
                                                                 address runtime_entry) {
   address entry = __ pc();
   __ push(state);
+  __ push_cont_fastpath();
   __ call_VM(noreg, runtime_entry);
+  __ pop_cont_fastpath();
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for (vtos));
   return entry;
 }
 
 address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
-  return nullptr;
+  if (!Continuations::enabled()) return nullptr;
+  address start = __ pc();
+  __ z_lg(Z_fp, _z_common_abi(callers_sp), Z_SP);
+  {
+    Register top_frame_sp = Z_R1_scratch; // anyway going to load it with correct value
+    __ z_lg(top_frame_sp, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+    __ z_slag(top_frame_sp, top_frame_sp, Interpreter::logStackElementSize);
+    __ z_agr(top_frame_sp, Z_fp);
+
+    __ resize_frame_absolute(top_frame_sp, /* temp = */ Z_R0, /* load_fp = */ true);
+  }
+  __ restore_bcp();
+  __ restore_locals();
+  __ restore_esp();
+
+  __ z_br(Z_R14);
+  return start;
 }
 
 
@@ -1468,8 +1486,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   __ bind(call_signature_handler);
 
+  bool support_vthread_preemption = Continuations::enabled();
+
   // We have a TOP_IJAVA_FRAME here, which belongs to us.
-  __ set_top_ijava_frame_at_SP_as_last_Java_frame(Z_SP, Z_R1/*tmp*/);
+  Label last_java_pc;
+  Label *resume_pc = support_vthread_preemption ? &last_java_pc : nullptr;
+
+  __ set_top_ijava_frame_at_SP_as_last_Java_frame(Z_SP, Z_R1/*tmp*/, resume_pc);
 
   // Call signature handler and pass locals address in Z_ARG1.
   __ z_lgr(Z_ARG1, Z_locals);
@@ -1526,7 +1549,18 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // overwritten since "__ call_stub(signature_handler);" (except for
   // ARG1 and ARG2 for static methods).
 
+  if (support_vthread_preemption) {
+    // Rresult_handler is a nonvolatile register. Its value will be preserved across
+    // the native call but only if the call isn't preempted. To preserve its value even
+    // in the case of preemption we save it in the lresult slot. It is restored at
+    // resume_pc if, and only if the call was preempted. This works because only
+    // j.l.Object::wait calls are preempted which don't return a result.
+
+    __ z_stg(Rresult_handler, _z_ijava_state_neg(lresult), Z_fp);
+  }
+  __ push_cont_fastpath();
   __ call_c(Z_R1/*native_method_entry*/);
+  __ pop_cont_fastpath();
 
   // NOTE: frame::interpreter_frame_result() depends on these stores.
   __ z_stg(Z_RET, _z_ijava_state_neg(lresult), Z_fp);
@@ -1609,6 +1643,32 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // i.e., bci == 0 <=> Z_bcp == code_base().
   __ z_lg(Z_bcp, Address(Rmethod, Method::const_offset())); // get constMethod
   __ add2reg(Z_bcp, in_bytes(ConstMethod::codes_offset())); // get codebase
+
+  if (support_vthread_preemption) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ z_ltg(Z_R1_scratch, Address(Z_thread, JavaThread::preempt_alternate_return_offset()));
+    __ z_brz(not_preempted); // if 0, jump to not_preempted
+    __ z_mvghi(Address(Z_thread, JavaThread::preempt_alternate_return_offset()), 0);
+    __ z_br(Z_R1_scratch);
+
+    // Execution will be resumed here when the vthread becomes runnable again.
+    __ bind(*resume_pc);
+    __ restore_after_resume();
+    // We saved the result handler before the call
+    __ z_lg(Rresult_handler, _z_ijava_state_neg(lresult), Z_fp);
+#ifdef ASSERT
+    // Clobber result slots. Only native methods returning void can be preemted currently.
+    __ load_const(Z_RET, UCONST64(0xbad01001));
+    __ z_stg(Z_RET, _z_ijava_state_neg(lresult), Z_fp);
+    __ z_stg(Z_RET, _z_ijava_state_neg(fresult), Z_fp);
+    // reset_last_Java_frame() below asserts that a last java sp is set
+    __ asm_assert_mem8_is_zero(in_bytes(JavaThread::last_Java_sp_offset()),
+         Z_thread, FILE_AND_LINE ": Last java sp should not be set when resuming", 69);
+    __ z_stg(Z_RET, in_bytes(JavaThread::last_Java_sp_offset()), Z_thread);
+#endif
+    __ bind(not_preempted);
+  }
 
   if (CheckJNICalls) {
     // clear_pending_jni_exception_check
@@ -2030,7 +2090,7 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
 address TemplateInterpreterGenerator::generate_currentThread() {
   uint64_t entry_off = __ offset();
 
-  __ z_lg(Z_RET, Address(Z_thread, JavaThread::threadObj_offset()));
+  __ z_lg(Z_RET, Address(Z_thread, JavaThread::vthread_offset()));
   __ resolve_oop_handle(Z_RET, Z_R0_scratch, Z_R1_scratch);
 
   // Restore caller sp for c2i case.
@@ -2176,6 +2236,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                    JavaThread::popframe_force_deopt_reexecution_bit,
                    Z_tmp_1, false);
 
+    __ pop_cont_fastpath();
     // Continue in deoptimization handler.
     __ z_br(Z_R14);
 
@@ -2191,6 +2252,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                        false,  // install_monitor_exception
                        false); // notify_jvmdi
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
+  __ pop_cont_fastpath();
   {
     Register top_frame_sp = Z_R1_scratch;
     __ z_lg(top_frame_sp, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
@@ -2264,6 +2326,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // Remove the activation (without doing throws on illegalMonitorExceptions).
   __ remove_activation(vtos, noreg/*ret.pc already loaded*/, false/*throw exc*/, true/*install exc*/, false/*notify jvmti*/);
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
+  __ pop_cont_fastpath();
 
   __ get_vm_result_oop(Z_ARG1);     // Restore exception.
   __ verify_oop(Z_ARG1);

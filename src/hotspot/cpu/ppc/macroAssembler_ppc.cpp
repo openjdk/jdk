@@ -4450,7 +4450,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
     addi(offset, offset, receiver_step);
   bdnz(L_loop_search_receiver);
 
-  // Fast: no receiver, but profile is full
+  // Fast: no receiver, but profile is not full
   if (count != noreg) {
     mtctr(count);
   } else {

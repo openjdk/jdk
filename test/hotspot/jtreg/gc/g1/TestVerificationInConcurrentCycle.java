@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package gc.g1;
 
+import java.lang.ref.Reference;
+
 /*
  * @test TestVerificationInConcurrentCycle
  * @requires vm.gc.G1
@@ -34,6 +36,7 @@ package gc.g1;
  * @run main/othervm
  *   -Xbootclasspath/a:.
  *   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *   -XX:G1HeapRegionSize=2m
  *   -XX:+VerifyBeforeGC -XX:+VerifyDuringGC -XX:+VerifyAfterGC
  *   -XX:+UseG1GC -XX:+G1VerifyHeapRegionCodeRoots
  *   -XX:+G1VerifyBitmaps
@@ -52,6 +55,7 @@ package gc.g1;
  * @run main/othervm
  *   -Xbootclasspath/a:.
  *   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *   -XX:G1HeapRegionSize=2m
  *   -XX:+VerifyBeforeGC -XX:+VerifyDuringGC -XX:+VerifyAfterGC
  *   -XX:+UseG1GC -XX:+G1VerifyHeapRegionCodeRoots
  *   gc.g1.TestVerificationInConcurrentCycle
@@ -64,27 +68,50 @@ public class TestVerificationInConcurrentCycle {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
+    private static Object[] allocateHumongous() {
+        Object[] result = new Object[7];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = new byte[1024 * 1024]; // Is humongous.
+        }
+        return result;
+    }
+
+    private static void dropHalf(Object[] array) {
+        for (int i = 0; i < array.length; i++) {
+            if (i % 2 == 0) {
+                array[i] = null;
+            }
+        }
+    }
     // All testN() assume initial state is idle, and restore that state.
 
     private static void testFullGCAt(String at) throws Exception {
         System.out.println("testSimpleCycle");
+
+        Object[] objects = allocateHumongous();
         try {
             // Run one cycle.
             WB.concurrentGCRunTo(at);
+            dropHalf(objects);
             WB.fullGC();
         } finally {
             WB.concurrentGCRunToIdle();
+            Reference.reachabilityFence(objects);
         }
     }
 
     private static void testYoungGCAt(String at) throws Exception {
         System.out.println("testSimpleCycle");
+
+        Object[] objects = allocateHumongous();
         try {
             // Run one cycle.
             WB.concurrentGCRunTo(at);
+            dropHalf(objects);
             WB.youngGC();
         } finally {
             WB.concurrentGCRunToIdle();
+            Reference.reachabilityFence(objects);
         }
     }
 

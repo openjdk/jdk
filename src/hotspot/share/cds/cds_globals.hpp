@@ -27,6 +27,9 @@
 
 #include "runtime/globals_shared.hpp"
 
+#define DEFAULT_SHARED_BASE_ADDRESS (LP64_ONLY(32*G) \
+                                    NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)))
+
 //
 // Defines all globals flags used by CDS.
 //
@@ -51,8 +54,7 @@
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \
                                                                             \
-  product(size_t, SharedBaseAddress, LP64_ONLY(32*G)                        \
-          NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
+  product(size_t, SharedBaseAddress, DEFAULT_SHARED_BASE_ADDRESS,           \
           "Address to allocate shared memory region for class data")        \
           range(0, SIZE_MAX)                                                \
                                                                             \

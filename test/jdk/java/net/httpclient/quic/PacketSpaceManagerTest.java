@@ -80,16 +80,19 @@ import javax.net.ssl.SSLSession;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
+ * @bug 8349910 8386985
  * @summary tests the logic to build an AckFrame
  * @library /test/lib
  * @library ../debug
@@ -102,6 +105,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @run junit/othervm -Dseed=-4159871071396382784 ${test.main.class}
  * @run junit/othervm -Dseed=2252276218459363615 ${test.main.class}
  * @run junit/othervm -Dseed=-5130588140709404919 ${test.main.class}
+ * @run junit/othervm -Dseed=4257295716830862528 ${test.main.class}
  */
 // -Djdk.internal.httpclient.debug=true
 public class PacketSpaceManagerTest {
@@ -766,6 +770,26 @@ public class PacketSpaceManagerTest {
             }
         }
 
+        // Sends a trivial INITIAL packet, with a CRYPTO frame containing
+        // a payload of length 1 for the provided offset. If ackFrameToSend
+        // is not null it will be included in the packet.
+        public List<QuicFrame> sendPacket(long offset, AckFrame ackFrameToSend, Packet packet, long largestReceivedAckedPN) {
+            // add a crypto frame and build the packet
+            CryptoFrame crypto = new CryptoFrame(offset, 1,
+                    ByteBuffer.wrap(new byte[] {nextByte(offset)}));
+            List<QuicFrame> frames = ackFrameToSend == null ?
+                    List.of(crypto) : List.of(crypto, ackFrameToSend);
+            QuicPacket newPacket = codingContext.encoder
+                    .newInitialPacket(localId, peerId,
+                            null,
+                            packet.packetNumber,
+                            largestReceivedAckedPN,
+                            frames, codingContext);
+            // pretend that we sent a packet
+            manager.packetSent(newPacket, -1, packet.packetNumber);
+            return frames;
+        }
+
         /**
          * Drives the test by pretending to emit each packet in order,
          * then pretending to receive ack frames (as soon as possible
@@ -830,19 +854,8 @@ public class PacketSpaceManagerTest {
                     debug.log("largestAckSent is: " + largestAckAcked);
                 }
 
-                // add a crypto frame and build the packet
-                CryptoFrame crypto = new CryptoFrame(offset, 1,
-                        ByteBuffer.wrap(new byte[] {nextByte(offset)}));
-                List<QuicFrame> frames = ackFrameToSend == null ?
-                        List.of(crypto) : List.of(crypto, ackFrameToSend);
-                QuicPacket newPacket = codingContext.encoder
-                        .newInitialPacket(localId, peerId,
-                                null,
-                                packet.packetNumber,
-                                largestReceivedAckedPN,
-                                frames, codingContext);
-                // pretend that we sent a packet
-                manager.packetSent(newPacket, -1, packet.packetNumber);
+                // send a packet
+                List<QuicFrame> frames = sendPacket(offset, ackFrameToSend, packet, largestReceivedAckedPN);
 
                 // compute next deadline
                 var nextDeadline = timerQueue.nextDeadline();
@@ -1121,6 +1134,55 @@ public class PacketSpaceManagerTest {
     public void testPacketSpaceManager(TestCase testCase) throws Exception {
         System.out.printf("%n -------  testPacketSpaceManager ------- %n");
         SynchronousTestDriver driver = new SynchronousTestDriver(testCase);
+        driver.run();
+        driver.check();
+    }
+
+    @Test
+    public void testPacketSent() throws Exception {
+        // this test case is specifically for JDK-8386985
+        System.out.printf("%n -------  testPacketSent ------- %n");
+
+        // create a minimal SynchronousTestDriver
+        TestCase testCase = new TestCase(List.of(new Acknowledged(1, 3), new Acknowledged(4,4)),
+                List.of(new Packet(3, 0), new Packet(4, 0)));
+        SynchronousTestDriver driver = new SynchronousTestDriver(testCase);
+
+        // send a first ack-eliciting packet, and move the timeline past PTO
+        driver.sendPacket(0, null, new Packet(1, 0), -1);
+        Deadline pto = driver.manager.nextScheduledDeadline(); // should be PTO
+        driver.timeSource.advance(driver.timeSource.instant().until(pto, ChronoUnit.MILLIS) + 250, ChronoUnit.MILLIS);
+
+        // start processing events, but delay the task that will run the transmitter
+        ArrayList<Runnable> tasks = new ArrayList<>();
+        Executor executor = new Executor() {
+            @Override
+            public void execute(Runnable command) {
+                tasks.add(command);
+            }
+        };
+        driver.timerQueue.processEventsAndReturnNextDeadline(driver.timeSource.instant(), executor);
+
+        // acknowledge the first packet so that it's no longer pending retransmission
+        driver.manager.processAckFrame(new AckFrameBuilder().addAck(1).build());
+
+        // send a second packet, and examine the timerQueue next deadline
+        // if sending the second packet didn't cause the task to be rescheduled, we
+        // will observe Deadline.MAX, or a deadline before now: that's the bug.
+        driver.sendPacket(1, null, new Packet(2, 0), -1);
+
+        Deadline next = driver.timerQueue.nextDeadline();
+        assertNotEquals(next, Deadline.MAX);
+        assertTrue(next.isAfter(driver.timeSource.instant()));
+
+        // now finish running the task and ack the second packet,
+        // so that we leave the packet space manager in a clean state
+        // for running the driver with the next two packets.
+        for (Runnable task : tasks) {
+            task.run();
+        }
+        driver.manager.processAckFrame(new AckFrameBuilder()
+                .addAck(1).addAck(2).build());
         driver.run();
         driver.check();
     }

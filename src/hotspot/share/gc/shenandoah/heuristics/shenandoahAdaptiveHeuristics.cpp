@@ -211,9 +211,11 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_degenerated() {
-  ShenandoahHeuristics::record_degenerated();
-  add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time());
+void ShenandoahAdaptiveHeuristics::record_degenerated(bool is_generational_global) {
+  ShenandoahHeuristics::record_degenerated(is_generational_global);
+  if (!is_generational_global) {
+    add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time());
+  }
 }
 
 bool ShenandoahAdaptiveHeuristics::should_start_gc() {

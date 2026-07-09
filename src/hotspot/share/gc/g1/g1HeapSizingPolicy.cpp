@@ -185,7 +185,7 @@ size_t G1HeapSizingPolicy::young_collection_shrink_amount(double cpu_usage_delta
   // going to use during this mutator phase.
   uint target_regions_to_shrink = _g1h->num_free_regions();
 
-  uint needed_for_allocation = _g1h->eden_target_length();
+  uint needed_for_allocation = _g1h->target_num_eden_regions();
   if (_g1h->is_humongous(allocation_word_size)) {
     needed_for_allocation += (uint) _g1h->humongous_obj_size_in_regions(allocation_word_size);
   }

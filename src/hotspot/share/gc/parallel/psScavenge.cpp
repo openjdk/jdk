@@ -193,7 +193,7 @@ class ParallelScavengeRefProcProxyTask : public RefProcProxyTask {
 public:
   ParallelScavengeRefProcProxyTask(uint max_workers)
     : RefProcProxyTask("ParallelScavengeRefProcProxyTask", max_workers),
-      _terminator(max_workers, ParCompactionManager::marking_stacks()) {}
+      _terminator(max_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth()) {}
 
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");

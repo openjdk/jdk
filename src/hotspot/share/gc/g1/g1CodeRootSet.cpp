@@ -196,12 +196,12 @@ public:
     clean(delete_check);
   }
 
-  // Calculate the log2 of the table size we want to shrink to.
-  size_t log2_target_shrink_size(size_t current_size) const {
+  // Calculate the log2 of the table size we want to change to.
+  size_t log2_target_size(size_t new_size) const {
     // A table with the new size should be at most filled by this factor. Otherwise
     // we would grow again quickly.
     const float WantedLoadFactor = 0.5;
-    size_t min_expected_size = checked_cast<size_t>(ceil(current_size / WantedLoadFactor));
+    size_t min_expected_size = checked_cast<size_t>(ceil(new_size / WantedLoadFactor));
 
     size_t result = Log2DefaultNumBuckets;
     if (min_expected_size != 0) {
@@ -214,9 +214,31 @@ public:
   // Shrink to keep table size appropriate to the given number of entries.
   void shrink_to_match(size_t current_size) {
     size_t prev_log2size = _table.get_size_log2(Thread::current());
-    size_t new_log2_table_size = log2_target_shrink_size(current_size);
+    size_t new_log2_table_size = log2_target_size(current_size);
     if (new_log2_table_size < prev_log2size) {
       _table.shrink(Thread::current(), new_log2_table_size);
+    }
+  }
+
+  void grow_to_match_unsafe(size_t new_size) {
+    assert_at_safepoint();
+
+    size_t prev_log2size = _table.get_size_log2(Thread::current());
+    size_t new_log2_table_size = log2_target_size(new_size);
+    // If there is nothing in the table, we can reset directly. Otherwise double
+    // the table in size until the target is reached, which is the only grow
+    // operation CHT supports.
+    if ((prev_log2size != new_log2_table_size) && (number_of_entries() == 0)) {
+      _table.unsafe_reset(new_log2_table_size);
+    } else {
+      while (new_log2_table_size > prev_log2size) {
+        if (!_table.grow(Thread::current(), new_log2_table_size)) {
+          // Should always succeed during safepoint.
+          ShouldNotReachHere();
+          break;
+        }
+        prev_log2size = _table.get_size_log2(Thread::current());
+      }
     }
   }
 
@@ -267,6 +289,11 @@ bool G1CodeRootSet::remove(nmethod* method) {
 void G1CodeRootSet::bulk_remove() {
   assert(!_is_iterating, "should not mutate while iterating the table");
   _table->bulk_remove();
+}
+
+void G1CodeRootSet::prepare_for_adding_code_roots(size_t num_new_code_roots) {
+  assert(!_is_iterating, "should not mutate while iterating the table");
+  _table->grow_to_match_unsafe(_table->number_of_entries() + num_new_code_roots);
 }
 
 bool G1CodeRootSet::contains(nmethod* method) {

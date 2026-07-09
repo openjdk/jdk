@@ -142,8 +142,7 @@ define CreateCDSArchive
   $1_$2_COOPS_OPTION := $(if $(findstring _nocoops, $2),-XX:-UseCompressedOops)
   # enable and also explicitly disable coh as needed.
   ifeq ($(call isTargetCpuBits, 64), true)
-    $1_$2_NOCOH_OPTION := -XX:+UnlockExperimentalVMOptions \
-                        $(if $(findstring _nocoh, $2),-XX:-UseCompactObjectHeaders,-XX:+UseCompactObjectHeaders)
+    $1_$2_NOCOH_OPTION := $(if $(findstring _nocoh, $2),-XX:-UseCompactObjectHeaders,-XX:+UseCompactObjectHeaders)
   endif
   $1_$2_DUMP_EXTRA_ARG := $$($1_$2_COOPS_OPTION) $$($1_$2_NOCOH_OPTION)
   $1_$2_DUMP_TYPE      := $(if $(findstring _nocoops, $2),-NOCOOPS,)$(if $(findstring _nocoh, $2),-NOCOH,)

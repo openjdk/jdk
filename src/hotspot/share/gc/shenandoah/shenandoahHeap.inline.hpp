@@ -110,7 +110,7 @@ inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
       // set that are not really forwarded. We can still go and try and update them
       // (uselessly) to simplify the common path.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop fwd = ShenandoahForwarding::get_forwardee(obj);
       shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
       // Unconditionally store the update: no concurrent updates expected.
@@ -129,7 +129,7 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
       // set that are not really forwarded. We can still go and try CAS-update them
       // (uselessly) to simplify the common path.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop fwd = ShenandoahForwarding::get_forwardee(obj);
       shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
       // Sanity check: we should not be updating the cset regions themselves,

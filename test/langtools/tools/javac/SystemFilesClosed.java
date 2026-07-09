@@ -31,18 +31,22 @@
  */
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -53,6 +57,11 @@ public class SystemFilesClosed {
 
     @Test
     void testSystemFilesClosed() throws Exception {
+        // Probe lsof availability before doing the jlink/compile work
+        if (!lsofCommand().isPresent()) {
+            Assumptions.abort("lsof command is not available on this system");
+        }
+
         String targetSystem = base.toString();
         int ret = java.util.spi.ToolProvider.findFirst("jlink")
                 .orElseThrow()
@@ -83,7 +92,8 @@ public class SystemFilesClosed {
         }
 
         Process process = new ProcessBuilder()
-                .command("lsof", "-p", String.valueOf(ProcessHandle.current().pid()))
+                .command(lsofCommand().orElseThrow(() -> new RuntimeException("lsof command is not available on this system")),
+                        "-p", String.valueOf(ProcessHandle.current().pid()))
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)
                 .redirectError(ProcessBuilder.Redirect.INHERIT)
                 .start();
@@ -102,5 +112,18 @@ public class SystemFilesClosed {
                     .resolve(info.getTestMethod()
                                  .orElseThrow()
                                  .getName());
+    }
+
+    static Optional<String> lsofCommandCache = Arrays.stream(new String[] {
+            "/usr/bin/lsof",
+            "/usr/sbin/lsof",
+            "/bin/lsof",
+            "/sbin/lsof",
+            "/usr/local/bin/lsof"})
+        .filter(args -> new File(args).exists())
+        .findFirst();
+
+    static Optional<String> lsofCommand() {
+        return lsofCommandCache;
     }
 }

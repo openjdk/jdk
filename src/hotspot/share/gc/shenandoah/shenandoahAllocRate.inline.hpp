@@ -57,7 +57,7 @@ void ShenandoahAllocRate<Clock>::update_minimum_sample_size(const size_t availab
 
 template<typename Clock>
 void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
-  size_t unsampled = _allocated_bytes_since_last_sample.add_then_fetch(allocated_bytes);
+  size_t unsampled = _allocated_bytes_since_last_sample.add_then_fetch(allocated_bytes, memory_order_relaxed);
   const size_t minimum_sample_size = _minimum_sample_size.load_relaxed();
   if (unsampled < minimum_sample_size) {
     // Not enough to sample yet
@@ -120,7 +120,7 @@ void ShenandoahAllocRate<Clock>::take_sample(jlong now, jlong elapsed, size_t un
 
   // We are recording this sample, deduct it from the counter. It may be increased
   // concurrently by other threads outside the lock, so we still use an atomic access.
-  _allocated_bytes_since_last_sample.sub_then_fetch(unsampled);
+  _allocated_bytes_since_last_sample.sub_then_fetch(unsampled, memory_order_relaxed);
 
   const double timestamp = static_cast<double>(_last_sample_time) / Clock::elapsed_frequency();
   const double rate_seconds = static_cast<double>(unsampled) * Clock::elapsed_frequency() / elapsed;

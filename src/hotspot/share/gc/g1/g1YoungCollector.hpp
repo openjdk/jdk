@@ -144,7 +144,7 @@ public:
                    size_t allocation_word_size);
   void collect();
 
-  G1CollectorState next_state() const { return _next_state; }
+  const G1CollectorState next_state() const { return _next_state; }
   bool concurrent_operation_is_full_mark() const { return _concurrent_operation_is_full_mark; }
 };
 

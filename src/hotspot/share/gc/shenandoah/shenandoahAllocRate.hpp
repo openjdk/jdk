@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
@@ -110,7 +111,9 @@ class ShenandoahAllocRate {
   static constexpr size_t ALLOC_SAMPLE_MAX = G;
 
   PaddedMonitor _sample_lock;
+  shenandoah_padding(0);
   Atomic<size_t> _allocated_bytes_since_last_sample;
+  shenandoah_padding(1);
   Atomic<size_t> _minimum_sample_size; // bytes, read by mutator, updated by gc
   jlong _last_sample_time;
 

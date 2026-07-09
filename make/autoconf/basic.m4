@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -326,14 +326,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
       SYSROOT="$DEVKIT_ROOT/$host_alias/libc"
     elif test -d "$DEVKIT_ROOT/$host/sys-root"; then
       SYSROOT="$DEVKIT_ROOT/$host/sys-root"
-    fi
-
-    if test "x$DEVKIT_ROOT" != x; then
-      DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib"
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib64"
-      fi
-      AC_SUBST(DEVKIT_LIB_DIR)
     fi
   fi
 

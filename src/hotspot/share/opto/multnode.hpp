@@ -149,6 +149,34 @@ public:
   ProjNode* find_first(uint which_proj, bool is_io_use) const;
 };
 
+class BinaryMultiNode : public MultiNode {
+protected:
+  BinaryMultiNode(Node* ctrl, Node* in1, Node* in2) : MultiNode(3) {
+    init_req(0, ctrl);
+    init_req(1, in1);
+    init_req(2, in2);
+  }
+
+public:
+  enum {
+    first_proj_num = 0,
+    second_proj_num = 1
+  };
+
+  virtual Node* Identity(PhaseGVN* phase) { return this; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) { return nullptr; }
+  virtual const Type* Value(PhaseGVN* phase) const { return bottom_type(); }
+  virtual uint hash() const { return Node::hash(); }
+  virtual bool is_CFG() const { return false; }
+  virtual uint ideal_reg() const { return NotAMachineReg; }
+
+  ProjNode* first_proj() const { return proj_out_or_null(first_proj_num); }
+  ProjNode* second_proj() const { return proj_out_or_null(second_proj_num); }
+
+private:
+  virtual bool depends_only_on_test() const { return false; }
+};
+
 //------------------------------ProjNode---------------------------------------
 // This class defines a Projection node.  Projections project a single element
 // out of a tuple (or Signature) type.  Only MultiNodes produce TypeTuple

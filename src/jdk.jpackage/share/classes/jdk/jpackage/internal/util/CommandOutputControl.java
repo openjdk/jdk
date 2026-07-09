@@ -1555,7 +1555,9 @@ public final class CommandOutputControl {
         }
 
         Optional<String> bufferContents() {
-            return buf.map(ByteArrayOutputStream::toString);
+            return buf.map(in -> {
+                return in.toString(ps.charset());
+            });
         }
 
         static Builder build(Charset charset) {
@@ -1600,7 +1602,7 @@ public final class CommandOutputControl {
 
                 final PrintStream ps;
                 if (buf.isPresent() && dumpStream != null) {
-                    ps = new PrintStream(new TeeOutputStream(List.of(buf.get(), dumpStream)), true, dumpStream.charset());
+                    ps = new PrintStream(new TeeOutputStream(List.of(buf.get(), dumpStream)), true, charset);
                 } else if (!discard) {
                     ps = buf.map(in -> {
                         return new PrintStream(in, false, charset);

@@ -873,11 +873,10 @@ public class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitAssign(JCAssign tree) {
-        VarSymbol sym = (VarSymbol)TreeInfo.symbolFor(tree.lhs);
         scan(tree.lhs);
         refs.discardExprs(depth);
         scan(tree.rhs);
-        if (isParamOrVar(sym))
+        if (TreeInfo.symbolFor(tree.lhs) instanceof VarSymbol sym && isParamOrVar(sym))
             refs.replaceExprs(depth, ref -> new VarRef(sym, ref));
         else
             refs.discardExprs(depth);         // we don't track fields yet

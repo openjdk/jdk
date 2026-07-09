@@ -34,7 +34,7 @@
 #ifdef COMPILER1
 
 class LIR_Assembler;
-class ShenandoahPreBarrierStub;
+class ShenandoahKeepaliveBarrierStub;
 class ShenandoahLoadReferenceBarrierStub;
 class StubAssembler;
 
@@ -56,7 +56,8 @@ private:
                          Register base, RegisterOrConstant ind_or_offs,
                          Register pre_val,
                          Register tmp1, Register tmp2,
-                         MacroAssembler::PreservationLevel preservation_level);
+                         MacroAssembler::PreservationLevel preservation_level,
+                         int extra_stack_space = 0);
 
   void card_barrier(MacroAssembler* masm,
                     Register base, RegisterOrConstant ind_or_offs,
@@ -66,7 +67,8 @@ private:
                                    Register base, RegisterOrConstant ind_or_offs,
                                    Register dst,
                                    Register tmp1, Register tmp2,
-                                   MacroAssembler::PreservationLevel preservation_level);
+                                   MacroAssembler::PreservationLevel preservation_level,
+                                   int extra_stack_space = 0);
 
   /* ==== Helper methods for barrier implementations ==== */
   void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
@@ -78,28 +80,26 @@ public:
 
   /* ==== C1 stubs ==== */
 #ifdef COMPILER1
+  void keepalive_barrier_c1_stub(LIR_Assembler* ce, ShenandoahKeepaliveBarrierStub* stub);
+  void keepalive_barrier_c1_runtime_stub(StubAssembler* sasm);
 
-  void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
-
-  void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
-
-  void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
-
-  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, DecoratorSet decorators);
-
+  void load_reference_barrier_c1_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
+  void load_reference_barrier_c1_runtime_stub(StubAssembler* sasm, DecoratorSet decorators);
 #endif
 
   /* ==== Available barriers (facades of the actual implementations) ==== */
   void satb_barrier(MacroAssembler* masm,
                     Register base, RegisterOrConstant ind_or_offs,
                     Register tmp1, Register tmp2, Register tmp3,
-                    MacroAssembler::PreservationLevel preservation_level);
+                    MacroAssembler::PreservationLevel preservation_level,
+                    int extra_stack_space = 0);
 
   void load_reference_barrier(MacroAssembler* masm, DecoratorSet decorators,
                               Register base, RegisterOrConstant ind_or_offs,
                               Register dst,
                               Register tmp1, Register tmp2,
-                              MacroAssembler::PreservationLevel preservation_level);
+                              MacroAssembler::PreservationLevel preservation_level,
+                              int extra_stack_space = 0);
 
   /* ==== Access api ==== */
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.Closeable;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -221,9 +222,10 @@ public final class RecordingFile implements Closeable {
      *
      * @param filter      filter that determines if an event should be included, not
      *                    {@code null}
-     * @throws IOException       if an I/O error occurred, it's not a Flight
-     *                           Recorder file or a version of a JFR file that can't
-     *                           be parsed
+     * @throws IOException if an I/O error occurred, if {@code destination} is the
+     *                     same file as the input file for this
+     *                     {@code RecordingFile}, if it's not a Flight Recorder file
+     *                     or a version of a JFR file that can't be parsed
      *
      * @since 19
      */
@@ -235,6 +237,9 @@ public final class RecordingFile implements Closeable {
 
     // package private
     List<RemovedEvents> write(Path destination, Predicate<RecordedEvent> filter, boolean collectResults) throws IOException {
+        if (Files.exists(destination) && Files.isSameFile(destination, file.toPath())) {
+            throw new IOException("Destination file can't be the same as the input file: " + destination.toAbsolutePath());
+        }
         try (ChunkWriter cw = new ChunkWriter(file.toPath(), destination, filter, collectResults)) {
             try (RecordingFile rf = new RecordingFile(cw)) {
                 while (rf.hasMoreEvents()) {

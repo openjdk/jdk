@@ -103,7 +103,7 @@ bool WorkerThreads::allow_inject_creation_failure() const {
     return false;
   }
 
-  if (_created_workers == 0) {
+  if (_created_workers.load_relaxed() == 0) {
     // Never allow creation failures of the first worker, it will cause the VM to exit
     return false;
   }
@@ -135,18 +135,20 @@ uint WorkerThreads::set_active_workers(uint num_workers) {
             "Invalid number of active workers %u (should be 1-%u)",
             num_workers, _max_workers);
 
-  while (_created_workers < num_workers) {
-    WorkerThread* const worker = create_worker(_created_workers);
+  uint local_created_workers = created_workers();
+  while (local_created_workers < num_workers) {
+    WorkerThread* const worker = create_worker(local_created_workers);
     if (worker == nullptr) {
       log_error(gc, task)("Failed to create worker thread");
       break;
     }
 
-    _workers[_created_workers] = worker;
-    _created_workers++;
+    _workers[local_created_workers] = worker;
+    local_created_workers++;
+    _created_workers.release_store(local_created_workers);
   }
 
-  _active_workers = MIN2(_created_workers, num_workers);
+  _active_workers = MIN2(local_created_workers, num_workers);
 
   log_trace(gc, task)("%s: using %d out of %d workers", _name, _active_workers, _max_workers);
 
@@ -154,14 +156,16 @@ uint WorkerThreads::set_active_workers(uint num_workers) {
 }
 
 void WorkerThreads::threads_do(ThreadClosure* tc) const {
-  for (uint i = 0; i < _created_workers; i++) {
+  uint local_created_workers = created_workers();
+  for (uint i = 0; i < local_created_workers; i++) {
     tc->do_thread(_workers[i]);
   }
 }
 
 template <typename Function>
 void WorkerThreads::threads_do_f(Function function) const {
-  for (uint i = 0; i < _created_workers; i++) {
+  uint local_created_workers = created_workers();
+  for (uint i = 0; i < local_created_workers; i++) {
     function(_workers[i]);
   }
 }

@@ -49,10 +49,12 @@ public:
   TASKQUEUE_STATS_ONLY(using taskqueue_t::stats;)
 
   // Push task t into the queue. Returns true on success.
-  inline bool push(E t);
+  ALWAYSINLINE
+  bool push(E t);
 
   // Attempt to pop from the queue. Returns true on success.
-  inline bool pop(E &t);
+  ALWAYSINLINE
+  bool pop(E &t);
 
   inline void clear();
 

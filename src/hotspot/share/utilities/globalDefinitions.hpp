@@ -1157,8 +1157,8 @@ inline T clamp(T value, T min, T max) {
   return MIN2(MAX2(value, min), max);
 }
 
-inline bool is_odd (intx x) { return x & 1;      }
-inline bool is_even(intx x) { return !is_odd(x); }
+constexpr bool is_odd (intx x) { return x & 1;      }
+constexpr bool is_even(intx x) { return !is_odd(x); }
 
 // abs methods which cannot overflow and so are well-defined across
 // the entire domain of integer types.

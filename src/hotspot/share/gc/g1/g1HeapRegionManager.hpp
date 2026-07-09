@@ -71,8 +71,8 @@ class G1HeapRegionTable : public G1BiasedMappedArray<G1HeapRegion*> {
 //
 
 class G1HeapRegionManager: public CHeapObj<mtGC> {
-  friend class VMStructs;
   friend class G1HeapRegionClaimer;
+  friend class VMStructs;
 
   G1RegionToSpaceMapper* _bot_mapper;
   G1RegionToSpaceMapper* _card_table_mapper;

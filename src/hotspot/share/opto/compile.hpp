@@ -1257,6 +1257,7 @@ public:
   void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes);
   void final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
   void handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned);
+  void handle_mulhi_mul_op(Node* n, bool is_unsigned);
 
   // Logic cone optimization.
   void optimize_logic_cones(PhaseIterGVN &igvn);

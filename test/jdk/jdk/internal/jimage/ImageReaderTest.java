@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -59,7 +60,7 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
 /*
  * @test
- * @bug 8385355
+ * @bug 8385355 8386842
  * @summary Tests for ImageReader.
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
@@ -86,6 +87,11 @@ public class ImageReaderTest {
                     "!META-INF/z",
                     "!META-INF/collision/child.properties",
                     "!META-INF/collision",
+                    // Non-class resource in top level directory
+                    "!fileA.txt",
+                    "!fileB.txt",
+                    "!META-INF/preview/fileA.txt",
+                    "!META-INF/preview/fileB.txt",
                     // Replaces original class in preview mode.
                     "@com.foo.HasPreviewVersion",
                     // New class in existing package in preview mode.
@@ -96,6 +102,11 @@ public class ImageReaderTest {
                     // Two new packages in preview mode (new symbolic links).
                     "@com.bar.preview.stuff.Foo",
                     "@com.bar.preview.stuff.Bar"),
+            "modbaz", Arrays.asList(
+                    "!file.txt",
+                    "!normal.txt",
+                    "!META-INF/preview/file.txt",
+                    "!META-INF/preview/previewOnly.txt"),
             "modgus", Arrays.asList(
                     // A second module with a preview-only empty package (preview).
                     "@com.bar.preview.other.Gus"));
@@ -270,6 +281,18 @@ public class ImageReaderTest {
             assertAbsent(reader, "/modules/modfoo/com/foo/bar/IsPreviewOnly.class");
             assertDirContents(reader, "/modules/modfoo/com/foo", "HasPreviewVersion.class", "NormalFoo.class", "bar");
             assertDirContents(reader, "/modules/modfoo/com/foo/bar", "NormalBar.class");
+
+            // Non-class resource in top level directory
+            assertResource(reader, "modfoo", "fileA.txt");
+            assertNonPreviewResourceVersion(reader, "modfoo", "fileA.txt");
+            assertNode(reader, "/modules/modfoo/fileB.txt");
+            assertNonPreviewResourceVersion(reader, "modfoo", "fileB.txt");
+            assertDirContents(reader, "/modules/modfoo", "META-INF", "module-info.class", "fileA.txt", "fileB.txt", "com");
+
+            assertAbsent(reader, "/modules/modbaz/previewOnly.txt");
+            assertDirContents(reader, "/modules/modbaz", "META-INF", "module-info.class", "file.txt", "normal.txt");
+            assertNonPreviewResourceVersion(reader, "modbaz", "file.txt");
+            assertNonPreviewResourceVersion(reader, "modbaz", "normal.txt");
         }
     }
 
@@ -289,6 +312,20 @@ public class ImageReaderTest {
             assertResource(reader, "modfoo", "com/foo/bar/IsPreviewOnly.class");
             assertDirContents(reader, "/modules/modfoo/com/foo", "HasPreviewVersion.class", "NormalFoo.class", "bar");
             assertDirContents(reader, "/modules/modfoo/com/foo/bar", "NormalBar.class", "IsPreviewOnly.class");
+
+            // Non-class resource in top level directory
+            assertResource(reader, "modfoo", "fileA.txt");
+            assertPreviewResourceVersion(reader, "modfoo", "fileA.txt");
+            assertNode(reader, "/modules/modfoo/fileB.txt");
+            assertPreviewResourceVersion(reader, "modfoo", "fileB.txt");
+            assertDirContents(reader, "/modules/modfoo/com", "foo");
+            assertDirContents(reader, "/modules/modfoo", "META-INF", "module-info.class", "fileA.txt", "fileB.txt", "com");
+
+            assertNode(reader, "/modules/modbaz/previewOnly.txt");
+            assertDirContents(reader, "/modules/modbaz", "META-INF", "module-info.class", "file.txt", "normal.txt", "previewOnly.txt");
+            assertPreviewResourceVersion(reader, "modbaz", "file.txt");
+            assertNonPreviewResourceVersion(reader, "modbaz", "normal.txt");
+            assertPreviewResourceVersion(reader, "modbaz", "previewOnly.txt");
         }
     }
 
@@ -405,6 +442,17 @@ public class ImageReaderTest {
         assertSame(resNode, reader.findNode(nodeName));
     }
 
+    private static void assertNonPreviewResourceVersion(ImageReader reader, String modName, String resPath) throws IOException {
+        Node resNode = reader.findResourceNode(modName, resPath);
+        assertArrayEquals(resPath.getBytes(StandardCharsets.UTF_8), reader.getResource(resNode));
+    }
+
+    private static void assertPreviewResourceVersion(ImageReader reader, String modName, String resPath) throws IOException {
+        Node resNode = reader.findResourceNode(modName, resPath);
+        String name = "META-INF/preview/" + resPath;
+        assertArrayEquals(name.getBytes(StandardCharsets.UTF_8), reader.getResource(resNode));
+    }
+
     private static void assertNonPreviewVersion(ImageClassLoader loader, String module, String fqn) throws IOException {
         assertEquals("Class: " + fqn, loader.loadAndGetToString(module, fqn));
     }
@@ -441,7 +489,7 @@ public class ImageReaderTest {
 
             classes.forEach(fqn -> {
                 if (fqn.startsWith("!")) {
-                    jar.addEntry(fqn.substring(1), "resource".getBytes(StandardCharsets.UTF_8));
+                    jar.addEntry(fqn.substring(1), fqn.substring(1).getBytes(StandardCharsets.UTF_8));
                     return;
                 }
                 boolean isPreviewEntry = fqn.startsWith("@");

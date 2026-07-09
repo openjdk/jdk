@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,12 @@
 
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/g1ReviseYoungLengthTask.hpp"
+#include "gc/g1/g1ReviseNumYoungRegionsTask.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 
 
-jlong G1ReviseYoungLengthTask::reschedule_delay_ms() const {
+jlong G1ReviseNumYoungRegionsTask::reschedule_delay_ms() const {
   G1Policy* policy = G1CollectedHeap::heap()->policy();
   size_t available_bytes;
   if (policy->try_get_available_bytes_estimate(available_bytes)) {
@@ -47,7 +47,7 @@ jlong G1ReviseYoungLengthTask::reschedule_delay_ms() const {
   }
 }
 
-class G1ReviseYoungLengthTask::RemSetSamplingClosure : public G1HeapRegionClosure {
+class G1ReviseNumYoungRegionsTask::RemSetSamplingClosure : public G1HeapRegionClosure {
   size_t _sampled_code_root_rs_length;
 
 public:
@@ -62,16 +62,16 @@ public:
   size_t sampled_code_root_rs_length() const { return _sampled_code_root_rs_length; }
 };
 
-void G1ReviseYoungLengthTask::adjust_young_list_target_length() {
+void G1ReviseNumYoungRegionsTask::adjust_target_num_young_regions() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   G1Policy* policy = g1h->policy();
 
-  assert(policy->use_adaptive_young_list_length(), "should not call otherwise");
+  assert(policy->use_adaptive_num_young_regions(), "should not call otherwise");
 
   size_t pending_cards;
   size_t current_to_collection_set_cards;
   {
-    MutexLocker x(G1ReviseYoungLength_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(G1ReviseNumYoungRegions_lock, Mutex::_no_safepoint_check_flag);
     pending_cards = policy->current_pending_cards();
     current_to_collection_set_cards = policy->current_to_collection_set_cards();
   }
@@ -79,18 +79,18 @@ void G1ReviseYoungLengthTask::adjust_young_list_target_length() {
   RemSetSamplingClosure cl;
   g1h->collection_set()->iterate(&cl);
 
-  policy->revise_young_list_target_length(pending_cards,
+  policy->revise_target_num_young_regions(pending_cards,
                                           current_to_collection_set_cards,
                                           cl.sampled_code_root_rs_length());
 }
 
-G1ReviseYoungLengthTask::G1ReviseYoungLengthTask(const char* name) :
+G1ReviseNumYoungRegionsTask::G1ReviseNumYoungRegionsTask(const char* name) :
   G1ServiceTask(name) { }
 
-void G1ReviseYoungLengthTask::execute() {
+void G1ReviseNumYoungRegionsTask::execute() {
   SuspendibleThreadSetJoiner sts;
 
-  adjust_young_list_target_length();
+  adjust_target_num_young_regions();
 
   schedule(reschedule_delay_ms());
 }

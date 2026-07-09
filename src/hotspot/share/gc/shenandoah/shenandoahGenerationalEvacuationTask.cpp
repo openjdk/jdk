@@ -62,10 +62,12 @@ ShenandoahGenerationalEvacuationTask::ShenandoahGenerationalEvacuationTask(Shena
 
 void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
   if (_concurrent) {
+    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac, ShenandoahPhaseTimings::Work, worker_id, true);
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     SuspendibleThreadSetJoiner stsj;
     do_work();
   } else {
+    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::degen_gc_evac, ShenandoahPhaseTimings::Work, worker_id, true);
     ShenandoahParallelWorkerSession worker_session(worker_id);
     do_work();
   }

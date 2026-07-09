@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Tencent. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +27,8 @@
  * @bug 8293785
  * @summary test for -XX:+TraceOptoParse
  * @requires vm.debug & vm.compiler2.enabled
- * @run main/othervm -XX:+TraceOptoParse compiler.print.TestTraceOptoParse
+ * @run main/othervm -XX:-DisplayVMOutput -XX:+TraceOptoParse
+ *                   compiler.print.TestTraceOptoParse
  *
  */
 

@@ -174,18 +174,6 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=big
       ;;
-    sparc)
-      VAR_CPU=sparc
-      VAR_CPU_ARCH=sparc
-      VAR_CPU_BITS=32
-      VAR_CPU_ENDIAN=big
-      ;;
-    sparcv9|sparc64)
-      VAR_CPU=sparcv9
-      VAR_CPU_ARCH=sparc
-      VAR_CPU_BITS=64
-      VAR_CPU_ENDIAN=big
-      ;;
     *)
       AC_MSG_ERROR([unsupported cpu $1])
       ;;

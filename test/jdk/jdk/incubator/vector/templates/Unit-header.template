@@ -2013,14 +2013,16 @@ relativeError));
     static $type$ cornerCaseValue(int i) {
 #if[FP]
 #if[FP16]
-        return switch(i % 8) {
+        return switch(i % 10) {
             case 0  -> float16ToRawShortBits($Wideboxtype$.MAX_VALUE);
             case 1  -> float16ToRawShortBits($Wideboxtype$.MIN_VALUE);
             case 2  -> float16ToRawShortBits($Wideboxtype$.NEGATIVE_INFINITY);
             case 3  -> float16ToRawShortBits($Wideboxtype$.POSITIVE_INFINITY);
             case 4  -> float16ToRawShortBits($Wideboxtype$.NaN);
             case 5  -> float16ToRawShortBits(shortBitsToFloat16((short)0x7FFA));
-            case 6  -> float16ToShortBits(Float16.valueOf(0.0f));
+            case 6  -> float16ToRawShortBits(shortBitsToFloat16((short)0x7c01)); // signaling NaN
+            case 7  -> float16ToRawShortBits(shortBitsToFloat16((short)0x7e00)); // quiet NaN
+            case 8  -> float16ToShortBits(Float16.valueOf(0.0f));
             default -> float16ToShortBits(Float16.valueOf(-0.0f));
         };
 #else[FP16]

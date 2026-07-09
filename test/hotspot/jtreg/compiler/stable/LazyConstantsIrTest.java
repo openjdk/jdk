@@ -27,7 +27,7 @@
  * @modules java.base/jdk.internal.lang
  * @library /test/lib /
  * @enablePreview
- * @run main ${test.main.class}
+ * @run driver ${test.main.class}
  */
 
 package compiler.stable;

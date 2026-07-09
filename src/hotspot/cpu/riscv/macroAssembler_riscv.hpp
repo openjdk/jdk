@@ -197,6 +197,7 @@ class MacroAssembler: public Assembler {
                        Register val, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src, Register tmp = t0);
   void load_narrow_klass_compact(Register dst, Register src);
+  void load_narrow_klass(Register dst, Register src);
   void store_klass(Register dst, Register src, Register tmp = t0);
   void cmp_klass_beq(Register obj, Register klass,
                      Register tmp1, Register tmp2,

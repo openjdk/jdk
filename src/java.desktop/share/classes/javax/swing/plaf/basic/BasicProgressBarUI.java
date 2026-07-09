@@ -1165,24 +1165,6 @@ public class BasicProgressBarUI extends ProgressBarUI {
         return repaintInterval;
     }
 
-    /**
-     * Returns the number of milliseconds per animation cycle.
-     * This value is meaningful
-     * only if the progress bar is in indeterminate mode.
-     * The cycle time is used by the default indeterminate progress bar
-     * painting code when determining
-     * how far to move the bouncing box per frame.
-     * The cycle time is specified by
-     * the "ProgressBar.cycleTime" UI default
-     * and adjusted, if necessary,
-     * by the initIndeterminateDefaults method.
-     *
-     * @return  the cycle time, in milliseconds
-     */
-    private int getCycleTime() {
-        return cycleTime;
-    }
-
     private int initCycleTime() {
         cycleTime = DefaultLookup.getInt(progressBar, this,
                 "ProgressBar.cycleTime", 3000);

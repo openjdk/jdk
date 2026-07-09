@@ -66,6 +66,11 @@
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:ShenandoahPinRegionRate=1000
+ *      TestRetainObjects
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
  *      TestRetainObjects
  */
 
@@ -102,6 +107,11 @@
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
  *      -XX:+ShenandoahAllocFailureALot -XX:+ShenandoahVerify
+ *      TestRetainObjects
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -XX:ShenandoahPinRegionRate=1000 -XX:+ShenandoahVerify
  *      TestRetainObjects
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions

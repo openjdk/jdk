@@ -212,6 +212,18 @@ public class SecureDS {
                 Path link = createSymbolicLink(aDir.resolve(linkEntry), fileEntry);
                 Set<PosixFilePermission> permsLink = getPosixFilePermissions(link, NOFOLLOW_LINKS);
 
+                // Test setting permissions on a regular file through the no-follow view
+                view = stream.getFileAttributeView(fileEntry, PosixFileAttributeView.class, NOFOLLOW_LINKS);
+                view.setPermissions(noperms);
+                assertEquals(noperms, getPosixFilePermissions(file));
+                try {
+                    view.setPermissions(permsFile);
+                    assertEquals(permsFile, getPosixFilePermissions(file));
+                } catch (AccessDeniedException e) {
+                    // Fails on older Linux systems without fchmodat AT_SYMLINK_NOFOLLOW support
+                    setPosixFilePermissions(file, permsFile);
+                }
+
                 // Test following link to file
                 view = stream.getFileAttributeView(link, PosixFileAttributeView.class);
                 view.setPermissions(noperms);
@@ -220,14 +232,19 @@ public class SecureDS {
                 view.setPermissions(permsFile);
                 assertEquals(permsFile, getPosixFilePermissions(file));
                 assertEquals(permsLink, getPosixFilePermissions(link, NOFOLLOW_LINKS));
-                // Symbolic link permissions do not apply on Linux
-                if (!Platform.isLinux()) {
-                    // Test not following link to file
-                    view = stream.getFileAttributeView(link, PosixFileAttributeView.class, NOFOLLOW_LINKS);
-                    view.setPermissions(noperms);
+
+                // Test not following link to file
+                var linkView = stream.getFileAttributeView(link, PosixFileAttributeView.class, NOFOLLOW_LINKS);
+                if (Platform.isLinux()) {
+                    // Symbolic link permissions do not apply on Linux
+                    assertThrows(IOException.class, () -> linkView.setPermissions(noperms));
+                    assertEquals(permsFile, getPosixFilePermissions(file));
+                    assertThrows(IOException.class, () -> linkView.setPermissions(permsLink));
+                } else {
+                    linkView.setPermissions(noperms);
                     assertEquals(permsFile, getPosixFilePermissions(file));
                     assertEquals(noperms, getPosixFilePermissions(link, NOFOLLOW_LINKS));
-                    view.setPermissions(permsLink);
+                    linkView.setPermissions(permsLink);
                     assertEquals(permsFile, getPosixFilePermissions(file));
                     assertEquals(permsLink, getPosixFilePermissions(link, NOFOLLOW_LINKS));
                 }

@@ -2861,6 +2861,17 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
         return a;
     }
 
+    // Returns the lane values boxed as Float16 elements.
+    @ForceInline
+    final Float16[] toFloat16Array() {
+        short[] bits = vec();
+        Float16[] a = new Float16[bits.length];
+        for (int i = 0; i < bits.length; i++) {
+            a[i] = Float16.shortBitsToFloat16(bits[i]);
+        }
+        return a;
+    }
+
     /** {@inheritDoc} <!--workaround-->
      */
     @ForceInline
@@ -3734,8 +3745,9 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     @ForceInline
     public final
     int hashCode() {
-        // now that toArray is strongly typed, we can define this
-        return Objects.hash(species(), Arrays.hashCode(toArray()));
+        // Hash the lanes as Float16 values; Float16.hashCode canonicalizes NaN
+        // so that all NaN representations contribute the same hash code.
+        return Objects.hash(species(), Arrays.hashCode(toFloat16Array()));
     }
 
     // ================================================

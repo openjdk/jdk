@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
     }
 
     /**
-     * Returns a localized name for the given <a href="http://www.rfc-editor.org/rfc/bcp/bcp47.txt">
+     * Returns a localized name for the given <a href="https://www.rfc-editor.org/info/bcp47/">
      * IETF BCP47</a> language code and the given locale that is appropriate for
      * display to the user.
      * For example, if {@code languageCode} is "fr" and {@code locale}
@@ -70,7 +70,7 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
     public abstract String getDisplayLanguage(String languageCode, Locale locale);
 
     /**
-     * Returns a localized name for the given <a href="http://www.rfc-editor.org/rfc/bcp/bcp47.txt">
+     * Returns a localized name for the given <a href="https://www.rfc-editor.org/info/bcp47/">
      * IETF BCP47</a> script code and the given locale that is appropriate for
      * display to the user.
      * For example, if {@code scriptCode} is "Latn" and {@code locale}
@@ -100,7 +100,7 @@ public abstract class LocaleNameProvider extends LocaleServiceProvider {
     }
 
     /**
-     * Returns a localized name for the given <a href="http://www.rfc-editor.org/rfc/bcp/bcp47.txt">
+     * Returns a localized name for the given <a href="https://www.rfc-editor.org/info/bcp47/">
      * IETF BCP47</a> region code (either ISO 3166 country code or UN M.49 area
      * codes) and the given locale that is appropriate for display to the user.
      * For example, if {@code countryCode} is "FR" and {@code locale}

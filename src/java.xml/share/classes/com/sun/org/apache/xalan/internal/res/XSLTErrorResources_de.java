@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -641,7 +641,7 @@ public class XSLTErrorResources_de extends ListResourceBundle
       "Vorlagen m\u00FCssen entweder ein \"match\"- oder ein \"name\"-Attribut haben"},
 
     { ER_NO_CLONE_OF_DOCUMENT_FRAG,
-      "Kein Clone eines Dokumentfragments."},
+      "Kein Klon eines Dokumentfragments."},
 
     { ER_CANT_CREATE_ITEM,
       "Element in Ergebnisbaum kann nicht erstellt werden: {0}"},

@@ -29,6 +29,7 @@
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -147,7 +148,7 @@ using G1CSetCandidateGroupListIterator = GrowableArrayIterator<G1CSetCandidateGr
 
 class G1CSetCandidateGroupList {
   GrowableArray<G1CSetCandidateGroup*> _groups;
-  volatile uint _num_regions;
+  Atomic<uint> _num_regions;
 
 public:
   G1CSetCandidateGroupList();
@@ -163,7 +164,7 @@ public:
 
   uint length() const { return (uint)_groups.length(); }
 
-  uint num_regions() const { return _num_regions; }
+  uint num_regions() const { return _num_regions.load_relaxed(); }
 
   void remove_selected(uint count, uint num_regions);
 

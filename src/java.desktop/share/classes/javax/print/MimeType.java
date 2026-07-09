@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,20 +135,25 @@ class MimeType implements Serializable, Cloneable {
         public ParameterMapEntry(int theIndex) {
             myIndex = theIndex;
         }
+        @Override
         public String getKey(){
             return myPieces[myIndex];
         }
+        @Override
         public String getValue(){
             return myPieces[myIndex+1];
         }
+        @Override
         public String setValue (String value) {
             throw new UnsupportedOperationException();
         }
+        @Override
         public boolean equals(Object o) {
             return o instanceof Map.Entry<?, ?> entry &&
                     getKey().equals(entry.getKey()) &&
                     getValue().equals(entry.getValue());
         }
+        @Override
         public int hashCode() {
             return getKey().hashCode() ^ getValue().hashCode();
         }
@@ -163,9 +168,11 @@ class MimeType implements Serializable, Cloneable {
          * The current index of the iterator.
          */
         private int myIndex = 2;
+        @Override
         public boolean hasNext() {
             return myIndex < myPieces.length;
         }
+        @Override
         public Map.Entry<String, String> next() {
             if (hasNext()) {
                 ParameterMapEntry result = new ParameterMapEntry (myIndex);
@@ -175,6 +182,7 @@ class MimeType implements Serializable, Cloneable {
                 throw new NoSuchElementException();
             }
         }
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
@@ -184,9 +192,11 @@ class MimeType implements Serializable, Cloneable {
      * Parameter map entry set.
      */
     private class ParameterMapEntrySet extends AbstractSet<Map.Entry<String, String>> {
+        @Override
         public Iterator<Map.Entry<String, String>> iterator() {
             return new ParameterMapEntrySetIterator();
         }
+        @Override
         public int size() {
             return (myPieces.length - 2) / 2;
         }
@@ -196,6 +206,7 @@ class MimeType implements Serializable, Cloneable {
      * Parameter map.
      */
     private class ParameterMap extends AbstractMap<String, String> {
+        @Override
         public Set<Map.Entry<String, String>> entrySet() {
             if (myEntrySet == null) {
                 myEntrySet = new ParameterMapEntrySet();
@@ -266,6 +277,7 @@ class MimeType implements Serializable, Cloneable {
      * @return MIME type string based on the canonical form. Each parameter
      *         value is enclosed in quotes.
      */
+    @Override
     public String toString() {
         return getStringValue();
     }
@@ -273,6 +285,7 @@ class MimeType implements Serializable, Cloneable {
     /**
      * Returns a hash code for this MIME type object.
      */
+    @Override
     public int hashCode() {
         return getStringValue().hashCode();
     }
@@ -292,6 +305,7 @@ class MimeType implements Serializable, Cloneable {
      * @return {@code true} if this MIME type object equals {@code obj},
      *         {@code false} otherwise
      */
+    @Override
     public boolean equals (Object obj) {
         return obj instanceof MimeType mimeType &&
                 getStringValue().equals(mimeType.getStringValue());
