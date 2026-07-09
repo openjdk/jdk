@@ -1791,11 +1791,14 @@ void PhaseIdealLoop::LoopExitTest::canonicalize_mask(jlong stride_con) {
 //
 // to
 //
-//  if (int_min <= long_limit && long_limit <= int_max) {
+//  if ((int) long_limit == long_limit) {
 //    for (int i = 0; i < (int) long_limit; i++) {...}
 //  } else {
 //    trap: loop_limit_check
 //  }
+//
+// When StressLoopLimitSpeculativeNarrowing is set, we guard (byte) long_limit == long_limit instead 
+// for  more deopts.
 Node* PhaseIdealLoop::LoopExitTest::speculatively_narrow_limit(PhaseIterGVN& igvn) {
   assert(_should_speculatively_narrow_limit, "must call can_speculatively_narrow_limit() first");
 
@@ -1815,7 +1818,20 @@ Node* PhaseIdealLoop::LoopExitTest::speculatively_narrow_limit(PhaseIterGVN& igv
   assert(_loop->is_invariant(_narrowed_limit), "limit must be a loop invariant");
 
   // Finally, we assumed the limit is within int range, so add guards and traps if it's not.
-  Node* i2l_limit = igvn.register_new_node_with_optimizer(new ConvI2LNode(_narrowed_limit));
+  Node* guard_value = _narrowed_limit;
+  
+  #ifdef ASSERT
+  // Instead of guarding (int) limit == limit, we guard (byte) limit == limit to trigger more deopts
+  if (StressLoopLimitSpeculativeNarrowing) {
+    // (byte) limit == limit << 24 >> 24
+    Node* shl = igvn.register_new_node_with_optimizer(
+        new LShiftINode(_narrowed_limit, igvn.intcon(24)));
+    guard_value = igvn.register_new_node_with_optimizer(
+        new RShiftINode(shl, igvn.intcon(24)));
+  }
+  #endif
+
+  Node* i2l_limit = igvn.register_new_node_with_optimizer(new ConvI2LNode(guard_value));
   Node* cmp_limit = new CmpLNode(i2l_limit, _limit);
   Node* bol_limit = new BoolNode(cmp_limit, BoolTest::eq);
 

@@ -935,6 +935,10 @@
   develop(bool, StressCountedLoop, false,                                   \
           "Randomly delay conversion to counted loops")                     \
                                                                             \
+  develop(bool, StressLoopLimitSpeculativeNarrowing, false,                 \
+          "Narrow the speculative limit range check from int to byte "      \
+          "to stress the deoptimization path")                              \
+                                                                            \
   product(bool, HotCodeHeap, false, EXPERIMENTAL,                           \
           "Enable the code heap for hot C2 nmethods")                       \
                                                                             \

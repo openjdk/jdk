@@ -89,7 +89,9 @@ public class TestIntCountedLoopLongLimit {
                         "-XX:+StressCountedLoop",
                         "-XX:+StressShortRunningLongLoop",
                         "-XX:+StressIGVN",
-                        "-XX:+StressCCP"
+                        "-XX:+StressCCP",
+                        // combining with StressLongCountedLoop, we get int → long → speculatively narrow back to int → deopt → recompile stress cycle
+                        "-XX:+StressLoopLimitSpeculativeNarrowing"
                 });
                 break;
             default:
