@@ -6058,6 +6058,11 @@ static inline HANDLE get_thread_handle_for_extended_context(DWORD tid) {
 // Thread sampling implementation
 //
 void SuspendedThreadTask::internal_do_task() {
+#if INCLUDE_JFR
+  assert(NOT_COMPILER2(true) COMPILER2_PRESENT(!HotCodeHeap) ||
+         SuspendedThreadTask_lock->owned_by_self(),
+         "suspend/resume must be serialized when HotCodeHeap is enabled");
+#endif
   const HANDLE h = get_thread_handle_for_extended_context(_thread->osthread()->thread_id());
   if (h == nullptr) {
     return;
@@ -6382,7 +6387,7 @@ void os::jfr_report_memory_info() {
     // Send the RSS JFR event
     EventResidentSetSize event;
     event.set_size(pmex.WorkingSetSize);
-    event.set_peak(pmex.PeakWorkingSetSize);
+    event.set_peak(MAX2(pmex.PeakWorkingSetSize, pmex.WorkingSetSize));
     event.commit();
   } else {
     // Log a warning
