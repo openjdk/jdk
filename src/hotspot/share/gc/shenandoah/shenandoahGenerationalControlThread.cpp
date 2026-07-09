@@ -259,14 +259,16 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     _heap->print_after_gc();
   }
 
-  if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
-    // If an allocation failure occurred during this cycle, we'll have threads waiting
-    // to reclaim memory. We'll wake them up, and they'll retry their allocation.
-    // If our waiters cannot allocate, they will signal the control thread again
-    // to start another cycle.
+  {
     MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-    _heap->clear_cancellation(_requested_gc_cause);
-    _requested_gc_cause = GCCause::_no_gc;
+    if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
+      // If an allocation failure occurred during this cycle, we'll have threads waiting
+      // to reclaim memory. We'll wake them up, and they'll retry their allocation.
+      // If our waiters cannot allocate, they will signal the control thread again
+      // to start another cycle.
+      _heap->clear_cancellation(_requested_gc_cause);
+      _requested_gc_cause = GCCause::_no_gc;
+    }
   }
 
   // If this cycle completed successfully, notify threads waiting for gc
