@@ -58,7 +58,7 @@
 // Good estimate for the initial table size.
 static uint initial_nmethod_table_size(G1CollectedHeap* g1h) {
   // The +1 is both to consider the retained old region likely to be added, and avoid zero-sized initial tables.
-  return MIN3(g1h->collection_set()->num_regions(), g1h->max_num_regions() / 2, g1h->num_available_regions()) + 1;
+  return MIN3(checked_cast<uint>(g1h->collection_set()->cur_length()), g1h->max_num_regions() / 2, g1h->num_available_regions()) + 1;
 }
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
