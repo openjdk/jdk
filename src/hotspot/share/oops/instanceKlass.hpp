@@ -339,6 +339,9 @@ class InstanceKlass: public Klass {
   bool has_localvariable_table() const     { return _misc_flags.has_localvariable_table(); }
   void set_has_localvariable_table(bool b) { _misc_flags.set_has_localvariable_table(b); }
 
+  bool verification_failed_over() const { return _misc_flags.verification_failed_over(); }
+  void set_verification_failed_over() { _misc_flags.set_verification_failed_over(true); }
+
   // field sizes
   int nonstatic_field_size() const         { return _nonstatic_field_size; }
   void set_nonstatic_field_size(int size)  { _nonstatic_field_size = size; }
