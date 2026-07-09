@@ -2240,7 +2240,7 @@ void PhaseIterGVN::maybe_make_dependent_paths(Node* k, const Type* t) {
       // Find out through which of the Phi's input, we reached that Phi and mark the corresponding CFG path dead
       for (uint j = 1; j < n->req(); j++) {
         Node* in = n->in(j);
-        // We don't follow uses beyond Phis so if in is a Phi, we couldn't reach this Phi through it
+        // We don't follow uses beyond Phis so if 'in' is a Phi, we couldn't reach this Phi through it
         if (in != nullptr && !in->is_Phi() && wq.member(in)) {
           if (!n->in(0)->is_top() && n->in(0)->in(j) != nullptr && !n->in(0)->in(j)->is_top()) {
             // We reached this CFG path through data nodes, record it in dead path to later insert an Halt node, if it
