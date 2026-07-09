@@ -251,6 +251,15 @@ public class VectorCompareWithZeroTest {
     }
 
     public static void main(String[] args) {
+        // The @IR rules in this test verify that the optimized NEON compare-with-zero
+        // instructions (vmaskcmp_zero*_neon) are generated. IncrementalInlineVector is
+        // enabled by default; when a vector intrinsic fails to intrinsify, inlining its
+        // fallback implementation enlarges the compilation unit and, in some configurations,
+        // prevents AbstractMask::intoArray() from being inlined. When intoArray() is not
+        // inlined, the mask is boxed before the call, which breaks the compare-with-zero
+        // match so the expected vmaskcmp_zero*_neon nodes are not produced. We therefore run
+        // with -XX:-IncrementalInlineVector so the intended IR shape is observed
+        // deterministically.
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(10000)
                      .addFlags("--add-modules=jdk.incubator.vector",

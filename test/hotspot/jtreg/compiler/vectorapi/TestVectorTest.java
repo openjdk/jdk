@@ -40,6 +40,15 @@ import jdk.incubator.vector.VectorMask;
  */
 public class TestVectorTest {
     public static void main(String[] args) {
+        // IncrementalInlineVector is enabled by default. When a vector intrinsic
+        // fails to intrinsify on a given configuration (e.g. VectorMask.fromLong
+        // under -XX:UseAVX=0), its fallback implementation is now inlined instead
+        // of being left as a static call. The inlined fallback materializes the
+        // mask result using scalar CmpI/CMoveI nodes, which the @IR rules in this
+        // test forbid (they verify the VectorTest idealization that eliminates
+        // such scalar materialization). We therefore run with
+        // -XX:-IncrementalInlineVector so the intended intrinsified IR shape is
+        // observed deterministically across all supported configurations.
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
                                    "-XX:-IncrementalInlineVector");
     }

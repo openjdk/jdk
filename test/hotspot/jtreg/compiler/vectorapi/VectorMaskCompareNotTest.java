@@ -1745,6 +1745,16 @@ public class VectorMaskCompareNotTest {
     }
 
     public static void main(String[] args) {
+        // The @IR rules in this test verify that XorVMask(VectorMaskCmp, maskAll(true))
+        // is folded away, i.e. that no XorV/XorVMask node survives. IncrementalInlineVector
+        // is enabled by default; when a vector intrinsic fails to intrinsify, inlining its
+        // fallback implementation enlarges the compilation unit and, in some configurations,
+        // prevents AbstractMask::intoArray() from being inlined. When intoArray() is not
+        // inlined, the mask must be boxed before the call, and during VectorBoxNode
+        // scalarization a VectorStoreMask user is added to the VectorMaskCmp node. The extra
+        // out-edge raises VectorMaskCmp's out-count, which inhibits the fold above and leaves
+        // the XorVMask/XorV nodes the rules expect to be absent. We therefore run with
+        // -XX:-IncrementalInlineVector so the folded IR shape is observed deterministically.
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(10000)
                      .addFlags("--add-modules=jdk.incubator.vector",
