@@ -2358,6 +2358,19 @@ bool CountedLoopConverter::is_counted_loop() {
 
   const TypeInteger* limit_t = _structure.exit_test().limit_t(*igvn, _iv_bt);
   Node* raw_limit = _structure.exit_test().raw_limit();
+
+  if (_structure.exit_test().should_speculatively_narrow_limit()) {
+    ParsePredicateNode* parse_predicate = loop_limit_check_parse_predicate();
+    if (parse_predicate == nullptr) {
+      return false;
+    }
+
+    Node* parse_predicate_entry = parse_predicate->in(0);
+    if (!_phase->is_dominator(_phase->get_ctrl(raw_limit), parse_predicate_entry)) {
+      return false;
+    }
+  }
+
   StrideOverflowState stride_overflow_state = check_stride_overflow(_structure.final_limit_correction(), limit_t, _iv_bt);
 
   if (stride_overflow_state == Overflow) {
@@ -2410,7 +2423,6 @@ bool CountedLoopConverter::is_counted_loop() {
     // We use the following condition:
     // - stride > 0: init < limit
     // - stride < 0: init > limit
-    //
     // This predicate is always required if we have a non-equal-operator in the loop exit check (where stride = 1 is
     // a requirement). We transform the loop exit check by using a less-than-operator. By doing so, we must always
     // check that init < limit. Otherwise, we could have a different number of iterations at runtime.

@@ -243,6 +243,31 @@ public class TestIntCountedLoopLongLimit {
         return sum;
     }
 
+    // Test speculative narrowing handles missing Loop Limit Check Parse Predicate. After the first
+    // compilation deoptimizes (limit out of int range), the parse predicate is not regenerated on
+    // recompilation. The loop must gracefully fall back to a non-counted loop instead of crashing.
+    public static int testEarlyReturn(long limit) {
+        int sum = 0;
+        for (int i = 0; i < limit; i++) {
+            sum += i;
+            if (sum > 100) {
+                return sum;
+            }
+        }
+        return sum;
+    }
+
+    public static int testEarlyBreak(long limit) {
+        int sum = 0;
+        for (int i = 0; i < limit; i++) {
+            sum += i;
+            if (sum > 100) {
+                break;
+            }
+        }
+        return sum;
+    }
+
     @Test
     @IR(counts = { IRNode.COUNTED_LOOP, ">=2" })
     @IR(failOn = { IRNode.LOOP })
@@ -341,6 +366,14 @@ public class TestIntCountedLoopLongLimit {
         assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ -init, -compileArg }, new Object[]{ -init, (long) Integer.MIN_VALUE }, (int) -compileArg, 1);
         assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ -init, -compileArg }, new Object[]{ -init, (long) Integer.MIN_VALUE - 1L }, (int) -compileArg, 1);
         assertShouldTrap(testCountedLoopWithUnderflow, new Object[]{ -init, -compileArg }, new Object[]{ -init, (long) Integer.MIN_VALUE - compileArg }, (int) -compileArg, 1);
+
+        // Test loops with early exits (return/break). After deopt, the Loop Limit Check Parse Predicate is not
+        // regenerated. Speculative narrowing must bail out gracefully instead of asserting.
+        Method testEarlyReturn = TestIntCountedLoopLongLimit.class.getDeclaredMethod("testEarlyReturn", long.class);
+        assertShouldTrap(testEarlyReturn, new Object[]{ 42L }, new Object[]{ (long) Integer.MAX_VALUE + 1L }, 105, 105);
+
+        Method testEarlyBreak = TestIntCountedLoopLongLimit.class.getDeclaredMethod("testEarlyBreak", long.class);
+        assertShouldTrap(testEarlyBreak, new Object[]{ 42L }, new Object[]{ (long) Integer.MAX_VALUE + 1L }, 105, 105);
     }
 
     // Templated and randomized tests cover the following:
