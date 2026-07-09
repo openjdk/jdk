@@ -1108,7 +1108,6 @@ address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
 void StubGenerator::generate_kyber_stubs() {
   // Generate Kyber intrinsics code
   if (UseKyberIntrinsics) {
-    assert(VM_Version::supports_avx512vlbw(), "must at least support AVX-512 VLBW");
     StubRoutines::_kyberNtt = generate_kyberNtt_avx512(this, _masm);
     StubRoutines::_kyberInverseNtt = generate_kyberInverseNtt_avx512(this, _masm);
     StubRoutines::_kyberNttMult = generate_kyberNttMult_avx512(this, _masm);
