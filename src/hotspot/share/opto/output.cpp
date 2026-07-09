@@ -3223,6 +3223,15 @@ void PhaseOutput::install_code(ciMethod*         target,
                                      C->has_monitors(),
                                      C->has_scoped_access(),
                                      0);
+    if (UseNewCode) {
+      stringStream sst;
+      static int total_count = 0;
+      int method_count = C->_ConvL2I_count;
+      AtomicAccess::add(&total_count, method_count);
+      sst.print("%d %d", method_count, total_count);
+      target->print_short_name(&sst);
+      tty->print_cr("%s",sst.freeze());
+    }
 
     if (C->log() != nullptr) { // Print code cache state into compiler log
       C->log()->code_cache_state();
@@ -3381,6 +3390,10 @@ void PhaseOutput::dump_asm_on(outputStream* st, int* pcs, uint pc_limit) {
         starts_bundle = ' ';
         st->fill_to(prefix_len);
         n->format(C->regalloc(), st);
+        if (Verbose) {
+          st->fill_to(60);
+          st->print("\t\t ::= %s", n->Name());
+        }
         st->cr();
       }
 
