@@ -1109,7 +1109,8 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
       if (base->Opcode() == Op_CastPP) {
         Node* previous_base = get_addp_base(previous_addp);
         if (previous_base->Opcode() == Op_CastPP) {
-          assert(previous_base != base, "");
+          assert(previous_base != base, "Should have been pushed through Phi");
+          // add the CastPP to the connection graph
           _nodes.at_grow(base->_idx, nullptr);
           PointsToNode* curr_castpp_ptn = ptnode_adr(previous_base->_idx);
           add_local_var(base, curr_castpp_ptn->escape_state());
