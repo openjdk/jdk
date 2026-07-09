@@ -27,6 +27,8 @@ package gc.shenandoah.generational;
 import java.util.Random;
 import jdk.test.lib.Utils;
 
+
+
 /*
  * @test id=generational
  * @key randomness
@@ -34,10 +36,12 @@ import jdk.test.lib.Utils;
  * @requires vm.flagless
  * @library /test/lib
  *
- * @run main/othervm/timeout=960 -Xms4g -Xmx4g
+ * @run main/othervm/timeout=960 -Xms1g -Xmx1g
+ *     -XX:+AlwaysPreTouch
  *     -XX:+UseShenandoahGC
  *     -XX:ShenandoahGCMode=generational
  *     -XX:+UnlockExperimentalVMOptions
+ *     -XX:ShenandoahMinFreeThreshold=5
  *     -XX:ShenandoahGuaranteedYoungGCInterval=0
  *     -XX:ShenandoahGuaranteedOldGCInterval=0
  *     -XX:ShenandoahOldEvacPercent=95
@@ -45,35 +49,36 @@ import jdk.test.lib.Utils;
  *     gc.shenandoah.generational.TestTransferOfAffiliated
  */
 public class TestTransferOfAffiliated {
+    // Heap size is 1 GB.  HeapRegionSize is 512KB of memory.  Note: 512KB/region * 2048 regions = 1 GB.
+    //
     // Size calculations below ignore the overhead of array headers, except to acknowledge that array header causes that
     // only 1 inner array fits per heap region.  Size cacluations also assume the root_array is negligible.
     // Run with 8GB heap size, ShenandoahHeapRegionSize is 4MB
 
     static Integer[][] root_array;
-    // Each inner array spans 1M of memory, which is 2M / 4 bytes (per compressed oops pointer)
-    final static int InnerArraySlots = (1 * 1024 * 1024) / 4;
-    // Integer objects referenced from inner array
-    //  Assume we fill 1048K of memory with Integer objects.
-    //  Assume each Integer object consists of 4 bytes for int value, plus 8 bytes for compressed Lilliput header, plus 4 bytes for alignment
-    //    (same as 12 bytes for non-compressed object header plus 4 bytes for int value).  
-    //  We assign these Integer objects to random elements of the inner array. In the case that two Integer objects are
-    //   randomly assigned to the same array element, one of the two will immediately become garbage.
-    // The expectation is that the rare collision on array slots is sufficient to allow the "Inner Array" including the array header, plus
-    //   all of its Integer elements to pack within a single heap region.
-    final static int InnerIntegers = (1 * 1024 * 1024) / 16;
-    // Assume heap size is 4 GB.  We want to consume 2 GB of live data.  Each array element consumes 2 MB
-    // Raw computation may overflow integer arithmetic: (2 * 1024 * 1024 * 1024) / (2 * 1024 * 1024)
-    // Simplified computation: 1024
-    final static int OuterArraySlots = 1024;
 
-    // We vary how many entries are spot checked for each filling of an inner array.
-    // Spot-checking lots of entries corresponds to slow allocation.  Spot-checking few entries corresponds to faster allocation.
-    // By varying the number of spot checks, we create a situation that looks like acceleration of allocation, causing more
-    // frequent triggering of young. Times of slower allocation are needed to allow old marking to make progress.
-    final static int MaxSpotCheck = 1024;
-    final static int MinSpotCheck = 4;
-    // Each inner array is intended to consume one region of memory. Process four regions at each spot-check value before
-    // moving to the next spot check value.
+    // Each inner array spans 256K of memory plus a small number of bytes for the array header. Only 1 inner array fits
+    // within each HeapRegion, causing a large amount of fragmentation.  The number of elements in an array is 256K divided
+    // by 4 bytes per (compressed) oop
+    final static int InnerArraySlots = (256 * 1024) / 4;
+
+    // Integer objects are referenced from the inner array. We want each InnerArray to consume a full HeapRegion after
+    //   we account for the InnerIntegers referenced from the array. We cannot fill the entire array as that would consume
+    //   more than a HeapRegion's worth of memory. We assign Integer objects to random elements of the inner array.  In the
+    //   case that two Integer objects are randomly assigned to the same array element, one of the two will immediately become
+    //   garbage. The expectation is that the rare collision on array slots is sufficient to allow the "Inner Array", including
+    //   its array header and all of its Integer elements to pack within a single heap region.
+    //
+    //  Assume each Integer object consists of 4 bytes for int value, plus 8 bytes for compressed Lilliput 1 header,
+    //   plus 4 bytes for alignment.  Alternatively, if we don't use Lilliput 1, each Integer consumes the same:
+    //   12 bytes for non-compressed object header plus 4 bytes for int value.
+    //
+    //  The number of InnerIntegers for each InnerArray is 256K (half the region size) / 12 bytes / Integer
+    final static int InnerIntegers = (256 * 1024) / 12;
+
+    // Assume heap size is 1 GB.  We want to consume approximately 512MB of live data.  Each InnerArray, including its
+    // referenced Integer objects, consumes approximately 512KB.  1024 array elements * 512KB/array element = 512MB.
+    final static int OuterArraySlots = 1024;
 
     final static Random r = new Random(42);
 
@@ -105,7 +110,7 @@ public class TestTransferOfAffiliated {
             // arithmetic may overflow
             result *= n;
             n /= 4;
-            n *= 1;             // was 1: trying to speed this up a bit
+            n *= 1;             // Should be less than 4. Larger number causes us to take more time.
         }
         if (n > 0) {
             result *= n;
@@ -158,7 +163,7 @@ public class TestTransferOfAffiliated {
         root_array = new Integer[OuterArraySlots][];
         long accumulator = 0;
 
-        // Fragment young, slowly so we don't do GC cycles here.  We want the fragmented memory to accumulate in young.
+        // Fragment young, slowly so we don't do GC cycles here. We want the fragmented memory to accumulate in young.
         // We don't want this memory to get promoted until last possible moment.
         for (int i = 0; i < 768; i++) {
             int index = i % OuterArraySlots;
@@ -174,19 +179,20 @@ public class TestTransferOfAffiliated {
         }
 
         // Fill the arrays slowly. We do this as slowly as possible to maximize allocation runway,
-        // separate GC cycles, accumulate promo potential.  We want a big promo potential when we have
-        // highly fragmented young memory.  This big promo potential must be paired with a large runway.
+        // separate GC cycles, accumulate promo potential. We want a big promo potential when we have
+        // highly fragmented young memory. This big promo potential must be paired with a large runway.
         for (int j = 0; j < 768; j++) {
             if (root_array[j] != null) {
                 fill_array_Integers_with_probe(root_array[j], 2048);
             }
         }
-
-        assertEquals(accumulator, 3103832320L);
+        assertEquals(accumulator, 775993600L);
     }
 
     private static void assertEquals(long a, long b) {
-        if (a != b) throw new RuntimeException("assert failed");
+        String message = "assert failed(" + Long.toString(a) + " != " + Long.toString(b) + ")";
+        if (a != b) throw new RuntimeException(message);
     }
+
 
 }
