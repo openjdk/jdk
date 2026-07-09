@@ -117,7 +117,7 @@ objArrayOop oopFactory::new_objArray(Klass* klass, int length, ArrayProperties p
 }
 
 objArrayOop oopFactory::new_objArray(Klass* klass, int length, TRAPS) {
-  return  new_objArray(klass, length, ArrayProperties::Default(), THREAD);
+  return new_objArray(klass, length, ArrayProperties::Default(), THREAD);
 }
 
 refArrayOop oopFactory::new_refArray(Klass* klass, int length, ArrayProperties properties, TRAPS) {

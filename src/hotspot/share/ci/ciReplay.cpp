@@ -515,14 +515,14 @@ class CompileReplay : public StackObj {
       }
       obj = ciReplay::obj_field(obj, field);
       // TODO 8350865 I think we need to handle null-free/flat arrays here
-      if (obj != nullptr && obj->is_refArray()) {
-        refArrayOop arr = oop_cast<refArrayOop>(obj);
+      if (obj != nullptr && obj->is_objArray()) {
+        objArrayOop arr = oop_cast<objArrayOop>(obj);
         int index = parse_int("index");
         if (index >= arr->length()) {
           report_error("bad array index");
           return nullptr;
         }
-        obj = arr->obj_at(index);
+        obj = arr->obj_at(index, THREAD);
       }
     } while (obj != nullptr);
     if (obj == nullptr) {
@@ -1139,12 +1139,23 @@ class CompileReplay : public StackObj {
             value = oopFactory::new_longArray(length, CHECK_(true));
           } else if (field_signature[0] == JVM_SIGNATURE_ARRAY &&
                      field_signature[1] == JVM_SIGNATURE_CLASS) {
-            Klass* actual_array_klass = parse_klass(CHECK_(true));
-            // TODO 8350865 I think we need to handle null-free/flat arrays here
-            // This handling will change the array property argument passed to the
-            // factory below
-            Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
-            value = oopFactory::new_objArray(kelem, length, CHECK_(true));
+            const char* flatness = parse_string();
+            if (strcmp(flatness, "ref") == 0) {
+              Klass* actual_array_klass = parse_klass(CHECK_(true));
+              Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
+              value = oopFactory::new_refArray(kelem, length, CHECK_(true));
+            } else if (strcmp(flatness, "flat") == 0) {
+              const char* atomicity = parse_string();
+              const char* nullability = parse_string();
+              bool non_atomic = (strcmp(atomicity, "non-atomic") == 0);
+              bool null_restricted = (strcmp(nullability, "null-free") == 0);
+              Klass* actual_array_klass = parse_klass(CHECK_(true));
+              Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
+              ArrayProperties props = ArrayProperties::Default().with_non_atomic(non_atomic).with_null_restricted(null_restricted);
+              value = oopFactory::new_flatArray(InlineKlass::cast(kelem), length, props, CHECK_(true));
+            } else {
+              report_error("unrecognized array kind");
+            }
           } else {
             report_error("unhandled array staticfield");
           }
@@ -1234,17 +1245,22 @@ class CompileReplay : public StackObj {
       const char* string_value = parse_escaped_string();
       double value = atof(string_value);
       java_mirror->double_field_put(fd.offset(), value);
-    } else if (fd.is_null_free_inline_type()) {
-      Klass* kelem = resolve_klass(field_signature, CHECK);
-      InlineKlass* vk = InlineKlass::cast(kelem);
-      oop value = vk->allocate_instance(CHECK);
-      InlineTypeFieldInitializer init_fields(value, this);
-      vk->do_nonstatic_fields(&init_fields);
-      java_mirror->obj_field_put(fd.offset(), value);
     } else {
-      bool res = process_staticfield_reference(field_signature, java_mirror, &fd, CHECK);
-      if (!res)  {
-        report_error("unhandled staticfield");
+      Klass* kelem = nullptr;
+      if (fd.field_type() == T_OBJECT) {
+        kelem = resolve_klass(field_signature, CHECK);
+      }
+      if (kelem != nullptr && kelem->is_inline_klass()) {
+        InlineKlass* vk = InlineKlass::cast(kelem);
+        oop value = vk->allocate_instance(CHECK);
+        InlineTypeFieldInitializer init_fields(value, this);
+        vk->do_nonstatic_fields(&init_fields);
+        java_mirror->obj_field_put(fd.offset(), value);
+      } else {
+        bool res = process_staticfield_reference(field_signature, java_mirror, &fd, CHECK);
+        if (!res)  {
+          report_error("unhandled staticfield");
+        }
       }
     }
   }
