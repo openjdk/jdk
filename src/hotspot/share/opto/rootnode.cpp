@@ -104,7 +104,7 @@ Node* DeadPathNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
   if (req() == 1 && in(0) == this) {
     assert(modified, "only if some inputs were removed");
-    set_req(0, nullptr);
+    deactivate();
   }
   return modified ? this : nullptr;
 }
@@ -114,4 +114,23 @@ const Type* DeadPathNode::Value(PhaseGVN* phase) const {
     return Type::TOP;
   }
   return bottom_type();
+}
+
+void DeadPathNode::activate(PhaseIterGVN* igvn) {
+  assert(Compile::current()->root()->find_edge(this) < 0, "should be disconnected from root");
+  set_req(0, this);
+  while (req() > 1) {
+    uint last = req() - 1;
+    assert(in(last) == nullptr || in(last)->is_top(), "only dead inputs should remain");
+    del_req(last);
+  }
+  Node* root_node = Compile::current()->root();
+  root_node->add_req(this);
+  igvn->_worklist.push(root_node);
+  igvn->set_type(this, bottom_type());
+
+}
+
+void DeadPathNode::deactivate() {
+  set_req(0, nullptr);
 }

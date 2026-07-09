@@ -2200,33 +2200,33 @@ Node *PhaseIterGVN::transform( Node *n ) {
 
 DeadPathNode* PhaseIterGVN::dead_path() {
   DeadPathNode* dead_path_node = C->dead_path();
-  if (dead_path_node->in(0) != dead_path_node) {
-    assert(C->root()->find_edge(dead_path_node) < 0, "");
-    dead_path_node->set_req(0, dead_path_node);
-    while (dead_path_node->req() > 1) {
-      uint last = dead_path_node->req() - 1;
-      assert(dead_path_node->in(last) == nullptr || dead_path_node->in(last)->is_top(), "");
-      dead_path_node->del_req(last);
-    }
-    C->root()->add_req(dead_path_node);
-    _worklist.push(C->root());
-    set_type(dead_path_node, dead_path_node->bottom_type());
+  if (!dead_path_node->is_active()) {
+    dead_path_node->activate(this);
   }
-  assert(C->root()->find_edge(dead_path_node) > 0, "");
+  assert(C->root()->find_edge(dead_path_node) > 0, "should be reachable from root");
   return dead_path_node;
 }
 
-void PhaseIterGVN::maybe_make_dependent_paths(Node* k, const Type* t) {
+
+// If dead_node is a data node, all CFG nodes reachable from dead_node are dead cfg paths. This method follows uses from
+// dead_node until it encounters a cfg node or a phi and eagerly kills these dead cfg paths. This is needed because, in
+// some corner cases, a data node dies but some data paths that use it (and are unreachable at runtime) are not proven
+// dead by igvn, possibly leading to incorrect IR graphs.
+// Also see comment at DeadPathNode declaration
+void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type* t) {
   if (t != Type::TOP) {
     return;
   }
-  // k is going dead, follow uses
+  if (!KillPathsReachableByDeadDataNode) {
+    return;
+  }
+  // dead_node is going dead, follow uses
   ResourceMark rm;
   Unique_Node_List wq;
-  wq.push(k);
+  wq.push(dead_node);
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
-    if (n != k && (n->is_Phi() || n->is_CFG())) {
+    if (n != dead_node && (n->is_Phi() || n->is_CFG())) {
       continue;
     }
     for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
@@ -2237,17 +2237,18 @@ void PhaseIterGVN::maybe_make_dependent_paths(Node* k, const Type* t) {
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
     if (n->is_Phi()) {
+      Node* region = n->in(0);
       // Find out through which of the Phi's input, we reached that Phi and mark the corresponding CFG path dead
       for (uint j = 1; j < n->req(); j++) {
         Node* in = n->in(j);
-        // We don't follow uses beyond Phis so if 'in' is a Phi, we couldn't reach this Phi through it
-        if (in != nullptr && !in->is_Phi() && wq.member(in)) {
-          if (!n->in(0)->is_top() && n->in(0)->in(j) != nullptr && !n->in(0)->in(j)->is_top()) {
+        // We don't follow uses beyond Phis so if 'in' is a Phi (unless it's dead_node), we couldn't reach this Phi through it
+        if (in == dead_node || (in != nullptr && !in->is_Phi() && wq.member(in))) {
+          if (!region->is_top() && region->in(j) != nullptr && !region->in(j)->is_top()) {
             // We reached this CFG path through data nodes, record it in dead path to later insert a Halt node, if it
             // doesn't die in the meantime
-            dead_path()->add_req(n->in(0)->in(j));
+            dead_path()->add_req(region->in(j));
             _worklist.push(dead_path());
-            replace_input_of(n->in(0), j, C->top());
+            replace_input_of(region, j, C->top());
           }
           replace_input_of(n, j, C->top());
           if (in->outcnt() == 0) {
@@ -2257,9 +2258,11 @@ void PhaseIterGVN::maybe_make_dependent_paths(Node* k, const Type* t) {
       }
       continue;
     }
-    if (n == k) {
+    if (n == dead_node) {
       continue;
     }
+    // We don't want to follow CFG nodes but is_CFG() can return false for a cfg projection if its input is top. So
+    // there's no foolproof way of telling if dead_node is a cfg or not and as a consequence we can reach a Region.
     if (n->is_Region()) {
       // Find out through which of the Region's input, we reached that Region and mark it dead
       for (uint j = 1; j < n->req(); j++) {
@@ -2274,9 +2277,10 @@ void PhaseIterGVN::maybe_make_dependent_paths(Node* k, const Type* t) {
     }
     // If we reached this CFG node through a data input...
     if (n->is_CFG()) {
-      if (n->in(0) != nullptr && !n->in(0)->is_top()) {
+      Node* control_input = n->in(0);
+      if (control_input != nullptr && !control_input->is_top()) {
         // record it in dead path to later insert an Halt node, if it doesn't die in the meantime
-        dead_path()->add_req(n->in(0));
+        dead_path()->add_req(control_input);
         _worklist.push(dead_path());
         replace_input_of(n, 0, C->top());
       }
@@ -2387,7 +2391,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
   // If 'k' computes a constant, replace it with a constant
   if (t->singleton() && !k->is_Con()) {
-    maybe_make_dependent_paths(k, t);
+    make_dependent_paths_dead_if_top(k, t);
     set_progress();
     Node* con = makecon(t);     // Make a constant
     add_users_to_worklist(k);
@@ -3057,7 +3061,7 @@ void PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
     set_type(n, new_type);
     push_child_nodes_to_worklist(worklist, n);
   }
-  if (KillPathsReachableByDeadTypeNode && n->is_Type() && new_type == Type::TOP) {
+  if (KillPathsReachableByDeadDataNode && n->is_Type() && new_type == Type::TOP) {
     // Keep track of Type nodes to kill CFG paths that use Type
     // nodes that become dead.
     _maybe_top_type_or_div_mod_nodes.push(n);
@@ -3359,7 +3363,7 @@ Node *PhaseCCP::transform( Node *n ) {
   // track all visited nodes, so that we can remove the complement
   Unique_Node_List useful;
 
-  if (KillPathsReachableByDeadTypeNode) {
+  if (KillPathsReachableByDeadDataNode) {
     for (uint i = 0; i < _maybe_top_type_or_div_mod_nodes.size(); ++i) {
       Node* type_node = _maybe_top_type_or_div_mod_nodes.at(i);
       if (type(type_node) == Type::TOP) {

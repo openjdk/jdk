@@ -503,7 +503,7 @@ protected:
 
   DeadPathNode* dead_path();
 
-  void maybe_make_dependent_paths(Node* k, const Type* t);
+  void make_dependent_paths_dead_if_top(Node* dead_node, const Type* t);
 
 public:
 
