@@ -222,9 +222,9 @@ TEST_VM_F(ShenandoahAllocationRateTest, event_driven_sampling_concurrent_skew) {
 
   ShenandoahAllocRate<ShenandoahMockClock> rate(MINIMUM_SAMPLE_SIZE, BASELINE_SAMPLES, RECENT_SAMPLES, MOMENTARY_SAMPLES);
 
-  // Each holder repeatedly tops its stripe back up to just under the per-stripe share, so several
-  // stripes stay simultaneously occupied below their individual share for the whole run. Their adds
-  // never cross a share alone, but they contend on the counter and feed sum().
+  // Each holder adds just under the per-stripe share once, then stays live for the whole run, so
+  // several stripes remain simultaneously occupied below their individual share. Their adds never
+  // cross a share alone, but they contend on the counter and feed sum().
   Atomic<bool> stop(false);
   const size_t per_stripe_share = MINIMUM_SAMPLE_SIZE / stripes.num_stripes();
   const size_t holder_target = per_stripe_share > 2 ? per_stripe_share - 1 : 1;

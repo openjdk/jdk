@@ -96,7 +96,6 @@ void ShenandoahAllocRate<Clock>::maybe_take_sample(const size_t minimum_sample_s
 
 template<typename Clock>
 void ShenandoahAllocRate<Clock>::allocated(const size_t allocated_bytes) {
-  // The striped counter absorbs allocation-path contention;
   const size_t striped_unsampled = _unsampled.add(allocated_bytes);
   const size_t previous_striped_unsampled = striped_unsampled - allocated_bytes;
 
