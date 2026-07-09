@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1969,9 +1969,9 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
         ShouldNotReachHere();
     }
     if (argi > 0) {
-      // Check that the sum hasn't overflowed
+      // Check that the sum won't overflow the destination byte array.
       IfNode* iff = kit.create_and_map_if(kit.control(),
-                                          __ Bool(__ CmpI(length, __ intcon(0)), BoolTest::lt),
+                                          __ Bool(_gvn->transform(new CmpUNode(length, __ RShiftI(__ intcon(max_jint), coder))), BoolTest::gt),
                                           PROB_MIN, COUNT_UNKNOWN);
       kit.set_control(__ IfFalse(iff));
       overflow->set_req(argi, __ IfTrue(iff));
