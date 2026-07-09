@@ -44,7 +44,8 @@ private:
   size_t _interrupted_old_gcs;
   size_t _alloc_failure_full;
   size_t _collection_cause_counts[GCCause::_last_gc_cause];
-  size_t _stall_counts[ShenandoahController::PHASE_LIMIT];
+
+  Atomic<size_t> _stall_counts[ShenandoahController::PHASE_LIMIT];
 
   ShenandoahSharedFlag _in_shutdown;
   ShenandoahTracer* _tracer;

@@ -53,7 +53,8 @@ private:
   Atomic<size_t> _gc_id;
   shenandoah_padding(1);
 
-  ShenandoahCollectorPhase _phase;
+  // Written by control thread, read by mutators
+  Atomic<ShenandoahCollectorPhase> _phase;
 
 protected:
   const Mutex::Rank WAITERS_LOCK_RANK = Mutex::safepoint - 5;
@@ -102,11 +103,13 @@ public:
   size_t get_gc_id() const;
 
   ShenandoahCollectorPhase get_phase() const {
-    return _phase;
+    return _phase.load_relaxed();
   }
 
   void set_phase(ShenandoahCollectorPhase phase) {
-    _phase = phase;
+    assert(ShenandoahCollectorPhase::UNSET <= phase, "Phase out of bounds: %d", phase);
+    assert(phase < ShenandoahCollectorPhase::PHASE_LIMIT, "Phase out of bounds %d", phase);
+    _phase.store_relaxed(phase);
   }
 
   static const char* collector_phase_to_string(ShenandoahCollectorPhase phase);

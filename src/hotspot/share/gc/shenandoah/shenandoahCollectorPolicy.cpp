@@ -58,7 +58,8 @@ void ShenandoahCollectorPolicy::record_alloc_failure_to_full() {
 
 void ShenandoahCollectorPolicy::record_allocation_stall(ShenandoahController::ShenandoahCollectorPhase phase) {
   assert(phase < ShenandoahController::PHASE_LIMIT, "Invalid phase: %d", phase);
-  _stall_counts[phase]++;
+  assert(ShenandoahController::UNSET <= phase, "Invalid phase: %d", phase);
+  _stall_counts[phase].add_then_fetch(1UL);
 }
 
 void ShenandoahCollectorPolicy::record_success_concurrent(bool is_young, bool is_abbreviated) {
@@ -174,7 +175,7 @@ template<typename T>
 size_t shenandoah_sum_array(T* a, size_t length) {
   size_t sum = 0;
   for (size_t i = 0; i < length; i++) {
-    sum += a[i];
+    sum += a[i].load_relaxed();
   }
   return sum;
 }
@@ -233,9 +234,11 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   const size_t total_stalls = shenandoah_sum_array(_stall_counts, ShenandoahController::PHASE_LIMIT);
   out->print_cr("%5zu Stalls", total_stalls);
   for (int c = 0; c < ShenandoahController::PHASE_LIMIT; c++) {
-    if (_stall_counts[c] > 0) {
-      const char* desc = ShenandoahController::collector_phase_to_string((ShenandoahController::ShenandoahCollectorPhase)c);
-      out->print_cr("    %5zu happened at %s", _stall_counts[c], desc);
+    const size_t stall_count = _stall_counts[c].load_relaxed();
+    if (stall_count > 0) {
+      const auto phase = static_cast<ShenandoahController::ShenandoahCollectorPhase>(c);
+      const char* desc = ShenandoahController::collector_phase_to_string(phase);
+      out->print_cr("    %5zu happened at %s", stall_count, desc);
     }
   }
   out->cr();
