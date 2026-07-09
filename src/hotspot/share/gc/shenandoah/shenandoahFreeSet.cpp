@@ -210,7 +210,7 @@ void ShenandoahFreeSet::account_for_pip_regions(size_t mutator_regions, size_t m
 
 ShenandoahFreeSetPartitionId ShenandoahFreeSet::prepare_to_promote_in_place(size_t idx, size_t bytes) {
   shenandoah_assert_heaplocked();
-  size_t min_remnant_size = PLAB::min_size() * HeapWordSize;
+  size_t min_remnant_size = ShenandoahHeap::plab_min_size() * HeapWordSize;
   ShenandoahFreeSetPartitionId p =  _partitions.membership(idx);
   if (bytes >= min_remnant_size) {
     assert((p == ShenandoahFreeSetPartitionId::Mutator) || (p == ShenandoahFreeSetPartitionId::Collector),
@@ -431,7 +431,7 @@ void ShenandoahFreeSet::unretire_alloc_region(ShenandoahFreeSetPartitionId parti
   // was active consumed part of that free capacity, so the remnant we give back is the
   // current free capacity.
   size_t free_bytes = r->free();
-  assert(free_bytes >= PLAB::min_size() * HeapWordSize, "Only unretire regions still worth allocating from");
+  assert(free_bytes >= ShenandoahHeap::plab_min_size() * HeapWordSize, "Only unretire regions still worth allocating from");
   _partitions.decrease_used(partition, free_bytes);
   _partitions.increase_region_counts(partition, 1);
   // The empty-region count is availability-based: a region counts as empty iff its entire capacity
@@ -1278,7 +1278,7 @@ void ShenandoahRegionPartitions::assert_bounds() {
             young_humongous_waste += capacity;
           }
         } else {
-          assert(r->is_cset() || is_active_alloc || (capacity < PLAB::min_size() * HeapWordSize),
+          assert(r->is_cset() || is_active_alloc || (capacity < ShenandoahHeap::plab_min_size() * HeapWordSize),
                  "Expect retired remnant size to be smaller than min plab size");
           // This region has been retired already or it is in the cset.  In either case, we set capacity to zero
           // so that the entire region will be counted as used.  We count young cset regions as "retired".
@@ -1770,7 +1770,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
       }
       r->set_update_watermark(r->bottom());
       total_used += r->used();
-      if  (r->free() < PLAB::min_size() * HeapWordSize) {
+      if  (r->free() < ShenandoahHeap::plab_min_size() * HeapWordSize) {
         // retire_from_partition() will adjust bounds on Mutator free set if appropriate and will recompute affiliated.
         // It also increases used for the waste bytes, which includes bytes filled at retirement and bytes too small
         // to be filled.  Only the last iteration may have non-zero waste_bytes.
@@ -2051,7 +2051,7 @@ size_t ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed
 
       // Do not add regions that would almost surely fail allocation
       size_t ac = alloc_capacity(region);
-      if (ac >= PLAB::min_size() * HeapWordSize) {
+      if (ac >= ShenandoahHeap::plab_min_size() * HeapWordSize) {
         if (region->is_trash() || !region->is_old()) {
           // Both young and old (possibly immediately) collected regions (trashed) are placed into the Mutator set
           _partitions.raw_assign_membership(idx, ShenandoahFreeSetPartitionId::Mutator);
@@ -3135,7 +3135,7 @@ void ShenandoahFreeSet::decrease_humongous_waste_for_regular_bypass(ShenandoahHe
   ShenandoahFreeSetPartitionId p =
     r->is_old()? ShenandoahFreeSetPartitionId::OldCollector: ShenandoahFreeSetPartitionId::Mutator;
   _partitions.decrease_humongous_waste(p, waste);
-  if (waste >= PLAB::min_size() * HeapWordSize) {
+  if (waste >= ShenandoahHeap::plab_min_size() * HeapWordSize) {
     _partitions.decrease_used(p, waste);
     _partitions.unretire_to_partition(r, p);
     if (r->is_old()) {

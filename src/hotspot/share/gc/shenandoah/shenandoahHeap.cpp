@@ -174,6 +174,11 @@ static ReservedSpace reserve(size_t size, size_t preferred_page_size) {
 }
 
 jint ShenandoahHeap::initialize() {
+  assert(_plab_min_size == 0, "Should only set it once");
+  _plab_min_size = PLAB::min_size();
+  assert(_plab_max_size == 0, "Should only set it once");
+  _plab_max_size = ShenandoahHeapRegion::max_tlab_size_words();
+
   //
   // Figure out heap sizing
   //
@@ -548,6 +553,9 @@ void ShenandoahHeap::initialize_heuristics() {
   _global_generation->initialize_heuristics(mode());
 }
 
+size_t ShenandoahHeap::_plab_min_size = 0;
+size_t ShenandoahHeap::_plab_max_size = 0;
+
 #ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
@@ -865,13 +873,13 @@ void ShenandoahHeap::handle_force_counters_update() {
 
 HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) {
   // New object should fit the GCLAB size
-  size_t min_size = MAX2(size, PLAB::min_size());
+  size_t min_size = MAX2(size, plab_min_size());
 
   // Figure out size of new GCLAB, looking back at heuristics. Expand aggressively.
   size_t new_size = ShenandoahThreadLocalData::gclab_size(thread) * 2;
 
-  new_size = MIN2(new_size, PLAB::max_size());
-  new_size = MAX2(new_size, PLAB::min_size());
+  new_size = MIN2(new_size, plab_max_size());
+  new_size = MAX2(new_size, plab_min_size());
 
   // Record new heuristic value even if we take any shortcut. This captures
   // the case when moderately-sized objects always take a shortcut. At some point,

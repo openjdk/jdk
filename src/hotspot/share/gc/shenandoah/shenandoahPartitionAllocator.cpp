@@ -160,7 +160,7 @@ bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint inde
         occupant->set_update_watermark(occupant->stable_top());
         occupant->set_collector_allocator_reserved(false);
       }
-      if (occupant->free() >> LogHeapWordSize >= PLAB::min_size()) {
+      if (occupant->free() >> LogHeapWordSize >= ShenandoahHeap::plab_min_size()) {
         _free_set->unretire_alloc_region(PARTITION, occupant);
       }
     }
@@ -207,8 +207,8 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
     }
     shared_region = current;
   }
-
-  // Slow-path with heap lock
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  // Slow-path
   {
     // Mutator allocations may yield to safepoint; GC allocations cannot
     ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), req.is_mutator_alloc());
@@ -235,7 +235,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
 
     // OldCollector: verify old generation has room before attempting allocation
     if constexpr (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) {
-      if (!req.is_promotion() && !ShenandoahHeap::heap()->old_generation()->can_allocate(req)) {
+      if (!req.is_promotion() && !heap->old_generation()->can_allocate(req)) {
         return nullptr;
       }
     }
@@ -282,7 +282,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
       // installs only when fresh is the better region to cache (slot empty, or fresh has more room
       // than the occupant); otherwise fresh simply remains an ordinary free-set member (already
       // accounted by allocate_in). Either way the partition boundary moved.
-      if (_free_set->alloc_capacity(fresh) >> LogHeapWordSize >= PLAB::min_size()) {
+      if (_free_set->alloc_capacity(fresh) >> LogHeapWordSize >= ShenandoahHeap::plab_min_size()) {
         // shared_region is the slot value loaded above under the lock; find_region_for_alloc does
         // not touch the slots, so it is still a valid CAS expected value for the install.
         try_install_alloc_region(slot, shared_region, fresh);
@@ -347,7 +347,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate_in(ShenandoahHeapReg
   }
 
   // Retire the region if remaining capacity is too small for any future PLAB.
-  if ((r->free() >> LogHeapWordSize) < PLAB::min_size()) {
+  if ((r->free() >> LogHeapWordSize) < ShenandoahHeap::plab_min_size()) {
     size_t idx = r->index();
     size_t waste_bytes = _free_set->retire_region(PARTITION, idx, r->used());
     boundary_changed = true;
@@ -466,7 +466,7 @@ void ShenandoahPartitionAllocator<PARTITION>::release_alloc_region(uint index) {
     alloc_region->set_update_watermark(alloc_region->stable_top());
     alloc_region->set_collector_allocator_reserved(false);
   }
-  if (alloc_region->free() >> LogHeapWordSize >= PLAB::min_size()) {
+  if (alloc_region->free() >> LogHeapWordSize >= ShenandoahHeap::plab_min_size()) {
     // Region is still allocatable: return its unconsumed remnant to the partition and
     // make it a free-set member again.
     _free_set->unretire_alloc_region(PARTITION, alloc_region);
