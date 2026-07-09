@@ -5020,9 +5020,6 @@ void C2_MacroAssembler::vector_cast_fp_to_int_special_cases_evex(BasicType src_e
                                                                  AddressLiteral float_sign_flip, int vec_enc) {
   assert(rscratch != noreg || always_reachable(float_sign_flip), "missing");
   assert(src_elem_bt == T_SHORT || src_elem_bt == T_FLOAT || src_elem_bt == T_DOUBLE, "unexpected source element type");
-  // The sign-flip load is unmasked and vpternlogd applies its immediate bitwise, so
-  // doubleword granularity is used uniformly across all source types (it is semantically
-  // equivalent to the quadword form for double here as no mask register is involved).
   Label done;
   evmovdqul(xtmp1, k0, float_sign_flip, false, vec_enc, rscratch);
   Assembler::evpcmpeqd(ktmp1, k0, xtmp1, dst, vec_enc);
@@ -5337,6 +5334,7 @@ void C2_MacroAssembler::vector_castHF2I_evex(BasicType to_elem_bt, XMMRegister d
                                              XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
                                              AddressLiteral float_sign_flip, Register rscratch, int vec_enc) {
   assert(type2aelembytes(to_elem_bt) <= 4, "");
+  assert(VM_Version::supports_avx512vl() || vec_enc == Assembler::AVX_512bit, "sub-512-bit vectors require AVX512VL");
   evcvttph2dq(dst, src, vec_enc);
   vector_cast_fp_to_int_special_cases_evex(T_SHORT, dst, src, xtmp1, xtmp2, ktmp1, ktmp2, rscratch, float_sign_flip, vec_enc);
   switch(to_elem_bt) {
@@ -5355,6 +5353,7 @@ void C2_MacroAssembler::vector_castHF2I_evex(BasicType to_elem_bt, XMMRegister d
 void C2_MacroAssembler::vector_castHF2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                              XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
                                              AddressLiteral double_sign_flip, Register rscratch, int vec_enc) {
+  assert(VM_Version::supports_avx512vl() || vec_enc == Assembler::AVX_512bit, "sub-512-bit vectors require AVX512VL");
   evcvttph2qq(dst, src, vec_enc);
   vector_cast_fp_to_long_special_cases_evex(T_SHORT, dst, src, xtmp1, xtmp2, ktmp1, ktmp2, rscratch, double_sign_flip, vec_enc);
 }
