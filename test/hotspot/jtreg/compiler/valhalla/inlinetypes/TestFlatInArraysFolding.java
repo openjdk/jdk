@@ -164,7 +164,6 @@ public class TestFlatInArraysFolding {
         }
     }
 
-    // TODO 8350865 FlatArrayElementMaxSize does not exist anymore
     // PUnique is the unique concrete sub class of AUnique and is not flat in array (with FlatArrayElementMaxOops=0).
     // The CheckCastPP output of the sub type check uses PUnique while the sub type check itself uses AUnique. This leads
     // to a bad graph because the type system determines that the flat in array super klass cannot be met with the
