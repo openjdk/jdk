@@ -27,6 +27,7 @@
  * @bug 8385993
  * @summary C2: Incorrect escape analysis in reduce allocation merges causes NPE
  * @library /test/lib
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-UseDeepIGVNRevisit -XX:CompileCommand=compileonly::${test.main.class},* ${test.main.class}
  * @run main ${test.main.class} ${test.main.class} ${test.file}
  */
 
@@ -37,10 +38,12 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 import java.io.IOException;
 
-// java -Xbatch -XX:-UseDeepIGVNRevisit -XX:CompileCommand=compileonly,Test.* Test.java
-// This will trigger an assertion. Uncomment comments to get an NPE only with C2 compilation.
 public class TestReduceAllocationClonedCast {
     public static void main(String[] args) throws IOException {
+        // For some reason, test failure is only observed when running:
+        // java TestReduceAllocationClonedCast.java
+        // with some extra command flags rather than building and then running:
+        // java TestReduceAllocationClonedCast
         if (args.length == 0) {
             for (int i = 0; i < 8_000; i++) {
                 test1();
@@ -50,7 +53,9 @@ public class TestReduceAllocationClonedCast {
         } else {
             String mainClass = args[0];
             String mainSrc = args[1];
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xbatch", "-XX:-UseDeepIGVNRevisit", "-XX:CompileCommand=compileonly," + mainClass + "::*",  mainSrc);
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xbatch", "-XX:+IgnoreUnrecognizedVMOptions",
+                                                                                 "-XX:-UseDeepIGVNRevisit", "-XX:CompileCommand=compileonly," + mainClass + "::*",
+                                                                                 mainSrc);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
         }
