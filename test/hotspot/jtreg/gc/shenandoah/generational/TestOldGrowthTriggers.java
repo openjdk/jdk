@@ -112,6 +112,8 @@ public class TestOldGrowthTriggers {
                 "-XX:ShenandoahMinOldGenGrowthRemainingHeapPercent=100",
                 "-XX:ShenandoahGuaranteedYoungGCInterval=0",
                 "-XX:ShenandoahGuaranteedOldGCInterval=0",
+                "-XX:ShenandoahGenerationalMinTenuringAge=2",
+                "-XX:ShenandoahGenerationalMaxTenuringAge=2",
                 "-XX:-UseCompactObjectHeaders"
         );
 
@@ -129,6 +131,8 @@ public class TestOldGrowthTriggers {
                 "-XX:ShenandoahMinOldGenGrowthRemainingHeapPercent=100",
                 "-XX:ShenandoahGuaranteedYoungGCInterval=0",
                 "-XX:ShenandoahGuaranteedOldGCInterval=0",
+                "-XX:ShenandoahGenerationalMinTenuringAge=2",
+                "-XX:ShenandoahGenerationalMaxTenuringAge=2",
                 "-XX:+UseCompactObjectHeaders"
         );
     }
