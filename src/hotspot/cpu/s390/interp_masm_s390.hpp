@@ -49,7 +49,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
                             bool check_exceptions,
                             Label *last_java_pc);
 
-
   // Base routine for all dispatches.
   void dispatch_base(TosState state, address* table, bool generate_poll = false);
 
@@ -57,7 +56,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   InterpreterMacroAssembler(CodeBuffer* c)
     : MacroAssembler(c) {}
 
-  void restore_after_resume(Register fp);
+  void restore_after_resume();
   virtual void check_and_handle_popframe(Register java_thread);
   virtual void check_and_handle_earlyret(Register java_thread);
 

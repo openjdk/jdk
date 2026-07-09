@@ -271,7 +271,6 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
 }
 
 inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, const frame& f) {
-  intptr_t* vfp = f.fp();
   // Make sure that monitors is still relativized.
   assert(f.at_absolute(_z_ijava_idx(monitors)) <= -(frame::z_ijava_state_size / wordSize), "");
   // Make sure that esp is still relativized.
@@ -280,7 +279,7 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
 }
 
 inline intptr_t* ThawBase::align(const frame& hf, intptr_t* frame_sp, frame& caller, bool bottom) {
-  Unimplemented();
+  // Unused. Alignment is done directly in new_stack_frame() / finish_thaw().
   return nullptr;
 }
 

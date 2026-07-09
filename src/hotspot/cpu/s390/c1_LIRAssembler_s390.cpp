@@ -540,8 +540,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   // CALL to fixup routine. Fixup routine uses ScopeDesc info
   // to determine who we intended to call.
   __ relocate(virtual_call_Relocation::spec(virtual_call_oop_addr));
-  call(op, relocInfo::none);
-  __ post_call_nop();
+  call(op, relocInfo::none); // call will emit a post call nop, see above method.
 }
 
 void LIR_Assembler::move_regs(Register from_reg, Register to_reg) {

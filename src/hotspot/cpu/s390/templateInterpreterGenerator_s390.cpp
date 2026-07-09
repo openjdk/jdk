@@ -1654,7 +1654,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
     // Execution will be resumed here when the vthread becomes runnable again.
     __ bind(*resume_pc);
-    __ restore_after_resume(Z_fp /* fp */);
+    __ restore_after_resume();
     // We saved the result handler before the call
     __ z_lg(Rresult_handler, _z_ijava_state_neg(lresult), Z_fp);
 #ifdef ASSERT

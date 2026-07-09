@@ -236,7 +236,7 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result, address
   z_br(tmp);  // branch to handler in Z_R1_scratch
 
   bind(resume_pc); // Location to resume execution
-  restore_after_resume(noreg/* fp */);
+  restore_after_resume();
 
   bind(not_preempted);
 
@@ -255,7 +255,7 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result, address
   }
 }
 
-void InterpreterMacroAssembler::restore_after_resume(Register fp) {
+void InterpreterMacroAssembler::restore_after_resume() {
   if (!Continuations::enabled()) return;
   load_const_optimized(Z_R1, Interpreter::cont_resume_interpreter_adapter());
   call(Z_R1);

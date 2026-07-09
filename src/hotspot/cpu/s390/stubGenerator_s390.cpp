@@ -3308,7 +3308,7 @@ class StubGenerator: public StubCodeGenerator {
 
     { // stack alignment
       __ z_lcgr(Z_RET, Z_RET); // negate Z_RET value
-      __ z_nill(Z_RET, -exact_log2(frame::alignment_in_bytes));
+      __ z_nill(Z_RET, -frame::alignment_in_bytes);
     }
     __ resize_frame( /* offset = */ Z_RET,/* fp = */ Z_R1, /* load_fp = */ true);
 

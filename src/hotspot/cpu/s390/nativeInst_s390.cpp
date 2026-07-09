@@ -657,7 +657,5 @@ bool NativeDeoptInstruction::is_deopt_at(address instr){
   if (cb == nullptr || !cb->is_nmethod()) {
     return false;
   }
-  nmethod *nm = (nmethod *)cb;
-
   return true;
 }
