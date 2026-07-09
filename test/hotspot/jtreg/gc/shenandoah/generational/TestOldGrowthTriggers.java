@@ -41,7 +41,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestOldGrowthTriggers {
 
     public static void makeOldAllocations() {
-        // Expect most of the BitSet entries placed into array to be promoted, and most will eventually become garbage within old
+        // Keep the majority of BitSet entries (5/8, 960) long-lived so they promote and grow old generation
+        // well past the old GC trigger threshold. A smaller long-lived set can fall just short and only
+        // intermittently trigger an old GC, so don't reduce the array size or the promoted fraction.
 
         final int ArraySize = 1536;  // 1536 entries (1024 + 512)
         final int RefillIterations = 128;
@@ -57,8 +59,8 @@ public class TestOldGrowthTriggers {
                 int replaceIndex = i;
                 int deriveIndex = i-1;
 
-                // 3/8 of entries are replaced each pass to trigger young gcs.
-                // The other 5/8 entries are never touched, so they age each cycle.
+                // 3/8 entries are replaced each pass to trigger young gcs.
+                // 5/8 entries are never touched, so they age each cycle.
                 switch (i & 0x7) {
                     case 0,1 -> {
                         // creates new BitSet, releases old BitSet,
