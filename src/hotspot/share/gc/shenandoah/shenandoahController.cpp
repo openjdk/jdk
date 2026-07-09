@@ -58,12 +58,15 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
 
 void ShenandoahController::adjust_concurrent_worker_count() {
   const size_t stalls = _alloc_waiters_count.load_relaxed();
+  const size_t conc_threads = checked_cast<size_t>(ConcGCThreads);
   if (stalls > 0) {
-    _concurrent_worker_count = MIN2(stalls, checked_cast<size_t>(ParallelGCThreads));
+    // boost the concurrent worker threads based on the number of stalls, but do not
+    // exceed parallel gc thread count.
+    _concurrent_worker_count = MIN2(conc_threads + stalls, checked_cast<size_t>(ParallelGCThreads));
   } else {
     // no stalls, backoff slowly. Making this a little 'sticky' allows us to use
     // more threads during a mark phase that follows a cycle which had allocation stalls.
-    _concurrent_worker_count = MAX2(_concurrent_worker_count - 1, checked_cast<size_t>(ConcGCThreads));
+    _concurrent_worker_count = MAX2(_concurrent_worker_count - 1, conc_threads);
   }
 }
 
