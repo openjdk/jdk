@@ -27,6 +27,8 @@ package java.sql;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
 /**
  * <P>A thin wrapper around a millisecond value that allows
@@ -298,9 +300,21 @@ public class Date extends java.util.Date {
      *
      * @since 1.8
      */
-    @SuppressWarnings("deprecation")
     public LocalDate toLocalDate() {
-        return LocalDate.of(getNormalizedYear() + 1900, getMonth() + 1, getDate());
+        final GregorianCalendar calendar = new GregorianCalendar();
+        calendar.setTime(this);
+
+        final int year;
+        if (calendar.get(Calendar.ERA) == GregorianCalendar.BC) {
+            // Ajdust the BC date into a negative astronomical date.
+            // As there is no year 0 in the proleptic Gregorian calendar
+            // we also have to adjust the BC year by 1.
+            // 1 BC becomes year 0, 2 BC becomes year -1 and so on.
+            year = 1 - calendar.get(Calendar.YEAR);
+        } else {
+            year = calendar.get(Calendar.YEAR);
+        }
+        return LocalDate.of(year, calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH));
     }
 
    /**

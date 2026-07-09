@@ -27,6 +27,8 @@ package java.sql;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
 /**
  * <P>A thin wrapper around {@code java.util.Date} that allows
@@ -515,15 +517,27 @@ public class Timestamp extends java.util.Date {
      * @return a {@code LocalDateTime} object representing the same date-time value
      * @since 1.8
      */
-    @SuppressWarnings("deprecation")
     public LocalDateTime toLocalDateTime() {
-        return LocalDateTime.of(getNormalizedYear() + 1900,
-                                getMonth() + 1,
-                                getDate(),
-                                getHours(),
-                                getMinutes(),
-                                getSeconds(),
-                                getNanos());
+        final GregorianCalendar calendar = new GregorianCalendar();
+        calendar.setTime(this);
+
+        final int year;
+        if (calendar.get(Calendar.ERA) == GregorianCalendar.BC) {
+            // Ajdust the BC date into a negative astronomical date.
+            // As there is no year 0 in the proleptic Gregorian calendar
+            // we also have to adjust the BC year by 1.
+            // 1 BC becomes year 0, 2 BC becomes year -1 and so on.
+            year = 1 - calendar.get(Calendar.YEAR);
+        } else {
+            year = calendar.get(Calendar.YEAR);
+        }
+        return LocalDateTime.of(year,
+                                calendar.get(Calendar.MONTH) + 1,
+                                calendar.get(Calendar.DAY_OF_MONTH),
+                                calendar.get(Calendar.HOUR_OF_DAY),
+                                calendar.get(Calendar.MINUTE),
+                                calendar.get(Calendar.SECOND),
+                                getNanos()); // We have to use nanos here as the calendar does not support nano precision
     }
 
     /**

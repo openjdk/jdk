@@ -636,18 +636,6 @@ public class Date
 
     /**
      * Returns a value that is the result of subtracting 1900 from the
-     * normalized year that contains or begins with the instant in time
-     * represented by this {@code Date} object, as interpreted in the local
-     * time zone.
-     *
-     * @return  the normalized year represented by this date, minus 1900.
-     */
-    protected int getNormalizedYear() {
-        return normalize().getNormalizedYear() - 1900;
-    }
-
-    /**
-     * Returns a value that is the result of subtracting 1900 from the
      * year that contains or begins with the instant in time represented
      * by this {@code Date} object, as interpreted in the local
      * time zone.
