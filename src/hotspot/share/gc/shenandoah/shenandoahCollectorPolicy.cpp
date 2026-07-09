@@ -25,9 +25,10 @@
  */
 
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/ostream.hpp"
 
 ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
@@ -222,7 +223,7 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   out->print_cr("  %5zu abbreviated (%.2f%%)",  _abbreviated_concurrent_gcs, percent_of(_abbreviated_concurrent_gcs, _success_concurrent_gcs));
   out->cr();
 
-  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+  if (_success_old_gcs > 0) {
     out->print_cr("%5zu Completed Old GCs (%.2f%%)",        _success_old_gcs, percent_of(_success_old_gcs, completed_gcs));
     out->print_cr("  %5zu mixed",                        _mixed_gcs);
     out->print_cr("  %5zu interruptions",                _interrupted_old_gcs);
