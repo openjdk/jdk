@@ -44,7 +44,7 @@ Java_StopThreadTest2_resumeAllVirtualThreads(JNIEnv* jni, jclass cls) {
 
 JNIEXPORT void JNICALL
 Java_StopThreadTest2_stopThread(JNIEnv* jni, jclass cls, jthread thread, jobject exception) {
-  jvmtiError err =  jvmti->StopThread(thread, exception);
+  jvmtiError err = jvmti->StopThread(thread, exception);
   // The target might be suspended at a VirtualThread method
   // so we ignore JVMTI_ERROR_OPAQUE_FRAME.
   if (err != JVMTI_ERROR_OPAQUE_FRAME) {
@@ -57,7 +57,7 @@ Agent_OnLoad(JavaVM* jvm, char* options, void* reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
 
-  printf("Agent_OnLoad: started\n");
+  LOG("Agent_OnLoad: started\n");
   if (jvm->GetEnv((void **) (&jvmti), JVMTI_VERSION) != JNI_OK) {
     LOG("Agent_OnLoad: error in GetEnv");
     return JNI_ERR;
@@ -70,9 +70,10 @@ Agent_OnLoad(JavaVM* jvm, char* options, void* reserved) {
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Agent_OnLoad: error in JVMTI AddCapabilities: %d\n", err);
+    return JNI_ERR;
   }
 
-  printf("Agent_OnLoad: finished\n");
+  LOG("Agent_OnLoad: finished\n");
 
   return 0;
 }
