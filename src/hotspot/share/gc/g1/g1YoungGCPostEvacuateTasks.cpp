@@ -141,18 +141,18 @@ public:
     // Pass 1: count the number of nmethods to add per region across all workers.
     for (uint i = 0; i < _psss->num_workers(); i++) {
       G1ParScanThreadState* pss = _psss->state_for_worker(i);
-      const GrowableArrayCHeap<G1CodeRootPair, mtGC>* pairs = pss->code_root_pairs();
-      for (int j = 0; j < pairs->length(); j++) {
-        counts[pairs->at(j)._region_idx]++;
+      const GrowableArrayCHeap<G1CodeRootPair, mtGC>& pairs = pss->code_root_pairs();
+      for (int j = 0; j < pairs.length(); j++) {
+        counts[pairs.at(j)._region_idx]++;
       }
     }
 
     // Pass 2: pre-size each region's code root set once, then add all nmethods.
     for (uint i = 0; i < _psss->num_workers(); i++) {
       G1ParScanThreadState* pss = _psss->state_for_worker(i);
-      const GrowableArrayCHeap<G1CodeRootPair, mtGC>* pairs = pss->code_root_pairs();
-      for (int j = 0; j < pairs->length(); j++) {
-        G1CodeRootPair pair = pairs->at(j);
+      const GrowableArrayCHeap<G1CodeRootPair, mtGC>& pairs = pss->code_root_pairs();
+      for (int j = 0; j < pairs.length(); j++) {
+        G1CodeRootPair pair = pairs.at(j);
         uint region_idx = pair._region_idx;
         if (counts[region_idx] > 0) {
           // First occurrence of this region: pre-size its code root set to the

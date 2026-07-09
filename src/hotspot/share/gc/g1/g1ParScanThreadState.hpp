@@ -57,7 +57,6 @@ struct G1CodeRootPair {
 };
 class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
-  G1ParScanThreadStateSet* _per_thread_states;
   G1ScannerTasksQueue* _task_queue;
   G1CardTable* _ct;
   G1EvacuationRootClosures* _closures;
@@ -125,7 +124,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
-                       G1ParScanThreadStateSet* per_thread_states,
                        uint worker_id,
                        uint num_workers,
                        G1CollectionSet* collection_set,
@@ -257,7 +255,7 @@ public:
 
   inline void remember_nmethod_into_region(G1HeapRegion* r, nmethod* nm);
 
-  GrowableArrayCHeap<G1CodeRootPair, mtGC>* code_root_pairs() { return &_code_root_pairs; }
+  const GrowableArrayCHeap<G1CodeRootPair, mtGC>& code_root_pairs() const { return _code_root_pairs; }
 
   template <typename T>
   inline void remember_root_into_optional_region(T* p);

@@ -56,13 +56,11 @@
 #define MAYBE_INLINE_EVACUATION NOT_DEBUG(inline) DEBUG_ONLY(NOINLINE)
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
-                                           G1ParScanThreadStateSet* per_thread_states,
                                            uint worker_id,
                                            uint num_workers,
                                            G1CollectionSet* collection_set,
                                            G1EvacFailureRegions* evac_failure_regions)
   : _g1h(g1h),
-    _per_thread_states(per_thread_states),
     _task_queue(g1h->task_queue(worker_id)),
     _ct(g1h->refinement_table()),
     _closures(nullptr),
@@ -578,7 +576,6 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
   if (_states[worker_id] == nullptr) {
     _states[worker_id] =
       new G1ParScanThreadState(_g1h,
-                               this,
                                worker_id,
                                _num_workers,
                                _collection_set,
