@@ -43,7 +43,8 @@ public class TestReduceAllocationClonedCast {
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
             for (int i = 0; i < 8_000; i++) {
-                test();
+                test1();
+                test2();
             }
             System.out.println("DONE");
         } else {
@@ -55,40 +56,61 @@ public class TestReduceAllocationClonedCast {
         }
     }
 
-    static int test() {
+    static int test1() {
         int val = 0;
-        A a = getA(Integer.valueOf(14));
+        A1 a = getA1(Integer.valueOf(14));
         if (a != null) {
             val += a.getA1();
         }
         return val;
     }
 
-    static A getA(Object obj) {
+    static int test2() {
+        int val = 0;
+        A2 a = getA2(Integer.valueOf(14));
+        if (a != null) {
+            val += a.getA1();
+        }
+        return val;
+    }
+
+    static A1 getA1(Object obj) {
         java.util.Random rnd = new java.util.Random();
         int rndInt= rnd.nextInt(100);
         if (rndInt < 15) {
             return null;
         }
 
-        A retA = new A(rndInt/*, rnd.nextInt(100), rnd.nextInt(100)*/);
+        A1 retA = new A1(rndInt);
         if (obj != null) {
-            B b = new B(retA);
+            B1 b = new B1(retA);
             retA = b.getAFromB(obj);
         }
 
         return retA;
     }
 
-    static class A {
-        final Integer a1;
-        //final int a2;
-        //final long a3;
+    static A2 getA2(Object obj) {
+        java.util.Random rnd = new java.util.Random();
+        int rndInt= rnd.nextInt(100);
+        if (rndInt < 15) {
+            return null;
+        }
 
-        A(int a1/*, int a2, long a3*/) {
+        A2 retA = new A2(rndInt, rnd.nextInt(100), rnd.nextInt(100));
+        if (obj != null) {
+            B2 b = new B2(retA);
+            retA = b.getAFromB(obj);
+        }
+
+        return retA;
+    }
+
+    static class A1 {
+        final Integer a1;
+
+        A1(int a1) {
             this.a1 = a1;
-            //this.a2 = a2;
-            //this.a3 = a3;
         }
 
         int getA1() {
@@ -97,13 +119,41 @@ public class TestReduceAllocationClonedCast {
 
     }
 
-    static class B {
-        final A a;
-        B (A a) {
+    static class A2 {
+        final Integer a1;
+        final int a2;
+        final long a3;
+
+        A2(int a1, int a2, long a3) {
+            this.a1 = a1;
+            this.a2 = a2;
+            this.a3 = a3;
+        }
+
+        int getA1() {
+            return a1.intValue();
+        }
+
+    }
+
+    static class B1 {
+        final A1 a;
+        B1(A1 a) {
             this.a = a;
         }
 
-        A getAFromB(Object obj) {
+        A1 getAFromB(Object obj) {
+            return a;
+        }
+    }
+
+    static class B2 {
+        final A2 a;
+        B2(A2 a) {
+            this.a = a;
+        }
+
+        A2 getAFromB(Object obj) {
             return a;
         }
     }
