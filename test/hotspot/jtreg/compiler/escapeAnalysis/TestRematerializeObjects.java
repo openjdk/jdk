@@ -40,7 +40,6 @@ package compiler.escapeAnalysis;
 import jdk.test.lib.Utils;
 
 import compiler.lib.ir_framework.*;
-import compiler.lib.verify.*;
 
 public class TestRematerializeObjects {
 
@@ -74,7 +73,7 @@ public class TestRematerializeObjects {
         }
     }
 
-    @Test
+    @TestReduceAllocationClonedCast
     @IR(counts = {IRNode.ALLOC_ARRAY, "1",
                   IRNode.UNSTABLE_IF_TRAP, "1",
                   IRNode.STORE_L_OF_CLASS, "int\\[int:4\\]", "1",
@@ -119,7 +118,7 @@ public class TestRematerializeObjects {
         }
     }
 
-    @Test
+    @TestReduceAllocationClonedCast
     @IR(counts = {IRNode.ALLOC_ARRAY, "1",
                   IRNode.UNSTABLE_IF_TRAP, "1",
                   IRNode.STORE_I_OF_CLASS, "short\\[int:4\\]", "1",
@@ -165,7 +164,7 @@ public class TestRematerializeObjects {
         }
     }
 
-    @Test
+    @TestReduceAllocationClonedCast
     @IR(counts = {IRNode.ALLOC_ARRAY, "1",
                   IRNode.UNSTABLE_IF_TRAP, "1",
                   IRNode.SAFEPOINT_SCALAROBJECT_OF, "fields@\\[0..3\\]", "0"},

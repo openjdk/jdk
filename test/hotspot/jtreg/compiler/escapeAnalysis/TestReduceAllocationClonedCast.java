@@ -26,22 +26,35 @@
  * @test
  * @bug 8385993
  * @summary C2: Incorrect escape analysis in reduce allocation merges causes NPE
- * @run shell/othervm -Xbatch -XX:-UseDeepIGVNRevisit -XX:CompileCommand=compileonly,${test.main.class}.* ${test.src}
+ * @library /test/lib
+ * @run main ${test.main.class} ${test.main.class} ${test.file}
  */
 
 package compiler.escapeAnalysis;
 
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+
+import java.io.IOException;
 
 // java -Xbatch -XX:-UseDeepIGVNRevisit -XX:CompileCommand=compileonly,Test.* Test.java
 // This will trigger an assertion. Uncomment comments to get an NPE only with C2 compilation.
-public class Test {
-    public static void main(String[] args) {
-        for (int i = 0; i < 8_000; i++) {
-            test();
+public class TestReduceAllocationClonedCast {
+    public static void main(String[] args) throws IOException {
+        if (args.length > 2) {
+            for (int i = 0; i < 8_000; i++) {
+                test();
+            }
+            System.out.println("DONE");
+        } else {
+            String mainClass = args[0];
+            String mainSrc = args[1];
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xbatch", "-XX:-UseDeepIGVNRevisit", "-XX:CompileCommand=compileonly," + mainClass + "::*",  mainSrc);
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            output.shouldHaveExitValue(0);
         }
-        System.out.println("DONE");
     }
-        
+
     static int test() {
         int val = 0;
         A a = getA(Integer.valueOf(14));
