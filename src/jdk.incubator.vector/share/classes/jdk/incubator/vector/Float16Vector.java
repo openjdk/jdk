@@ -3708,12 +3708,10 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
      *
      * The string is produced as if by a call to {@link
      * java.util.Arrays#toString(Object[]) Arrays.toString()},
-     * as appropriate to the {@link Float16} array whose elements are
-     * the lane values of this vector boxed as {@link Float16} values.
-     * Each lane is rendered by {@link Float16#toString(Float16)}, which
-     * produces a human-readable floating-point value and canonical text
-     * for special values (for example {@code "NaN"} and {@code "Infinity"})
-     * regardless of the underlying bit encoding.
+     * as appropriate to a {@code Float16} array whose elements
+     * are obtained by applying {@link Float16#shortBitsToFloat16(short)}
+     * to each element of the {@code short[]} array returned by
+     * {@link #toArray this.toArray()}.
      *
      * @return a string of the form {@code "[0,1,2...]"}
      * reporting the lane values of this vector
