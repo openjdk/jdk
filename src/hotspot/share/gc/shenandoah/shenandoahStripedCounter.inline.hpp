@@ -39,8 +39,13 @@ inline uint32_t ShenandoahStripedCounter::current_stripe() const {
   return (uint32_t) ((t ^ (t >> 20) ^ (t >> 9)) & _stripe_mask);
 }
 
-inline uint32_t ShenandoahStripedCounter::num_stripes() const     { return _num_stripes; }
-inline uint32_t ShenandoahStripedCounter::log_num_stripes() const { return _log_num_stripes; }
+inline uint32_t ShenandoahStripedCounter::num_stripes() const {
+  return _num_stripes;
+}
+
+inline uint32_t ShenandoahStripedCounter::log_num_stripes() const {
+  return _log_num_stripes;
+}
 
 inline size_t ShenandoahStripedCounter::add(const size_t bytes) {
   return _stripes[current_stripe()].add_then_fetch(bytes, memory_order_relaxed);
