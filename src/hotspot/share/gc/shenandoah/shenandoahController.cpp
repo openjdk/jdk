@@ -51,8 +51,9 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
   const GCCause::Cause cause = is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_allocation_failure;
 
   const size_t req_byte = req.size() * HeapWordSize;
-  log_info(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req_byte));
+  log_debug(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req_byte));
   AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(get_gc_id()));
+
   request_gc(cause);
 }
 
