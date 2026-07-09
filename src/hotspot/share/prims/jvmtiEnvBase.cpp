@@ -2447,7 +2447,7 @@ StopThreadClosure::do_thread(Thread* target) {
 
 void
 StopThreadClosure::do_vthread(Handle target_h) {
-  if (!_self && !JvmtiEnvBase::is_vthread_suspended(target_h(), _target_jt)) {
+  if (!_self && !JvmtiVTSuspender::is_vthread_suspended(target_h())) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return;
   }
