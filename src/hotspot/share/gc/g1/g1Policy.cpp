@@ -38,7 +38,7 @@
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/g1SurvivorRegions.hpp"
+#include "gc/g1/g1YoungRegions.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
