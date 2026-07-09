@@ -88,8 +88,9 @@ public class TestSubwordPartialInlining {
         }
 
         TemplateToken generate() {
-            final int inputSize = RANDOM.nextInt(1,4);
-            final int copySize = RANDOM.nextInt(inputSize + 1, 5);
+            final int maxSize = RANDOM.nextInt(0, 4) == 0 ? RANDOM.nextInt(5, 100) : 4;
+            final int inputSize = RANDOM.nextInt(1, maxSize);
+            final int copySize = RANDOM.nextInt(inputSize + 1, maxSize + 1);
 
 
             var runTemplate = Template.make("op", (Operation op) -> scope(
@@ -116,6 +117,7 @@ public class TestSubwordPartialInlining {
                 let("pty", pty),
                 let("testName", getTestName(op)),
                 let("len", copySize),
+                let("minRange", RANDOM.nextInt(0, 4) == 0 ? RANDOM.nextInt(0, inputSize) : 0),
                 """
                     @Test
                     static #pty[] test#{testName}() {
@@ -123,7 +125,7 @@ public class TestSubwordPartialInlining {
                 "       return ",
                 switch (op) {
                     case COPY_OF       -> "Arrays.copyOf(#{pty}Arr, #len)";
-                    case COPY_OF_RANGE -> "Arrays.copyOfRange(#{pty}Arr, 0, #len)";
+                    case COPY_OF_RANGE -> "Arrays.copyOfRange(#{pty}Arr, #minRange, #len)";
                 },
                 ";\n",
                 """
