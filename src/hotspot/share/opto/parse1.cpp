@@ -1883,8 +1883,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       if (phi != nullptr) {
         assert(n != top() || r->in(pnum) == top(), "live value must not be garbage");
         assert(phi->region() == r, "");
-        phi->set_req(pnum, n);  // Then add 'n' to the merge
-        ensure_valid_phi(phi, pnum);
+        phi->set_req(pnum, maybe_narrow_phi_input(r->in(pnum), n, _gvn.type(phi)));
 
         if (pnum == PhiNode::Input) {
           // Last merge for this Phi.
@@ -2069,18 +2068,11 @@ int Parse::Block::add_new_path() {
 // those cases, we need to insert a CheckCastPP, otherwise several PhiNode idealization may be
 // unsound, as we may replace a Phi which has a narrower Type with one of its input which has a
 // wider Type.
-void Parse::ensure_valid_phi(PhiNode* phi, uint input_idx) {
-  Node* input = phi->in(input_idx);
-  if (input == nullptr) {
-    return;
+Node* Parse::maybe_narrow_phi_input(Node* ctrl, Node* n, const Type* phi_type) {
+  if (phi_type->isa_oopptr() != nullptr && !_gvn.type(n)->higher_equal(phi_type)) {
+    n = new CheckCastPPNode(ctrl, n, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing);
   }
-
-  const Type* phi_type = _gvn.type(phi);
-  if (phi_type->isa_oopptr() != nullptr && !_gvn.type(input)->higher_equal(phi_type)) {
-    Node* ctrl_input = phi->region()->in(input_idx);
-    Node* new_input = new CheckCastPPNode(ctrl_input, input, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing);
-    phi->set_req(input_idx, _gvn.transform(new_input));
-  }
+  return n;
 }
 
 //------------------------------ensure_phi-------------------------------------
@@ -2131,10 +2123,13 @@ PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
     return nullptr;
   }
 
-  PhiNode* phi = PhiNode::make(region, o, t);
+  PhiNode* phi = new PhiNode(region, t);
   gvn().set_type(phi, t);
   for (uint i = 1; i < phi->req(); i++) {
-    ensure_valid_phi(phi, i);
+    Node* ctrl = region->in(i);
+    if (ctrl != nullptr) {
+      phi->init_req(i, maybe_narrow_phi_input(ctrl, o, t));
+    }
   }
 
   if (C->do_escape_analysis()) {
