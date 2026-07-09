@@ -41,7 +41,7 @@ import java.io.IOException;
 // This will trigger an assertion. Uncomment comments to get an NPE only with C2 compilation.
 public class TestReduceAllocationClonedCast {
     public static void main(String[] args) throws IOException {
-        if (args.length > 2) {
+        if (args.length == 0) {
             for (int i = 0; i < 8_000; i++) {
                 test();
             }
