@@ -40,7 +40,7 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
     _bitmap(collector->mark_bitmap()),
     _task_queue(),
     _partial_array_splitter(collector->partial_array_state_manager(), collector->workers()),
-    _mark_closure(worker_id, this, ClassLoaderData::_claim_stw_fullgc_mark, G1CollectedHeap::heap()->ref_processor_stw()),
+    _mark_closure(this, ClassLoaderData::_claim_stw_fullgc_mark, G1CollectedHeap::heap()->ref_processor_stw()),
     _stack_closure(this),
     _cld_closure(mark_closure(), ClassLoaderData::_claim_stw_fullgc_mark),
     _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize) {
