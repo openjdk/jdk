@@ -258,12 +258,14 @@ public class TransPatterns extends TreeTranslator {
                     extraConditions = translate(extraConditions);
                     resultExpression = makeBinary(Tag.AND, resultExpression, extraConditions);
                 }
-                if (currentValue != exprSym) {
-                    resultExpression =
-                            make.at(tree.pos).LetExpr(make.VarDef(currentValue, translatedExpr),
-                                                      resultExpression).setType(syms.booleanType);
-                    ((LetExpr) resultExpression).needsCond = true;
-                }
+                List<JCStatement> tempVars = currentValue != exprSym
+                        ? List.of(make.VarDef(currentValue, translatedExpr))
+                        : List.nil();
+                resultExpression =
+                        make.at(tree.pos).LetExpr(tempVars,
+                                                  resultExpression).setType(syms.booleanType);
+                ((LetExpr) resultExpression).needsCond = true;
+                ((LetExpr) resultExpression).needsLineNumberTableEntry = true;
                 result = bindingContext.decorateExpression(resultExpression);
             } finally {
                 currentValue = prevCurrentValue;
@@ -1555,7 +1557,8 @@ public class TransPatterns extends TreeTranslator {
             //=>
             //(let T N; (let T' N$temp = E; N$temp instanceof T && (N = (T) N$temp == (T) N$temp)) && /*use of N*/)
             for (VarSymbol vsym : hoistedVarMap.values()) {
-                expr = make.at(expr.pos).LetExpr(makeHoistedVarDecl(expr.pos, vsym), expr).setType(expr.type);
+                int pos = TreeInfo.getStartPos(expr); //XXXX: untested!
+                expr = make.at(pos).LetExpr(makeHoistedVarDecl(pos, vsym), expr).setType(expr.type);
             }
             return expr;
         }

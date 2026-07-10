@@ -92,6 +92,7 @@ public class LineNumberTestBase extends TestBase {
 
                         if (expected != null) {
                             verifyCoveredLines(methodCoveredLines, expected);
+                            expected.validator().accept(classFile, m);
                         }
 
                         coveredLines.addAll(methodCoveredLines);
