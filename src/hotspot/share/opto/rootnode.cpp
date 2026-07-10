@@ -128,7 +128,6 @@ void DeadPathNode::activate(PhaseIterGVN* igvn) {
   root_node->add_req(this);
   igvn->_worklist.push(root_node);
   igvn->set_type(this, bottom_type());
-
 }
 
 void DeadPathNode::deactivate() {
