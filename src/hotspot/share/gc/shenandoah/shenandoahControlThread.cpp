@@ -248,7 +248,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   //                                      Full GC  --------------------------/
   //
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (check_cancellation_or_degen()) {
+  if (check_cancellation()) {
     log_info(gc)("Cancelled");
     return;
   }
@@ -266,12 +266,12 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
     heap->log_heap_status("At end of GC");
   } else {
     assert(heap->cancelled_gc(), "Must have been cancelled");
-    check_cancellation_or_degen();
+    check_cancellation();
     heap->log_heap_status("At end of cancelled GC");
   }
 }
 
-bool ShenandoahControlThread::check_cancellation_or_degen() {
+bool ShenandoahControlThread::check_cancellation() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->cancelled_gc()) {
     if (heap->cancelled_cause() == GCCause::_shenandoah_stop_vm) {

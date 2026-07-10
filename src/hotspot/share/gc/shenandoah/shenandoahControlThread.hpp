@@ -58,7 +58,7 @@ private:
   // Sets the requested cause and flag and notifies the control thread
   void notify_control_thread(GCCause::Cause cause);
 
-  bool check_cancellation_or_degen();
+  bool check_cancellation();
   void service_concurrent_normal_cycle(GCCause::Cause cause);
   void service_stw_full_cycle(GCCause::Cause cause);
 
