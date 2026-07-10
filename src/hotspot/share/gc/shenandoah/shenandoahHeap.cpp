@@ -1231,7 +1231,8 @@ public:
     markWord m = obj->mark();
     if (!m.is_forwarded()) {
       oop fwd = ShenandoahForwarding::try_forward_to_self(obj, m);
-      if (fwd == obj) {
+      if (fwd == nullptr) {
+        // We won the CAS to self-forward the object
         _self_forwarded = true;
       }
     }
