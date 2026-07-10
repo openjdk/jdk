@@ -51,8 +51,8 @@ public class StressEliminateAllocationsIRTest {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC , "1"})
-    @Arguments( values = { Argument.NUMBER_42 })
+    @IR(counts = {IRNode.ALLOC, "1"})
+    @Arguments(values = Argument.NUMBER_42)
     private static int test(int i) {
         // Even though the object is scalar replaceable,
         // allocation elimination unconditionally fails in stress mode.
