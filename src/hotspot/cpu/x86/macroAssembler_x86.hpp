@@ -376,6 +376,7 @@ class MacroAssembler: public Assembler {
   // Load oopDesc._metadata without decode (useful for direct Klass* compare from oops)
   void load_metadata(Register dst, Register src);
   void load_narrow_klass_compact(Register dst, Register src);
+  void load_narrow_klass(Register dst, Register src);
   void load_klass(Register dst, Register src, Register tmp);
   void store_klass(Register dst, Register src, Register tmp);
 

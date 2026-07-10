@@ -54,12 +54,12 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/ticks.hpp"
 
-class G1PostEvacuateCollectionSetCleanupTask1::MergePssTask : public G1AbstractSubTask {
+class G1PostEvacuateCollectionSetCleanupTask1::FlushPssTask : public G1AbstractSubTask {
   G1ParScanThreadStateSet* _per_thread_states;
 
 public:
-  MergePssTask(G1ParScanThreadStateSet* per_thread_states) :
-    G1AbstractSubTask(G1GCPhaseTimes::MergePSS),
+  FlushPssTask(G1ParScanThreadStateSet* per_thread_states) :
+    G1AbstractSubTask(G1GCPhaseTimes::FlushPSS),
     _per_thread_states(per_thread_states) { }
 
   double worker_cost() const override { return 1.0; }
@@ -116,6 +116,58 @@ public:
       _total.add(gr->card_set_memory_stats());
     }
     g1h->set_collection_set_candidates_stats(_total);
+  }
+};
+
+class G1PostEvacuateCollectionSetCleanupTask1::UpdateCodeRootsTask
+  : public G1AbstractSubTask
+{
+  class ProcessRegionClosure : public G1HeapRegionClosure {
+    G1ParScanThreadStateSet* _psss;
+
+  public:
+    ProcessRegionClosure(G1ParScanThreadStateSet* psss) : _psss(psss) { }
+
+    bool do_heap_region(G1HeapRegion* r) override {
+      uint index = r->hrm_index();
+
+      size_t num_nmethods = 0;
+      for (uint i = 0; i < _psss->num_workers(); i++) {
+        G1ParScanThreadState* pss = _psss->state_for_worker(i);
+        num_nmethods += pss->num_nmethods(index);
+      }
+      if (num_nmethods != 0) {
+        // Notify the code root sets that we are going to add code roots.
+        r->rem_set()->prepare_for_adding_code_roots(num_nmethods);
+
+        // Add roots.
+        for (uint i = 0; i < _psss->num_workers(); i++) {
+          G1ParScanThreadState* pss = _psss->state_for_worker(i);
+          pss->iterate_nmethods(index, [&] (nmethod* nm) { r->add_code_root(nm); });
+        }
+      }
+      return false;
+    }
+  };
+
+  G1ParScanThreadStateSet* _psss;
+  G1HeapRegionClaimer _claimer;
+
+public:
+  UpdateCodeRootsTask(G1ParScanThreadStateSet* per_thread_states)
+    : G1AbstractSubTask(G1GCPhaseTimes::UpdateCodeRoots), _psss(per_thread_states), _claimer(0) { }
+
+  double worker_cost() const override {
+    return _psss->num_nmethod_regions_to_add();
+  }
+
+  void set_max_workers(uint max_workers) override {
+    _claimer.set_n_workers(max_workers);
+  }
+
+  void do_work(uint worker_id) override {
+    ProcessRegionClosure cl(_psss);
+    _psss->par_iterate_nmethod_regions_to_add(&cl, &_claimer, worker_id);
   }
 };
 
@@ -327,11 +379,13 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   bool evac_failed = evac_failure_regions->has_regions_evac_failed();
   bool alloc_failed = evac_failure_regions->has_regions_alloc_failed();
 
-  add_serial_task(new MergePssTask(per_thread_states));
+  add_serial_task(new FlushPssTask(per_thread_states));
   add_serial_task(new RecalculateUsedTask(evac_failed, alloc_failed));
   if (SampleCollectionSetCandidatesTask::should_execute()) {
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
+  add_parallel_task(new UpdateCodeRootsTask(per_thread_states));
+
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
   if (evac_failed) {
     add_parallel_task(new RestoreEvacFailureRegionsTask(evac_failure_regions));
@@ -871,21 +925,19 @@ public:
   }
 };
 
-class G1PostEvacuateCollectionSetCleanupTask2::ResetPartialArrayStateManagerTask
-  : public G1AbstractSubTask
-{
-public:
-  ResetPartialArrayStateManagerTask()
-    : G1AbstractSubTask(G1GCPhaseTimes::ResetPartialArrayStateManager)
-  {}
+class G1PostEvacuateCollectionSetCleanupTask2::DestroyPssTask : public G1AbstractSubTask {
+  G1ParScanThreadStateSet* _per_thread_states;
 
-  double worker_cost() const override {
-    return AlmostNoWork;
-  }
+public:
+  DestroyPssTask(G1ParScanThreadStateSet* per_thread_states) :
+    G1AbstractSubTask(G1GCPhaseTimes::DestroyPSS),
+    _per_thread_states(per_thread_states) { }
+
+  double worker_cost() const override { return 1.0; }
 
   void do_work(uint worker_id) override {
-    // This must be in phase2 cleanup, after phase1 has destroyed all of the
-    // associated allocators.
+    _per_thread_states->destroy_worker_states();
+    // This must be here after above destroyed the per-thread allocators.
     G1CollectedHeap::heap()->partial_array_state_manager()->reset();
   }
 };
@@ -901,7 +953,7 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
   if (G1CollectedHeap::heap()->has_humongous_reclaim_candidates()) {
     add_serial_task(new EagerlyReclaimHumongousObjectsTask());
   }
-  add_serial_task(new ResetPartialArrayStateManagerTask());
+  add_serial_task(new DestroyPssTask(per_thread_states));
 
   if (evac_failure_regions->has_regions_evac_failed()) {
     add_parallel_task(new ProcessEvacuationFailedRegionsTask(evac_failure_regions));

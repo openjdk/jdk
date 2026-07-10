@@ -119,7 +119,7 @@ public:
   inline oop oop_xchg(DecoratorSet decorators, T* addr, oop new_value);
 
   template <DecoratorSet decorators, typename T>
-  void write_ref_field_post(T* field);
+  void write_ref_field_post(T* field, oop new_value);
 
   void write_ref_array(HeapWord* start, size_t count);
 

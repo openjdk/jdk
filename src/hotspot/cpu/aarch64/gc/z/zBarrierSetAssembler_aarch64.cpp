@@ -1385,9 +1385,8 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   __ bind(check_oop);
 
   // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(tmp1, obj);  // get klass
-  __ tst(tmp1, tmp1);
-  __ br(Assembler::EQ, error); // if klass is null it is broken
+  __ load_narrow_klass(tmp1, obj); // get narrow klass
+  __ cbz(tmp1, error);      // if klass is null it is broken
 
   __ bind(check_zaddress);
   // Check if the oop is in the right area of memory

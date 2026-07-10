@@ -31,7 +31,6 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 
 
 vmTestbase/nsk/jvmti/unit/functions/Dispose/JvmtiTest/TestDescription.java 8387429 generic-all
 vmTestbase/nsk/jvmti/scenarios/capability/CM02/cm02t001/TestDescription.java 8299217 generic-all
-vmTestbase/nsk/jdi/EventRequestManager/threadStartRequests/thrstartreq002/TestDescription.java 8327967 generic-all
 
 
 ####

@@ -38,6 +38,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
@@ -814,7 +815,8 @@ void CodeCache::update_cold_gc_count() {
   size_t used = max - free;
   double gc_interval = time - last_time;
 
-  _unloading_threshold_gc_requested = false;
+  AtomicAccess::store(&_unloading_threshold_gc_state, UnloadingRequestState::Idle);
+
   _last_unloading_time = time;
   _last_unloading_used = used;
 
@@ -889,7 +891,7 @@ void CodeCache::gc_on_allocation() {
   double free_ratio = double(free) / double(max);
   if (free_ratio <= StartAggressiveSweepingAt / 100.0)  {
     // In case the GC is concurrent, we make sure only one thread requests the GC.
-    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
+    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_state, UnloadingRequestState::Idle, UnloadingRequestState::Active) == UnloadingRequestState::Idle) {
       log_info(codecache)("Triggering aggressive GC due to having only %.3f%% free memory", free_ratio * 100.0);
       Universe::heap()->collect(GCCause::_codecache_GC_aggressive);
     }
@@ -915,7 +917,7 @@ void CodeCache::gc_on_allocation() {
   // it is eventually invoked to avoid trouble.
   if (allocated_since_last_ratio > threshold) {
     // In case the GC is concurrent, we make sure only one thread requests the GC.
-    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
+    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_state, UnloadingRequestState::Idle, UnloadingRequestState::Active) == UnloadingRequestState::Idle) {
       log_info(codecache)("Triggering threshold (%.3f%%) GC due to allocating %.3f%% since last unloading (%.3f%% used -> %.3f%% used)",
                           threshold * 100.0, allocated_since_last_ratio * 100.0, last_used_ratio * 100.0, used_ratio * 100.0);
       Universe::heap()->collect(GCCause::_codecache_GC_threshold);
@@ -935,7 +937,7 @@ uint64_t CodeCache::_cold_gc_count = INT_MAX;
 
 double CodeCache::_last_unloading_time = 0.0;
 size_t CodeCache::_last_unloading_used = 0;
-volatile bool CodeCache::_unloading_threshold_gc_requested = false;
+volatile CodeCache::UnloadingRequestState CodeCache::_unloading_threshold_gc_state = UnloadingRequestState::Idle;
 TruncatedSeq CodeCache::_unloading_gc_intervals(10 /* samples */);
 TruncatedSeq CodeCache::_unloading_allocation_rates(10 /* samples */);
 
@@ -968,6 +970,23 @@ void CodeCache::on_gc_marking_cycle_finish() {
   assert(is_gc_marking_cycle_active(), "Marking cycle started before last one finished");
   ++_gc_epoch;
   update_cold_gc_count();
+}
+
+void CodeCache::defer_unloading_gc_request() {
+  assert_at_safepoint();
+  assert(_unloading_threshold_gc_state == UnloadingRequestState::Active, "only defer active requests");
+  AtomicAccess::store(&_unloading_threshold_gc_state, UnloadingRequestState::Deferred);
+}
+
+void CodeCache::clear_deferred_unloading_gc_request() {
+  // Codecache marking may still be active after aborting gc marking, so we can not
+  // use is_marking_active() to check whether we are in the correct state to clear
+  // the deferred state.
+  // Requests are only deferred outside GC marking, and only cleared after
+  // at the end of whitebox, we can just clear it if it was Deferred.
+  AtomicAccess::cmpxchg(&_unloading_threshold_gc_state,
+                        UnloadingRequestState::Deferred,
+                        UnloadingRequestState::Idle);
 }
 
 void CodeCache::arm_all_nmethods() {
