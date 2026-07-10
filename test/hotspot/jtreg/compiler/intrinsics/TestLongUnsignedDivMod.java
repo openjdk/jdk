@@ -110,7 +110,6 @@ public class TestLongUnsignedDivMod {
     }
 
     @Test // needs to be run in (fast) debug mode
-    @Warmup(10000)
     @IR(counts = {IRNode.UDIV_L, ">= 1"}) // At least one UDivL node is generated if intrinsic is used
     public void testDivideUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
@@ -124,7 +123,6 @@ public class TestLongUnsignedDivMod {
     }
 
     @Test // needs to be run in (fast) debug mode
-    @Warmup(10000)
     @IR(counts = {IRNode.UMOD_L, ">= 1"}) // At least one UModL node is generated if intrinsic is used
     public void testRemainderUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
@@ -139,7 +137,6 @@ public class TestLongUnsignedDivMod {
 
 
     @Test // needs to be run in (fast) debug mode
-    @Warmup(10000)
     @IR(applyIfPlatform = {"x64", "true"},
         counts = {IRNode.UDIV_MOD_L, ">= 1"}) // At least one UDivModL node is generated if intrinsic is used
     public void testDivModUnsigned() {

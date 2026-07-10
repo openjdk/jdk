@@ -609,6 +609,9 @@ bool JfrRedactedEvents::match_key(StringArray* filters, const char* text) {
 }
 
 bool JfrRedactedEvents::read_file(StringArray* target, const char* filename) {
+  if (!is_valid_redaction_file(filename)) {
+    return false;
+  }
   FILE* file = os::fopen(filename, "r");
   if (file == nullptr) {
     log_error(jfr, redact)("Failed to open redaction file: %s", filename);
@@ -660,4 +663,22 @@ StringArray* JfrRedactedEvents::split(const char* text, char separator) {
     result->add(last, strlen(last));
   }
   return result;
+}
+
+bool JfrRedactedEvents::is_valid_redaction_file(const char* filename) {
+  struct stat st;
+  int ret = os::stat(filename, &st);
+  if (ret != 0) {
+    log_error(jfr, redact)("Failed to access redaction file %s", filename);
+    return false;
+  }
+  if ((st.st_mode & S_IFMT) != S_IFREG) {
+    log_error(jfr, redact)("Redaction file %s is not a regular file", filename);
+    return false;
+  }
+  if (st.st_size > 1024*1024) {
+    log_error(jfr, redact)("Redaction file %s is too large (1024 KB).", filename);
+    return false;
+  }
+  return true;
 }

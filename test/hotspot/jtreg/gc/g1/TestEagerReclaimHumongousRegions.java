@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,10 @@ public class TestEagerReclaimHumongousRegions {
                        "-Xmx20M",
                        "-Xms20m",
                        "-XX:+UnlockDiagnosticVMOptions",
+                       "-XX:+VerifyBeforeGC",
                        "-XX:+VerifyAfterGC",
+                       "-XX:+VerifyDuringGC",
+                       "-XX:+G1VerifyBitmaps",
                        "-Xbootclasspath/a:.",
                        "-Xlog:gc=debug,gc+humongous=debug",
                        "-XX:+UnlockDiagnosticVMOptions",
