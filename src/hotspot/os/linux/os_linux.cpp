@@ -161,8 +161,8 @@ physical_memory_size_type os::Linux::_physical_memory = 0;
 
 address   os::Linux::_initial_thread_stack_bottom = nullptr;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
-size_t    os::Linux::_vm_min_address = 0;
-size_t    os::Linux::_vm_max_address = 0;
+uintptr_t os::Linux::_vm_min_address = 0;
+uintptr_t os::Linux::_vm_max_address = 0;
 
 pthread_t os::Linux::_main_thread;
 const char * os::Linux::_libc_version = nullptr;
@@ -1569,9 +1569,6 @@ void os::Linux::capture_address_space_boundaries() {
 }
 
 void os::Linux::initialize_vm_min_address() {
-
-  // Determine vm_min_address:
-
   // Determined by sysctl vm.mmap_min_addr. It exists as an adjustable safety zone to prevent
   // null pointer dereferences.
   // Most distros set this value to 64 KB. It *can* be zero, but rarely is. Here,
@@ -1599,7 +1596,8 @@ void os::Linux::initialize_vm_max_address() {
 
   // We already captured the primordial stack. If it looks atypical, we will search
   // for it in /proc/self/maps. Atypical configurations are possible with self-compiled
-  // kernels, but rare.
+  // kernels, but rare - since _initial_thread_stack_bottom may have reported an NPTL
+  // stack as primordial, we re-check here.
 
   unsigned address_bits = 0;
 

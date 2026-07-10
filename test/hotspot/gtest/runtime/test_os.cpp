@@ -1133,17 +1133,17 @@ TEST_VM(os, vm_min_address) {
 #endif
 }
 
+#if defined(_LP64)
 TEST_VM(os, vm_max_address) {
   // on all our 64-bit platforms, address space end should be a clean
   // power of 2
   uintptr_t s = os::vm_max_address();
-#if defined(_LP64)
   ASSERT_TRUE(
       is_power_of_2(s + 1)
       );
-#endif
   ASSERT_GE(s, 4 * G);
 }
+#endif
 
 #if !defined(_WINDOWS) && !defined(_AIX)
 TEST_VM(os, free_without_uncommit) {
