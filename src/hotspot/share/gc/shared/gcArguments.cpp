@@ -62,10 +62,8 @@ size_t GCArguments::limit_heap_by_allocatable_memory(size_t limit) {
   // Limits the given heap size by the maximum amount of virtual
   // memory this process is currently allowed to use. It also takes
   // the virtual-to-physical ratio of the current GC into account.
-  size_t fraction = MaxVirtMemFraction * heap_virtual_to_physical_ratio();
-  size_t max_allocatable = os::commit_memory_limit();
-
-  return MIN2(limit, max_allocatable / fraction);
+  size_t physical_max_allocatable = os::commit_memory_limit() / heap_virtual_to_physical_ratio();
+  return MIN2(limit, physical_max_allocatable / MaxVirtMemFraction);
 }
 
 // Use static initialization to get the default before parsing
