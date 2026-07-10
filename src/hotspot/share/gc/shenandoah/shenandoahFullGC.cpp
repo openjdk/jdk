@@ -111,7 +111,7 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   ShenandoahMetricsSnapshot metrics(heap->free_set());
 
   // Perform full GC
-  do_it(cause);
+  do_it();
 
   if (heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::handle_completion(heap);
@@ -141,20 +141,24 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   }
 }
 
-void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
+void ShenandoahFullGC::do_it() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->release_injected_pins();
-
-  // A full GC must be entered directly.
-  // TODO: All of the 'recover from evacuation failures' should be safe to remove now
-  {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_un_self_forward);
-    heap->un_self_forward_cset_regions();
-  }
+  // A full GC must be entered directly, though it is possible for concurrent marking to be
+  // in progress.
 
   if (heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::prepare();
   }
+
+#ifdef ASSERT
+  assert(heap->is_idle(), "Full GC should not be running from incomplete cycle");
+  assert(!heap->has_self_forwarded_objects(), "Self forwarded objects should be cleared by concurrent cycle.");
+  for (size_t i = 0, n = heap->num_regions(); i < n; ++i) {
+    ShenandoahHeapRegion* region = heap->get_region(i);
+    assert(!region->has_self_forwards(), "Region %zu should not have self forwarded objects here.", i);
+  }
+#endif
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_before_fullgc(_generation);
@@ -163,6 +167,8 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   if (VerifyBeforeGC) {
     Universe::verify();
   }
+
+  // TODO: All of the code for 'recover from degenerated states' should be safe to remove now
 
   // Degenerated GC may carry concurrent root flags when upgrading to
   // full GC. We need to reset it before mutators resume.
