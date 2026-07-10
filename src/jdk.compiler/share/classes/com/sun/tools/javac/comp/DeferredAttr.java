@@ -1273,6 +1273,17 @@ public class DeferredAttr extends JCTree.Visitor {
                 stuckVars.addAll(freeArgVars);
                 depVars.addAll(inferenceContext.freeVarsIn(descType.getReturnType()));
                 depVars.addAll(inferenceContext.freeVarsIn(descType.getThrownTypes()));
+                /* if pt has any type arguments which happen to be free vars, and hasn't been accounted
+                 * for, should be included as stuck vars since the deferred check calls
+                 * findDescriptorType(asInstType(pt))
+                 */
+                Set<Type> stuckAndDepVars = new LinkedHashSet<>(stuckVars);
+                stuckAndDepVars.addAll(depVars);
+                for (Type v : inferenceContext.freeVarsIn(pt.getTypeArguments())) {
+                    if (!stuckAndDepVars.contains(v)) {
+                        stuckVars.add(v);
+                    }
+                }
             }
         }
 
