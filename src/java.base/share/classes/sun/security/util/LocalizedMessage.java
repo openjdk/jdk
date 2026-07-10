@@ -120,13 +120,14 @@ public class LocalizedMessage {
                 //   that exception class may not be loaded yet
                 throw new RuntimeException("Unmatched braces");
             }
-            String indexStr = value.substring(leftBraceIndex + 1, rightBraceIndex);
             try {
-                int index = Integer.parseInt(indexStr);
+                int index = Integer.parseInt(value, leftBraceIndex + 1,
+                        rightBraceIndex, 10);
                 sb.append(arguments[index]);
             } catch (NumberFormatException e) {
                 // argument index is not an integer
-                throw new RuntimeException("not an integer: " + indexStr);
+                throw new RuntimeException("not an integer: " +
+                        value.substring(leftBraceIndex + 1, rightBraceIndex));
             }
 
             pos = rightBraceIndex + 1;
