@@ -246,7 +246,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
         klass, message_buffer, message_buffer_len, THREAD);
 
       if (exception_name == nullptr && !HAS_PENDING_EXCEPTION) {
-        klass->set_verification_failed_over();
+        klass->set_fail_over_verified();
       }
     }
     if (exception_name != nullptr) {

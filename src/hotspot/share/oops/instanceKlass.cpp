@@ -2912,10 +2912,11 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
     return false;
   }
 
-  if (CDSConfig::is_dumping_final_static_archive() && verification_failed_over()) {
-    // This class failed over to the old verifier during a training run using AOTClassLinking so
-    // it was archived in the config file. An assembly run without AOTClassLinking needs to exclude
-    // this class.
+  if (CDSConfig::is_dumping_final_static_archive() && fail_over_verified()) {
+    // This is a "new" class but was verified with the old verifier in the training run, which had
+     // -XX:+AOTClassLinking. However, we are now in the assembly run with -XX:-AOTClassLinking.
+     // As SystemDictionaryShared::check_verification_constraints() does not support this case,
+     // we must exclude this class.
     assert(!CDSConfig::is_dumping_aot_linked_classes(), "must be");
     return false;
   }
