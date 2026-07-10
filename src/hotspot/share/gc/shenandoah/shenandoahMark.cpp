@@ -57,11 +57,16 @@ ShenandoahMark::ShenandoahMark(ShenandoahGeneration* generation) :
 
 template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
 void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, StringDedup::Requests* const req, bool update_refs) {
+  ShenandoahObjToScanQueueSet* queues = task_queues();
   ShenandoahObjToScanQueue* q = get_queue(w);
   ShenandoahObjToScanQueue* old_q = get_old_queue(w);
   ShenandoahReferenceProcessor *rp = _generation->ref_processor();
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahLiveData* ld = heap->get_liveness_cache(w);
+
+  // Take outstanding work from queues not covered by current workers.
+  // We expect there is little work in those queues.
+  mark_drain_extra_queues<CANCELLABLE>(queues, q);
 
   // TODO: We can clean up this if we figure out how to do templated oop closures that
   // play nice with specialized_oop_iterators.
@@ -120,53 +125,51 @@ void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, Shena
   }
 }
 
+template <bool CANCELLABLE>
+void ShenandoahMark::mark_drain_extra_queues(ShenandoahObjToScanQueueSet* queues, ShenandoahObjToScanQueue* local_q) {
+  uintx stride = ShenandoahMarkLoopStride;
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahMarkTask t;
+
+  assert(queues->get_reserved() == heap->workers()->active_workers(),
+         "Safety: claimable queues do not intersect with worker queues: %u == %u",
+         queues->get_reserved(), heap->workers()->active_workers());
+
+  ShenandoahObjToScanQueue* q = queues->claim_next();
+  while (q != nullptr) {
+    while (!q->is_empty()) {
+      if (CANCELLABLE && heap->check_cancelled_gc_and_yield()) {
+        return;
+      }
+      for (uint i = 0; i < stride; i++) {
+        if (q->pop(t)) {
+          local_q->push(t);
+        } else {
+          break;
+        }
+      }
+    }
+    q = queues->claim_next();
+  }
+}
+
 template <class T, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
 void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req) {
   uintx stride = ShenandoahMarkLoopStride;
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahObjToScanQueueSet* queues = task_queues();
-  ShenandoahObjToScanQueue* q;
+  ShenandoahObjToScanQueue* q = get_queue(worker_id);
+  ShenandoahObjToScanQueue* old_q = get_old_queue(worker_id);
   ShenandoahMarkTask t;
 
   assert(_generation->type() == GENERATION, "Sanity: %d != %d", _generation->type(), GENERATION);
   _generation->ref_processor()->set_mark_closure(worker_id, cl);
 
-  /*
-   * Process outstanding queues, if any.
-   *
-   * There can be more queues than workers. To deal with the imbalance, we claim
-   * extra queues first. Since marking can push new tasks into the queue associated
-   * with this worker id, we come back to process this queue in the normal loop.
-   */
-  assert(queues->get_reserved() == heap->workers()->active_workers(),
-         "Need to reserve proper number of queues: reserved: %u, active: %u", queues->get_reserved(), heap->workers()->active_workers());
-
-  q = queues->claim_next();
-  while (q != nullptr) {
-    if (CANCELLABLE && heap->check_cancelled_gc_and_yield()) {
-      return;
-    }
-
-    for (uint i = 0; i < stride; i++) {
-      if (q->pop(t)) {
-        do_task<T, GENERATION, STRING_DEDUP>(q, cl, live_data, req, &t, worker_id);
-      } else {
-        assert(q->is_empty(), "Must be empty");
-        q = queues->claim_next();
-        break;
-      }
-    }
-  }
-  q = get_queue(worker_id);
-  ShenandoahObjToScanQueue* old_q = get_old_queue(worker_id);
-
   ShenandoahSATBBufferClosure<GENERATION> drain_satb(q, old_q);
   SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
 
-  /*
-   * Normal marking loop:
-   */
   while (true) {
     if (CANCELLABLE && heap->check_cancelled_gc_and_yield()) {
       return;
