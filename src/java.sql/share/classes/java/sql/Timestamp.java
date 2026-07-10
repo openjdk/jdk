@@ -517,7 +517,24 @@ public class Timestamp extends java.util.Date {
      * @return a {@code LocalDateTime} object representing the same date-time value
      * @since 1.8
      */
+    @SuppressWarnings("deprecation")
     public LocalDateTime toLocalDateTime() {
+        // The underlying date does not expose any direct way of determining if
+        // the year is a BC year. As a result, we need to rederive the calendar
+        // of the date in order to find the correct year.
+        // However, deriving a new calendar is a relatively expensive operation
+        // that we would ideally avoid if possible.
+        // Given that we can comfortably state that any dates after the unix epoch
+        // are AD, we can use a much faster local date time derivation for these dates.
+        if (getTime() >= 0) {
+            return LocalDateTime.of(getYear() + 1900,
+                                    getMonth() + 1,
+                                    getDate(),
+                                    getHours(),
+                                    getMinutes(),
+                                    getSeconds(),
+                                    getNanos());
+        }
         final GregorianCalendar calendar = new GregorianCalendar();
         calendar.setTime(this);
 

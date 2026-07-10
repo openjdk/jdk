@@ -300,7 +300,18 @@ public class Date extends java.util.Date {
      *
      * @since 1.8
      */
+    @SuppressWarnings("deprecation")
     public LocalDate toLocalDate() {
+        // The underlying date does not expose any direct way of determining if
+        // the year is a BC year. As a result, we need to rederive the calendar
+        // of the date in order to find the correct year.
+        // However, deriving a new calendar is a relatively expensive operation
+        // that we would ideally avoid if possible.
+        // Given that we can comfortably state that any dates after the unix epoch
+        // are AD, we can use a much faster local date derivation for these dates.
+        if (getTime() >= 0) {
+            return LocalDate.of(getYear() + 1900, getMonth() + 1, getDate());
+        }
         final GregorianCalendar calendar = new GregorianCalendar();
         calendar.setTime(this);
 
