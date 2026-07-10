@@ -2267,7 +2267,7 @@ void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type*
       // Find out through which of the Region's input, we reached that Region and mark it dead
       for (uint j = 1; j < n->req(); j++) {
         Node* in = n->in(j);
-        // We don't follow uses beyond Regions so if in is a Region, we couldn't reach this Region through it
+        // We don't follow uses beyond Regions so if 'in' is a Region, we couldn't reach this Region through it
         if (in != nullptr && !in->is_Region() && wq.member(in)) {
           replace_input_of(n, j, C->top());
           in->remove_dead_region(this, true);
