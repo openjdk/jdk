@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2026 IBM Corporation. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +22,17 @@
  *
  */
 
-#ifndef CPU_S390_CONTINUATIONENTRY_S390_HPP
-#define CPU_S390_CONTINUATIONENTRY_S390_HPP
+#include "gc/shenandoah/shenandoahStripedCounter.hpp"
+#include "memory/padded.inline.hpp"
+#include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
-#include "runtime/frame.hpp"
+ShenandoahStripedCounter::ShenandoahStripedCounter()
+  : _num_stripes(round_down_power_of_2((uint32_t) MAX2(os::processor_count(), 1)))
+  , _stripe_mask(_num_stripes - 1)
+  , _log_num_stripes(log2i_exact(_num_stripes)) {
+  _stripes = PaddedArray<Atomic<size_t>, mtGC>::create_unfreeable(_num_stripes);
+}
 
-class ContinuationEntryPD {
-  // This is needed to position the ContinuationEntry at the unextended sp of the entry frame
-  frame::z_abi_160_base _abi;
-};
-
-#endif // CPU_S390_CONTINUATIONENTRY_S390_HPP
+ShenandoahStripedCounter::~ShenandoahStripedCounter() { }

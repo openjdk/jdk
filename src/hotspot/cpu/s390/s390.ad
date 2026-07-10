@@ -2361,6 +2361,7 @@ encode %{
     unsigned int actual_ret_off = __ offset();
     assert(start_off + size_of_code == actual_ret_off, "wrong return_pc");
 #endif
+    __ post_call_nop();
   %}
 
   enc_class z_enc_java_static_call(method meth) %{
@@ -2393,6 +2394,7 @@ encode %{
     }
 
     __ clear_inst_mark();
+    __ post_call_nop();
   %}
 
   // Java dynamic call
@@ -2449,6 +2451,7 @@ encode %{
       __ z_basr(Z_R14, Z_R1_scratch);
       unsigned int ret_off = __ offset();
     }
+    __ post_call_nop();
   %}
 
   enc_class z_enc_cmov_reg(cmpOp cmp, iRegI dst, iRegI src) %{
@@ -5554,6 +5557,38 @@ instruct compareAndSwapN_bool(iRegP mem_ptr, rarg5RegN oldval, iRegN_P2N newval,
   format %{ "$res = CompareAndSwapN $oldval,$newval,$mem_ptr" %}
   ins_encode(z_enc_casI(oldval, newval, mem_ptr),
              z_enc_cctobool(res));
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct compareAndExchangeN(iRegN res, iRegP mem_ptr, rarg5RegN oldval, iRegN_P2N newval, flagsReg cr) %{
+  match(Set res (CompareAndExchangeN mem_ptr (Binary oldval newval)));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
+  effect(TEMP_DEF res, USE mem_ptr, USE_KILL oldval, KILL cr);
+  format %{ "$res = CompareAndExchangeN $oldval,$newval,$mem_ptr" %}
+  ins_encode %{
+    Register Rcomp = reg_to_register_object($oldval$$reg);
+    Register Rnew  = reg_to_register_object($newval$$reg);
+    Register Raddr = reg_to_register_object($mem_ptr$$reg);
+    Register Rres  = reg_to_register_object($res$$reg);
+    __ z_lr(Rres, Rcomp);
+    __ z_cs(Rres, Rnew, 0, Raddr);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct compareAndExchangeP(iRegP res, iRegP mem_ptr, rarg5RegP oldval, iRegP_N2P newval, flagsReg cr) %{
+  match(Set res (CompareAndExchangeP mem_ptr (Binary oldval newval)));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
+  effect(TEMP_DEF res, USE mem_ptr, USE_KILL oldval, KILL cr);
+  format %{ "$res = CompareAndExchangeP $oldval,$newval,$mem_ptr" %}
+  ins_encode %{
+    Register Rcomp = reg_to_register_object($oldval$$reg);
+    Register Rnew  = reg_to_register_object($newval$$reg);
+    Register Raddr = reg_to_register_object($mem_ptr$$reg);
+    Register Rres  = reg_to_register_object($res$$reg);
+    __ z_lgr(Rres, Rcomp);
+    __ z_csg(Rres, Rnew, 0, Raddr);
+  %}
   ins_pipe(pipe_class_dummy);
 %}
 

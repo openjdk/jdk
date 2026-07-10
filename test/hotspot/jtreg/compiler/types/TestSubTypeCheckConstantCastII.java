@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2026 IBM Corporation. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,17 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef CPU_S390_CONTINUATIONENTRY_S390_HPP
-#define CPU_S390_CONTINUATIONENTRY_S390_HPP
+/**
+ * @test
+ * @bug 8382536
+ * @summary C2: sharpen_type_after_if: assert(val->find_edge(con) > 0) failed: mismatch
+ *
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,${test.main.class}::test ${test.main.class}
+ */
+package compiler.types;
 
-#include "runtime/frame.hpp"
+public class TestSubTypeCheckConstantCastII {
+    static class A {}
 
-class ContinuationEntryPD {
-  // This is needed to position the ContinuationEntry at the unextended sp of the entry frame
-  frame::z_abi_160_base _abi;
-};
+    static boolean isInstanceOfA(Object obj) {
+        return (obj instanceof A);
+    }
 
-#endif // CPU_S390_CONTINUATIONENTRY_S390_HPP
+    static void test(boolean b, Object obj) {
+        if (b) {
+            return;
+        }
+        // b == false
+        if (b != isInstanceOfA(obj)) {}
+    }
+
+    public static void main(String[] args) {
+        test(true, new A());
+    }
+}
