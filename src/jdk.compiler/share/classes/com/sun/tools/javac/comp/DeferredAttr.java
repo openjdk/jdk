@@ -1278,10 +1278,12 @@ public class DeferredAttr extends JCTree.Visitor {
                  * findDescriptorType(asInstType(pt)) and we can get a partial type if not all free vars
                  * in the target type have been instantiated
                  */
-                Set<Type> stuckAndDepVars = new LinkedHashSet<>(stuckVars);
-                stuckAndDepVars.addAll(depVars);
+                List<Type> freeInDescriptor = inferenceContext.freeVarsIn(
+                        descType.getParameterTypes()
+                                .appendList(descType.getThrownTypes())
+                                .prepend(descType.getReturnType()));
                 for (Type v : inferenceContext.freeVarsIn(pt.getTypeArguments())) {
-                    if (!stuckAndDepVars.contains(v)) {
+                    if (!freeInDescriptor.contains(v)) {
                         stuckVars.add(v);
                     }
                 }
