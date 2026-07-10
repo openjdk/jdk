@@ -373,11 +373,11 @@ extern "C" NOINLINE void disnm(intptr_t p) {
   if (cb != nullptr) {
     nmethod* nm = cb->as_nmethod_or_null();
     if (nm != nullptr) {
-      nm->print_nmethod(true);
+      nm->print();
     } else {
       cb->print();
     }
-    // Disassembler::decode(cb);
+    Disassembler::decode(cb);
   }
 }
 

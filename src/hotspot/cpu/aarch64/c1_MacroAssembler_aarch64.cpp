@@ -36,6 +36,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
+// State for randomized profile counters.
 Register r_profile_rng;
 
 void C1_MacroAssembler::float_cmp(bool is_float, int unordered_result,

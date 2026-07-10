@@ -3218,8 +3218,9 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
     counter_holder = new_register(T_METADATA);
     offset = in_bytes(backedge ? MethodData::backedge_counter_offset() :
                                  MethodData::invocation_counter_offset());
-    counters_base = LIR_OprFact::metadataConst
-                     (method->method_data()->constant_encoding());
+    ciMethodData* md = method->method_data_or_null();
+    assert(md != nullptr, "Sanity");
+    counters_base = LIR_OprFact::metadataConst(md->constant_encoding());
   } else {
     ShouldNotReachHere();
   }
@@ -3230,8 +3231,6 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
     LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());
     // The bci for info can point to cmp for if's we want the if bci
     CodeStub* overflow = new CounterOverflowStub (info, bci, meth);
-    // Zero the low-order bits of the frequency, otherwise we'll miss
-    // overflows when using randomized profile counters.
     unsigned int freq = (unsigned int)frequency
                          << InvocationCounter::count_shift;
     __ increment_counter(step, result,

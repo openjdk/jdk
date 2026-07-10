@@ -2548,10 +2548,6 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj);
 }
 
-#ifndef PRODUCT
-long tier3_overflows;
-#endif
-
 void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Opr freq_opr,
                                           LIR_Opr md_reg, LIR_Opr md_opr, LIR_Opr md_offset_opr,
                                           CodeStub* overflow_stub) {
@@ -2616,7 +2612,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
           break;
         }
         case T_LONG: {
-          inc *= ProfileCaptureRatio;
           __ increment(counter_address, inc, dest);
 
           break;
@@ -2662,14 +2657,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
               __ mov(rscratch1, step->as_constant_ptr()->as_jint_bits() << ratio_shift);
               __ subsw(zr, dest, rscratch1);
             }
-#ifndef PRODUCT
-            Label nope;
-            __ br(~ __ LO, nope);
-            __ lea(rscratch2, Address((address)&tier3_overflows));
-            __ mov(rscratch1, 1);
-            __ ldadd(Assembler::xword, rscratch1, rscratch1, rscratch2);
-            __ bind(nope);
-#endif
             __ br(__ LO, *overflow_stub->entry());
             break;
         }

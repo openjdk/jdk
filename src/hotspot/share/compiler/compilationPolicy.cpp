@@ -411,9 +411,6 @@ void CompilationPolicy::print_training_data_on(outputStream* st,  const char* pr
 
 // Print an event.
 void CompilationPolicy::print_event_on(outputStream *st, EventType type, Method* m, Method* im, int bci, CompLevel level) {
-
-  if (level < CompLevel_full_optimization)  return;
-
   bool inlinee_event = m != im;
 
   st->print("%lf: [", os::elapsedTime());
@@ -454,7 +451,7 @@ void CompilationPolicy::print_event_on(outputStream *st, EventType type, Method*
   st->print("[%s", method_name);
   if (inlinee_event) {
     char *inlinee_name = im->name_and_sig_as_C_string();
-    st->print(" [inlinee %s]] ", inlinee_name);
+    st->print(" [%s]] ", inlinee_name);
   }
   else st->print("] ");
   st->print("@%d queues=%d,%d", bci, CompileBroker::queue_size(CompLevel_full_profile),
@@ -502,11 +499,8 @@ void CompilationPolicy::print_event_on(outputStream *st, EventType type, Method*
       print_training_data_on(st, "inlinee ", im, level);
     }
   }
-
-  if (im) {
-    im->method_data()->print_on(st);
-  }
   st->print_cr("]");
+
 }
 
 void CompilationPolicy::print_event(EventType type, Method* m, Method* im, int bci, CompLevel level) {
@@ -1383,7 +1377,7 @@ CompLevel CompilationPolicy::transition_from_limited_profile(const methodHandle&
 // Determine if a method should be compiled with a normal entry point at a different level.
 CompLevel CompilationPolicy::call_event(const methodHandle& method, CompLevel cur_level, JavaThread* THREAD) {
   CompLevel osr_level = MIN2((CompLevel) method->highest_osr_comp_level(), common<LoopPredicate>(method, cur_level, THREAD, true));
-  CompLevel next_level = common<CallPredicate>(method, cur_level, THREAD, is_old(method));
+  CompLevel next_level = common<CallPredicate>(method, cur_level, THREAD, !TrainingData::have_data() && is_old(method));
 
   // If OSR method level is greater than the regular method level, the levels should be
   // equalized by raising the regular method level in order to avoid OSRs during each

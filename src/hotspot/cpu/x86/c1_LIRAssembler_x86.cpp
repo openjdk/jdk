@@ -1293,7 +1293,7 @@ static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src, Reg
   if (ProfileCaptureRatio > 1) {
     assert(!dst.uses(temp), "fix register allocation");
     auto threshold = (UCONST64(1) << 32) >> ratio_shift;
-    __ cmpl(r_profile_rng, threshold);
+    __ cmpl(r_profile_rng, (uint32_t)threshold);
     __ jccb(Assembler::aboveEqual, nope);
   }
   __ addptr(dst, src << ratio_shift);
@@ -2903,9 +2903,9 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
           guarantee(dest != step_opr->as_register(), "must be");
           // If step_opr is 0, make sure the stub check below always fails
           __ cmpl(step_opr->as_register(), 0);
-          __ movl(step_opr->as_register(),
+          __ movl(rscratch1,
                   InvocationCounter::count_increment * ProfileCaptureRatio);
-          __ cmovl(Assembler::equal, dest, step_opr->as_register());
+          __ cmovl(Assembler::equal, dest, rscratch1);
         }
 
         // If (dest & mask) < step, we just overflowed.

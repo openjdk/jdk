@@ -1637,8 +1637,6 @@ void VMError::report_and_die(Thread* thread, const void* context, const char* fi
                              const char* detail_fmt, ...) {
   va_list detail_args;
   va_start(detail_args, detail_fmt);
-  fprintf(stderr, "Spinning\n"); fflush(stderr);
-  for(;;);
   report_and_die(thread, context, filename, lineno, message, detail_fmt, detail_args);
   va_end(detail_args);
 }
