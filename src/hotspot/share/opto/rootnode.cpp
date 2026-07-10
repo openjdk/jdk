@@ -102,7 +102,7 @@ Node* DeadPathNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       modified = true;
     }
   }
-  if (req() == 1 && in(0) == this) {
+  if (req() == 1 && is_active()) {
     assert(modified, "only if some inputs were removed");
     deactivate();
   }
