@@ -171,7 +171,7 @@ void ShenandoahHeuristics::adjust_reserves_for_abbreviated(ShenandoahHeap* heap)
 void ShenandoahHeuristics::record_cycle_start() {
   _cycle_start = os::elapsedTime();
   cancel_trigger_request();
-  log_info(gc, ergo)("Declined trigger count at start: %zu", _declined_trigger_count.load_relaxed());
+  log_debug(gc, ergo)("Declined trigger count at start: %zu", _declined_trigger_count.load_relaxed());
 }
 
 void ShenandoahHeuristics::record_cycle_end() {
@@ -241,7 +241,7 @@ void ShenandoahHeuristics::record_concurrent_completion() {
   } else {
     adjust_penalty(Concurrent_Adjust);
   }
-  log_info(gc, ergo)("Declined trigger count at end: %zu", _declined_trigger_count.load_relaxed());
+  log_debug(gc, ergo)("Declined trigger count at end: %zu", _declined_trigger_count.load_relaxed());
   _declined_trigger_count.store_relaxed(0);
 }
 

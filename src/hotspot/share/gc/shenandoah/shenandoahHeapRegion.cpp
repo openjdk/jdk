@@ -966,7 +966,7 @@ void ShenandoahHeapRegion::partially_recycle() {
   set_top(reclaimer.last_self_forwarded_object());
   const size_t reclaimed_bytes = pointer_delta(old_top, top()) * HeapWordSize;
 
-  log_info(gc)("Reclaimed " PROPERFMT " from partially evacuated region (%zu)", PROPERFMTARGS(reclaimed_bytes), index());
+  log_debug(gc)("Reclaimed " PROPERFMT " from partially evacuated region (%zu)", PROPERFMTARGS(reclaimed_bytes), index());
 }
 
 void ShenandoahHeapRegion::decrement_humongous_waste() {
