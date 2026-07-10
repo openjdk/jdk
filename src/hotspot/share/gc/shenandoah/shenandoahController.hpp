@@ -62,8 +62,10 @@ protected:
 
   Monitor _gc_waiters_lock;
 
-  // The number of threads blocked in allocation
+  // The number of threads blocked in allocation, incremented by mutators.
+  shenandoah_padding(2);
   Atomic<size_t> _alloc_waiters_count;
+  shenandoah_padding(3);
 
   // Only read/written by control thread, clamped between ConcGCThreads and ParallelGCThreads.
   size_t _concurrent_worker_count;
