@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @key stress
  * @bug 8387940
  * @requires vm.compiler2.enabled
  * @summary C2: Stress allocation elimination failures
