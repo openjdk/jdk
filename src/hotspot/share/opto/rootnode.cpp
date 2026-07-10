@@ -91,7 +91,7 @@ const RegMask &HaltNode::out_RegMask() const {
   return RegMask::EMPTY;
 }
 
-Node* DeadPathNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* DeadPathNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   assert(unique_ctrl_out() == phase->C->root(), "only referenced from root");
   assert(can_reshape, "only used once igvn executes");
   bool modified = false;
