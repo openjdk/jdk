@@ -182,6 +182,7 @@ public:
   void add_code_root(nmethod* nm);
   void remove_code_root(nmethod* nm);
   void bulk_remove_code_roots();
+  void prepare_for_adding_code_roots(size_t num_code_roots);
 
   // Applies blk->do_nmethod() to each of the entries in _code_roots
   void code_roots_do(NMethodClosure* blk) const;

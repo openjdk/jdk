@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,15 @@
 
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1RegionsOnNodes.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 
 class G1EdenRegions {
-private:
-  uint    _length;
+  uint _length;
   // Sum of used bytes from all retired eden regions.
   // I.e. updated when mutator regions are retired.
-  volatile size_t _used_bytes;
+  Atomic<size_t> _used_bytes;
   G1RegionsOnNodes  _regions_on_node;
 
 public:
@@ -49,17 +49,17 @@ public:
 
   void clear() {
     _length = 0;
-    _used_bytes = 0;
+    _used_bytes.store_relaxed(0);
     _regions_on_node.clear();
   }
 
   uint length() const { return _length; }
   uint regions_on_node(uint node_index) const { return _regions_on_node.count(node_index); }
 
-  size_t used_bytes() const { return _used_bytes; }
+  size_t used_bytes() const { return _used_bytes.load_relaxed(); }
 
   void add_used_bytes(size_t used_bytes) {
-    _used_bytes += used_bytes;
+    _used_bytes.add_then_fetch(used_bytes, memory_order_relaxed);
   }
 };
 

@@ -622,20 +622,18 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
   }
 }
 
-static inline bool target_needs_far_branch(address addr) {
+bool MacroAssembler::target_needs_far_branch(address addr) {
   if (AOTCodeCache::is_on_for_dump()) {
     return true;
   }
-  // codecache size <= 128M
-  if (!MacroAssembler::far_branches()) {
+  if (!far_branches()) {
     return false;
   }
-  // codecache size > 240M
-  if (MacroAssembler::codestub_branch_needs_far_jump()) {
-    return true;
+  if (CodeCache::is_non_nmethod(addr) &&
+      CodeCache::max_distance_to_non_nmethod() <= branch_range) {
+    return false;
   }
-  // codecache size: 128M..240M
-  return !CodeCache::is_non_nmethod(addr);
+  return true;
 }
 
 void MacroAssembler::far_call(Address entry, Register tmp) {
@@ -5097,7 +5095,7 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   ldr(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
-// Loads the obj's Klass* into dst.
+// Loads the obj's narrow Klass from a compact object header (+COH) into dst.
 // Preserves all registers (incl src, rscratch1 and rscratch2).
 // Input:
 // src - the oop we want to load the klass from.
@@ -5108,12 +5106,17 @@ void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
   lsr(dst, dst, markWord::klass_shift);
 }
 
-void MacroAssembler::load_klass(Register dst, Register src) {
+// Loads the obj's narrow Klass from any header (compact or not) into dst.
+void MacroAssembler::load_narrow_klass(Register dst, Register src) {
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(dst, src);
   } else {
     ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
   }
+}
+
+void MacroAssembler::load_klass(Register dst, Register src) {
+  load_narrow_klass(dst, src);
   decode_klass_not_null(dst);
 }
 

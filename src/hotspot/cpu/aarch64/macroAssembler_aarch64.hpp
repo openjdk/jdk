@@ -924,6 +924,7 @@ public:
 
   // oop manipulations
   void load_narrow_klass_compact(Register dst, Register src);
+  void load_narrow_klass(Register dst, Register src);
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
   void cmp_klass(Register obj, Register klass, Register tmp);
@@ -1353,15 +1354,16 @@ public:
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
   }
-
-  // Check if branches to the non nmethod section require a far jump
+  // Check if the static call stub branch needs a far jump.
   static bool codestub_branch_needs_far_jump() {
     if (AOTCodeCache::is_on_for_dump()) {
-      // To calculate far_codestub_branch_size correctly.
+      // To calculate static_call_stub_size correctly.
       return true;
     }
-    return CodeCache::max_distance_to_non_nmethod() > branch_range;
+    return far_branches();
   }
+  // Check if a branch to the given address needs a far jump.
+  static bool target_needs_far_branch(address addr);
 
   // Emit a direct call/jump if the entry address will always be in range,
   // otherwise a far call/jump.
@@ -1373,17 +1375,9 @@ public:
   // In the case of a far call/jump, the entry address is put in the tmp register.
   // The tmp register is invalidated.
   //
-  // Far_jump returns the amount of the emitted code.
   void far_call(Address entry, Register tmp = rscratch1);
+  // Far_jump returns the amount of the emitted code.
   int far_jump(Address entry, Register tmp = rscratch1);
-
-  static int far_codestub_branch_size() {
-    if (codestub_branch_needs_far_jump()) {
-      return 3 * 4;  // adrp, add, br
-    } else {
-      return 4;
-    }
-  }
 
   // Emit the CompiledIC call idiom
   address ic_call(address entry, jint method_index = 0);
