@@ -56,7 +56,7 @@ private:
   }
 
 public:
-  const TypeInteger* zero() {
+  const TypeInteger* zero() const {
     if (bottom_type() == TypeInt::INT) {
       return TypeInt::ZERO;
     }
