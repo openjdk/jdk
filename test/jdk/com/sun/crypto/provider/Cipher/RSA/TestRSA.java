@@ -27,6 +27,7 @@
  * @summary Test RSA Cipher implementation
  * @author Andreas Sterbenz
  * @key randomness
+ * @run main/othervm TestRSA
  */
 
 import java.io.*;
@@ -174,8 +175,8 @@ public class TestRSA {
     private final static String rout2 = "7a:11:19:cf:76:97:4b:29:48:66:69:e7:f0:db:18:53:d4:50:71:a4:9d:90:47:9f:e6:8a:f3:ba:2e:96:fd:c8:4b:02:7e:06:a9:2b:47:0d:68:3c:6a:f9:21:62:77:0d:4e:e1:1b:82:97:66:13:01:c2:3b:b2:d3:f8:9e:cc:c9:2a:1a:76:05:3f:d4:f7:fb:9d:9b:bf:a8:2d:fd:81:e5:f4:bb:ca:3b:5f:93:ea:ef:88:1c:c1:18:52:38:be:50:42:29:08:d9:65:43:5f:01:7d:50:22:7a:2f:f1:29:14:95:30:c1:b8:fd:eb:da:c1:4e:8a:ef:97:84:f9:cf:34:ab:89:a6:3c:4a:ff:a4:98:a8:7c:c6:2c:c3:e3:10:a9:8b:67:32:47:35:37:15:03:3b:d0:f3:23:fc:bb:42:64:a2:ba:63:3e:94:6e:7a:e6:94:05:79:29:28:d5:99:5b:f9:67:fd:ea:d3:5f:b5:7b:f4:10:9b:0a:1c:20:6b:0c:59:56:76:45:07:56:cb:d0:ab:08:fc:19:8e:f1:27:03:22:f1:e9:23:d3:01:b1:4d:cf:96:f7:a6:44:59:de:2a:52:fd:bb:14:ae:39:c4:e4:0f:4e:10:f7:c6:61:79:0a:a6:4c:ed:ee:d7:40:fe:ef:f3:85:ae:3e:f3:bb:6e:de";
 
     public static void main(String[] args) throws Exception {
-        long start = System.currentTimeMillis();
         Security.setProperty("jdk.crypto.disabledAlgorithms", "");
+        long start = System.currentTimeMillis();
 
         p = Security.getProvider(
                 System.getProperty("test.provider.name", "SunJCE"));

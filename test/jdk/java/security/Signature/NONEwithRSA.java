@@ -28,6 +28,7 @@
  * @summary ensure that the NONEwithRSA adapter works correctly
  * @author Andreas Sterbenz
  * @key randomness
+ * @run main/othervm NONEwithRSA
  */
 
 import java.util.*;

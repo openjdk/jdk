@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 
 import java.io.*;
 import java.net.*;
+import java.security.Security;
 import javax.net.ssl.*;
 
 import jdk.test.lib.security.SecurityUtils;
@@ -159,6 +160,7 @@ public class ProtocolFilter {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         // Re-enable TLS_RSA_* since test depends on it.
         SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
         String keyFilename =

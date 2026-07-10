@@ -817,7 +817,7 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 # Example:
 #   jdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding, MessageDigest.MD2
 #
-#jdk.crypto.disabledAlgorithms=
+jdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)

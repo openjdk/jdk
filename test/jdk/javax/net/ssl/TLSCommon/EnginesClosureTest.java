@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.security.Security;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
@@ -31,6 +32,7 @@ import javax.net.ssl.SSLException;
 public class EnginesClosureTest extends SSLEngineTestCase {
 
     public static void main(String[] args) {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         EnginesClosureTest test = new EnginesClosureTest();
         setUpAndStartKDCIfNeeded();
         test.runTests();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,12 @@
  *          java.security.jgss/sun.security.krb5.internal.crypto
  *          java.security.jgss/sun.security.krb5.internal.ktab
  *          java.base/sun.security.util
- * @run main/othervm -Dtest.security.protocol=DTLSv1.0
- *      -Dtest.mode=norm DTLSv10EnginesClosureTest
- * @run main/othervm -Dtest.security.protocol=DTLSv1.0
- *      -Dtest.mode=norm_sni DTLSv10EnginesClosureTest
- * @run main/othervm -Dtest.security.protocol=DTLSv1.0
- *      -Dtest.mode=krb DTLSv10EnginesClosureTest
+ * @run main/othervm -Dtest.security.protocol=DTLSv1.0 -Dtest.mode=norm
+ *      -Djava.security.properties=${test.src}/java.security DTLSv10EnginesClosureTest
+ * @run main/othervm -Dtest.security.protocol=DTLSv1.0 -Dtest.mode=norm_sni
+ *      -Djava.security.properties=${test.src}/java.security DTLSv10EnginesClosureTest
+ * @run main/othervm -Dtest.security.protocol=DTLSv1.0 -Dtest.mode=krb
+ *      -Djava.security.properties=${test.src}/java.security DTLSv10EnginesClosureTest
  */
 
 /**

@@ -138,11 +138,11 @@ public class DisabledAlgorithms {
     };
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         if (args.length < 1) {
             throw new RuntimeException("No parameters specified");
         }
 
-        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         switch (args[0]) {
             case "default" -> {
                 // use default jdk.tls.disabledAlgorithms

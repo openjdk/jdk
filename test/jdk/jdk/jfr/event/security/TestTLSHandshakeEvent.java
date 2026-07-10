@@ -23,6 +23,7 @@
 
 package jdk.jfr.event.security;
 
+import java.security.Security;
 import java.util.List;
 
 import jdk.jfr.Recording;
@@ -59,6 +60,7 @@ public class TestTLSHandshakeEvent {
     );
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.crypto.disabledAlgorithms", "");
         // re-enable TLS_RSA suites as one test depends on it
         SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
         for (TLSConfig config : CONFIGS) {

@@ -27,6 +27,7 @@
  * @summary encryption/decryption test for OAEP
  * @author Andreas Sterbenz
  * @key randomness
+ * @run main/othervm TestOAEP
  */
 
 import java.util.*;
@@ -46,8 +47,8 @@ public class TestOAEP {
     private static Random random = new Random();
 
     public static void main(String[] args) throws Exception {
-        long start = System.currentTimeMillis();
         Security.setProperty("jdk.crypto.disabledAlgorithms", "");
+        long start = System.currentTimeMillis();
 
         cp = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
         System.out.println("Testing provider " + cp.getName() + "...");

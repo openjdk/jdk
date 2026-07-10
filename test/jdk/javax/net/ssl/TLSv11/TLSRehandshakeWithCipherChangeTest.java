@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
  *          java.security.jgss/sun.security.krb5.internal.ktab
  *          java.base/sun.security.util
  * @build jdk.test.lib.RandomFactory
- * @run main/othervm -Dtest.security.protocol=TLSv1.1 TLSRehandshakeWithCipherChangeTest
+ * @run main/othervm -Dtest.security.protocol=TLSv1.1 -Djava.security.properties=${test.src}/java.security TLSRehandshakeWithCipherChangeTest
  */
 
 /**

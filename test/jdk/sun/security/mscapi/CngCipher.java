@@ -36,6 +36,7 @@ import java.security.KeyStore;
  * @requires os.family == "windows"
  * @summary Cipher operations on CNG keys
  * @library /test/lib
+ * @run main/othervm -Djava.security.properties=${test.src}/java.security CngCipher
  */
 
 public class CngCipher {

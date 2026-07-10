@@ -37,11 +37,11 @@
  *          java.security.jgss/sun.security.krb5.internal.ktab
  *          java.base/sun.security.util
  * @run main/othervm -Dtest.security.protocol=TLSv1.2
- *     -Dtest.mode=norm TLSEnginesClosureTest
+ *     -Dtest.mode=norm -Djava.security.properties=${test.src}/java.security TLSEnginesClosureTest
  * @run main/othervm -Dtest.security.protocol=TLSv1.2
- *     -Dtest.mode=norm_sni TLSEnginesClosureTest
+ *     -Dtest.mode=norm_sni -Djava.security.properties=${test.src}/java.security TLSEnginesClosureTest
  * @run main/othervm -Dtest.security.protocol=TLSv1.2
- *     -Dtest.mode=krb TLSEnginesClosureTest
+ *     -Dtest.mode=krb -Djava.security.properties=${test.src}/java.security TLSEnginesClosureTest
  */
 
 /**
