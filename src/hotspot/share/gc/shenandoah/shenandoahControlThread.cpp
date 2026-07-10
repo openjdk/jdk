@@ -62,9 +62,9 @@ void ShenandoahControlThread::run_service() {
     if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
       break;
     }
+    assert(cancelled_cause == GCCause::_no_gc, "Cannot be cancelled for: %s", GCCause::to_string(cancelled_cause));
 
     // Figure out if we have pending requests.
-    const bool alloc_failure_pending = ShenandoahCollectorPolicy::is_allocation_failure(cancelled_cause);
     const bool is_gc_requested = _gc_requested.try_unset();
     const GCCause::Cause requested_gc_cause = _requested_gc_cause;
 
@@ -72,13 +72,7 @@ void ShenandoahControlThread::run_service() {
     GCMode mode = none;
     GCCause::Cause cause = GCCause::_last_gc_cause;
 
-    if (alloc_failure_pending) {
-      // Allocation failure takes precedence: we have to deal with it first thing
-      heuristics->log_trigger("Handle Allocation Failure");
-      cause = GCCause::_allocation_failure;
-      heap->set_unload_classes(heuristics->can_unload_classes());
-      mode = default_mode;
-    } else if (is_gc_requested) {
+    if (is_gc_requested) {
       cause = requested_gc_cause;
       heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
@@ -103,7 +97,7 @@ void ShenandoahControlThread::run_service() {
 
     // Blow all soft references on this cycle, if handling allocation failure,
     // either implicit or explicit GC request,  or we are requested to do so unconditionally.
-    if (alloc_failure_pending || is_gc_requested || ShenandoahAlwaysClearSoftRefs) {
+    if (is_gc_requested || ShenandoahAlwaysClearSoftRefs) {
       heap->global_generation()->ref_processor()->set_soft_reference_policy(true);
     }
 
