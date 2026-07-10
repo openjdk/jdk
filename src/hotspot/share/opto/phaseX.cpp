@@ -2212,7 +2212,7 @@ DeadPathNode* PhaseIterGVN::dead_path() {
 // dead_node until it encounters a cfg node or a phi and eagerly kills these dead cfg paths. This is needed because, in
 // some corner cases, a data node dies but some data paths that use it (and are unreachable at runtime) are not proven
 // dead by igvn, possibly leading to incorrect IR graphs.
-// Also see comment at DeadPathNode declaration
+// Also see comment at DeadPathNode declaration.
 void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type* t) {
   if (t != Type::TOP) {
     return;
