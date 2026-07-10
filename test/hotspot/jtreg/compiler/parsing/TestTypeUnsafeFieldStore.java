@@ -56,7 +56,8 @@ public class TestTypeUnsafeFieldStore {
         }
     }
 
-    // It's hard to coordinate the compiler thread with the thread that load the child class, so
+    // It's hard to coordinate the compiler thread with the thread that load the child class, so we
+    // randomly delay one of the threads
     private static void testConcurrentClassLoading(int idx) throws Exception {
         var parentClass = Class.forName("compiler.parsing.TestTypeUnsafeFieldStore$P" + idx);
         var testMethod = TestTypeUnsafeFieldStore.class.getDeclaredMethod("testMethod" + idx, parentClass);
