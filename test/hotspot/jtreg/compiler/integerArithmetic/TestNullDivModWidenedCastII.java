@@ -34,7 +34,7 @@
 
 package compiler.integerArithmetic;
 
-public class TestNullDivModWidenedCastII {
+public class TestZeroDivModWidenedCastII {
     private static int intField;
     private static long longField;
     private static volatile int volatileField;
