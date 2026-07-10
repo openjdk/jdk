@@ -429,6 +429,8 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _alloc_with_final_or_stable = nullptr;
   _stress_rf_hook = (StressReachabilityFences ? new Node(1) : nullptr);
   _block = nullptr;
+  _sync_lock_box = nullptr;
+  _sync_lock_obj = nullptr;
   _first_return = true;
   _replaced_nodes_for_exceptions = false;
   _new_idx = C->unique();
