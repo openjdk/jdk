@@ -25,8 +25,8 @@
 #ifndef SHARE_UTILITIES_FAKERTTISUPPORT_HPP
 #define SHARE_UTILITIES_FAKERTTISUPPORT_HPP
 
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Provides support for checked downcasts in a hierarchy of classes.
 // The base class provides a member of this type, specialized on that

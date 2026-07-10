@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import sun.awt.image.SunVolatileImage;
 import sun.awt.image.VolatileSurfaceManager;
 import sun.java2d.SurfaceData;
 
-public class XRGraphicsConfig extends X11GraphicsConfig implements
+public final class XRGraphicsConfig extends X11GraphicsConfig implements
         SurfaceManager.ProxiedGraphicsConfig {
     private final SurfaceManager.ProxyCache surfaceDataProxyCache =
             new SurfaceManager.ProxyCache();
@@ -44,6 +44,7 @@ public class XRGraphicsConfig extends X11GraphicsConfig implements
         super(device, visualnum, depth, colormap, doubleBuffer);
     }
 
+    @Override
     public SurfaceData createSurfaceData(X11ComponentPeer peer) {
         return XRSurfaceData.createData(peer);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,17 +59,16 @@
  */
 package test.java.time.format;
 
-import static org.testng.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.time.format.DecimalStyle;
 import java.util.Locale;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test DecimalStyle.
  */
-@Test
 public class TestDecimalStyle {
 
     @Test

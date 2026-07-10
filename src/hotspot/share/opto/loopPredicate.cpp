@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+
 #include <fenv.h>
 #include <math.h>
 
@@ -126,7 +127,7 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(const ParsePredicateSucc
     }
     // Move nodes pinned on the projection or whose control is set to
     // the projection to the region.
-    lazy_replace(uncommon_proj_orig, uncommon_trap);
+    replace_node_and_forward_ctrl(uncommon_proj_orig, uncommon_trap);
   } else {
     // Find region's edge corresponding to uncommon_proj
     for (; proj_index < uncommon_trap->req(); proj_index++)
@@ -333,7 +334,7 @@ class Invariance : public StackObj {
           // loop, it was marked invariant but n is only invariant if
           // it depends only on that test. Otherwise, unless that test
           // is out of the loop, it's not invariant.
-          if (n->is_CFG() || (n->depends_only_on_test() && _phase->igvn().no_dependent_zero_check(n)) || n->in(0) == nullptr || !_phase->is_member(_lpt, n->in(0))) {
+          if (n->is_CFG() || n->in(0) == nullptr || n->depends_only_on_test() || !_phase->is_member(_lpt, n->in(0))) {
             _invariant.set(n->_idx); // I am a invariant too
           }
         }
@@ -1053,7 +1054,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
 #ifdef ASSERT
     const bool exact_trip_count = cl->has_exact_trip_count();
     const uint trip_count = cl->trip_count();
-    loop->compute_trip_count(this);
+    loop->compute_trip_count(this, T_INT);
     assert(exact_trip_count == cl->has_exact_trip_count() && trip_count == cl->trip_count(),
            "should have computed trip count on Loop Predication entry");
 #endif
@@ -1170,7 +1171,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
       // Do nothing for iteration-splitted loops
       return false;
     }
-    loop->compute_trip_count(this);
+    loop->compute_trip_count(this, T_INT);
     if (cl->trip_count() == 1) {
       // Not worth to hoist checks out of a loop that is only run for one iteration since the checks are only going to
       // be executed once anyway.

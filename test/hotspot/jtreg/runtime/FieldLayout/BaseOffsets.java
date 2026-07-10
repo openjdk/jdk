@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,55 +22,38 @@
  */
 
 /*
- * @test id=with-coops-with-ccp
+ * @test id=with-coops
  * @library /test/lib /
  * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCompressedOops -XX:-UseCompactObjectHeaders BaseOffsets
  */
+
 /*
- * @test id=no-coops-with-ccp
+ * @test id=no-coops
  * @library /test/lib /
  * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops -XX:-UseCompactObjectHeaders BaseOffsets
  */
+
 /*
- * @test id=with-coops-no-ccp
+ * @test id=with-coop-with-coh
  * @library /test/lib /
  * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:-UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCompressedOops -XX:+UseCompactObjectHeaders BaseOffsets
  */
-/*
- * @test id=no-coops-no-ccp
- * @library /test/lib /
- * @requires vm.bits == "64"
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
- */
-/*
- * @test id=with-coop--with-coh
- * @library /test/lib /
- * @requires vm.bits == "64"
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:+UseCompactObjectHeaders BaseOffsets
- */
+
 /*
  * @test id=no-coops-with-coh
  * @library /test/lib /
@@ -79,8 +62,9 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:+UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops -XX:+UseCompactObjectHeaders BaseOffsets
  */
+
 /*
  * @test id=32bit
  * @library /test/lib /
@@ -117,14 +101,10 @@ public class BaseOffsets {
             INT_OFFSET = 8;
             INT_ARRAY_OFFSET = 12;
             LONG_ARRAY_OFFSET = 16;
-        } else if (WB.getBooleanVMFlag("UseCompressedClassPointers")) {
+        } else {
             INT_OFFSET = 12;
             INT_ARRAY_OFFSET = 16;
             LONG_ARRAY_OFFSET = 16;
-        } else {
-            INT_OFFSET = 16;
-            INT_ARRAY_OFFSET = 20;
-            LONG_ARRAY_OFFSET = 24;
         }
     }
 

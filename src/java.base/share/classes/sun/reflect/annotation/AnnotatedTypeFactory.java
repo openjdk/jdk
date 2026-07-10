@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ public final class AnnotatedTypeFactory {
         private final Type type;
         private final LocationInfo location;
         private final TypeAnnotation[] allOnSameTargetTypeAnnotations;
-        private final Map<Class <? extends Annotation>, Annotation> annotations;
+        private final Map<Class<? extends Annotation>, Annotation> annotations;
 
         AnnotatedTypeBaseImpl(Type type, LocationInfo location,
                 TypeAnnotation[] actualTypeAnnotations, TypeAnnotation[] allOnSameTargetTypeAnnotations) {
@@ -162,11 +162,13 @@ public final class AnnotatedTypeFactory {
         @Override
         @SuppressWarnings("unchecked")
         public final <T extends Annotation> T getDeclaredAnnotation(Class<T> annotation) {
+            Objects.requireNonNull(annotation);
             return (T)annotations.get(annotation);
         }
 
         @Override
         public final <T extends Annotation> T[] getDeclaredAnnotationsByType(Class<T> annotation) {
+            Objects.requireNonNull(annotation);
             return AnnotationSupport.getDirectlyAndIndirectlyPresent(annotations, annotation);
         }
 

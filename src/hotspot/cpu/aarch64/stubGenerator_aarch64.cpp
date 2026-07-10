@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,7 +42,7 @@
 #include "prims/methodHandles.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -78,6 +78,172 @@
 #endif
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
+
+// Constant data definitions
+
+static const uint32_t _sha256_round_consts[64] = {
+  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
+  0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+  0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
+  0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+  0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+  0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
+  0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
+  0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+  0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+};
+
+static const uint64_t _sha512_round_consts[80] = {
+  0x428A2F98D728AE22L, 0x7137449123EF65CDL, 0xB5C0FBCFEC4D3B2FL,
+  0xE9B5DBA58189DBBCL, 0x3956C25BF348B538L, 0x59F111F1B605D019L,
+  0x923F82A4AF194F9BL, 0xAB1C5ED5DA6D8118L, 0xD807AA98A3030242L,
+  0x12835B0145706FBEL, 0x243185BE4EE4B28CL, 0x550C7DC3D5FFB4E2L,
+  0x72BE5D74F27B896FL, 0x80DEB1FE3B1696B1L, 0x9BDC06A725C71235L,
+  0xC19BF174CF692694L, 0xE49B69C19EF14AD2L, 0xEFBE4786384F25E3L,
+  0x0FC19DC68B8CD5B5L, 0x240CA1CC77AC9C65L, 0x2DE92C6F592B0275L,
+  0x4A7484AA6EA6E483L, 0x5CB0A9DCBD41FBD4L, 0x76F988DA831153B5L,
+  0x983E5152EE66DFABL, 0xA831C66D2DB43210L, 0xB00327C898FB213FL,
+  0xBF597FC7BEEF0EE4L, 0xC6E00BF33DA88FC2L, 0xD5A79147930AA725L,
+  0x06CA6351E003826FL, 0x142929670A0E6E70L, 0x27B70A8546D22FFCL,
+  0x2E1B21385C26C926L, 0x4D2C6DFC5AC42AEDL, 0x53380D139D95B3DFL,
+  0x650A73548BAF63DEL, 0x766A0ABB3C77B2A8L, 0x81C2C92E47EDAEE6L,
+  0x92722C851482353BL, 0xA2BFE8A14CF10364L, 0xA81A664BBC423001L,
+  0xC24B8B70D0F89791L, 0xC76C51A30654BE30L, 0xD192E819D6EF5218L,
+  0xD69906245565A910L, 0xF40E35855771202AL, 0x106AA07032BBD1B8L,
+  0x19A4C116B8D2D0C8L, 0x1E376C085141AB53L, 0x2748774CDF8EEB99L,
+  0x34B0BCB5E19B48A8L, 0x391C0CB3C5C95A63L, 0x4ED8AA4AE3418ACBL,
+  0x5B9CCA4F7763E373L, 0x682E6FF3D6B2B8A3L, 0x748F82EE5DEFB2FCL,
+  0x78A5636F43172F60L, 0x84C87814A1F0AB72L, 0x8CC702081A6439ECL,
+  0x90BEFFFA23631E28L, 0xA4506CEBDE82BDE9L, 0xBEF9A3F7B2C67915L,
+  0xC67178F2E372532BL, 0xCA273ECEEA26619CL, 0xD186B8C721C0C207L,
+  0xEADA7DD6CDE0EB1EL, 0xF57D4F7FEE6ED178L, 0x06F067AA72176FBAL,
+  0x0A637DC5A2C898A6L, 0x113F9804BEF90DAEL, 0x1B710B35131C471BL,
+  0x28DB77F523047D84L, 0x32CAAB7B40C72493L, 0x3C9EBE0A15C9BEBCL,
+  0x431D67C49C100D4CL, 0x4CC5D4BECB3E42B6L, 0x597F299CFC657E2AL,
+  0x5FCB6FAB3AD6FAECL, 0x6C44198C4A475817L
+};
+
+static const uint64_t _sha3_round_consts[24] = {
+  0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
+  0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
+  0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
+  0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
+  0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
+  0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
+  0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
+  0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
+};
+
+static const uint64_t _double_keccak_round_consts[24] = {
+  0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
+  0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
+  0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
+  0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
+  0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
+  0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
+  0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
+  0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
+};
+
+//Omit 3rd limb of modulus since it is 0
+static const int64_t _modulus_P256[5] = {
+  0x000fffffffffffffL, 0x00000fffffffffffL,
+  0x0000001000000000L, 0x0000ffffffff0000L
+};
+
+static const char _encodeBlock_toBase64[64] = {
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+  'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+};
+
+static const char _encodeBlock_toBase64URL[64] = {
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+  'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
+};
+
+// Non-SIMD lookup tables are mostly dumped from fromBase64 array used in java.util.Base64,
+// except the trailing character '=' is also treated illegal value in this intrinsic. That
+// is java.util.Base64.fromBase64['='] = -2, while fromBase(URL)64ForNoSIMD['='] = 255 here.
+static const uint8_t _decodeBlock_fromBase64ForNoSIMD[256] = {
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u, 255u,  63u,
+  52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
+  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u, 255u,
+  255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
+  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+};
+
+static const uint8_t _decodeBlock_fromBase64URLForNoSIMD[256] = {
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u,
+  52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
+  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,  63u,
+  255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
+  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+};
+
+// A legal value of base64 code is in range [0, 127].  We need two lookups
+// with tbl/tbx and combine them to get the decode data. The 1st table vector
+// lookup use tbl, out of range indices are set to 0 in destination. The 2nd
+// table vector lookup use tbx, out of range indices are unchanged in
+// destination. Input [64..126] is mapped to index [65, 127] in second lookup.
+// The value of index 64 is set to 0, so that we know that we already get the
+// decoded data with the 1st lookup.
+static const uint8_t _decodeBlock_fromBase64ForSIMD[128] = {
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u, 255u,  63u,
+  52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+  0u, 255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,
+  14u,  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,
+  255u, 255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,
+  40u,  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u,
+};
+
+static const uint8_t _decodeBlock_fromBase64URLForSIMD[128] = {
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+  255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u,
+  52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+  0u, 255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,
+  14u,  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,
+  63u, 255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,
+  40u,  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u,
+};
+
 
 // Stub Code definitions
 
@@ -202,9 +368,18 @@ class StubGenerator: public StubCodeGenerator {
            (int)frame::entry_frame_call_wrapper_offset == (int)call_wrapper_off,
            "adjust this code");
 
-    StubGenStubId stub_id = StubGenStubId::call_stub_id;
+    StubId stub_id = StubId::stubgen_call_stub_id;
+    GrowableArray<address> entries;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 2, "sanity check");
+    address start = load_archive_data(stub_id, &entries);
+    if (start != nullptr) {
+      assert(entries.length() == 1, "expected 1 extra entry");
+      return_address = entries.at(0);
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     const Address sp_after_call (rfp, sp_after_call_off * wordSize);
 
@@ -323,6 +498,7 @@ class StubGenerator: public StubCodeGenerator {
     // save current address for use by exception handling code
 
     return_address = __ pc();
+    entries.append(return_address);
 
     // store result depending on type (everything that is not
     // T_OBJECT, T_LONG, T_FLOAT or T_DOUBLE is treated as T_INT)
@@ -406,6 +582,9 @@ class StubGenerator: public StubCodeGenerator {
     __ strd(j_farg0, Address(j_rarg2, 0));
     __ br(Assembler::AL, exit);
 
+    // record the stub entry and end plus the auxiliary entry
+    store_archive_data(stub_id, start, __ pc(), &entries);
+
     return start;
   }
 
@@ -422,9 +601,15 @@ class StubGenerator: public StubCodeGenerator {
   // r0: exception oop
 
   address generate_catch_exception() {
-    StubGenStubId stub_id = StubGenStubId::catch_exception_id;
+    StubId stub_id = StubId::stubgen_catch_exception_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     // same as in generate_call_stub():
     const Address sp_after_call(rfp, sp_after_call_off * wordSize);
@@ -450,7 +635,9 @@ class StubGenerator: public StubCodeGenerator {
     __ verify_oop(r0);
 
     __ str(r0, Address(rthread, Thread::pending_exception_offset()));
-    __ mov(rscratch1, (address)__FILE__);
+    // special case -- add file name string to AOT address table
+    address file = (address)AOTCodeCache::add_C_string(__FILE__);
+    __ lea(rscratch1, ExternalAddress(file));
     __ str(rscratch1, Address(rthread, Thread::exception_file_offset()));
     __ movw(rscratch1, (int)__LINE__);
     __ strw(rscratch1, Address(rthread, Thread::exception_line_offset()));
@@ -458,7 +645,10 @@ class StubGenerator: public StubCodeGenerator {
     // complete return to VM
     assert(StubRoutines::_call_stub_return_address != nullptr,
            "_call_stub_return_address must have been generated before");
-    __ b(StubRoutines::_call_stub_return_address);
+    __ b(RuntimeAddress(StubRoutines::_call_stub_return_address));
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -478,9 +668,15 @@ class StubGenerator: public StubCodeGenerator {
   // so it just needs to be generated code with no x86 prolog
 
   address generate_forward_exception() {
-    StubGenStubId stub_id = StubGenStubId::forward_exception_id;
+    StubId stub_id = StubId::stubgen_forward_exception_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     // Upon entry, LR points to the return address returning into
     // Java (interpreted or compiled) code; i.e., the return address
@@ -551,6 +747,9 @@ class StubGenerator: public StubCodeGenerator {
     __ verify_oop(r0);
     __ br(r19);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -568,9 +767,15 @@ class StubGenerator: public StubCodeGenerator {
   //    [tos + 4]: saved r0
   //    [tos + 5]: saved rscratch1
   address generate_verify_oop() {
-    StubGenStubId stub_id = StubGenStubId::verify_oop_id;
+    StubId stub_id = StubId::stubgen_verify_oop_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Label exit, error;
 
@@ -613,33 +818,64 @@ class StubGenerator: public StubCodeGenerator {
     __ blr(rscratch1);
     __ hlt(0);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   // Generate indices for iota vector.
-  address generate_iota_indices(StubGenStubId stub_id) {
+  void generate_iota_indices(StubId stub_id) {
+    GrowableArray<address> entries;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == VECTOR_IOTA_COUNT, "sanity check");
+    address start = load_archive_data(stub_id, &entries);
+    if (start != nullptr) {
+      assert(entries.length() == entry_count - 1,
+             "unexpected entries count %d", entries.length());
+      StubRoutines::aarch64::_vector_iota_indices[0] = start;
+      for (int i = 1; i < VECTOR_IOTA_COUNT; i++) {
+        StubRoutines::aarch64::_vector_iota_indices[i] = entries.at(i - 1);
+      }
+      return;
+    }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     // B
     __ emit_data64(0x0706050403020100, relocInfo::none);
     __ emit_data64(0x0F0E0D0C0B0A0908, relocInfo::none);
+    entries.append(__ pc());
     // H
     __ emit_data64(0x0003000200010000, relocInfo::none);
     __ emit_data64(0x0007000600050004, relocInfo::none);
+    entries.append(__ pc());
     // S
     __ emit_data64(0x0000000100000000, relocInfo::none);
     __ emit_data64(0x0000000300000002, relocInfo::none);
+    entries.append(__ pc());
     // D
     __ emit_data64(0x0000000000000000, relocInfo::none);
     __ emit_data64(0x0000000000000001, relocInfo::none);
+    entries.append(__ pc());
     // S - FP
     __ emit_data64(0x3F80000000000000, relocInfo::none); // 0.0f, 1.0f
     __ emit_data64(0x4040000040000000, relocInfo::none); // 2.0f, 3.0f
+    entries.append(__ pc());
     // D - FP
     __ emit_data64(0x0000000000000000, relocInfo::none); // 0.0d
     __ emit_data64(0x3FF0000000000000, relocInfo::none); // 1.0d
-    return start;
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc(), &entries);
+
+    // install the entry addresses in the entry array
+    assert(entries.length() == entry_count - 1,
+           "unexpected entries count %d", entries.length());
+    StubRoutines::aarch64::_vector_iota_indices[0] = start;
+    for (int i = 1; i < VECTOR_IOTA_COUNT; i++) {
+      StubRoutines::aarch64::_vector_iota_indices[i] = entries.at(i - 1);
+    }
   }
 
   // The inner part of zero_words().  This is the bulk operation,
@@ -656,15 +892,21 @@ class StubGenerator: public StubCodeGenerator {
   //      r11 < MacroAssembler::zero_words_block_size.
 
   address generate_zero_blocks() {
+    StubId stub_id = StubId::stubgen_zero_blocks_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
     Label done;
     Label base_aligned;
 
     Register base = r10, cnt = r11;
 
-    __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::zero_blocks_id;
-    StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     if (UseBlockZeroing) {
       int zva_length = VM_Version::zva_length();
@@ -706,6 +948,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -802,32 +1047,38 @@ class StubGenerator: public StubCodeGenerator {
   //
   // s and d are adjusted to point to the remaining words to copy
   //
-  void generate_copy_longs(StubGenStubId stub_id, DecoratorSet decorators, Label &start, Register s, Register d, Register count) {
+  address generate_copy_longs(StubId stub_id, DecoratorSet decorators, Register s, Register d, Register count) {
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     BasicType type;
     copy_direction direction;
 
     switch (stub_id) {
-    case copy_byte_f_id:
+    case StubId::stubgen_copy_byte_f_id:
       direction = copy_forwards;
       type = T_BYTE;
       break;
-    case copy_byte_b_id:
+    case StubId::stubgen_copy_byte_b_id:
       direction = copy_backwards;
       type = T_BYTE;
       break;
-    case copy_oop_f_id:
+    case StubId::stubgen_copy_oop_f_id:
       direction = copy_forwards;
       type = T_OBJECT;
       break;
-    case copy_oop_b_id:
+    case StubId::stubgen_copy_oop_b_id:
       direction = copy_backwards;
       type = T_OBJECT;
       break;
-    case copy_oop_uninit_f_id:
+    case StubId::stubgen_copy_oop_uninit_f_id:
       direction = copy_forwards;
       type = T_OBJECT;
       break;
-    case copy_oop_uninit_b_id:
+    case StubId::stubgen_copy_oop_uninit_b_id:
       direction = copy_backwards;
       type = T_OBJECT;
       break;
@@ -854,7 +1105,7 @@ class StubGenerator: public StubCodeGenerator {
 
     StubCodeMark mark(this, stub_id);
 
-    __ bind(start);
+    start = __ pc();
 
     Label unaligned_copy_long;
     if (AvoidUnalignedAccesses) {
@@ -894,9 +1145,9 @@ class StubGenerator: public StubCodeGenerator {
     int prefetch = PrefetchCopyIntervalInBytes;
     bool use_stride = false;
     if (direction == copy_backwards) {
-       use_stride = prefetch > 256;
-       prefetch = -prefetch;
-       if (use_stride) __ mov(stride, prefetch);
+      use_stride = prefetch > 256;
+      prefetch = -prefetch;
+      if (use_stride) __ mov(stride, prefetch);
     }
 
     __ bind(again);
@@ -1026,9 +1277,9 @@ class StubGenerator: public StubCodeGenerator {
       int prefetch = PrefetchCopyIntervalInBytes;
       bool use_stride = false;
       if (direction == copy_backwards) {
-         use_stride = prefetch > 256;
-         prefetch = -prefetch;
-         if (use_stride) __ mov(stride, prefetch);
+        use_stride = prefetch > 256;
+        prefetch = -prefetch;
+        if (use_stride) __ mov(stride, prefetch);
       }
 
       __ bind(again);
@@ -1037,15 +1288,15 @@ class StubGenerator: public StubCodeGenerator {
         __ prfm(use_stride ? Address(s, stride) : Address(s, prefetch), PLDL1KEEP);
 
       if (direction == copy_forwards) {
-       // allowing for the offset of -8 the store instructions place
-       // registers into the target 64 bit block at the following
-       // offsets
-       //
-       // t0 at offset 0
-       // t1 at offset 8,  t2 at offset 16
-       // t3 at offset 24, t4 at offset 32
-       // t5 at offset 40, t6 at offset 48
-       // t7 at offset 56
+        // allowing for the offset of -8 the store instructions place
+        // registers into the target 64 bit block at the following
+        // offsets
+        //
+        // t0 at offset 0
+        // t1 at offset 8,  t2 at offset 16
+        // t3 at offset 24, t4 at offset 32
+        // t5 at offset 40, t6 at offset 48
+        // t7 at offset 56
 
         bs.copy_store_at_8(Address(d, 1 * unit), t0);
         bs.copy_store_at_16(Address(d, 2 * unit), t1, t2);
@@ -1057,18 +1308,18 @@ class StubGenerator: public StubCodeGenerator {
         bs.copy_store_at_8(Address(__ pre(d, 8 * unit)), t7);
         bs.copy_load_at_16(t6, t7, Address(__ pre(s, 8 * unit)));
       } else {
-       // d was not offset when we started so the registers are
-       // written into the 64 bit block preceding d with the following
-       // offsets
-       //
-       // t1 at offset -8
-       // t3 at offset -24, t0 at offset -16
-       // t5 at offset -48, t2 at offset -32
-       // t7 at offset -56, t4 at offset -48
-       //                   t6 at offset -64
-       //
-       // note that this matches the offsets previously noted for the
-       // loads
+        // d was not offset when we started so the registers are
+        // written into the 64 bit block preceding d with the following
+        // offsets
+        //
+        // t1 at offset -8
+        // t3 at offset -24, t0 at offset -16
+        // t5 at offset -48, t2 at offset -32
+        // t7 at offset -56, t4 at offset -48
+        //                   t6 at offset -64
+        //
+        // note that this matches the offsets previously noted for the
+        // loads
 
         bs.copy_store_at_8(Address(d, 1 * unit), t1);
         bs.copy_store_at_16(Address(d, 3 * unit), t3, t0);
@@ -1109,10 +1360,10 @@ class StubGenerator: public StubCodeGenerator {
       {
         Label L1, L2;
         __ tbz(count, exact_log2(4), L1);
-       // this is the same as above but copying only 4 longs hence
-       // with only one intervening stp between the str instructions
-       // but note that the offsets and registers still follow the
-       // same pattern
+        // this is the same as above but copying only 4 longs hence
+        // with only one intervening stp between the str instructions
+        // but note that the offsets and registers still follow the
+        // same pattern
         bs.copy_load_at_16(t0, t1, Address(s, 2 * unit));
         bs.copy_load_at_16(t2, t3, Address(__ pre(s, 4 * unit)));
         if (direction == copy_forwards) {
@@ -1127,10 +1378,10 @@ class StubGenerator: public StubCodeGenerator {
         __ bind(L1);
 
         __ tbz(count, 1, L2);
-       // this is the same as above but copying only 2 longs hence
-       // there is no intervening stp between the str instructions
-       // but note that the offset and register patterns are still
-       // the same
+        // this is the same as above but copying only 2 longs hence
+        // there is no intervening stp between the str instructions
+        // but note that the offset and register patterns are still
+        // the same
         bs.copy_load_at_16(t0, t1, Address(__ pre(s, 2 * unit)));
         if (direction == copy_forwards) {
           bs.copy_store_at_8(Address(d, 1 * unit), t0);
@@ -1141,18 +1392,23 @@ class StubGenerator: public StubCodeGenerator {
         }
         __ bind(L2);
 
-       // for forwards copy we need to re-adjust the offsets we
-       // applied so that s and d are follow the last words written
+        // for forwards copy we need to re-adjust the offsets we
+        // applied so that s and d are follow the last words written
 
-       if (direction == copy_forwards) {
-         __ add(s, s, 16);
-         __ add(d, d, 8);
-       }
+        if (direction == copy_forwards) {
+          __ add(s, s, 16);
+          __ add(d, d, 8);
+        }
 
       }
 
       __ ret(lr);
-      }
+    }
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
   }
 
   // Small copy: less than 16 bytes.
@@ -1205,10 +1461,6 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(Lbyte);
     }
   }
-
-  Label copy_f, copy_b;
-  Label copy_obj_f, copy_obj_b;
-  Label copy_obj_uninit_f, copy_obj_uninit_b;
 
   // All-singing all-dancing memory copy.
   //
@@ -1447,19 +1699,25 @@ class StubGenerator: public StubCodeGenerator {
     }
     if (direction == copy_forwards) {
       if (type != T_OBJECT) {
-        __ bl(copy_f);
+        __ lea(rscratch1, RuntimeAddress(StubRoutines::aarch64::copy_byte_f()));
+        __ blr(rscratch1);
       } else if ((decorators & IS_DEST_UNINITIALIZED) != 0) {
-        __ bl(copy_obj_uninit_f);
+        __ lea(rscratch1, RuntimeAddress(StubRoutines::aarch64::copy_oop_uninit_f()));
+        __ blr(rscratch1);
       } else {
-        __ bl(copy_obj_f);
+        __ lea(rscratch1, RuntimeAddress(StubRoutines::aarch64::copy_oop_f()));
+        __ blr(rscratch1);
       }
     } else {
       if (type != T_OBJECT) {
-        __ bl(copy_b);
+        __ lea(rscratch1, RuntimeAddress(StubRoutines::aarch64::copy_byte_b()));
+        __ blr(rscratch1);
       } else if ((decorators & IS_DEST_UNINITIALIZED) != 0) {
-        __ bl(copy_obj_uninit_b);
+        __ lea(rscratch1, RuntimeAddress(StubRoutines::aarch64::copy_oop_uninit_b()));
+        __ blr(rscratch1);
       } else {
-        __ bl(copy_obj_b);
+        __ lea(rscratch1, RuntimeAddress(StubRoutines::aarch64::copy_oop_b()));
+        __ blr(rscratch1);
       }
     }
 
@@ -1510,8 +1768,8 @@ class StubGenerator: public StubCodeGenerator {
   //   stub_id - is used to name the stub and identify all details of
   //             how to perform the copy.
   //
-  //   entry - is assigned to the stub's post push entry point unless
-  //           it is null
+  //   nopush_entry - is assigned to the stub's post push entry point
+  //                  unless it is null
   //
   // Inputs:
   //   c_rarg0   - source array address
@@ -1522,84 +1780,82 @@ class StubGenerator: public StubCodeGenerator {
   // the hardware handle it.  The two dwords within qwords that span
   // cache line boundaries will still be loaded and stored atomically.
   //
-  // Side Effects: entry is set to the (post push) entry point so it
-  //               can be used by the corresponding conjoint copy
-  //               method
+  // Side Effects: nopush_entry is set to the (post push) entry point
+  //               so it can be used by the corresponding conjoint
+  //               copy method
   //
-  address generate_disjoint_copy(StubGenStubId stub_id, address *entry) {
-    Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
-    RegSet saved_reg = RegSet::of(s, d, count);
+  address generate_disjoint_copy(StubId stub_id, address *nopush_entry) {
     int size;
     bool aligned;
     bool is_oop;
     bool dest_uninitialized;
     switch (stub_id) {
-    case jbyte_disjoint_arraycopy_id:
+    case StubId::stubgen_jbyte_disjoint_arraycopy_id:
       size = sizeof(jbyte);
       aligned = false;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case arrayof_jbyte_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_jbyte_disjoint_arraycopy_id:
       size = sizeof(jbyte);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case jshort_disjoint_arraycopy_id:
+    case StubId::stubgen_jshort_disjoint_arraycopy_id:
       size = sizeof(jshort);
       aligned = false;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case arrayof_jshort_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_jshort_disjoint_arraycopy_id:
       size = sizeof(jshort);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case jint_disjoint_arraycopy_id:
+    case StubId::stubgen_jint_disjoint_arraycopy_id:
       size = sizeof(jint);
       aligned = false;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case arrayof_jint_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_jint_disjoint_arraycopy_id:
       size = sizeof(jint);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case jlong_disjoint_arraycopy_id:
+    case StubId::stubgen_jlong_disjoint_arraycopy_id:
       // since this is always aligned we can (should!) use the same
-      // stub as for case arrayof_jlong_disjoint_arraycopy
+      // stub as for case StubId::stubgen_arrayof_jlong_disjoint_arraycopy
       ShouldNotReachHere();
       break;
-    case arrayof_jlong_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_jlong_disjoint_arraycopy_id:
       size = sizeof(jlong);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case oop_disjoint_arraycopy_id:
+    case StubId::stubgen_oop_disjoint_arraycopy_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
       dest_uninitialized = false;
       break;
-    case arrayof_oop_disjoint_arraycopy_id:
+    case StubId::stubgen_arrayof_oop_disjoint_arraycopy_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
       dest_uninitialized = false;
       break;
-    case oop_disjoint_arraycopy_uninit_id:
+    case StubId::stubgen_oop_disjoint_arraycopy_uninit_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
       dest_uninitialized = true;
       break;
-    case arrayof_oop_disjoint_arraycopy_uninit_id:
+    case StubId::stubgen_arrayof_oop_disjoint_arraycopy_uninit_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
@@ -1609,17 +1865,45 @@ class StubGenerator: public StubCodeGenerator {
       ShouldNotReachHere();
       break;
     }
+    // all stubs provide a 2nd entry which omits the frame push for
+    // use when bailing out from a conjoint copy. However we may also
+    // need some extra addressses for memory access protection.
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 2, "sanity check");
+    assert(nopush_entry != nullptr, "all disjoint copy stubs export a nopush entry");
+
+    bool add_extras = !is_oop && (!aligned || sizeof(jlong) == size);
+    int extra_count = ((add_extras ? 1 : 0) * UnsafeMemoryAccess::COLUMN_COUNT);
+    GrowableArray<address> entries;
+    GrowableArray<address> extras;
+    GrowableArray<address> *extras_ptr = (extra_count > 0 ? &extras : nullptr);
+    address start = load_archive_data(stub_id, &entries, extras_ptr);
+    if (start != nullptr) {
+      assert(entries.length() == entry_count - 1,
+             "unexpected entries count %d", entries.length());
+      *nopush_entry = entries.at(0);
+      assert(extras.length() == extra_count,
+             "unexpected extra count %d", extras.length());
+      if (add_extras) {
+        // register one handler at offset 0
+        register_unsafe_access_handlers(extras, 0, 1);
+      }
+      return start;
+    }
+
+    Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
+    RegSet saved_reg = RegSet::of(s, d, count);
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
-    if (entry != nullptr) {
-      *entry = __ pc();
-      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
-      BLOCK_COMMENT("Entry:");
-    }
+    *nopush_entry = __ pc();
+    entries.append(*nopush_entry);
+
+    // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+    BLOCK_COMMENT("Post-Push Entry:");
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_DISJOINT;
     if (dest_uninitialized) {
@@ -1638,8 +1922,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     {
       // UnsafeMemoryAccess page error: continue after unsafe access
-      bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeMemoryAccessMark umam(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_extras, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, size);
     }
 
@@ -1649,11 +1932,25 @@ class StubGenerator: public StubCodeGenerator {
         verify_oop_array(size, d, count, r16);
     }
 
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1, RegSet());
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1);
 
     __ leave();
     __ mov(r0, zr); // return 0
     __ ret(lr);
+
+    address end = __ pc();
+
+    if (add_extras) {
+      // retrieve the registered handler addresses
+      retrieve_unsafe_access_handlers(start, end, extras);
+      assert(extras.length() == extra_count
+             , "incorrect handlers count %d", extras.length());
+    }
+
+    // record the stub entry and end plus the no_push entry and any
+    // extra handler addresses
+    store_archive_data(stub_id, start, end, &entries, extras_ptr);
+
     return start;
   }
 
@@ -1665,8 +1962,8 @@ class StubGenerator: public StubCodeGenerator {
   //             corresponding disjoint copy routine which can be
   //             jumped to if the ranges do not actually overlap
   //
-  //   entry - is assigned to the stub's post push entry point unless
-  //           it is null
+  //   nopush_entry - is assigned to the stub's post push entry point
+  //                  unless it is null
   //
   //
   // Inputs:
@@ -1679,83 +1976,81 @@ class StubGenerator: public StubCodeGenerator {
   // cache line boundaries will still be loaded and stored atomically.
   //
   // Side Effects:
-  //   entry is set to the no-overlap entry point so it can be used by
-  //   some other conjoint copy method
+  //   nopush_entry is set to the no-overlap entry point so it can be
+  //   used by some other conjoint copy method
   //
-  address generate_conjoint_copy(StubGenStubId stub_id, address nooverlap_target, address *entry) {
-    Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
-    RegSet saved_regs = RegSet::of(s, d, count);
+  address generate_conjoint_copy(StubId stub_id, address nooverlap_target, address *nopush_entry) {
     int size;
     bool aligned;
     bool is_oop;
     bool dest_uninitialized;
     switch (stub_id) {
-    case jbyte_arraycopy_id:
+    case StubId::stubgen_jbyte_arraycopy_id:
       size = sizeof(jbyte);
       aligned = false;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case arrayof_jbyte_arraycopy_id:
+    case StubId::stubgen_arrayof_jbyte_arraycopy_id:
       size = sizeof(jbyte);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case jshort_arraycopy_id:
+    case StubId::stubgen_jshort_arraycopy_id:
       size = sizeof(jshort);
       aligned = false;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case arrayof_jshort_arraycopy_id:
+    case StubId::stubgen_arrayof_jshort_arraycopy_id:
       size = sizeof(jshort);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case jint_arraycopy_id:
+    case StubId::stubgen_jint_arraycopy_id:
       size = sizeof(jint);
       aligned = false;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case arrayof_jint_arraycopy_id:
+    case StubId::stubgen_arrayof_jint_arraycopy_id:
       size = sizeof(jint);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case jlong_arraycopy_id:
+    case StubId::stubgen_jlong_arraycopy_id:
       // since this is always aligned we can (should!) use the same
-      // stub as for case arrayof_jlong_disjoint_arraycopy
+      // stub as for case StubId::stubgen_arrayof_jlong_disjoint_arraycopy
       ShouldNotReachHere();
       break;
-    case arrayof_jlong_arraycopy_id:
+    case StubId::stubgen_arrayof_jlong_arraycopy_id:
       size = sizeof(jlong);
       aligned = true;
       is_oop = false;
       dest_uninitialized = false;
       break;
-    case oop_arraycopy_id:
+    case StubId::stubgen_oop_arraycopy_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
       dest_uninitialized = false;
       break;
-    case arrayof_oop_arraycopy_id:
+    case StubId::stubgen_arrayof_oop_arraycopy_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
       dest_uninitialized = false;
       break;
-    case oop_arraycopy_uninit_id:
+    case StubId::stubgen_oop_arraycopy_uninit_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
       dest_uninitialized = true;
       break;
-    case arrayof_oop_arraycopy_uninit_id:
+    case StubId::stubgen_arrayof_oop_arraycopy_uninit_id:
       size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
       aligned = !UseCompressedOops;
       is_oop = true;
@@ -1764,21 +2059,56 @@ class StubGenerator: public StubCodeGenerator {
     default:
       ShouldNotReachHere();
     }
+    // only some conjoint stubs generate a 2nd entry
+    int entry_count = StubInfo::entry_count(stub_id);
+    int expected_entry_count = (nopush_entry == nullptr ? 1 : 2);
+    assert(entry_count == expected_entry_count,
+           "expected entry count %d does not match declared entry count %d for stub %s",
+           expected_entry_count, entry_count, StubInfo::name(stub_id));
 
+    // We need to protect memory accesses in certain cases
+    bool add_extras = !is_oop && (!aligned || sizeof(jlong) == size);
+    int extra_count = ((add_extras ? 1 : 0) * UnsafeMemoryAccess::COLUMN_COUNT);
+    GrowableArray<address> entries;
+    GrowableArray<address> extras;
+    GrowableArray<address> *entries_ptr = (nopush_entry != nullptr ? &entries : nullptr);
+    GrowableArray<address> *extras_ptr = (extra_count > 0 ? &extras : nullptr);
+    address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
+    if (start != nullptr) {
+      assert(entries.length() == expected_entry_count - 1,
+             "unexpected entries count %d", entries.length());
+      assert(extras.length() == extra_count,
+             "unexpected extra count %d", extras.length());
+      if (nopush_entry != nullptr) {
+        *nopush_entry = entries.at(0);
+      }
+      if (add_extras) {
+        // register one handler at offset 0
+        register_unsafe_access_handlers(extras, 0, 1);
+      }
+      return start;
+    }
+
+    Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
+    RegSet saved_regs = RegSet::of(s, d, count);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
-    if (entry != nullptr) {
-      *entry = __ pc();
+    if (nopush_entry != nullptr) {
+      *nopush_entry = __ pc();
+      entries.append(*nopush_entry);
       // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
-      BLOCK_COMMENT("Entry:");
+      BLOCK_COMMENT("Post-Push Entry:");
     }
 
     // use fwd copy when (d-s) above_equal (count*size)
+    Label L_overlapping;
     __ sub(rscratch1, d, s);
     __ cmp(rscratch1, count, Assembler::LSL, exact_log2(size));
-    __ br(Assembler::HS, nooverlap_target);
+    __ br(Assembler::LO, L_overlapping);
+    __ b(RuntimeAddress(nooverlap_target));
+    __ bind(L_overlapping);
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY;
     if (dest_uninitialized) {
@@ -1797,8 +2127,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     {
       // UnsafeMemoryAccess page error: continue after unsafe access
-      bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeMemoryAccessMark umam(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_extras, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, -size);
     }
     if (is_oop) {
@@ -1806,10 +2135,27 @@ class StubGenerator: public StubCodeGenerator {
       if (VerifyOops)
         verify_oop_array(size, d, count, r16);
     }
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1, RegSet());
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1);
     __ leave();
     __ mov(r0, zr); // return 0
     __ ret(lr);
+
+    assert(entries.length() == expected_entry_count - 1,
+           "unexpected entries count %d", entries.length());
+
+    address end = __ pc();
+
+    if (add_extras) {
+      // retrieve the registered handler addresses
+      retrieve_unsafe_access_handlers(start, end, extras);
+      assert(extras.length() == extra_count,
+             "incorrect handlers count %d", extras.length());
+    }
+
+    // record the stub entry and end plus any no_push entry and/or
+    // extra handler addresses
+    store_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
+
     return start;
   }
 
@@ -1850,17 +2196,38 @@ class StubGenerator: public StubCodeGenerator {
   //    r0 ==  0  -  success
   //    r0 == -1^K - failure, where K is partial transfer count
   //
-  address generate_checkcast_copy(StubGenStubId stub_id, address *entry) {
+  address generate_checkcast_copy(StubId stub_id, address *nopush_entry) {
     bool dest_uninitialized;
     switch (stub_id) {
-    case checkcast_arraycopy_id:
+    case StubId::stubgen_checkcast_arraycopy_id:
       dest_uninitialized = false;
       break;
-    case checkcast_arraycopy_uninit_id:
+    case StubId::stubgen_checkcast_arraycopy_uninit_id:
       dest_uninitialized = true;
       break;
     default:
       ShouldNotReachHere();
+    }
+
+    // The normal stub provides a 2nd entry which omits the frame push
+    // for use when bailing out from a disjoint copy.
+    // Only some conjoint stubs generate a 2nd entry
+    int entry_count = StubInfo::entry_count(stub_id);
+    int expected_entry_count = (nopush_entry == nullptr ? 1 : 2);
+    GrowableArray<address> entries;
+    GrowableArray<address> *entries_ptr = (expected_entry_count == 1 ? nullptr : &entries);
+    assert(entry_count == expected_entry_count,
+           "expected entry count %d does not match declared entry count %d for stub %s",
+           expected_entry_count, entry_count, StubInfo::name(stub_id));
+    address start = load_archive_data(stub_id, entries_ptr);
+    if (start != nullptr) {
+      assert(entries.length() + 1 == expected_entry_count,
+             "expected entry count %d does not match return entry count %d for stub %s",
+             expected_entry_count, entries.length() + 1, StubInfo::name(stub_id));
+      if (nopush_entry != nullptr) {
+        *nopush_entry = entries.at(0);
+      }
+      return start;
     }
 
     Label L_load_element, L_store_element, L_do_card_marks, L_done, L_done_pop;
@@ -1873,7 +2240,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register ckval       = c_rarg4;   // super_klass
 
     RegSet wb_pre_saved_regs = RegSet::range(c_rarg0, c_rarg4);
-    RegSet wb_post_saved_regs = RegSet::of(count);
 
     // Registers used as temps (r19, r20, r21, r22 are save-on-entry)
     const Register copied_oop  = r22;       // actual oop copied
@@ -1896,7 +2262,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -1911,8 +2277,9 @@ class StubGenerator: public StubCodeGenerator {
 #endif //ASSERT
 
     // Caller of this entry point must set up the argument registers.
-    if (entry != nullptr) {
-      *entry = __ pc();
+    if (nopush_entry != nullptr) {
+      *nopush_entry = __ pc();
+      entries.append(*nopush_entry);
       BLOCK_COMMENT("Entry:");
     }
 
@@ -1999,7 +2366,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::EQ, L_done_pop);
 
     __ BIND(L_do_card_marks);
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, count_save, rscratch1, wb_post_saved_regs);
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, count_save, rscratch1);
 
     __ bind(L_done_pop);
     __ pop(RegSet::of(r19, r20, r21, r22), sp);
@@ -2010,6 +2377,8 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret(lr);
 
+    // record the stub entry and end plus any no_push entry
+    store_archive_data(stub_id, start, __ pc() , entries_ptr);
     return start;
   }
 
@@ -2071,14 +2440,19 @@ class StubGenerator: public StubCodeGenerator {
                                address short_copy_entry,
                                address int_copy_entry,
                                address long_copy_entry) {
-    StubGenStubId stub_id = StubGenStubId::unsafe_arraycopy_id;
-
+    StubId stub_id = StubId::stubgen_unsafe_arraycopy_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     Label L_long_aligned, L_int_aligned, L_short_aligned;
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
     // bump this on entry, not on exit:
@@ -2104,6 +2478,9 @@ class StubGenerator: public StubCodeGenerator {
     __ lsr(count, count, LogBytesPerLong);   // size => long_count
     __ b(RuntimeAddress(long_copy_entry));
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -2124,8 +2501,13 @@ class StubGenerator: public StubCodeGenerator {
   address generate_generic_copy(address byte_copy_entry, address short_copy_entry,
                                 address int_copy_entry, address oop_copy_entry,
                                 address long_copy_entry, address checkcast_copy_entry) {
-    StubGenStubId stub_id = StubGenStubId::generic_arraycopy_id;
-
+    StubId stub_id = StubId::stubgen_generic_arraycopy_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     Label L_failed, L_objArray;
     Label L_copy_bytes, L_copy_shorts, L_copy_ints, L_copy_longs;
 
@@ -2144,7 +2526,7 @@ class StubGenerator: public StubCodeGenerator {
 
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
+    start = __ pc();
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -2186,7 +2568,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(scratch_length, length);        // length (elements count, 32-bits value)
     __ tbnz(scratch_length, 31, L_failed);  // i.e. sign bit set
 
-    __ load_klass(scratch_src_klass, src);
+    __ load_narrow_klass(scratch_src_klass, src);
 #ifdef ASSERT
     //  assert(src->klass() != nullptr);
     {
@@ -2196,11 +2578,12 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
-      __ load_klass(rscratch1, dst);
+      __ load_narrow_klass(rscratch1, dst);
       __ cbz(rscratch1, L1);     // this would be broken also
       BLOCK_COMMENT("} assert klasses not null done");
     }
 #endif
+    __ decode_klass_not_null(scratch_src_klass, scratch_src_klass);
 
     // Load layout helper (32-bits)
     //
@@ -2383,6 +2766,9 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();   // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -2395,42 +2781,47 @@ class StubGenerator: public StubCodeGenerator {
   //   value: c_rarg1
   //   count: c_rarg2 treated as signed
   //
-  address generate_fill(StubGenStubId stub_id) {
+  address generate_fill(StubId stub_id) {
     BasicType t;
     bool aligned;
 
     switch (stub_id) {
-    case jbyte_fill_id:
+    case StubId::stubgen_jbyte_fill_id:
       t = T_BYTE;
       aligned = false;
       break;
-    case jshort_fill_id:
+    case StubId::stubgen_jshort_fill_id:
       t = T_SHORT;
       aligned = false;
       break;
-    case jint_fill_id:
+    case StubId::stubgen_jint_fill_id:
       t = T_INT;
       aligned = false;
       break;
-    case arrayof_jbyte_fill_id:
+    case StubId::stubgen_arrayof_jbyte_fill_id:
       t = T_BYTE;
       aligned = true;
       break;
-    case arrayof_jshort_fill_id:
+    case StubId::stubgen_arrayof_jshort_fill_id:
       t = T_SHORT;
       aligned = true;
       break;
-    case arrayof_jint_fill_id:
+    case StubId::stubgen_arrayof_jint_fill_id:
       t = T_INT;
       aligned = true;
       break;
     default:
       ShouldNotReachHere();
     };
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     BLOCK_COMMENT("Entry:");
 
@@ -2563,15 +2954,32 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_exit2);
     __ leave();
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   address generate_unsafecopy_common_error_exit() {
-    address start_pc = __ pc();
+    StubId stub_id = StubId::stubgen_unsafecopy_common_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
       __ leave();
       __ mov(r0, 0);
       __ ret(lr);
-    return start_pc;
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
   }
 
   //
@@ -2589,13 +2997,28 @@ class StubGenerator: public StubCodeGenerator {
   //    c_rarg2   - byte value
   //
   address generate_unsafe_setmemory() {
+    StubId stub_id = StubId::stubgen_unsafe_setmemory_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    // we expect one set of extra unsafememory access handler entries
+    GrowableArray<address> extras;
+    int extra_count =  1 * UnsafeMemoryAccess::COLUMN_COUNT;
+    address start = load_archive_data(stub_id, nullptr, &extras);
+    if (start != nullptr) {
+      assert(extras.length() == extra_count,
+             "unexpected extra entry count %d", extras.length());
+      register_unsafe_access_handlers(extras, 0, 1);
+      return start;
+    }
+
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, StubGenStubId::unsafe_setmemory_id);
-    address start = __ pc();
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
 
     Register dest = c_rarg0, count = c_rarg1, value = c_rarg2;
     Label tail;
 
+    {
     UnsafeMemoryAccessMark umam(this, true, false);
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
@@ -2679,6 +3102,17 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(finished);
     __ leave();
     __ ret(lr);
+    // have to exit the block and destroy the UnsafeMemoryAccessMark
+    // in order to retrieve the handler end address
+    }
+
+    // install saved handler addresses in extras
+    address end = __ pc();
+    retrieve_unsafe_access_handlers(start, end, extras);
+    assert(extras.length() == extra_count,
+           "incorrect handlers count %d", extras.length());
+    // record the stub entry and end plus the extras
+    store_archive_data(stub_id, start, end, nullptr, &extras);
 
     return start;
   }
@@ -2686,33 +3120,45 @@ class StubGenerator: public StubCodeGenerator {
   address generate_data_cache_writeback() {
     const Register line        = c_rarg0;  // address of line to write back
 
+    StubId stub_id = StubId::stubgen_data_cache_writeback_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-
-    StubGenStubId stub_id = StubGenStubId::data_cache_writeback_id;
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
+    start = __ pc();
     __ enter();
     __ cache_wb(Address(line, 0));
     __ leave();
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   address generate_data_cache_writeback_sync() {
+    StubId stub_id = StubId::stubgen_data_cache_writeback_sync_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     const Register is_pre     = c_rarg0;  // pre or post sync
-
     __ align(CodeEntryAlignment);
-
-    StubGenStubId stub_id = StubGenStubId::data_cache_writeback_sync_id;
     StubCodeMark mark(this, stub_id);
 
     // pre wbsync is a no-op
     // post wbsync translates to an sfence
 
     Label skip;
-    address start = __ pc();
+    start = __ pc();
     __ enter();
     __ cbnz(is_pre, skip);
     __ cache_wbsync(false);
@@ -2720,105 +3166,159 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   void generate_arraycopy_stubs() {
-    address entry;
-    address entry_jbyte_arraycopy;
-    address entry_jshort_arraycopy;
-    address entry_jint_arraycopy;
-    address entry_oop_arraycopy;
-    address entry_jlong_arraycopy;
-    address entry_checkcast_arraycopy;
+    // Some copy stubs publish a normal entry and then a 2nd 'fallback'
+    // entry immediately following their stack push. This can be used
+    // as a post-push branch target for compatible stubs when they
+    // identify a special case that can be handled by the fallback
+    // stub e.g a disjoint copy stub may be use as a special case
+    // fallback for its compatible conjoint copy stub.
+    //
+    // A no push entry is always returned in the following local and
+    // then published by assigning to the appropriate entry field in
+    // class StubRoutines. The entry value is then passed to the
+    // generator for the compatible stub. That means the entry must be
+    // listed when saving to/restoring from the AOT cache, ensuring
+    // that the inter-stub jumps are noted at AOT-cache save and
+    // relocated at AOT cache load.
+    address nopush_entry;
 
-    address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
-    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
+    // generate the common exit first so later stubs can rely on it if
+    // they want an UnsafeMemoryAccess exit non-local to the stub
+    StubRoutines::_unsafecopy_common_exit = generate_unsafecopy_common_error_exit();
+    // register the stub as the default exit with class UnsafeMemoryAccess
+    UnsafeMemoryAccess::set_common_exit_stub_pc(StubRoutines::_unsafecopy_common_exit);
 
-    generate_copy_longs(StubGenStubId::copy_byte_f_id, IN_HEAP | IS_ARRAY, copy_f, r0, r1, r15);
-    generate_copy_longs(StubGenStubId::copy_byte_b_id, IN_HEAP | IS_ARRAY, copy_b, r0, r1, r15);
+    // generate and publish arch64-specific bulk copy routines first
+    // so we can call them from other copy stubs
+    StubRoutines::aarch64::_copy_byte_f = generate_copy_longs(StubId::stubgen_copy_byte_f_id, IN_HEAP | IS_ARRAY, r0, r1, r15);
+    StubRoutines::aarch64::_copy_byte_b = generate_copy_longs(StubId::stubgen_copy_byte_b_id, IN_HEAP | IS_ARRAY, r0, r1, r15);
 
-    generate_copy_longs(StubGenStubId::copy_oop_f_id, IN_HEAP | IS_ARRAY, copy_obj_f, r0, r1, r15);
-    generate_copy_longs(StubGenStubId::copy_oop_b_id, IN_HEAP | IS_ARRAY, copy_obj_b, r0, r1, r15);
+    StubRoutines::aarch64::_copy_oop_f = generate_copy_longs(StubId::stubgen_copy_oop_f_id, IN_HEAP | IS_ARRAY, r0, r1, r15);
+    StubRoutines::aarch64::_copy_oop_b = generate_copy_longs(StubId::stubgen_copy_oop_b_id, IN_HEAP | IS_ARRAY, r0, r1, r15);
 
-    generate_copy_longs(StubGenStubId::copy_oop_uninit_f_id, IN_HEAP | IS_ARRAY | IS_DEST_UNINITIALIZED, copy_obj_uninit_f, r0, r1, r15);
-    generate_copy_longs(StubGenStubId::copy_oop_uninit_b_id, IN_HEAP | IS_ARRAY | IS_DEST_UNINITIALIZED, copy_obj_uninit_b, r0, r1, r15);
+    StubRoutines::aarch64::_copy_oop_uninit_f = generate_copy_longs(StubId::stubgen_copy_oop_uninit_f_id, IN_HEAP | IS_ARRAY | IS_DEST_UNINITIALIZED, r0, r1, r15);
+    StubRoutines::aarch64::_copy_oop_uninit_b = generate_copy_longs(StubId::stubgen_copy_oop_uninit_b_id, IN_HEAP | IS_ARRAY | IS_DEST_UNINITIALIZED, r0, r1, r15);
 
     StubRoutines::aarch64::_zero_blocks = generate_zero_blocks();
 
     //*** jbyte
     // Always need aligned and unaligned versions
-    StubRoutines::_jbyte_disjoint_arraycopy         = generate_disjoint_copy(StubGenStubId::jbyte_disjoint_arraycopy_id, &entry);
-    StubRoutines::_jbyte_arraycopy                  = generate_conjoint_copy(StubGenStubId::jbyte_arraycopy_id, entry, &entry_jbyte_arraycopy);
-    StubRoutines::_arrayof_jbyte_disjoint_arraycopy = generate_disjoint_copy(StubGenStubId::arrayof_jbyte_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jbyte_arraycopy          = generate_conjoint_copy(StubGenStubId::arrayof_jbyte_arraycopy_id, entry, nullptr);
+    StubRoutines::_jbyte_disjoint_arraycopy         = generate_disjoint_copy(StubId::stubgen_jbyte_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint nopush entry is needed by conjoint copy
+    StubRoutines::_jbyte_disjoint_arraycopy_nopush  = nopush_entry;
+    StubRoutines::_jbyte_arraycopy                  = generate_conjoint_copy(StubId::stubgen_jbyte_arraycopy_id, StubRoutines::_jbyte_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint nopush entry is needed by generic/unsafe copy
+    StubRoutines::_jbyte_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jbyte_disjoint_arraycopy = generate_disjoint_copy(StubId::stubgen_arrayof_jbyte_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint arrayof nopush entry is needed by conjoint copy
+    StubRoutines::_arrayof_jbyte_disjoint_arraycopy_nopush  = nopush_entry;
+    StubRoutines::_arrayof_jbyte_arraycopy          = generate_conjoint_copy(StubId::stubgen_arrayof_jbyte_arraycopy_id, StubRoutines::_arrayof_jbyte_disjoint_arraycopy_nopush, nullptr);
 
     //*** jshort
     // Always need aligned and unaligned versions
-    StubRoutines::_jshort_disjoint_arraycopy         = generate_disjoint_copy(StubGenStubId::jshort_disjoint_arraycopy_id, &entry);
-    StubRoutines::_jshort_arraycopy                  = generate_conjoint_copy(StubGenStubId::jshort_arraycopy_id, entry, &entry_jshort_arraycopy);
-    StubRoutines::_arrayof_jshort_disjoint_arraycopy = generate_disjoint_copy(StubGenStubId::arrayof_jshort_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jshort_arraycopy          = generate_conjoint_copy(StubGenStubId::arrayof_jshort_arraycopy_id, entry, nullptr);
+    StubRoutines::_jshort_disjoint_arraycopy         = generate_disjoint_copy(StubId::stubgen_jshort_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint nopush entry is needed by conjoint copy
+    StubRoutines::_jshort_disjoint_arraycopy_nopush  = nopush_entry;
+    StubRoutines::_jshort_arraycopy                  = generate_conjoint_copy(StubId::stubgen_jshort_arraycopy_id, StubRoutines::_jshort_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint nopush entry is used by generic/unsafe copy
+    StubRoutines::_jshort_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jshort_disjoint_arraycopy = generate_disjoint_copy(StubId::stubgen_arrayof_jshort_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint arrayof nopush entry is needed by conjoint copy
+    StubRoutines::_arrayof_jshort_disjoint_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jshort_arraycopy          = generate_conjoint_copy(StubId::stubgen_arrayof_jshort_arraycopy_id, StubRoutines::_arrayof_jshort_disjoint_arraycopy_nopush, nullptr);
 
     //*** jint
     // Aligned versions
-    StubRoutines::_arrayof_jint_disjoint_arraycopy = generate_disjoint_copy(StubGenStubId::arrayof_jint_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jint_arraycopy          = generate_conjoint_copy(StubGenStubId::arrayof_jint_arraycopy_id, entry, &entry_jint_arraycopy);
+    StubRoutines::_arrayof_jint_disjoint_arraycopy = generate_disjoint_copy(StubId::stubgen_arrayof_jint_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint arrayof nopush entry is needed by conjoint copy
+    StubRoutines::_arrayof_jint_disjoint_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jint_arraycopy          = generate_conjoint_copy(StubId::stubgen_arrayof_jint_arraycopy_id, StubRoutines::_arrayof_jint_disjoint_arraycopy_nopush, nullptr);
     // In 64 bit we need both aligned and unaligned versions of jint arraycopy.
-    // entry_jint_arraycopy always points to the unaligned version
-    StubRoutines::_jint_disjoint_arraycopy         = generate_disjoint_copy(StubGenStubId::jint_disjoint_arraycopy_id, &entry);
-    StubRoutines::_jint_arraycopy                  = generate_conjoint_copy(StubGenStubId::jint_arraycopy_id, entry, &entry_jint_arraycopy);
+    // jint_arraycopy_nopush always points to the unaligned version
+    StubRoutines::_jint_disjoint_arraycopy         = generate_disjoint_copy(StubId::stubgen_jint_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint nopush entry is needed by conjoint copy
+    StubRoutines::_jint_disjoint_arraycopy_nopush  = nopush_entry;
+    StubRoutines::_jint_arraycopy                  = generate_conjoint_copy(StubId::stubgen_jint_arraycopy_id, StubRoutines::_jint_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint nopush entry is needed by generic/unsafe copy
+    StubRoutines::_jint_arraycopy_nopush = nopush_entry;
 
     //*** jlong
     // It is always aligned
-    StubRoutines::_arrayof_jlong_disjoint_arraycopy = generate_disjoint_copy(StubGenStubId::arrayof_jlong_disjoint_arraycopy_id, &entry);
-    StubRoutines::_arrayof_jlong_arraycopy          = generate_conjoint_copy(StubGenStubId::arrayof_jlong_arraycopy_id, entry, &entry_jlong_arraycopy);
+    StubRoutines::_arrayof_jlong_disjoint_arraycopy = generate_disjoint_copy(StubId::stubgen_arrayof_jlong_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint arrayof nopush entry is needed by conjoint copy
+    StubRoutines::_arrayof_jlong_disjoint_arraycopy_nopush = nopush_entry;
+    StubRoutines::_arrayof_jlong_arraycopy          = generate_conjoint_copy(StubId::stubgen_arrayof_jlong_arraycopy_id, StubRoutines::_arrayof_jlong_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint nopush entry is needed by generic/unsafe copy
+    StubRoutines::_jlong_arraycopy_nopush = nopush_entry;
+    // disjoint normal/nopush and conjoint normal entries are not
+    // generated since the arrayof versions are the same
     StubRoutines::_jlong_disjoint_arraycopy         = StubRoutines::_arrayof_jlong_disjoint_arraycopy;
+    StubRoutines::_jlong_disjoint_arraycopy_nopush = StubRoutines::_arrayof_jlong_disjoint_arraycopy_nopush;
     StubRoutines::_jlong_arraycopy                  = StubRoutines::_arrayof_jlong_arraycopy;
 
     //*** oops
     {
-      // With compressed oops we need unaligned versions; notice that
-      // we overwrite entry_oop_arraycopy.
-      bool aligned = !UseCompressedOops;
-
       StubRoutines::_arrayof_oop_disjoint_arraycopy
-        = generate_disjoint_copy(StubGenStubId::arrayof_oop_disjoint_arraycopy_id, &entry);
+        = generate_disjoint_copy(StubId::stubgen_arrayof_oop_disjoint_arraycopy_id, &nopush_entry);
+      // disjoint arrayof nopush entry is needed by conjoint copy
+      StubRoutines::_arrayof_oop_disjoint_arraycopy_nopush = nopush_entry;
       StubRoutines::_arrayof_oop_arraycopy
-        = generate_conjoint_copy(StubGenStubId::arrayof_oop_arraycopy_id, entry, &entry_oop_arraycopy);
+        = generate_conjoint_copy(StubId::stubgen_arrayof_oop_arraycopy_id, StubRoutines::_arrayof_oop_disjoint_arraycopy_nopush, &nopush_entry);
+      // conjoint arrayof nopush entry is needed by generic/unsafe copy
+      StubRoutines::_oop_arraycopy_nopush = nopush_entry;
       // Aligned versions without pre-barriers
       StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit
-        = generate_disjoint_copy(StubGenStubId::arrayof_oop_disjoint_arraycopy_uninit_id, &entry);
+        = generate_disjoint_copy(StubId::stubgen_arrayof_oop_disjoint_arraycopy_uninit_id, &nopush_entry);
+      // disjoint arrayof+uninit nopush entry is needed by conjoint copy
+      StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit_nopush = nopush_entry;
+      // note that we don't need a returned nopush entry because the
+      // generic/unsafe copy does not cater for uninit arrays.
       StubRoutines::_arrayof_oop_arraycopy_uninit
-        = generate_conjoint_copy(StubGenStubId::arrayof_oop_arraycopy_uninit_id, entry, nullptr);
+        = generate_conjoint_copy(StubId::stubgen_arrayof_oop_arraycopy_uninit_id, StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit_nopush, nullptr);
     }
 
+    // for oop copies reuse arrayof entries for non-arrayof cases
     StubRoutines::_oop_disjoint_arraycopy            = StubRoutines::_arrayof_oop_disjoint_arraycopy;
+    StubRoutines::_oop_disjoint_arraycopy_nopush = StubRoutines::_arrayof_oop_disjoint_arraycopy_nopush;
     StubRoutines::_oop_arraycopy                     = StubRoutines::_arrayof_oop_arraycopy;
     StubRoutines::_oop_disjoint_arraycopy_uninit     = StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit;
+    StubRoutines::_oop_disjoint_arraycopy_uninit_nopush = StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit_nopush;
     StubRoutines::_oop_arraycopy_uninit              = StubRoutines::_arrayof_oop_arraycopy_uninit;
 
-    StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy(StubGenStubId::checkcast_arraycopy_id, &entry_checkcast_arraycopy);
-    StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy(StubGenStubId::checkcast_arraycopy_uninit_id, nullptr);
+    StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy(StubId::stubgen_checkcast_arraycopy_id, &nopush_entry);
+    // checkcast nopush entry is needed by generic copy
+    StubRoutines::_checkcast_arraycopy_nopush = nopush_entry;
+    // note that we don't need a returned nopush entry because the
+    // generic copy does not cater for uninit arrays.
+    StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy(StubId::stubgen_checkcast_arraycopy_uninit_id, nullptr);
 
-    StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy(entry_jbyte_arraycopy,
-                                                              entry_jshort_arraycopy,
-                                                              entry_jint_arraycopy,
-                                                              entry_jlong_arraycopy);
+    // unsafe arraycopy may fallback on conjoint stubs
+    StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy(StubRoutines::_jbyte_arraycopy_nopush,
+                                                              StubRoutines::_jshort_arraycopy_nopush,
+                                                              StubRoutines::_jint_arraycopy_nopush,
+                                                              StubRoutines::_jlong_arraycopy_nopush);
 
-    StubRoutines::_generic_arraycopy   = generate_generic_copy(entry_jbyte_arraycopy,
-                                                               entry_jshort_arraycopy,
-                                                               entry_jint_arraycopy,
-                                                               entry_oop_arraycopy,
-                                                               entry_jlong_arraycopy,
-                                                               entry_checkcast_arraycopy);
+    // generic arraycopy may fallback on conjoint stubs
+    StubRoutines::_generic_arraycopy   = generate_generic_copy(StubRoutines::_jbyte_arraycopy_nopush,
+                                                               StubRoutines::_jshort_arraycopy_nopush,
+                                                               StubRoutines::_jint_arraycopy_nopush,
+                                                               StubRoutines::_oop_arraycopy_nopush,
+                                                               StubRoutines::_jlong_arraycopy_nopush,
+                                                               StubRoutines::_checkcast_arraycopy_nopush);
 
-    StubRoutines::_jbyte_fill = generate_fill(StubGenStubId::jbyte_fill_id);
-    StubRoutines::_jshort_fill = generate_fill(StubGenStubId::jshort_fill_id);
-    StubRoutines::_jint_fill = generate_fill(StubGenStubId::jint_fill_id);
-    StubRoutines::_arrayof_jbyte_fill = generate_fill(StubGenStubId::arrayof_jbyte_fill_id);
-    StubRoutines::_arrayof_jshort_fill = generate_fill(StubGenStubId::arrayof_jshort_fill_id);
-    StubRoutines::_arrayof_jint_fill = generate_fill(StubGenStubId::arrayof_jint_fill_id);
+    StubRoutines::_jbyte_fill = generate_fill(StubId::stubgen_jbyte_fill_id);
+    StubRoutines::_jshort_fill = generate_fill(StubId::stubgen_jshort_fill_id);
+    StubRoutines::_jint_fill = generate_fill(StubId::stubgen_jint_fill_id);
+    StubRoutines::_arrayof_jbyte_fill = generate_fill(StubId::stubgen_arrayof_jbyte_fill_id);
+    StubRoutines::_arrayof_jshort_fill = generate_fill(StubId::stubgen_arrayof_jshort_fill_id);
+    StubRoutines::_arrayof_jint_fill = generate_fill(StubId::stubgen_arrayof_jint_fill_id);
   }
 
   void generate_math_stubs() { Unimplemented(); }
@@ -2828,11 +3328,18 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKe (key) in little endian int array
   //
   address generate_aescrypt_encryptBlock() {
+    assert(UseAES, "need AES cryptographic extension support");
+    StubId stub_id = StubId::stubgen_aescrypt_encryptBlock_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::aescrypt_encryptBlock_id;
     StubCodeMark mark(this, stub_id);
 
     const Register from        = c_rarg0;  // source array address
@@ -2840,7 +3347,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register key         = c_rarg2;  // key array address
     const Register keylen      = rscratch1;
 
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     __ ldrw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
@@ -2853,6 +3360,9 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -2861,12 +3371,18 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKd (key) in little endian int array
   //
   address generate_aescrypt_decryptBlock() {
     assert(UseAES, "need AES cryptographic extension support");
+    StubId stub_id = StubId::stubgen_aescrypt_decryptBlock_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::aescrypt_decryptBlock_id;
     StubCodeMark mark(this, stub_id);
     Label L_doLast;
 
@@ -2875,7 +3391,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register key         = c_rarg2;  // key array address
     const Register keylen      = rscratch1;
 
-    address start = __ pc();
+    start = __ pc();
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
     __ ldrw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
@@ -2887,6 +3403,9 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -2895,7 +3414,7 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKe (key) in little endian int array
   //   c_rarg3   - r vector byte array address
   //   c_rarg4   - input length
   //
@@ -2904,8 +3423,14 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_cipherBlockChaining_encryptAESCrypt() {
     assert(UseAES, "need AES cryptographic extension support");
+    StubId stub_id = StubId::stubgen_cipherBlockChaining_encryptAESCrypt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_encryptAESCrypt_id;
     StubCodeMark mark(this, stub_id);
 
     Label L_loadkeys_44, L_loadkeys_52, L_aes_loop, L_rounds_44, L_rounds_52;
@@ -2918,7 +3443,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register len_reg     = c_rarg4;  // src len (must be multiple of blocksize 16)
     const Register keylen      = rscratch1;
 
-    address start = __ pc();
+    start = __ pc();
 
       __ enter();
 
@@ -2992,6 +3517,9 @@ class StubGenerator: public StubCodeGenerator {
       __ leave();
       __ ret(lr);
 
+      // record the stub entry and end
+      store_archive_data(stub_id, start, __ pc());
+
       return start;
   }
 
@@ -3000,7 +3528,7 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKd (key) in little endian int array
   //   c_rarg3   - r vector byte array address
   //   c_rarg4   - input length
   //
@@ -3009,8 +3537,14 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_cipherBlockChaining_decryptAESCrypt() {
     assert(UseAES, "need AES cryptographic extension support");
+    StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_decryptAESCrypt_id;
     StubCodeMark mark(this, stub_id);
 
     Label L_loadkeys_44, L_loadkeys_52, L_aes_loop, L_rounds_44, L_rounds_52;
@@ -3023,7 +3557,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register len_reg     = c_rarg4;  // src len (must be multiple of blocksize 16)
     const Register keylen      = rscratch1;
 
-    address start = __ pc();
+    start = __ pc();
 
       __ enter();
 
@@ -3101,6 +3635,9 @@ class StubGenerator: public StubCodeGenerator {
       __ leave();
       __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -3127,7 +3664,7 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0   - source byte array address
   //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg2   - sessionKe (key) in little endian int array
   //   c_rarg3   - counter vector byte array address
   //   c_rarg4   - input length
   //   c_rarg5   - saved encryptedCounter start
@@ -3137,6 +3674,13 @@ class StubGenerator: public StubCodeGenerator {
   //   r0       - input length
   //
   address generate_counterMode_AESCrypt() {
+    StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     const Register in = c_rarg0;
     const Register out = c_rarg1;
     const Register key = c_rarg2;
@@ -3197,9 +3741,8 @@ class StubGenerator: public StubCodeGenerator {
     //    Wide bulk encryption of whole blocks.
 
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::counterMode_AESCrypt_id;
     StubCodeMark mark(this, stub_id);
-    const address start = __ pc();
+    start = __ pc();
     __ enter();
 
     Label DONE, CTR_large_block, large_block_return;
@@ -3384,6 +3927,9 @@ class StubGenerator: public StubCodeGenerator {
     __ strw(used, Address(used_ptr));
     __ b(large_block_return);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -3399,17 +3945,17 @@ class StubGenerator: public StubCodeGenerator {
   // counter = c_rarg7 - 16 bytes of CTR
   // return - number of processed bytes
   address generate_galoisCounterMode_AESCrypt() {
-    address ghash_polynomial = __ pc();
-    __ emit_int64(0x87);  // The low-order bits of the field
-                          // polynomial (i.e. p = z^7+z^2+z+1)
-                          // repeated in the low and high parts of a
-                          // 128-bit vector
-    __ emit_int64(0x87);
-
+    Label ghash_polynomial; // local data generated after code
+    StubId stub_id = StubId::stubgen_galoisCounterMode_AESCrypt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::galoisCounterMode_AESCrypt_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register in = c_rarg0;
@@ -3511,7 +4057,20 @@ class StubGenerator: public StubCodeGenerator {
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
-     return start;
+
+    // bind label and generate polynomial data
+    __ align(wordSize * 2);
+    __ bind(ghash_polynomial);
+    __ emit_int64(0x87);  // The low-order bits of the field
+                          // polynomial (i.e. p = z^7+z^2+z+1)
+                          // repeated in the low and high parts of a
+                          // 128-bit vector
+    __ emit_int64(0x87);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
   }
 
   class Cached64Bytes {
@@ -3617,22 +4176,28 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg2   - int     offset
   //   c_rarg3   - int     limit
   //
-  address generate_md5_implCompress(StubGenStubId stub_id) {
+  address generate_md5_implCompress(StubId stub_id) {
     bool multi_block;
     switch (stub_id) {
-    case md5_implCompress_id:
+    case StubId::stubgen_md5_implCompress_id:
       multi_block = false;
       break;
-    case md5_implCompressMB_id:
+    case StubId::stubgen_md5_implCompressMB_id:
       multi_block = true;
       break;
     default:
       ShouldNotReachHere();
     }
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
 
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register buf       = c_rarg0;
     Register state     = c_rarg1;
@@ -3759,6 +4324,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -3770,23 +4338,28 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg2   - int     offset
   //   c_rarg3   - int     limit
   //
-  address generate_sha1_implCompress(StubGenStubId stub_id) {
+  address generate_sha1_implCompress(StubId stub_id) {
     bool multi_block;
     switch (stub_id) {
-    case sha1_implCompress_id:
+    case StubId::stubgen_sha1_implCompress_id:
       multi_block = false;
       break;
-    case sha1_implCompressMB_id:
+    case StubId::stubgen_sha1_implCompressMB_id:
       multi_block = true;
       break;
     default:
       ShouldNotReachHere();
     }
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
 
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register buf   = c_rarg0;
     Register state = c_rarg1;
@@ -3863,6 +4436,9 @@ class StubGenerator: public StubCodeGenerator {
     __ emit_int32(0x8f1bbcdc);
     __ emit_int32(0xca62c1d6);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -3875,42 +4451,27 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg2   - int     offset
   //   c_rarg3   - int     limit
   //
-  address generate_sha256_implCompress(StubGenStubId stub_id) {
+  address generate_sha256_implCompress(StubId stub_id) {
     bool multi_block;
     switch (stub_id) {
-    case sha256_implCompress_id:
+    case StubId::stubgen_sha256_implCompress_id:
       multi_block = false;
       break;
-    case sha256_implCompressMB_id:
+    case StubId::stubgen_sha256_implCompressMB_id:
       multi_block = true;
       break;
     default:
       ShouldNotReachHere();
     }
-
-    static const uint32_t round_consts[64] = {
-      0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
-      0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-      0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
-      0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-      0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
-      0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-      0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
-      0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-      0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
-      0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-      0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
-      0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-      0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
-      0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-      0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
-      0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
-    };
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register buf   = c_rarg0;
     Register state = c_rarg1;
@@ -3931,7 +4492,7 @@ class StubGenerator: public StubCodeGenerator {
 // t1 == v7
 
     // load 16 keys to v16..v31
-    __ lea(rscratch1, ExternalAddress((address)round_consts));
+    __ lea(rscratch1, ExternalAddress((address)_sha256_round_consts));
     __ ld1(v16, v17, v18, v19, __ T4S, __ post(rscratch1, 64));
     __ ld1(v20, v21, v22, v23, __ T4S, __ post(rscratch1, 64));
     __ ld1(v24, v25, v26, v27, __ T4S, __ post(rscratch1, 64));
@@ -3992,6 +4553,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -4031,53 +4595,27 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg2   - int     offset
   //   c_rarg3   - int     limit
   //
-  address generate_sha512_implCompress(StubGenStubId stub_id) {
+  address generate_sha512_implCompress(StubId stub_id) {
     bool multi_block;
     switch (stub_id) {
-    case sha512_implCompress_id:
+    case StubId::stubgen_sha512_implCompress_id:
       multi_block = false;
       break;
-    case sha512_implCompressMB_id:
+    case StubId::stubgen_sha512_implCompressMB_id:
       multi_block = true;
       break;
     default:
       ShouldNotReachHere();
     }
-
-    static const uint64_t round_consts[80] = {
-      0x428A2F98D728AE22L, 0x7137449123EF65CDL, 0xB5C0FBCFEC4D3B2FL,
-      0xE9B5DBA58189DBBCL, 0x3956C25BF348B538L, 0x59F111F1B605D019L,
-      0x923F82A4AF194F9BL, 0xAB1C5ED5DA6D8118L, 0xD807AA98A3030242L,
-      0x12835B0145706FBEL, 0x243185BE4EE4B28CL, 0x550C7DC3D5FFB4E2L,
-      0x72BE5D74F27B896FL, 0x80DEB1FE3B1696B1L, 0x9BDC06A725C71235L,
-      0xC19BF174CF692694L, 0xE49B69C19EF14AD2L, 0xEFBE4786384F25E3L,
-      0x0FC19DC68B8CD5B5L, 0x240CA1CC77AC9C65L, 0x2DE92C6F592B0275L,
-      0x4A7484AA6EA6E483L, 0x5CB0A9DCBD41FBD4L, 0x76F988DA831153B5L,
-      0x983E5152EE66DFABL, 0xA831C66D2DB43210L, 0xB00327C898FB213FL,
-      0xBF597FC7BEEF0EE4L, 0xC6E00BF33DA88FC2L, 0xD5A79147930AA725L,
-      0x06CA6351E003826FL, 0x142929670A0E6E70L, 0x27B70A8546D22FFCL,
-      0x2E1B21385C26C926L, 0x4D2C6DFC5AC42AEDL, 0x53380D139D95B3DFL,
-      0x650A73548BAF63DEL, 0x766A0ABB3C77B2A8L, 0x81C2C92E47EDAEE6L,
-      0x92722C851482353BL, 0xA2BFE8A14CF10364L, 0xA81A664BBC423001L,
-      0xC24B8B70D0F89791L, 0xC76C51A30654BE30L, 0xD192E819D6EF5218L,
-      0xD69906245565A910L, 0xF40E35855771202AL, 0x106AA07032BBD1B8L,
-      0x19A4C116B8D2D0C8L, 0x1E376C085141AB53L, 0x2748774CDF8EEB99L,
-      0x34B0BCB5E19B48A8L, 0x391C0CB3C5C95A63L, 0x4ED8AA4AE3418ACBL,
-      0x5B9CCA4F7763E373L, 0x682E6FF3D6B2B8A3L, 0x748F82EE5DEFB2FCL,
-      0x78A5636F43172F60L, 0x84C87814A1F0AB72L, 0x8CC702081A6439ECL,
-      0x90BEFFFA23631E28L, 0xA4506CEBDE82BDE9L, 0xBEF9A3F7B2C67915L,
-      0xC67178F2E372532BL, 0xCA273ECEEA26619CL, 0xD186B8C721C0C207L,
-      0xEADA7DD6CDE0EB1EL, 0xF57D4F7FEE6ED178L, 0x06F067AA72176FBAL,
-      0x0A637DC5A2C898A6L, 0x113F9804BEF90DAEL, 0x1B710B35131C471BL,
-      0x28DB77F523047D84L, 0x32CAAB7B40C72493L, 0x3C9EBE0A15C9BEBCL,
-      0x431D67C49C100D4CL, 0x4CC5D4BECB3E42B6L, 0x597F299CFC657E2AL,
-      0x5FCB6FAB3AD6FAECL, 0x6C44198C4A475817L
-    };
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register buf   = c_rarg0;
     Register state = c_rarg1;
@@ -4095,7 +4633,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ld1(v8, v9, v10, v11, __ T2D, state);
 
     // load first 4 round constants
-    __ lea(rscratch1, ExternalAddress((address)round_consts));
+    __ lea(rscratch1, ExternalAddress((address)_sha512_round_consts));
     __ ld1(v20, v21, v22, v23, __ T2D, __ post(rscratch1, 64));
 
     __ BIND(sha512_loop);
@@ -4179,6 +4717,9 @@ class StubGenerator: public StubCodeGenerator {
     __ ldpd(v8, v9, __ post(sp, 64));
 
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -4281,34 +4822,27 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg3   - int     offset
   //   c_rarg4   - int     limit
   //
-  address generate_sha3_implCompress(StubGenStubId stub_id) {
+  address generate_sha3_implCompress(StubId stub_id) {
     bool multi_block;
     switch (stub_id) {
-    case sha3_implCompress_id:
+    case StubId::stubgen_sha3_implCompress_id:
       multi_block = false;
       break;
-    case sha3_implCompressMB_id:
+    case StubId::stubgen_sha3_implCompressMB_id:
       multi_block = true;
       break;
     default:
       ShouldNotReachHere();
     }
-
-    static const uint64_t round_consts[24] = {
-      0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
-      0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
-      0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
-      0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
-      0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
-      0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
-      0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
-      0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
-    };
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register buf           = c_rarg0;
     Register state         = c_rarg1;
@@ -4340,7 +4874,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(rscratch2, 24);
 
     // load round_constants base
-    __ lea(rscratch1, ExternalAddress((address) round_consts));
+    __ lea(rscratch1, ExternalAddress((address) _sha3_round_consts));
 
     // load input
     __ ld1(v25, v26, v27, v28, __ T8B, __ post(buf, 32));
@@ -4432,6 +4966,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -4439,22 +4976,18 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg0   - long[]  state0
   //   c_rarg1   - long[]  state1
   address generate_double_keccak() {
-    static const uint64_t round_consts[24] = {
-      0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
-      0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
-      0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
-      0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
-      0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
-      0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
-      0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
-      0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
-    };
-
+    StubId stub_id = StubId::stubgen_double_keccak_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     // Implements the double_keccak() method of the
-    // sun.secyrity.provider.SHA3Parallel class
+    // sun.security.provider.SHA3Parallel class
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "double_keccak");
-    address start = __ pc();
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
     __ enter();
 
     Register state0        = c_rarg0;
@@ -4490,7 +5023,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(rscratch2, 24);
 
     // load round_constants base
-    __ lea(rscratch1, ExternalAddress((address) round_consts));
+    __ lea(rscratch1, ExternalAddress((address) _double_keccak_round_consts));
 
     __ BIND(rounds24_loop);
     __ subw(rscratch2, rscratch2, 1);
@@ -4519,8 +5052,12 @@ class StubGenerator: public StubCodeGenerator {
     __ ldpd(v8, v9, __ post(sp, 64));
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -4555,21 +5092,17 @@ class StubGenerator: public StubCodeGenerator {
   // vectors write their first lane back to the keystream buffer, followed
   // by the second lane from all vectors and so on.
   address generate_chacha20Block_blockpar() {
+    StubId stub_id = StubId::stubgen_chacha20Block_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     Label L_twoRounds, L_cc20_const;
-    // The constant data is broken into two 128-bit segments to be loaded
-    // onto FloatRegisters.  The first 128 bits are a counter add overlay
-    // that adds +0/+1/+2/+3 to the vector holding replicated state[12].
-    // The second 128-bits is a table constant used for 8-bit left rotations.
-    __ BIND(L_cc20_const);
-    __ emit_int64(0x0000000100000000UL);
-    __ emit_int64(0x0000000300000002UL);
-    __ emit_int64(0x0605040702010003UL);
-    __ emit_int64(0x0E0D0C0F0A09080BUL);
-
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::chacha20Block_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     int i, j;
@@ -4713,6 +5246,20 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret(lr);
 
+    // bind label and generate local constant data used by this stub
+    // The constant data is broken into two 128-bit segments to be loaded
+    // onto FloatRegisters.  The first 128 bits are a counter add overlay
+    // that adds +0/+1/+2/+3 to the vector holding replicated state[12].
+    // The second 128-bits is a table constant used for 8-bit left rotations.
+    __ BIND(L_cc20_const);
+    __ emit_int64(0x0000000100000000UL);
+    __ emit_int64(0x0000000300000002UL);
+    __ emit_int64(0x0605040702010003UL);
+    __ emit_int64(0x0E0D0C0F0A09080BUL);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -4772,6 +5319,32 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   template<int N>
+  void vs_shl(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
+              const VSeq<N>& v1, int shift) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+
+    for (int i = 0; i < N; i++) {
+      __ shl(v[i], T, v1[i], shift);
+    }
+  }
+
+  template<int N>
+  void vs_ushr(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
+               const VSeq<N>& v1, int shift) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+
+    for (int i = 0; i < N; i++) {
+      __ ushr(v[i], T, v1[i], shift);
+    }
+  }
+
+  template<int N>
   void vs_sshr(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
                const VSeq<N>& v1, int shift) {
     // output must not be constant
@@ -4792,6 +5365,29 @@ class StubGenerator: public StubCodeGenerator {
     assert(!vs_write_before_read(v, v2), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ andr(v[i], __ T16B, v1[i], v2[i]);
+    }
+  }
+
+  template<int N>
+  void vs_andr(const VSeq<N>& v, const VSeq<N>& v1, const FloatRegister v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    for (int i = 0; i < N; i++) {
+      __ andr(v[i], __ T16B, v1[i], v2);
+    }
+  }
+
+  template<int N>
+  void vs_eor(const VSeq<N>& v, const VSeq<N>& v1, const VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
+    for (int i = 0; i < N; i++) {
+      __ eor(v[i], __ T16B, v1[i], v2[i]);
     }
   }
 
@@ -4847,8 +5443,9 @@ class StubGenerator: public StubCodeGenerator {
   // address supplied in base.
   template<int N>
   void vs_ldpq(const VSeq<N>& v, Register base) {
+    static_assert(N > 0 && is_even(N), "sequence length must be even");
     for (int i = 0; i < N; i += 2) {
-      __ ldpq(v[i], v[i+1], Address(base, 32 * i));
+      __ ldpq(v[i], v[i+1], Address(base, 16 * i));
     }
   }
 
@@ -4857,7 +5454,7 @@ class StubGenerator: public StubCodeGenerator {
   // in base using post-increment addressing
   template<int N>
   void vs_ldpq_post(const VSeq<N>& v, Register base) {
-    static_assert((N & (N - 1)) == 0, "sequence length must be even");
+    static_assert(N > 0 && is_even(N), "sequence length must be even");
     for (int i = 0; i < N; i += 2) {
       __ ldpq(v[i], v[i+1], __ post(base, 32));
     }
@@ -4868,7 +5465,7 @@ class StubGenerator: public StubCodeGenerator {
   // supplied in base using post-increment addressing
   template<int N>
   void vs_stpq_post(const VSeq<N>& v, Register base) {
-    static_assert((N & (N - 1)) == 0, "sequence length must be even");
+    static_assert(N > 0 && is_even(N), "sequence length must be even");
     for (int i = 0; i < N; i += 2) {
       __ stpq(v[i], v[i+1], __ post(base, 32));
     }
@@ -4879,7 +5476,7 @@ class StubGenerator: public StubCodeGenerator {
   // using post-increment addressing.
   template<int N>
   void vs_ld2_post(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base) {
-    static_assert((N & (N - 1)) == 0, "sequence length must be even");
+    static_assert(N > 0 && is_even(N), "sequence length must be even");
     for (int i = 0; i < N; i += 2) {
       __ ld2(v[i], v[i+1], T, __ post(base, 32));
     }
@@ -4890,9 +5487,21 @@ class StubGenerator: public StubCodeGenerator {
   // post-increment addressing.
   template<int N>
   void vs_st2_post(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base) {
-    static_assert((N & (N - 1)) == 0, "sequence length must be even");
+    static_assert(N > 0 && is_even(N), "sequence length must be even");
     for (int i = 0; i < N; i += 2) {
       __ st2(v[i], v[i+1], T, __ post(base, 32));
+    }
+  }
+
+  // store two vector register sequences of length N
+  // interleaved into N pairs of quadword memory locations
+  // starting at the address supplied in dest using
+  // post-increment addressing.
+  template<int N>
+  void vs_st1_interleaved(VSeq<N> A, VSeq<N> B, Register dest) {
+    for (int i = 0; i < N; i++) {
+      __ st1(A[i], __ T2D, __ post(dest, 16));
+      __ st1(B[i], __ T2D, __ post(dest, 16));
     }
   }
 
@@ -4919,10 +5528,11 @@ class StubGenerator: public StubCodeGenerator {
 
   // load N/2 pairs of quadword values from memory into N vector
   // registers via the address supplied in base with each pair indexed
-  // using the the start offset plus the corresponding entry in the
+  // using the start offset plus the corresponding entry in the
   // offsets array
   template<int N>
   void vs_ldpq_indexed(const VSeq<N>& v, Register base, int start, int (&offsets)[N/2]) {
+    static_assert(N > 0 && is_even(N), "sequence length must be even");
     for (int i = 0; i < N/2; i++) {
       __ ldpq(v[2*i], v[2*i+1], Address(base, start + offsets[i]));
     }
@@ -4930,7 +5540,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // store N vector registers into N/2 pairs of quadword memory
   // locations via the address supplied in base with each pair indexed
-  // using the the start offset plus the corresponding entry in the
+  // using the start offset plus the corresponding entry in the
   // offsets array
   template<int N>
   void vs_stpq_indexed(const VSeq<N>& v, Register base, int start, int offsets[N/2]) {
@@ -4941,7 +5551,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // load N single quadword values from memory into N vector registers
   // via the address supplied in base with each value indexed using
-  // the the start offset plus the corresponding entry in the offsets
+  // the start offset plus the corresponding entry in the offsets
   // array
   template<int N>
   void vs_ldr_indexed(const VSeq<N>& v, Assembler::SIMD_RegVariant T, Register base,
@@ -4953,7 +5563,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // store N vector registers into N single quadword memory locations
   // via the address supplied in base with each value indexed using
-  // the the start offset plus the corresponding entry in the offsets
+  // the start offset plus the corresponding entry in the offsets
   // array
   template<int N>
   void vs_str_indexed(const VSeq<N>& v, Assembler::SIMD_RegVariant T, Register base,
@@ -4965,11 +5575,12 @@ class StubGenerator: public StubCodeGenerator {
 
   // load N/2 pairs of quadword values from memory de-interleaved into
   // N vector registers 2 at a time via the address supplied in base
-  // with each pair indexed using the the start offset plus the
+  // with each pair indexed using the start offset plus the
   // corresponding entry in the offsets array
   template<int N>
   void vs_ld2_indexed(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base,
                       Register tmp, int start, int (&offsets)[N/2]) {
+    static_assert(N > 0 && is_even(N), "sequence length must be even");
     for (int i = 0; i < N/2; i++) {
       __ add(tmp, base, start + offsets[i]);
       __ ld2(v[2*i], v[2*i+1], T, tmp);
@@ -4978,11 +5589,12 @@ class StubGenerator: public StubCodeGenerator {
 
   // store N vector registers 2 at a time interleaved into N/2 pairs
   // of quadword memory locations via the address supplied in base
-  // with each pair indexed using the the start offset plus the
+  // with each pair indexed using the start offset plus the
   // corresponding entry in the offsets array
   template<int N>
   void vs_st2_indexed(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base,
                       Register tmp, int start, int (&offsets)[N/2]) {
+    static_assert(N > 0 && is_even(N), "sequence length must be even");
     for (int i = 0; i < N/2; i++) {
       __ add(tmp, base, start + offsets[i]);
       __ st2(v[2*i], v[2*i+1], T, tmp);
@@ -5201,11 +5813,16 @@ class StubGenerator: public StubCodeGenerator {
   // coeffs (short[256]) = c_rarg0
   // ntt_zetas (short[256]) = c_rarg1
   address generate_kyberNtt() {
-
+    StubId stub_id = StubId::stubgen_kyberNtt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::kyberNtt_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register coeffs = c_rarg0;
@@ -5232,7 +5849,7 @@ class StubGenerator: public StubCodeGenerator {
     // registers.
     // 3. In the seilerNTT() method we use R = 2^20 for the Montgomery
     // multiplications (this is because that way there should not be any
-    // overflow during the inverse NTT computation), here we usr R = 2^16 so
+    // overflow during the inverse NTT computation), here we use R = 2^16 so
     // that we can use the 16-bit arithmetic in the vector unit.
     //
     // On each level, we fill up the vector registers in such a way that the
@@ -5354,7 +5971,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // level 4
     // At level 4 coefficients occur in 8 discrete blocks of size 16
-    // so they are loaded using employing an ldr at 8 distinct offsets.
+    // so they are loaded by employing an ldr at 8 distinct offsets.
 
     vs_ldpq(vq, kyberConsts);
     int offsets3[8] = { 0, 32, 64, 96, 128, 160, 192, 224 };
@@ -5410,7 +6027,6 @@ class StubGenerator: public StubCodeGenerator {
     kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
     vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 0, offsets4);
     vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 128, offsets4);
-    // __ ldpq(v18, v19, __ post(zetas, 32));
     load32shorts(vs_front(vs2), zetas);
     kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
     vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 128, offsets4);
@@ -5426,8 +6042,11 @@ class StubGenerator: public StubCodeGenerator {
     vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 384, offsets4);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -5439,11 +6058,16 @@ class StubGenerator: public StubCodeGenerator {
   // coeffs (short[256]) = c_rarg0
   // ntt_zetas (short[256]) = c_rarg1
   address generate_kyberInverseNtt() {
-
+    StubId stub_id = StubId::stubgen_kyberInverseNtt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::kyberInverseNtt_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register coeffs = c_rarg0;
@@ -5515,7 +6139,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // level 2
     // At level 2 coefficients occur in 8 discrete blocks of size 16
-    // so they are loaded using employing an ldr at 8 distinct offsets.
+    // so they are loaded by employing an ldr at 8 distinct offsets.
 
     int offsets3[8] = { 0, 32, 64, 96, 128, 160, 192, 224 };
     vs_ldr_indexed(vs1, __ Q, coeffs, 0, offsets3);
@@ -5710,8 +6334,11 @@ class StubGenerator: public StubCodeGenerator {
     store64shorts(vs2, tmpAddr);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -5721,16 +6348,39 @@ class StubGenerator: public StubCodeGenerator {
   // static int implKyberNttMult(
   //              short[] result, short[] ntta, short[] nttb, short[] zetas) {}
   //
+  // The actual algorithm that is used here differs from the one in the Java
+  // implementation, it uses Montgomery multiplications instead of Barrett
+  // reduction, but the end result modulo MLKEM_Q is the same. This is the
+  // Java equivalent of this intrinsic implementation:
+  // static void implKyberNttMultJava(short[] result, short[] ntta, short[] nttb) {
+  //         for (int m = 0; m < ML_KEM_N / 2; m++) {
+  //             int a0 = ntta[2 * m];
+  //             int a1 = ntta[2 * m + 1];
+  //             int b0 = nttb[2 * m];
+  //             int b1 = nttb[2 * m + 1];
+  //             int r = montMul(a0, b0) +
+  //                     montMul(montMul(a1, b1), MONT_ZETAS_FOR_NTT_MULT[m]);
+  //             result[2 * m] = (short) montMul(r, MONT_R_SQUARE_MOD_Q);
+  //             result[2 * m + 1] = (short) montMul(
+  //                     (montMul(a0, b1) + montMul(a1, b0)), MONT_R_SQUARE_MOD_Q);
+  //          }
+  // }
+  //
   // result (short[256]) = c_rarg0
   // ntta (short[256]) = c_rarg1
   // nttb (short[256]) = c_rarg2
   // zetas (short[128]) = c_rarg3
   address generate_kyberNttMult() {
-
+    StubId stub_id = StubId::stubgen_kyberNttMult_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::kyberNttMult_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register result = c_rarg0;
@@ -5829,8 +6479,11 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::NE, kyberNttMult_loop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -5843,11 +6496,16 @@ class StubGenerator: public StubCodeGenerator {
   // a (short[256]) = c_rarg1
   // b (short[256]) = c_rarg2
   address generate_kyberAddPoly_2() {
-
+    StubId stub_id = StubId::stubgen_kyberAddPoly_2_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::kyberAddPoly_2_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register result = c_rarg0;
@@ -5913,8 +6571,11 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -5928,11 +6589,16 @@ class StubGenerator: public StubCodeGenerator {
   // b (short[256]) = c_rarg2
   // c (short[256]) = c_rarg3
   address generate_kyberAddPoly_3() {
-
+    StubId stub_id = StubId::stubgen_kyberAddPoly_3_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::kyberAddPoly_3_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register result = c_rarg0;
@@ -6012,8 +6678,11 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -6024,23 +6693,29 @@ class StubGenerator: public StubCodeGenerator {
   // static int implKyber12To16(
   //         byte[] condensed, int index, short[] parsed, int parsedLength) {}
   //
-  // (parsedLength or (parsedLength - 48) must be divisible by 64.)
+  // we assume that parsed and condensed are allocated such that for
+  // n = (parsedLength + 63) / 64
+  // n blocks of 96 bytes of input can be processed, i.e.
+  // index + n * 96 <= condensed.length and
+  // n * 64 <= parsed.length
   //
   // condensed (byte[]) = c_rarg0
   // condensedIndex = c_rarg1
-  // parsed (short[112 or 256]) = c_rarg2
-  // parsedLength (112 or 256) = c_rarg3
+  // parsed (short[]) = c_rarg2
+  // parsedLength = c_rarg3
   address generate_kyber12To16() {
-    Label L_F00, L_loop, L_end;
-
-    __ BIND(L_F00);
-    __ emit_int64(0x0f000f000f000f00);
-    __ emit_int64(0x0f000f000f000f00);
+    StubId stub_id = StubId::stubgen_kyber12To16_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    Label L_F00, L_loop;
 
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::kyber12To16_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register condensed = c_rarg0;
@@ -6089,8 +6764,8 @@ class StubGenerator: public StubCodeGenerator {
     // twice, one copy manipulated to provide the lower 4 bits
     // belonging to the first short in a pair and another copy
     // manipulated to provide the higher 4 bits belonging to the
-    // second short in a pair. This is why the the vector sequences va
-    // and vb used to hold the expanded 8H elements are of length 8.
+    // second short in a pair. This is why the vector sequences va
+    // and vb are used to hold the expanded 8H elements are of length 8.
 
     // Expand vin[0] into va[0:1], and vin[1] into va[2:3] and va[4:5]
     // n.b. target elements 2 and 3 duplicate elements 4 and 5
@@ -6156,79 +6831,20 @@ class StubGenerator: public StubCodeGenerator {
     vs_st2_post(vs_front(vb), __ T8H, parsed);
 
     __ sub(parsedLength, parsedLength, 64);
-    __ cmp(parsedLength, (u1)64);
-    __ br(Assembler::GE, L_loop);
-    __ cbz(parsedLength, L_end);
-
-    // if anything is left it should be a final 72 bytes of input
-    // i.e. a final 48 12-bit values. so we handle this by loading
-    // 48 bytes into all 16B lanes of front(vin) and only 24
-    // bytes into the lower 8B lane of back(vin)
-    vs_ld3_post(vs_front(vin), __ T16B, condensed);
-    vs_ld3(vs_back(vin), __ T8B, condensed);
-
-    // Expand vin[0] into va[0:1], and vin[1] into va[2:3] and va[4:5]
-    // n.b. target elements 2 and 3 of va duplicate elements 4 and
-    // 5 and target element 2 of vb duplicates element 4.
-    __ ushll(va[0], __ T8H, vin[0], __ T8B, 0);
-    __ ushll2(va[1], __ T8H, vin[0], __ T16B, 0);
-    __ ushll(va[2], __ T8H, vin[1], __ T8B, 0);
-    __ ushll2(va[3], __ T8H, vin[1], __ T16B, 0);
-    __ ushll(va[4], __ T8H, vin[1], __ T8B, 0);
-    __ ushll2(va[5], __ T8H, vin[1], __ T16B, 0);
-
-    // This time expand just the lower 8 lanes
-    __ ushll(vb[0], __ T8H, vin[3], __ T8B, 0);
-    __ ushll(vb[2], __ T8H, vin[4], __ T8B, 0);
-    __ ushll(vb[4], __ T8H, vin[4], __ T8B, 0);
-
-    // shift lo byte of copy 1 of the middle stripe into the high byte
-    __ shl(va[2], __ T8H, va[2], 8);
-    __ shl(va[3], __ T8H, va[3], 8);
-    __ shl(vb[2], __ T8H, vb[2], 8);
-
-    // expand vin[2] into va[6:7] and lower 8 lanes of vin[5] into
-    // vb[6] pre-shifted by 4 to ensure top bits of the input 12-bit
-    // int are in bit positions [4..11].
-    __ ushll(va[6], __ T8H, vin[2], __ T8B, 4);
-    __ ushll2(va[7], __ T8H, vin[2], __ T16B, 4);
-    __ ushll(vb[6], __ T8H, vin[5], __ T8B, 4);
-
-    // mask hi 4 bits of each 1st 12-bit int in pair from copy1 and
-    // shift lo 4 bits of each 2nd 12-bit int in pair to bottom of
-    // copy2
-    __ andr(va[2], __ T16B, va[2], v31);
-    __ andr(va[3], __ T16B, va[3], v31);
-    __ ushr(va[4], __ T8H, va[4], 4);
-    __ ushr(va[5], __ T8H, va[5], 4);
-    __ andr(vb[2], __ T16B, vb[2], v31);
-    __ ushr(vb[4], __ T8H, vb[4], 4);
-
-
-
-    // sum hi 4 bits and lo 8 bits of each 1st 12-bit int in pair and
-    // hi 8 bits plus lo 4 bits of each 2nd 12-bit int in pair
-
-    // n.b. ordering ensures: i) inputs are consumed before they are
-    // overwritten ii) order of 16-bit results across succsessive
-    // pairs of vectors in va and then lower half of vb reflects order
-    // of corresponding 12-bit inputs
-    __ addv(va[0], __ T8H, va[0], va[2]);
-    __ addv(va[2], __ T8H, va[1], va[3]);
-    __ addv(va[1], __ T8H, va[4], va[6]);
-    __ addv(va[3], __ T8H, va[5], va[7]);
-    __ addv(vb[0], __ T8H, vb[0], vb[2]);
-    __ addv(vb[1], __ T8H, vb[4], vb[6]);
-
-    // store 48 results interleaved as shorts
-    vs_st2_post(vs_front(va), __ T8H, parsed);
-    vs_st2_post(vs_front(vs_front(vb)), __ T8H, parsed);
-
-    __ BIND(L_end);
+    __ cmp(parsedLength, (u1)0);
+    __ br(Assembler::GT, L_loop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
+
+    // bind label and generate constant data used by this stub
+    __ BIND(L_F00);
+    __ emit_int64(0x0f000f000f000f00);
+    __ emit_int64(0x0f000f000f000f00);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -6239,11 +6855,16 @@ class StubGenerator: public StubCodeGenerator {
   //
   // coeffs (short[256]) = c_rarg0
   address generate_kyberBarrettReduce() {
-
+    StubId stub_id = StubId::stubgen_kyberBarrettReduce_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::kyberBarrettReduce_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register coeffs = c_rarg0;
@@ -6320,8 +6941,11 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -6391,7 +7015,7 @@ class StubGenerator: public StubCodeGenerator {
     vs_addv(va0, __ T4S, va0, vc);
   }
 
-  // Perform combined add/sub then montul on 4x4S vectors.
+  // Perform combined add/sub then montmul on 4x4S vectors.
   void dilithium_sub_add_montmul16(
           const VSeq<4>& va0, const VSeq<4>& va1, const VSeq<4>& vb,
           const VSeq<4>& vtmp1, const VSeq<4>& vtmp2, const VSeq<2>& vq) {
@@ -6486,11 +7110,16 @@ class StubGenerator: public StubCodeGenerator {
   // coeffs (int[256]) = c_rarg0
   // zetas (int[256]) = c_rarg1
   address generate_dilithiumAlmostNtt() {
-
+    StubId stub_id = StubId::stubgen_dilithiumAlmostNtt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::dilithiumAlmostNtt_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register coeffs = c_rarg0;
@@ -6522,7 +7151,7 @@ class StubGenerator: public StubCodeGenerator {
     // coefficients we load 4 adjacent values at 8 different offsets
     // using an indexed ldr with register variant Q and multiply them
     // in sequence order by the next set of inputs. Likewise we store
-    // the resuls using an indexed str with register variant Q.
+    // the results using an indexed str with register variant Q.
     for (int i = 0; i < 1024; i += 256) {
       // reload constants q, qinv each iteration as they get clobbered later
       vs_ldpq(vq, dilithiumConsts); // qInv, q
@@ -6572,11 +7201,11 @@ class StubGenerator: public StubCodeGenerator {
 
     // level 7
     // At level 7 the coefficients we need to combine with the zetas
-    // occur singly with montmul inputs alterating with add/sub
+    // occur singly with montmul inputs alternating with add/sub
     // inputs. Once again we can use 4-way parallelism to combine 16
     // zetas at a time. However, we have to load 8 adjacent values at
     // 4 different offsets using an ld2 load with arrangement 4S. That
-    // interleaves the the odd words of each pair into one
+    // interleaves the odd words of each pair into one
     // coefficients vector register and the even words of the pair
     // into the next register. We then need to montmul the 4 even
     // elements of the coefficients register sequence by the zetas in
@@ -6598,8 +7227,11 @@ class StubGenerator: public StubCodeGenerator {
       vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, i, offsets);
     }
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -6693,11 +7325,16 @@ class StubGenerator: public StubCodeGenerator {
   // coeffs (int[256]) = c_rarg0
   // zetas (int[256]) = c_rarg1
   address generate_dilithiumAlmostInverseNtt() {
-
+    StubId stub_id = StubId::stubgen_dilithiumAlmostInverseNtt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::dilithiumAlmostInverseNtt_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     const Register coeffs = c_rarg0;
@@ -6769,7 +7406,7 @@ class StubGenerator: public StubCodeGenerator {
       // c0 load 32 (8x4S) coefficients via first offsets
       vs_ldr_indexed(vs1, __ Q, coeffs, i, offsets1);
       // c1 load 32 (8x4S) coefficients via second offsets
-      vs_ldr_indexed(vs2, __ Q,coeffs, i, offsets2);
+      vs_ldr_indexed(vs2, __ Q, coeffs, i, offsets2);
       // a0 = c0 + c1  n.b. clobbers vq which overlaps vs3
       vs_addv(vs3, __ T4S, vs1, vs2);
       // c = c0 - c1
@@ -6790,8 +7427,11 @@ class StubGenerator: public StubCodeGenerator {
     dilithiumInverseNttLevel3_7(dilithiumConsts, coeffs, zetas);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -6799,18 +7439,23 @@ class StubGenerator: public StubCodeGenerator {
   // Dilithium multiply polynomials in the NTT domain.
   // Straightforward implementation of the method
   // static int implDilithiumNttMult(
-  //              int[] result, int[] ntta, int[] nttb {} of
-  // the sun.security.provider.ML_DSA class.
+  //              int[] product, int[] coeffs1, int[] coeffs2) {}
+  // of the sun.security.provider.ML_DSA class.
   //
   // result (int[256]) = c_rarg0
   // poly1 (int[256]) = c_rarg1
   // poly2 (int[256]) = c_rarg2
   address generate_dilithiumNttMult() {
-
-        __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::dilithiumNttMult_id;
+    StubId stub_id = StubId::stubgen_dilithiumNttMult_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     Label L_loop;
@@ -6856,25 +7501,33 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::GE, L_loop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
 
-  // Dilithium Motgomery multiply an array by a constant.
+  // Dilithium Montgomery multiply an array by a constant.
   // A straightforward implementation of the method
   // static int implDilithiumMontMulByConstant(int[] coeffs, int constant) {}
-  // of the sun.security.provider.MLDSA class
+  // of the sun.security.provider.ML_DSA class
   //
   // coeffs (int[256]) = c_rarg0
   // constant (int) = c_rarg1
   address generate_dilithiumMontMulByConstant() {
-
+    StubId stub_id = StubId::stubgen_dilithiumMontMulByConstant_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::dilithiumMontMulByConstant_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ enter();
 
     Label L_loop;
@@ -6917,15 +7570,19 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::GE, L_loop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
 
   // Dilithium decompose poly.
   // Implements the method
-  // static int implDilithiumDecomposePoly(int[] coeffs, int constant) {}
+  //    static int implDilithiumDecomposePoly(int[] input, int[] lowPart, int[] highPart,
+  //                                          int twoGamma2, int multiplier) {
   // of the sun.security.provider.ML_DSA class
   //
   // input (int[256]) = c_rarg0
@@ -6934,11 +7591,16 @@ class StubGenerator: public StubCodeGenerator {
   // twoGamma2  (int) = c_rarg3
   // multiplier (int) = c_rarg4
   address generate_dilithiumDecomposePoly() {
-
+    StubId stub_id = StubId::stubgen_dilithiumDecomposePoly_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::dilithiumDecomposePoly_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     Label L_loop;
 
     const Register input = c_rarg0;
@@ -7024,7 +7686,7 @@ class StubGenerator: public StubCodeGenerator {
     vs_andr(vtmp, vs4, twog2);
     vs_subv(vs3, __ T4S, vs3, vtmp);
 
-    //  quotient += (mask & 1);
+    // quotient += (mask & 1);
     vs_andr(vtmp, vs4, one);
     vs_addv(vs2, __ T4S, vs2, vtmp);
 
@@ -7058,7 +7720,7 @@ class StubGenerator: public StubCodeGenerator {
     // r1 = r1 & quotient;
     vs_andr(vs1, vs2, vs1);
 
-    // store results inteleaved
+    // store results interleaved
     // lowPart[m] = r0;
     // highPart[m] = r1;
     __ st4(vs3[0], vs3[1], vs3[2], vs3[3], __ T4S, __ post(lowPart, 64));
@@ -7075,8 +7737,1398 @@ class StubGenerator: public StubCodeGenerator {
     __ ldpd(v8, v9, __ post(sp, 64));
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0 (Java callees return 1. Caller ignores the return value)
+    __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
+  static constexpr int montMulP256Shift1 = 12; // 64 - bits per limb
+  static constexpr int montMulP256Shift2 = 52; // bits per limb
+  // stack space needed for carry computation
+  static constexpr int cDataSize = 6 * BytesPerLong;
+  // stack space needed for data computed by the neon side
+  static constexpr int mulDataSize = 16 * BytesPerLong;
+
+
+  // Subroutine used by the 52 x 52 bit multiplication algorithm in
+  // generate_intpoly_montgomeryMult_P256().
+  // This function computes partial results of eight 52 x 52 bit multiplications,
+  // where the multiplicands are stored as 64-bit values, specifically
+  // (b_0, b_1, b_2, b_3) * (a_3, a_4). (The 4 calls to this function
+  // together provide the results of these limb-multiplications.)
+  // Calls to this function accept either the low 32 bits or high 20 bits
+  // of each b_i packed into bs in ascending order. a_3 and a_4 are packed
+  // into successive 64 bit elements of as. lane selects the low 32 or high
+  // 20 bits of each a_j value. So four calls with the appropriate parameters
+  // will produce the 64-bit low32 * low32, low32 * high20, high20 * low32,
+  // high20 * high20 values in the output register sequences vs. The
+  // 64-bit partial products are returned in vs in ascending order:
+  // vs[0] = (b_0*a_3, b_1*a_3) . . .  vs[3] = (b_2*a_4, b_3*a_4)
+
+  void neon_partial_mult_64(const VSeq<4>& vs, FloatRegister bs, FloatRegister as, int lane_lo) {
+    __ umullv(vs[0], __ T2D, bs, __ T2S, as, __ S, lane_lo);
+    __ umull2v(vs[1], __ T2D, bs, __ T4S, as, __ S, lane_lo);
+    __ umullv(vs[2], __ T2D, bs, __ T2S, as, __ S, lane_lo + 2);
+    __ umull2v(vs[3], __ T2D, bs, __ T4S, as, __ S, lane_lo + 2);
+  }
+
+    // Subroutine used by the generate_intpoly_montgomeryMult_P256() function
+    // to compute the result of a 52 x 52 bit multiplications where the
+    // multiplicands, a and b are available as 64-bit values.
+    // The result is going to two 64-bit registers lo (least significant 52 bits)
+    // and hi (most significant 52 bits).
+    void gpr_partial_mult_52(Register a, Register b, Register hi, Register lo,
+     Register mask) {
+      // compute 104-bit (40 + 64) full product
+      __ umulh(hi, a, b);
+      __ mul(lo, a, b);
+      // combine 40 + 12 bits into hi result
+      // on certain implementations of aarch64 (e.g. apple M1) replacing extr()
+      // with the following equivalent instruction sequence the performance
+      // improves slightly (despite it is two instructions longer and needs
+      // an additional register)
+      //      __ lsl(hi, hi, montMulP256Shift1);
+      //      __ lsr(tmp, lo, montMulP256Shift2);
+      //      __ orr(hi, hi, tmp);
+      __ extr(hi, hi, lo, montMulP256Shift2);
+      // mask off 52 bits of lo result
+      __ andr(lo, lo, mask);
+    }
+
+  // This assembly follows the Java code in MontgomeryIntegerPolynomial256.mult()
+  // quite closely. The main difference is that the computations done with the
+  // last two limbs of `a` are done using Neon registers. This allows us to take
+  // advantage of both the Neon registers and GPRs simultaneously.
+  // It is also worth noting that since Neon does not support 64 bit
+  // multiplication, we split each 64 bit value into lower and upper halves
+  // and use the "schoolbook" multiplication algorithm.
+  address generate_intpoly_montgomeryMult_P256() {
+    assert(UseIntPolyIntrinsics, "what are we doing here?");
+    StubId stub_id = StubId::stubgen_intpoly_montgomeryMult_P256_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    __ enter();
+
+    // Registers that are used throughout entire routine
+    const Register a = c_rarg0;
+    const Register b = c_rarg1;
+    const Register result = c_rarg2;
+
+    RegSet regs = RegSet::range(r0, r28) - rscratch1 - rscratch2
+      - r16 - r17 - r18_tls - a - b - result;
+
+    auto common_regs = regs.begin();
+    Register limb_mask = *common_regs++,
+      c_ptr = *common_regs++,
+      mod_0 = *common_regs++,
+      mod_1 = *common_regs++,
+      mod_3 = *common_regs++,
+      mod_4 = *common_regs++,
+      b_0 = *common_regs++,
+      b_1 = *common_regs++,
+      b_2 = *common_regs++,
+      b_3 = *common_regs++,
+      b_4 = *common_regs++;
+
+    FloatRegSet floatRegs = FloatRegSet::range(v0, v31)
+      - FloatRegSet::range(v8, v15)   // Caller saved vectors
+      - FloatRegSet::range(v16, v31); // Manually-allocated vectors
+
+    auto common_vectors = floatRegs.begin();
+    FloatRegister limb_mask_vec = *common_vectors++,
+      b_lows = *common_vectors++,
+      b_highs = *common_vectors++,
+      a_vals = *common_vectors++;
+
+    // Push callee saved registers on to the stack
+    RegSet callee_saved = RegSet::range(r19, r28);
+    __ push(callee_saved, sp);
+
+    // Allocate space on the stack for carry values
+    __ sub(sp, sp, cDataSize);
+    __ mov(c_ptr, sp);
+
+    // Calculate (52-bit) limb masks for both gpr and vector registers
+    __ mov(limb_mask, -UCONST64(1) >> montMulP256Shift1);
+    __ dup(limb_mask_vec, __ T2D, limb_mask);
+
+    //Load input arrays and modulus
+    Register a_ptr = *common_regs++, mod_ptr = *common_regs++;
+     // skip 3 limbs so a_ptr addresses trailing pair {a3, a4}
+    __ add(a_ptr, a, 3 * BytesPerLong);
+    __ lea(mod_ptr, ExternalAddress((address)_modulus_P256));
+    __ ldr(b_0, Address(b));
+    __ ldr(b_1, Address(b, BytesPerLong));
+    __ ldr(b_2, Address(b, 2 * BytesPerLong));
+    __ ldr(b_3, Address(b, 3 * BytesPerLong));
+    __ ldr(b_4, Address(b, 4 * BytesPerLong));
+    __ ldr(mod_0, __ post(mod_ptr, BytesPerLong));
+    __ ldr(mod_1, __ post(mod_ptr, BytesPerLong));
+    __ ldr(mod_3, __ post(mod_ptr, BytesPerLong));
+    __ ldr(mod_4, mod_ptr);
+    __ ld1(a_vals, __ T2D, a_ptr);
+    // use an interleaved load to group low 32 bits and high 20 bits
+    // of 4 successive b values into two vector registers
+    // n.b. these are the same inputs as the ones in b_0 ... b4
+    __ ld2(b_lows, b_highs, __ T4S, b);
+    common_regs = common_regs.remaining()
+      + a_ptr + mod_ptr;
+        a_ptr = mod_ptr = noreg;
+
+    //Regs used throughout the main "loop", which is partially unrolled here
+    Register high = *common_regs++,
+      low = *common_regs++,
+      mul_ptr = *common_regs++,
+      mod_high = *common_regs++,
+      mod_low = *common_regs++,
+      a_i = *common_regs++,
+      c_i = *common_regs++,
+      tmp = *common_regs++,
+      n = *common_regs++;
+
+    // vector sequences used to compute and combine partial products of
+    // b_i * a_j for i = {0,1,2,3} j = {3,4}
+    VSeq<4> A(16);
+    VSeq<4> B(20);
+    VSeq<4> C(24);
+    VSeq<4> D(28);
+
+
+    // neon and gpr computations are interleaved to maximize parallelism
+
+    // allocate stack space for the neon results
+    __ sub(sp, sp, mulDataSize);
+    __ mov(mul_ptr, sp);
+
+    // cross-multiply low * low for limbs b0-b3 and a3-a4 in parallel
+    neon_partial_mult_64(A, b_lows, a_vals, 0);
+
+    // Limb 0
+    __ ldr(a_i, __ post(a, BytesPerLong));
+    gpr_partial_mult_52(a_i, b_0, high, low, limb_mask);
+    __ mov(n, low);
+   // __ andr(n, low, limb_mask);
+
+    // cross-multiply high * low for limbs b0-b3 and a3-a4 in parallel
+    neon_partial_mult_64(B, b_highs, a_vals, 0);
+
+    // Limb 0 modulus computation
+    // n.b. modulus computation requires multiplying successive
+    // limbs of the product by corresponding limbs of the p256
+    // prime adding the result to the limb and folding this
+    // partial result into a running 256-bit sum in c_i. Limbs
+    // of c_i are stored via c_ptr once carries are included.
+    // n.b. the mul + add is omitted for limb 2 since the
+    // corresponding prime bits are zero.
+    gpr_partial_mult_52(n, mod_0, mod_high, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+    __ lsr(c_i, low, montMulP256Shift2);
+    __ add(c_i, c_i, high);
+
+    // cross-multiply low * high for limbs b0-b3 and a3-a4 in parallel
+    neon_partial_mult_64(C, b_lows, a_vals, 1);
+
+    // Limb 1
+    gpr_partial_mult_52(a_i, b_1, high, low, limb_mask);
+
+    // cross-multiply high * high for limbs b0-b3 and a3-a4 in parallel
+    neon_partial_mult_64(D, b_highs, a_vals, 1);
+
+    gpr_partial_mult_52(n, mod_1, mod_high, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+    __ add(c_i, c_i, low);
+    __ str(c_i, c_ptr);
+    __ mov(c_i, high);
+
+    // combine neon 32-bit partial products, regrouping to produce
+    // 8*52-bit low products in A and 8*52-bit high products in D
+
+    // add low*high/high*low intermediate products before regrouping
+    vs_addv(B, __ T2D, B, C); // Store (B+C) in B
+
+    // Limb 2
+    gpr_partial_mult_52(a_i, b_2, high, low, limb_mask);
+    __ add(c_i, c_i, low);
+    __ str(c_i, Address(c_ptr, 8));
+    __ mov(c_i, high);
+
+    // shift high*high (40-bit) product up into 52-bits of output
+    vs_shl(D, __ T2D, D, montMulP256Shift1);
+
+    // Limb 3
+    gpr_partial_mult_52(a_i, b_3, high, low, limb_mask);
+
+    // shift high 32 (or 33) bits of intermediate products for addition to D
+    vs_ushr(C, __ T2D, B, 32 - montMulP256Shift1); // Use C for ((B+C) >>> 20)
+
+    gpr_partial_mult_52(n, mod_3, mod_high, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+    __ add(c_i, c_i, low);
+    __ str(c_i, Address(c_ptr, 2 * BytesPerLong));
+    __ mov(c_i, high);
+
+    // shift low 32 bits of intermediate product up for masking and addition to A
+    vs_shl(B, __ T2D, B, 32);
+
+    // Limb 4
+    gpr_partial_mult_52(a_i, b_4, high, low, limb_mask);
+
+    // add high bits of intermediate product into D
+    vs_addv(D, __ T2D, D, C);
+
+    gpr_partial_mult_52(n, mod_4, mod_high, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+    __ add(c_i, c_i, low);
+    __ str(c_i, Address(c_ptr, 3 * BytesPerLong));
+    __ str(high, Address(c_ptr, 4 * BytesPerLong));
+
+    // top 12 bits of 32*32 bit product in A need adding into high 52-bit output
+    vs_ushr(C, __ T2D, A, 52); // C now holds (A >>> 52)
+    // Only 20 of the 32 bits now in the top of B should be added into A
+    vs_andr(B, B, limb_mask_vec);
+    // reduce original 64-bit product to 52-bits
+    vs_andr(A, A, limb_mask_vec);
+    // add intermediate products to high 52-bit result in D
+    vs_addv(D, __ T2D, D, C);
+    // add 20/21 bits of intermediate product in top of B into low 52-bit result
+    vs_addv(A, __ T2D, A, B);
+    // save and then mask off any overflow bit from computing low 52-bit result
+    vs_ushr(B, __ T2D, A, montMulP256Shift2);
+    vs_andr(A, A, limb_mask_vec);
+    // add any remaining carry into the high 52-bit result
+    vs_addv(D, __ T2D, D, B);
+
+    // the write interleaves the 4 successive pairs of low and
+    // high results: (l0, l1), (h0, h1), ... (l6, l7), (h6, h7)
+    vs_st1_interleaved(A, D, mul_ptr);
+
+    // Free mul_ptr
+    common_regs = common_regs.remaining() + mul_ptr;
+    mul_ptr = noreg;
+
+    /////////////////////////
+    // Loop 2 & 3
+    /////////////////////////
+
+    for (int i = 0; i < 2; i++) {
+      // Load a_i and increment by 8 bytes
+      __ ldr(a_i, __ post(a, BytesPerLong));
+      __ ldr(c_i, c_ptr); //Load prior c_i
+
+      // Limb 0
+      gpr_partial_mult_52(a_i, b_0, high, low, limb_mask);
+      __ add(low, low, c_i);
+      __ ldr(c_i, Address(c_ptr, BytesPerLong));
+      __ andr(n, low, limb_mask);
+      gpr_partial_mult_52(n, mod_0, mod_high, mod_low, limb_mask);
+      __ add(low, low, mod_low);
+      __ add(high, high, mod_high);
+      __ lsr(tmp, low, montMulP256Shift2);
+      __ add(c_i, c_i, tmp);
+      __ add(c_i, c_i, high);
+
+      // Limb 1
+      gpr_partial_mult_52(a_i, b_1, high, low, limb_mask);
+      gpr_partial_mult_52(n, mod_1, mod_high, mod_low, limb_mask);
+      __ ldr(tmp, Address(c_ptr, 2 * BytesPerLong));
+      __ add(low, low, mod_low);
+      __ add(high, high, mod_high);
+      __ add(c_i, c_i, low);
+      __ str(c_i, c_ptr);
+      __ add(c_i, tmp, high);
+
+      // Limb 2
+      gpr_partial_mult_52(a_i, b_2, high, low, limb_mask);
+      __ ldr(tmp, Address(c_ptr, 3 * BytesPerLong));
+      __ add(c_i, c_i, low);
+      __ str(c_i, Address(c_ptr, BytesPerLong));
+      __ add(c_i, tmp, high);
+
+      // Limb 3
+      gpr_partial_mult_52(a_i, b_3, high, low, limb_mask);
+      gpr_partial_mult_52(n, mod_3, mod_high, mod_low, limb_mask);
+      __ ldr(tmp, Address(c_ptr, 4 * BytesPerLong));
+      __ add(low, low, mod_low);
+      __ add(high, high, mod_high);
+      __ add(c_i, c_i, low);
+      __ str(c_i, Address(c_ptr, 2 * BytesPerLong));
+      __ add(c_i, tmp, high);
+
+      // Limb 4
+      gpr_partial_mult_52(a_i, b_4, high, low, limb_mask);
+      gpr_partial_mult_52(n, mod_4, mod_high, mod_low, limb_mask);
+      __ add(low, low, mod_low);
+      __ add(high, high, mod_high);
+      __ add(c_i, c_i, low);
+      __ str(c_i, Address(c_ptr, 3 * BytesPerLong));
+      __ str(high, Address(c_ptr, 4 * BytesPerLong));
+    }
+    // Reallocate regs b_0, b_1, b_2 and b_3
+        common_regs = common_regs.remaining()
+          + b_0 + b_1 + b_2 + b_3;
+            b_0 = b_1 = b_2 = b_3 = noreg;
+
+    Register low_1 = *common_regs++;
+    Register high_1 = *common_regs++;
+
+    //////////////////////////////
+    // a[3]
+    //////////////////////////////
+
+    // For a_3 and a_4 we have already computed the cross-products
+    // with b_0 ... b_3 and stored them on the stack relative to
+    // `mul_ptr` i.e. the current `sp`in the order
+    // l(a_3 * b_0), l(a_3 * b_1), h(a_3 * b_0), h(a_3 * b_1),
+    // l(a_3 * b_2), l(a_3 * b_3), h(a_3 * b_2), h(a_3 * b_3),
+    // l(a_4 * b_0), l(a_4 * b_1), h(a_4 * b_0), h(a_4 * b_1),
+    // l(a_4 * b_2), l(a_4 * b_3), h(a_4 * b_2), h(a_4 * b_3),
+    // where l(x) is the low 52 bits of x and h(x) is the high 52 bits
+
+    __ ldr(low_1, Address(sp));
+    __ ldr(high_1, Address(sp, 2 * BytesPerLong));
+
+    __ ldr(low, Address(sp, BytesPerLong));
+    __ ldr(high, Address(sp, 3 * BytesPerLong));
+    __ ldr(a_i, __ post(a, BytesPerLong));
+    __ ldr(c_i, c_ptr);
+
+    // Limb 0
+    __ add(low_1, low_1, c_i);
+    __ ldr(c_i, Address(c_ptr, BytesPerLong));
+    __ andr(n, low_1, limb_mask);
+    gpr_partial_mult_52(n, mod_0, mod_high, mod_low, limb_mask);
+    __ add(low_1, low_1, mod_low);
+    __ add(high_1, high_1, mod_high);
+    __ lsr(tmp, low_1, montMulP256Shift2);
+    __ add(c_i, c_i, tmp);
+    __ add(c_i, c_i, high_1);
+
+    // Limb 1
+    __ ldr(low_1, Address(sp, 4 * BytesPerLong));
+    __ ldr(high_1, Address(sp, 6 * BytesPerLong));
+    gpr_partial_mult_52(n, mod_1, mod_high, mod_low, limb_mask);
+    __ ldr(tmp, Address(c_ptr, 2 * BytesPerLong));
+    __ andr(mod_low, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+    __ add(c_i, c_i, low);
+    __ str(c_i, c_ptr);
+    __ add(c_i, tmp, high);
+
+    // Limb 2
+    __ ldr(low, Address(sp, 5 * BytesPerLong));
+    __ ldr(high, Address(sp, 7 * BytesPerLong));
+    __ ldr(tmp, Address(c_ptr, 3 * BytesPerLong));
+    __ add(c_i, c_i, low_1);
+    __ str(c_i, Address(c_ptr, BytesPerLong));
+    __ add(c_i, tmp, high_1);
+
+    // Limb 3
+    gpr_partial_mult_52(n, mod_3, mod_high, mod_low, limb_mask);
+    __ ldr(tmp, Address(c_ptr, 4 * BytesPerLong));
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+    __ add(c_i, c_i, low);
+    __ str(c_i, Address(c_ptr, 2 * BytesPerLong));
+    __ add(c_i, tmp, high);
+
+    // Limb 4
+    __ ldr(low, Address(sp, 8 * BytesPerLong));
+    __ ldr(high, Address(sp, 10 * BytesPerLong));
+    gpr_partial_mult_52(a_i, b_4, high_1, low_1, limb_mask);
+    gpr_partial_mult_52(n, mod_4, mod_high, mod_low, limb_mask);
+    __ add(low_1, low_1, mod_low);
+    __ add(high_1, high_1, mod_high);
+    __ add(c_i, c_i, low_1);
+    __ str(c_i, Address(c_ptr, 3 * BytesPerLong));
+    __ str(high_1, Address(c_ptr, 4 * BytesPerLong));
+
+    //////////////////////////////
+    // a[4]
+    //////////////////////////////
+
+    Register c5 = *common_regs++,
+      c6 = *common_regs++,
+      c7 = *common_regs++;
+
+    __ ldr(a_i, a);
+    __ ldr(c_i, c_ptr);
+
+    // Limb 0
+    __ ldr(low_1, Address(sp, 9 * BytesPerLong));
+    __ ldr(high_1, Address(sp, 11 * BytesPerLong));
+
+    __ add(low, low, c_i);
+    __ ldr(c_i, Address(c_ptr, BytesPerLong));
+    __ andr(n, low, limb_mask);
+    gpr_partial_mult_52(n, mod_0, mod_high, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+    __ lsr(tmp, low, montMulP256Shift2);
+    __ add(c_i, c_i, tmp);
+    __ add(c_i, c_i, high);
+
+    __ ldr(low, Address(sp, 12 * BytesPerLong));
+    __ ldr(high, Address(sp, 14 * BytesPerLong));
+    gpr_partial_mult_52(n, mod_1, mod_high, mod_low, limb_mask);
+    __ add(low_1, low_1, mod_low);
+    __ add(high_1, high_1, mod_high);
+    __ add(c5, c_i, low_1);
+    __ ldr(c_i, Address(c_ptr, 2 * BytesPerLong));
+    __ lsr(tmp, c5, montMulP256Shift2);
+    __ add(c_i, c_i, tmp);
+    __ add(c_i, c_i, high_1);
+
+    // Limb 2
+    __ ldr(low_1, Address(sp, 13 * BytesPerLong));
+    __ ldr(high_1, Address(sp, 15 * BytesPerLong));
+    __ add(c6, c_i, low);
+    __ ldr(c_i, Address(c_ptr, 3 * BytesPerLong));
+    __ lsr(tmp, c6, montMulP256Shift2);
+    __ add(c_i, c_i, tmp);
+    __ add(c_i, c_i, high);
+
+    // Limb 3
+    gpr_partial_mult_52(n, mod_3, mod_high, mod_low, limb_mask);
+    __ add(low_1, low_1, mod_low);
+    __ add(high_1, high_1, mod_high);
+    __ add(c7, c_i, low_1);
+    __ ldr(c_i, Address(c_ptr, 4 * BytesPerLong));
+    __ lsr(tmp, c7, montMulP256Shift2);
+    __ add(c_i, c_i, tmp);
+    __ add(c_i, c_i, high_1);
+
+    // Limb 4
+    gpr_partial_mult_52(a_i, b_4, high, low, limb_mask);
+    gpr_partial_mult_52(n, mod_4, mod_high, mod_low, limb_mask);
+    __ add(low, low, mod_low);
+    __ add(high, high, mod_high);
+
+    // Reallocate b_4
+    common_regs = common_regs.remaining() + b_4;
+    b_4 = noreg;
+
+    Register c8 = *common_regs++,
+      c9 = *common_regs++;
+
+    __ add(c8, c_i, low);
+    __ lsr(c9, c8, montMulP256Shift2);
+    __ add(c9, c9, high);
+
+    __ andr(c5, c5, limb_mask);
+    __ andr(c6, c6, limb_mask);
+    __ andr(c7, c7, limb_mask);
+    __ andr(c8, c8, limb_mask);
+
+    /////////////////////////////
+    // Final carry propagate
+    /////////////////////////////
+
+    // c0 = c5 - modulus[0];
+    // c1 = c6 - modulus[1] + (c0 >> BITS_PER_LIMB);
+    // c0 &= LIMB_MASK;
+    // c2 = c7 + (c1 >> BITS_PER_LIMB);
+    // c1 &= LIMB_MASK;
+    // c3 = c8 - modulus[3] + (c2 >> BITS_PER_LIMB);
+    // c2 &= LIMB_MASK;
+    // c4 = c9 - modulus4] + (c3 >> BITS_PER_LIMB);
+    // c3 &= LIMB_MASK;
+
+    // Free up all unused regs
+    common_regs = common_regs.remaining()
+      + c_ptr + low + high + mod_high
+      + mod_low + a_i + c_i + n + low_1 + high_1;
+        c_ptr = low = high = mod_high
+      = mod_low = a_i = c_i = n = low_1 = high_1 = noreg;
+
+    Register c0 = *common_regs++,
+      c1 = *common_regs++,
+      c2 = *common_regs++,
+      c3 = *common_regs++,
+      c4 = *common_regs++;
+
+    __ sub(c0, c5, mod_0);
+    __ sub(c1, c6, mod_1);
+    __ sub(c3, c8, mod_3);
+    __ sub(c4, c9, mod_4);
+    __ add(c1, c1, c0, Assembler::ASR, montMulP256Shift2);
+    __ andr(c0, c0, limb_mask);
+    __ add(c2, c7, c1, Assembler::ASR, montMulP256Shift2);
+    __ andr(c1, c1, limb_mask);
+    __ add(c3, c3, c2, Assembler::ASR, montMulP256Shift2);
+    __ andr(c2, c2, limb_mask);
+    __ add(c4, c4, c3, Assembler::ASR, montMulP256Shift2);
+    __ andr(c3, c3, limb_mask);
+
+    // Final write back
+    // mask = c4 >> 63
+    // r[0] = ((c5 & mask) | (c0 & ~mask));
+    // r[1] = ((c6 & mask) | (c1 & ~mask));
+    // r[2] = ((c7 & mask) | (c2 & ~mask));
+    // r[3] = ((c8 & mask) | (c3 & ~mask));
+    // r[4] = ((c9 & mask) | (c4 & ~mask));
+
+    common_regs = common_regs.remaining()
+      + mod_0 + mod_1 + mod_3 + mod_4;
+        mod_0 = mod_1 = mod_3 = mod_4 = noreg;
+
+    Register mask = *common_regs++;
+    Register nmask = *common_regs++;
+
+    __ asr(mask, c4, 63);
+    __ mvn(nmask, mask);
+    __ andr(c5, c5, mask);
+    __ andr(tmp, c0, nmask);
+    __ orr(c5, c5, tmp);
+    __ andr(c6, c6, mask);
+    __ andr(tmp, c1, nmask);
+    __ orr(c6, c6, tmp);
+    __ andr(c7, c7, mask);
+    __ andr(tmp, c2, nmask);
+    __ orr(c7, c7, tmp);
+    __ andr(c8, c8, mask);
+    __ andr(tmp, c3, nmask);
+    __ orr(c8, c8, tmp);
+    __ andr(c9, c9, mask);
+    __ andr(tmp, c4, nmask);
+    __ orr(c9, c9, tmp);
+
+    __ str(c5, result);
+    __ str(c6, Address(result, BytesPerLong));
+    __ str(c7, Address(result, 2 * BytesPerLong));
+    __ str(c8, Address(result, 3 * BytesPerLong));
+    __ str(c9, Address(result, 4 * BytesPerLong));
+
+    // End intrinsic call
+    __ add(sp, sp, cDataSize + mulDataSize);
+    __ pop(callee_saved, sp);
+    __ leave();
     __ mov(r0, zr); // return 0
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
+  address generate_intpoly_assign() {
+    // KNOWN Lengths:
+    //   MontgomeryIntPolynP256:  5 = 4 + 1
+    //   IntegerPolynomial1305:   5 = 4 + 1
+    //   IntegerPolynomial25519: 10 = 8 + 2
+    //   IntegerPolynomialP256:  10 = 8 + 2
+    //   Curve25519OrderField:   10 = 8 + 2
+    //   Curve25519OrderField:   10 = 8 + 2
+    //   P256OrderField:         10 = 8 + 2
+    //   IntegerPolynomialP384:  14 = 8 + 4 + 2
+    //   P384OrderField:         14 = 8 + 4 + 2
+    //   IntegerPolynomial448:   16 = 8 + 8
+    //   Curve448OrderField:     16 = 8 + 8
+    //   Curve448OrderField:     16 = 8 + 8
+    //   IntegerPolynomialP521:  19 = 8 + 8 + 2 + 1
+    //   P521OrderField:         19 = 8 + 8 + 2 + 1
+    // Special Cases 5, 10, 14, 16, 19
+    assert(UseIntPolyIntrinsics, "what are we doing here?");
+    StubId stub_id = StubId::stubgen_intpoly_assign_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    __ enter();
+
+    // Inputs
+    const Register set = c_rarg0;
+    const Register aLimbs = c_rarg1;
+    const Register bLimbs = c_rarg2;
+    const Register length = c_rarg3;
+
+    Label L_Length5, L_Length10, L_Length14, L_Length16, L_Length19, L_Default, L_Done;
+
+    /*
+    int maskValue = -set;
+    for (int i = 0; i < a.length; i++) {
+        long dummyLimbs = maskValue & (a[i] ^ b[i]);
+        a[i] = dummyLimbs ^ a[i];
+    }
+    */
+    Register mask_scalar = r4;
+    FloatRegister mask_vec = v0;
+
+    __ neg(mask_scalar, set);
+    __ dup(mask_vec, __ T2D, mask_scalar);
+
+    __ cmp(length, (u1)5);
+    __ br(Assembler::EQ, L_Length5);
+    __ cmp(length, (u1)10);
+    __ br(Assembler::EQ, L_Length10);
+    __ cmp(length, (u1)14);
+    __ br(Assembler::EQ, L_Length14);
+    __ cmp(length, (u1)16);
+    __ br(Assembler::EQ, L_Length16);
+    __ cmp(length, (u1)19);
+    __ br(Assembler::EQ, L_Length19);
+    __ b(L_Default);
+
+
+    // Length = 5
+    // Use 5 GPRs (neon not faster with this few limbs)
+    __ BIND(L_Length5);
+    {
+      Register a0 = r5;
+      Register a1 = r6;
+      Register a2 = r7;
+      Register a3 = r10;
+      Register a4 = r11;
+      Register b0 = r12;
+      Register b1 = r13;
+      Register b2 = r14;
+      Register b3 = r15;
+      Register b4 = r19;
+
+      __ push(r19, sp);
+
+      __ ldr(a0, aLimbs);
+      __ ldr(a1, Address(aLimbs, 1 * BytesPerLong));
+      __ ldr(a2, Address(aLimbs, 2 * BytesPerLong));
+      __ ldr(a3, Address(aLimbs, 3 * BytesPerLong));
+      __ ldr(a4, Address(aLimbs, 4 * BytesPerLong));
+
+      __ ldr(b0, bLimbs);
+      __ ldr(b1, Address(bLimbs, 1 * BytesPerLong));
+      __ ldr(b2, Address(bLimbs, 2 * BytesPerLong));
+      __ ldr(b3, Address(bLimbs, 3 * BytesPerLong));
+      __ ldr(b4, Address(bLimbs, 4 * BytesPerLong));
+
+      __ eor(b0, b0, a0);
+      __ eor(b1, b1, a1);
+      __ eor(b2, b2, a2);
+      __ eor(b3, b3, a3);
+      __ eor(b4, b4, a4);
+
+      __ andr(b0, b0, mask_scalar);
+      __ andr(b1, b1, mask_scalar);
+      __ andr(b2, b2, mask_scalar);
+      __ andr(b3, b3, mask_scalar);
+      __ andr(b4, b4, mask_scalar);
+
+      __ eor(a0, a0, b0);
+      __ eor(a1, a1, b1);
+      __ eor(a2, a2, b2);
+      __ eor(a3, a3, b3);
+      __ eor(a4, a4, b4);
+
+      __ str(a0, aLimbs);
+      __ str(a1, Address(aLimbs, 1 * BytesPerLong));
+      __ str(a2, Address(aLimbs, 2 * BytesPerLong));
+      __ str(a3, Address(aLimbs, 3 * BytesPerLong));
+      __ str(a4, Address(aLimbs, 4 * BytesPerLong));
+
+      __ pop(r19, sp);
+      __ b(L_Done);
+    }
+
+    // Length = 10
+    // Split into 4 neon regs and 2 GPRs
+    __ BIND(L_Length10);
+    {
+      Register a9 = r10;
+      Register a10 = r11;
+      Register b9 = r12;
+      Register b10 = r13;
+
+      VSeq<4> a_vec(16);
+      VSeq<4> b_vec(20);
+
+      __ ldr(a9, Address(aLimbs, 8 * BytesPerLong));
+      __ ldr(a10, Address(aLimbs, 9 * BytesPerLong));
+      __ ldr(b9, Address(bLimbs, 8 * BytesPerLong));
+      __ ldr(b10, Address(bLimbs, 9 * BytesPerLong));
+
+      vs_ldpq(a_vec, aLimbs);
+
+      __ eor(b9, b9, a9);
+      __ eor(b10, b10, a10);
+
+      vs_ldpq(b_vec, bLimbs);
+
+      __ andr(b9, b9, mask_scalar);
+      __ andr(b10, b10, mask_scalar);
+
+      vs_eor(b_vec, b_vec, a_vec);
+
+      __ eor(a9, a9, b9);
+      __ eor(a10, a10, b10);
+
+      vs_andr(b_vec, b_vec, mask_vec);
+
+      __ str(a9, Address(aLimbs, 8 * BytesPerLong));
+      __ str(a10, Address(aLimbs, 9 * BytesPerLong));
+
+      vs_eor(a_vec, a_vec, b_vec);
+      vs_stpq_post(a_vec, aLimbs);
+
+      __ b(L_Done);
+    }
+
+    // Length = 14
+    // Split into 5 neon regs and 4 GPRs
+    __ BIND(L_Length14);
+    {
+      Register a10 = r5;
+      Register a11 = r6;
+      Register a12 = r7;
+      Register a13 = r8;
+      Register b10 = r9;
+      Register b11 = r10;
+      Register b12 = r11;
+      Register b13 = r12;
+
+      VSeq<5> a_vec(16);
+      VSeq<5> b_vec(22);
+
+      int offsets[2] = { 0, 32 };
+
+      __ ldr(a10, Address(aLimbs, 10 * BytesPerLong));
+      __ ldr(a11, Address(aLimbs, 11 * BytesPerLong));
+      __ ldr(a12, Address(aLimbs, 12 * BytesPerLong));
+      __ ldr(a13, Address(aLimbs, 13 * BytesPerLong));
+
+      __ ldr(b10, Address(bLimbs, 10 * BytesPerLong));
+      __ ldr(b11, Address(bLimbs, 11 * BytesPerLong));
+      __ ldr(b12, Address(bLimbs, 12 * BytesPerLong));
+      __ ldr(b13, Address(bLimbs, 13 * BytesPerLong));
+
+      __ ld1(a_vec[0], __ T2D, aLimbs);
+      vs_ldpq_indexed(vs_tail(a_vec), aLimbs, 16, offsets);
+
+      __ eor(b10, b10, a10);
+      __ eor(b11, b11, a11);
+      __ eor(b12, b12, a12);
+      __ eor(b13, b13, a13);
+
+      __ ld1(b_vec[0], __ T2D, bLimbs);
+      vs_ldpq_indexed(vs_tail(b_vec), bLimbs, 16, offsets);
+
+      __ andr(b10, b10, mask_scalar);
+      __ andr(b11, b11, mask_scalar);
+      __ andr(b12, b12, mask_scalar);
+      __ andr(b13, b13, mask_scalar);
+
+      vs_eor(b_vec, b_vec, a_vec);
+
+      __ eor(a10, a10, b10);
+      __ eor(a11, a11, b11);
+      __ eor(a12, a12, b12);
+      __ eor(a13, a13, b13);
+
+      vs_andr(b_vec, b_vec, mask_vec);
+
+      __ str(a10, Address(aLimbs, 10 * BytesPerLong));
+      __ str(a11, Address(aLimbs, 11 * BytesPerLong));
+      __ str(a12, Address(aLimbs, 12 * BytesPerLong));
+      __ str(a13, Address(aLimbs, 13 * BytesPerLong));
+
+      vs_eor(a_vec, a_vec, b_vec);
+
+      __ st1(a_vec[0], __ T2D, aLimbs);
+      vs_stpq_indexed(vs_tail(a_vec), aLimbs, 16, offsets);
+
+      __ b(L_Done);
+    }
+
+    // Length = 16
+    // Use 8 neon regs
+    __ BIND(L_Length16);
+    {
+      VSeq<8> a_vec(16);
+      VSeq<8> b_vec(24);
+
+      vs_ldpq(a_vec, aLimbs);
+      vs_ldpq(b_vec, bLimbs);
+      vs_eor(b_vec, b_vec, a_vec);
+      vs_andr(b_vec, b_vec, mask_vec);
+      vs_eor(a_vec, a_vec, b_vec);
+      vs_stpq_post(a_vec, aLimbs);
+
+      __ b(L_Done);
+    }
+
+    // Length = 19
+    // Split into 8 neon regs and 3 GPRs
+    __ BIND(L_Length19);
+    {
+      Register a17 = r10;
+      Register a18 = r11;
+      Register a19 = r12;
+      Register b17 = r13;
+      Register b18 = r14;
+      Register b19 = r15;
+
+      VSeq<8> a_vec(16);
+      VSeq<8> b_vec(24);
+
+      __ ldr(a17, Address(aLimbs, 16 * BytesPerLong));
+      __ ldr(a18, Address(aLimbs, 17 * BytesPerLong));
+      __ ldr(a19, Address(aLimbs, 18 * BytesPerLong));
+      __ ldr(b17, Address(bLimbs, 16 * BytesPerLong));
+      __ ldr(b18, Address(bLimbs, 17 * BytesPerLong));
+      __ ldr(b19, Address(bLimbs, 18 * BytesPerLong));
+
+      vs_ldpq(a_vec, aLimbs);
+
+      __ eor(b17, b17, a17);
+      __ eor(b18, b18, a18);
+      __ eor(b19, b19, a19);
+
+      vs_ldpq(b_vec, bLimbs);
+
+      __ andr(b17, b17, mask_scalar);
+      __ andr(b18, b18, mask_scalar);
+      __ andr(b19, b19, mask_scalar);
+
+      vs_eor(b_vec, b_vec, a_vec);
+
+      __ eor(a17, a17, b17);
+      __ eor(a18, a18, b18);
+      __ eor(a19, a19, b19);
+
+      vs_andr(b_vec, b_vec, mask_vec);
+
+      __ str(a17, Address(aLimbs, 16 * BytesPerLong));
+      __ str(a18, Address(aLimbs, 17 * BytesPerLong));
+      __ str(a19, Address(aLimbs, 18 * BytesPerLong));
+
+      vs_eor(a_vec, a_vec, b_vec);
+      vs_stpq_post(a_vec, aLimbs);
+
+      __ b(L_Done);
+    }
+
+    __ BIND(L_Default);
+    {
+      Register ctr = r5;
+      Register a_val = r6;
+      Register b_val = r7;
+
+      __ mov(ctr, length); // length (the number of limbs) is never 0
+
+      Label default_loop;
+      __ BIND(default_loop);
+
+      __ ldr(a_val, aLimbs);
+      __ ldr(b_val, __ post(bLimbs, 8));
+      __ eor(b_val, b_val, a_val);
+      __ andr(b_val, b_val, mask_scalar);
+      __ eor(a_val, a_val, b_val);
+      __ str(a_val, __ post(aLimbs, 8));
+      __ sub(ctr, ctr, 1);
+      __ cmp(ctr, (u1)0);
+      __ br(Assembler::NE, default_loop);
+    }
+
+    __ BIND(L_Done);
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
+  /**
+   * Arithmetic polynomial multiplication in Curve25519.  The algorithm mimics
+   * the version in the IntegerPolynomial25519 class, including the use of all
+   * columns (no folding method).
+   *
+   * Arguments:
+   *
+   * Inputs:
+   *   c_rarg0   - long[] aLimbs
+   *   c_rarg1   - long[] bLimbs
+   *
+   * Output:
+   *   c_rarg2   - long[] rLimbs result
+   */
+  address generate_intpoly_mult_25519() {
+    StubId stub_id = StubId::stubgen_intpoly_mult_25519_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    __ enter();
+
+    // Register Map
+    const Register aLimbs  = c_rarg0; // r0
+    const Register bLimbs  = c_rarg1; // r1
+    const Register rLimbs  = c_rarg2; // r2
+
+    Register c[]   = {r3, r4, r5, r6, r7, r8, r9, r10, r11, r12};
+    Register a     = r13;
+    Register b     = r14;
+    Register term  = r15;
+    Register low   = r16;
+    Register high  = r17;
+
+    const int32_t limbs      = 5;
+    const int32_t bpl        = 51;
+    const int32_t rem        = 64 - bpl;
+    const int32_t TERM       = 19;
+    const int32_t columns    = limbs * 2;
+    const uint64_t mask      = (uint64_t) -1 >> rem;
+    const uint64_t CARRY_ADD = (uint64_t) 1 << (bpl - 1);
+
+    __ mov(term, TERM);
+    for (int i = 0; i < columns; i++) {
+      __ mov(c[i], zr);
+    }
+
+    // Perform high/low multiplication with signed 5x51 bit limbs
+    for (int i = 0; i < limbs; i++) {
+      __ ldr(b, Address(bLimbs, i * 8));
+      for (int j = 0; j < limbs; j++) {
+        __ ldr(a, Address(aLimbs, j * 8));
+        __ smulh(high, a, b);
+        __ mul(low, a, b);
+        __ extr(high, high, low, bpl);
+        __ andr(low, low,  mask);
+        __ add(c[i + j], c[i + j], low);
+        __ add(c[i + j + 1], c[i + j + 1], high);
+      }
+    }
+
+    for (int i = 0; i < limbs; i++) {
+      __ mul(c[i + 5], c[i + 5], term);
+      __ add(c[i], c[i], c[i + 5]);
+    }
+
+    // Carry-add with reduction from high limb
+    Register tmp       = low;
+    Register carry_add = high;
+    __ mov(carry_add, CARRY_ADD);
+
+    // Limb 3
+    __ add(tmp, c[3], carry_add);
+    __ asr(tmp, tmp, bpl);
+    __ add(c[4], c[4], tmp);
+    __ lsl(tmp, tmp, bpl);
+    __ sub(c[3], c[3], tmp);
+
+    // Limb 4
+    __ add(tmp, c[4], carry_add);
+    __ asr(tmp, tmp, bpl);
+
+    // Reduce high order limb and fold back into low order limb
+    __ mul(term, tmp, term);
+    __ add(c[0], c[0], term);
+
+    __ lsl(tmp, tmp, bpl);
+    __ sub(c[4], c[4], tmp);
+
+    // Limbs 0 - 3
+    for (int i = 0; i < (limbs - 1); i++) {
+      __ add(tmp, c[i], carry_add);
+      __ asr(tmp, tmp, bpl);
+      __ add(c[i + 1], c[i + 1], tmp);
+      __ lsl(tmp, tmp, bpl);
+      __ sub(c[i], c[i], tmp);
+    }
+
+    for (int i = 0; i < limbs; i++) {
+      __ str(c[i], Address(rLimbs, i * 8));
+    }
+
+    __ mov(r0, 0);
+    __ leave();   // required for proper stackwalking of RuntimeStub frame
+    __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
+  void bcax5(Register a0, Register a1, Register a2, Register a3, Register a4,
+             Register tmp0, Register tmp1, Register tmp2) {
+    __ bic(tmp0, a2, a1); // for a0
+    __ bic(tmp1, a3, a2); // for a1
+    __ bic(tmp2, a4, a3); // for a2
+    __ eor(a2, a2, tmp2);
+    __ bic(tmp2, a0, a4); // for a3
+    __ eor(a3, a3, tmp2);
+    __ bic(tmp2, a1, a0); // for a4
+    __ eor(a0, a0, tmp0);
+    __ eor(a1, a1, tmp1);
+    __ eor(a4, a4, tmp2);
+  }
+
+  void keccak_round_gpr(bool can_use_fp, bool can_use_r18, Register rc,
+                        Register a0, Register a1, Register a2, Register a3, Register a4,
+                        Register a5, Register a6, Register a7, Register a8, Register a9,
+                        Register a10, Register a11, Register a12, Register a13, Register a14,
+                        Register a15, Register a16, Register a17, Register a18, Register a19,
+                        Register a20, Register a21, Register a22, Register a23, Register a24,
+                        Register tmp0, Register tmp1, Register tmp2) {
+    __ eor3(tmp1, a4, a9, a14);
+    __ eor3(tmp0, tmp1, a19, a24); // tmp0 = a4^a9^a14^a19^a24 = c4
+    __ eor3(tmp2, a1, a6, a11);
+    __ eor3(tmp1, tmp2, a16, a21); // tmp1 = a1^a6^a11^a16^a21 = c1
+    __ rax1(tmp2, tmp0, tmp1); // d0
+    {
+
+      Register tmp3, tmp4;
+      if (can_use_fp && can_use_r18) {
+        tmp3 = rfp;
+        tmp4 = r18_tls;
+      } else {
+        tmp3 = a4;
+        tmp4 = a9;
+        __ stp(tmp3, tmp4, __ pre(sp, -16));
+      }
+
+      __ eor3(tmp3, a0, a5, a10);
+      __ eor3(tmp4, tmp3, a15, a20); // tmp4 = a0^a5^a10^a15^a20 = c0
+      __ eor(a0, a0, tmp2);
+      __ eor(a5, a5, tmp2);
+      __ eor(a10, a10, tmp2);
+      __ eor(a15, a15, tmp2);
+      __ eor(a20, a20, tmp2); // d0(tmp2)
+      __ eor3(tmp3, a2, a7, a12);
+      __ eor3(tmp2, tmp3, a17, a22); // tmp2 = a2^a7^a12^a17^a22 = c2
+      __ rax1(tmp3, tmp4, tmp2); // d1
+      __ eor(a1, a1, tmp3);
+      __ eor(a6, a6, tmp3);
+      __ eor(a11, a11, tmp3);
+      __ eor(a16, a16, tmp3);
+      __ eor(a21, a21, tmp3); // d1(tmp3)
+      __ rax1(tmp3, tmp2, tmp0); // d3
+      __ eor3(tmp2, a3, a8, a13);
+      __ eor3(tmp0, tmp2, a18, a23);  // tmp0 = a3^a8^a13^a18^a23 = c3
+      __ eor(a3, a3, tmp3);
+      __ eor(a8, a8, tmp3);
+      __ eor(a13, a13, tmp3);
+      __ eor(a18, a18, tmp3);
+      __ eor(a23, a23, tmp3);
+      __ rax1(tmp2, tmp1, tmp0); // d2
+      __ eor(a2, a2, tmp2);
+      __ eor(a7, a7, tmp2);
+      __ eor(a12, a12, tmp2);
+      __ rax1(tmp0, tmp0, tmp4); // d4
+      if (!can_use_fp || !can_use_r18) {
+        __ ldp(tmp3, tmp4, __ post(sp, 16));
+      }
+      __ eor(a17, a17, tmp2);
+      __ eor(a22, a22, tmp2);
+      __ eor(a4, a4, tmp0);
+      __ eor(a9, a9, tmp0);
+      __ eor(a14, a14, tmp0);
+      __ eor(a19, a19, tmp0);
+      __ eor(a24, a24, tmp0);
+    }
+
+    __ rol(tmp0, a10, 3);
+    __ rol(a10, a1, 1);
+    __ rol(a1, a6, 44);
+    __ rol(a6, a9, 20);
+    __ rol(a9, a22, 61);
+    __ rol(a22, a14, 39);
+    __ rol(a14, a20, 18);
+    __ rol(a20, a2, 62);
+    __ rol(a2, a12, 43);
+    __ rol(a12, a13, 25);
+    __ rol(a13, a19, 8) ;
+    __ rol(a19, a23, 56);
+    __ rol(a23, a15, 41);
+    __ rol(a15, a4, 27);
+    __ rol(a4, a24, 14);
+    __ rol(a24, a21, 2);
+    __ rol(a21, a8, 55);
+    __ rol(a8, a16, 45);
+    __ rol(a16, a5, 36);
+    __ rol(a5, a3, 28);
+    __ rol(a3, a18, 21);
+    __ rol(a18, a17, 15);
+    __ rol(a17, a11, 10);
+    __ rol(a11, a7, 6);
+    __ mov(a7, tmp0);
+
+    bcax5(a0, a1, a2, a3, a4, tmp0, tmp1, tmp2);
+    bcax5(a5, a6, a7, a8, a9, tmp0, tmp1, tmp2);
+    bcax5(a10, a11, a12, a13, a14, tmp0, tmp1, tmp2);
+    bcax5(a15, a16, a17, a18, a19, tmp0, tmp1, tmp2);
+    bcax5(a20, a21, a22, a23, a24, tmp0, tmp1, tmp2);
+
+    __ ldr(tmp1, __ post(rc, 8));
+    __ eor(a0, a0, tmp1);
+
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - byte[]  source+offset
+  //   c_rarg1   - byte[]  SHA.state
+  //   c_rarg2   - int     block_size
+  //   c_rarg3   - int     offset
+  //   c_rarg4   - int     limit
+  //
+  address generate_sha3_implCompress_gpr(StubId stub_id) {
+    bool multi_block;
+    switch (stub_id) {
+    case StubId::stubgen_sha3_implCompress_id:
+      multi_block = false;
+      break;
+    case StubId::stubgen_sha3_implCompressMB_id:
+      multi_block = true;
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+
+    Register buf           = c_rarg0;
+    Register state         = c_rarg1;
+    Register block_size    = c_rarg2;
+    Register ofs           = c_rarg3;
+    Register limit         = c_rarg4;
+
+    // use r3.r17,r19..r28 to keep a0..a24.
+    // a0..a24 are respective locals from SHA3.java
+    Register a0 = r25,
+             a1 = r26,
+             a2 = r27,
+             a3 = r3,
+             a4 = r4,
+             a5 = r5,
+             a6 = r6,
+             a7 = r7,
+             a8 = rscratch1, // r8
+             a9 = rscratch2, // r9
+             a10 = r10,
+             a11 = r11,
+             a12 = r12,
+             a13 = r13,
+             a14 = r14,
+             a15 = r15,
+             a16 = r16,
+             a17 = r17,
+             a18 = r28,
+             a19 = r19,
+             a20 = r20,
+             a21 = r21,
+             a22 = r22,
+             a23 = r23,
+             a24 = r24;
+
+    Register tmp0 = block_size, tmp1 = buf, tmp2 = state, tmp3 = r30;
+
+    Label sha3_loop, rounds24_preloop, loop_body;
+    Label sha3_512_or_sha3_384, shake128;
+
+    bool can_use_r18 = false;
+#ifndef R18_RESERVED
+    can_use_r18 = true;
+#endif
+    bool can_use_fp = !PreserveFramePointer;
+
+    __ enter();
+
+    // save almost all yet unsaved gpr registers on stack
+    __ str(block_size, __ pre(sp, -128));
+    if (multi_block) {
+      __ stpw(ofs, limit, Address(sp, 8));
+    }
+    // 8 bytes at sp+16 will be used to keep buf
+    __ stp(r19, r20, Address(sp, 32));
+    __ stp(r21, r22, Address(sp, 48));
+    __ stp(r23, r24, Address(sp, 64));
+    __ stp(r25, r26, Address(sp, 80));
+    __ stp(r27, r28, Address(sp, 96));
+    if (can_use_r18 && can_use_fp) {
+      __ stp(r18_tls, state, Address(sp, 112));
+    } else {
+      __ str(state, Address(sp, 112));
+    }
+
+    // begin sha3 calculations: loading a0..a24 from state arrary
+    __ ldp(a0, a1, state);
+    __ ldp(a2, a3, Address(state, 16));
+    __ ldp(a4, a5, Address(state, 32));
+    __ ldp(a6, a7, Address(state, 48));
+    __ ldp(a8, a9, Address(state, 64));
+    __ ldp(a10, a11, Address(state, 80));
+    __ ldp(a12, a13, Address(state, 96));
+    __ ldp(a14, a15, Address(state, 112));
+    __ ldp(a16, a17, Address(state, 128));
+    __ ldp(a18, a19, Address(state, 144));
+    __ ldp(a20, a21, Address(state, 160));
+    __ ldp(a22, a23, Address(state, 176));
+    __ ldr(a24, Address(state, 192));
+
+    __ BIND(sha3_loop);
+
+    // load input
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a0, a0, tmp3);
+    __ eor(a1, a1, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a2, a2, tmp3);
+    __ eor(a3, a3, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a4, a4, tmp3);
+    __ eor(a5, a5, tmp2);
+    __ ldr(tmp3, __ post(buf, 8));
+    __ eor(a6, a6, tmp3);
+
+    // block_size == 72, SHA3-512; block_size == 104, SHA3-384
+    __ tbz(block_size, 7, sha3_512_or_sha3_384);
+
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a7, a7, tmp3);
+    __ eor(a8, a8, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a9, a9, tmp3);
+    __ eor(a10, a10, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a11, a11, tmp3);
+    __ eor(a12, a12, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a13, a13, tmp3);
+    __ eor(a14, a14, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a15, a15, tmp3);
+    __ eor(a16, a16, tmp2);
+
+    // block_size == 136, bit4 == 0 and bit5 == 0, SHA3-256 or SHAKE256
+    __ andw(tmp2, block_size, 48);
+    __ cbzw(tmp2, rounds24_preloop);
+    __ tbnz(block_size, 5, shake128);
+    // block_size == 144, bit5 == 0, SHA3-244
+    __ ldr(tmp3, __ post(buf, 8));
+    __ eor(a17, a17, tmp3);
+    __ b(rounds24_preloop);
+
+    __ BIND(shake128);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a17, a17, tmp3);
+    __ eor(a18, a18, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a19, a19, tmp3);
+    __ eor(a20, a20, tmp2);
+    __ b(rounds24_preloop); // block_size == 168, SHAKE128
+
+    __ BIND(sha3_512_or_sha3_384);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a7, a7, tmp3);
+    __ eor(a8, a8, tmp2);
+    __ tbz(block_size, 5, rounds24_preloop); // SHA3-512
+
+    // SHA3-384
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a9, a9, tmp3);
+    __ eor(a10, a10, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a11, a11, tmp3);
+    __ eor(a12, a12, tmp2);
+
+    __ BIND(rounds24_preloop);
+    __ fmovs(v0, 24.0); // float loop counter,
+    __ fmovs(v1, 1.0);  // exact representation
+
+    __ str(buf, Address(sp, 16));
+    __ lea(tmp3, ExternalAddress((address) _sha3_round_consts));
+
+    __ BIND(loop_body);
+    keccak_round_gpr(can_use_fp, can_use_r18, tmp3,
+                     a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
+                     a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24,
+                     tmp0, tmp1, tmp2);
+    __ fsubs(v0, v0, v1);
+    __ fcmps(v0, 0.0);
+    __ br(__ NE, loop_body);
+
+    if (multi_block) {
+      __ ldrw(block_size, sp); // block_size
+      __ ldpw(tmp2, tmp1, Address(sp, 8)); // offset, limit
+      __ addw(tmp2, tmp2, block_size);
+      __ cmpw(tmp2, tmp1);
+      __ strw(tmp2, Address(sp, 8)); // store offset in case we're jumping
+      __ ldr(buf, Address(sp, 16)); // restore buf in case we're jumping
+      __ br(Assembler::LE, sha3_loop);
+      __ movw(c_rarg0, tmp2); // return offset
+    }
+    if (can_use_fp && can_use_r18) {
+      __ ldp(r18_tls, state, Address(sp, 112));
+    } else {
+      __ ldr(state, Address(sp, 112));
+    }
+    // save calculated sha3 state
+    __ stp(a0, a1, Address(state));
+    __ stp(a2, a3, Address(state, 16));
+    __ stp(a4, a5, Address(state, 32));
+    __ stp(a6, a7, Address(state, 48));
+    __ stp(a8, a9, Address(state, 64));
+    __ stp(a10, a11, Address(state, 80));
+    __ stp(a12, a13, Address(state, 96));
+    __ stp(a14, a15, Address(state, 112));
+    __ stp(a16, a17, Address(state, 128));
+    __ stp(a18, a19, Address(state, 144));
+    __ stp(a20, a21, Address(state, 160));
+    __ stp(a22, a23, Address(state, 176));
+    __ str(a24, Address(state, 192));
+
+    // restore required registers from stack
+    __ ldp(r19, r20, Address(sp, 32));
+    __ ldp(r21, r22, Address(sp, 48));
+    __ ldp(r23, r24, Address(sp, 64));
+    __ ldp(r25, r26, Address(sp, 80));
+    __ ldp(r27, r28, Address(sp, 96));
+    if (can_use_fp && can_use_r18) {
+      __ add(rfp, sp, 128); // leave() will copy rfp to sp below
+    } // else no need to recalculate rfp, since it wasn't changed
+
+    __ leave();
+
+    __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -7094,12 +9146,17 @@ class StubGenerator: public StubCodeGenerator {
    */
   address generate_updateBytesCRC32() {
     assert(UseCRC32Intrinsics, "what are we doing here?");
-
+    StubId stub_id = StubId::stubgen_updateBytesCRC32_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::updateBytesCRC32_id;
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
+    start = __ pc();
 
     const Register crc   = c_rarg0;  // crc
     const Register buf   = c_rarg1;  // source java byte array address
@@ -7119,6 +9176,9 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -7136,12 +9196,17 @@ class StubGenerator: public StubCodeGenerator {
    */
   address generate_updateBytesCRC32C() {
     assert(UseCRC32CIntrinsics, "what are we doing here?");
-
+    StubId stub_id = StubId::stubgen_updateBytesCRC32C_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::updateBytesCRC32C_id;
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
+    start = __ pc();
 
     const Register crc   = c_rarg0;  // crc
     const Register buf   = c_rarg1;  // source java byte array address
@@ -7161,6 +9226,9 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -7176,10 +9244,16 @@ class StubGenerator: public StubCodeGenerator {
    *   c_rarg0   - int adler result
    */
   address generate_updateBytesAdler32() {
+    StubId stub_id = StubId::stubgen_updateBytesAdler32_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::updateBytesAdler32_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Label L_simple_by1_loop, L_nmax, L_nmax_loop, L_by16, L_by16_loop, L_by1_loop, L_do_mod, L_combine, L_by1;
 
@@ -7347,6 +9421,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -7398,11 +9475,17 @@ class StubGenerator: public StubCodeGenerator {
    *    c_rarg4   - z address
    */
   address generate_multiplyToLen() {
+    StubId stub_id = StubId::stubgen_multiplyToLen_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::multiplyToLen_id;
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
+    start = __ pc();
     const Register x     = r0;
     const Register xlen  = r1;
     const Register y     = r2;
@@ -7424,6 +9507,9 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -7431,10 +9517,16 @@ class StubGenerator: public StubCodeGenerator {
     // squareToLen algorithm for sizes 1..127 described in java code works
     // faster than multiply_to_len on some CPUs and slower on others, but
     // multiply_to_len shows a bit better overall results
+    StubId stub_id = StubId::stubgen_squareToLen_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::squareToLen_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     const Register x     = r0;
     const Register xlen  = r1;
@@ -7461,15 +9553,25 @@ class StubGenerator: public StubCodeGenerator {
     __ pop(spilled_regs, sp);
     __ leave();
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   address generate_mulAdd() {
+    StubId stub_id = StubId::stubgen_mulAdd_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::mulAdd_id;
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
+    start = __ pc();
 
     const Register out     = r0;
     const Register in      = r1;
@@ -7482,6 +9584,9 @@ class StubGenerator: public StubCodeGenerator {
     __ mul_add(out, in, offset, len, k);
     __ leave();
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -7496,10 +9601,16 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg4   - numIter
   //
   address generate_bigIntegerRightShift() {
+    StubId stub_id = StubId::stubgen_bigIntegerRightShiftWorker_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::bigIntegerRightShiftWorker_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Label ShiftSIMDLoop, ShiftTwoLoop, ShiftThree, ShiftTwo, ShiftOne, Exit;
 
@@ -7606,6 +9717,9 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(Exit);
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -7619,10 +9733,16 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg4   - numIter
   //
   address generate_bigIntegerLeftShift() {
+    StubId stub_id = StubId::stubgen_bigIntegerLeftShiftWorker_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::bigIntegerLeftShiftWorker_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Label ShiftSIMDLoop, ShiftTwoLoop, ShiftThree, ShiftTwo, ShiftOne, Exit;
 
@@ -7717,10 +9837,25 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(Exit);
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   address generate_count_positives(address &count_positives_long) {
+    StubId stub_id = StubId::stubgen_count_positives_id;
+    GrowableArray<address> entries;
+    int entry_count = StubInfo::entry_count(stub_id);
+    // We have an extra entry for count_positives_long.
+    assert(entry_count == 2, "sanity check");
+    address start = load_archive_data(stub_id, &entries);
+    if (start != nullptr) {
+      assert(entries.length() == 1,
+             "unexpected extra entry count %d", entries.length());
+      count_positives_long = entries.at(0);
+      return start;
+    }
     const u1 large_loop_size = 64;
     const uint64_t UPPER_BIT_MASK=0x8080808080808080;
     int dcache_line = VM_Version::dcache_line_size();
@@ -7728,8 +9863,6 @@ class StubGenerator: public StubCodeGenerator {
     Register ary1 = r1, len = r2, result = r0;
 
     __ align(CodeEntryAlignment);
-
-    StubGenStubId stub_id = StubGenStubId::count_positives_id;
     StubCodeMark mark(this, stub_id);
 
     address entry = __ pc();
@@ -7772,6 +9905,7 @@ class StubGenerator: public StubCodeGenerator {
   const RegSet spilled_regs = RegSet::range(tmp1, tmp5) + tmp6;
 
   count_positives_long = __ pc(); // 2nd entry point
+  entries.append(count_positives_long);
 
   __ enter();
 
@@ -7886,6 +10020,9 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(result, result, len);
     __ ret(lr);
 
+    // record the stub entry and end plus the extra entry
+    store_archive_data(stub_id, entry, __ pc(), &entries);
+
     return entry;
   }
 
@@ -7976,6 +10113,13 @@ class StubGenerator: public StubCodeGenerator {
   // r3-r5 are reserved temporary registers
   // Clobbers: v0-v7 when UseSIMDForArrayEquals, rscratch1, rscratch2
   address generate_large_array_equals() {
+    StubId stub_id = StubId::stubgen_large_array_equals_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     Register a1 = r1, a2 = r2, result = r0, cnt1 = r10, tmp1 = rscratch1,
         tmp2 = rscratch2, tmp3 = r3, tmp4 = r4, tmp5 = r5, tmp6 = r11,
         tmp7 = r12, tmp8 = r13;
@@ -7991,7 +10135,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    StubGenStubId stub_id = StubGenStubId::large_array_equals_id;
     StubCodeMark mark(this, stub_id);
 
     address entry = __ pc();
@@ -8066,6 +10209,10 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(NOT_EQUAL_NO_POP);
     __ leave();
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
@@ -8074,6 +10221,33 @@ class StubGenerator: public StubCodeGenerator {
   // cnt = r2 - elements count
   // Clobbers: v0-v13, rscratch1, rscratch2
   address generate_large_arrays_hashcode(BasicType eltype) {
+    StubId stub_id;
+    switch (eltype) {
+    case T_BOOLEAN:
+      stub_id = StubId::stubgen_large_arrays_hashcode_boolean_id;
+      break;
+    case T_BYTE:
+      stub_id = StubId::stubgen_large_arrays_hashcode_byte_id;
+      break;
+    case T_CHAR:
+      stub_id = StubId::stubgen_large_arrays_hashcode_char_id;
+      break;
+    case T_SHORT:
+      stub_id = StubId::stubgen_large_arrays_hashcode_short_id;
+      break;
+    case T_INT:
+      stub_id = StubId::stubgen_large_arrays_hashcode_int_id;
+      break;
+    default:
+      stub_id = StubId::NO_STUBID;
+      ShouldNotReachHere();
+    };
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     const Register result = r0, ary = r1, cnt = r2;
     const FloatRegister vdata0 = v3, vdata1 = v2, vdata2 = v1, vdata3 = v0;
     const FloatRegister vmul0 = v4, vmul1 = v5, vmul2 = v6, vmul3 = v7;
@@ -8116,28 +10290,6 @@ class StubGenerator: public StubCodeGenerator {
     const unsigned evf = vf * uf;
 
     __ align(CodeEntryAlignment);
-
-    StubGenStubId stub_id;
-    switch (eltype) {
-    case T_BOOLEAN:
-      stub_id = StubGenStubId::large_arrays_hashcode_boolean_id;
-      break;
-    case T_BYTE:
-      stub_id = StubGenStubId::large_arrays_hashcode_byte_id;
-      break;
-    case T_CHAR:
-      stub_id = StubGenStubId::large_arrays_hashcode_char_id;
-      break;
-    case T_SHORT:
-      stub_id = StubGenStubId::large_arrays_hashcode_short_id;
-      break;
-    case T_INT:
-      stub_id = StubGenStubId::large_arrays_hashcode_int_id;
-      break;
-    default:
-      stub_id = StubGenStubId::NO_STUBID;
-      ShouldNotReachHere();
-    };
 
     StubCodeMark mark(this, stub_id);
 
@@ -8373,19 +10525,32 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
   address generate_dsin_dcos(bool isCos) {
+    StubId stub_id = (isCos ? StubId::stubgen_dcos_id : StubId::stubgen_dsin_id);
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = (isCos ? StubGenStubId::dcos_id : StubGenStubId::dsin_id);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     __ generate_dsin_dcos(isCos, (address)StubRoutines::aarch64::_npio2_hw,
         (address)StubRoutines::aarch64::_two_over_pi,
         (address)StubRoutines::aarch64::_pio2,
         (address)StubRoutines::aarch64::_dsin_coef,
         (address)StubRoutines::aarch64::_dcos_coef);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -8429,8 +10594,14 @@ class StubGenerator: public StubCodeGenerator {
   // r10 = tmp1
   // r11 = tmp2
   address generate_compare_long_string_different_encoding(bool isLU) {
+    StubId stub_id = (isLU ? StubId::stubgen_compare_long_string_LU_id : StubId::stubgen_compare_long_string_UL_id);
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = (isLU ? StubGenStubId::compare_long_string_LU_id : StubGenStubId::compare_long_string_UL_id);
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     Label SMALL_LOOP, TAIL, TAIL_LOAD_16, LOAD_LAST, DIFF1, DIFF2,
@@ -8532,20 +10703,34 @@ class StubGenerator: public StubCodeGenerator {
       __ subw(result, tmp1, rscratch1);
     __ bind(DONE);
       __ ret(lr);
-    return entry;
+
+      // record the stub entry and end
+      store_archive_data(stub_id, entry, __ pc());
+
+      return entry;
   }
 
   // r0 = input (float16)
   // v0 = result (float)
   // v1 = temporary float register
   address generate_float16ToFloat() {
+    StubId stub_id = StubId::stubgen_hf2f_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::hf2f_id;
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     BLOCK_COMMENT("Entry:");
     __ flt16_to_flt(v0, r0, v1);
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
@@ -8553,24 +10738,40 @@ class StubGenerator: public StubCodeGenerator {
   // r0 = result (float16)
   // v1 = temporary float register
   address generate_floatToFloat16() {
+    StubId stub_id = StubId::stubgen_f2hf_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::f2hf_id;
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     BLOCK_COMMENT("Entry:");
     __ flt_to_flt16(r0, v0, v1);
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
   address generate_method_entry_barrier() {
+    StubId stub_id = StubId::stubgen_method_entry_barrier_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::method_entry_barrier_id;
     StubCodeMark mark(this, stub_id);
 
     Label deoptimize_label;
 
-    address start = __ pc();
+    start = __ pc();
 
     BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
 
@@ -8619,6 +10820,9 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(sp, rscratch1);
     __ br(rscratch2);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -8630,8 +10834,14 @@ class StubGenerator: public StubCodeGenerator {
   // r10 = tmp1
   // r11 = tmp2
   address generate_compare_long_string_same_encoding(bool isLL) {
+    StubId stub_id = (isLL ? StubId::stubgen_compare_long_string_LL_id : StubId::stubgen_compare_long_string_UU_id);
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = (isLL ? StubGenStubId::compare_long_string_LL_id : StubGenStubId::compare_long_string_UU_id);
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
@@ -8739,6 +10949,10 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(LENGTH_DIFF);
       __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
@@ -8762,16 +10976,22 @@ class StubGenerator: public StubCodeGenerator {
   // p0  = pgtmp1
   // p1  = pgtmp2
   address generate_compare_long_string_sve(string_compare_mode mode) {
-    StubGenStubId stub_id;
+    StubId stub_id;
     switch (mode) {
-      case LL: stub_id = StubGenStubId::compare_long_string_LL_id;  break;
-      case LU: stub_id = StubGenStubId::compare_long_string_LU_id; break;
-      case UL: stub_id = StubGenStubId::compare_long_string_UL_id; break;
-      case UU: stub_id = StubGenStubId::compare_long_string_UU_id; break;
+      case LL: stub_id = StubId::stubgen_compare_long_string_LL_id;  break;
+      case LU: stub_id = StubId::stubgen_compare_long_string_LU_id; break;
+      case UL: stub_id = StubId::stubgen_compare_long_string_UL_id; break;
+      case UU: stub_id = StubId::stubgen_compare_long_string_UU_id; break;
       default: ShouldNotReachHere();
     }
-
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
              tmp1 = r10, tmp2 = r11;
@@ -8805,8 +11025,6 @@ class StubGenerator: public StubCodeGenerator {
       default:                                                                 \
         ShouldNotReachHere();                                                  \
     }
-
-    StubCodeMark mark(this, stub_id);
 
     __ mov(idx, 0);
     __ sve_whilelt(pgtmp1, mode == LL ? __ B : __ H, idx, cnt);
@@ -8851,6 +11069,10 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(DONE);
     __ ret(lr);
 #undef LOAD_PAIR
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
@@ -8898,19 +11120,25 @@ class StubGenerator: public StubCodeGenerator {
   // larger and a bit less readable, however, most of extra operations are
   // issued during loads or branches, so, penalty is minimal
   address generate_string_indexof_linear(bool str1_isL, bool str2_isL) {
-    StubGenStubId stub_id;
+    StubId stub_id;
     if (str1_isL) {
       if (str2_isL) {
-        stub_id = StubGenStubId::string_indexof_linear_ll_id;
+        stub_id = StubId::stubgen_string_indexof_linear_ll_id;
       } else {
-        stub_id = StubGenStubId::string_indexof_linear_ul_id;
+        stub_id = StubId::stubgen_string_indexof_linear_ul_id;
       }
     } else {
       if (str2_isL) {
         ShouldNotReachHere();
       } else {
-        stub_id = StubGenStubId::string_indexof_linear_uu_id;
+        stub_id = StubId::stubgen_string_indexof_linear_uu_id;
       }
+    }
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
     }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
@@ -9180,6 +11408,10 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(DONE);
       __ pop(spilled_regs, sp);
       __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
@@ -9210,8 +11442,14 @@ class StubGenerator: public StubCodeGenerator {
   // v1 = loaded 8 bytes
   // Clobbers: r0, r1, r3, rscratch1, rflags, v0-v6
   address generate_large_byte_array_inflate() {
+    StubId stub_id = StubId::stubgen_large_byte_array_inflate_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::large_byte_array_inflate_id;
     StubCodeMark mark(this, stub_id);
     address entry = __ pc();
     Label LOOP, LOOP_START, LOOP_PRFM, LOOP_PRFM_START, DONE;
@@ -9250,6 +11488,10 @@ class StubGenerator: public StubCodeGenerator {
       __ br(__ GE, LOOP);
     __ bind(DONE);
       __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, entry, __ pc());
+
     return entry;
   }
 
@@ -9265,7 +11507,7 @@ class StubGenerator: public StubCodeGenerator {
    *  Output:
    *  Updated state at c_rarg0
    */
-  address generate_ghash_processBlocks() {
+  address generate_ghash_processBlocks_small() {
     // Bafflingly, GCM uses little-endian for the byte order, but
     // big-endian for the bit order.  For example, the polynomial 1 is
     // represented as the 16-byte string 80 00 00 00 | 12 bytes of 00.
@@ -9277,18 +11519,17 @@ class StubGenerator: public StubCodeGenerator {
     // that) and keep the data in little-endian bit order through the
     // calculation, bit-reversing the inputs and outputs.
 
-    StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_id;
-    StubCodeMark mark(this, stub_id);
-    __ align(wordSize * 2);
-    address p = __ pc();
-    __ emit_int64(0x87);  // The low-order bits of the field
-                          // polynomial (i.e. p = z^7+z^2+z+1)
-                          // repeated in the low and high parts of a
-                          // 128-bit vector
-    __ emit_int64(0x87);
-
+    StubId stub_id = StubId::stubgen_ghash_processBlocks_small_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    address start = __ pc();
+    StubCodeMark mark(this, stub_id);
+    Label polynomial; // local data generated at end of stub
+    start = __ pc();
 
     Register state   = c_rarg0;
     Register subkeyH = c_rarg1;
@@ -9298,7 +11539,8 @@ class StubGenerator: public StubCodeGenerator {
     FloatRegister vzr = v30;
     __ eor(vzr, __ T16B, vzr, vzr); // zero register
 
-    __ ldrq(v24, p);    // The field polynomial
+    __ adr(rscratch1, polynomial);
+    __ ldrq(v24, rscratch1);    // The field polynomial
 
     __ ldrq(v0, Address(state));
     __ ldrq(v1, Address(subkeyH));
@@ -9338,24 +11580,33 @@ class StubGenerator: public StubCodeGenerator {
     __ st1(v0, __ T16B, state);
     __ ret(lr);
 
-    return start;
-  }
-
-  address generate_ghash_processBlocks_wide() {
-    address small = generate_ghash_processBlocks();
-
-    StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_wide_id;
-    StubCodeMark mark(this, stub_id);
+    // bind label and generate local polynomial data
     __ align(wordSize * 2);
-    address p = __ pc();
+    __ bind(polynomial);
     __ emit_int64(0x87);  // The low-order bits of the field
                           // polynomial (i.e. p = z^7+z^2+z+1)
                           // repeated in the low and high parts of a
                           // 128-bit vector
     __ emit_int64(0x87);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
+  address generate_ghash_processBlocks(address small) {
+    StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    Label polynomial;           // local data generated after stub
     __ align(CodeEntryAlignment);
-    address start = __ pc();
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
 
     Register state   = c_rarg0;
     Register subkeyH = c_rarg1;
@@ -9375,7 +11626,7 @@ class StubGenerator: public StubCodeGenerator {
       __ st1(v8, v9, v10, v11, __ T16B, Address(sp));
     }
 
-    __ ghash_processBlocks_wide(p, state, subkeyH, data, blocks, unroll);
+    __ ghash_processBlocks_wide(polynomial, state, subkeyH, data, blocks, unroll);
 
     if (unroll > 1) {
       // And restore state
@@ -9387,6 +11638,18 @@ class StubGenerator: public StubCodeGenerator {
     __ br(__ GT, small);
 
     __ ret(lr);
+
+    // bind label and generate polynomial data
+    __ align(wordSize * 2);
+    __ bind(polynomial);
+    __ emit_int64(0x87);  // The low-order bits of the field
+                          // polynomial (i.e. p = z^7+z^2+z+1)
+                          // repeated in the low and high parts of a
+                          // 128-bit vector
+    __ emit_int64(0x87);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -9439,26 +11702,16 @@ class StubGenerator: public StubCodeGenerator {
    */
   address generate_base64_encodeBlock() {
 
-    static const char toBase64[64] = {
-      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
-    };
-
-    static const char toBase64URL[64] = {
-      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
-    };
-
+    StubId stub_id = StubId::stubgen_base64_encodeBlock_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::base64_encodeBlock_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register src   = c_rarg0;  // source array
     Register soff  = c_rarg1;  // source start offset
@@ -9478,9 +11731,9 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(length, send, soff);
 
     // load the codec base address
-    __ lea(codec, ExternalAddress((address) toBase64));
+    __ lea(codec, ExternalAddress((address) _encodeBlock_toBase64));
     __ cbz(isURL, ProcessData);
-    __ lea(codec, ExternalAddress((address) toBase64URL));
+    __ lea(codec, ExternalAddress((address) _encodeBlock_toBase64URL));
 
     __ BIND(ProcessData);
 
@@ -9532,6 +11785,9 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(Exit);
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -9654,80 +11910,16 @@ class StubGenerator: public StubCodeGenerator {
     // on http://0x80.pl/articles/base64-simd-neon.html#encoding-quadwords, in section
     // titled "Base64 decoding".
 
-    // Non-SIMD lookup tables are mostly dumped from fromBase64 array used in java.util.Base64,
-    // except the trailing character '=' is also treated illegal value in this intrinsic. That
-    // is java.util.Base64.fromBase64['='] = -2, while fromBase(URL)64ForNoSIMD['='] = 255 here.
-    static const uint8_t fromBase64ForNoSIMD[256] = {
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u, 255u,  63u,
-       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
-       15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u, 255u,
-      255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
-       41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-    };
-
-    static const uint8_t fromBase64URLForNoSIMD[256] = {
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u,
-       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
-       15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,  63u,
-      255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
-       41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-    };
-
-    // A legal value of base64 code is in range [0, 127].  We need two lookups
-    // with tbl/tbx and combine them to get the decode data. The 1st table vector
-    // lookup use tbl, out of range indices are set to 0 in destination. The 2nd
-    // table vector lookup use tbx, out of range indices are unchanged in
-    // destination. Input [64..126] is mapped to index [65, 127] in second lookup.
-    // The value of index 64 is set to 0, so that we know that we already get the
-    // decoded data with the 1st lookup.
-    static const uint8_t fromBase64ForSIMD[128] = {
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u, 255u,  63u,
-       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
-        0u, 255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,
-       14u,  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,
-      255u, 255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,
-       40u,  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u,
-    };
-
-    static const uint8_t fromBase64URLForSIMD[128] = {
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
-      255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u,
-       52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
-        0u, 255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,
-       14u,  15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,
-       63u, 255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,
-       40u,  41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u,
-    };
-
+    StubId stub_id = StubId::stubgen_base64_decodeBlock_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::base64_decodeBlock_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     Register src    = c_rarg0;  // source array
     Register soff   = c_rarg1;  // source start offset
@@ -9754,9 +11946,9 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(length, send, soff);
     __ bfm(length, zr, 0, 1);
 
-    __ lea(nosimd_codec, ExternalAddress((address) fromBase64ForNoSIMD));
+    __ lea(nosimd_codec, ExternalAddress((address) _decodeBlock_fromBase64ForNoSIMD));
     __ cbz(isURL, ProcessData);
-    __ lea(nosimd_codec, ExternalAddress((address) fromBase64URLForNoSIMD));
+    __ lea(nosimd_codec, ExternalAddress((address) _decodeBlock_fromBase64URLForNoSIMD));
 
     __ BIND(ProcessData);
     __ mov(rscratch1, length);
@@ -9801,9 +11993,9 @@ class StubGenerator: public StubCodeGenerator {
     __ cbzw(rscratch1, Exit);
     __ sub(length, length, 80);
 
-    __ lea(simd_codec, ExternalAddress((address) fromBase64ForSIMD));
+    __ lea(simd_codec, ExternalAddress((address) _decodeBlock_fromBase64ForSIMD));
     __ cbz(isURL, SIMDEnter);
-    __ lea(simd_codec, ExternalAddress((address) fromBase64URLForSIMD));
+    __ lea(simd_codec, ExternalAddress((address) _decodeBlock_fromBase64URLForSIMD));
 
     __ BIND(SIMDEnter);
     __ ld1(v0, v1, v2, v3, __ T16B, __ post(simd_codec, 64));
@@ -9836,24 +12028,50 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   // Support for spin waits.
   address generate_spin_wait() {
+    StubId stub_id = StubId::stubgen_spin_wait_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::spin_wait_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     __ spin_wait();
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
 
   void generate_lookup_secondary_supers_table_stub() {
-    StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_id;
+    StubId stub_id = StubId::stubgen_lookup_secondary_supers_table_id;
+    GrowableArray<address> entries;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == Klass::SECONDARY_SUPERS_TABLE_SIZE, "sanity check");
+    address start = load_archive_data(stub_id, &entries);
+    if (start != nullptr) {
+      assert(entries.length() == Klass::SECONDARY_SUPERS_TABLE_SIZE - 1,
+             "unexpected extra entry count %d", entries.length());
+      StubRoutines::_lookup_secondary_supers_table_stubs[0] = start;
+      for (int slot = 1; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+        StubRoutines::_lookup_secondary_supers_table_stubs[slot] = entries.at(slot - 1);
+      }
+      return;
+    }
+
     StubCodeMark mark(this, stub_id);
 
     const Register
@@ -9868,7 +12086,13 @@ class StubGenerator: public StubCodeGenerator {
       vtemp          = v0;
 
     for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
-      StubRoutines::_lookup_secondary_supers_table_stubs[slot] = __ pc();
+      address next_entry = __ pc();
+      StubRoutines::_lookup_secondary_supers_table_stubs[slot] = next_entry;
+      if (slot == 0) {
+        start = next_entry;
+      } else {
+        entries.append(next_entry);
+      }
       Label L_success;
       __ enter();
       __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
@@ -9878,14 +12102,21 @@ class StubGenerator: public StubCodeGenerator {
       __ leave();
       __ ret(lr);
     }
+    // record the stub entry and end plus all the auxiliary entries
+    store_archive_data(stub_id, start, __ pc(), &entries);
   }
 
   // Slow path implementation for UseSecondarySupersTable.
   address generate_lookup_secondary_supers_table_slow_path_stub() {
-    StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_slow_path_id;
+    StubId stub_id = StubId::stubgen_lookup_secondary_supers_table_slow_path_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-
-    address start = __ pc();
+    start = __ pc();
     const Register
       r_super_klass  = r0,        // argument
       r_array_base   = r1,        // argument
@@ -9897,12 +12128,15 @@ class StubGenerator: public StubCodeGenerator {
     __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index, r_bitmap, temp1, result);
     __ ret(lr);
 
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
 #if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
 
-  // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
+  // ARMv8.1 LSE versions of the atomic stubs used by AtomicAccess::PlatformXX.
   //
   // If LSE is in use, generate LSE versions of all the stubs. The
   // non-LSE versions are in atomic_aarch64.S.
@@ -10036,14 +12270,43 @@ class StubGenerator: public StubCodeGenerator {
     if (! UseLSE) {
       return;
     }
-    __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::atomic_entry_points_id;
-    StubCodeMark mark(this, stub_id);
-    address first_entry = __ pc();
+    StubId stub_id = StubId::stubgen_atomic_entry_points_id;
+    GrowableArray<address> entries;
+    int entry_count = StubInfo::entry_count(stub_id);
+    address start = load_archive_data(stub_id, &entries);
+    if (start != nullptr) {
+      assert(entries.length() == entry_count - 1,
+             "unexpected extra entry count %d", entries.length());
+      aarch64_atomic_fetch_add_4_impl = (aarch64_atomic_stub_t)start;
+      int idx = 0;
+      aarch64_atomic_fetch_add_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_fetch_add_4_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_fetch_add_8_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_xchg_4_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_xchg_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_1_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_4_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_1_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_4_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_8_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_4_release_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_8_release_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_4_seq_cst_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      aarch64_atomic_cmpxchg_8_seq_cst_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      assert(idx == entries.length(), "sanity!");
+      return;
+    }
 
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+    address end;
+    {
     // ADD, memory_order_conservative
     AtomicStubMark mark_fetch_add_4(_masm, &aarch64_atomic_fetch_add_4_impl);
     gen_ldadd_entry(Assembler::word, memory_order_conservative);
+
     AtomicStubMark mark_fetch_add_8(_masm, &aarch64_atomic_fetch_add_8_impl);
     gen_ldadd_entry(Assembler::xword, memory_order_conservative);
 
@@ -10051,6 +12314,7 @@ class StubGenerator: public StubCodeGenerator {
     AtomicStubMark mark_fetch_add_4_relaxed
       (_masm, &aarch64_atomic_fetch_add_4_relaxed_impl);
     gen_ldadd_entry(MacroAssembler::word, memory_order_relaxed);
+
     AtomicStubMark mark_fetch_add_8_relaxed
       (_masm, &aarch64_atomic_fetch_add_8_relaxed_impl);
     gen_ldadd_entry(MacroAssembler::xword, memory_order_relaxed);
@@ -10058,14 +12322,17 @@ class StubGenerator: public StubCodeGenerator {
     // XCHG, memory_order_conservative
     AtomicStubMark mark_xchg_4(_masm, &aarch64_atomic_xchg_4_impl);
     gen_swpal_entry(Assembler::word);
-    AtomicStubMark mark_xchg_8_impl(_masm, &aarch64_atomic_xchg_8_impl);
+
+    AtomicStubMark mark_xchg_8(_masm, &aarch64_atomic_xchg_8_impl);
     gen_swpal_entry(Assembler::xword);
 
     // CAS, memory_order_conservative
     AtomicStubMark mark_cmpxchg_1(_masm, &aarch64_atomic_cmpxchg_1_impl);
     gen_cas_entry(MacroAssembler::byte, memory_order_conservative);
+
     AtomicStubMark mark_cmpxchg_4(_masm, &aarch64_atomic_cmpxchg_4_impl);
     gen_cas_entry(MacroAssembler::word, memory_order_conservative);
+
     AtomicStubMark mark_cmpxchg_8(_masm, &aarch64_atomic_cmpxchg_8_impl);
     gen_cas_entry(MacroAssembler::xword, memory_order_conservative);
 
@@ -10073,9 +12340,11 @@ class StubGenerator: public StubCodeGenerator {
     AtomicStubMark mark_cmpxchg_1_relaxed
       (_masm, &aarch64_atomic_cmpxchg_1_relaxed_impl);
     gen_cas_entry(MacroAssembler::byte, memory_order_relaxed);
+
     AtomicStubMark mark_cmpxchg_4_relaxed
       (_masm, &aarch64_atomic_cmpxchg_4_relaxed_impl);
     gen_cas_entry(MacroAssembler::word, memory_order_relaxed);
+
     AtomicStubMark mark_cmpxchg_8_relaxed
       (_masm, &aarch64_atomic_cmpxchg_8_relaxed_impl);
     gen_cas_entry(MacroAssembler::xword, memory_order_relaxed);
@@ -10083,6 +12352,7 @@ class StubGenerator: public StubCodeGenerator {
     AtomicStubMark mark_cmpxchg_4_release
       (_masm, &aarch64_atomic_cmpxchg_4_release_impl);
     gen_cas_entry(MacroAssembler::word, memory_order_release);
+
     AtomicStubMark mark_cmpxchg_8_release
       (_masm, &aarch64_atomic_cmpxchg_8_release_impl);
     gen_cas_entry(MacroAssembler::xword, memory_order_release);
@@ -10090,11 +12360,41 @@ class StubGenerator: public StubCodeGenerator {
     AtomicStubMark mark_cmpxchg_4_seq_cst
       (_masm, &aarch64_atomic_cmpxchg_4_seq_cst_impl);
     gen_cas_entry(MacroAssembler::word, memory_order_seq_cst);
+
     AtomicStubMark mark_cmpxchg_8_seq_cst
       (_masm, &aarch64_atomic_cmpxchg_8_seq_cst_impl);
     gen_cas_entry(MacroAssembler::xword, memory_order_seq_cst);
 
-    ICache::invalidate_range(first_entry, __ pc() - first_entry);
+    end = __ pc();
+
+    ICache::invalidate_range(start, end - start);
+    // exit block to force update of AtomicStubMark targets
+    }
+
+    assert(start == (address)aarch64_atomic_fetch_add_4_impl,
+           "atomic stub should be at start of buffer");
+    // record the stub start and end plus all the entries saved by the
+    // AtomicStubMark destructor
+    entries.append((address)aarch64_atomic_fetch_add_8_impl);
+    entries.append((address)aarch64_atomic_fetch_add_4_relaxed_impl);
+    entries.append((address)aarch64_atomic_fetch_add_8_relaxed_impl);
+    entries.append((address)aarch64_atomic_xchg_4_impl);
+    entries.append((address)aarch64_atomic_xchg_8_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_1_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_4_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_8_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_1_relaxed_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_4_relaxed_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_8_relaxed_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_4_release_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_8_release_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_4_seq_cst_impl);
+    entries.append((address)aarch64_atomic_cmpxchg_8_seq_cst_impl);
+
+    assert(entries.length() == entry_count - 1,
+           "unexpected extra entry count %d", entries.length());
+
+    store_archive_data(stub_id, start, end, &entries);
   }
 #endif // LINUX
 
@@ -10197,10 +12497,20 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cont_thaw() {
     if (!Continuations::enabled()) return nullptr;
 
-    StubGenStubId stub_id = StubGenStubId::cont_thaw_id;
+    StubId stub_id = StubId::stubgen_cont_thaw_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     generate_cont_thaw(Continuation::thaw_top);
+
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -10208,11 +12518,20 @@ class StubGenerator: public StubCodeGenerator {
     if (!Continuations::enabled()) return nullptr;
 
     // TODO: will probably need multiple return barriers depending on return type
-    StubGenStubId stub_id = StubGenStubId::cont_returnBarrier_id;
+    StubId stub_id = StubId::stubgen_cont_returnBarrier_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     generate_cont_thaw(Continuation::thaw_return_barrier);
+
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -10220,20 +12539,35 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cont_returnBarrier_exception() {
     if (!Continuations::enabled()) return nullptr;
 
-    StubGenStubId stub_id = StubGenStubId::cont_returnBarrierExc_id;
+    StubId stub_id = StubId::stubgen_cont_returnBarrierExc_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     generate_cont_thaw(Continuation::thaw_return_barrier_exception);
+
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
 
   address generate_cont_preempt_stub() {
     if (!Continuations::enabled()) return nullptr;
-    StubGenStubId stub_id = StubGenStubId::cont_preempt_id;
+    StubId stub_id = StubId::stubgen_cont_preempt_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     __ reset_last_Java_frame(true);
 
@@ -10257,6 +12591,9 @@ class StubGenerator: public StubCodeGenerator {
     __ lea(rscratch1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
     __ ldr(rscratch1, Address(rscratch1));
     __ br(rscratch1);
+
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -10313,10 +12650,16 @@ class StubGenerator: public StubCodeGenerator {
   // computation.
 
   address generate_poly1305_processBlocks() {
+    StubId stub_id = StubId::stubgen_poly1305_processBlocks_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::poly1305_processBlocks_id;
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
     Label here;
     __ enter();
     RegSet callee_saved = RegSet::range(r19, r28);
@@ -10424,14 +12767,23 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret(lr);
 
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
   // exception handler for upcall stubs
   address generate_upcall_stub_exception_handler() {
-    StubGenStubId stub_id = StubGenStubId::upcall_stub_exception_handler_id;
+    StubId stub_id = StubId::stubgen_upcall_stub_exception_handler_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     // Native caller has no idea how to handle exceptions,
     // so we just crash here. Up to callee to catch exceptions.
@@ -10440,6 +12792,9 @@ class StubGenerator: public StubCodeGenerator {
     __ blr(rscratch1);
     __ should_not_reach_here();
 
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
+
     return start;
   }
 
@@ -10447,9 +12802,15 @@ class StubGenerator: public StubCodeGenerator {
   // j_rarg0 = jobject receiver
   // rmethod = result
   address generate_upcall_stub_load_target() {
-    StubGenStubId stub_id = StubGenStubId::upcall_stub_load_target_id;
+    StubId stub_id = StubId::stubgen_upcall_stub_load_target_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     __ resolve_global_jobject(j_rarg0, rscratch1, rscratch2);
       // Load target method from receiver
@@ -10462,6 +12823,9 @@ class StubGenerator: public StubCodeGenerator {
     __ str(rmethod, Address(rthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
 
     __ ret(lr);
+
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
@@ -10862,8 +13226,6 @@ class StubGenerator: public StubCodeGenerator {
      */
     address generate_multiply() {
       Label argh, nothing;
-      bind(argh);
-      stop("MontgomeryMultiply total_allocation must be <= 8192");
 
       align(CodeEntryAlignment);
       address entry = pc();
@@ -10970,6 +13332,10 @@ class StubGenerator: public StubCodeGenerator {
       bind(nothing);
       ret(lr);
 
+      // handler for error case
+      bind(argh);
+      stop("MontgomeryMultiply total_allocation must be <= 8192");
+
       return entry;
     }
     // In C, approximately:
@@ -11073,8 +13439,6 @@ class StubGenerator: public StubCodeGenerator {
      */
     address generate_square() {
       Label argh;
-      bind(argh);
-      stop("MontgomeryMultiply total_allocation must be <= 8192");
 
       align(CodeEntryAlignment);
       address entry = pc();
@@ -11182,6 +13546,10 @@ class StubGenerator: public StubCodeGenerator {
 
       leave();
       ret(lr);
+
+      // handler for error case
+      bind(argh);
+      stop("MontgomeryMultiply total_allocation must be <= 8192");
 
       return entry;
     }
@@ -11293,6 +13661,10 @@ class StubGenerator: public StubCodeGenerator {
   };
 
   // Initialization
+  void generate_preuniverse_stubs() {
+    // preuniverse stubs are not needed for aarch64
+  }
+
   void generate_initial_stubs() {
     // Generate initial stubs and initializes the entry points
 
@@ -11316,8 +13688,6 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (UseCRC32Intrinsics) {
-      // set table address before stub generation which use it
-      StubRoutines::_crc_table_adr = (address)StubRoutines::aarch64::_crc_table;
       StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
     }
 
@@ -11379,16 +13749,18 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif
 
-    StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory();
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_setMemory)) {
+      StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory();
+    }
 
     StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated
   }
 
   void generate_compiler_stubs() {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
     if (UseSVE == 0) {
-      StubRoutines::aarch64::_vector_iota_indices = generate_iota_indices(StubGenStubId::vector_iota_indices_id);
+      generate_iota_indices(StubId::stubgen_vector_iota_indices_id);
     }
 
     // array equals stub for large arrays.
@@ -11413,7 +13785,6 @@ class StubGenerator: public StubCodeGenerator {
 
     generate_string_indexof_stubs();
 
-#ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
     }
@@ -11432,25 +13803,42 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (UseMontgomeryMultiplyIntrinsic) {
-      StubGenStubId stub_id = StubGenStubId::montgomeryMultiply_id;
-      StubCodeMark mark(this, stub_id);
-      MontgomeryMultiplyGenerator g(_masm, /*squaring*/false);
-      StubRoutines::_montgomeryMultiply = g.generate_multiply();
+      StubId stub_id = StubId::stubgen_montgomeryMultiply_id;
+      address start = load_archive_data(stub_id);
+      if (start == nullptr) {
+        // we have to generate it
+        StubCodeMark mark(this, stub_id);
+        MontgomeryMultiplyGenerator g(_masm, /*squaring*/false);
+        start = g.generate_multiply();
+        // record the stub start and end
+        store_archive_data(stub_id, start, _masm->pc());
+      }
+      StubRoutines::_montgomeryMultiply = start;
     }
 
     if (UseMontgomerySquareIntrinsic) {
-      StubGenStubId stub_id = StubGenStubId::montgomerySquare_id;
-      StubCodeMark mark(this, stub_id);
-      MontgomeryMultiplyGenerator g(_masm, /*squaring*/true);
-      // We use generate_multiply() rather than generate_square()
-      // because it's faster for the sizes of modulus we care about.
-      StubRoutines::_montgomerySquare = g.generate_multiply();
+      StubId stub_id = StubId::stubgen_montgomerySquare_id;
+      address start = load_archive_data(stub_id);
+      if (start == nullptr) {
+        // we have to generate it
+        StubCodeMark mark(this, stub_id);
+        MontgomeryMultiplyGenerator g(_masm, /*squaring*/true);
+        // We use generate_multiply() rather than generate_square()
+        // because it's faster for the sizes of modulus we care about.
+        start = g.generate_multiply();
+        // record the stub start and end
+        store_archive_data(stub_id, start, _masm->pc());
+      }
+      StubRoutines::_montgomerySquare = start;
     }
-
-#endif // COMPILER2
 
     if (UseChaCha20Intrinsics) {
       StubRoutines::_chacha20Block = generate_chacha20Block_blockpar();
+    }
+
+    if (UseIntPolyIntrinsics) {
+      StubRoutines::_intpoly_montgomeryMult_P256 = generate_intpoly_montgomeryMult_P256();
+      StubRoutines::_intpoly_assign = generate_intpoly_assign();
     }
 
     if (UseKyberIntrinsics) {
@@ -11489,36 +13877,49 @@ class StubGenerator: public StubCodeGenerator {
     }
     if (UseGHASHIntrinsics) {
       // StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
-      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks_wide();
+      StubRoutines::aarch64::_ghash_processBlocks_small = generate_ghash_processBlocks_small();
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks(StubRoutines::aarch64::_ghash_processBlocks_small);
     }
     if (UseAESIntrinsics && UseGHASHIntrinsics) {
       StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
     }
 
     if (UseMD5Intrinsics) {
-      StubRoutines::_md5_implCompress      = generate_md5_implCompress(StubGenStubId::md5_implCompress_id);
-      StubRoutines::_md5_implCompressMB    = generate_md5_implCompress(StubGenStubId::md5_implCompressMB_id);
+      StubRoutines::_md5_implCompress      = generate_md5_implCompress(StubId::stubgen_md5_implCompress_id);
+      StubRoutines::_md5_implCompressMB    = generate_md5_implCompress(StubId::stubgen_md5_implCompressMB_id);
     }
     if (UseSHA1Intrinsics) {
-      StubRoutines::_sha1_implCompress     = generate_sha1_implCompress(StubGenStubId::sha1_implCompress_id);
-      StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(StubGenStubId::sha1_implCompressMB_id);
+      StubRoutines::_sha1_implCompress     = generate_sha1_implCompress(StubId::stubgen_sha1_implCompress_id);
+      StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(StubId::stubgen_sha1_implCompressMB_id);
     }
     if (UseSHA256Intrinsics) {
-      StubRoutines::_sha256_implCompress   = generate_sha256_implCompress(StubGenStubId::sha256_implCompress_id);
-      StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(StubGenStubId::sha256_implCompressMB_id);
+      StubRoutines::_sha256_implCompress   = generate_sha256_implCompress(StubId::stubgen_sha256_implCompress_id);
+      StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(StubId::stubgen_sha256_implCompressMB_id);
     }
     if (UseSHA512Intrinsics) {
-      StubRoutines::_sha512_implCompress   = generate_sha512_implCompress(StubGenStubId::sha512_implCompress_id);
-      StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(StubGenStubId::sha512_implCompressMB_id);
+      StubRoutines::_sha512_implCompress   = generate_sha512_implCompress(StubId::stubgen_sha512_implCompress_id);
+      StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(StubId::stubgen_sha512_implCompressMB_id);
     }
-    if (UseSHA3Intrinsics) {
-      StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(StubGenStubId::sha3_implCompress_id);
+    if (UseSHA3Intrinsics && UseSIMDForSHA3Intrinsic) {
       StubRoutines::_double_keccak         = generate_double_keccak();
-      StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(StubGenStubId::sha3_implCompressMB_id);
+      StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(StubId::stubgen_sha3_implCompress_id);
+      StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(StubId::stubgen_sha3_implCompressMB_id);
+    } else if (UseSHA3Intrinsics) {
+      StubRoutines::_sha3_implCompress     = generate_sha3_implCompress_gpr(StubId::stubgen_sha3_implCompress_id);
+      StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress_gpr(StubId::stubgen_sha3_implCompressMB_id);
     }
 
     if (UsePoly1305Intrinsics) {
       StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
+    }
+
+    // The difference between AArch64 vs. x86_64 intrinsics implementation
+    // include the lack of square() intrinsics; usage caused a 3.3% performance
+    // degradation due to the efficiencies of the symmetric squaring shape in
+    // Java vs. the inefficiencies of the leaf calls and the additional cycles
+    // required for 64 bit multiplication in AArch64.
+    if (UseIntPoly25519Intrinsics) {
+      StubRoutines::_intpoly_mult_25519 = generate_intpoly_mult_25519();
     }
 
     // generate Adler32 intrinsics code
@@ -11526,35 +13927,62 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
 
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
   }
 
  public:
-  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
+  StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) : StubCodeGenerator(code, blob_id, stub_data) {
     switch(blob_id) {
-    case initial_id:
+    case BlobId::stubgen_preuniverse_id:
+      generate_preuniverse_stubs();
+      break;
+    case BlobId::stubgen_initial_id:
       generate_initial_stubs();
       break;
-     case continuation_id:
+     case BlobId::stubgen_continuation_id:
       generate_continuation_stubs();
       break;
-    case compiler_id:
+    case BlobId::stubgen_compiler_id:
       generate_compiler_stubs();
       break;
-    case final_id:
+    case BlobId::stubgen_final_id:
       generate_final_stubs();
       break;
     default:
-      fatal("unexpected blob id: %d", blob_id);
+      fatal("unexpected blob id: %s", StubInfo::name(blob_id));
       break;
     };
   }
+
+#if INCLUDE_CDS
+  static void init_AOTAddressTable(GrowableArray<address>& external_addresses) {
+    // external data defined in this file
+#define ADD(addr) external_addresses.append((address)(addr));
+    ADD(_sha256_round_consts);
+    ADD(_sha512_round_consts);
+    ADD(_sha3_round_consts);
+    ADD(_double_keccak_round_consts);
+    ADD(_modulus_P256);
+    ADD(_encodeBlock_toBase64);
+    ADD(_encodeBlock_toBase64URL);
+    ADD(_decodeBlock_fromBase64ForNoSIMD);
+    ADD(_decodeBlock_fromBase64URLForNoSIMD);
+    ADD(_decodeBlock_fromBase64ForSIMD);
+    ADD(_decodeBlock_fromBase64URLForSIMD);
+#undef ADD
+  }
+#endif // INCLUDE_CDS
 }; // end class declaration
 
-void StubGenerator_generate(CodeBuffer* code, StubGenBlobId blob_id) {
-  StubGenerator g(code, blob_id);
+void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) {
+  StubGenerator g(code, blob_id, stub_data);
 }
 
+#if INCLUDE_CDS
+void StubGenerator_init_AOTAddressTable(GrowableArray<address>& addresses) {
+  StubGenerator::init_AOTAddressTable(addresses);
+}
+#endif // INCLUDE_CDS
 
 #if defined (LINUX)
 

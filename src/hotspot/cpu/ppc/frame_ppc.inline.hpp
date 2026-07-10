@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,10 +137,10 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
 
 // Return unique id for this frame. The id must have a value where we
 // can distinguish identity and younger/older relationship. null
-// represents an invalid (incomparable) frame.
+// represents an invalid (incomparable) frame. Should not be called for heap frames.
 inline intptr_t* frame::id(void) const {
   // Use _fp. _sp or _unextended_sp wouldn't be correct due to resizing.
-  return _fp;
+  return real_fp();
 }
 
 // Return true if this frame is older (less recent activation) than
@@ -319,6 +319,9 @@ inline frame frame::sender(RegisterMap* map) const {
     StackWatermarkSet::on_iteration(map->thread(), result);
   }
 
+  // Calling frame::id() is currently not supported for heap frames.
+  assert(result._on_heap || this->_on_heap || result.is_older(this->id()), "Must be");
+
   return result;
 }
 
@@ -390,5 +393,44 @@ template <typename RegisterMapT>
 void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) {
   // Nothing to do.
 }
+
+#if INCLUDE_JFR
+
+// Static helper routines
+inline intptr_t* frame::sender_sp(intptr_t* fp) { return fp; }
+
+// Extract common_abi parts.
+inline intptr_t* frame::fp(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(((common_abi*)sp)->callers_sp);
+}
+
+inline intptr_t* frame::link(const intptr_t* fp) { return frame::fp(fp); }
+
+inline address frame::return_address(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<address>(((common_abi*)sp)->lr);
+}
+
+inline address frame::interpreter_return_address(const intptr_t* fp) { return frame::return_address(fp); }
+
+// Extract java interpreter state parts.
+inline address frame::interpreter_bcp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<address>(*(fp + ijava_idx(bcp)));
+}
+
+inline intptr_t* frame::interpreter_sender_sp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(*(fp + ijava_idx(sender_sp)));
+}
+
+inline bool frame::is_interpreter_frame_setup_at(const intptr_t* fp, const void* sp) {
+  assert(fp != nullptr, "invariant");
+  assert(sp != nullptr, "invariant");
+  return sp <= fp - ((frame::ijava_state_size + frame::top_ijava_frame_abi_size) >> LogBytesPerWord);
+}
+
+#endif // INCLUDE_JFR
 
 #endif // CPU_PPC_FRAME_PPC_INLINE_HPP

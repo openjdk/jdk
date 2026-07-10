@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
- * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2022, Tencent. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
-#include "gc/shenandoah/shenandoahPacer.inline.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceStats.hpp"
@@ -42,9 +42,10 @@
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ShenandoahController(),
-  _requested_gc_cause(GCCause::_no_cause_specified),
-  _degen_point(ShenandoahGC::_degenerated_outside_cycle) {
-  set_name("Shenandoah Control Thread");
+  _requested_gc_cause(GCCause::_no_gc),
+  _degen_point(ShenandoahGC::_degenerated_outside_cycle),
+  _control_lock(CONTROL_LOCK_RANK, "ShenandoahControl_lock", true) {
+  set_name("ShenControl");
   create_and_start();
 }
 
@@ -58,6 +59,7 @@ void ShenandoahControlThread::run_service() {
 
   ShenandoahCollectorPolicy* const policy = heap->shenandoah_policy();
   ShenandoahHeuristics* const heuristics = heap->heuristics();
+  double most_recent_wake_time = os::elapsedTime();
   while (!should_terminate()) {
     const GCCause::Cause cancelled_cause = heap->cancelled_cause();
     if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
@@ -66,11 +68,8 @@ void ShenandoahControlThread::run_service() {
 
     // Figure out if we have pending requests.
     const bool alloc_failure_pending = ShenandoahCollectorPolicy::is_allocation_failure(cancelled_cause);
-    const bool is_gc_requested = _gc_requested.is_set();
+    const bool is_gc_requested = _gc_requested.try_unset();
     const GCCause::Cause requested_gc_cause = _requested_gc_cause;
-
-    // This control loop iteration has seen this much allocation.
-    const size_t allocs_seen = reset_allocs_seen();
 
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
@@ -122,7 +121,7 @@ void ShenandoahControlThread::run_service() {
     // Blow all soft references on this cycle, if handling allocation failure,
     // either implicit or explicit GC request,  or we are requested to do so unconditionally.
     if (alloc_failure_pending || is_gc_requested || ShenandoahAlwaysClearSoftRefs) {
-      heap->soft_ref_policy()->set_should_clear_all_soft_refs(true);
+      heap->global_generation()->ref_processor()->set_soft_reference_policy(true);
     }
 
     const bool gc_requested = (mode != none);
@@ -139,8 +138,6 @@ void ShenandoahControlThread::run_service() {
 
       heuristics->cancel_trigger_request();
 
-      heap->reset_bytes_allocated_since_gc_start();
-
       MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();
 
       // If GC was requested, we are sampling the counters even without actual triggers
@@ -150,6 +147,7 @@ void ShenandoahControlThread::run_service() {
       // If GC was requested, we better dump freeset data for performance debugging
       heap->free_set()->log_status_under_lock();
 
+      heap->print_before_gc();
       switch (mode) {
         case concurrent_normal:
           service_concurrent_normal_cycle(cause);
@@ -163,6 +161,7 @@ void ShenandoahControlThread::run_service() {
         default:
           ShouldNotReachHere();
       }
+      heap->print_after_gc();
 
       // If this was the requested GC cycle, notify waiters about it
       if (is_gc_requested) {
@@ -195,47 +194,18 @@ void ShenandoahControlThread::run_service() {
       heap->set_forced_counters_update(false);
 
       // Retract forceful part of soft refs policy
-      heap->soft_ref_policy()->set_should_clear_all_soft_refs(false);
+      heap->global_generation()->ref_processor()->set_soft_reference_policy(false);
 
       // Clear metaspace oom flag, if current cycle unloaded classes
       if (heap->unload_classes()) {
         heuristics->clear_metaspace_oom();
       }
 
-      // Commit worker statistics to cycle data
-      heap->phase_timings()->flush_par_workers_to_cycle();
-      if (ShenandoahPacing) {
-        heap->pacer()->flush_stats_to_cycle();
-      }
-
-      // Print GC stats for current cycle
-      {
-        LogTarget(Info, gc, stats) lt;
-        if (lt.is_enabled()) {
-          ResourceMark rm;
-          LogStream ls(lt);
-          heap->phase_timings()->print_cycle_on(&ls);
-          if (ShenandoahPacing) {
-            heap->pacer()->print_cycle_on(&ls);
-          }
-        }
-      }
-
-      // Commit statistics to globals
-      heap->phase_timings()->flush_cycle_to_global();
+      // Manage and print gc stats
+      heap->process_gc_stats();
 
       // Print Metaspace change following GC (if logging is enabled).
       MetaspaceUtils::print_metaspace_change(meta_sizes);
-
-      // GC is over, we are at idle now
-      if (ShenandoahPacing) {
-        heap->pacer()->setup_for_idle();
-      }
-    } else {
-      // Report to pacer that we have seen this many words allocated
-      if (ShenandoahPacing && (allocs_seen > 0)) {
-        heap->pacer()->report_alloc(allocs_seen);
-      }
     }
 
     // Check if we have seen a new target for soft max heap size or if a gc was requested.
@@ -251,14 +221,26 @@ void ShenandoahControlThread::run_service() {
     // Wait before performing the next action. If allocation happened during this wait,
     // we exit sooner, to let heuristics re-evaluate new conditions. If we are at idle,
     // back off exponentially.
-    const double current = os::elapsedTime();
     if (heap->has_changed()) {
       sleep = ShenandoahControlIntervalMin;
-    } else if ((current - last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
+    } else if ((most_recent_wake_time - last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
       sleep = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2));
-      last_sleep_adjust_time = current;
+      last_sleep_adjust_time = most_recent_wake_time;
     }
-    os::naked_short_sleep(sleep);
+    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+    const double before_sleep_time = os::elapsedTime();
+    ml.wait(sleep);
+    most_recent_wake_time = os::elapsedTime();
+    // Record a conservative estimate of the longest anticipated sleep duration until we sample again.
+    double planned_sleep_interval = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2)) / 1000.0;
+    heuristics->update_should_start_query_times(most_recent_wake_time, planned_sleep_interval);
+    if (LogTarget(Debug, gc, thread)::is_enabled()) {
+      double elapsed = most_recent_wake_time - before_sleep_time;
+      double hiccup = elapsed - double(sleep) / 1000.0;
+      if (hiccup > 0.001) {
+        log_debug(gc, thread)("Control Thread hiccup time: %.3fs", hiccup);
+      }
+    }
   }
 }
 
@@ -303,6 +285,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
     log_info(gc)("Cancelled");
     return;
   }
+  heap->increment_total_collections(false);
 
   ShenandoahGCSession session(cause, heap->global_generation());
 
@@ -349,6 +332,8 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahGCSession session(cause, heap->global_generation());
 
+  heap->increment_total_collections(true);
+
   ShenandoahFullGC gc;
   gc.collect(cause);
 }
@@ -356,7 +341,10 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  ShenandoahGCSession session(cause, heap->global_generation());
+  ShenandoahGCSession session(cause, heap->global_generation(), true,
+                              point == ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle);
+
+  heap->increment_total_collections(false);
 
   ShenandoahDegenGC gc(point, heap->global_generation());
   gc.collect(cause);
@@ -366,6 +354,16 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
   if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
     handle_requested_gc(cause);
   }
+}
+
+void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause) {
+  // Although setting gc request is under _controller_lock, the read side (run_service())
+  // does not take the lock. We need to enforce following order, so that read side sees
+  // latest requested gc cause when the flag is set.
+  MonitorLocker controller(&_control_lock, Mutex::_no_safepoint_check_flag);
+  _requested_gc_cause = cause;
+  _gc_requested.set();
+  controller.notify();
 }
 
 void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
@@ -379,8 +377,7 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   // The whitebox caller thread will arrange for itself to wait until the GC notifies
   // it that has reached the requested breakpoint (phase in the GC).
   if (cause == GCCause::_wb_breakpoint) {
-    _requested_gc_cause = cause;
-    _gc_requested.set();
+    notify_control_thread(cause);
     return;
   }
 
@@ -397,19 +394,13 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   size_t current_gc_id = get_gc_id();
   size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
-    // Although setting gc request is under _gc_waiters_lock, but read side (run_service())
-    // does not take the lock. We need to enforce following order, so that read side sees
-    // latest requested gc cause when the flag is set.
-    _requested_gc_cause = cause;
-    _gc_requested.set();
-
+    notify_control_thread(cause);
     ml.wait();
     current_gc_id = get_gc_id();
   }
 }
 
 void ShenandoahControlThread::notify_gc_waiters() {
-  _gc_requested.unset();
   MonitorLocker ml(&_gc_waiters_lock);
   ml.notify_all();
 }

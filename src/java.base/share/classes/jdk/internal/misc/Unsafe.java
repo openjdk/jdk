@@ -25,9 +25,11 @@
 
 package jdk.internal.misc;
 
-import jdk.internal.ref.Cleaner;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import sun.nio.Cleaner;
 import sun.nio.ch.DirectBuffer;
 
 import java.lang.reflect.Field;
@@ -52,7 +54,7 @@ import static jdk.internal.misc.UnsafeConstants.*;
  * @author John R. Rose
  * @see #getUnsafe
  */
-
+@AOTSafeClassInitializer
 public final class Unsafe {
 
     private static native void registerNatives();
@@ -60,7 +62,9 @@ public final class Unsafe {
         runtimeSetup();
     }
 
-    // Called from JVM when loading an AOT cache
+    /// BASE_OFFSET, INDEX_SCALE, and ADDRESS_SIZE fields are equivalent if the
+    /// AOT initialized heap is reused, so just register natives
+    @AOTRuntimeSetup
     private static void runtimeSetup() {
         registerNatives();
     }
@@ -1065,6 +1069,9 @@ public final class Unsafe {
      * the field locations in a form usable by {@link #getInt(Object,long)}.
      * Therefore, code which will be ported to such JVMs on 64-bit platforms
      * must preserve all bits of static field offsets.
+     *
+     * @throws NullPointerException if the field is {@code null}
+     * @throws IllegalArgumentException if the field is static
      * @see #getInt(Object, long)
      */
     public long objectFieldOffset(Field f) {
@@ -1076,13 +1083,17 @@ public final class Unsafe {
     }
 
     /**
-     * Reports the location of the field with a given name in the storage
-     * allocation of its class.
+     * (For compile-time known instance fields in JDK code only) Reports the
+     * location of the field with a given name in the storage allocation of its
+     * class.
+     * <p>
+     * This API is used to avoid creating reflective Objects in Java code at
+     * startup.  This should not be used to find fields in non-trusted code.
+     * Use the {@link #objectFieldOffset(Field) Field}-accepting version for
+     * arbitrary fields instead.
      *
      * @throws NullPointerException if any parameter is {@code null}.
-     * @throws InternalError if there is no field named {@code name} declared
-     *         in class {@code c}, i.e., if {@code c.getDeclaredField(name)}
-     *         would throw {@code java.lang.NoSuchFieldException}.
+     * @throws InternalError if the presumably known field couldn't be found
      *
      * @see #objectFieldOffset(Field)
      */
@@ -1091,7 +1102,16 @@ public final class Unsafe {
             throw new NullPointerException();
         }
 
-        return objectFieldOffset1(c, name);
+        long result = knownObjectFieldOffset0(c, name);
+        if (result < 0) {
+            String type = switch ((int) result) {
+                case -2 -> "a static field";
+                case -1 -> "not found";
+                default -> "unknown";
+            };
+            throw new InternalError("Field %s.%s %s".formatted(c.getTypeName(), name, type));
+        }
+        return result;
     }
 
     /**
@@ -1109,6 +1129,9 @@ public final class Unsafe {
      * a few bits to encode an offset within a non-array object,
      * However, for consistency with other methods in this class,
      * this method reports its result as a long value.
+     *
+     * @throws NullPointerException if the field is {@code null}
+     * @throws IllegalArgumentException if the field is not static
      * @see #getInt(Object, long)
      */
     public long staticFieldOffset(Field f) {
@@ -1128,6 +1151,9 @@ public final class Unsafe {
      * which is a "cookie", not guaranteed to be a real Object, and it should
      * not be used in any way except as argument to the get and put routines in
      * this class.
+     *
+     * @throws NullPointerException if the field is {@code null}
+     * @throws IllegalArgumentException if the field is not static
      */
     public Object staticFieldBase(Field f) {
         if (f == null) {
@@ -1757,10 +1783,7 @@ public final class Unsafe {
      * <p>The JNI documents specify that, at least for returning
      * values from native methods, a Java boolean value is converted
      * to the value-set 0..1 by first truncating to a byte (0..255 or
-     * maybe -128..127) and then testing against zero. Thus, Java
-     * booleans in non-Java data structures are by convention
-     * represented as 8-bit containers containing either zero (for
-     * false) or any non-zero value (for true).
+     * maybe -128..127) and then testing against zero.
      *
      * <p>Java booleans in the heap are also stored in bytes, but are
      * strongly normalized to the value-set 0..1 (i.e., they are
@@ -1771,17 +1794,17 @@ public final class Unsafe {
      * bit can be usually implemented with fewer (machine)
      * instructions than byte testing against zero.
      *
-     * <p>A number of Unsafe methods load boolean values from the heap
-     * as bytes. Unsafe converts those values according to the JNI
-     * rules (i.e, using the "testing against zero" convention). The
-     * method {@code byte2bool} implements that conversion.
+     * <p>A number of Unsafe methods load boolean values as bytes,
+     * truncate them to the least-significant bit, and then test
+     * against zero. It is uniformly performed for both Java heap
+     * and non-Java heap accesses.
      *
      * @param b the byte to be converted to boolean
      * @return the result of the conversion
      */
     @ForceInline
     private boolean byte2bool(byte b) {
-        return b != 0;
+        return (b & 1) != 0;
     }
 
     /**
@@ -3844,10 +3867,10 @@ public final class Unsafe {
     @IntrinsicCandidate
     private native void copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
     private native void copySwapMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes, long elemSize);
-    private native long objectFieldOffset0(Field f);
-    private native long objectFieldOffset1(Class<?> c, String name);
-    private native long staticFieldOffset0(Field f);
-    private native Object staticFieldBase0(Field f);
+    private native long objectFieldOffset0(Field f); // throws IAE
+    private native long knownObjectFieldOffset0(Class<?> c, String name); // error code: -1 not found, -2 static
+    private native long staticFieldOffset0(Field f); // throws IAE
+    private native Object staticFieldBase0(Field f); // throws IAE
     private native boolean shouldBeInitialized0(Class<?> c);
     private native void ensureClassInitialized0(Class<?> c);
     private native int arrayBaseOffset0(Class<?> arrayClass); // public version returns long to promote correct arithmetic

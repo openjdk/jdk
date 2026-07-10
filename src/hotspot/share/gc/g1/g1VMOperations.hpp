@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 
 // VM_operations for the G1 collector.
 
-class VM_G1CollectFull : public VM_GC_Operation {
+class VM_G1CollectFull : public VM_GC_Collect_Operation {
 protected:
   bool skip_operation() const override;
 
@@ -38,61 +38,70 @@ public:
   VM_G1CollectFull(uint gc_count_before,
                    uint full_gc_count_before,
                    GCCause::Cause cause) :
-    VM_GC_Operation(gc_count_before, cause, full_gc_count_before, true) { }
+    VM_GC_Collect_Operation(gc_count_before, cause, full_gc_count_before, true) { }
   VMOp_Type type() const override { return VMOp_G1CollectFull; }
   void doit() override;
-  bool gc_succeeded() const { return prologue_succeeded(); }
 };
 
-class VM_G1TryInitiateConcMark : public VM_GC_Operation {
+class VM_G1TryInitiateConcMark : public VM_GC_Collect_Operation {
+  size_t _word_size;
   bool _transient_failure;
+  bool _mark_in_progress;
   bool _cycle_already_in_progress;
-  bool _whitebox_attached;
-  bool _terminating;
+  bool _whitebox_controlled;
+  // The concurrent start pause may be cancelled for some reasons. Keep track of
+  // this.
   bool _gc_succeeded;
 
 public:
-  VM_G1TryInitiateConcMark(uint gc_count_before,
+  VM_G1TryInitiateConcMark(size_t word_size,
+                           uint gc_count_before,
                            GCCause::Cause gc_cause);
   virtual VMOp_Type type() const { return VMOp_G1TryInitiateConcMark; }
   virtual bool doit_prologue();
   virtual void doit();
   bool transient_failure() const { return _transient_failure; }
+  bool mark_in_progress() const { return _mark_in_progress; }
   bool cycle_already_in_progress() const { return _cycle_already_in_progress; }
-  bool whitebox_attached() const { return _whitebox_attached; }
-  bool terminating() const { return _terminating; }
-  bool gc_succeeded() const { return _gc_succeeded; }
+  bool whitebox_controlled() const { return _whitebox_controlled; }
+  bool gc_succeeded() const { return _gc_succeeded && VM_GC_Operation::gc_succeeded(); }
 };
 
 class VM_G1CollectForAllocation : public VM_CollectForAllocation {
-  bool _gc_succeeded;
 
 public:
-  VM_G1CollectForAllocation(size_t         word_size,
-                            uint           gc_count_before,
+  VM_G1CollectForAllocation(size_t word_size,
+                            uint gc_count_before,
                             GCCause::Cause gc_cause);
   virtual VMOp_Type type() const { return VMOp_G1CollectForAllocation; }
   virtual void doit();
-  bool gc_succeeded() const { return _gc_succeeded; }
 };
 
 // Concurrent G1 stop-the-world operations such as remark and cleanup.
 class VM_G1PauseConcurrent : public VM_Operation {
   uint         _gc_id;
+  bool         _is_shutting_down;
   const char*  _message;
 
 protected:
   VM_G1PauseConcurrent(const char* message) :
-    _gc_id(GCId::current()), _message(message) { }
+    _gc_id(GCId::current()), _is_shutting_down(false), _message(message) { }
   virtual void work() = 0;
 
+  // Does this concurrent pause affect the memory pools? If so, update the collectionUsage()
+  // MemoryMXBean for the old gen memory pool (which is the only pool registered for concurrent
+  // pauses).
+  virtual bool affects_memory_pools() const = 0;
 public:
   bool doit_prologue() override;
   void doit_epilogue() override;
   void doit() override;
+  bool is_gc_operation() const override { return true; }
 };
 
 class VM_G1PauseRemark : public VM_G1PauseConcurrent {
+  bool affects_memory_pools() const override { return true; }
+
 public:
   VM_G1PauseRemark() : VM_G1PauseConcurrent("Pause Remark") { }
   VMOp_Type type() const override { return VMOp_G1PauseRemark; }
@@ -100,10 +109,23 @@ public:
 };
 
 class VM_G1PauseCleanup : public VM_G1PauseConcurrent {
+  bool affects_memory_pools() const override { return false; }
+
 public:
   VM_G1PauseCleanup() : VM_G1PauseConcurrent("Pause Cleanup") { }
   VMOp_Type type() const override { return VMOp_G1PauseCleanup; }
   void work() override;
+};
+
+class VM_G1StopMarking : public VM_Operation {
+public:
+  VM_G1StopMarking() : VM_Operation() { }
+  VMOp_Type type() const override { return VMOp_G1StopMarking; }
+
+  bool doit_prologue() override;
+  void doit() override;
+
+  bool is_gc_operation() const override { return true; }
 };
 
 #endif // SHARE_GC_G1_G1VMOPERATIONS_HPP

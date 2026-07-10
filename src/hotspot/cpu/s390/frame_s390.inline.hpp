@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,8 @@
 #ifndef CPU_S390_FRAME_S390_INLINE_HPP
 #define CPU_S390_FRAME_S390_INLINE_HPP
 
-#include "code/codeCache.hpp"
+#include "code/codeBlob.inline.hpp"
+#include "code/codeCache.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
@@ -44,12 +45,23 @@ inline void frame::setup() {
     _cb = CodeCache::find_blob(_pc);
   }
 
-  if (_fp == nullptr) {
-    _fp = (intptr_t*)own_abi()->callers_sp;
-  }
-
   if (_unextended_sp == nullptr) {
     _unextended_sp = _sp;
+  }
+
+  if (_fp == nullptr) {
+    // The back link for compiled frames on the heap is not valid
+    if (is_heap_frame()) {
+      // fp for interpreted frames should have been derelativized and passed to the constructor
+      assert(is_compiled_frame()
+             || is_native_frame()   // native wrapper (nmethod) for j.l.Object::wait0
+             || is_runtime_frame(), // e.g. Runtime1::monitorenter, SharedRuntime::complete_monitor_locking_C
+             "sp:" PTR_FORMAT " fp:" PTR_FORMAT " name:%s", p2i(_sp), p2i(_unextended_sp + _cb->frame_size()), _cb->name());
+      // The back link for compiled frames on the heap is invalid.
+      _fp = _unextended_sp + _cb->frame_size();
+    } else {
+      _fp = (intptr_t *) own_abi()->callers_sp;
+    }
   }
 
   // When thawing continuation frames the _unextended_sp passed to the constructor is not aligend
@@ -70,7 +82,12 @@ inline void frame::setup() {
     }
   }
 
-  // assert(_on_heap || is_aligned(_sp, frame::frame_alignment), "SP must be 8-byte aligned");
+  // Continuation frames on the java heap are not aligned.
+  // When thawing interpreted frames the sp can be unaligned (see new_stack_frame()).
+  assert(_on_heap ||
+         ((is_aligned(_sp, alignment_in_bytes) || is_interpreted_frame()) &&
+          (is_aligned(_fp, alignment_in_bytes) || !is_fully_initialized())),
+         "invalid alignment sp:" PTR_FORMAT " unextended_sp:" PTR_FORMAT " fp:" PTR_FORMAT, p2i(_sp), p2i(_unextended_sp), p2i(_fp));
 }
 
 // Constructors
@@ -86,6 +103,26 @@ inline frame::frame(intptr_t* sp, address pc, intptr_t* unextended_sp, intptr_t*
 }
 
 inline frame::frame(intptr_t* sp) : frame(sp, nullptr) {}
+
+inline frame::frame(intptr_t* sp, intptr_t* fp, address pc)
+  : _sp(sp), _pc(pc), _cb(nullptr), _oop_map(nullptr), _deopt_state(unknown),
+    _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(nullptr), _fp(fp) {
+  setup();
+}
+
+inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map)
+  :_sp(sp), _pc(pc), _cb(cb), _oop_map(oop_map), _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(unextended_sp), _fp(fp) {
+  setup();
+}
+
+inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map, bool on_heap)
+  :_sp(sp), _pc(pc), _cb(cb), _oop_map(oop_map), _on_heap(on_heap), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(unextended_sp), _fp(fp) {
+  // In thaw, non-heap frames use this constructor to pass oop_map.  I don't know why.
+  assert(_on_heap || _cb != nullptr, "these frames are always heap frames");
+  if (cb != nullptr) {
+    setup();
+  }
+}
 
 // Generic constructor. Used by pns() in debug.cpp only
 #ifndef PRODUCT
@@ -128,10 +165,10 @@ inline void frame::interpreter_frame_set_monitors(BasicObjectLock* monitors) {
 
 // Return unique id for this frame. The id must have a value where we
 // can distinguish identity and younger/older relationship. null
-// represents an invalid (incomparable) frame.
+// represents an invalid (incomparable) frame. Should not be called for heap frames.
 inline intptr_t* frame::id(void) const {
   // Use _fp. _sp or _unextended_sp wouldn't be correct due to resizing.
-  return _fp;
+  return real_fp();
 }
 
 // Return true if this frame is older (less recent activation) than
@@ -290,11 +327,11 @@ inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
 }
 
 inline oop frame::saved_oop_result(RegisterMap* map) const {
-  return *((oop*) map->location(Z_R2->as_VMReg(), nullptr));  // R2 is return register.
+  return *((oop*) map->location(Z_R2->as_VMReg(), sp()));  // R2 is return register.
 }
 
 inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
-  *((oop*) map->location(Z_R2->as_VMReg(), nullptr)) = obj;  // R2 is return register.
+  *((oop*) map->location(Z_R2->as_VMReg(), sp())) = obj;  // R2 is return register.
 }
 
 inline intptr_t* frame::real_fp() const {
@@ -302,39 +339,54 @@ inline intptr_t* frame::real_fp() const {
 }
 
 inline int frame::compiled_frame_stack_argsize() const {
-  Unimplemented();
-  return 0;
+  assert(cb()->is_nmethod(), "what ?");
+  return (cb()->as_nmethod()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
 }
 
 inline void frame::interpreted_frame_oop_map(InterpreterOopMap* mask) const {
-  Unimplemented();
+  assert(mask != nullptr, "");
+  Method* m = interpreter_frame_method();
+  int   bci = interpreter_frame_bci();
+  m->mask_for(bci, mask); // OopMapCache::compute_one_oop_map(m, bci, mask);
 }
 
 inline int frame::sender_sp_ret_address_offset() {
-  Unimplemented();
-  return 0;
+  return -(int)(_z_common_abi(return_pc) >> LogBytesPerWord);
 }
 
 inline void frame::set_unextended_sp(intptr_t* value) {
-  Unimplemented();
+  _unextended_sp = value;
 }
 
 inline int frame::offset_unextended_sp() const {
-  Unimplemented();
-  return 0;
+  assert_offset();   return _offset_unextended_sp;
 }
 
 inline void frame::set_offset_unextended_sp(int value) {
-  Unimplemented();
+  assert_on_heap();  _offset_unextended_sp = value;
 }
 
 //------------------------------------------------------------------------------
 // frame::sender
 
 inline frame frame::sender(RegisterMap* map) const {
+  frame result = sender_raw(map);
+
+  if (map->process_frames() && !map->in_cont()) {
+    StackWatermarkSet::on_iteration(map->thread(), result);
+  }
+
+  return result;
+}
+
+inline frame frame::sender_raw(RegisterMap* map) const {
   // Default is we don't have to follow them. The sender_for_xxx will
   // update it accordingly.
   map->set_include_argument_oops(false);
+
+  if (map->in_cont()) { // already in an h-stack
+    return map->stack_chunk()->sender(*this, map);
+  }
 
   if (is_entry_frame())       return sender_for_entry_frame(map);
   if (is_upcall_stub_frame()) return sender_for_upcall_stub_frame(map);
@@ -357,12 +409,31 @@ inline frame frame::sender_for_compiled_frame(RegisterMap *map) const {
   // Now adjust the map.
   if (map->update_map()) {
     // Tell GC to use argument oopmaps for some runtime stubs that need it.
-    map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));
-    if (_cb->oop_maps() != nullptr) {
-      OopMapSet::update_register_map(this, map);
+
+    // For C1, some runtime stubs don't have oop maps (e.g., slow_subtype_check,
+    // unwind_exception), so set this flag outside of update_register_map to ensure
+    // the GC can handle arguments correctly even when oop_map() is null.
+    if (!_cb->is_nmethod()) { // compiled frames do not use callee-saved registers
+      map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));
+      if (oop_map() != nullptr) {
+        _oop_map->update_register_map(this, map);
+      }
+    } else {
+      assert(!_cb->caller_must_gc_arguments(map->thread()), "");
+      assert(!map->include_argument_oops(), "");
+      assert(oop_map() == nullptr || !oop_map()->has_any(OopMapValue::callee_saved_value), "callee-saved value in compiled frame");
     }
   }
 
+  assert(sender_sp != sp(), "must have changed");
+
+  if (Continuation::is_return_barrier_entry(sender_pc)) {
+    if (map->walk_cont()) { // about to walk into an h-stack
+      return Continuation::top_frame(*this, map);
+    } else {
+      return Continuation::continuation_bottom_sender(map->thread(), *this, sender_sp);
+    }
+  }
   return frame(sender_sp, sender_pc);
 }
 
@@ -370,5 +441,43 @@ template <typename RegisterMapT>
 void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) {
   Unimplemented();
 }
+
+#if INCLUDE_JFR
+
+// Static helper routines
+inline intptr_t* frame::sender_sp(intptr_t* fp) { return fp; }
+
+// Extract common_abi parts.
+inline intptr_t* frame::fp(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(((z_common_abi*)sp)->callers_sp);
+}
+
+inline intptr_t* frame::link(const intptr_t* fp) { return frame::fp(fp); }
+
+inline address frame::return_address(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<address>(((z_common_abi*)sp)->return_pc);
+}
+
+inline address frame::interpreter_return_address(const intptr_t* fp) { return frame::return_address(fp); }
+
+inline address frame::interpreter_bcp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<address>(*(fp + _z_ijava_idx(bcp)));
+}
+
+inline intptr_t* frame::interpreter_sender_sp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(*(fp + _z_ijava_idx(sender_sp)));
+}
+
+inline bool frame::is_interpreter_frame_setup_at(const intptr_t* fp, const void* sp) {
+  assert(fp != nullptr, "invariant");
+  assert(sp != nullptr, "invariant");
+  return sp <= fp - ((frame::z_ijava_state_size + frame::z_top_ijava_frame_abi_size) >> LogBytesPerWord);
+}
+
+#endif // INCLUDE_JFR
 
 #endif // CPU_S390_FRAME_S390_INLINE_HPP

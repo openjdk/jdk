@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -573,12 +573,13 @@ public class Socket implements java.io.Closeable {
      *        a {@link SocketChannel SocketChannel}.
      *        In that case, interrupting a thread establishing a connection will
      *        close the underlying channel and cause this method to throw
-     *        {@link ClosedByInterruptException} with the interrupt status set.
+     *        {@link ClosedByInterruptException} with the thread's interrupted
+     *        status set.
      *   <li> The socket uses the system-default socket implementation and a
      *        {@linkplain Thread#isVirtual() virtual thread} is establishing a
      *        connection. In that case, interrupting the virtual thread will
      *        cause it to wakeup and close the socket. This method will then throw
-     *        {@code SocketException} with the interrupt status set.
+     *        {@code SocketException} with the thread's interrupted status set.
      * </ol>
      *
      * @param   endpoint the {@code SocketAddress}
@@ -613,13 +614,21 @@ public class Socket implements java.io.Closeable {
      *        a {@link SocketChannel SocketChannel}.
      *        In that case, interrupting a thread establishing a connection will
      *        close the underlying channel and cause this method to throw
-     *        {@link ClosedByInterruptException} with the interrupt status set.
+     *        {@link ClosedByInterruptException} with the thread's interrupted
+     *        status set.
      *   <li> The socket uses the system-default socket implementation and a
      *        {@linkplain Thread#isVirtual() virtual thread} is establishing a
      *        connection. In that case, interrupting the virtual thread will
      *        cause it to wakeup and close the socket. This method will then throw
-     *        {@code SocketException} with the interrupt status set.
+     *        {@code SocketException} with the thread's interrupted status set.
      * </ol>
+     *
+     * @apiNote Establishing a TCP/IP connection is subject to connect timeout settings
+     * in the operating system. The typical operating system timeout is in the range of tens of
+     * seconds to minutes. If the operating system timeout expires before the
+     * {@code timeout} specified to this method then an {@code IOException} is thrown.
+     * The {@code timeout} specified to this method is typically a timeout value that is
+     * shorter than the operating system timeout.
      *
      * @param   endpoint the {@code SocketAddress}
      * @param   timeout  the timeout value to be used in milliseconds.
@@ -679,7 +688,7 @@ public class Socket implements java.io.Closeable {
      *          SocketAddress subclass not supported by this socket
      *
      * @since   1.4
-     * @see #isBound
+     * @see #isBound()
      */
     public void bind(SocketAddress bindpoint) throws IOException {
         int s = state;
@@ -879,13 +888,14 @@ public class Socket implements java.io.Closeable {
      *        a {@link SocketChannel SocketChannel}.
      *        In that case, interrupting a thread reading from the input stream
      *        will close the underlying channel and cause the read method to
-     *        throw {@link ClosedByInterruptException} with the interrupt
-     *        status set.
+     *        throw {@link ClosedByInterruptException} with the thread's
+     *        interrupted status set.
      *   <li> The socket uses the system-default socket implementation and a
      *        {@linkplain Thread#isVirtual() virtual thread} is reading from the
      *        input stream. In that case, interrupting the virtual thread will
      *        cause it to wakeup and close the socket. The read method will then
-     *        throw {@code SocketException} with the interrupt status set.
+     *        throw {@code SocketException} with the thread's interrupted
+     *        status set.
      * </ol>
      *
      * <p>Under abnormal conditions the underlying connection may be
@@ -965,10 +975,7 @@ public class Socket implements java.io.Closeable {
             }
             long start = SocketReadEvent.timestamp();
             int nbytes = implRead(b, off, len);
-            long duration = SocketReadEvent.timestamp() - start;
-            if (SocketReadEvent.shouldCommit(duration)) {
-                SocketReadEvent.emit(start, duration, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
-            }
+            SocketReadEvent.offer(start, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
             return nbytes;
         }
 
@@ -1022,13 +1029,14 @@ public class Socket implements java.io.Closeable {
      *        a {@link SocketChannel SocketChannel}.
      *        In that case, interrupting a thread writing to the output stream
      *        will close the underlying channel and cause the write method to
-     *        throw {@link ClosedByInterruptException} with the interrupt status
-     *        set.
+     *        throw {@link ClosedByInterruptException} with the thread's
+     *        interrupted status set.
      *   <li> The socket uses the system-default socket implementation and a
      *        {@linkplain Thread#isVirtual() virtual thread} is writing to the
      *        output stream. In that case, interrupting the virtual thread will
      *        cause it to wakeup and close the socket. The write method will then
-     *        throw {@code SocketException} with the interrupt status set.
+     *        throw {@code SocketException} with the thread's interrupted
+     *        status set.
      * </ol>
      *
      * <p> Closing the returned {@link java.io.OutputStream OutputStream}
@@ -1081,10 +1089,7 @@ public class Socket implements java.io.Closeable {
             }
             long start = SocketWriteEvent.timestamp();
             implWrite(b, off, len);
-            long duration = SocketWriteEvent.timestamp() - start;
-            if (SocketWriteEvent.shouldCommit(duration)) {
-                SocketWriteEvent.emit(start, duration, len, parent.getRemoteSocketAddress());
-            }
+            SocketWriteEvent.offer(start, len, parent.getRemoteSocketAddress());
         }
 
         private void implWrite(byte[] b, int off, int len) throws IOException {
@@ -1612,7 +1617,7 @@ public class Socket implements java.io.Closeable {
      * as well.
      *
      * @throws     IOException  if an I/O error occurs when closing this socket.
-     * @see #isClosed
+     * @see #isClosed()
      */
     public void close() throws IOException {
         synchronized (socketLock) {
@@ -1627,22 +1632,21 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Places the input stream for this socket at "end of stream".
-     * Any data sent to the input stream side of the socket is acknowledged
-     * and then silently discarded.
+     * Shutdown the connection for reading without closing the socket.
      * <p>
-     * If you read from a socket input stream after invoking this method on the
-     * socket, the stream's {@code available} method will return 0, and its
-     * {@code read} methods will return {@code -1} (end of stream).
+     * If you read from a {@linkplain Socket#getInputStream() socket input stream}
+     * after invoking this method, the stream's {@code available} method will
+     * return {@code 0}, and its {@code read} methods will return {@code -1} (end of stream).
      *
      * @throws IOException if an I/O error occurs when shutting down this socket, the
-     *         socket is not connected or the socket is closed.
+     *         socket is not connected, the socket is already shutdown for reading,
+     *         or the socket is closed.
      *
      * @since 1.3
      * @see java.net.Socket#shutdownOutput()
      * @see java.net.Socket#close()
      * @see java.net.Socket#setSoLinger(boolean, int)
-     * @see #isInputShutdown
+     * @see #isInputShutdown()
      */
     public void shutdownInput() throws IOException {
         int s = state;
@@ -1657,22 +1661,20 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Disables the output stream for this socket.
-     * For a TCP socket, any previously written data will be sent
-     * followed by TCP's normal connection termination sequence.
+     * Shutdown the connection for writing without closing the socket.
+     * <p>
+     * If you write to a {@linkplain Socket#getOutputStream() socket output stream}
+     * after invoking this method, the stream will throw an {@code IOException}.
      *
-     * If you write to a socket output stream after invoking
-     * shutdownOutput() on the socket, the stream will throw
-     * an IOException.
-     *
-     * @throws IOException if an I/O error occurs when shutting down this socket, the socket
-     *         is not connected or the socket is closed.
+     * @throws IOException if an I/O error occurs when shutting down this socket, the
+     *         socket is not connected, the socket is already shutdown for writing,
+     *         or the socket is closed.
      *
      * @since 1.3
      * @see java.net.Socket#shutdownInput()
      * @see java.net.Socket#close()
      * @see java.net.Socket#setSoLinger(boolean, int)
-     * @see #isOutputShutdown
+     * @see #isOutputShutdown()
      */
     public void shutdownOutput() throws IOException {
         int s = state;
@@ -1705,10 +1707,9 @@ public class Socket implements java.io.Closeable {
     /**
      * Returns the connection state of the socket.
      * <p>
-     * Note: Closing a socket doesn't clear its connection state, which means
+     * {@linkplain #close() Closing} a socket doesn't clear its connection state, which means
      * this method will return {@code true} for a closed socket
-     * (see {@link #isClosed()}) if it was successfully connected prior
-     * to being closed.
+     * if it was successfully connected prior to being closed.
      *
      * @return true if the socket was successfully connected to a server
      * @since 1.4
@@ -1720,10 +1721,9 @@ public class Socket implements java.io.Closeable {
     /**
      * Returns the binding state of the socket.
      * <p>
-     * Note: Closing a socket doesn't clear its binding state, which means
+     * {@linkplain #close() Closing} a socket doesn't clear its binding state, which means
      * this method will return {@code true} for a closed socket
-     * (see {@link #isClosed()}) if it was successfully bound prior
-     * to being closed.
+     * if it was successfully bound prior to being closed.
      *
      * @return true if the socket was successfully bound to an address
      * @since 1.4
@@ -1745,22 +1745,22 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Returns whether the read-half of the socket connection is closed.
+     * Returns {@code true} if the socket was shutdown for reading.
      *
-     * @return true if the input of the socket has been shutdown
+     * @return true only if a prior call to {@link #shutdownInput()} completed successfully,
+     *         false otherwise
      * @since 1.4
-     * @see #shutdownInput
      */
     public boolean isInputShutdown() {
         return isInputShutdown(state);
     }
 
     /**
-     * Returns whether the write-half of the socket connection is closed.
+     * Returns {@code true} if the socket was shutdown for writing.
      *
-     * @return true if the output of the socket has been shutdown
+     * @return true only if a prior call to {@link #shutdownOutput()} completed successfully,
+     *         false otherwise
      * @since 1.4
-     * @see #shutdownOutput
      */
     public boolean isOutputShutdown() {
         return isOutputShutdown(state);
@@ -1848,7 +1848,11 @@ public class Socket implements java.io.Closeable {
      *         bandwidth
      *
      * @since 1.5
+     *
+     * @deprecated This method was intended to allow for protocols that are now
+     *             obsolete.
      */
+    @Deprecated(since = "26", forRemoval = true)
     public void setPerformancePreferences(int connectionTime,
                                           int latency,
                                           int bandwidth)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,5 +182,12 @@ jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
 int lookupCharacteristicsToAddressFamily(int characteristics);
 
 int addressesInSystemOrder(int characteristics);
+
+/* return codes */
+#define ENH_INIT_ERROR -1  /* initialization error: check exceptions */
+#define ENH_DISABLED    0  /* enhanced exceptions disabled */
+#define ENH_ENABLED     1  /* enhanced exceptions enabled */
+
+int getEnhancedExceptionsAllowed(JNIEnv *env);
 
 #endif /* NET_UTILS_H */

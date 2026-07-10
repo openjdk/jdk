@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -461,10 +461,6 @@ class Assembler : public AbstractAssembler {
     FRIN_OPCODE   = (63u << OPCODE_SHIFT | 392u << 1),
     FRIP_OPCODE   = (63u << OPCODE_SHIFT | 456u << 1),
     FRIM_OPCODE   = (63u << OPCODE_SHIFT | 488u << 1),
-    // These are special Power6 opcodes, reused for "lfdepx" and "stfdepx"
-    // on Power7.  Do not use.
-    // MFFGPR_OPCODE  = (31u << OPCODE_SHIFT | 607u << 1),
-    // MFTGPR_OPCODE  = (31u << OPCODE_SHIFT | 735u << 1),
     CMPB_OPCODE    = (31u << OPCODE_SHIFT |  508  << 1),
     POPCNTB_OPCODE = (31u << OPCODE_SHIFT |  122  << 1),
     POPCNTW_OPCODE = (31u << OPCODE_SHIFT |  378  << 1),
@@ -518,7 +514,6 @@ class Assembler : public AbstractAssembler {
     FSQRT_OPCODE   = (63u << OPCODE_SHIFT |   22u << 1),            // A-FORM
     FSQRTS_OPCODE  = (59u << OPCODE_SHIFT |   22u << 1),            // A-FORM
 
-    // Vector instruction support for >= Power6
     // Vector Storage Access
     LVEBX_OPCODE   = (31u << OPCODE_SHIFT |    7u << 1),
     LVEHX_OPCODE   = (31u << OPCODE_SHIFT |   39u << 1),
@@ -568,6 +563,9 @@ class Assembler : public AbstractAssembler {
     XSCVDPHP_OPCODE= (60u << OPCODE_SHIFT |  347u << 2 | 17u << 16), // XX2-FORM
     XXPERM_OPCODE  = (60u << OPCODE_SHIFT |   26u << 3),
     XXSEL_OPCODE   = (60u << OPCODE_SHIFT |    3u << 4),
+    XSCMPEQDP_OPCODE=(60u << OPCODE_SHIFT |   3u <<  3),
+    XSCMPGEDP_OPCODE=(60u << OPCODE_SHIFT |  19u <<  3),
+    XSCMPGTDP_OPCODE=(60u << OPCODE_SHIFT |  11u <<  3),
     XXSPLTIB_OPCODE= (60u << OPCODE_SHIFT |  360u << 1),
     XVDIVDP_OPCODE = (60u << OPCODE_SHIFT |  120u << 3),
     XVABSSP_OPCODE = (60u << OPCODE_SHIFT |  409u << 2),
@@ -591,6 +589,13 @@ class Assembler : public AbstractAssembler {
     XVRDPIC_OPCODE = (60u << OPCODE_SHIFT |  235u << 2),
     XVRDPIM_OPCODE = (60u << OPCODE_SHIFT |  249u << 2),
     XVRDPIP_OPCODE = (60u << OPCODE_SHIFT |  233u << 2),
+    XVMINSP_OPCODE = (60u << OPCODE_SHIFT |  200u << 3),
+    XVMINDP_OPCODE = (60u << OPCODE_SHIFT |  232u << 3),
+    XVMAXSP_OPCODE = (60u << OPCODE_SHIFT |  192u << 3),
+    XVMAXDP_OPCODE = (60u << OPCODE_SHIFT |  224u << 3),
+
+    XSMINJDP_OPCODE = (60u << OPCODE_SHIFT | 152u << 3),
+    XSMAXJDP_OPCODE = (60u << OPCODE_SHIFT | 144u << 3),
 
     // Deliver A Random Number (introduced with POWER9)
     DARN_OPCODE    = (31u << OPCODE_SHIFT |  755u << 1),
@@ -699,15 +704,19 @@ class Assembler : public AbstractAssembler {
     VMAXSB_OPCODE  = (4u  << OPCODE_SHIFT |  258u     ),
     VMAXSW_OPCODE  = (4u  << OPCODE_SHIFT |  386u     ),
     VMAXSH_OPCODE  = (4u  << OPCODE_SHIFT |  322u     ),
+    VMAXSD_OPCODE  = (4u  << OPCODE_SHIFT |  450u     ),
     VMAXUB_OPCODE  = (4u  << OPCODE_SHIFT |    2u     ),
     VMAXUW_OPCODE  = (4u  << OPCODE_SHIFT |  130u     ),
     VMAXUH_OPCODE  = (4u  << OPCODE_SHIFT |   66u     ),
+    VMAXUD_OPCODE  = (4u  << OPCODE_SHIFT |  194u     ),
     VMINSB_OPCODE  = (4u  << OPCODE_SHIFT |  770u     ),
     VMINSW_OPCODE  = (4u  << OPCODE_SHIFT |  898u     ),
     VMINSH_OPCODE  = (4u  << OPCODE_SHIFT |  834u     ),
+    VMINSD_OPCODE  = (4u  << OPCODE_SHIFT |  962u     ),
     VMINUB_OPCODE  = (4u  << OPCODE_SHIFT |  514u     ),
     VMINUW_OPCODE  = (4u  << OPCODE_SHIFT |  642u     ),
     VMINUH_OPCODE  = (4u  << OPCODE_SHIFT |  578u     ),
+    VMINUD_OPCODE  = (4u  << OPCODE_SHIFT |  706u     ),
 
     VCMPEQUB_OPCODE= (4u  << OPCODE_SHIFT |    6u     ),
     VCMPEQUH_OPCODE= (4u  << OPCODE_SHIFT |   70u     ),
@@ -749,6 +758,7 @@ class Assembler : public AbstractAssembler {
     VCTZH_OPCODE   = (4u  << OPCODE_SHIFT | 29u << 16 | 1538u),
     VCTZW_OPCODE   = (4u  << OPCODE_SHIFT | 30u << 16 | 1538u),
     VCTZD_OPCODE   = (4u  << OPCODE_SHIFT | 31u << 16 | 1538u),
+    VNEGW_OPCODE   = (4u  << OPCODE_SHIFT |  6u << 16 | 1538u),
 
     // Vector Floating-Point
     // not implemented yet
@@ -1038,6 +1048,13 @@ class Assembler : public AbstractAssembler {
     return (julong)x < maxplus1;
   }
 
+  // Test if x has exactly one consecutive range of one bits (e.g. 00111000)
+  static bool has_consecutive_ones(julong x) {
+    if (x == max_julong) return true;
+    if (x == 0) return false;
+    return is_power_of_2((x >> count_trailing_zeros(x)) + 1);
+  }
+
  protected:
   // helpers
 
@@ -1221,7 +1238,7 @@ class Assembler : public AbstractAssembler {
   static int u(        int         x)  { return  opp_u_field(x,             19, 16); }
   static int ui(       int         x)  { return  opp_u_field(x,             31, 16); }
 
-  // Support vector instructions for >= Power6.
+  // Support vector instructions.
   static int vra(      int         x)  { return  opp_u_field(x,             15, 11); }
   static int vrb(      int         x)  { return  opp_u_field(x,             20, 16); }
   static int vrc(      int         x)  { return  opp_u_field(x,             25, 21); }
@@ -1565,10 +1582,6 @@ class Assembler : public AbstractAssembler {
   static bool is_nop(int x) {
     return x == 0x60000000;
   }
-  // endgroup opcode for Power6
-  static bool is_endgroup(int x) {
-    return is_ori(x) && inv_ra_field(x) == 1 && inv_rs_field(x) == 1 && inv_d1_field(x) == 0;
-  }
 
 
  private:
@@ -1600,7 +1613,8 @@ class Assembler : public AbstractAssembler {
   inline void isel_0( Register d, ConditionRegister cr, Condition cc, Register b = noreg);
 
   // PPC 1, section 3.3.11, Fixed-Point Logical Instructions
-         void andi(   Register a, Register s, long ui16);   // optimized version
+         void andi(   Register a, Register s, julong int_or_long_const); // optimized version, may clobber CR0
+  static bool andi_supports(julong int_or_long_const);
   inline void andi_(  Register a, Register s, int ui16);
   inline void andis_( Register a, Register s, int ui16);
   inline void ori(    Register a, Register s, int ui16);
@@ -1643,9 +1657,6 @@ class Assembler : public AbstractAssembler {
   inline void mr(      Register d, Register s);
   inline void ori_opt( Register d, int ui16);
   inline void oris_opt(Register d, int ui16);
-
-  // endgroup opcode for Power6
-  inline void endgroup();
 
   // count instructions
   inline void cntlzw(  Register a, Register s);
@@ -2008,7 +2019,7 @@ class Assembler : public AbstractAssembler {
 
   // Wait instructions for polling. Attention: May result in SIGILL.
   inline void wait();
-  inline void waitrsv(); // >=Power7
+  inline void waitrsv();
 
   // atomics
   inline void lbarx_unchecked(Register d, Register a, Register b, int eh1 = 0); // >=Power 8
@@ -2016,7 +2027,6 @@ class Assembler : public AbstractAssembler {
   inline void lwarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
   inline void ldarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
   inline void lqarx_unchecked(Register d, Register a, Register b, int eh1 = 0); // >=Power 8
-  inline bool lxarx_hint_exclusive_access();
   inline void lbarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
   inline void lharx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
   inline void lwarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
@@ -2029,7 +2039,7 @@ class Assembler : public AbstractAssembler {
   inline void stqcx_( Register s, Register a, Register b);
 
   // Instructions for adjusting thread priority for simultaneous
-  // multithreading (SMT) on Power5.
+  // multithreading (SMT).
  private:
   inline void smt_prio_very_low();
   inline void smt_prio_medium_high();
@@ -2039,7 +2049,6 @@ class Assembler : public AbstractAssembler {
   inline void smt_prio_low();
   inline void smt_prio_medium_low();
   inline void smt_prio_medium();
-  // >= Power7
   inline void smt_yield();
   inline void smt_mdoio();
   inline void smt_mdoom();
@@ -2052,12 +2061,12 @@ class Assembler : public AbstractAssembler {
  protected:
   inline void tdi_unchecked(int tobits, Register a, int si16);
   inline void twi_unchecked(int tobits, Register a, int si16);
+ public:
   inline void tdi(          int tobits, Register a, int si16);   // asserts UseSIGTRAP
   inline void twi(          int tobits, Register a, int si16);   // asserts UseSIGTRAP
   inline void td(           int tobits, Register a, Register b); // asserts UseSIGTRAP
   inline void tw(           int tobits, Register a, Register b); // asserts UseSIGTRAP
 
- public:
   static bool is_tdi(int x, int tobits, int ra, int si16) {
      return (TDI_OPCODE == (x & TDI_OPCODE_MASK))
          && (tobits == inv_to_field(x))
@@ -2198,7 +2207,7 @@ class Assembler : public AbstractAssembler {
   inline void fsqrt( FloatRegister d, FloatRegister b);
   inline void fsqrts(FloatRegister d, FloatRegister b);
 
-  // Vector instructions for >= Power6.
+  // Vector instructions.
   inline void lvebx(    VectorRegister d, Register s1, Register s2);
   inline void lvehx(    VectorRegister d, Register s1, Register s2);
   inline void lvewx(    VectorRegister d, Register s1, Register s2);
@@ -2304,15 +2313,19 @@ class Assembler : public AbstractAssembler {
   inline void vmaxsb(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxsw(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxsh(   VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vmaxsd(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxub(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxuw(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxuh(   VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vmaxud(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminsb(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminsw(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminsh(   VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vminsd(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminub(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminuw(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminuh(   VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vminud(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vcmpequb( VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vcmpequh( VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vcmpequw( VectorRegister d, VectorRegister a, VectorRegister b);
@@ -2362,6 +2375,7 @@ class Assembler : public AbstractAssembler {
   inline void vctzh(    VectorRegister d, VectorRegister b);
   inline void vctzw(    VectorRegister d, VectorRegister b);
   inline void vctzd(    VectorRegister d, VectorRegister b);
+  inline void vnegw(    VectorRegister d, VectorRegister b);
   // Vector Floating-Point not implemented yet
   inline void mtvscr(   VectorRegister b);
   inline void mfvscr(   VectorRegister d);
@@ -2412,6 +2426,9 @@ class Assembler : public AbstractAssembler {
   inline void xscvdphp( VectorSRegister d, VectorSRegister b);
   inline void xxland(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxsel(    VectorSRegister d, VectorSRegister a, VectorSRegister b, VectorSRegister c);
+  inline void xscmpeqdp(VectorSRegister t, VectorSRegister a, VectorSRegister b); // Requires Power9
+  inline void xscmpgedp(VectorSRegister t, VectorSRegister a, VectorSRegister b); // Requires Power9
+  inline void xscmpgtdp(VectorSRegister t, VectorSRegister a, VectorSRegister b); // Requires Power9
   inline void xxspltib( VectorSRegister d, int ui8);
   inline void xvdivsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvdivdp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
@@ -2436,6 +2453,15 @@ class Assembler : public AbstractAssembler {
   inline void xvrdpic(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpim(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpip(  VectorSRegister d, VectorSRegister b);
+
+  inline void xsminjdp( VectorSRegister d, VectorSRegister a, VectorSRegister b); // Requires Power 9
+  inline void xsmaxjdp( VectorSRegister d, VectorSRegister a, VectorSRegister b); // Requires Power 9
+
+  // The following functions do not match exactly the Java.math semantics.
+  inline void xvminsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmindp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmaxsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmaxdp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
 
   // VSX Extended Mnemonics
   inline void xxspltd(  VectorSRegister d, VectorSRegister a, int x);

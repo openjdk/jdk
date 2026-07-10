@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -82,11 +82,13 @@ class NativeInstruction {
 
   bool is_illegal();
 
+  bool is_nop() const {
+    // TODO update: https://bugs.openjdk.org/browse/JDK-8290965
+    return Assembler::is_z_nop(addr_at(0));
+  }
+
   // Bcrl is currently the only accepted instruction here.
   bool is_jump();
-
-  // We use an illtrap for marking a method as not_entrant.
-  bool is_sigill_not_entrant();
 
   bool is_safepoint_poll() {
     // Is the current instruction a POTENTIAL read access to the polling page?
@@ -609,11 +611,6 @@ class NativeJump: public NativeInstruction {
 
   // Insertion of native jump instruction.
   static void insert(address code_pos, address entry);
-
-  // MT-safe insertion of native jump at verified method entry.
-  static void check_verified_entry_alignment(address entry, address verified_entry) { }
-
-  static void patch_verified_entry(address entry, address verified_entry, address dest);
 };
 
 //-------------------------------------
@@ -657,33 +654,41 @@ class NativeGeneralJump: public NativeInstruction {
 
 class NativePostCallNop: public NativeInstruction {
 public:
-  bool check() const { Unimplemented(); return false; }
+  enum z_specific_constants {
+    // The check reads a 2-byte nop instruction. Since s390 nop is 2 bytes (BCR instruction),
+    // we can safely read it in a single stage without risk of out-of-bounds access.
+    // The nop instruction is checked by is_nop() which reads a short (2 bytes).
+    first_check_size = 2
+  };
+  bool check() const { return is_nop(); }
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const { return false; }
   bool patch(int32_t oopmap_slot, int32_t cb_offset) { Unimplemented(); return false; }
-  void make_deopt() { Unimplemented(); }
+  void make_deopt();
 };
 
 inline NativePostCallNop* nativePostCallNop_at(address address) {
-  // Unimplemented();
+    NativePostCallNop* nop = (NativePostCallNop*) address;
+  if (nop->check()) {
+    return nop;
+  }
   return nullptr;
 }
 
 class NativeDeoptInstruction: public NativeInstruction {
 public:
-  address instruction_address() const       { Unimplemented(); return nullptr; }
-  address next_instruction_address() const  { Unimplemented(); return nullptr; }
+  enum {
+    instruction_offset          =    0
+  };
 
-  void  verify() { Unimplemented(); }
+  address instruction_address() const       { return addr_at(instruction_offset); }
+  address next_instruction_address() const  { return instruction_address() + Assembler::instr_len(addr_at(0)); }
 
-  static bool is_deopt_at(address instr) {
-    // Unimplemented();
-    return false;
-  }
+  void  verify();
+
+  static bool is_deopt_at(address instr);
 
   // MT-safe patching
-  static void insert(address code_pos) {
-    Unimplemented();
-  }
+  static void insert(address code_pos);
 };
 
 #endif // CPU_S390_NATIVEINST_S390_HPP

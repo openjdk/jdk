@@ -384,9 +384,15 @@ public class Symtab {
     // Enter a synthetic class that is used to mark classes in ct.sym.
     // This class does not have a class file.
     private Type enterSyntheticAnnotation(String name) {
+        return enterSyntheticAnnotation(names.fromString(name));
+    }
+
+    // Enter a synthetic class that is used to mark classes in ct.sym.
+    // This class does not have a class file.
+    private Type enterSyntheticAnnotation(Name name) {
         // for now, leave the module null, to prevent problems from synthesizing the
         // existence of a class in any specific module, including noModule
-        ClassType type = (ClassType)enterClass(java_base, names.fromString(name)).type;
+        ClassType type = (ClassType)enterClass(java_base, name).type;
         ClassSymbol sym = (ClassSymbol)type.tsym;
         sym.completer = Completer.NULL_COMPLETER;
         sym.flags_field = PUBLIC|ACYCLIC|ANNOTATION|INTERFACE;
@@ -613,7 +619,7 @@ public class Symtab {
         valueBasedType = enterClass("jdk.internal.ValueBased");
         valueBasedInternalType = enterSyntheticAnnotation("jdk.internal.ValueBased+Annotation");
         requiresIdentityType = enterClass("jdk.internal.RequiresIdentity");
-        requiresIdentityInternalType = enterSyntheticAnnotation("jdk.internal.RequiresIdentity+Annotation");
+        requiresIdentityInternalType = enterSyntheticAnnotation(names.requiresIdentityInternal);
         classDescType = enterClass("java.lang.constant.ClassDesc");
         enumDescType = enterClass("java.lang.Enum$EnumDesc");
         // For serialization lint checking

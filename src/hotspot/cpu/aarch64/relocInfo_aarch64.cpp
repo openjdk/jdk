@@ -41,7 +41,7 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
   case relocInfo::oop_type:
     {
       oop_Relocation *reloc = (oop_Relocation *)this;
-      if (NativeInstruction::is_ldr_literal_at(addr())) {
+      if (NativeInstruction::is_load_literal_at(addr())) {
         address constptr = (address)code()->oop_addr_at(reloc->oop_index());
         bytes = MacroAssembler::pd_patch_instruction_size(addr(), constptr);
         assert(*(address*)constptr == x, "error in oop relocation");
@@ -54,7 +54,12 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
     bytes = MacroAssembler::pd_patch_instruction_size(addr(), x);
     break;
   }
-  ICache::invalidate_range(addr(), bytes);
+
+  if (UseSingleICacheInvalidation) {
+    assert(_binding != nullptr, "expect to be called with RelocIterator in use");
+  } else {
+    ICache::invalidate_range(addr(), bytes);
+  }
 }
 
 address Relocation::pd_call_destination(address orig_addr) {
@@ -85,12 +90,11 @@ void Relocation::pd_set_call_destination(address x) {
   } else {
     MacroAssembler::pd_patch_instruction(addr(), x);
   }
-  assert(pd_call_destination(addr()) == x, "fail in reloc");
+  guarantee(pd_call_destination(addr()) == x, "fail in reloc");
 }
 
 void trampoline_stub_Relocation::pd_fix_owner_after_move() {
   NativeCall* call = nativeCall_at(owner());
-  assert(call->raw_destination() == owner(), "destination should be empty");
   address trampoline = addr();
   address dest = nativeCallTrampolineStub_at(trampoline)->destination();
   if (!Assembler::reachable_from_branch_at(owner(), dest)) {

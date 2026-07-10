@@ -30,6 +30,7 @@ import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.runtime.ExactConversionsSupport;
 import java.util.Arrays;
 
 import jdk.internal.access.JavaLangAccess;
@@ -275,10 +276,10 @@ public final class BufWriterImpl implements BufWriter {
     void writeUtfEntry(String str) {
         int strlen = str.length();
         int countNonZeroAscii = JLA.countNonZeroAscii(str);
-        int utflen = utfLen(str, countNonZeroAscii);
-        if (utflen > 65535) {
-            throw new IllegalArgumentException("string too long");
-        }
+        long utflenLong = utfLen(str, countNonZeroAscii);
+        // Utf8Entry should always be writable
+        assert ExactConversionsSupport.isLongToCharExact(utflenLong) : utflenLong;
+        int utflen = (int) utflenLong;
         reserveSpace(utflen + 3);
 
         int offset = this.offset;
@@ -399,6 +400,7 @@ public final class BufWriterImpl implements BufWriter {
         writeU2(cpIndex(entry));
     }
 
+    // Null checks entry
     public void writeIndex(int bytecode, PoolEntry entry) {
         writeU1U2(bytecode, cpIndex(entry));
     }

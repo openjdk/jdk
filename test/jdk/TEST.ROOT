@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This file identifies the root of the test-suite hierarchy.
@@ -59,7 +59,7 @@ exclusiveAccess.dirs=java/math/BigInteger/largeMemory \
 java/rmi/Naming java/util/prefs sun/management/jmxremote \
 sun/tools/jstatd sun/security/mscapi java/util/Arrays/largeMemory \
 java/util/BitSet/stream javax/rmi java/net/httpclient/websocket \
-com/sun/net/httpserver/simpleserver sun/tools/jhsdb
+com/sun/net/httpserver/simpleserver sun/tools/jhsdb javax/sound
 
 # Group definitions
 groups=TEST.groups
@@ -95,18 +95,19 @@ requires.properties= \
     vm.gc.Shenandoah \
     vm.gc.Epsilon \
     vm.gc.Z \
-    vm.graal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
     vm.cds \
     vm.cds.write.archived.java.heap \
+    vm.cds.write.mapped.java.heap \
+    vm.cds.write.streamed.java.heap \
     vm.continuations \
     vm.musl \
+    vm.asan \
+    vm.ubsan \
     vm.debug \
     vm.hasSA \
     vm.hasJFR \
-    vm.jvmci \
-    vm.jvmci.enabled \
     vm.jvmti \
     vm.cpu.features \
     container.support \
@@ -119,14 +120,9 @@ requires.properties= \
     jdk.static
 
 # Minimum jtreg version
-requiredVersion=7.5.1+1
+requiredVersion=8.3+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them
 external.lib.roots = ../../
 
-# Use new module options
-useNewOptions=true
-
-# Use --patch-module instead of -Xmodule:
-useNewPatchModule=true

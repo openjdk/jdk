@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1855,7 +1855,6 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
 
 
 Dependencies* GraphBuilder::dependency_recorder() const {
-  assert(DeoptC1, "need debug information");
   return compilation()->dependency_recorder();
 }
 
@@ -2001,7 +2000,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   ciMethod* cha_monomorphic_target = nullptr;
   ciMethod* exact_target = nullptr;
   Value better_receiver = nullptr;
-  if (UseCHA && DeoptC1 && target->is_loaded() &&
+  if (UseCHA && target->is_loaded() &&
       !(// %%% FIXME: Are both of these relevant?
         target->is_method_handle_intrinsic() ||
         target->is_compiled_lambda_form()) &&
@@ -2252,7 +2251,7 @@ bool GraphBuilder::direct_compare(ciKlass* k) {
     if (ik->is_final()) {
       return true;
     } else {
-      if (DeoptC1 && UseCHA && !(ik->has_subklass() || ik->is_interface())) {
+      if (UseCHA && !(ik->has_subklass() || ik->is_interface())) {
         // test class is leaf class
         dependency_recorder()->assert_leaf_type(ik);
         return true;
@@ -3297,7 +3296,9 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   case vmIntrinsics::_dsin          : // fall through
   case vmIntrinsics::_dcos          : // fall through
   case vmIntrinsics::_dtan          : // fall through
+  case vmIntrinsics::_dsinh         : // fall through
   case vmIntrinsics::_dtanh         : // fall through
+  case vmIntrinsics::_dcbrt         : // fall through
   case vmIntrinsics::_dlog          : // fall through
   case vmIntrinsics::_dlog10        : // fall through
   case vmIntrinsics::_dexp          : // fall through
@@ -3340,7 +3341,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
       break;
     }
 
-  case vmIntrinsics::_Reference_get:
+  case vmIntrinsics::_Reference_get0:
     {
       {
         // With java.lang.ref.reference.get() we must go through the
@@ -3557,7 +3558,7 @@ const char* GraphBuilder::check_can_parse(ciMethod* callee) const {
 
 // negative filter: should callee NOT be inlined?  returns null, ok to inline, or rejection msg
 const char* GraphBuilder::should_not_inline(ciMethod* callee) const {
-  if ( compilation()->directive()->should_not_inline(callee)) return "disallowed by CompileCommand";
+  if ( compilation()->directive()->should_not_inline(callee, compilation()->env()->comp_level())) return "disallowed by CompileCommand";
   if ( callee->dont_inline())          return "don't inline by annotation";
   return nullptr;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.nio.charset.*;
 import java.nio.CharBuffer;
 import java.nio.ByteBuffer;
 
-class XMap {
+final class XMap {
 
     private static HashMap<String, XMap> xMappers = new HashMap<>();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class TestQuotedLogOutputs {
         for (String logOutput : validOutputs) {
             // Run with logging=trace on stdout so that we can verify the log configuration afterwards.
             ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:logging=trace",
-                                                                                 "-Xlog:all=trace:" + logOutput,
+                                                                                 "-Xlog:all=info:" + logOutput,
                                                                                  "-version");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
@@ -99,7 +99,7 @@ public class TestQuotedLogOutputs {
         };
         for (String logOutput : invalidOutputs) {
             ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:logging=trace",
-                                                                                 "-Xlog:all=trace:" + logOutput,
+                                                                                 "-Xlog:all=info:" + logOutput,
                                                                                  "-version");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(1);

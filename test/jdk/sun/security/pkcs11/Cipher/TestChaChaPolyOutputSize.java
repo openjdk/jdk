@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,14 @@
  * @run main TestChaChaPolyOutputSize
  */
 
+import jtreg.SkippedException;
+
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
-import java.security.Key;
 import java.security.SecureRandom;
 import java.security.Provider;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.Cipher;
-import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -60,8 +60,7 @@ public class TestChaChaPolyOutputSize extends PKCS11Test {
         try {
             Cipher.getInstance(ALGO, p);
         } catch (NoSuchAlgorithmException nsae) {
-            System.out.println("Skip; no support for " + ALGO);
-            return;
+            throw new SkippedException("Skip; no support for " + ALGO);
         }
         testGetOutSize(p);
         testMultiPartAEADDec(p);

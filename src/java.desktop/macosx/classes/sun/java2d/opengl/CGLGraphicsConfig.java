@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.awt.Image;
 import java.awt.ImageCapabilities;
 import java.awt.Rectangle;
 import java.awt.Transparency;
+import java.awt.Window;
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
@@ -210,11 +211,12 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         return isCapPresent(CAPS_DOUBLEBUFFERED);
     }
 
-    private static class CGLGCDisposerRecord implements DisposerRecord {
+    private static final class CGLGCDisposerRecord implements DisposerRecord {
         private long pCfgInfo;
         public CGLGCDisposerRecord(long pCfgInfo) {
             this.pCfgInfo = pCfgInfo;
         }
+        @Override
         public void dispose() {
             if (pCfgInfo != 0) {
                 OGLRenderQueue.disposeGraphicsConfig(pCfgInfo);
@@ -254,7 +256,11 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
     public Image createAcceleratedImage(Component target,
                                         int width, int height)
     {
-        ColorModel model = getColorModel(Transparency.OPAQUE);
+        int transparency = Transparency.OPAQUE;
+        if (target instanceof Window window && !window.isOpaque()) {
+            transparency = Transparency.TRANSLUCENT;
+        }
+        ColorModel model = getColorModel(transparency);
         WritableRaster wr = model.createCompatibleWritableRaster(width, height);
         return new OffScreenImage(target, model, wr,
                                   model.isAlphaPremultiplied());
@@ -321,7 +327,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         }
     }
 
-    private static class CGLBufferCaps extends BufferCapabilities {
+    private static final class CGLBufferCaps extends BufferCapabilities {
         public CGLBufferCaps(boolean dblBuf) {
             super(imageCaps, imageCaps,
                   dblBuf ? FlipContents.UNDEFINED : null);
@@ -336,10 +342,11 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         return bufferCaps;
     }
 
-    private static class CGLImageCaps extends ImageCapabilities {
+    private static final class CGLImageCaps extends ImageCapabilities {
         private CGLImageCaps() {
             super(true);
         }
+        @Override
         public boolean isTrueVolatile() {
             return true;
         }

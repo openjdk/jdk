@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,62 +22,43 @@
  */
 
 /* @test
- * @bug 4957669 5017871
+ * @bug 4957669 5017871 8358729
  * @summary cannot load class names containing some JSR 202 characters;
  *          plugin does not escape unicode character in http request
  * @modules java.base/sun.net.www
  *          jdk.httpserver
- * @compile -XDignore.symbol.file=true ClassnameCharTest.java
- * @run main ClassnameCharTest
+ * @run junit ClassnameCharTest
  */
 
 import java.io.*;
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
 import java.net.*;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.CodeSource;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.util.jar.*;
 import com.sun.net.httpserver.*;
 import sun.net.www.ParseUtil;
 
-public class ClassnameCharTest {
-    static String FNPrefix = System.getProperty("test.src", ".") + File.separator;
-    static File classesJar = new File(FNPrefix + "testclasses.jar");
-    static HttpServer server;
+import org.junit.jupiter.api.Test;
 
-    public static void realMain(String[] args) throws Exception {
+public class ClassnameCharTest {
+
+    private static HttpServer server;
+    private static final byte[] bytes =
+            ClassFile.of().build(ClassDesc.of("fo o"), _ -> {});
+
+    @Test
+    void testClassName() throws IOException {
+        // Build the server and set the context
         server = HttpServer.create(new InetSocketAddress(0), 0);
-        server.createContext("/", new HttpHandler() {
-            @Override
-            public void handle(HttpExchange exchange) {
-                try {
-                    String filename = exchange.getRequestURI().getPath();
-                    System.out.println("getRequestURI = " + exchange.getRequestURI());
-                    System.out.println("filename = " + filename);
-                    try (FileInputStream fis = new FileInputStream(classesJar);
-                         JarInputStream jis = new JarInputStream(fis)) {
-                        JarEntry entry;
-                        while ((entry = jis.getNextJarEntry()) != null) {
-                            if (filename.endsWith(entry.getName())) {
-                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                                byte[] buf = new byte[8092];
-                                int count = 0;
-                                while ((count = jis.read(buf)) != -1)
-                                    baos.write(buf, 0, count);
-                                exchange.sendResponseHeaders(200, baos.size());
-                                try (OutputStream os = exchange.getResponseBody()) {
-                                    baos.writeTo(os);
-                                }
-                                return;
-                            }
-                        }
-                        fail("Failed to find " + filename);
-                    }
-                } catch (IOException e) {
-                    unexpected(e);
-                }
+        server.createContext("/", exchange -> {
+            String filename = exchange.getRequestURI().getPath();
+            System.out.println("getRequestURI = " + exchange.getRequestURI());
+            System.out.println("filename = " + filename);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            baos.write(bytes, 0, bytes.length);
+            exchange.sendResponseHeaders(200, baos.size());
+            try (OutputStream os = exchange.getResponseBody()) {
+                baos.writeTo(os);
             }
         });
         server.start();
@@ -87,7 +68,6 @@ public class ClassnameCharTest {
             MyURLClassLoader acl = new MyURLClassLoader(base);
             Class<?> class1 = acl.findClass("fo o");
             System.out.println("class1 = " + class1);
-            pass();
             // can't test the following class unless platform in unicode locale
             // Class class2 = acl.findClass("\u624b\u518c");
             // System.out.println("class2 = "+class2);
@@ -99,17 +79,15 @@ public class ClassnameCharTest {
     static class MyURLClassLoader extends URLClassLoader {
         private URL base;   /* code base URL */
         private CodeSource codesource; /* codesource for the base URL */
-        private AccessControlContext acc;
         MyURLClassLoader(URL base) {
             super(new URL[0]);
             this.base = base;
             this.codesource =
                     new CodeSource(base, (java.security.cert.Certificate[]) null);
-            acc = AccessController.getContext();
         }
 
         @Override
-        public Class<?> findClass(String name) throws ClassNotFoundException {
+        public Class<?> findClass(String name) {
             int index = name.indexOf(';');
             String cookie = "";
             if(index != -1) {
@@ -117,46 +95,29 @@ public class ClassnameCharTest {
                 name = name.substring(0, index);
             }
 
-            // check loaded JAR files
-            try {
-                return super.findClass(name);
-            } catch (ClassNotFoundException e) {
-            }
-
             // Otherwise, try loading the class from the code base URL
             //      final String path = name.replace('.', '/').concat(".class").concat(cookie);
             String encodedName = ParseUtil.encodePath(name.replace('.', '/'), false);
-            final String path = (new StringBuffer(encodedName)).append(".class").append(cookie).toString();
+            final String path = encodedName + ".class" + cookie;
+            Exception exc = null;
+            // try block used for checked exceptions as well as ClassFormatError
+            // from defineClass call
             try {
-                byte[] b = AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<byte[]>() {
-                            public byte[] run() throws IOException {
-                                try {
-                                    URL finalURL = new URL(base, path);
-
-                                    // Make sure the codebase won't be modified
-                                    if (base.getProtocol().equals(finalURL.getProtocol()) &&
-                                            base.getHost().equals(finalURL.getHost()) &&
-                                            base.getPort() == finalURL.getPort()) {
-                                        return getBytes(finalURL);
-                                    }
-                                    else {
-                                        return null;
-                                    }
-                                } catch (Exception e) {
-                                    return null;
-                                }
-                            }
-                        }, acc);
-
-                if (b != null) {
+                URL finalURL = new URL(base, path);
+                // Make sure the codebase won't be modified
+                if (base.getProtocol().equals(finalURL.getProtocol()) &&
+                        base.getHost().equals(finalURL.getHost()) &&
+                        base.getPort() == finalURL.getPort()) {
+                    byte[] b = getBytes(finalURL);
                     return defineClass(name, b, 0, b.length, codesource);
-                } else {
-                    throw new ClassNotFoundException(name);
                 }
-            } catch (PrivilegedActionException e) {
-                throw new ClassNotFoundException(name, e.getException());
+                // protocol/host/port mismatch, fail with RuntimeException
+            } catch (Exception underlyingE) {
+                exc = underlyingE; // Most likely CFE from defineClass
             }
+            // Fail if there was either a protocol/host/port mismatch
+            // or an exception was thrown (which is propagated)
+            throw new RuntimeException(name, exc);
         }
 
         /*
@@ -184,65 +145,6 @@ public class ClassnameCharTest {
                 in.close();
             }
             return b;
-        }
-    }
-
-    //--------------------- Infrastructure ---------------------------
-    static volatile int passed = 0, failed = 0;
-
-    static boolean pass() {
-        passed++;
-        return true;
-    }
-
-    static boolean fail() {
-        failed++;
-        if (server != null) {
-            server.stop(0);
-        }
-        Thread.dumpStack();
-        return false;
-    }
-
-    static boolean fail(String msg) {
-        System.out.println(msg);
-        return fail();
-    }
-
-    static void unexpected(Throwable t) {
-        failed++;
-        if (server != null) {
-            server.stop(0);
-        }
-        t.printStackTrace();
-    }
-
-    static boolean check(boolean cond) {
-        if (cond) {
-            pass();
-        } else {
-            fail();
-        }
-        return cond;
-    }
-
-    static boolean equal(Object x, Object y) {
-        if (x == null ? y == null : x.equals(y)) {
-            return pass();
-        } else {
-            return fail(x + " not equal to " + y);
-        }
-    }
-
-    public static void main(String[] args) throws Throwable {
-        try {
-            realMain(args);
-        } catch (Throwable t) {
-            unexpected(t);
-        }
-        System.out.println("\nPassed = " + passed + " failed = " + failed);
-        if (failed > 0) {
-            throw new AssertionError("Some tests failed");
         }
     }
 }

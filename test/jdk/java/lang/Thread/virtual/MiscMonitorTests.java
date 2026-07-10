@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,50 +25,50 @@
  * @test id=default
  * @summary Tests for object monitors that have been useful to find bugs
  * @library /test/lib
- * @requires vm.continuations & vm.opt.LockingMode != 1
+ * @requires vm.continuations
  * @modules java.base/java.lang:+open
- * @run junit/othervm MiscMonitorTests
+ * @run junit/othervm/timeout=480 MiscMonitorTests
  */
 
 /*
  * @test id=Xint
  * @library /test/lib
- * @requires vm.continuations & vm.opt.LockingMode != 1
+ * @requires vm.continuations
  * @modules java.base/java.lang:+open
- * @run junit/othervm -Xint MiscMonitorTests
+ * @run junit/othervm/timeout=480 -Xint MiscMonitorTests
  */
 
 /*
  * @test id=Xcomp
  * @library /test/lib
- * @requires vm.continuations & vm.opt.LockingMode != 1
+ * @requires vm.continuations
  * @modules java.base/java.lang:+open
- * @run junit/othervm -Xcomp MiscMonitorTests
+ * @run junit/othervm/timeout=480 -Xcomp MiscMonitorTests
  */
 
 /*
  * @test id=Xcomp-TieredStopAtLevel3
  * @library /test/lib
- * @requires vm.continuations & vm.opt.LockingMode != 1
+ * @requires vm.continuations
  * @modules java.base/java.lang:+open
- * @run junit/othervm -Xcomp -XX:TieredStopAtLevel=3 MiscMonitorTests
+ * @run junit/othervm/timeout=480 -Xcomp -XX:TieredStopAtLevel=3 MiscMonitorTests
  */
 
 /*
  * @test id=Xcomp-noTieredCompilation
  * @summary Test virtual threads using synchronized
  * @library /test/lib
- * @requires vm.continuations & vm.opt.LockingMode != 1
+ * @requires vm.continuations
  * @modules java.base/java.lang:+open
- * @run junit/othervm -Xcomp -XX:-TieredCompilation MiscMonitorTests
+ * @run junit/othervm/timeout=480 -Xcomp -XX:-TieredCompilation MiscMonitorTests
  */
 
 /*
  * @test id=gc
- * @requires vm.debug == true & vm.continuations & vm.opt.LockingMode != 1
+ * @requires vm.debug == true & vm.continuations
  * @library /test/lib
  * @modules java.base/java.lang:+open
- * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:+FullGCALot -XX:FullGCALotInterval=1000 MiscMonitorTests
+ * @run junit/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+FullGCALot -XX:FullGCALotInterval=1000 MiscMonitorTests
  */
 
 import java.util.concurrent.atomic.AtomicInteger;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,27 @@
 
 package com.sun.tools.javac.code;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.SequencedMap;
+import java.util.SequencedSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import com.sun.tools.javac.main.Option;
-import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
-import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
+import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
+
+import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.DEFAULT_ENABLED;
+import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.DEPRECATION_SENSITIVE;
 
 /**
  * A class for handling -Xlint suboptions and @SuppressWarnings.
@@ -80,35 +81,20 @@ public class Lint {
      */
     public Lint augment(Symbol sym) {
         EnumSet<LintCategory> suppressions = suppressionsFrom(sym);
-        if (!suppressions.isEmpty()) {
+        boolean symWithinDeprecated = withinDeprecated || isDeprecatedDeclaration(sym);
+        if (!suppressions.isEmpty() || symWithinDeprecated != withinDeprecated) {
             Lint lint = new Lint(this);
             lint.values.removeAll(suppressions);
             lint.suppressedValues.addAll(suppressions);
+            lint.withinDeprecated = symWithinDeprecated;
             return lint;
         }
         return this;
     }
 
-    /**
-     * Returns a new Lint that has the given LintCategorys enabled.
-     * @param lc one or more categories to be enabled
-     */
-    public Lint enable(LintCategory... lc) {
-        Lint l = new Lint(this);
-        l.values.addAll(Arrays.asList(lc));
-        l.suppressedValues.removeAll(Arrays.asList(lc));
-        return l;
-    }
-
-    /**
-     * Returns a new Lint that has the given LintCategorys suppressed.
-     * @param lc one or more categories to be suppressed
-     */
-    public Lint suppress(LintCategory... lc) {
-        Lint l = new Lint(this);
-        l.values.removeAll(Arrays.asList(lc));
-        l.suppressedValues.addAll(Arrays.asList(lc));
-        return l;
+    // Does sym's declaration have a (non-useless) @Deprecated annotation?
+    public static boolean isDeprecatedDeclaration(Symbol sym) {
+        return sym.isDeprecated() && sym.isDeprecatableViaAnnotation();
     }
 
     private final Context context;
@@ -119,11 +105,12 @@ public class Lint {
     private Symtab syms;
     private Names names;
 
-    // Invariant: it's never the case that a category is in both "values" and "suppressedValues"
+    // Invariants:
+    //  - It's never the case that a category is in both "values" and "suppressedValues"
+    //  - All categories in "suppressedValues" have annotationSuppression = true
     private EnumSet<LintCategory> values;
     private EnumSet<LintCategory> suppressedValues;
-
-    private static final Map<String, LintCategory> map = new LinkedHashMap<>(40);
+    private boolean withinDeprecated;
 
     @SuppressWarnings("this-escape")
     protected Lint(Context context) {
@@ -133,7 +120,7 @@ public class Lint {
         log = Log.instance(context);
     }
 
-    // Instantiate a non-root ("symbol scoped") instance
+    // Copy constructor - used to instantiate a non-root ("symbol scoped") instances
     protected Lint(Lint other) {
         other.initializeRootIfNeeded();
         this.context = other.context;
@@ -143,64 +130,50 @@ public class Lint {
         this.names = other.names;
         this.values = other.values.clone();
         this.suppressedValues = other.suppressedValues.clone();
+        this.withinDeprecated = other.withinDeprecated;
     }
 
     // Process command line options on demand to allow use of root Lint early during startup
     private void initializeRootIfNeeded() {
-
-        // Already initialized?
-        if (values != null)
-            return;
-
-        // Initialize enabled categories based on "-Xlint" flags
-        if (options.isSet(Option.XLINT) || options.isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_ALL)) {
-            // If -Xlint or -Xlint:all is given, enable all categories by default
-            values = EnumSet.allOf(LintCategory.class);
-        } else if (options.isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_NONE)) {
-            // if -Xlint:none is given, disable all categories by default
-            values = LintCategory.newEmptySet();
-        } else {
-            // otherwise, enable on-by-default categories
-            values = LintCategory.newEmptySet();
-
-            Source source = Source.instance(context);
-            if (source.compareTo(Source.JDK9) >= 0) {
-                values.add(LintCategory.DEP_ANN);
-            }
-            if (Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source)) {
-                values.add(LintCategory.STRICTFP);
-            }
-            values.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);
-            values.add(LintCategory.OPENS);
-            values.add(LintCategory.MODULE);
-            values.add(LintCategory.REMOVAL);
-            if (!options.isSet(Option.PREVIEW)) {
-                values.add(LintCategory.PREVIEW);
-            }
-            values.add(LintCategory.IDENTITY);
-            values.add(LintCategory.INCUBATING);
+        if (values == null) {
+            values = options.getLintCategoriesOf(Option.XLINT, this::getDefaults);
+            suppressedValues = LintCategory.newEmptySet();
         }
+    }
 
-        // Look for specific overrides
-        for (LintCategory lc : LintCategory.values()) {
-            if (options.isExplicitlyEnabled(Option.XLINT, lc)) {
-                values.add(lc);
-            } else if (options.isExplicitlyDisabled(Option.XLINT, lc)) {
-                values.remove(lc);
-            }
-        }
-
-        suppressedValues = LintCategory.newEmptySet();
+    // Obtain the set of on-by-default categories. Note that for a few categories,
+    // whether the category is on-by-default depends on other compiler options.
+    private EnumSet<LintCategory> getDefaults() {
+        EnumSet<LintCategory> defaults = LintCategory.newEmptySet();
+        Source source = Source.instance(context);
+        Stream.of(LintCategory.values())
+          .filter(lc ->
+            switch (lc) {
+                case DEP_ANN  -> source.compareTo(Source.JDK9) >= 0;
+                case STRICTFP -> Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source);
+                case PREVIEW  -> !options.isSet(Option.PREVIEW);
+                default       -> lc.enabledByDefault;
+            })
+          .forEach(defaults::add);
+        return defaults;
     }
 
     @Override
     public String toString() {
         initializeRootIfNeeded();
-        return "Lint:[enable" + values + ",suppress" + suppressedValues + "]";
+        return "Lint:[enable" + values + ",suppress" + suppressedValues + ",deprecated=" + withinDeprecated + "]";
     }
 
     /**
      * Categories of warnings that can be generated by the compiler.
+     * Each lint category has a logical name (a string), which is the string used e.g. in a {@code SuppressWarning} annotation.
+     * To ensure automation, the enum field name for a lint category string {@code C} should be obtained by:
+     * <ol>
+     *    <li>capitalize all the letters in {@code C}, and</li>
+     *    <li>replacing any occurrence of {@code -} with {@code _}</li>
+     * </ol>
+     * For instance, the lint category string {@code dangling-doc-comments} corresponds to the enum field
+     * {@code DANGLING_DOC_COMMENTS}.
      */
     public enum LintCategory {
         /**
@@ -221,7 +194,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        CLASSFILE("classfile", false),
+        CLASSFILE("classfile", Property.NO_ANNOTATION_SUPPRESSION),
 
         /**
          * Warn about "dangling" documentation comments,
@@ -238,7 +211,7 @@ public class Lint {
          * Warn about items which are documented with an {@code @deprecated} JavaDoc
          * comment, but which do not have {@code @Deprecated} annotation.
          */
-        DEP_ANN("dep-ann"),
+        DEP_ANN("dep-ann", Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about division by constant integer 0.
@@ -268,7 +241,7 @@ public class Lint {
         /**
          * Warn about uses of @ValueBased classes where an identity class is expected.
          */
-        IDENTITY("identity", true, "synchronization"),
+        IDENTITY(List.of("identity", "synchronization"), Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about use of incubating modules.
@@ -276,7 +249,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        INCUBATING("incubating", false),
+        INCUBATING("incubating", Property.NO_ANNOTATION_SUPPRESSION, Property.ENABLED_BY_DEFAULT),
 
         /**
           * Warn about compiler possible lossy conversions.
@@ -291,12 +264,12 @@ public class Lint {
         /**
          * Warn about module system related issues.
          */
-        MODULE("module"),
+        MODULE("module", Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about issues regarding module opens.
          */
-        OPENS("opens"),
+        OPENS("opens", Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about issues relating to use of command line options.
@@ -304,7 +277,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        OPTIONS("options", false),
+        OPTIONS("options", Property.NO_ANNOTATION_SUPPRESSION),
 
         /**
          * Warn when any output file is written to more than once.
@@ -312,7 +285,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        OUTPUT_FILE_CLASH("output-file-clash", false),
+        OUTPUT_FILE_CLASH("output-file-clash", Property.NO_ANNOTATION_SUPPRESSION),
 
         /**
          * Warn about issues regarding method overloads.
@@ -330,22 +303,25 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        PATH("path", false),
+        PATH("path", Property.NO_ANNOTATION_SUPPRESSION),
 
         /**
          * Warn about issues regarding annotation processing.
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings}.
          */
-        PROCESSING("processing"),
+        PROCESSING("processing", Property.NO_ANNOTATION_SUPPRESSION),
 
         /**
          * Warn about unchecked operations on raw types.
          */
-        RAW("rawtypes"),
+        RAWTYPES("rawtypes"),
 
         /**
          * Warn about use of deprecated-for-removal items.
          */
-        REMOVAL("removal"),
+        REMOVAL("removal", Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about use of automatic modules in the requires clauses.
@@ -355,7 +331,7 @@ public class Lint {
         /**
          * Warn about automatic modules in requires transitive.
          */
-        REQUIRES_TRANSITIVE_AUTOMATIC("requires-transitive-automatic"),
+        REQUIRES_TRANSITIVE_AUTOMATIC("requires-transitive-automatic", Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about Serializable classes that do not provide a serial version ID.
@@ -370,15 +346,12 @@ public class Lint {
         /**
          * Warn about unnecessary uses of the strictfp modifier
          */
-        STRICTFP("strictfp"),
+        STRICTFP("strictfp", Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about issues relating to use of text blocks
-         *
-         * <p>
-         * This category is not supported by {@code @SuppressWarnings} (yet - see JDK-8224228).
          */
-        TEXT_BLOCKS("text-blocks", false),
+        TEXT_BLOCKS("text-blocks"),
 
         /**
          * Warn about possible 'this' escapes before subclass instance is fully initialized.
@@ -403,26 +376,37 @@ public class Lint {
         /**
          * Warn about use of preview features.
          */
-        PREVIEW("preview"),
+        PREVIEW("preview", Property.ENABLED_BY_DEFAULT),
 
         /**
          * Warn about use of restricted methods.
          */
         RESTRICTED("restricted");
 
-        LintCategory(String option) {
-            this(option, true);
+        enum Property { NO_ANNOTATION_SUPPRESSION, ENABLED_BY_DEFAULT }
+
+        LintCategory(String option, Property... properties) {
+            this(List.of(option), properties);
         }
 
-        LintCategory(String option, boolean annotationSuppression, String... aliases) {
-            this.option = option;
-            this.annotationSuppression = annotationSuppression;
-            ArrayList<String> optionList = new ArrayList<>(1 + aliases.length);
-            optionList.add(option);
-            Collections.addAll(optionList, aliases);
-            this.optionList = Collections.unmodifiableList(optionList);
-            this.optionList.forEach(ident -> map.put(ident, this));
+        LintCategory(List<String> options, Property... properties) {
+            this.option = options.getFirst();
+            this.optionList = options;
+            Set<Property> propertySet = properties.length == 0 ? Set.of() : EnumSet.copyOf(Arrays.asList(properties));
+            this.annotationSuppression = !propertySet.contains(Property.NO_ANNOTATION_SUPPRESSION);
+            this.enabledByDefault = propertySet.contains(Property.ENABLED_BY_DEFAULT);
         }
+
+        private static final SequencedMap<String, LintCategory> lookup = createLookup();
+
+        private static SequencedMap<String, LintCategory> createLookup() {
+            var map = new LinkedHashMap<String, LintCategory>();
+            for (var category : values()) {
+                category.optionList.forEach(id -> map.put(id, category));
+            }
+            return Collections.unmodifiableSequencedMap(map);
+        }
+
 
         /**
          * Get the {@link LintCategory} having the given command line option.
@@ -431,14 +415,14 @@ public class Lint {
          * @return corresponding {@link LintCategory}, or empty if none exists
          */
         public static Optional<LintCategory> get(String option) {
-            return Optional.ofNullable(map.get(option));
+            return Optional.ofNullable(lookup.get(option));
         }
 
         /**
          * Get all lint category option strings and aliases.
          */
-        public static Set<String> options() {
-            return Collections.unmodifiableSet(map.keySet());
+        public static SequencedSet<String> options() {
+            return lookup.sequencedKeySet();
         }
 
         public static EnumSet<LintCategory> newEmptySet() {
@@ -453,6 +437,40 @@ public class Lint {
 
         /** Does this category support being suppressed by the {@code @SuppressWarnings} annotation? */
         public final boolean annotationSuppression;
+
+        /**
+         * Is this category included in the default set of enabled lint categories?
+         * Note that for some categories, command line options can alter this at runtime.
+         */
+        public final boolean enabledByDefault;
+    }
+
+    /**
+     * Determine if the given diagnostic should be emitted given the state of this instance.
+     */
+    public boolean shouldEmit(JCDiagnostic diag) {
+
+        // Check category
+        LintCategory category = diag.getLintCategory();
+        if (category == null)
+            return true;
+
+        // Certain warnings within @Deprecated declarations are automatically suppressed (JLS 9.6.4.6)
+        if (withinDeprecated && diag.isFlagSet(DEPRECATION_SENSITIVE)) {
+            Assert.check(diag.isFlagSet(DEFAULT_ENABLED) && category.annotationSuppression);
+            return false;
+        }
+
+        // If the warning is not enabled by default, then emit only when its lint category is explicitly enabled
+        if (!diag.isFlagSet(DEFAULT_ENABLED))
+            return isEnabled(category);
+
+        // If the lint category doesn't support @SuppressWarnings, then we just check the -Xlint:category flag
+        if (!category.annotationSuppression)
+            return !options.isDisabled(Option.XLINT, category);
+
+        // Check whether the lint category is currently suppressed
+        return !isSuppressed(category);
     }
 
     /**
@@ -466,10 +484,11 @@ public class Lint {
     }
 
     /**
-     * Checks is a warning category has been specifically suppressed, by means
-     * of the SuppressWarnings annotation, or, in the case of the deprecated
-     * category, whether it has been implicitly suppressed by virtue of the
-     * current entity being itself deprecated.
+     * Check if a warning category has been specifically suppressed by means of @SuppressWarnings.
+     *
+     * <p>
+     * Always returns false for categories that are not suppressible by the annotation, even
+     * if they (uselessly) happen to appear in one.
      */
     public boolean isSuppressed(LintCategory lc) {
         initializeRootIfNeeded();
@@ -477,41 +496,17 @@ public class Lint {
     }
 
     /**
-     * Helper method. Log a lint warning if its lint category is enabled.
-     *
-     * @param warning key for the localized warning message
-     */
-    public void logIfEnabled(LintWarning warning) {
-        logIfEnabled(null, warning);
-    }
-
-    /**
-     * Helper method. Log a lint warning if its lint category is enabled.
-     *
-     * @param pos source position at which to report the warning
-     * @param warning key for the localized warning message
-     */
-    public void logIfEnabled(DiagnosticPosition pos, LintWarning warning) {
-        if (isEnabled(warning.getLintCategory())) {
-            log.warning(pos, warning);
-        }
-    }
-
-    /**
      * Obtain the set of recognized lint warning categories suppressed at the given symbol's declaration.
      *
      * <p>
-     * This set can be non-empty only if the symbol is annotated with either
-     * @SuppressWarnings or @Deprecated.
+     * This set can be non-empty only if the symbol is annotated with @SuppressWarnings, and only categories
+     * for which {@code annotationSuppression} is true are included.
      *
      * @param symbol symbol corresponding to a possibly-annotated declaration
      * @return new warning suppressions applied to sym
      */
     public EnumSet<LintCategory> suppressionsFrom(Symbol symbol) {
-        EnumSet<LintCategory> suppressions = suppressionsFrom(symbol.getDeclarationAttributes().stream());
-        if (symbol.isDeprecated() && symbol.isDeprecatableViaAnnotation())
-            suppressions.add(LintCategory.DEPRECATION);
-        return suppressions;
+        return suppressionsFrom(symbol.getDeclarationAttributes().stream());
     }
 
     // Find the @SuppressWarnings annotation in the given stream and extract the recognized suppressions
@@ -528,12 +523,15 @@ public class Lint {
     // Given a @SuppressWarnings annotation, extract the recognized suppressions
     private EnumSet<LintCategory> suppressionsFrom(Attribute.Compound suppressWarnings) {
         EnumSet<LintCategory> result = LintCategory.newEmptySet();
-        Attribute.Array values = (Attribute.Array)suppressWarnings.member(names.value);
-        for (Attribute value : values.values) {
-            Optional.of((String)((Attribute.Constant)value).value)
-              .flatMap(LintCategory::get)
-              .filter(lc -> lc.annotationSuppression)
-              .ifPresent(result::add);
+        if (suppressWarnings.member(names.value) instanceof Attribute.Array values) {
+            for (Attribute value : values.values) {
+                Optional.of(value)
+                  .filter(val -> val instanceof Attribute.Constant)
+                  .map(val -> (String) ((Attribute.Constant) val).value)
+                  .flatMap(LintCategory::get)
+                  .filter(lc -> lc.annotationSuppression)
+                  .ifPresent(result::add);
+            }
         }
         return result;
     }

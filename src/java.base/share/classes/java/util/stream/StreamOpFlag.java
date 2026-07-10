@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package java.util.stream;
 
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Spliterator;
@@ -738,9 +739,9 @@ enum StreamOpFlag {
      *
      * @implSpec
      * If the spliterator is naturally {@code SORTED} (the associated
-     * {@code Comparator} is {@code null}) then the characteristic is converted
-     * to the {@link #SORTED} flag, otherwise the characteristic is not
-     * converted.
+     * {@code Comparator} is {@code null} or {@code Comparator.naturalOrder()}) then
+     * the characteristic is converted to the {@link #SORTED} flag, otherwise
+     * the characteristic is not converted.
      *
      * @param spliterator the spliterator from which to obtain characteristic
      *        bit set.
@@ -748,14 +749,15 @@ enum StreamOpFlag {
      */
     static int fromCharacteristics(Spliterator<?> spliterator) {
         int characteristics = spliterator.characteristics();
-        if ((characteristics & Spliterator.SORTED) != 0 && spliterator.getComparator() != null) {
-            // Do not propagate the SORTED characteristic if it does not correspond
-            // to a natural sort order
-            return characteristics & SPLITERATOR_CHARACTERISTICS_MASK & ~Spliterator.SORTED;
+        if ((characteristics & Spliterator.SORTED) != 0) {
+            Comparator<?> comparator = spliterator.getComparator();
+            if (comparator != null && !Comparator.naturalOrder().equals(comparator)) {
+                // Do not propagate the SORTED characteristic if it does not correspond
+                // to a natural sort order
+                return characteristics & SPLITERATOR_CHARACTERISTICS_MASK & ~Spliterator.SORTED;
+            }
         }
-        else {
-            return characteristics & SPLITERATOR_CHARACTERISTICS_MASK;
-        }
+        return characteristics & SPLITERATOR_CHARACTERISTICS_MASK;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,6 @@ public abstract class AbstractPeer implements Peer {
         Path logPath = getLogPath();
         Objects.requireNonNull(logPath, "Please specify log path.");
         System.out.println(Utilities.readFile(logPath).orElse(""));
-    }
-
-    /*
-     * Deletes log file if exists.
-     */
-    protected void deleteLog() throws IOException {
-        Utilities.deleteFile(getLogPath());
     }
 
     /*

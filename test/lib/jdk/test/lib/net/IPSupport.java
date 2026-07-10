@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.net.InetAddress;
 import java.net.ProtocolFamily;
 import java.net.StandardProtocolFamily;
 import java.nio.channels.SocketChannel;
+import java.util.Optional;
 
 import jtreg.SkippedException;
 
@@ -124,13 +125,33 @@ public class IPSupport {
      *         is non-operational
      */
     public static void throwSkippedExceptionIfNonOperational() throws SkippedException {
+        Optional<String> configurationIssue = diagnoseConfigurationIssue();
+        configurationIssue.map(SkippedException::new).ifPresent(x -> {
+            throw x;
+        });
+    }
+
+    /**
+     * Checks that the platform supports the ability to create a
+     * minimally-operational socket whose protocol is either one of IPv4
+     * or IPv6.
+     *
+     * <p> A minimally-operation socket is one that can be created and
+     * bound to an IP-specific loopback address. IP support is
+     * considered non-operational if a socket cannot be bound to either
+     * one of, an IPv4 loopback address, or the IPv6 loopback address.
+     *
+     * @return Optinal with config issue or empty Optinal if no issue found
+     */
+    public static Optional<String> diagnoseConfigurationIssue(){
         if (!currentConfigurationIsValid()) {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             PrintStream ps = new PrintStream(os);
             ps.println("Invalid networking configuration");
             printPlatformSupport(ps);
-            throw new SkippedException(os.toString());
+            return Optional.of(os.toString());
         }
+        return Optional.empty();
     }
 
     /**

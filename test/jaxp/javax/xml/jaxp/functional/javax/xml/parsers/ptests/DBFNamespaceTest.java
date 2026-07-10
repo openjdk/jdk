@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,21 @@
 
 package javax.xml.parsers.ptests;
 
-import static javax.xml.parsers.ptests.ParserTestConst.GOLDEN_DIR;
-import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static org.testng.Assert.assertTrue;
-
-import java.io.File;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.w3c.dom.Document;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.w3c.dom.Document;
+import static javax.xml.parsers.ptests.ParserTestConst.GOLDEN_DIR;
+import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
 
 /**
  * This tests DocumentBuilderFactory for namespace processing and no-namespace
@@ -47,7 +46,7 @@ import org.w3c.dom.Document;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.parsers.ptests.DBFNamespaceTest
+ * @run junit/othervm javax.xml.parsers.ptests.DBFNamespaceTest
  */
 public class DBFNamespaceTest {
 
@@ -56,15 +55,14 @@ public class DBFNamespaceTest {
      * @return a two-dimensional array contains factory, output file name and
      *         golden validate file name.
      */
-    @DataProvider(name = "input-provider")
-    public Object[][] getInput() {
+    public static Object[][] getInput() {
         DocumentBuilderFactory dbf1 = DocumentBuilderFactory.newInstance();
-        String outputfile1 = USER_DIR + "dbfnstest01.out";
+        String outputfile1 = "dbfnstest01.out";
         String goldfile1 = GOLDEN_DIR + "dbfnstest01GF.out";
 
         DocumentBuilderFactory dbf2 = DocumentBuilderFactory.newInstance();
         dbf2.setNamespaceAware(true);
-        String outputfile2 = USER_DIR + "dbfnstest02.out";
+        String outputfile2 = "dbfnstest02.out";
         String goldfile2 = GOLDEN_DIR + "dbfnstest02GF.out";
         return new Object[][] { { dbf1, outputfile1, goldfile1 }, { dbf2, outputfile2, goldfile2 } };
     }
@@ -77,12 +75,15 @@ public class DBFNamespaceTest {
      * @param goldfile golden validate file name.
      * @throws Exception If any errors occur.
      */
-    @Test(dataProvider = "input-provider")
+    @ParameterizedTest
+    @MethodSource("getInput")
     public void testNamespaceTest(DocumentBuilderFactory dbf, String outputfile,
             String goldfile) throws Exception {
         Document doc = dbf.newDocumentBuilder().parse(new File(XML_DIR, "namespace1.xml"));
         dummyTransform(doc, outputfile);
-        assertTrue(compareWithGold(goldfile, outputfile));
+        assertLinesMatch(
+                Files.readAllLines(Path.of(goldfile)),
+                Files.readAllLines(Path.of(outputfile)));
     }
 
     /**
@@ -90,8 +91,6 @@ public class DBFNamespaceTest {
      * invoke the callbacks through a ContentHandler. If namespace processing is
      * not chosen, namespaceURI in callbacks should be an empty string otherwise
      * it should be namespaceURI.
-     *
-     * @throws Exception If any errors occur.
      */
     private void dummyTransform(Document document, String fileName)
             throws Exception {

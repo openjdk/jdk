@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,20 +26,22 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import jdk.xml.internal.Utils;
 
 /**
  * Represents one annotation in the annotation table
  *
  * @since 6.0
+ * @LastModified: Sept 2025
  */
 public class AnnotationEntry implements Node {
 
     public static final AnnotationEntry[] EMPTY_ARRAY = {};
 
-    public static AnnotationEntry[] createAnnotationEntries(final Attribute[] attrs) {
+    public static AnnotationEntry[] createAnnotationEntries(final Attribute[] attributes) {
         // Find attributes that contain annotation data
-        return Stream.of(attrs).filter(Annotations.class::isInstance).flatMap(e -> Stream.of(((Annotations) e).getAnnotationEntries()))
-            .toArray(AnnotationEntry[]::new);
+        return Utils.streamOfIfNonNull(attributes).filter(Annotations.class::isInstance).flatMap(e -> Stream.of(((Annotations) e).getAnnotationEntries()))
+                .toArray(AnnotationEntry[]::new);
     }
 
     /**
@@ -55,7 +56,6 @@ public class AnnotationEntry implements Node {
     public static AnnotationEntry read(final DataInput input, final ConstantPool constantPool, final boolean isRuntimeVisible) throws IOException {
         final AnnotationEntry annotationEntry = new AnnotationEntry(input.readUnsignedShort(), constantPool, isRuntimeVisible);
         final int numElementValuePairs = input.readUnsignedShort();
-        annotationEntry.elementValuePairs = new ArrayList<>();
         for (int i = 0; i < numElementValuePairs; i++) {
             annotationEntry.elementValuePairs
                 .add(new ElementValuePair(input.readUnsignedShort(), ElementValue.readElementValue(input, constantPool), constantPool));
@@ -69,12 +69,13 @@ public class AnnotationEntry implements Node {
 
     private final boolean isRuntimeVisible;
 
-    private List<ElementValuePair> elementValuePairs;
+    private final List<ElementValuePair> elementValuePairs;
 
     public AnnotationEntry(final int typeIndex, final ConstantPool constantPool, final boolean isRuntimeVisible) {
         this.typeIndex = typeIndex;
         this.constantPool = constantPool;
         this.isRuntimeVisible = isRuntimeVisible;
+        this.elementValuePairs = new ArrayList<>();
     }
 
     /**

@@ -33,6 +33,7 @@
 #include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "logging/log.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 
 bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
@@ -70,12 +71,15 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return false;
   }
 
-  // Heal barriers
-  ZNMethod::nmethod_patch_barriers(nm);
+  {
+    ICacheInvalidationContext icic;
+    // Heal barriers
+    ZNMethod::nmethod_patch_barriers(nm, &icic);
 
-  // Heal oops
-  ZUncoloredRootProcessWeakOopClosure cl(ZNMethod::color(nm));
-  ZNMethod::nmethod_oops_do_inner(nm, &cl);
+    // Heal oops
+    ZUncoloredRootProcessWeakOopClosure cl(ZNMethod::color(nm));
+    ZNMethod::nmethod_oops_do_inner(nm, &cl, &icic);
+  }
 
   const uintptr_t prev_color = ZNMethod::color(nm);
   const uintptr_t new_color = *ZPointerStoreGoodMaskLowOrderBitsAddr;
@@ -104,4 +108,9 @@ oop ZBarrierSetNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {
 
 oop ZBarrierSetNMethod::oop_load_phantom(const nmethod* nm, int index) {
   return ZNMethod::oop_load_phantom(nm, index);
+}
+
+uintptr_t ZBarrierSetNMethod::color(nmethod* nm) {
+  // color is stored at low order bits of int; conversion to uintptr_t is fine
+  return uintptr_t(guard_value(nm) & ~not_entrant);
 }

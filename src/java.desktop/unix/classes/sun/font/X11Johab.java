@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,28 +29,32 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharsetDecoder;
 
-public class X11Johab extends Charset {
+public final class X11Johab extends Charset {
     public X11Johab () {
         super("X11Johab", null);
     }
 
+    @Override
     public CharsetEncoder newEncoder() {
         return new Encoder(this);
     }
 
+    @Override
     public CharsetDecoder newDecoder() {
         throw new Error("Decoder is not supported by X11Johab Charset");
     }
 
+    @Override
     public boolean contains(Charset cs) {
         return cs instanceof X11GB18030_1;
     }
 
-    private static class Encoder extends DoubleByteEncoder {
+    private static final class Encoder extends DoubleByteEncoder {
         public Encoder(Charset cs) {
             super(cs, index1, index2);
         }
 
+        @Override
         public boolean isLegalReplacement(byte[] repl) {
             return true;
         }

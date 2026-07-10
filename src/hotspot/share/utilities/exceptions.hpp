@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/sizes.hpp"
 
@@ -60,7 +61,6 @@ class methodHandle;
 
 class ThreadShadow: public CHeapObj<mtThread> {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
  protected:
   oop  _pending_exception;                       // Thread has gc actions.
@@ -94,6 +94,10 @@ class ThreadShadow: public CHeapObj<mtThread> {
   // use CLEAR_PENDING_NONASYNC_EXCEPTION to clear probable nonasync exception.
   void clear_pending_nonasync_exception();
 
+  void set_pending_preempted_exception();
+  void clear_pending_preempted_exception();
+  void check_preempted_exception() NOT_DEBUG_RETURN;
+
   ThreadShadow() : _pending_exception(nullptr),
                    _exception_file(nullptr), _exception_line(0) {}
 };
@@ -109,12 +113,16 @@ class Exceptions {
   static bool special_exception(JavaThread* thread, const char* file, int line, Handle exception, Symbol* name = nullptr, const char* message = nullptr);
 
   // Count out of memory errors that are interesting in error diagnosis
-  static volatile int _out_of_memory_error_java_heap_errors;
-  static volatile int _out_of_memory_error_metaspace_errors;
-  static volatile int _out_of_memory_error_class_metaspace_errors;
+  static Atomic<int> _out_of_memory_error_java_heap_errors;
+  static Atomic<int> _out_of_memory_error_metaspace_errors;
+  static Atomic<int> _out_of_memory_error_class_metaspace_errors;
 
   // Count linkage errors
-  static volatile int _linkage_errors;
+  static Atomic<int> _linkage_errors;
+
+  // Count stack overflow errors.
+  static Atomic<int> _stack_overflow_errors;
+
  public:
   // this enum is defined to indicate whether it is safe to
   // ignore the encoding scheme of the original message string.
@@ -175,10 +183,9 @@ class Exceptions {
 
   static void wrap_dynamic_exception(bool is_indy, JavaThread* thread);
 
-  // Exception counting for error files of interesting exceptions that may have
-  // caused a problem for the jvm
-  static volatile int _stack_overflow_errors;
-
+  // Exception counting of interesting exceptions that may have caused a
+  // problem for the JVM, for reporting in the hs_err file.
+  static void increment_stack_overflow_errors();
   static bool has_exception_counts();
   static void count_out_of_memory_exceptions(Handle exception);
   static void print_exception_counts_on_error(outputStream* st);
@@ -190,6 +197,8 @@ class Exceptions {
 
   // for logging exceptions
   static void log_exception(Handle exception, const char* message);
+  static void log_exception_stacktrace(Handle exception);
+  static void log_exception_stacktrace(Handle exception, methodHandle method, int bci);
 };
 
 
@@ -228,6 +237,8 @@ class Exceptions {
 #define CHECK_NULL                               CHECK_(nullptr)
 #define CHECK_false                              CHECK_(false)
 #define CHECK_JNI_ERR                            CHECK_(JNI_ERR)
+#define CHECK_PREEMPTABLE                        THREAD); if (HAS_PENDING_EXCEPTION) { THREAD->check_preempted_exception(); return;       } (void)(0
+#define CHECK_PREEMPTABLE_false                  THREAD); if (HAS_PENDING_EXCEPTION) { THREAD->check_preempted_exception(); return false; } (void)(0
 
 // CAUTION: These macros clears all exceptions including async exceptions, use it with caution.
 #define CHECK_AND_CLEAR                         THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_EXCEPTION; return;        } (void)(0
@@ -246,6 +257,10 @@ class Exceptions {
 #define CHECK_AND_CLEAR_NONASYNC_NH             CHECK_AND_CLEAR_NONASYNC_(Handle())
 #define CHECK_AND_CLEAR_NONASYNC_NULL           CHECK_AND_CLEAR_NONASYNC_(nullptr)
 #define CHECK_AND_CLEAR_NONASYNC_false          CHECK_AND_CLEAR_NONASYNC_(false)
+
+#define CLEAR_PENDING_PREEMPTED_EXCEPTION       (((ThreadShadow*)THREAD)->clear_pending_preempted_exception())
+#define CHECK_AND_CLEAR_PREEMPTED               THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_PREEMPTED_EXCEPTION; return; } (void)(0
+
 
 // The THROW... macros should be used to throw an exception. They require a THREAD variable to be
 // visible within the scope containing the THROW. Usually this is achieved by declaring the function

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef OS_WINDOWS_PERMITFORBIDDENFUNCTIONS_WINDOWS_HPP
 #define OS_WINDOWS_PERMITFORBIDDENFUNCTIONS_WINDOWS_HPP
 
+#include "cppstdlib/cstdlib.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -33,6 +34,8 @@
 
 namespace permit_forbidden_function {
 BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
+
+[[noreturn]] inline void _exit(int status) { ::_exit(status); }
 
 // Used by the Windows implementation of os::realpath.
 inline char* _fullpath(char* absPath, const char* relPath, size_t maxLength) {

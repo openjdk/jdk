@@ -950,12 +950,15 @@ public abstract sealed class $Type$Buffer
         return get(index, dst, 0, dst.length);
     }
 
-    private $Type$Buffer getArray(int index, $type$[] dst, int offset, int length) {
-        if (
+    //
+    // This method does not perform bounds checking which it expects
+    // will have been done by the caller
+    //
+    $Type$Buffer getArray(int index, $type$[] dst, int offset, int length) {
 #if[char]
-            isAddressable() &&
+        assert isAddressable();
 #end[char]
-            ((long)length << $LG_BYTES_PER_VALUE$) > Bits.JNI_COPY_TO_ARRAY_THRESHOLD) {
+        if (((long)length << $LG_BYTES_PER_VALUE$) > Bits.JNI_COPY_TO_ARRAY_THRESHOLD) {
             long bufAddr = address + ((long)index << $LG_BYTES_PER_VALUE$);
             long dstOffset =
                 ARRAY_BASE_OFFSET + ((long)offset << $LG_BYTES_PER_VALUE$);
@@ -1116,6 +1119,10 @@ public abstract sealed class $Type$Buffer
         return this;
     }
 
+    //
+    // This method does not perform bounds checking which it expects
+    // will have been done by the caller
+    //
     void putBuffer(int pos, $Type$Buffer src, int srcPos, int n) {
 #if[rw]
         Object srcBase = src.base();
@@ -1150,9 +1157,13 @@ public abstract sealed class $Type$Buffer
 #if[char]
         } else { // src.isAddressable() == false
             assert StringCharBuffer.class.isInstance(src);
-            int posMax = pos + n;
-            for (int i = pos, j = srcPos; i < posMax; i++, j++)
-                put(i, src.get(j));
+            if (this.hb != null && src instanceof StringCharBuffer scb) {
+                scb.getArray(srcPos, this.hb, pos, n);
+            } else {
+                int posMax = pos + n;
+                for (int i = pos, j = srcPos; i < posMax; i++, j++)
+                    put(i, src.get(j));
+            }
         }
 #end[char]
 #else[rw]
@@ -1342,6 +1353,10 @@ public abstract sealed class $Type$Buffer
         return put(index, src, 0, src.length);
     }
 
+    //
+    // This method does not perform bounds checking which it expects
+    // will have been done by the caller
+    //
     $Type$Buffer putArray(int index, $type$[] src, int offset, int length) {
 #if[rw]
         if (
@@ -1897,21 +1912,31 @@ public abstract sealed class $Type$Buffer
 #if[char]
 
     /**
-     * Absolute bulk <i>get</i> method.
+     * Relative bulk <i>get</i> method.
      *
      * <p> This method transfers {@code srcEnd-srcBegin} characters from this
-     * buffer into the given array, starting at index {@code srcBegin} in this
-     * buffer and at offset {@code dstBegin} in the array. The position of this
-     * buffer is unchanged.
+     * buffer into the given array, starting at index
+     * {@code position() + srcBegin} in this buffer and at offset
+     * {@code dstBegin} in the array. The position of this buffer is unchanged.
+     *
+     * <p> An invocation of this method behaves exactly the same was as the
+     * invocation
+     *
+     * {@snippet lang=java :
+     *     get(position() + srcBegin, dst, dstBegin, srcEnd - srcBegin)
+     * }
      *
      * @param  srcBegin
-     *         The index in this buffer from which the first character will be
-     *         read; must be non-negative and less than {@code limit()}
+     *         The index in this buffer, relative to the current position,
+     *         of the first character to
+     *         read; must be non-negative and less than
+     *         {@code limit() - position()}
      *
      * @param  srcEnd
-     *         The index in this buffer directly before the last character to
-     *         read; must be non-negative and less or equal than {@code limit()}
-     *         and must be greater or equal than {@code srcBegin}
+     *         The index in this buffer, relative to the current position,
+     *         after the last character to read;
+     *         must be greater than or equal to {@code srcBegin} and less than
+     *         or equal to {@code limit() - position()}
      *
      * @param  dst
      *         The destination array
@@ -1924,14 +1949,16 @@ public abstract sealed class $Type$Buffer
      *          If the preconditions on the {@code srcBegin}, {@code srcEnd},
      *          and {@code dstBegin} parameters do not hold
      *
-     * @implSpec This method is equivalent to
-     *           {@code get(srcBegin, dst, dstBegin, srcEnd - srcBegin)}.
-     *
      * @since 25
      */
     @Override
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
-        get(srcBegin, dst, dstBegin, srcEnd - srcBegin);
+        // Check [srcBegin,srcEnd) is a subset of [0,limit()-position)
+        int pos = position();
+        int lim = limit();
+        Objects.checkFromToIndex(srcBegin, srcEnd, lim - pos);
+
+        get(pos + srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
     /**

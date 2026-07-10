@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  */
 
 #include "classfile/classLoader.hpp"
+#include "cppstdlib/cstdlib.hpp"
+#include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
@@ -30,7 +32,7 @@
 #include "nmt/memTracker.hpp"
 #include "os_posix.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -58,6 +60,7 @@
 #ifdef AIX
 #include "loadlib_aix.hpp"
 #include "os_aix.hpp"
+#include "porting_aix.hpp"
 #endif
 #ifdef LINUX
 #include "os_linux.hpp"
@@ -68,13 +71,13 @@
 #include <grp.h>
 #include <locale.h>
 #include <netdb.h>
-#include <pwd.h>
 #include <pthread.h>
+#include <pwd.h>
 #include <signal.h>
+#include <spawn.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
-#include <spawn.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
@@ -106,50 +109,69 @@ size_t os::_os_min_stack_allowed = PTHREAD_STACK_MIN;
 
 // Check core dump limit and report possible place where core can be found
 void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool check_only) {
+  stringStream buf(buffer, bufferSize);
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
-    jio_snprintf(buffer, bufferSize, "CreateCoredumpOnCrash is disabled from command line");
-    VMError::record_coredump_status(buffer, false);
+    buf.print("CreateCoredumpOnCrash is disabled from command line");
+    VMError::record_coredump_status(buf.freeze(), false);
   } else {
     struct rlimit rlim;
     bool success = true;
     bool warn = true;
     char core_path[PATH_MAX];
     if (get_core_path(core_path, PATH_MAX) <= 0) {
-      jio_snprintf(buffer, bufferSize, "core.%d (may not exist)", current_process_id());
+      // In the warning message, let the user know.
+      if (check_only) {
+        buf.print("the core path couldn't be determined. It commonly defaults to ");
+      }
+      buf.print("core.%d%s", current_process_id(), check_only ? "" : " (may not exist)");
 #ifdef LINUX
     } else if (core_path[0] == '"') { // redirect to user process
-      jio_snprintf(buffer, bufferSize, "Core dumps may be processed with %s", core_path);
+      if (check_only) {
+        buf.print("core dumps may be further processed by the following: ");
+      } else {
+        buf.print("Determined by the following: ");
+      }
+      buf.print("%s", core_path);
 #endif
     } else if (getrlimit(RLIMIT_CORE, &rlim) != 0) {
-      jio_snprintf(buffer, bufferSize, "%s (may not exist)", core_path);
+      if (check_only) {
+        buf.print("the rlimit couldn't be determined. If resource limits permit, the core dump will be located at ");
+      }
+      buf.print("%s%s", core_path, check_only ? "" : " (may not exist)");
     } else {
       switch(rlim.rlim_cur) {
         case RLIM_INFINITY:
-          jio_snprintf(buffer, bufferSize, "%s", core_path);
+          buf.print("%s", core_path);
           warn = false;
           break;
         case 0:
-          jio_snprintf(buffer, bufferSize, "Core dumps have been disabled. To enable core dumping, try \"ulimit -c unlimited\" before starting Java again");
+          buf.print("%s dumps have been disabled. To enable core dumping, try \"ulimit -c unlimited\" before starting Java again", check_only ? "core" : "Core");
           success = false;
           break;
         default:
-          jio_snprintf(buffer, bufferSize, "%s (max size " UINT64_FORMAT " k). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, uint64_t(rlim.rlim_cur) / K);
+          if (check_only) {
+            buf.print("core dumps are constrained ");
+          } else {
+             buf.print( "%s ", core_path);
+          }
+          buf.print( "(max size " UINT64_FORMAT " k). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", uint64_t(rlim.rlim_cur) / K);
           break;
       }
     }
+    const char* result = buf.freeze();
     if (!check_only) {
-      VMError::record_coredump_status(buffer, success);
+      VMError::record_coredump_status(result, success);
     } else if (warn) {
-      warning("CreateCoredumpOnCrash specified, but %s", buffer);
+      warning("CreateCoredumpOnCrash specified, but %s", result);
     }
   }
 }
 
-bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
+bool os::first_resident_in_range(address start, size_t size, address& resident_start, size_t& resident_size) {
 
 #ifdef _AIX
-  committed_start = start;
-  committed_size = size;
+  resident_start = start;
+  resident_size = size;
   return true;
 #else
 
@@ -166,10 +188,10 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
   assert(is_aligned(start, page_sz), "Start address must be page aligned");
   assert(is_aligned(size, page_sz), "Size must be page aligned");
 
-  committed_start = nullptr;
+  resident_start = nullptr;
 
   int loops = checked_cast<int>((pages + stripe - 1) / stripe);
-  int committed_pages = 0;
+  int resident_pages = 0;
   address loop_base = start;
   bool found_range = false;
 
@@ -188,7 +210,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
 
     // During shutdown, some memory goes away without properly notifying NMT,
     // E.g. ConcurrentGCThread/WatcherThread can exit without deleting thread object.
-    // Bailout and return as not committed for now.
+    // Bailout and return as not resident for now.
     if (mincore_return_value == -1 && errno == ENOMEM) {
       return false;
     }
@@ -202,32 +224,32 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
     assert(mincore_return_value == 0, "Range must be valid");
     // Process this stripe
     for (uintx vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
-      if ((vec[vecIdx] & 0x01) == 0) { // not committed
+      if ((vec[vecIdx] & 0x01) == 0) { // not resident
         // End of current contiguous region
-        if (committed_start != nullptr) {
+        if (resident_start != nullptr) {
           found_range = true;
           break;
         }
-      } else { // committed
+      } else { // resident
         // Start of region
-        if (committed_start == nullptr) {
-          committed_start = loop_base + page_sz * vecIdx;
+        if (resident_start == nullptr) {
+          resident_start = loop_base + page_sz * vecIdx;
         }
-        committed_pages ++;
+        resident_pages ++;
       }
     }
 
     loop_base += pages_to_query * page_sz;
   }
 
-  if (committed_start != nullptr) {
-    assert(committed_pages > 0, "Must have committed region");
-    assert(committed_pages <= int(size / page_sz), "Can not commit more than it has");
-    assert(committed_start >= start && committed_start < start + size, "Out of range");
-    committed_size = page_sz * committed_pages;
+  if (resident_start != nullptr) {
+    assert(resident_pages > 0, "Must have a resident region");
+    assert(resident_pages <= int(size / page_sz), "Resident size exceeds region size");
+    assert(resident_start >= start && resident_start < start + size, "Out of range");
+    resident_size = page_sz * resident_pages;
     return true;
   } else {
-    assert(committed_pages == 0, "Should not have committed region");
+    assert(resident_pages == 0, "Should not have a resident region");
     return false;
   }
 #endif
@@ -320,7 +342,7 @@ int os::create_file_for_heap(const char* dir) {
       vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
       return -1;
     }
-    int n = snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
+    int n = os::snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
     assert((size_t)n == fullname_len, "Unexpected number of characters in string");
 
     os::native_path(fullname);
@@ -436,12 +458,10 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
     warning("Failed mmap to file. (%s)", os::strerror(errno));
     return nullptr;
   }
-  if (base != nullptr && addr != base) {
-    if (!os::release_memory(addr, size)) {
-      warning("Could not release memory on unsuccessful file mapping");
-    }
-    return nullptr;
-  }
+
+  // The requested address should be the same as the returned address when using MAP_FIXED
+  // as per POSIX.
+  assert(base == nullptr || addr == base, "base should equal addr when using MAP_FIXED");
   return addr;
 }
 
@@ -710,7 +730,7 @@ bool os::get_host_name(char* buf, size_t buflen) {
 }
 
 #ifndef _LP64
-// Helper, on 32bit, for os::has_allocatable_memory_limit
+// Helper, on 32bit, for os::commit_memory_limit
 static bool is_allocatable(size_t s) {
   if (s < 2 * G) {
     return true;
@@ -728,31 +748,19 @@ static bool is_allocatable(size_t s) {
 }
 #endif // !_LP64
 
+size_t os::commit_memory_limit() {
+  // On POSIX systems, the amount of memory that can be commmitted is limited
+  // by the size of the reservable memory.
+  size_t reserve_limit = reserve_memory_limit();
 
-bool os::has_allocatable_memory_limit(size_t* limit) {
-  struct rlimit rlim;
-  int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
-  // if there was an error when calling getrlimit, assume that there is no limitation
-  // on virtual memory.
-  bool result;
-  if ((getrlimit_res != 0) || (rlim.rlim_cur == RLIM_INFINITY)) {
-    result = false;
-  } else {
-    *limit = (size_t)rlim.rlim_cur;
-    result = true;
-  }
 #ifdef _LP64
-  return result;
+  return reserve_limit;
 #else
-  // arbitrary virtual space limit for 32 bit Unices found by testing. If
-  // getrlimit above returned a limit, bound it with this limit. Otherwise
-  // directly use it.
-  const size_t max_virtual_limit = 3800*M;
-  if (result) {
-    *limit = MIN2(*limit, max_virtual_limit);
-  } else {
-    *limit = max_virtual_limit;
-  }
+  // Arbitrary max reserve limit for 32 bit Unices found by testing.
+  const size_t max_reserve_limit = 3800 * M;
+
+  // Bound the reserve limit with the arbitrary max.
+  size_t actual_limit = MIN2(reserve_limit, max_reserve_limit);
 
   // bound by actually allocatable memory. The algorithm uses two bounds, an
   // upper and a lower limit. The upper limit is the current highest amount of
@@ -766,15 +774,15 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
   // the minimum amount of memory we care about allocating.
   const size_t min_allocation_size = M;
 
-  size_t upper_limit = *limit;
+  size_t upper_limit = actual_limit;
 
   // first check a few trivial cases
   if (is_allocatable(upper_limit) || (upper_limit <= min_allocation_size)) {
-    *limit = upper_limit;
+    // The actual limit is allocatable, no need to do anything.
   } else if (!is_allocatable(min_allocation_size)) {
     // we found that not even min_allocation_size is allocatable. Return it
     // anyway. There is no point to search for a better value any more.
-    *limit = min_allocation_size;
+    actual_limit = min_allocation_size;
   } else {
     // perform the binary search.
     size_t lower_limit = min_allocation_size;
@@ -787,10 +795,29 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
         upper_limit = temp_limit;
       }
     }
-    *limit = lower_limit;
+    actual_limit = lower_limit;
   }
-  return true;
+
+  return actual_limit;
 #endif
+}
+
+size_t os::reserve_memory_limit() {
+  struct rlimit rlim;
+  int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
+
+  // If there was an error calling getrlimit, conservatively assume no limit.
+  if (getrlimit_res != 0) {
+    return SIZE_MAX;
+  }
+
+  // If the current limit is not infinity, there is a limit.
+  if (rlim.rlim_cur != RLIM_INFINITY) {
+    return (size_t)rlim.rlim_cur;
+  }
+
+  // No limit
+  return SIZE_MAX;
 }
 
 void* os::get_default_process_handle() {
@@ -861,6 +888,14 @@ void* os::lookup_function(const char* name) {
   return dlsym(RTLD_DEFAULT, name);
 }
 
+int64_t os::ftell(FILE* file) {
+  return ::ftell(file);
+}
+
+int os::fseek(FILE* file, int64_t offset, int whence) {
+  return ::fseek(file, offset, whence);
+}
+
 jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) ::lseek(fd, offset, whence);
 }
@@ -879,8 +914,25 @@ FILE* os::fdopen(int fd, const char* mode) {
 
 ssize_t os::pd_write(int fd, const void *buf, size_t nBytes) {
   ssize_t res;
+#ifdef __APPLE__
+  // macOS fails for individual write operations > 2GB.
+  // See https://gitlab.haskell.org/ghc/ghc/-/issues/17414
+  ssize_t total = 0;
+  while (nBytes > 0) {
+    size_t bytes_to_write = MIN2(nBytes, (size_t)INT_MAX);
+    RESTARTABLE(::write(fd, buf, bytes_to_write), res);
+    if (res == OS_ERR) {
+      return OS_ERR;
+    }
+    buf = (const char*)buf + res;
+    nBytes -= res;
+    total += res;
+  }
+  return total;
+#else
   RESTARTABLE(::write(fd, buf, nBytes), res);
   return res;
+#endif
 }
 
 ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
@@ -1000,6 +1052,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
+    ErrnoPreserver ep;
     permit_forbidden_function::free(p); // *not* os::free
   } else {
     // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
@@ -1057,6 +1110,95 @@ bool os::same_files(const char* file1, const char* file2) {
     is_same = true;
   }
   return is_same;
+}
+
+static char saved_jvm_path[MAXPATHLEN] = {0};
+
+// Find the full path to the current module, libjvm.so
+void os::jvm_path(char *buf, jint buflen) {
+  // Error checking.
+  if (buflen < MAXPATHLEN) {
+    assert(false, "must use a large-enough buffer");
+    buf[0] = '\0';
+    return;
+  }
+  // Lazy resolve the path to current module.
+  if (saved_jvm_path[0] != 0) {
+    strcpy(buf, saved_jvm_path);
+    return;
+  }
+
+  const char* fname;
+#ifdef AIX
+  Dl_info dlinfo;
+  int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
+  assert(ret != 0, "cannot locate libjvm");
+  if (ret == 0) {
+    return;
+  }
+  fname = dlinfo.dli_fname;
+#else
+  char dli_fname[MAXPATHLEN];
+  dli_fname[0] = '\0';
+  bool ret = dll_address_to_library_name(
+                                         CAST_FROM_FN_PTR(address, os::jvm_path),
+                                         dli_fname, sizeof(dli_fname), nullptr);
+  assert(ret, "cannot locate libjvm");
+  if (!ret) {
+    return;
+  }
+  fname = dli_fname;
+#endif // AIX
+  char* rp = nullptr;
+  if (fname[0] != '\0') {
+    rp = os::realpath(fname, buf, buflen);
+  }
+  if (rp == nullptr) {
+    return;
+  }
+
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
+  if (Arguments::executing_unit_tests()) {
+    // Look for JAVA_HOME in the environment.
+    char* java_home_var = ::getenv("JAVA_HOME");
+    if (java_home_var != nullptr && java_home_var[0] != 0) {
+
+      // Check the current module name "libjvm.so".
+      const char* p = strrchr(buf, '/');
+      if (p == nullptr) {
+        return;
+      }
+      assert(strstr(p, "/libjvm") == p, "invalid library name");
+
+      stringStream ss(buf, buflen);
+      rp = os::realpath(java_home_var, buf, buflen);
+      if (rp == nullptr) {
+        return;
+      }
+
+      assert((int)strlen(buf) < buflen, "Ran out of buffer room");
+      ss.print("%s/lib", buf);
+
+      // If the path exists within JAVA_HOME, add the VM variant directory and JVM
+      // library name to complete the path to JVM being overridden.  Otherwise fallback
+      // to the path to the current library.
+      if (0 == access(buf, F_OK)) {
+        // Use current module name "libjvm.so"
+        ss.print("/%s/libjvm%s", Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+               "buf has been truncated");
+      } else {
+        // Go back to path of .so
+        rp = os::realpath(fname, buf, buflen);
+        if (rp == nullptr) {
+          return;
+        }
+      }
+    }
+  }
+
+  strncpy(saved_jvm_path, buf, MAXPATHLEN);
+  saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
 // Called when creating the thread.  The minimum stack sizes have already been calculated
@@ -1234,6 +1376,10 @@ bool os::Posix::is_root(uid_t uid){
     return ROOT_UID == uid;
 }
 
+bool os::Posix::is_current_user_root(){
+    return is_root(geteuid());
+}
+
 bool os::Posix::matches_effective_uid_or_root(uid_t uid) {
     return is_root(uid) || geteuid() == uid;
 }
@@ -1329,6 +1475,15 @@ void os::Posix::init_2(void) {
 int os::Posix::clock_tics_per_second() {
   return clock_tics_per_sec;
 }
+
+#ifdef ASSERT
+bool os::Posix::ucontext_is_interpreter(const ucontext_t* uc) {
+  assert(uc != nullptr, "invariant");
+  address pc = os::Posix::ucontext_get_pc(uc);
+  assert(pc != nullptr, "invariant");
+  return Interpreter::contains(pc);
+}
+#endif
 
 // Utility to convert the given timeout to an absolute timespec
 // (based on the appropriate clock) to use with pthread_cond_timewait,
@@ -1499,7 +1654,16 @@ jlong os::elapsed_frequency() {
   return NANOSECS_PER_SEC; // nanosecond resolution
 }
 
-bool os::supports_vtime() { return true; }
+double os::elapsed_process_cpu_time() {
+  struct rusage usage;
+  int retval = getrusage(RUSAGE_SELF, &usage);
+  if (retval == 0) {
+    return usage.ru_utime.tv_sec + usage.ru_stime.tv_sec +
+         (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / (1000.0 * 1000.0);
+  } else {
+    return -1;
+  }
+}
 
 // Return the real, user, and system times in seconds from an
 // arbitrary fixed point in the past.
@@ -1575,7 +1739,7 @@ void PlatformEvent::park() {       // AKA "down()"
   // atomically decrement _event
   for (;;) {
     v = _event;
-    if (Atomic::cmpxchg(&_event, v, v - 1) == v) break;
+    if (AtomicAccess::cmpxchg(&_event, v, v - 1) == v) break;
   }
   guarantee(v >= 0, "invariant");
 
@@ -1622,7 +1786,7 @@ int PlatformEvent::park_nanos(jlong nanos) {
   // atomically decrement _event
   for (;;) {
     v = _event;
-    if (Atomic::cmpxchg(&_event, v, v - 1) == v) break;
+    if (AtomicAccess::cmpxchg(&_event, v, v - 1) == v) break;
   }
   guarantee(v >= 0, "invariant");
 
@@ -1678,7 +1842,7 @@ void PlatformEvent::unpark() {
   // but only in the correctly written condition checking loops of ObjectMonitor,
   // Mutex/Monitor, and JavaThread::sleep
 
-  if (Atomic::xchg(&_event, 1) >= 0) return;
+  if (AtomicAccess::xchg(&_event, 1) >= 0) return;
 
   int status = pthread_mutex_lock(_mutex);
   assert_status(status == 0, status, "mutex_lock");
@@ -1731,9 +1895,9 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Optional fast-path check:
   // Return immediately if a permit is available.
-  // We depend on Atomic::xchg() having full barrier semantics
+  // We depend on AtomicAccess::xchg() having full barrier semantics
   // since we are doing a lock-free update to _counter.
-  if (Atomic::xchg(&_counter, 0) > 0) return;
+  if (AtomicAccess::xchg(&_counter, 0) > 0) return;
 
   JavaThread *jt = JavaThread::current();
 

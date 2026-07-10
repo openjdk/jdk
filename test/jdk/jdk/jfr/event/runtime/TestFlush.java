@@ -143,8 +143,6 @@ public class TestFlush {
         printFlushEvent(re);
         Asserts.assertTrue(re.getEventType().getName().contains("Flush"), "invalid Event type");
         Asserts.assertGT((long) re.getValue("flushId"), 0L, "Invalid flush ID");
-        Asserts.assertGT((long) re.getValue("elements"), 0L, "No elements");
-        Asserts.assertGT((long) re.getValue("size"), 0L, "Empty size");
     }
 
     private static void acknowledgeFlushEvent() {

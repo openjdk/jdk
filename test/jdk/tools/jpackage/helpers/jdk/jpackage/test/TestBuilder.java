@@ -60,7 +60,7 @@ final class TestBuilder implements AutoCloseable {
         return new Builder();
     }
 
-    final static class Builder {
+    static final class Builder {
         private Builder() {
         }
 
@@ -74,17 +74,24 @@ final class TestBuilder implements AutoCloseable {
             return this;
         }
 
+        Builder testClassLoader(ClassLoader v) {
+            testClassLoader = v;
+            return this;
+        }
+
         TestBuilder create() {
-            return new TestBuilder(testConsumer, workDirRoot);
+            return new TestBuilder(testConsumer, workDirRoot, testClassLoader);
         }
 
         private Consumer<TestInstance> testConsumer;
         private Path workDirRoot = Path.of("");
+        private ClassLoader testClassLoader = TestBuilder.class.getClassLoader();
     }
 
-    private TestBuilder(Consumer<TestInstance> testConsumer, Path workDirRoot) {
+    private TestBuilder(Consumer<TestInstance> testConsumer, Path workDirRoot, ClassLoader testClassLoader) {
         this.testMethodSupplier = TestBuilderConfig.getDefault().createTestMethodSupplier();
         this.workDirRoot = Objects.requireNonNull(workDirRoot);
+        this.testClassLoader = Objects.requireNonNull(testClassLoader);
         argProcessors = Map.of(
                 CMDLINE_ARG_PREFIX + "after-run",
                 arg -> getJavaMethodsFromArg(arg).map(
@@ -121,7 +128,7 @@ final class TestBuilder implements AutoCloseable {
         clear();
     }
 
-    void processCmdLineArg(String arg) throws Throwable {
+    void processCmdLineArg(String arg) throws Exception {
         int separatorIdx = arg.indexOf('=');
         final String argName;
         final String argValue;
@@ -133,7 +140,7 @@ final class TestBuilder implements AutoCloseable {
             argValue = null;
         }
         try {
-            ThrowingConsumer<String> argProcessor = argProcessors.get(argName);
+            var argProcessor = argProcessors.get(argName);
             if (argProcessor == null) {
                 throw new ParseException("Unrecognized");
             }
@@ -198,8 +205,8 @@ final class TestBuilder implements AutoCloseable {
     }
 
     private void createTestInstance(MethodCall testBody) {
-        final List<ThrowingConsumer<Object>> curBeforeActions;
-        final List<ThrowingConsumer<Object>> curAfterActions;
+        final List<ThrowingConsumer<Object, ? extends Exception>> curBeforeActions;
+        final List<ThrowingConsumer<Object, ? extends Exception>> curAfterActions;
 
         Method testMethod = testBody.getMethod();
         if (Stream.of(BeforeEach.class, AfterEach.class).anyMatch(
@@ -233,9 +240,9 @@ final class TestBuilder implements AutoCloseable {
         testGroup = null;
     }
 
-    private static Class<?> probeClass(String name) {
+    private static Class<?> probeClass(String name, ClassLoader classLoader) {
         try {
-            return Class.forName(name);
+            return Class.forName(name, true, classLoader);
         } catch (ClassNotFoundException ex) {
             return null;
         }
@@ -254,7 +261,7 @@ final class TestBuilder implements AutoCloseable {
 
         String defaultClassName = null;
         for (String token : argValue.split(",")) {
-            Class<?> testSet = probeClass(token);
+            Class<?> testSet = probeClass(token, testClassLoader);
             if (testSet != null) {
                 if (testMethodSupplier.isTestClass(testSet)) {
                     toConsumer(testMethodSupplier::verifyTestClass).accept(testSet);
@@ -297,7 +304,7 @@ final class TestBuilder implements AutoCloseable {
 
         try {
             return testMethodSupplier.findNullaryLikeMethods(
-                    fromQualifiedMethodName(qualifiedMethodName));
+                    fromQualifiedMethodName(qualifiedMethodName), testClassLoader);
         } catch (NoSuchMethodException ex) {
             throw new ParseException(ex.getMessage() + ";", ex);
         }
@@ -319,7 +326,7 @@ final class TestBuilder implements AutoCloseable {
     }
 
     // Wraps Method.invoke() into ThrowingRunnable.run()
-    private ThrowingConsumer<Object> wrap(Method method) {
+    private ThrowingConsumer<Object, ? extends Exception> wrap(Method method) {
         return (test) -> {
             Class<?> methodClass = method.getDeclaringClass();
             String methodName = String.join(".", methodClass.getName(),
@@ -362,18 +369,19 @@ final class TestBuilder implements AutoCloseable {
     }
 
     static void trace(String msg) {
-        if (TKit.VERBOSE_TEST_SETUP) {
+        if (TKit.verboseTestSetup()) {
             TKit.log(msg);
         }
     }
 
     private final TestMethodSupplier testMethodSupplier;
-    private final Map<String, ThrowingConsumer<String>> argProcessors;
+    private final Map<String, ThrowingConsumer<String, ? extends Exception>> argProcessors;
     private final Consumer<TestInstance> testConsumer;
     private final Path workDirRoot;
+    private final ClassLoader testClassLoader;
     private List<MethodCall> testGroup;
-    private List<ThrowingConsumer<Object>> beforeActions;
-    private List<ThrowingConsumer<Object>> afterActions;
+    private List<ThrowingConsumer<Object, ? extends Exception>> beforeActions;
+    private List<ThrowingConsumer<Object, ? extends Exception>> afterActions;
     private Set<String> excludedTests;
     private Set<String> includedTests;
     private String spaceSubstitute;

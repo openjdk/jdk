@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,9 @@ public class T6348499 {
                                                   "-processorpath", testClassPath);
             StringWriter out = new StringWriter();
             JavacTask task = tool.getTask(out, fm, dl, opts, null, files);
-            task.call();
+            if (task.call()) {
+                throw new AssertionError("test compilation was expected to fail");
+            }
             String s = out.toString();
             System.err.print(s);
             // Expect the following 1 multi-line diagnostic, and no output to log

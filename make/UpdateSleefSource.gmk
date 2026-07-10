@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ ifneq ($(OPENJDK_BUILD_OS), linux)
 endif
 
 SLEEF_SUPPORT_DIR := $(MAKESUPPORT_OUTPUTDIR)/sleef
-SLEEF_SOURCE_BASE_DIR := $(TOPDIR)/src/jdk.incubator.vector/linux/native/libsleef
+SLEEF_SOURCE_BASE_DIR := $(TOPDIR)/src/jdk.incubator.vector/unix/native/libsleef
 SLEEF_SOURCE_DIR := $(SLEEF_SOURCE_BASE_DIR)/upstream
 SLEEF_TARGET_DIR := $(SLEEF_SOURCE_BASE_DIR)/generated
 SLEEF_NATIVE_BUILD_DIR := $(SLEEF_SUPPORT_DIR)/native
@@ -81,8 +81,13 @@ SLEEF_CMAKE_FILE := toolchains/$(OPENJDK_TARGET_CPU)-$(SLEEF_TOOLCHAIN_TYPE).cma
 $(eval $(call SetupExecute, sleef_native_config, \
     INFO := Configuring native sleef build, \
     OUTPUT_DIR := $(SLEEF_NATIVE_BUILD_DIR), \
-    COMMAND := cd $(SLEEF_SOURCE_DIR) && $(CMAKE) -S . -B \
-        $(SLEEF_NATIVE_BUILD_DIR), \
+    WORKING_DIR := $(SLEEF_SOURCE_DIR), \
+    COMMAND := $(CMAKE) -S . -B $(SLEEF_NATIVE_BUILD_DIR) \
+       -DCMAKE_INSTALL_PREFIX=$(SLEEF_NATIVE_BUILD_DIR) \
+       -DSLEEF_BUILD_TESTS=OFF \
+       -DSLEEF_DISABLE_SSL=ON \
+       -DSLEEF_ENABLE_TLFLOAT=OFF \
+       -DSLEEF_ENABLE_TESTER4=OFF, \
 ))
 
 TARGETS := $(sleef_native_config)
@@ -91,8 +96,8 @@ $(eval $(call SetupExecute, sleef_native_build, \
     INFO := Building native sleef, \
     DEPS := $(sleef_native_config), \
     OUTPUT_DIR := $(SLEEF_NATIVE_BUILD_DIR), \
-    COMMAND := cd $(SLEEF_SOURCE_DIR) && $(CMAKE) --build \
-        $(SLEEF_NATIVE_BUILD_DIR) -j, \
+    WORKING_DIR := $(SLEEF_SOURCE_DIR), \
+    COMMAND := $(CMAKE) --build $(SLEEF_NATIVE_BUILD_DIR) -j, \
 ))
 
 TARGETS := $(sleef_native_build)
@@ -101,11 +106,16 @@ $(eval $(call SetupExecute, sleef_cross_config, \
     INFO := Configuring cross-compiling sleef build, \
     DEPS := $(sleef_native_build), \
     OUTPUT_DIR := $(SLEEF_CROSS_BUILD_DIR), \
-    COMMAND := cd $(SLEEF_SOURCE_DIR) && $(CMAKE) -S . -B \
-        $(SLEEF_CROSS_BUILD_DIR) \
+    WORKING_DIR := $(SLEEF_SOURCE_DIR), \
+    COMMAND := $(CMAKE) -S . -B $(SLEEF_CROSS_BUILD_DIR) \
         -DCMAKE_C_COMPILER=$(CC) \
         -DCMAKE_TOOLCHAIN_FILE=$(SLEEF_CMAKE_FILE) \
         -DNATIVE_BUILD_DIR=$(SLEEF_NATIVE_BUILD_DIR) \
+        -DCMAKE_INSTALL_PREFIX=$(SLEEF_CROSS_BUILD_DIR) \
+        -DSLEEF_BUILD_TESTS=OFF \
+        -DSLEEF_DISABLE_SSL=ON \
+        -DSLEEF_ENABLE_TLFLOAT=OFF \
+        -DSLEEF_ENABLE_TESTER4=OFF \
         -DSLEEF_BUILD_INLINE_HEADERS=TRUE \
         $(EXTRA_CROSS_OPTIONS), \
 ))
@@ -116,8 +126,8 @@ $(eval $(call SetupExecute, sleef_cross_build, \
     INFO := Building cross-compiling sleef, \
     DEPS := $(sleef_cross_config), \
     OUTPUT_DIR := $(SLEEF_NATIVE_BUILD_DIR), \
-    COMMAND := cd $(SLEEF_SOURCE_DIR) && $(CMAKE) --build \
-        $(SLEEF_CROSS_BUILD_DIR) -j, \
+    WORKING_DIR := $(SLEEF_SOURCE_DIR), \
+    COMMAND := $(CMAKE) --build $(SLEEF_CROSS_BUILD_DIR) -j, \
 ))
 
 TARGETS := $(sleef_cross_build)
@@ -139,7 +149,7 @@ $(eval $(call SetupCopyFiles, copy_generated_sleef_source, \
     DEST := $(SLEEF_TARGET_DIR), \
 ))
 
-TARGETS := $(copy_generated_sleef_source)
+TARGETS := $(copy_static_sleef_source) $(copy_generated_sleef_source)
 
 ################################################################################
 

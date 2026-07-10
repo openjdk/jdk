@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,13 @@
  * @test
  * @bug 6530336 6537997 8008577 8174269 8333582
  * @library /java/text/testlib
- * @run main Bug6530336
+ * @run junit/othervm Bug6530336
  */
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.FieldSource;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -34,84 +39,59 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class Bug6530336 {
 
-    public static void main(String[] args) throws Exception {
-        Locale defaultLocale = Locale.getDefault();
-        TimeZone defaultTimeZone = TimeZone.getDefault();
+    private static final Locale[] locales = Locale.getAvailableLocales();
+    private static final TimeZone[] timezones = {
+            TimeZone.getTimeZone("America/New_York"),
+            TimeZone.getTimeZone("America/Denver"),
+    };
+    private static final TimeZone timezone_LA = TimeZone.getTimeZone("America/Los_Angeles");
+    private static final String[] expected = {
+            "Sun Jul 15 12:00:00 PDT 2007",
+            "Sun Jul 15 14:00:00 PDT 2007",
+    };
+    private static final Date[] dates = new Date[2];
 
-        boolean err = false;
-
-        try {
-            Locale locales[] = Locale.getAvailableLocales();
-            TimeZone timezone_LA = TimeZone.getTimeZone("America/Los_Angeles");
-            TimeZone.setDefault(timezone_LA);
-
-            TimeZone timezones[] = {
-                TimeZone.getTimeZone("America/New_York"),
-                TimeZone.getTimeZone("America/Denver"),
-            };
-
-            String[] expected = {
-                "Sun Jul 15 12:00:00 PDT 2007",
-                "Sun Jul 15 14:00:00 PDT 2007",
-            };
-
-            Date[] dates = new Date[2];
-
-            for (int i = 0; i < locales.length; i++) {
-                Locale locale = locales[i];
-                if (!TestUtils.usesGregorianCalendar(locale)) {
-                    continue;
-                }
-
-                Locale.setDefault(locale);
-
-                for (int j = 0; j < timezones.length; j++) {
-                    Calendar cal = Calendar.getInstance(timezones[j]);
-                    cal.set(2007, 6, 15, 15, 0, 0);
-                    dates[j] = cal.getTime();
-                }
-
-                SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
-
-                for (int j = 0; j < timezones.length; j++) {
-                    sdf.setTimeZone(timezones[j]);
-                    String date = sdf.format(dates[j]);
-                    // CLDR localizes GMT format into for some locales. Ignore those cases
-                    if (date.matches(".*GMT[\\s+-]\\D.*") ||
-                            date.contains("UTC") ||
-                            date.contains("TMG") || // Interlingue
-                            date.contains("\u07dc\u07ed\u07d5\u07d6") || // N’Ko
-                            date.contains("\ua2e7\ua0c5\ua395\ua3e6\ua12e\ua209") || // Sichuan Yi, Nuosu
-                            date.contains("\u06af\u0631\u06cc\u0646\u06cc\u0686")) { // Central Kurdish
-                        continue;
-                    }
-                    sdf.setTimeZone(timezone_LA);
-                    String date_LA = sdf.parse(date).toString();
-
-                    if (!expected[j].equals(date_LA)) {
-                        System.err.println("Got wrong Pacific time (" +
-                            date_LA + ") for (" + date + ") in " + locale +
-                            " in " + timezones[j] +
-                            ".\nExpected=" + expected[j]);
-                        err = true;
-                    }
-                }
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            err = true;
-        }
-        finally {
-            Locale.setDefault(defaultLocale);
-            TimeZone.setDefault(defaultTimeZone);
-
-            if (err) {
-                throw new RuntimeException("Failed.");
-            }
-        }
+    @BeforeAll
+    static void setup() {
+        TimeZone.setDefault(timezone_LA);
     }
 
+    @ParameterizedTest
+    @FieldSource("locales")
+    void test(Locale locale) {
+        Assumptions.assumeTrue(TestUtils.usesGregorianCalendar(locale),
+                locale + " does not use a Gregorian calendar");
+        Locale.setDefault(locale);
+
+        for (int j = 0; j < timezones.length; j++) {
+            Calendar cal = Calendar.getInstance(timezones[j]);
+            cal.set(2007, 6, 15, 15, 0, 0);
+            dates[j] = cal.getTime();
+        }
+
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
+
+        for (int j = 0; j < timezones.length; j++) {
+            sdf.setTimeZone(timezones[j]);
+            String date = sdf.format(dates[j]);
+            // CLDR localizes GMT format into for some locales. Ignore those cases
+            if (date.matches(".*GMT[\\s+-]\\D.*") ||
+                    date.contains("UTC") ||
+                    date.contains("TMG") || // Interlingue
+                    date.contains("ߜ߭ߕߖ") || // N’Ko
+                    date.contains("ꋧꃅꎕꏦꄮꈉ") || // Sichuan Yi, Nuosu
+                    date.contains("گرینیچ")) { // Central Kurdish
+                continue;
+            }
+            sdf.setTimeZone(timezone_LA);
+            String date_LA = assertDoesNotThrow(() -> sdf.parse(date).toString());
+            assertEquals(expected[j], date_LA,
+                    "Got wrong Pacific time (%s) for (%s) in %s in %s.".formatted(date_LA, date, locale, timezones[j]));
+        }
+    }
 }

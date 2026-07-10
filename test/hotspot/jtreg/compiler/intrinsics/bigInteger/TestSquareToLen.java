@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * @library /test/lib
  *
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch
+ *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:CompileCommand=exclude,compiler.intrinsics.bigInteger.TestSquareToLen::main
  *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestSquareToLen::base_multiply,ccstrlist,DisableIntrinsic,_squareToLen
  *      -XX:CompileCommand=option,java.math.BigInteger::multiply,ccstrlist,DisableIntrinsic,_squareToLen

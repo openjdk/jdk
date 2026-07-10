@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,16 @@ public enum BlobType {
                     || type == BlobType.MethodNonProfiled;
         }
     },
+    MethodHot(2, "CodeHeap 'hot nmethods'", "HotCodeHeapSize") {
+        @Override
+        public boolean allowTypeWhenOverflow(BlobType type) {
+            return super.allowTypeWhenOverflow(type)
+                    || type == BlobType.MethodNonProfiled
+                    || type == BlobType.MethodProfiled;
+        }
+    },
     // Non-nmethods like Buffers, Adapters and Runtime Stubs
-    NonNMethod(2, "CodeHeap 'non-nmethods'", "NonNMethodCodeHeapSize") {
+    NonNMethod(3, "CodeHeap 'non-nmethods'", "NonNMethodCodeHeapSize") {
         @Override
         public boolean allowTypeWhenOverflow(BlobType type) {
             return super.allowTypeWhenOverflow(type)
@@ -56,7 +64,7 @@ public enum BlobType {
         }
     },
     // All types (No code cache segmentation)
-    All(3, "CodeCache", "ReservedCodeCacheSize");
+    All(4, "CodeCache", "ReservedCodeCacheSize");
 
     public final int id;
     public final String sizeOptionName;
@@ -99,10 +107,14 @@ public enum BlobType {
             // there is no MethodProfiled in non tiered world or pure C1
             result.remove(MethodProfiled);
         }
+
+        if (Long.valueOf(0).equals(whiteBox.getVMFlag("HotCodeHeapSize"))) {
+            result.remove(MethodHot);
+        }
         return result;
     }
 
     public long getSize() {
-        return WhiteBox.getWhiteBox().getUintxVMFlag(sizeOptionName);
+        return WhiteBox.getWhiteBox().getSizeTVMFlag(sizeOptionName);
     }
 }

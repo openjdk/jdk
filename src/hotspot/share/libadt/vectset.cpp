@@ -47,12 +47,11 @@ void VectorSet::init(Arena* arena) {
 
 // Expand the existing set to a bigger size
 void VectorSet::grow(uint new_word_capacity) {
-  _nesting.check(_set_arena); // Check if a potential reallocation in the arena is safe
   assert(new_word_capacity >= _size, "Should have been checked before, use maybe_grow?");
   assert(new_word_capacity < (1U << 30), "");
   uint x = next_power_of_2(new_word_capacity);
   if (x > _data_size) {
-    _data = REALLOC_ARENA_ARRAY(_set_arena, uint32_t, _data, _size, x);
+    _data = REALLOC_ARENA_ARRAY(_set_arena, _data, _size, x);
     _data_size = x;
   }
   Copy::zero_to_bytes(_data + _size, (x - _size) * sizeof(uint32_t));

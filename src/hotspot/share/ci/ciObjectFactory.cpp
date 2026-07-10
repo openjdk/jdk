@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,13 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/compileTask.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/trainingData.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/macros.hpp"
@@ -81,6 +84,7 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
                                  int expected_size)
                                  : _arena(arena),
                                    _ci_metadata(arena, expected_size, 0, nullptr),
+                                   _cached_init_state(arena, _shared_ident_limit, 0, (u1)0),
                                    _unloaded_methods(arena, 4, 0, nullptr),
                                    _unloaded_klasses(arena, 8, 0, nullptr),
                                    _unloaded_instances(arena, 4, 0, nullptr),
@@ -95,6 +99,28 @@ ciObjectFactory::ciObjectFactory(Arena* arena,
   // If the shared ci objects exist append them to this factory's objects
   if (_shared_ci_metadata != nullptr) {
     _ci_metadata.appendAll(_shared_ci_metadata);
+    // ciInstanceKlass for well-known class is shared by all
+    // compiler threads and can be updated concurrently by
+    // other compiler threads during compilation.
+    // Make local copy of class state to avoid state change
+    // during compilation.
+    int len = _ci_metadata.length();
+    for (int i = 0; i < len; i++) {
+      ciMetadata* obj = _ci_metadata.at(i);
+      if (obj->is_loaded() && obj->is_instance_klass()) {
+        ciInstanceKlass* cik = obj->as_instance_klass();
+        precond(cik->is_shared());
+        InstanceKlass::ClassState current_state = cik->_init_state;
+        InstanceKlass::ClassState state = InstanceKlass::fully_initialized;
+        if (current_state != state) {
+          GUARDED_VM_ENTRY( state = cik->get_instanceKlass()->init_state(); )
+          // Update state of shared ciInstanceKlass
+          cik->_init_state = state;
+        }
+        // Cache state for current compilation
+        _cached_init_state.at_put_grow(cik->ident(), (u1)state, 0);
+      }
+    }
   }
 }
 
@@ -108,7 +134,7 @@ void ciObjectFactory::initialize() {
   // This Arena is long lived and exists in the resource mark of the
   // compiler thread that initializes the initial ciObjectFactory which
   // creates the shared ciObjects that all later ciObjectFactories use.
-  Arena* arena = new (mtCompiler) Arena(mtCompiler, Arena::Tag::tag_cienv);
+  Arena* arena = new (mtCompiler) Arena(mtCompiler);
   ciEnv initial(arena);
   ciEnv* env = ciEnv::current();
   env->_factory->init_shared_objects();
@@ -232,24 +258,38 @@ void ciObjectFactory::remove_symbols() {
 ciObject* ciObjectFactory::get(oop key) {
   ASSERT_IN_VM;
 
-  assert(Universe::heap()->is_in(key), "must be");
+  Handle keyHandle(Thread::current(), key);
+  assert(Universe::heap()->is_in(keyHandle()), "must be");
 
-  NonPermObject* &bucket = find_non_perm(key);
+  NonPermObject* &bucket = find_non_perm(keyHandle);
   if (bucket != nullptr) {
     return bucket->object();
   }
 
   // The ciObject does not yet exist.  Create it and insert it
   // into the cache.
-  Handle keyHandle(Thread::current(), key);
   ciObject* new_object = create_new_object(keyHandle());
   assert(keyHandle() == new_object->get_oop(), "must be properly recorded");
   init_ident_of(new_object);
   assert(Universe::heap()->is_in(new_object->get_oop()), "must be");
 
   // Not a perm-space object.
-  insert_non_perm(bucket, keyHandle(), new_object);
+  insert_non_perm(bucket, keyHandle, new_object);
+  notice_new_object(new_object);
   return new_object;
+}
+
+void ciObjectFactory::notice_new_object(ciBaseObject* new_object) {
+  if (TrainingData::need_data()) {
+    ciEnv* env = ciEnv::current();
+    if (env->task() != nullptr) {
+      // Note: task will be null during init_compiler_runtime.
+      CompileTrainingData* td = env->task()->training_data();
+      if (td != nullptr) {
+        td->notice_jit_observation(env, new_object);
+      }
+    }
+  }
 }
 
 int ciObjectFactory::metadata_compare(Metadata* const& key, ciMetadata* const& elt) {
@@ -331,6 +371,7 @@ ciMetadata* ciObjectFactory::get_metadata(Metadata* key) {
     }
     assert(!found, "no double insert");
     _ci_metadata.insert_before(index, new_object);
+    notice_new_object(new_object);
     return new_object;
   }
   return _ci_metadata.at(index)->as_metadata();
@@ -636,12 +677,12 @@ static ciObjectFactory::NonPermObject* emptyBucket = nullptr;
 // Use a small hash table, hashed on the klass of the key.
 // If there is no entry in the cache corresponding to this oop, return
 // the null tail of the bucket into which the oop should be inserted.
-ciObjectFactory::NonPermObject* &ciObjectFactory::find_non_perm(oop key) {
-  assert(Universe::heap()->is_in(key), "must be");
-  ciMetadata* klass = get_metadata(key->klass());
+ciObjectFactory::NonPermObject* &ciObjectFactory::find_non_perm(Handle keyHandle) {
+  assert(Universe::heap()->is_in(keyHandle()), "must be");
+  ciMetadata* klass = get_metadata(keyHandle->klass()); // This may safepoint!
   NonPermObject* *bp = &_non_perm_bucket[(unsigned) klass->hash() % NON_PERM_BUCKETS];
   for (NonPermObject* p; (p = (*bp)) != nullptr; bp = &p->next()) {
-    if (is_equal(p, key))  break;
+    if (is_equal(p, keyHandle()))  break;
   }
   return (*bp);
 }
@@ -664,12 +705,12 @@ inline ciObjectFactory::NonPermObject::NonPermObject(ciObjectFactory::NonPermObj
 // ciObjectFactory::insert_non_perm
 //
 // Insert a ciObject into the non-perm table.
-void ciObjectFactory::insert_non_perm(ciObjectFactory::NonPermObject* &where, oop key, ciObject* obj) {
-  assert(Universe::heap()->is_in_or_null(key), "must be");
+void ciObjectFactory::insert_non_perm(ciObjectFactory::NonPermObject* &where, Handle keyHandle, ciObject* obj) {
+  assert(Universe::heap()->is_in_or_null(keyHandle()), "must be");
   assert(&where != &emptyBucket, "must not try to fill empty bucket");
-  NonPermObject* p = new (arena()) NonPermObject(where, key, obj);
-  assert(where == p && is_equal(p, key) && p->object() == obj, "entry must match");
-  assert(find_non_perm(key) == p, "must find the same spot");
+  NonPermObject* p = new (arena()) NonPermObject(where, keyHandle(), obj);
+  assert(where == p && is_equal(p, keyHandle()) && p->object() == obj, "entry must match");
+  assert(find_non_perm(keyHandle) == p, "must find the same spot");
   ++_non_perm_count;
 }
 

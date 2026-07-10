@@ -86,9 +86,10 @@ import jdk.internal.misc.Unsafe;
  * #isHeldExclusively} reports whether synchronization is exclusively
  * held with respect to the current thread, method {@link #release}
  * invoked with the current {@link #getState} value fully releases
- * this object, and {@link #acquire}, given this saved state value,
- * eventually restores this object to its previous acquired state.  No
- * {@code AbstractQueuedSynchronizer} method otherwise creates such a
+ * this object, and the underlying version of {@link #acquire(int)},
+ * given this saved state value, eventually restores this object to
+ * its previous acquired state.
+ * No {@code AbstractQueuedSynchronizer} method otherwise creates such a
  * condition, so if this constraint cannot be met, do not use it.  The
  * behavior of {@link ConditionObject} depends of course on the
  * semantics of its synchronizer implementation.
@@ -831,7 +832,8 @@ public abstract class AbstractQueuedSynchronizer
                 if (q.status < 0) {              // cancelled
                     if ((s == null ? casTail(q, p) : s.casPrev(q, p)) &&
                         q.prev == p) {
-                        p.casNext(q, s);         // OK if fails
+                        if (s != null)
+                            p.casNext(q, s);     // OK if fails
                         if (p.prev == null)
                             signalNext(p);
                     }
@@ -1031,7 +1033,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * Acquires in exclusive mode, aborting if interrupted.
-     * Implemented by first checking interrupt status, then invoking
+     * Implemented by first checking interrupted status, then invoking
      * at least once {@link #tryAcquire}, returning on
      * success.  Otherwise the thread is queued, possibly repeatedly
      * blocking and unblocking, invoking {@link #tryAcquire}
@@ -1053,7 +1055,7 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * Attempts to acquire in exclusive mode, aborting if interrupted,
      * and failing if the given timeout elapses.  Implemented by first
-     * checking interrupt status, then invoking at least once {@link
+     * checking interrupted status, then invoking at least once {@link
      * #tryAcquire}, returning on success.  Otherwise, the thread is
      * queued, possibly repeatedly blocking and unblocking, invoking
      * {@link #tryAcquire} until success or the thread is interrupted
@@ -1120,7 +1122,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * Acquires in shared mode, aborting if interrupted.  Implemented
-     * by first checking interrupt status, then invoking at least once
+     * by first checking interrupted status, then invoking at least once
      * {@link #tryAcquireShared}, returning on success.  Otherwise the
      * thread is queued, possibly repeatedly blocking and unblocking,
      * invoking {@link #tryAcquireShared} until success or the thread
@@ -1142,7 +1144,7 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * Attempts to acquire in shared mode, aborting if interrupted, and
      * failing if the given timeout elapses.  Implemented by first
-     * checking interrupt status, then invoking at least once {@link
+     * checking interrupted status, then invoking at least once {@link
      * #tryAcquireShared}, returning on success.  Otherwise, the
      * thread is queued, possibly repeatedly blocking and unblocking,
      * invoking {@link #tryAcquireShared} until success or the thread
@@ -1682,8 +1684,8 @@ public abstract class AbstractQueuedSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(int)} with saved state as argument.
          * </ol>
          */
         public final void awaitUninterruptibly() {
@@ -1725,8 +1727,8 @@ public abstract class AbstractQueuedSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled or interrupted.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(int)} with saved state as argument.
          * <li>If interrupted while blocked in step 4, throw InterruptedException.
          * </ol>
          */
@@ -1777,8 +1779,8 @@ public abstract class AbstractQueuedSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled, interrupted, or timed out.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(int)} with saved state as argument.
          * <li>If interrupted while blocked in step 4, throw InterruptedException.
          * </ol>
          */
@@ -1821,8 +1823,8 @@ public abstract class AbstractQueuedSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled, interrupted, or timed out.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(int)} with saved state as argument.
          * <li>If interrupted while blocked in step 4, throw InterruptedException.
          * <li>If timed out while blocked in step 4, return false, else true.
          * </ol>
@@ -1864,8 +1866,8 @@ public abstract class AbstractQueuedSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled, interrupted, or timed out.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(int)} with saved state as argument.
          * <li>If interrupted while blocked in step 4, throw InterruptedException.
          * <li>If timed out while blocked in step 4, return false, else true.
          * </ol>

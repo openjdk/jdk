@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
-#include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerEvent.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -60,6 +60,7 @@ InlineTree::InlineTree(Compile* c,
     // Keep a private copy of the caller_jvms:
     _caller_jvms = new (C) JVMState(caller_jvms->method(), caller_tree->caller_jvms());
     _caller_jvms->set_bci(caller_jvms->bci());
+    _caller_jvms->set_receiver_info(caller_jvms->receiver_info());
     assert(!caller_jvms->should_reexecute(), "there should be no reexecute bytecode with inlining");
     assert(_caller_jvms->same_calls_as(caller_jvms), "consistent JVMS");
   }
@@ -233,7 +234,7 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     return false;
   }
 
-  if (C->directive()->should_not_inline(callee_method)) {
+  if (C->directive()->should_not_inline(callee_method, CompLevel_full_optimization)) {
     set_msg("disallowed by CompileCommand");
     return true;
   }
@@ -294,32 +295,34 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     return false;
   }
 
-  // don't use counts with -Xcomp
-  if (UseInterpreter) {
-    if (!callee_method->has_compiled_code() &&
-        !callee_method->was_executed_more_than(0)) {
-      set_msg("never executed");
+  // accept cold methods in CTW or -Xcomp
+  if (InlineColdMethods) {
+    return false;
+  }
+
+  if (!callee_method->has_compiled_code() &&
+      !callee_method->was_executed_more_than(0)) {
+    set_msg("never executed");
+    return true;
+  }
+
+  if (is_init_with_ea(callee_method, caller_method, C)) {
+    // Escape Analysis: inline all executed constructors
+    return false;
+  }
+
+  if (MinInlineFrequencyRatio > 0) {
+    int call_site_count  = caller_method->scale_count(profile.count());
+    int invoke_count     = caller_method->interpreter_invocation_count();
+    assert(invoke_count != 0, "require invocation count greater than zero");
+    double freq = (double)call_site_count / (double)invoke_count;
+    // avoid division by 0, set divisor to at least 1
+    int cp_min_inv = MAX2(1, CompilationPolicy::min_invocations());
+    double min_freq = MAX2(MinInlineFrequencyRatio, 1.0 / cp_min_inv);
+
+    if (freq < min_freq) {
+      set_msg("low call site frequency");
       return true;
-    }
-
-    if (is_init_with_ea(callee_method, caller_method, C)) {
-      // Escape Analysis: inline all executed constructors
-      return false;
-    }
-
-    if (MinInlineFrequencyRatio > 0) {
-      int call_site_count  = caller_method->scale_count(profile.count());
-      int invoke_count     = caller_method->interpreter_invocation_count();
-      assert(invoke_count != 0, "require invocation count greater than zero");
-      double freq = (double)call_site_count / (double)invoke_count;
-      // avoid division by 0, set divisor to at least 1
-      int cp_min_inv = MAX2(1, CompilationPolicy::min_invocations());
-      double min_freq = MAX2(MinInlineFrequencyRatio, 1.0 / cp_min_inv);
-
-      if (freq < min_freq) {
-        set_msg("low call site frequency");
-        return true;
-      }
     }
   }
 
@@ -327,8 +330,8 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
 }
 
 bool InlineTree::is_not_reached(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile) {
-  if (!UseInterpreter) {
-    return false; // -Xcomp
+  if (InlineColdMethods) {
+    return false; // CTW or -Xcomp
   }
   if (profile.count() > 0) {
     return false; // reachable according to profile
@@ -390,11 +393,13 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
 
   // suppress a few checks for accessors and trivial methods
   if (callee_method->code_size() > MaxTrivialSize) {
-
-    // don't inline into giant methods
+    // We don't want to inline a call into a sufficiently large graph. However, this cannot be
+    // decided during parsing because there are more bytecodes in the caller that need parsing, and
+    // determining dead nodes is hard. As a result, we stop parse inlining at a relatively
+    // conservative threshold, and resume during incremental inlining, when there is no more
+    // parsing in the caller, and node liveness is more easily determined.
     if (C->over_inlining_cutoff()) {
-      if ((!callee_method->force_inline() && !caller_method->is_compiled_lambda_form())
-          || !IncrementalInline) {
+      if (!C->should_delay_after_inlining_cutoff(callee_method, caller_method)) {
         set_msg("NodeCountInliningCutoff");
         return false;
       } else {
@@ -402,7 +407,7 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
       }
     }
 
-    if (!UseInterpreter &&
+    if (InlineColdMethods &&
         is_init_with_ea(callee_method, caller_method, C)) {
       // Escape Analysis stress testing when running Xcomp:
       // inline constructors even if they are not reached.
@@ -437,24 +442,26 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
 
   // detect direct and indirect recursive inlining
   {
-    // count the current method and the callee
     const bool is_compiled_lambda_form = callee_method->is_compiled_lambda_form();
-    int inline_level = 0;
-    if (!is_compiled_lambda_form) {
-      if (method() == callee_method) {
-        inline_level++;
-      }
+    const bool is_method_handle_invoker = is_compiled_lambda_form && !jvms->method()->is_compiled_lambda_form();
+
+    ciInstance* lform_callee_recv = nullptr;
+    if (is_compiled_lambda_form && !is_method_handle_invoker) { // MH invokers don't have a receiver
+      lform_callee_recv = jvms->compute_receiver_info(callee_method);
     }
-    // count callers of current method and callee
-    Node* callee_argument0 = is_compiled_lambda_form ? jvms->map()->argument(jvms, 0)->uncast() : nullptr;
-    for (JVMState* j = jvms->caller(); j != nullptr && j->has_method(); j = j->caller()) {
+
+    int inline_level = 0;
+    for (JVMState* j = jvms; j != nullptr && j->has_method(); j = j->caller()) {
       if (j->method() == callee_method) {
-        if (is_compiled_lambda_form) {
-          // Since compiled lambda forms are heavily reused we allow recursive inlining.  If it is truly
-          // a recursion (using the same "receiver") we limit inlining otherwise we can easily blow the
-          // compiler stack.
-          Node* caller_argument0 = j->map()->argument(j, 0)->uncast();
-          if (caller_argument0 == callee_argument0) {
+        // Since compiled lambda forms are heavily reused we allow recursive inlining.  If it is truly
+        // a recursion (using the same "receiver") we limit inlining otherwise we can easily blow the
+        // compiler stack.
+        if (lform_callee_recv != nullptr) {
+          ciInstance* lform_caller_recv = j->receiver_info();
+          assert(lform_caller_recv != nullptr || j->depth() == 1 ||
+                 !j->caller()->method()->is_compiled_lambda_form(), // MH invoker
+                 "missing receiver info");
+          if (lform_caller_recv == lform_callee_recv || lform_caller_recv == nullptr) {
             inline_level++;
           }
         } else {

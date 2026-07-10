@@ -91,41 +91,34 @@ public class ownedmonitors002 {
             return quitDebuggee();
         }
 
-        // debuggee main class
-        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+        try {
+            // debuggee main class
+            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
 
-        ThreadReference thrRef =
-            debuggee.threadByFieldName(rType, "testThread", DEBUGGEE_THRNAME);
-        if (thrRef == null) {
-            log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
-                + DEBUGGEE_THRNAME);
-            tot_res = Consts.TEST_FAILED;
-            return quitDebuggee();
-        }
-
-        int num = 0;
-        thrRef.suspend();
-        while(!thrRef.isSuspended()) {
-            num++;
-            if (num > ATTEMPTS) {
-                log.complain("TEST FAILURE: Unable to suspend debuggee thread after "
-                    + ATTEMPTS + " attempts");
+            ThreadReference thrRef =
+                debuggee.threadByFieldName(rType, "testThread", DEBUGGEE_THRNAME);
+            if (thrRef == null) {
+                log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
+                             + DEBUGGEE_THRNAME);
                 tot_res = Consts.TEST_FAILED;
                 return quitDebuggee();
             }
-            log.display("Waiting for debuggee thread suspension ...");
-            try {
+
+            int num = 0;
+            thrRef.suspend();
+            while(!thrRef.isSuspended()) {
+                num++;
+                if (num > ATTEMPTS) {
+                    log.complain("TEST FAILURE: Unable to suspend debuggee thread after "
+                                 + ATTEMPTS + " attempts");
+                    tot_res = Consts.TEST_FAILED;
+                    return quitDebuggee();
+                }
+                log.display("Waiting for debuggee thread suspension ...");
                 Thread.currentThread().sleep(DELAY);
-            } catch(InterruptedException ie) {
-                ie.printStackTrace();
-                log.complain("TEST FAILURE: caught: " + ie);
-                tot_res = Consts.TEST_FAILED;
-                return quitDebuggee();
             }
-        }
 
 // Check the tested assersion
-        try {
             List mons = thrRef.ownedMonitors();
             if (vm.canGetOwnedMonitorInfo()) {
                 log.display("CHECK PASSED: got a List of monitors owned by the thread,"

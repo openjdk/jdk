@@ -24,8 +24,7 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.nio.file.Path;
-import java.util.List;
+import java.util.Optional;
 
 /**
  * Details of application launcher startup configuration using Java module.
@@ -39,15 +38,18 @@ public interface LauncherModularStartupInfoMixin {
     String moduleName();
 
     /**
-     * Gets the path to the input module location.
-     * @return the path to the input module location
+     * Gets the main module version if available or an empty {@link Optional}
+     * otherwise.
+     *
+     * @return the main module version if available or an empty {@link Optional}
+     *         otherwise
      */
-    List<Path> modulePath();
+    Optional<String> moduleVersion();
 
     /**
      * Default implementation of {@link LauncherModularStartupInfoMixin} interface.
      */
-    record Stub(String moduleName, List<Path> modulePath) implements LauncherModularStartupInfoMixin {
+    record Stub(String moduleName, Optional<String> moduleVersion) implements LauncherModularStartupInfoMixin {
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,43 +22,43 @@
  */
 package test.gaptest;
 
-import static jaxp.library.JAXPTestUtilities.filenameToURL;
-import static org.testng.Assert.assertEquals;
-import static test.gaptest.GapTestConst.GOLDEN_DIR;
-import static test.gaptest.GapTestConst.XML_DIR;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import org.junit.jupiter.api.Test;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamSource;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-import org.testng.annotations.Test;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static test.gaptest.GapTestConst.GOLDEN_DIR;
+import static test.gaptest.GapTestConst.XML_DIR;
 
 /*
  * @test
  * @bug 4858685 4894410
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm test.gaptest.Bug4858685
+ * @run junit/othervm test.gaptest.Bug4858685
  * @summary test transforming text node
  */
 public class Bug4858685 {
     @Test
     public void test() throws TransformerException, IOException {
-        String uri = XML_DIR + "certificate.xml";
+        String filename = XML_DIR + "certificate.xml";
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
 
         Transformer transformer = transformerFactory.newTransformer();
 
         // use URI as a StreamSource
-        StreamSource streamSource = new StreamSource(filenameToURL(uri));
+        String uri = Path.of(filename).toUri().toASCIIString();
+        StreamSource streamSource = new StreamSource(uri);
 
         DOMResult domResult = new DOMResult();
 
@@ -66,12 +66,8 @@ public class Bug4858685 {
         transformer.transform(streamSource, domResult);
 
         // dump DOM in a human readable form
-        String gotString = DOMDump.dumpDom(domResult.getNode());
-
         String goldenString = new String(Files.readAllBytes(Paths.get(GOLDEN_DIR + "Bug4858685.txt")));
-
-        assertEquals(gotString, goldenString);
-
+        assertEquals(goldenString, DOMDump.dumpDom(domResult.getNode()));
     }
 
     /**

@@ -29,19 +29,31 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 
 abstract class UnixDispatcher extends NativeDispatcher {
+    private static final boolean SUPPORTS_PENDING_SIGNALS = NativeThread.supportPendingSignals();
 
     @Override
     void close(FileDescriptor fd) throws IOException {
         close0(fd);
     }
 
-    @Override
-    void implPreClose(FileDescriptor fd, long reader, long writer) throws IOException {
-        preClose0(fd);
-        if (NativeThread.isNativeThread(reader))
+    private void signalThreads(Thread reader, Thread writer) {
+        if (reader != null) {
             NativeThread.signal(reader);
-        if (NativeThread.isNativeThread(writer))
+        }
+        if (writer != null) {
             NativeThread.signal(writer);
+        }
+    }
+
+    @Override
+    void implPreClose(FileDescriptor fd, Thread reader, Thread writer) throws IOException {
+        if (SUPPORTS_PENDING_SIGNALS) {
+            signalThreads(reader, writer);
+        }
+        preClose0(fd);
+        if (!SUPPORTS_PENDING_SIGNALS) {
+            signalThreads(reader, writer);
+        }
     }
 
     private static native void close0(FileDescriptor fd) throws IOException;

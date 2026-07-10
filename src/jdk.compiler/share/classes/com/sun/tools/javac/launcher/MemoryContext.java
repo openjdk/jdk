@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,12 @@ package com.sun.tools.javac.launcher;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.api.JavacTool;
-import com.sun.tools.javac.code.Preview;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.resources.LauncherProperties.Errors;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Context.Factory;
+import com.sun.tools.javac.util.Log;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -120,8 +121,11 @@ final class MemoryContext {
         }
         var opts = options.forProgramCompilation();
         var context = new Context();
-        MemoryPreview.registerInstance(context);
         var task = compiler.getTask(out, memoryFileManager, null, opts, null, units, context);
+
+        // This suppresses diagnostics like "Note: Recompile with -Xlint:preview for details."
+        Log.instance(context).suppressAggregatedWarningNotes(LintCategory.PREVIEW);
+
         var ok = task.call();
         if (!ok) {
             throw new Fault(Errors.CompilationFailed);
@@ -221,17 +225,11 @@ final class MemoryContext {
         var memoryConfig = parentLayer.configuration().resolveAndBind(memoryFinder, ModuleFinder.of(), Set.of(applicationModule.name()));
         var memoryClassLoader = new MemoryClassLoader(inMemoryClasses, parentLoader, applicationModule, descriptor, this::compileJavaFileByName);
         var memoryController = ModuleLayer.defineModules(memoryConfig, List.of(parentLayer), __ -> memoryClassLoader);
-        var memoryLayer = memoryController.layer();
-
-        // Make application class accessible from the calling (unnamed) module, that loaded this class.
-        var module = memoryLayer.findModule(applicationModule.name()).orElseThrow();
-        var mainClassNamePackageName = mainClassName.substring(0, lastDotInMainClassName);
-        memoryController.addOpens(module, mainClassNamePackageName, getClass().getModule());
 
         // Configure native access for the modular application.
         enableNativeAccess(memoryController, true);
 
-        return memoryLayer.findLoader(applicationModule.name());
+        return memoryClassLoader;
     }
 
     private static ModuleFinder createModuleFinderFromModulePath() {
@@ -267,21 +265,6 @@ final class MemoryContext {
                 continue;
             }
             controller.enableNativeAccess(module);
-        }
-    }
-
-    static class MemoryPreview extends Preview {
-        static void registerInstance(Context context) {
-            context.put(previewKey, (Factory<Preview>)MemoryPreview::new);
-        }
-
-        MemoryPreview(Context context) {
-            super(context);
-        }
-
-        @Override
-        public void reportDeferredDiagnostics() {
-            // suppress diagnostics like "Note: Recompile with -Xlint:preview for details."
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,47 +23,12 @@
 
 /**
  * @test
- * @bug 8316653
- * @requires vm.debug
- * @summary Test flag with max value.
- *
- * @run main/othervm -XX:NMethodSizeLimit=1M
- *                   compiler.arguments.TestC1Globals
- */
-
-/**
- * @test
- * @bug 8318817
- * @requires vm.debug
- * @requires os.family == "linux"
- * @summary Test flag with max value combined with transparent huge pages on
- *          Linux.
- *
- * @run main/othervm -XX:NMethodSizeLimit=1M
- *                   -XX:+UseTransparentHugePages
- *                   compiler.arguments.TestC1Globals
- */
-
-/**
- * @test
- * @bug 8320682
- * @requires vm.debug
- * @summary Test flag with max value and specific compilation.
- *
- * @run main/othervm -XX:NMethodSizeLimit=1M
- *                   -XX:CompileOnly=java.util.HashMap::putMapEntries
- *                   -Xcomp
- *                   compiler.arguments.TestC1Globals
- *
- */
-
-/**
- * @test
  * @bug 8322781
  * @requires vm.debug
  * @summary Test flag with c1 value numbering
  *
- * @run main/othervm -XX:+PrintValueNumbering -XX:+Verbose -XX:-UseLocalValueNumbering
+ * @run main/othervm -XX:-DisplayVMOutput
+ *                   -XX:+PrintValueNumbering -XX:+Verbose -XX:-UseLocalValueNumbering
  *                   -Xcomp -XX:TieredStopAtLevel=1
  *                   compiler.arguments.TestC1Globals
  */

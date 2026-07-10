@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8329817 8334432 8339076 8341260
+ * @bug 8329817 8334432 8339076 8341260 8362207
  * @modules jdk.incubator.vector
  * @summary Basic tests of Float16 arithmetic and similar operations
  */
@@ -38,6 +38,8 @@ public class BasicFloat16ArithTests {
     private static float NaNf = Float.NaN;
 
     private static final float MAX_VAL_FP16 = 0x1.ffcp15f;
+    private static final float MIN_NRM_FP16 = 0x1.0p-14f;
+    private static final float MIN_VAL_FP16 = 0x1.0p-24f;
 
     public static void main(String... args) {
         checkBitWise();
@@ -145,9 +147,9 @@ public class BasicFloat16ArithTests {
         checkInt(PRECISION,     11, "Float16.PRECISION");
         checkInt(SIZE,          16, "Float16.SIZE");
 
-        checkFloat16(MIN_VALUE,  0x1.0p-24f, "Float16.MIN_VALUE");
-        checkFloat16(MIN_NORMAL, 0x1.0p-14f, "Float16.MIN_NORMAL");
-        checkFloat16(MAX_VALUE,  65504.0f,  "Float16.MAX_VALUE");
+        checkFloat16(MIN_VALUE,  MIN_VAL_FP16, "Float16.MIN_VALUE");
+        checkFloat16(MIN_NORMAL, MIN_NRM_FP16, "Float16.MIN_NORMAL");
+        checkFloat16(MAX_VALUE,  65504.0f,     "Float16.MAX_VALUE");
 
         checkFloat16(POSITIVE_INFINITY,   InfinityF,  "+infinity");
         checkFloat16(NEGATIVE_INFINITY,  -InfinityF,  "-infinity");
@@ -186,7 +188,7 @@ public class BasicFloat16ArithTests {
         for(var testCase : testCases) {
             float arg =      testCase[0];
             float expected = testCase[1];
-            Float16 result =  negate(valueOf(arg));
+            Float16 result =  negate(valueOfExact(arg));
 
             if (Float.compare(expected, result.floatValue()) != 0) {
                 checkFloat16(result, expected, "negate(" + arg + ")");
@@ -213,7 +215,7 @@ public class BasicFloat16ArithTests {
         for(var testCase : testCases) {
             float arg =      testCase[0];
             float expected = testCase[1];
-            Float16 result =  abs(valueOf(arg));
+            Float16 result =  abs(valueOfExact(arg));
 
             if (Float.compare(expected, result.floatValue()) != 0) {
                 checkFloat16(result, expected, "abs(" + arg + ")");
@@ -238,7 +240,7 @@ public class BasicFloat16ArithTests {
         };
 
         for(var testCase : testCases) {
-            boolean result = isNaN(valueOf(testCase));
+            boolean result = isNaN(valueOfExact(testCase));
             if (result) {
                 throwRE("isNaN returned true for " + testCase);
             }
@@ -254,8 +256,8 @@ public class BasicFloat16ArithTests {
         };
 
         for(var infinity : infinities) {
-            boolean result1 = isFinite(valueOf(infinity));
-            boolean result2 = isInfinite(valueOf(infinity));
+            boolean result1 = isFinite(valueOfExact(infinity));
+            boolean result2 = isInfinite(valueOfExact(infinity));
 
             if (result1) {
                 throwRE("Float16.isFinite returned true for " + infinity);
@@ -282,8 +284,8 @@ public class BasicFloat16ArithTests {
         };
 
         for(var finity : finities) {
-            boolean result1 = isFinite(valueOf(finity));
-            boolean result2 = isInfinite(valueOf(finity));
+            boolean result1 = isFinite(valueOfExact(finity));
+            boolean result2 = isInfinite(valueOfExact(finity));
 
             if (!result1) {
                 throwRE("Float16.isFinite returned true for " + finity);
@@ -301,12 +303,12 @@ public class BasicFloat16ArithTests {
         float small = 1.0f;
         float large = 2.0f;
 
-        if (min(valueOf(small), valueOf(large)).floatValue() != small) {
+        if (min(valueOfExact(small), valueOfExact(large)).floatValue() != small) {
             throwRE(String.format("min(%g, %g) not equal to %g)",
                                   small, large, small));
         }
 
-        if (max(valueOf(small), valueOf(large)).floatValue() != large) {
+        if (max(valueOfExact(small), valueOfExact(large)).floatValue() != large) {
             throwRE(String.format("max(%g, %g) not equal to %g)",
                                   small, large, large));
         }
@@ -318,10 +320,10 @@ public class BasicFloat16ArithTests {
      */
     private static void checkArith() {
         float   a   = 1.0f;
-        Float16 a16 = valueOf(a);
+        Float16 a16 = valueOfExact(a);
 
         float   b   = 2.0f;
-        Float16 b16 = valueOf(b);
+        Float16 b16 = valueOfExact(b);
 
         if (add(a16, b16).floatValue() != (a + b)) {
             throwRE("failure with " + a16 + " + " + b16);
@@ -371,7 +373,7 @@ public class BasicFloat16ArithTests {
         for(var testCase : testCases) {
             float arg =      testCase[0];
             float expected = testCase[1];
-            Float16 result =  sqrt(valueOf(arg));
+            Float16 result =  sqrt(valueOfExact(arg));
 
             if (Float.compare(expected, result.floatValue()) != 0) {
                 checkFloat16(result, expected, "sqrt(" + arg + ")");
@@ -389,12 +391,12 @@ public class BasicFloat16ArithTests {
             { NaNf,      MAX_EXPONENT + 1},
 
             // Subnormal and almost subnormal values
-            {-0.0f,       MIN_EXPONENT - 1},
-            {+0.0f,       MIN_EXPONENT - 1},
-            { 0x1.0p-24f, MIN_EXPONENT - 1}, // Float16.MIN_VALUE
-            {-0x1.0p-24f, MIN_EXPONENT - 1}, // Float16.MIN_VALUE
-            { 0x1.0p-14f, MIN_EXPONENT},     // Float16.MIN_NORMAL
-            {-0x1.0p-14f, MIN_EXPONENT},     // Float16.MIN_NORMAL
+            {-0.0f,         MIN_EXPONENT - 1},
+            {+0.0f,         MIN_EXPONENT - 1},
+            { MIN_VAL_FP16, MIN_EXPONENT - 1},
+            {-MIN_VAL_FP16, MIN_EXPONENT - 1},
+            { MIN_NRM_FP16, MIN_EXPONENT},
+            {-MIN_NRM_FP16, MIN_EXPONENT},
 
             // Normal values
             { 1.0f,       0},
@@ -408,11 +410,10 @@ public class BasicFloat16ArithTests {
         for(var testCase : testCases) {
             float arg =      testCase[0];
             float expected = testCase[1];
-            // Exponents are in-range for Float16
-            Float16 result =  valueOf(getExponent(valueOf(arg)));
+            float result =  (float)getExponent(valueOfExact(arg));
 
-            if (Float.compare(expected, result.floatValue()) != 0) {
-                checkFloat16(result, expected, "getExponent(" + arg + ")");
+            if (Float.compare(expected, result) != 0) {
+                checkFloat16(Float16.valueOf(result), expected, "getExponent(" + arg + ")");
             }
         }
         return;
@@ -425,17 +426,17 @@ public class BasicFloat16ArithTests {
             { NaNf,      NaNf},
 
             // Zeros, subnormals, and MIN_VALUE all have MIN_VALUE as an ulp.
-            {-0.0f,       0x1.0p-24f},
-            {+0.0f,       0x1.0p-24f},
-            { 0x1.0p-24f, 0x1.0p-24f},
-            {-0x1.0p-24f, 0x1.0p-24f},
-            { 0x1.0p-14f, 0x1.0p-24f},
-            {-0x1.0p-14f, 0x1.0p-24f},
+            {-0.0f,         MIN_VAL_FP16},
+            {+0.0f,         MIN_VAL_FP16},
+            { MIN_VAL_FP16, MIN_VAL_FP16},
+            {-MIN_VAL_FP16, MIN_VAL_FP16},
+            { MIN_NRM_FP16, MIN_VAL_FP16},
+            {-MIN_NRM_FP16, MIN_VAL_FP16},
 
-            // ulp is 10 bits away
-            {0x1.0p0f,       0x0.004p0f}, // 1.0f
-            {0x1.0p1f,       0x0.004p1f}, // 2.0f
-            {0x1.0p2f,       0x0.004p2f}, // 4.0f
+            // ulp is (PRECISION - 1) = 10 bits away
+            {0x1.0p0f,       0x1.0p-10f}, // 1.0f
+            {0x1.0p1f,       0x1.0p-9f},  // 2.0f
+            {0x1.0p2f,       0x1.0p-8f},  // 4.0f
 
             {MAX_VAL_FP16*0.5f, 0x0.004p14f},
             {MAX_VAL_FP16,      0x0.004p15f},
@@ -444,8 +445,7 @@ public class BasicFloat16ArithTests {
         for(var testCase : testCases) {
             float arg =      testCase[0];
             float expected = testCase[1];
-            // Exponents are in-range for Float16
-            Float16 result =  ulp(valueOf(arg));
+            Float16 result = ulp(valueOfExact(arg));
 
             if (Float.compare(expected, result.floatValue()) != 0) {
                 checkFloat16(result, expected, "ulp(" + arg + ")");
@@ -509,12 +509,12 @@ public class BasicFloat16ArithTests {
     }
 
     private static void checkValueOfLong() {
-        checkFloat16(valueOf(-65_521),  Float.NEGATIVE_INFINITY, "-infinity");
-        checkFloat16(valueOf(-65_520),  Float.NEGATIVE_INFINITY, "-infinity");
-        checkFloat16(valueOf(-65_519), -MAX_VALUE.floatValue(), "-MAX_VALUE");
-        checkFloat16(valueOf(65_519),   MAX_VALUE.floatValue(), "MAX_VALUE");
-        checkFloat16(valueOf(65_520),   Float.POSITIVE_INFINITY, "+infinity");
-        checkFloat16(valueOf(65_521),   Float.POSITIVE_INFINITY, "+infinity");
+        checkFloat16(valueOf(-65_521),  Float.NEGATIVE_INFINITY, "-65_521");
+        checkFloat16(valueOf(-65_520),  Float.NEGATIVE_INFINITY, "-65_520");
+        checkFloat16(valueOf(-65_519), -MAX_VALUE.floatValue(),  "-65_519");
+        checkFloat16(valueOf( 65_519),  MAX_VALUE.floatValue(),   "65_519");
+        checkFloat16(valueOf( 65_520),  Float.POSITIVE_INFINITY,  "65_520");
+        checkFloat16(valueOf( 65_521),  Float.POSITIVE_INFINITY,  "65_521");
     }
 
     private static void checkValueOfString() {
@@ -602,7 +602,7 @@ public class BasicFloat16ArithTests {
             String input = testCase.input();
             float expected = testCase.expected();
             Float16 result = Float16.valueOf(input);
-            checkFloat16(result, expected, "Float16.valueOf(String) " + input);
+            checkFloat16(result, expected, "Float16.valueOfExact(String) " + input);
         }
 
         List<String> negativeCases = List.of("0x1",
@@ -747,7 +747,7 @@ public class BasicFloat16ArithTests {
         }
 
         private static void testSimple() {
-            final float ulpOneFp16 = ulp(valueOf(1.0f)).floatValue();
+            final float ulpOneFp16 = ulp(valueOfExact(1.0f)).floatValue();
 
             float [][] testCases = {
                 {1.0f, 2.0f, 3.0f,
@@ -781,7 +781,7 @@ public class BasicFloat16ArithTests {
         }
 
         private static void testRounding() {
-            final float ulpOneFp16 = ulp(valueOf(1.0f)).floatValue();
+            final float ulpOneFp16 = ulp(valueOfExact(1.0f)).floatValue();
 
             float [][] testCases = {
                 // The product is equal to
@@ -794,7 +794,7 @@ public class BasicFloat16ArithTests {
                 // threshold; subtracting a non-zero finite value will
                 // result in MAX_VALUE, adding zero or a positive
                 // value will overflow.
-                {0x1.2p10f, 0x1.c7p5f, -0x1.0p-14f,
+                {0x1.2p10f, 0x1.c7p5f, -MIN_NRM_FP16,
                  MAX_VAL_FP16},
 
                 {0x1.2p10f, 0x1.c7p5f, -0.0f,
@@ -803,7 +803,7 @@ public class BasicFloat16ArithTests {
                 {0x1.2p10f, 0x1.c7p5f, +0.0f,
                  InfinityF},
 
-                {0x1.2p10f, 0x1.c7p5f, +0x1.0p-14f,
+                {0x1.2p10f, 0x1.c7p5f, +MIN_NRM_FP16,
                  InfinityF},
 
                 {0x1.2p10f, 0x1.c7p5f, InfinityF,
@@ -815,6 +815,11 @@ public class BasicFloat16ArithTests {
 
                 {0x1.ffcp-14f, 0x1.0p-24f, 0x1.0p14f, // *Cannot* be held exactly
                  0x1.0p14f},
+
+                // Arguments where using float fma or uniform float
+                // arithmetic gives the wrong result
+                {0x1.08p7f, 0x1.04p7f, 0x1.0p-24f,
+                 0x1.0c4p14f},
 
                 // Check values where the exact result cannot be
                 // exactly stored in a double.
@@ -839,10 +844,10 @@ public class BasicFloat16ArithTests {
         }
 
         private static void testFusedMacCase(float input1, float input2, float input3, float expected) {
-            Float16 a = valueOf(input1);
-            Float16 b = valueOf(input2);
-            Float16 c = valueOf(input3);
-            Float16 d = valueOf(expected);
+            Float16 a = valueOfExact(input1);
+            Float16 b = valueOfExact(input2);
+            Float16 c = valueOfExact(input3);
+            Float16 d = valueOfExact(expected);
 
             test("Float16.fma(float)", a, b, c, Float16.fma(a, b, c), d);
 
@@ -864,5 +869,21 @@ public class BasicFloat16ArithTests {
                                "\tgot       "  + result   + "\t(" + toHexString(result) + ").");
             throw new RuntimeException();
         }
+    }
+
+    /**
+     * {@return a Float16 value converted from the {@code float}
+     * argument throwing an {@code ArithmeticException} if the
+     * conversion is inexact}.
+     *
+     * @param f the {@code float} value to convert exactly
+     * @throws ArithmeticException
+     */
+    private static Float16 valueOfExact(float f) {
+        Float16 f16 = valueOf(f);
+        if (Float.compare(f16.floatValue(), f) != 0) {
+            throw new ArithmeticException("Inexact conversion to Float16 of float value " + f);
+        }
+        return f16;
     }
 }

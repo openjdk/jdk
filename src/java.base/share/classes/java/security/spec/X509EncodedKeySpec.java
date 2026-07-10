@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.security.spec;
 
+import java.security.BinaryEncodable;
+
 /**
  * This class represents the ASN.1 encoding of a public key,
  * encoded according to the ASN.1 type {@code SubjectPublicKeyInfo}.
@@ -49,8 +51,8 @@ package java.security.spec;
  * @since 1.2
  */
 
-public class X509EncodedKeySpec extends EncodedKeySpec {
-
+public non-sealed class X509EncodedKeySpec extends EncodedKeySpec implements
+    BinaryEncodable {
     /**
      * Creates a new {@code X509EncodedKeySpec} with the given encoded key.
      *
@@ -78,7 +80,6 @@ public class X509EncodedKeySpec extends EncodedKeySpec {
      * <a href="{@docRoot}/../specs/security/standard-names.html#asymmetrickey-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard asymmetric key algorithm names.
-     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws NullPointerException if {@code encodedKey}
      * or {@code algorithm} is null.
      * @throws IllegalArgumentException if {@code algorithm} is

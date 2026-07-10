@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class SocketEventOverhead {
     @Fork(value = 1, jvmArgs = {
         "--add-exports",
         "java.base/jdk.internal.event=ALL-UNNAMED",
-        "-XX:StartFlightRecording:jdk.SocketWrite#enabled=true,jdk.SocketWrite#threshold=1s"})
+        "-XX:StartFlightRecording:jdk.SocketWrite#enabled=true,jdk.SocketWrite#threshold=1s,jdk.SocketWrite#throttle=off"})
     @Benchmark
     public int socketWriteJFREnabledEventNotEmitted(SkeletonFixture fixture) {
         return fixture.write();
@@ -73,7 +73,7 @@ public class SocketEventOverhead {
 
     @Fork(value = 1, jvmArgs = {
         "--add-exports","java.base/jdk.internal.event=ALL-UNNAMED",
-        "-XX:StartFlightRecording:jdk.SocketWrite#enabled=true,jdk.SocketWrite#threshold=0ms,disk=false,jdk.SocketWrite#stackTrace=false"})
+        "-XX:StartFlightRecording:jdk.SocketWrite#enabled=true,jdk.SocketWrite#threshold=0ms,disk=false,jdk.SocketWrite#stackTrace=false,jdk.SocketWrite#throttle=off"})
     @Benchmark
     public int socketWriteJFREnabledEventEmitted(SkeletonFixture fixture) {
         return fixture.write();
@@ -99,7 +99,7 @@ public class SocketEventOverhead {
     @Fork(value = 1, jvmArgs = {
         "--add-exports",
         "java.base/jdk.internal.event=ALL-UNNAMED",
-        "-XX:StartFlightRecording:jdk.SocketRead#enabled=true,jdk.SocketRead#threshold=1s"})
+        "-XX:StartFlightRecording:jdk.SocketRead#enabled=true,jdk.SocketRead#threshold=1s,jdk.SocketRead#throttle=off"})
     @Benchmark
     public int socketReadJFREnabledEventNotEmitted(SkeletonFixture fixture) {
         return fixture.read();
@@ -107,7 +107,7 @@ public class SocketEventOverhead {
 
     @Fork(value = 1, jvmArgs = {
         "--add-exports","java.base/jdk.internal.event=ALL-UNNAMED",
-        "-XX:StartFlightRecording:jdk.SocketRead#enabled=true,jdk.SocketRead#threshold=0ms,disk=false,jdk.SocketRead#stackTrace=false"})
+        "-XX:StartFlightRecording:jdk.SocketRead#enabled=true,jdk.SocketRead#threshold=0ms,disk=false,jdk.SocketRead#stackTrace=false,jdk.SocketRead#throttle=off"})
     @Benchmark
     public int socketReadJFREnabledEventEmitted(SkeletonFixture fixture) {
         return fixture.read();
@@ -137,10 +137,7 @@ public class SocketEventOverhead {
             try {
                 nbytes = write0();
             } finally {
-                long duration = start - SocketWriteEvent.timestamp();
-                if (SocketWriteEvent.shouldCommit(duration)) {
-                    SocketWriteEvent.emit(start, duration, nbytes, getRemoteAddress());
-                }
+                SocketWriteEvent.offer(start, nbytes, getRemoteAddress());
             }
             return nbytes;
         }
@@ -158,10 +155,7 @@ public class SocketEventOverhead {
             try {
                 nbytes = read0();
             } finally {
-                long duration = start - SocketReadEvent.timestamp();
-                if (SocketReadEvent.shouldCommit(duration)) {
-                    SocketReadEvent.emit(start, duration, nbytes, getRemoteAddress(), 0);
-                }
+                SocketReadEvent.offer(start, nbytes, getRemoteAddress(), 0);
             }
             return nbytes;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ package sun.java2d.xr;
  *
  * @author Clemens Eisserer
  */
-public class GrowableEltArray extends GrowableIntArray {
+public final class GrowableEltArray extends GrowableIntArray {
     private static final int ELT_SIZE = 4;
     GrowableIntArray glyphs;
 
@@ -77,6 +77,7 @@ public class GrowableEltArray extends GrowableIntArray {
         return glyphs;
     }
 
+    @Override
     public void clear() {
         glyphs.clear();
         super.clear();

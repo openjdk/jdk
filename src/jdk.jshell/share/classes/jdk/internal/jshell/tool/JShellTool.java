@@ -3362,7 +3362,19 @@ public class JShellTool implements MessageHandler {
             // error occurred, already reported
             return false;
         }
-        try (BufferedWriter writer = Files.newBufferedWriter(toPathResolvingUserHome(filename),
+        // Create missing parent directories before writing to target file
+        Path target;
+        try {
+            target = toPathResolvingUserHome(filename);
+            Path parent = target.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+        } catch (Exception e) {
+            errormsg("jshell.err.file.exception", "/save", filename, e);
+            return false;
+        }
+        try (BufferedWriter writer = Files.newBufferedWriter(target,
                 Charset.defaultCharset(),
                 CREATE, TRUNCATE_EXISTING, WRITE)) {
             if (at.hasOption("-history")) {
@@ -4121,7 +4133,11 @@ public class JShellTool implements MessageHandler {
                     public int read(char[] cbuf, int off, int len) throws IOException {
                         if (len == 0) return 0;
                         try {
-                            cbuf[off] = input.readUserInputChar();
+                            int r = input.readUserInputChar();
+                            if (r == (-1)) {
+                                return -1;
+                            }
+                            cbuf[off] = (char) r;
                             return 1;
                         } catch (UserInterruptException ex) {
                             return -1;

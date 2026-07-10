@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,13 @@
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerThread.hpp"
 #include "compiler/compileTask.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "utilities/stack.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciCompiler.hpp"
-#endif
 
 class nmethod;
 
-#if defined(ASSERT) && COMPILER2_OR_JVMCI
+#if defined(ASSERT) && defined(COMPILER2)
 // Stress testing. Dedicated threads revert optimizations based on escape analysis concurrently to
 // the running java application.  Configured with vm options DeoptimizeObjectsALot*.
 class DeoptimizeObjectsALotThread : public JavaThread {
@@ -53,7 +50,7 @@ public:
 
   bool is_hidden_from_external_view() const      { return true; }
 };
-#endif
+#endif // defined(ASSERT) && defined(COMPILER2)
 
 // CompilerCounters
 //
@@ -140,7 +137,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
 
   // Redefine Classes support
   void mark_on_stack();
-  void free_all();
+  void delete_all();
   void print_tty();
   void print(outputStream* st = tty);
 
@@ -254,11 +251,13 @@ class CompileBroker: AllStatic {
 
   enum ThreadType {
     compiler_t,
-    deoptimizer_t
+    deoptimizer_t,
+    training_replay_t
   };
 
   static JavaThread* make_thread(ThreadType type, jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD);
   static void init_compiler_threads();
+  static void init_training_replay();
   static void possibly_add_compiler_threads(JavaThread* THREAD);
   static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded);
 
@@ -271,10 +270,6 @@ class CompileBroker: AllStatic {
                                           CompileTask::CompileReason compile_reason,
                                           bool                blocking);
   static void wait_for_completion(CompileTask* task);
-#if INCLUDE_JVMCI
-  static bool wait_for_jvmci_completion(JVMCICompiler* comp, CompileTask* task, JavaThread* thread);
-#endif
-
   static void free_buffer_blob_if_allocated(CompilerThread* thread);
 
   static void invoke_compiler_on_method(CompileTask* task);
@@ -360,7 +355,7 @@ public:
   static inline bool should_compile_new_jobs() { return UseCompiler && (_should_compile_new_jobs == run_compilation); }
   static bool set_should_compile_new_jobs(jint new_state) {
     // Return success if the current caller set it
-    jint old = Atomic::cmpxchg(&_should_compile_new_jobs, 1-new_state, new_state);
+    jint old = AtomicAccess::cmpxchg(&_should_compile_new_jobs, 1-new_state, new_state);
     bool success = (old == (1-new_state));
     if (success) {
       if (new_state == run_compilation) {
@@ -375,16 +370,19 @@ public:
   static void disable_compilation_forever() {
     UseCompiler               = false;
     AlwaysCompileLoopMethods  = false;
-    Atomic::xchg(&_should_compile_new_jobs, jint(shutdown_compilation));
+    AtomicAccess::xchg(&_should_compile_new_jobs, jint(shutdown_compilation));
   }
 
   static bool is_compilation_disabled_forever() {
-    return _should_compile_new_jobs == shutdown_compilation;
+    return AtomicAccess::load(&_should_compile_new_jobs) == shutdown_compilation;
   }
+
+  static void wait_for_no_active_tasks();
+
   static void handle_full_code_cache(CodeBlobType code_blob_type);
   // Ensures that warning is only printed once.
   static bool should_print_compiler_warning() {
-    jint old = Atomic::cmpxchg(&_print_compilation_warning, 0, 1);
+    jint old = AtomicAccess::cmpxchg(&_print_compilation_warning, 0, 1);
     return old == 0;
   }
   // Return total compilation ticks
@@ -445,6 +443,18 @@ public:
   // CodeHeap State Analytics.
   static void print_info(outputStream *out);
   static void print_heapinfo(outputStream *out, const char* function, size_t granularity);
+};
+
+// In order to achiveve a maximally fast warmup we attempt to compile important methods as soon as all
+// the classes that they depend on are initialized. TrainingReplayThread processes a queue of InstanceKlass*
+// that have just finished running their static initializers. We find all the methods that depend on the given class
+// and for which the number of remaining dependencies is now zero, and eagerly compile them.
+class TrainingReplayThread : public JavaThread {
+  static void training_replay_thread_entry(JavaThread* thread, TRAPS);
+public:
+  TrainingReplayThread() : JavaThread(&training_replay_thread_entry) { }
+
+  bool is_hidden_from_external_view() const      { return true; }
 };
 
 #endif // SHARE_COMPILER_COMPILEBROKER_HPP

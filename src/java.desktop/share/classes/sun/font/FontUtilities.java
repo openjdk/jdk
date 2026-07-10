@@ -369,6 +369,28 @@ public final class FontUtilities {
         }
     }
 
+    /**
+     * <p>Checks whether or not the specified codepoint is whitespace which is
+     * ignorable at the shaping stage of text rendering. These ignorable
+     * whitespace characters should be used prior to text shaping and
+     * rendering to determine the position of the text, but are not themselves
+     * rendered.
+     *
+     * <p>Includes 0x0009 (horizontal tab / TAB), 0x000A (line feed / LF),
+     * 0x000B (vertical tab / VT), 0x000C (form feed / FF),
+     * 0x000D (carriage return / CR), 0x0085 (next line / NEL),
+     * 0x2028 (line separator / LS), 0x2029 (paragraph separator / PS).
+     *
+     * @param ch the codepoint to check
+     * @return whether the specified codepoint is ignorable whitespace
+     */
+    public static boolean isIgnorableWhitespace(int ch) {
+        return (ch >= 0x0009 && ch <= 0x000d)
+            || ch == 0x0085
+            || ch == 0x2028
+            || ch == 0x2029;
+    }
+
     public static PlatformLogger getLogger() {
         return logger;
     }

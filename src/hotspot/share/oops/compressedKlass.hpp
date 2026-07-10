@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,6 @@ class Klass;
 // If compressed klass pointers then use narrowKlass.
 typedef juint  narrowKlass;
 
-// For UseCompressedClassPointers.
 class CompressedKlassPointers : public AllStatic {
   friend class VMStructs;
   friend class ArchiveBuilder;
@@ -124,7 +123,7 @@ class CompressedKlassPointers : public AllStatic {
   static address _base;
   static int _shift;
 
-  // Start and end of the Klass Range.
+  // Start and end of the Klass Range. Start includes the protection zone if one exists.
   // Note: guaranteed to be aligned to 1<<shift (klass_alignment_in_bytes)
   static address _klass_range_start;
   static address _klass_range_end;
@@ -139,9 +138,11 @@ class CompressedKlassPointers : public AllStatic {
 
   // Helper function for common cases.
   static char* reserve_address_space_X(uintptr_t from, uintptr_t to, size_t size, size_t alignment, bool aslr);
+  static char* reserve_address_space_below_4G(size_t size, bool aslr);
   static char* reserve_address_space_for_unscaled_encoding(size_t size, bool aslr);
   static char* reserve_address_space_for_zerobased_encoding(size_t size, bool aslr);
   static char* reserve_address_space_for_16bit_move(size_t size, bool aslr);
+
   static void calc_lowest_highest_narrow_klass_id();
 
 #ifdef ASSERT
@@ -159,7 +160,6 @@ public:
 
   // Initialization sequence:
   // 1) Parse arguments. The following arguments take a role:
-  //      - UseCompressedClassPointers
   //      - UseCompactObjectHeaders
   //      - Xshare on off dump
   //      - CompressedClassSpaceSize
@@ -186,10 +186,8 @@ public:
   // The maximum possible shift; the actual shift employed later can be smaller (see initialize())
   static int max_shift()                 { check_init(_max_shift); return _max_shift; }
 
-  // Returns the maximum encoding range, given the current geometry (narrow klass bit size and shift)
-  static size_t max_encoding_range_size() { return nth_bit(narrow_klass_pointer_bits() + max_shift()); }
-
-  // Returns the maximum allowed klass range size.
+  // Returns the maximum allowed klass range size. It is calculated from the length of the encoding range
+  // resulting from the current encoding settings (base, shift), capped to a certain max. value.
   static size_t max_klass_range_size();
 
   // Reserve a range of memory that is to contain Klass strucutures which are referenced by narrow Klass IDs.
@@ -200,6 +198,7 @@ public:
   // set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for
   // archived heap objects. In this case, we don't have the freedom to choose base and shift; they are handed to
   // us from CDS.
+  // Note: CDS with +UCCP for 32-bit currently unsupported.
   static void initialize_for_given_encoding(address addr, size_t len, address requested_base, int requested_shift);
 
   // Given an address range [addr, addr+len) which the encoding is supposed to
@@ -213,7 +212,7 @@ public:
 
   // Can only be used after initialization
   static address  base()             { check_init(_base); return  _base; }
-  static address  base_addr()        { return  (address)&_base; }
+  static address  base_addr()        { return (address)&_base; }
   static int      shift()            { check_init(_shift); return  _shift; }
 
   static address  klass_range_start()  { return  _klass_range_start; }
@@ -224,14 +223,14 @@ public:
   // Returns the alignment a Klass* is guaranteed to have.
   // Note: *Not* the same as 1 << shift ! Klass are always guaranteed to be at least 64-bit aligned,
   // so this will return 8 even if shift is 0.
-  static int klass_alignment_in_bytes() { return nth_bit(MAX2(3, _shift)); }
+  static int klass_alignment_in_bytes() { return static_cast<int>(nth_bit(MAX2(3, _shift))); }
   static int klass_alignment_in_words() { return klass_alignment_in_bytes() / BytesPerWord; }
 
   // Returns the highest possible narrowKlass value given the current Klass range
   static narrowKlass highest_valid_narrow_klass_id() { return _highest_valid_narrow_klass_id; }
 
-  static bool is_null(Klass* v)      { return v == nullptr; }
-  static bool is_null(narrowKlass v) { return v == 0; }
+  static bool is_null(const Klass* v)  { return v == nullptr; }
+  static bool is_null(narrowKlass v)   { return v == 0; }
 
   // Versions without asserts
   static inline Klass* decode_not_null_without_asserts(narrowKlass v);
@@ -239,9 +238,9 @@ public:
   static inline Klass* decode_not_null(narrowKlass v);
   static inline Klass* decode(narrowKlass v);
 
-  static inline narrowKlass encode_not_null_without_asserts(Klass* k, address narrow_base, int shift);
-  static inline narrowKlass encode_not_null(Klass* v);
-  static inline narrowKlass encode(Klass* v);
+  static inline narrowKlass encode_not_null_without_asserts(const Klass* k, address narrow_base, int shift);
+  static inline narrowKlass encode_not_null(const Klass* v);
+  static inline narrowKlass encode(const Klass* v);
 
 #ifdef ASSERT
   // Given an address, check that it can be encoded with the current encoding
@@ -249,6 +248,9 @@ public:
   // Given a narrow Klass ID, check that it is valid according to current encoding
   inline static void check_valid_narrow_klass_id(narrowKlass nk);
 #endif
+
+  // Given a narrow Klass ID, returns true if it appears to be valid
+  inline static bool is_valid_narrow_klass_id(narrowKlass nk);
 
   // Returns whether the pointer is in the memory region used for encoding compressed
   // class pointers.  This includes CDS.

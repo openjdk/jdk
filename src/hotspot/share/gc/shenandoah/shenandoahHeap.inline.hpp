@@ -31,6 +31,7 @@
 
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
@@ -44,6 +45,7 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahPrefetch.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -60,7 +62,7 @@ inline ShenandoahHeap* ShenandoahHeap::heap() {
 }
 
 inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
-  size_t new_index = Atomic::add(&_index, (size_t) 1, memory_order_relaxed);
+  size_t new_index = _index.add_then_fetch((size_t) 1, memory_order_relaxed);
   // get_region() provides the bounds-check and returns null on OOB.
   return _heap->get_region(new_index - 1);
 }
@@ -74,15 +76,15 @@ inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
 }
 
 inline void ShenandoahHeap::notify_gc_progress() {
-  Atomic::store(&_gc_no_progress_count, (size_t) 0);
+  _gc_no_progress_count.store_relaxed((size_t) 0);
 
 }
 inline void ShenandoahHeap::notify_gc_no_progress() {
-  Atomic::inc(&_gc_no_progress_count);
+  _gc_no_progress_count.add_then_fetch((size_t) 1);
 }
 
 inline size_t ShenandoahHeap::get_gc_no_progress_count() const {
-  return Atomic::load(&_gc_no_progress_count);
+  return _gc_no_progress_count.load_relaxed();
 }
 
 inline size_t ShenandoahHeap::heap_region_index_containing(const void* addr) const {
@@ -99,14 +101,6 @@ inline ShenandoahHeapRegion* ShenandoahHeap::heap_region_containing(const void* 
   return result;
 }
 
-inline void ShenandoahHeap::enter_evacuation(Thread* t) {
-  _oom_evac_handler.enter_evacuation(t);
-}
-
-inline void ShenandoahHeap::leave_evacuation(Thread* t) {
-  _oom_evac_handler.leave_evacuation(t);
-}
-
 template <class T>
 inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
@@ -117,7 +111,7 @@ inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
       // set that are not really forwarded. We can still go and try and update them
       // (uselessly) to simplify the common path.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop fwd = ShenandoahForwarding::get_forwardee(obj);
       shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
       // Unconditionally store the update: no concurrent updates expected.
@@ -136,7 +130,7 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
       // set that are not really forwarded. We can still go and try CAS-update them
       // (uselessly) to simplify the common path.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop fwd = ShenandoahForwarding::get_forwardee(obj);
       shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
       // Sanity check: we should not be updating the cset regions themselves,
@@ -197,38 +191,38 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
 
 inline void ShenandoahHeap::atomic_update_oop(oop update, oop* addr, oop compare) {
   assert(is_aligned(addr, HeapWordSize), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  Atomic::cmpxchg(addr, compare, update, memory_order_release);
+  AtomicAccess::cmpxchg(addr, compare, update, memory_order_release);
 }
 
 inline void ShenandoahHeap::atomic_update_oop(oop update, narrowOop* addr, narrowOop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop u = CompressedOops::encode(update);
-  Atomic::cmpxchg(addr, compare, u, memory_order_release);
+  AtomicAccess::cmpxchg(addr, compare, u, memory_order_release);
 }
 
 inline void ShenandoahHeap::atomic_update_oop(oop update, narrowOop* addr, oop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop c = CompressedOops::encode(compare);
   narrowOop u = CompressedOops::encode(update);
-  Atomic::cmpxchg(addr, c, u, memory_order_release);
+  AtomicAccess::cmpxchg(addr, c, u, memory_order_release);
 }
 
 inline bool ShenandoahHeap::atomic_update_oop_check(oop update, oop* addr, oop compare) {
   assert(is_aligned(addr, HeapWordSize), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  return (oop) Atomic::cmpxchg(addr, compare, update, memory_order_release) == compare;
+  return (oop) AtomicAccess::cmpxchg(addr, compare, update, memory_order_release) == compare;
 }
 
 inline bool ShenandoahHeap::atomic_update_oop_check(oop update, narrowOop* addr, narrowOop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop u = CompressedOops::encode(update);
-  return (narrowOop) Atomic::cmpxchg(addr, compare, u, memory_order_release) == compare;
+  return (narrowOop) AtomicAccess::cmpxchg(addr, compare, u, memory_order_release) == compare;
 }
 
 inline bool ShenandoahHeap::atomic_update_oop_check(oop update, narrowOop* addr, oop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop c = CompressedOops::encode(compare);
   narrowOop u = CompressedOops::encode(update);
-  return CompressedOops::decode(Atomic::cmpxchg(addr, c, u, memory_order_release)) == compare;
+  return CompressedOops::decode(AtomicAccess::cmpxchg(addr, c, u, memory_order_release)) == compare;
 }
 
 // The memory ordering discussion above does not apply for methods that store nulls:
@@ -237,18 +231,18 @@ inline bool ShenandoahHeap::atomic_update_oop_check(oop update, narrowOop* addr,
 
 inline void ShenandoahHeap::atomic_clear_oop(oop* addr, oop compare) {
   assert(is_aligned(addr, HeapWordSize), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  Atomic::cmpxchg(addr, compare, oop(), memory_order_relaxed);
+  AtomicAccess::cmpxchg(addr, compare, oop(), memory_order_relaxed);
 }
 
 inline void ShenandoahHeap::atomic_clear_oop(narrowOop* addr, oop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop cmp = CompressedOops::encode(compare);
-  Atomic::cmpxchg(addr, cmp, narrowOop(), memory_order_relaxed);
+  AtomicAccess::cmpxchg(addr, cmp, narrowOop(), memory_order_relaxed);
 }
 
 inline void ShenandoahHeap::atomic_clear_oop(narrowOop* addr, narrowOop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  Atomic::cmpxchg(addr, compare, narrowOop(), memory_order_relaxed);
+  AtomicAccess::cmpxchg(addr, compare, narrowOop(), memory_order_relaxed);
 }
 
 inline bool ShenandoahHeap::cancelled_gc() const {
@@ -268,15 +262,23 @@ inline GCCause::Cause ShenandoahHeap::cancelled_cause() const {
   return _cancelled_gc.get();
 }
 
-inline void ShenandoahHeap::clear_cancelled_gc(bool clear_oom_handler) {
+inline void ShenandoahHeap::clear_cancelled_gc() {
   _cancelled_gc.set(GCCause::_no_gc);
+  reset_cancellation_time();
+}
+
+inline GCCause::Cause ShenandoahHeap::clear_cancellation(const GCCause::Cause expected) {
+  const GCCause::Cause cancellation_cause = _cancelled_gc.cmpxchg(GCCause::_no_gc, expected);
+  if (cancellation_cause == expected) {
+    reset_cancellation_time();
+  }
+  return cancellation_cause;
+}
+
+inline void ShenandoahHeap::reset_cancellation_time() {
   if (_cancel_requested_time > 0) {
     log_debug(gc)("GC cancellation took %.3fs", (os::elapsedTime() - _cancel_requested_time));
     _cancel_requested_time = 0;
-  }
-
-  if (clear_oom_handler) {
-    _oom_evac_handler.clear();
   }
 }
 
@@ -312,11 +314,6 @@ void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
   // For all these reasons, we take the conservative approach and not attempt
   // to increase the age when the header is displaced.
   markWord w = obj->mark();
-  // The mark-word has been copied from the original object. It can not be
-  // inflating, because inflation can not be interrupted by a safepoint,
-  // and after a safepoint, a Java thread would first have to successfully
-  // evacuate the object before it could inflate the monitor.
-  assert(!w.is_being_inflated() || LockingMode == LM_LIGHTWEIGHT, "must not inflate monitor before evacuation of object succeeds");
   // It is possible that we have copied the object after another thread has
   // already successfully completed evacuation. While harmless (we would never
   // publish our copy), don't even attempt to modify the age when that
@@ -334,15 +331,13 @@ uint ShenandoahHeap::get_object_age(oop obj) {
   markWord w = obj->mark();
   assert(!w.is_marked(), "must not be forwarded");
   if (UseObjectMonitorTable) {
-    assert(LockingMode == LM_LIGHTWEIGHT, "Must use LW locking, too");
     assert(w.age() <= markWord::max_age, "Impossible!");
     return w.age();
   }
   if (w.has_monitor()) {
     w = w.monitor()->header();
-  } else if (w.is_being_inflated() || w.has_displaced_mark_helper()) {
-    // Informs caller that we aren't able to determine the age
-    return markWord::max_age + 1; // sentinel
+  } else {
+    assert(!w.has_displaced_mark_helper(), "Mark word should not be displaced");
   }
   assert(w.age() <= markWord::max_age, "Impossible!");
   return w.age();
@@ -429,11 +424,11 @@ inline void ShenandoahHeap::set_affiliation(ShenandoahHeapRegion* r, ShenandoahA
 #ifdef ASSERT
   assert_lock_for_affiliation(region_affiliation(r), new_affiliation);
 #endif
-  Atomic::store(_affiliations + r->index(), (uint8_t) new_affiliation);
+  AtomicAccess::store(_affiliations + r->index(), (uint8_t) new_affiliation);
 }
 
 inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(size_t index) const {
-  return (ShenandoahAffiliation) Atomic::load(_affiliations + index);
+  return (ShenandoahAffiliation) AtomicAccess::load(_affiliations + index);
 }
 
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {
@@ -449,6 +444,17 @@ inline bool ShenandoahHeap::in_collection_set(oop p) const {
 inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
   assert(collection_set() != nullptr, "Sanity");
   return collection_set()->is_in_loc(p);
+}
+
+inline char ShenandoahHeap::gc_state() const {
+  return integer_cast<char>(_gc_state.raw_value());
+}
+
+inline bool ShenandoahHeap::is_gc_state(GCState state) const {
+  // If the global gc state has been changed, but hasn't yet been propagated to all threads, then
+  // the global gc state is the correct value. Once the gc state has been synchronized with all threads,
+  // _gc_state_changed will be toggled to false and we need to use the thread local state.
+  return _gc_state_changed ? _gc_state.is_set(state) : ShenandoahThreadLocalData::is_gc_state(state);
 }
 
 inline bool ShenandoahHeap::is_idle() const {
@@ -510,74 +516,35 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
 
 template<class T>
 inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, T* cl, HeapWord* limit) {
-  assert(! region->is_humongous_continuation(), "no humongous continuation regions here");
+  assert(!region->is_humongous_continuation(), "no humongous continuation regions here");
+  assert(limit <= region->top(), "sanity");
 
   ShenandoahMarkingContext* const ctx = marking_context();
 
   HeapWord* tams = ctx->top_at_mark_start(region);
-
-  size_t skip_bitmap_delta = 1;
-  HeapWord* start = region->bottom();
-  HeapWord* end = MIN2(tams, region->end());
-
-  // Step 1. Scan below the TAMS based on bitmap data.
   HeapWord* limit_bitmap = MIN2(limit, tams);
 
+  // Step 1. Scan below the TAMS based on bitmap data.
   // Try to scan the initial candidate. If the candidate is above the TAMS, it would
   // fail the subsequent "< limit_bitmap" checks, and fall through to Step 2.
-  HeapWord* cb = ctx->get_next_marked_addr(start, end);
+  HeapWord* cb = ctx->get_next_marked_addr(region->bottom(), limit_bitmap);
+  while (cb < limit_bitmap) {
+    assert (cb < tams,  "only objects below TAMS here: "  PTR_FORMAT " (" PTR_FORMAT ")", p2i(cb), p2i(tams));
+    assert (cb < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(cb), p2i(limit));
+    oop obj = cast_to_oop(cb);
+    assert(oopDesc::is_oop(obj), "sanity");
+    assert(ctx->is_marked(obj), "object expected to be marked");
 
-  intx dist = ShenandoahMarkScanPrefetch;
-  if (dist > 0) {
-    // Batched scan that prefetches the oop data, anticipating the access to
-    // either header, oop field, or forwarding pointer. Not that we cannot
-    // touch anything in oop, while it still being prefetched to get enough
-    // time for prefetch to work. This is why we try to scan the bitmap linearly,
-    // disregarding the object size. However, since we know forwarding pointer
-    // precedes the object, we can skip over it. Once we cannot trust the bitmap,
-    // there is no point for prefetching the oop contents, as oop->size() will
-    // touch it prematurely.
-
-    // No variable-length arrays in standard C++, have enough slots to fit
-    // the prefetch distance.
-    static const int SLOT_COUNT = 256;
-    guarantee(dist <= SLOT_COUNT, "adjust slot count");
-    HeapWord* slots[SLOT_COUNT];
-
-    int avail;
-    do {
-      avail = 0;
-      for (int c = 0; (c < dist) && (cb < limit_bitmap); c++) {
-        Prefetch::read(cb, oopDesc::mark_offset_in_bytes());
-        slots[avail++] = cb;
-        cb += skip_bitmap_delta;
-        if (cb < limit_bitmap) {
-          cb = ctx->get_next_marked_addr(cb, limit_bitmap);
-        }
-      }
-
-      for (int c = 0; c < avail; c++) {
-        assert (slots[c] < tams,  "only objects below TAMS here: "  PTR_FORMAT " (" PTR_FORMAT ")", p2i(slots[c]), p2i(tams));
-        assert (slots[c] < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(slots[c]), p2i(limit));
-        oop obj = cast_to_oop(slots[c]);
-        assert(oopDesc::is_oop(obj), "sanity");
-        assert(ctx->is_marked(obj), "object expected to be marked");
-        cl->do_object(obj);
-      }
-    } while (avail > 0);
-  } else {
-    while (cb < limit_bitmap) {
-      assert (cb < tams,  "only objects below TAMS here: "  PTR_FORMAT " (" PTR_FORMAT ")", p2i(cb), p2i(tams));
-      assert (cb < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(cb), p2i(limit));
-      oop obj = cast_to_oop(cb);
-      assert(oopDesc::is_oop(obj), "sanity");
-      assert(ctx->is_marked(obj), "object expected to be marked");
-      cl->do_object(obj);
-      cb += skip_bitmap_delta;
-      if (cb < limit_bitmap) {
-        cb = ctx->get_next_marked_addr(cb, limit_bitmap);
-      }
+    // Compute the next object address and initiate prefetches for it,
+    // while we are processing current object.
+    constexpr size_t skip_bitmap_delta = 1;
+    cb += skip_bitmap_delta;
+    if (cb < limit_bitmap) {
+      cb = ctx->get_next_marked_addr(cb, limit_bitmap);
     }
+    ShenandoahPrefetch::prefetch(cast_to_oop(cb));
+
+    cl->do_object(obj);
   }
 
   // Step 2. Accurate size-based traversal, happens past the TAMS.
@@ -590,9 +557,13 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     oop obj = cast_to_oop(cs);
     assert(oopDesc::is_oop(obj), "sanity");
     assert(ctx->is_marked(obj), "object expected to be marked");
-    size_t size = ShenandoahForwarding::size(obj);
+
+    // Compute the next object address and initiate prefetches for it,
+    // while we are processing current object.
+    cs += ShenandoahForwarding::size(obj);
+    ShenandoahPrefetch::prefetch(cast_to_oop(cs));
+
     cl->do_object(obj);
-    cs += size;
   }
 }
 

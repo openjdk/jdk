@@ -556,10 +556,10 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                        .shouldContain(HELLO_WORLD)
                        .shouldContain("Dumping shared data to file:");
              });
-        ft2 = Files.getLastModifiedTime(Paths.get(versionB));
+        ft2 = Files.getLastModifiedTime(Paths.get(versionF));
         fileModified = !ft1.equals(ft2);
         if (!fileModified) {
-            throw new RuntimeException("Shared archive " + versionB + " should be created at exit");
+            throw new RuntimeException("Shared archive " + versionF + " should be created at exit");
         }
 
         // 22 create an archive with dynamic magic number only

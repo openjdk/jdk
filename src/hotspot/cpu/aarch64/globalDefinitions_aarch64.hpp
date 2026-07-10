@@ -35,8 +35,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORTS_NATIVE_CX8
 
-#define SUPPORT_MONITOR_COUNT
-
 // Aarch64 was not originally defined to be multi-copy-atomic, but now
 // is.  See: "Simplifying ARM Concurrency: Multicopy-atomic Axiomatic
 // and Operational Models for ARMv8"
@@ -63,7 +61,9 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 // evidence that it's worth doing.
 #define DEOPTIMIZE_WHEN_PATCHING
 
+#if !defined(_WINDOWS)
 #define SUPPORT_RESERVED_STACK_AREA
+#endif
 
 #if defined(__APPLE__) || defined(_WIN64)
 #define R18_RESERVED

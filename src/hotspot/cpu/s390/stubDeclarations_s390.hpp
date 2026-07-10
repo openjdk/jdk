@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,24 +26,35 @@
 #ifndef CPU_S390_STUBDECLARATIONS_HPP
 #define CPU_S390_STUBDECLARATIONS_HPP
 
+#define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
+                                          do_arch_blob,                 \
+                                          do_arch_entry,                \
+                                          do_arch_entry_init,           \
+                                          do_arch_entry_array)          \
+  do_arch_blob(preuniverse, 0)                                          \
+
+
 #define STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub,                          \
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
-                                      do_arch_entry_init)               \
+                                      do_arch_entry_init,               \
+                                      do_arch_entry_array)              \
   do_arch_blob(initial, 20000)                                          \
 
 
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \
                                            do_arch_blob,                \
                                            do_arch_entry,               \
-                                           do_arch_entry_init)          \
-  do_arch_blob(continuation, 2000)                                      \
+                                           do_arch_entry_init,          \
+                                           do_arch_entry_array)         \
+  do_arch_blob(continuation, 5000)                                      \
 
 
 #define STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub,                         \
                                        do_arch_blob,                    \
                                        do_arch_entry,                   \
-                                       do_arch_entry_init)              \
+                                       do_arch_entry_init,              \
+                                       do_arch_entry_array)             \
   do_arch_blob(compiler, 20000 )                                        \
   do_stub(compiler, partial_subtype_check)                              \
   do_arch_entry(zarch, compiler, partial_subtype_check,                 \
@@ -53,7 +64,8 @@
 #define STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,                            \
                                     do_arch_blob,                       \
                                     do_arch_entry,                      \
-                                    do_arch_entry_init)                 \
+                                    do_arch_entry_init,                 \
+                                    do_arch_entry_array)                \
   do_arch_blob(final, 20000)                                            \
 
 

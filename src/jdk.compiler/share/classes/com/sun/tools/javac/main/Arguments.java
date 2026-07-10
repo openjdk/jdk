@@ -32,7 +32,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -52,7 +51,6 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.doclint.DocLint;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
@@ -279,12 +277,8 @@ public class Arguments {
      */
     public Set<JavaFileObject> getFileObjects() {
         if (fileObjects == null) {
-            fileObjects = new LinkedHashSet<>();
-        }
-        if (files != null) {
-            JavacFileManager jfm = (JavacFileManager) getFileManager();
-            for (JavaFileObject fo: jfm.getJavaFileObjectsFromPaths(files))
-                fileObjects.add(fo);
+            // see Arguments::validate
+            throw new IllegalStateException("file objects have not been initialized");
         }
         return fileObjects;
     }
@@ -422,6 +416,9 @@ public class Arguments {
      */
     public boolean validate() {
         JavaFileManager fm = getFileManager();
+        if (fileObjects == null) {
+            fileObjects = new LinkedHashSet<>();
+        }
         if (options.isSet(Option.MODULE)) {
             if (!fm.hasLocation(StandardLocation.CLASS_OUTPUT)) {
                 log.error(Errors.OutputDirMustBeSpecifiedWithDashMOption);
@@ -434,19 +431,10 @@ public class Arguments {
                         Location sourceLoc = fm.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH, module);
                         if (sourceLoc == null) {
                             log.error(Errors.ModuleNotFoundInModuleSourcePath(module));
-                        } else {
-                            Location classLoc = fm.getLocationForModule(StandardLocation.CLASS_OUTPUT, module);
-
-                            for (JavaFileObject file : fm.list(sourceLoc, "", EnumSet.of(JavaFileObject.Kind.SOURCE), true)) {
-                                String className = fm.inferBinaryName(sourceLoc, file);
-                                JavaFileObject classFile = fm.getJavaFileForInput(classLoc, className, Kind.CLASS);
-
-                                if (classFile == null || classFile.getLastModified() < file.getLastModified()) {
-                                    if (fileObjects == null)
-                                        fileObjects = new HashSet<>();
-                                    fileObjects.add(file);
-                                }
-                            }
+                            return false;
+                        }
+                        for (JavaFileObject file : fm.list(sourceLoc, "", EnumSet.of(Kind.SOURCE), true)) {
+                            fileObjects.add(file);
                         }
                     }
                 } catch (IOException ex) {
@@ -454,6 +442,12 @@ public class Arguments {
                     ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
                     return false;
                 }
+            }
+        }
+        if (files != null) {
+            JavacFileManager jfm = (JavacFileManager) getFileManager();
+            for (JavaFileObject fo : jfm.getJavaFileObjectsFromPaths(files)){
+                fileObjects.add(fo);
             }
         }
 
@@ -503,12 +497,9 @@ public class Arguments {
                     }
                 } else {
                     // single-module or legacy mode
-                    boolean lintPaths = !options.isExplicitlyDisabled(Option.XLINT, LintCategory.PATH);
-                    if (lintPaths) {
-                        Path outDirParent = outDir.getParent();
-                        if (outDirParent != null && Files.exists(outDirParent.resolve("module-info.class"))) {
-                            log.warning(LintWarnings.OutdirIsInExplodedModule(outDir));
-                        }
+                    Path outDirParent = outDir.getParent();
+                    if (outDirParent != null && Files.exists(outDirParent.resolve("module-info.class"))) {
+                        log.warning(LintWarnings.OutdirIsInExplodedModule(outDir));
                     }
                 }
             }
@@ -576,15 +567,14 @@ public class Arguments {
             reportDiag(Errors.SourcepathModulesourcepathConflict);
         }
 
-        boolean lintOptions = !options.isExplicitlyDisabled(Option.XLINT, LintCategory.OPTIONS);
-        if (lintOptions && source.compareTo(Source.DEFAULT) < 0 && !options.isSet(Option.RELEASE)) {
+        if (source.compareTo(Source.DEFAULT) < 0 && !options.isSet(Option.RELEASE)) {
             if (fm instanceof BaseFileManager baseFileManager) {
                 if (source.compareTo(Source.JDK8) <= 0) {
-                    if (baseFileManager.isDefaultBootClassPath())
+                    if (baseFileManager.isDefaultBootClassPath()) {
                         log.warning(LintWarnings.SourceNoBootclasspath(source.name, releaseNote(source, targetString)));
-                } else {
-                    if (baseFileManager.isDefaultSystemModulesPath())
-                        log.warning(LintWarnings.SourceNoSystemModulesPath(source.name, releaseNote(source, targetString)));
+                    }
+                } else if (baseFileManager.isDefaultSystemModulesPath()) {
+                    log.warning(LintWarnings.SourceNoSystemModulesPath(source.name, releaseNote(source, targetString)));
                 }
             }
         }
@@ -593,14 +583,14 @@ public class Arguments {
 
         if (source.compareTo(Source.MIN) < 0) {
             log.error(Errors.OptionRemovedSource(source.name, Source.MIN.name));
-        } else if (source == Source.MIN && lintOptions) {
+        } else if (source == Source.MIN) {
             log.warning(LintWarnings.OptionObsoleteSource(source.name));
             obsoleteOptionFound = true;
         }
 
         if (target.compareTo(Target.MIN) < 0) {
             log.error(Errors.OptionRemovedTarget(target, Target.MIN));
-        } else if (target == Target.MIN && lintOptions) {
+        } else if (target == Target.MIN) {
             log.warning(LintWarnings.OptionObsoleteTarget(target));
             obsoleteOptionFound = true;
         }
@@ -634,7 +624,7 @@ public class Arguments {
             log.error(Errors.ProcessorpathNoProcessormodulepath);
         }
 
-        if (obsoleteOptionFound && lintOptions) {
+        if (obsoleteOptionFound) {
             log.warning(LintWarnings.OptionObsoleteSuppression);
         }
 
@@ -645,7 +635,7 @@ public class Arguments {
         validateLimitModules(sv);
         validateDefaultModuleForCreatedFiles(sv);
 
-        if (lintOptions && options.isSet(Option.ADD_OPENS)) {
+        if (options.isSet(Option.ADD_OPENS)) {
             log.warning(LintWarnings.AddopensIgnored);
         }
 

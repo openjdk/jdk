@@ -35,13 +35,13 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/klass.hpp"
+#include "oops/method.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/signature.hpp"
-#include "oops/instanceKlass.hpp"
-#include "oops/klass.hpp"
-#include "oops/method.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
@@ -123,7 +123,7 @@ class HierarchyVisitor : StackObj {
     InstanceKlass* interface_at(int index) {
       return _class->local_interfaces()->at(index);
     }
-    InstanceKlass* next_super() { return _class->java_super(); }
+    InstanceKlass* next_super() { return _class->super(); }
     InstanceKlass* next_interface() {
       return interface_at(interface_index());
     }
@@ -439,7 +439,7 @@ class MethodFamily : public ResourceObj {
     StreamIndentor si(str, indent * 2);
     str->print("Selected method: ");
     print_method(str, _selected_target);
-    Klass* method_holder = _selected_target->method_holder();
+    InstanceKlass* method_holder = _selected_target->method_holder();
     if (!method_holder->is_interface()) {
       str->print(" : in superclass");
     }
@@ -636,7 +636,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
 
   // Also any overpasses in our superclasses, that we haven't implemented.
   // (can't use the vtable because it is not guaranteed to be initialized yet)
-  InstanceKlass* super = klass->java_super();
+  InstanceKlass* super = klass->super();
   while (super != nullptr) {
     for (int i = 0; i < super->methods()->length(); ++i) {
       Method* m = super->methods()->at(i);
@@ -658,19 +658,17 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
     if (super->default_methods() != nullptr) {
       for (int i = 0; i < super->default_methods()->length(); ++i) {
         Method* m = super->default_methods()->at(i);
-        // m is a method that would have been a miranda if not for the
-        // default method processing that occurred on behalf of our superclass,
-        // so it's a method we want to re-examine in this new context.  That is,
-        // unless we have a real implementation of it in the current class.
         if (!already_in_vtable_slots(slots, m)) {
+          // m is a method that we need to re-examine, unless we have a valid concrete
+          // implementation in the current class - see FindMethodsByErasedSig::visit.
           Method* impl = klass->lookup_method(m->name(), m->signature());
-          if (impl == nullptr || impl->is_overpass() || impl->is_static()) {
+          if (impl == nullptr || impl->is_overpass() || impl->is_static() || impl->is_private()) {
             slots->append(new EmptyVtableSlot(m));
           }
         }
       }
     }
-    super = super->java_super();
+    super = super->super();
   }
 
   LogTarget(Debug, defaultmethods) lt;

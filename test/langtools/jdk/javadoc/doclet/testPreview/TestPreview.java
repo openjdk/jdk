@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      8250768 8261976 8277300 8282452 8287597 8325325 8325874 8297879
- *           8331947 8281533 8343239 8318416 8346109
+ *           8331947 8281533 8343239 8318416 8346109 8359024 8386589
  * @summary  test generated docs for items declared using preview
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -63,9 +63,9 @@ public class TestPreview extends JavadocTester {
         checkOutput("m/pkg/TestPreviewDeclarationUse.html", true,
                     "<code><a href=\"TestPreviewDeclaration.html\" title=\"interface in pkg\">TestPreviewDeclaration</a></code>");
         checkOutput("m/pkg/TestPreviewAPIUse.html", true,
-                "<a href=\"" + doc + "java.base/preview/Core.html\" title=\"class or interface in preview\" class="
+                "<a href=\"" + doc + "java.base/preview/Core.html\" title=\"class in preview\" class="
                         + "\"external-link\">Core</a><sup class=\"preview-mark\"><a href=\"" + doc + "java.base/pr"
-                        + "eview/Core.html#preview-preview.Core\" title=\"class or interface in preview\" class=\""
+                        + "eview/Core.html#preview-preview.Core\" class=\""
                         + "external-link\">PREVIEW</a>");
         checkOutput("m/pkg/DocAnnotation.html", true,
                 "<span class=\"modifiers\">public @interface </span><span class=\"element-name type-name-label\">DocAnnotation</span>");
@@ -104,7 +104,7 @@ public class TestPreview extends JavadocTester {
                     """,
                 """
                     <div id="package">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                    <div class="table-tabs">
                     <div class="caption"><span>Packages</span></div>
                     </div>
                     <div id="package.tabpanel" role="tabpanel" aria-labelledby="package-tab0">
@@ -122,7 +122,7 @@ public class TestPreview extends JavadocTester {
                     """,
                 """
                     <div id="record-class">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                    <div class="table-tabs">
                     <div class="caption"><span>Record Classes</span></div>
                     </div>
                     <div id="record-class.tabpanel" role="tabpanel" aria-labelledby="record-class-tab0">
@@ -139,7 +139,7 @@ public class TestPreview extends JavadocTester {
                     """,
                 """
                     <div id="method">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                    <div class="table-tabs">
                     <div class="caption"><span>Methods</span></div>
                     </div>
                     <div id="method.tabpanel" role="tabpanel" aria-labelledby="method-tab0">
@@ -160,15 +160,15 @@ public class TestPreview extends JavadocTester {
         checkOutput("java.base/preview/package-summary.html", true,
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="../module-summary.html">java.base</a></li>
-                    <li><a href="package-summary.html" class="current-selection">preview</a></li>
+                    <li><a href="../module-summary.html" title="Module java.base">java.base</a></li>
+                    <li><a href="package-summary.html" title="Package preview" class="current-selection">preview</a></li>
                     </ol>""");
         checkOutput("java.base/preview/Core.html", true,
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="../module-summary.html">java.base</a></li>
-                    <li><a href="package-summary.html">preview</a></li>
-                    <li><a href="Core.html" class="current-selection">Core</a></li>
+                    <li><a href="../module-summary.html" title="Module java.base">java.base</a></li>
+                    <li><a href="package-summary.html" title="Package preview">preview</a></li>
+                    <li><a href="Core.html" title="Class Core" class="current-selection">Core</a></li>
                     </ol>""",
                 """
                     <div class="block">Preview feature. Links: <a href="CoreRecord.html" title="cla\
@@ -242,6 +242,42 @@ public class TestPreview extends JavadocTester {
                 """);
     }
 
+    // 8386589 pre-existing permanent API that is later retrofitted
+    // to permit a @PreviewFeature API should not be flagged as a preview feature
+    @Test
+    public void nonPreviewPermitsPreview(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                public sealed interface Core permits BasicChild, PreviewChild {
+                }
+                """, """
+                package p;
+                public non-sealed interface BasicChild extends Core {
+                }
+                ""","""
+                package p;
+                import jdk.internal.javac.PreviewFeature;
+                @PreviewFeature(feature = PreviewFeature.Feature.TEST)
+                public non-sealed interface PreviewChild extends Core {
+                }
+                """);
+        javadoc("-d", "out-non-preview-permits-preview",
+                "--add-exports", "java.base/jdk.internal.javac=ALL-UNNAMED",
+                "--source-path",
+                src.toString(),
+                "p");
+        checkExit(Exit.OK);
+        checkOutput("p/Core.html", false,
+                """
+                <div class="preview-comment">Programs can only use <code>Core</code> when preview features are enabled.</div>
+                """);
+        checkOutput("p/PreviewChild.html", true,
+                """
+                <div class="preview-comment">Programs can only use <code>PreviewChild</code> when preview features are enabled.</div>
+                """);
+    }
+
     @Test
     public void test8277300() {
         javadoc("-d", "out-8277300",
@@ -254,7 +290,7 @@ public class TestPreview extends JavadocTester {
         checkOutput("api2/api/API.html", true,
                     "<p><a href=\"#test()\"><code>test()</code></a></p>",
                     "<p><a href=\"#testNoPreviewInSig()\"><code>testNoPreviewInSig()</code></a></p>",
-                    "title=\"class or interface in java.util\" class=\"external-link\">List</a>&lt;<a href=\"API.h"
+                    "title=\"interface in java.util\" class=\"external-link\">List</a>&lt;<a href=\"API.h"
                             + "tml\" title=\"class in api\">API</a><sup class=\"preview-mark\"><a href=\"#preview-"
                             + "api.API\">PREVIEW</a></sup>&gt;");
         checkOutput("api2/api/API2.html", true,
@@ -335,10 +371,10 @@ public class TestPreview extends JavadocTester {
                 """
                     <h2 title="Contents">Contents</h2>
                     <ul class="contents-list">
-                    <li id="contents-preview-api-notes"><a href="#preview-api-notes">Preview API Notes</a></li>
-                    <li id="contents-interface"><a href="#interface">Interfaces</a></li>""",
+                    <li id="contents-interface"><a href="#interface">Interfaces</a></li>
+                    <li id="contents-preview-api-notes"><a href="#preview-api-notes">Permanent APIs affected by Preview Features</a></li>""",
                 """
-                    <div class="caption"><span>Elements containing Preview Notes</span></div>""",
+                    <div class="caption"><span>Permanent APIs affected by Preview Features</span></div>""",
                 """
                     <div class="col-summary-item-name even-row-color preview-api-notes preview-api-notes-tab1\
                     "><a href="p/NonPrevieFeature.html" title="interface in p">p.NonPrevieFeature</a></div>

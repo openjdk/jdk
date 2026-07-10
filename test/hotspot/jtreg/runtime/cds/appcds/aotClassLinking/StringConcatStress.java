@@ -34,8 +34,6 @@
 /*
  * @test id=aot
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib
  * @build StringConcatStress
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar StringConcatStressApp

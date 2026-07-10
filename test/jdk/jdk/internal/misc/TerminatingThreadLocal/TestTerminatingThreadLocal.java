@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,19 @@
 
 import jdk.internal.misc.TerminatingThreadLocal;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
+
+import jdk.test.lib.thread.VThreadScheduler;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -41,9 +43,10 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @bug 8202788 8291897
+ * @bug 8202788 8291897 8357637
  * @summary TerminatingThreadLocal unit test
  * @modules java.base/java.lang:+open java.base/jdk.internal.misc
+ * @library /test/lib
  * @requires vm.continuations
  * @run testng/othervm TestTerminatingThreadLocal
  */
@@ -137,7 +140,7 @@ public class TestTerminatingThreadLocal {
             // capture carrier Thread
             carrier = pool.submit(Thread::currentThread).get();
 
-            ThreadFactory factory = virtualThreadBuilder(pool)
+            ThreadFactory factory = VThreadScheduler.virtualThreadBuilder(pool)
                     .name("ttl-test-virtual-", 0)
                     .factory();
             try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
@@ -155,22 +158,49 @@ public class TestTerminatingThreadLocal {
     }
 
     /**
-     * Returns a builder to create virtual threads that use the given scheduler.
+     * Test TerminatingThreadLocal when thread locals are "cleared" by null'ing the
+     * threadLocal field of the current Thread.
      */
-    static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
-        try {
-            Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
-            Constructor<?> ctor = clazz.getDeclaredConstructor(Executor.class);
-            ctor.setAccessible(true);
-            return (Thread.Builder.OfVirtual) ctor.newInstance(scheduler);
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException re) {
-                throw re;
+    @Test
+    public void testClearingThreadLocals() throws Throwable {
+        var terminatedValues = new CopyOnWriteArrayList<Object>();
+
+        var tl = new ThreadLocal<String>();
+        var ttl = new TerminatingThreadLocal<String>() {
+            @Override
+            protected void threadTerminated(String value) {
+                terminatedValues.add(value);
             }
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        };
+        var throwableRef = new AtomicReference<Throwable>();
+
+        String tlValue = "abc";
+        String ttlValue = "xyz";
+
+        Thread thread = Thread.ofPlatform().start(() -> {
+            try {
+                tl.set(tlValue);
+                ttl.set(ttlValue);
+
+                assertEquals(tl.get(), tlValue);
+                assertEquals(ttl.get(), ttlValue);
+
+                // set Thread.threadLocals to null
+                Field f = Thread.class.getDeclaredField("threadLocals");
+                f.setAccessible(true);
+                f.set(Thread.currentThread(), null);
+
+                assertNull(tl.get());
+                assertEquals(ttl.get(), ttlValue);
+            } catch (Throwable t) {
+                throwableRef.set(t);
+            }
+        });
+        thread.join();
+        if (throwableRef.get() instanceof Throwable t) {
+            throw t;
         }
+
+        assertEquals(terminatedValues, List.of(ttlValue));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,9 @@
 package test.java.time.format;
 
 import static java.time.temporal.ChronoField.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.ParsePosition;
 import java.time.DateTimeException;
@@ -71,8 +72,12 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import test.java.time.temporal.MockFieldValue;
 
 /**
@@ -80,7 +85,7 @@ import test.java.time.temporal.MockFieldValue;
  *
  * @bug 8230136 8276220
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestFractionPrinterParser extends AbstractTestPrinterParser {
 
     private DateTimeFormatter getFormatter(TemporalField field, int minWidth, int maxWidth, boolean decimalPoint) {
@@ -90,12 +95,11 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
     //-----------------------------------------------------------------------
     // print
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test
     public void test_print_emptyCalendrical() throws Exception {
-        getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(EMPTY_DTA, buf);
+        Assertions.assertThrows(DateTimeException.class, () -> getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(EMPTY_DTA, buf));
     }
 
-    @DataProvider(name="OOB_Nanos")
     Object[][] provider_oob_nanos() {
         return new Object[][]{
             {-1},
@@ -108,12 +112,12 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider="OOB_Nanos", expectedExceptions=DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("provider_oob_nanos")
     public void test_print_oob_nanos(long value) throws Exception {
-        getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(new MockFieldValue(NANO_OF_SECOND, value), buf);
+        Assertions.assertThrows(DateTimeException.class, () -> getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(new MockFieldValue(NANO_OF_SECOND, value), buf));
     }
 
-    @DataProvider(name="OOB_Micros")
     Object[][] provider_oob_micros() {
         return new Object[][]{
                 {-1},
@@ -126,25 +130,27 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider="OOB_Micros", expectedExceptions=DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("provider_oob_micros")
     public void test_print_oob_micros(long value) throws Exception {
-        getFormatter(MICRO_OF_SECOND, 0, 9, true).formatTo(new MockFieldValue(MICRO_OF_SECOND, value), buf);
+        Assertions.assertThrows(DateTimeException.class, () -> getFormatter(MICRO_OF_SECOND, 0, 9, true).formatTo(new MockFieldValue(MICRO_OF_SECOND, value), buf));
     }
 
+    @Test
     public void test_print_append() throws Exception {
         buf.append("EXISTING");
         getFormatter(NANO_OF_SECOND, 0, 9, true).formatTo(LocalTime.of(12, 30, 40, 3), buf);
-        assertEquals(buf.toString(), "EXISTING.000000003");
+        assertEquals("EXISTING.000000003", buf.toString());
     }
 
+    @Test
     public void test_print_append_micros() throws Exception {
         buf.append("EXISTING");
         getFormatter(MICRO_OF_SECOND, 0, 6, true).formatTo(LocalTime.of(12, 30, 40, 3000), buf);
-        assertEquals(buf.toString(), "EXISTING.000003");
+        assertEquals("EXISTING.000003", buf.toString());
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="Nanos")
     Object[][] provider_nanos() {
         return new Object[][] {
             {0, 9, 0,           ""},
@@ -266,26 +272,27 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
        };
     }
 
-    @Test(dataProvider="Nanos")
+    @ParameterizedTest
+    @MethodSource("provider_nanos")
     public void test_print_nanos(int minWidth, int maxWidth, int value, String result) throws Exception {
         getFormatter(NANO_OF_SECOND,  minWidth, maxWidth, true).formatTo(new MockFieldValue(NANO_OF_SECOND, value), buf);
         if (result == null) {
             fail("Expected exception");
         }
-        assertEquals(buf.toString(), result);
+        assertEquals(result, buf.toString());
     }
 
-    @Test(dataProvider="Nanos")
+    @ParameterizedTest
+    @MethodSource("provider_nanos")
     public void test_print_nanos_noDecimalPoint(int minWidth, int maxWidth, int value, String result) throws Exception {
         getFormatter(NANO_OF_SECOND,  minWidth, maxWidth, false).formatTo(new MockFieldValue(NANO_OF_SECOND, value), buf);
         if (result == null) {
             fail("Expected exception");
         }
-        assertEquals(buf.toString(), (result.startsWith(".") ? result.substring(1) : result));
+        assertEquals((result.startsWith(".") ? result.substring(1) : result), buf.toString());
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="Micros")
     Object[][] provider_micros() {
         return new Object[][] {
                 {0, 6, 0,           ""},
@@ -342,26 +349,27 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider="Micros")
+    @ParameterizedTest
+    @MethodSource("provider_micros")
     public void test_print_micros(int minWidth, int maxWidth, int value, String result) throws Exception {
         getFormatter(MICRO_OF_SECOND,  minWidth, maxWidth, true).formatTo(new MockFieldValue(MICRO_OF_SECOND, value), buf);
         if (result == null) {
             fail("Expected exception");
         }
-        assertEquals(buf.toString(), result);
+        assertEquals(result, buf.toString());
     }
 
-    @Test(dataProvider="Micros")
+    @ParameterizedTest
+    @MethodSource("provider_micros")
     public void test_print_micros_noDecimalPoint(int minWidth, int maxWidth, int value, String result) throws Exception {
         getFormatter(MICRO_OF_SECOND,  minWidth, maxWidth, false).formatTo(new MockFieldValue(MICRO_OF_SECOND, value), buf);
         if (result == null) {
             fail("Expected exception");
         }
-        assertEquals(buf.toString(), (result.startsWith(".") ? result.substring(1) : result));
+        assertEquals((result.startsWith(".") ? result.substring(1) : result), buf.toString());
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="Seconds")
     Object[][] provider_seconds() {
         return new Object[][] {
             {0, 9, 0,  ""},
@@ -384,51 +392,56 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider="Seconds")
+    @ParameterizedTest
+    @MethodSource("provider_seconds")
     public void test_print_seconds(int minWidth, int maxWidth, int value, String result) throws Exception {
         getFormatter(SECOND_OF_MINUTE, minWidth, maxWidth, true).formatTo(new MockFieldValue(SECOND_OF_MINUTE, value), buf);
         if (result == null) {
             fail("Expected exception");
         }
-        assertEquals(buf.toString(), result);
+        assertEquals(result, buf.toString());
     }
 
-    @Test(dataProvider="Seconds")
+    @ParameterizedTest
+    @MethodSource("provider_seconds")
     public void test_print_seconds_noDecimalPoint(int minWidth, int maxWidth, int value, String result) throws Exception {
         getFormatter(SECOND_OF_MINUTE, minWidth, maxWidth, false).formatTo(new MockFieldValue(SECOND_OF_MINUTE, value), buf);
         if (result == null) {
             fail("Expected exception");
         }
-        assertEquals(buf.toString(), (result.startsWith(".") ? result.substring(1) : result));
+        assertEquals((result.startsWith(".") ? result.substring(1) : result), buf.toString());
     }
 
     //-----------------------------------------------------------------------
     // parse
     //-----------------------------------------------------------------------
-    @Test(dataProvider="Nanos")
+    @ParameterizedTest
+    @MethodSource("provider_nanos")
     public void test_reverseParse(int minWidth, int maxWidth, int value, String result) throws Exception {
         ParsePosition pos = new ParsePosition(0);
         int expectedValue = fixParsedValue(maxWidth, value);
         TemporalAccessor parsed = getFormatter(NANO_OF_SECOND, minWidth, maxWidth, true).parseUnresolved(result, pos);
-        assertEquals(pos.getIndex(), result.length());
+        assertEquals(result.length(), pos.getIndex());
         assertParsed(parsed, NANO_OF_SECOND, value == 0 && minWidth == 0 ? null : (long) expectedValue);
     }
 
-    @Test(dataProvider="Nanos")
+    @ParameterizedTest
+    @MethodSource("provider_nanos")
     public void test_reverseParse_noDecimalPoint(int minWidth, int maxWidth, int value, String result) throws Exception {
         ParsePosition pos = new ParsePosition((result.startsWith(".") ? 1 : 0));
         TemporalAccessor parsed = getFormatter(NANO_OF_SECOND, minWidth, maxWidth, false).parseUnresolved(result, pos);
-        assertEquals(pos.getIndex(), result.length());
+        assertEquals(result.length(), pos.getIndex());
         int expectedValue = fixParsedValue(maxWidth, value);
         assertParsed(parsed, NANO_OF_SECOND, value == 0 && minWidth == 0 ? null : (long) expectedValue);
     }
 
-    @Test(dataProvider="Nanos")
+    @ParameterizedTest
+    @MethodSource("provider_nanos")
     public void test_reverseParse_followedByNonDigit(int minWidth, int maxWidth, int value, String result) throws Exception {
         ParsePosition pos = new ParsePosition(0);
         int expectedValue = fixParsedValue(maxWidth, value);
         TemporalAccessor parsed = getFormatter(NANO_OF_SECOND, minWidth, maxWidth, true).parseUnresolved(result + " ", pos);
-        assertEquals(pos.getIndex(), result.length());
+        assertEquals(result.length(), pos.getIndex());
         assertParsed(parsed, NANO_OF_SECOND, value == 0 && minWidth == 0 ? null : (long) expectedValue);
     }
 
@@ -441,12 +454,13 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
 //        assertParsed(parseContext, NANO_OF_SECOND, value == 0 && minWidth == 0 ? null : (long) expectedValue);
 //    }
 
-    @Test(dataProvider="Nanos")
+    @ParameterizedTest
+    @MethodSource("provider_nanos")
     public void test_reverseParse_preceededByNonDigit(int minWidth, int maxWidth, int value, String result) throws Exception {
         ParsePosition pos = new ParsePosition(1);
         int expectedValue = fixParsedValue(maxWidth, value);
         TemporalAccessor parsed = getFormatter(NANO_OF_SECOND, minWidth, maxWidth, true).parseUnresolved(" " + result, pos);
-        assertEquals(pos.getIndex(), result.length() + 1);
+        assertEquals(result.length() + 1, pos.getIndex());
         assertParsed(parsed, NANO_OF_SECOND, value == 0 && minWidth == 0 ? null : (long) expectedValue);
     }
 
@@ -458,25 +472,25 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
         return value;
     }
 
-    @Test(dataProvider="Seconds")
+    @ParameterizedTest
+    @MethodSource("provider_seconds")
     public void test_reverseParse_seconds(int minWidth, int maxWidth, int value, String result) throws Exception {
         ParsePosition pos = new ParsePosition(0);
         TemporalAccessor parsed = getFormatter(SECOND_OF_MINUTE, minWidth, maxWidth, true).parseUnresolved(result, pos);
-        assertEquals(pos.getIndex(), result.length());
+        assertEquals(result.length(), pos.getIndex());
         assertParsed(parsed, SECOND_OF_MINUTE, value == 0 && minWidth == 0 ? null : (long) value);
     }
 
     private void assertParsed(TemporalAccessor parsed, TemporalField field, Long value) {
         if (value == null) {
-            assertEquals(parsed.isSupported(field), false);
+            assertEquals(false, parsed.isSupported(field));
         } else {
-            assertEquals(parsed.isSupported(field), true);
-            assertEquals(parsed.getLong(field), (long) value);
+            assertEquals(true, parsed.isSupported(field));
+            assertEquals((long) value, parsed.getLong(field));
         }
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="ParseNothing")
     Object[][] provider_parseNothing() {
         return new Object[][] {
             {NANO_OF_SECOND, 3, 6, true, "", 0, 0},
@@ -489,15 +503,15 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider = "ParseNothing")
+    @ParameterizedTest
+    @MethodSource("provider_parseNothing")
     public void test_parse_nothing(TemporalField field, int min, int max, boolean decimalPoint, String text, int pos, int expected) {
         ParsePosition ppos = new ParsePosition(pos);
         TemporalAccessor parsed = getFormatter(field, min, max, decimalPoint).parseUnresolved(text, ppos);
-        assertEquals(ppos.getErrorIndex(), expected);
-        assertEquals(parsed, null);
+        assertEquals(expected, ppos.getErrorIndex());
+        assertEquals(null, parsed);
     }
 
-    @DataProvider(name="ParseMinWidth")
     Object[][] provider_parseMinWidth() {
         return new Object[][] {
             {MILLI_OF_SECOND, 3, 3, true, ".1x"},
@@ -506,22 +520,26 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider="ParseMinWidth", expectedExceptions=DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("provider_parseMinWidth")
     public void test_parse_minWidth(TemporalField field, int min, int max, boolean decimalPoint, String text) throws Exception {
-        builder
-            .appendFraction(field, min, max, decimalPoint)
-            .appendLiteral("x")
-            .toFormatter(locale)
-            .parse(text);
+        Assertions
+            .assertThrows(DateTimeException.class, () -> builder
+                    .appendFraction(field, min, max, decimalPoint)
+                    .appendLiteral("x")
+                    .toFormatter(locale)
+                    .parse(text));
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_toString() throws Exception {
-        assertEquals(getFormatter(NANO_OF_SECOND, 3, 6, true).toString(), "Fraction(NanoOfSecond,3,6,DecimalPoint)");
+        assertEquals("Fraction(NanoOfSecond,3,6,DecimalPoint)", getFormatter(NANO_OF_SECOND, 3, 6, true).toString());
     }
 
+    @Test
     public void test_toString_noDecimalPoint() throws Exception {
-        assertEquals(getFormatter(NANO_OF_SECOND, 3, 6, false).toString(), "Fraction(NanoOfSecond,3,6)");
+        assertEquals("Fraction(NanoOfSecond,3,6)", getFormatter(NANO_OF_SECOND, 3, 6, false).toString());
     }
 
 }

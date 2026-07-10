@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,9 @@ package sun.nio.cs;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.Arrays;
-import sun.nio.cs.DoubleByte;
-import sun.nio.cs.Surrogate;
+
 import static sun.nio.cs.CharsetMapping.*;
 
 public class HKSCS {
@@ -355,43 +352,9 @@ public class HKSCS {
                 return encodeBufferLoop(src, dst);
         }
 
-        @SuppressWarnings("this-escape")
-        private byte[] repl = replacement();
-        protected void implReplaceWith(byte[] newReplacement) {
-            repl = newReplacement;
-        }
-
-        public int encode(char[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
+        @Override
+        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst, int dp) {
             int sl = sp + len;
-            while (sp < sl) {
-                char c = src[sp++];
-                int bb = encodeChar(c);
-                if (bb == UNMAPPABLE_ENCODING) {
-                    if (!Character.isHighSurrogate(c) || sp == sl ||
-                        !Character.isLowSurrogate(src[sp]) ||
-                        (bb = encodeSupp(Character.toCodePoint(c, src[sp++])))
-                        == UNMAPPABLE_ENCODING) {
-                        dst[dp++] = repl[0];
-                        if (repl.length > 1)
-                            dst[dp++] = repl[1];
-                        continue;
-                    }
-                }
-                if (bb > MAX_SINGLEBYTE) {        // DoubleByte
-                    dst[dp++] = (byte)(bb >> 8);
-                    dst[dp++] = (byte)bb;
-                } else {                          // SingleByte
-                    dst[dp++] = (byte)bb;
-                }
-            }
-            return dp;
-        }
-
-        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
-            int sl = sp + len;
-            int dl = dst.length;
             while (sp < sl) {
                 char c = StringUTF16.getChar(src, sp++);
                 int bb = encodeChar(c);

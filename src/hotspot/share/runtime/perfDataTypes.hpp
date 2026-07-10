@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,11 @@
 // To reduce HotSpot build time, if you just need to declare a pointer to the
 // following types, include this file instead of perfData.hpp.
 
-class PerfLongSampleHelper;
 class PerfLongConstant;
 class PerfLongCounter;
 class PerfLongVariable;
 class PerfStringVariable;
 
-typedef PerfLongSampleHelper PerfSampleHelper;
 typedef PerfLongConstant PerfConstant;
 typedef PerfLongCounter PerfCounter;
 typedef PerfLongVariable PerfVariable;

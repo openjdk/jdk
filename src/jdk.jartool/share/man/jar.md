@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -84,34 +84,38 @@ appropriate operation arguments described in this section. You can mix an
 operation argument with other one-letter options. Generally the operation
 argument is the first argument specified on the command line.
 
-`-c` or `--create`
+[`-c`]{#option--create} or `--create`
 :   Creates the archive.
 
-`-i` *FILE* or `--generate-index=`*FILE*
+[`-i`]{#option--generate-index} *FILE* or `--generate-index=`*FILE*
 :   Generates index information for the specified JAR file.  This option is deprecated
     and may be removed in a future release.
 
-`-t` or `--list`
+[`-t`]{#option--list} or `--list`
 :   Lists the table of contents for the archive.
 
-`-u` or `--update`
+[`-u`]{#option--update} or `--update`
 :   Updates an existing JAR file.
 
-`-x` or `--extract`
+[`-x`]{#option--extract} or `--extract`
 :   Extracts the named (or all) files from the archive.
     If a file with the same name appears more than once in
     the archive, each copy will be extracted, with later copies
     overwriting (replacing) earlier copies unless -k is specified.
 
-`-d` or `--describe-module`
+[`-d`]{#option--describe-module} or `--describe-module`
 :   Prints the module descriptor or automatic module name.
+
+[`--validate`]{#option--validate}
+:   Validate the contents of the JAR file.
+    See `Integrity of a JAR File` section below for more details.
 
 ## Operation Modifiers Valid in Any Mode
 
 You can use the following options to customize the actions of any operation
 mode included in the `jar` command.
 
-`-C` *DIR*
+[`-C`]{#option-C} *DIR*
 :   When used with the create operation mode, changes the specified directory
     and includes the *files* specified at the end of the command line.
 
@@ -122,10 +126,10 @@ mode included in the `jar` command.
     where the JAR file will be extracted. Unlike with the create operation mode,
     this option can be specified only once with the extract operation mode.
 
-`-f` *FILE* or `--file=`*FILE*
+[`-f`]{#option--file} *FILE* or `--file=`*FILE*
 :   Specifies the archive file name.
 
-`--release` *VERSION*
+[`--release`]{#option--release} *VERSION*
 :   Creates a multirelease JAR file. Places all files specified after the
     option into a versioned directory of the JAR file named
     `META-INF/versions/`*VERSION*`/`, where *VERSION* must be must be a
@@ -145,26 +149,26 @@ mode included in the `jar` command.
 You can use the following options to customize the actions of the create and
 the update main operation modes:
 
-`-e` *CLASSNAME* or `--main-class=`*CLASSNAME*
+[`-e`]{#option--main-class} *CLASSNAME* or `--main-class=`*CLASSNAME*
 :   Specifies the application entry point for standalone applications bundled
     into a modular or executable modular JAR file.
 
-`-m` *FILE* or `--manifest=`*FILE*
+[`-m`]{#option--manifest} *FILE* or `--manifest=`*FILE*
 :   Includes the manifest information from the given manifest file.
 
-`-M` or `--no-manifest`
+[`-M`]{#option--no-manifest} or `--no-manifest`
 :   Doesn't create a manifest file for the entries.
 
-`--module-version=`*VERSION*
+[`--module-version=`]{#option--module-version}*VERSION*
 :   Specifies the module version, when creating or updating a modular JAR file,
     or updating a non-modular JAR file.
 
-`--hash-modules=`*PATTERN*
+[`--hash-modules=`]{#option--hash-modules}*PATTERN*
 :   Computes and records the hashes of modules matched by the given pattern and
     that depend upon directly or indirectly on a modular JAR file being created
     or a non-modular JAR file being updated.
 
-`-p` or `--module-path`
+[`-p`]{#option--module-path} or `--module-path`
 :   Specifies the location of module dependence for generating the hash.
 
 `@`*file*
@@ -177,20 +181,20 @@ You can use the following options to customize the actions of the create (`-c`
 or `--create`) the update (`-u` or `--update` ) and the generate-index (`-i` or
 `--generate-index=`*FILE*) main operation modes:
 
-`-0` or `--no-compress`
+[`-0`]{#option--no-compress} or `--no-compress`
 :   Stores without using ZIP compression.
 
-`--date=`*TIMESTAMP*
+[`--date=`]{#option--date}*TIMESTAMP*
 :   The timestamp in ISO-8601 extended offset date-time with optional time-zone
     format, to use for the timestamp of the entries,
     e.g. "2022-02-12T12:30:00-05:00".
 
 ## Operation Modifiers Valid Only in Extract Mode
 
-`--dir` *DIR*
+[`--dir`]{#option--dir} *DIR*
 :   Directory into which the JAR file will be extracted.
 
-`-k` or `--keep-old-files`
+[`-k`]{#option--keep-old-files} or `--keep-old-files`
 :   Do not overwrite existing files.
     If a Jar file entry with the same name exists in the target directory, the
     existing file will not be overwritten.
@@ -212,6 +216,27 @@ operation modes:
 
 `--version`
 :   Prints the program version.
+
+## Integrity of a JAR File
+As a JAR file is based on ZIP format, it is possible to create a JAR file using tools
+other than the `jar` command. The --validate option may be used to perform the following
+integrity checks against a JAR file:
+
+- That there are no duplicate Zip entry file names
+- Verify that the Zip entry file name:
+    - is not an absolute path
+    - the file name is not '.' or '..'
+    - does not contain a backslash, '\\'
+    - does not contain a drive letter
+    - path element does not include '.' or '..
+- The API exported by a multi-release jar archive is consistent across all different release
+  versions.
+
+The jar tool exits with a status of 0 if there were no integrity issues encountered and >0 if an
+error/warning occurred.
+
+When an integrity issue is reported, it will often require that the JAR file is re-created by the
+original source of the JAR file.
 
 ## Examples of jar Command Syntax
 

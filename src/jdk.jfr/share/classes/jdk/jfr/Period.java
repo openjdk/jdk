@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public @interface Period {
     /**
      * Returns the default setting value for a periodic setting.
      * <p>
-     * String representation of a positive {@code Long} value followed by an empty
+     * String representation of a positive {@code long} value followed by an empty
      * space and one of the following units:<br>
      * <br>
      * {@code "ns"} (nanoseconds)<br>
@@ -71,7 +71,7 @@ public @interface Period {
      * least once for every recording file. The number of events that are emitted
      * depends on how many times the file rotations occur when data is recorded.
      *
-     * @return the default setting value, not {@code null}
+     * @return the default setting value, default {@code "everyChunk"}
      */
     String value() default "everyChunk";
 }

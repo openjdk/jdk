@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 
 package test.java.time.format;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
 import java.time.chrono.ChronoLocalDate;
@@ -51,9 +51,11 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
 import java.util.Locale;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test DateTimeFormatter with non-ISO chronology.
@@ -61,7 +63,7 @@ import org.testng.annotations.Test;
  * Strings in test data are all dependent on CLDR data which may change
  * in future CLDR releases.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestNonIsoFormatter {
     private static final Chronology ISO8601 = IsoChronology.INSTANCE;
     private static final Chronology JAPANESE = JapaneseChronology.INSTANCE;
@@ -76,11 +78,10 @@ public class TestNonIsoFormatter {
     private static final Locale thTHTH = Locale.forLanguageTag("th-TH-u-nu-thai");
     private static final Locale jaJPJP = Locale.forLanguageTag("ja-JP-u-ca-japanese");
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
     }
 
-    @DataProvider(name="format_data")
     Object[][] formatData() {
         return new Object[][] {
             // Chronology, Format Locale, Numbering Locale, ChronoLocalDate, expected string
@@ -102,7 +103,6 @@ public class TestNonIsoFormatter {
         };
     }
 
-    @DataProvider(name="invalid_text")
     Object[][] invalidText() {
         return new Object[][] {
             // TODO: currently fixed Chronology and Locale.
@@ -113,7 +113,6 @@ public class TestNonIsoFormatter {
         };
     }
 
-    @DataProvider(name="chrono_names")
     Object[][] chronoNamesData() {
         return new Object[][] {
             // Chronology, Locale, Chronology Name
@@ -137,7 +136,6 @@ public class TestNonIsoFormatter {
         };
     }
 
-    @DataProvider(name="lenient_eraYear")
     Object[][] lenientEraYear() {
         return new Object[][] {
             // Chronology, lenient era/year, strict era/year
@@ -147,17 +145,19 @@ public class TestNonIsoFormatter {
         };
     }
 
-    @Test(dataProvider="format_data")
+    @ParameterizedTest
+    @MethodSource("formatData")
     public void test_formatLocalizedDate(Chronology chrono, Locale formatLocale, Locale numberingLocale,
                                          ChronoLocalDate date, String expected) {
         DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
             .withChronology(chrono).withLocale(formatLocale)
             .withDecimalStyle(DecimalStyle.of(numberingLocale));
         String text = dtf.format(date);
-        assertEquals(text, expected);
+        assertEquals(expected, text);
     }
 
-    @Test(dataProvider="format_data")
+    @ParameterizedTest
+    @MethodSource("formatData")
     public void test_parseLocalizedText(Chronology chrono, Locale formatLocale, Locale numberingLocale,
                                         ChronoLocalDate expected, String text) {
         DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
@@ -165,28 +165,33 @@ public class TestNonIsoFormatter {
             .withDecimalStyle(DecimalStyle.of(numberingLocale));
         TemporalAccessor temporal = dtf.parse(text);
         ChronoLocalDate date = chrono.date(temporal);
-        assertEquals(date, expected);
+        assertEquals(expected, date);
     }
 
-    @Test(dataProvider="invalid_text", expectedExceptions=DateTimeParseException.class)
+    @ParameterizedTest
+    @MethodSource("invalidText")
     public void test_parseInvalidText(String text) {
-        DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
-            .withChronology(JAPANESE).withLocale(Locale.JAPANESE);
-        dtf.parse(text);
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
+                    .withChronology(JAPANESE).withLocale(Locale.JAPANESE);
+            dtf.parse(text);
+        });
     }
 
-    @Test(dataProvider="chrono_names")
+    @ParameterizedTest
+    @MethodSource("chronoNamesData")
     public void test_chronoNames(Chronology chrono, Locale locale, String expected) {
         DateTimeFormatter dtf = new DateTimeFormatterBuilder().appendChronologyText(TextStyle.SHORT)
             .toFormatter(locale);
         String text = dtf.format(chrono.dateNow());
-        assertEquals(text, expected);
+        assertEquals(expected, text);
         TemporalAccessor ta = dtf.parse(text);
         Chronology cal = ta.query(TemporalQueries.chronology());
-        assertEquals(cal, chrono);
+        assertEquals(chrono, cal);
     }
 
-    @Test(dataProvider="lenient_eraYear")
+    @ParameterizedTest
+    @MethodSource("lenientEraYear")
     public void test_lenientEraYear(Chronology chrono, String lenient, String strict) {
         String mdStr = "-01-01";
         DateTimeFormatter dtf = new DateTimeFormatterBuilder()
@@ -194,6 +199,6 @@ public class TestNonIsoFormatter {
             .toFormatter(Locale.ROOT)
             .withChronology(chrono);
         DateTimeFormatter dtfLenient = dtf.withResolverStyle(ResolverStyle.LENIENT);
-        assertEquals(LocalDate.parse(lenient+mdStr, dtfLenient), LocalDate.parse(strict+mdStr, dtf));
+        assertEquals(LocalDate.parse(strict+mdStr, dtf), LocalDate.parse(lenient+mdStr, dtfLenient));
     }
 }

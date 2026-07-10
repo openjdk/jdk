@@ -213,6 +213,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "adfiles", get_basename(AD._VM_file._name));
   AD.addInclude(AD._CPP_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_file, "memory/allocation.inline.hpp");
+  AD.addInclude(AD._CPP_file, "code/aotCodeCache.hpp");
   AD.addInclude(AD._CPP_file, "code/codeCache.hpp");
   AD.addInclude(AD._CPP_file, "code/compiledIC.hpp");
   AD.addInclude(AD._CPP_file, "code/nativeInst.hpp");
@@ -257,6 +258,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_PEEPHOLE_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_PIPELINE_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._DFA_file, "adfiles", get_basename(AD._HPP_file._name));
+  AD.addInclude(AD._DFA_file, "code/aotCodeCache.hpp");
   AD.addInclude(AD._DFA_file, "oops/compressedOops.hpp");
   AD.addInclude(AD._DFA_file, "opto/cfgnode.hpp");  // Use PROB_MAX in predicate.
   AD.addInclude(AD._DFA_file, "opto/intrinsicnode.hpp");
@@ -480,8 +482,4 @@ int get_legal_text(FileBuff &fbuf, char **legal_text)
   }
   *legal_text = legal_start;
   return (int) (legal_end - legal_start);
-}
-
-void *operator new( size_t size, int, const char *, int ) throw() {
-  return ::operator new( size );
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  *          read the request body and sends back a reply with no content, or when
  *          the client closes its outputstream while the server tries to drains
  *          its content.
- * @run testng/othervm InputNotRead
- * @run testng/othervm -Djava.net.preferIPv6Addresses=true InputNotRead
+ * @run junit/othervm InputNotRead
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=true InputNotRead
  */
 
 import java.io.BufferedReader;
@@ -51,9 +51,11 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import org.testng.annotations.Test;
 
 import static java.nio.charset.StandardCharsets.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
+
+import org.junit.jupiter.api.Test;
 
 public class InputNotRead {
 
@@ -91,7 +93,8 @@ public class InputNotRead {
                     try {
                         msg.getRequestBody().read();
                         try {
-                            msg.sendResponseHeaders(msgCode, reply.length == 0 ? -1 : reply.length);
+                            msg.sendResponseHeaders(msgCode, reply.length == 0
+                                                        ? RSPBODY_EMPTY : reply.length);
                         } catch(IOException ioe) {
                             ioe.printStackTrace();
                         }
@@ -132,7 +135,8 @@ public class InputNotRead {
                         BufferedReader r = new BufferedReader(new InputStreamReader(msg.getRequestBody()));
                         r.read();
                         try {
-                            msg.sendResponseHeaders(msgCode, reply.length == 0 ? -1 : reply.length);
+                            msg.sendResponseHeaders(msgCode, reply.length == 0
+                                                        ? RSPBODY_EMPTY : reply.length);
                             msg.getResponseBody().write(reply);
                             msg.getResponseBody().close();
                             Thread.sleep(50);

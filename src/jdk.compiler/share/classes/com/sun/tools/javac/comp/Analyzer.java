@@ -240,7 +240,7 @@ public class Analyzer {
 
         @Override
         List<JCNewClass> rewrite(JCNewClass oldTree) {
-            if (oldTree.clazz.hasTag(TYPEAPPLY)) {
+            if (oldTree.clazz.hasTag(TYPEAPPLY) && !oldTree.type.isErroneous()) {
                 JCNewClass nc = copier.copy(oldTree);
                 ((JCTypeApply)nc.clazz).arguments = List.nil();
                 return List.of(nc);
@@ -365,16 +365,11 @@ public class Analyzer {
             super(AnalyzerMode.LOCAL, tag);
         }
 
-        boolean isImplicitlyTyped(JCVariableDecl decl) {
-            return decl.vartype.pos == Position.NOPOS;
-        }
-
         /**
          * Map a variable tree into a new declaration using implicit type.
          */
         JCVariableDecl rewriteVarType(JCVariableDecl oldTree) {
             JCVariableDecl newTree = copier.copy(oldTree);
-            newTree.vartype = null;
             return newTree;
         }
 
@@ -401,7 +396,7 @@ public class Analyzer {
 
         boolean match(JCVariableDecl tree){
             return tree.sym.owner.kind == Kind.MTH &&
-                    tree.init != null && !isImplicitlyTyped(tree) &&
+                    tree.init != null && !tree.declaredUsingVar() &&
                     attr.canInferLocalVarType(tree) == null;
         }
         @Override
@@ -425,7 +420,7 @@ public class Analyzer {
 
         @Override
         boolean match(JCEnhancedForLoop tree){
-            return !isImplicitlyTyped(tree.var);
+            return !tree.var.declaredUsingVar();
         }
         @Override
         List<JCEnhancedForLoop> rewrite(JCEnhancedForLoop oldTree) {
@@ -755,7 +750,6 @@ public class Analyzer {
             if (oldLambda.paramKind == ParameterKind.IMPLICIT) {
                 //reset implicit lambda parameters (whose type might have been set during attr)
                 newLambda.paramKind = ParameterKind.IMPLICIT;
-                newLambda.params.forEach(p -> p.vartype = null);
             }
             return newLambda;
         }

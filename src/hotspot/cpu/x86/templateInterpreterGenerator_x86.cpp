@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@
 // if too small.
 // Run with +PrintInterpreter to get the VM to print out the size.
 // Max size with JVMTI
-int TemplateInterpreter::InterpreterCodeSize = JVMCI_ONLY(268) NOT_JVMCI(256) * 1024;
+int TemplateInterpreter::InterpreterCodeSize = 256 * 1024;
 
 // Global Register Names
 static const Register rbcp     = r13;
@@ -224,32 +224,6 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   __ restore_bcp();
   __ restore_locals();
   const Register thread = r15_thread;
-#if INCLUDE_JVMCI
-  // Check if we need to take lock at entry of synchronized method.  This can
-  // only occur on method entry so emit it only for vtos with step 0.
-  if (EnableJVMCI && state == vtos && step == 0) {
-    Label L;
-    __ cmpb(Address(thread, JavaThread::pending_monitorenter_offset()), 0);
-    __ jcc(Assembler::zero, L);
-    // Clear flag.
-    __ movb(Address(thread, JavaThread::pending_monitorenter_offset()), 0);
-    // Satisfy calling convention for lock_method().
-    __ get_method(rbx);
-    // Take lock.
-    lock_method();
-    __ bind(L);
-  } else {
-#ifdef ASSERT
-    if (EnableJVMCI) {
-      Label L;
-      __ cmpb(Address(r15_thread, JavaThread::pending_monitorenter_offset()), 0);
-      __ jcc(Assembler::zero, L);
-      __ stop("unexpected pending monitor in deopt entry");
-      __ bind(L);
-    }
-#endif
-  }
-#endif
   // handle exceptions
   {
     Label L;
@@ -1017,21 +991,16 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // change thread state
   __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_Java);
 
-  if (LockingMode != LM_LEGACY) {
-    // Check preemption for Object.wait()
-    Label not_preempted;
-    __ movptr(rscratch1, Address(r15_thread, JavaThread::preempt_alternate_return_offset()));
-    __ cmpptr(rscratch1, NULL_WORD);
-    __ jccb(Assembler::equal, not_preempted);
-    __ movptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
-    __ jmp(rscratch1);
-    __ bind(native_return);
-    __ restore_after_resume(true /* is_native */);
-    __ bind(not_preempted);
-  } else {
-    // any pc will do so just use this one for LM_LEGACY to keep code together.
-    __ bind(native_return);
-  }
+  // Check preemption for Object.wait()
+  Label not_preempted;
+  __ movptr(rscratch1, Address(r15_thread, JavaThread::preempt_alternate_return_offset()));
+  __ cmpptr(rscratch1, NULL_WORD);
+  __ jccb(Assembler::equal, not_preempted);
+  __ movptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
+  __ jmp(rscratch1);
+  __ bind(native_return);
+  __ restore_after_resume(true /* is_native */);
+  __ bind(not_preempted);
 
   // reset_last_Java_frame
   __ reset_last_Java_frame(true);
@@ -1147,6 +1116,30 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bind(L);
   }
 
+#if INCLUDE_JFR
+  __ enter_jfr_critical_section();
+
+  // This poll test is to uphold the invariant that a JFR sampled frame
+  // must not return to its caller without a prior safepoint poll check.
+  // The earlier poll check in this routine is insufficient for this purpose
+  // because the thread has transitioned back to Java.
+
+  Label slow_path;
+  Label fast_path;
+  __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
+  __ jmp(fast_path);
+  __ bind(slow_path);
+  __ push(dtos);
+  __ push(ltos);
+  __ set_last_Java_frame(noreg, rbp, (address)__ pc(), rscratch1);
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), r15_thread);
+  __ reset_last_Java_frame(true);
+  __ pop(ltos);
+  __ pop(dtos);
+  __ bind(fast_path);
+
+#endif // INCLUDE_JFR
+
   // jvmti support
   // Note: This must happen _after_ handling/throwing any exceptions since
   //       the exception handler code notifies the runtime of method exits
@@ -1169,8 +1162,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                        frame::interpreter_frame_sender_sp_offset *
                        wordSize)); // get sender sp
   __ leave();                                // remove frame anchor
+
+  JFR_ONLY(__ leave_jfr_critical_section();)
+
   __ pop(rdi);                               // get return address
   __ mov(rsp, t);                            // set sp to sender sp
+
   __ jmp(rdi);
 
   if (inc_counter) {
@@ -1413,6 +1410,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   Interpreter::_remove_activation_preserving_args_entry = __ pc();
   __ empty_expression_stack();
+  __ restore_bcp(); // We could have returned from deoptimizing this frame, so restore rbcp.
   // Set the popframe_processing bit in pending_popframe_condition
   // indicating that we are currently handling popframe, so that
   // call_VMs that may happen later do not trigger new popframe

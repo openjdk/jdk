@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,8 +139,8 @@ class javaVFrame: public vframe {
 
   // printing used during stack dumps and diagnostics
   static void print_locked_object_class_name(outputStream* st, Handle obj, const char* lock_state);
-  void print_lock_info_on(outputStream* st, int frame_count);
-  void print_lock_info(int frame_count) { print_lock_info_on(tty, frame_count); }
+  void print_lock_info_on(outputStream* st, bool is_virtual, int frame_count);
+  void print_lock_info(bool is_virtual, int frame_count) { print_lock_info_on(tty, is_virtual, frame_count); }
 
 #ifndef PRODUCT
  public:
@@ -289,8 +289,6 @@ class vframeStreamCommon : StackObj {
   int bci() const { return _bci; }
   inline intptr_t* frame_id() const;
   address frame_pc() const { return _frame.pc(); }
-  inline int vframe_id() const;
-  inline int decode_offset() const;
   inline oop continuation() const;
 
   CodeBlob* cb() const { return _frame.cb();  }

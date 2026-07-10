@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,7 +254,6 @@ var getJibProfilesCommon = function (input, data) {
         configure_args: concat(
             "--with-exclude-translations=es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-jvm-feature-shenandoahgc",
-            "--disable-cds-archive-coh",
             versionArgs(input, common))
     };
 
@@ -388,8 +387,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "24";
-    common.boot_jdk_build_number = "36";
+    common.boot_jdk_version = "26";
+    common.boot_jdk_build_number = "35";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -645,7 +644,7 @@ var getJibProfilesProfiles = function (input, common, data) {
     // Bootcycle profiles runs the build with itself as the boot jdk. This can
     // be done in two ways. Either using the builtin bootcycle target in the
     // build system. Or by supplying the main jdk build as bootjdk to configure.
-    [ "linux-x64", "macosx-x64", "windows-x64", "linux-aarch64" ]
+    [ "linux-x64", "macosx-aarch64", "macosx-x64", "windows-x64", "linux-aarch64" ]
         .forEach(function (name) {
             var bootcycleName = name + "-bootcycle";
             var bootcyclePrebuiltName = name + "-bootcycle-prebuilt";
@@ -1175,9 +1174,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "7.5.1",
+            version: "8.3",
             build_number: "1",
-            file: "bundles/jtreg-7.5.1+1.zip",
+            file: "bundles/jtreg-8.3+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1193,8 +1192,8 @@ var getJibProfilesDependencies = function (input, common) {
             server: "jpg",
             product: "jcov",
             version: "3.0",
-            build_number: "1",
-            file: "bundles/jcov-3.0+1.zip",
+            build_number: "6",
+            file: "bundles/jcov-3.0+6.zip",
             environment_name: "JCOV_HOME",
         },
 

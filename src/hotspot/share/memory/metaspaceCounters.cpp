@@ -32,7 +32,6 @@
 #include "utilities/exceptions.hpp"
 
 class MetaspacePerfCounters {
-  friend class VMStructs;
   PerfVariable*      _capacity;
   PerfVariable*      _used;
   PerfVariable*      _max_capacity;

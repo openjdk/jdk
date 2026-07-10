@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,11 @@
 
 #ifndef SHARE_ADLC_ADLPARSE_HPP
 #define SHARE_ADLC_ADLPARSE_HPP
+
+#include "filebuff.hpp"
+#include "forms.hpp"
+#include "formsopt.hpp"
+#include "formssel.hpp"
 
 // ADLPARSE.HPP - Definitions for Architecture Description Language Parser
 // Authors: Chris Vick and Mike Paleczny
@@ -115,7 +120,6 @@ protected:
   // Parse the components of the frame section
   void sync_stack_slots_parse(FrameForm *frame);
   void frame_pointer_parse(FrameForm *frame, bool native);
-  void interpreter_frame_pointer_parse(FrameForm *frame, bool native);
   void inline_cache_parse(FrameForm *frame, bool native);
   void interpreter_arg_ptr_parse(FrameForm *frame, bool native);
   void interpreter_method_parse(FrameForm *frame, bool native);

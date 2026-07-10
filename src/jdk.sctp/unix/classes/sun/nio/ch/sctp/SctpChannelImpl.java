@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.nio.ch.sctp;
 
 import java.net.InetAddress;
@@ -83,9 +84,9 @@ public class SctpChannelImpl extends SctpChannel
 
     private final int fdVal;
 
-    /* IDs of native threads doing send and receive, for signalling */
-    private volatile long receiverThread;
-    private volatile long senderThread;
+    /* Threads doing send and receive, for signalling */
+    private volatile Thread receiverThread;
+    private volatile Thread senderThread;
 
     /* Lock held by current receiving or connecting thread */
     private final Object receiveLock = new Object();
@@ -325,7 +326,7 @@ public class SctpChannelImpl extends SctpChannel
 
     private void receiverCleanup() throws IOException {
         synchronized (stateLock) {
-            receiverThread = 0;
+            receiverThread = null;
             if (state == ChannelState.KILLPENDING)
                 kill();
         }
@@ -333,7 +334,7 @@ public class SctpChannelImpl extends SctpChannel
 
     private void senderCleanup() throws IOException {
         synchronized (stateLock) {
-            senderThread = 0;
+            senderThread = null;
             if (state == ChannelState.KILLPENDING)
                 kill();
         }
@@ -366,7 +367,7 @@ public class SctpChannelImpl extends SctpChannel
                                 if (!isOpen()) {
                                     return false;
                                 }
-                                receiverThread = NativeThread.current();
+                                receiverThread = NativeThread.threadToSignal();
                             }
                             for (;;) {
                                 InetAddress ia = isa.getAddress();
@@ -471,7 +472,7 @@ public class SctpChannelImpl extends SctpChannel
                                 if (!isOpen()) {
                                     return false;
                                 }
-                                receiverThread = NativeThread.current();
+                                receiverThread = NativeThread.threadToSignal();
                             }
                             if (!isBlocking()) {
                                 connected = Net.pollConnect(fd, 0);
@@ -483,7 +484,7 @@ public class SctpChannelImpl extends SctpChannel
                         }
                     } finally {
                         synchronized (stateLock) {
-                            receiverThread = 0;
+                            receiverThread = null;
                             if (state == ChannelState.KILLPENDING) {
                                 kill();
                                 connected = false;
@@ -540,10 +541,10 @@ public class SctpChannelImpl extends SctpChannel
             if (state != ChannelState.KILLED)
                 SctpNet.preClose(fdVal);
 
-            if (receiverThread != 0)
+            if (receiverThread != null)
                 NativeThread.signal(receiverThread);
 
-            if (senderThread != 0)
+            if (senderThread != null)
                 NativeThread.signal(senderThread);
 
             if (!isRegistered())
@@ -643,7 +644,7 @@ public class SctpChannelImpl extends SctpChannel
 
             /* Postpone the kill if there is a waiting reader
              * or writer thread. */
-            if (receiverThread == 0 && senderThread == 0) {
+            if (receiverThread == null && senderThread == null) {
                 state = ChannelState.KILLED;
                 SctpNet.close(fdVal);
             } else {
@@ -742,7 +743,7 @@ public class SctpChannelImpl extends SctpChannel
                         synchronized (stateLock) {
                             if(!isOpen())
                                 return null;
-                            receiverThread = NativeThread.current();
+                            receiverThread = NativeThread.threadToSignal();
                         }
 
                         do {
@@ -829,7 +830,7 @@ public class SctpChannelImpl extends SctpChannel
     {
         NIO_ACCESS.acquireSession(bb);
         try {
-            int n = receive0(fd, resultContainer, ((DirectBuffer)bb).address() + pos, rem, peek);
+            int n = receive0(fd, resultContainer, NIO_ACCESS.getBufferAddress(bb) + pos, rem, peek);
 
             if (n > 0)
                 bb.position(pos + n);
@@ -935,7 +936,7 @@ public class SctpChannelImpl extends SctpChannel
                 synchronized (stateLock) {
                     if(!isOpen())
                         return 0;
-                    senderThread = NativeThread.current();
+                    senderThread = NativeThread.threadToSignal();
                 }
 
                 do {
@@ -1012,7 +1013,7 @@ public class SctpChannelImpl extends SctpChannel
 
         NIO_ACCESS.acquireSession(bb);
         try {
-            int written = send0(fd, ((DirectBuffer)bb).address() + pos, rem, addr,
+            int written = send0(fd, NIO_ACCESS.getBufferAddress(bb) + pos, rem, addr,
                     port, -1 /*121*/, streamNumber, unordered, ppid);
             if (written > 0)
                 bb.position(pos + written);
@@ -1030,7 +1031,7 @@ public class SctpChannelImpl extends SctpChannel
 
             ensureSendOpen();
             SctpNet.shutdown(fdVal, -1);
-            if (senderThread != 0)
+            if (senderThread != null)
                 NativeThread.signal(senderThread);
             isShutdown = true;
         }

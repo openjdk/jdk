@@ -46,10 +46,18 @@ import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
-final class TestInstance implements ThrowingRunnable {
+final class TestInstance implements ThrowingRunnable<Exception> {
 
-    static class TestDesc {
-        private TestDesc() {
+    static final class TestDesc {
+        private TestDesc(Class<?> clazz, String functionName, String functionArgs, String instanceArgs) {
+            this.clazz = Objects.requireNonNull(clazz);
+            this.functionName = functionName;
+            this.functionArgs = functionArgs;
+            this.instanceArgs = instanceArgs;
+        }
+
+        private TestDesc(Class<?> clazz) {
+            this(clazz, null, null, null);
         }
 
         String testFullName() {
@@ -93,16 +101,11 @@ final class TestInstance implements ThrowingRunnable {
 
             @Override
             public TestDesc get() {
-                TestDesc desc = new TestDesc();
                 if (method == null) {
-                    desc.clazz = enclosingMainMethodClass();
+                    return new TestDesc(enclosingMainMethodClass());
                 } else {
-                    desc.clazz = method.getDeclaringClass();
-                    desc.functionName = method.getName();
-                    desc.functionArgs = formatArgs(methodArgs);
-                    desc.instanceArgs = formatArgs(ctorArgs);
+                    return new TestDesc(method.getDeclaringClass(), method.getName(), formatArgs(methodArgs), formatArgs(ctorArgs));
                 }
-                return desc;
             }
 
             private static String formatArgs(List<Object> values) {
@@ -140,30 +143,13 @@ final class TestInstance implements ThrowingRunnable {
             private static final HexFormat ARGS_CHAR_FORMATTER = HexFormat.of().withUpperCase();
         }
 
-        static TestDesc create(Method m, Object... args) {
-            TestDesc desc = new TestDesc();
-            desc.clazz = m.getDeclaringClass();
-            desc.functionName = m.getName();
-            if (args.length != 0) {
-                desc.functionArgs = Stream.of(args).map(v -> {
-                    if (v.getClass().isArray()) {
-                        return String.format("%s(length=%d)",
-                                Arrays.deepToString((Object[]) v),
-                                Array.getLength(v));
-                    }
-                    return String.format("%s", v);
-                }).collect(Collectors.joining(", "));
-            }
-            return desc;
-        }
-
-        private Class<?> clazz;
-        private String functionName;
-        private String functionArgs;
-        private String instanceArgs;
+        private final Class<?> clazz;
+        private final String functionName;
+        private final String functionArgs;
+        private final String instanceArgs;
     }
 
-    TestInstance(ThrowingRunnable testBody, Path workDirRoot) {
+    TestInstance(ThrowingRunnable<? extends Exception> testBody, Path workDirRoot) {
         assertCount = 0;
         this.testConstructor = (unused) -> null;
         this.testBody = (unused) -> testBody.run();
@@ -174,8 +160,8 @@ final class TestInstance implements ThrowingRunnable {
         this.workDir = workDirRoot.resolve(createWorkDirPath(testDesc));
     }
 
-    TestInstance(MethodCall testBody, List<ThrowingConsumer<Object>> beforeActions,
-            List<ThrowingConsumer<Object>> afterActions, boolean dryRun, Path workDirRoot) {
+    TestInstance(MethodCall testBody, List<ThrowingConsumer<Object, ? extends Exception>> beforeActions,
+            List<ThrowingConsumer<Object, ? extends Exception>> afterActions, boolean dryRun, Path workDirRoot) {
         assertCount = 0;
         this.testConstructor = v -> ((MethodCall)v).newInstance();
         this.testBody = testBody;
@@ -184,6 +170,17 @@ final class TestInstance implements ThrowingRunnable {
         this.testDesc = testBody.createDescription();
         this.dryRun = dryRun;
         this.workDir = workDirRoot.resolve(createWorkDirPath(testDesc));
+    }
+
+    TestInstance(TestInstance other, Path workDirRoot) {
+        assertCount = 0;
+        this.testConstructor = other.testConstructor;
+        this.testBody = other.testBody;
+        this.beforeActions = other.beforeActions;
+        this.afterActions = other.afterActions;
+        this.testDesc = other.testDesc;
+        this.dryRun = other.dryRun;
+        this.workDir = workDirRoot.resolve(createWorkDirPath(other.testDesc));
     }
 
     void notifyAssert() {
@@ -229,7 +226,7 @@ final class TestInstance implements ThrowingRunnable {
     }
 
     @Override
-    public void run() throws Throwable {
+    public void run() throws Exception {
         final String fullName = fullName();
         TKit.log(String.format("[ RUN      ] %s", fullName));
         try {
@@ -336,10 +333,10 @@ final class TestInstance implements ThrowingRunnable {
     private Status status;
     private RuntimeException skippedTestException;
     private final TestDesc testDesc;
-    private final ThrowingFunction<ThrowingConsumer<Object>, Object> testConstructor;
-    private final ThrowingConsumer<Object> testBody;
-    private final List<ThrowingConsumer<Object>> beforeActions;
-    private final List<ThrowingConsumer<Object>> afterActions;
+    private final ThrowingFunction<ThrowingConsumer<Object, ? extends Exception>, Object, ? extends Exception> testConstructor;
+    private final ThrowingConsumer<Object, ? extends Exception> testBody;
+    private final List<ThrowingConsumer<Object, ? extends Exception>> beforeActions;
+    private final List<ThrowingConsumer<Object, ? extends Exception>> afterActions;
     private final boolean dryRun;
     private final Path workDir;
 

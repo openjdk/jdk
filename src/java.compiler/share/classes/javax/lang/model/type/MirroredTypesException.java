@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,14 @@
 
 package javax.lang.model.type;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collections;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-import javax.lang.model.element.Element;
+import java.io.ObjectInputStream;
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
+import javax.lang.model.element.Element;
 
 /**
  * Thrown when an application attempts to access a sequence of {@link
@@ -43,7 +44,8 @@ import javax.lang.model.element.Element;
  */
 public class MirroredTypesException extends RuntimeException {
 
-    private static final long serialVersionUID = 269;
+    @Serial
+    private static final long serialVersionUID = 269L;
 
     transient List<? extends TypeMirror> types; // cannot be serialized
 
@@ -87,6 +89,7 @@ public class MirroredTypesException extends RuntimeException {
      * deserialization
      * @throws IOException for an IO problem during deserialization
      */
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         s.defaultReadObject();

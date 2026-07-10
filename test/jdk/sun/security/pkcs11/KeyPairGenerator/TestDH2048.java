@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
  * @run main/othervm TestDH2048
  */
 
+import jtreg.SkippedException;
+
 import java.security.InvalidParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -50,8 +52,7 @@ public class TestDH2048 extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         if (p.getService("KeyPairGenerator", "DH") == null) {
-            System.out.println("KPG for DH not supported, skipping");
-            return;
+            throw new SkippedException("KPG for DH not supported, skipping");
         }
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", p);
         kpg.initialize(512);

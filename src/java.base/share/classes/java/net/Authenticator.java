@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,12 +426,12 @@ class Authenticator {
     }
 
     /**
-     * Returns the URL that resulted in this
-     * request for authentication.
+     * Returns the URL that resulted in this request for authentication.
+     * If the corresponding request does not specify a URL, this method returns null.
      *
      * @since 1.5
      *
-     * @return the requesting URL
+     * @return the requesting URL, or null if not available.
      *
      */
     protected URL getRequestingURL () {

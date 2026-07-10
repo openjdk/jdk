@@ -24,9 +24,11 @@
  */
 package jdk.jpackage.internal.model;
 
-import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.WIN_LAUNCHER_DESKTOP_SHORTCUT;
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.WIN_LAUNCHER_MENU_SHORTCUT;
 
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import jdk.jpackage.internal.resources.ResourceLocator;
@@ -47,7 +49,14 @@ public interface WinLauncher extends Launcher, WinLauncherMixin {
 
     @Override
     default Map<String, String> extraAppImageFileData() {
-        return shortcuts().stream().collect(toMap(WinShortcut::name, v -> Boolean.toString(true)));
+        Map<String, String> map = new HashMap<>();
+        desktopShortcut().ifPresent(shortcut -> {
+            shortcut.store(WIN_LAUNCHER_DESKTOP_SHORTCUT.getName(), map::put);
+        });
+        startMenuShortcut().ifPresent(shortcut -> {
+            shortcut.store(WIN_LAUNCHER_MENU_SHORTCUT.getName(), map::put);
+        });
+        return map;
     }
 
     public static WinLauncher create(Launcher launcher, WinLauncherMixin mixin) {

@@ -31,7 +31,6 @@
  * @run main/othervm MultiNSTNoSessionCreation -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.newSessionTicketCount=0
  */
 
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -55,13 +54,13 @@ public class MultiNSTNoSessionCreation {
                 " -Dtest.src=" + System.getProperty("test.src") +
                     " -Dtest.jdk=" + System.getProperty("test.jdk") +
                     " -Dtest.root=" + System.getProperty("test.root") +
-                    " -Djavax.net.debug=ssl,handshake " + params);
+                    " -Djavax.net.debug=ssl " + params);
 
             System.out.println("test.java.opts: " +
                 System.getProperty("test.java.opts"));
 
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                Utils.addTestJavaOpts("MultiNSTNoSessionCreation", "p"));
+                    "MultiNSTNoSessionCreation", "p");
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             try {

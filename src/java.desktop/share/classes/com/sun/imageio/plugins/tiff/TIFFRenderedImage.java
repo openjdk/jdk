@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,74 +130,92 @@ public class TIFFRenderedImage implements RenderedImage {
         return newParam;
     }
 
+    @Override
     public Vector<RenderedImage> getSources() {
         return null;
     }
 
+    @Override
     public Object getProperty(String name) {
         return java.awt.Image.UndefinedProperty;
     }
 
+    @Override
     public String[] getPropertyNames() {
         return null;
     }
 
+    @Override
     public ColorModel getColorModel() {
         return its.getColorModel();
     }
 
+    @Override
     public SampleModel getSampleModel() {
         return its.getSampleModel();
     }
 
+    @Override
     public int getWidth() {
         return width;
     }
 
+    @Override
     public int getHeight() {
         return height;
     }
 
+    @Override
     public int getMinX() {
         return 0;
     }
 
+    @Override
     public int getMinY() {
         return 0;
     }
 
+    @Override
     public int getNumXTiles() {
         return (width + tileWidth - 1)/tileWidth;
     }
 
+    @Override
     public int getNumYTiles() {
         return (height + tileHeight - 1)/tileHeight;
     }
 
+    @Override
     public int getMinTileX() {
         return 0;
     }
 
+    @Override
     public int getMinTileY() {
         return 0;
     }
 
+    @Override
     public int getTileWidth() {
         return tileWidth;
     }
 
+    @Override
     public int getTileHeight() {
         return tileHeight;
     }
 
+    @Override
     public int getTileGridXOffset() {
         return 0;
     }
 
+    @Override
     public int getTileGridYOffset() {
         return 0;
     }
 
+    @Override
     public Raster getTile(int tileX, int tileY) {
         Rectangle tileRect = new Rectangle(tileX*tileWidth,
                                            tileY*tileHeight,
@@ -206,10 +224,12 @@ public class TIFFRenderedImage implements RenderedImage {
         return getData(tileRect);
     }
 
+    @Override
     public Raster getData() {
         return read(new Rectangle(0, 0, getWidth(), getHeight()));
     }
 
+    @Override
     public Raster getData(Rectangle rect) {
         return read(rect);
     }
@@ -236,6 +256,7 @@ public class TIFFRenderedImage implements RenderedImage {
         }
     }
 
+    @Override
     public WritableRaster copyData(WritableRaster raster) {
         if (raster == null) {
             return read(new Rectangle(0, 0, getWidth(), getHeight()));

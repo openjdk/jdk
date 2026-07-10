@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,14 +128,17 @@ static void initTemplatePipelineDescriptors() {
     }
 
     if (x1 >= x2 || y1 >= y2) {
-        J2dTraceLn4(J2D_TRACE_ERROR, "MTLClip.setClipRect: invalid rect: x1=%d y1=%d x2=%d y2=%d", x1, y1, x2, y2);
+        J2dTraceLn(J2D_TRACE_ERROR,
+                   "MTLClip.setClipRect: invalid rect: x1=%d y1=%d x2=%d y2=%d",
+                   x1, y1, x2, y2);
         _clipType = NO_CLIP;
     }
 
     const jint width = x2 - x1;
     const jint height = y2 - y1;
 
-    J2dTraceLn4(J2D_TRACE_INFO, "MTLClip.setClipRect: x=%d y=%d w=%d h=%d", x1, y1, width, height);
+    J2dTraceLn(J2D_TRACE_INFO, "MTLClip.setClipRect: x=%d y=%d w=%d h=%d",
+               x1, y1, width, height);
 
     _clipRect.x = (NSUInteger)((x1 >= 0) ? x1 : 0);
     _clipRect.y = (NSUInteger)((y1 >= 0) ? y1 : 0);

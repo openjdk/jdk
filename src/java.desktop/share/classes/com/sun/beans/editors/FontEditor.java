@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,11 +78,13 @@ public class FontEditor extends Panel implements java.beans.PropertyEditor {
     }
 
 
+    @Override
     @SuppressWarnings("deprecation")
     public Dimension preferredSize() {
         return new Dimension(300, 40);
     }
 
+    @Override
     public void setValue(Object o) {
         font = (Font) o;
         if (this.font == null)
@@ -130,10 +132,12 @@ public class FontEditor extends Panel implements java.beans.PropertyEditor {
         support.firePropertyChange("", null, null);
     }
 
+    @Override
     public Object getValue() {
         return (font);
     }
 
+    @Override
     public String getJavaInitializationString() {
         if (this.font == null)
             return "null";
@@ -142,6 +146,7 @@ public class FontEditor extends Panel implements java.beans.PropertyEditor {
                    font.getStyle() + ", " + font.getSize() + ")";
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public boolean action(Event e, Object arg) {
         String family = familyChoser.getSelectedItem();
@@ -158,10 +163,12 @@ public class FontEditor extends Panel implements java.beans.PropertyEditor {
     }
 
 
+    @Override
     public boolean isPaintable() {
         return true;
     }
 
+    @Override
     public void paintValue(java.awt.Graphics gfx, java.awt.Rectangle box) {
         // Silent noop.
         Font oldFont = gfx.getFont();
@@ -172,6 +179,7 @@ public class FontEditor extends Panel implements java.beans.PropertyEditor {
         gfx.setFont(oldFont);
     }
 
+    @Override
     public String getAsText() {
         if (this.font == null) {
             return null;
@@ -195,26 +203,32 @@ public class FontEditor extends Panel implements java.beans.PropertyEditor {
         return sb.toString();
     }
 
+    @Override
     public void setAsText(String text) throws IllegalArgumentException {
         setValue((text == null) ? null : Font.decode(text));
     }
 
+    @Override
     public String[] getTags() {
         return null;
     }
 
+    @Override
     public java.awt.Component getCustomEditor() {
         return this;
     }
 
+    @Override
     public boolean supportsCustomEditor() {
         return true;
     }
 
+    @Override
     public void addPropertyChangeListener(PropertyChangeListener l) {
         support.addPropertyChangeListener(l);
     }
 
+    @Override
     public void removePropertyChangeListener(PropertyChangeListener l) {
         support.removePropertyChangeListener(l);
     }

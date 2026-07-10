@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,8 @@ import java.io.Writer;
  * for setting and getting all times and for doing whatever
  * analysis is interesting; this class is merely a central container
  * for those timing values.
- * Note that, due to the variables in this class being static,
- * use of particular time values by multiple applets will cause
- * confusing results.  For example, if plugin runs two applets
- * simultaneously, the initTime for those applets will collide
- * and the results may be undefined.
  * <P>
- * To automatically track startup performance in an app or applet,
+ * To automatically track startup performance in an app
  * use the command-line parameter sun.perflog as follows:<BR>
  * <pre>{@code
  *     -Dsun.perflog[=file:<filename>]
@@ -167,9 +162,9 @@ public class PerformanceLogger {
 
     /**
      * Sets the start time.  Ideally, this is the earliest time available
-     * during the startup of a Java applet or application.  This time is
+     * during the startup of an application.  This time is
      * later used to analyze the difference between the initial startup
-     * time and other events in the system (such as an applet's init time).
+     * time and other events in the system.
      */
     public static void setStartTime(String message) {
         if (loggingEnabled()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
 #include "compiler/disassembler.hpp"
 #include "logging/log.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/icache.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -89,7 +89,7 @@ typedef CodeBuffer::csize_t csize_t;  // file-local definition
 
 // External buffer, in a predefined CodeBlob.
 // Important: The code_start must be taken exactly, and not realigned.
-CodeBuffer::CodeBuffer(CodeBlob* blob) DEBUG_ONLY(: Scrubber(this, sizeof(*this))) {
+CodeBuffer::CodeBuffer(const CodeBlob* blob) DEBUG_ONLY(: Scrubber(this, sizeof(*this))) {
   // Provide code buffer with meaningful name
   initialize_misc(blob->name());
   initialize(blob->content_begin(), blob->content_size());
@@ -97,6 +97,8 @@ CodeBuffer::CodeBuffer(CodeBlob* blob) DEBUG_ONLY(: Scrubber(this, sizeof(*this)
 }
 
 void CodeBuffer::initialize(csize_t code_size, csize_t locs_size) {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+
   // Always allow for empty slop around each section.
   int slop = (int) CodeSection::end_slop();
 
@@ -415,7 +417,7 @@ void CodeSection::expand_locs(int new_capacity) {
       new_capacity = old_capacity * 2;
     relocInfo* locs_start;
     if (_locs_own) {
-      locs_start = REALLOC_RESOURCE_ARRAY(relocInfo, _locs_start, old_capacity, new_capacity);
+      locs_start = REALLOC_RESOURCE_ARRAY(_locs_start, old_capacity, new_capacity);
     } else {
       locs_start = NEW_RESOURCE_ARRAY(relocInfo, new_capacity);
       Copy::conjoint_jbytes(_locs_start, locs_start, old_capacity * sizeof(relocInfo));
@@ -465,9 +467,7 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
   assert(!_finalize_stubs, "non-finalized stubs");
 
   {
-    // not sure why this is here, but why not...
-    int alignSize = MAX2((intx) sizeof(jdouble), CodeEntryAlignment);
-    assert( (dest->_total_start - _insts.start()) % alignSize == 0, "copy must preserve alignment");
+    assert( (dest->_total_start - _insts.start()) % CodeEntryAlignment == 0, "copy must preserve alignment");
   }
 
   const CodeSection* prev_cs      = nullptr;
@@ -537,6 +537,9 @@ void CodeBuffer::finalize_oop_references(const methodHandle& mh) {
             if (m->is_methodData()) {
               m = ((MethodData*)m)->method();
             }
+            if (m->is_methodCounters()) {
+              m = ((MethodCounters*)m)->method();
+            }
             if (m->is_method()) {
               m = ((Method*)m)->method_holder();
             }
@@ -560,6 +563,9 @@ void CodeBuffer::finalize_oop_references(const methodHandle& mh) {
       if (oop_recorder()->is_real(m)) {
         if (m->is_methodData()) {
           m = ((MethodData*)m)->method();
+        }
+        if (m->is_methodCounters()) {
+          m = ((MethodCounters*)m)->method();
         }
         if (m->is_method()) {
           m = ((Method*)m)->method_holder();
@@ -619,7 +625,7 @@ csize_t CodeBuffer::total_relocation_size() const {
   return (csize_t) align_up(total, HeapWordSize);
 }
 
-csize_t CodeBuffer::copy_relocations_to(address buf, csize_t buf_limit, bool only_inst) const {
+csize_t CodeBuffer::copy_relocations_to(address buf, csize_t buf_limit) const {
   csize_t buf_offset = 0;
   csize_t code_end_so_far = 0;
   csize_t code_point_so_far = 0;
@@ -628,10 +634,6 @@ csize_t CodeBuffer::copy_relocations_to(address buf, csize_t buf_limit, bool onl
   assert(buf_limit % HeapWordSize == 0, "buf must be evenly sized");
 
   for (int n = (int) SECT_FIRST; n < (int)SECT_LIMIT; n++) {
-    if (only_inst && (n != (int)SECT_INSTS)) {
-      // Need only relocation info for code.
-      continue;
-    }
     // pull relocs out of each section
     const CodeSection* cs = code_section(n);
     assert(!(cs->is_empty() && cs->locs_count() > 0), "sanity");
@@ -698,7 +700,7 @@ csize_t CodeBuffer::copy_relocations_to(address buf, csize_t buf_limit, bool onl
     buf_offset += sizeof(relocInfo);
   }
 
-  assert(only_inst || code_end_so_far == total_content_size(), "sanity");
+  assert(code_end_so_far == total_content_size(), "sanity");
 
   return buf_offset;
 }
@@ -714,7 +716,7 @@ csize_t CodeBuffer::copy_relocations_to(CodeBlob* dest) const {
   }
   // if dest is null, this is just the sizing pass
   //
-  buf_offset = copy_relocations_to(buf, buf_limit, false);
+  buf_offset = copy_relocations_to(buf, buf_limit);
 
   return buf_offset;
 }
@@ -742,9 +744,6 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
 
   // Done moving code bytes; were they the right size?
   assert((int)align_up(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
-
-  // Flush generated code
-  ICache::invalidate_range(dest_blob->code_begin(), dest_blob->code_size());
 }
 
 // Move all my code into another code buffer.  Consult applicable
@@ -859,6 +858,13 @@ csize_t CodeBuffer::figure_expanded_capacities(CodeSection* which_cs,
 }
 
 void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
+#ifdef ASSERT
+  // The code below copies contents across temp buffers. The following
+  // sizes relate to buffer contents, and should not be changed by buffer
+  // expansion.
+  int old_total_skipped = total_skipped_instructions_size();
+#endif
+
 #ifndef PRODUCT
   if (PrintNMethods && (WizardMode || Verbose)) {
     tty->print("expanding CodeBuffer:");
@@ -917,6 +923,7 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
     assert(cb_sect->capacity() >= new_capacity[n], "big enough");
     address cb_start = cb_sect->start();
     cb_sect->set_end(cb_start + this_sect->size());
+    cb_sect->register_skipped(this_sect->_skipped_instructions_size);
     if (this_sect->mark() == nullptr) {
       cb_sect->clear_mark();
     } else {
@@ -930,8 +937,8 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   // Move all the code and relocations to the new blob:
   relocate_code_to(&cb);
 
-  // some internal addresses, _last_insn _last_label, are used during code emission,
-  // adjust them in expansion
+  // some internal addresses, _last_merge_candidate and _last_label, are used during
+  // code emission, adjust them in expansion
   adjust_internal_address(insts_begin(), cb.insts_begin());
 
   // Copy the temporary code buffer into the current code buffer.
@@ -953,11 +960,14 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
     this->print_on(tty);
   }
 #endif //PRODUCT
+
+  assert(old_total_skipped == total_skipped_instructions_size(),
+         "Should match: %d == %d", old_total_skipped, total_skipped_instructions_size());
 }
 
 void CodeBuffer::adjust_internal_address(address from, address to) {
-  if (_last_insn != nullptr) {
-    _last_insn += to - from;
+  if (_last_merge_candidate != nullptr) {
+    _last_merge_candidate += to - from;
   }
   if (_last_label != nullptr) {
     _last_label += to - from;
@@ -1099,12 +1109,17 @@ CHeapString::~CHeapString() {
 // offset is a byte offset into an instruction stream (CodeBuffer, CodeBlob or
 // other memory buffer) and remark is a string (comment).
 //
-AsmRemarks::AsmRemarks() : _remarks(new AsmRemarkCollection()) {
+AsmRemarks::AsmRemarks() {
+  init();
   assert(_remarks != nullptr, "Allocation failure!");
 }
 
 AsmRemarks::~AsmRemarks() {
   assert(_remarks == nullptr, "Must 'clear()' before deleting!");
+}
+
+void AsmRemarks::init() {
+  _remarks = new AsmRemarkCollection();
 }
 
 const char* AsmRemarks::insert(uint offset, const char* remstr) {
@@ -1132,7 +1147,7 @@ void AsmRemarks::clear() {
 uint AsmRemarks::print(uint offset, outputStream* strm) const {
   uint count = 0;
   const char* prefix = " ;; ";
-  const char* remstr = _remarks->lookup(offset);
+  const char* remstr = (_remarks ? _remarks->lookup(offset) : nullptr);
   while (remstr != nullptr) {
     strm->bol();
     strm->print("%s", prefix);
@@ -1151,12 +1166,17 @@ uint AsmRemarks::print(uint offset, outputStream* strm) const {
 // Acting as interface to reference counted collection of (debug) strings used
 // in the code generated, and thus requiring a fixed address.
 //
-DbgStrings::DbgStrings() : _strings(new DbgStringCollection()) {
+DbgStrings::DbgStrings() {
+  init();
   assert(_strings != nullptr, "Allocation failure!");
 }
 
 DbgStrings::~DbgStrings() {
   assert(_strings == nullptr, "Must 'clear()' before deleting!");
+}
+
+void DbgStrings::init() {
+  _strings = new DbgStringCollection();
 }
 
 const char* DbgStrings::insert(const char* dbgstr) {

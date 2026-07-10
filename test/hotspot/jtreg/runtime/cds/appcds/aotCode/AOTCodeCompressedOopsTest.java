@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,15 @@
  * @summary Sanity test of AOT Code Cache with compressed oops configurations
  * @requires vm.cds.supports.aot.code.caching
  * @requires vm.compMode != "Xcomp"
+ * @requires vm.bits == 64
+ * @requires vm.opt.final.UseCompressedOops
  * @comment The test verifies AOT checks during VM startup and not code generation.
  *          No need to run it with -Xcomp. It takes a lot of time to complete all
  *          subtests with this flag.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeCompressedOopsTest JavacBenchApp
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *             JavacBenchApp
- *             JavacBenchApp$ClassFile
- *             JavacBenchApp$FileManager
- *             JavacBenchApp$SourceFile
- * @run driver AOTCodeCompressedOopsTest
+ * @build AOTCodeCompressedOopsTest HelloWorld
+ * @run driver/timeout=480 jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloWorld
+ * @run driver/timeout=480 AOTCodeCompressedOopsTest
  */
 
 import java.util.ArrayList;
@@ -136,6 +134,7 @@ public class AOTCodeCompressedOopsTest {
             case RunMode.PRODUCTION: {
                     List<String> args = getVMArgsForHeapConfig(zeroBaseInProdPhase, zeroShiftInProdPhase);
                     args.addAll(List.of("-XX:+UnlockDiagnosticVMOptions",
+                                        "-XX:-AbortVMOnAOTCodeFailure",
                                         "-Xlog:aot=info", // we need this to parse CompressedOops settings
                                         "-Xlog:aot+codecache+init=debug",
                                         "-Xlog:aot+codecache+exit=debug"));
@@ -147,9 +146,7 @@ public class AOTCodeCompressedOopsTest {
 
         @Override
         public String[] appCommandLine(RunMode runMode) {
-            return new String[] {
-                "JavacBenchApp", "10"
-            };
+            return new String[] { "HelloWorld" };
         }
 
         @Override
@@ -168,12 +165,14 @@ public class AOTCodeCompressedOopsTest {
                   *    [0.022s][info][cds] CDS archive was created with max heap size = 1024M, and the following configuration:
                   *    [0.022s][info][cds]     narrow_klass_base at mapping start address, narrow_klass_pointer_bits = 32, narrow_klass_shift = 0
                   *    [0.022s][info][cds]     narrow_oop_mode = 1, narrow_oop_base = 0x0000000000000000, narrow_oop_shift = 3
+                  *    [0.022s][info][cds]     AOTCompatibleOopCompression = false
                   *    [0.022s][info][cds] The current max heap size = 31744M, G1HeapRegion::GrainBytes = 16777216
                   *    [0.022s][info][cds]     narrow_klass_base = 0x000007fc00000000, arrow_klass_pointer_bits = 32, narrow_klass_shift = 0
                   *    [0.022s][info][cds]     narrow_oop_mode = 3, narrow_oop_base = 0x0000000300000000, narrow_oop_shift = 3
                   *    [0.022s][info][cds]     heap range = [0x0000000301000000 - 0x0000000ac1000000]
+                  *    [0.022s][info][cds]     AOTCompatibleOopCompression = false
                   */
-                 Pattern p = Pattern.compile("narrow_oop_base = 0x(\\d+), narrow_oop_shift = (\\d)");
+                 Pattern p = Pattern.compile("narrow_oop_base = 0x([0-9a-fA-F]+), narrow_oop_shift = (\\d)");
                  for (int i = 0; i < list.size(); i++) {
                      String line = list.get(i);
                      if (line.indexOf("CDS archive was created with max heap size") != -1) {
@@ -186,7 +185,7 @@ public class AOTCodeCompressedOopsTest {
                          aotCacheBase = Long.valueOf(m.group(1), 16);
                          aotCacheShift = Integer.valueOf(m.group(2));
                          // Parse current CompressedOops settings
-                         line = list.get(i+5);
+                         line = list.get(i+6);
                          m = p.matcher(line);
                          if (!m.find()) {
                              throw new RuntimeException("Pattern \"" + p + "\" not found in the output");
@@ -199,12 +198,18 @@ public class AOTCodeCompressedOopsTest {
                  if (aotCacheShift == -1 || currentShift == -1 || aotCacheBase == -1 || currentBase == -1) {
                      throw new RuntimeException("Failed to find CompressedOops settings");
                  }
+
+                 // Changes in compressed oop encoding could randomly affect flags like AllocatePrefetchDistance
+                 // due to the OS-assigned range of the Java heap. If that happens, the exact error message may vary
+                 String disabledMsg = "AOT Code Cache disabled:";
                  if (aotCacheShift != currentShift) {
-                     out.shouldContain("AOT Code Cache disabled: it was created with different CompressedOops::shift()");
+                     out.shouldContain(disabledMsg);
                  } else if ((aotCacheBase == 0 || currentBase == 0) && (aotCacheBase != currentBase)) {
-                     out.shouldContain("AOTStubCaching is disabled: incompatible CompressedOops::base()");
+                     out.shouldContain(disabledMsg);
                  } else {
-                     out.shouldMatch("Read \\d+ entries table at offset \\d+ from AOT Code Cache");
+                     if (!out.contains(disabledMsg)) {
+                         out.shouldMatch("Read \\d+ entries table at offset \\d+ from AOT Code Cache");
+                     }
                  }
             }
         }

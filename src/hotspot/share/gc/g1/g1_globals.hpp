@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,15 +100,27 @@
                                                                             \
   product(bool, G1UseAdaptiveIHOP, true,                                    \
           "Adaptively adjust the initiating heap occupancy from the "       \
-          "initial value of InitiatingHeapOccupancyPercent. The policy "    \
-          "attempts to start marking in time based on application "         \
-          "behavior.")                                                      \
+          "initial value of G1IHOP. The policy attempts to start marking "  \
+          "in time based on application behavior.")                         \
                                                                             \
   product(size_t, G1AdaptiveIHOPNumInitialSamples, 3, EXPERIMENTAL,         \
           "How many completed time periods from concurrent start to first " \
           "mixed gc are required to use the input values for prediction "   \
           "of the optimal occupancy to start marking.")                     \
           range(1, max_intx)                                                \
+                                                                            \
+  product(uint, G1IHOP, 45,                                                 \
+          "The Initiating Heap Occupancy Percentage (IHOP) for the "        \
+          "concurrent cycle. G1IHOP sets the percentage of the current "    \
+          "Java heap capacity occupied by the old generation at which G1 "  \
+          "starts this process. If G1UseAdaptiveIHOP is enabled, this "     \
+          "value is used as the initial threshold and may be adjusted "     \
+          "ergonomically by G1. "                                           \
+          "A value of 0 will result in as frequent as possible concurrent " \
+          "cycles. A value of 100 disables concurrent cycles. "             \
+          "Fragmentation waste in the old generation is not considered "    \
+          "free space in this calculation.")                                \
+          range(0, 100)                                                     \
                                                                             \
   product(uint, G1ConfidencePercent, 50,                                    \
           "Confidence level for MMU/pause predictions. A higher value "     \
@@ -144,7 +156,7 @@
                                                                             \
   product(size_t, G1SATBBufferSize, 1*K,                                    \
           "Number of entries in an SATB log buffer.")                       \
-          constraint(G1SATBBufferSizeConstraintFunc, AtParse)               \
+          constraint(G1SATBBufferSizeConstraintFunc, AfterErgo)             \
                                                                             \
   develop(uintx, G1SATBProcessCompletedThreshold, 20,                       \
           "Number of completed buffers that triggers log processing.")      \
@@ -158,12 +170,44 @@
           range(0, 100)                                                     \
                                                                             \
   product(uint, G1ExpandByPercentOfAvailable, 20, EXPERIMENTAL,             \
-          "When expanding, % of uncommitted space to claim.")               \
+          "When expanding, % of uncommitted space to expand the heap by in "\
+          "a single expand attempt.")                                       \
           range(0, 100)                                                     \
                                                                             \
-  product(size_t, G1UpdateBufferSize, 256,                                  \
-          "Size of an update buffer")                                       \
-          constraint(G1UpdateBufferSizeConstraintFunc, AtParse)             \
+  product(size_t, G1PerThreadPendingCardThreshold, 256, DIAGNOSTIC,         \
+          "Number of pending cards allowed on the card table per GC "       \
+          "worker thread before considering starting refinement.")          \
+          range(0, UINT_MAX)                                                \
+                                                                            \
+  product(uint, G1ShrinkByPercentOfAvailable, 50, DIAGNOSTIC,               \
+          "When shrinking, maximum % of free space to free for a single "   \
+          "shrink attempt.")                                                \
+          range(0, 100)                                                     \
+                                                                            \
+  develop(uint, G1UncommitInitialDelay, 100,                                \
+          "Delay in milliseconds until regions just made eligible for "     \
+          "uncommit are actually uncommitted.")                             \
+                                                                            \
+  product(uint, G1CPUUsageDeviationPercent, 25, DIAGNOSTIC,                 \
+          "The acceptable deviation (in percent) from the target GC CPU "   \
+          "usage (based on GCTimeRatio). Creates a tolerance range "        \
+          "around the target to deal with short-term fluctuations without " \
+          "triggering GC resizing mechanism prematurely.")                  \
+          range(0, 100)                                                     \
+                                                                            \
+  product(uint, G1CPUUsageExpandThreshold, 4, DIAGNOSTIC,                   \
+          "If the GC CPU usage deviation counter exceeds this threshold, "  \
+          "a heap expansion may be triggered. The counter is incremented "  \
+          "when short-term GC CPU usage exceeds the upper bound of the "    \
+          "acceptable deviation range.")                                    \
+          constraint(G1CPUUsageExpandConstraintFunc, AfterErgo)             \
+                                                                            \
+  product(uint, G1CPUUsageShrinkThreshold, 8, DIAGNOSTIC,                   \
+          "If the GC CPU usage deviation counter drops below the negative " \
+          "of this threshold, a heap shrink may be triggered. The counter " \
+          "is decremented when short-term GC CPU usage is below the lower " \
+          "bound of acceptable deviation range.")                           \
+          constraint(G1CPUUsageShrinkConstraintFunc, AfterErgo)             \
                                                                             \
   product(uint, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \
@@ -288,7 +332,7 @@
   product(bool, G1VerifyHeapRegionCodeRoots, false, DIAGNOSTIC,             \
           "Verify the code root lists attached to each heap region.")       \
                                                                             \
-  develop(bool, G1VerifyBitmaps, false,                                     \
+  product(bool, G1VerifyBitmaps, false, DIAGNOSTIC,                         \
           "Verifies the consistency of the marking bitmaps")                \
                                                                             \
   product(uintx, G1PeriodicGCInterval, 0, MANAGEABLE,                       \
@@ -342,6 +386,12 @@
           "Threshold for the number of code roots when reporting code root "\
           "scan cost related prediction samples. A sample must involve "    \
           "the same or more than this number of code roots to be used.")    \
+                                                                            \
+  develop(bool, G1ForceOptionalEvacuation, false,                           \
+          "Force optional evacuation for all GCs where there are old gen "  \
+          "collection set candidates."                                      \
+          "Also schedule all available optional groups for evacuation "     \
+          "regardless of timing.")                                          \
                                                                             \
   GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \
                     develop_pd,                                             \

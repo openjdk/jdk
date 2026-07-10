@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,10 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * {@code outputFile} parameter must be an absolute path to a file that
      * does not exist.
      *
+     * <p> When the format is specified as {@link ThreadDumpFormat#JSON JSON}, the
+     * thread dump is generated as JSON text in the <a href="doc-files/threadDump.html">
+     * JSON Thread Dump Format</a>.
+     *
      * <p> The thread dump will include output for all platform threads. It may
      * include output for some or all virtual threads.
      *
@@ -151,6 +155,8 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
         TEXT_PLAIN,
         /**
          * JSON (JavaScript Object Notation) format.
+         * @spec https://datatracker.ietf.org/doc/html/rfc8259 RFC 8259: The JavaScript
+         *      Object Notation (JSON) Data Interchange Format
          */
         JSON,
     }

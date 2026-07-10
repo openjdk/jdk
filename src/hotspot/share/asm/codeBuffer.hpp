@@ -33,8 +33,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
-#include "utilities/resizeableResourceHash.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 template <typename T>
 static inline void put_native(address p, T x) {
@@ -57,7 +57,6 @@ public:
                  OSR_Entry,
                  Exceptions,     // Offset where exception handler lives
                  Deopt,          // Offset where deopt handler lives
-                 DeoptMH,        // Offset where MethodHandle deopt handler lives
                  UnwindHandler,  // Offset to default unwind handler
                  max_Entries };
 
@@ -77,7 +76,6 @@ public:
     _values[OSR_Entry     ] = 0;
     _values[Exceptions    ] = -1;
     _values[Deopt         ] = -1;
-    _values[DeoptMH       ] = -1;
     _values[UnwindHandler ] = -1;
   }
 
@@ -426,6 +424,8 @@ class AsmRemarks {
   AsmRemarks();
  ~AsmRemarks();
 
+  void init();
+
   const char* insert(uint offset, const char* remstr);
 
   bool is_empty() const;
@@ -451,6 +451,8 @@ class DbgStrings {
  public:
   DbgStrings();
  ~DbgStrings();
+
+  void init();
 
   const char* insert(const char* dbgstr);
 
@@ -537,7 +539,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   };
 
   typedef LinkedListImpl<int> Offsets;
-  typedef ResizeableResourceHashtable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedTrampolineRequests;
+  typedef ResizeableHashTable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedTrampolineRequests;
 
  private:
   enum {
@@ -559,11 +561,11 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   OopRecorder* _oop_recorder;
 
-  OopRecorder  _default_oop_recorder;  // override with initialize_oop_recorder
+  OopRecorder  _default_oop_recorder; // override with initialize_oop_recorder
   Arena*       _overflow_arena;
 
-  address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
-  address      _last_label;     // record last bind label address, it's also the start of current bb.
+  address      _last_label;           // record last bind label address, it's also the start of current bb.
+  address      _last_merge_candidate; // used to merge consecutive memory barriers, loads or stores.
 
   SharedStubToInterpRequests* _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
   SharedTrampolineRequests*   _shared_trampoline_requests;     // used to collect requests for shared trampolines
@@ -589,11 +591,11 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _total_size      = 0;
     _oop_recorder    = nullptr;
     _overflow_arena  = nullptr;
-    _last_insn       = nullptr;
     _last_label      = nullptr;
-    _finalize_stubs  = false;
+    _last_merge_candidate = nullptr;
     _shared_stub_to_interp_requests = nullptr;
     _shared_trampoline_requests = nullptr;
+    _finalize_stubs  = false;
 
     _consts.initialize_outer(this, SECT_CONSTS);
     _insts.initialize_outer(this,  SECT_INSTS);
@@ -637,6 +639,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // copies combined relocations to the blob, returns bytes copied
   // (if target is null, it is a dry run only, just for sizing)
   csize_t copy_relocations_to(CodeBlob* blob) const;
+  csize_t copy_relocations_to(address buf, csize_t buf_limit) const;
 
   // copies combined code to the blob (assumes relocs are already in there)
   void copy_code_to(CodeBlob* blob);
@@ -669,7 +672,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   }
 
   // (2) CodeBuffer referring to pre-allocated CodeBlob.
-  CodeBuffer(CodeBlob* blob);
+  CodeBuffer(const CodeBlob* blob);
 
   // (3) code buffer allocating codeBlob memory for code & relocation
   // info but with lazy initialization.  The name must be something
@@ -787,8 +790,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   int total_skipped_instructions_size() const;
 
-  csize_t copy_relocations_to(address buf, csize_t buf_limit, bool only_inst) const;
-
   // allocated size of any and all recorded oops
   csize_t total_oop_size() const {
     OopRecorder* recorder = oop_recorder();
@@ -811,9 +812,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   OopRecorder* oop_recorder() const { return _oop_recorder; }
 
-  address last_insn() const { return _last_insn; }
-  void set_last_insn(address a) { _last_insn = a; }
-  void clear_last_insn() { set_last_insn(nullptr); }
+  address last_merge_candidate() const { return _last_merge_candidate; }
+  void set_last_merge_candidate(address a) { _last_merge_candidate = a; }
+  void clear_last_merge_candidate() { set_last_merge_candidate(nullptr); }
 
   address last_label() const { return _last_label; }
   void set_last_label(address a) { _last_label = a; }

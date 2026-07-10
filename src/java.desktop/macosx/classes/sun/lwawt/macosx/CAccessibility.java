@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,9 +60,11 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JTextArea;
 import javax.swing.JList;
+import javax.swing.JPopupMenu;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
 
@@ -70,7 +72,7 @@ import sun.awt.AWTAccessor;
 import sun.lwawt.LWWindowPeer;
 import sun.swing.SwingAccessor;
 
-class CAccessibility implements PropertyChangeListener {
+final class CAccessibility implements PropertyChangeListener {
     private static Set<String> ignoredRoles;
 
     static {
@@ -102,6 +104,7 @@ class CAccessibility implements PropertyChangeListener {
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", this);
     }
 
+    @Override
     public void propertyChange(final PropertyChangeEvent evt) {
         Object newValue = evt.getNewValue();
         if (newValue == null) return;
@@ -113,7 +116,9 @@ class CAccessibility implements PropertyChangeListener {
         if (newValue instanceof Accessible) {
             AccessibleContext nvAC = ((Accessible) newValue).getAccessibleContext();
             AccessibleRole nvRole = nvAC.getAccessibleRole();
-            if (!ignoredRoles.contains(roleKey(nvRole))) {
+            String roleStr = nvRole == null ? null :
+                    AWTAccessor.getAccessibleBundleAccessor().getKey(nvRole);
+            if (!ignoredRoles.contains(roleStr)) {
                 focusChanged();
             }
         }
@@ -856,6 +861,34 @@ class CAccessibility implements PropertyChangeListener {
         }, c);
     }
 
+    private static Accessible getCurrentAccessiblePopupMenu(Accessible a, Component c) {
+        if (a == null) return null;
+
+        return invokeAndWait(new Callable<Accessible>() {
+            @Override
+            public Accessible call() throws Exception {
+                return traversePopupMenu(a);
+            }
+        }, c);
+    }
+
+    private static Accessible traversePopupMenu(Accessible a) {
+        // a is root level popupmenu
+        AccessibleContext ac = a.getAccessibleContext();
+        if (ac != null) {
+            for (int i = 0; i < ac.getAccessibleChildrenCount(); i++) {
+                Accessible child = ac.getAccessibleChild(i);
+                if (child instanceof JMenu subMenu) {
+                    JPopupMenu popup = subMenu.getPopupMenu();
+                    if (popup.isVisible()) {
+                        return traversePopupMenu((Accessible) popup);
+                    }
+                }
+            }
+        }
+        return a;
+    }
+
     @Native private static final int JAVA_AX_ROWS = 1;
     @Native private static final int JAVA_AX_COLS = 2;
 
@@ -999,13 +1032,21 @@ class CAccessibility implements PropertyChangeListener {
             }
 
             if (!allowIgnored) {
-                final AccessibleRole role = context.getAccessibleRole();
-                if (role != null && ignoredRoles != null && ignoredRoles.contains(roleKey(role))) {
-                    // Get the child's unignored children.
-                    _addChildren(child, whichChildren, false, childrenAndRoles, ChildrenOperations.COMMON);
-                } else {
-                    childrenAndRoles.add(child);
-                    childrenAndRoles.add(getAccessibleRole(child));
+                // If a Component isn't showing then it should be classified as
+                // "ignored", and we should skip it and its descendants
+                if (isShowing(context)) {
+                    final AccessibleRole role = context.getAccessibleRole();
+                    String roleStr = role == null ? null :
+                            AWTAccessor.getAccessibleBundleAccessor().getKey(role);
+                    if (roleStr != null && ignoredRoles != null &&
+                            ignoredRoles.contains(roleStr)) {
+                        // Get the child's unignored children.
+                        _addChildren(child, whichChildren, false,
+                                childrenAndRoles, ChildrenOperations.COMMON);
+                    } else {
+                        childrenAndRoles.add(child);
+                        childrenAndRoles.add(getAccessibleRole(child));
+                    }
                 }
             } else {
                 childrenAndRoles.add(child);
@@ -1019,7 +1060,45 @@ class CAccessibility implements PropertyChangeListener {
         }
     }
 
-    private static native String roleKey(AccessibleRole aRole);
+    /**
+     * Return false if an AccessibleContext is not showing
+     * <p>
+     * This first checks {@link AccessibleComponent#isShowing()}, if possible.
+     * If there is no AccessibleComponent then this checks the
+     * AccessibleStateSet for {@link AccessibleState#SHOWING}. If there is no
+     * AccessibleStateSet then we assume (given the lack of information) the
+     * AccessibleContext may be visible, and we recursive check its parent if
+     * possible.
+     *
+     * Return false if an AccessibleContext is not showing
+     */
+    private static boolean isShowing(final AccessibleContext context) {
+        AccessibleComponent c = context.getAccessibleComponent();
+        if (c != null) {
+            return c.isShowing();
+        }
+
+        AccessibleStateSet ass = context.getAccessibleStateSet();
+        if (ass != null && ass.contains((AccessibleState.SHOWING))) {
+            return true;
+        } else {
+            // We don't have an AccessibleComponent. And either we don't
+            // have an AccessibleStateSet OR it doesn't include useful
+            // info to determine visibility/showing. So our status is
+            // unknown. When in doubt: assume we're showing and ask our
+            // parent if it is visible/showing.
+        }
+
+        Accessible parent = context.getAccessibleParent();
+        if (parent == null) {
+            return true;
+        }
+        AccessibleContext parentContext = parent.getAccessibleContext();
+        if (parentContext == null) {
+            return true;
+        }
+        return isShowing(parentContext);
+    }
 
     public static Object[] getChildren(final Accessible a, final Component c) {
         if (a == null) return null;

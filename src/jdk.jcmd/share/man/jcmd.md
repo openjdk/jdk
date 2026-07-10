@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,16 @@ The following commands are available:
     *options*:
 
     -   `-all`: (Optional) Show help for all commands (BOOLEAN, false) .
+
+`AOT.end_recording`
+:   Ends an in-progress AOT training and records the results to the file(s) specified by `-XX:AOTConfiguration` and/or `-XX:AOTCacheOutput`.
+
+    Impact: Low
+
+    **Note:**
+
+    The JVM must be started in AOT training mode using command-line arguments such as `-XX:AOTMode=record` or `-XX:AOTCacheOutput=<file>`.
+    The results of the AOT training can be an AOT configuration file, an AOT cache file, or both.
 
 `Compiler.CodeHeap_Analytics`  \[*function*\] \[*granularity*\]
 :   Print CodeHeap analytics
@@ -704,7 +714,7 @@ The following commands are available:
     Impact: Low
 
 `Thread.dump_to_file` \[*options*\] *filepath*
-:   Dump threads, with stack traces, to a file in plain text or JSON format.
+:   Dump all threads, with stack traces, to a file in plain text or JSON format.
 
     Impact: Medium: Depends on the number of threads.
 
@@ -723,7 +733,8 @@ The following commands are available:
     -   *filepath*:  The file path to the output file.  If %p is specified in the filename, it is expanded to the JVM's PID.  (FILE, no default value)
 
 `Thread.print` \[*options*\]
-:   Prints all threads with stacktraces.
+:   Print all platform threads, and mounted virtual threads, with stack traces.
+    The Thread.dump_to_file command will print all threads to a file.
 
     Impact: Medium --- depends on the number of threads.
 

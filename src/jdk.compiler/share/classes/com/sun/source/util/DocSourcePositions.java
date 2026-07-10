@@ -28,6 +28,7 @@ package com.sun.source.util;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.Tree;
 
 /**
  * Provides methods to obtain the position of a DocTree within a javadoc comment.
@@ -59,8 +60,32 @@ public interface DocSourcePositions extends SourcePositions {
      *                position is being sought
      * @param tree tree for which a position is sought
      * @return the start position of tree
+     * @deprecated use {@link #getStartPosition(DocCommentTree, DocTree)} instead
      */
-    long getStartPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree);
+    @Deprecated(since = "27", forRemoval = true)
+    default long getStartPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
+        return getStartPosition(comment, tree);
+    }
+
+    /**
+     * {@return the starting position of the given {@link Tree}. If the starting position is not available, returns
+     * {@link javax.tools.Diagnostic#NOPOS}}
+     *
+     * <p>The given tree should be under the given comment tree. The returned position must be at the start of the
+     * yield of this tree, that is for any sub-tree of this tree, the following must hold:
+     *
+     * <p>
+     * {@code getStartPosition(comment, tree) <= getStartPosition(comment, subtree)} or <br>
+     * {@code getStartPosition(comment, tree) == NOPOS} or <br>
+     * {@code getStartPosition(comment, subtree) == NOPOS}
+     * </p>
+     *
+     * @param comment the comment tree that encloses the tree for which the
+     *                position is being sought
+     * @param tree tree for which a position is sought
+     * @since 27
+     */
+    long getStartPosition(DocCommentTree comment, DocTree tree);
 
     /**
      * Returns the ending position of the tree within the comment within the file.  If tree is not found within
@@ -91,7 +116,39 @@ public interface DocSourcePositions extends SourcePositions {
      *                position is being sought
      * @param tree tree for which a position is sought
      * @return the end position of tree
+     * @deprecated use {@link #getEndPosition(DocCommentTree, DocTree)} instead
      */
-    long getEndPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree);
+    @Deprecated(since = "27", forRemoval = true)
+    default long getEndPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
+        return getEndPosition(comment, tree);
+    }
+
+    /**
+     * {@return the ending position of the given {@link Tree}. If the ending position is not available, returns
+     * {@link javax.tools.Diagnostic#NOPOS}}
+     *
+     * <p>The given tree should be under the given comment tree. The returned position must be at the end of the yield
+     * of this tree, that is for any sub-tree of this tree, the following must hold:
+     *
+     * <p>
+     * {@code getEndPosition(comment, tree) >= getEndPosition(comment, subtree)} or <br>
+     * {@code getEndPosition(comment, tree) == NOPOS} or <br>
+     * {@code getEndPosition(comment, subtree) == NOPOS}
+     * </p>
+     *
+     * In addition, the following must hold:
+     *
+     * <p>
+     * {@code getStartPosition(comment, tree) <= getEndPosition(comment, tree)} or <br>
+     * {@code getStartPosition(comment, tree) == NOPOS} or <br>
+     * {@code getEndPosition(comment, tree) == NOPOS}
+     * </p>
+     *
+     * @param comment the comment tree that encloses the tree for which the
+     *                position is being sought
+     * @param tree tree for which a position is sought
+     * @since 27
+     */
+    long getEndPosition(DocCommentTree comment, DocTree tree);
 
 }

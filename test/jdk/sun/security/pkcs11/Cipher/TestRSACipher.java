@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import jdk.test.lib.security.SecurityUtils;
+import jtreg.SkippedException;
 
 public class TestRSACipher extends PKCS11Test {
 
@@ -55,8 +56,7 @@ public class TestRSACipher extends PKCS11Test {
         try {
             Cipher.getInstance(RSA_ALGOS[0], p);
         } catch (GeneralSecurityException e) {
-            System.out.println("Not supported by provider, skipping");
-            return;
+            throw new SkippedException("Algorithm " + RSA_ALGOS[0] + " is not supported by provider, skipping");
         }
         String kpgAlgorithm = "RSA";
         int keySize = SecurityUtils.getTestKeySize(kpgAlgorithm);

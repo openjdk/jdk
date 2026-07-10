@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +38,8 @@
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "registerSaver_s390.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -402,9 +405,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
         break;
     }
 
-    // Second set_callee_saved is really a waste but we'll keep things as they were for now
     map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2), live_regs[i].vmreg);
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size) >> 2), live_regs[i].vmreg->next());
   }
   assert(first != noreg, "Should spill at least one int reg.");
   __ z_stmg(first, last, first_offset, Z_SP);
@@ -416,12 +417,6 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
 
     map->set_callee_saved(VMRegImpl::stack2reg(offset>>2),
                    RegisterSaver_LiveVRegs[i].vmreg);
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size ) >> 2),
-                   RegisterSaver_LiveVRegs[i].vmreg->next());
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + (half_reg_size * 2)) >> 2),
-                   RegisterSaver_LiveVRegs[i].vmreg->next(2));
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + (half_reg_size * 3)) >> 2),
-                   RegisterSaver_LiveVRegs[i].vmreg->next(3));
   }
 
   assert(offset == frame_size_in_bytes, "consistency check");
@@ -473,7 +468,6 @@ OopMap* RegisterSaver::generate_oop_map(MacroAssembler* masm, RegisterSet reg_se
   for (int i = 0; i < regstosave_num; i++) {
     if (live_regs[i].reg_type < RegisterSaver::excluded_reg) {
       map->set_callee_saved(VMRegImpl::stack2reg(offset>>2), live_regs[i].vmreg);
-      map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size)>>2), live_regs[i].vmreg->next());
     }
     offset += reg_size;
   }
@@ -580,10 +574,12 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg
 
 
 // Pop the current frame and restore the registers that might be holding a result.
-void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
+void RegisterSaver::restore_result_registers(MacroAssembler* masm, bool save_vectors) {
   const int regstosave_num       = sizeof(RegisterSaver_LiveRegs) /
                                    sizeof(RegisterSaver::LiveRegType);
-  const int register_save_offset = live_reg_frame_size(all_registers) - live_reg_save_size(all_registers);
+  const int vecregstosave_num    = save_vectors ?  calculate_vregstosave_num() : 0;
+  const int vreg_save_size   = vecregstosave_num * v_reg_size;
+  const int register_save_offset = live_reg_frame_size(all_registers, save_vectors) - (live_reg_save_size(all_registers) + vreg_save_size);
 
   // Restore all result registers (ints and floats).
   int offset = register_save_offset;
@@ -609,7 +605,7 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
         ShouldNotReachHere();
     }
   }
-  assert(offset == live_reg_frame_size(all_registers), "consistency check");
+  assert(offset == live_reg_frame_size(all_registers, save_vectors) - (save_vectors ? vreg_save_size : 0) , "consistency check");
 }
 
 // ---------------------------------------------------------------------------
@@ -1346,6 +1342,395 @@ static void move32_64(MacroAssembler *masm,
 // Wrap a JNI call.
 //----------------------------------------------------------------------
 #undef USE_RESIZE_FRAME
+
+static void check_continuation_enter_argument(VMReg actual_vmreg,
+                                              Register expected_reg,
+                                              const char* name) {
+  assert(!actual_vmreg->is_stack(), "%s cannot be on stack", name);
+  assert(actual_vmreg->as_Register() == expected_reg,
+         "%s is in unexpected register: %s instead of %s",
+         name, actual_vmreg->as_Register()->name(), expected_reg->name());
+}
+
+//---------------------------- continuation_enter_setup ---------------------------
+//
+// Frame setup.
+//
+// Arguments:
+//   None.
+//
+// Results:
+//   Z_SP: pointer to blank ContinuationEntry in the pushed frame.
+//
+// Kills:
+//   Nothing
+//
+static OopMap* continuation_enter_setup(MacroAssembler* masm, int& framesize_words) {
+
+  assert(ContinuationEntry::size() % VMRegImpl::stack_slot_size == 0, "");
+  assert(in_bytes(ContinuationEntry::cont_offset())  % VMRegImpl::stack_slot_size == 0, "");
+  assert(in_bytes(ContinuationEntry::chunk_offset()) % VMRegImpl::stack_slot_size == 0, "");
+
+  const int frame_size_in_bytes = (int)ContinuationEntry::size();
+  assert(is_aligned(frame_size_in_bytes, frame::alignment_in_bytes), "alignment error");
+
+  framesize_words = frame_size_in_bytes / wordSize;
+
+  DEBUG_ONLY(__ block_comment("continuation_enter_setup {"));
+  __ save_return_pc(); // preserve current Z_R14
+  __ push_frame(frame_size_in_bytes);
+
+  OopMap* map = new OopMap((int)frame_size_in_bytes / VMRegImpl::stack_slot_size, 0 /* arg_slots*/);
+  __ z_mvc(Address(Z_SP, ContinuationEntry::parent_offset()), /* move to */
+           Address(Z_thread, JavaThread::cont_entry_offset()), /* move from */
+           sizeof(ContinuationEntry*) /* size of data to be moved */
+           );
+  __ z_stg(Z_SP, Address(Z_thread, JavaThread::cont_entry_offset()));
+  DEBUG_ONLY(__ block_comment("} continuation_enter_setup"));
+  return map;
+}
+
+//---------------------------- fill_continuation_entry ---------------------------
+//
+// Initialize the new ContinuationEntry.
+//
+// Arguments:
+//   Z_SP         : pointer to blank Continuation entry
+//   reg_cont_obj : pointer to the continuation
+//   reg_flags    : flags / isVirtualThread
+//
+// Results:
+//   Z_SP : pointer to filled out ContinuationEntry
+//
+// Kills:
+//   This is peace driven method, doesn't kill anyone.
+//
+static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj, Register reg_flags) {
+  assert_different_registers(reg_cont_obj, reg_flags);
+  DEBUG_ONLY(__ block_comment("fill_continuation_entry {"));
+#ifdef ASSERT
+  assert(Immediate::is_simm16(ContinuationEntry::cookie_value()), "update below instruction");
+  __ z_mvhi(Address(Z_SP, ContinuationEntry::cookie_offset()), ContinuationEntry::cookie_value());
+#endif //ASSERT
+  __ z_stg(reg_cont_obj, Address(Z_SP, ContinuationEntry::cont_offset()));
+  __ z_st(reg_flags,    Address(Z_SP, ContinuationEntry::flags_offset()));
+  __ z_mvghi(Address(Z_SP, ContinuationEntry::chunk_offset()), 0);
+  __ z_mvhi( Address(Z_SP, ContinuationEntry::argsize_offset()), 0);
+  __ z_mvhi( Address(Z_SP, ContinuationEntry::pin_count_offset()), 0);
+
+  __ z_mvc(Address(Z_SP, ContinuationEntry::parent_cont_fastpath_offset()), /* move to */
+           Address(Z_thread, JavaThread::cont_fastpath_offset()), /* move from */
+           sizeof(ContinuationEntry*) /* size of data to be moved */
+  );
+
+  __ z_mvghi(Address(Z_thread, JavaThread::cont_fastpath_offset()), 0);
+
+  DEBUG_ONLY(__ block_comment("} fill_continuation_entry"));
+}
+
+//---------------------------- continuation_enter_cleanup ---------------------------
+//
+// Copy corresponding attributes from the top ContinuationEntry to the JavaThread
+// before deleting it.
+//
+// Arguments:
+//   Z_SP: pointer to the ContinuationEntry
+//
+// Results:
+//   None.
+//
+// Kills:
+//   Z_R0_scratch (in debug builds)
+//   Z_R10 (when CheckJNICalls is enabled)
+//
+static void continuation_enter_cleanup(MacroAssembler* masm) {
+  __ block_comment("continuation_enter_cleanup {");
+
+#ifdef ASSERT
+  __ z_cg(Z_SP, Address(Z_thread, JavaThread::cont_entry_offset()));
+  __ asm_assert(Assembler::bcondEqual, FILE_AND_LINE ": incorrect Z_SP", 0x1bb);
+
+  __ z_lgf(Z_R0, Address(Z_SP, ContinuationEntry::cookie_offset()));
+  __ z_cfi(Z_R0, ContinuationEntry::cookie_value());
+  __ asm_assert(Assembler::bcondEqual, FILE_AND_LINE ": incorrect cookie value", 0x1cc);
+#endif // ASSERT
+
+  __ z_mvc(Address(Z_thread, JavaThread::cont_fastpath_offset()), /* move to */
+           Address(Z_SP, ContinuationEntry::parent_cont_fastpath_offset()), /* move from */
+           sizeof(ContinuationEntry*) /* size of data to be moved */
+  );
+
+  __ z_mvc(Address(Z_thread, JavaThread::cont_entry_offset()), /* move to */
+           Address(Z_SP, ContinuationEntry::parent_offset()), /* move from */
+           sizeof(ContinuationEntry*) /* size of data to be moved */
+  );
+
+  __ block_comment("} continuation_enter_cleanup");
+}
+static void gen_continuation_enter(MacroAssembler* masm,
+                                   const VMRegPair* regs,
+                                   int& exception_offset,
+                                   OopMapSet* oop_maps,
+                                   int& frame_complete,
+                                   int& framesize_words,
+                                   int& interpreted_entry_offset,
+                                   int& compiled_entry_offset) {
+  // enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread)
+  int pos_cont_obj   = 0;
+  int pos_is_cont    = 1;
+  int pos_is_virtual = 2;
+
+  // The platform-specific calling convention may present the arguments in various registers.
+  // To simplify the rest of the code, we expect the arguments to reside at these known
+  // registers, and we additionally check the placement here in case calling convention ever
+  // changes.
+  Register reg_cont_obj   = Z_ARG1;
+  Register reg_is_cont    = Z_ARG2;
+  Register reg_is_virtual = Z_ARG3;
+
+  check_continuation_enter_argument(regs[pos_cont_obj].first(),   reg_cont_obj,   "Continuation object");
+  check_continuation_enter_argument(regs[pos_is_cont].first(),    reg_is_cont,    "isContinue");
+  check_continuation_enter_argument(regs[pos_is_virtual].first(), reg_is_virtual, "isVirtualThread");
+
+  address resolve_static_call = SharedRuntime::get_resolve_static_call_stub();
+
+  address start = __ pc();
+
+  Label L_thaw, L_exit;
+
+  // i2i entry used at interp_only_mode only
+  interpreted_entry_offset = __ pc() - start;
+  {
+#ifdef ASSERT
+    NearLabel is_interp_only;
+    __ load_and_test_int(Z_R0_scratch, Address(Z_thread, JavaThread::interp_only_mode_offset()));
+    __ z_brnz(is_interp_only);
+    __ stop("enterSpecial interpreter entry called when not in interp_only_mode");
+    __ bind(is_interp_only);
+#endif
+
+    // Read interpreter arguments into registers (this is an ad-hoc i2c adapter)
+    // s390x stores frame pointer in the slot 0, so argument will be loaded from slot 1
+    __ z_lg(reg_cont_obj,     Address(Z_esp, Interpreter::stackElementSize*3));
+    __ z_llgf(reg_is_cont,    Address(Z_esp, Interpreter::stackElementSize*2));
+    __ z_llgf(reg_is_virtual, Address(Z_esp, Interpreter::stackElementSize*1));
+
+    __ push_cont_fastpath();
+
+    OopMap* map = continuation_enter_setup(masm, framesize_words);
+
+    // The frame is complete here, but we only record it for the compiled entry, so the frame would appear unsafe,
+    // but that's okay because at the very worst we'll miss an async sample, but we're in interp_only_mode anyway.
+
+    __ verify_oop(reg_cont_obj);
+
+    fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
+
+    // If isContinue, call to thaw. Otherwise, call Continuation.enter(Continuation c, boolean isContinue)
+    __ compare32_and_branch(reg_is_cont, 0, Assembler::bcondNotZero, L_thaw);
+
+    // --- call Continuation.enter(Continuation c, boolean isContinue)
+
+    // Emit compiled static call. The call will be always resolved to the c2i
+    // entry of Continuation.enter(Continuation c, boolean isContinue).
+    // There are special cases in SharedRuntime::resolve_static_call_C() and
+    // SharedRuntime::resolve_sub_helper_internal() to achieve this
+    // See also corresponding call below.
+    // Make sure the call is patchable
+
+    __ align(NativeCall::call_far_pcrelative_displacement_alignment,
+        __ offset() + NativeCall::call_far_pcrelative_displacement_offset);
+
+    // Emit stub for static call
+    address stub = CompiledDirectCall::emit_to_interp_stub(masm, __ pc());
+    if (stub == nullptr) {
+      fatal("CodeCache is full at gen_continuation_enter");
+    }
+    __ relocate(relocInfo::static_call_type);
+    __ z_nop();
+    __ z_brasl(Z_R14, resolve_static_call);
+    oop_maps->add_gc_map(__ pc() - start, map);
+    __ post_call_nop();
+    __ branch_optimized(Assembler::bcondAlways, L_exit);
+  }
+
+  // compiled entry
+  __ align(CodeEntryAlignment);
+  compiled_entry_offset = __ pc() - start;
+
+  OopMap* map = continuation_enter_setup(masm, framesize_words);
+
+  // Frame is now completed as far as size and linkage.
+
+  frame_complete =__ pc() - start;
+
+  __ verify_oop(reg_cont_obj);
+
+  fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
+
+  // If isContinue, call to thaw. Otherwise, call Continuation.enter(Continuation c, boolean isContinue)
+  __ z_ltr(reg_is_cont, reg_is_cont);
+  __ branch_optimized(Assembler::bcondNotEqual, L_thaw); // was reg_is_cont equal to 0 ?
+
+  // --- call Continuation.enter(Continuation c, boolean isContinue)
+
+  // Make sure the call is patchable
+  __ align(NativeCall::call_far_pcrelative_displacement_alignment,
+      __ offset() + NativeCall::call_far_pcrelative_displacement_offset);
+
+  // Emit stub for static call
+  address stub = CompiledDirectCall::emit_to_interp_stub(masm, __ pc());
+  guarantee(stub != nullptr, "CodeCache is full at gen_continuation_enter");
+
+  assert((__ offset() + NativeCall::call_far_pcrelative_displacement_offset) % NativeCall::call_far_pcrelative_displacement_alignment == 0,
+         "must be aligned (offset=%d)", __ offset());
+
+  // The call needs to be resolved. There's a special case for this in
+  // SharedRuntime::find_callee_info_helper() which calls
+  // LinkResolver::resolve_continuation_enter() which resolves the call to
+  // Continuation.enter(Continuation c, boolean isContinue).
+  __ relocate(relocInfo::static_call_type);
+  __ z_nop();
+  __ z_brasl(Z_R14, resolve_static_call);
+  oop_maps->add_gc_map(__ pc() - start, map);
+  __ post_call_nop();
+
+  __ branch_optimized(Assembler::bcondAlways, L_exit);
+
+  // --- Thawing path
+
+  __ bind(L_thaw);
+  ContinuationEntry::_thaw_call_pc_offset = __ pc() - start;
+  __ load_const_optimized(Z_R1_scratch, StubRoutines::cont_thaw());
+  __ call(Z_R1_scratch);
+  oop_maps->add_gc_map(__ pc() - start, map->deep_copy());
+  ContinuationEntry::_return_pc_offset = __ pc() - start;
+  __ post_call_nop();
+
+  // --- Normal exit (resolve/thawing)
+  __ bind(L_exit);
+  ContinuationEntry::_cleanup_offset = __ pc() - start;
+  continuation_enter_cleanup(masm);
+
+  // Pop frame and return
+  DEBUG_ONLY(__ z_lg(Z_R0, Address(Z_SP, 0)));
+  __ add2reg(Z_SP, framesize_words * wordSize);
+
+#ifdef ASSERT
+  NearLabel ok;
+  __ z_cgr(Z_R0, Z_SP);
+  __ z_bre(ok);
+  __ stop("inconsistent frame size");
+  __ bind(ok);
+#endif // ASSERT
+
+  __ restore_return_pc();
+  __ z_br(Z_R14);
+
+  // --- Exception handling path
+  exception_offset = __ pc() - start;
+
+  continuation_enter_cleanup(masm);
+
+  // Load caller's return pc
+  __ z_lg(Z_ARG2, _z_common_abi(callers_sp), Z_SP);
+  __ z_lg(Z_ARG2, _z_common_abi(return_pc), Z_ARG2);
+
+  __ save_return_pc();
+  __ push_frame_abi160(0 + 2 * BytesPerWord);
+
+  __ z_stg(Z_ARG1, 0 * BytesPerWord + frame::z_abi_160_size, Z_SP); // save return value containing the exception oop
+  __ z_stg(Z_ARG2, 1 * BytesPerWord + frame::z_abi_160_size, Z_SP); // save exception_pc
+
+  // Find exception handler.
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address),
+                  Z_thread,
+                  Z_ARG2);
+
+  // Copy handler's address.
+  __ z_lgr(Z_R1, Z_RET);
+
+  // Set up the arguments for the exception handler:
+  // - Z_ARG1: exception oop
+  // - Z_ARG2: exception pc
+  __ z_lg(Z_ARG1, 0 * BytesPerWord + frame::z_abi_160_size, Z_SP); // load the exception oop
+  __ z_lg(Z_ARG2, 1 * BytesPerWord + frame::z_abi_160_size, Z_SP); // load the exception pc
+
+  __ pop_frame(); // pop frame pushed before runtime call
+  // __ restore_return_pc(); // can be skipped
+
+  __ pop_frame(); // pop enterSpecial frame
+  __ restore_return_pc();
+
+  // Jump to exception handler
+  __ z_br(Z_R1 /*handler address*/);
+}
+
+static void gen_continuation_yield(MacroAssembler* masm,
+                                   const VMRegPair* regs,
+                                   OopMapSet* oop_maps,
+                                   int& frame_complete,
+                                   int& framesize_words,
+                                   int& compiled_entry_offset) {
+  const int framesize_bytes = (int)align_up((int)frame::z_abi_160_size, frame::alignment_in_bytes);
+  framesize_words = framesize_bytes / wordSize;
+
+  Register Rtmp = Z_R1_scratch;
+
+  address start = __ pc();
+  compiled_entry_offset = __ pc() - start;
+
+  // Save return pc and push entry frame
+  __ save_return_pc();
+  __ push_frame(framesize_bytes);
+
+    DEBUG_ONLY(__ block_comment("Frame Complete (gen_continuation_yield):"));
+    frame_complete = __ pc() - start;
+    address last_java_pc = __ pc();
+
+
+    // This nop must be exactly at the PC we push into the frame info.
+    // We use this nop for fast CodeBlob lookup, associate the OopMap
+    // with it right away.
+    __ post_call_nop();
+    OopMap* map = new OopMap(framesize_bytes / VMRegImpl::stack_slot_size, 1);
+    oop_maps->add_gc_map(last_java_pc - start, map);
+
+    __ z_larl(Rtmp, last_java_pc);
+    __ set_last_Java_frame(Z_SP, Rtmp);
+    __ call_VM_leaf(Continuation::freeze_entry(), Z_thread, Z_SP);
+    __ reset_last_Java_frame();
+
+    NearLabel L_pinned;
+    __ z_cij(Z_RET, 0, Assembler::bcondNotEqual, L_pinned);
+
+    // Pop frames of continuation including this stub's frame
+    __ z_lg(Z_SP, Address(Z_thread, JavaThread::cont_entry_offset()));
+    // The frame pushed by gen_continuation_enter() is on top now again
+    continuation_enter_cleanup(masm);
+    // Pop frame and return
+    Label L_return;
+    __ bind(L_return);
+    __ pop_frame();
+    __ restore_return_pc();
+    __ z_br(Z_R14);
+
+    // yield failed - continuation is pinned
+    __ bind(L_pinned);
+
+    // handle pending exception thrown by freeze
+    __ load_and_test_long(Rtmp, Address(Z_thread, Thread::pending_exception_offset()));
+    __ z_bre(L_return); // return if no exception is pending
+    __ pop_frame();
+    __ restore_return_pc();
+    __ load_const_optimized(Z_R1_scratch, StubRoutines::forward_exception_entry());
+    __ z_br(Z_R1_scratch);
+}
+
+void SharedRuntime::continuation_enter_cleanup(MacroAssembler* masm) {
+  ::continuation_enter_cleanup(masm);
+}
+
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 const methodHandle& method,
                                                 int compile_id,
@@ -1353,6 +1738,66 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 VMRegPair *in_regs,
                                                 BasicType ret_type) {
   int total_in_args = method->size_of_parameters();
+  if (method->is_continuation_native_intrinsic()) {
+    int exception_offset = -1;
+    OopMapSet* oop_maps = new OopMapSet();
+    int frame_complete = -1;
+    int stack_slots = -1;
+    int interpreted_entry_offset = -1;
+    int vep_offset = -1; // verified entry point offset
+    if (method->is_continuation_enter_intrinsic()) {
+      gen_continuation_enter(masm,
+                             in_regs,
+                             exception_offset,
+                             oop_maps,
+                             frame_complete,
+                             stack_slots,
+                             interpreted_entry_offset,
+                             vep_offset);
+    } else if(method->is_continuation_yield_intrinsic()) {
+      gen_continuation_yield(masm,
+                             in_regs,
+                             oop_maps,
+                             frame_complete,
+                             stack_slots,
+                             vep_offset);
+    } else {
+      guarantee(false, "Unknown Continuation native intrinsic");
+    }
+
+#ifdef ASSERT
+    if (method->is_continuation_enter_intrinsic()) {
+      assert(interpreted_entry_offset != -1, "Must be set");
+      assert(exception_offset != -1,         "Must be set");
+    } else {
+      assert(interpreted_entry_offset == -1, "Must be unset");
+      assert(exception_offset == -1,         "Must be unset");
+    }
+    assert(frame_complete != -1,    "Must be set");
+    assert(stack_slots != -1,       "Must be set");
+    assert(vep_offset != -1,        "Must be set");
+#endif
+
+    __ flush();
+    nmethod* nm = nmethod::new_native_nmethod(method,
+                                              compile_id,
+                                              masm->code(),
+                                              vep_offset,
+                                              frame_complete,
+                                              stack_slots,
+                                              in_ByteSize(-1),
+                                              in_ByteSize(-1),
+                                              oop_maps,
+                                              exception_offset);
+    if (nm == nullptr) return nm;
+    if (method->is_continuation_enter_intrinsic()) {
+      ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
+    } else if (method->is_continuation_yield_intrinsic()) {
+      _cont_doYield_stub = nm;
+    }
+    return nm;
+  }
+
   if (method->is_method_handle_intrinsic()) {
     vmIntrinsics::ID iid = method->intrinsic_id();
     intptr_t start = (intptr_t) __ pc();
@@ -1552,6 +1997,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   unsigned int wrapper_FrameDone;
   unsigned int wrapper_CRegsSet;
   Label     handle_pending_exception;
+  Label     last_java_pc;
 
   //---------------------------------------------------------------------
   // Unverified entry point (UEP)
@@ -1567,7 +2013,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   //---------------------------------------------------------------------
   wrapper_VEPStart = __ offset();
 
-  if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
+  if (method->needs_clinit_barrier()) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     Label L_skip_barrier;
     Register klass = Z_R1_scratch;
     // Notify OOP recorder (don't need the relocation)
@@ -1732,16 +2179,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // So if we must call out we must push a new frame.
   //////////////////////////////////////////////////////////////////////
 
-
-  // Calc the current pc into Z_R10 and into wrapper_CRegsSet.
-  // Both values represent the same position.
-  __ get_PC(Z_R10);                // PC into register
-  wrapper_CRegsSet = __ offset();  // and into into variable.
-
-  // Z_R10 now has the pc loaded that we will use when we finally call to native.
-
-  // We use the same pc/oopMap repeatedly when we call out.
-  oop_maps->add_gc_map((int)(wrapper_CRegsSet-wrapper_CodeStart), map);
+  // The last java pc will also be used as resume pc if this is the wrapper for wait0.
+  // For this purpose the precise location matters but not for oopmap lookup.
+  __ z_larl(Z_R10, last_java_pc);
 
   // Lock a synchronized method.
 
@@ -1764,13 +2204,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ add2reg(r_box, lock_offset, Z_SP);
 
     // Try fastpath for locking.
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // Fast_lock kills r_temp_1, r_temp_2.
-      __ compiler_fast_lock_lightweight_object(r_oop, r_box, r_tmp1, r_tmp2);
-    } else {
-      // Fast_lock kills r_temp_1, r_temp_2.
-      __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
-    }
+    // Fast_lock kills r_temp_1, r_temp_2.
+    __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
     __ z_bre(done);
 
     //-------------------------------------------------------------------------
@@ -1791,10 +2226,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ z_lgr(Z_ARG3, Z_thread);
 
     __ set_last_Java_frame(oldSP, Z_R10 /* gc map pc */);
+    assert(Z_R10->is_nonvolatile(), "Z_R10 needs to be preserved accross complete_monitor_locking_C call");
 
     // Do the call.
+    __ push_cont_fastpath();
     __ load_const_optimized(Z_R1_scratch, CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C));
     __ call(Z_R1_scratch);
+    __ pop_cont_fastpath();
 
     __ reset_last_Java_frame();
 
@@ -1921,6 +2359,23 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // Transition from _thread_in_native_trans to _thread_in_Java.
   __ set_thread_state(_thread_in_Java);
 
+  // Check preemption for Object.wait()
+  if (method->is_object_wait0()) {
+    NearLabel not_preempted;
+    __ z_ltg(Z_R1_scratch, Address(Z_thread, JavaThread::preempt_alternate_return_offset()));
+    __ z_brz(not_preempted); // if 0, jump to not_preempted
+    __ z_mvghi(Address(Z_thread, JavaThread::preempt_alternate_return_offset()), 0);
+    __ z_br(Z_R1_scratch);
+    __ bind(not_preempted);
+  }
+  __ bind(last_java_pc);
+
+  // Calc the current pc into wrapper_CRegsSet.
+  wrapper_CRegsSet = __ offset();  // and into into variable.
+
+  // We use the same pc/oopMap repeatedly when we call out.
+  oop_maps->add_gc_map((int)(wrapper_CRegsSet-wrapper_CodeStart), map);
+
   //--------------------------------------------------------------------
   // Reguard any pages if necessary.
   // Protect native result from being destroyed.
@@ -1965,13 +2420,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ add2reg(r_box, lock_offset, Z_SP);
 
     // Try fastpath for unlocking.
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // Fast_unlock kills r_tmp1, r_tmp2.
-      __ compiler_fast_unlock_lightweight_object(r_oop, r_box, r_tmp1, r_tmp2);
-    } else {
-      // Fast_unlock kills r_tmp1, r_tmp2.
-      __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
-    }
+    // Fast_unlock kills r_tmp1, r_tmp2.
+    __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
     __ z_bre(done);
 
     // Slow path for unlocking.
@@ -2028,7 +2478,10 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // Clear "last Java frame" SP and PC.
   //--------------------------------------------------------------------
 
-  __ reset_last_Java_frame();
+
+  // Last java frame won't be set if we're resuming after preemption
+  bool maybe_preempted = method->is_object_wait0();
+  __ reset_last_Java_frame(/* check_last_java_sp = */ !maybe_preempted);
 
   // Unpack oop result, e.g. JNIHandles::resolve result.
   if (is_reference_type(ret_type)) {
@@ -2139,7 +2592,7 @@ static address gen_c2i_adapter(MacroAssembler  *masm,
   Register  value       = Z_R12;
 
   // Remember the senderSP so we can pop the interpreter arguments off of the stack.
-  // In addition, frame manager expects initial_caller_sp in Z_R10.
+  // In addition, template interpreter expects initial_caller_sp in Z_R10.
   __ z_lgr(sender_SP, Z_SP);
 
   // This should always fit in 14 bit immediate.
@@ -2333,6 +2786,8 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
     }
   }
 
+  __ push_cont_fastpath(); // Set JavaThread::_cont_fastpath to the sp of the oldest interpreted frame we know about
+
   // Jump to the compiled code just as if compiled code was doing it.
   // load target address from method:
   __ z_lg(Z_R1_scratch, Address(Z_method, Method::from_compiled_offset()));
@@ -2357,12 +2812,10 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
                                             int comp_args_on_stack,
                                             const BasicType *sig_bt,
                                             const VMRegPair *regs,
-                                            AdapterHandlerEntry* handler) {
+                                            address entry_address[AdapterBlob::ENTRY_COUNT]) {
   __ align(CodeEntryAlignment);
-  address i2c_entry = __ pc();
+  entry_address[AdapterBlob::I2C] = __ pc();
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
-
-  address c2i_unverified_entry;
 
   Label skip_fixup;
   {
@@ -2373,7 +2826,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
 
     // Unverified Entry Point UEP
     __ align(CodeEntryAlignment);
-    c2i_unverified_entry = __ pc();
+    entry_address[AdapterBlob::C2I_Unverified] = __ pc();
 
     __ ic_check(2);
     __ z_lg(Z_method, Address(Z_inline_cache, CompiledICData::speculated_method_offset()));
@@ -2386,32 +2839,28 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
     // Fallthru to VEP. Duplicate LTG, but saved taken branch.
   }
 
-  address c2i_entry = __ pc();
+  entry_address[AdapterBlob::C2I] = __ pc();
 
   // Class initialization barrier for static methods
-  address c2i_no_clinit_check_entry = nullptr;
-  if (VM_Version::supports_fast_class_init_checks()) {
-    Label L_skip_barrier;
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
+  assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+  Label L_skip_barrier;
 
-    { // Bypass the barrier for non-static methods
-      __ testbit_ushort(Address(Z_method, Method::access_flags_offset()), JVM_ACC_STATIC_BIT);
-      __ z_bfalse(L_skip_barrier); // non-static
-    }
+  // Bypass the barrier for non-static methods
+  __ testbit_ushort(Address(Z_method, Method::access_flags_offset()), JVM_ACC_STATIC_BIT);
+  __ z_bfalse(L_skip_barrier); // non-static
 
-    Register klass = Z_R11;
-    __ load_method_holder(klass, Z_method);
-    __ clinit_barrier(klass, Z_thread, &L_skip_barrier /*L_fast_path*/);
+  Register klass = Z_R11;
+  __ load_method_holder(klass, Z_method);
+  __ clinit_barrier(klass, Z_thread, &L_skip_barrier /*L_fast_path*/);
 
-    __ load_const_optimized(klass, SharedRuntime::get_handle_wrong_method_stub());
-    __ z_br(klass);
+  __ load_const_optimized(klass, SharedRuntime::get_handle_wrong_method_stub());
+  __ z_br(klass);
 
-    __ bind(L_skip_barrier);
-    c2i_no_clinit_check_entry = __ pc();
-  }
+  __ bind(L_skip_barrier);
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
-
-  handler->set_entry_points(i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
   return;
 }
 
@@ -2438,8 +2887,7 @@ uint SharedRuntime::out_preserve_stack_slots() {
 }
 
 VMReg SharedRuntime::thread_register() {
-  Unimplemented();
-  return nullptr;
+  return Z_thread->as_VMReg();
 }
 
 //
@@ -2544,7 +2992,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
-  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  const char* name = SharedRuntime::stub_name(StubId::shared_deopt_id);
   CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
@@ -2558,14 +3006,10 @@ void SharedRuntime::generate_deopt_blob() {
   // Normal entry (non-exception case)
   //
   // We have been called from the deopt handler of the deoptee.
-  // Z_R14 points behind the call in the deopt handler. We adjust
-  // it such that it points to the start of the deopt handler.
+  // Z_R14 points to the entry point of the deopt handler.
   // The return_pc has been stored in the frame of the deoptee and
   // will replace the address of the deopt_handler in the call
   // to Deoptimization::fetch_unroll_info below.
-  // The (int) cast is necessary, because -((unsigned int)14)
-  // is an unsigned int.
-  __ add2reg(Z_R14, -(int)NativeCall::max_instruction_size());
 
   const Register   exec_mode_reg = Z_tmp_1;
 
@@ -2576,7 +3020,7 @@ void SharedRuntime::generate_deopt_blob() {
   // nmethod that was valid just before the nmethod was deoptimized.
   // save R14 into the deoptee frame.  the `fetch_unroll_info'
   // procedure called below will read it from there.
-  map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers);
+  map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers, Z_R14, /* save_vectors= */ SuperwordUseVX);
 
   // note the entry point.
   __ load_const_optimized(exec_mode_reg, Deoptimization::Unpack_deopt);
@@ -2592,7 +3036,7 @@ void SharedRuntime::generate_deopt_blob() {
   int reexecute_offset = __ offset() - start_off;
 
   // No need to update map as each call to save_live_registers will produce identical oopmap
-  (void) RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers);
+  (void) RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers, Z_R14, /* save_vectors= */ SuperwordUseVX);
 
   __ load_const_optimized(exec_mode_reg, Deoptimization::Unpack_reexecute);
   __ z_bru(exec_mode_initialized);
@@ -2630,7 +3074,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ z_lg(Z_R1_scratch, Address(Z_thread, JavaThread::exception_pc_offset()));
 
   // Save everything in sight.
-  (void) RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers, Z_R1_scratch);
+  (void) RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers, Z_R1_scratch, /* save_vectors= */ SuperwordUseVX);
 
   // Now it is safe to overwrite any register
 
@@ -2680,7 +3124,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ z_lgr(unroll_block_reg, Z_RET);
   // restore the return registers that have been saved
   // (among other registers) by save_live_registers(...).
-  RegisterSaver::restore_result_registers(masm);
+  RegisterSaver::restore_result_registers(masm, /* save_vectors= */ SuperwordUseVX);
 
   // reload the exec mode from the UnrollBlock (it might have changed)
   __ z_llgf(exec_mode_reg, Address(unroll_block_reg, Deoptimization::UnrollBlock::unpack_kind_offset()));
@@ -2703,6 +3147,13 @@ void SharedRuntime::generate_deopt_blob() {
   __ pop_frame();
 
   // stack: (caller_of_deoptee, ...).
+
+  // Freezing continuation frames requires that the caller is trimmed to unextended sp if compiled.
+  // If not compiled the loaded value is equal to the current SP (see frame::initial_deoptimization_info())
+  // and the frame is effectively not resized.
+  Register caller_sp = Z_R1_scratch;
+  __ z_lg(caller_sp, Address(unroll_block_reg, Deoptimization::UnrollBlock::initial_info_offset()));
+  __ resize_frame_absolute(caller_sp, Z_R0, true);
 
   // loop through the `UnrollBlock' info and create interpreter frames.
   push_skeleton_frames(masm, true/*deopt*/,
@@ -2756,7 +3207,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Make sure all code is generated
   masm->flush();
 
-  _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers)/wordSize);
+  _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers, SuperwordUseVX)/wordSize);
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
 }
 
@@ -2767,7 +3218,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_uncommon_trap_id);
   CodeBuffer buffer(name, 2048, 1024);
   if (buffer.blob() == nullptr) {
     return nullptr;
@@ -2835,6 +3286,13 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
 
   __ zap_from_to(Z_SP, Z_SP, Z_R0_scratch, Z_R1, 500, -1);
 
+  // Freezing continuation frames requires that the caller is trimmed to unextended sp if compiled.
+  // If not compiled the loaded value is equal to the current SP (see frame::initial_deoptimization_info())
+  // and the frame is effectively not resized.
+  Register caller_sp = Z_R1_scratch;
+  __ z_lg(caller_sp, Address(unroll_block_reg, Deoptimization::UnrollBlock::initial_info_offset()));
+  __ resize_frame_absolute(caller_sp, Z_R0, true);
+
   // allocate new interpreter frame(s) and possibly resize the caller's frame
   // (no more adapters !)
   push_skeleton_frames(masm, false/*deopt*/,
@@ -2895,7 +3353,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
 //
 // Generate a special Compile2Runtime blob that saves all registers,
 // and setup oopmap.
-SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
+SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr) {
   assert(StubRoutines::forward_exception_entry() != nullptr,
          "must be generated before");
   assert(is_polling_page_id(id), "expected a polling page stub id");
@@ -2913,13 +3371,13 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   address call_pc = nullptr;
   int frame_size_in_bytes;
 
-  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
+  bool cause_return = (id == StubId::shared_polling_page_return_handler_id);
   // Make room for return address (or push it again)
   if (!cause_return) {
     __ z_lg(Z_R14, Address(Z_thread, JavaThread::saved_exception_pc_offset()));
   }
 
-  bool save_vectors = (id == SharedStubId::polling_page_vectors_safepoint_handler_id);
+  bool save_vectors = (id == StubId::shared_polling_page_vectors_safepoint_handler_id);
   // Save registers, fpu state, and flags
   map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers, Z_R14, save_vectors);
 
@@ -2999,7 +3457,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
 // but since this is generic code we don't know what they are and the caller
 // must do any gc of the args.
 //
-RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination) {
   assert (StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
   assert(is_resolve_id(id), "expected a resolve stub id");
 
@@ -3098,7 +3556,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 // SharedRuntime.cpp requires that this code be generated into a
 // RuntimeStub.
 
-RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_entry) {
   assert(is_throw_id(id), "expected a throw stub id");
 
   const char* name = SharedRuntime::stub_name(id);
@@ -3413,16 +3871,76 @@ int SpinPause() {
 }
 
 #if INCLUDE_JFR
+
+// For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
+// It returns a jobject handle to the event writer.
+// The handle is dereferenced and the return value is the event writer oop.
 RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
-  if (!Continuations::enabled()) return nullptr;
-  Unimplemented();
-  return nullptr;
+  const char* name = SharedRuntime::stub_name(StubId::shared_jfr_write_checkpoint_id);
+  CodeBuffer code(name, 512, 64);
+  MacroAssembler* masm = new MacroAssembler(&code);
+
+  int framesize = frame::z_abi_160_size / VMRegImpl::stack_slot_size;
+  address start = __ pc();
+  __ save_return_pc(); // save return_pc (Z_R14)
+  __ push_frame_abi160(0);
+  int frame_complete = __ pc() - start;
+  __ set_last_Java_frame(Z_SP, noreg);
+
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), Z_thread);
+  address calls_return_pc = __ last_calls_return_pc();
+  __ reset_last_Java_frame();
+
+  // The handle is dereferenced through a load barrier.
+  __ resolve_global_jobject(Z_ARG1, Z_tmp_1, Z_tmp_2);
+  __ pop_frame();
+  __ restore_return_pc();
+  __ z_br(Z_R14);
+
+  OopMapSet* oop_maps = new OopMapSet();
+  OopMap* map = new OopMap(framesize, 0);
+  oop_maps->add_gc_map(calls_return_pc - start, map);
+
+  RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
+    RuntimeStub::new_runtime_stub(name, &code, frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps, false);
+
+  return stub;
 }
 
+// For c2: call to return a leased buffer.
 RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
-  if (!Continuations::enabled()) return nullptr;
-  Unimplemented();
-  return nullptr;
+  const char* name = SharedRuntime::stub_name(StubId::shared_jfr_return_lease_id);
+  CodeBuffer code(name, 512, 64);
+  MacroAssembler* masm = new MacroAssembler(&code);
+
+  int framesize = frame::z_abi_160_size / VMRegImpl::stack_slot_size;
+  address start = __ pc();
+  __ save_return_pc(); // save return_pc (Z_R14)
+  __ push_frame_abi160(0);
+  int frame_complete = __ pc() - start;
+  __ set_last_Java_frame(Z_SP, noreg);
+
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), Z_thread);
+  address calls_return_pc = __ last_calls_return_pc();
+
+  __ reset_last_Java_frame();
+
+  __ pop_frame();
+  __ restore_return_pc();
+  __ z_br(Z_R14);
+
+  OopMapSet* oop_maps = new OopMapSet();
+  OopMap* map = new OopMap(framesize, 0);
+  oop_maps->add_gc_map(calls_return_pc - start, map);
+
+  RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
+    RuntimeStub::new_runtime_stub(name, &code, frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps, false);
+
+  return stub;
 }
 
 #endif // INCLUDE_JFR

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,7 @@
  */
 package org.xml.sax.ptests;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
-import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
-
-import java.io.FileInputStream;
-
-import javax.xml.parsers.SAXParserFactory;
-
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
@@ -43,13 +32,24 @@ import org.xml.sax.ext.DeclHandler;
 import org.xml.sax.ext.LexicalHandler;
 import org.xml.sax.helpers.XMLFilterImpl;
 
+import javax.xml.parsers.SAXParserFactory;
+import java.io.FileInputStream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+
 /**
  * Class containing the test cases for SAXParser API
  */
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.xml.sax.ptests.XMLReaderTest
+ * @run junit/othervm org.xml.sax.ptests.XMLReaderTest
  */
 public class XMLReaderTest {
 
@@ -309,11 +309,11 @@ public class XMLReaderTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = SAXNotRecognizedException.class)
+    @Test
     public void featureNE01() throws Exception {
         SAXParserFactory spf = SAXParserFactory.newInstance();
         spf.setNamespaceAware(true);
-        spf.newSAXParser().getXMLReader().getFeature("no-meaning-feature");
+        assertThrows(SAXNotRecognizedException.class, () -> spf.newSAXParser().getXMLReader().getFeature("no-meaning-feature"));
     }
 
     /**
@@ -328,7 +328,7 @@ public class XMLReaderTest {
         XMLReader xmlReader = spf.newSAXParser().getXMLReader();
         XMLFilterImpl xmlFilter = new XMLFilterImpl();
         xmlReader.setEntityResolver(xmlFilter);
-        assertEquals(xmlReader.getEntityResolver(), xmlFilter);
+        assertEquals(xmlFilter, xmlReader.getEntityResolver());
     }
 
     /**
@@ -355,7 +355,7 @@ public class XMLReaderTest {
         XMLReader xmlReader = spf.newSAXParser().getXMLReader();
         XMLFilterImpl xmlFilter = new XMLFilterImpl();
         xmlReader.setDTDHandler(xmlFilter);
-        assertEquals(xmlReader.getDTDHandler(), xmlFilter);
+        assertEquals(xmlFilter, xmlReader.getDTDHandler());
     }
 
     /**
@@ -382,7 +382,7 @@ public class XMLReaderTest {
         XMLReader xmlReader = spf.newSAXParser().getXMLReader();
         XMLFilterImpl xmlFilter = new XMLFilterImpl();
         xmlReader.setContentHandler(xmlFilter);
-        assertEquals(xmlReader.getContentHandler(), xmlFilter);
+        assertEquals(xmlFilter, xmlReader.getContentHandler());
     }
 
     /**
@@ -429,11 +429,11 @@ public class XMLReaderTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void parse01() throws Exception {
         SAXParserFactory spf = SAXParserFactory.newInstance();
         spf.setNamespaceAware(true);
-        spf.newSAXParser().getXMLReader().parse((InputSource) null);
+        assertThrows(NullPointerException.class, () -> spf.newSAXParser().getXMLReader().parse((InputSource) null));
     }
 
     /**
@@ -441,12 +441,12 @@ public class XMLReaderTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = SAXException.class)
+    @Test
     public void parse02() throws Exception {
         try (FileInputStream fis = new FileInputStream(XML_DIR + "invalid.xml")) {
             SAXParserFactory spf = SAXParserFactory.newInstance();
             spf.setNamespaceAware(true);
-            spf.newSAXParser().getXMLReader().parse(new InputSource(fis));
+            assertThrows(SAXException.class, () -> spf.newSAXParser().getXMLReader().parse(new InputSource(fis)));
         }
     }
 
@@ -470,11 +470,11 @@ public class XMLReaderTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = SAXNotSupportedException.class)
+    @Test
     public void xrProperty01() throws Exception {
         SAXParserFactory spf = SAXParserFactory.newInstance();
         XMLReader xmlReader = spf.newSAXParser().getXMLReader();
-        xmlReader.getProperty(XML_STRING);
+        assertThrows(SAXNotSupportedException.class, () -> xmlReader.getProperty(XML_STRING));
     }
 
     /**
@@ -483,11 +483,11 @@ public class XMLReaderTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = SAXNotSupportedException.class)
+    @Test
     public void xrProperty02() throws Exception {
         SAXParserFactory spf = SAXParserFactory.newInstance();
         XMLReader xmlReader = spf.newSAXParser().getXMLReader();
-        assertNull(xmlReader.getProperty(DOM_NODE));
+        assertThrows(SAXNotSupportedException.class, () -> xmlReader.getProperty(DOM_NODE));
     }
 
     /**
@@ -623,7 +623,7 @@ class MyDeclHandler implements DeclHandler {
      * @param eName The name of the associated element.
      * @param aName The name of the attribute.
      * @param type A string representing the attribute type.
-     * @param mode A string representing the attribute defaulting mode
+     * @param valueDefault A string representing the attribute defaulting mode
      * ("#IMPLIED", "#REQUIRED", or "#FIXED") or null if none of these applies.
      * @param value A string representing the attribute's default value, or null
      * if there is none.

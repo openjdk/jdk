@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,32 +21,32 @@
 package com.sun.org.apache.bcel.internal.generic;
 
 /**
- * Thrown by InstructionList.remove() when one or multiple disposed instructions are still being referenced by an
- * InstructionTargeter object. I.e. the InstructionTargeter has to be notified that (one of) the InstructionHandle it is
- * referencing is being removed from the InstructionList and thus not valid anymore.
+ * Thrown by {@link InstructionList} when one or multiple disposed instructions are still being referenced by an {@link InstructionTargeter} object. I.e. the
+ * {@link InstructionTargeter} has to be notified that (one of) the {@link InstructionHandle} it is referencing is being removed from the
+ * {@link InstructionList} and thus not valid anymore.
  *
  * <p>
- * Making this an exception instead of a return value forces the user to handle these case explicitly in a try { ... }
- * catch. The following code illustrates how this may be done:
+ * Making this an exception instead of a return value forces the user to handle these case explicitly in a try { ... } catch. The following code illustrates how
+ * this may be done:
  * </p>
  *
- * <PRE>
+ * <pre>
  *     ...
  *     try {
  *         il.delete(start_ih, end_ih);
- *     } catch(TargetLostException e) {
+ *     } catch (TargetLostException e) {
  *         for (InstructionHandle target : e.getTargets()) {
  *             for (InstructionTargeter targeter : target.getTargeters()) {
  *                 targeter.updateTarget(target, new_target);
  *             }
  *         }
  *     }
- * </PRE>
+ * </pre>
  *
  * @see InstructionHandle
  * @see InstructionList
  * @see InstructionTargeter
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
 public final class TargetLostException extends Exception {
 
@@ -54,12 +54,14 @@ public final class TargetLostException extends Exception {
     @SuppressWarnings("serial") // Array component type is not Serializable
     private final InstructionHandle[] targets;
 
-    TargetLostException(final InstructionHandle[] t, final String mesg) {
-        super(mesg);
-        targets = t;
+    TargetLostException(final InstructionHandle[] targets, final String message) {
+        super(message);
+        this.targets = targets;
     }
 
     /**
+     * Gets the list of instructions still being targeted.
+     *
      * @return list of instructions still being targeted.
      */
     public InstructionHandle[] getTargets() {

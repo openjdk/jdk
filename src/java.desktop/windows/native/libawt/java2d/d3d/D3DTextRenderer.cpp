@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,8 +133,8 @@ D3DTR_UpdateLCDTextColor(D3DContext *d3dc, jint contrast)
     jfloat gamma = ((jfloat)contrast) / 100.0f;
     jfloat clr[4];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "D3DTR_UpdateLCDTextColor: contrast=%d", contrast);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DTR_UpdateLCDTextColor: contrast=%d", contrast);
 
     /*
      * Note: Ideally we would update the "srcAdj" uniform parameter only

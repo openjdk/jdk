@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @bug 4091859 8189366
  * @library /test/lib
  * @summary Test Socket.getInputStream().available()
- * @run main CloseAvailable
- * @run main/othervm -Djava.net.preferIPv4Stack=true CloseAvailable
+ * @run main/timeout=480 CloseAvailable
+ * @run main/othervm/timeout=480 -Djava.net.preferIPv4Stack=true CloseAvailable
  */
 
 import java.net.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -94,44 +94,24 @@ typedef void (*JImageClose_t)(JImageFile* jimage);
 
 
 /*
- * JImagePackageToModule - Given an open image file (see JImageOpen) and the name
- * of a package, return the name of module where the package resides. If the
- * package does not exist in the image file, the function returns NULL.
- * The resulting string does/should not have to be released. All strings are
- * utf-8, zero byte terminated.
- *
- * Ex.
- *  const char* package = (*JImagePackageToModule)(image, "java/lang");
- *  tty->print_cr(package);
- *  -> java.base
- */
-
-extern "C" JNIEXPORT const char *
-JIMAGE_PackageToModule(JImageFile* jimage, const char* package_name);
-
-typedef const char* (*JImagePackageToModule_t)(JImageFile* jimage, const char* package_name);
-
-
-/*
  * JImageFindResource - Given an open image file (see JImageOpen), a module
  * name, a version string and the name of a class/resource, return location
  * information describing the resource and its size. If no resource is found, the
  * function returns JIMAGE_NOT_FOUND and the value of size is undefined.
- * The version number should be "9.0" and is not used in locating the resource.
  * The resulting location does/should not have to be released.
  * All strings are utf-8, zero byte terminated.
  *
  *  Ex.
  *   jlong size;
  *   JImageLocationRef location = (*JImageFindResource)(image,
- *                                "java.base", "9.0", "java/lang/String.class", &size);
+ *           "java.base", "java/lang/String.class", is_preview_mode, &size);
  */
 extern "C" JNIEXPORT JImageLocationRef JIMAGE_FindResource(JImageFile* jimage,
-        const char* module_name, const char* version, const char* name,
+        const char* module_name, const char* name, bool is_preview_mode,
         jlong* size);
 
 typedef JImageLocationRef(*JImageFindResource_t)(JImageFile* jimage,
-        const char* module_name, const char* version, const char* name,
+        const char* module_name, const char* name, bool is_preview_mode,
         jlong* size);
 
 

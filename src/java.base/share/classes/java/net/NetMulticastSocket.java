@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -568,12 +568,6 @@ final class NetMulticastSocket extends MulticastSocket {
     private boolean interfaceSet;
 
     /**
-     * The lock on the socket's TTL. This is for set/getTTL and
-     * send(packet,ttl).
-     */
-    private final Object ttlLock = new Object();
-
-    /**
      * The lock on the socket's interface - used by setInterface
      * and getInterface
      */
@@ -585,14 +579,6 @@ final class NetMulticastSocket extends MulticastSocket {
     private InetAddress infAddress = null;
 
     @Override
-    @SuppressWarnings("removal")
-    public void setTTL(byte ttl) throws IOException {
-        if (isClosed())
-            throw new SocketException("Socket is closed");
-        getImpl().setTTL(ttl);
-    }
-
-    @Override
     public void setTimeToLive(int ttl) throws IOException {
         if (ttl < 0 || ttl > 255) {
             throw new IllegalArgumentException("ttl out of range");
@@ -600,14 +586,6 @@ final class NetMulticastSocket extends MulticastSocket {
         if (isClosed())
             throw new SocketException("Socket is closed");
         getImpl().setTimeToLive(ttl);
-    }
-
-    @Override
-    @SuppressWarnings("removal")
-    public byte getTTL() throws IOException {
-        if (isClosed())
-            throw new SocketException("Socket is closed");
-        return getImpl().getTTL();
     }
 
     @Override
@@ -796,50 +774,4 @@ final class NetMulticastSocket extends MulticastSocket {
     public boolean getLoopbackMode() throws SocketException {
         return ((Boolean)getImpl().getOption(SocketOptions.IP_MULTICAST_LOOP)).booleanValue();
     }
-
-    @SuppressWarnings("removal")
-    @Override
-    public void send(DatagramPacket p, byte ttl)
-            throws IOException {
-        if (isClosed())
-            throw new SocketException("Socket is closed");
-        synchronized(ttlLock) {
-            synchronized(p) {
-                InetAddress packetAddress = p.getAddress();
-                checkAddress(packetAddress, "send");
-                if (connectState == ST_NOT_CONNECTED) {
-                    if (packetAddress == null) {
-                        throw new IllegalArgumentException("Address not set");
-                    }
-                } else {
-                    // we're connected
-                    if (packetAddress == null) {
-                        p.setAddress(connectedAddress);
-                        p.setPort(connectedPort);
-                    } else if ((!packetAddress.equals(connectedAddress)) ||
-                            p.getPort() != connectedPort) {
-                        throw new IllegalArgumentException("connected address and packet address" +
-                                " differ");
-                    }
-                }
-                byte dttl = getTTL();
-                try {
-                    if (ttl != dttl) {
-                        // set the ttl
-                        getImpl().setTTL(ttl);
-                    }
-                    if (p.getPort() == 0) {
-                        throw new SocketException("Can't send to port 0");
-                    }
-                    // call the datagram method to send
-                    getImpl().send(p);
-                } finally {
-                    // set it back to default
-                    if (ttl != dttl) {
-                        getImpl().setTTL(dttl);
-                    }
-                }
-            } // synch p
-        }  //synch ttl
-    } //method
 }

@@ -266,7 +266,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_CompareAndSwap(Intrinsic* x, ValueType* type);
   void do_PreconditionsCheckIndex(Intrinsic* x, BasicType type);
   void do_FPIntrinsics(Intrinsic* x);
-  void do_Reference_get(Intrinsic* x);
+  void do_Reference_get0(Intrinsic* x);
   void do_update_CRC32(Intrinsic* x);
   void do_update_CRC32C(Intrinsic* x);
   void do_vectorizedMismatch(Intrinsic* x);
@@ -330,8 +330,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   // volatile field operations are never patchable because a klass
   // must be loaded to know it's volatile which means that the offset
-  // it always known as well.
+  // is always known as well.
   void volatile_field_store(LIR_Opr value, LIR_Address* address, CodeEmitInfo* info);
+  // volatile_field_load provides trailing membar semantics
   void volatile_field_load(LIR_Address* address, LIR_Opr result, CodeEmitInfo* info);
 
   void put_Object_unsafe(LIR_Opr src, LIR_Opr offset, LIR_Opr data, BasicType type, bool is_volatile);

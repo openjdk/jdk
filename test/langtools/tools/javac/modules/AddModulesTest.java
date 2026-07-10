@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8167975 8173596
+ * @bug 8167975 8173596 8370334
  * @summary Test the --add-modules option
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -35,6 +35,7 @@
 
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
@@ -275,6 +276,40 @@ public class AddModulesTest extends ModuleTestBase {
             Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(findJavaFiles(src2));
             CompilationTask t = c.getTask(null, fm, null, null, null, files);
             t.addModules(Arrays.asList("m1x", "m2x"));
+            Assert.check(t.call());
+        }
+    }
+
+    @Test //JDK-8370334
+    public void testModuleImportAndAddModules(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        //module that will be inserted using addModules:
+        Path src_m = src.resolve("m");
+        tb.writeJavaFiles(src_m,
+                          "import module m; module m { exports p1; }",
+                          "package p1; public class C1 { }");
+        //test module:
+        Path src_test = src.resolve("test");
+        tb.writeJavaFiles(src_test,
+                          "import module test; module test { exports p2; }",
+                          "package p2; public class C2 { }");
+
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        JavaCompiler c = ToolProvider.getSystemJavaCompiler();
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            List<String> options = List.of(
+                "--module-source-path", src.toString(),
+                "-d", classes.toString()
+            );
+            Iterable<? extends JavaFileObject> files =
+                    fm.getJavaFileObjects(findJavaFiles(src_test));
+
+            CompilationTask t = c.getTask(null, fm, null, options, null, files);
+            t.addModules(Arrays.asList("m"));
+            //expecting no errors/crashes:
             Assert.check(t.call());
         }
     }

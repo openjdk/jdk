@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 4250960 5044412
  * @summary Should not be able to set final fields through reflection unless setAccessible(true) passes and is not static
  * @author David Bowen (modified by Doug Lea)
+ * @run main/othervm --enable-final-field-mutation=ALL-UNNAMED Set
 */
 
 import java.lang.reflect.*;

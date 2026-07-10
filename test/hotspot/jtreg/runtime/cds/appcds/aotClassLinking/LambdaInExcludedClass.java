@@ -27,8 +27,6 @@
  * @bug 8349888
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.gc.Epsilon
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib
  * @build LambdaInExcludedClass
  * @run driver jdk.test.lib.helpers.ClassFileInstaller LambdaInExcludedClassApp

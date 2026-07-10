@@ -391,6 +391,11 @@ class SystemRegOp(Instruction):
             self.CRn = 0b0100
             self.CRm = 0b0010
             self.op2 = 0b000
+        elif self.system_reg == 'cntvctss_el0':
+            self.op1 = 0b011
+            self.CRn = 0b1110
+            self.CRm = 0b0000
+            self.op2 = 0b110
 
     def generate(self):
         self.reg = [GeneralRegister().generate()]
@@ -1116,7 +1121,7 @@ class SVEVectorOp(Instruction):
         self._bitwiseop = False
         if name[0] == 'f':
             self._width = RegVariant(2, 3)
-        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic", "eor3"]):
+        elif not self._isPredicated and (name in ["and", "bic", "bsl", "eor", "eor3", "orr"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
         elif name == "revb":
@@ -1145,7 +1150,7 @@ class SVEVectorOp(Instruction):
                         width +
                         [str(self.reg[i]) for i in range(1, self.numRegs)]))
     def astr(self):
-        firstArg = 0 if self._name == "eor3" else 1
+        firstArg = 0 if self._name in ["bsl", "eor3"] else 1
         formatStr = "%s%s" + ''.join([", %s" for i in range(firstArg, self.numRegs)])
         if self._dnm == 'dn':
             formatStr += ", %s"
@@ -1605,7 +1610,9 @@ generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", # "dcps1",  "dcps2",  "dcps
 generate (Op, ["nop", "yield", "wfe", "sev", "sevl",
                "autia1716", "autiasp", "autiaz", "autib1716", "autibsp", "autibz",
                "pacia1716", "paciasp", "paciaz", "pacib1716", "pacibsp", "pacibz",
-               "eret", "drps", "isb",])
+               "eret", "drps", "isb", "sb",])
+
+generate (OneRegOp, ["wfet"])
 
 # Ensure the "i" is not stripped off the end of the instruction
 generate (PostfixExceptionOp, ["wfi", "xpaclri"])
@@ -1623,7 +1630,7 @@ generate (OneRegOp, ["br", "blr",
 for system_reg in ["fpsr", "nzcv"]:
     generate (SystemOneRegOp, [ ["msr", system_reg] ])
 
-for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0"]:
+for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0", "cntvctss_el0"]:
     generate (OneRegSystemOp, [ ["mrs", system_reg] ])
 
 # Ensure the "i" is not stripped off the end of the instruction
@@ -1780,11 +1787,14 @@ generate(TwoRegNEONOp,
           ["absr", "abs", "2S"], ["absr", "abs", "4S"],
           ["absr", "abs", "2D"],
           ["fabs", "fabs", "2S"], ["fabs", "fabs", "4S"],
-          ["fabs", "fabs", "2D"],
+          ["fabs", "fabs", "2D"], ["fabs", "fabs", "4H"],
+          ["fabs", "fabs", "8H"],
           ["fneg", "fneg", "2S"], ["fneg", "fneg", "4S"],
-          ["fneg", "fneg", "2D"],
+          ["fneg", "fneg", "2D"], ["fneg", "fneg", "4H"],
+          ["fneg", "fneg", "8H"],
           ["fsqrt", "fsqrt", "2S"], ["fsqrt", "fsqrt", "4S"],
-          ["fsqrt", "fsqrt", "2D"],
+          ["fsqrt", "fsqrt", "2D"], ["fsqrt", "fsqrt", "4H"],
+          ["fsqrt", "fsqrt", "8H"],
           ["notr", "not", "8B"], ["notr", "not", "16B"],
           ])
 
@@ -1805,7 +1815,8 @@ generate(ThreeRegNEONOp,
           ["uqaddv", "uqadd", "2S"], ["uqaddv", "uqadd", "4S"],
           ["uqaddv", "uqadd", "2D"],
           ["fadd", "fadd", "2S"], ["fadd", "fadd", "4S"],
-          ["fadd", "fadd", "2D"],
+          ["fadd", "fadd", "2D"], ["fadd", "fadd", "4H"],
+          ["fadd", "fadd", "8H"],
           ["subv", "sub", "8B"], ["subv", "sub", "16B"],
           ["subv", "sub", "4H"], ["subv", "sub", "8H"],
           ["subv", "sub", "2S"], ["subv", "sub", "4S"],
@@ -1819,26 +1830,33 @@ generate(ThreeRegNEONOp,
           ["uqsubv", "uqsub", "2S"], ["uqsubv", "uqsub", "4S"],
           ["uqsubv", "uqsub", "2D"],
           ["fsub", "fsub", "2S"], ["fsub", "fsub", "4S"],
-          ["fsub", "fsub", "2D"],
+          ["fsub", "fsub", "2D"], ["fsub", "fsub", "4H"],
+          ["fsub", "fsub", "8H"],
           ["mulv", "mul", "8B"], ["mulv", "mul", "16B"],
           ["mulv", "mul", "4H"], ["mulv", "mul", "8H"],
           ["mulv", "mul", "2S"], ["mulv", "mul", "4S"],
           ["fabd", "fabd", "2S"], ["fabd", "fabd", "4S"],
-          ["fabd", "fabd", "2D"],
+          ["fabd", "fabd", "2D"], ["fabd", "fabd", "4H"],
+          ["fabd", "fabd", "8H"],
           ["faddp", "faddp", "2S"], ["faddp", "faddp", "4S"],
-          ["faddp", "faddp", "2D"],
+          ["faddp", "faddp", "2D"], ["faddp", "faddp", "4H"],
+          ["faddp", "faddp", "8H"],
           ["fmul", "fmul", "2S"], ["fmul", "fmul", "4S"],
-          ["fmul", "fmul", "2D"],
+          ["fmul", "fmul", "2D"], ["fmul", "fmul", "4H"],
+          ["fmul", "fmul", "8H"],
           ["mlav", "mla", "4H"], ["mlav", "mla", "8H"],
           ["mlav", "mla", "2S"], ["mlav", "mla", "4S"],
           ["fmla", "fmla", "2S"], ["fmla", "fmla", "4S"],
-          ["fmla", "fmla", "2D"],
+          ["fmla", "fmla", "2D"], ["fmla", "fmla", "4H"],
+          ["fmla", "fmla", "8H"],
           ["mlsv", "mls", "4H"], ["mlsv", "mls", "8H"],
           ["mlsv", "mls", "2S"], ["mlsv", "mls", "4S"],
           ["fmls", "fmls", "2S"], ["fmls", "fmls", "4S"],
-          ["fmls", "fmls", "2D"],
+          ["fmls", "fmls", "2D"], ["fmls", "fmls", "4H"],
+          ["fmls", "fmls", "8H"],
           ["fdiv", "fdiv", "2S"], ["fdiv", "fdiv", "4S"],
-          ["fdiv", "fdiv", "2D"],
+          ["fdiv", "fdiv", "2D"], ["fdiv", "fdiv", "4H"],
+          ["fdiv", "fdiv", "8H"],
           ["maxv", "smax", "8B"], ["maxv", "smax", "16B"],
           ["maxv", "smax", "4H"], ["maxv", "smax", "8H"],
           ["maxv", "smax", "2S"], ["maxv", "smax", "4S"],
@@ -1849,7 +1867,8 @@ generate(ThreeRegNEONOp,
           ["smaxp", "smaxp", "4H"], ["smaxp", "smaxp", "8H"],
           ["smaxp", "smaxp", "2S"], ["smaxp", "smaxp", "4S"],
           ["fmax", "fmax", "2S"], ["fmax", "fmax", "4S"],
-          ["fmax", "fmax", "2D"],
+          ["fmax", "fmax", "2D"], ["fmax", "fmax", "4H"],
+          ["fmax", "fmax", "8H"],
           ["minv", "smin", "8B"], ["minv", "smin", "16B"],
           ["minv", "smin", "4H"], ["minv", "smin", "8H"],
           ["minv", "smin", "2S"], ["minv", "smin", "4S"],
@@ -1859,15 +1878,23 @@ generate(ThreeRegNEONOp,
           ["sminp", "sminp", "8B"], ["sminp", "sminp", "16B"],
           ["sminp", "sminp", "4H"], ["sminp", "sminp", "8H"],
           ["sminp", "sminp", "2S"], ["sminp", "sminp", "4S"],
+          ["uminp", "uminp", "8B"], ["uminp", "uminp", "16B"],
+          ["uminp", "uminp", "4H"], ["uminp", "uminp", "8H"],
+          ["uminp", "uminp", "2S"], ["uminp", "uminp", "4S"],
+          ["umaxp", "umaxp", "8B"], ["umaxp", "umaxp", "16B"],
+          ["umaxp", "umaxp", "4H"], ["umaxp", "umaxp", "8H"],
+          ["umaxp", "umaxp", "2S"], ["umaxp", "umaxp", "4S"],
           ["sqdmulh", "sqdmulh", "4H"], ["sqdmulh", "sqdmulh", "8H"],
           ["sqdmulh", "sqdmulh", "2S"], ["sqdmulh", "sqdmulh", "4S"],
           ["shsubv", "shsub", "8B"], ["shsubv", "shsub", "16B"],
           ["shsubv", "shsub", "4H"], ["shsubv", "shsub", "8H"],
           ["shsubv", "shsub", "2S"], ["shsubv", "shsub", "4S"],
           ["fmin", "fmin", "2S"], ["fmin", "fmin", "4S"],
-          ["fmin", "fmin", "2D"],
+          ["fmin", "fmin", "2D"], ["fmin", "fmin", "4H"],
+          ["fmin", "fmin", "8H"],
           ["facgt", "facgt", "2S"], ["facgt", "facgt", "4S"],
-          ["facgt", "facgt", "2D"],
+          ["facgt", "facgt", "2D"], ["facgt", "facgt", "4H"],
+          ["facgt", "facgt", "8H"],
           ])
 
 generate(VectorScalarNEONInstruction,
@@ -1928,8 +1955,14 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["fmov",   "__ fmovd(v14, __ T2D, 0.5f);",                       "fmov\tv14.2d, 0.5"],
                         ["ld1",    "__ ld1(v31, v0, __ T2D, Address(__ post(r1, r0)));", "ld1\t{v31.2d, v0.2d}, [x1], x0"],
                         ["fcvtzs", "__ fcvtzs(v0, __ T2S, v1);",                         "fcvtzs\tv0.2s, v1.2s"],
+                        ["fcvtzs", "__ fcvtzs(v0, __ T4H, v1);",                         "fcvtzs\tv0.4h, v1.4h"],
+                        ["fcvtzs", "__ fcvtzs(v0, __ T8H, v1);",                         "fcvtzs\tv0.8h, v1.8h"],
                         ["fcvtas", "__ fcvtas(v2, __ T4S, v3);",                         "fcvtas\tv2.4s, v3.4s"],
+                        ["fcvtas", "__ fcvtas(v2, __ T4H, v3);",                         "fcvtas\tv2.4h, v3.4h"],
+                        ["fcvtas", "__ fcvtas(v2, __ T8H, v3);",                         "fcvtas\tv2.8h, v3.8h"],
                         ["fcvtms", "__ fcvtms(v4, __ T2D, v5);",                         "fcvtms\tv4.2d, v5.2d"],
+                        ["fcvtms", "__ fcvtms(v4, __ T4H, v5);",                         "fcvtms\tv4.4h, v5.4h"],
+                        ["fcvtms", "__ fcvtms(v4, __ T8H, v5);",                         "fcvtms\tv4.8h, v5.8h"],
                         # SVE instructions
                         ["cpy",      "__ sve_cpy(z0, __ S, p0, v1);",                      "mov\tz0.s, p0/m, s1"],
                         ["cpy",      "__ sve_cpy(z0, __ B, p0, 127, true);",               "mov\tz0.b, p0/m, 127"],
@@ -1938,6 +1971,8 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["cpy",      "__ sve_cpy(z5, __ D, p0, -32768, false);",           "mov\tz5.d, p0/z, -32768"],
                         ["cpy",      "__ sve_cpy(z10, __ B, p0, -1, false);",              "mov\tz10.b, p0/z, -1"],
                         ["cpy",      "__ sve_cpy(z11, __ S, p0, -1, false);",              "mov\tz11.s, p0/z, -1"],
+                        ["fcpy",     "__ sve_cpy(z11, __ S, p0, 0.5);",                    "fcpy\tz11.s, p0/m, #0.5"],
+                        ["fcpy",     "__ sve_cpy(z11, __ S, p0, -1.0);",                   "fcpy\tz11.s, p0/m, #-1.0"],
                         ["inc",      "__ sve_inc(r0, __ S);",                              "incw\tx0"],
                         ["dec",      "__ sve_dec(r1, __ H);",                              "dech\tx1"],
                         ["lsl",      "__ sve_lsl(z0, __ B, z1, 7);",                       "lsl\tz0.b, z1.b, #7"],
@@ -2067,6 +2102,10 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["index",    "__ sve_index(z7, __ D, r5, 5);",                     "index\tz7.d, x5, #5"],
                         ["cpy",      "__ sve_cpy(z7, __ H, p3, r5);",                      "cpy\tz7.h, p3/m, w5"],
                         ["tbl",      "__ sve_tbl(z16, __ S, z17, z18);",                   "tbl\tz16.s, {z17.s}, z18.s"],
+                        ["tbl",      "__ sve_tbl(z16, __ B, z17, z18, z16);",              "tbl\tz16.b, {z17.b, z18.b}, z16.b"],
+                        ["tbl",      "__ sve_tbl(z16, __ H, z17, z18, z16);",              "tbl\tz16.h, {z17.h, z18.h}, z16.h"],
+                        ["tbl",      "__ sve_tbl(z16, __ S, z17, z18, z16);",              "tbl\tz16.s, {z17.s, z18.s}, z16.s"],
+                        ["tbl",      "__ sve_tbl(z16, __ D, z17, z18, z16);",              "tbl\tz16.d, {z17.d, z18.d}, z16.d"],
                         ["ld1w",     "__ sve_ld1w_gather(z15, p0, r5, z16);",              "ld1w\t{z15.s}, p0/z, [x5, z16.s, uxtw #2]"],
                         ["ld1d",     "__ sve_ld1d_gather(z15, p0, r5, z16);",              "ld1d\t{z15.d}, p0/z, [x5, z16.d, uxtw #3]"],
                         ["st1w",     "__ sve_st1w_scatter(z15, p0, r5, z16);",             "st1w\t{z15.s}, p0, [x5, z16.s, uxtw #2]"],
@@ -2109,6 +2148,7 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["punpkhi",  "__ sve_punpkhi(p1, p0);",                            "punpkhi\tp1.h, p0.b"],
                         ["compact",  "__ sve_compact(z16, __ S, z16, p1);",                "compact\tz16.s, p1, z16.s"],
                         ["compact",  "__ sve_compact(z16, __ D, z16, p1);",                "compact\tz16.d, p1, z16.d"],
+                        ["movprfx",  "__ sve_movprfx(z17, z1);",                           "movprfx\tz17, z1"],
                         ["ext",      "__ sve_ext(z17, z16, 63);",                          "ext\tz17.b, z17.b, z16.b, #63"],
                         ["facgt",    "__ sve_fac(Assembler::GT, p1, __ H, p2, z4, z5);",   "facgt\tp1.h, p2/z, z4.h, z5.h"],
                         ["facgt",    "__ sve_fac(Assembler::GT, p1, __ S, p2, z4, z5);",   "facgt\tp1.s, p2/z, z4.s, z5.s"],
@@ -2116,9 +2156,17 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["facge",    "__ sve_fac(Assembler::GE, p1, __ H, p2, z4, z5);",   "facge\tp1.h, p2/z, z4.h, z5.h"],
                         ["facge",    "__ sve_fac(Assembler::GE, p1, __ S, p2, z4, z5);",   "facge\tp1.s, p2/z, z4.s, z5.s"],
                         ["facge",    "__ sve_fac(Assembler::GE, p1, __ D, p2, z4, z5);",   "facge\tp1.d, p2/z, z4.d, z5.d"],
+                        ["splice",   "__ sve_splice(z0, __ B, p0, z1);",                   "splice\tz0.b, p0, z0.b, z1.b"],
+                        ["splice",   "__ sve_splice(z0, __ H, p0, z1);",                   "splice\tz0.h, p0, z0.h, z1.h"],
+                        ["splice",   "__ sve_splice(z0, __ S, p0, z1);",                   "splice\tz0.s, p0, z0.s, z1.s"],
+                        ["splice",   "__ sve_splice(z0, __ D, p0, z1);",                   "splice\tz0.d, p0, z0.d, z1.d"],
                         # SVE2 instructions
                         ["histcnt",  "__ sve_histcnt(z16, __ S, p0, z16, z16);",           "histcnt\tz16.s, p0/z, z16.s, z16.s"],
                         ["histcnt",  "__ sve_histcnt(z17, __ D, p0, z17, z17);",           "histcnt\tz17.d, p0/z, z17.d, z17.d"],
+                        ["umullb",   "__ sve_umullb(z16, __ H, z17, z18);",                "umullb\tz16.h, z17.b, z18.b"],
+                        ["umullt",   "__ sve_umullt(z19, __ S, z20, z21);",                "umullt\tz19.s, z20.h, z21.h"],
+                        ["smullb",   "__ sve_smullb(z22, __ D, z23, z24);",                "smullb\tz22.d, z23.s, z24.s"],
+                        ["smullt",   "__ sve_smullt(z25, __ H, z26, z27);",                "smullt\tz25.h, z26.b, z27.b"],
 ])
 
 print "\n// FloatImmediateOp"
@@ -2214,6 +2262,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        # SVE2 instructions
                        ["bext", "ZZZ"],
                        ["bdep", "ZZZ"],
+                       ["bsl", "ZZZ"],
                        ["eor3", "ZZZ"],
                        ["sqadd", "ZPZ", "m", "dn"],
                        ["sqsub", "ZPZ", "m", "dn"],
@@ -2221,7 +2270,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["uqsub", "ZPZ", "m", "dn"],
                       ])
 
-generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],
+generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0], ["umaxv", 0], ["uminv", 0],
                           ["fminv", 2], ["fmaxv", 2], ["fadda", 2], ["uaddv", 0]])
 
 generate(AddWideNEONOp,
@@ -2238,9 +2287,9 @@ outfile.write("forth:\n")
 
 outfile.close()
 
-# compile for sve with armv9-a+sha3+sve2-bitperm because of SHA3 crypto extension and SVE2 bitperm instructions.
+# compile for sve with armv9.2-a+sha3+sve2-bitperm because of SHA3 crypto extension and SVE2 bitperm instructions.
 # armv9-a enables sve and sve2 by default.
-subprocess.check_call([AARCH64_AS, "-march=armv9-a+sha3+sve2-bitperm", "aarch64ops.s", "-o", "aarch64ops.o"])
+subprocess.check_call([AARCH64_AS, "-march=armv9.2-a+sha3+sve2-bitperm", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
 print "/*"

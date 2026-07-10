@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
  */
 
 #include "gc/g1/g1HeapRegionBounds.inline.hpp"
+#include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/jvmFlagConstraintsG1.hpp"
 #include "gc/shared/bufferNode.hpp"
-#include "gc/shared/ptrQueue.hpp"
+#include "gc/shared/satbMarkQueue.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -69,7 +70,7 @@ JVMFlag::Error G1RemSetHowlMaxNumBucketsConstraintFunc(uint value, bool verbose)
   }
   if (!is_power_of_2(G1RemSetHowlMaxNumBuckets)) {
     JVMFlag::printError(verbose,
-                        "G1RemSetMaxHowlNumBuckets (%u) must be a power of two.\n",
+                        "G1RemSetHowlMaxNumBuckets (%u) must be a power of two.\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -164,7 +165,7 @@ JVMFlag::Error GCPauseIntervalMillisConstraintFuncG1(uintx value, bool verbose) 
 
 JVMFlag::Error NewSizeConstraintFuncG1(size_t value, bool verbose) {
 #ifdef _LP64
-  // Overflow would happen for uint type variable of YoungGenSizer::_min_desired_young_length
+  // Overflow would happen for uint type variable of YoungGenSizer::_min_desired_num_regions
   // when the value to be assigned exceeds uint range.
   // i.e. result of '(uint)(NewSize / region size(1~32MB))'
   // So maximum of NewSize should be 'max_juint * 1M'
@@ -205,8 +206,31 @@ JVMFlag::Error G1SATBBufferSizeConstraintFunc(size_t value, bool verbose) {
                                        verbose);
 }
 
-JVMFlag::Error G1UpdateBufferSizeConstraintFunc(size_t value, bool verbose) {
-  return buffer_size_constraint_helper(FLAG_MEMBER_ENUM(G1UpdateBufferSize),
+JVMFlag::Error gc_cpu_usage_threshold_helper(JVMFlagsEnum flagid,
+                                             uint value,
+                                             bool verbose) {
+  if (UseG1GC) {
+    JVMFlag* flag = JVMFlag::flag_from_enum(flagid);
+    const uint min_count = 1;
+    const uint max_count = G1HeapSizingPolicy::long_term_count_limit();
+    if (value < min_count || value > max_count) {
+      JVMFlag::printError(verbose,
+                          "%s (%u) must be in range [%u, %u]\n",
+                          flag->name(), value, min_count, max_count);
+      return JVMFlag::VIOLATES_CONSTRAINT;
+    }
+  }
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error G1CPUUsageExpandConstraintFunc(uint value, bool verbose) {
+  return gc_cpu_usage_threshold_helper(FLAG_MEMBER_ENUM(G1CPUUsageExpandThreshold),
+                                       value,
+                                       verbose);
+}
+
+JVMFlag::Error G1CPUUsageShrinkConstraintFunc(uint value, bool verbose) {
+  return gc_cpu_usage_threshold_helper(FLAG_MEMBER_ENUM(G1CPUUsageShrinkThreshold),
                                        value,
                                        verbose);
 }

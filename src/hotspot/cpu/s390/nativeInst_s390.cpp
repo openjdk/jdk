@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -165,27 +165,6 @@ bool NativeInstruction::is_illegal() {
   // If this method returns false, then the 2-byte instruction at *-2 is not a 0x00 opcode.
   // If this method returns true, then the 2-byte instruction at *-2 is a 0x00 opcode.
   return halfword_at(-2) == illegal_instruction();
-}
-
-// We use an illtrap for marking a method as not_entrant.
-bool NativeInstruction::is_sigill_not_entrant() {
-  if (!is_illegal()) return false; // Just a quick path.
-
-  // One-sided error of is_illegal tolerable here
-  // (see implementation of is_illegal() for details).
-
-  CodeBlob* cb = CodeCache::find_blob(addr_at(0));
-  if (cb == nullptr || !cb->is_nmethod()) {
-    return false;
-  }
-
-  nmethod *nm = (nmethod *)cb;
-  // This method is not_entrant if the illtrap instruction
-  // is located at the verified entry point.
-  // BE AWARE: the current pc (this) points to the instruction after the
-  // "illtrap" location.
-  address sig_addr = ((address) this) - 2;
-  return nm->verified_entry_point() == sig_addr;
 }
 
 bool NativeInstruction::is_jump() {
@@ -620,19 +599,6 @@ void NativeJump::verify() {
   fatal("this is not a `NativeJump' site");
 }
 
-// Patch atomically with an illtrap.
-void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
-  ResourceMark rm;
-  int code_size = 2;
-  CodeBuffer cb(verified_entry, code_size + 1);
-  MacroAssembler* a = new MacroAssembler(&cb);
-#ifdef COMPILER2
-  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
-#endif
-  a->z_illtrap();
-  ICache::invalidate_range(verified_entry, code_size);
-}
-
 #undef LUCY_DBG
 
 //-------------------------------------
@@ -663,4 +629,33 @@ void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer)
   intptr_t load_const_bytes = (*(intptr_t*)code_buffer) & 0xffffffffffff0000L;
   *(intptr_t*)instr_addr = load_const_bytes | bytes_after_jump;
   ICache::invalidate_range(instr_addr, 6);
+}
+
+void NativeDeoptInstruction::verify() {
+}
+
+void NativePostCallNop::make_deopt() {
+  NativeDeoptInstruction::insert(addr_at(0));
+}
+
+void NativeDeoptInstruction::insert(address code_pos) {
+  ResourceMark rm;
+  int code_size = 2; // z_illtrap is of 2 bytes
+  CodeBuffer cb(code_pos, code_size + 1);
+  MacroAssembler* a = new MacroAssembler(&cb);
+  a->z_illtrap();
+  // forcing CPU to reload these 2 bytes of instruction by setting current range invalid
+  ICache::invalidate_range(code_pos, code_size);
+}
+
+bool NativeDeoptInstruction::is_deopt_at(address instr){
+  // Check if the instruction is an illtrap (illegal instruction used for deoptimization)
+  if (!Assembler::is_z_illtrap(instr)) return false;
+
+  // Verify the instruction belongs to an nmethod
+  CodeBlob* cb = CodeCache::find_blob(instr);
+  if (cb == nullptr || !cb->is_nmethod()) {
+    return false;
+  }
+  return true;
 }
