@@ -5775,7 +5775,6 @@ bool PhaseIdealLoop::verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verif
   } else {
     assert(!phase_verify->has_ctrl(n), "sanity");
     // n is a ctrl node.
-
     // Verify that not has_ctrl, and that get_loop_idx is the same.
 
     // Broken part of VerifyLoopOptimizations (B)

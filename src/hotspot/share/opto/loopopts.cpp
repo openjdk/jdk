@@ -31,7 +31,6 @@
 #include "opto/castnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/divnode.hpp"
-#include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
