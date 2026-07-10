@@ -201,7 +201,7 @@ public class thrstartreq001 {
 
         public void run() {
             try {
-                do {
+                while (true) {
                     EventSet eventSet = vm.eventQueue().remove(1000);
                     if (eventSet != null) { // there is not a timeout
                         EventIterator it = eventSet.eventIterator();
@@ -225,7 +225,9 @@ public class thrstartreq001 {
                         // allowing continuing to be conditional on isConnected below.
                         continue;
                     }
-                } while (isConnected);
+                    if (!isConnected)
+                        break;
+                }
             } catch (InterruptedException e) {
                 tot_res = FAILED;
                 log.complain("FAILURE in EventListener: caught unexpected "
