@@ -2309,7 +2309,13 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         if (is_vector_mask) {
           // VectorUnbox (VectorBox vmask) ==> VectorMaskCast vmask
           const TypeVect* vmask_type = TypeVect::makemask(out_vt->element_basic_type(), out_vt->length());
-          return new VectorMaskCastNode(value, vmask_type);
+          const TypeVect* value_type = value->bottom_type()->is_vect();
+          // Very rarely, profiling can give us output types that are not
+          // compatible with the input type, where one is PVectMask and
+          // the other not. Such a path should be unreachable anyway.
+          if ((value_type->isa_pvectmask() == nullptr) == (vmask_type->isa_pvectmask() == nullptr)) {
+            return new VectorMaskCastNode(value, vmask_type);
+          }
         } else {
           // Vector type mismatch is only supported for masks, but sometimes it happens in pathological cases.
         }
