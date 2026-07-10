@@ -131,22 +131,17 @@ public:
 //------------------------------FastLockNode-----------------------------------
 class FastLockNode: public CmpNode {
 public:
-  FastLockNode(Node *ctrl, Node *oop, Node *box) : CmpNode(oop,box) {
+  FastLockNode(Node* ctrl, Node* oop, Node* box) : CmpNode(oop, box) {
+    assert(ctrl != nullptr, "required");
     init_req(0,ctrl);
     init_class_id(Class_FastLock);
   }
   Node* obj_node() const { return in(1); }
   Node* box_node() const { return in(2); }
-  void  set_box_node(Node* box) { set_req(2, box); }
 
-  // FastLock and FastUnlockNode do not hash, we need one for each corresponding
-  // LockNode/UnLockNode to avoid creating Phi's.
-  virtual uint hash() const ;                  // { return NO_HASH; }
-  virtual uint size_of() const;
-  virtual bool cmp( const Node &n ) const ;    // Always fail, except on self
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
-  const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
+  const Type* sub(const Type* t1, const Type* t2) const { return TypeInt::CC;}
 
 private:
   virtual bool depends_only_on_test_impl() const { return false; }
@@ -156,21 +151,17 @@ private:
 //------------------------------FastUnlockNode---------------------------------
 class FastUnlockNode: public CmpNode {
 public:
-  FastUnlockNode(Node *ctrl, Node *oop, Node *box) : CmpNode(oop,box) {
+  FastUnlockNode(Node* ctrl, Node* oop, Node* box) : CmpNode(oop, box) {
+    assert(ctrl != nullptr, "required");
     init_req(0,ctrl);
     init_class_id(Class_FastUnlock);
   }
   Node* obj_node() const { return in(1); }
   Node* box_node() const { return in(2); }
 
-
-  // FastLock and FastUnlockNode do not hash, we need one for each corresponding
-  // LockNode/UnLockNode to avoid creating Phi's.
-  virtual uint hash() const ;                  // { return NO_HASH; }
-  virtual bool cmp( const Node &n ) const ;    // Always fail, except on self
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
-  const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
+  const Type* sub(const Type* t1, const Type* t2) const { return TypeInt::CC;}
 
 private:
   virtual bool depends_only_on_test_impl() const { return false; }

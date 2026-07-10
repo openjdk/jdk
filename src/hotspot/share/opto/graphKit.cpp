@@ -3553,28 +3553,24 @@ Node* GraphKit::insert_reachability_fence(Node* referent) {
 
 //------------------------------shared_lock------------------------------------
 // Emit locking code.
-FastLockNode* GraphKit::shared_lock(Node* obj) {
+BoxLockNode* GraphKit::shared_lock(Node* obj) {
   // bci is either a monitorenter bc or InvocationEntryBci
   // %%% SynchronizationEntryBCI is redundant; use InvocationEntryBci in interfaces
   assert(SynchronizationEntryBCI == InvocationEntryBci, "");
 
-  if (stopped())                // Dead monitor?
-    return nullptr;
+  if (stopped()) { return nullptr; } // Dead monitor?
 
   assert(dead_locals_are_killed(), "should kill locals before sync. point");
 
   // Box the stack location
-  Node* box = new BoxLockNode(next_monitor());
-  // Check for bailout after new BoxLockNode
-  if (failing()) { return nullptr; }
-  box = _gvn.transform(box);
+  BoxLockNode* box = new BoxLockNode(next_monitor());
+  if (failing()) { return nullptr; } // check for bailout after new BoxLockNode
+  box = _gvn.transform(box)->as_BoxLock();
   Node* mem = reset_memory();
-
-  FastLockNode* flock = _gvn.transform(new FastLockNode(control(), obj, box) )->as_FastLock();
 
   // Add monitor to debug info for the slow path.  If we block inside the
   // slow path and de-opt, we need the monitor hanging around
-  map()->push_monitor( flock );
+  map()->push_monitor(box, obj);
 
   const TypeFunc* tf = LockNode::lock_type();
   LockNode* lock = new LockNode(C, tf);
@@ -3587,12 +3583,12 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
 
   lock->init_req(TypeFunc::Parms + 0, obj);
   lock->init_req(TypeFunc::Parms + 1, box);
-  lock->init_req(TypeFunc::Parms + 2, flock);
+
   add_safepoint_edges(lock);
 
-  lock = _gvn.transform( lock )->as_Lock();
+  lock = _gvn.transform(lock)->as_Lock();
 
-  // lock has no side-effects, sets few values
+  // lock has no side effects, sets few values
   set_predefined_output_for_runtime_call(lock, mem, TypeRawPtr::BOTTOM);
 
   insert_mem_bar(Op_MemBarAcquireLock);
@@ -3608,14 +3604,13 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
     increment_counter(lock->counter()->addr());
   }
 #endif
-
-  return flock;
+  return box;
 }
 
 
 //------------------------------shared_unlock----------------------------------
 // Emit unlocking code.
-void GraphKit::shared_unlock(Node* box, Node* obj) {
+void GraphKit::shared_unlock(BoxLockNode* box, Node* obj) {
   // bci is either a monitorenter bc or InvocationEntryBci
   // %%% SynchronizationEntryBCI is redundant; use InvocationEntryBci in interfaces
   assert(SynchronizationEntryBCI == InvocationEntryBci, "");

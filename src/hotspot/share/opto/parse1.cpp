@@ -235,27 +235,25 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     osr_box->set_coarsened();
     osr_box->set_unbalanced();
 
-    Node* box = _gvn.transform(osr_box);
+    BoxLockNode* box = _gvn.transform(osr_box)->as_BoxLock();
 
     // Displaced headers and locked objects are interleaved in the
     // temp OSR buffer.  We only copy the locked objects out here.
-    // Fetch the locked object from the OSR temp buffer and copy to our fastlock node.
-    Node *lock_object = fetch_interpreter_state(index*2, T_OBJECT, monitors_addr);
+    // Fetch the locked object from the OSR temp buffer and keep it around.
+    Node* lock_object = fetch_interpreter_state(index*2, T_OBJECT, monitors_addr);
     // Try and copy the displaced header to the BoxNode
-    Node *displaced_hdr = fetch_interpreter_state((index*2) + 1, T_ADDRESS, monitors_addr);
-
+    Node* displaced_hdr = fetch_interpreter_state((index*2) + 1, T_ADDRESS, monitors_addr);
 
     store_to_memory(control(), box, displaced_hdr, T_ADDRESS, MemNode::unordered);
 
-    // Build a bogus FastLockNode (no code will be generated) and push the
-    // monitor into our debug info.
-    const FastLockNode *flock = _gvn.transform(new FastLockNode( nullptr, lock_object, box ))->as_FastLock();
-    map()->push_monitor(flock);
+    // Push the monitor info into our debug info.
+    map()->push_monitor(box, lock_object);
 
     // If the lock is our method synchronization lock, tuck it away in
     // _sync_lock for return and rethrow exit paths.
     if (index == 0 && method()->is_synchronized()) {
-      _synch_lock = flock;
+      _sync_lock_box = box;
+      _sync_lock_obj = lock_object;
     }
   }
 
@@ -1104,13 +1102,12 @@ void Parse::do_exits() {
       JVMState* caller = kit.jvms();
       JVMState* ex_jvms = caller->clone_shallow(C);
       ex_jvms->bind_map(kit.clone_map());
-      ex_jvms->set_bci(   InvocationEntryBci);
+      ex_jvms->set_bci(InvocationEntryBci);
       kit.set_jvms(ex_jvms);
       if (do_synch) {
         // Add on the synchronized-method box/object combo
-        kit.map()->push_monitor(_synch_lock);
-        // Unlock!
-        kit.shared_unlock(_synch_lock->box_node(), _synch_lock->obj_node());
+        kit.map()->push_monitor(_sync_lock_box, _sync_lock_obj);
+        kit.shared_unlock(_sync_lock_box, _sync_lock_obj); // Unlock!
       }
       if (C->env()->dtrace_method_probes()) {
         kit.make_dtrace_method_exit(method());
@@ -1281,13 +1278,11 @@ void Parse::do_method_entry() {
   // If the method is synchronized, we need to construct a lock node, attach
   // it to the Start node, and pin it there.
   if (method()->is_synchronized()) {
-    // Insert a FastLockNode right after the Start which takes as arguments
+    // Insert a LockNode right after the Start which takes as arguments
     // the current thread pointer, the "this" pointer & the address of the
     // stack slot pair used for the lock.  The "this" pointer is a projection
     // off the start node, but the locking spot has to be constructed by
-    // creating a ConLNode of 0, and boxing it with a BoxLockNode.  The BoxLockNode
-    // becomes the second argument to the FastLockNode call.  The
-    // FastLockNode becomes the new control parent to pin it to the start.
+    // creating a ConLNode of 0, and boxing it with a BoxLockNode.
 
     // Setup Object Pointer
     Node *lock_obj = nullptr;
@@ -1300,10 +1295,11 @@ void Parse::do_method_entry() {
     }
     // Clear out dead values from the debug info.
     kill_dead_locals();
-    // Build the FastLockNode
-    _synch_lock = shared_lock(lock_obj);
-    // Check for bailout in shared_lock
-    if (failing()) { return; }
+    BoxLockNode* box = shared_lock(lock_obj);
+    if (failing()) { return; } // check for bailout in shared_lock
+    assert(box != nullptr, "missing");
+    _sync_lock_box = box;
+    _sync_lock_obj = lock_obj;
   }
 
   // Feed profiling data for parameters to the type system so it can
@@ -2254,7 +2250,7 @@ void Parse::return_current(Node* value) {
   // Do not set_parse_bci, so that return goo is credited to the return insn.
   set_bci(InvocationEntryBci);
   if (method()->is_synchronized()) {
-    shared_unlock(_synch_lock->box_node(), _synch_lock->obj_node());
+    shared_unlock(_sync_lock_box, _sync_lock_obj);
   }
   if (C->env()->dtrace_method_probes()) {
     make_dtrace_method_exit(method());

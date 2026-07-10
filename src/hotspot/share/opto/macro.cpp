@@ -95,20 +95,16 @@ void PhaseMacroExpand::migrate_outs(Node *old, Node *target) {
   assert(old->outcnt() == 0, "all uses must be deleted");
 }
 
-Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, Node* word) {
-  Node* cmp = word;
+Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, CmpNode* cmp) {
   Node* bol = transform_later(new BoolNode(cmp, BoolTest::ne));
   IfNode* iff = new IfNode( ctrl, bol, PROB_MIN, COUNT_UNKNOWN );
   transform_later(iff);
 
-  // Fast path taken.
-  Node *fast_taken = transform_later(new IfFalseNode(iff));
+  Node* fast_path = transform_later(new IfFalseNode(iff));
+  Node* slow_path = transform_later(new IfTrueNode(iff));
 
-  // Fast path not-taken, i.e. slow path
-  Node *slow_taken = transform_later(new IfTrueNode(iff));
-
-    region->init_req(edge, fast_taken); // Capture fast-control
-    return slow_taken;
+  region->init_req(edge, fast_path); // Capture fast-control
+  return slow_path;
 }
 
 //--------------------copy_predefined_input_for_runtime_call--------------------
@@ -2155,13 +2151,6 @@ void PhaseMacroExpand::mark_eliminated_box(Node* box, Node* obj) {
         next_edge = false;
       }
     }
-    if (u->is_FastLock() && u->as_FastLock()->obj_node()->eqv_uncast(obj)) {
-      FastLockNode* flock = u->as_FastLock();
-      assert(flock->box_node() == oldbox, "sanity");
-      _igvn.rehash_node_delayed(flock);
-      flock->set_box_node(newbox);
-      next_edge = false;
-    }
 
     // Replace old box in monitor debug info.
     if (u->is_SafePoint() && u->as_SafePoint()->jvms()) {
@@ -2309,11 +2298,6 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
     Node* memproj = membar->proj_out(TypeFunc::Memory);
     _igvn.replace_node(ctrlproj, fallthroughproj);
     _igvn.replace_node(memproj, memproj_fallthrough);
-
-    // Delete FastLock node.
-    Node* flock = alock->as_Lock()->fastlock_node();
-    assert(flock->unique_out() == alock, "sanity");
-    _igvn.replace_node(flock, top());
   }
 
   // Search for MemBarReleaseLock node and delete it also.
@@ -2342,7 +2326,6 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   Node* mem = lock->in(TypeFunc::Memory);
   Node* obj = lock->obj_node();
   Node* box = lock->box_node();
-  Node* flock = lock->fastlock_node();
 
   assert(!box->as_BoxLock()->is_eliminated(), "sanity");
 
@@ -2356,6 +2339,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
 
   // Optimize test; set region slot 2
+  FastLockNode* flock = transform_later(new FastLockNode(ctrl, obj, box))->as_FastLock();
   slow_path = opt_bits_test(ctrl, region, 2, flock);
   mem_phi->init_req(2, mem);
 
