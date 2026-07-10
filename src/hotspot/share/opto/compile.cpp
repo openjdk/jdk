@@ -3938,7 +3938,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   }
 #endif
   case Op_DeadPath: {
-    // The CFG inputs are dead path, replace the DeadPath with a Region and insert a Halt node.
+    // The CFG inputs are dead paths. Replace the DeadPath with a Region and insert a Halt node.
     assert(n->req() > 1, "why not removed if no input other than itself?");
     RegionNode* r = new RegionNode(n->req());
     for (uint i = 1; i < n->req(); ++i) {
