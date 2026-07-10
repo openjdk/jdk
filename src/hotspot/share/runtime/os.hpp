@@ -208,11 +208,6 @@ class os: AllStatic {
   static OSThread*          _starting_thread;
   static PageSizes          _page_sizes;
 
-  // The default value for os::vm_min_address() unless the platform knows better. This value
-  // is chosen to give us reasonable protection against null pointer dereferences while being
-  // low enough to leave most of the valuable low-4gb address space open.
-  static constexpr size_t _vm_min_address_default = 16 * M;
-
   static char*  pd_reserve_memory(size_t bytes, bool executable);
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
@@ -501,9 +496,9 @@ class os: AllStatic {
   static size_t align_up_vm_allocation_granularity(size_t size) { return align_up(size, os::vm_allocation_granularity()); }
 
   // Returns the lowest address the process is allowed to map against.
-  static size_t vm_min_address();
+  static uintptr_t vm_min_address();
   // Returns the highest address the process is allowed to access, +1
-  static size_t vm_max_address();
+  static uintptr_t vm_max_address();
 
   // Some kernels (e.g. s390x) can dynamically expand the page table. This function returns
   // the lowest user space address that will expand the page table for the first time.

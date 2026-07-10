@@ -3695,11 +3695,11 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
   return res;
 }
 
-size_t os::vm_min_address() {
+uintptr_t os::vm_min_address() {
   return os::win32::vm_min_address();
 }
 
-size_t os::vm_max_address() {
+uintptr_t os::vm_max_address() {
   return os::win32::vm_max_address();
 }
 
@@ -4268,8 +4268,8 @@ int                       os::win32::_minor_version             = 0;
 int                       os::win32::_build_number              = 0;
 int                       os::win32::_build_minor               = 0;
 
-size_t                    os::win32::_vm_min_address            = 0;
-size_t                    os::win32::_vm_max_address            = 0;
+uintptr_t                 os::win32::_vm_min_address            = 0;
+uintptr_t                 os::win32::_vm_max_address            = 0;
 
 bool                      os::win32::_processor_group_warning_displayed = false;
 bool                      os::win32::_job_object_processor_group_warning_displayed = false;
@@ -4468,13 +4468,13 @@ void os::win32::initialize_system_info() {
   _processor_type  = si.dwProcessorType;
   _processor_level = si.wProcessorLevel;
 
-  // We always keep a healthy distance to NULL of at least 16 MB.
-  constexpr size_t min_address_default = 16 * M;
+  // We always keep a healthy distance to zero page of at least 16 MB.
+  constexpr uintptr_t min_address_default = 16 * M;
   _vm_min_address = MAX2(min_address_default, p2u(si.lpMinimumApplicationAddress));
   assert(is_aligned(_vm_min_address, si.dwAllocationGranularity), "strange alignment?");
   assert(_vm_max_address <= (G * 4), "weirdly high?");
 
-  _vm_max_address = p2u(si.lpMaximumApplicationAddress) + 1; // usually 128TB
+  _vm_max_address = p2u(si.lpMaximumApplicationAddress); // usually 128TB
   assert(is_aligned(_vm_min_address, si.dwAllocationGranularity), "strange alignment?");
   assert(_vm_max_address > (G * 4), "weirdly low?");
 
