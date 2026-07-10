@@ -329,27 +329,19 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 // of old marking, all concurrent cycles run to completion before returning
 // to IDLE to choose the next action.
 //
-//                      +------------+
-//                      |            |
-//       +--------------+   IDLE     +---------------------------------+
-//       |              |            +---------+                       |
-//       |              +-----+------+         |                       |
-//       |                    |                |                       |
-//       |                    |                |                       |
-//       |                    |                |                       |
-// +-----v------+       +-----v------+       +-v----------+      +-----v------+
-// |            |       |            |       |            |      |            |
-// |  BOOTSTRAP |       |  YOUNG     |       |  GLOBAL    |      |   FULL     |
-// |            |       |            |       |            |      |            |
-// +-----+------+       +------------+       +------------+      +------------+
-//       |
-//       |
-//       |
-// +-----v------+
-// |            |
-// |  MARK OLD  |
-// |            |
-// +------------+
+//                                        +------------+
+//                                        |            |
+//       +--------------------------------+   IDLE     +--------------------------------+
+//       |                  +-------------+            +------------+                   |
+//       |                  |             +-----+------+            |                   |
+//       |                  |                   |                   |                   |
+//       |                  |                   |                   |                   |
+//       |                  |                   |                   |                   |
+// +-----v------+     +-----v------+      +-----v------+      +-----v------+      +-----v------+
+// |            |     |            |      |            |      |            |      |            |
+// |  YOUNG     |     |  BOOTSTRAP |      |  MARK OLD  |      |  GLOBAL    |      |   FULL     |
+// |            |     |            |      |            |      |            |      |            |
+// +------------+     +------------+      +------------+      +------------+      +------------+
 //
 void ShenandoahGenerationalControlThread::service_concurrent_normal_cycle(const ShenandoahGCRequest& request) {
   log_info(gc, ergo)("Start GC cycle (%s)", request.generation->name());
