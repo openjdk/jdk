@@ -1005,8 +1005,6 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   } else {
     assert(req.is_gc_alloc(), "Can only accept GC allocs here");
     result = allocate_memory_work(req, in_new_region);
-    // Do not call handle_alloc_failure() here, because we cannot block.
-    // The allocation failure would be handled by the LRB slowpath with handle_alloc_failure_evac().
   }
 
   if (in_new_region) {
@@ -2427,7 +2425,7 @@ void ShenandoahHeap::stw_process_weak_roots() {
 
 void ShenandoahHeap::parallel_cleaning(ShenandoahGeneration* generation) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  assert(is_stw_gc_in_progress(), "Only for Degenerated and Full GC");
+  assert(is_stw_gc_in_progress(), "Only for Full GC");
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_purge);
   stw_weak_refs(generation);
   stw_process_weak_roots();
