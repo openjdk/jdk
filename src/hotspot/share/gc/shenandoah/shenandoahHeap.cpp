@@ -570,7 +570,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _gc_state_changed(false),
   _gc_no_progress_count(0),
   _cancel_requested_time(0),
-  _has_self_forwarded_objects(false),
   _global_generation(nullptr),
   _control_thread(nullptr),
   _uncommit_thread(nullptr),
@@ -1272,7 +1271,7 @@ void ShenandoahHeap::evacuate_collection_set(ShenandoahGeneration* generation) {
   ShenandoahEvacuationTask task(this, _collection_set);
   workers()->run_task(&task);
 
-  if (_has_self_forwarded_objects.load_relaxed()) {
+  if (has_self_forwarded_objects()) {
     // When a thread cannot evacuate, it will self forward objects _and_ then it
     // will _stop_ further evacuation attempts to avoid 'poisoning' more regions
     // with self forwarded objects. Of course, we should change this behavior if
@@ -1394,7 +1393,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     if (winner == nullptr) {
       // We own the self-forwarding. Flag the region so other threads will not
       // try to evacuate objects from here.
-      _has_self_forwarded_objects.store_relaxed(true);
+      set_has_self_forwarded_objects(true);
       from_region->set_has_self_forwards();
       log_debug(gc)("Could not evacuate " PTR_FORMAT " from region: %zu", p2i(p), from_region->index());
       return p;
@@ -2549,11 +2548,11 @@ void ShenandoahHeap::finish_concurrent_roots() {
   }
 
   if (has_self_forwarded_objects()) {
-    uint nworkers = workers()->active_workers();
+    const uint nworkers = workers()->active_workers();
     ShenandoahRootUpdater root_updater(nworkers, ShenandoahPhaseTimings::final_update_refs_self_forwards);
     ShenandoahUpdateRootsTask update_roots(&root_updater, true);
     workers()->run_task(&update_roots);
-    _has_self_forwarded_objects.store_relaxed(false);
+    set_has_self_forwarded_objects(false);
   }
 }
 

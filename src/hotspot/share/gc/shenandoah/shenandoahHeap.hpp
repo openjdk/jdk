@@ -476,14 +476,19 @@ public:
   // Returns true if the soft maximum heap has been changed using management APIs.
   bool check_soft_max_changed();
 
+  // True if self forwarded objects exist in the heap
   bool has_self_forwarded_objects() const {
-    return _has_self_forwarded_objects.load_relaxed();
+    return _has_self_forwarded_objects.is_set();
   }
 
-protected:
+  // Set whether self forwarded objects exist in the heap
+  void set_has_self_forwarded_objects(bool value) {
+    _has_self_forwarded_objects.set_cond(value);
+  }
 
-  Atomic<bool> _has_self_forwarded_objects;
 private:
+  ShenandoahSharedFlag _has_self_forwarded_objects;
+
   inline void reset_cancellation_time();
 
   // GC support

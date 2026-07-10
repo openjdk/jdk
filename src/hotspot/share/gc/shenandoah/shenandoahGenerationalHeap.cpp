@@ -188,7 +188,7 @@ void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* g
   ShenandoahGenerationalEvacuationTask task(this, generation, &regions, false /* only promote regions */);
   workers()->run_task(&task);
 
-  if (_has_self_forwarded_objects.load_relaxed()) {
+  if (has_self_forwarded_objects()) {
     log_info(gc)("Cleaning up failed evacuations");
     ShenandoahSelfForwardTask self_forward_task(this, collection_set());
     workers()->run_task(&self_forward_task);
@@ -354,7 +354,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     if (winner == nullptr) {
       // We own the self-forwarding. Flag the from-region so that other threads
       // don't waste time evacuating this region
-      _has_self_forwarded_objects.store_relaxed(true);
+      set_has_self_forwarded_objects(true);
       heap_region_containing(p)->set_has_self_forwards();
       return p;
     }
