@@ -97,7 +97,7 @@ Node* DeadPathNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   bool modified = false;
   for (uint i = 1; i < req(); i++) { // For all inputs
     // Check for and remove dead inputs
-    if( phase->type(in(i)) == Type::TOP ) {
+    if (phase->type(in(i)) == Type::TOP) {
       del_req(i--);             // Delete TOP inputs
       modified = true;
     }
