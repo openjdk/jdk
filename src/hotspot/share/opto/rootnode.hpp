@@ -85,7 +85,7 @@ public:
 class DeadPathNode : public RegionNode {
 public:
   DeadPathNode() : RegionNode(1) {
-    set_req(0, nullptr);
+    deactivate();
     assert(Compile::current()->dead_path() == nullptr, "only one");
   }
   virtual int   Opcode() const;
