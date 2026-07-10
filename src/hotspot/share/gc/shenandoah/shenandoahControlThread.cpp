@@ -216,40 +216,13 @@ void ShenandoahControlThread::run_service() {
 
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {
   // Normal cycle goes via all concurrent phases. If allocation failure (af) happens during
-  // any of the concurrent phases, it first degrades to Degenerated GC and completes GC there.
-  // If second allocation failure happens during Degenerated GC cycle (for example, when GC
-  // tries to evac something and no memory is available), cycle degrades to Full GC.
+  // any of the concurrent phases, the allocating thread will block until the concurrent
+  // cycle completes.
   //
   // There are also a shortcut through the normal cycle: immediate garbage shortcut, when
   // heuristics says there are no regions to compact, and all the collection comes from immediately
   // reclaimable regions.
-  //
-  // ................................................................................................
-  //
-  //                                    (immediate garbage shortcut)                Concurrent GC
-  //                             /-------------------------------------------\
-  //                             |                                           |
-  //                             |                                           |
-  //                             |                                           |
-  //                             |                                           v
-  // [START] ----> Conc Mark ----o----> Conc Evac --o--> Conc Update-Refs ---o----> [END]
-  //                   |                    |                 |              ^
-  //                   | (af)               | (af)            | (af)         |
-  // ..................|....................|.................|..............|.......................
-  //                   |                    |                 |              |
-  //                   |                    |                 |              |      Degenerated GC
-  //                   v                    v                 v              |
-  //               STW Mark ----------> STW Evac ----> STW Update-Refs ----->o
-  //                   |                    |                 |              ^
-  //                   | (af)               | (af)            | (af)         |
-  // ..................|....................|.................|..............|.......................
-  //                   |                    |                 |              |
-  //                   |                    v                 |              |      Full GC
-  //                   \------------------->o<----------------/              |
-  //                                        |                                |
-  //                                        v                                |
-  //                                      Full GC  --------------------------/
-  //
+
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (check_cancellation()) {
     log_info(gc)("Cancelled");
