@@ -1075,7 +1075,7 @@ public:
   }
 };
 
-class  ShenandoahConcurrentRootsEvacUpdateTask : public WorkerTask {
+class ShenandoahConcurrentRootsEvacUpdateTask : public WorkerTask {
 private:
   ShenandoahPhaseTimings::Phase                 _phase;
   ShenandoahVMRoots<true /*concurrent*/>        _vm_roots;

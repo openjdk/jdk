@@ -118,7 +118,7 @@ inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
   // in which objects that _should_ be evacuated were ignored.
   if (!obj->is_self_forwarded()) {
     // Ignore pointers to forwarded objects, the pointer is already correct. The pointee
-    // wasn't moved during evacution.
+    // wasn't moved during evacuation.
     shenandoah_assert_forwarded(p, obj);
     oop fwd = ShenandoahForwarding::get_forwardee(obj);
     // Unconditionally store the update: no concurrent updates expected.
