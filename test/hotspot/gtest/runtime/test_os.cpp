@@ -1138,9 +1138,9 @@ TEST_VM(os, vm_max_address) {
   // power of 2
   uintptr_t s = os::vm_max_address();
 #if defined(_LP64)
-  if (s != right_n_bits(64)) { // this is also a valid value, but lets avoid overflow
-    ASSERT_TRUE(is_power_of_2(s + 1));
-  }
+  ASSERT_TRUE(
+      is_power_of_2(s + 1)
+      );
 #endif
   ASSERT_GE(s, 4 * G);
 }
