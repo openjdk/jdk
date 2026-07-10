@@ -2289,7 +2289,6 @@ void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type*
     }
     if (n->outcnt() == 0) {
       remove_dead_node(n, NodeOrigin::Graph);
-      continue;
     }
   }
 #ifdef ASSERT
