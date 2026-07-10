@@ -4472,10 +4472,10 @@ void os::win32::initialize_system_info() {
   constexpr uintptr_t min_address_default = 16 * M;
   _vm_min_address = MAX2(min_address_default, p2u(si.lpMinimumApplicationAddress));
   assert(is_aligned(_vm_min_address, si.dwAllocationGranularity), "strange alignment?");
-  assert(_vm_max_address <= (G * 4), "weirdly high?");
+  assert(_vm_min_address <= (G * 4), "weirdly high?");
 
   _vm_max_address = p2u(si.lpMaximumApplicationAddress); // usually 128TB
-  assert(is_aligned(_vm_min_address, si.dwAllocationGranularity), "strange alignment?");
+  assert(is_aligned(_vm_max_address, si.dwAllocationGranularity), "strange alignment?");
   assert(_vm_max_address > (G * 4), "weirdly low?");
 
   DWORD processors = 0;

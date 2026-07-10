@@ -1957,6 +1957,11 @@ size_t os::vm_min_address() {
 #endif
 }
 
+uintptr_t os::vm_max_address() {
+  // 47 bit on MacOS Arm64
+  return right_n_bits<uintptr_t>(47);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // thread priority support
 

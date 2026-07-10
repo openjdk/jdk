@@ -1577,20 +1577,67 @@ void os::Linux::initialize_vm_min_address() {
   // Most distros set this value to 64 KB. It *can* be zero, but rarely is. Here,
   // we impose a minimum value if vm.mmap_min_addr is too low, for increased protection.
   uintptr_t value = 0;
-  if (value == 0) {
-    FILE* f = os::fopen("/proc/sys/vm/mmap_min_addr", "r");
-    if (f != nullptr) {
-      if (fscanf(f, "%zu", &value) != 1) {
-        value = 0;
-      }
-      fclose(f);
+  FILE* f = os::fopen("/proc/sys/vm/mmap_min_addr", "r");
+  if (f != nullptr) {
+    if (fscanf(f, "%zu", &value) != 1) {
+      value = 0;
     }
-    // We always keep a healthy distance to zero page of at least 16 MB.
-    constexpr uintptr_t min_address_default = 16 * M;
-    value = MAX2(min_address_default, value);
+    fclose(f);
   }
-  _vm_min_address = value;
+  constexpr uintptr_t min_address_default = 16 * M;
+  _vm_min_address = MAX2(min_address_default, value);
 }
+
+#if !defined(S390) && !defined(ARM)
+// Default implementation for standard Linux variants
+void os::Linux::initialize_vm_max_address() {
+  // On Linux, the kernel places the primordial stack very close to the end of the
+  // User address space. This happens even with ASLR - it will never "jitter" enough
+  // to be in the lower half of the address space. Since address spaces, on all of
+  // our 64-bit platforms, end at clean power-of-two-boundaries, it is sufficient to
+  // examine the primordial stack location to figure out the address space size.
+
+  // We already captured the primordial stack. If it looks atypical, we will search
+  // for it in /proc/self/maps. Atypical configurations are possible with self-compiled
+  // kernels, but rare.
+
+  unsigned address_bits = 0;
+
+  if (_initial_thread_stack_bottom != nullptr) {
+    address_bits = BitsPerSize_t - count_leading_zeros(p2u(_initial_thread_stack_bottom));
+  }
+
+  switch(address_bits) {
+#if defined(AARCH64)
+  case 39: // small SBCs, e.g. Raspian OS
+  case 48: // standard
+  case 52: // Distros that enable LVA in their kernels
+    break;
+#elif defined(PPC64)
+  case 47:
+  case 51:
+    break;
+#elif defined(RISCV64)
+  case 38:
+  case 47:
+    break;
+#elif defined(AMD64)
+  case 47: // 4-level paging
+  case 57: // 5-level paging
+    break;
+#endif
+  default: { // fallback
+      address hi;
+      if (find_vma_by_name("[stack]", nullptr, &hi)) {
+        address_bits = BitsPerSize_t - count_leading_zeros(p2u(hi));
+      }
+    }
+  }
+
+  assert(address_bits > 0, "Sanity");
+  _vm_max_address = right_n_bits<uintptr_t>(address_bits);
+}
+#endif
 
 // thread_id is kernel thread id (similar to Solaris LWP id)
 intx os::current_thread_id() { return os::Linux::gettid(); }
