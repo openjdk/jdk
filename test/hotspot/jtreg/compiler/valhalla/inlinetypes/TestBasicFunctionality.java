@@ -576,7 +576,7 @@ static MyValue1 tmp = null;
         counts = {ALLOC_OF_MYVALUE_KLASS, "<= 1"}, // 1 MyValue2 allocation (if not the all-zero value): MyValue1.createWithFieldsInline -> setV4
         failOn = {LOAD_OF_ANY_KLASS})
     @IR(applyIf = {"InlineTypePassFieldsAsArgs", "false"},
-        counts = {ALLOC_OF_MYVALUE_KLASS, "<= 2"}, // 1 MyValue1 and 1 MyValue2 allocation (if not the all-zero value): same as above + the local v (MyValue1) + MyValue2.DEFAULT for the calls to MyValue2.hashInterpreted()
+        counts = {ALLOC_OF_MYVALUE_KLASS, "<= 3"}, // 1 MyValue1 and 2 MyValue2 allocation (if not the all-zero value): same as above + the local v (MyValue1) + MyValue2.DEFAULT for the calls to MyValue2.hashInterpreted()
         failOn = LOAD_OF_ANY_KLASS)
     public long test20(boolean deopt, Method m) {
         MyValue1 v = MyValue1.createWithFieldsInline(rI, rL);
