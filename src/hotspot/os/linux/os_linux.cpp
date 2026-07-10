@@ -161,6 +161,8 @@ physical_memory_size_type os::Linux::_physical_memory = 0;
 
 address   os::Linux::_initial_thread_stack_bottom = nullptr;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
+size_t    os::Linux::_vm_min_address = 0;
+size_t    os::Linux::_vm_max_address = 0;
 
 pthread_t os::Linux::_main_thread;
 const char * os::Linux::_libc_version = nullptr;
@@ -1335,6 +1337,26 @@ static bool find_vma(address addr, address* vma_low, address* vma_high) {
   return false;
 }
 
+// Find the virtual memory area that contains addr
+static bool find_vma_by_name(const char* name, address* vma_low, address* vma_high) {
+  FILE *fp = os::fopen("/proc/self/maps", "r");
+  if (fp != nullptr) {
+    address low, high;
+    char line[128];
+    while (fgets(line, sizeof(line), fp)) {
+      if (sscanf(line, "%p-%p", &low, &high) == 2) {
+        if (strstr(line, name) != nullptr) {
+          if (vma_low)  *vma_low  = low;
+          if (vma_high) *vma_high = high;
+          return true;
+        }
+      }
+    }
+    fclose(fp);
+  }
+  return false;
+}
+
 // Locate primordial thread stack. This special handling of primordial thread stack
 // is needed because pthread_getattr_np() on most (all?) Linux distros returns
 // bogus value for the primordial process thread. While the launcher has created
@@ -1540,6 +1562,113 @@ void os::Linux::capture_initial_stack(size_t max_size) {
                          primordial ? "primordial" : "user", max_size / K,  _initial_thread_stack_size / K,
                          stack_top, intptr_t(_initial_thread_stack_bottom));
   }
+}
+
+void os::Linux::capture_address_space_boundaries() {
+  initialize_vm_min_address();
+  initialize_vm_max_address();
+}
+
+void os::Linux::initialize_vm_min_address() {
+
+  // Determine vm_min_address:
+
+  // Determined by sysctl vm.mmap_min_addr. It exists as an adjustable safety zone to prevent
+  // null pointer dereferences.
+  // Most distros set this value to 64 KB. It *can* be zero, but rarely is. Here,
+  // we impose a minimum value if vm.mmap_min_addr is too low, for increased protection.
+  uintptr_t value = 0;
+  if (value == 0) {
+    FILE* f = os::fopen("/proc/sys/vm/mmap_min_addr", "r");
+    if (f != nullptr) {
+      if (fscanf(f, "%zu", &value) != 1) {
+        value = 0;
+      }
+      fclose(f);
+    }
+    // We always keep a healthy distance to zero page of at least 16 MB.
+    constexpr uintptr_t min_address_default = 16 * M;
+    value = MAX2(min_address_default, value);
+  }
+  _vm_min_address = value;
+}
+
+void os::Linux::initialize_vm_max_address() {
+  // Determine vm_max_address:
+
+  // On Linux, the kernel places the primordial stack very close to the end of the
+  // User address space. This happens even with ASLR - its position may "jitter"
+  // around a bit, but never enough to move it into the lower half
+  // of the user address space.
+  // That we can use to determine the extension of the address space: we just
+  // calculate log2_ceil of the primordial stack location.
+
+  // We should already have the primordial thread stack address. If we don't, or
+  // if it looks like capture_initial_stack() did not find the real primordial stack,
+  // we parse /proc/self/stat ourselves.
+
+#if defined(S390)
+  // s390 is unique in that the kernel allows the TASK_SIZE to grow dynamically in
+  // response to mmap calls. The process will then switch to a higher-level paging.
+  // In theory, we can have 64-bit address bits. For the OpenJDK, here we just report
+  // 53 bits, which is a standard starting value. For our purposes this is close enough.
+  // Note that ZGC is not supported on s390, so colored pointers don't pose a problem.
+  _vm_max_address = right_n_bits(53);
+
+#elif defined ARM
+  // On 32-bit ARM, we assume a 3GB address space.
+  _vm_max_address = (3 * G) - 1;
+
+#else
+
+  unsigned address_bits = 0;
+
+  if (_initial_thread_stack_bottom != nullptr) {
+    const unsigned leading_zeros = count_leading_zeros(p2u(_initial_thread_stack_bottom));
+    address_bits = BitsPerSize_t - leading_zeros;
+
+    // Do some sanity checks for well-known platforms:
+    // We only accept a small range of possible values. In theory, TASK_SIZE can
+    // have any value, since the kernel could have been built with non-standard
+    // settings. In practice, a few well-known values will be typical, since most
+    // kernels we run on will have been built by standard distro vendors.
+    // Therefore, a _initial_thread_stack_bottom that looks atypical for the
+    // platform we are on will cause us to repeat the stack search in /proc/pid/maps.
+    if (
+#if defined(AARCH64)
+        address_bits == 39 || // small devices, e.g. Raspian OS
+        address_bits == 48 || // Standard
+        address_bits == 48    // Distros that enable LVA in their kernels, typically 64K-paged machines
+#elif defined(AMD64)
+        address_bits == 47 || // 4-level paging
+        address_bits == 57    // 5-level paging
+#elif defined(PPC64),
+        address_bits == 47 ||
+        address_bits == 51
+#elif defined(RISCV64)
+        address_bits == 38 || // 3-level paging
+        address_bits == 47 || // 4-level paging
+        address_bits == 56    // 5-level paging
+#endif
+        ) {
+      _vm_max_address = right_n_bits(address_bits);
+    }
+  }
+  log_debug(os)("1 " PTR_FORMAT, _vm_max_address);
+
+  if (_vm_max_address == 0) {
+    // Fallback: scan /proc/pid/maps ourselves
+    address hi;
+    if (find_vma_by_name("[stack]", nullptr, &hi)) {
+      const unsigned leading_zeros = count_leading_zeros(p2u(hi));
+      address_bits = BitsPerSize_t - leading_zeros;
+      _vm_max_address = right_n_bits(address_bits);
+    }
+  }
+
+  log_debug(os)("2 " PTR_FORMAT, _vm_max_address);
+
+#endif
 }
 
 // thread_id is kernel thread id (similar to Solaris LWP id)
@@ -4416,23 +4545,11 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
 }
 
 size_t os::vm_min_address() {
-  // Determined by sysctl vm.mmap_min_addr. It exists as a safety zone to prevent
-  // null pointer dereferences.
-  // Most distros set this value to 64 KB. It *can* be zero, but rarely is. Here,
-  // we impose a minimum value if vm.mmap_min_addr is too low, for increased protection.
-  static size_t value = 0;
-  if (value == 0) {
-    assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
-    FILE* f = os::fopen("/proc/sys/vm/mmap_min_addr", "r");
-    if (f != nullptr) {
-      if (fscanf(f, "%zu", &value) != 1) {
-        value = _vm_min_address_default;
-      }
-      fclose(f);
-    }
-    value = MAX2(_vm_min_address_default, value);
-  }
-  return value;
+  return os::Linux::vm_min_address();
+}
+
+size_t os::vm_max_address() {
+  return os::Linux::vm_max_address();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4737,6 +4854,11 @@ jint os::init_2(void) {
   if (!suppress_primordial_thread_resolution) {
     Linux::capture_initial_stack(JavaThread::stack_size_at_create());
   }
+
+  Linux::capture_address_space_boundaries();
+  log_info(os)("User Address Space: [" PTR_FORMAT "-" PTR_FORMAT "] (%u bits)",
+               Linux::vm_min_address(), Linux::vm_max_address(),
+               log2i_ceil(Linux::vm_max_address()));
 
   Linux::libpthread_init();
   Linux::sched_getcpu_init();

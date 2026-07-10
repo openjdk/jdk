@@ -34,6 +34,8 @@ class os::Linux {
 
   static address   _initial_thread_stack_bottom;
   static uintptr_t _initial_thread_stack_size;
+  static uintptr_t _vm_min_address;
+  static uintptr_t _vm_max_address;
 
   static const char *_libc_version;
   static const char *_libpthread_version;
@@ -44,6 +46,9 @@ class os::Linux {
   static GrowableArray<struct bitmask*>* _numa_affinity_masks;
 
   static void build_numa_affinity_masks();
+
+  static void initialize_vm_min_address();
+  static void initialize_vm_max_address();
 
  protected:
 
@@ -138,6 +143,9 @@ class os::Linux {
   static bool adjustStackSizeForGuardPages(); // See comments in os_linux.cpp
 
   static void capture_initial_stack(size_t max_size);
+  static void capture_address_space_boundaries();
+  static uintptr_t vm_min_address() { return _vm_min_address; }
+  static uintptr_t vm_max_address() { return _vm_max_address; }
 
   // Stack overflow handling
   static bool manually_expand_stack(JavaThread * t, address addr);

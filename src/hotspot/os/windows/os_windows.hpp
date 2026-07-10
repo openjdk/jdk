@@ -50,8 +50,8 @@ class os::win32 {
   static int                       _minor_version;
   static int                       _build_number;
   static int                       _build_minor;
-  static int                       _vm_min_address;
-  static int                       _vm_max_address;
+  static uintptr_t                 _vm_min_address;
+  static uintptr_t                 _vm_max_address;
 
   static void print_windows_version(outputStream* st);
   static void print_uptime_info(outputStream* st);
@@ -99,8 +99,8 @@ class os::win32 {
     return _job_object_processor_group_warning_displayed;
   }
 
-  static size_t vm_min_address() { return _vm_min_address; }
-  static size_t vm_max_address() { return _vm_max_address; }
+  static uintptr_t vm_min_address() { return _vm_min_address; }
+  static uintptr_t vm_max_address() { return _vm_max_address; }
 
   // Processor info as provided by NT
   static int processor_type()  { return _processor_type;  }
