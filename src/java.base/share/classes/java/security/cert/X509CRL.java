@@ -349,7 +349,7 @@ public abstract non-sealed class X509CRL extends CRL implements X509Extension, B
     public abstract Date getThisUpdate();
 
     /**
-     * Gets the {@code thisUpdate} instant from the CRL.
+     * Gets the {@code thisUpdate} date as an {@code Instant} from the CRL.
      * See {@link #getThisUpdate() getThisUpdate} for relevant ASN.1
      * definitions.
      *
@@ -358,13 +358,12 @@ public abstract non-sealed class X509CRL extends CRL implements X509Extension, B
      *
      * @implSpec
      * The default implementation calls {@code getThisUpdate()}
-     * and returns the output as an {@code Instant} value.
+     * and returns the date as an {@code Instant}.
      *
-     * @return the {@code thisUpdate} instant from the CRL.
+     * @return the {@code thisUpdate} date from the CRL.
      */
     public Instant getThisUpdateInstant() {
-        final Date date = getThisUpdate();
-        return date == null ? null : date.toInstant();
+        return getThisUpdate().toInstant();
     }
 
     /**
@@ -376,16 +375,16 @@ public abstract non-sealed class X509CRL extends CRL implements X509Extension, B
     public abstract Date getNextUpdate();
 
     /**
-     * Gets the {@code nextUpdate} instant from the CRL.
+     * Gets the {@code nextUpdate} date as an {@code Instant} from the CRL.
      *
      * @apiNote Subclasses should override this method to directly return an
      * instant.
      *
      * @implSpec
      * The default implementation calls {@code getNextUpdate()}
-     * and returns the output as an {@code Instant} value.
+     * and returns the date as an {@code Instant}.
      *
-     * @return the {@code nextUpdate} instant from the CRL, or null if
+     * @return the {@code nextUpdate} date from the CRL, or null if
      * not present.
      */
     public Instant getNextUpdateInstant() {
