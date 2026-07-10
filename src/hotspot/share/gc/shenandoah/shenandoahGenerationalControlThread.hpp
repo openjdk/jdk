@@ -94,8 +94,6 @@ public:
     return _gc_mode;
   }
 private:
-  // Returns true if the cycle has been cancelled
-  bool check_cancellation() const;
 
   // Executes one GC cycle
   void run_gc_cycle(const ShenandoahGCRequest& request);

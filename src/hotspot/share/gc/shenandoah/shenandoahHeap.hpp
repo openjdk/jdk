@@ -716,9 +716,6 @@ private:
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
 
-  // We want to retry an unsuccessful attempt at allocation until at least a full gc.
-  bool should_retry_allocation(size_t original_full_gc_count) const;
-
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);
   HeapWord* mem_allocate(size_t size) override;

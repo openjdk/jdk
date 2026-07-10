@@ -137,10 +137,6 @@ bool ShenandoahRegulatorThread::start_young_cycle() const {
   return _young_heuristics->should_start_gc() && request_concurrent_gc(_heap->young_generation());
 }
 
-bool ShenandoahRegulatorThread::start_global_cycle() const {
-  return _global_heuristics->should_start_gc() && request_concurrent_gc(_heap->global_generation());
-}
-
 bool ShenandoahRegulatorThread::request_concurrent_gc(ShenandoahGeneration* generation) const {
   double now = os::elapsedTime();
 

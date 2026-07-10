@@ -59,10 +59,6 @@ uint ShenandoahWorkerPolicy::calc_workers_for_fullgc() {
   return ParallelGCThreads;
 }
 
-uint ShenandoahWorkerPolicy::calc_workers_for_stw_degenerated() {
-  return ParallelGCThreads;
-}
-
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_update_ref() {
   return concurrent_workers_count();
 }

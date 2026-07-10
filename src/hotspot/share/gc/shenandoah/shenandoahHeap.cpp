@@ -1029,11 +1029,6 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   return result;
 }
 
-inline bool ShenandoahHeap::should_retry_allocation(size_t original_full_gc_count) const {
-  return shenandoah_policy()->full_gc_count() == original_full_gc_count
-      && !shenandoah_policy()->is_at_shutdown();
-}
-
 HeapWord* ShenandoahHeap::allocate_memory_work(ShenandoahAllocRequest& req, bool& in_new_region) {
   // Reserve the promotion budget up front so it is enforced atomically without the heap lock.
   // If the reserve is exhausted, deny the promotion rather than overshoot it; the reservation

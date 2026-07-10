@@ -53,12 +53,10 @@
 
 class PreservedMarksSet;
 class VM_ShenandoahFullGC;
-class ShenandoahDegenGC;
 
 class ShenandoahFullGC : public ShenandoahGC {
   friend class ShenandoahPrepareForCompactionObjectClosure;
   friend class VM_ShenandoahFullGC;
-  friend class ShenandoahDegenGC;
 
 private:
   GCTimer* _gc_timer;

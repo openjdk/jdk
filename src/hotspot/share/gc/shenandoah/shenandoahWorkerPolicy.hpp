@@ -53,9 +53,6 @@ public:
   // Calculate workers for parallel full gc
   static uint calc_workers_for_fullgc();
 
-  // Calculate workers for parallel degenerated gc
-  static uint calc_workers_for_stw_degenerated();
-
   // Calculate workers for concurrent reference update
   static uint calc_workers_for_conc_update_ref();
 

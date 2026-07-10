@@ -528,21 +528,6 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
   _heap->log_heap_status(msg);
 }
 
-bool ShenandoahGenerationalControlThread::check_cancellation() const {
-  if (!_heap->cancelled_gc()) {
-    return false;
-  }
-
-  if (_heap->cancelled_cause() == GCCause::_shenandoah_stop_vm
-    || _heap->cancelled_cause() == GCCause::_shenandoah_concurrent_gc) {
-    log_debug(gc, thread)("Cancellation detected, reason: %s", GCCause::to_string(_heap->cancelled_cause()));
-    return true;
-  }
-
-  fatal("Cancel GC either for gracefully exiting, or to pause old generation marking");
-  return false;
-}
-
 void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   _heap->increment_total_collections(true);
   ShenandoahGCSession session(cause, _heap->global_generation());

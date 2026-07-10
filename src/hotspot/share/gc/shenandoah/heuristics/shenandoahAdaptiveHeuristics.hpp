@@ -111,8 +111,6 @@ protected:
   // bytes of headroom at which we should trigger GC
   size_t _headroom_adjustment;
 
-  void add_degenerated_gc_time(double timestamp_at_start, double duration);
-
   // A conservative minimum threshold of free space that we'll try to maintain when possible.
   // For example, we might trigger a concurrent gc if we are likely to drop below
   // this threshold, or we might consider this when dynamically resizing generations
