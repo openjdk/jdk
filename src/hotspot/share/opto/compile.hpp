@@ -512,8 +512,6 @@ public:
 
   InlinePrinter* inline_printer() { return &_inline_printer; }
 
-  int _ConvL2I_count;
-
 #ifndef PRODUCT
   IdealGraphPrinter* igv_printer() { return _igv_printer; }
   void reset_igv_phase_iter(CompilerPhaseType cpt) { _igv_phase_iter[cpt] = 0; }

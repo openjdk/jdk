@@ -9895,7 +9895,6 @@ instruct convL2I_reg(iRegIdst dst, iRegLsrc src) %{
   format %{ "MR      $dst, $src \t// long->int" %}
   // variable size, 0 or 4
   ins_encode %{
-    ra_->C->_ConvL2I_count++;
     __ mr_if_needed($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
