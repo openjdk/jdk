@@ -24,11 +24,11 @@
 /*
  * @test
  * @bug 8376219
- * @summary C2: Shared FastLock node 
+ * @summary C2: Shared FastLock node
  *
  * @requires vm.compiler2.enabled
  *
- * @run main/othervm -Xbatch -XX:-TieredCompilation ${test.main.class} 
+ * @run main/othervm -Xbatch -XX:-TieredCompilation ${test.main.class}
  */
 
 
