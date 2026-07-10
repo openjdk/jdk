@@ -354,7 +354,7 @@ static void print_properties(Symbol* method_name, outputStream* out, TRAPS) {
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
   Symbol* signature = vmSymbols::void_byte_array_signature();
-  JavaCalls::call_static(&result, ik, method_name, signature, &args, CHECK);
+  JavaCalls::call_static(&result, ik, method_name, signature, &args, THREAD);
 
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, out);
