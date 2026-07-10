@@ -87,7 +87,8 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
 
   oop fwd = ShenandoahForwarding::get_forwardee_mutator(obj);
   if (obj == fwd) {
-    assert(_heap->is_evacuation_in_progress() || _heap->heap_region_containing(obj)->has_self_forwards(), "evac should be in progress");
+    assert(_heap->is_evacuation_in_progress() || _heap->heap_region_containing(obj)->has_self_forwards(),
+           "Evacuation should be in progress, or object is in a region that could not be evacuated");
     Thread* const t = Thread::current();
     fwd = _heap->evacuate_object(obj, t);
   }
