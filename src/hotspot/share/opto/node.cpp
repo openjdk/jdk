@@ -740,7 +740,7 @@ bool Node::is_dead() const {
     return false;
   }
   for (uint i = 0; i < _max; i++) {
-    if(_in[i] != nullptr) {
+    if (_in[i] != nullptr) {
       return false;
     }
   }
