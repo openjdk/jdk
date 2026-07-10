@@ -63,7 +63,6 @@ public class ArraysSupport {
 
     private static final boolean BIG_ENDIAN = U.isBigEndian();
 
-
     public static final int LOG2_ARRAY_BOOLEAN_INDEX_SCALE = exactLog2(Unsafe.ARRAY_BOOLEAN_INDEX_SCALE);
     public static final int LOG2_ARRAY_BYTE_INDEX_SCALE = exactLog2(Unsafe.ARRAY_BYTE_INDEX_SCALE);
     public static final int LOG2_ARRAY_CHAR_INDEX_SCALE = exactLog2(Unsafe.ARRAY_CHAR_INDEX_SCALE);
@@ -111,7 +110,9 @@ public class ArraysSupport {
      * corresponds to the size, in bytes, of an array element.
      * @return if a mismatch is found a relative index, between 0 (inclusive)
      * and {@code length} (exclusive), of the first mismatching pair of elements
-     * in the two arrays.  Otherwise, if a mismatch is not found, return -1.
+     * in the two arrays.  Otherwise, if a mismatch is not found the bitwise
+     * compliment of the number of remaining pairs of elements to be checked in
+     * the tail of the two arrays.
      */
     @IntrinsicCandidate
     public static int vectorizedMismatch(Object a, long aOffset,
