@@ -1613,7 +1613,7 @@ void os::Linux::initialize_vm_max_address() {
   // In theory, we can have 64-bit address bits. For the OpenJDK, here we just report
   // 53 bits, which is a standard starting value. For our purposes this is close enough.
   // Note that ZGC is not supported on s390, so colored pointers don't pose a problem.
-  _vm_max_address = right_n_bits(53);
+  _vm_max_address = right_n_bits<uintptr_t>(53);
 
 #elif defined ARM
   // On 32-bit ARM, we assume a 3GB address space.
@@ -1636,35 +1636,36 @@ void os::Linux::initialize_vm_max_address() {
     // platform we are on will cause us to repeat the stack search in /proc/pid/maps.
     if (
 #if defined(AARCH64)
-        address_bits == 39 || // small devices, e.g. Raspian OS
-        address_bits == 48 || // Standard
-        address_bits == 48    // Distros that enable LVA in their kernels, typically 64K-paged machines
+        address_bits != 39 && // small devices, e.g. Raspian OS
+        address_bits != 48 && // Standard
+        address_bits != 48    // Distros that enable LVA in their kernels, typically 64K-paged machines
 #elif defined(AMD64)
-        address_bits == 47 || // 4-level paging
-        address_bits == 57    // 5-level paging
+        address_bits != 47 && // 4-level paging
+        address_bits != 57    // 5-level paging
 #elif defined(PPC64),
-        address_bits == 47 ||
-        address_bits == 51
+        address_bits != 47 &&
+        address_bits != 51
 #elif defined(RISCV64)
-        address_bits == 38 || // 3-level paging
-        address_bits == 47 || // 4-level paging
-        address_bits == 56    // 5-level paging
+        address_bits != 38 && // 3-level paging
+        address_bits != 47 && // 4-level paging
+        address_bits != 56    // 5-level paging
 #endif
-        ) {
-      _vm_max_address = right_n_bits(address_bits);
+       ) {
+      address_bits = 0;
     }
   }
   log_debug(os)("1 " PTR_FORMAT, _vm_max_address);
 
-  if (_vm_max_address == 0) {
+  if (address_bits == 0) {
     // Fallback: scan /proc/pid/maps ourselves
     address hi;
     if (find_vma_by_name("[stack]", nullptr, &hi)) {
       const unsigned leading_zeros = count_leading_zeros(p2u(hi));
       address_bits = BitsPerSize_t - leading_zeros;
-      _vm_max_address = right_n_bits(address_bits);
     }
   }
+
+  _vm_max_address = right_n_bits<uintptr_t>(address_bits);
 
   log_debug(os)("2 " PTR_FORMAT, _vm_max_address);
 
