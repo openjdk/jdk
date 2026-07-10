@@ -1568,6 +1568,8 @@ void os::pd_check_temp_directory() {
       AltTempDir = nullptr;
     } else {
       if (!is_writable_directory(AltTempDir)) {
+        // This is only a warning and still uses AltTempDir, which is needed to attach to a
+        // containerized process from the host.
         log_warning(os)("Warning: AltTempDir is not an existing or writable directory");
       }
     }
