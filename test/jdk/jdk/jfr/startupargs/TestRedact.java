@@ -42,6 +42,7 @@ import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.CommonHelper;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -378,6 +379,14 @@ public class TestRedact {
         e.assertRedactedArgument("N4711");
         e.assertRedactedArgument("Smith:abc123");
         e.assertUnredacted("Banana");
+
+       if (!Platform.isWindows()) { // On windows, quoting doesn't work the same, so ignore this test
+            Execution e2 = run(
+                "-XX:FlightRecorderOptions:redact-argument=\"Foo,bar\"",
+                "Foo,bar"
+            );
+            e2.assertRedactedArgument("Foo,bar");
+        }
     }
 
     private static void testRedactMultiple() throws Exception {
@@ -394,18 +403,22 @@ public class TestRedact {
     private static void testOptionVariable() throws Exception {
         // Simulate shell expansion with the three options:
         // SYSTEM_PROPS, JVM_OPTIONS and PROGRAM_OPTIONS
+        String systemProperty = "-Dsecret=apple";
+        String jvmOption = "-XX:FlightRecorderOptions:stackdepth=32,redact-argument=+Aracuan";
+        String programOption = "Aracuan";
         Execution e1 = run(
-                Map.of("SYSTEM_PROPS",
-                        "-Dsecret=apple",
-                       "JVM_OPTIONS",
-                        "-XX:FlightRecorderOptions:stackdepth=32,redact-argument=+Aracuan",
-                       "PROGRAM_OPTIONS", "Aracuan"),
+                Map.of("SYSTEM_PROPS", systemProperty,
+                       "JVM_OPTIONS",jvmOption,
+                       "PROGRAM_OPTIONS", programOption),
                 Map.of("secret","apple"),
-                "-XX:FlightRecorderOptions:stackdepth=32,redact-argument=+Aracuan",
-                "Aracuan"
+                List.of(systemProperty, jvmOption),
+                programOption
             );
         e1.assertRedactedKey("SYSTEM_PROPS");
-        e1.assertRedactedKey("JVM_OPTIONS");
+        String redactedJVMOption = e1.environment.get("JVM_OPTIONS");
+        if (!redactedJVMOption.equals("-XX:FlightRecorderOptions:stackdepth=32,redact-argument=[REDACTED]")) {
+            throw new Exception("Expected partial redaction for environment variable with -XX:FlightRecorderOptions:redact-argument=");
+        }
         e1.assertRedactedKey("PROGRAM_OPTIONS");
         e1.assertRedactedKey("secret");
         e1.assertRedactedArgument("Aracuan");
@@ -433,6 +446,21 @@ public class TestRedact {
             e3.print();
             throw new Exception("Incorrect redaction when option arguments overlap");
         }
+
+        String option1 = "-XX:FlightRecorderOptions:redact-argument=Zebra,gibberish=,,,";
+        String option2 = "-XX:FlightRecorderOptions:redact-argument=Tiger";
+        Execution e4 = run(
+                Map.of("MY_JVM_OPTIONS", option1 + " " + option2),
+                Map.of(),
+                List.of(option1, option2),
+                "TIGER"
+            );
+        e4.assertRedactedArgument("TIGER");
+        String redacted = e4.environment().get("MY_JVM_OPTIONS");
+        if (!redacted.equals("[REDACTED] -XX:FlightRecorderOptions:redact-argument=[REDACTED]")) {
+            e4.print();
+            throw new Exception("Incorrect redaction with multiple options in environment variables");
+        }
     }
 
     private static void testRedactKey() throws Exception {
@@ -452,14 +480,20 @@ public class TestRedact {
         return run(Map.of(), Map.of(), options, args);
     }
 
-    private static Execution run(Map<String, String> environment, Map<String, String> properties, String options, String... args) throws Exception {
+    private static Execution run(Map<String, String> environment, Map<String, String> properties, String option, String... args) throws Exception {
+       return run(environment, properties, List.of(option), args);
+    }
+
+    private static Execution run(Map<String, String> environment, Map<String, String> properties, List<String> options, String... args) throws Exception {
         List<String> arguments = new ArrayList<>();
         Path file = Path.of("file.jfr");
         for (var entry : properties.entrySet()) {
             arguments.add("-D" + entry.getKey() + "=" + entry.getValue());
         }
         arguments.add("-XX:StartFlightRecording:filename=" + file.toAbsolutePath().toString());
-        arguments.add(options);
+        for (String option : options) {
+            arguments.add(option);
+        }
         arguments.add("jdk.jfr.startupargs.Application");
         arguments.addAll(Arrays.asList(args));
 

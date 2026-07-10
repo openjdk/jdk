@@ -218,6 +218,7 @@ class JfrRedactedEvents: public AllStatic {
   static bool match_key(StringArray* array, const char* text);
   static bool read_file(StringArray* target, const char* filename);
   static void redact(String* scratch_string, const char* target, const String* redaction);
+  static String* redact_flight_recorder_options(const char* option);
   static String* redact_command_line(StringArray* arguments);
   static String* redact_environment_variable_value(const char* value);
   static StringArray* split(const char* text, char separator);
