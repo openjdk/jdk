@@ -2279,7 +2279,7 @@ void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type*
     if (n->is_CFG()) {
       Node* control_input = n->in(0);
       if (control_input != nullptr && !control_input->is_top()) {
-        // record it in dead path to later insert an Halt node, if it doesn't die in the meantime
+        // record it in dead path to later insert a Halt node, if it doesn't die in the meantime
         dead_path()->add_req(control_input);
         _worklist.push(dead_path());
         replace_input_of(n, 0, C->top());
