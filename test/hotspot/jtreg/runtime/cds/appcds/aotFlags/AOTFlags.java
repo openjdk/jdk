@@ -469,8 +469,20 @@ public class AOTFlags {
         out.shouldHaveExitValue(1);
 
         //----------------------------------------------------------------------
-        printTestCase("Cannot use a dynamic CDS archive for -XX:AOTCache");
+        printTestCase("Cannot use a classic CDS archive with -XX:+AOTClassLinking");
         String staticArchive = "static.jsa";
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xshare:dump",
+            "-XX:SharedArchiveFile=" + staticArchive,
+            "-XX:+AOTClassLinking");
+        out = CDSTestUtils.executeAndLog(pb, "static");
+        out.shouldContain("AOTClassLinking is not supported for classic CDS archive");
+        out.shouldHaveExitValue(0);
+
+        //----------------------------------------------------------------------
+        printTestCase("Cannot use a dynamic CDS archive for -XX:AOTCache");
+        staticArchive = "static.jsa";
         String dynamicArchive = "dynamic.jsa";
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
