@@ -2071,6 +2071,7 @@ int Parse::Block::add_new_path() {
 Node* Parse::maybe_narrow_phi_input(Node* ctrl, Node* n, const Type* phi_type) {
   if (phi_type->isa_oopptr() != nullptr && !_gvn.type(n)->higher_equal(phi_type)) {
     n = new CheckCastPPNode(ctrl, n, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing);
+    n = _gvn.transform(n);
   }
   return n;
 }
