@@ -108,9 +108,11 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
     case _pinned:
       return;
     case _cset:
-      assert(has_self_forwards(), "Can only become regular region if there were evacuation failures");
-      set_state(_regular);
-      return;
+      if (has_self_forwards()) {
+        // Only allowed for regions with self-forwarded objects. Otherwise, fall through to illegal transition.
+        set_state(_regular);
+        return;
+      }
     default:
       report_illegal_transition("regular allocation");
   }
