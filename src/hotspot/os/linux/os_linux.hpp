@@ -49,6 +49,7 @@ class os::Linux {
 
   static void initialize_vm_min_address();
   static void initialize_vm_max_address();
+  static bool find_vma_by_name(const char* name, address* vma_low, address* vma_high);
 
  protected:
 

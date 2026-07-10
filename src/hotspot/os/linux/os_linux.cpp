@@ -1337,8 +1337,7 @@ static bool find_vma(address addr, address* vma_low, address* vma_high) {
   return false;
 }
 
-// Find the virtual memory area that contains addr
-static bool find_vma_by_name(const char* name, address* vma_low, address* vma_high) {
+bool os::Linux::find_vma_by_name(const char* name, address* vma_low, address* vma_high) {
   FILE *fp = os::fopen("/proc/self/maps", "r");
   if (fp != nullptr) {
     address low, high;
@@ -1591,85 +1590,6 @@ void os::Linux::initialize_vm_min_address() {
     value = MAX2(min_address_default, value);
   }
   _vm_min_address = value;
-}
-
-void os::Linux::initialize_vm_max_address() {
-  // Determine vm_max_address:
-
-  // On Linux, the kernel places the primordial stack very close to the end of the
-  // User address space. This happens even with ASLR - its position may "jitter"
-  // around a bit, but never enough to move it into the lower half
-  // of the user address space.
-  // That we can use to determine the extension of the address space: we just
-  // calculate log2_ceil of the primordial stack location.
-
-  // We should already have the primordial thread stack address. If we don't, or
-  // if it looks like capture_initial_stack() did not find the real primordial stack,
-  // we parse /proc/self/stat ourselves.
-
-#if defined(S390)
-  // s390 is unique in that the kernel allows the TASK_SIZE to grow dynamically in
-  // response to mmap calls. The process will then switch to a higher-level paging.
-  // In theory, we can have 64-bit address bits. For the OpenJDK, here we just report
-  // 53 bits, which is a standard starting value. For our purposes this is close enough.
-  // Note that ZGC is not supported on s390, so colored pointers don't pose a problem.
-  _vm_max_address = right_n_bits<uintptr_t>(53);
-
-#elif defined ARM
-  // On 32-bit ARM, we assume a 3GB address space.
-  _vm_max_address = (3 * G) - 1;
-
-#else
-
-  unsigned address_bits = 0;
-
-  if (_initial_thread_stack_bottom != nullptr) {
-    const unsigned leading_zeros = count_leading_zeros(p2u(_initial_thread_stack_bottom));
-    address_bits = BitsPerSize_t - leading_zeros;
-
-    // Do some sanity checks for well-known platforms:
-    // We only accept a small range of possible values. In theory, TASK_SIZE can
-    // have any value, since the kernel could have been built with non-standard
-    // settings. In practice, a few well-known values will be typical, since most
-    // kernels we run on will have been built by standard distro vendors.
-    // Therefore, a _initial_thread_stack_bottom that looks atypical for the
-    // platform we are on will cause us to repeat the stack search in /proc/pid/maps.
-    if (
-#if defined(AARCH64)
-        address_bits != 39 && // small devices, e.g. Raspian OS
-        address_bits != 48 && // Standard
-        address_bits != 48    // Distros that enable LVA in their kernels, typically 64K-paged machines
-#elif defined(AMD64)
-        address_bits != 47 && // 4-level paging
-        address_bits != 57    // 5-level paging
-#elif defined(PPC64),
-        address_bits != 47 &&
-        address_bits != 51
-#elif defined(RISCV64)
-        address_bits != 38 && // 3-level paging
-        address_bits != 47 && // 4-level paging
-        address_bits != 56    // 5-level paging
-#endif
-       ) {
-      address_bits = 0;
-    }
-  }
-  log_debug(os)("1 " PTR_FORMAT, _vm_max_address);
-
-  if (address_bits == 0) {
-    // Fallback: scan /proc/pid/maps ourselves
-    address hi;
-    if (find_vma_by_name("[stack]", nullptr, &hi)) {
-      const unsigned leading_zeros = count_leading_zeros(p2u(hi));
-      address_bits = BitsPerSize_t - leading_zeros;
-    }
-  }
-
-  _vm_max_address = right_n_bits<uintptr_t>(address_bits);
-
-  log_debug(os)("2 " PTR_FORMAT, _vm_max_address);
-
-#endif
 }
 
 // thread_id is kernel thread id (similar to Solaris LWP id)

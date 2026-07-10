@@ -451,6 +451,10 @@ void os::setup_fpu() {
 #endif
 }
 
+void os::Linux::initialize_vm_max_address() {
+  _vm_max_address = (3 * G) - 1;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 

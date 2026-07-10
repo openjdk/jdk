@@ -362,6 +362,39 @@ juint os::cpu_microcode_revision() {
   return result;
 }
 
+void os::Linux::initialize_vm_max_address() {
+  // On Linux, the kernel places the primordial stack very close to the end of the
+  // User address space. This happens even with ASLR - it will never "jitter" enough
+  // to be in the lower half of the address space. Since address spaces, on all of
+  // our 64-bit platforms, end at clean power-of-two-boundaries, it is sufficient to
+  // examine the primordial stack location to figure out the address space size.
+
+  // We already captured the primordial stack. If it looks atypical, we will search
+  // for it in /proc/self/maps. Atypical configurations are possible with self-compiled
+  // kernels, but rare.
+
+  unsigned address_bits = 0;
+
+  if (_initial_thread_stack_bottom != nullptr) {
+    address_bits = BitsPerSize_t - count_leading_zeros(p2u(_initial_thread_stack_bottom));
+  }
+
+  switch(address_bits) {
+    case 47: // 4-level paging - ok
+    case 57: // 5-level paging - ok
+    break;
+    default: {
+      address hi;
+      if (find_vma_by_name("[stack]", nullptr, &hi)) {
+        address_bits = BitsPerSize_t - count_leading_zeros(p2u(hi));
+      }
+    }
+  }
+
+  assert(address_bits > 0, "Sanity");
+  _vm_max_address = right_n_bits<uintptr_t>(address_bits);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 

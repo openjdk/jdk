@@ -380,6 +380,15 @@ void os::Linux::set_fpu_control_word(int fpu_control) {
   // Nothing to do on z/Architecture.
 }
 
+void os::Linux::initialize_vm_max_address() {
+  // s390 is unique in that the kernel allows the TASK_SIZE to grow dynamically in
+  // response to mmap calls. The process will then switch to a higher-level paging.
+  // In theory, we can have 64-bit address bits. For the OpenJDK, here we just report
+  // 53 bits, which is a standard starting value. For our purposes this is close enough.
+  // Note that ZGC is not supported on s390, so colored pointers don't pose a problem.
+  _vm_max_address = right_n_bits<uintptr_t>(53);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 
