@@ -236,11 +236,14 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) const {
 void ShenandoahHeuristics::record_concurrent_completion() {
   _gc_times_learned++;
   const bool stalls = _allocation_stalls.exchange(false, memory_order_relaxed);
-  if (stalls && _declined_trigger_count.load_relaxed() > Penalty_Free_Declinations) {
-    adjust_penalty(Stall_Penalty);
-  } else {
+  if (!stalls) {
     adjust_penalty(Concurrent_Adjust);
+  } else if (_declined_trigger_count.load_relaxed() > Penalty_Free_Declinations) {
+    // There were stalls _and_ the trigger was lazy, penalize it. Else, there were
+    // stalls, but the trigger was not lazy. Make no adjustments in this case.
+    adjust_penalty(Stall_Penalty);
   }
+
   log_debug(gc, ergo)("Declined trigger count at end: %zu", _declined_trigger_count.load_relaxed());
   _declined_trigger_count.store_relaxed(0);
 }
