@@ -51,8 +51,7 @@ private:
   ssize_t _region_balance;
 
   // Set when evacuation in the old generation fails. When this is set, the control thread will initiate a
-  // full GC instead of a futile degenerated cycle.
-  // TODO: This is only used to get a debug log message now.
+  // full GC instead of a futile concurrent cycle.
   ShenandoahSharedFlag _failed_evacuation;
 
   // Bytes reserved within old-gen to hold the results of promotion. This is separate from
