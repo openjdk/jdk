@@ -209,6 +209,9 @@ void ShenandoahControlThread::run_service() {
       }
     }
   }
+
+  // In case any threads are waiting for a cycle to happen, notify them so they observe the shutdown.
+  notify_gc_waiters();
 }
 
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {
