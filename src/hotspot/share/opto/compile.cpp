@@ -3947,7 +3947,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     n->disconnect_inputs(this);
     Node* frame = start()->proj_out(TypeFunc::FramePtr);
     stringStream ss;
-    ss.print("dead path discovered by TypeNode during igvn");
+    ss.print("dead path discovered by data nodes during igvn");
     Node* halt = new HaltNode(r, frame, ss.as_string(comp_arena()));
     root()->set_req(root()->find_edge(n), halt);
     break;
