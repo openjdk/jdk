@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "asm/macroAssembler.hpp"
 #include "code/vmreg.hpp"
 #include "memory/allStatic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/checkedCast.hpp"
 
 // A VtableStub holds an individual code stub for a pair (vtable index, #args) for either itables or vtables
@@ -111,7 +112,9 @@ class VtableStubs : AllStatic {
   static bool        contains(address pc);                           // is pc within any stub?
   static VtableStub* stub_containing(address pc);                    // stub containing pc or nullptr
   static void        initialize();
-  static void        vtable_stub_do(void f(VtableStub*));            // iterates over all vtable stubs
+
+  template <typename F>
+  static void vtable_stub_do(F f);
 };
 
 
@@ -142,13 +145,14 @@ class VtableStub {
         : _next(nullptr), _index(index), _ame_offset(-1), _npe_offset(-1),
           _type(is_vtable_stub ? Type::vtable_stub : Type::itable_stub) {}
   VtableStub* next() const                       { return _next; }
-  int index() const                              { return _index; }
   static VMReg receiver_location()               { return _receiver_location; }
   void set_next(VtableStub* n)                   { _next = n; }
 
  public:
+  int index() const                              { return _index; }
+  int code_size() const                          { return VtableStubs::code_size_limit(is_vtable_stub()); }
   address code_begin() const                     { return (address)(this + 1); }
-  address code_end() const                       { return code_begin() + VtableStubs::code_size_limit(is_vtable_stub()); }
+  address code_end() const                       { return code_begin() + code_size(); }
   address entry_point() const                    { return code_begin(); }
   static int entry_offset()                      { return sizeof(class VtableStub); }
 
@@ -188,5 +192,14 @@ class VtableStub {
   void print() const;
 
 };
+
+template <typename F>
+void VtableStubs::vtable_stub_do(F f) {
+  for (int i = 0; i < N; i++) {
+    for (VtableStub* s = AtomicAccess::load_acquire(&_table[i]); s != nullptr; s = s->next()) {
+      f(s);
+    }
+  }
+}
 
 #endif // SHARE_CODE_VTABLESTUBS_HPP
