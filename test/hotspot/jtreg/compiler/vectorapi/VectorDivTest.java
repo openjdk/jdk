@@ -48,7 +48,7 @@ public class VectorDivTest {
     private static final VectorSpecies<Float> F_SPECIES = FloatVector.SPECIES_MAX;
     private static final VectorSpecies<Double> D_SPECIES = DoubleVector.SPECIES_MAX;
 
-    private static final int BUF_LEN = 512;
+    private static final int BUF_LEN = 256;
 
     private static final byte[] ba = new byte[BUF_LEN];
     private static final byte[] bb = new byte[BUF_LEN];
