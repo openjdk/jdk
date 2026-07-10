@@ -29,24 +29,19 @@
 #include "memory/allocation.hpp"
 
 /*
- * Base class of three Shenandoah GC modes
+ * Base class of three Shenandoah GC collections
  *
  * The relationship of the GCs:
  *
  * ("normal" mode) ----> Concurrent GC ----> (finish)
- *                            |
- *                            | <upgrade>
- *                            v
+ * ("old" mode) --> Concurrent GC (bootstrap) --> Old GC --> (finish)
  * ("passive" mode) ---> Full GC --------> (finish)
  */
 
-class ShenandoahController;
 class ShenandoahGeneration;
 
 class ShenandoahGC : public StackObj {
 public:
-  // Fail point from concurrent GC
-
   explicit ShenandoahGC(ShenandoahGeneration* generation)
     : _generation(generation) { }
 

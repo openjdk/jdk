@@ -1432,15 +1432,11 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
       // For LAB allocations, it is enough to rollback the allocation ptr. Either the next
       // object will overwrite this stale copy, or the filler object on LAB retirement will
       // do this.
-      // if (ZapUnusedHeapArea) {
-      //  SpaceMangler::mangle_region(MemRegion(copy, size));
-      // }
       ShenandoahThreadLocalData::gclab(thread)->undo_allocation(copy, size);
     } else {
       // For non-LAB allocations, we have no way to retract the allocation, and
       // have to explicitly overwrite the copy with the filler object. With that overwrite,
       // we have to keep the fwdptr initialized and pointing to our (stale) copy.
-      // What fwdptr? we failed to update the header in the from-space object?
       assert(size >= ShenandoahHeap::min_fill_size(), "previously allocated object known to be larger than min_size");
       fill_with_object(copy, size);
       shenandoah_assert_correct(nullptr, copy_val);

@@ -378,7 +378,6 @@ void ShenandoahAsserts::assert_forwarded(void* interior_loc, oop obj, const char
   oop fwd =   ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
   if (obj == fwd) {
-    // This feels kinda racy...
     if (obj->has_displaced_mark()) {
       markWord displaced_mark = obj->displaced_mark();
       if (displaced_mark.is_self_forwarded()) {

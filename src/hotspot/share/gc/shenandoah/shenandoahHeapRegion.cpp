@@ -923,7 +923,7 @@ public:
         CollectedHeap::fill_with_object(_previous, pointer_delta(current, _previous));
         if (_cards != nullptr) {
           // We created a filler object that could span multiple original objects, we know there are
-          // no pointers in these filler objects, so we don't need to dirty cards, but we stil need
+          // no pointers in these filler objects, so we don't need to dirty cards, but we still need
           // to register the object.
           _cards->register_object_without_lock(_previous);
         }
