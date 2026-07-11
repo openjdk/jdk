@@ -1957,7 +1957,7 @@ size_t os::vm_min_address() {
   return 4 * G;
 #else
   // Attention, porters
-  return 32 * M;
+  return 16 * M;
 #endif
 }
 
