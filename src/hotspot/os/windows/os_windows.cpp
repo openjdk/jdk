@@ -2225,6 +2225,9 @@ void os::print_memory_info(outputStream* st) {
     st->print("\nGetProcessMemoryInfo did not succeed so we miss some memory values.");
   }
 
+  st->print_cr("Usable address space: [" PTR_FORMAT ".." PTR_FORMAT "]",
+               os::vm_min_address(), os::vm_max_address());
+
   st->cr();
 }
 
@@ -4474,8 +4477,8 @@ void os::win32::initialize_system_info() {
   assert(is_aligned(_vm_min_address, si.dwAllocationGranularity), "strange alignment?");
   assert(_vm_min_address <= (G * 4), "weirdly high?");
 
-  _vm_max_address = p2u(si.lpMaximumApplicationAddress); // usually 128TB
-  assert(is_aligned(_vm_max_address, si.dwAllocationGranularity), "strange alignment?");
+  _vm_max_address = p2u(si.lpMaximumApplicationAddress); // usually 128TB - 1
+  assert(is_aligned(_vm_max_address + 1, si.dwAllocationGranularity), "strange alignment?");
   assert(_vm_max_address > (G * 4), "weirdly low?");
 
   DWORD processors = 0;

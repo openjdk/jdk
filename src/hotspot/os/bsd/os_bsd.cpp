@@ -1596,6 +1596,8 @@ void os::print_memory_info(outputStream* st) {
     }
   }
 
+  st->print_cr("Usable address space: [" PTR_FORMAT ".." PTR_FORMAT "]",
+               os::vm_min_address(), os::vm_max_address());
   st->cr();
 }
 
