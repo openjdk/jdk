@@ -1201,11 +1201,13 @@ void PhaseIterGVN::optimize(bool deep) {
     return;
   }
 
-  clean_up_memory_phis();
-  if (drain_worklist()) {
-    return;
+  if (clean_up_memory_phis()) {
+    if (drain_worklist()) {
+      return;
+    }
+    assert(!clean_up_memory_phis(), "should not introduce more memory Phis that need cleaning up");
   }
-  assert(!clean_up_memory_phis(), "should not introduce more memory Phis that need cleaning up");
+  DEBUG_ONLY(verify_empty_worklist(nullptr));
 
   if (deep && UseDeepIGVNRevisit) {
     deep_revisit_converged = deep_revisit();
