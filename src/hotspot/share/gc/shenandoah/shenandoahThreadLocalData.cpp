@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#include "runtime/os.hpp"
 
 ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _gc_state(0),
@@ -40,8 +41,7 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _evacuation_stats(new ShenandoahEvacuationStats()),
   _invisible_root(nullptr),
   _invisible_root_word_size(0),
-  _mutator_alloc_region_slot(UINT_MAX),
-  _collector_alloc_region_slot(UINT_MAX) {
+  _random_probe((uint32_t)(os::random() & 0x7fffffff)) {
 }
 
 ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {

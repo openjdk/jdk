@@ -93,12 +93,11 @@ private:
   Atomic<HeapWord*> _invisible_root;
   Atomic<size_t> _invisible_root_word_size;
 
-  // Per-thread stripe slot for the striped CAS alloc regions, one per striped partition. This is
-  // the slot this thread allocates from on the lock-free fast path (and where its sibling scan
-  // begins). Initialized lazily to UINT_MAX, then assigned a stable per-thread slot so different
-  // threads map to different alloc regions, spreading CAS contention.
-  uint _mutator_alloc_region_slot;
-  uint _collector_alloc_region_slot;
+  // Stable per-thread random value, drawn once at thread creation. Callers that need to spread
+  // threads across a fixed-size array of stripes/slots derive an index from it (e.g. masking for a
+  // power-of-two stripe count, or modulo for an arbitrary slot count) instead of hashing the thread
+  // pointer, which distributes poorly when allocators are aligned to a power of two.
+  uint32_t _random_probe;
 
   ShenandoahThreadLocalData();
   ~ShenandoahThreadLocalData();
@@ -194,22 +193,9 @@ public:
     data(thread)->_gclab_size = v;
   }
 
-  // Caller passes the already-resolved current thread to avoid a repeated Thread::current() on the
-  // allocation fast path.
-  static uint mutator_alloc_region_slot(Thread* thread) {
-    return data(thread)->_mutator_alloc_region_slot;
-  }
-
-  static void set_mutator_alloc_region_slot(Thread* thread, uint slot) {
-    data(thread)->_mutator_alloc_region_slot = slot;
-  }
-
-  static uint collector_alloc_region_slot(Thread* thread) {
-    return data(thread)->_collector_alloc_region_slot;
-  }
-
-  static void set_collector_alloc_region_slot(Thread* thread, uint slot) {
-    data(thread)->_collector_alloc_region_slot = slot;
+  // Stable per-thread random value, drawn once at thread creation. See _random_probe.
+  static uint32_t random_probe(Thread* thread) {
+    return data(thread)->_random_probe;
   }
 
   static void begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {

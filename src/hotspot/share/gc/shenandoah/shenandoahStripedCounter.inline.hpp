@@ -27,16 +27,15 @@
 
 #include "gc/shenandoah/shenandoahStripedCounter.hpp"
 
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "runtime/thread.hpp"
 
 inline uint32_t ShenandoahStripedCounter::current_stripe() const {
   if (_num_stripes == 1u) {
     return 0u;
   }
-  // Per-thread probe into [0, _num_stripes). Hashing the thread pointer spreads threads across
-  // stripes. This is a pure, stable function of (thread pointer,  _num_stripes)
-  const uintptr_t t = (uintptr_t) Thread::current();
-  return (uint32_t) ((t ^ (t >> 20) ^ (t >> 9)) & _stripe_mask);
+
+  return ShenandoahThreadLocalData::random_probe(Thread::current()) & _stripe_mask;
 }
 
 inline uint32_t ShenandoahStripedCounter::num_stripes() const {

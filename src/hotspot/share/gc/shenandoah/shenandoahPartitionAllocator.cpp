@@ -33,7 +33,6 @@
 #include "gc/shenandoah/shenandoahPartitionAllocator.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "logging/log.hpp"
-#include "runtime/os.hpp"
 
 template<ShenandoahFreeSetPartitionId PARTITION>
 ShenandoahPartitionAllocator<PARTITION>::ShenandoahPartitionAllocator(ShenandoahFreeSet* free_set, uint alloc_region_count)
@@ -49,29 +48,8 @@ uint ShenandoahPartitionAllocator<PARTITION>::alloc_region_slot(Thread* thread) 
   if (_alloc_region_count <= 1u) {
     return 0u;
   }
-  if constexpr (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
-    // Collector/old-collector slots are sized per evacuation to the worker count, and that count can
-    // change between phases (set before concurrent evac, grown when a degenerated cycle escalates).
-    // GC workers therefore derive their slot fresh from worker_id() each time rather than caching it
-    // in thread-local state, so a stale cached slot can never fall outside the current count. The
-    // modulo is trivial, and a given worker only ever allocates in one collector partition.
-    if (thread->is_Worker_thread()) {
-      return WorkerThread::worker_id() % _alloc_region_count;
-    }
-    // Non-worker collector allocations (rare) use a stable pseudo-random slot.
-    uint slot = ShenandoahThreadLocalData::collector_alloc_region_slot(thread);
-    if (slot == UINT_MAX || slot >= _alloc_region_count) {
-      slot = (uint)(os::random() & 0x7fffffff) % _alloc_region_count;
-      ShenandoahThreadLocalData::set_collector_alloc_region_slot(thread, slot);
-    }
-    return slot;
-  }
-  // Mutator: stable per-thread slot, assigned once, count is fixed for the allocator's life.
-  uint slot = ShenandoahThreadLocalData::mutator_alloc_region_slot(thread);
-  if (slot == UINT_MAX) {
-    slot = (uint)(os::random() & 0x7fffffff) % _alloc_region_count;
-    ShenandoahThreadLocalData::set_mutator_alloc_region_slot(thread, slot);
-  }
+  // stable per-thread slot, assigned once, count is fixed for the allocator's life.
+  uint slot = ShenandoahThreadLocalData::random_probe(thread) % _alloc_region_count;
   assert(slot < _alloc_region_count, "slot in range");
   return slot;
 }
