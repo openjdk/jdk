@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 
 // In-flight release callback for ShenandoahLock and ShenandoahSimpleLock. ThreadBlockInVMPreprocess
