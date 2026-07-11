@@ -22,9 +22,11 @@
  */
 package compiler.parsing;
 
+import java.io.IOException;
 import java.util.Objects;
 import jdk.test.lib.Asserts;
 import jdk.test.whitebox.WhiteBox;
+import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
@@ -35,84 +37,8 @@ import jdk.test.whitebox.WhiteBox;
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileOnly=${test.main.class}::test*
- *                   -XX:CompileCommand=inline,${test.main.class}::inline*
- *                   -XX:CompileCommand=dontinline,${test.main.class}::nonInline
- *                   -XX:CompileCommand=delayinline,${test.main.class}::inlineTestHelper
- *                   -DIdx=0 ${test.main.class}
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileOnly=${test.main.class}::test*
- *                   -XX:CompileCommand=inline,${test.main.class}::inline*
- *                   -XX:CompileCommand=dontinline,${test.main.class}::nonInline
- *                   -XX:CompileCommand=delayinline,${test.main.class}::inlineTestHelper
- *                   -DIdx=1 ${test.main.class}
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileOnly=${test.main.class}::test*
- *                   -XX:CompileCommand=inline,${test.main.class}::inline*
- *                   -XX:CompileCommand=dontinline,${test.main.class}::nonInline
- *                   -XX:CompileCommand=delayinline,${test.main.class}::inlineTestHelper
- *                   -DIdx=2 ${test.main.class}
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileOnly=${test.main.class}::test*
- *                   -XX:CompileCommand=inline,${test.main.class}::inline*
- *                   -XX:CompileCommand=dontinline,${test.main.class}::nonInline
- *                   -XX:CompileCommand=delayinline,${test.main.class}::inlineTestHelper
- *                   -DIdx=3 ${test.main.class}
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileOnly=${test.main.class}::test*
- *                   -XX:CompileCommand=inline,${test.main.class}::inline*
- *                   -XX:CompileCommand=dontinline,${test.main.class}::nonInline
- *                   -XX:CompileCommand=delayinline,${test.main.class}::inlineTestHelper
- *                   -DIdx=4 ${test.main.class}
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileOnly=${test.main.class}::test*
- *                   -XX:CompileCommand=inline,${test.main.class}::inline*
- *                   -XX:CompileCommand=dontinline,${test.main.class}::nonInline
- *                   -XX:CompileCommand=delayinline,${test.main.class}::inlineTestHelper
- *                   -DIdx=5 ${test.main.class}
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileOnly=${test.main.class}::test*
- *                   -XX:CompileCommand=inline,${test.main.class}::inline*
- *                   -XX:CompileCommand=dontinline,${test.main.class}::nonInline
- *                   -XX:CompileCommand=delayinline,${test.main.class}::inlineTestHelper
- *                   -DIdx=6 ${test.main.class}
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileOnly=${test.main.class}::test*
- *                   -XX:CompileCommand=inline,${test.main.class}::inline*
- *                   -XX:CompileCommand=dontinline,${test.main.class}::nonInline
- *                   -XX:CompileCommand=delayinline,${test.main.class}::inlineTestHelper
- *                   -DIdx=7 ${test.main.class}
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileOnly=${test.main.class}::test*
- *                   -XX:CompileCommand=inline,${test.main.class}::inline*
- *                   -XX:CompileCommand=dontinline,${test.main.class}::nonInline
- *                   -XX:CompileCommand=delayinline,${test.main.class}::inlineTestHelper
- *                   -DIdx=8 ${test.main.class}
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileOnly=${test.main.class}::test*
- *                   -XX:CompileCommand=inline,${test.main.class}::inline*
- *                   -XX:CompileCommand=dontinline,${test.main.class}::nonInline
- *                   -XX:CompileCommand=delayinline,${test.main.class}::inlineTestHelper
- *                   -DIdx=9 ${test.main.class}
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileOnly=${test.main.class}::test*
- *                   -XX:CompileCommand=inline,${test.main.class}::inline*
- *                   -XX:CompileCommand=dontinline,${test.main.class}::nonInline
- *                   -XX:CompileCommand=delayinline,${test.main.class}::inlineTestHelper
- *                   -DIdx=10 ${test.main.class}
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   ${test.main.class}
  */
 public class TestNarrowPhi {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
@@ -130,10 +56,41 @@ public class TestNarrowPhi {
         int v;
     }
 
-    public static void main(String[] args) throws InterruptedException, NoSuchMethodException {
+    public static void main(String[] args) throws IOException, InterruptedException, NoSuchMethodException {
+        if (args.length == 0) {
+            spawnTestProcesses();
+        } else {
+            int idx = Integer.parseInt(args[0]);
+            runTest(idx);
+        }
+    }
+
+    private static void spawnTestProcesses() throws IOException, InterruptedException {
+        String testClassName = TestNarrowPhi.class.getName();
         // Since we cannot reliably coordinate the compiler thread and the thread that load the
         // child class, randomly delaying one of them
-        int idx = Integer.getInteger("Idx");
+        for (int i = 0; i <= 10; i++) {
+            var builder = ProcessTools.createTestJavaProcessBuilder(
+                    "-Xbootclasspath/a:.",
+                    "-Xbatch",
+                    "-XX:-TieredCompilation",
+                    "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:+WhiteBoxAPI",
+                    "-XX:CompileOnly=" + testClassName + "::test*",
+                    "-XX:CompileCommand=inline," + testClassName + "::inline*",
+                    "-XX:CompileCommand=dontinline," + testClassName + "::nonInline",
+                    "-XX:CompileCommand=delayinline," + testClassName + "::inlineTestHelper",
+                    testClassName,
+                    Integer.toString(i));
+            builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+            builder.redirectError(ProcessBuilder.Redirect.INHERIT);
+            var process = builder.start();
+            process.waitFor();
+            Asserts.assertEQ(0, process.exitValue());
+        }
+    }
+
+    private static void runTest(int idx) throws InterruptedException, NoSuchMethodException {
         var testMethod = TestNarrowPhi.class.getDeclaredMethod("testMethod", boolean.class, P.class, P.class, P.class);
         var _ = Objects.class;
         Thread loader = new Thread(() -> {
