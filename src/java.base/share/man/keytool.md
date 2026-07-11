@@ -1198,7 +1198,7 @@ These options can appear for all commands operating on a keystore:
     directory if it doesn't already exist. Similarly, if the `-keystore ks_file`
     option is specified but `ks_file` doesn't exist, then it is created. For
     more information on keystore types and implementations, see the
-    **KeyStore Implementation** section in **KeyStore aliases**.
+    **KeyStore implementation** section in [Terms].
 
     Note that the input stream from the `-keystore` option is passed to the
     `KeyStore.load` method. If `NONE` is specified as the URL, then a null
@@ -1886,11 +1886,7 @@ Keystore implementation
     is a cross platform keystore based on the RSA PKCS12 Personal Information
     Exchange Syntax Standard. This standard is primarily meant for storing or
     transporting a user's private keys, certificates, and miscellaneous
-    secrets. There is another built-in implementation, provided by Oracle. It
-    implements the keystore as a file with a proprietary keystore type (format)
-    named `JKS`. It protects each private key with its individual password, and
-    also protects the integrity of the entire keystore with a (possibly
-    different) password.
+    secrets. There is another built-in implementation, provided by Oracle.
 
     Keystore implementations are provider-based. More specifically, the
     application interfaces supplied by `KeyStore` are implemented in terms of a
@@ -1946,11 +1942,7 @@ Keystore implementation
     >   `keystore.type=pkcs12`
 
     To have the tools utilize a keystore implementation other than the default,
-    you can change that line to specify a different keystore type. For example,
-    if you want to use the Oracle's `jks` keystore implementation, then change
-    the line to the following:
-
-    >   `keystore.type=jks`
+    you can change that line to specify a different keystore type.
 
     **Note:**
 
@@ -2157,9 +2149,9 @@ cacerts Certificates File
 
     The `cacerts` file represents a system-wide keystore with CA certificates.
     System administrators can configure and manage that file with the `keytool`
-    command by specifying `pkcs12` as the keystore type. The `cacerts` keystore
-    file ships with a default set of root CA certificates. For Linux, macOS, and
-    Windows, you can list the default certificates with the following command:
+    command. The `cacerts` keystore file ships with a default set of root CA
+    certificates. For Linux, macOS, and Windows, you can list the default
+    certificates with the following command:
 
     >   `keytool -list -cacerts`
 
