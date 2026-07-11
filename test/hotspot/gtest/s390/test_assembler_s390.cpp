@@ -60,9 +60,9 @@ TEST(AssemblerS390, is_z_illtrap_with_id) {
 
 TEST(AssemblerS390, is_z_illtrap_false_positive) {
   // A non-zero high byte must NOT be recognised as an illtrap.
-  uint8_t buf[] = { 0x47, 0x00 };  // BCR 0,0  (a NOP — not an illtrap)
+  uint8_t buf[] = { 0x07, 0x00 };  // BCR 0,0  (a NOP — not an illtrap)
   EXPECT_FALSE(Assembler::is_z_illtrap((address)buf))
-      << "BCR 0,0 (0x4700) must not be recognised as illtrap";
+      << "BCR 0,0 (0x0700) must not be recognised as illtrap";
 }
 
 #endif // S390 && !ZERO
