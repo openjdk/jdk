@@ -1202,7 +1202,7 @@ void PhaseIterGVN::optimize(bool deep) {
   }
 
   clean_up_memory_phis();
-  verify_empty_worklist(nullptr);
+  DEBUG_ONLY(verify_empty_worklist(nullptr));
 
   if (deep && UseDeepIGVNRevisit) {
     deep_revisit_converged = deep_revisit();
