@@ -149,7 +149,7 @@ void ShenandoahAllocRate<Clock>::take_sample(jlong now, jlong elapsed, size_t un
 template<typename Clock>
 ShenandoahAnticipatedConsumption ShenandoahAllocRate<Clock>::snapshot(const double time_delta, const double standard_deviations) {
   ShenandoahAnticipatedConsumption result(time_delta);
-  MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
+  ShenandoahAllocRateSampleLocker locker(&_sample_lock);
 
   result._baseline = upper_bound_no_lock(standard_deviations);
 
