@@ -158,7 +158,8 @@ public:
   // (under ASSERT) and then trip lock()'s assert(_owner == nullptr). Kept for parity with
   // ShenandoahSimpleLock::try_lock and for callers that want a bare non-blocking attempt.
   bool try_lock() {
-    bool const acquired = _state.compare_exchange(unlocked, locked) == unlocked;
+    bool const acquired = _state.load_relaxed() == unlocked &&
+                          _state.compare_exchange(unlocked, locked) == unlocked;
 #ifdef ASSERT
     if (acquired) {
       assert(_state.load_relaxed() == locked, "must be locked");
