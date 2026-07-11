@@ -1205,6 +1205,7 @@ void PhaseIterGVN::optimize(bool deep) {
   if (drain_worklist()) {
     return;
   }
+  assert(!clean_up_memory_phis(), "should not introduce more memory Phis that need cleaning up");
 
   if (deep && UseDeepIGVNRevisit) {
     deep_revisit_converged = deep_revisit();
@@ -1218,7 +1219,7 @@ void PhaseIterGVN::optimize(bool deep) {
 }
 
 // Remove dead memory Phis. This function solves the cases where local IGVN cannot.
-void PhaseIterGVN::clean_up_memory_phis() {
+bool PhaseIterGVN::clean_up_memory_phis() {
   ResourceMark rm;
   Unique_Node_List control_graph;
   Unique_Node_List memory_phis;
@@ -1238,11 +1239,15 @@ void PhaseIterGVN::clean_up_memory_phis() {
 
   // Cannot process at the same time as we collect these nodes because the operations may kill the
   // nodes in an unexpected manner
+  bool progress = false;
   Unique_Node_List tmp_worklist;
   for (uint i = 0; i < memory_phis.size(); i++) {
     PhiNode* mem_phi = memory_phis.at(i)->as_Phi();
-    try_kill_dead_memory_phi(mem_phi, tmp_worklist);
+    if (try_kill_dead_memory_phi(mem_phi, tmp_worklist)) {
+      progress = true;
+    }
   }
+  return progress;
 }
 
 // If a Phi has no transitive use other than other Phis, then it is dead. Note that the memory Phi
