@@ -1202,9 +1202,7 @@ void PhaseIterGVN::optimize(bool deep) {
   }
 
   clean_up_memory_phis();
-  if (drain_worklist()) {
-    return;
-  }
+  verify_empty_worklist(nullptr);
 
   if (deep && UseDeepIGVNRevisit) {
     deep_revisit_converged = deep_revisit();
@@ -1239,7 +1237,6 @@ void PhaseIterGVN::clean_up_memory_phis() {
   // Cannot process at the same time as we collect these nodes because the operations may kill the
   // nodes in an unexpected manner
   Unique_Node_List tmp_worklist;
-  Node_Array tmp_node_map;
   for (uint i = 0; i < memory_phis.size(); i++) {
     PhiNode* mem_phi = memory_phis.at(i)->as_Phi();
     try_kill_dead_memory_phi(mem_phi, tmp_worklist);
