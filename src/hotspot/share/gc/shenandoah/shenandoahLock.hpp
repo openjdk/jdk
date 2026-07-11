@@ -69,6 +69,8 @@ private:
   shenandoah_padding(2);
 #endif
 
+  void contended_lock(bool allow_block_for_safepoint);
+
   // Spin/TTAS on _state. Returns true once the lock is acquired. When ALLOW_BLOCK is set and a
   // safepoint poll becomes armed, returns false WITHOUT acquiring, so the caller (contended_lock)
   // can block for the safepoint and retry. Runs inside the caller's _thread_blocked scope when
@@ -150,8 +152,6 @@ public:
     _state.store_relaxed(unlocked);
   }
 
-  void contended_lock(bool allow_block_for_safepoint);
-
   // Single non-blocking TTAS attempt to acquire the lock. Returns true iff this call won it.
   // Note: contended_lock does NOT route through this; it re-acquires via a raw _state CAS so it can
   // set _owner itself afterwards. Routing contended_lock through try_lock() would set _owner here
@@ -197,7 +197,22 @@ private:
   }
 public:
   ShenandoahSimpleLock();
-  void lock(bool allow_block_for_safepoint = false);
+  void lock(bool allow_block_for_safepoint) {
+    assert(!allow_block_for_safepoint || Thread::current()->is_Java_thread(), "Must be Java thread if allow for safepoint");
+    assert(_owner.load_relaxed() != Thread::current(), "reentrant locking attempt, would deadlock");
+
+    if (allow_block_for_safepoint) {
+      if (!_lock.try_lock()) {
+        contended_lock_for_java_thread(JavaThread::current());
+      }
+    } else {
+      _lock.lock();
+    }
+
+    assert(_owner.load_relaxed() == nullptr, "must not be owned");
+    DEBUG_ONLY(_owner.store_relaxed(Thread::current());)
+  }
+
   void unlock() {
     assert(_owner.load_relaxed() == Thread::current(), "sanity");
     DEBUG_ONLY(_owner.store_relaxed((Thread*)nullptr);)

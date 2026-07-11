@@ -74,22 +74,6 @@ void ShenandoahSimpleLock::contended_lock_for_java_thread(JavaThread* java_threa
   }
 }
 
-void ShenandoahSimpleLock::lock(bool allow_block_for_safepoint) {
-  assert(!allow_block_for_safepoint || Thread::current()->is_Java_thread(), "Must be Java thread if allow for safepoint");
-  assert(_owner.load_relaxed() != Thread::current(), "reentrant locking attempt, would deadlock");
-
-  if (allow_block_for_safepoint) {
-    if (!_lock.try_lock()) {
-      contended_lock_for_java_thread(JavaThread::current());
-    }
-  } else {
-    _lock.lock();
-  }
-
-  assert(_owner.load_relaxed() == nullptr, "must not be owned");
-  DEBUG_ONLY(_owner.store_relaxed(Thread::current());)
-}
-
 template<typename Lock>
 ShenandoahReentrantLock<Lock>::ShenandoahReentrantLock() :
   Lock(), _owner(nullptr), _count(0) {
