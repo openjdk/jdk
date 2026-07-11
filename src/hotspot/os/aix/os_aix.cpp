@@ -1219,6 +1219,9 @@ void os::print_memory_info(outputStream* st) {
   // Print segments allocated with os::reserve_memory.
   st->print_cr("internal virtual memory regions used by vm:");
   vmembk_print_on(st);
+
+  st->print_cr("Usable address space: [" PTR_FORMAT ".." PTR_FORMAT "]",
+               os::vm_min_address(), os::vm_max_address());
 }
 
 // Get a string for the cpuinfo that is a summary of the cpu type
