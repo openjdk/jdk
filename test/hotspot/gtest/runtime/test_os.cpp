@@ -1138,9 +1138,7 @@ TEST_VM(os, vm_max_address) {
   // on all our 64-bit platforms, address space end should be a clean
   // power of 2
   uintptr_t s = os::vm_max_address();
-  ASSERT_TRUE(
-      is_power_of_2(s + 1)
-      );
+  ASSERT_TRUE(is_aligned(s + 1, os::vm_allocation_granularity()));
   ASSERT_GE(s, 4 * G);
 }
 #endif
