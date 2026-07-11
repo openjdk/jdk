@@ -260,7 +260,7 @@ public interface PrimitiveIterator<T, T_CONS> extends Iterator<T> {
         @Override
         default Double next() {
             if (Tripwire.ENABLED)
-                Tripwire.trip(getClass(), "{0} calling PrimitiveIterator.OfDouble.nextLong()");
+                Tripwire.trip(getClass(), "{0} calling PrimitiveIterator.OfDouble.nextDouble()");
             return nextDouble();
         }
 
