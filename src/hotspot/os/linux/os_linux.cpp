@@ -2893,8 +2893,9 @@ void os::print_memory_info(outputStream* st) {
   st->print("Page Sizes: ");
   _page_sizes.print_on(st);
   st->cr();
-  st->print_cr("Usable address space: [" PTR_FORMAT ".." PTR_FORMAT "]",
-               os::vm_min_address(), os::vm_max_address());
+  st->print_cr("User Address Space: [" PTR_FORMAT "-" PTR_FORMAT "] (%u bits)",
+               Linux::vm_min_address(), Linux::vm_max_address(),
+               log2i_ceil(Linux::vm_max_address()));
 }
 
 // Print the first "model name" line and the first "flags" line
@@ -4824,9 +4825,6 @@ jint os::init_2(void) {
   }
 
   Linux::capture_address_space_boundaries();
-  log_info(os)("User Address Space: [" PTR_FORMAT "-" PTR_FORMAT "] (%u bits)",
-               Linux::vm_min_address(), Linux::vm_max_address(),
-               log2i_ceil(Linux::vm_max_address()));
 
   Linux::libpthread_init();
   Linux::sched_getcpu_init();

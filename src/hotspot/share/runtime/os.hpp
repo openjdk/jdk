@@ -497,8 +497,11 @@ class os: AllStatic {
 
   // Returns the lowest address the process is allowed to map against.
   static uintptr_t vm_min_address();
-  // Returns the highest address the process is allowed to access
-  // (eg. 0x7FFF_FFFF_FFFF for a 47-bit address space)
+  // Returns the highest address the process is allowed to access.
+  // (eg. 0x7FFF_FFFF_FFFF for a 47-bit address space). It is guaranteed
+  // to be aligned to allocation granularity.
+  // Note: it will never be (uintptr_t)-1, even if that were theoretically possible
+  // (e.g. on s390 or on some 32-bit platforms).
   static uintptr_t vm_max_address();
 
   // Some kernels (e.g. s390x) can dynamically expand the page table. This function returns

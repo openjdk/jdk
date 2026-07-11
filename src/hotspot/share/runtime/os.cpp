@@ -2043,8 +2043,13 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   assert(is_aligned(bytes, os::vm_page_size()), "size not page aligned (" ARGSFMT ")", ARGSFMTARGS);
   assert(max >= min, "invalid range (" ARGSFMT ")", ARGSFMTARGS);
 
-  char* const absolute_max = (char*)(NOT_LP64(G * 3) LP64_ONLY(G * 128 * 1024));
   char* const absolute_min = (char*) os::vm_min_address();
+#ifdef _LP64
+  // Note: for backward compatibility reasons, we limit ourselves to 48 bits even if more were possible.
+  char* const absolute_max = (char*) MIN2(os::vm_max_address() + 1, nth_bit<uintptr_t>(48));
+#else
+  char* const absolute_max = (char*) (3 * G);
+#endif
 
   // AIX is the only platform that uses System V shm for reserving virtual memory.
   // In this case, the required alignment of the allocated size (64K) and the alignment

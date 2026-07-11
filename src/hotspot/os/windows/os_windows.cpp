@@ -2225,8 +2225,9 @@ void os::print_memory_info(outputStream* st) {
     st->print("\nGetProcessMemoryInfo did not succeed so we miss some memory values.");
   }
 
-  st->print_cr("Usable address space: [" PTR_FORMAT ".." PTR_FORMAT "]",
-               os::vm_min_address(), os::vm_max_address());
+  st->print_cr("User Address Space: [" PTR_FORMAT "-" PTR_FORMAT "] (%u bits)",
+               os::vm_min_address(), os::vm_max_address(),
+               log2i_ceil(os::vm_max_address()));
 
   st->cr();
 }

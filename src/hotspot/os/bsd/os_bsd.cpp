@@ -1596,8 +1596,10 @@ void os::print_memory_info(outputStream* st) {
     }
   }
 
-  st->print_cr("Usable address space: [" PTR_FORMAT ".." PTR_FORMAT "]",
-               os::vm_min_address(), os::vm_max_address());
+  st->print_cr("User Address Space: [" PTR_FORMAT "-" PTR_FORMAT "] (%u bits)",
+               os::vm_min_address(), os::vm_max_address(),
+               log2i_ceil(os::vm_max_address()));
+
   st->cr();
 }
 
@@ -1954,8 +1956,8 @@ size_t os::vm_min_address() {
   // -pagezero_size linker option).
   return 4 * G;
 #else
-  assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
-  return _vm_min_address_default;
+  // Attention, porters
+  return 32 * M;
 #endif
 }
 
