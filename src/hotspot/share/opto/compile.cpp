@@ -2366,7 +2366,8 @@ void Compile::Optimize() {
 
     if (failing())  return;
 
-    if (AlwaysIncrementalInline || StressIncrementalInlining) {
+    if (AlwaysIncrementalInline || StressIncrementalInlining ||
+        _late_inlines.length() > 0) {
       inline_incrementally(igvn);
     }
 
