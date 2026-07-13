@@ -25,6 +25,7 @@ import java.io.FileInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -61,25 +62,19 @@ public class SecurityPropertiesPluginTest {
         }
 
         /*
-         * Test props option with file containing 3 properties:
+         * Test props option with file containing 5 properties:
          * one that overrides a current property,
-         * one that is a user-defined property, and one that
-         * overrides a multi-valued property.
+         * one that is a user-defined property,
+         * two include properties (it should only use the 2nd one)
+         * one that overrides a multi-valued property.
          */
         Map<String, String> propMap =
                 Map.of("keystore.type", "bogus",
                        "foo", "bar",
+                       "include", "file1",
                        "jdk.certpath.disabledAlgorithms", "MD2");
         Path p = writePropsToFile(propMap, "test.security");
-        test("modOne", "props=" + p.toString(), propMap);
-
-        // test include option
-        test("modTwo", "include=file", Map.of("include", "file"));
-
-        // test props and include option together
-        Map<String, String> propMap2 = new HashMap<>(propMap);
-        propMap2.put("include", "file");
-        test("modThree", "props=" + p.toString() + ":include=file", propMap2);
+        test("modOne", p.toString(), propMap);
 
         // test illegal/bad options
         testBadOptions();
@@ -103,6 +98,10 @@ public class SecurityPropertiesPluginTest {
 
         propMap.forEach((k, v) ->
             Asserts.assertEquals(v, props.getProperty(k)));
+
+        // check include is last line
+        List<String> lines = Files.readAllLines(image.resolve(SECPROPS_PATH));
+        Asserts.assertEquals(lines.getLast(), "include=file1");
     }
 
     private static void testBadOptions() throws Exception {
@@ -111,44 +110,9 @@ public class SecurityPropertiesPluginTest {
         String module = "testBad";
         helper.generateDefaultJModule(module);
         helper.generateDefaultImage(new String[]
-                { "--security-properties", "props=nonexistent-file" }, module)
+                { "--security-properties", "nonexistent-file" }, module)
                 .assertFailure("java.io.FileNotFoundException: " +
                                "nonexistent-file (No such file or directory)");
-
-        Path p = Path.of(TEST_DIR, "bad");
-        Files.writeString(p, "include foo");
-        helper.generateDefaultImage(new String[]
-                { "--security-properties", "props=" + p.toString() }, module)
-                .assertFailure("the include property is not supported");
-
-        // unsupported option
-        helper.generateDefaultImage(new String[]
-                { "--security-properties", "remove=foo" }, module)
-                .assertFailure("Invalid option: remove");
-
-        // invalid syntax (missing '=')
-        helper.generateDefaultImage(new String[]
-                { "--security-properties", "props" }, module)
-                .assertFailure("Invalid syntax: props");
-
-        // too many options
-        helper.generateDefaultImage(new String[]
-                { "--security-properties",
-                  "props=foo:include=bar:extra=baz" }, module)
-                .assertFailure("Each option can be specified at most once");
-
-        // more than one include option
-        helper.generateDefaultImage(new String[]
-                { "--security-properties", "include=foo:include=bar" }, module)
-                .assertFailure("Only one include option can be specified");
-
-        // more than one props option
-        p = Path.of(TEST_DIR, "p");
-        Files.writeString(p, "foo=bar");
-        helper.generateDefaultImage(new String[]
-                { "--security-properties", "props=" + p.toString() +
-                  ":props=bar" }, module)
-                .assertFailure("Only one props option can be specified");
     }
 
     private static Path writePropsToFile(Map<String, String> propMap,

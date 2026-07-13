@@ -58,9 +58,6 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
     // holds properties and values that will be overridden
     private Map<String, String> props;
 
-    // the include filename
-    private String includeFile;
-
     public SecurityPropertiesPlugin() {
         super("security-properties");
     }
@@ -77,61 +74,23 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
 
     @Override
     public void configure(Map<String, String> config) {
-        String operation = config.get(getName());
-        if (operation == null) {
+        String propsFile = config.get(getName());
+        if (propsFile == null) {
             throw new AssertionError();
         }
 
-        String[] options = operation.split(":");
-        if (options.length > 2) {
-            throw new IllegalArgumentException(
-                "Each option can be specified at most once");
+        props = new HashMap<>();
+        Properties overrideProps = new Properties();
+        try (FileInputStream fis = new FileInputStream(propsFile)) {
+            overrideProps.load(fis);
+        } catch (IOException ioe) {
+            throw new IllegalArgumentException(ioe);
         }
-        for (String option : options) {
-            String[] args = option.split("=");
-            if (args.length != 2) {
-                throw new IllegalArgumentException("Invalid syntax: " + option);
-            }
-            switch (args[0]) {
-                case "props":
-                    if (props != null) {
-                        throw new IllegalArgumentException(
-                            "Only one props option can be specified");
-                    }
-                    props = new HashMap<>();
-                    String propsFile = args[1];
-                    Properties overrideProps = new Properties();
-                    try (FileInputStream fis = new FileInputStream(propsFile)) {
-                        overrideProps.load(fis);
-                    } catch (IOException ioe) {
-                        throw new IllegalArgumentException(ioe);
-                    }
-                    if (overrideProps.containsKey("include")) {
-                        throw new IllegalArgumentException(
-                            "the include property is not supported in a " +
-                            "properties file");
-                    }
-                    for (String name : overrideProps.stringPropertyNames()) {
-                        props.put(name, overrideProps.getProperty(name));
-                    }
-                    if (props.isEmpty()) {
-                        throw new IllegalArgumentException("No properties in "
-                                                           + propsFile);
-                    }
-                    break;
-
-                case "include":
-                    if (includeFile != null) {
-                        throw new IllegalArgumentException(
-                            "Only one include option can be specified");
-                    }
-                    includeFile = args[1];
-                    break;
-
-                default:
-                    throw new IllegalArgumentException(
-                        "Invalid option: " + args[0]);
-            }
+        for (String name : overrideProps.stringPropertyNames()) {
+            props.put(name, overrideProps.getProperty(name));
+        }
+        if (props.isEmpty()) {
+            throw new IllegalArgumentException("No properties in " + propsFile);
         }
     }
 
@@ -149,21 +108,6 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
     }
 
     private byte[] processProperties(InputStream content) {
-
-        if (props == null) {
-            // only include option specified
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (OutputStreamWriter osw = new OutputStreamWriter(baos);
-                 BufferedWriter bw = new BufferedWriter(osw)) {
-                 baos.write(content.readAllBytes());
-                 // add include directive at end
-                 bw.append("include=" + includeFile);
-                 bw.newLine();
-            } catch (Exception e) {
-                throw new PluginException(e);
-            }
-            return baos.toByteArray();
-        }
 
         List<String> lines = new ArrayList<>();
 
@@ -194,12 +138,16 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
         } catch (Exception e) {
             throw new PluginException(e);
         }
+
+        // extract and remove include property if it exists
+        String includeValue = props.remove("include");
+
         // add user-defined properties at end
         props.forEach((k, v) -> lines.add(k + "=" + v));
 
-        // add include directive at end, if specified
-        if (includeFile != null) {
-            lines.add("include=" + includeFile);
+        // add include property at end if it has been specified
+        if (includeValue != null) {
+            lines.add("include=" + includeValue);
         }
 
         // write contents of list to byte array
