@@ -380,13 +380,11 @@ public class TestRedact {
         e.assertRedactedArgument("Smith:abc123");
         e.assertUnredacted("Banana");
 
-       if (!Platform.isWindows()) { // On windows, quoting doesn't work the same, so ignore this test
-            Execution e2 = run(
-                "-XX:FlightRecorderOptions:redact-argument=\"Foo,bar\"",
-                "Foo,bar"
-            );
-            e2.assertRedactedArgument("Foo,bar");
-        }
+       String option = Platform.isWindows() ?
+           "-XX:FlightRecorderOptions:redact-argument='Foo,bar'" :
+           "-XX:FlightRecorderOptions:redact-argument=\"Foo,bar\"";
+        Execution e2 = run(option,"Foo,bar");
+        e2.assertRedactedArgument("Foo,bar");
     }
 
     private static void testRedactMultiple() throws Exception {
@@ -408,7 +406,7 @@ public class TestRedact {
         String programOption = "Aracuan";
         Execution e1 = run(
                 Map.of("SYSTEM_PROPS", systemProperty,
-                       "JVM_OPTIONS",jvmOption,
+                       "JVM_OPTIONS", jvmOption,
                        "PROGRAM_OPTIONS", programOption),
                 Map.of("secret","apple"),
                 List.of(systemProperty, jvmOption),
