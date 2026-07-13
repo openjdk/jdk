@@ -24,22 +24,26 @@
 /*
  * @test
  * @bug 8386116
- * @summary Test suspend and send async exception to a yielding virtual thread
+ * @summary Test suspending and sending async exception to a yielding virtual thread
  * @requires vm.continuations
+ * @requires vm.jvmti
  * @requires test.thread.factory == null
  * @library /test/lib /test/hotspot/jtreg
  * @run main/othervm/native -agentlib:StopThreadTest2 StopThreadTest2
  */
 
+import jdk.test.lib.Asserts;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class StopThreadTest2 {
     static final int MAX_VTHREAD_COUNT = Runtime.getRuntime().availableProcessors();
     static volatile boolean done;
+    static AtomicInteger asyncThrownCounter = new AtomicInteger();
 
     private static native void suspendAllVirtualThreads();
     private static native void resumeAllVirtualThreads();
-    private static native void stopThread(Thread thread, Throwable th);
+    private static native boolean stopThread(Thread thread, Throwable th);
 
     public static void foo(CountDownLatch started) {
         try {
@@ -47,7 +51,9 @@ public class StopThreadTest2 {
             while (!done) {
                 Thread.yield();
             }
-        } catch (Throwable t) {}
+        } catch (MyException t) {
+            asyncThrownCounter.incrementAndGet();
+        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -58,9 +64,12 @@ public class StopThreadTest2 {
             started.await();
         }
 
+        int asyncInstalledCounter = 0;
         suspendAllVirtualThreads();
         for (Thread vthread : vthreads) {
-            stopThread(vthread, new RuntimeException("Sent by JVMTI StopThread"));
+            if(stopThread(vthread, new MyException())) {
+                asyncInstalledCounter++;
+            }
         }
         resumeAllVirtualThreads();
         done = true;
@@ -68,5 +77,8 @@ public class StopThreadTest2 {
         for (Thread vthread : vthreads) {
             vthread.join();
         }
+        Asserts.assertEquals(asyncInstalledCounter, asyncThrownCounter.get());
     }
+
+    static class MyException extends RuntimeException {}
 }

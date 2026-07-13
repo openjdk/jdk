@@ -42,7 +42,7 @@ Java_StopThreadTest2_resumeAllVirtualThreads(JNIEnv* jni, jclass cls) {
   check_jvmti_status(jni, jvmti->ResumeAllVirtualThreads(0, nullptr), "Error in ResumeAllVirtualThreads");
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jboolean JNICALL
 Java_StopThreadTest2_stopThread(JNIEnv* jni, jclass cls, jthread thread, jobject exception) {
   jvmtiError err = jvmti->StopThread(thread, exception);
   // The target might be suspended at a VirtualThread method
@@ -50,6 +50,7 @@ Java_StopThreadTest2_stopThread(JNIEnv* jni, jclass cls, jthread thread, jobject
   if (err != JVMTI_ERROR_OPAQUE_FRAME) {
     check_jvmti_status(jni, err, "Error during StopThread()");
   }
+  return err == JVMTI_ERROR_NONE;
 }
 
 JNIEXPORT jint JNICALL
