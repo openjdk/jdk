@@ -126,8 +126,6 @@ public class JvmTempDirTest {
         }
     }
 
-    private static int counter = 0;
-
     /*
      * The actual test is in the nested class TestMain.
      * The responsibility of this class is to:
@@ -146,7 +144,6 @@ public class JvmTempDirTest {
         long elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
         System.out.println("Started after " + elapsedTime + "s");
 
-        final String pidFile = "JvmTempDirTest.Application.pid-" + counter++;
         ProcessThread processThread = null;
         try {
             String[] tmpDirArg = null;

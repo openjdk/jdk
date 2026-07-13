@@ -171,8 +171,8 @@ public class PlatformSupportImpl extends PlatformSupport {
 
 
     /*
-     * Extract the VM ID (PID) from a file path.
-     * Specifically the host pid for a container process.
+     * Extract the VM ID (pid) from a file path,
+     * specifically the host pid for a container process.
      *
      * File path should be in 1 of these 2 forms:
      *
