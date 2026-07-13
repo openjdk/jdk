@@ -85,7 +85,7 @@ private:
     // Apply TTAS to avoid more expensive CAS calls if the lock is still held by other thread.
     while (_state.load_relaxed() == locked ||
            _state.compare_exchange(unlocked, locked) != unlocked) {
-      if (ctr > 0 && !SafepointSynchronize::is_synchronizing()) {
+      if (ctr > 0 && (!ALLOW_BLOCK || !SafepointSynchronize::is_synchronizing())) {
         // Lightly contended, spin a little if no safepoint is pending.
         SpinPause();
         ctr--;
