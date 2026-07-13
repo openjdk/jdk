@@ -25,8 +25,6 @@
 
 package javax.crypto;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Thrown to indicate a cryptographic failure during processing.
  *
@@ -38,9 +36,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>This exception is not intended to represent internal provider errors,
  * which should be reported using {@link java.security.ProviderException}.
  *
- * @since 27
+ * @since 28
  */
-@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class CryptoException extends RuntimeException {
 
     @java.io.Serial

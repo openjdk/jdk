@@ -30,7 +30,6 @@
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
  * @summary Testing basic PEM API decoding
- * @enablePreview
  */
 
 import javax.crypto.EncryptedPrivateKeyInfo;

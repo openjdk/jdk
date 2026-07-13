@@ -31,27 +31,27 @@ import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
-import jdk.internal.javac.PreviewFeature;
 import sun.security.internal.InternalBinaryEncodable;
 
-
 /**
- * This interface identifies the cryptographic objects that can be converted
- * to and from binary data, and thereby encoded and decoded as PEM text.
+ * This interface identifies cryptographic objects that can be converted to
+ * and from standardized binary representations.
  *
  * <p> The APIs for cryptographic objects such as public keys, private keys,
  * certificates, and certificate revocation lists all provide the means to
  * convert their instances to and from standardized binary representations.
  * Other kinds of cryptographic objects, such as certificate requests, have
  * no corresponding API but can still be expressed as standardized binary
- * representations. The {@code BinaryEncodable} interface allows the
- * {@link PEMEncoder} and {@link PEMDecoder} classes to operate uniformly on
- * binary representations of key or certificate material.
+ * representations.  The {@code BinaryEncodable} interface allows APIs that
+ * operate on standardized binary representations, such as {@link PEMEncoder}
+ * and {@link PEMDecoder}, to process all kinds of cryptographic objects
+ * uniformly.
  *
  * <p> The permitted subtype {@code PEM} is notable for supporting the encoding
  * and decoding of PEM text that represents cryptographic objects for which no
  * API exists. In future releases, other permitted subtypes may be added to
- * support the encoding and decoding of such cryptographic objects.
+ * support the encoding and decoding of additional kinds of cryptographic
+ * objects as standardized binary representations.
  *
  * <p> The list of permitted subtypes shown after {@code permits} is not
  * exhaustive. This means if application code switches over a
@@ -71,10 +71,9 @@ import sun.security.internal.InternalBinaryEncodable;
  * @see X509CRL
  * @see PEM
  *
- * @since 27
+ * @since 28
  */
 
-@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public sealed interface BinaryEncodable permits AsymmetricKey, KeyPair,
     PKCS8EncodedKeySpec, X509EncodedKeySpec, EncryptedPrivateKeyInfo,
     X509Certificate, X509CRL, PEM, InternalBinaryEncodable {
