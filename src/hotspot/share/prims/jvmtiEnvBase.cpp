@@ -2467,8 +2467,15 @@ StopThreadClosure::do_vthread(Handle target_h) {
   vframeStream vfst(_target_jt);
   Method* m = vfst.method();
   if (is_async_unsafe_method(m)) {
-    // Throwing inside these methods can leave the
-    // vthread in an inconsistent state.
+    // Throwing from a VirtualThread method might leave the
+    // virtual thread in an inconsistent state. The current
+    // implementation simply checks the top method, which is
+    // enough to fix known issues where transition bits could
+    // be left in an invalid state and trigger assertion failures.
+    // A more thorough approach would be to walk the stack and
+    // check for VirtualThread methods further up (excluding
+    // VirtualThread.run and VirtualThread$VThreadContinuation$1.run
+    // which are always present).
     _result = JVMTI_ERROR_OPAQUE_FRAME;
     return;
   }

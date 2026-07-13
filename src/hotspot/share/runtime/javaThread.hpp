@@ -249,7 +249,7 @@ class JavaThread: public Thread {
   };
 
   int at_no_async_entry_count() const {
-    assert(is_handshake_safe_for(Thread::current()), "");
+    assert(is_handshake_safe_for(Thread::current()), "Should only be invoked from within a handshake!");
     assert(_at_no_async_entry_count >= 0, "");
     return _at_no_async_entry_count;
   }
