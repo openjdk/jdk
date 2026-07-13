@@ -4472,8 +4472,7 @@ void os::win32::initialize_system_info() {
   _processor_type  = si.dwProcessorType;
   _processor_level = si.wProcessorLevel;
 
-  const uintptr_t min_address_default = si.dwAllocationGranularity;
-  _vm_min_address = MAX2(min_address_default, p2u(si.lpMinimumApplicationAddress));
+  _vm_min_address = MAX2(os::vm_min_address_default, p2u(si.lpMinimumApplicationAddress));
   assert(is_aligned(_vm_min_address, si.dwAllocationGranularity), "strange alignment?");
   assert(_vm_min_address <= (G * 4), "weirdly high?");
 

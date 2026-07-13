@@ -495,6 +495,9 @@ class os: AllStatic {
 
   static size_t align_up_vm_allocation_granularity(size_t size) { return align_up(size, os::vm_allocation_granularity()); }
 
+  // The minimum value for os::vm_min_address() we enforce on all our platforms.
+  static constexpr size_t vm_min_address_default() { return 16 * M; }
+
   // Returns the lowest address the process is allowed to map against.
   static uintptr_t vm_min_address();
   // Returns the highest address the process is allowed to access.
