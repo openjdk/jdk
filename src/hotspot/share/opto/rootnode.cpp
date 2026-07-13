@@ -119,6 +119,8 @@ const Type* DeadPathNode::Value(PhaseGVN* phase) const {
 void DeadPathNode::activate(PhaseIterGVN* igvn) {
   assert(Compile::current()->root()->find_edge(this) < 0, "should be disconnected from root");
   set_req(0, this);
+  // If an entire subgraph died such as with Node::remove_dead_region(), some dead inputs to the DeadPath node will have
+  // been left behind
   while (req() > 1) {
     uint last = req() - 1;
     assert(in(last) == nullptr || in(last)->is_top(), "only dead inputs should remain");
