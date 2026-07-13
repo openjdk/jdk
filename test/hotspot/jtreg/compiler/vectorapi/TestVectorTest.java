@@ -40,33 +40,39 @@ import jdk.incubator.vector.VectorMask;
  */
 public class TestVectorTest {
     public static void main(String[] args) {
-        // IncrementalInlineVector is enabled by default. When a vector intrinsic
-        // fails to intrinsify on a given configuration (e.g. VectorMask.fromLong
-        // under -XX:UseAVX=0), its fallback implementation is now inlined instead
-        // of being left as a static call. The inlined fallback materializes the
-        // mask result using scalar CmpI/CMoveI nodes, which the @IR rules in this
-        // test forbid (they verify the VectorTest idealization that eliminates
-        // such scalar materialization). We therefore run with
-        // -XX:-IncrementalInlineVector so the intended intrinsified IR shape is
-        // observed deterministically across all supported configurations.
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
-                                   "-XX:-IncrementalInlineVector");
+        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
     }
 
     @DontInline
     public int call() { return 1; }
 
+    // The @IR rules below verify the VectorTest idealization that eliminates the
+    // scalar materialization (CmpI/CMoveI) of the mask query result. They are only
+    // valid when VectorMask.fromLong and the mask query are fully intrinsified.
+    // IncrementalInlineVector is enabled by default: when the intrinsic fails to
+    // apply on a given configuration (e.g. VectorMask.fromLong under -XX:UseAVX=0),
+    // the fallback is inlined and materializes the result with the very scalar
+    // nodes these rules forbid. We therefore guard the rules to the configurations
+    // where full intrinsification is guaranteed: on x64 that requires UseAVX > 0
+    // (and bmi2), while on the other supported platforms the @requires clause above
+    // already guarantees it, so the rules apply unconditionally there.
     @Test
-    @IR(failOn = {IRNode.CMP_I, IRNode.CMOVE_I})
-    @IR(counts = {IRNode.VECTOR_TEST, "1"})
+    @IR(failOn = {IRNode.CMP_I, IRNode.CMOVE_I}, counts = {IRNode.VECTOR_TEST, "1"},
+        applyIfPlatform = {"x64", "true"}, applyIf = {"UseAVX", "> 0"},
+        applyIfCPUFeature = {"bmi2", "true"})
+    @IR(failOn = {IRNode.CMP_I, IRNode.CMOVE_I}, counts = {IRNode.VECTOR_TEST, "1"},
+        applyIfPlatform = {"x64", "false"})
     public int branch(long maskLong) {
         var mask = VectorMask.fromLong(ByteVector.SPECIES_PREFERRED, maskLong);
         return mask.allTrue() ? call() : 0;
     }
 
     @Test
-    @IR(failOn = {IRNode.CMP_I})
-    @IR(counts = {IRNode.VECTOR_TEST, "1", IRNode.CMOVE_I, "1"})
+    @IR(failOn = {IRNode.CMP_I}, counts = {IRNode.VECTOR_TEST, "1", IRNode.CMOVE_I, "1"},
+        applyIfPlatform = {"x64", "true"}, applyIf = {"UseAVX", "> 0"},
+        applyIfCPUFeature = {"bmi2", "true"})
+    @IR(failOn = {IRNode.CMP_I}, counts = {IRNode.VECTOR_TEST, "1", IRNode.CMOVE_I, "1"},
+        applyIfPlatform = {"x64", "false"})
     public int cmove(long maskLong) {
         var mask = VectorMask.fromLong(ByteVector.SPECIES_PREFERRED, maskLong);
         return mask.allTrue() ? 1 : 0;
