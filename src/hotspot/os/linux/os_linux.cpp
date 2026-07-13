@@ -1582,8 +1582,7 @@ void os::Linux::initialize_vm_min_address() {
     fclose(f);
   }
 
-  const uintptr_t min_address_default = os::vm_allocation_granularity();
-  _vm_min_address = MAX2(min_address_default, value);
+  _vm_min_address = MAX2(os::vm_min_address_default(), value);
 }
 
 #if !defined(S390) && !defined(ARM)
