@@ -433,7 +433,7 @@ public:
   void grow_stack(JVMState* jvms, uint grow_by);
   // Handle monitor stack
   void push_monitor(BoxLockNode* box, Node* obj);
-  void pop_monitor ();
+  void pop_monitor();
   BoxLockNode* peek_monitor_box() const;
   Node*        peek_monitor_obj() const;
   // Peek Operand Stacks, JVMS 2.6.2
