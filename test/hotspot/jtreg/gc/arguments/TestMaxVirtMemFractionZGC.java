@@ -27,10 +27,11 @@ package gc.arguments;
  * @test
  * @bug 8376296
  * @summary Test that ZGC does not crash with boundary values for MaxVirtMemFraction
+ * @requires vm.debug
  * @library /test/lib
  * @library /
  * @requires vm.gc.Z
- * @run main/othervm ${test.main.class}
+ * @run driver ${test.main.class}
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
