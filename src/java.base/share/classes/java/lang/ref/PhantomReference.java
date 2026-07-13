@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ public non-sealed class PhantomReference<@jdk.internal.RequiresIdentity T> exten
      * @param q the queue with which the reference is to be registered,
      *          or {@code null} if registration is not required
      * @throws IdentityException if the referent is not an
-     *         {@link java.util.Objects#hasIdentity(Object) identity object}
+     *         {@linkplain java.util.Objects#hasIdentity(Object) identity object}
      */
     public PhantomReference(@jdk.internal.RequiresIdentity T referent, ReferenceQueue<? super T> q) {
         super(referent, q);
