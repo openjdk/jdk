@@ -1294,7 +1294,7 @@ public:
 // High-level lock operation
 //
 // This is a subclass of CallNode because it is a macro node which gets expanded
-// into a code sequence containing a call.  This node takes 3 "parameters":
+// into a code sequence containing a call.  This node takes two "parameters":
 //    0 - object to lock
 //    1 - a BoxLockNode
 //
