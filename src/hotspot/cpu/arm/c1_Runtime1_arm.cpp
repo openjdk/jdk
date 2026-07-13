@@ -363,6 +363,8 @@ void Runtime1::generate_unwind_exception(StubAssembler* sasm) {
   // Jump to handler
   __ verify_not_null_oop(Rexception_obj);
 
+  __ restore_profile_rng();
+
   __ jump(R0);
 }
 

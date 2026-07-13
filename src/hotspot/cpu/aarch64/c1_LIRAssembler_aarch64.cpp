@@ -1304,9 +1304,6 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   ciKlass* k = op->klass();
   Register Rtmp1 = noreg;
 
-  int profile_capture_ratio = ProfileCaptureRatio;
-  int ratio_shift = exact_log2(profile_capture_ratio);
-
   // check if it needs to be profiled
   ciMethodData* md;
   ciProfileData* data;

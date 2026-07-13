@@ -49,6 +49,9 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
 
+  if (ProfileCaptureRatio > 1) {
+    __ step_random(r_profile_rng, rscratch1);
+  }
   __ b(_continuation);
 }
 

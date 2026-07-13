@@ -196,7 +196,7 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
              "3 = CLWB loop; 4 = single CPUID; 5 = single SERIALIZE. "      \
              "Explicitly selected mechanism will fail at startup if "       \
              "hardware does not support it.")                               \
-             range(-1, 5)
+             range(-1, 5)                                                   \
 
 // end of ARCH_FLAGS
 
