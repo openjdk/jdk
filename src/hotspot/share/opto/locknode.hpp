@@ -133,7 +133,7 @@ class FastLockNode: public CmpNode {
 public:
   FastLockNode(Node* ctrl, Node* oop, Node* box) : CmpNode(oop, box) {
     assert(ctrl != nullptr, "required");
-    init_req(0,ctrl);
+    init_req(0, ctrl);
     init_class_id(Class_FastLock);
   }
   Node* obj_node() const { return in(1); }
