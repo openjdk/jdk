@@ -1125,6 +1125,7 @@ TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
 
 TEST_VM(os, vm_min_address) {
   uintptr_t s = os::vm_min_address();
+  ASSERT_TRUE(is_aligned(s, os::vm_allocation_granularity()));
   ASSERT_GE(s, M);
   // Test upper limit. On Linux, its adjustable, so we just test for absurd values to prevent errors
   // with high vm.mmap_min_addr settings.

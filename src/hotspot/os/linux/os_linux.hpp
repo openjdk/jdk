@@ -47,8 +47,8 @@ class os::Linux {
 
   static void build_numa_affinity_masks();
 
-  static void initialize_vm_min_address();
-  static void initialize_vm_max_address();
+  static void capture_vm_min_address();
+  static void capture_vm_max_address();
   static bool find_vma_by_name(const char* name, address* vma_low, address* vma_high);
 
  protected:
@@ -144,7 +144,6 @@ class os::Linux {
   static bool adjustStackSizeForGuardPages(); // See comments in os_linux.cpp
 
   static void capture_initial_stack(size_t max_size);
-  static void capture_address_space_boundaries();
   static uintptr_t vm_min_address() { return _vm_min_address; }
   static uintptr_t vm_max_address() { return _vm_max_address; }
 

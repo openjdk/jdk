@@ -495,11 +495,9 @@ class os: AllStatic {
 
   static size_t align_up_vm_allocation_granularity(size_t size) { return align_up(size, os::vm_allocation_granularity()); }
 
-  // The minimum value for os::vm_min_address() we enforce on all our platforms.
-  static constexpr size_t vm_min_address_default() { return 16 * M; }
-
   // Returns the lowest address the process is allowed to map against.
   static uintptr_t vm_min_address();
+
   // Returns the highest address the process is allowed to access.
   // (eg. 0x7FFF_FFFF_FFFF for a 47-bit address space). It is guaranteed
   // to be aligned to allocation granularity.
@@ -511,6 +509,11 @@ class os: AllStatic {
   // the lowest user space address that will expand the page table for the first time.
   // We typically want to avoid expanding the page table unless it is really necessary.
   static uintptr_t vm_page_table_expansion_point();
+
+  // The minimum value for os::vm_min_address() we enforce across our platforms. This value
+  // is chosen to give us reasonable protection against null pointer dereferences while being
+  // low enough to leave most of the valuable low-4gb address space open.
+  static constexpr uintptr_t vm_min_address_default = 16 * M;
 
   // Returns an upper limit beyond which reserve_memory() calls are guaranteed
   // to fail. It is not guaranteed that reserving less memory than this will
