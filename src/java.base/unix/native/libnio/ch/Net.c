@@ -237,7 +237,7 @@ Java_sun_nio_ch_Net_canIPv6SocketJoinIPv4Group0(JNIEnv* env, jclass cl)
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_canJoin6WithIPv4Group0(JNIEnv* env, jclass cl)
 {
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(_AIX)
     /* IPV6_ADD_MEMBERSHIP can be used to join IPv4 multicast groups */
     return JNI_TRUE;
 #else
@@ -767,6 +767,11 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
     if (n < 0) {
         if (join && (errno == ENOPROTOOPT || errno == EOPNOTSUPP))
             return IOS_UNAVAILABLE;
+#ifdef _AIX
+        // AIX rejects MCAST_*_SOURCE_GROUP for IPv4-mapped groups with EINVAL
+        if (source != NULL && errno == EINVAL)
+            return IOS_UNAVAILABLE;
+#endif
         handleSocketErrorWithMessage(env, errno, "setsockopt failed");
     }
     return 0;
@@ -791,6 +796,11 @@ Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, j
     if (n < 0) {
         if (block && (errno == ENOPROTOOPT || errno == EOPNOTSUPP))
             return IOS_UNAVAILABLE;
+#ifdef _AIX
+        // AIX rejects MCAST_BLOCK/UNBLOCK_SOURCE for IPv4-mapped groups with EINVAL
+        if (errno == EINVAL)
+            return IOS_UNAVAILABLE;
+#endif
         handleSocketError(env, errno);
     }
     return 0;
