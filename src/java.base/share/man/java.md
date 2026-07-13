@@ -100,13 +100,16 @@ argument is the name of the JAR file containing class and resource files for the
 application, and the main class is indicated by the `Main-Class` attribute in
 the manifest of the JAR file.
 
-Arguments after the main class name or the JAR file name are passed to
-the `main()` method. The `main()` method may be a static method or an instance
-method. It must accept either a `String` array as a parameter, or no parameters.
-It must not return any value, and must have `public`, `protected`, or package access.
-The method declaration typically has one of the following forms:
+The `main()` method may be a static method or an instance method. It may
+declare a `String` array parameter for arguments passed to the `java`
+command after the main class name or the JAR file name; alternatively,
+it may declare no parameters. It must not return any value, and must
+have `public`, `protected`, or package access. The method declaration
+typically has one of the following forms:
 
 >    `public static void main(String[] args)`
+>
+>    `public static void main()`
 >
 >    `void main(String[] args)`
 >
