@@ -2336,7 +2336,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 
   region  = new RegionNode(3);
   // create a Phi for the memory state
-  mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
+  mem_phi = new PhiNode(region, Type::MEMORY, TypeRawPtr::BOTTOM);
 
   // Optimize test; set region slot 2
   FastLockNode* flock = transform_later(new FastLockNode(ctrl, obj, box))->as_FastLock();
