@@ -27,8 +27,8 @@
  * @summary Test that UTF-16 string concat overflow does not produce a negative size backing array
  * @requires vm.compiler2.enabled & os.maxMemory > 4G
  * @library /test/lib /
- * @run main/othervm -XX:-OptoScheduling
- *                   ${test.main.class}
+ * @run main/othervm -XX:-OptoScheduling ${test.main.class}
+ * @run main/othervm -Xint ${test.main.class}
  * @run main/othervm -Xmx4g -XX:-TieredCompilation -Xcomp -XX:-OptoScheduling
  *                   -XX:CompileOnly=${test.main.class}::f
  *                   ${test.main.class}
