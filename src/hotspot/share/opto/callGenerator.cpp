@@ -734,7 +734,7 @@ void CallGenerator::do_late_inline_helper() {
       if (call->is_CallStaticJava() && call->as_CallStaticJava()->is_boxing_method()) {
         result = kit.must_be_not_null(result, false);
       }
-      // Limit result type propagation until next cleanup.
+      // Limit result type propagation until next IGVN cleanup.
       const Type* result_type = kit.gvn().type(callprojs.resproj);
       result = kit.gvn().transform(new OpaqueParseNode(C, result, result_type));
     }
