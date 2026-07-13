@@ -97,10 +97,10 @@ class MacroAssembler: public Assembler {
 
   enum KlassDecodeMode {
     KlassDecodeNone,
-    KlassDecodeFallback,
     KlassDecodeZero,
     KlassDecodeXor,
-    KlassDecodeMovk
+    KlassDecodeMovk,
+    KlassDecodeFallback
   };
 
   static KlassDecodeMode _klass_decode_mode;
@@ -313,19 +313,27 @@ class MacroAssembler: public Assembler {
   }
 
   inline void lslw(Register Rd, Register Rn, unsigned imm) {
-    ubfmw(Rd, Rn, ((32 - imm) & 31), (31 - imm));
+    if (imm > 0 || Rd != Rn) {
+      ubfmw(Rd, Rn, ((32 - imm) & 31), (31 - imm));
+    }
   }
 
   inline void lsl(Register Rd, Register Rn, unsigned imm) {
-    ubfm(Rd, Rn, ((64 - imm) & 63), (63 - imm));
+    if (imm > 0 || Rd != Rn) {
+      ubfm(Rd, Rn, ((64 - imm) & 63), (63 - imm));
+    }
   }
 
   inline void lsrw(Register Rd, Register Rn, unsigned imm) {
-    ubfmw(Rd, Rn, imm, 31);
+    if (imm > 0 || Rd != Rn) {
+      ubfmw(Rd, Rn, imm, 31);
+    }
   }
 
   inline void lsr(Register Rd, Register Rn, unsigned imm) {
-    ubfm(Rd, Rn, imm, 63);
+    if (imm > 0 || Rd != Rn) {
+      ubfm(Rd, Rn, imm, 63);
+    }
   }
 
   inline void rorw(Register Rd, Register Rn, unsigned imm) {

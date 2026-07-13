@@ -5429,24 +5429,14 @@ void MacroAssembler::emit_encode_klass_not_null(Register dst, Register src, Regi
   assert_different_registers(tmp, src);
   assert(tmp != noreg, "valid tmp required");
 
-  bool tmp_used = false;
-
   switch (decode_mode) {
   case KlassDecodeZero:
-    if (shift != 0) {
-      lsr(dst, src, shift);
-    } else {
-      if (dst != src) mov(dst, src);
-    }
+    lsr(dst, src, shift);
     break;
 
   case KlassDecodeXor:
-    if (shift != 0) {
-      eor(dst, src, (uint64_t)base);
-      lsr(dst, dst, shift);
-    } else {
-      eor(dst, src, (uint64_t)base);
-    }
+    eor(dst, src, (uint64_t)base);
+    lsr(dst, dst, shift);
     break;
 
   case KlassDecodeMovk:
@@ -5458,16 +5448,9 @@ void MacroAssembler::emit_encode_klass_not_null(Register dst, Register src, Regi
     break;
 
   case KlassDecodeFallback: {
-    Register reg_base = dst;
-    if (src == dst) {
-      tmp_used = true;
-      reg_base = tmp;
-    }
-    mov(reg_base, base);
-    sub(dst, src, reg_base);
-    if (shift != 0) {
-      lsr(dst, dst, shift);
-    }
+    mov(tmp, base);
+    sub(dst, src, tmp);
+    lsr(dst, dst, shift);
     break;
   }
 
@@ -5477,7 +5460,7 @@ void MacroAssembler::emit_encode_klass_not_null(Register dst, Register src, Regi
   }
 
 #ifdef ASSERT
-  if (!tmp_used && tmp != dst) {
+  if (tmp != dst) {
     mov(tmp, 0xdead);
   }
 #endif // ASSERT
@@ -5524,24 +5507,14 @@ void MacroAssembler::emit_decode_klass_not_null(Register dst, Register src, Regi
   assert_different_registers(tmp, src);
   assert(tmp != noreg, "valid tmp required");
 
-  bool tmp_used = false;
-
   switch (decode_mode) {
   case KlassDecodeZero: // 0-1 instructions
-    if (shift != 0) {
-      lsl(dst, src, shift);
-    } else {
-      if (dst != src) mov(dst, src);
-    }
+    lsl(dst, src, shift);
     break;
 
   case KlassDecodeXor: // 1-2 instructions
-    if (shift != 0) {
-      lsl(dst, src, shift);
-      eor(dst, dst, (uint64_t)base);
-    } else {
-      eor(dst, src, (uint64_t)base);
-    }
+    lsl(dst, src, shift);
+    eor(dst, dst, (uint64_t)base);
     break;
 
   case KlassDecodeMovk: { // 1-3 instructions
@@ -5550,28 +5523,16 @@ void MacroAssembler::emit_decode_klass_not_null(Register dst, Register src, Regi
 
     if (dst != src) movw(dst, src);
     movk(dst, shifted_base >> 32, 32);
-
-    if (shift != 0) {
-      lsl(dst, dst, shift);
-    }
-
+    lsl(dst, dst, shift);
     break;
   }
 
   case KlassDecodeFallback: { // 3-4 instructions
-    Register reg_base = dst;
-    if (src == dst) {
-      tmp_used = true;
-      reg_base = tmp;
-    }
-    // Note: base will always be aligned to Metaspace granularity (16MB). Address
-    // spaces are 47(macOS)/48(Linux)/52 (Linux with LVA, rare) bits. Therefore,
-    // loading the base will cost typically two, rarely three movk/movz
-    mov(reg_base, base);
+    mov(tmp, base);
     if (shift != 0) {
-      add(dst, reg_base, src, LSL, shift);
+      add(dst, tmp, src, LSL, shift);
     } else {
-      add(dst, reg_base, src);
+      add(dst, tmp, src);
     }
     break;
   }
@@ -5583,7 +5544,7 @@ void MacroAssembler::emit_decode_klass_not_null(Register dst, Register src, Regi
 
 #ifdef ASSERT
   // Always clobber tmp
-  if (!tmp_used && tmp != dst) {
+  if (tmp != dst) {
     mov(tmp, 0xdead);
   }
 #endif // ASSERT
