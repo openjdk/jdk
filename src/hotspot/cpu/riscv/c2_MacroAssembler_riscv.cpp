@@ -3295,6 +3295,17 @@ void C2_MacroAssembler::extract_v(Register dst, VectorRegister src,
   }
 }
 
+// Extract a scalar element from a vector at position 'idx'.
+// The input elements in src are expected to be of integral type.
+void C2_MacroAssembler::extract_v(Register dst, VectorRegister src,
+                                  BasicType bt, Register idx, VectorRegister vtmp) {
+  assert(is_integral_type(bt), "unsupported element type");
+  // Only need the first element after vector slidedown
+  vsetvli_helper(bt, 1);
+  vslidedown_vx(vtmp, src, idx);
+  vmv_x_s(dst, vtmp);
+}
+
 // Extract a scalar element from an vector at position 'idx'.
 // The input elements in src are expected to be of floating point type.
 void C2_MacroAssembler::extract_fp_v(FloatRegister dst, VectorRegister src,

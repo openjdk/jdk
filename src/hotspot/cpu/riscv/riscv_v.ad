@@ -5000,6 +5000,7 @@ instruct rearrange_masked(vReg dst, vReg src, vReg shuffle, vRegMask_V0 v0) %{
 
 instruct extract(iRegINoSp dst, vReg src, immI idx, vReg tmp)
 %{
+  match(Set dst (ExtractUB src idx));
   match(Set dst (ExtractB src idx));
   match(Set dst (ExtractS src idx));
   match(Set dst (ExtractI src idx));
@@ -5009,6 +5010,18 @@ instruct extract(iRegINoSp dst, vReg src, immI idx, vReg tmp)
     __ extract_v($dst$$Register, as_VectorRegister($src$$reg),
                  Matcher::vector_element_basic_type(this, $src), (int)($idx$$constant),
                  as_VectorRegister($tmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct extractUB_var(iRegINoSp dst, vReg src, iRegI idx, vReg tmp)
+%{
+  match(Set dst (ExtractUB src idx));
+  effect(TEMP tmp);
+  format %{ "extractUB_var $dst, $src, $idx\t# KILL $tmp" %}
+  ins_encode %{
+    __ extract_v($dst$$Register, as_VectorRegister($src$$reg), T_BOOLEAN,
+                 $idx$$Register, as_VectorRegister($tmp$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
