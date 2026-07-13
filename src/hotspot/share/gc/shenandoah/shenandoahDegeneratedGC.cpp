@@ -376,10 +376,10 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   // STW cleanup weak roots and unload classes
   heap->parallel_cleaning(_generation, false /*full gc*/);
 
-  // Release the collector CAS alloc regions before choosing the collection set; mutator alloc
-  // regions stay active (skipped by cset selection, re-accounted in place by the rebuild) so
-  // application threads keep their lock-free fast path. See ShenandoahConcurrentGC::op_final_mark.
-  heap->free_set()->release_collector_alloc_regions_under_lock();
+  // Release all cached CAS alloc regions (mutator and collector) before choosing the collection
+  // set. We are at a safepoint here, so releasing mutator regions is safe: no mutator can be
+  // concurrently allocating into them. See ShenandoahConcurrentGC::op_final_mark.
+  heap->free_set()->release_alloc_regions_under_lock();
 
   // Prepare regions and collection set
   _generation->prepare_regions_and_collection_set(false /*concurrent*/);

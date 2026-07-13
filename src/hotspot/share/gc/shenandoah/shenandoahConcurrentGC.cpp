@@ -800,13 +800,12 @@ void ShenandoahConcurrentGC::op_final_mark() {
     // Notify JVMTI that the tagmap table will need cleaning.
     JvmtiTagMap::set_needs_cleaning();
 
-    // Release the collector CAS alloc regions before choosing the collection set: they hold
-    // evacuation copies and feed cset reserve computation, so they must be deactivated (their
-    // _atomic_top synced back to _top, accounting reconciled) while cset selection and recycling
-    // iterate the heap. Mutator alloc regions stay active so application threads keep their
-    // lock-free fast path across the GC cycle; cset selection skips them and the subsequent
-    // free-set rebuild re-accounts them in place rather than releasing them.
-    heap->free_set()->release_collector_alloc_regions_under_lock();
+    // Release all cached CAS alloc regions (mutator and collector) before choosing the collection
+    // set, so that no region remains an active alloc region (its _atomic_top synced back to _top,
+    // accounting reconciled) while cset selection and recycling iterate the heap. We are at a
+    // safepoint here, so releasing mutator regions is safe: no mutator can be concurrently
+    // allocating into them.
+    heap->free_set()->release_alloc_regions_under_lock();
 
     // The collection set is chosen by prepare_regions_and_collection_set(). Additionally, certain parameters have been
     // established to govern the evacuation efforts that are about to begin.  Refer to comments on reserve members in
