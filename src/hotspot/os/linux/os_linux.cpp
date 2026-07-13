@@ -1581,7 +1581,8 @@ void os::Linux::initialize_vm_min_address() {
     }
     fclose(f);
   }
-  constexpr uintptr_t min_address_default = os::vm_allocation_granularity();
+
+  const uintptr_t min_address_default = os::vm_allocation_granularity();
   _vm_min_address = MAX2(min_address_default, value);
 }
 
