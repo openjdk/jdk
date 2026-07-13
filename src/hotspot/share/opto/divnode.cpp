@@ -419,8 +419,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
     if (!d_pos) {
       q = new SubLNode(phase->longcon(0), phase->transform(q));
     }
-  } else if ( !Matcher::use_asm_for_ldiv_by_con(d) ) { // Use hardware DIV instruction when
-                                                       // it is faster than code generated below.
+  } else {
     // Attempt the jlong constant divide -> multiply transform found in
     //   "Division by Invariant Integers using Multiplication"
     //     by Granlund and Montgomery
@@ -1615,12 +1614,6 @@ const Type* ModFloatingNode::Value(PhaseGVN* phase) const {
 
 //=============================================================================
 
-DivModNode::DivModNode( Node *c, Node *dividend, Node *divisor ) : MultiNode(3) {
-  init_req(0, c);
-  init_req(1, dividend);
-  init_req(2, divisor);
-}
-
 DivModNode* DivModNode::make(Node* div_or_mod, BasicType bt, bool is_unsigned) {
   assert(bt == T_INT || bt == T_LONG, "only int or long input pattern accepted");
 
@@ -1646,8 +1639,8 @@ DivModINode* DivModINode::make(Node* div_or_mod) {
          "only div or mod input pattern accepted");
 
   DivModINode* divmod = new DivModINode(n->in(0), n->in(1), n->in(2));
-  Node*        dproj  = new ProjNode(divmod, DivModNode::div_proj_num);
-  Node*        mproj  = new ProjNode(divmod, DivModNode::mod_proj_num);
+  Node*        dproj  = new ProjNode(divmod, DivModNode::first_proj_num);
+  Node*        mproj  = new ProjNode(divmod, DivModNode::second_proj_num);
   return divmod;
 }
 
@@ -1658,8 +1651,8 @@ DivModLNode* DivModLNode::make(Node* div_or_mod) {
          "only div or mod input pattern accepted");
 
   DivModLNode* divmod = new DivModLNode(n->in(0), n->in(1), n->in(2));
-  Node*        dproj  = new ProjNode(divmod, DivModNode::div_proj_num);
-  Node*        mproj  = new ProjNode(divmod, DivModNode::mod_proj_num);
+  Node*        dproj  = new ProjNode(divmod, DivModNode::first_proj_num);
+  Node*        mproj  = new ProjNode(divmod, DivModNode::second_proj_num);
   return divmod;
 }
 
@@ -1668,11 +1661,11 @@ DivModLNode* DivModLNode::make(Node* div_or_mod) {
 Node *DivModINode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
-  if (proj->_con == div_proj_num) {
-    rm.assignFrom(match->divI_proj_mask());
+  if (proj->_con == first_proj_num) {
+    rm.assignFrom(match->firstI_proj_mask());
   } else {
-    assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm.assignFrom(match->modI_proj_mask());
+    assert(proj->_con == second_proj_num, "must be div or mod projection");
+    rm.assignFrom(match->secondI_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
@@ -1683,11 +1676,11 @@ Node *DivModINode::match( const ProjNode *proj, const Matcher *match ) {
 Node *DivModLNode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
-  if (proj->_con == div_proj_num) {
-    rm.assignFrom(match->divL_proj_mask());
+  if (proj->_con == first_proj_num) {
+    rm.assignFrom(match->firstL_proj_mask());
   } else {
-    assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm.assignFrom(match->modL_proj_mask());
+    assert(proj->_con == second_proj_num, "must be div or mod projection");
+    rm.assignFrom(match->secondL_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
@@ -1699,8 +1692,8 @@ UDivModINode* UDivModINode::make(Node* div_or_mod) {
          "only div or mod input pattern accepted");
 
   UDivModINode* divmod = new UDivModINode(n->in(0), n->in(1), n->in(2));
-  Node*        dproj  = new ProjNode(divmod, DivModNode::div_proj_num);
-  Node*        mproj  = new ProjNode(divmod, DivModNode::mod_proj_num);
+  Node*        dproj  = new ProjNode(divmod, DivModNode::first_proj_num);
+  Node*        mproj  = new ProjNode(divmod, DivModNode::second_proj_num);
   return divmod;
 }
 
@@ -1711,8 +1704,8 @@ UDivModLNode* UDivModLNode::make(Node* div_or_mod) {
          "only div or mod input pattern accepted");
 
   UDivModLNode* divmod = new UDivModLNode(n->in(0), n->in(1), n->in(2));
-  Node*        dproj  = new ProjNode(divmod, DivModNode::div_proj_num);
-  Node*        mproj  = new ProjNode(divmod, DivModNode::mod_proj_num);
+  Node*        dproj  = new ProjNode(divmod, DivModNode::first_proj_num);
+  Node*        mproj  = new ProjNode(divmod, DivModNode::second_proj_num);
   return divmod;
 }
 
@@ -1721,11 +1714,11 @@ UDivModLNode* UDivModLNode::make(Node* div_or_mod) {
 Node* UDivModINode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
-  if (proj->_con == div_proj_num) {
-    rm.assignFrom(match->divI_proj_mask());
+  if (proj->_con == first_proj_num) {
+    rm.assignFrom(match->firstI_proj_mask());
   } else {
-    assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm.assignFrom(match->modI_proj_mask());
+    assert(proj->_con == second_proj_num, "must be div or mod projection");
+    rm.assignFrom(match->secondI_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
@@ -1736,11 +1729,11 @@ Node* UDivModINode::match( const ProjNode *proj, const Matcher *match ) {
 Node* UDivModLNode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
-  if (proj->_con == div_proj_num) {
-    rm.assignFrom(match->divL_proj_mask());
+  if (proj->_con == first_proj_num) {
+    rm.assignFrom(match->firstL_proj_mask());
   } else {
-    assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm.assignFrom(match->modL_proj_mask());
+    assert(proj->_con == second_proj_num, "must be div or mod projection");
+    rm.assignFrom(match->secondL_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }

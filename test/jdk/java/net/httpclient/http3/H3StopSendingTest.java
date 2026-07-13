@@ -27,7 +27,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm/timeout=40  -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=trace,errors,headers
- *                              H3StopSendingTest
+ *                              ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;

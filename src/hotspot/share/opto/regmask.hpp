@@ -285,8 +285,9 @@ class RegMask {
         _rm_word_ext = NEW_ARENA_ARRAY(_arena, uintptr_t, new_ext_size);
       } else {
         assert(_original_ext_address == &_rm_word_ext, "clone sanity check");
-        _rm_word_ext = REALLOC_ARENA_ARRAY(_arena, uintptr_t, _rm_word_ext,
+        _rm_word_ext = REALLOC_ARENA_ARRAY(_arena, _rm_word_ext,
                                            old_ext_size, new_ext_size);
+
       }
       if (initialize_by_infinite_stack) {
         int fill = 0;

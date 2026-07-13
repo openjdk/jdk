@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,11 @@ public:
                   XMMRegister tmp, XMMRegister atmp, XMMRegister btmp,
                   int vlen_enc);
 
-  void vminmax_fp(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
-                  XMMRegister src1, XMMRegister src2, int vlen_enc);
+  void vminmax_fp_avx10_2(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
+                          XMMRegister src1, XMMRegister src2, int vlen_enc);
+
+  void sminmax_fp_avx10_2(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
+                          XMMRegister src1, XMMRegister src2);
 
   void vpuminmaxq(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
 
@@ -576,12 +579,22 @@ public:
 
   void evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, Address src2, int vlen_enc);
 
-  void vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
-                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
+  void vminmax_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                    KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
 
-  void scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
-                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2);
+  void vminmax_fp16_avx10_2(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                            KRegister ktmp, int vlen_enc);
+
+  void vminmax_fp16_avx10_2(int opcode, XMMRegister dst, XMMRegister src1, Address src2,
+                            KRegister ktmp, int vlen_enc);
+
+  void sminmax_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                    KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2);
+
+  void sminmax_fp16_avx10_2(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                            KRegister ktmp);
 
   void reconstruct_frame_pointer(Register rtmp);
 
+  int vector_iota_entry_index(BasicType bt);
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

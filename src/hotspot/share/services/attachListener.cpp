@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,12 @@ static bool get_bool_sys_prop(const char* name, bool default_value, TRAPS) {
   HandleMark hm(THREAD);
 
   // setup the arguments to getProperty
-  Handle key_str = java_lang_String::create_from_str(name, CHECK_(default_value));
+  Handle key_str = java_lang_String::create_from_str(name, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    CLEAR_PENDING_EXCEPTION;
+    return default_value;
+  }
+
   // return value
   JavaValue result(T_OBJECT);
   // public static String getProperty(String key, String def);
@@ -189,7 +194,12 @@ static bool get_bool_sys_prop(const char* name, bool default_value, TRAPS) {
                          vmSymbols::getProperty_name(),
                          vmSymbols::string_string_signature(),
                          key_str,
-                         CHECK_(default_value));
+                         THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    CLEAR_PENDING_EXCEPTION;
+    return default_value;
+  }
+
   oop value_oop = result.get_oop();
   if (value_oop != nullptr) {
     // convert Java String to utf8 string

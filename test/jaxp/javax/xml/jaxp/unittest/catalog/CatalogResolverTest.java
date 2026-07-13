@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,36 +22,41 @@
  */
 package catalog;
 
-import java.net.URI;
-import java.nio.file.Paths;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.xml.sax.InputSource;
+
 import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
 import javax.xml.catalog.CatalogResolver.NotFoundAction;
-import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.xml.sax.InputSource;
+import java.net.URI;
+import java.nio.file.Paths;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8316996
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm catalog.CatalogResolverTest
+ * @run junit/othervm catalog.CatalogResolverTest
  * @summary Tests CatalogResolver functions. See CatalogTest for existing basic
  * functional tests.
  */
+@TestInstance(Lifecycle.PER_CLASS)
 public class CatalogResolverTest extends CatalogSupportBase {
-    static final String KEY_FILES = "javax.xml.catalog.files";
     static final String SYSTEM_ID = "http://openjdk_java_net/xml/catalog/dtd/system.dtd";
 
     /*
      * Initializing fields
      */
-    @BeforeClass
+    @BeforeAll
     public void setUpClass() throws Exception {
         super.setUp();
     }
@@ -63,7 +68,6 @@ public class CatalogResolverTest extends CatalogSupportBase {
         resolve property for the Catalog, resolve property for the CatalogResolver,
         system ID to be resolved, expected result, expected exception
      */
-    @DataProvider(name = "factoryMethodInput")
     public Object[][] getInputs() throws Exception {
 
         return new Object[][]{
@@ -80,7 +84,6 @@ public class CatalogResolverTest extends CatalogSupportBase {
          };
     }
 
-    @DataProvider(name = "NPETest")
     public Object[][] getNPETest() throws Exception {
         return new Object[][]{
             {null, null},
@@ -104,22 +107,22 @@ public class CatalogResolverTest extends CatalogSupportBase {
      * @param expectedThrow the expected exception
      * @throws Exception if the test fails
      */
-    @Test(dataProvider = "factoryMethodInput")
+    @ParameterizedTest
+    @MethodSource("getInputs")
     public void testResolveProperty(String cResolve, NotFoundAction action,
             String systemId, String expectedResult, Class<Throwable> expectedThrow)
             throws Exception {
         Catalog c = getCatalog(cResolve);
 
         if (expectedThrow != null) {
-            Assert.assertThrows(expectedThrow,
-                () -> resolveRef(c, action, systemId));
+            assertThrows(expectedThrow, () -> resolveRef(c, action, systemId));
         } else {
-
             String sysId = resolveRef(c, action, systemId);
             System.out.println(sysId);
-            Assert.assertEquals(sysId,
-                    (expectedResult == null) ? null : Paths.get(filepath + expectedResult).toUri().toString().replace("///", "/"),
-                    "System ID match not right");
+            String expected = (expectedResult == null)
+                    ? null
+                    : Paths.get(filepath + expectedResult).toUri().toString().replace("///", "/");
+            assertEquals(expected, sysId, "System ID match not right");
         }
     }
 
@@ -127,9 +130,10 @@ public class CatalogResolverTest extends CatalogSupportBase {
      * Verifies that the catalogResolver method throws NullPointerException if
      * any of the parameters is null.
      */
-    @Test(dataProvider = "NPETest", expectedExceptions = NullPointerException.class)
+    @ParameterizedTest
+    @MethodSource("getNPETest")
     public void testCatalogProperty(Catalog c, NotFoundAction action) {
-        CatalogManager.catalogResolver(c, action);
+        assertThrows(NullPointerException.class, () -> CatalogManager.catalogResolver(c, action));
     }
 
     private String resolveRef(Catalog c, NotFoundAction action, String systemId) throws Exception {
@@ -140,9 +144,8 @@ public class CatalogResolverTest extends CatalogSupportBase {
 
     private Catalog getCatalog(String cResolve) throws Exception {
         URI catalogFile = getClass().getResource("catalog.xml").toURI();
-        Catalog c = CatalogManager.catalog(
+        return CatalogManager.catalog(
                 CatalogFeatures.builder().with(CatalogFeatures.Feature.RESOLVE, cResolve).build(),
                 catalogFile);
-        return c;
     }
 }

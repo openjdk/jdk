@@ -126,16 +126,6 @@ public class TestStressArrayCopy {
                 configs.add(List.of("-XX:UseAVX=0", "-XX:UseSSE=2"));
             }
 
-            // x86_64 always has UseSSE >= 2. These lower configurations only
-            // make sense for x86_32.
-            if (Platform.isX86()) {
-                if (containsFuzzy(cpuFeatures, "sse")) {
-                    configs.add(List.of("-XX:UseAVX=0", "-XX:UseSSE=1"));
-                }
-
-                configs.add(List.of("-XX:UseAVX=0", "-XX:UseSSE=0"));
-            }
-
             // Alternate configs with other flags
             if (Platform.isX64()) {
                 configs = alternate(configs, "UseCompressedOops");

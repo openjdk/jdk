@@ -63,9 +63,6 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
   _method = vf->method();
   _bci    = vf->raw_bci();
   _reexecute = vf->should_reexecute(); // initial value, updated in unpack_on_stack
-#if INCLUDE_JVMCI
-  _rethrow = vf->scope()->rethrow_exception();
-#endif
 #ifdef ASSERT
   _removed_monitors = false;
 #endif

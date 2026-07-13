@@ -303,7 +303,8 @@ public:
     AllocGapNode* node = allocate_node(gap, Empty{});
     insert(gap, node);
 
-    log_trace(aot, alloc)("adding a gap of %zu bytes @ %p (total = %zu) in %zu blocks", gap_bytes, gap_bottom, _total_gap_bytes, size());
+    log_trace(aot, alloc)("adding a gap of %zu bytes @ %p (total = %zu, used = %zu) in %zu blocks",
+                          gap_bytes, gap_bottom, _total_gap_bytes, _total_gap_bytes_used, size());
     return gap_bytes;
   }
 
@@ -325,29 +326,25 @@ public:
 
     remove(node);
 
-    precond(_total_gap_bytes >= num_bytes);
-    _total_gap_bytes -= num_bytes;
     _total_gap_bytes_used += num_bytes;
     _total_gap_allocs++;
     DEBUG_ONLY(node = nullptr); // Don't use it anymore!
 
     precond(gap_bytes >= num_bytes);
     if (gap_bytes > num_bytes) {
-      gap_bytes -= num_bytes;
-      gap_bottom += num_bytes;
-
-      AllocGap gap(gap_bytes, gap_bottom); // constructor checks alignment
+      AllocGap gap(gap_bytes - num_bytes, gap_bottom + num_bytes); // constructor checks alignment
       AllocGapNode* new_node = allocate_node(gap, Empty{});
       insert(gap, new_node);
     }
+    size_t unfilled_bytes = _total_gap_bytes - _total_gap_bytes_used;
     log_trace(aot, alloc)("%zu bytes @ %p in a gap of %zu bytes (used gaps %zu times, remain gap = %zu bytes in %zu blocks)",
-                          num_bytes, result, gap_bytes, _total_gap_allocs, _total_gap_bytes, size());
+                          num_bytes, result, gap_bytes, _total_gap_allocs, unfilled_bytes, size());
     return result;
   }
 };
 
-size_t DumpRegion::_total_gap_bytes = 0;
-size_t DumpRegion::_total_gap_bytes_used = 0;
+size_t DumpRegion::_total_gap_bytes = 0; // All the gaps that have ever been created
+size_t DumpRegion::_total_gap_bytes_used = 0; // All the gaps that have been used
 size_t DumpRegion::_total_gap_allocs = 0;
 DumpRegion::AllocGapTree DumpRegion::_gap_tree;
 
@@ -360,8 +357,8 @@ char* DumpRegion::allocate_metaspace_obj(size_t num_bytes, address src, Metaspac
   bool is_instance_class = is_class && ((Klass*)src)->is_instance_klass();
 
 #ifdef _LP64
-  // More strict alignments needed for UseCompressedClassPointers
-  if (is_class && UseCompressedClassPointers) {
+  // More strict alignments needed for Klass objects
+  if (is_class) {
     size_t klass_alignment = checked_cast<size_t>(nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift()));
     alignment = MAX2(alignment, klass_alignment);
     precond(is_aligned(alignment, SharedSpaceObjectAlignment));
@@ -416,13 +413,23 @@ void DumpRegion::report_gaps(DumpAllocStats* stats) {
         stats->record_gap(checked_cast<int>(node->key().gap_bytes()));
         return true;
       });
+
+  double unfilled_percent = 0.0;
+  size_t unfilled_bytes = _total_gap_bytes - _total_gap_bytes_used;
   if (_gap_tree.size() > 0) {
-    log_warning(aot)("Unexpected %zu gaps (%zu bytes) for Klass alignment",
-                     _gap_tree.size(), _total_gap_bytes);
+    unfilled_percent = percent_of(unfilled_bytes, _total_gap_bytes);
+    if (unfilled_percent > 5.0) {
+      // We have a limited number of small objects, so some small gaps may remain
+      // unfilled. If more than 5% of the gaps are unfilled, this likely indicates
+      // a systematic error that should be investigated. Otherwise, do not warn to
+      // avoid noise.
+      log_warning(aot)("Unexpected %zu gaps (%zu bytes, %.2f%%) for Klass alignment",
+                       _gap_tree.size(), _total_gap_bytes, unfilled_percent);
+    }
   }
   if (_total_gap_allocs > 0) {
-    log_info(aot)("Allocated %zu objects of %zu bytes in gaps (remain = %zu bytes)",
-                  _total_gap_allocs, _total_gap_bytes_used, _total_gap_bytes);
+    log_info(aot)("Allocated %zu objects of %zu bytes in gaps (remain = %zu bytes, %.2f%%)",
+                  _total_gap_allocs, _total_gap_bytes_used, unfilled_bytes, unfilled_percent);
   }
 }
 

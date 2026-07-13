@@ -23,6 +23,7 @@
 */
 
 #include "classfile/javaClasses.inline.hpp"
+#include "runtime/handles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -94,11 +95,11 @@ void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
 
     for (uint i = 0; i < threads->length(); i++) {
       JavaThread* thread = threads->thread_at(i);
-      oop tobj = thread->threadObj();
+      Handle tobj = Handle(JavaThread::current(), thread->threadObj());
       if (tobj != nullptr) {
         MutexLocker ml(Threads_lock);
         if (!thread->is_exiting()) {
-          jlong java_tid = java_lang_Thread::thread_id(tobj);
+          jlong java_tid = java_lang_Thread::thread_id(tobj());
           // Must be inside the lock to ensure that we don't add a thread to the table
           // that has just passed the removal point in Threads::remove().
           add_thread(java_tid, thread);

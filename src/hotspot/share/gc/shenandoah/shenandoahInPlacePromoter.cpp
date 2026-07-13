@@ -48,6 +48,7 @@ bool ShenandoahInPlacePromotionPlanner::is_eligible(const ShenandoahHeapRegion* 
 }
 
 void ShenandoahInPlacePromotionPlanner::prepare(ShenandoahHeapRegion* r) {
+  assert(!r->is_humongous_continuation(), "Should not call for humongous continuations");
   HeapWord* tams = _marking_context->top_at_mark_start(r);
   HeapWord* original_top = r->top();
 
@@ -59,10 +60,16 @@ void ShenandoahInPlacePromotionPlanner::prepare(ShenandoahHeapRegion* r) {
     return;
   }
 
-  if (r->is_humongous()) {
-    // Nothing else to do for humongous, we just update the stats and move on. The humongous regions
-    // themselves will be discovered and promoted by gc workers during evacuation.
-    _pip_humongous_stats.update(r);
+  if (r->is_humongous_start()) {
+    if (const oop obj = cast_to_oop(r->bottom()); !obj->is_typeArray()) {
+      // Nothing else to do for humongous, we just update the stats and move on. The humongous regions
+      // themselves will be discovered and promoted by gc workers during evacuation. Note that humongous
+      // primitive arrays are not promoted.
+      const size_t num_regions = ShenandoahHeapRegion::required_regions(obj->size() * HeapWordSize);
+      for (size_t i = r->index(); i < r->index() + num_regions; i++) {
+        _pip_humongous_stats.update(_heap->get_region(i));
+      }
+    }
     return;
   }
 
@@ -146,7 +153,7 @@ void ShenandoahInPlacePromoter::maybe_promote_region(ShenandoahHeapRegion* r) co
       if (!obj->is_typeArray()) {
         promote_humongous(r);
       }
-    } else if (r->is_regular() && (r->get_top_before_promote() != nullptr)) {
+    } else if (r->is_regular_or_regular_pinned() && (r->get_top_before_promote() != nullptr)) {
       // Likewise, we cannot put promote-in-place regions into the collection set because that would also trigger
       // the LRB to copy on reference fetch.
       //
@@ -174,7 +181,7 @@ void ShenandoahInPlacePromoter::promote(ShenandoahHeapRegion* region) const {
     assert(region->garbage_before_padded_for_promote() < old_garbage_threshold,
            "Region %zu has too much garbage for promotion", region->index());
     assert(region->is_young(), "Only young regions can be promoted");
-    assert(region->is_regular(), "Use different service to promote humongous regions");
+    assert(region->is_regular_or_regular_pinned(), "Use different service to promote humongous regions");
     assert(_heap->is_tenurable(region), "Only promote regions that are sufficiently aged");
     assert(region->get_top_before_promote() == tams, "Region %zu has been used for allocations before promotion", region->index());
   }
@@ -230,6 +237,9 @@ void ShenandoahInPlacePromoter::promote(ShenandoahHeapRegion* region) const {
     // Now that this region is affiliated with old, we can allow it to receive allocations, though it may not be in the
     // is_collector_free range.  We'll add it to that range below.
     region->restore_top_before_promote();
+
+    // We also need to record where those allocations begin so that we can later update the remembered set.
+    region->record_top_at_evac_start();
 
     assert(region->used() + pip_pad_bytes + pip_unpadded == region_size_bytes, "invariant");
 

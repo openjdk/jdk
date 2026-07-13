@@ -1292,7 +1292,7 @@ public class SwingUtilities2 {
      * returns true if the Graphics is print Graphics
      * false otherwise
      */
-    static boolean isPrinting(Graphics g) {
+    public static boolean isPrinting(Graphics g) {
         return (g instanceof PrinterGraphics || g instanceof PrintGraphics);
     }
 
@@ -1434,15 +1434,6 @@ public class SwingUtilities2 {
             return result;
         }
     }
-
-    /**
-    * checks if the system clipboard can be accessed.
-    * This is true in a headful environment, false in a headless one
-    *
-    */
-   public static boolean canAccessSystemClipboard() {
-       return !GraphicsEnvironment.isHeadless();
-   }
 
     public static String displayPropertiesToCSS(Font font, Color fg) {
         StringBuilder rule = new StringBuilder("body {");

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -257,6 +257,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_microsoft_dgif_lib.c := 4018 4267, \
       DISABLED_WARNINGS_microsoft_splashscreen_impl.c := 4018 4267 4244, \
       DISABLED_WARNINGS_microsoft_splashscreen_png.c := 4267, \
+      DISABLED_WARNINGS_microsoft_pngread.c := 4146, \
       DISABLED_WARNINGS_microsoft_splashscreen_sys.c := 4267 4244, \
       LDFLAGS := $(ICONV_LDFLAGS), \
       LDFLAGS_windows := -delayload:user32.dll, \
@@ -338,11 +339,8 @@ else
   # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
   # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
   # maybe-uninitialized required for GCC 8 builds. Not required for GCC 9+.
-  # calloc-transposed-args required for GCC 14 builds. (fixed upstream in
-  #  Harfbuzz 032c931e1c0cfb20f18e5acb8ba005775242bd92)
   HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type \
-      expansion-to-defined dangling-reference maybe-uninitialized \
-      calloc-transposed-args
+      expansion-to-defined dangling-reference maybe-uninitialized
   HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers \
       range-loop-analysis unused-variable
   HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244
@@ -397,6 +395,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
         AccelGlyphCache.c, \
     CFLAGS := $(LIBFONTMANAGER_CFLAGS), \
     CXXFLAGS := $(LIBFONTMANAGER_CFLAGS), \
+    CXXFLAGS_gcc := -fno-rtti -fno-exceptions, \
+    CXXFLAGS_clang := -fno-rtti -fno-exceptions, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS_windows = -DCC_NOEX, \
     EXTRA_HEADER_DIRS := $(LIBFONTMANAGER_EXTRA_HEADER_DIRS), \

@@ -395,9 +395,6 @@ public:
 #endif  // #ifdef ASSERT
 
 private:
-  bool initialize_region_data(size_t heap_size);
-  PSVirtualSpace* create_vspace(size_t count, size_t element_size);
-
   HeapWord*       _heap_start;
 #ifdef  ASSERT
   HeapWord*       _heap_end;
@@ -763,8 +760,11 @@ public:
   // should_do_max_compaction controls whether all spaces for dead objs should be reclaimed.
   static bool invoke(bool clear_all_soft_refs, bool should_do_max_compaction);
 
-  template<typename Func>
-  static void adjust_in_space_helper(SpaceId id, Atomic<uint>* claim_counter, Func&& on_stripe);
+  static void adjust_in_space_helper(SpaceId id, Atomic<uint>* claim_counter);
+
+  static size_t adjust_in_obj_with_limit(HeapWord* obj_start, HeapWord* left, HeapWord* right);
+
+  static void adjust_in_stripe(HeapWord* stripe_start, HeapWord* stripe_end);
 
   static void adjust_in_old_space(Atomic<uint>* claim_counter);
 
