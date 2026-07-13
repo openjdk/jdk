@@ -325,7 +325,7 @@ public class Date extends java.util.Date {
         } else {
             year = calendar.get(Calendar.YEAR);
         }
-        return LocalDate.of(year, calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH));
+        return LocalDate.of(year, getMonth() + 1, getDate());
     }
 
    /**

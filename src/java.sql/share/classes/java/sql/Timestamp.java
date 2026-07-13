@@ -549,11 +549,11 @@ public class Timestamp extends java.util.Date {
             year = calendar.get(Calendar.YEAR);
         }
         return LocalDateTime.of(year,
-                                calendar.get(Calendar.MONTH) + 1,
-                                calendar.get(Calendar.DAY_OF_MONTH),
-                                calendar.get(Calendar.HOUR_OF_DAY),
-                                calendar.get(Calendar.MINUTE),
-                                calendar.get(Calendar.SECOND),
+                                getMonth() + 1,
+                                getDate(),
+                                getHours(),
+                                getMinutes(),
+                                getSeconds(),
                                 getNanos()); // We have to use nanos here as the calendar does not support nano precision
     }
 
