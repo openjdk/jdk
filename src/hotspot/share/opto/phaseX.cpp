@@ -3366,9 +3366,9 @@ Node *PhaseCCP::transform( Node *n ) {
   if (KillPathsReachableByDeadDataNode) {
     for (uint i = 0; i < _maybe_top_type_or_div_mod_nodes.size(); ++i) {
       Node* data_node = _maybe_top_type_or_div_mod_nodes.at(i);
-      if (type(type_node) == Type::TOP) {
+      if (type(data_node) == Type::TOP) {
         ResourceMark rm;
-        type_node->make_paths_from_here_dead(this, nullptr, "ccp");
+        data_node->make_paths_from_here_dead(this, nullptr, "ccp");
       }
     }
   } else {
