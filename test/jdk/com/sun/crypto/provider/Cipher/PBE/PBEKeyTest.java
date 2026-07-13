@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 0000000
+ * @bug 8348732
  * @summary test PBEKey
  * @author Jan Luehe
  */
