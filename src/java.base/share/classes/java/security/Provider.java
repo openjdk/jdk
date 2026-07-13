@@ -1084,13 +1084,14 @@ public abstract class Provider extends Properties {
                 String stdAlg = attrString.substring(0, i).intern();
                 String attrName = attrString.substring(i + 1);
                 // kill additional spaces
-                for (int pos = 0; pos < attrName.length(); pos++) {
+                int pos = 0;
+                for (; pos < attrName.length(); pos++) {
                     if (attrName.charAt(pos) != ' ') {
-                        if (pos > 0) {
-                            attrName = attrName.substring(pos);
-                        }
                         break;
                     }
+                }
+                if (pos > 0) {
+                    attrName = attrName.substring(pos);
                 }
 
                 attrName = attrName.intern();
