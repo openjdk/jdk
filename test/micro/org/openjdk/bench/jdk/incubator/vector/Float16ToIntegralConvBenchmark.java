@@ -36,11 +36,11 @@ public class Float16ToIntegralConvBenchmark {
     @Param({"1024", "2048"})
     int size;
 
-    short [] fp16inp;
-    int [] iout;
-    long [] lout;
-    short [] sout;
-    byte [] bout;
+    short[] fp16inp;
+    int[] iout;
+    long[] lout;
+    short[] sout;
+    byte[] bout;
 
     @Setup(Level.Trial)
     public void BmSetup() {

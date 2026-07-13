@@ -37,7 +37,7 @@ import static compiler.lib.generators.Generators.G;
  * @modules jdk.incubator.vector
  * @requires vm.compiler2.enabled
  * @library /test/lib /
- * @run driver compiler.vectorapi.TestFloat16ToIntegralConv
+ * @run driver ${test.main.class}
  */
 public class TestFloat16ToIntegralConv {
     private static final int SIZE = 1024;
