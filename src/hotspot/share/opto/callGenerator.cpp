@@ -725,18 +725,22 @@ void CallGenerator::do_late_inline_helper() {
 
     // Find the result object and capture any exceptional control flow.
     GraphKit kit(new_jvms);
-    Node* result = kit.pop_node(method()->return_type()->basic_type());
+    Node* result = C->top();
 
     assert(!C->do_cleanup(), "already set");
     if (kit.stopped()) {
       C->set_do_cleanup(true); // path is dead; needs cleanup
-    } else if (result != C->top() && !result_not_used) {
-      if (call->is_CallStaticJava() && call->as_CallStaticJava()->is_boxing_method()) {
-        result = kit.must_be_not_null(result, false);
+    } else {
+      result = kit.pop_node(method()->return_type()->basic_type());
+      if (result != C->top() && !result_not_used) {
+        if (call->is_CallStaticJava() &&
+            call->as_CallStaticJava()->is_boxing_method()) {
+          result = kit.must_be_not_null(result, false);
+        }
+        // Limit result type propagation until next IGVN cleanup.
+        const Type* result_type = kit.gvn().type(callprojs.resproj);
+        result = kit.gvn().transform(new OpaqueParseNode(C, result, result_type));
       }
-      // Limit result type propagation until next IGVN cleanup.
-      const Type* result_type = kit.gvn().type(callprojs.resproj);
-      result = kit.gvn().transform(new OpaqueParseNode(C, result, result_type));
     }
 
     kit.replace_call(call, result, true, do_asserts);
