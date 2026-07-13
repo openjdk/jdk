@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
@@ -83,25 +82,19 @@ public class BulkCipherDecomposition {
         }
     }
 
-    private static CipherSuite[] getCipherSuites() throws NoSuchAlgorithmException {
+    private static String[] getCipherSuites() throws NoSuchAlgorithmException {
         SSLEngine engine = SSLContext.getDefault().createSSLEngine();
         return Arrays.stream(engine.getSupportedCipherSuites())
                 .map(CipherSuite::cipherSuite)
                 .filter(cs -> cs != CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
-                .toArray(CipherSuite[]::new);
-    }
-
-    private static List<String> buildTests() throws NoSuchAlgorithmException {
-        // disabledAlgorithms limits supported suites; clear to list all
-        Security.setProperty("jdk.tls.disabledAlgorithms", "");
-        List<String> tests = new ArrayList<>();
-        for (CipherSuite suite : getCipherSuites()) {
-            tests.add(suite.name());
-        }
-        return tests;
+                .map(CipherSuite::name)
+                .toArray(String[]::new);
     }
 
     public static void main(String[] args) throws Exception {
+        // disabledAlgorithms limits supported suites; clear to list all
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+
         Class<?> c = Class.forName("sun.security.ssl.SSLAlgorithmDecomposer");
         var ctor = c.getDeclaredConstructor();
         ctor.setAccessible(true);
@@ -109,7 +102,7 @@ public class BulkCipherDecomposition {
         Method decomposeMethod = c.getDeclaredMethod("decompose", String.class);
         decomposeMethod.setAccessible(true);
 
-        for (String suite : buildTests()) {
+        for (String suite : getCipherSuites()) {
             testDecomposition(instance, decomposeMethod, suite);
         }
 

@@ -31,15 +31,16 @@
  *          /javax/net/ssl/templates
  */
 
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import javax.net.ssl.*;
-
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 import jdk.test.lib.process.Proc;
-
-import java.security.NoSuchAlgorithmException;
 
 /*
  * Each test case is executed in a separate JVM because
