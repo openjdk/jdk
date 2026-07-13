@@ -151,7 +151,7 @@ class FastUnlockNode: public CmpNode {
 public:
   FastUnlockNode(Node* ctrl, Node* oop, Node* box) : CmpNode(oop, box) {
     assert(ctrl != nullptr, "required");
-    init_req(0,ctrl);
+    init_req(0, ctrl);
     init_class_id(Class_FastUnlock);
   }
 
