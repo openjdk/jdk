@@ -485,6 +485,17 @@ public class Timestamp extends java.util.Date {
     private static final int MILLIS_PER_SECOND = 1000;
 
     /**
+     * The epoch millisecond value of 0002-01-01T00:00:00.000 at UTC in
+     * the Julian-Gregorian hybrid calendar system.
+     * We cannot use 1st January 1AD as different timezones could possibly
+     * offset the date back into BC, thus resulting in the incorrect BC year.
+     * While a one year margin is considerably larger than any possible
+     * timezone offset, it gives us a comfortable distance while still
+     * providing a faster code path for almost 1970 years.
+     */
+    private static final long TWO_AD_AT_UTC_EPOCH_MILLIS = -62104233600000L;
+
+    /**
      * Obtains an instance of {@code Timestamp} from a {@code LocalDateTime}
      * object, with the same year, month, day of month, hours, minutes,
      * seconds and nanos date-time value as the provided {@code LocalDateTime}.
@@ -524,9 +535,10 @@ public class Timestamp extends java.util.Date {
         // of the date in order to find the correct year.
         // However, deriving a new calendar is a relatively expensive operation
         // that we would ideally avoid if possible.
-        // Given that we can comfortably state that any dates after the unix epoch
-        // are AD, we can use a much faster local date time derivation for these dates.
-        if (getTime() >= 0) {
+        // Given that we can comfortably state that any dates on or after
+        // 0002-01-01 are AD, we can use a much faster local date time
+        // derivation for these dates.
+        if (getTime() >= TWO_AD_AT_UTC_EPOCH_MILLIS) {
             return LocalDateTime.of(getYear() + 1900,
                                     getMonth() + 1,
                                     getDate(),

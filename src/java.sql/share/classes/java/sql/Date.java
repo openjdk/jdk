@@ -276,6 +276,17 @@ public class Date extends java.util.Date {
     static final long serialVersionUID = 1511598038487230103L;
 
     /**
+     * The epoch millisecond value of 0002-01-01T00:00:00.000 at UTC in
+     * the Julian-Gregorian hybrid calendar system.
+     * We cannot use 1st January 1AD as different timezones could possibly
+     * offset the date back into BC, thus resulting in the incorrect BC year.
+     * While a one year margin is considerably larger than any possible
+     * timezone offset, it gives us a comfortable distance while still
+     * providing a faster code path for almost 1970 years.
+     */
+    private static final long TWO_AD_AT_UTC_EPOCH_MILLIS = -62104233600000L;
+
+    /**
      * Obtains an instance of {@code Date} from a {@link LocalDate} object
      * with the same year, month and day of month value as the given
      * {@code LocalDate}.
@@ -307,9 +318,10 @@ public class Date extends java.util.Date {
         // of the date in order to find the correct year.
         // However, deriving a new calendar is a relatively expensive operation
         // that we would ideally avoid if possible.
-        // Given that we can comfortably state that any dates after the unix epoch
-        // are AD, we can use a much faster local date derivation for these dates.
-        if (getTime() >= 0) {
+        // Given that we can comfortably state that any dates on or after
+        // 0002-01-01 are AD, we can use a much faster local date derivation
+        // for these dates.
+        if (getTime() >= TWO_AD_AT_UTC_EPOCH_MILLIS) {
             return LocalDate.of(getYear() + 1900, getMonth() + 1, getDate());
         }
         final GregorianCalendar calendar = new GregorianCalendar();
