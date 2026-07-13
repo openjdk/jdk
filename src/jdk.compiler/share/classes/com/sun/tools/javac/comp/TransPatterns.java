@@ -1557,7 +1557,7 @@ public class TransPatterns extends TreeTranslator {
             //=>
             //(let T N; (let T' N$temp = E; N$temp instanceof T && (N = (T) N$temp == (T) N$temp)) && /*use of N*/)
             for (VarSymbol vsym : hoistedVarMap.values()) {
-                int pos = TreeInfo.getStartPos(expr); //XXXX: untested!
+                int pos = TreeInfo.getStartPos(expr);
                 expr = make.at(pos).LetExpr(makeHoistedVarDecl(pos, vsym), expr).setType(expr.type);
             }
             return expr;
