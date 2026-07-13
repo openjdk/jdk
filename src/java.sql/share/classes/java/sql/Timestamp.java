@@ -540,8 +540,8 @@ public class Timestamp extends java.util.Date {
 
         final int year;
         if (calendar.get(Calendar.ERA) == GregorianCalendar.BC) {
-            // Ajdust the BC date into a negative astronomical date.
-            // As there is no year 0 in the proleptic Gregorian calendar
+            // Adjust the BC date into a negative astronomical date.
+            // As there is no year 0 in the Gregorian calendar
             // we also have to adjust the BC year by 1.
             // 1 BC becomes year 0, 2 BC becomes year -1 and so on.
             year = 1 - calendar.get(Calendar.YEAR);
