@@ -25,13 +25,12 @@
 package gc.shenandoah.generational;
 
 import java.util.Random;
-import jdk.test.lib.Utils;
-
-
 
 /*
  * @test id=generational
- * @key randomness
+ * @summary Test that we do not attempt to transfer to the old generation regions that are affiliated with young
+ * @bug 8382085
+ * @key stress
  * @requires vm.gc.Shenandoah
  * @requires vm.flagless
  * @library /test/lib
@@ -52,8 +51,7 @@ public class TestTransferOfAffiliated {
     // Heap size is 1 GB.  HeapRegionSize is 512KB of memory.  Note: 512KB/region * 2048 regions = 1 GB.
     //
     // Size calculations below ignore the overhead of array headers, except to acknowledge that array header causes that
-    // only 1 inner array fits per heap region.  Size cacluations also assume the root_array is negligible.
-    // Run with 8GB heap size, ShenandoahHeapRegionSize is 4MB
+    // only 1 inner array fits per heap region.  Size calculations also assume the root_array is negligible.
 
     static Integer[][] root_array;
 
@@ -76,9 +74,9 @@ public class TestTransferOfAffiliated {
     //  The number of InnerIntegers for each InnerArray is 256K (half the region size) / 12 bytes / Integer
     final static int InnerIntegers = (256 * 1024) / 12;
 
-    // Assume heap size is 1 GB.  We want to consume approximately 512MB of live data.  Each InnerArray, including its
-    // referenced Integer objects, consumes approximately 512KB.  1024 array elements * 512KB/array element = 512MB.
-    final static int OuterArraySlots = 1024;
+    // Assume heap size is 1 GB.  We want to consume approximately 384MB of live data.  Each InnerArray, including its
+    // referenced Integer objects, consumes approximately 512KB.  768 array elements * 512KB/array element = 384MB.
+    final static int OuterArraySlots = 768;
 
     final static Random r = new Random(42);
 
@@ -110,7 +108,6 @@ public class TestTransferOfAffiliated {
             // arithmetic may overflow
             result *= n;
             n /= 4;
-            n *= 1;             // Should be less than 4. Larger number causes us to take more time.
         }
         if (n > 0) {
             result *= n;
@@ -147,7 +144,7 @@ public class TestTransferOfAffiliated {
     }
 
     // How much memory is represented by this array?
-    public static long do_inventory(Integer[] array, int index) {
+    public static long do_inventory(Integer[] array) {
         int integer_count = 0;
         if (array != null) {
             for (int i = 0; i < InnerArraySlots; i++) {
@@ -168,14 +165,14 @@ public class TestTransferOfAffiliated {
         for (int i = 0; i < 768; i++) {
             int index = i % OuterArraySlots;
             root_array[index] = allocate_empty_inner_array();
-            // Accumulate results to slow the allocation, so we have rare GC, long allocation ruway
-            accumulator += do_inventory(root_array[index], index);
+            // Accumulate results to slow the allocation, so we have rare GC, long allocation runway.
+            accumulator += do_inventory(root_array[index]);
             int inventory_index = (index + OuterArraySlots - 16) % OuterArraySlots;
-            accumulator += do_inventory(root_array[inventory_index], inventory_index);
+            accumulator += do_inventory(root_array[inventory_index]);
             inventory_index = (index + OuterArraySlots - 32) % OuterArraySlots;
-            accumulator += do_inventory(root_array[inventory_index], inventory_index);
+            accumulator += do_inventory(root_array[inventory_index]);
             inventory_index = (index + OuterArraySlots - 64) % OuterArraySlots;
-            accumulator += do_inventory(root_array[inventory_index], inventory_index);
+            accumulator += do_inventory(root_array[inventory_index]);
         }
 
         // Fill the arrays slowly. We do this as slowly as possible to maximize allocation runway,
@@ -186,6 +183,10 @@ public class TestTransferOfAffiliated {
                 fill_array_Integers_with_probe(root_array[j], 2048);
             }
         }
+        // The following assert simply confirms that the program ran correctly and prevents optimizers from removing
+        // what might appear to be dead code in the various loops above. The expected regression failure consists of an
+        // assert failure observed with fast-debug builds of the JVM before integration of
+        // https://github.com/openjdk/jdk/pull/31563.
         assertEquals(accumulator, 775993600L);
     }
 
