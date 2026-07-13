@@ -86,7 +86,7 @@ private:
     // Apply TTAS to avoid more expensive CAS calls if the lock is still held by other thread.
     while (_state.load_relaxed() == locked ||
            _state.compare_exchange(unlocked, locked) != unlocked) {
-      if (ctr > 0 && !SafepointSynchronize::is_synchronizing()) {
+      if (ctr > 0 && (!ALLOW_BLOCK || !SafepointSynchronize::is_synchronizing())) {
         // Lightly contended, spin a little if no safepoint is pending.
         SpinPause();
         ctr--;
@@ -133,7 +133,7 @@ public:
   void lock(bool allow_block_for_safepoint = false) {
     assert(_owner.load_relaxed() != Thread::current(), "reentrant locking attempt, would deadlock");
 
-    if (_state.load_relaxed() == locked || 
+    if (_state.load_relaxed() == locked ||
         _state.compare_exchange(unlocked, locked) != unlocked) {
       // 1. Java thread, and there is a pending safepoint. Dive into contended locking
       //    immediately without trying anything else, and block.
@@ -156,7 +156,7 @@ public:
   // Single non-blocking CAS attempt to acquire the lock. Returns true if this thread won it.
   bool try_lock() {
     bool const acquired = _state.load_relaxed() == unlocked &&
-	                  _state.compare_exchange(unlocked, locked) == unlocked;
+                          _state.compare_exchange(unlocked, locked) == unlocked;
 #ifdef ASSERT
     if (acquired) {
       assert(_state.load_relaxed() == locked, "must be locked");
@@ -180,7 +180,7 @@ public:
 // Blocking lock backed by a PlatformMonitor: a contended waiter parks on the native monitor instead
 // of busy-spinning like ShenandoahLock.
 class ShenandoahSimpleLock {
-  template<typename Lock> friend class ShenandoahInFlightLockRelease; 
+  template<typename Lock> friend class ShenandoahInFlightLockRelease;
 private:
   PlatformMonitor   _lock; // native lock
   DEBUG_ONLY(Atomic<Thread*> _owner;)
