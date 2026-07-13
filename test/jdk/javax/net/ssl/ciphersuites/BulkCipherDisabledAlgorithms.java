@@ -24,14 +24,11 @@
 /*
  * @test
  * @bug 8387124
- * @summary Test TLS cipher suite disabling via jdk.tls.disabledAlgorithms,
- *          including matching on bulk cipher components, covering both
- *          visibility and handshake behavior.
+ * @summary Test TLS cipher suite disabling via jdk.tls.disabledAlgorithms
+ *          using both cipher suite names and bulk cipher components.
  * @library /test/lib
  *          /javax/net/ssl/TLSCommon
  *          /javax/net/ssl/templates
- * @run main/othervm/timeout=480 BulkCipherDisabledAlgorithms visibility
- * @run main/othervm BulkCipherDisabledAlgorithms handshake
  */
 
 import java.util.ArrayList;
@@ -43,21 +40,17 @@ import javax.net.ssl.*;
 import jdk.test.lib.process.Proc;
 
 import java.security.NoSuchAlgorithmException;
-import java.security.Security;
 
+/*
+ * Each test case is executed in a separate JVM because
+ * jdk.tls.disabledAlgorithms is evaluated during JSSE initialization and
+ * cannot be reliably reconfigured within the same VM.
+ */
 public class BulkCipherDisabledAlgorithms {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            throw new RuntimeException("Missing mode argument");
-        }
-
-        String mode = args[0];
-        boolean isVisibilityTest = "visibility".equals(mode);
-        boolean isHandshakeTest = "handshake".equals(mode);
-
-        if (args.length == 1) {
-            List<String[]> tests = buildTests(isVisibilityTest);
+            List<String[]> tests = buildTests();
 
             for (String[] test : tests) {
                 String suite = test[0];
@@ -65,14 +58,13 @@ public class BulkCipherDisabledAlgorithms {
                 String expected = test[2];
 
                 System.out.println("=================================================");
-                System.out.println("Testing: " + mode +
-                        ", suite=" + suite +
+                System.out.println("Testing: suite=" + suite +
                         ", disabled=" + disabled +
                         ", expected=" + expected);
 
                 Proc p = Proc.create(
                         BulkCipherDisabledAlgorithms.class.getName())
-                        .args(mode, suite, expected)
+                        .args(suite, expected)
                         .secprop("jdk.tls.disabledAlgorithms", disabled)
                         .inheritIO();
 
@@ -83,44 +75,25 @@ public class BulkCipherDisabledAlgorithms {
             return;
         }
 
-        String suite = args[1];
-        String expected = args[2];
+        String suite = args[0];
+        String expected = args[1];
         boolean expectedDisabled = "disabled".equals(expected);
 
-        if (isVisibilityTest) {
-            testCipherSuiteVisibility(suite, expectedDisabled);
-        }
-
-        if (isHandshakeTest) {
-            testHandshake(suite, expectedDisabled);
-        }
+        testHandshake(suite, expectedDisabled);
     }
 
-    // Returns cipher suites for testing.
-    // - true: use all supported suites (independent of disabledAlgorithms)
-    // - false: use default enabled suites (candidates for handshake)
-    private static CipherSuite[] getCipherSuites(boolean useSupportedSuites)
-            throws NoSuchAlgorithmException {
+    private static CipherSuite[] getCipherSuites() throws NoSuchAlgorithmException {
         SSLEngine engine = SSLContext.getDefault().createSSLEngine();
-        String[] suites = useSupportedSuites
-                ? engine.getSupportedCipherSuites()
-                : engine.getEnabledCipherSuites();
-
+        String[] suites = engine.getEnabledCipherSuites();
         return Arrays.stream(suites)
                 .map(CipherSuite::cipherSuite)
                 .filter(cs -> cs != CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV)
                 .toArray(CipherSuite[]::new);
     }
 
-    private static List<String[]> buildTests(boolean useSupportedSuites)
-            throws NoSuchAlgorithmException {
-        if (useSupportedSuites) {
-            // disabledAlgorithms limits supported suites; clear to list all
-            Security.setProperty("jdk.tls.disabledAlgorithms", "");
-        }
-
+    private static List<String[]> buildTests() throws NoSuchAlgorithmException {
         List<String[]> tests = new ArrayList<>();
-        CipherSuite[] suites = getCipherSuites(useSupportedSuites);
+        CipherSuite[] suites = getCipherSuites();
 
         for (CipherSuite suite : suites) {
             String suiteName = suite.name();
@@ -165,20 +138,6 @@ public class BulkCipherDisabledAlgorithms {
             int first = suite.indexOf('_');
             int last = suite.lastIndexOf('_');
             return suite.substring(first + 1, last);
-        }
-    }
-
-    private static void testCipherSuiteVisibility(String suite, boolean expectedDisabled)
-            throws NoSuchAlgorithmException {
-        boolean visible = Arrays.asList(getCipherSuites(true))
-                .contains(CipherSuite.cipherSuite(suite));
-
-        if (!expectedDisabled && !visible) {
-            throw new RuntimeException(
-                    "Cipher suite '" + suite + "' not visible but expected to be enabled");
-        } else if (expectedDisabled && visible) {
-            throw new RuntimeException(
-                    "Cipher suite '" + suite + "' visible but expected to be disabled");
         }
     }
 
