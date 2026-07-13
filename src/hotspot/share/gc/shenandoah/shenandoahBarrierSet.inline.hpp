@@ -545,10 +545,8 @@ void ShenandoahBarrierSet::arraycopy_marking(T* dst, size_t count) {
   }
 
   const ShenandoahMarkingContext* ctx = _heap->marking_context();
-
   // Everything allocated above TAMS is alive and doesn't need the barrier to keep it that way
-  const bool above_tams = ctx->allocated_after_mark_start(reinterpret_cast<HeapWord*>(dst));
-  if (above_tams && !needs_old_array_satb<IS_GENERATIONAL>(dst)) {
+  if (is_above_tams<IS_GENERATIONAL>(ctx, dst)) {
     return;
   }
 
@@ -568,12 +566,13 @@ void ShenandoahBarrierSet::arraycopy_marking(T* dst, size_t count) {
 }
 
 template <bool IS_GENERATIONAL, class T>
-bool ShenandoahBarrierSet::needs_old_array_satb(T* dst) const {
+bool ShenandoahBarrierSet::is_above_tams(const ShenandoahMarkingContext* ctx, T* dst) const {
   // TAMS for an old region is unreliable during a young-only mark, so overwritten pointers in old dst arrays must
   // be enqueued to preserve old->young referents copied in and overwritten after init mark. See JDK-8373116.
-  return IS_GENERATIONAL
-      && _heap->heap_region_containing(dst)->is_old()
-      && _heap->is_concurrent_young_mark_in_progress();
+  return ctx->allocated_after_mark_start(reinterpret_cast<HeapWord*>(dst))
+         && !(IS_GENERATIONAL
+              && _heap->heap_region_containing(dst)->is_old()
+              && _heap->is_concurrent_young_mark_in_progress());
 }
 
 inline bool ShenandoahBarrierSet::need_bulk_update(HeapWord* ary) const {
