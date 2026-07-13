@@ -30,7 +30,7 @@
  * @run main/othervm -XX:-OptoScheduling
  *                   ${test.main.class}
  * @run main/othervm -Xmx4g -XX:-TieredCompilation -Xcomp -XX:-OptoScheduling
- *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsManyUTF16Overflow::f
+ *                   -XX:CompileOnly=${test.main.class}::f
  *                   ${test.main.class}
  */
 
