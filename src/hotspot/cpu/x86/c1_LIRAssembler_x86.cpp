@@ -1356,11 +1356,6 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   __ testptr(obj, obj);
   if (op->should_profile()) {
-    int profile_capture_ratio = ProfileCaptureRatio;
-    int ratio_shift = exact_log2(profile_capture_ratio);
-    auto threshold = (UCONST64(1) << 32) >> ratio_shift;
-    assert(threshold > 0, "must be");
-
     Label not_null;
     Register mdo  = klass_RInfo;
     __ mov_metadata(mdo, md->constant_encoding());
@@ -1372,33 +1367,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ jmp(*obj_is_null);
     __ bind(not_null);
 
-    ProfileStub *stub
-      = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
-
-    auto lambda = [stub, md, mdo, data, k_RInfo, obj, Rtmp1, tmp_load_klass]
-        (LIR_Assembler* ce, LIR_Op* base_op) {
-      auto masm = [=]() { return ce->masm(); };
-      if (stub != nullptr)  __ bind(*stub->entry());
-
-      Register recv = k_RInfo;
-      __ load_klass(recv, obj, tmp_load_klass);
-      ce->type_profile_helper(mdo, md, data, recv, Rtmp1);
-
-      if (stub != nullptr)  __ jmp(*stub->continuation());
-    };
-
-    if (stub != nullptr) {
-      __ cmpl(r_profile_rng, threshold);
-      __ jcc(Assembler::below, *stub->entry());
-      __ bind(*stub->continuation());
-      __ step_random(r_profile_rng, rscratch1);
-
-      stub->set_action(lambda, op);
-      stub->set_name("Typecheck stub");
-      append_code_stub(stub);
-    } else {
-      lambda(this, op);
-    }
+    Register recv = k_RInfo;
+    __ load_klass(recv, obj, tmp_load_klass);
+    type_profile_helper(mdo, md, data, recv, Rtmp1);
   } else {
     __ jcc(Assembler::equal, *obj_is_null);
   }
