@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Calendar;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 
@@ -714,16 +715,23 @@ public class TimestampTests extends BaseTest {
     }
 
     /*
-     * Validate that Timestamp.valueOf and Timestamp.toLocalDateTime yield the expected results for dates with negative years.
+     * Validate that Timestamp.valueOf and Timestamp.toLocalDateTime yield the expected results for dates with BC years.
+     * Ensures that the fix for 8272194 has not regressed.
      */
     @Test
     public void test56() throws Exception {
-        LocalDateTime ldt1 = LocalDateTime.of(-4, 1, 1, 0, 0);
-        Timestamp ts1 = Timestamp.valueOf(ldt1);
-        LocalDateTime ldt2 = ts1.toLocalDateTime();
-        assertTrue(ldt1.equals(ldt2), "Error ldt1 != ldt2");
-        Timestamp ts2 = Timestamp.valueOf(ldt2);
-        assertTrue(ts1.equals(ts2), "Error ts1 != ts2");
+        List<LocalDateTime> bcLocalDateTimes = List.of(
+            LocalDateTime.of(0, 1, 1, 0, 0, 0, 0),
+            LocalDateTime.of(-4, 9, 8, 23, 11, 59, 999_999_999),
+            LocalDateTime.of(-1000, 3, 22, 8, 30, 20, 0)
+        );
+        for (LocalDateTime bcLocalDateTime : bcLocalDateTimes) {
+            Timestamp bcTimestamp = Timestamp.valueOf(bcLocalDateTime);
+            // Previously, getYear() of a LocalDateTime created from a Timestamp always returned a positive year, even if it was BC.
+            assertTrue(bcTimestamp.toLocalDateTime().getYear() <= 0, "Expected a BC year.");
+            assertEquals(bcTimestamp.toLocalDateTime(), bcLocalDateTime, "The LocalDateTime created from the Timestamp does not match the original BC LocalDateTime.");
+            assertEquals(Timestamp.valueOf(bcTimestamp.toLocalDateTime()), bcTimestamp, "The BC Timestamp did not yield the expected result on a round trip Timestamp / LocalDateTime conversion.");
+        }
     }
 
     /*

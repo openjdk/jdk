@@ -24,6 +24,7 @@ package sql;
 
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -328,16 +329,23 @@ public class DateTests extends BaseTest {
     }
 
     /*
-     * Validate that Date.valueOf and Date.toLocalDate yield the expected results for dates with negative years.
+     * Validate that Date.valueOf and Date.toLocalDate yield the expected results for dates with BC years.
+     * Ensures that the fix for 8272194 has not regressed.
      */
     @Test
     public void test27() {
-        LocalDate ld1 = LocalDate.of(-4, 1, 1);
-        Date d1 = Date.valueOf(ld1);
-        LocalDate ld2 = d1.toLocalDate();
-        assertTrue(ld1.equals(ld2), "Error ld1 != ld2");
-        Date d2 = Date.valueOf(ld1);
-        assertTrue(d1.equals(d2), "Error d1 != d2");
+        List<LocalDate> bcLocalDates = List.of(
+            LocalDate.of(0, 1, 1),
+            LocalDate.of(-4, 9, 8),
+            LocalDate.of(-1000, 3, 22)
+        );
+        for (LocalDate bcLocalDate : bcLocalDates) {
+            Date bcDate = Date.valueOf(bcLocalDate);
+            // Previously, getYear() of a LocalDate created from a Date always returned a positive year, even if it was BC.
+            assertTrue(bcDate.toLocalDate().getYear() <= 0, "Expected a BC year.");
+            assertEquals(bcDate.toLocalDate(), bcLocalDate, "The LocalDate created from the Date does not match the original BC LocalDate.");
+            assertEquals(Date.valueOf(bcDate.toLocalDate()), bcDate, "The BC Date did not yield the expected result on a round trip Date / LocalDate conversion.");
+        }
     }
 
     /*
