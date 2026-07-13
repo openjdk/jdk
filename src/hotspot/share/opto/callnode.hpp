@@ -1314,7 +1314,7 @@ public:
     const Type** fields = TypeTuple::fields(argcnt);
     fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
     fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;    // Address of stack location for lock
-    const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms +argcnt,fields);
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
 
     // create result type (range)
     fields = TypeTuple::fields(0);
