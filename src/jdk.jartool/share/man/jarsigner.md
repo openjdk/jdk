@@ -181,8 +181,7 @@ Currently, there are two command-line tools that use keystore implementations
 The default keystore implementation is `PKCS12`. This is a cross platform
 keystore based on the RSA PKCS12 Personal Information Exchange Syntax Standard.
 This standard is primarily meant for storing or transporting a user's private
-keys, certificates, and miscellaneous secrets. There is another built-in
-implementation, provided by Oracle.
+keys, certificates, and miscellaneous secrets.
 
 Keystore implementations are provider-based, which means the application
 interfaces supplied by the `KeyStore` class are implemented in terms of a

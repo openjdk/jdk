@@ -1886,7 +1886,7 @@ Keystore implementation
     is a cross platform keystore based on the RSA PKCS12 Personal Information
     Exchange Syntax Standard. This standard is primarily meant for storing or
     transporting a user's private keys, certificates, and miscellaneous
-    secrets. There is another built-in implementation, provided by Oracle.
+    secrets.
 
     Keystore implementations are provider-based. More specifically, the
     application interfaces supplied by `KeyStore` are implemented in terms of a
