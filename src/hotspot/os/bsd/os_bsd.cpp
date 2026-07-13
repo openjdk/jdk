@@ -1956,7 +1956,7 @@ size_t os::vm_min_address() {
   // -pagezero_size linker option).
   return 4 * G;
 #else
-  return os::vm_min_address_default();
+  return os::vm_min_address_default;
 #endif
 }
 

@@ -1563,12 +1563,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
   }
 }
 
-void os::Linux::capture_address_space_boundaries() {
-  initialize_vm_min_address();
-  initialize_vm_max_address();
-}
-
-void os::Linux::initialize_vm_min_address() {
+void os::Linux::capture_vm_min_address() {
   // Determined by sysctl vm.mmap_min_addr. It exists as an adjustable safety zone to prevent
   // null pointer dereferences.
   // Most distros set this value to 64 KB. It *can* be zero, but rarely is. Here,
@@ -1582,12 +1577,12 @@ void os::Linux::initialize_vm_min_address() {
     fclose(f);
   }
 
-  _vm_min_address = MAX2(os::vm_min_address_default(), value);
+  _vm_min_address = MAX2(os::vm_min_address_default, value);
 }
 
 #if !defined(S390) && !defined(ARM)
 // Default implementation for standard Linux variants
-void os::Linux::initialize_vm_max_address() {
+void os::Linux::capture_vm_max_address() {
   // On Linux, the kernel places the primordial stack very close to the end of the
   // User address space. This happens even with ASLR - it will never "jitter" enough
   // to be in the lower half of the address space. Since address spaces, on all of
@@ -4824,7 +4819,8 @@ jint os::init_2(void) {
     Linux::capture_initial_stack(JavaThread::stack_size_at_create());
   }
 
-  Linux::capture_address_space_boundaries();
+  Linux::capture_vm_min_address();
+  Linux::capture_vm_max_address();
 
   Linux::libpthread_init();
   Linux::sched_getcpu_init();
