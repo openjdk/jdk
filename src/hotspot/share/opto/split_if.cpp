@@ -394,7 +394,7 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
         Node* use = n->last_out(j);
         Node* x = n->clone();
         register_new_node(x, ctrl_or_self(use));
-        assert(use->in(1) == n, "" );
+        assert(use->in(1) == n, "should match");
         _igvn.replace_input_of(use, 1, x);
       }
       _igvn.remove_dead_node(n, PhaseIterGVN::NodeOrigin::Graph);
