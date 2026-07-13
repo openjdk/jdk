@@ -72,8 +72,6 @@ compiler/intrinsics/TestReturnOopSetForJFRWriteCheckpoint.java 8286300 linux-s39
 
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 generic-aarch64
 
-compiler/unsafe/AlignmentGapAccess.java 8373487 generic-all
-
 #############################################################################
 
 # :hotspot_gc
