@@ -899,7 +899,7 @@ public:
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
   DeadPathNode* dead_path() const          { return _dead_path; }
-  
+
   void set_dead_path(DeadPathNode* dead_path) {
     assert(_dead_path == nullptr, "can only set once");
     _dead_path = dead_path;

@@ -3065,7 +3065,7 @@ void PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
     // nodes that become dead.
     _maybe_top_type_or_div_mod_nodes.push(n);
   }
-  if (KillPathsReachableByDeadDataNode && new_type == Type::TOP && n->is_DivModInteger() && 
+  if (KillPathsReachableByDeadDataNode && new_type == Type::TOP && n->is_DivModInteger() &&
       type(n->in(2)) == n->as_DivModInteger()->zero()) {
     _maybe_top_type_or_div_mod_nodes.push(n);
   }
