@@ -258,7 +258,6 @@ class OpaqueInitializedAssertionPredicateNode : public Node {
   NOT_PRODUCT(void dump_spec(outputStream* st) const);
 };
 
-//------------------------------OpaqueParseNode-------------------------------
 // The node is used during late inlining to limit type propagation between cleanup phases.
 // It avoids type paradoxes caused by divergence between recorded type and IR shapes
 // during successive late inlining attempts.
