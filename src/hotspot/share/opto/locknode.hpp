@@ -136,8 +136,6 @@ public:
     init_req(0, ctrl);
     init_class_id(Class_FastLock);
   }
-  Node* obj_node() const { return in(1); }
-  Node* box_node() const { return in(2); }
 
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
@@ -156,8 +154,6 @@ public:
     init_req(0,ctrl);
     init_class_id(Class_FastUnlock);
   }
-  Node* obj_node() const { return in(1); }
-  Node* box_node() const { return in(2); }
 
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
