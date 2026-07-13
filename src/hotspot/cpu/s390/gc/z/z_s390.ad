@@ -76,29 +76,30 @@ static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node
 // Purpose: Check is pointer is good if it is just uncolor it else call the runtime
 static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
-  const bool on_non_strong =
-      ((node->barrier_data() & ZBarrierWeak) != 0) ||
-      ((node->barrier_data() & ZBarrierPhantom) != 0);
-
-  if (on_non_strong) {
-    z_keep_alive_load_barrier(masm, node, ref_addr, ref);
-    return;
-  }
-
   if (node->barrier_data() == ZBarrierElided) {
     z_uncolor(masm, node, ref);
     return;
+  } else {
+    const bool on_non_strong =
+        ((node->barrier_data() & ZBarrierWeak) != 0) ||
+        ((node->barrier_data() & ZBarrierPhantom) != 0);
+
+    if (on_non_strong) {
+      //__ stop("non strong load barrier");
+      z_keep_alive_load_barrier(masm, node, ref_addr, ref);
+      return;
+    }
+
+    ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
+    // TODO: Check what is the correct way here, all architecture have different implementations and here i am following ppc
+    __ z_lgr(Z_R0_scratch, ref);
+    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTestBit);
+    __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
+    __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
+
+    z_uncolor(masm, node, ref);
+    __ bind(*stub->continuation());
   }
-
-  ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
-  // TODO: Check what is the correct way here, all architecture have different implementations and here i am following ppc
-  __ z_lgr(Z_R0_scratch, ref);
-  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTestBit);
-  __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
-  __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
-
-  z_uncolor(masm, node, ref);
-  __ bind(*stub->continuation());
 }
 
 //Purpose: Check if oop is initialized if it not just color it else call store_barrier_fast
@@ -142,7 +143,6 @@ instruct zLoadP(iRegP dst, memory mem, flagsReg cr) %{
 %}
 
 // TODO: x86 has also written match rule for cmpP
-
 // Store Pointer
 instruct zStoreP(memory mem, iRegP src, iRegP temp, flagsReg cr) %{
   predicate(UseZGC && n->as_Store()->barrier_data() != 0);
@@ -185,15 +185,19 @@ instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP newval, iRegP newval_t
 
   format %{ "CompareAndExchangeP $oldval, $newval, $mem" %}
   ins_encode %{
-    //__ stop("zCompareAndExchangeP");
     assert_different_registers($oldval$$Register, $mem$$Register);
     const Address mem_addr = Address($mem$$Register, 0);
-    z_store_barrier(masm, this, mem_addr, $newval$$Register, $newval_temp$$Register, true /* is_atomic */);
-    z_color(masm, this, $oldval_temp$$Register, $oldval$$Register);
-    __ z_lg($res$$Register, mem_addr);
-    __ z_csg($oldval_temp$$Register, $newval_temp$$Register, mem_addr);
-    z_uncolor(masm, this, $res$$Register);
+    //z_store_barrier(masm, this, mem_addr, $newval$$Register, $newval_temp$$Register, true /* is_atomic */);
+    //z_color(masm, this, $oldval_temp$$Register, $oldval$$Register);
+    //__ z_lg($res$$Register, mem_addr);
+    //__ z_csg($oldval_temp$$Register, $newval_temp$$Register, mem_addr);
+    //z_uncolor(masm, this, $res$$Register);
 // TODO: Check which register we need to uncolor
+
+    z_store_barrier(masm, this, mem_addr, $newval$$Register, $newval_temp$$Register, true);
+    z_color(masm, this, $res$$Register, $oldval$$Register);
+    __ z_csg($res$$Register, $newval_temp$$Register, mem_addr);
+    z_uncolor(masm, this, $res$$Register);
   %}
   ins_pipe(pipe_class_dummy);
 %}
