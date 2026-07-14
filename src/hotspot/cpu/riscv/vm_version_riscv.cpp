@@ -214,9 +214,15 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
-  if (UseCRC32CIntrinsics) {
-    warning("CRC32C intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
+  if (UseZbc) {
+    if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
+      FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
+    }
+  } else {
+    if (UseCRC32CIntrinsics) {
+      warning("CRC32C intrinsic are not available on this CPU.");
+      FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
+    }
   }
 }
 
@@ -492,6 +498,12 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   case vmIntrinsics::_floatToFloat16:
   case vmIntrinsics::_float16ToFloat:
     if (!supports_float16_float_conversion()) {
+      return false;
+    }
+    break;
+  case vmIntrinsics::_updateBytesCRC32C:
+  case vmIntrinsics::_updateDirectByteBufferCRC32C:
+    if (!UseCRC32CIntrinsics) {
       return false;
     }
     break;
