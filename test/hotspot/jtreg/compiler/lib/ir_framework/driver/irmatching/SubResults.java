@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,41 @@
 
 package compiler.lib.ir_framework.driver.irmatching;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 /**
- * This class performs matching on a collection of {@link Matchable} objects. It returns a list of {@link MatchResult}
- * objects which failed or an empty list of there was not failure.
+ * Class to represent sub results as part of a {@link MatchResult}. A {@link LeafMatchResult} use an empty sub results
+ * object.
  */
-public class MatchableMatcher {
-    private final Collection<? extends Matchable> matchables;
+public class SubResults implements Iterable<MatchResult> {
+    private final List<MatchResult> subResults;
+    private final int failCount;
 
-    public MatchableMatcher(Collection<? extends Matchable> matchables) {
-        this.matchables = matchables;
+    public SubResults(List<MatchResult> subResults) {
+        this.failCount = (int)subResults.stream().filter(MatchResult::fail).count();
+        this.subResults = subResults;
     }
 
-    public SubResults match() {
-        List<MatchResult> results = new ArrayList<>();
-        for (Matchable matchable : matchables) {
-            results.add(matchable.match());
-        }
-        return new SubResults(results);
+    /**
+     * Used for {@link LeafMatchResult} objects with no sub results.
+     */
+    public static SubResults createEmpty() {
+        return new SubResults(List.of());
+    }
+
+    /**
+     * Is there a sub result with a failure?
+     */
+    public boolean hasFailure() {
+        return failCount > 0;
+    }
+
+    public int failCount() {
+        return failCount;
+    }
+
+    public Iterator<MatchResult> iterator() {
+        return subResults.iterator();
     }
 }
