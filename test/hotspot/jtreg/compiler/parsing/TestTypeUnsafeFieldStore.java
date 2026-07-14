@@ -27,10 +27,10 @@ import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test
- * @bug 8382936
+ * @bug 8386503
  * @summary Test load folding from a field store with a less precise type
  * @library /test/lib
- * @requires vm.debug == true & vm.compiler2.enabled
+ * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
