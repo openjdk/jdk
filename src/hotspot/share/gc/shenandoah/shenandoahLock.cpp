@@ -35,12 +35,10 @@ void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
     JavaThread* java_thread = JavaThread::current();
     ShenandoahInFlightLockRelease<ShenandoahLock> release;
     while (release.released()) {
-      {
-        ThreadBlockInVMPreprocess tbivm(java_thread, release);
-        if (contended_lock_internal<true>(java_thread)) {
-          // Won the lock. Arm the release: if the destructor processes a safepoint, it drops _state.
-          release.arm(this);
-        }
+      ThreadBlockInVMPreprocess tbivm(java_thread, release);
+      if (contended_lock_internal<true>(java_thread)) {
+        // Won the lock. Arm the release: if the destructor processes a safepoint, it drops _state.
+        release.arm(this);
       }
     }
   } else {
