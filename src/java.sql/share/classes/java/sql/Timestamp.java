@@ -558,7 +558,7 @@ public class Timestamp extends java.util.Date {
             // 1 BC becomes year 0, 2 BC becomes year -1 and so on.
             year = 1 - calendar.get(Calendar.YEAR);
         } else {
-            year = calendar.get(Calendar.YEAR);
+            year = getYear() + 1900;
         }
         return LocalDateTime.of(year,
                                 getMonth() + 1,
