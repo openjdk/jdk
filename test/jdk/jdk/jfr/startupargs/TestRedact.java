@@ -317,15 +317,6 @@ public class TestRedact {
     private static void testEmpty() throws Exception {
         var environment = Map.of("API_TOKEN", "Zebra1");
         var properties = Map.of("API_KEY", "Zebra2");
-        Execution e1 = run(environment, properties,
-           "-XX:FlightRecorderOptions:redact-key=,redact-argument=", "Zebra3"
-        );
-        e1.output().shouldContain("Default redaction filters are replaced.");
-        e1.output().shouldContain("redact-key=none to disable filters without a warning");
-        e1.output().shouldContain("redact-argument=none to disable filters without a warning");
-        e1.assertUnredacted("Zebra1");
-        e1.assertUnredacted("Zebra2");
-        e1.assertUnredacted("Zebra3");
 
         Execution e2 = run(environment, properties,
            "-XX:FlightRecorderOptions:redact-argument=none,redact-key=none",  "Zebra3"

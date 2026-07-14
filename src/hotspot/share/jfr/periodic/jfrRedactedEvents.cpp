@@ -143,9 +143,8 @@ bool JfrRedactedEvents::append_filters(StringArray* target, bool argument, const
   }
   if (filters[0] == '\0') {
     LogMessage(jfr, redact) msg;
-    msg.warning("Default redaction filters are replaced. Specify:");
-    msg.warning("-XX:FlightRecorderOptions:%s=none to disable filters without a warning.", option_name);
-    return true;
+    msg.error("Specify -XX:FlightRecorderOptions:%s=none to disable filters completely.", option_name);
+    return false;
   }
   if (strcmp(filters, "none") == 0) {
     return true;
@@ -603,7 +602,7 @@ StringArray* JfrRedactedEvents::make_jvm_args_array(char** jvm_args_array, int a
       }
       if (strstr(argument, REDACT_ARGUMENT_EQUAL) != nullptr) {
         _redacted_arguments->add(argument);
-        result->add("-XX:FlightRecorderOption:[REDACTED]");
+        result->add("-XX:FlightRecorderOptions:[REDACTED]");
         continue;
       }
     }
