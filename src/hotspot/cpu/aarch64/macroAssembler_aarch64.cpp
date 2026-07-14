@@ -5529,11 +5529,7 @@ void MacroAssembler::emit_decode_klass_not_null(Register dst, Register src, Regi
 
   case KlassDecodeFallback: { // 3-4 instructions
     mov(tmp, base);
-    if (shift != 0) {
-      add(dst, tmp, src, LSL, shift);
-    } else {
-      add(dst, tmp, src);
-    }
+    add(dst, tmp, src, LSL, shift);
     break;
   }
 
