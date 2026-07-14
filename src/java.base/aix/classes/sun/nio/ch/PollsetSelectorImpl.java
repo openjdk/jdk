@@ -113,7 +113,7 @@ class PollsetSelectorImpl
      */
     private static int getFDLimit() {
         int limit = Pollset.fdLimit();
-        if(limit <=0) {
+        if (limit <=0) {
             return 8192;
         }
         return Math.min(limit, 8192);
@@ -274,7 +274,7 @@ class PollsetSelectorImpl
         synchronized (updateLock) {
             updateKeys.remove(ski);
         }
-        int fd  =  ski.getFDVal();
+        int fd = ski.getFDVal();
 
         if (fdToKey.remove(fd) != null) {
             if (ski.registeredEvents() != 0) {
@@ -340,7 +340,7 @@ class PollsetSelectorImpl
 
         static void free(AllocatedNativeNode node) {
             AllocatedNativeNode toBeFreed = node;
-            while(toBeFreed != null) {
+            while (toBeFreed != null) {
                 AllocatedNativeNode next = toBeFreed.getNext();
                 toBeFreed.free();
                 toBeFreed = next;
