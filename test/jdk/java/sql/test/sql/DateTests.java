@@ -24,7 +24,6 @@ package sql;
 
 import java.sql.Date;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -332,20 +331,14 @@ public class DateTests extends BaseTest {
      * Validate that Date.valueOf and Date.toLocalDate yield the expected results for dates with BC years.
      * Ensures that the fix for 8272194 has not regressed.
      */
-    @Test
-    public void test27() {
-        List<LocalDate> bcLocalDates = List.of(
-            LocalDate.of(0, 1, 1),
-            LocalDate.of(-4, 9, 8),
-            LocalDate.of(-1000, 3, 22)
-        );
-        for (LocalDate bcLocalDate : bcLocalDates) {
-            Date bcDate = Date.valueOf(bcLocalDate);
-            // Previously, getYear() of a LocalDate created from a Date always returned a positive year, even if it was BC.
-            assertTrue(bcDate.toLocalDate().getYear() <= 0, "Expected a BC year.");
-            assertEquals(bcDate.toLocalDate(), bcLocalDate, "The LocalDate created from the Date does not match the original BC LocalDate.");
-            assertEquals(Date.valueOf(bcDate.toLocalDate()), bcDate, "The BC Date did not yield the expected result on a round trip Date / LocalDate conversion.");
-        }
+    @ParameterizedTest(autoCloseArguments = false)
+    @MethodSource("bcLocalDates")
+    public void test27(LocalDate bcLocalDate) {
+        Date bcDate = Date.valueOf(bcLocalDate);
+        // Previously, getYear() of a LocalDate created from a Date always returned a positive year, even if it was BC.
+        assertTrue(bcDate.toLocalDate().getYear() <= 0, "Expected a BC year.");
+        assertEquals(bcLocalDate, bcDate.toLocalDate(), "The LocalDate created from the Date does not match the original BC LocalDate.");
+        assertEquals(bcDate, Date.valueOf(bcDate.toLocalDate()), "The BC Date did not yield the expected result on a round trip Date / LocalDate conversion.");
     }
 
     /*
@@ -391,6 +384,19 @@ public class DateTests extends BaseTest {
             Arguments.of("2009-01-8", "2009-01-08"),
             Arguments.of("2009-1-01", "2009-01-01"),
             Arguments.of("2009-1-1", "2009-01-01")
+        );
+    }
+
+    /*
+     * DataProvider used to provide BC LocalDate values, used to validate that
+     * Date.valueOf and Date.toLocalDate yield the expected results for dates
+     * with BC years.
+     */
+    private Stream<LocalDate> bcLocalDates() {
+        return Stream.of(
+            LocalDate.of(0, 1, 1),
+            LocalDate.of(-4, 9, 8),
+            LocalDate.of(-1000, 3, 22)
         );
     }
 }
