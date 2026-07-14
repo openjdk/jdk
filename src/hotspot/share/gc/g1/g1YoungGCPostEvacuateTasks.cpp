@@ -153,13 +153,14 @@ public:
       const GrowableArrayCHeap<G1CodeRootPair, mtGC>& pairs = pss->code_root_pairs();
       for (const G1CodeRootPair& pair : pairs) {
         uint region_idx = pair._region_idx;
+        G1HeapRegion* region = g1h->region_at(region_idx);
         if (counts[region_idx] > 0) {
           // First occurrence of this region: pre-size its code root set to the
           // final size so it never needs to grow under the (single-threaded) add.
-          g1h->region_at(region_idx)->rem_set()->prepare_for_adding_code_roots(counts[region_idx]);
+          region->rem_set()->prepare_for_adding_code_roots(counts[region_idx]);
           counts[region_idx] = 0;
         }
-        g1h->region_at(region_idx)->add_code_root(pair._nmethod);
+        region->add_code_root(pair._nmethod);
       }
     }
 
