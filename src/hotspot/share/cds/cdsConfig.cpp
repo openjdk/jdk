@@ -41,6 +41,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 bool CDSConfig::_is_dumping_static_archive = false;
 bool CDSConfig::_is_dumping_preimage_static_archive = false;
@@ -110,6 +111,25 @@ void CDSConfig::ergo_initialize() {
   AOTMapLogger::ergo_initialize();
 
   setup_compiler_args();
+
+  if (is_dumping_full_module_graph()) {
+    precond(allow_only_single_java_thread());
+
+    // The AttachListenerThread may execute Java code or load new classes. It might see
+    // unexpected results after HeapShared::prepare_for_archiving().
+    //
+    // We disable all new incoming attach requests, so you can't use jcmd, etc, on this JVM.
+    // Since we are not running any application code in this JVM and only executed a very
+    // limited set of Java code (for module system init, class loading, indy resolution,
+    // etc), there is usually no need to attach to this JVM.
+    FLAG_SET_ERGO(DisableAttachMechanism, true);
+  }
+
+  if (!AOTMetaspace::shared_base_valid((char*)SharedBaseAddress)) {
+     log_warning(cds)("SharedBaseAddress " PTR_FORMAT " is invalid. Reverting to " PTR_FORMAT,
+                 p2i((void*)SharedBaseAddress), p2i((void*)DEFAULT_SHARED_BASE_ADDRESS));
+     FLAG_SET_ERGO(SharedBaseAddress, DEFAULT_SHARED_BASE_ADDRESS);
+  }
 }
 
 const char* CDSConfig::default_archive_path() {
@@ -139,10 +159,10 @@ const char* CDSConfig::default_archive_path() {
     if (!UseCompressedOops) {
       tmp.print_raw("_nocoops");
     }
-    if (UseCompactObjectHeaders) {
-      // Note that generation of xxx_coh.jsa variants require
-      // --enable-cds-archive-coh at build time
-      tmp.print_raw("_coh");
+    if (!UseCompactObjectHeaders) {
+      // Note that generation of xxx_nocoh.jsa variants require
+      // --enable-cds-archive-nocoh at build time
+      tmp.print_raw("_nocoh");
     }
 #endif
     tmp.print_raw(".jsa");
@@ -462,7 +482,7 @@ void CDSConfig::check_aot_flags() {
   // At least one AOT flag has been used
   _new_aot_flags_used = true;
 
-  if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0) {
+  if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0 || strcmp(AOTMode, "required") == 0) {
     check_aotmode_auto_or_on();
   } else if (strcmp(AOTMode, "off") == 0) {
     check_aotmode_off();
@@ -489,7 +509,7 @@ void CDSConfig::check_aotmode_auto_or_on() {
   if (FLAG_IS_DEFAULT(AOTMode) || (strcmp(AOTMode, "auto") == 0)) {
     RequireSharedSpaces = false;
   } else {
-    assert(strcmp(AOTMode, "on") == 0, "already checked");
+    assert(strcmp(AOTMode, "on") == 0 || strcmp(AOTMode, "required") == 0 , "already checked");
     RequireSharedSpaces = true;
   }
 }
@@ -520,7 +540,7 @@ static void substitute_aot_filename(JVMFlagsEnum flag_enum) {
     JVMFlag::Error err = JVMFlagAccess::set_ccstr(flag, &new_filename, JVMFlagOrigin::ERGONOMIC);
     assert(err == JVMFlag::SUCCESS, "must never fail");
   }
-  FREE_C_HEAP_ARRAY(char, new_filename);
+  FREE_C_HEAP_ARRAY(new_filename);
 }
 
 void CDSConfig::check_aotmode_record() {

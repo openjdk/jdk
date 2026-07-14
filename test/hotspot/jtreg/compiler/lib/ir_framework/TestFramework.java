@@ -364,6 +364,7 @@ public class TestFramework {
      * @return the same framework instance.
      */
     @SafeVarargs
+    @SuppressWarnings("varargs")
     final public TestFramework addCrossProductScenarios(Set<String>... flagSets) {
         TestFormat.checkAndReport(flagSets != null &&
                                   Arrays.stream(flagSets).noneMatch(Objects::isNull) &&

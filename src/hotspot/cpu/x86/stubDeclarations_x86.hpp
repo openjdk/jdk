@@ -178,8 +178,17 @@
   /* other arches use arch-specific entries */                          \
   /* this really needs rationalising */                                 \
   do_stub(compiler, string_indexof_linear_ll)                           \
+  do_arch_entry(x86, compiler, string_indexof_linear_ll,                \
+                string_indexof_linear_ll,                               \
+                string_indexof_linear_ll)                               \
   do_stub(compiler, string_indexof_linear_uu)                           \
+  do_arch_entry(x86, compiler, string_indexof_linear_uu,                \
+                string_indexof_linear_uu,                               \
+                string_indexof_linear_uu)                               \
   do_stub(compiler, string_indexof_linear_ul)                           \
+  do_arch_entry(x86, compiler, string_indexof_linear_ul,                \
+                string_indexof_linear_ul,                               \
+                string_indexof_linear_ul)                               \
   do_stub(compiler, pshuffle_byte_flip_mask_sha512)                     \
   do_arch_entry(x86, compiler, pshuffle_byte_flip_mask_sha512,          \
                 pshuffle_byte_flip_mask_addr_sha512,                    \

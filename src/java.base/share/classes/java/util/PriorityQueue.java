@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,6 +205,32 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         }
         else {
             this.comparator = null;
+            initFromCollection(c);
+        }
+    }
+
+    /**
+     * Creates a {@code PriorityQueue} containing the elements in the
+     * specified collection. The elements of the new {@code PriorityQueue}
+     * will be ordered according to the specified comparator.
+     *
+     * @param  c the collection whose elements are to be placed
+     *         into this priority queue
+     * @param  comparator the comparator that will be used to order this
+     *         priority queue.  If {@code null}, the {@linkplain Comparable
+     *         natural ordering} of the elements will be used.
+     * @throws NullPointerException if the specified collection or any
+     *         of its elements are null
+     * @since 28
+     */
+    public PriorityQueue(Collection<? extends E> c,
+                         Comparator<? super E> comparator) {
+        this.comparator = comparator;
+        if (c instanceof SortedSet<? extends E> ss && comparator == ss.comparator()) {
+            initElementsFromCollection(ss);
+        } else if (c instanceof PriorityQueue<? extends E> pq && comparator == pq.comparator()) {
+            initFromPriorityQueue(pq);
+        } else {
             initFromCollection(c);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,16 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 import javax.swing.ListCellRenderer;
-import javax.swing.ListSelectionModel;
+import javax.swing.ListModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import static java.awt.event.ItemEvent.DESELECTED;
 import static java.awt.event.ItemEvent.ITEM_STATE_CHANGED;
 import static java.awt.event.ItemEvent.SELECTED;
+
+import static javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION;
+import static javax.swing.ListSelectionModel.SINGLE_SELECTION;
 
 /**
  * Lightweight implementation of {@link ListPeer}. Delegates most of the work to
@@ -157,11 +160,14 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
     @Override
     public void select(final int index) {
         synchronized (getDelegateLock()) {
-            getDelegate().setSkipStateChangedEvent(true);
-            try {
-                getDelegate().getView().setSelectedIndex(index);
-            } finally {
-                getDelegate().setSkipStateChangedEvent(false);
+            ListModel<String> model = getDelegate().getModel();
+            if (index >= 0 && index < model.getSize()) {
+                getDelegate().setSkipStateChangedEvent(true);
+                try {
+                    getDelegate().getView().addSelectionInterval(index, index);
+                } finally {
+                    getDelegate().setSkipStateChangedEvent(false);
+                }
             }
         }
     }
@@ -188,9 +194,23 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
     @Override
     public void setMultipleMode(final boolean m) {
         synchronized (getDelegateLock()) {
-            getDelegate().getView().setSelectionMode(m ?
-                    ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
-                    : ListSelectionModel.SINGLE_SELECTION);
+            JList<String> view = getDelegate().getView();
+            int newMode = m ? MULTIPLE_INTERVAL_SELECTION : SINGLE_SELECTION;
+            if (view.getSelectionMode() == newMode) {
+                return;
+            }
+            int lead = view.getLeadSelectionIndex();
+            boolean wasSelected = lead != -1 && view.isSelectedIndex(lead);
+            getDelegate().setSkipStateChangedEvent(true);
+            try {
+                view.clearSelection();
+                view.setSelectionMode(newMode);
+                if (wasSelected) {
+                    view.setSelectedIndex(lead);
+                }
+            } finally {
+                getDelegate().setSkipStateChangedEvent(false);
+            }
         }
     }
 

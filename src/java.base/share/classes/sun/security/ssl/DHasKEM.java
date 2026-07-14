@@ -268,17 +268,17 @@ public class DHasKEM implements KEMSpi {
 
             // RFC 8446 section 7.4.2: checks for all-zero
             // X25519/X448 shared secret.
-            if (kaAlgorithm.equals("X25519") ||
-                    kaAlgorithm.equals("X448")) {
+            if (this == X25519 || this == X448) {
                 byte[] s = secret.getEncoded();
+                byte data = 0;
                 for (byte b : s) {
-                    if (b != 0) {
-                        return secret;
-                    }
+                    data |= b;
                 }
-                // Trigger ILLEGAL_PARAMETER alert
-                throw new IllegalArgumentException(
-                        "All-zero shared secret");
+                if (data == 0) {
+                    // Trigger ILLEGAL_PARAMETER alert
+                    throw new IllegalArgumentException(
+                            "All-zero shared secret");
+                }
             }
 
             return secret;
