@@ -6776,10 +6776,12 @@ void MacroAssembler::post_call_nop() {
   if (!Continuations::enabled()) {
     return;
   }
-  nop();
-  // TODO:
-  // 1. https://bugs.openjdk.org/browse/JDK-8300002
-  // 2. https://bugs.openjdk.org/browse/JDK-8290965
+  // We use CLFI R0, imm32 to encode post call nops.
+  // Refer to NativePostCallNop for details.
+  relocate(post_call_nop_Relocation::spec());
+  InlineSkippedInstructionsCounter skipCounter(this);
+  z_clfi(Z_R0, 0);
+  assert(is_post_call_nop(pc() - 6), "post call nop not found");
 }
 
 void MacroAssembler::push_cont_fastpath() {

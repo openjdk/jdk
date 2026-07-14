@@ -3279,6 +3279,15 @@ class Assembler : public AbstractAssembler {
   static bool is_z_nop(address x) {
     return is_z_nop(* (short *) x);
   }
+  // A post-call NOP is encoded as CLFI R0, imm32 (RIL-a format, 6 bytes).
+  // Byte 0 = 0xC2 (opcode1), byte 1 = 0x0F (R1=R0=0x0 in bits 39..36,
+  // opcode2=0xF in bits 35..32). The 4-byte imm32 carries the payload.
+  // Result goes only to the condition code, which is caller-scratch after a call.
+  static bool is_post_call_nop(address x) {
+    // Check the first 2 bytes for the CLFI R0 opcode signature (0xC2 0x0F).
+    // Only 2 bytes are read to avoid a page-boundary out-of-bounds access.
+    return (*(unsigned short*) x) == (unsigned short)((0xc2 << 8) | 0x0f);
+  }
   static bool is_z_illtrap(address x) {
     return *(uint8_t*)x == 0u;
   }

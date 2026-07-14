@@ -35,14 +35,14 @@
 // Inline functions for z/Architecture frames:
 
 // Initialize frame members (_sp must be given)
-inline void frame::setup() {
+inline void frame::setup(kind knd) {
   if (_pc == nullptr) {
     _pc = (address)own_abi()->return_pc;
     assert(_pc != nullptr, "must have PC");
   }
 
   if (_cb == nullptr) {
-    _cb = CodeCache::find_blob(_pc);
+    _cb = (knd == kind::nmethod) ? CodeCache::find_blob_fast(_pc) : CodeCache::find_blob(_pc);
   }
 
   if (_unextended_sp == nullptr) {
@@ -99,20 +99,26 @@ inline frame::frame() : _sp(nullptr), _pc(nullptr), _cb(nullptr), _oop_map(nullp
 inline frame::frame(intptr_t* sp, address pc, intptr_t* unextended_sp, intptr_t* fp, CodeBlob* cb)
   : _sp(sp), _pc(pc), _cb(cb), _oop_map(nullptr),
     _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(unextended_sp), _fp(fp) {
-  setup();
+  setup(kind::nmethod);
 }
 
-inline frame::frame(intptr_t* sp) : frame(sp, nullptr) {}
+inline frame::frame(intptr_t* sp) : frame(sp, nullptr, kind::nmethod) {}
 
 inline frame::frame(intptr_t* sp, intptr_t* fp, address pc)
   : _sp(sp), _pc(pc), _cb(nullptr), _oop_map(nullptr), _deopt_state(unknown),
     _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(nullptr), _fp(fp) {
-  setup();
+  setup(kind::nmethod);
+}
+
+inline frame::frame(intptr_t* sp, address pc, kind knd)
+  : _sp(sp), _pc(pc), _cb(nullptr), _oop_map(nullptr),
+    _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(sp), _fp(nullptr) {
+  setup(knd);
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map)
   :_sp(sp), _pc(pc), _cb(cb), _oop_map(oop_map), _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(unextended_sp), _fp(fp) {
-  setup();
+  setup(kind::nmethod);
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map, bool on_heap)
@@ -120,7 +126,7 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
   // In thaw, non-heap frames use this constructor to pass oop_map.  I don't know why.
   assert(_on_heap || _cb != nullptr, "these frames are always heap frames");
   if (cb != nullptr) {
-    setup();
+    setup(kind::nmethod);
   }
 }
 
@@ -129,7 +135,7 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
 inline frame::frame(void* sp, void* pc, void* unextended_sp)
   : _sp((intptr_t*)sp), _pc((address)pc), _cb(nullptr), _oop_map(nullptr),
     _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp((intptr_t*)unextended_sp) {
-  setup();
+  setup(kind::unknown);
 }
 #endif
 
@@ -397,7 +403,7 @@ inline frame frame::sender_raw(RegisterMap* map) const {
 
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
-  return frame(sender_sp(), sender_pc());
+  return frame(sender_sp(), sender_pc(), kind::code_blob);
 }
 
 inline frame frame::sender_for_compiled_frame(RegisterMap *map) const {
@@ -434,7 +440,7 @@ inline frame frame::sender_for_compiled_frame(RegisterMap *map) const {
       return Continuation::continuation_bottom_sender(map->thread(), *this, sender_sp);
     }
   }
-  return frame(sender_sp, sender_pc);
+  return frame(sender_sp, sender_pc, kind::nmethod);
 }
 
 template <typename RegisterMapT>
