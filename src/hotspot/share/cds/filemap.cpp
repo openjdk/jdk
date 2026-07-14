@@ -1112,11 +1112,11 @@ void FileMapInfo::close() {
  * Same as os::map_memory() but also pretouches if AlwaysPreTouch is enabled.
  */
 static char* map_memory(int fd, const char* file_name, size_t file_offset,
-                        char* addr, size_t bytes, bool read_only,
-                        bool allow_exec, MemTag mem_tag) {
+                        char* addr, size_t bytes, MemTag mem_tag,
+                        bool allow_exec,bool read_only) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
-                             mem_tag, AlwaysPreTouch ? false : read_only,
-                             allow_exec);
+                             mem_tag, allow_exec,
+                             AlwaysPreTouch ? false : read_only);
   if (mem != nullptr && AlwaysPreTouch) {
     os::pretouch_memory(mem, mem + bytes);
   }
@@ -1129,9 +1129,9 @@ char* FileMapInfo::map_heap_region(FileMapRegion* r, char* addr, size_t bytes) {
                     r->file_offset(),
                     addr,
                     bytes,
-                    r->read_only(),
+                    mtJavaHeap,
                     r->allow_exec(),
-                    mtJavaHeap);
+                    r->read_only());
 }
 
 // JVM/TI RedefineClasses() support:
@@ -1152,8 +1152,8 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
   assert(WINDOWS_ONLY(false) NOT_WINDOWS(true), "Don't call on Windows");
   // Replace old mapping with new one that is writable.
   char *base = os::map_memory(_fd, _full_path, r->file_offset(),
-                              addr, size, mtNone, false /* !read_only */,
-                              r->allow_exec());
+                              addr, size, mtNone,
+                              r->allow_exec(), false /* !read_only */);
   close();
   // These have to be errors because the shared region is now unmapped.
   if (base == nullptr) {
@@ -1273,8 +1273,8 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     // space (Windows, first mapping attempt), or a mapping into pre-reserved
     // space (Posix). See also comment in AOTMetaspace::map_archives().
     char* base = map_memory(_fd, _full_path, r->file_offset(),
-                            requested_addr, size, r->read_only(),
-                            r->allow_exec(), mtClassShared);
+                            requested_addr, size, mtClassShared,
+                            r->allow_exec(), r->read_only());
     if (base != requested_addr) {
       AOTMetaspace::report_loading_error("Unable to map %s shared space at " INTPTR_FORMAT,
                                             shared_region_name[i], p2i(requested_addr));
@@ -1310,7 +1310,7 @@ char* FileMapInfo::map_auxiliary_region(int region_index, bool read_only) {
   bool allow_exec = false;
   char* requested_addr = nullptr; // allow OS to pick any location
   char* mapped_base = map_memory(_fd, _full_path, r->file_offset(),
-                                 requested_addr, r->used_aligned(), read_only, allow_exec, mtClassShared);
+                                 requested_addr, r->used_aligned(), mtClassShared, allow_exec, read_only);
   if (mapped_base == nullptr) {
     AOTMetaspace::report_loading_error("failed to map %d region", region_index);
     return nullptr;
@@ -1359,7 +1359,7 @@ bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
     // AOT code is copied to the CodeCache for execution.
     bool read_only = false, allow_exec = false;
     mapped_base = map_memory(_fd, _full_path, r->file_offset(),
-                             requested_base, r->used_aligned(), read_only, allow_exec, mtClassShared);
+                             requested_base, r->used_aligned(), mtClassShared, allow_exec, read_only);
   }
   if (mapped_base == nullptr) {
     AOTMetaspace::report_loading_error("failed to map aot code region");

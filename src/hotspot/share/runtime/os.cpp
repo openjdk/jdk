@@ -2372,9 +2372,8 @@ char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc,
 }
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes, MemTag mem_tag,
-                            bool read_only, bool allow_exec) {
-  char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
+                     char *addr, size_t bytes, MemTag mem_tag, bool allow_exec,bool read_only) {
+  char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, allow_exec, read_only);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);
   }
