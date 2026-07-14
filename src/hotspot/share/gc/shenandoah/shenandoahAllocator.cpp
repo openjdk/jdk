@@ -27,6 +27,7 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "jfr/utilities/jfrNode.hpp"
 #include "runtime/os.hpp"
 
 // Derive the number of CAS alloc-region stripe slots for the mutator allocator. Striping spreads
@@ -48,8 +49,8 @@ static uint mutator_alloc_regions() {
     return MIN2((uint) ShenandoahMutatorAllocRegions, ShenandoahMutatorAllocator::MAX_ALLOC_REGIONS);
   }
   const uint cpu_bound = (uint) MAX2(os::initial_active_processor_count(), 1);
-  const uint heap_bound = (uint) MAX2(ShenandoahHeapRegion::region_count() / 256, (size_t) 1);
-  return MIN2(MIN2(cpu_bound, heap_bound), ShenandoahMutatorAllocator::MAX_ALLOC_REGIONS);
+  const uint heap_bound = (uint) MAX2(ShenandoahHeapRegion::region_count() / 512, (size_t) 2);
+  return MIN3(cpu_bound, heap_bound, ShenandoahMutatorAllocator::MAX_ALLOC_REGIONS);
 }
 
 ShenandoahAllocator::ShenandoahAllocator(ShenandoahFreeSet* free_set)
@@ -70,19 +71,28 @@ HeapWord* ShenandoahAllocator::allocate(ShenandoahAllocRequest& req, bool& in_ne
         in_new_region = true;
         return _free_set->allocate_contiguous(req, /* is_humongous = */ false);
       default:
-        ShouldNotReachHere();
+        assert(false, "Should not reach here");
         in_new_region = false;
         return nullptr;
     }
   }
 
   // Route to the appropriate per-partition allocator.
-  if (req.is_mutator_alloc()) {
-    return _mutator_allocator.allocate(req, in_new_region);
-  } else if (req.is_old()) {
-    return _old_collector_allocator.allocate(req, in_new_region);
-  } else {
-    return _collector_allocator.allocate(req, in_new_region);
+  switch(req.type()) {
+    case ShenandoahAllocRequest::_alloc_shared:
+    case ShenandoahAllocRequest::_alloc_tlab:
+    case ShenandoahAllocRequest::_alloc_cds:
+      return _mutator_allocator.allocate(req, in_new_region);
+    case ShenandoahAllocRequest::_alloc_gclab:
+    case ShenandoahAllocRequest::_alloc_shared_gc:
+      return _collector_allocator.allocate(req, in_new_region);
+    case ShenandoahAllocRequest::_alloc_shared_gc_old:
+    case ShenandoahAllocRequest::_alloc_shared_gc_promotion:
+    case ShenandoahAllocRequest::_alloc_plab:
+      return _old_collector_allocator.allocate(req, in_new_region);
+    default:
+      assert(false, "Should not reach here");
+      return nullptr;
   }
 }
 
