@@ -74,16 +74,15 @@ heapRootCallbackForFirstObjectsIteration(jvmtiHeapRootKind root_kind,
 
     if (*tag_ptr != 0) return JVMTI_ITERATION_CONTINUE;
 
-    /* Set tag */
-    *tag_ptr = ++objectTagCount;
-    objectCount++;
-
     if (!NSK_JVMTI_VERIFY(jvmti->Allocate((sizeof(ObjectDesc)), (unsigned char**)&objectDescBuf))) {
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
         NSK_COMPLAIN0("heapRootCallbackForFirstObjectsIteration: Allocation failed. Iteration aborted.\n");
         return JVMTI_ITERATION_ABORT;
     }
+    /* Set tag */
+    *tag_ptr = ++objectTagCount;
+    objectCount++;
 
     (*objectDescList).tag = *tag_ptr;
     (*objectDescList).size = size;
@@ -153,16 +152,15 @@ stackReferenceCallbackForFirstObjectsIteration(jvmtiHeapRootKind root_kind,
 
     if (*tag_ptr != 0) return JVMTI_ITERATION_CONTINUE;
 
-    /* Set tag */
-    *tag_ptr = ++objectTagCount;
-    objectCount++;
-
     if (!NSK_JVMTI_VERIFY(jvmti->Allocate((sizeof(ObjectDesc)), (unsigned char**)&objectDescBuf))) {
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
         NSK_COMPLAIN0("stackReferenceCallbackForFirstObjectsIteration: Allocation failed. Iteration aborted.\n");
         return JVMTI_ITERATION_ABORT;
     }
+    /* Set tag */
+    *tag_ptr = ++objectTagCount;
+    objectCount++;
 
     (*objectDescList).tag = *tag_ptr;
     (*objectDescList).size = size;
@@ -234,16 +232,15 @@ objectReferenceCallbackForFirstObjectsIteration(jvmtiObjectReferenceKind referen
 
     if (*tag_ptr != 0) return JVMTI_ITERATION_CONTINUE;
 
-    /* Set tag */
-    *tag_ptr = ++objectTagCount;
-    objectCount++;
-
     if (!NSK_JVMTI_VERIFY(jvmti->Allocate((sizeof(ObjectDesc)), (unsigned char**)&objectDescBuf))) {
         nsk_jvmti_setFailStatus();
         callbackAborted = 1;
         NSK_COMPLAIN0("objectReferenceCallbackForFirstObjectsIteration: Allocation failed. Iteration aborted.\n");
         return JVMTI_ITERATION_ABORT;
     }
+    /* Set tag */
+    *tag_ptr = ++objectTagCount;
+    objectCount++;
 
     (*objectDescList).tag = *tag_ptr;
     (*objectDescList).size = size;
