@@ -232,8 +232,8 @@ class os: AllStatic {
 
   static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc);
 
-  static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset, 
-                              char *addr, size_t bytes,bool allow_exec, 
+  static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
+                              char *addr, size_t bytes,bool allow_exec,
                               bool read_only = false);
   static bool   pd_unmap_memory(char *addr, size_t bytes);
   static void   pd_disclaim_memory(char *addr, size_t bytes);
