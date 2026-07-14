@@ -33,7 +33,7 @@ import jdk.test.lib.process.ProcessTools;
  * @bug 8387328
  * @summary A Phi having a narrower Type than its inputs may result in incorrect scheduling
  * @library /test/lib
- * @requires vm.debug == true & vm.compiler2.enabled
+ * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
