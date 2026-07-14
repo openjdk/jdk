@@ -4662,20 +4662,6 @@ void os::Linux::numa_init() {
   if (UseNUMA && !UseNUMAInterleaving) {
     FLAG_SET_ERGO_IF_DEFAULT(UseNUMAInterleaving, true);
   }
-
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC && UseNUMA && UseLargePages && !can_commit_large_page_memory()) {
-    // With static large pages we cannot uncommit a page, so there's no way
-    // we can make the adaptive lgrp chunk resizing work. If the user specified both
-    // UseNUMA and UseLargePages on the command line - warn and disable adaptive resizing.
-    if (UseAdaptiveSizePolicy || UseAdaptiveNUMAChunkSizing) {
-      warning("UseNUMA is not fully compatible with +UseLargePages, "
-              "disabling adaptive resizing (-XX:-UseAdaptiveSizePolicy -XX:-UseAdaptiveNUMAChunkSizing)");
-      UseAdaptiveSizePolicy = false;
-      UseAdaptiveNUMAChunkSizing = false;
-    }
-  }
-#endif
 }
 
 void os::Linux::disable_numa(const char* reason, bool warning) {

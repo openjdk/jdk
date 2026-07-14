@@ -41,9 +41,11 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestOldGrowthTriggers {
 
     public static void makeOldAllocations() {
-        // Expect most of the BitSet entries placed into array to be promoted, and most will eventually become garbage within old
+        // Keep the majority of BitSet entries (5/8, 960) long-lived so they promote and grow old generation
+        // well past the old GC trigger threshold. A smaller long-lived set can fall just short and only
+        // intermittently trigger an old GC, so don't reduce the array size or the promoted fraction.
 
-        final int ArraySize = 1024;  // 1K entries
+        final int ArraySize = 1536;  // 1536 entries (1024 + 512)
         final int RefillIterations = 128;
         BitSet[] array = new BitSet[ArraySize];
 
@@ -57,8 +59,10 @@ public class TestOldGrowthTriggers {
                 int replaceIndex = i;
                 int deriveIndex = i-1;
 
+                // 3/8 entries are replaced each pass to trigger young gcs.
+                // 5/8 entries are never touched, so they age each cycle.
                 switch (i & 0x7) {
-                    case 0,1,2 -> {
+                    case 0,1 -> {
                         // creates new BitSet, releases old BitSet,
                         // create ephemeral data while computing
                         BitSet result = (BitSet) array[deriveIndex].clone();
@@ -67,12 +71,12 @@ public class TestOldGrowthTriggers {
                         }
                         array[replaceIndex] = result;
                     }
-                    case 3,4 -> {
+                    case 2 -> {
                         // creates new BitSet, releases old BitSet
                         BitSet result = (BitSet) array[deriveIndex].clone();
                         array[replaceIndex] = result;
                     }
-                    case 5,6,7 -> {
+                    default -> {
                         // do nothing, let all objects in the array age to increase pressure on old generation
                     }
                 }
@@ -110,6 +114,8 @@ public class TestOldGrowthTriggers {
                 "-XX:ShenandoahMinOldGenGrowthRemainingHeapPercent=100",
                 "-XX:ShenandoahGuaranteedYoungGCInterval=0",
                 "-XX:ShenandoahGuaranteedOldGCInterval=0",
+                "-XX:ShenandoahGenerationalMinTenuringAge=2",
+                "-XX:ShenandoahGenerationalMaxTenuringAge=2",
                 "-XX:-UseCompactObjectHeaders"
         );
 
@@ -127,6 +133,8 @@ public class TestOldGrowthTriggers {
                 "-XX:ShenandoahMinOldGenGrowthRemainingHeapPercent=100",
                 "-XX:ShenandoahGuaranteedYoungGCInterval=0",
                 "-XX:ShenandoahGuaranteedOldGCInterval=0",
+                "-XX:ShenandoahGenerationalMinTenuringAge=2",
+                "-XX:ShenandoahGenerationalMaxTenuringAge=2",
                 "-XX:+UseCompactObjectHeaders"
         );
     }
