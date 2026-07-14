@@ -34,9 +34,7 @@
 import java.lang.reflect.Method;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
