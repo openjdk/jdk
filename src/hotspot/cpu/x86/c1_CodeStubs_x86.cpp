@@ -58,9 +58,6 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_counter_overflow_id)));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  if (ProfileCaptureRatio > 1) {
-    __ step_random(r_profile_rng, rscratch1);
-  }
   __ jmp(_continuation);
 }
 

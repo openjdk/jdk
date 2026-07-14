@@ -2896,7 +2896,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
           __ jcc(Assembler::equal, *overflow_stub->entry());
         } else {
           __ jmp(*overflow_stub->entry());
-          return;
         }
       } else {
         if (!step_opr->is_constant()) {
@@ -2926,6 +2925,8 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
             break;
         }
       }
+
+      __ bind(*overflow_stub->continuation());
     }
 
     if (counter_stub != nullptr) {
@@ -2944,10 +2945,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
     append_code_stub(counter_stub);
   } else {
     lambda(this, nullptr);
-  }
-
-  if (overflow_stub != nullptr) {
-    __ bind(*overflow_stub->continuation());
   }
 
 #ifndef PRODUCT
