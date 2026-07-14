@@ -280,13 +280,13 @@ void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
 // Randomized profile capture.
 
 void C1_MacroAssembler::step_random(Register state, Register temp, Register data) {
-#ifndef PRODUCT
-  Label not_zero;
-  cbnzw(r_profile_rng, not_zero);
-  stop("non-zero required before step");
-  bind(not_zero);
-#endif
   if (VM_Version::supports_crc32()) {
+#ifndef PRODUCT
+    Label not_zero;
+    cbnzw(r_profile_rng, not_zero);
+    stop("non-zero required before step");
+    bind(not_zero);
+#endif
     /* CRC used as a pseudo-random-number generator */
     // In effect, the CRC instruction is being used here for its
     // linear feedback shift register.
