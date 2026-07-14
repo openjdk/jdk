@@ -327,15 +327,13 @@ public class Date extends java.util.Date {
         final GregorianCalendar calendar = new GregorianCalendar();
         calendar.setTime(this);
 
-        final int year;
+        int year = getYear() + 1900;
         if (calendar.get(Calendar.ERA) == GregorianCalendar.BC) {
             // Adjust the BC date into a negative astronomical date.
             // As there is no year 0 in the Gregorian calendar
             // we also have to adjust the BC year by 1.
             // 1 BC becomes year 0, 2 BC becomes year -1 and so on.
-            year = 1 - calendar.get(Calendar.YEAR);
-        } else {
-            year = getYear() + 1900;
+            year = 1 - year;
         }
         return LocalDate.of(year, getMonth() + 1, getDate());
     }
