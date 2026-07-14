@@ -1295,7 +1295,7 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
       // type of an array element depends on the type of the array. In addition, there are some
       // corner cases, the first one is concurrent class loading, when CHA can result in a narrower
       // Type than what is declared only after the child class is loaded, and the second case is
-      // unsafe accesses when we do not check for type safety.
+      // unsafe accesses when we do not check for type safety. See JDK-8388184.
       return nullptr;
     }
 
