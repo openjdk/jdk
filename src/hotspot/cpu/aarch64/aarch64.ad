@@ -1662,19 +1662,19 @@ bool needs_acquiring_load_exclusive(const Node *n)
 //       from the start of the call to the point where the return address
 //       will point.
 
-int MachCallStaticJavaNode::ret_addr_offset()
+int MachCallStaticJavaNode::ret_addr_offset() const
 {
   // call should be a simple bl
   int off = 4;
   return off;
 }
 
-int MachCallDynamicJavaNode::ret_addr_offset()
+int MachCallDynamicJavaNode::ret_addr_offset() const
 {
   return 16; // movz, movk, movk, bl
 }
 
-int MachCallRuntimeNode::ret_addr_offset() {
+int MachCallRuntimeNode::ret_addr_offset() const {
   // for generated stubs the call will be
   //   bl(addr)
   // or with far branches

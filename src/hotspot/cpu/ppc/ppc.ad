@@ -1171,16 +1171,16 @@ bool followed_by_acquire(const Node *load) {
 
 // PPC port: Removed use of lazy constant construct.
 
-int MachCallStaticJavaNode::ret_addr_offset() {
+int MachCallStaticJavaNode::ret_addr_offset() const {
   // It's only a single branch-and-link instruction.
   return 4;
 }
 
-int MachCallDynamicJavaNode::ret_addr_offset() {
+int MachCallDynamicJavaNode::ret_addr_offset() const {
   return 12;
 }
 
-int MachCallRuntimeNode::ret_addr_offset() {
+int MachCallRuntimeNode::ret_addr_offset() const {
   if (rule() == CallRuntimeDirect_rule) {
     // CallRuntimeDirectNode uses call_c.
 #if defined(ABI_ELFv2)

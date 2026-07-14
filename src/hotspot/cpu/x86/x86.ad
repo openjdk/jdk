@@ -1634,21 +1634,21 @@ static int clear_avx_size() {
 // !!!!! Special hack to get all types of calls to specify the byte offset
 //       from the start of the call to the point where the return address
 //       will point.
-int MachCallStaticJavaNode::ret_addr_offset()
+int MachCallStaticJavaNode::ret_addr_offset() const
 {
   int offset = 5; // 5 bytes from start of call to where return address points
   offset += clear_avx_size();
   return offset;
 }
 
-int MachCallDynamicJavaNode::ret_addr_offset()
+int MachCallDynamicJavaNode::ret_addr_offset() const
 {
   int offset = 15; // 15 bytes from start of call to where return address points
   offset += clear_avx_size();
   return offset;
 }
 
-int MachCallRuntimeNode::ret_addr_offset() {
+int MachCallRuntimeNode::ret_addr_offset() const {
   int offset = 13; // movq r10,#addr; callq (r10)
   if (this->ideal_Opcode() != Op_CallLeafVector) {
     offset += clear_avx_size();
