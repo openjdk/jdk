@@ -111,20 +111,6 @@ public:
 
   void contended_lock(bool allow_block_for_safepoint);
 
-  // Single non-blocking CAS attempt to acquire the lock. Returns true if this call won it.
-  bool try_lock() {
-    bool const acquired = _state.load_relaxed() == unlocked &&
-                          _state.compare_exchange(unlocked, locked) == unlocked;
-#ifdef ASSERT
-    if (acquired) {
-      assert(_state.load_relaxed() == locked, "must be locked");
-      assert(_owner.load_relaxed() == nullptr, "must not be owned");
-      DEBUG_ONLY(_owner.store_relaxed(Thread::current());)
-    }
-#endif
-    return acquired;
-  }
-
   bool owned_by_self() const {
 #ifdef ASSERT
     return _state.load_relaxed() == locked && _owner.load_relaxed() == Thread::current();
