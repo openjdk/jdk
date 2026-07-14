@@ -868,7 +868,7 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection(size_t allocatio
 
   // Rebuild the code root lists for each region
   rebuild_code_roots();
-  finish_codecache_marking_cycle();
+  CodeCache::arm_all_nmethods();
 
   start_new_collection_set();
   _allocator->init_mutator_alloc_regions();
@@ -1761,12 +1761,11 @@ size_t G1CollectedHeap::unused_committed_regions_in_bytes() const {
 
 // Computes the sum of the storage used by the various regions.
 size_t G1CollectedHeap::used() const {
-  size_t result = _summary_bytes_used + _allocator->used_in_alloc_regions();
-  return result;
+  return used_unlocked() + _allocator->used_in_alloc_regions();
 }
 
 size_t G1CollectedHeap::used_unlocked() const {
-  return _summary_bytes_used;
+  return _summary_bytes_used.load_relaxed();
 }
 
 class SumUsedClosure: public G1HeapRegionClosure {
@@ -1932,7 +1931,7 @@ static bool should_retry_vm_op(GCCause::Cause cause,
     // GC, so try again.
     LOG_COLLECT_CONCURRENTLY(cause, "retry after in-progress");
     return true;
-  } else if (op->whitebox_attached()) {
+  } else if (op->whitebox_controlled()) {
     // If WhiteBox wants control, wait for notification of a state
     // change in the controller, then try again.  Don't wait for
     // release of control, since collections may complete while in
@@ -2000,7 +1999,7 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
       }
       // When _wb_breakpoint there can't be another cycle or deferred.
       assert(!op.cycle_already_in_progress(), "invariant");
-      assert(!op.whitebox_attached(), "invariant");
+      assert(!op.whitebox_controlled(), "invariant");
       // Concurrent cycle attempt might have been cancelled by some other
       // collection, so retry.  Unlike other cases below, we want to retry
       // even if cancelled by a STW full collection, because we really want
@@ -2025,13 +2024,19 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
       // Cases (2) and (3) are detected together by a change to
       // _old_marking_cycles_started.
       //
-      // Compared to other "automatic" GCs (see below), we do not consider being
-      // in whitebox as sufficient too because we might be anywhere within that
-      // cycle and we need to make progress.
+      // Compared to other "automatic" GCs (see below), being in WhiteBox is not
+      // addressed here because we need to handle it specially.
       if (op.mark_in_progress() ||
           (old_marking_started_before != old_marking_started_after)) {
         LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
         return true;
+      }
+
+      if (op.whitebox_controlled()) {
+        LOG_COLLECT_CONCURRENTLY(cause, "Suppressed CodeCache GC because of WhiteBox in control.");
+        // The caller in this case does not check the return value, so it does not
+        // really matter what we return. However we did not finish the request.
+        return false;
       }
 
       if (wait_full_mark_finished(cause,
@@ -2041,7 +2046,11 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
         return true;
       }
 
-      if (should_retry_vm_op(cause, &op)) {
+      if (op.cycle_already_in_progress()) {
+        // If VMOp failed because a cycle was already in progress, it
+        // is now complete (we just waited).  But it didn't finish this
+        // request, so try again.
+        LOG_COLLECT_CONCURRENTLY(cause, "retry after in-progress");
         continue;
       }
     } else if (!GCCause::is_user_requested_gc(cause)) {
@@ -2062,7 +2071,7 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
       // _old_marking_cycles_started.
       if (op.gc_succeeded() ||
           op.cycle_already_in_progress() ||
-          op.whitebox_attached() ||
+          op.whitebox_controlled() ||
           (old_marking_started_before != old_marking_started_after)) {
         LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
         return true;
@@ -3024,18 +3033,18 @@ void G1CollectedHeap::prepare_region_for_full_compaction(G1HeapRegion* hr) {
 }
 
 void G1CollectedHeap::increase_used(size_t bytes) {
-  _summary_bytes_used += bytes;
+  _summary_bytes_used.add_then_fetch(bytes, memory_order_relaxed);
 }
 
 void G1CollectedHeap::decrease_used(size_t bytes) {
-  assert(_summary_bytes_used >= bytes,
+  assert(used_unlocked() >= bytes,
          "invariant: _summary_bytes_used: %zu should be >= bytes: %zu",
-         _summary_bytes_used, bytes);
-  _summary_bytes_used -= bytes;
+         used_unlocked(), bytes);
+  _summary_bytes_used.sub_then_fetch(bytes, memory_order_relaxed);
 }
 
 void G1CollectedHeap::set_used(size_t bytes) {
-  _summary_bytes_used = bytes;
+  _summary_bytes_used.store_relaxed(bytes);
 }
 
 class RebuildRegionSetsClosure : public G1HeapRegionClosure {
@@ -3332,9 +3341,4 @@ void G1CollectedHeap::start_codecache_marking_cycle_if_inactive(bool concurrent_
   if (concurrent_mark_start) {
     CodeCache::arm_all_nmethods();
   }
-}
-
-void G1CollectedHeap::finish_codecache_marking_cycle() {
-  CodeCache::on_gc_marking_cycle_finish();
-  CodeCache::arm_all_nmethods();
 }
