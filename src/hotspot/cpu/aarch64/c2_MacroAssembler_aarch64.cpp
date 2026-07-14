@@ -2728,6 +2728,8 @@ void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
 void C2_MacroAssembler::select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
                                                      FloatRegister src2, FloatRegister index,
                                                      FloatRegister tmp, unsigned vector_length_in_bytes) {
+  assert_different_registers(src2, tmp);
+  assert_different_registers(index, tmp);
   SIMD_Arrangement size = vector_length_in_bytes == 16 ? T16B : T8B;
 
   if (vector_length_in_bytes == 16) {
@@ -2736,8 +2738,6 @@ void C2_MacroAssembler::select_from_two_vectors_neon(FloatRegister dst, FloatReg
     // If the vector length is 16B, then use the Neon "tbl" instruction with two vector table
     tbl(dst, size, src1, 2, index);
   } else { // vector length == 8
-    assert_different_registers(src2, tmp);
-    assert_different_registers(index, tmp);
     assert(UseSVE == 0, "must be Neon only");
     // We need to fit both the source vectors (src1, src2) in a 128-bit register because the
     // Neon "tbl" instruction supports only looking up 16B vectors. We then use the Neon "tbl"
@@ -2758,9 +2758,10 @@ void C2_MacroAssembler::select_from_two_vectors_sve(FloatRegister dst, FloatRegi
                                                     FloatRegister src2, FloatRegister index,
                                                     FloatRegister tmp, SIMD_RegVariant T,
                                                     unsigned vector_length_in_bytes) {
+  assert_different_registers(src2, tmp);
+  assert_different_registers(index, tmp);
+
   if (vector_length_in_bytes == 8) {
-    assert_different_registers(src2, tmp);
-    assert_different_registers(index, tmp);
     // We need to fit both the source vectors (src1, src2) in a single vector register because the
     // SVE "tbl" instruction is unpredicated and works on the entire vector which can lead to
     // incorrect results if each source vector is only partially filled. We then use the SVE "tbl"
@@ -2784,6 +2785,10 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
                                                 FloatRegister src2, FloatRegister index,
                                                 FloatRegister tmp, BasicType bt,
                                                 unsigned vector_length_in_bytes) {
+
+  assert_different_registers(dst, src1, src2, tmp);
+  assert_different_registers(index, tmp);
+
   // The cases that can reach this method are -
   // - UseSVE = 0/1, vector_length_in_bytes = 8 or 16, excluding double and long types
   // - UseSVE = 2, vector_length_in_bytes >= 8, for all types
@@ -2825,9 +2830,6 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
   if (bt == T_BYTE) {
     select_from_two_vectors_neon(dst, src1, src2, index, tmp, vector_length_in_bytes);
   } else {
-    assert_different_registers(dst, src1, src2, tmp);
-    assert_different_registers(index, tmp);
-
     int elem_size = (bt == T_SHORT) ? 2 : 4;
     uint64_t tbl_offset = (bt == T_SHORT) ? 0x0100u : 0x03020100u;
 
