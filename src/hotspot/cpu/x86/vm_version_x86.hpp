@@ -362,8 +362,6 @@ protected:
   static int _model;
   static int _stepping;
 
-  static bool _has_intel_jcc_erratum;
-
   static address   _cpuinfo_segv_addr;     // address of instruction which causes SEGV
   static address   _cpuinfo_cont_addr;     // address of instruction after the one which causes SEGV
   static address   _cpuinfo_segv_addr_apx; // address of instruction which causes APX specific SEGV
@@ -729,6 +727,15 @@ private:
   static bool os_supports_avx_vectors();
   static bool os_supports_apx_egprs();
   static void get_processor_features();
+  static void set_vendor_agnostic_vm_config();
+  static void set_vendor_specific_vm_config();
+  static void set_config_dependent_on_vendor_config();
+  static void configure_intrinsics();
+  static void log_additional_cpu_info();
+
+  static void zx_config();
+  static void amd_config();
+  static void intel_config();
 
 public:
   // Offsets for cpuid asm stub
@@ -972,7 +979,7 @@ public:
   // that causes unpredictable behaviour when jcc crosses 64 byte boundaries. Its microcode
   // mitigation causes regressions when jumps or fused conditional branches cross or end at
   // 32 byte boundaries.
-  static bool has_intel_jcc_erratum() { return _has_intel_jcc_erratum; }
+  static bool has_intel_jcc_erratum() { return IntelJccErratumMitigation; }
 
   // AMD features
   static bool supports_3dnow_prefetch()    { return _features.supports_feature(CPU_3DNOW_PREFETCH); }
