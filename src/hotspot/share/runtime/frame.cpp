@@ -1685,13 +1685,13 @@ void FrameValues::print_on(outputStream* st, int min_index, int max_index, intpt
       //   4. Recognize it as being part of the "fixed frame".
       if (*fv.location != 0 && *fv.location > -100 && *fv.location < 100
           && fp != nullptr && *fv.description != '#'
-#if !defined(PPC64)
+#if !defined(PPC64) && !defined(S390)
           && (strncmp(fv.description, "interpreter_frame_", 18) == 0 || strstr(fv.description, " method "))
-#else  // !defined(PPC64)
+#else  // !defined(PPC64) && !defined(S390)
           && (strcmp(fv.description, "sender_sp") == 0 || strcmp(fv.description, "top_frame_sp") == 0 ||
               strcmp(fv.description, "esp") == 0 || strcmp(fv.description, "monitors") == 0 ||
               strcmp(fv.description, "locals") == 0 || strstr(fv.description, " method "))
-#endif //!defined(PPC64)
+#endif // !defined(PPC64) && !defined(S390)
           ) {
         st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %-32s (relativized: fp%+d)",
                      p2i(fv.location), p2i(&fp[*fv.location]), fv.description, (int)*fv.location);
