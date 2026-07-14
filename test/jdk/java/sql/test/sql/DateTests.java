@@ -331,7 +331,7 @@ public class DateTests extends BaseTest {
      * Validate that Date.valueOf and Date.toLocalDate yield the expected results for dates with BC years.
      * Ensures that the fix for 8272194 has not regressed.
      */
-    @ParameterizedTest(autoCloseArguments = false)
+    @ParameterizedTest
     @MethodSource("bcLocalDates")
     public void test27(LocalDate bcLocalDate) {
         Date bcDate = Date.valueOf(bcLocalDate);
@@ -345,7 +345,7 @@ public class DateTests extends BaseTest {
      * Ensure that LocalDate conversion of AD dates close to the BC check threshold
      * behave as expected.
      */
-    @ParameterizedTest(autoCloseArguments = false)
+    @ParameterizedTest
     @MethodSource("datesAroundBcCheckThreshold")
     public void test28(LocalDate localDate) {
         Date date = Date.valueOf(localDate);

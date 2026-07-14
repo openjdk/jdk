@@ -717,7 +717,7 @@ public class TimestampTests extends BaseTest {
      * Validate that Timestamp.valueOf and Timestamp.toLocalDateTime yield the expected results for dates with BC years.
      * Ensures that the fix for 8272194 has not regressed.
      */
-    @ParameterizedTest(autoCloseArguments = false)
+    @ParameterizedTest
     @MethodSource("bcLocalDateTimes")
     public void test56(LocalDateTime bcLocalDateTime) throws Exception {
         Timestamp bcTimestamp = Timestamp.valueOf(bcLocalDateTime);
@@ -731,7 +731,7 @@ public class TimestampTests extends BaseTest {
      * Ensure that LocalDateTime conversion of AD dates close to the BC check threshold
      * behave as expected.
      */
-    @ParameterizedTest(autoCloseArguments = false)
+    @ParameterizedTest
     @MethodSource("dateTimesAroundBcCheckThreshold")
     public void test57(LocalDateTime localDateTime) {
         Timestamp timestamp = Timestamp.valueOf(localDateTime);
