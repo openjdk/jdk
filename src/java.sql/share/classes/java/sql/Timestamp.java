@@ -564,7 +564,7 @@ public class Timestamp extends java.util.Date {
                                 getHours(),
                                 getMinutes(),
                                 getSeconds(),
-                                getNanos()); // We have to use nanos here as the calendar does not support nano precision
+                                getNanos());
     }
 
     /**
