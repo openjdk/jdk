@@ -35,6 +35,7 @@ package compiler.igvn;
 
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -94,7 +95,8 @@ public class TestMaskedStoreIdealization {
     enum Operation {
         STORE_SCATTER,
         STORE_MASK,
-        STORE_SCATTER_MASK
+        STORE_SCATTER_MASK,
+        STORE_VECTOR_AFTER_SCATTER
     }
 
     record TestPerShape(VectorType.Vector vec) {
@@ -110,7 +112,6 @@ public class TestMaskedStoreIdealization {
                 let("boxedTy", vec.elementType.boxedTypeName()),
                 let("species", vec.speciesName),
                 "        VectorMask<#boxedTy> mask = VectorMask.fromLong(#species, ",
-                // 1
                 RANDOM.nextInt(0, 10) == 0 ? RANDOM.nextLong() : "-1 - (1 << #idx)",
                 ");\n"
             ));
@@ -145,9 +146,10 @@ public class TestMaskedStoreIdealization {
                     }
 
                     String opIR = switch (op) {
-                        case STORE_SCATTER      -> "STORE_VECTOR_SCATTER";
-                        case STORE_MASK         -> "STORE_VECTOR_MASKED";
-                        case STORE_SCATTER_MASK -> "STORE_VECTOR_SCATTER_MASKED";
+                        case STORE_SCATTER              -> "STORE_VECTOR_SCATTER";
+                        case STORE_MASK                 -> "STORE_VECTOR_MASKED";
+                        case STORE_SCATTER_MASK         -> "STORE_VECTOR_SCATTER_MASKED";
+                        case STORE_VECTOR_AFTER_SCATTER -> "STORE_VECTOR_SCATTER";
                     };
 
                     // x64 does not emit specialised scatter nodes/instructions for subword types.
@@ -170,11 +172,25 @@ public class TestMaskedStoreIdealization {
                     let("pty", vec.elementType.name()),
                     let("ptyIR", ptyIR),
                     let("idx", idx),
-                    """
-                        @IR(counts = {IRNode.START + "Store#{ptyIR}" + IRNode.MID + "(Memory: @aryptr:#{pty}\\\\[int:#{arraySize}\\\\]).*(:NotNull:exact\\\\[\\\\d+\\\\]).*" + IRNode.END, "= 1"},
-                            applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"},
-                            phase = CompilePhase.BEFORE_MATCHING)
-                    """,
+                    (op == Operation.STORE_MASK || op == Operation.STORE_SCATTER_MASK) ?
+                        // For masked operations, depending on the generated mask and index map C2 does not manage to elide a branch from
+                        // if (mask.allTrue()) {
+                        //     intoArray(a, offset);
+                        // } else {
+                        //     intoArray(a, offset, mask);
+                        // }
+                        // leading to both stores of the diamond being live. This is highly profile dependent and cannot be predicted.
+                        """
+                            @IR(counts = {IRNode.START + "Store#{ptyIR}" + IRNode.MID + "(Memory: @aryptr:#{pty}\\\\[int:#{arraySize}\\\\]).*(:NotNull:exact\\\\[\\\\d+\\\\]).*" + IRNode.END, ">=1",
+                                          IRNode.START + "Store#{ptyIR}" + IRNode.MID + "(Memory: @aryptr:#{pty}\\\\[int:#{arraySize}\\\\]).*(:NotNull:exact\\\\[\\\\d+\\\\]).*" + IRNode.END, "<=2"},
+                                applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"},
+                                phase = CompilePhase.BEFORE_MATCHING)
+                        """ :
+                        """
+                            @IR(counts = {IRNode.START + "Store#{ptyIR}" + IRNode.MID + "(Memory: @aryptr:#{pty}\\\\[int:#{arraySize}\\\\]).*(:NotNull:exact\\\\[\\\\d+\\\\]).*" + IRNode.END, "=1"},
+                                applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"},
+                                phase = CompilePhase.BEFORE_MATCHING)
+                        """,
                     opVerification.asToken()
                 );
             });
@@ -194,7 +210,7 @@ public class TestMaskedStoreIdealization {
                         final #pty arrVal = #rngCall;
 
                         final #pty[] interpreterResult = test#{testCaseName}(broadcastVal, arrVal);
-                        for (int i = 0; i < 10_000; i++) {
+                        for (int i = 0; i < 12_000; i++) {
                             test#{testCaseName}(broadcastVal, arrVal);
                         }
                         final #pty[] compiledResult = test#{testCaseName}(broadcastVal, arrVal);
@@ -209,27 +225,39 @@ public class TestMaskedStoreIdealization {
 
             var test = Template.make("testCaseName", "op", (String testCaseName, Operation op) -> {
                 var generation = switch (op) {
-                    case STORE_SCATTER      -> indexMapGeneration.asToken();
-                    case STORE_MASK         -> maskGeneration.asToken();
-                    case STORE_SCATTER_MASK ->
+                    case STORE_SCATTER              -> indexMapGeneration.asToken();
+                    case STORE_MASK                 -> maskGeneration.asToken();
+                    case STORE_SCATTER_MASK         ->
                         Template.make(() -> scope(indexMapGeneration.asToken(), maskGeneration.asToken())).asToken();
+                    case STORE_VECTOR_AFTER_SCATTER -> indexMapGeneration.asToken();
                 };
 
-                var intoArray = switch (op) {
-                    case STORE_SCATTER      -> "        v.intoArray(a, 0, indexMap, 0);\n";
-                    case STORE_MASK         -> "        v.intoArray(a, 0, mask);\n";
-                    case STORE_SCATTER_MASK -> "        v.intoArray(a, 0, indexMap, 0, mask);\n";
+                var initStore  = switch (op) {
+                    case STORE_SCATTER, STORE_VECTOR_AFTER_SCATTER -> "        v.intoArray(a, 0, indexMap, 0);\n";
+                    case STORE_MASK                                -> "        v.intoArray(a, 0, mask);\n";
+                    case STORE_SCATTER_MASK                        -> "        v.intoArray(a, 0, indexMap, 0, mask);\n";
+                };
+
+                var keepStore = switch (op) {
+                    case STORE_MASK, STORE_SCATTER, STORE_SCATTER_MASK -> "        a[#idx] = arrVal;\n";
+                    case STORE_VECTOR_AFTER_SCATTER                    -> "        v.intoArray(a, 0);\n";
+                };
+
+                var holeStore  = switch (op) {
+                    case STORE_SCATTER              -> "        v.intoArray(a, 0, indexMap, 0);\n";
+                    case STORE_MASK                 -> "        v.intoArray(a, 0, mask);\n";
+                    case STORE_SCATTER_MASK         -> "        v.intoArray(a, 0, indexMap, 0, mask);\n";
+                    case STORE_VECTOR_AFTER_SCATTER -> "";
                 };
 
                 // The array size needs to be one larger than the number of lanes for scatter tests, so we can not write to one element.
                 final int arraySize = switch (op) {
-                    case STORE_SCATTER, STORE_SCATTER_MASK -> vec.length + 1;
-                    case STORE_MASK                        -> vec.length;
+                    case STORE_SCATTER, STORE_SCATTER_MASK, STORE_VECTOR_AFTER_SCATTER -> vec.length + 1;
+                    case STORE_MASK                                                    -> vec.length;
                 };
 
                 return scope(
                     let("pty", vec.elementType.name()),
-                    let("boxedTy", vec.elementType.boxedTypeName()),
                     let("vecTy", vec.name()),
                     let("arraySize", arraySize),
                     let("species", vec.speciesName),
@@ -239,7 +267,7 @@ public class TestMaskedStoreIdealization {
                     """,
                     irVerification.asToken(op, arraySize),
                     """
-                        static #pty[] test#{testCaseName}(final #pty broadcastVal, final #pty arrVal){
+                        static #pty[] test#{testCaseName}(final #pty broadcastVal, final #pty arrVal) {
                             #pty[] a = new #pty[#arraySize];
                     """,
                     generation,
@@ -247,13 +275,9 @@ public class TestMaskedStoreIdealization {
 
                             var v = #vecTy.broadcast(#species, broadcastVal);
                     """,
-                    intoArray,
-                    """
-
-                            a[#idx] = arrVal;
-
-                    """,
-                    intoArray,
+                    initStore,
+                    keepStore,
+                    holeStore,
                     """
                             return a;
                         }
@@ -264,9 +288,10 @@ public class TestMaskedStoreIdealization {
 
             var testCase = Template.make("op", (Operation op) -> {
                 String testCaseName = testName + switch (op) {
-                    case STORE_SCATTER      -> "Scatter";
-                    case STORE_MASK         -> "Mask";
-                    case STORE_SCATTER_MASK -> "ScatterMask";
+                    case STORE_SCATTER              -> "Scatter";
+                    case STORE_MASK                 -> "Mask";
+                    case STORE_SCATTER_MASK         -> "ScatterMask";
+                    case STORE_VECTOR_AFTER_SCATTER -> "VectorAfterScatter";
                 };
                 return scope(
                     run.asToken(testCaseName),
@@ -274,12 +299,199 @@ public class TestMaskedStoreIdealization {
                 );
             });
 
+            var randomTest = Template.make(() -> scope(
+                run.asToken(testName + "Random"),
+                generateRandomTest(testName + "Random")
+            ));
+
             return Template.make(() -> scope(
                 Stream.of(Operation.STORE_SCATTER, Operation.STORE_MASK, Operation.STORE_SCATTER_MASK)
                          .map(op -> testCase.asToken(op))
-                         .toList()
+                         .toList(),
+                randomTest.asToken()
+            )).asToken();
+        }
+
+        TemplateToken generateRandomTest(String testName) {
+            final int arraySize = RANDOM.nextInt(vec.length + 1, 5 * vec.length);
+            var maskHook = new Hook("MaskHook");
+            var genRandomMask = Template.make("maskName", "vecTy", (String maskName, VectorType.Vector vecTy) -> scope(
+                let("boxedTy", vecTy.elementType.boxedTypeName()),
+                let("species", vecTy.speciesName),
+                let("maskVal", RANDOM.nextLong()),
+                """
+                        VectorMask<#{boxedTy}> #maskName = VectorMask.fromLong(#species, #maskVal);
+                """
+            ));
+            var genRandomIdxMap = Template.make("mapName", "maxIdx", "len", (String mapName, Integer maxIdx, Integer len) -> {
+                ArrayList<Integer> possibleIndices = new ArrayList(IntStream.range(0, maxIdx).boxed().toList());
+                Collections.shuffle(possibleIndices, RANDOM);
+                return scope(
+                    let("map", String.join(", ", possibleIndices.stream().limit(vec.length).map(i -> i.toString()).toList())),
+                """
+                        int[] #mapName = { #map };
+                """
+                );
+            });
+            var initialStore = Template.make(() -> {
+                final int offset = RANDOM.nextInt(0, 4) == 0 ? RANDOM.nextInt(0, arraySize - vec.length) : 0;
+                return scope(
+                    let("offset", offset),
+                    switch (RANDOM.nextInt(0,4)) {
+                        case 0 -> scope(
+                            """
+                                    v.intoArray(a, #offset);
+                            """
+                            );
+                        case 1 -> scope(
+                            maskHook.insert(genRandomMask.asToken("initMask", vec)),
+                            """
+                                    v.intoArray(a, #offset, initMask);
+                            """
+                            );
+                        case 2 -> scope(
+                            maskHook.insert(genRandomIdxMap.asToken("initMap", arraySize - offset, vec.length)),
+                            """
+                                    v.intoArray(a, #offset, initMap, 0);
+                            """
+                            );
+                        case 3 -> scope(
+                            maskHook.insert(scope(
+                                genRandomIdxMap.asToken("initMap", arraySize - offset, vec.length),
+                                genRandomMask.asToken("initMask", vec)
+                            )),
+                            """
+                                    v.intoArray(a, #offset, initMap, 0, initMask);
+                            """
+                            );
+                        default -> throw new RuntimeException("unreachable");
+                    }
+                );
+            });
+
+            var storeThatShouldNotBeLost = Template.make(() -> {
+                final int selection = RANDOM.nextInt(0,6);
+                final VectorType.Vector narrowerVector = CodeGenerationDataNameType.VECTOR_VECTOR_TYPES
+                                                            .stream()
+                                                            .filter(v -> v.elementType == vec.elementType && v.length <= vec.length)
+                                                            // Flip a coin on each reduction step to pick a random element.
+                                                            .reduce(null, (l, r) -> l == null ? r : (RANDOM.nextBoolean() ? l : r));
+                final int offset = RANDOM.nextInt(0, 4) == 0 ? RANDOM.nextInt(0, arraySize - narrowerVector.length) : 0;
+                return scope(
+                    let("offset", offset),
+                    switch (selection) {
+                        case 0, 1, 2, 3 -> scope(
+                            let("vecTy", narrowerVector),
+                            let("species", narrowerVector.speciesName),
+                            """
+                                    var vKeep = #vecTy.broadcast(#species, arrVal);
+                            """
+                            );
+                        default -> "";
+                    },
+                    switch (selection) {
+                        case 0 -> scope(
+                            """
+                                    vKeep.intoArray(a, #offset);
+                            """
+                            );
+                        case 1 -> scope(
+                            maskHook.insert(genRandomMask.asToken("keepMask", narrowerVector)),
+                            """
+                                    vKeep.intoArray(a, #offset, keepMask);
+                            """
+                            );
+                        case 2 -> scope(
+                            maskHook.insert(genRandomIdxMap.asToken("keepMap", arraySize - offset, narrowerVector.length)),
+                            """
+                                    vKeep.intoArray(a, #offset, keepMap, 0);
+                            """
+                            );
+                        case 3 -> scope(
+                            maskHook.insert(scope(
+                                genRandomIdxMap.asToken("keepMap", arraySize - offset, narrowerVector.length),
+                                genRandomMask.asToken("keepMask", narrowerVector)
+                            )),
+                            """
+                                    vKeep.intoArray(a, #offset, keepMap, 0, keepMask);
+                            """
+                            );
+                        case 4 -> scope(
+                            let("idx", RANDOM.nextInt(0, arraySize)),
+                            """
+                                    a[#idx] = arrVal;
+                            """
+                        );
+                        case 5 -> scope(
+                            let("idx", RANDOM.nextInt(0, arraySize - vec.length)),
+                            let("len", RANDOM.nextInt(1, vec.length + 1)),
+                            """
+                                    Arrays.fill(a, #idx, #idx + #len, arrVal);
+                            """
+                        );
+                        default -> throw new RuntimeException("unreachable");
+                    }
+                );
+            });
+
+            var storeWithHole = Template.make(() -> {
+                final int offset = RANDOM.nextInt(0, 4) == 0 ? RANDOM.nextInt(0, arraySize - vec.length) : 0;
+                return scope(
+                    let("offset", offset),
+                    switch (RANDOM.nextInt(0,3)) {
+                        case 0 -> scope(
+                            maskHook.insert(genRandomMask.asToken("holeMask", vec)),
+                            """
+                                    v.intoArray(a, #offset, holeMask);
+                            """
+                            );
+                        case 1 -> scope(
+                            maskHook.insert(genRandomIdxMap.asToken("holeMap", arraySize - offset, vec.length)),
+                            """
+                                    v.intoArray(a, #offset, holeMap, 0);
+                            """
+                            );
+                        case 2 -> scope(
+                            maskHook.insert(scope(
+                                genRandomIdxMap.asToken("holeMap", arraySize - offset, vec.length),
+                                genRandomMask.asToken("holeMask", vec)
+                            )),
+                            """
+                                    v.intoArray(a, #offset, holeMap, 0, holeMask);
+                            """
+                            );
+                        default -> throw new RuntimeException("unreachable");
+                    }
+                );
+            });
+
+            return Template.make(() -> scope(
+                let("pty", vec.elementType.name()),
+                let("arraySize", arraySize),
+                let("testName", testName),
+                """
+                    @Test
+                    static #pty[] test#{testName}(final #pty broadcastVal, final #pty arrVal) {
+                        #pty[] a = new #pty[#arraySize];
+
+                """,
+                maskHook.anchor(scope(
+                    // The code for generating masks and index maps goes here.
+                    let("vecTy", vec.name()),
+                    let("species", vec.speciesName),
+                """
+                        var v = #vecTy.broadcast(#species, broadcastVal);
+                """,
+                    initialStore.asToken(),
+                    storeThatShouldNotBeLost.asToken(),
+                    storeWithHole.asToken()
+                )),
+                """
+                        return a;
+                    }
+
+                """
             )).asToken();
         }
     }
-
 }
