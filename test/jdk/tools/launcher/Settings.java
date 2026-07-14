@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ import java.io.IOException;
 
 /*
  * @test
- * @bug 6994753 7123582 8305950 8281658 8310201 8311653 8343804 8351354 8366364
+ * @bug 6994753 7123582 8305950 8281658 8310201 8311653 8343804 8351354 8366364 8387750
  * @summary tests -XshowSettings options
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -174,11 +174,13 @@ public class Settings extends TestHelper {
     static void runTestOptionAll() throws IOException {
         init();
         TestResult tr = doExec(javaCmd, "-XshowSettings:all");
+        tr.checkPositive();
         containsAllOptions(tr);
     }
 
     static void runTestOptionVM() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:vm");
+        tr.checkPositive();
         checkContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
         checkNotContains(tr, LOCALE_SETTINGS);
@@ -186,6 +188,7 @@ public class Settings extends TestHelper {
 
     static void runTestOptionProperty() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:properties");
+        tr.checkPositive();
         checkNotContains(tr, VM_SETTINGS);
         checkContains(tr, PROP_SETTINGS);
         checkNotContains(tr, LOCALE_SETTINGS);
@@ -193,6 +196,7 @@ public class Settings extends TestHelper {
 
     static void runTestOptionLocale() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:locale");
+        tr.checkPositive();
         checkNotContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
         checkContains(tr, LOCALE_SETTINGS);
@@ -204,6 +208,7 @@ public class Settings extends TestHelper {
 
     static void runTestOptionSecurity() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:security");
+        tr.checkPositive();
         checkNotContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
         checkContains(tr, SEC_PROPS_SETTINGS);
@@ -213,6 +218,7 @@ public class Settings extends TestHelper {
 
     static void runTestOptionSecurityProps() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:security:properties");
+        tr.checkPositive();
         checkContains(tr, SEC_PROPS_SETTINGS);
         checkNotContains(tr, SEC_PROVIDER_SETTINGS);
         checkNotContains(tr, SEC_TLS_SETTINGS);
@@ -222,6 +228,7 @@ public class Settings extends TestHelper {
 
     static void runTestOptionSecurityProv() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:security:providers");
+        tr.checkPositive();
         checkNotContains(tr, SEC_PROPS_SETTINGS);
         checkContains(tr, SEC_PROVIDER_SETTINGS);
         checkNotContains(tr, SEC_TLS_SETTINGS);
@@ -234,6 +241,7 @@ public class Settings extends TestHelper {
 
     static void runTestOptionSecurityTLS() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:security:tls");
+        tr.checkPositive();
         checkNotContains(tr, SEC_PROPS_SETTINGS);
         checkNotContains(tr, SEC_PROVIDER_SETTINGS);
         checkContains(tr, SEC_TLS_SETTINGS);
@@ -255,6 +263,7 @@ public class Settings extends TestHelper {
     }
     static void runTestOptionSystem() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:system");
+        tr.checkPositive();
         if (System.getProperty("os.name").contains("Linux")) {
             checkNotContains(tr, VM_SETTINGS);
             checkNotContains(tr, PROP_SETTINGS);
@@ -314,6 +323,15 @@ public class Settings extends TestHelper {
             throw new RuntimeException("test fails");
         }
         containsDefaultOptions(tr);
+    }
+
+    static void runTestStandaloneDoesNotPrintUsage() throws IOException {
+        TestResult tr = doExec(javaCmd,
+                               "-Duser.language=en",
+                               "-Duser.country=US",
+                               "-XshowSettings:vm");
+        tr.checkPositive();
+        checkNotContains(tr, "Usage: java");
     }
 
     public static void main(String... args) throws IOException {
