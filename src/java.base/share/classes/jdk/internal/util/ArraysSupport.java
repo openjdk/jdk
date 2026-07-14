@@ -141,28 +141,32 @@ public class ArraysSupport {
         }
 
         // Calculate the tail of remaining elements to check
-        int tail = length - (wi << log2ValuesPerWidth);
+        int checked = wi << log2ValuesPerWidth;
+        int tailBytes = (length - checked) << log2ArrayIndexScale;
+        if (tailBytes == 0) {
+            return -1;
+        }
 
-        if (tail > 0) {
-            int tailBytes = tail << log2ArrayIndexScale;
-            assert tailBytes < Long.BYTES;
-            long av, bv, x;
-
-            // A direct long read would cover all tail bytes, but may read past the object
-            // boundary and reach an inaccessible page. Copy exact tail bytes to a temp
-            // buffer to avoid out-of-bounds access.
-            byte[] buff = new byte[Long.BYTES];
-            U.copyMemory(a, aOffset + bi, buff, Unsafe.ARRAY_BYTE_BASE_OFFSET, tailBytes);
-            av = U.getLongUnaligned(buff, Unsafe.ARRAY_BYTE_BASE_OFFSET);
-            U.copyMemory(b, bOffset + bi, buff, Unsafe.ARRAY_BYTE_BASE_OFFSET, tailBytes);
-            bv = U.getLongUnaligned(buff, Unsafe.ARRAY_BYTE_BASE_OFFSET);
-            x = av ^ bv;
-
-            if (x != 0L) {
+        // check remaining bytes
+        if (tailBytes >= Integer.BYTES) {
+            int av = U.getIntUnaligned(a, aOffset + bi);
+            int bv = U.getIntUnaligned(b, bOffset + bi);
+            if (av != bv) {
+                int x = av ^ bv;
                 int o = BIG_ENDIAN
-                        ? Long.numberOfLeadingZeros(x) >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale)
-                        : Long.numberOfTrailingZeros(x) >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale);
-                return (wi << log2ValuesPerWidth) + o;
+                        ? Integer.numberOfLeadingZeros(x) >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale)
+                        : Integer.numberOfTrailingZeros(x) >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale);
+                return checked + o;
+            }
+            tailBytes -= Integer.BYTES;
+            bi += Integer.BYTES;
+        }
+
+        for (int i = 0; i < tailBytes; i++, bi++) {
+            byte av = U.getByte(a, aOffset + bi);
+            byte bv = U.getByte(b, bOffset + bi);
+            if (av != bv) {
+                return (int)(bi >> log2ArrayIndexScale);
             }
         }
         return -1;
