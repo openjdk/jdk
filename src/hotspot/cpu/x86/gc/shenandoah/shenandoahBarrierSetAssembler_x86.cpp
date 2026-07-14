@@ -679,7 +679,7 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
 
   assert(oldval == rax, "must be in rax for implicit use in cmpxchg");
 
-  // Oldval and newval cannot be in the same register as tmp. The stub's constructor already asserts
+  // Oldval and newval cannot be clobbered by aliasing with tmp. The stub's constructor already asserts
   // that tmp (_obj) is not the same register as addr.base() and addr.index().
   assert_different_registers(oldval, tmp);
   assert_different_registers(newval, tmp);
@@ -703,7 +703,7 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
 }
 
 void ShenandoahBarrierSetAssembler::get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register newval, Address addr, Register tmp, bool narrow) {
-  assert_different_registers(newval, tmp, addr.base(), addr.index());
+  assert_different_registers(newval, tmp);
 
   ShenandoahBarrierStubC2::load_store_pre(masm, node, addr, tmp, noreg, noreg, narrow);
 
