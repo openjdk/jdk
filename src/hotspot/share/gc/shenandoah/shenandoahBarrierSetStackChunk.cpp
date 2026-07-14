@@ -35,10 +35,10 @@ void ShenandoahBarrierSetStackChunk::decode_gc_mode(stackChunkOop chunk, OopIter
 
 oop ShenandoahBarrierSetStackChunk::load_oop(stackChunkOop chunk, oop* addr) {
   oop result = BarrierSetStackChunk::load_oop(chunk, addr);
-  return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(result);
+  return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, result, (oop*)nullptr);
 }
 
 oop ShenandoahBarrierSetStackChunk::load_oop(stackChunkOop chunk, narrowOop* addr) {
   oop result = BarrierSetStackChunk::load_oop(chunk, addr);
-  return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(result);
+  return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, result, (narrowOop*)nullptr);
 }

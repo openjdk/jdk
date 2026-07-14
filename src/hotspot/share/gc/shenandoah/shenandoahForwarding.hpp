@@ -36,11 +36,6 @@ public:
    */
   static inline oop get_forwardee(oop obj);
 
-  /* Gets forwardee from the given object. Only from mutator thread.
-   * For a self-forwarded object, returns the object itself.
-   */
-  static inline oop get_forwardee_mutator(oop obj);
-
   /* Returns the raw value from forwardee slot. For a self-forwarded
    * object, returns the object itself.
    */
