@@ -232,7 +232,7 @@ class os: AllStatic {
 
   static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc);
 
-  static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
+  static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset, 
                               char *addr, size_t bytes,bool allow_exec, 
                               bool read_only = false);
   static bool   pd_unmap_memory(char *addr, size_t bytes);
@@ -577,7 +577,7 @@ class os: AllStatic {
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes,MemTag mem_tag, bool allow_exec, 
+                           char *addr, size_t bytes,MemTag mem_tag, bool allow_exec,
                            bool read_only = false);
   static void   unmap_memory(char *addr, size_t bytes);
   static void   disclaim_memory(char *addr, size_t bytes);
