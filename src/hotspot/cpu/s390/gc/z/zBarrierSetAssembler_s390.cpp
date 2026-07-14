@@ -63,6 +63,7 @@ long conjoint_fubar = 0;
 long copy_load_slow_fubar = 0;
 long setup_args_fubar = 0;
 long c2_load_fubar = 0;
+long jobject_fubar = 0;
 long disjoint_fubar = 0;
 long atomic_nmethod_fubar = 0;
 long c1_load_runtime_fubar = 0;
@@ -438,7 +439,6 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
 
   // The reason to end up in the medium path is that the pre-value was not 'good'.
   if (is_native) {
-    __ stop("is_native store_barrier_medium");
     __ branch_optimized(Assembler::bcondAlways, slow_path);
     __ bind(slow_path_continuation);
     __ branch_optimized(Assembler::bcondAlways, medium_path_continuation);
@@ -825,48 +825,54 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
                                                          Register robj,
                                                          Register temp,
                                                          Label& slowpath) {
-  //BLOCK_COMMENT("ZBarrierSetAssembler::try_resolve_jobject_in_native {");
-//
-  //Label done, tagged, weak_tagged, uncolor;
-//
-  //// test for tag
-  //__ z_cgr(robj, JNIHandles::tag_mask);
-  //__ branch_optimized(Assembler::bcondNotEqual, tagged);
-//
-  //// Resolve local handle
-  //__ z_lg(robj, Address(robj, 0));
-  //__ branch_optimized(Assembler::bcondAlways, done);
-//
-  //__ bind(tagged);
-//
-  //// Test for weak tag
-  //__ z_cgr(robj, JNIHandles::TypeTag::weak_global);
-  //__ branch_optimized(Assembler::bcondNotEqual, weak_tagged);
-//
-  //// Resolve global handle
-  //__ z_lg(robj, Address(robj, -JNIHandles::TypeTag::global));
-  //__ z_ltg(robj, load_bad_mask_from_jni_env(jni_env));
-  //__ branch_optimized(Assembler::bcondNotEqual, slowpath);
-  //__ branch_optimized(Assembler::bcondAlways, uncolor);
-//
-  //__ bind(weak_tagged);
-//
-  //// Resolve weak handle
-  //__ z_lg(robj, Address(robj, -JNIHandles::TypeTag::weak_global));
-  //__ z_ltg(robj, mark_bad_mask_from_jni_env(jni_env));
-  //__ branch_optimized(Assembler::bcondNotEqual, slowpath);
-//
-  //__ bind(uncolor);
-//
-  //// Uncolor
-  //__ z_srlg(robj, robj, ZPointerLoadShift);
-//
-  //__ bind(done);
-//
-  //BLOCK_COMMENT("} ZBarrierSetAssembler::try_resolve_jobject_in_native");
+  BLOCK_COMMENT("ZBarrierSetAssembler::try_resolve_jobject_in_native {");
 
-  // Idk what is going on, It will start to give error not in CodeBuffer memory while emitting but it's never emmitted, It never get executed
-  __ stop("try resolve jobject in native");
+  Label done, tagged, weak_tagged, uncolor;
+  Address load_bad_mask = load_bad_mask_from_jni_env(jni_env),
+          mark_bad_mask = mark_bad_mask_from_jni_env(jni_env);
+
+  // Test for Tag
+  __ z_tmll(robj, JNIHandles::tag_mask);
+  __ branch_optimized(Assembler::bcondNotAllZero, tagged);
+
+  // Resolve local handle
+  __ z_lg(robj, Address(robj));
+  __ branch_optimized(Assembler::bcondAlways, done);
+
+  __ bind(tagged);
+//
+  //__ z_ldgr(Z_F0, Z_R1);
+  //__ load_const_optimized(Z_R1, (uintptr_t)&jobject_fubar);
+  //__ z_agsi(0, Z_R1, 1);
+  //__ z_lgdr(Z_R1, Z_F0);
+
+  // Test for weak tag
+  __ z_tmll(robj, JNIHandles::TypeTag::weak_global);
+  __ branch_optimized(Assembler::bcondNotZero, weak_tagged);
+
+  // Resolve global handle
+  __ z_lg(robj, Address(robj, -JNIHandles::TypeTag::global));
+  __ z_lg(temp, load_bad_mask);
+  __ z_ngr(temp, robj);
+  __ branch_optimized(Assembler::bcondNotZero, slowpath);
+  __ branch_optimized(Assembler::bcondAlways, uncolor);
+
+  __ bind(weak_tagged);
+
+  // Resolve weak handle
+  __ z_lg(robj, Address(robj, -JNIHandles::TypeTag::weak_global));
+  __ z_lg(temp, mark_bad_mask);
+  __ z_ngr(temp, robj);
+  __ branch_optimized(Assembler::bcondNotZero, slowpath);
+
+  __ bind(uncolor);
+
+  // Uncolor
+  __ z_srlg(robj, robj, ZPointerLoadShift);
+
+  __ bind(done);
+
+  BLOCK_COMMENT("} ZBarrierSetAssembler::try_resolve_jobject_in_native");
 }
 
 #undef __
