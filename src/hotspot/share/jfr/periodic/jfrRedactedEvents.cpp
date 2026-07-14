@@ -215,18 +215,20 @@ String* JfrRedactedEvents::redact_environment_variable_value(const char* value) 
   bool changed = false;
   String* input = new String(value);
   if (_redacted_flight_recorder_options != nullptr) {
+    String* redacted_with_marker = redact_flight_recorder_options(FlightRecorderOptions, true);
     size_t length = strlen(FlightRecorderOptions);
     while (const char* start = strstr(input->text(), FlightRecorderOptions)) {
       changed = true;
       const char* end = start + length;
       stringStream s;
       s.write(input->text(), start - input->text());
-      s.write(_redacted_flight_recorder_options->text(), _redacted_flight_recorder_options->length());
+      s.write(redacted_with_marker->text(), redacted_with_marker->length());
       s.write(end, strlen(end));
       String* result = new String(s.base());
       delete input;
       input = result;
     }
+    delete redacted_with_marker;
   }
   String* scratch_string = new String(input->text());
   for (int i = 0; i < _redacted_arguments->length(); i++) {
@@ -424,7 +426,7 @@ void JfrRedactedEvents::emit_jvm_information(bool log) {
 }
 
 // Method assumes that FlightRecorderOptions has been successfully parsed during startup
-String* JfrRedactedEvents::redact_flight_recorder_options(const char* option) {
+String* JfrRedactedEvents::redact_flight_recorder_options(const char* option, bool marker) {
   JavaThread* THREAD = JavaThread::current();
   const size_t length = strlen(option);
   DCmdArgIter iterator(option, length, ',');
@@ -434,7 +436,11 @@ String* JfrRedactedEvents::redact_flight_recorder_options(const char* option) {
       const char* end = start + iterator.value_length();
       stringStream result;
       result.write(option, start - option);
-      result.write(REDACTED, REDACTED_LENGTH);
+      if (marker) {
+        result.put(REDACTED_MARKER);
+      } else {
+        result.write(REDACTED, REDACTED_LENGTH);
+      }
       result.write(end, option + length - end);
       return new String(result.base());
     }
@@ -460,7 +466,7 @@ void JfrRedactedEvents::ensure_initialized() {
       add_default_filters(_argument_filters, true);
   }
   if (FlightRecorderOptions != nullptr) {
-      _redacted_flight_recorder_options = redact_flight_recorder_options(FlightRecorderOptions);
+      _redacted_flight_recorder_options = redact_flight_recorder_options(FlightRecorderOptions, false);
   }
 
   _redacted_arguments = new StringArray();
