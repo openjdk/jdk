@@ -1558,7 +1558,7 @@ static bool is_writable_directory(const char* name) {
 // directory.
 
 // If it is not an absolute path, revert back to hardcoded /tmp. If the directory is non existant or not
-// writeable give a warning but use AltTempDir. In the latter case, we may be connecting to a process that is
+// writable give a warning but use AltTempDir. In the latter case, we may be connecting to a process that is
 // inside a container.
 //
 // Since the attach mechanism uses the socket name length, this limits the length of the alternate
