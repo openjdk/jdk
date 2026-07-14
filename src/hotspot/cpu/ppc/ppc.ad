@@ -6640,7 +6640,7 @@ instruct encodePKlass_not_null(iRegNdst dst, iRegLsrc base, iRegPsrc src) %{
   match(Set dst (EncodePKlass (Binary base src)));
   predicate(false);
 
-  format %{ "EncodePKlass $dst, $base, $src\t// $src != Null" %}
+  format %{ "EncodePKlass $dst = ($src - $base) >> 3\t// $src != nullptr" %}
   size(8);
   ins_encode %{
     __ subf($dst$$Register, $base$$Register, $src$$Register);
@@ -6667,11 +6667,11 @@ instruct encodePKlass_not_null_Ex(iRegNdst dst, iRegPsrc src) %{
 // Decode nodes.
 
 // src != 0, shift != 0, base != 0
-instruct decodeNKlass_notNull_addBase(iRegPdst dst, iRegLsrc base, iRegNsrc src) %{
+instruct decodeNKlass_notNull(iRegPdst dst, iRegLsrc base, iRegNsrc src) %{
   match(Set dst (DecodeNKlass (Binary base src)));
   predicate(false);
 
-  format %{ "DecodeNKlass $dst = ($base + $src) << 3 \t// $src != nullptr, base pre-shifted" %}
+  format %{ "DecodeNKlass $dst = ($base + $src) << 3\t// $src != nullptr, base pre-shifted" %}
   size(8);
   ins_encode %{
     __ add($dst$$Register, $base$$Register, $src$$Register);
@@ -6681,12 +6681,10 @@ instruct decodeNKlass_notNull_addBase(iRegPdst dst, iRegLsrc base, iRegNsrc src)
 %}
 
 // src != 0, shift != 0, base != 0
-instruct decodeNKlass_notNull_addBase_Ex(iRegPdst dst, iRegNsrc src) %{
+instruct decodeNKlass_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeNKlass src));
   // predicate(CompressedKlassPointers::shift() != 0 &&
   //           CompressedKlassPointers::base() != 0);
-
-  //format %{ "DecodeNKlass $dst, $src \t// $src != nullptr, expanded" %}
 
   ins_cost(DEFAULT_COST*2);  // Don't count constant.
   expand %{
