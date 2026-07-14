@@ -728,6 +728,18 @@ public class TimestampTests extends BaseTest {
     }
 
     /*
+     * Ensure that LocalDateTime conversion of AD dates close to the BC check threshold
+     * behave as expected.
+     */
+    @ParameterizedTest(autoCloseArguments = false)
+    @MethodSource("dateTimesAroundBcCheckThreshold")
+    public void test57(LocalDateTime localDateTime) {
+        Timestamp timestamp = Timestamp.valueOf(localDateTime);
+        assertEquals(localDateTime, timestamp.toLocalDateTime(), "The LocalDateTime created from the Timestamp does not match the original LocalDateTime.");
+        assertEquals(timestamp, Timestamp.valueOf(timestamp.toLocalDateTime()), "The Timestamp did not yield the expected result on a round trip Timestamp / LocalDateTime conversion.");
+    }
+
+    /*
      * DataProvider used to provide Timestamps which are not valid and are used
      * to validate that an IllegalArgumentException will be thrown from the
      * valueOf method
@@ -866,6 +878,23 @@ public class TimestampTests extends BaseTest {
             LocalDateTime.of(0, 1, 1, 0, 0, 0, 0),
             LocalDateTime.of(-4, 9, 8, 23, 11, 59, 999_999_999),
             LocalDateTime.of(-1000, 3, 22, 8, 30, 20, 0)
+        );
+    }
+
+    /*
+     * DataProvider used to provide LocalDateTime values immediately
+     * surrounding the BC check threshold used internally by
+     * Timestamp.toLocalDateTime().
+     */
+    private Stream<LocalDateTime> dateTimesAroundBcCheckThreshold() {
+        return Stream.of(
+            LocalDateTime.of(1, 12, 1, 6, 15, 45, 500_000_000),
+            LocalDateTime.of(1, 12, 30, 12, 30, 0, 250_000_000),
+            LocalDateTime.of(1, 12, 31, 23, 59, 59, 999_999_999),
+            LocalDateTime.of(2, 1, 1, 0, 0, 0, 0),
+            LocalDateTime.of(2, 1, 2, 8, 20, 10, 750_750_750),
+            LocalDateTime.of(2, 1, 3, 16, 40, 20, 100_000_000),
+            LocalDateTime.of(2, 2, 1, 18, 45, 30, 123_000_000)
         );
     }
 }
