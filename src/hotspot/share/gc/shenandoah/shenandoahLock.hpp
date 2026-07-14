@@ -31,13 +31,9 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
 
-// In-flight release callback for ShenandoahLock, modeled on the file-private InFlightMutexRelease in
-// mutex.cpp. ThreadBlockInVMPreprocess invokes operator() after the acquiring JavaThread has
-// transitioned back to _thread_in_vm but before it processes a pending safepoint, giving us the
-// chance to release the just-acquired lock so the thread does not hold it across the safepoint.
-// The callback does nothing until armed via arm() -- it must not release a lock it does not hold,
-// which would clobber a lock held by another thread. So the owner arms it only once it actually
-// holds the lock. released() reports whether the lock was released on our behalf by the safepoint.
+// In-flight release callback for the Lock.ThreadBlockInVMPreprocess invokes operator() after the acquiring JavaThread
+// has transitioned back to _thread_in_vm, but before it processes a pending safepoint, giving us the chance to release
+// the just-acquired lock so the thread does not hold it across the safepoint.
 template<typename Lock>
 class ShenandoahInFlightLockRelease {
 private:
@@ -60,7 +56,6 @@ public:
 };
 
 class ShenandoahLock {
-  // Grants access to release_for_safepoint() for the in-flight release callback (defined in the .cpp).
   template<typename Lock> friend class ShenandoahInFlightLockRelease;
 private:
   enum LockState { unlocked = 0, locked = 1 };
@@ -73,20 +68,16 @@ private:
   shenandoah_padding(2);
 #endif
 
-  // Spin/TTAS on _state. Returns true once the lock is acquired. When ALLOW_BLOCK is set and a
-  // safepoint poll becomes armed, returns false WITHOUT acquiring, so the caller (contended_lock)
-  // can block for the safepoint and retry. Runs inside the caller's _thread_blocked scope when
-  // ALLOW_BLOCK, so the spinning thread is safepoint-safe and does not delay the safepoint.
   template<bool ALLOW_BLOCK>
   bool contended_lock_internal(JavaThread* java_thread);
   static void yield_or_sleep(int &yields);
 
-  // Release _state on behalf of an arriving safepoint (in-flight release). Called from the
-  // ThreadBlockInVMPreprocess callback only when contended_lock_internal had just acquired the lock
-  // and a safepoint is about to be processed, so the thread does not hold the lock across the
-  // safepoint. No owner/critical-section writes exist at this point (the owner is set only after
-  // contended_lock returns), so a plain store is sufficient.
+  // Release _state on behalf of an arriving safepoint (in-flight release). Called from the ThreadBlockInVMPreprocess
+  // callback only when contended_lock_internal had just acquired the lock and a safepoint is about to be processed,
+  // so the thread does not hold the lock across the safepoint.
   void release_for_safepoint() {
+    // No owner/critical-section writes exist at this point (the owner is set only after
+    // contended_lock returns), so a plain store is sufficient.
     _state.store_relaxed(unlocked);
   }
 
@@ -120,11 +111,7 @@ public:
 
   void contended_lock(bool allow_block_for_safepoint);
 
-  // Single non-blocking TTAS attempt to acquire the lock. Returns true iff this call won it.
-  // Note: contended_lock does NOT route through this; it re-acquires via a raw _state CAS so it can
-  // set _owner itself afterwards. Routing contended_lock through try_lock() would set _owner here
-  // (under ASSERT) and then trip lock()'s assert(_owner == nullptr). Kept for callers that want a
-  // bare non-blocking attempt.
+  // Single non-blocking CAS attempt to acquire the lock. Returns true if this call won it.
   bool try_lock() {
     bool const acquired = _state.load_relaxed() == unlocked &&
                           _state.compare_exchange(unlocked, locked) == unlocked;

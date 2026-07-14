@@ -81,8 +81,6 @@ bool ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
           return false;
         }
       }
-      // Reached when ALLOW_BLOCK but no safepoint is pending (or one was announced then cleared
-      // before our poll armed): yield like the non-blocking path rather than re-spin tightly.
       yield_or_sleep(yields);
     } else {
       yield_or_sleep(yields);
