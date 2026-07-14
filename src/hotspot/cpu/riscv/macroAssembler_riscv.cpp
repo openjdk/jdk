@@ -3704,11 +3704,17 @@ void MacroAssembler::encode_heap_oop(Register d, Register s) {
       mv(d, s);
     }
   } else {
-    Label notNull;
-    sub(d, s, xheapbase);
-    bgez(d, notNull);
-    mv(d, zr);
-    bind(notNull);
+    if (UseZicond) {
+      assert_different_registers(s, t0);
+      sub(t0, s, xheapbase);
+      czero_eqz(d, t0, s);  // d = s == 0 ? 0 : t0
+    } else {
+      Label notNull;
+      sub(d, s, xheapbase);
+      bgez(d, notNull);
+      mv(d, zr);
+      bind(notNull);
+    }
     if (CompressedOops::shift() != 0) {
       assert (LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
       srli(d, d, CompressedOops::shift());
@@ -3889,11 +3895,18 @@ void  MacroAssembler::decode_heap_oop(Register d, Register s) {
       slli(d, s, CompressedOops::shift());
     }
   } else {
-    Label done;
-    mv(d, s);
-    beqz(s, done);
-    shadd(d, s, xheapbase, d, LogMinObjAlignmentInBytes);
-    bind(done);
+    assert(LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
+    if (UseZicond) {
+      assert_different_registers(s, t0);
+      shadd(t0, s, xheapbase, t0, LogMinObjAlignmentInBytes);
+      czero_eqz(d, t0, s);   // d = s == 0 ? 0 : t0
+    } else {
+      Label done;
+      mv(d, s);
+      beqz(s, done);
+      shadd(d, s, xheapbase, d, LogMinObjAlignmentInBytes);
+      bind(done);
+    }
   }
   verify_oop_msg(d, "broken oop in decode_heap_oop");
 }
