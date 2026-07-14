@@ -6693,7 +6693,7 @@ instruct decodeNKlass_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
     immL baseImm %{ (jlong)((intptr_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift()) %}
     iRegLdst base;
     loadConL_Ex(base, baseImm);
-    decodeNKlass_notNull_addBase(dst, base, src);
+    decodeNKlass_notNull(dst, base, src);
   %}
 %}
 
