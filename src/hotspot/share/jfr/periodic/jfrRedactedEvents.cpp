@@ -60,6 +60,7 @@ String* JfrRedactedEvents::_redacted_java_command_line = nullptr;
 String* JfrRedactedEvents::_redacted_jvm_command_line = nullptr;
 String* JfrRedactedEvents::_redacted_flags_command_line = nullptr;
 String* JfrRedactedEvents::_redacted_flight_recorder_options = nullptr;
+String* JfrRedactedEvents::_redacted_flight_recorder_options_with_marker = nullptr;
 
 StringKeyValueArray JfrRedactedEvents::_initial_environment_variables = nullptr;
 StringKeyValueArray JfrRedactedEvents::_initial_system_properties = nullptr;
@@ -214,21 +215,19 @@ String* JfrRedactedEvents::redact_environment_variable_value(const char* value) 
   }
   bool changed = false;
   String* input = new String(value);
-  if (_redacted_flight_recorder_options != nullptr) {
-    String* redacted_with_marker = redact_flight_recorder_options(FlightRecorderOptions, true);
+  if (_redacted_flight_recorder_options_with_marker != nullptr) {
     size_t length = strlen(FlightRecorderOptions);
     while (const char* start = strstr(input->text(), FlightRecorderOptions)) {
       changed = true;
       const char* end = start + length;
       stringStream s;
       s.write(input->text(), start - input->text());
-      s.write(redacted_with_marker->text(), redacted_with_marker->length());
+      s.write(_redacted_flight_recorder_options_with_marker->text(), _redacted_flight_recorder_options_with_marker->length());
       s.write(end, strlen(end));
       String* result = new String(s.base());
       delete input;
       input = result;
     }
-    delete redacted_with_marker;
   }
   String* scratch_string = new String(input->text());
   for (int i = 0; i < _redacted_arguments->length(); i++) {
@@ -466,7 +465,8 @@ void JfrRedactedEvents::ensure_initialized() {
       add_default_filters(_argument_filters, true);
   }
   if (FlightRecorderOptions != nullptr) {
-      _redacted_flight_recorder_options = redact_flight_recorder_options(FlightRecorderOptions, false);
+    _redacted_flight_recorder_options = redact_flight_recorder_options(FlightRecorderOptions, false);
+    _redacted_flight_recorder_options_with_marker = redact_flight_recorder_options(FlightRecorderOptions, true);
   }
 
   _redacted_arguments = new StringArray();

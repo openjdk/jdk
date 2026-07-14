@@ -195,6 +195,7 @@ class JfrRedactedEvents: public AllStatic {
   static String* _redacted_jvm_command_line;
   static String* _redacted_flags_command_line;
   static String* _redacted_flight_recorder_options;
+  static String* _redacted_flight_recorder_options_with_marker;
   static GrowableArray<StringKeyValue*>* _initial_system_properties;
   static GrowableArray<StringKeyValue*>* _initial_environment_variables;
   static GrowableArray<StringFlag*>*     _string_flags;
