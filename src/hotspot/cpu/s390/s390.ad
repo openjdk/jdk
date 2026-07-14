@@ -9955,7 +9955,6 @@ instruct CallStaticJavaDirect_dynTOC(method meth) %{
   match(CallStaticJava);
   effect(USE meth);
   ins_cost(CALL_COST);
-  size(8);
   format %{ "CALL,static dynTOC $meth; ==> " %}
   ins_encode( z_enc_java_static_call(meth) );
   ins_pipe(pipe_class_dummy);
@@ -9967,7 +9966,6 @@ instruct CallDynamicJavaDirect_dynTOC(method meth) %{
   match(CallDynamicJava);
   effect(USE meth);
   ins_cost(CALL_COST);
-  size(46);
   format %{ "CALL,dynamic dynTOC $meth; ==> " %}
   ins_encode(z_enc_java_dynamic_call(meth));
   ins_pipe(pipe_class_dummy);
@@ -9979,7 +9977,6 @@ instruct CallRuntimeDirect(method meth) %{
   match(CallRuntime);
   effect(USE meth);
   ins_cost(CALL_COST);
-  size(20);
   ins_num_consts(1);
   ins_alignment(2);
   format %{ "CALL,runtime" %}
@@ -9992,7 +9989,6 @@ instruct CallLeafDirect(method meth) %{
   match(CallLeaf);
   effect(USE meth);
   ins_cost(CALL_COST);
-  size(20);
   ins_num_consts(1);
   ins_alignment(2);
   format %{ "CALL,runtime leaf $meth" %}
@@ -10005,7 +10001,6 @@ instruct CallLeafNoFPDirect(method meth) %{
   match(CallLeafNoFP);
   effect(USE meth);
   ins_cost(CALL_COST);
-  size(20);
   ins_num_consts(1);
   format %{ "CALL,runtime leaf nofp $meth" %}
   ins_encode( z_enc_java_to_runtime_call(meth) );
