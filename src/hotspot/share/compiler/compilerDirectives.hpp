@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ private:
   static int _depth;
 
   static void pop_inner(); // no lock version of pop
-  static DirectiveSet* getMatchingDirective(const methodHandle& mh, AbstractCompiler* comp);
+  static DirectiveSet* getMatchingDirective(const methodHandle& mh, int comp_level);
   static DirectiveSet* getDefaultDirective(AbstractCompiler* comp);
   static void release(DirectiveSet* set);
   static void release(CompilerDirectives* dir);
@@ -145,10 +145,10 @@ public:
   bool parse_and_add_inline(char* str, const char*& error_msg);
   void append_inline(InlineMatcher* m);
   bool should_inline(ciMethod* inlinee);
-  bool should_not_inline(ciMethod* inlinee);
+  bool should_not_inline(ciMethod* inlinee, int comp_level);
   bool should_delay_inline(ciMethod* inlinee);
   void print_inline(outputStream* st);
-  DirectiveSet* compilecommand_compatibility_init(const methodHandle& method);
+  DirectiveSet* compilecommand_compatibility_init(const methodHandle& method, int comp_level);
   bool is_exclusive_copy() { return _directive == nullptr; }
   bool matches_inline(const methodHandle& method, int inline_action);
   static DirectiveSet* clone(DirectiveSet const* src);
@@ -335,21 +335,35 @@ public:
 class CompilerDirectiveMatcher {
 private:
   DirectiveSet* _match;
+
+  void release_match() {
+    if (_match != nullptr) {
+      DirectivesStack::release(_match);
+      _match = nullptr;
+    }
+  }
+
 public:
   // Use this constructor to get default directive
   CompilerDirectiveMatcher(AbstractCompiler* comp) {
     _match = DirectivesStack::getDefaultDirective(comp);
   }
 
-  CompilerDirectiveMatcher(const methodHandle& mh, AbstractCompiler* comp) {
-    _match = DirectivesStack::getMatchingDirective(mh, comp);
+  CompilerDirectiveMatcher(const methodHandle& mh, int comp_level) {
+    _match = DirectivesStack::getMatchingDirective(mh, comp_level);
   }
 
   ~CompilerDirectiveMatcher() {
-    DirectivesStack::release(_match);
+    release_match();
   }
 
   DirectiveSet* directive_set() const { return _match; }
+
+  void transfer_from(CompilerDirectiveMatcher& src) {
+    release_match();
+    _match = src._match;
+    src._match = nullptr;
+  }
 };
 
 #endif // SHARE_COMPILER_COMPILERDIRECTIVES_HPP

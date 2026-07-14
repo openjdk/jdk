@@ -876,8 +876,10 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 #endif
 
-#ifdef ASSERT
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  bs->final_refinement(this);
+
+#ifdef ASSERT
   bs->verify_gc_barriers(this, BarrierSetC2::BeforeCodeGen);
 #endif
 
@@ -901,6 +903,13 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   // Now generate code
   Code_Gen();
 }
+
+// C2 uses runtime stubs serialized generation to initialize its static tables
+// shared by all compilations, like Type::_shared_type_dict.
+// At least one stub have to be completely generated to execute intialization
+// before we can skip the rest stubs generation by loading AOT cached stubs.
+
+static bool c2_do_stub_init_complete = false;
 
 //------------------------------Compile----------------------------------------
 // Compile a runtime stub
@@ -976,7 +985,7 @@ Compile::Compile(ciEnv* ci_env,
   C = this;
 
   // try to reuse an existing stub
-  {
+  if (c2_do_stub_init_complete) {
     BlobId blob_id = StubInfo::blob(_stub_id);
     CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, blob_id);
     if (blob != nullptr) {
@@ -1021,6 +1030,10 @@ Compile::Compile(ciEnv* ci_env,
   NOT_PRODUCT( verify_graph_edges(); )
 
   Code_Gen();
+
+  // First successful stub generation will set it to `true`
+  // and it will stay `true` after that.
+  c2_do_stub_init_complete = c2_do_stub_init_complete || (_stub_entry_point != nullptr);
 }
 
 Compile::~Compile() {
@@ -2708,13 +2721,11 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& inputs) {
   if (is_vector_bitwise_op(n)) {
     uint inp_cnt = n->is_predicated_vector() ? n->req()-1 : n->req();
     if (VectorNode::is_vector_bitwise_not_pattern(n)) {
-      for (uint i = 1; i < inp_cnt; i++) {
-        Node* in = n->in(i);
-        bool skip = VectorNode::is_all_ones_vector(in);
-        if (!skip && !inputs.member(in)) {
-          inputs.push(in);
-          cnt++;
-        }
+      assert(n->req() == (n->is_predicated_vector() ? 4 : 3), "must have 2 data inputs");
+      Node* opnd = VectorNode::is_all_ones_vector(n->in(1)) ? n->in(2) : n->in(1);
+      if (!inputs.member(opnd)) {
+        inputs.push(opnd);
+        cnt++;
       }
       assert(cnt <= 1, "not unary");
     } else {
@@ -3157,30 +3168,20 @@ void Compile::Code_Gen() {
 }
 
 //------------------------------Final_Reshape_Counts---------------------------
-// This class defines counters to help identify when a method
-// may/must be executed using hardware with only 24-bit precision.
+// This class defines counters and node lists collected during
+// the final graph reshaping.
 struct Final_Reshape_Counts : public StackObj {
-  int  _call_count;             // count non-inlined 'common' calls
-  int  _float_count;            // count float ops requiring 24-bit precision
-  int  _double_count;           // count double ops requiring more precision
   int  _java_call_count;        // count non-inlined 'java' calls
   int  _inner_loop_count;       // count loops which need alignment
   VectorSet _visited;           // Visitation flags
   Node_List _tests;             // Set of IfNodes & PCTableNodes
 
   Final_Reshape_Counts() :
-    _call_count(0), _float_count(0), _double_count(0),
     _java_call_count(0), _inner_loop_count(0) { }
 
-  void inc_call_count  () { _call_count  ++; }
-  void inc_float_count () { _float_count ++; }
-  void inc_double_count() { _double_count++; }
   void inc_java_call_count() { _java_call_count++; }
   void inc_inner_loop_count() { _inner_loop_count++; }
 
-  int  get_call_count  () const { return _call_count  ; }
-  int  get_float_count () const { return _float_count ; }
-  int  get_double_count() const { return _double_count; }
   int  get_java_call_count() const { return _java_call_count; }
   int  get_inner_loop_count() const { return _inner_loop_count; }
 };
@@ -3243,7 +3244,6 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
            "unused CallLeafPureNode should have been removed before final graph reshaping");
   }
 #endif
-  // Count FPU ops and common calls, implements item (3)
   bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->final_graph_reshaping(this, n, nop, dead_nodes);
   if (!gc_handled) {
     final_graph_reshaping_main_switch(n, frc, nop, dead_nodes);
@@ -3276,8 +3276,8 @@ void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
     // DivMod node so the dependency is not lost.
     divmod->add_prec_from(n);
     divmod->add_prec_from(d);
-    d->subsume_by(divmod->div_proj(), this);
-    n->subsume_by(divmod->mod_proj(), this);
+    d->subsume_by(divmod->first_proj(), this);
+    n->subsume_by(divmod->second_proj(), this);
   } else {
     // Replace "a % b" with "a - ((a / b) * b)"
     Node* mult = MulNode::make(d, d->in(2), bt);
@@ -3286,52 +3286,26 @@ void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
   }
 }
 
+void Compile::handle_mulhi_mul_op(Node* n, bool is_unsigned) {
+  const int fused_opcode = is_unsigned ? Op_UMulHiLoL : Op_MulHiLoL;
+  if (!Matcher::has_match_rule(fused_opcode)) {
+    return;
+  }
+
+  Node* mul = n->find_similar(Op_MulL, true);
+
+  if (mul == nullptr) {
+    return;
+  }
+
+  MulHiLoLNode* mul_hi_lo = is_unsigned ? static_cast<MulHiLoLNode*>(UMulHiLoLNode::make(n))
+                                        : MulHiLoLNode::make(n);
+  mul->subsume_by(mul_hi_lo->first_proj(), this);
+  n->subsume_by(mul_hi_lo->second_proj(), this);
+}
+
 void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes) {
   switch( nop ) {
-  // Count all float operations that may use FPU
-  case Op_AddHF:
-  case Op_MulHF:
-  case Op_AddF:
-  case Op_SubF:
-  case Op_MulF:
-  case Op_DivF:
-  case Op_NegF:
-  case Op_ModF:
-  case Op_ConvI2F:
-  case Op_ConF:
-  case Op_CmpF:
-  case Op_CmpF3:
-  case Op_StoreF:
-  case Op_LoadF:
-  // case Op_ConvL2F: // longs are split into 32-bit halves
-    frc.inc_float_count();
-    break;
-
-  case Op_ConvF2D:
-  case Op_ConvD2F:
-    frc.inc_float_count();
-    frc.inc_double_count();
-    break;
-
-  // Count all double operations that may use FPU
-  case Op_AddD:
-  case Op_SubD:
-  case Op_MulD:
-  case Op_DivD:
-  case Op_NegD:
-  case Op_ModD:
-  case Op_ConvI2D:
-  case Op_ConvD2I:
-  // case Op_ConvL2D: // handled by leaf call
-  // case Op_ConvD2L: // handled by leaf call
-  case Op_ConD:
-  case Op_CmpD:
-  case Op_CmpD3:
-  case Op_StoreD:
-  case Op_LoadD:
-  case Op_LoadD_unaligned:
-    frc.inc_double_count();
-    break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
     n->subsume_by(n->in(1), this);
     break;
@@ -3351,7 +3325,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       }
       n->subsume_by(new_call, this);
     }
-    frc.inc_call_count();
     break;
   }
   case Op_CallStaticJava:
@@ -3364,13 +3337,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_CallLeafNoFP: {
     assert (n->is_Call(), "");
     CallNode *call = n->as_Call();
-    // Count call sites where the FP mode bit would have to be flipped.
-    // Do not count uncommon runtime calls:
-    // uncommon_trap, _complete_monitor_locking, _complete_monitor_unlocking,
-    // _new_Java, _new_typeArray, _new_objArray, _rethrow_Java, ...
-    if (!call->is_CallStaticJava() || !call->as_CallStaticJava()->_name) {
-      frc.inc_call_count();   // Count the call site
-    } else {                  // See if uncommon argument is shared
+    // See if uncommon argument is shared
+    if (call->is_CallStaticJava() && call->as_CallStaticJava()->_name) {
       Node *n = call->in(TypeFunc::Parms);
       int nop = n->Opcode();
       // Clone shared simple arguments to uncommon calls, item (1).
@@ -3388,6 +3356,13 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
+
+  // Mem nodes need explicit cases to satisfy assert(!n->is_Mem()) in default.
+  case Op_StoreF:
+  case Op_LoadF:
+  case Op_StoreD:
+  case Op_LoadD:
+  case Op_LoadD_unaligned:
   case Op_StoreB:
   case Op_StoreC:
   case Op_StoreI:
@@ -3435,6 +3410,12 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_LoadN:
   case Op_LoadRange:
   case Op_LoadS:
+  case Op_LoadVectorGather:
+  case Op_StoreVectorScatter:
+  case Op_LoadVectorGatherMasked:
+  case Op_StoreVectorScatterMasked:
+  case Op_LoadVectorMasked:
+  case Op_StoreVectorMasked:
     break;
 
   case Op_AddP: {               // Assert sane base pointers
@@ -3516,22 +3497,38 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       ResourceMark rm;
       Unique_Node_List wq;
       wq.push(n);
+
+
+      // When we remove a CastPP, we need to pin all of its transitive users under the control of
+      // the removed node. The simplest approach is to pin all of the uses of the removed CastPP,
+      // but it is overly conservative, as an AddP does not really need pinning. As a result, we
+      // look through those nodes that do not need pinning and only pin memory access nodes under
+      // n->in(0).
       for (uint next = 0; next < wq.size(); ++next) {
         Node *m = wq.at(next);
         for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
           Node* use = m->fast_out(i);
-          if (use->is_Mem() || use->is_EncodeNarrowPtr()) {
+          int use_op = use->Opcode();
+          if (use->is_CFG() || use->pinned() ||                               // already pinned at the exact control
+              use->is_Cmp() || use_op == Op_CastP2X || use_op == Op_Conv2B) { // pure computations
+            continue;
+          } else if (use->is_EncodeNarrowPtr() ||        // EncodeP remembers whether its input is nullable, so it must be pinned
+                     use_op == Op_PartialSubtypeCheck || // This accesses its pointer inputs, so it must depend on them being not-null
+                     use->is_Mem() || use->is_memory_access_intrinsic()) {
             use->ensure_control_or_add_prec(n->in(0));
+          } else if (use_op == Op_AddP    ||
+                     use_op == Op_CastPP  || use_op == Op_CheckCastPP  ||
+                     use_op == Op_CMoveP  || use_op == Op_CMoveN       ||
+                     use_op == Op_DecodeN || use_op == Op_DecodeNKlass ||
+                     use_op == Op_VerifyVectorAlignment) {
+            // Look through use to find memory accesses if use does not need pinning
+            wq.push(use);
           } else {
-            switch(use->Opcode()) {
-            case Op_AddP:
-            case Op_DecodeN:
-            case Op_DecodeNKlass:
-            case Op_CheckCastPP:
-            case Op_CastPP:
-              wq.push(use);
-              break;
-            }
+            // Should have handled all kinds of nodes, verify that we do not unexpectedly arrive
+            // here
+            assert(false, "unexpected node %s", use->Name());
+            // Be conservative in product and pin the unexpected use
+            use->ensure_control_or_add_prec(n->in(0));
           }
         }
       }
@@ -3758,6 +3755,14 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     handle_div_mod_op(n, T_LONG, true);
     break;
 
+  case Op_MulHiL:
+    handle_mulhi_mul_op(n, false);
+    break;
+
+  case Op_UMulHiL:
+    handle_mulhi_mul_op(n, true);
+    break;
+
   case Op_LoadVector:
   case Op_StoreVector:
 #ifdef ASSERT
@@ -3783,35 +3788,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       }
     }
 #endif
-    break;
-
-  case Op_LoadVectorGather:
-  case Op_StoreVectorScatter:
-  case Op_LoadVectorGatherMasked:
-  case Op_StoreVectorScatterMasked:
-  case Op_VectorCmpMasked:
-  case Op_VectorMaskGen:
-  case Op_LoadVectorMasked:
-  case Op_StoreVectorMasked:
-    break;
-
-  case Op_AddReductionVI:
-  case Op_AddReductionVL:
-  case Op_AddReductionVHF:
-  case Op_AddReductionVF:
-  case Op_AddReductionVD:
-  case Op_MulReductionVI:
-  case Op_MulReductionVL:
-  case Op_MulReductionVHF:
-  case Op_MulReductionVF:
-  case Op_MulReductionVD:
-  case Op_MinReductionV:
-  case Op_MaxReductionV:
-  case Op_UMinReductionV:
-  case Op_UMaxReductionV:
-  case Op_AndReductionV:
-  case Op_OrReductionV:
-  case Op_XorReductionV:
     break;
 
   case Op_PackB:
@@ -3889,8 +3865,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
-  case Op_Blackhole:
-    break;
   case Op_RangeCheck: {
     RangeCheckNode* rc = n->as_RangeCheck();
     Node* iff = new IfNode(rc->in(0), rc->in(1), rc->_prob, rc->_fcnt);
@@ -4059,20 +4033,13 @@ void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_R
 //     Intel update-in-place two-address operations and better register usage
 //     on RISCs.  Must come after regular optimizations to avoid GVN Ideal
 //     calls canonicalizing them back.
-// (3) Count the number of double-precision FP ops, single-precision FP ops
-//     and call sites.  On Intel, we can get correct rounding either by
-//     forcing singles to memory (requires extra stores and loads after each
-//     FP bytecode) or we can set a rounding mode bit (requires setting and
-//     clearing the mode bit around call sites).  The mode bit is only used
-//     if the relative frequency of single FP ops to calls is low enough.
-//     This is a key transform for SPEC mpeg_audio.
-// (4) Detect infinite loops; blobs of code reachable from above but not
+// (3) Detect infinite loops; blobs of code reachable from above but not
 //     below.  Several of the Code_Gen algorithms fail on such code shapes,
 //     so we simply bail out.  Happens a lot in ZKM.jar, but also happens
 //     from time to time in other codes (such as -Xcomp finalizer loops, etc).
 //     Detection is by looking for IfNodes where only 1 projection is
 //     reachable from below or CatchNodes missing some targets.
-// (5) Assert for insane oop offsets in debug mode.
+// (4) Assert for insane oop offsets in debug mode.
 
 bool Compile::final_graph_reshaping() {
   // an infinite loop may have been eliminated by the optimizer,
@@ -5380,7 +5347,9 @@ void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const N
 #endif // !PRODUCT
 
 Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res) {
-  if (type != nullptr && phase->type(value)->higher_equal(type)) {
+  precond(type != nullptr);
+
+  if (phase->type(value)->higher_equal(type)) {
     return value;
   }
   Node* result = nullptr;
@@ -5388,7 +5357,9 @@ Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGV
     result = phase->transform(new LShiftINode(value, phase->intcon(24)));
     result = new RShiftINode(result, phase->intcon(24));
   } else if (bt == T_BOOLEAN) {
-    result = new AndINode(value, phase->intcon(0xFF));
+    assert(type == TypeInt::BOOL || type == TypeInt::UBYTE, "unexpected boolean type: %s", Type::str(type));
+    Node* mask = phase->intcon(type == TypeInt::BOOL ? 1 : 0xFF);
+    result = new AndINode(value, mask);
   } else if (bt == T_CHAR) {
     result = new AndINode(value,phase->intcon(0xFFFF));
   } else {

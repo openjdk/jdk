@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +30,23 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import jdk.test.lib.Utils;
+import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.process.ProcessTools;
 
 import jdk.test.whitebox.WhiteBox;
 
 public class VectorizationTestRunner {
 
-    private static final WhiteBox WB = WhiteBox.getWhiteBox();
+    private static final String VERIFY_CORRECTNESS_ARG = "--verify-vectorization-correctness";
+
+    private static class Flags {
+        private static final WhiteBox WHITEBOX = WhiteBox.getWhiteBox();
+    }
 
     private static final int COMP_LEVEL_INTP = 0;
     private static final int COMP_LEVEL_C2 = 4;
@@ -52,6 +62,35 @@ public class VectorizationTestRunner {
         // invokes it twice - first time in the interpreter and second time compiled
         // by C2. Then this runner compares the two return values. Hence we require
         // each test method returning a primitive value or an array of primitive type.
+        runCorrectnessTestsInTestVM(args);
+
+        // 2) Vectorization ability test
+        // To test vectorizability, invoke the IR test framework to check existence of
+        // expected C2 IR node.
+        TestFramework irTest = new TestFramework(klass);
+        irTest.addFlags(testVMFlags(args));
+        irTest.start();
+    }
+
+    private void runCorrectnessTestsInTestVM(String[] args) {
+        List<String> command = new ArrayList<>();
+        command.addAll(Arrays.asList(testVMFlags(args)));
+        command.add("-Xbootclasspath/a:.");
+        command.add("-XX:+UnlockDiagnosticVMOptions");
+        command.add("-XX:+WhiteBoxAPI");
+        command.add(getClass().getName());
+        command.add(VERIFY_CORRECTNESS_ARG);
+        command.add(getClass().getName());
+        try {
+            ClassFileInstaller.main("jdk.test.whitebox.WhiteBox");
+            ProcessTools.executeTestJava(command).shouldHaveExitValue(0);
+        } catch (Exception e) {
+            throw new RuntimeException("Vectorization correctness test failed", e);
+        }
+    }
+
+    private void runCorrectnessTests() {
+        Class klass = getClass();
         for (Method method : klass.getDeclaredMethods()) {
             try {
                 if (method.isAnnotationPresent(Test.class)) {
@@ -63,13 +102,6 @@ public class VectorizationTestRunner {
                         "." + method.getName() + ": " + e.getMessage());
             }
         }
-
-        // 2) Vectorization ability test
-        // To test vectorizability, invoke the IR test framework to check existence of
-        // expected C2 IR node.
-        TestFramework irTest = new TestFramework(klass);
-        irTest.addFlags(testVMFlags(args));
-        irTest.start();
     }
 
     // Override this to add extra flags.
@@ -109,22 +141,25 @@ public class VectorizationTestRunner {
         Object expected = null;
         Object actual = null;
 
-        // Temporarily disable the compiler and invoke the method to get reference
-        // result from the interpreter
-        WB.setBooleanVMFlag("UseCompiler", false);
+        // Temporarily make the test method not compilable and invoke it to get the
+        // reference result from the interpreter.
+        Flags.WHITEBOX.makeMethodNotCompilable(method, CompLevel.ANY.getValue(), true);
+        Flags.WHITEBOX.makeMethodNotCompilable(method, CompLevel.ANY.getValue(), false);
         try {
             expected = method.invoke(this);
+            assert(Flags.WHITEBOX.getMethodCompilationLevel(method) == COMP_LEVEL_INTP);
         } catch (Exception e) {
             e.printStackTrace();
             fail("Exception is thrown in test method invocation (interpreter).");
+        } finally {
+            // Make the test method compilable again
+            Flags.WHITEBOX.clearMethodState(method);
         }
-        assert(WB.getMethodCompilationLevel(method) == COMP_LEVEL_INTP);
-        WB.setBooleanVMFlag("UseCompiler", true);
 
         // Compile the method and invoke it again
         long enqueueTime = System.currentTimeMillis();
-        WB.enqueueMethodForCompilation(method, COMP_LEVEL_C2);
-        while (WB.getMethodCompilationLevel(method) != COMP_LEVEL_C2) {
+        Flags.WHITEBOX.enqueueMethodForCompilation(method, COMP_LEVEL_C2);
+        while (Flags.WHITEBOX.getMethodCompilationLevel(method) != COMP_LEVEL_C2) {
             Thread.sleep(100 /*ms*/);
         }
         try {
@@ -133,7 +168,7 @@ public class VectorizationTestRunner {
             e.printStackTrace();
             fail("Exception is thrown in test method invocation (C2).");
         }
-        assert(WB.getMethodCompilationLevel(method) == COMP_LEVEL_C2);
+        assert(Flags.WHITEBOX.getMethodCompilationLevel(method) == COMP_LEVEL_C2);
 
         // Check if two invocations return the same
         Class retType = method.getReturnType();
@@ -172,11 +207,10 @@ public class VectorizationTestRunner {
     }
 
     private static VectorizationTestRunner createTestInstance(String testName) {
-        if (!testName.toLowerCase().endsWith(".java")) {
-            fail("Invalid test file name " + testName);
+        if (testName.toLowerCase().endsWith(".java")) {
+            testName = testName.substring(0, testName.length() - 5);
+            testName = testName.replace('/', '.');
         }
-        testName = testName.substring(0, testName.length() - 5);
-        testName = testName.replace('/', '.');
 
         VectorizationTestRunner instance = null;
         try {
@@ -196,7 +230,13 @@ public class VectorizationTestRunner {
     }
 
     public static void main(String[] args) {
-        VectorizationTestRunner testObj = createTestInstance(Utils.TEST_NAME);
+        VectorizationTestRunner testObj;
+        if (args.length > 0 && args[0].equals(VERIFY_CORRECTNESS_ARG)) {
+            testObj = createTestInstance(args[1]);
+            testObj.runCorrectnessTests();
+            return;
+        }
+        testObj = createTestInstance(Utils.TEST_NAME);
         testObj.run(args);
     }
 }

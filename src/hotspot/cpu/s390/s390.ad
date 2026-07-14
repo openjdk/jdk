@@ -1929,23 +1929,23 @@ uint Matcher::float_pressure_limit()
   return (FLOATPRESSURE == -1) ? 15 : FLOATPRESSURE;
 }
 
-// Register for DIVI projection of divmodI
-const RegMask& Matcher::divI_proj_mask() {
+// Register for the first projection of an int pair
+const RegMask& Matcher::firstI_proj_mask() {
   return _Z_RARG4_INT_REG_mask;
 }
 
-// Register for MODI projection of divmodI
-const RegMask& Matcher::modI_proj_mask() {
+// Register for the second projection of an int pair
+const RegMask& Matcher::secondI_proj_mask() {
   return _Z_RARG3_INT_REG_mask;
 }
 
-// Register for DIVL projection of divmodL
-const RegMask& Matcher::divL_proj_mask() {
+// Register for the first projection of a long pair
+const RegMask& Matcher::firstL_proj_mask() {
   return _Z_RARG4_LONG_REG_mask;
 }
 
-// Register for MODL projection of divmodL
-const RegMask& Matcher::modL_proj_mask() {
+// Register for the second projection of a long pair
+const RegMask& Matcher::secondL_proj_mask() {
   return _Z_RARG3_LONG_REG_mask;
 }
 
@@ -2361,6 +2361,7 @@ encode %{
     unsigned int actual_ret_off = __ offset();
     assert(start_off + size_of_code == actual_ret_off, "wrong return_pc");
 #endif
+    __ post_call_nop();
   %}
 
   enc_class z_enc_java_static_call(method meth) %{
@@ -2393,6 +2394,7 @@ encode %{
     }
 
     __ clear_inst_mark();
+    __ post_call_nop();
   %}
 
   // Java dynamic call
@@ -2449,6 +2451,7 @@ encode %{
       __ z_basr(Z_R14, Z_R1_scratch);
       unsigned int ret_off = __ offset();
     }
+    __ post_call_nop();
   %}
 
   enc_class z_enc_cmov_reg(cmpOp cmp, iRegI dst, iRegI src) %{
@@ -2614,28 +2617,31 @@ frame %{
   // stack slot.
   return_addr(REG Z_R14);
 
-  // Location of native (C/C++) and interpreter return values. This
-  // is specified to be the same as Java. In the 32-bit VM, long
-  // values are actually returned from native calls in O0:O1 and
-  // returned to the interpreter in I0:I1. The copying to and from
-  // the register pairs is done by the appropriate call and epilog
-  // opcodes. This simplifies the register allocator.
-  //
-  // Use register pair for c return value.
-  c_return_value %{
-    assert(ideal_reg >= Op_RegI && ideal_reg <= Op_RegL, "only return normal values");
-    static int typeToRegLo[Op_RegL+1] = { 0, 0, Z_R2_num, Z_R2_num, Z_R2_num, Z_F0_num, Z_F0_num, Z_R2_num };
-    static int typeToRegHi[Op_RegL+1] = { 0, 0, OptoReg::Bad, OptoReg::Bad, Z_R2_H_num, OptoReg::Bad, Z_F0_H_num, Z_R2_H_num };
-    return OptoRegPair(typeToRegHi[ideal_reg], typeToRegLo[ideal_reg]);
-  %}
-
   // Use register pair for return value.
   // Location of compiled Java return values. Same as C
   return_value %{
     assert(ideal_reg >= Op_RegI && ideal_reg <= Op_RegL, "only return normal values");
-    static int typeToRegLo[Op_RegL+1] = { 0, 0, Z_R2_num, Z_R2_num, Z_R2_num, Z_F0_num, Z_F0_num, Z_R2_num };
-    static int typeToRegHi[Op_RegL+1] = { 0, 0, OptoReg::Bad, OptoReg::Bad, Z_R2_H_num, OptoReg::Bad, Z_F0_H_num, Z_R2_H_num };
-    return OptoRegPair(typeToRegHi[ideal_reg], typeToRegLo[ideal_reg]);
+    static const int lo[Op_RegL + 1] = {
+      0,
+      0,
+      Z_R2_num,     // Op_RegN
+      Z_R2_num,     // Op_RegI
+      Z_R2_num,     // Op_RegP
+      Z_F0_num,     // Op_RegF
+      Z_F0_num,     // Op_RegD
+      Z_R2_num      // Op_RegL
+    };
+    static const int hi[Op_RegL + 1] = {
+      0,
+      0,
+      OptoReg::Bad, // Op_RegN
+      OptoReg::Bad, // Op_RegI
+      Z_R2_H_num,   // Op_RegP
+      OptoReg::Bad, // Op_RegF
+      Z_F0_H_num,   // Op_RegD
+      Z_R2_H_num    // Op_RegL
+    };
+    return OptoRegPair(hi[ideal_reg], lo[ideal_reg]);
   %}
 %}
 
@@ -5554,6 +5560,38 @@ instruct compareAndSwapN_bool(iRegP mem_ptr, rarg5RegN oldval, iRegN_P2N newval,
   format %{ "$res = CompareAndSwapN $oldval,$newval,$mem_ptr" %}
   ins_encode(z_enc_casI(oldval, newval, mem_ptr),
              z_enc_cctobool(res));
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct compareAndExchangeN(iRegN res, iRegP mem_ptr, rarg5RegN oldval, iRegN_P2N newval, flagsReg cr) %{
+  match(Set res (CompareAndExchangeN mem_ptr (Binary oldval newval)));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
+  effect(TEMP_DEF res, USE mem_ptr, USE_KILL oldval, KILL cr);
+  format %{ "$res = CompareAndExchangeN $oldval,$newval,$mem_ptr" %}
+  ins_encode %{
+    Register Rcomp = reg_to_register_object($oldval$$reg);
+    Register Rnew  = reg_to_register_object($newval$$reg);
+    Register Raddr = reg_to_register_object($mem_ptr$$reg);
+    Register Rres  = reg_to_register_object($res$$reg);
+    __ z_lr(Rres, Rcomp);
+    __ z_cs(Rres, Rnew, 0, Raddr);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct compareAndExchangeP(iRegP res, iRegP mem_ptr, rarg5RegP oldval, iRegP_N2P newval, flagsReg cr) %{
+  match(Set res (CompareAndExchangeP mem_ptr (Binary oldval newval)));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
+  effect(TEMP_DEF res, USE mem_ptr, USE_KILL oldval, KILL cr);
+  format %{ "$res = CompareAndExchangeP $oldval,$newval,$mem_ptr" %}
+  ins_encode %{
+    Register Rcomp = reg_to_register_object($oldval$$reg);
+    Register Rnew  = reg_to_register_object($newval$$reg);
+    Register Raddr = reg_to_register_object($mem_ptr$$reg);
+    Register Rres  = reg_to_register_object($res$$reg);
+    __ z_lgr(Rres, Rcomp);
+    __ z_csg(Rres, Rnew, 0, Raddr);
+  %}
   ins_pipe(pipe_class_dummy);
 %}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,8 +104,8 @@ Mutex*   G1MarkStackChunkList_lock    = nullptr;
 Mutex*   G1MarkStackFreeList_lock     = nullptr;
 Monitor* G1OldGCCount_lock            = nullptr;
 Mutex*   G1OldSets_lock               = nullptr;
-Mutex*   G1ReviseYoungLength_lock     = nullptr;
 Mutex*   G1RareEvent_lock             = nullptr;
+Mutex*   G1ReviseNumYoungRegions_lock = nullptr;
 Mutex*   G1Uncommit_lock              = nullptr;
 #endif
 
@@ -121,6 +121,7 @@ Mutex*   Verify_lock                  = nullptr;
 Mutex*   JfrStacktrace_lock           = nullptr;
 Monitor* JfrMsg_lock                  = nullptr;
 Mutex*   JfrBuffer_lock               = nullptr;
+Mutex*   SuspendedThreadTask_lock     = nullptr;
 #endif
 
 Mutex*   CodeHeapStateAnalytics_lock  = nullptr;
@@ -156,11 +157,6 @@ Mutex*   ScratchObjects_lock          = nullptr;
 Mutex*   FinalImageRecipes_lock       = nullptr;
 #endif // INCLUDE_CDS
 Mutex*   Bootclasspath_lock           = nullptr;
-
-#if INCLUDE_JVMCI
-Monitor* JVMCI_lock                   = nullptr;
-Monitor* JVMCIRuntime_lock            = nullptr;
-#endif
 
 // Only one RecursiveMutex
 RecursiveMutex* MultiArray_lock       = nullptr;
@@ -285,6 +281,7 @@ void mutex_init() {
   MUTEX_DEFN(JfrBuffer_lock                  , PaddedMutex  , event);
   MUTEX_DEFN(JfrMsg_lock                     , PaddedMonitor, event);
   MUTEX_DEFN(JfrStacktrace_lock              , PaddedMutex  , event);
+  MUTEX_DEFN(SuspendedThreadTask_lock        , PaddedMutex  , nosafepoint);
 #endif
 
   MUTEX_DEFN(ContinuationRelativize_lock     , PaddedMonitor, nosafepoint-3);
@@ -309,11 +306,6 @@ void mutex_init() {
   MUTEX_DEFN(FinalImageRecipes_lock          , PaddedMutex  , nosafepoint);
 #endif // INCLUDE_CDS
   MUTEX_DEFN(Bootclasspath_lock              , PaddedMutex  , nosafepoint);
-
-#if INCLUDE_JVMCI
-  // JVMCIRuntime::_lock must be acquired before JVMCI_lock to avoid deadlock
-  MUTEX_DEFN(JVMCIRuntime_lock               , PaddedMonitor, safepoint, true);
-#endif
 
   MUTEX_DEFN(ThreadsLockThrottle_lock        , PaddedMonitor, safepoint);
 
@@ -343,7 +335,7 @@ void mutex_init() {
   if (UseG1GC) {
     MUTEX_DEFL(G1OldGCCount_lock            , PaddedMonitor, Threads_lock, true);
     MUTEX_DEFL(G1RareEvent_lock             , PaddedMutex  , Threads_lock, true);
-    MUTEX_DEFL(G1ReviseYoungLength_lock     , PaddedMutex  , Threads_lock, true);
+    MUTEX_DEFL(G1ReviseNumYoungRegions_lock , PaddedMutex  , Threads_lock, true);
   }
 #endif
 
@@ -355,10 +347,6 @@ void mutex_init() {
   }
 #endif
   MUTEX_DEFL(SystemDictionary_lock          , PaddedMonitor, Module_lock);
-#if INCLUDE_JVMCI
-  // JVMCIRuntime_lock must be acquired before JVMCI_lock to avoid deadlock
-  MUTEX_DEFL(JVMCI_lock                     , PaddedMonitor, JVMCIRuntime_lock);
-#endif
   MUTEX_DEFL(JvmtiThreadState_lock          , PaddedMutex  , VThreadTransition_lock); // Used by JvmtiThreadState/JvmtiEventController
   MUTEX_DEFL(SharedDecoder_lock             , PaddedMutex  , NmtVirtualMemory_lock);  // Must be lower than NmtVirtualMemory_lock due to MemTracker::print_containing_region
 
