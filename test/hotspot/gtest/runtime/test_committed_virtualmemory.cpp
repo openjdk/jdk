@@ -63,6 +63,7 @@ public:
     {
       MemTracker::NmtVirtualMemoryLocker vml;
       // For thread stacks, this historically named API visits resident ranges.
+      // Not all committed pages have to be resident.
       VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rgn_found, [&](const VirtualMemoryRegion& rgn) {
         EXPECT_GE(rgn.base(), stack_end);
         EXPECT_LE(rgn.end(), stack_top);
