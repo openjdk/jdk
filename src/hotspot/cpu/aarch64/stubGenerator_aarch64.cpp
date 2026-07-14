@@ -9134,6 +9134,11 @@ class StubGenerator: public StubCodeGenerator {
   //      * P16: vector polynomial for each 16-element block
   //      * P8 : single 8-element block in tail (if present)
   //      * P7 : scalar unrolled loop for remaining <= 7 elements
+  // Performance:
+  // Reduce each block immediately instead of carrying vector accumulators across the entire loop.
+  // Delaying the reduction increases loop-carried vector
+  // dependencies and register pressure, and was measured to perform worse on AArch64.
+  // See: https://github.com/openjdk/jdk/pull/31674#discussion_r3497411227
   address generate_large_arrays_hashcode(BasicType eltype, Label& L_pow_table) {
     StubId stub_id;
     switch (eltype) {
