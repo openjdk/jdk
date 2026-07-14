@@ -55,7 +55,7 @@ MutableNUMASpace::MutableNUMASpace(size_t page_size) : MutableSpace(page_size) {
     lgrp_spaces()->append(new LGRPSpace(lgrp_ids[i], page_size));
   }
 
-  FREE_C_HEAP_ARRAY(uint, lgrp_ids);
+  FREE_C_HEAP_ARRAY(lgrp_ids);
 }
 
 MutableNUMASpace::~MutableNUMASpace() {
@@ -154,7 +154,7 @@ void MutableNUMASpace::bias_region(MemRegion mr, uint lgrp_id) {
   // First we tell the OS which page size we want in the given range. The underlying
   // large page can be broken down if we require small pages.
   os::realign_memory((char*) mr.start(), mr.byte_size(), page_size());
-  // Then we uncommit the pages in the range.
+  // Then we disclaim the pages in the range so they can be faulted in again.
   os::disclaim_memory((char*) mr.start(), mr.byte_size());
   // And make them local/first-touch biased.
   os::numa_make_local((char*)mr.start(), mr.byte_size(), checked_cast<int>(lgrp_id));

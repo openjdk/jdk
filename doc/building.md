@@ -195,8 +195,8 @@ time of writing.
 
 | Operating system  | Vendor/version used                |
 | ----------------- | ---------------------------------- |
-| Linux/x64         | Oracle Enterprise Linux 6.4 / 8.x  |
-| Linux/aarch64     | Oracle Enterprise Linux 7.6 / 8.x  |
+| Linux/x64         | Oracle Linux 6.4 / 8.x             |
+| Linux/aarch64     | Oracle Linux 7.6 / 8.x             |
 | macOS             | macOS 14.x                         |
 | Windows           | Windows Server 2016                |
 
@@ -355,7 +355,7 @@ earlier versions may also work.
 Starting with Xcode 26, introduced in macOS 26, the Metal toolchain no longer
 comes bundled with Xcode, so it needs to be installed separately. This can
 either be done via the Xcode's Settings/Components UI, or in the command line
-calling `xcodebuild -downloadComponent metalToolchain`.
+calling `xcodebuild -downloadComponent MetalToolchain`.
 
 The standard macOS environment contains the basic tooling needed to build, but
 for external libraries a package manager is recommended. The JDK uses
@@ -1288,27 +1288,26 @@ at least the following targets are known to work:
 | riscv64-linux-gnu        |
 | s390x-linux-gnu          |
 
-`BASE_OS` must be one of `OL` for Oracle Enterprise Linux or `Fedora`. If the
-base OS is `Fedora` the corresponding Fedora release can be specified with the
-help of the `BASE_OS_VERSION` option. If the build is successful, the new
-devkits can be found in the `build/devkit/result` subdirectory:
+`BASE_OS` must be one of `OL` for Oracle Linux or `Fedora`. The release/version
+of the base OS can be specified using the `BASE_OS_VERSION` option. If the build
+is successful, the new devkits can be found in the `build/devkit/result`
+subdirectory:
 
 ```
 cd make/devkit
-make TARGETS="ppc64le-linux-gnu aarch64-linux-gnu" BASE_OS=Fedora BASE_OS_VERSION=21
+make TARGETS="ppc64le-linux-gnu aarch64-linux-gnu" BASE_OS=Fedora
 ls -1 ../../build/devkit/result/
 x86_64-linux-gnu-to-aarch64-linux-gnu
 x86_64-linux-gnu-to-ppc64le-linux-gnu
 ```
 
 Notice that devkits are not only useful for targeting different build
-platforms. Because they contain the full build dependencies for a system (i.e.
-compiler and root file system), they can easily be used to build well-known,
-reliable and reproducible build environments. You can for example create and
-use a devkit with GCC 7.3 and a Fedora 12 sysroot environment (with glibc 2.11)
-on Ubuntu 14.04 (which doesn't have GCC 7.3 by default) to produce JDK binaries
-which will run on all Linux systems with runtime libraries newer than the ones
-from Fedora 12 (e.g. Ubuntu 16.04, SLES 11 or RHEL 6).
+platforms. Because they contain the full build dependencies for a system (i.e.,
+compiler and root file system/sysroot), they can easily be used to build
+well-known, reliable, and reproducible build environments. You can, for example,
+create and use a devkit with a version of the GCC compiler not provided by the
+host OS, using a sysroot from an older Linux distribution to produce JDK
+binaries which will run on all Linux systems with newer runtime libraries.
 
 #### Using Debian debootstrap
 

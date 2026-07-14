@@ -875,7 +875,6 @@ public:
 class PhaseIdealLoop : public PhaseTransform {
   friend class IdealLoopTree;
   friend class SuperWord;
-  friend class ShenandoahBarrierC2Support;
   friend class AutoNodeBudget;
 
   Arena _arena; // For data whose lifetime is a single pass of loop optimizations
@@ -914,7 +913,7 @@ class PhaseIdealLoop : public PhaseTransform {
   void reallocate_preorders() {
     _nesting.check(); // Check if a potential re-allocation in the resource arena is safe
     if ( _max_preorder < C->unique() ) {
-      _preorders = REALLOC_RESOURCE_ARRAY(uint, _preorders, _max_preorder, C->unique());
+      _preorders = REALLOC_RESOURCE_ARRAY(_preorders, _max_preorder, C->unique());
       _max_preorder = C->unique();
     }
     memset(_preorders, 0, sizeof(uint) * _max_preorder);
@@ -926,7 +925,7 @@ class PhaseIdealLoop : public PhaseTransform {
     _nesting.check(); // Check if a potential re-allocation in the resource arena is safe
     if ( _max_preorder < C->unique() ) {
       uint newsize = _max_preorder<<1;  // double size of array
-      _preorders = REALLOC_RESOURCE_ARRAY(uint, _preorders, _max_preorder, newsize);
+      _preorders = REALLOC_RESOURCE_ARRAY(_preorders, _max_preorder, newsize);
       memset(&_preorders[_max_preorder],0,sizeof(uint)*(newsize-_max_preorder));
       _max_preorder = newsize;
     }
@@ -2106,7 +2105,6 @@ class CountedLoopConverter {
     bool is_valid() const { return _is_valid; }
     Node* incr() const { return _incr; }
 
-    // Optional truncation for: CHAR: (i+1)&0x7fff, BYTE: ((i+1)<<8)>>8, or SHORT: ((i+1)<<16)>>16
     Node* outer_trunc() const { return _outer_trunc; } // the outermost truncating node (either the & or the final >>)
     Node* inner_trunc() const { return _inner_trunc; } // the inner truncating node, if applicable (the << in a <</>> pair)
     const TypeInteger* trunc_type() const { return _trunc_type; }

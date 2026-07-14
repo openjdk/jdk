@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,17 +388,16 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_XATTR;
 #endif
 
-    return capabilities;
-}
-
-JNIEXPORT jboolean JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_fchmodatNoFollowSupported0(JNIEnv* env, jclass this) {
 #if defined(__linux__)
-    // Linux recognizes but does not support the AT_SYMLINK_NOFOLLOW flag
-    return JNI_FALSE;
+    // Linux 6.6+ supports AT_SYMLINK_NOFOLLOW. glibc 2.32+ also provides emulation for older kernels.
+    if (fchmodat(AT_FDCWD, "", 0, AT_SYMLINK_NOFOLLOW) == 0 || errno != ENOTSUP) {
+        capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FCHMODAT_NOFOLLOW;
+    }
 #else
-    return JNI_TRUE;
+    capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FCHMODAT_NOFOLLOW;
 #endif
+
+    return capabilities;
 }
 
 JNIEXPORT jbyteArray JNICALL

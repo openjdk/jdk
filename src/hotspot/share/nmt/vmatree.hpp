@@ -264,7 +264,7 @@ public:
     }
     ~SummaryDiff() {
       if (_members != _small) {
-        FREE_C_HEAP_ARRAY(KVEntry, _members);
+        FREE_C_HEAP_ARRAY(_members);
       }
     }
 
