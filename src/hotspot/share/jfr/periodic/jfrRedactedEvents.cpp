@@ -75,6 +75,10 @@ bool JfrRedactedEvents::_initialized = false;
 bool JfrRedactedEvents::set_argument_filter(const char* filters) {
   assert (_argument_filters == nullptr, "invariant");
   assert (filters != nullptr, "invariant");
+  if (strcmp(filters, "*") != 0 && strcmp(filters, "none") != 0) {
+    _redacted_arguments = new StringArray();
+    _redacted_arguments->add(filters);
+  }
   _argument_filters = new StringArray();
   return append_filters(_argument_filters, true, filters);
 }
@@ -467,8 +471,9 @@ void JfrRedactedEvents::ensure_initialized() {
     _redacted_flight_recorder_options = redact_flight_recorder_options(FlightRecorderOptions, false);
     _redacted_flight_recorder_options_with_marker = redact_flight_recorder_options(FlightRecorderOptions, true);
   }
-
-  _redacted_arguments = new StringArray();
+  if (_redacted_arguments == nullptr) {
+    _redacted_arguments = new StringArray();
+  }
 
   StringArray* java_args = make_java_args_array();
   _redacted_java_command_line = redact_command_line(java_args);
