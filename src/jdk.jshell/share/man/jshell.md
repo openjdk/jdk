@@ -778,6 +778,10 @@ JShell.
     class, interface, method, or field, when sources for the declaration are
     available.
 
+    The sources for the JDK classes are looked up in the JDK's sources, if they
+    can be found in the JDK installation. The sources may need to be added to
+    the JDK installation separately.
+
     The sources of classes, interfaces, methods, and fields declared on the class path
     or module path are looked up in the entry on the class path or module path which
     contains the declaration. If the entry is a JAR file and it does not contain the source,
