@@ -420,12 +420,17 @@ public class JShell implements AutoCloseable {
         }
 
         /**
-         * Add a mapping from roots containing classfiles to their corresponding
-         * sources.
+         * Add a mapping from roots containing classfiles to roots containing
+         * their corresponding sources.
          *
          * <p>The given {@code binarySourceMapping} will be called for various paths
          * used by JShell. Some of them may be distinct from roots specified in classpath
          * and module path.
+         *
+         * <p>When looking for a source for a binary class or interface, the roots
+         * containing sources are searched in the given order, and once
+         * a source file corresponding to the given class or interface is found,
+         * the rest of the roots containing sources will be ignored.
          *
          * <p>The results of calling {@code binarySourceMapping} may be cached, and the
          * same file may or may not be queried again.

@@ -50,6 +50,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 import jdk.jshell.JShell;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -65,6 +67,7 @@ public class BinaryToSourceCodeMappingTest extends KullaTesting {
     private static Path srcDir;
     private static Path srcZip;
     private static Path srcZipWithNestedPath;
+    private static Path brokenSrcZip;
     private final TestInfo testInfo;
     private final AtomicBoolean closeCalled = new AtomicBoolean();
 
@@ -103,6 +106,21 @@ public class BinaryToSourceCodeMappingTest extends KullaTesting {
 
     @Test
     public void testSourcesAsZip() {
+        assertJavadoc("test.inner.Test|",
+                      """
+                      test.inner.Test
+                      Class javadoc.""");
+        assertJavadoc("test.inner.Test.test(|",
+                      """
+                      void test.inner.Test.test(int i)
+                      Test method.
+                      @param i param""");
+    }
+
+    @Test
+    public void testSourcesDuplicate() {
+        //src.zip and broken-src.zip both available,
+        //only the first one should be used:
         assertJavadoc("test.inner.Test|",
                       """
                       test.inner.Test
@@ -171,6 +189,8 @@ public class BinaryToSourceCodeMappingTest extends KullaTesting {
                 case "testSourcesAsDirectory" -> p -> classesDir.equals(p) ? List.of(srcDir) : List.of();
                 case "testSourcesAsZip" ->
                         p -> classesDir.equals(p) ? List.of(srcZip) : List.of();
+                case "testSourcesDuplicate" ->
+                        p -> classesDir.equals(p) ? List.of(srcZip, brokenSrcZip) : List.of();
                 case "testClassPathModification", "testSourcesAsZipNested", "testClosingAPIUse" -> p -> {
                     if (!classesDir.equals(p)) {
                         return List.of();
@@ -247,6 +267,24 @@ public class BinaryToSourceCodeMappingTest extends KullaTesting {
             throw new RuntimeException(ex);
         }
         compiler.jar(srcDir2, srcZipWithNestedPath, srcDir2.relativize(srcFile2).toString());
+
+        brokenSrcZip = Paths.get("broken-src.zip");
+
+        try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(brokenSrcZip))) {
+            out.putNextEntry(new JarEntry("test/inner/Test.java"));
+            out.write("""
+                      package test.inner;
+                      ///broken
+                      public class Test {
+                          ///broken
+                          ///@param i broken
+                          public static void test(int i) {
+                          }
+                      }
+                      """.getBytes());
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     @Override

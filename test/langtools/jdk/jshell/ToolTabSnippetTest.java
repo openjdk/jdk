@@ -336,6 +336,38 @@ public class ToolTabSnippetTest extends UITesting {
                 throw new IllegalStateException(ex);
             }
 
+            //create a broken combined-sources.jar, which should not be used:
+            Path srcZip = Paths.get("combined-sources.jar");
+
+            try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(srcZip))) {
+                out.putNextEntry(new JarEntry("jshelltest/JShellTest.java"));
+                out.write("""
+                          package jshelltest;
+                          /** wrong */
+                          public class JShellTest {
+                              /** wrong
+                               */
+                              public JShellTest(String str) {}
+                              /**JShellTest 2     */
+                              public JShellTest(String str, int i) {}
+                          }
+                          """.getBytes());
+
+                out.putNextEntry(new JarEntry("jshelltest/JShellTestAux.java"));
+                out.write("""
+                          package jshelltest;
+                          /** wrong */
+                          public class JShellTestAux {
+                              /** wrong */
+                              public JShellTestAux(String str) { }
+                              /** wrong */
+                              public JShellTestAux(String str, int i) { }
+                          }
+                          """.getBytes());
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+
             return combinedJar;
         } else {
             Path srcZip = Paths.get("test-sources.jar");

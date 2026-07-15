@@ -783,10 +783,11 @@ JShell.
     the JDK installation separately. For the sources of classes, interfaces, methods,
     and fields declared on the class path or module path, the entry on the class path or
     module path which contains the declaration is searched for sources.
-    In addition to that, if the entry is a .jar file, and a file exists with
-    the same path and name but with .jar replaced with -sources.jar, this file
-    is searched as well. As an example, for `<directory>/lib.jar`,
-    `<directory>/lib-sources.jar` will be searched as well.
+    If the source is not found in the class path or module path entry, and the entry
+    is a .jar file, and a file exists with the same path and name but with .jar
+    replaced with -sources.jar, this file is searched as well.
+    As an example, for `<directory>/lib.jar`, `<directory>/lib-sources.jar`
+    will be searched as well.
 
     When searching for sources, JShell expects source files to be co-located with class files.
     That is, the source for a given class or interface must be in a file with the same path and name
