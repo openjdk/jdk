@@ -86,6 +86,7 @@ public class Settings extends TestHelper {
     private static final String ENABLED_GROUPS_SETTINGS = "Enabled Named Groups:";
     private static final String ENABLED_SIG_SCHEMES_SETTINGS =
             "Enabled Signature Schemes:";
+    private static final String USAGE_HEADER = "Usage: java";
 
     /*
      * "all" should print verbose settings
@@ -176,6 +177,7 @@ public class Settings extends TestHelper {
         TestResult tr = doExec(javaCmd, "-XshowSettings:all");
         tr.checkPositive();
         containsAllOptions(tr);
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionVM() throws IOException {
@@ -184,6 +186,7 @@ public class Settings extends TestHelper {
         checkContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
         checkNotContains(tr, LOCALE_SETTINGS);
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionProperty() throws IOException {
@@ -192,6 +195,7 @@ public class Settings extends TestHelper {
         checkNotContains(tr, VM_SETTINGS);
         checkContains(tr, PROP_SETTINGS);
         checkNotContains(tr, LOCALE_SETTINGS);
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionLocale() throws IOException {
@@ -204,6 +208,7 @@ public class Settings extends TestHelper {
         checkNotContains(tr, LOCALE_SUMMARY_SETTINGS);
         checkContains(tr, TIMEZONE_SETTINGS);
         checkContains(tr, TZDATA_SETTINGS);
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionSecurity() throws IOException {
@@ -214,6 +219,7 @@ public class Settings extends TestHelper {
         checkContains(tr, SEC_PROPS_SETTINGS);
         checkContains(tr, SEC_PROVIDER_SETTINGS);
         checkContains(tr, SEC_TLS_SETTINGS);
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionSecurityProps() throws IOException {
@@ -224,6 +230,7 @@ public class Settings extends TestHelper {
         checkNotContains(tr, SEC_TLS_SETTINGS);
         // test a well known property for sanity
         checkContains(tr, "keystore.type=pkcs12");
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionSecurityProv() throws IOException {
@@ -237,6 +244,7 @@ public class Settings extends TestHelper {
         // test for a well known alias (SunJCE: AlgorithmParameterGenerator.DiffieHellman)
         checkContains(tr, "aliases: [1.2.840.113549.1.3.1, " +
                 "DH, OID.1.2.840.113549.1.3.1]");
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestOptionSecurityTLS() throws IOException {
@@ -249,6 +257,7 @@ public class Settings extends TestHelper {
         checkContains(tr, "TLSv1.2");
         checkContains(tr, ENABLED_GROUPS_SETTINGS);
         checkContains(tr, ENABLED_SIG_SCHEMES_SETTINGS);
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     // ensure error message is printed when unrecognized option used
@@ -275,6 +284,7 @@ public class Settings extends TestHelper {
             checkNotContains(tr, VM_SETTINGS);
             checkContains(tr, METRICS_NOT_AVAILABLE_MSG);
         }
+        checkNotContains(tr, USAGE_HEADER);
     }
 
     static void runTestBadOptions() throws IOException {
@@ -323,15 +333,6 @@ public class Settings extends TestHelper {
             throw new RuntimeException("test fails");
         }
         containsDefaultOptions(tr);
-    }
-
-    static void runTestStandaloneDoesNotPrintUsage() throws IOException {
-        TestResult tr = doExec(javaCmd,
-                               "-Duser.language=en",
-                               "-Duser.country=US",
-                               "-XshowSettings:vm");
-        tr.checkPositive();
-        checkNotContains(tr, "Usage: java");
     }
 
     public static void main(String... args) throws IOException {
