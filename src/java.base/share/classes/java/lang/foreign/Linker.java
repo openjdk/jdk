@@ -632,11 +632,8 @@ public sealed interface Linker permits AbstractLinker {
      *     <li>The invocation occurs in a thread {@code T} such that
      *         {@code A.isAccessibleBy(T) == true}.
      *         Otherwise, the invocation throws {@link WrongThreadException}; and</li>
-     *     <li>{@code A} is kept alive during the invocation. For instance,
-     *         if {@code A} has been obtained using a {@linkplain Arena#ofShared() shared arena},
-     *         any attempt to {@linkplain Arena#close() close} the arena while the
-     *         downcall method handle is still executing will result in an
-     *         {@link IllegalStateException}.</li>
+     *     <li>{@code A} is <a href="MemorySegment.html#segment-alignment">kept alive</a>
+     *         during the invocation.
      *</ul>
      * <p>
      * Moreover, if the provided function descriptor's return layout is an

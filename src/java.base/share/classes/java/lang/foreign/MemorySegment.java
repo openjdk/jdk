@@ -506,6 +506,17 @@ import java.util.stream.Stream;
  * be used with caution: assigning a segment incorrect spatial and/or temporal bounds
  * could result in a VM crash when attempting to access the memory segment.
  *
+ * <h2 id="keep-alive">Keep-alive operations</h2>
+ *
+ * Some operations on memory segments keep the memory segment {@linkplain Scope#isAlive() alive}.
+ * For instance, if the segment has been obtained using a {@linkplain Arena#ofShared() shared arena},
+ * any attempt to {@linkplain Arena#close() close} the arena while such an operation is still
+ * executing will result in an {@link IllegalStateException}.
+ * <p>
+ * Examples of keep-alive operations are: passing a memory segment to a
+ * {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handle},
+ * or calling one of the methods {@link #load()}, {@link #unload()}, {@link #force()}, or {@link #isLoaded()}.
+ *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
@@ -1008,17 +1019,20 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Determines whether all the contents of this mapped segment are resident in physical
      * memory.
-     *
-     * <p> A return value of {@code true} implies that it is highly likely
+     * <p>
+     * A return value of {@code true} implies that it is highly likely
      * that all the data in this segment is resident in physical memory and
      * may therefore be accessed without incurring any virtual-memory page
      * faults or I/O operations. A return value of {@code false} does not
      * necessarily imply that this segment's contents are not resident in physical
      * memory.
-     *
-     * <p> The returned value is a hint, rather than a guarantee, because the
+     * <p>
+     * The returned value is a hint, rather than a guarantee, because the
      * underlying operating system may have paged out some of this segment's data
-     * by the time that an invocation of this method returns.  </p>
+     * by the time that an invocation of this method returns.
+     * <p>
+     * This memory segment is <a href="MemorySegment.html#keep-alive">kept alive</a>
+     * during the invocation of this method.
      *
      * @return  {@code true} if it is likely that the contents of this segment
      *          are resident in physical memory
@@ -1038,7 +1052,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * This method makes a best effort to ensure that, when it returns,
      * the contents of this segment are resident in physical memory.  Invoking this
      * method may cause some number of page faults and I/O operations to
-     * occur. </p>
+     * occur.
+     * <p>
+     * This memory segment is <a href="MemorySegment.html#keep-alive">kept alive</a>
+     * during the invocation of this method.
      *
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -1055,7 +1072,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * This method makes a best effort to ensure that the contents of this segment
      * are no longer resident in physical memory. Accessing this segment's contents
      * after invoking this method may cause some number of page faults and I/O operations
-     * to occur (as this segment's contents might need to be paged back in). </p>
+     * to occur (as this segment's contents might need to be paged back in).
+     * <p>
+     * This memory segment is <a href="MemorySegment.html#keep-alive">kept alive</a>
+     * during the invocation of this method.
      *
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -1083,6 +1103,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * method may have no effect. In particular, the method has no effect for segments
      * mapped in read-only or private mapping modes. This method may or may not have an
      * effect for implementation-specific mapping modes.
+     * <p>
+     * This memory segment is <a href="MemorySegment.html#keep-alive">kept alive</a>
+     * during the invocation of this method.
      *
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with this segment is not
      *         {@linkplain Scope#isAlive() alive}
