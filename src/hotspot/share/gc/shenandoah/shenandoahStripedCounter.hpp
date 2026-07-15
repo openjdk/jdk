@@ -31,9 +31,9 @@
 #include "utilities/globalDefinitions.hpp"
 
 // A contended-counter optimized for many concurrent writers and infrequent reads.
-// Each writer accumulates into a stripe chosen by its thread hash, each on its own cache line to
-// avoid false sharing. Stripes are shared when live writers outnumber stripes (num_stripes <= CPU
-// count). The value of the counter is always sum(stripes).
+// Each writer accumulates into a stripe chosen from its stable per-thread round-robin ticket, each
+// on its own cache line to avoid false sharing. Stripes are shared when live writers outnumber
+// stripes (num_stripes <= CPU count). The value of the counter is always sum(stripes).
 //
 // Reads (sum) are approximate under concurrent writes and exact when quiescent.
 // This counter is monotonic per epoch: add() only increases it; drain() atomically reads and resets
@@ -43,8 +43,8 @@ class ShenandoahStripedCounter : public CHeapObj<mtGC> {
 
   PaddedCounter* _stripes;   // _num_stripes entries
   // Number of stripes: a power of two, rounded down from the CPU count. Keeping it a power of two
-  // lets current_stripe() map a thread hash into range with a mask (& _stripe_mask) instead of a
-  // modulo on the hot path.
+  // lets current_stripe() map a thread's raw round-robin ticket into range with a mask
+  // (& _stripe_mask) instead of a modulo on the hot path.
   uint32_t const _num_stripes;
   uint32_t const _stripe_mask; // _num_stripes - 1
   uint32_t const _log_num_stripes;

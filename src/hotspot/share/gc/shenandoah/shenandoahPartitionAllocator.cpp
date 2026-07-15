@@ -58,8 +58,10 @@ uint ShenandoahPartitionAllocator<PARTITION>::alloc_region_slot(Thread* thread) 
     }
   }
 
-  // stable per-thread slot, assigned once, count is fixed for the allocator's life.
-  uint slot = ShenandoahThreadLocalData::random_probe(thread) % _alloc_region_count;
+  // Mutators and rare non-worker collector allocations share one stable raw per-thread ticket.
+  // Reduce it here rather than caching a consumer-specific slot so other striped structures can
+  // independently map the same ticket into differently-sized arrays.
+  const uint slot = ShenandoahThreadLocalData::round_robin_probe(thread) % _alloc_region_count;
   assert(slot < _alloc_region_count, "slot in range");
   return slot;
 }

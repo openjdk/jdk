@@ -28,7 +28,8 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "runtime/os.hpp"
+
+Atomic<uint32_t> ShenandoahThreadLocalData::_next_round_robin_probe{0};
 
 ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _gc_state(0),
@@ -41,7 +42,8 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _evacuation_stats(new ShenandoahEvacuationStats()),
   _invisible_root(nullptr),
   _invisible_root_word_size(0),
-  _random_probe((uint32_t)(os::random() & 0x7fffffff)) {
+  _round_robin_probe(0),
+  _round_robin_probe_initialized(false) {
 }
 
 ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {
