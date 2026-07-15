@@ -1884,6 +1884,8 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
         assert(n != top() || r->in(pnum) == top(), "live value must not be garbage");
         assert(phi->region() == r, "");
         phi->set_req(pnum, n);  // Then add 'n' to the merge
+        ensure_valid_phi(phi, pnum);
+
         if (pnum == PhiNode::Input) {
           // Last merge for this Phi.
           // So far, Phis have had a reasonable type from ciTypeFlow.
@@ -2060,6 +2062,26 @@ int Parse::Block::add_new_path() {
   return pnum;
 }
 
+// The verifier ensures that the ciType of phi is not narrower than its inputs. However, since
+// TypeOopPtr::make_from_klass may be aggressive if it finds that the ciType has only a single
+// concrete subtype, and concurrent class loading/unloading may change this property during the
+// compilation process, it may be the case that the Type of phi is narrower than its inputs. In
+// those cases, we need to insert a CheckCastPP, otherwise several PhiNode idealization may be
+// unsound, see PhaseIterGVN::verify_type_replacement.
+void Parse::ensure_valid_phi(PhiNode* phi, uint input_idx) {
+  Node* input = phi->in(input_idx);
+  if (input == nullptr) {
+    return;
+  }
+
+  const Type* phi_type = _gvn.type(phi);
+  if (phi_type->isa_oopptr() != nullptr && !_gvn.type(input)->higher_equal(phi_type)) {
+    Node* ctrl_input = phi->region()->in(input_idx);
+    Node* new_input = new CheckCastPPNode(ctrl_input, input, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing);
+    phi->set_req(input_idx, _gvn.transform(new_input));
+  }
+}
+
 //------------------------------ensure_phi-------------------------------------
 // Turn the idx'th entry of the current map into a Phi
 PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
@@ -2110,7 +2132,13 @@ PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
 
   PhiNode* phi = PhiNode::make(region, o, t);
   gvn().set_type(phi, t);
-  if (C->do_escape_analysis()) record_for_igvn(phi);
+  for (uint i = 1; i < phi->req(); i++) {
+    ensure_valid_phi(phi, i);
+  }
+
+  if (C->do_escape_analysis()) {
+    record_for_igvn(phi);
+  }
   map->set_req(idx, phi);
   return phi;
 }

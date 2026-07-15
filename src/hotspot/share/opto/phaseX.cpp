@@ -2166,6 +2166,36 @@ void PhaseIterGVN::verify_node_invariants_for(const Node* n) {
     }
   }
 }
+
+// It is not valid to replace an oop with another oop such that we lose information. For example,
+// replacing a non-nullable node with a nullable node will mistakenly drop the dependency that the
+// node is not nullable, which may result in depending loads being hoisted above the null check.
+// Another example is if the replacement results in derived pointers lying in a different alias
+// class, which may also lead to incorrect scheduling.
+// IGVN uses a stronger invariant that ensure both aforementioned properties.
+void PhaseIterGVN::verify_type_replacement(const Type* old_type, const Type* new_type, Node* old_node, Node* new_node) const {
+  if (old_type->make_oopptr() == nullptr && new_type->make_oopptr() == nullptr) {
+    // Only apply to oops for now
+    return;
+  }
+
+  if (new_type->higher_equal(old_type)) {
+    return;
+  }
+
+  stringStream ss;
+  old_type->dump_on(&ss);
+  ss.cr();
+  new_type->dump_on(&ss);
+  ss.cr();ss.cr();
+  old_node->dump("", false, &ss);
+  if (new_node != nullptr) {
+    ss.cr();
+    new_node->dump("", false, &ss);
+  }
+  tty->print_cr("%s", ss.as_string());
+  assert(false, "IGVN transformation must not lose Type information");
+}
 #endif
 
 /**
@@ -2238,6 +2268,9 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     if (loop_count >= K + C->live_nodes()) {
       dump_infinite_loop_info(i, "PhaseIterGVN::transform_old");
     }
+    if (is_verify_Ideal()) {
+      verify_type_replacement(k->bottom_type(), i->bottom_type(), k, i);
+    }
 #endif
     assert((i->_idx >= k->_idx) || i->is_top(), "Idealize should return new nodes, use Identity to return old nodes");
     // Made a change; put users of original Node on worklist
@@ -2288,6 +2321,12 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
   // If 'k' computes a constant, replace it with a constant
   if (t->singleton() && !k->is_Con()) {
+#ifdef ASSERT
+    if (is_verify_Value()) {
+      verify_type_replacement(k->bottom_type(), t, k);
+    }
+#endif // ASSERT
+
     set_progress();
     Node* con = makecon(t);     // Make a constant
     add_users_to_worklist(k);
@@ -2298,6 +2337,12 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   // Now check for Identities
   i = k->Identity(this);      // Look for a nearby replacement
   if (i != k) {                // Found? Return replacement!
+#ifdef ASSERT
+    if (is_verify_Identity()) {
+      verify_type_replacement(k->bottom_type(), i->bottom_type(), k, i);
+    }
+#endif // ASSERT
+
     set_progress();
     add_users_to_worklist(k);
     subsume_node(k, i);       // Everybody using k now uses i
@@ -2654,6 +2699,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->Opcode() == Op_AndI || u->Opcode() == Op_AndL;
+    });
+  }
+  // If changed AddI inputs, check Phi for CmpLTMask pattern
+  if (use_op == Op_AddI) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_Phi();
     });
   }
   // If changed AddI/SubI inputs, check CmpU for range check optimization.

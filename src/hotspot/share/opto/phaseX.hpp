@@ -545,6 +545,7 @@ public:
   void verify_Identity_for(Node* n);
   void verify_node_invariants_for(const Node* n);
   void verify_empty_worklist(Node* n);
+  void verify_type_replacement(const Type* old_type, const Type* new_type, Node* old_node, Node* new_node = nullptr) const;
 #endif
 
 #ifndef PRODUCT
