@@ -2897,16 +2897,21 @@ Node* VectorBlendNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // (VectorBlend A B (XorV/XorVMask M -1)) => (VectorBlend B A M)
-  int mask_opc = mask->Opcode();
+  Node* uncasted_mask = uncast_mask(mask);
+  int mask_opc = uncasted_mask->Opcode();
   if ((mask_opc == Op_XorV || mask_opc == Op_XorVMask) &&
-       !mask->is_predicated_vector()) {
+       !uncasted_mask->is_predicated_vector()) {
     Node* m = nullptr;
-    if (VectorNode::is_all_ones_vector(mask->in(1))) {
-      m = mask->in(2);
-    } else if (VectorNode::is_all_ones_vector(mask->in(2))) {
-      m = mask->in(1);
+    if (VectorNode::is_all_ones_vector(uncasted_mask->in(1))) {
+      m = uncasted_mask->in(2);
+    } else if (VectorNode::is_all_ones_vector(uncasted_mask->in(2))) {
+      m = uncasted_mask->in(1);
     }
     if (m != nullptr) {
+      // We need to regenerate the mask to ensure type correctness.
+      if (uncasted_mask != mask) {
+        m = phase->transform(new VectorMaskCastNode(m, mask->bottom_type()->is_vect()));
+      }
       return new VectorBlendNode(in2, in1, m);
     }
   }
@@ -2922,13 +2927,13 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
 
   // (VectorBlend X Y (Replicate -1)) => Y
   // (VectorBlend X Y (MaskAll   -1)) => Y
-  if (VectorNode::is_all_ones_vector(in(3))) {
+  if (VectorNode::is_all_ones_vector(uncast_mask(in(3)))) {
     return in(2);
   }
 
   // (VectorBlend X Y (Replicate 0)) => X
   // (VectorBlend X Y (MaskAll   0)) => X
-  if (VectorNode::is_all_zeros_vector(in(3))) {
+  if (VectorNode::is_all_zeros_vector(uncast_mask(in(3)))) {
     return in(1);
   }
   return this;
