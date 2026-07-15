@@ -95,11 +95,17 @@ public class TestDTestAndExclude {
      * Create a VM and simulate as if it was a driver VM spawned by JTreg that has -DTest/DExclude set as VM or Javaopts
      */
     protected static void run(String dTest, String dExclude, String arg) throws Exception {
-        System.out.println("Run -DTest=" + dTest + " -DExclude=" + dExclude + " arg=" + arg);
+        boolean plural = dTest.contains(",");
+        boolean capital = dTest.length() % 2 == 0;
+        String dTestFlag = capital ? "-DTest" : "-Dtest";
+        if (plural) {
+            dTestFlag = dTestFlag + "s";
+        }
+        System.out.println("Run " + dTestFlag + "=" + dTest + " -DExclude=" + dExclude + " arg=" + arg);
         OutputAnalyzer oa;
         ProcessBuilder process = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Dtest.class.path=" + Utils.TEST_CLASS_PATH, "-Dtest.jdk=" + Utils.TEST_JDK,
-                "-Dtest.vm.opts=-DTest=" + dTest + " -DExclude=" + dExclude,
+                "-Dtest.vm.opts=" + dTestFlag + "=" + dTest + " -DExclude=" + dExclude,
                 "ir_framework.tests.TestDTestAndExclude", arg);
         oa = ProcessTools.executeProcess(process);
         oa.shouldHaveExitValue(0);
