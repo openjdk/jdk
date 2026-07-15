@@ -955,7 +955,7 @@ address JvmtiClassFileReconstituter::writeable_address(size_t size) {
                                                          * initial_buffer_size;
 
     // VM goes belly-up if the memory isn't available, so cannot do OOM processing
-    _buffer = REALLOC_RESOURCE_ARRAY(u1, _buffer, _buffer_size, new_buffer_size);
+    _buffer = REALLOC_RESOURCE_ARRAY(_buffer, _buffer_size, new_buffer_size);
     _buffer_size = new_buffer_size;
     _buffer_ptr = _buffer + used_size;
   }

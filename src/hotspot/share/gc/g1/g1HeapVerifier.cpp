@@ -25,6 +25,7 @@
 #include "code/nmethod.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.hpp"
@@ -460,35 +461,34 @@ public:
 
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
 
-    bool part_of_marking = r->is_old_or_humongous() && !r->is_collection_set_candidate();
     HeapWord* top_at_mark_start = cm->top_at_mark_start(r);
 
-    if (part_of_marking) {
-      guarantee(r->bottom() != top_at_mark_start,
-                "region %u (%s) does not have TAMS set",
-                r->hrm_index(), r->get_short_type_str());
-      size_t marked_bytes = cm->live_bytes(r->hrm_index());
-
+    if (r->is_old_or_humongous()) {
+      if (!cm->is_root_region(r)) {
+        guarantee(r->bottom() != top_at_mark_start,
+            "region %u (%s) does not have TAMS set although it's going to be marked through",
+            r->hrm_index(), r->get_short_type_str());
+      }
       MarkedBytesClosure cl;
       r->apply_to_marked_objects(cm->mark_bitmap(), &cl);
 
+      size_t marked_bytes = cm->live_bytes(r->hrm_index());
       guarantee(cl.marked_bytes() == marked_bytes,
                 "region %u (%s) live bytes actual %zu and cache %zu differ",
                 r->hrm_index(), r->get_short_type_str(), cl.marked_bytes(), marked_bytes);
-    } else {
+    } else if (r->is_young()) {
       guarantee(r->bottom() == top_at_mark_start,
                 "region %u (%s) has TAMS set " PTR_FORMAT " " PTR_FORMAT,
                 r->hrm_index(), r->get_short_type_str(), p2i(r->bottom()), p2i(top_at_mark_start));
       guarantee(cm->live_bytes(r->hrm_index()) == 0,
                 "region %u (%s) has %zu live bytes recorded",
                 r->hrm_index(), r->get_short_type_str(), cm->live_bytes(r->hrm_index()));
-      guarantee(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), r->end()) == r->end(),
-                "region %u (%s) has mark",
-                r->hrm_index(), r->get_short_type_str());
-      guarantee(cm->is_root_region(r),
-                "region %u (%s) should be root region",
-                r->hrm_index(), r->get_short_type_str());
+      guarantee(cm->is_root_region(r), "must be for %u (%s)", r->hrm_index(), r->get_short_type_str());
     }
+
+    guarantee(cm->mark_bitmap()->get_next_marked_addr(top_at_mark_start, r->end()) == r->end(),
+            "region %u (%s) has mark from TAMS to top",
+            r->hrm_index(), r->get_short_type_str());
     return false;
   }
 };
@@ -499,12 +499,14 @@ void G1HeapVerifier::verify_marking_state() {
   // Verify TAMSes, bitmaps and liveness statistics.
   //
   // - if part of marking: TAMS != bottom, liveness == 0, bitmap clear
-  // - if evacuation failed + part of marking: TAMS != bottom, liveness != 0, bitmap has at least on object set (corresponding to liveness)
+  // - if evacuation failed + part of marking: TAMS != bottom, liveness != 0, bitmap has at least one
+  //   object set (corresponding to liveness)
   // - if not part of marking: TAMS == bottom, liveness == 0, bitmap clear; must be in root region
 
   // To compare liveness recorded in G1ConcurrentMark and actual we need to flush the
-  // cache.
-  G1CollectedHeap::heap()->concurrent_mark()->flush_all_task_caches();
+  // cache. Do not signal end of use of the mark stats cache as this flush is only to
+  // make verification work. Further concurrent marking continues to need these values.
+  G1CollectedHeap::heap()->concurrent_mark()->flush_all_task_caches(false /* ends_use_of_mark_cache */);
 
   G1VerifyRegionMarkingStateClosure cl;
   _g1h->heap_region_iterate(&cl);
@@ -532,28 +534,32 @@ void G1HeapVerifier::verify_after_gc() {
   verify_card_tables_in_sync();
 }
 
-void G1HeapVerifier::verify_bitmap_clear(bool from_tams) {
+void G1HeapVerifier::verify_bitmap_clear(bool from_tams, bool concurrent_cycle_aborted) {
   if (!G1VerifyBitmaps) {
     return;
   }
 
   class G1VerifyBitmapClear : public G1HeapRegionClosure {
     bool _from_tams;
+    bool _concurrent_cycle_aborted;
 
   public:
-    G1VerifyBitmapClear(bool from_tams) : _from_tams(from_tams) { }
+    G1VerifyBitmapClear(bool from_tams, bool concurrent_cycle_aborted) :
+      _from_tams(from_tams), _concurrent_cycle_aborted(concurrent_cycle_aborted) { }
 
     virtual bool do_heap_region(G1HeapRegion* r) {
       G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
       G1CMBitMap* bitmap = cm->mark_bitmap();
 
-      HeapWord* start = _from_tams ? cm->top_at_mark_start(r) : r->bottom();
+      HeapWord* start = _from_tams
+                        ? cm->top_at_mark_start_for_verification(r, _concurrent_cycle_aborted)
+                        : r->bottom();
 
       HeapWord* mark = bitmap->get_next_marked_addr(start, r->end());
       guarantee(mark == r->end(), "Found mark at " PTR_FORMAT " in region %u from start " PTR_FORMAT, p2i(mark), r->hrm_index(), p2i(start));
       return false;
     }
-  } cl(from_tams);
+  } cl(from_tams, concurrent_cycle_aborted);
 
   G1CollectedHeap::heap()->heap_region_iterate(&cl);
 }

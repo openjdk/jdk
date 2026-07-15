@@ -369,6 +369,15 @@ void Parse::load_interpreter_state(Node* osr_buf) {
       continue;
     }
     set_local(index, check_interpreter_type(l, type, bad_type_exit));
+    if (StressReachabilityFences && type->isa_oopptr() != nullptr) {
+      // Keep all oop locals alive until the method returns as if there are
+      // reachability fences for them at the end of the method.
+      Node* loc = local(index);
+      if (loc->bottom_type() != TypePtr::NULL_PTR) {
+        assert(loc->bottom_type()->isa_oopptr() != nullptr, "%s", Type::str(loc->bottom_type()));
+        _stress_rf_hook->add_req(loc);
+      }
+    }
   }
 
   for (index = 0; index < sp(); index++) {
@@ -377,6 +386,15 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     if (l->is_top())  continue;  // nothing here
     const Type *type = osr_block->stack_type_at(index);
     set_stack(index, check_interpreter_type(l, type, bad_type_exit));
+    if (StressReachabilityFences && type->isa_oopptr() != nullptr) {
+      // Keep all oops on stack alive until the method returns as if there are
+      // reachability fences for them at the end of the method.
+      Node* stk = stack(index);
+      if (stk->bottom_type() != TypePtr::NULL_PTR) {
+        assert(stk->bottom_type()->isa_oopptr() != nullptr, "%s", Type::str(stk->bottom_type()));
+        _stress_rf_hook->add_req(stk);
+      }
+    }
   }
 
   if (bad_type_exit->control()->req() > 1) {
@@ -411,6 +429,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _wrote_stable = false;
   _wrote_fields = false;
   _alloc_with_final_or_stable = nullptr;
+  _stress_rf_hook = (StressReachabilityFences ? new Node(1) : nullptr);
   _block = nullptr;
   _first_return = true;
   _replaced_nodes_for_exceptions = false;
@@ -642,6 +661,11 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 
   if (log)  log->done("parse nodes='%d' live='%d' memory='%zu'",
                       C->unique(), C->live_nodes(), C->node_arena()->used());
+
+  if (StressReachabilityFences) {
+    _stress_rf_hook->destruct(&_gvn);
+    _stress_rf_hook = nullptr;
+  }
 }
 
 //---------------------------do_all_blocks-------------------------------------
@@ -1194,6 +1218,14 @@ SafePointNode* Parse::create_entry_map() {
   return entry_map;
 }
 
+//-----------------------is_auto_boxed_primitive------------------------------
+// Helper method to detect auto-boxed primitives (result of valueOf() call).
+static bool is_auto_boxed_primitive(Node* n) {
+  return (n->is_Proj() && n->as_Proj()->_con == TypeFunc::Parms &&
+          n->in(0)->is_CallJava() &&
+          n->in(0)->as_CallJava()->method()->is_boxing_method());
+}
+
 //-----------------------------do_method_entry--------------------------------
 // Emit any code needed in the pseudo-block before BCI zero.
 // The main thing to do is lock the receiver of a synchronized method.
@@ -1205,6 +1237,19 @@ void Parse::do_method_entry() {
 
   if (C->env()->dtrace_method_probes()) {
     make_dtrace_method_entry(method());
+  }
+
+  if (StressReachabilityFences) {
+    // Keep all oop arguments alive until the method returns as if there are
+    // reachability fences for them at the end of the method.
+    int max_locals = jvms()->loc_size();
+    for (int idx = 0; idx < max_locals; idx++) {
+      Node* loc = local(idx);
+      if (loc->bottom_type()->isa_oopptr() != nullptr &&
+          !is_auto_boxed_primitive(loc)) { // ignore auto-boxed primitives
+        _stress_rf_hook->add_req(loc);
+      }
+    }
   }
 
 #ifdef ASSERT
@@ -1651,9 +1696,14 @@ void Parse::merge_new_path(int target_bci) {
 }
 
 //-------------------------merge_exception-------------------------------------
-// Merge the current mapping into the basic block starting at bci
-// The ex_oop must be pushed on the stack, unlike throw_to_exit.
-void Parse::merge_exception(int target_bci) {
+// Push the given ex_oop onto the stack, then merge the current mapping into
+// the basic block starting at target_bci.
+void Parse::push_and_merge_exception(int target_bci, Node* ex_oop) {
+  // Add the safepoint before trimming the stack and pushing the exception oop.
+  // We could add the safepoint after, but then the bci would also need to be
+  // advanced to target_bci first, so the stack state matches.
+  maybe_add_safepoint(target_bci);
+  push_ex_oop(ex_oop);      // Push exception oop for handler
 #ifdef ASSERT
   if (target_bci <= bci()) {
     C->set_exception_backedge();
@@ -1833,7 +1883,8 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       if (phi != nullptr) {
         assert(n != top() || r->in(pnum) == top(), "live value must not be garbage");
         assert(phi->region() == r, "");
-        phi->set_req(pnum, n);  // Then add 'n' to the merge
+        phi->set_req(pnum, maybe_narrow_phi_input(r->in(pnum), n, _gvn.type(phi)));
+
         if (pnum == PhiNode::Input) {
           // Last merge for this Phi.
           // So far, Phis have had a reasonable type from ciTypeFlow.
@@ -2010,6 +2061,21 @@ int Parse::Block::add_new_path() {
   return pnum;
 }
 
+// The verifier ensures that the ciType of phi is not narrower than its inputs. However, since
+// TypeOopPtr::make_from_klass may be aggressive if it finds that the ciType has only a single
+// concrete subtype, and concurrent class loading/unloading may change this property during the
+// compilation process, it may be the case that the Type of phi is narrower than its inputs. In
+// those cases, we need to insert a CheckCastPP, otherwise several PhiNode idealization may be
+// unsound, as we may replace a Phi which has a narrower Type with one of its input which has a
+// wider Type.
+Node* Parse::maybe_narrow_phi_input(Node* ctrl, Node* n, const Type* phi_type) {
+  if (phi_type->isa_oopptr() != nullptr && !_gvn.type(n)->higher_equal(phi_type)) {
+    n = new CheckCastPPNode(ctrl, n, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing);
+    n = _gvn.transform(n);
+  }
+  return n;
+}
+
 //------------------------------ensure_phi-------------------------------------
 // Turn the idx'th entry of the current map into a Phi
 PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
@@ -2058,9 +2124,18 @@ PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
     return nullptr;
   }
 
-  PhiNode* phi = PhiNode::make(region, o, t);
+  PhiNode* phi = new PhiNode(region, t);
   gvn().set_type(phi, t);
-  if (C->do_escape_analysis()) record_for_igvn(phi);
+  for (uint i = 1; i < phi->req(); i++) {
+    Node* ctrl = region->in(i);
+    if (ctrl != nullptr) {
+      phi->init_req(i, maybe_narrow_phi_input(ctrl, o, t));
+    }
+  }
+
+  if (C->do_escape_analysis()) {
+    record_for_igvn(phi);
+  }
   map->set_req(idx, phi);
   return phi;
 }
@@ -2190,6 +2265,15 @@ void Parse::clinit_deopt() {
 void Parse::return_current(Node* value) {
   if (method()->intrinsic_id() == vmIntrinsics::_Object_init) {
     call_register_finalizer();
+  }
+
+  if (StressReachabilityFences) {
+    // Insert reachability fences for all oop arguments at the end of the method.
+    for (uint i = 1; i < _stress_rf_hook->req(); i++) {
+      Node* referent = _stress_rf_hook->in(i);
+      assert(referent->bottom_type()->isa_oopptr(), "%s", Type::str(referent->bottom_type()));
+      insert_reachability_fence(referent);
+    }
   }
 
   // Do not set_parse_bci, so that return goo is credited to the return insn.

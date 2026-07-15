@@ -38,7 +38,6 @@ import javax.swing.event.MenuDragMouseEvent;
 import javax.swing.plaf.UIResource;
 import javax.swing.text.View;
 
-import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
 
@@ -1985,26 +1984,6 @@ public class SwingUtilities implements SwingConstants
         Frame sharedOwnerFrame = getSharedOwnerFrame();
         return (WindowListener)sharedOwnerFrame;
     }
-
-    /* Don't make these AppContext accessors public or protected --
-     * since AppContext is in sun.awt in 1.2, we shouldn't expose it
-     * even indirectly with a public API.
-     */
-    // REMIND(aim): phase out use of 4 methods below since they
-    // are just private covers for AWT methods (?)
-
-    static Object appContextGet(Object key) {
-        return AppContext.getAppContext().get(key);
-    }
-
-    static void appContextPut(Object key, Object value) {
-        AppContext.getAppContext().put(key, value);
-    }
-
-    static void appContextRemove(Object key) {
-        AppContext.getAppContext().remove(key);
-    }
-
 
     static Class<?> loadSystemClass(String className) throws ClassNotFoundException {
         return Class.forName(className, true, Thread.currentThread().

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @compile ../ReferenceTracker.java
- * @run main/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors H3Timeout
+ * @run main/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors ${test.main.class}
  */
 public class H3Timeout implements HttpServerAdapters {
 

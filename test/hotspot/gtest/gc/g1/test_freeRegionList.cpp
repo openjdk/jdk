@@ -91,5 +91,5 @@ TEST_OTHER_VM(G1FreeRegionList, length) {
   bot_storage->uncommit_regions(0, num_regions_in_test);
   delete bot_storage;
   os::release_memory(addr, sz);
-  FREE_C_HEAP_ARRAY(HeapWord, bot_data);
+  FREE_C_HEAP_ARRAY(bot_data);
 }

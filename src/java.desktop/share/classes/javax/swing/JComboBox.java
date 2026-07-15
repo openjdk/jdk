@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1101,7 +1101,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
             = "the Action instance connected with this ActionEvent source")
     public void setAction(Action a) {
         Action oldValue = getAction();
-        if (action==null || !action.equals(a)) {
+        if (action == null || !action.equals(a)) {
             action = a;
             if (oldValue != null) {
                 removeActionListener(oldValue);

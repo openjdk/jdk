@@ -36,7 +36,7 @@ define_pd_global(bool, ImplicitNullChecks,       true);  // Generate code for im
 define_pd_global(bool, TrapBasedNullChecks,     false);
 define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap nulls past to check cast
 
-define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
+define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_PRESENT(true) NOT_COMPILER2(false));
 
 define_pd_global(size_t, CodeCacheSegmentSize,   64);
 define_pd_global(uint, CodeEntryAlignment,       64);
@@ -48,7 +48,7 @@ define_pd_global(intx, OptoLoopAlignment,        16);
 // stack if compiled for unix and LP64. To pass stack overflow tests we need
 // 20 shadow pages.
 #define DEFAULT_STACK_SHADOW_PAGES (20 DEBUG_ONLY(+5))
-#define DEFAULT_STACK_RESERVED_PAGES (1)
+#define DEFAULT_STACK_RESERVED_PAGES (NOT_WINDOWS(1) WINDOWS_ONLY(0))
 
 #define MIN_STACK_YELLOW_PAGES DEFAULT_STACK_YELLOW_PAGES
 #define MIN_STACK_RED_PAGES    DEFAULT_STACK_RED_PAGES
@@ -115,18 +115,26 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Value -1 means off.")                                        \
           range(-1, 4096)                                               \
   product(ccstr, OnSpinWaitInst, "yield", DIAGNOSTIC,                   \
-          "The instruction to use to implement "                        \
-          "java.lang.Thread.onSpinWait()."                              \
-          "Valid values are: none, nop, isb, yield, sb.")               \
+          "The instruction to use for java.lang.Thread.onSpinWait(). "  \
+          "Valid values are: none, nop, isb, yield, sb, wfet.")         \
           constraint(OnSpinWaitInstNameConstraintFunc, AtParse)         \
   product(uint, OnSpinWaitInstCount, 1, DIAGNOSTIC,                     \
-          "The number of OnSpinWaitInst instructions to generate."      \
-          "It cannot be used with OnSpinWaitInst=none.")                \
+          "The number of OnSpinWaitInst instructions to generate. "     \
+          "It cannot be used with OnSpinWaitInst=none. "                \
+          "For OnSpinWaitInst=wfet it must be 1.")                      \
           range(1, 99)                                                  \
+  product(uint, OnSpinWaitDelay, 40, DIAGNOSTIC,                        \
+          "The minimum delay (in nanoseconds) of the OnSpinWait loop. " \
+          "It can only be used with -XX:OnSpinWaitInst=wfet.")          \
+          range(1, 1000)                                                \
   product(ccstr, UseBranchProtection, "none",                           \
           "Branch Protection to use: none, standard, pac-ret")          \
   product(bool, AlwaysMergeDMB, true, DIAGNOSTIC,                       \
           "Always merge DMB instructions in code emission")             \
+  product(bool, NeoverseN1ICacheErratumMitigation, false, DIAGNOSTIC,   \
+          "Enable workaround for Neoverse N1 erratum 1542419")          \
+  product(bool, UseSingleICacheInvalidation, false, DIAGNOSTIC,         \
+          "Defer multiple ICache invalidation to single invalidation")  \
 
 // end of ARCH_FLAGS
 

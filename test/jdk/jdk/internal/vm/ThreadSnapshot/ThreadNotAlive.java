@@ -25,11 +25,10 @@
  * @test
  * @summary Test jdk.internal.vm.ThreadSnapshot.of(Thread) when thread is not alive
  * @modules java.base/jdk.internal.vm
- * @compile/module=java.base jdk/internal/vm/Helper.java
  * @run junit ThreadNotAlive
  */
 
-import jdk.internal.vm.Helper;
+import jdk.internal.vm.ThreadSnapshot;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,27 +38,27 @@ class ThreadNotAlive {
     @Test
     void unstartedPlatformThread() {
         Thread t = Thread.ofPlatform().unstarted(() -> { });
-        assertFalse(Helper.isAlive(t));
+        assertFalse(ThreadSnapshot.of(t) != null);
     }
 
     @Test
     void terminatedPlatformThread() throws InterruptedException {
         Thread t = Thread.ofPlatform().start(() -> { });
         t.join();
-        assertFalse(Helper.isAlive(t));
+        assertFalse(ThreadSnapshot.of(t) != null);
     }
 
     @Test
     void unstartedVirtualhread() {
         Thread t = Thread.ofVirtual().unstarted(() -> { });
-        assertFalse(Helper.isAlive(t));
+        assertFalse(ThreadSnapshot.of(t) != null);
     }
 
     @Test
     void terminatedVirtualThread() throws InterruptedException {
         Thread t = Thread.ofVirtual().start(() -> { });
         t.join();
-        assertFalse(Helper.isAlive(t));
+        assertFalse(ThreadSnapshot.of(t) != null);
     }
 
 }

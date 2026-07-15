@@ -76,6 +76,17 @@
   develop(bool, StressBailout, false,                                       \
           "Perform bailouts randomly at C2 failing() checks")               \
                                                                             \
+  product(bool, OptimizeReachabilityFences, true, DIAGNOSTIC,               \
+          "Optimize reachability fences "                                   \
+          "(leave reachability fence nodes intact when turned off)")        \
+                                                                            \
+  product(bool, PreserveReachabilityFencesOnConstants, false, DIAGNOSTIC,   \
+          "Keep reachability fences on compile-time constants")             \
+                                                                            \
+  product(bool, StressReachabilityFences, false, DIAGNOSTIC,                \
+          "Aggressively insert reachability fences "                        \
+          "for all oop method arguments")                                   \
+                                                                            \
   develop(uint, StressBailoutMean, 100000,                                  \
           "The expected number of failing() checks made until "             \
           "a random bailout.")                                              \
@@ -496,8 +507,12 @@
   /* controls for heat-based inlining */                                    \
                                                                             \
   develop(intx, NodeCountInliningCutoff, 18000,                             \
-          "If parser node generation exceeds limit stop inlining")          \
+          "If node count exceeds limit stop inlining")                      \
           range(0, max_jint)                                                \
+                                                                            \
+  product(bool, DelayAfterInliningCutoff, false, DIAGNOSTIC,                \
+          "If node count exceeds limit during parsing, attempt inlining "   \
+          "later instead of giving up completely")                          \
                                                                             \
   product(intx, MaxNodeLimit, 80000,                                        \
           "Maximum number of nodes")                                        \
@@ -585,6 +600,14 @@
   product(intx, EliminateAllocationFieldsLimit, 512, DIAGNOSTIC,            \
           "Number of fields in instance limit for scalar replacement")      \
           range(0, max_jint)                                                \
+                                                                            \
+  product(bool, StressEliminateAllocations, false, DIAGNOSTIC,              \
+          "Randomly fail allocation elimination attempts")                  \
+                                                                            \
+  product(uint, StressEliminateAllocationsMean, 20, DIAGNOSTIC,             \
+          "The expected number of elimination checks made until "           \
+          "a random failure.")                                              \
+          range(1, max_juint)                                               \
                                                                             \
   product(bool, OptimizePtrCompare, true,                                   \
           "Use escape analysis to optimize pointers compare")               \
@@ -705,6 +728,10 @@
   develop(bool, TraceIterativeGVN, false,                                   \
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
+  develop(bool, UseDeepIGVNRevisit, true,                                   \
+          "Re-process nodes that could benefit from a deep revisit after "  \
+          "the IGVN worklist drains")                                       \
+                                                                            \
   develop(uint, VerifyIterativeGVN, 0,                                      \
           "Verify Iterative Global Value Numbering =FEDCBA, with:"          \
           "  F: verify Node::Ideal does not return nullptr if the node"     \
@@ -769,6 +796,11 @@
           "The maximum bytecode size of a trivial method to be inlined by " \
           "high tier compiler")                                             \
           range(0, max_jint)                                                \
+                                                                            \
+  product(bool, InlineColdMethods, false, DIAGNOSTIC,                       \
+          "Inline cold methods that would otherwise be rejected due to "    \
+          "cold profile counters. Useful for compiler testing to expose "   \
+          "more code to compilers.")                                        \
                                                                             \
   product(bool, IncrementalInline, true,                                    \
           "do post parse inlining")                                         \
@@ -890,8 +922,8 @@
           "Use StoreStore barrier instead of Release barrier at the end "   \
           "of constructors")                                                \
                                                                             \
-  develop(bool, KillPathsReachableByDeadTypeNode, true,                     \
-          "When a Type node becomes top, make paths where the node is "     \
+  develop(bool, KillPathsReachableByDeadDataNode, true,                     \
+          "When a data node becomes top, make paths where the node is "     \
           "used dead by replacing them with a Halt node. Turning this off " \
           "could corrupt the graph in rare cases and should be used with "  \
           "care.")                                                          \
@@ -910,6 +942,44 @@
                                                                             \
   develop(bool, StressCountedLoop, false,                                   \
           "Randomly delay conversion to counted loops")                     \
+                                                                            \
+  product(bool, HotCodeHeap, false, EXPERIMENTAL,                           \
+          "Enable the code heap for hot C2 nmethods")                       \
+                                                                            \
+  product(double, HotCodeSamplePercent, 80, EXPERIMENTAL,                   \
+          "Minimum percentage of profiling samples that must be in "        \
+          "the MethodHot heap before stopping hot code collection")         \
+          range(0, 100)                                                     \
+                                                                            \
+  product(double, HotCodeStablePercent, 5, EXPERIMENTAL,                    \
+          "Maximum percentage of newly compiled to total C2 nmethods "      \
+          "to treat nmethod count as stable. "                              \
+          "Values less than zero disable the stable check")                 \
+          range(-1, DBL_MAX)                                                \
+                                                                            \
+  product(uint, HotCodeIntervalSeconds, 300, EXPERIMENTAL,                  \
+          "Seconds between hot code grouping attempts")                     \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uint, HotCodeSampleSeconds, 120, EXPERIMENTAL,                    \
+          "Seconds to sample application threads per grouping attempt")     \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uint, HotCodeStartupDelaySeconds, 120, EXPERIMENTAL,              \
+          "Seconds to delay before starting hot code grouping thread")      \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uint, HotCodeMinSamplingMs, 5, EXPERIMENTAL,                      \
+          "Minimum sampling interval in milliseconds")                      \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uint, HotCodeMaxSamplingMs, 15, EXPERIMENTAL,                     \
+          "Maximum sampling interval in milliseconds")                      \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uint, HotCodeCallLevel, 1, EXPERIMENTAL,                          \
+          "Number of levels of callees to relocate per candidate")          \
+          range(0, max_juint)                                               \
 
 // end of C2_FLAGS
 

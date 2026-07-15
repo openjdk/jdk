@@ -192,7 +192,7 @@ public:
   }
 
   ~Table() {
-    FREE_C_HEAP_ARRAY(Atomic<Entry>, _buckets);
+    FREE_C_HEAP_ARRAY(_buckets);
   }
 
   Table* prev() {

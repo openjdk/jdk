@@ -108,7 +108,6 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     static List<WWindowPeer> activeWindows = new LinkedList<WWindowPeer>();
     // WComponentPeer overrides
     @Override
-    @SuppressWarnings("unchecked")
     protected void disposeImpl() {
         synchronized (activeWindows) {
             activeWindows.remove(this);
@@ -684,16 +683,6 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             throw new IllegalArgumentException(
                 "The value of opacity should be in the range [0.0f .. 1.0f].");
         }
-
-        if (((this.opacity == 1.0f && opacity <  1.0f) ||
-             (this.opacity <  1.0f && opacity == 1.0f)) &&
-            !Win32GraphicsEnvironment.isVistaOS())
-        {
-            // non-Vista OS: only replace the surface data if opacity status
-            // changed (see WComponentPeer.isAccelCapable() for more)
-            replaceSurfaceDataRecursively((Component)getTarget());
-        }
-
         this.opacity = opacity;
 
         final int maxOpacity = 0xff;
@@ -735,14 +724,6 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             }
         }
 
-        boolean isVistaOS = Win32GraphicsEnvironment.isVistaOS();
-
-        if (this.isOpaque != isOpaque && !isVistaOS) {
-            // non-Vista OS: only replace the surface data if the opacity
-            // status changed (see WComponentPeer.isAccelCapable() for more)
-            replaceSurfaceDataRecursively(target);
-        }
-
         synchronized (getStateLock()) {
             this.isOpaque = isOpaque;
             setOpaqueImpl(isOpaque);
@@ -757,16 +738,14 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             }
         }
 
-        if (isVistaOS) {
-            // On Vista: setting the window non-opaque makes the window look
-            // rectangular, though still catching the mouse clicks within
-            // its shape only. To restore the correct visual appearance
-            // of the window (i.e. w/ the correct shape) we have to reset
-            // the shape.
-            Shape shape = target.getShape();
-            if (shape != null) {
-                target.setShape(shape);
-            }
+        // Since Vista: setting the window non-opaque makes the window look
+        // rectangular, though still catching the mouse clicks within
+        // its shape only. To restore the correct visual appearance
+        // of the window (i.e. w/ the correct shape) we have to reset
+        // the shape.
+        Shape shape = target.getShape();
+        if (shape != null) {
+            target.setShape(shape);
         }
 
         if (target.isVisible()) {

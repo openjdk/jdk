@@ -53,6 +53,7 @@
 #include "opto/vectornode.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
@@ -85,12 +86,13 @@ bool MemNode::check_if_adr_maybe_raw(Node* adr) {
 
 #ifndef PRODUCT
 void MemNode::dump_spec(outputStream *st) const {
-  if (in(Address) == nullptr)  return; // node is dead
+  if (in(Address) == nullptr) {
+    // node is dead
+    return;
+  }
 #ifndef ASSERT
   // fake the missing field
-  const TypePtr* _adr_type = nullptr;
-  if (in(Address) != nullptr)
-    _adr_type = in(Address)->bottom_type()->isa_ptr();
+  const TypePtr* _adr_type = in(Address)->bottom_type()->isa_ptr();
 #endif
   dump_adr_type(_adr_type, st);
 
@@ -107,6 +109,7 @@ void MemNode::dump_spec(outputStream *st) const {
   if (_unsafe_access) {
     st->print(" unsafe");
   }
+  st->print(" barrier(0x%x)", _barrier_data);
 }
 
 void MemNode::dump_adr_type(const TypePtr* adr_type, outputStream* st) {
@@ -442,7 +445,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
 // and 'DomResult::EncounteredDeadCode' if we can't decide due to
 // dead code, but at the end of IGVN, we know the definite result
 // once the dead code is cleaned up.
-Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub) {
+Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub, PhaseGVN* phase) {
   if (dom == nullptr || dom->is_top() || sub == nullptr || sub->is_top()) {
     return DomResult::EncounteredDeadCode; // Conservative answer for dead code
   }
@@ -522,6 +525,9 @@ Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub) {
           return dom_result;
         }
       } else {
+        if (n->Value(phase) == Type::TOP) {
+          return DomResult::EncounteredDeadCode;
+        }
         // First, own control edge.
         Node* m = n->find_exact_control(n->in(0));
         if (m != nullptr) {
@@ -552,14 +558,14 @@ Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub) {
 // if any, which have been previously discovered by the caller.
 bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
                                       Node* p2, AllocateNode* a2,
-                                      PhaseTransform* phase) {
+                                      PhaseGVN* phase) {
   // Trivial case: Non-overlapping values. Be careful, we can cast a raw pointer to an oop (e.g. in
   // the allocation pattern) so joining the types only works if both are oops. join may also give
   // an incorrect result when both pointers are nullable and the result is supposed to be
   // TypePtr::NULL_PTR, so we exclude that case.
   const Type* p1_type = p1->bottom_type();
   const Type* p2_type = p2->bottom_type();
-  if (p1_type->isa_oopptr() && p2_type->isa_oopptr() &&
+  if (p1_type != p2_type && p1_type->isa_oopptr() && p2_type->isa_oopptr() &&
       (!p1_type->maybe_null() || !p2_type->maybe_null()) &&
       p1_type->join(p2_type)->empty()) {
     return true;
@@ -575,9 +581,9 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
     return (a1 != a2);
   } else if (a1 != nullptr) {                  // one allocation a1
     // (Note:  p2->is_Con implies p2->in(0)->is_Root, which dominates.)
-    return all_controls_dominate(p2, a1);
+    return all_controls_dominate(p2->uncast(), a1, phase);
   } else { //(a2 != null)                   // one allocation a2
-    return all_controls_dominate(p1, a2);
+    return all_controls_dominate(p1->uncast(), a2, phase);
   }
   return false;
 }
@@ -695,7 +701,7 @@ ArrayCopyNode* MemNode::find_array_copy_clone(Node* ld_alloc, Node* mem) const {
 // specific to loads and stores, so they are handled by the callers.
 // (Currently, only LoadNode::Ideal has steps (c), (d).  More later.)
 //
-Node* MemNode::find_previous_store(PhaseValues* phase) {
+Node* MemNode::find_previous_store(PhaseGVN* phase) {
   AccessAnalyzer analyzer(phase, this);
 
   Node* mem = in(MemNode::Memory); // start searching here...
@@ -771,7 +777,7 @@ uint8_t MemNode::barrier_data(const Node* n) {
   return 0;
 }
 
-AccessAnalyzer::AccessAnalyzer(PhaseValues* phase, MemNode* n)
+AccessAnalyzer::AccessAnalyzer(PhaseGVN* phase, MemNode* n)
   : _phase(phase), _n(n), _memory_size(n->memory_size()), _alias_idx(-1) {
   Node* adr  = _n->in(MemNode::Address);
   _offset    = 0;
@@ -883,14 +889,14 @@ AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(No
       known_identical = true;
     } else if (_alloc != nullptr) {
       known_independent = true;
-    } else if (MemNode::all_controls_dominate(_n, st_alloc)) {
+    } else if (MemNode::all_controls_dominate(_base->uncast(), st_alloc, _phase)) {
       known_independent = true;
     }
 
     if (known_independent) {
       // The bases are provably independent: Either they are
       // manifestly distinct allocations, or else the control
-      // of _n dominates the store's allocation.
+      // of _base dominates the store's allocation.
       if (_alias_idx == Compile::AliasIdxRaw) {
         other = st_alloc->in(TypeFunc::Memory);
       } else {
@@ -1156,40 +1162,38 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
   return nullptr;
 }
 
-
-//---------------------------can_see_stored_value------------------------------
 // This routine exists to make sure this set of tests is done the same
 // everywhere.  We need to make a coordinated change: first LoadNode::Ideal
 // will change the graph shape in a way which makes memory alive twice at the
 // same time (uses the Oracle model of aliasing), then some
 // LoadXNode::Identity will fold things back to the equivalence-class model
 // of aliasing.
-Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
+Node* LoadNode::can_see_stored_value_through_membars(Node* st, PhaseValues* phase) const {
   Node* ld_adr = in(MemNode::Address);
-  intptr_t ld_off = 0;
-  Node* ld_base = AddPNode::Ideal_base_and_offset(ld_adr, phase, ld_off);
-  Node* ld_alloc = AllocateNode::Ideal_allocation(ld_base);
   const TypeInstPtr* tp = phase->type(ld_adr)->isa_instptr();
   Compile::AliasType* atp = (tp != nullptr) ? phase->C->alias_type(tp) : nullptr;
-  // This is more general than load from boxing objects.
+
   if (skip_through_membars(atp, tp, phase->C->eliminate_boxing())) {
     uint alias_idx = atp->index();
     Node* result = nullptr;
     Node* current = st;
-    // Skip through chains of MemBarNodes checking the MergeMems for
-    // new states for the slice of this load.  Stop once any other
-    // kind of node is encountered.  Loads from final memory can skip
-    // through any kind of MemBar but normal loads shouldn't skip
-    // through MemBarAcquire since the could allow them to move out of
-    // a synchronized region. It is not safe to step over MemBarCPUOrder,
-    // because alias info above them may be inaccurate (e.g., due to
-    // mixed/mismatched unsafe accesses).
+    // Skip through chains of MemBarNodes checking the MergeMems for new states for the slice of
+    // this load. Stop once any other kind of node is encountered.
+    //
+    // In principle, folding a load is moving it up until it meets a matching store.
+    //
+    // store(ptr, v);          store(ptr, v);          store(ptr, v);
+    // membar1;          ->    membar1;          ->    load(ptr);
+    // membar2;                load(ptr);              membar1;
+    // load(ptr);              membar2;                membar2;
+    //
+    // So, we can decide which kinds of barriers we can walk past. It is not safe to step over
+    // MemBarCPUOrder, even if the memory is not rewritable, because alias info above them may be
+    // inaccurate (e.g., due to mixed/mismatched unsafe accesses).
     bool is_final_mem = !atp->is_rewritable();
     while (current->is_Proj()) {
       int opc = current->in(0)->Opcode();
-      if ((is_final_mem && (opc == Op_MemBarAcquire ||
-                            opc == Op_MemBarAcquireLock ||
-                            opc == Op_LoadFence)) ||
+      if ((is_final_mem && (opc == Op_MemBarAcquire || opc == Op_MemBarAcquireLock || opc == Op_LoadFence)) ||
           opc == Op_MemBarRelease ||
           opc == Op_StoreFence ||
           opc == Op_MemBarReleaseLock ||
@@ -1215,6 +1219,19 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
       st = result;
     }
   }
+
+  Node* res = can_see_stored_value(st, phase);
+  assert(res == nullptr || is_java_primitive(value_basic_type()) || res->bottom_type()->higher_equal(type()), "the fold is unsafe");
+  return res;
+}
+
+// If st is a store to the same location as this, return the stored value
+Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
+  Node* ld_adr = in(MemNode::Address);
+  intptr_t ld_off = 0;
+  Node* ld_base = AddPNode::Ideal_base_and_offset(ld_adr, phase, ld_off);
+  Node* ld_alloc = AllocateNode::Ideal_allocation(ld_base);
+  const TypeInstPtr* tp = phase->type(ld_adr)->isa_instptr();
 
   // Loop around twice in the case Load -> Initialize -> Store.
   // (See PhaseIterGVN::add_users_to_worklist, which knows about this case.)
@@ -1261,7 +1278,25 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
           return nullptr;
         }
       }
-      return st->in(MemNode::ValueIn);
+
+      // Even if we can see the store, we cannot fold the load if the store is not type safe (e.g.
+      // store a j.l.Object into an array of j.l.String) because folding makes the compiler lose the
+      // type information that the uses of this node may need. This is only necessary for pointers, we
+      // can see the stored value of a LoadS even if it is an int because LoadSNode::Ideal will do the
+      // necessary truncation.
+      // The same phenomenon is not an issue for StoreNodes because they don't use res.
+      Node* res = st->in(MemNode::ValueIn);
+      if (is_Store() || is_java_primitive(value_basic_type()) || res->bottom_type()->higher_equal(bottom_type())) {
+        return res;
+      }
+
+      // There are some cases in which the Type of the load is narrower than the Type of the value
+      // that is stored into that location. The most common case is array polymorphism, when the
+      // type of an array element depends on the type of the array. In addition, there are some
+      // corner cases, the first one is concurrent class loading, when CHA can result in a narrower
+      // Type than what is declared only after the child class is loaded, and the second case is
+      // unsafe accesses when we do not check for type safety. See JDK-8388184.
+      return nullptr;
     }
 
     // A load from a freshly-created object always returns zero.
@@ -1344,7 +1379,7 @@ Node* LoadNode::Identity(PhaseGVN* phase) {
   // If the previous store-maker is the right kind of Store, and the store is
   // to the same address, then we are equal to the value stored.
   Node* mem = in(Memory);
-  Node* value = can_see_stored_value(mem, phase);
+  Node* value = can_see_stored_value_through_membars(mem, phase);
   if( value ) {
     // byte, short & char stores truncate naturally.
     // A load has to load the truncated value which requires
@@ -1662,20 +1697,24 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
   intptr_t ignore  = 0;
   Node*    base    = AddPNode::Ideal_base_and_offset(address, phase, ignore);
 
+  if (base == nullptr) {
+    return false;
+  }
+
   if (base->is_CastPP()) {
     base = base->in(1);
   }
 
-  if (req() > 3 || base == nullptr || !base->is_Phi()) {
+  if (req() > 3 || !base->is_Phi()) {
     return false;
   }
 
   if (!mem->is_Phi()) {
-    if (!MemNode::all_controls_dominate(mem, base->in(0))) {
+    if (!MemNode::all_controls_dominate(mem, base->in(0), phase)) {
       return false;
     }
   } else if (base->in(0) != mem->in(0)) {
-    if (!MemNode::all_controls_dominate(mem, base->in(0))) {
+    if (!MemNode::all_controls_dominate(mem, base->in(0), phase)) {
       return false;
     }
   }
@@ -1770,20 +1809,20 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
     region = mem->in(0);
     // Skip if the region dominates some control edge of the address.
     // We will check `dom_result` later.
-    dom_result = MemNode::maybe_all_controls_dominate(address, region);
+    dom_result = MemNode::maybe_all_controls_dominate(address, region, phase);
   } else if (!mem->is_Phi()) {
     assert(base_is_phi, "sanity");
     region = base->in(0);
     // Skip if the region dominates some control edge of the memory.
     // We will check `dom_result` later.
-    dom_result = MemNode::maybe_all_controls_dominate(mem, region);
+    dom_result = MemNode::maybe_all_controls_dominate(mem, region, phase);
   } else if (base->in(0) != mem->in(0)) {
     assert(base_is_phi && mem->is_Phi(), "sanity");
-    dom_result = MemNode::maybe_all_controls_dominate(mem, base->in(0));
+    dom_result = MemNode::maybe_all_controls_dominate(mem, base->in(0), phase);
     if (dom_result == DomResult::Dominate) {
       region = base->in(0);
     } else {
-      dom_result = MemNode::maybe_all_controls_dominate(address, mem->in(0));
+      dom_result = MemNode::maybe_all_controls_dominate(address, mem->in(0), phase);
       if (dom_result == DomResult::Dominate) {
         region = mem->in(0);
       }
@@ -1889,7 +1928,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
       }
     }
     if (x != the_clone && the_clone != nullptr) {
-      igvn->remove_dead_node(the_clone);
+      igvn->remove_dead_node(the_clone, PhaseIterGVN::NodeOrigin::Speculative);
     }
     phi->set_req(i, x);
   }
@@ -1951,7 +1990,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if (in(MemNode::Control) != nullptr
         && can_remove_control()
         && phase->type(base)->higher_equal(TypePtr::NOTNULL)
-        && all_controls_dominate(base, phase->C->start())) {
+        && all_controls_dominate(base, phase->C->start(), phase)) {
       // A method-invariant, non-null address (constant or 'this' argument).
       set_req(MemNode::Control, nullptr);
       return this;
@@ -2042,7 +2081,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // (c) See if we can fold up on the spot, but don't fold up here.
     // Fold-up might require truncation (for LoadB/LoadS/LoadUS) or
     // just return a prior value, which is done by Identity calls.
-    if (can_see_stored_value(prev_mem, phase)) {
+    if (can_see_stored_value_through_membars(prev_mem, phase)) {
       // Make ready for step (d):
       set_req_X(MemNode::Memory, prev_mem, phase);
       return this;
@@ -2099,7 +2138,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   Compile* C = phase->C;
 
   // If load can see a previous constant store, use that.
-  Node* value = can_see_stored_value(mem, phase);
+  Node* value = can_see_stored_value_through_membars(mem, phase);
   if (value != nullptr && value->is_Con()) {
     assert(value->bottom_type()->higher_equal(_type), "sanity");
     return value->bottom_type();
@@ -2350,7 +2389,7 @@ uint LoadNode::match_edge(uint idx) const {
 //
 Node* LoadBNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value(mem,phase);
+  Node* value = can_see_stored_value_through_membars(mem, phase);
   if (value != nullptr) {
     Node* narrow = Compile::narrow_value(T_BYTE, value, _type, phase, false);
     if (narrow != value) {
@@ -2363,7 +2402,7 @@ Node* LoadBNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 const Type* LoadBNode::Value(PhaseGVN* phase) const {
   Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value(mem,phase);
+  Node* value = can_see_stored_value_through_membars(mem, phase);
   if (value != nullptr && value->is_Con() &&
       !value->bottom_type()->higher_equal(_type)) {
     // If the input to the store does not fit with the load's result type,
@@ -2384,7 +2423,7 @@ const Type* LoadBNode::Value(PhaseGVN* phase) const {
 //
 Node* LoadUBNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value(mem, phase);
+  Node* value = can_see_stored_value_through_membars(mem, phase);
   if (value != nullptr) {
     Node* narrow = Compile::narrow_value(T_BOOLEAN, value, _type, phase, false);
     if (narrow != value) {
@@ -2397,7 +2436,7 @@ Node* LoadUBNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 const Type* LoadUBNode::Value(PhaseGVN* phase) const {
   Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value(mem,phase);
+  Node* value = can_see_stored_value_through_membars(mem, phase);
   if (value != nullptr && value->is_Con() &&
       !value->bottom_type()->higher_equal(_type)) {
     // If the input to the store does not fit with the load's result type,
@@ -2418,7 +2457,7 @@ const Type* LoadUBNode::Value(PhaseGVN* phase) const {
 //
 Node* LoadUSNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value(mem,phase);
+  Node* value = can_see_stored_value_through_membars(mem, phase);
   if (value != nullptr) {
     Node* narrow = Compile::narrow_value(T_CHAR, value, _type, phase, false);
     if (narrow != value) {
@@ -2431,7 +2470,7 @@ Node* LoadUSNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 const Type* LoadUSNode::Value(PhaseGVN* phase) const {
   Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value(mem,phase);
+  Node* value = can_see_stored_value_through_membars(mem, phase);
   if (value != nullptr && value->is_Con() &&
       !value->bottom_type()->higher_equal(_type)) {
     // If the input to the store does not fit with the load's result type,
@@ -2452,7 +2491,7 @@ const Type* LoadUSNode::Value(PhaseGVN* phase) const {
 //
 Node* LoadSNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value(mem,phase);
+  Node* value = can_see_stored_value_through_membars(mem, phase);
   if (value != nullptr) {
     Node* narrow = Compile::narrow_value(T_SHORT, value, _type, phase, false);
     if (narrow != value) {
@@ -2465,7 +2504,7 @@ Node* LoadSNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 const Type* LoadSNode::Value(PhaseGVN* phase) const {
   Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value(mem,phase);
+  Node* value = can_see_stored_value_through_membars(mem, phase);
   if (value != nullptr && value->is_Con() &&
       !value->bottom_type()->higher_equal(_type)) {
     // If the input to the store does not fit with the load's result type,
@@ -4072,7 +4111,7 @@ uint LoadStoreNode::ideal_reg() const {
 bool LoadStoreNode::result_not_used() const {
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     Node *x = fast_out(i);
-    if (x->Opcode() == Op_SCMemProj) {
+    if (x->Opcode() == Op_SCMemProj || x->is_ReachabilityFence()) {
       continue;
     }
     if (x->bottom_type() == TypeTuple::MEMBAR &&
@@ -4110,6 +4149,26 @@ MemBarNode* LoadStoreNode::trailing_membar() const {
 }
 
 uint LoadStoreNode::size_of() const { return sizeof(*this); }
+
+#ifndef PRODUCT
+void LoadStoreNode::dump_spec(outputStream* st) const {
+  if (in(MemNode::Address) == nullptr) {
+    // node is dead
+    return;
+  }
+#ifndef ASSERT
+  // fake the missing field
+  const TypePtr* _adr_type = in(MemNode::Address)->bottom_type()->isa_ptr();
+#endif
+  MemNode::dump_adr_type(_adr_type, st);
+
+  Compile* C = Compile::current();
+  if (C->alias_type(_adr_type)->is_volatile()) {
+    st->print(" Volatile!");
+  }
+  st->print(" barrier(0x%x)", _barrier_data);
+}
+#endif
 
 //=============================================================================
 //----------------------------------LoadStoreConditionalNode--------------------
@@ -4816,7 +4875,7 @@ bool InitializeNode::detect_init_independence(Node* value, PhaseGVN* phase) {
       // must have preceded the init, or else be equal to the init.
       // Even after loop optimizations (which might change control edges)
       // a store is never pinned *before* the availability of its inputs.
-      if (!MemNode::all_controls_dominate(n, this)) {
+      if (!MemNode::all_controls_dominate(n, this, phase)) {
         return false;                  // failed to prove a good control
       }
     }

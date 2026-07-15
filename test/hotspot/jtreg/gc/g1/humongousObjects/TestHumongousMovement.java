@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:G1HeapRegionSize=1M -Xms200m -Xmx200m -XX:InitiatingHeapOccupancyPercent=100
+ *                   -XX:G1HeapRegionSize=1M -Xms200m -Xmx200m -XX:G1IHOP=100
  *                   -Xlog:gc=info:file=TestHumongousMovement.log
  *                   gc.g1.humongousObjects.TestHumongousMovement
  */

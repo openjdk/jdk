@@ -1889,7 +1889,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sext(scratch_length, length, 32); // length (elements count, 32-bits value)
     __ bltz(scratch_length, L_failed);
 
-    __ load_klass(scratch_src_klass, src);
+    __ load_narrow_klass(scratch_src_klass, src);
 #ifdef ASSERT
     {
       BLOCK_COMMENT("assert klasses not null {");
@@ -1898,11 +1898,12 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
-      __ load_klass(t0, dst, t1);
+      __ load_narrow_klass(t0, dst);
       __ beqz(t0, L1);     // this would be broken also
       BLOCK_COMMENT("} assert klasses not null done");
     }
 #endif
+    __ decode_klass_not_null(scratch_src_klass, t0);
 
     // Load layout helper (32-bits)
     //
@@ -4754,7 +4755,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
 #undef __
 #define __ this->
@@ -6782,7 +6783,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   // x10 = input (float16)
   // f10 = result (float)
@@ -7348,7 +7349,7 @@ static const int64_t right_3_bits = right_n_bits(3);
   }
 
  public:
-  StubGenerator(CodeBuffer* code, BlobId blob_id) : StubCodeGenerator(code, blob_id) {
+  StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) : StubCodeGenerator(code, blob_id, stub_data) {
     switch(blob_id) {
     case BlobId::stubgen_preuniverse_id:
       generate_preuniverse_stubs();
@@ -7372,6 +7373,6 @@ static const int64_t right_3_bits = right_n_bits(3);
   }
 }; // end class declaration
 
-void StubGenerator_generate(CodeBuffer* code, BlobId blob_id) {
-  StubGenerator g(code, blob_id);
+void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) {
+  StubGenerator g(code, blob_id, stub_data);
 }

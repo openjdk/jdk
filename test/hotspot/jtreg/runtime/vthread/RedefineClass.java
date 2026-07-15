@@ -120,7 +120,7 @@ public class RedefineClass {
 
     private static int getStringIndex(String needle, byte[] buf, int offset) {
         outer:
-        for (int i = offset; i < buf.length - offset - needle.length(); i++) {
+        for (int i = offset; i <= buf.length - needle.length(); i++) {
             for (int j = 0; j < needle.length(); j++) {
                 if (buf[i + j] != (byte)needle.charAt(j)) continue outer;
             }

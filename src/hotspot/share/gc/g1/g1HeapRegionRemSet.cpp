@@ -87,8 +87,12 @@ void G1HeapRegionRemSet::clear(bool only_cardset, bool keep_tracked) {
   }
 }
 
-void G1HeapRegionRemSet::reset_table_scanner() {
+void G1HeapRegionRemSet::reset_code_root_table_scanner() {
   _code_roots.reset_table_scanner();
+}
+
+void G1HeapRegionRemSet::reset_table_scanner() {
+  reset_code_root_table_scanner();
   if (has_cset_group()) {
     card_set()->reset_table_scanner();
   }
@@ -126,6 +130,10 @@ void G1HeapRegionRemSet::remove_code_root(nmethod* nm) {
 
 void G1HeapRegionRemSet::bulk_remove_code_roots() {
   _code_roots.bulk_remove();
+}
+
+void G1HeapRegionRemSet::prepare_for_adding_code_roots(size_t num_code_roots) {
+  _code_roots.prepare_for_adding_code_roots(num_code_roots);
 }
 
 void G1HeapRegionRemSet::code_roots_do(NMethodClosure* blk) const {

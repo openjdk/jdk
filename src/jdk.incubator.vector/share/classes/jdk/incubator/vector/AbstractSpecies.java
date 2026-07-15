@@ -24,39 +24,31 @@
  */
 package jdk.incubator.vector;
 
-import java.lang.foreign.MemorySegment;
-import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 import java.lang.reflect.Array;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.IntUnaryOperator;
 
-abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.VectorSpecies<E>
-                                  implements VectorSpecies<E> {
-    @Stable
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.TrustFinalFields;
+
+@TrustFinalFields
+abstract sealed class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.VectorSpecies<E>
+        implements VectorSpecies<E>
+        permits ByteVector.ByteSpecies, DoubleVector.DoubleSpecies, FloatVector.FloatSpecies,
+        IntVector.IntSpecies, LongVector.LongSpecies, ShortVector.ShortSpecies, Float16Vector.Float16Species {
     final VectorShape vectorShape;
-    @Stable
     final LaneType laneType;
-    @Stable
     final int laneCount;
-    @Stable
     final int laneCountLog2P1;
-    @Stable
     final Class<? extends AbstractVector<E>> vectorType;
-    @Stable
     final Class<? extends AbstractMask<E>> maskType;
-    @Stable
     final Class<? extends AbstractShuffle<E>> shuffleType;
-    @Stable
     final Function<Object, ? extends AbstractVector<E>> vectorFactory;
 
-    @Stable
     final VectorShape indexShape;
-    @Stable
     final int maxScale, minScale;
-    @Stable
     final int vectorBitSize, vectorByteSize;
 
     AbstractSpecies(VectorShape vectorShape,
@@ -432,14 +424,21 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
         Object ia = Array.newInstance(carrierType(), laneCount);
         assert(ia.getClass() == laneType.arrayType);
         checkValue(laneCount-1);  // worst case
-        for (int i = 0; i < laneCount; i++) {
-            if ((byte)i == i)
-                Array.setByte(ia, i, (byte)i);
-            else if ((short)i == i)
-                Array.setShort(ia, i, (short)i);
-            else
-                Array.setInt(ia, i, i);
-            assert(Array.getDouble(ia, i) == i);
+        if (elementType() == Float16.class) {
+            for (int i = 0; i < laneCount; i++) {
+                Array.setShort(ia, i, Float.floatToFloat16((float)i));
+                assert(Float16.shortBitsToFloat16(Array.getShort(ia, i)).intValue() == i);
+            }
+        } else {
+            for (int i = 0; i < laneCount; i++) {
+                if ((byte)i == i)
+                    Array.setByte(ia, i, (byte)i);
+                else if ((short)i == i)
+                    Array.setShort(ia, i, (short)i);
+                else
+                    Array.setInt(ia, i, i);
+                assert(Array.getDouble(ia, i) == i);
+            }
         }
         return ia;
     }
@@ -637,6 +636,8 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
             s = IntVector.species(shape); break;
         case LaneType.SK_LONG:
             s = LongVector.species(shape); break;
+        case LaneType.SK_FLOAT16:
+            s = Float16Vector.species(shape); break;
         }
         if (s == null) {
             // NOTE: The result of this method is guaranteed to be

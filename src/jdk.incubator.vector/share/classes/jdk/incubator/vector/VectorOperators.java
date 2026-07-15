@@ -24,13 +24,12 @@
  */
 package jdk.incubator.vector;
 
-import java.util.function.IntFunction;
-import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.function.IntFunction;
 
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
-
 import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
@@ -65,8 +64,9 @@ import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
  *
  * <li>{@code bits(x)} &mdash; a function call which produces the
  * underlying bits of the value {@code x}.  If {@code x} is a floating
- * point value, this is either {@code doubleToLongBits(x)} or
- * {@code floatToIntBits(x)}.  Otherwise, the value is just {@code x}.
+ * point value, this is {@code doubleToLongBits(x)},
+ * {@code floatToIntBits(x)}, or {@code float16ToShortBits(x)}.
+ * Otherwise, the value is just {@code x}.
  *
  * <li>{@code ESIZE} &mdash; the size in bytes of the operand type
  *
@@ -74,6 +74,26 @@ import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
  *
  * <li>{@code intVal}, {@code byteVal}, etc. &mdash; the operand of a
  * conversion, with the indicated type
+ *
+ * <li id="type_letters">Single-letter type codes used in the names of
+ * {@linkplain Conversion conversion} operator tokens (for example
+ * {@link #B2D}, {@link #F2H}, {@link #H2F}, {@link #REINTERPRET_F2I},
+ * {@link #ZERO_EXTEND_B2L}) abbreviate lane types as follows:
+ * <table class="striped">
+ * <caption style="display:none">Lane type letter codes</caption>
+ * <thead>
+ * <tr><th scope="col">Letter</th><th scope="col">Lane type</th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row">{@code B}</th><td>{@code byte}</td></tr>
+ * <tr><th scope="row">{@code S}</th><td>{@code short}</td></tr>
+ * <tr><th scope="row">{@code I}</th><td>{@code int}</td></tr>
+ * <tr><th scope="row">{@code L}</th><td>{@code long}</td></tr>
+ * <tr><th scope="row">{@code F}</th><td>{@code float}</td></tr>
+ * <tr><th scope="row">{@code D}</th><td>{@code double}</td></tr>
+ * <tr><th scope="row">{@code H}</th><td>{@link Float16} ("half")</td></tr>
+ * </tbody>
+ * </table>
  * </ul>
  *
  * <h2>Operations on floating point vectors</h2>
@@ -115,7 +135,7 @@ import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
  * operations on individual lane values.
  *
  */
-public abstract class VectorOperators {
+public final class VectorOperators {
     private VectorOperators() { }
 
     /**
@@ -131,12 +151,9 @@ public abstract class VectorOperators {
      * @see VectorOperators.Test Test
      * @see VectorOperators.Conversion Conversion
      *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
+     * @sealedGraph
      */
-    public interface Operator {
+    public sealed interface Operator {
         /**
          * Returns the symbolic name of this operator,
          * as a constant in {@link VectorOperators}.
@@ -235,13 +252,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code w = v0.}{@link
      * Vector#lanewise(VectorOperators.Unary)
      * lanewise}{@code (NEG)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Unary extends Operator {
+    public sealed interface Unary extends Operator {
     }
 
     /**
@@ -252,12 +264,9 @@ public abstract class VectorOperators {
      * Vector#lanewise(VectorOperators.Binary,Vector)
      * lanewise}{@code (ADD, v1)}.
      *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
+     * @sealedGraph
      */
-    public interface Binary extends Operator {
+    public sealed interface Binary extends Operator {
     }
 
     /**
@@ -267,13 +276,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code w = v0.}{@link
      * Vector#lanewise(VectorOperators.Ternary,Vector,Vector)
      * lanewise}{@code (FMA, v1, v2)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Ternary extends Operator {
+    public sealed interface Ternary extends Operator {
     }
 
     /**
@@ -283,13 +287,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code e = v0.}{@link
      * IntVector#reduceLanes(VectorOperators.Associative)
      * reduceLanes}{@code (ADD)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Associative extends Binary {
+    public sealed interface Associative extends Binary {
     }
 
     /**
@@ -299,13 +298,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code m = v0.}{@link
      * FloatVector#test(VectorOperators.Test)
      * test}{@code (IS_FINITE)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Test extends Operator {
+    public sealed interface Test extends Operator {
     }
 
     /**
@@ -315,13 +309,8 @@ public abstract class VectorOperators {
      * usable in expressions like {@code m = v0.}{@link
      * Vector#compare(VectorOperators.Comparison,Vector)
      * compare}{@code (LT, v1)}.
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Comparison extends Operator {
+    public sealed interface Comparison extends Operator {
     }
 
     /**
@@ -336,21 +325,16 @@ public abstract class VectorOperators {
      *        domain type (the input lane type)
      * @param <F> the boxed element type for the conversion
      *        range type (the output lane type)
-     *
-     * @apiNote
-     * User code should not implement this interface.  A future release of
-     * this type may restrict implementations to be members of the same
-     * package.
      */
-    public interface Conversion<E,F> extends Operator {
+    public sealed interface Conversion<E,F> extends Operator {
         /**
-         * The domain of this conversion, a primitive type.
+         * The domain of this conversion, a supported lane type.
          * @return the domain of this conversion
          */
         Class<E> domainType();
 
         /**
-         * The range of this conversion, a primitive type.
+         * The range of this conversion, a supported lane type.
          * @return the range of this conversion
          */
         @Override
@@ -597,15 +581,15 @@ public abstract class VectorOperators {
 
 
     /** Produce {@code a<<(n&(ESIZE*8-1))}.  Integral only. */
-    public static final /*bitwise*/ Binary LSHL = binary("LSHL", "<<", VectorSupport.VECTOR_OP_LSHIFT, VO_SHIFT);
+    public static final /*bitwise*/ Binary LSHL = binary("LSHL", "<<", VectorSupport.VECTOR_OP_LSHIFT, VO_SHIFT+VO_NOFP);
     /** Produce {@code a>>(n&(ESIZE*8-1))}.  Integral only. */
-    public static final /*bitwise*/ Binary ASHR = binary("ASHR", ">>", VectorSupport.VECTOR_OP_RSHIFT, VO_SHIFT);
+    public static final /*bitwise*/ Binary ASHR = binary("ASHR", ">>", VectorSupport.VECTOR_OP_RSHIFT, VO_SHIFT+VO_NOFP);
     /** Produce {@code (a&EMASK)>>>(n&(ESIZE*8-1))}.  Integral only. */
-    public static final /*bitwise*/ Binary LSHR = binary("LSHR", ">>>", VectorSupport.VECTOR_OP_URSHIFT, VO_SHIFT);
+    public static final /*bitwise*/ Binary LSHR = binary("LSHR", ">>>", VectorSupport.VECTOR_OP_URSHIFT, VO_SHIFT+VO_NOFP);
     /** Produce {@code rotateLeft(a,n)}.  Integral only. */
-    public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT);
+    public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT+VO_NOFP);
     /** Produce {@code rotateRight(a,n)}.  Integral only. */
-    public static final /*bitwise*/ Binary ROR = binary("ROR", "rotateRight", VectorSupport.VECTOR_OP_RROTATE, VO_SHIFT);
+    public static final /*bitwise*/ Binary ROR = binary("ROR", "rotateRight", VectorSupport.VECTOR_OP_RROTATE, VO_SHIFT+VO_NOFP);
     /** Produce {@code compress(a,n)}. Integral, {@code int} and {@code long}, only.
      * @since 19
      */
@@ -694,6 +678,8 @@ public abstract class VectorOperators {
     public static final Conversion<Byte,Long> B2L = convert("B2L", 'C', byte.class, long.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code byteVal} to {@code (short)byteVal}. */
     public static final Conversion<Byte,Short> B2S = convert("B2S", 'C', byte.class, short.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code byteVal} to {@code (Float16)byteVal}. */
+    public static final Conversion<Byte,Float16> B2H = convert("B2H", 'C', byte.class, Float16.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code doubleVal} to {@code (byte)doubleVal}. */
     public static final Conversion<Double,Byte> D2B = convert("D2B", 'C', double.class, byte.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code doubleVal} to {@code (float)doubleVal}. */
@@ -704,6 +690,8 @@ public abstract class VectorOperators {
     public static final Conversion<Double,Long> D2L = convert("D2L", 'C', double.class, long.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code doubleVal} to {@code (short)doubleVal}. */
     public static final Conversion<Double,Short> D2S = convert("D2S", 'C', double.class, short.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code doubleVal} to {@code (Float16)doubleVal}. */
+    public static final Conversion<Double,Float16> D2H = convert("D2H", 'C', double.class, Float16.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code floatVal} to {@code (byte)floatVal}. */
     public static final Conversion<Float,Byte> F2B = convert("F2B", 'C', float.class, byte.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code floatVal} to {@code (double)floatVal}. */
@@ -714,6 +702,8 @@ public abstract class VectorOperators {
     public static final Conversion<Float,Long> F2L = convert("F2L", 'C', float.class, long.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code floatVal} to {@code (short)floatVal}. */
     public static final Conversion<Float,Short> F2S = convert("F2S", 'C', float.class, short.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code floatVal} to {@code (Float16)floatVal}. */
+    public static final Conversion<Float,Float16> F2H = convert("F2H", 'C', float.class, Float16.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code intVal} to {@code (byte)intVal}. */
     public static final Conversion<Integer,Byte> I2B = convert("I2B", 'C', int.class, byte.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code intVal} to {@code (double)intVal}. */
@@ -724,6 +714,8 @@ public abstract class VectorOperators {
     public static final Conversion<Integer,Long> I2L = convert("I2L", 'C', int.class, long.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code intVal} to {@code (short)intVal}. */
     public static final Conversion<Integer,Short> I2S = convert("I2S", 'C', int.class, short.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code intVal} to {@code (Float16)intVal}. */
+    public static final Conversion<Integer,Float16> I2H = convert("I2H", 'C', int.class, Float16.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code longVal} to {@code (byte)longVal}. */
     public static final Conversion<Long,Byte> L2B = convert("L2B", 'C', long.class, byte.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code longVal} to {@code (double)longVal}. */
@@ -734,6 +726,8 @@ public abstract class VectorOperators {
     public static final Conversion<Long,Integer> L2I = convert("L2I", 'C', long.class, int.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code longVal} to {@code (short)longVal}. */
     public static final Conversion<Long,Short> L2S = convert("L2S", 'C', long.class, short.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code longVal} to {@code (Float16)longVal}. */
+    public static final Conversion<Long,Float16> L2H = convert("L2H", 'C', long.class, Float16.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code shortVal} to {@code (byte)shortVal}. */
     public static final Conversion<Short,Byte> S2B = convert("S2B", 'C', short.class, byte.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code shortVal} to {@code (double)shortVal}. */
@@ -744,6 +738,21 @@ public abstract class VectorOperators {
     public static final Conversion<Short,Integer> S2I = convert("S2I", 'C', short.class, int.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code shortVal} to {@code (long)shortVal}. */
     public static final Conversion<Short,Long> S2L = convert("S2L", 'C', short.class, long.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code shortVal} to {@code (Float16)shortVal}. */
+    public static final Conversion<Short,Float16> S2H = convert("S2H", 'C', short.class, Float16.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code Float16Val} to {@code (byte)Float16Val}. */
+    public static final Conversion<Float16,Byte> H2B = convert("H2B", 'C', Float16.class, byte.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code Float16Val} to {@code (short)Float16Val}. */
+    public static final Conversion<Float16,Short> H2S = convert("H2S", 'C', Float16.class, short.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code Float16Val} to {@code (double)Float16Val}. */
+    public static final Conversion<Float16,Double> H2D = convert("H2D", 'C', Float16.class, double.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code Float16Val} to {@code (float)Float16Val}. */
+    public static final Conversion<Float16,Float> H2F = convert("H2F", 'C', Float16.class, float.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code Float16Val} to {@code (int)Float16Val}. */
+    public static final Conversion<Float16,Integer> H2I = convert("H2I", 'C', Float16.class, int.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code Float16Val} to {@code (long)Float16Val}. */
+    public static final Conversion<Float16,Long> H2L = convert("H2L", 'C', Float16.class, long.class, VO_KIND_CAST, VO_ALL);
+
     /** Reinterpret bits of {@code doubleVal} as {@code long}. As if by {@link Double#doubleToRawLongBits(double)} */
     public static final Conversion<Double,Long> REINTERPRET_D2L = convert("REINTERPRET_D2L", 'R', double.class, long.class, VO_KIND_BITWISE, VO_ALL);
     /** Reinterpret bits of {@code floatVal} as {@code int}. As if by {@link Float#floatToRawIntBits(float)} */
@@ -831,7 +840,7 @@ public abstract class VectorOperators {
                                     kind, dom, ran);
     }
 
-    private abstract static class OperatorImpl implements Operator {
+    private abstract static sealed class OperatorImpl implements Operator {
         private final String symName;
         private final String opName;
         private final int opInfo;
@@ -956,35 +965,35 @@ public abstract class VectorOperators {
         }
     }
 
-    private static class UnaryImpl extends OperatorImpl implements Unary {
+    private static final class UnaryImpl extends OperatorImpl implements Unary {
         private UnaryImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_UNARY);
         }
     }
 
-    private static class BinaryImpl extends OperatorImpl implements Binary {
+    private static sealed class BinaryImpl extends OperatorImpl implements Binary permits AssociativeImpl {
         private BinaryImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_BINARY);
         }
     }
 
-    private static class TernaryImpl extends OperatorImpl implements Ternary {
+    private static final class TernaryImpl extends OperatorImpl implements Ternary {
         private TernaryImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_TERNARY);
         }
     }
 
-    private static class AssociativeImpl extends BinaryImpl implements Associative {
+    private static final class AssociativeImpl extends BinaryImpl implements Associative {
         private AssociativeImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
         }
     }
 
     /*package-private*/
-    static
+    static final
     class ConversionImpl<E,F> extends OperatorImpl
                               implements Conversion<E,F> {
         private ConversionImpl(String symName, String opName, int opInfo,
@@ -1260,7 +1269,7 @@ public abstract class VectorOperators {
         }
     }
 
-    private static class TestImpl extends OperatorImpl implements Test {
+    private static final class TestImpl extends OperatorImpl implements Test {
         private TestImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_UNARY);
@@ -1272,7 +1281,7 @@ public abstract class VectorOperators {
         }
     }
 
-    private static class ComparisonImpl extends OperatorImpl implements Comparison {
+    private static final class ComparisonImpl extends OperatorImpl implements Comparison {
         private ComparisonImpl(String symName, String opName, int opInfo) {
             super(symName, opName, opInfo);
             assert((opInfo & VO_ARITY_MASK) == VO_BINARY);

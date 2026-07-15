@@ -1980,6 +1980,56 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 # https://searcharchives.vancouver.ca/daylight-saving-1918-starts-again-july-7-1941-start-d-s-sept-27-end-of-d-s-1941
 # We have no further details, so omit them for now.
 
+# From Arthur David Olson (2026-03-02):
+# B. C. Gov News: “Adopting permanent daylight saving time: ‘Spring forward’
+# on March 8 will be the last time change, ending twice-yearly clock changes.”
+# https://news.gov.bc.ca/releases/2026AG0013-000209
+#
+# From Paul Eggert (2026-03-07):
+# The law says that 21 hours after the usual 2026-03-08 02:00 switch from
+# PST to PDT, the next day inaugurates the new standard time Pacific Time,
+# i.e., just one clock change but two name changes separated by 21 hours.
+# PT, the obvious abbreviation for Pacific Time, is one letter too short
+# to conform to TZDB’s (and POSIX’s) [-+[:alnum:]]{3,6} requirements.
+# I asked the BC government for advice, with no response. For now, do this:
+#   1.	As a temporary hack, pretend that the BC law takes effect
+#	not on 2026-03-09 at 00:00, but on 2026-11-01 at 02:00.
+#	This pretense works around a limitation in CLDR v48.2 (2026-03-17),
+#	which would otherwise say the interval uses “Pacific Standard Time”.
+#	(Below, this temporary hack is marked “Temporary hack; see above.”)
+#	Strictly speaking this hack is incorrect since the interval uses
+#	standard time, but it does have the right UT offset and it
+#	works around the CLDR limitation.  We should be able to remove
+#	the temporary hack after CLDR is fixed.
+#   2.	After the BC law takes effect, model the time as MST sans DST.
+#	We can change this later if another conforming non-numeric abbreviation
+#	for Pacific Time becomes more popular.  Possibilities include:
+#   MST - the most compatible with existing software and practice,
+#	and already used in parts of BC and in Yukon
+#   PDT - almost as software-friendly, but confusing because it implies
+#	it is DST and is paired with PST, whereas PT is standard time
+#   PST - straightforward but even more confusing,
+#	and will likely break much software that assumes PST is -08
+#   -07 - accurate and clear in itself, but makes BC look odd vs neighbors
+#   CPT, CPST - for Canadian Pacific (Standard) Time,
+#	by analogy with AEST in Australia
+#   P-T - conforming approximation to “PT”
+#   PT+ - like P-T but suggesting one-hour advance over PST
+
+# From Chris Walton (2026-03-15):
+# The Regional District of East Kootenay is planning to move to year-round
+# Mountain Standard Time (MST) on November 1, 2026....
+# https://www.rdek.bc.ca/news/entry/rdek_board_moves_to_transition_to_year_round_mountain_standard_time
+# (2026-03-17):
+# The final decision East Kootenay made a few days ago may turn out not to
+# be final after all. They are going to reopen the debate next month!
+# https://www.cbc.ca/news/canada/british-columbia/what-time-is-it-in-the-east-kootenay-debate-9.7132624
+# From Paul Eggert (2026-03-17):
+# Mayor Steve Fairbairn of Elkford asked the question be called a second time,
+# saying, “Pardon the pun, but this is not a time-sensitive issue.”
+# For now, merely mention the potential change in these comments.
+# If it happens it would likely affect clocks starting 2027-03-14 at 02:00.
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Vanc	1918	only	-	Apr	14	2:00	1:00	D
 Rule	Vanc	1918	only	-	Oct	27	2:00	0	S
@@ -1993,7 +2043,11 @@ Rule	Vanc	1962	2006	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Vancouver	-8:12:28 -	LMT	1884
 			-8:00	Vanc	P%sT	1987
-			-8:00	Canada	P%sT
+			-8:00	Canada	P%sT	2026 Mar  9
+			# Temporary hack; see above.
+			-8:00	1:00	PDT	2026 Nov  1 02:00
+			# End of temporary hack.
+			-7:00	-	MST
 Zone America/Dawson_Creek -8:00:56 -	LMT	1884
 			-8:00	Canada	P%sT	1947
 			-8:00	Vanc	P%sT	1972 Aug 30  2:00

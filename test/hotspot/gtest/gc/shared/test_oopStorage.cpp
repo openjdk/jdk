@@ -486,7 +486,7 @@ public:
 
     EXPECT_EQ(storage().block_count(), empty_block_count(storage()));
 
-    FREE_C_HEAP_ARRAY(oop*, to_release);
+    FREE_C_HEAP_ARRAY(to_release);
   }
 
   struct PointerCompare {
@@ -534,7 +534,7 @@ TEST_VM_F(OopStorageTest, invalid_malloc_pointer) {
   oop* ptr = reinterpret_cast<oop*>(align_down(mem + 250, sizeof(oop)));
   // Predicate returns false for some malloc'ed block.
   EXPECT_EQ(OopStorage::INVALID_ENTRY, storage().allocation_status(ptr));
-  FREE_C_HEAP_ARRAY(char, mem);
+  FREE_C_HEAP_ARRAY(mem);
 }
 
 TEST_VM_F(OopStorageTest, invalid_random_pointer) {

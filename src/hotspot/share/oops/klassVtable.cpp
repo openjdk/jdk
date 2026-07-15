@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1066,7 +1066,7 @@ void klassVtable::dump_vtable() {
     Method* m = unchecked_method_at(i);
     if (m != nullptr) {
       tty->print("      (%5d)  ", i);
-      m->access_flags().print_on(tty);
+      m->print_access_flags(tty);
       if (m->is_default_method()) {
         tty->print("default ");
       }
@@ -1421,7 +1421,7 @@ void klassItable::dump_itable() {
     Method* m = ime->method();
     if (m != nullptr) {
       tty->print("      (%5d)  ", i);
-      m->access_flags().print_on(tty);
+      m->print_access_flags(tty);
       if (m->is_default_method()) {
         tty->print("default ");
       }
