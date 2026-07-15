@@ -24,20 +24,19 @@
 /*
  * @test
  * @bug 8388186
- * @summary Verify that SHA3 stub generation does not crash the VM when
- *          EnableX86ECoreOpts is enabled and UseAVX < 2.
+ * @summary Test for VM crash with -XX:+EnableX86ECoreOpts and UseAVX < 2.
  * @requires vm.flagless
  * @requires os.arch == "amd64" | os.arch == "x86_64"
  * @library /test/lib
  * @run driver ${test.main.class}
  */
 
-package compiler.arguments;
+package compiler.cpuflags;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-public class TestSHA3StubsWithoutAVX2 {
+public class TestEnableX86ECoreOptsWithoutAVX2 {
     static final String[] OPTIONS = {
         "-XX:UseSSE=2",
         "-XX:UseSSE=3",
