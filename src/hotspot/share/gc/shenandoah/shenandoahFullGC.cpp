@@ -153,6 +153,8 @@ void ShenandoahFullGC::do_it() {
 
 #ifdef ASSERT
   assert(_heap->is_idle(), "Full GC should not be running from incomplete cycle");
+  assert(!_heap->has_forwarded_objects(), "Concurrent cycle should have finished update references");
+  assert(!_heap->is_concurrent_mark_in_progress(), "Cannot be marking now");
   assert(!_heap->has_self_forwarded_objects(), "Self forwarded objects should be cleared by concurrent cycle.");
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
     ShenandoahHeapRegion* region = _heap->get_region(i);
@@ -168,13 +170,6 @@ void ShenandoahFullGC::do_it() {
     Universe::verify();
   }
 
-  // TODO: All of the code for 'recover from degenerated states' should be safe to remove now
-
-  // Degenerated GC may carry concurrent root flags when upgrading to
-  // full GC. We need to reset it before mutators resume.
-  _heap->set_concurrent_strong_root_in_progress(false);
-  _heap->set_concurrent_weak_root_in_progress(false);
-
   _heap->set_full_gc_in_progress(true);
 
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
@@ -187,39 +182,8 @@ void ShenandoahFullGC::do_it() {
 
   {
     ShenandoahGCPhase prepare_phase(ShenandoahPhaseTimings::full_gc_prepare);
-    // Full GC is supposed to recover from any GC state:
 
-    // a0. Remember if we have forwarded objects
-    bool has_forwarded_objects = _heap->has_forwarded_objects();
-
-    // a1. Cancel evacuation, if in progress
-    if (_heap->is_evacuation_in_progress()) {
-      _heap->set_evacuation_in_progress(false);
-    }
-    assert(!_heap->is_evacuation_in_progress(), "sanity");
-
-    // a2. Cancel update-refs, if in progress
-    if (_heap->is_update_refs_in_progress()) {
-      _heap->set_update_refs_in_progress(false);
-    }
-    assert(!_heap->is_update_refs_in_progress(), "sanity");
-
-    // b. Cancel all concurrent marks, if in progress
-    if (_heap->is_concurrent_mark_in_progress()) {
-      _heap->cancel_concurrent_mark();
-    }
-    assert(!_heap->is_concurrent_mark_in_progress(), "sanity");
-
-    // c. Update roots if this full GC is due to evac-oom, which may carry from-space pointers in roots.
-    if (has_forwarded_objects) {
-      update_roots();
-    }
-
-    // d. Abandon reference discovery and clear all discovered references.
-    ShenandoahReferenceProcessor* rp = _generation->ref_processor();
-    rp->abandon_partial_discovery();
-
-    // e. Sync pinned region status from the CP marks
+    // Sync pinned region status from the CP marks
     _heap->sync_pinned_region_status();
 
     if (_heap->mode()->is_generational()) {
@@ -228,8 +192,6 @@ void ShenandoahFullGC::do_it() {
 
     // The rest of prologue:
     _preserved_marks->init(_heap->workers()->active_workers());
-
-    assert(_heap->has_forwarded_objects() == has_forwarded_objects, "This should not change");
   }
 
   if (UseTLAB) {
@@ -241,11 +203,6 @@ void ShenandoahFullGC::do_it() {
   OrderAccess::fence();
 
   phase1_mark_heap();
-
-  // Once marking is done, which may have fixed up forwarded objects, we can drop it.
-  // Coming out of Full GC, we would not have any forwarded objects.
-  // This also prevents resolves with fwdptr from kicking in while adjusting pointers in phase3.
-  _heap->set_has_forwarded_objects(false);
 
   _heap->set_full_gc_move_in_progress(true);
 
@@ -326,7 +283,7 @@ void ShenandoahFullGC::phase1_mark_heap() {
   }
 }
 
-void ShenandoahFullGC::parallel_cleaning(ShenandoahGeneration* generation) {
+void ShenandoahFullGC::parallel_cleaning(ShenandoahGeneration* generation) const {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(ShenandoahHeap::heap()->is_stw_gc_in_progress(), "Only for Full GC");
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_purge);
@@ -345,35 +302,25 @@ void ShenandoahFullGC::stw_weak_refs(ShenandoahGeneration* generation) {
 
 // Weak roots are either pre-evacuated (final mark) or updated (final update refs),
 // so they should not have forwarded oops.
-// However, we do need to "null" dead oops in the roots, if can not be done
+// However, we do need to "null" dead oops in the roots, if it cannot be done
 // in concurrent cycles.
-void ShenandoahFullGC::stw_process_weak_roots() {
+void ShenandoahFullGC::stw_process_weak_roots() const {
   uint num_workers = _heap->workers()->active_workers();
   ShenandoahPhaseTimings::Phase timing_phase = ShenandoahPhaseTimings::full_gc_purge_weak_par;
   ShenandoahGCPhase phase(timing_phase);
   ShenandoahGCWorkerPhase worker_phase(timing_phase);
   // Cleanup weak roots
-  if (_heap->has_forwarded_objects()) {
-    ShenandoahForwardedIsAliveClosure is_alive;
-    ShenandoahNonConcUpdateRefsClosure keep_alive;
-    ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahNonConcUpdateRefsClosure>
-      cleaning_task(timing_phase, &is_alive, &keep_alive, num_workers);
-    _heap->workers()->run_task(&cleaning_task);
-  } else {
-    ShenandoahIsAliveClosure is_alive;
+  ShenandoahIsAliveClosure is_alive;
 #ifdef ASSERT
-    ShenandoahAssertNotForwardedClosure verify_cl;
-    ShenandoahParallelWeakRootsCleaningTask<ShenandoahIsAliveClosure, ShenandoahAssertNotForwardedClosure>
-      cleaning_task(timing_phase, &is_alive, &verify_cl, num_workers);
+  ShenandoahAssertNotForwardedClosure verify_cl;
+  ShenandoahParallelWeakRootsCleaningTask cleaning_task(timing_phase, &is_alive, &verify_cl, num_workers);
 #else
-    ShenandoahParallelWeakRootsCleaningTask<ShenandoahIsAliveClosure, DoNothingClosure>
-      cleaning_task(timing_phase, &is_alive, &do_nothing_cl, num_workers);
+  ShenandoahParallelWeakRootsCleaningTask cleaning_task(timing_phase, &is_alive, &do_nothing_cl, num_workers);
 #endif
-    _heap->workers()->run_task(&cleaning_task);
-  }
+  _heap->workers()->run_task(&cleaning_task);
 }
 
-void ShenandoahFullGC::stw_unload_classes() {
+void ShenandoahFullGC::stw_unload_classes() const {
   if (!_heap->unload_classes()) return;
   ClassUnloadingContext ctx(_heap->workers()->active_workers(),
                             true /* unregister_nmethods_during_purge */,

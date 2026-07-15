@@ -84,11 +84,12 @@ private:
   void compact_humongous_objects();
 
   // Perform STW class unloading and weak root cleaning
-  void parallel_cleaning(ShenandoahGeneration* generation);
+  void parallel_cleaning(ShenandoahGeneration* generation) const;
 
-  void stw_unload_classes();
-  void stw_process_weak_roots();
-  void stw_weak_refs(ShenandoahGeneration* generation);
+  void stw_unload_classes() const;
+  void stw_process_weak_roots() const;
+
+  static void stw_weak_refs(ShenandoahGeneration* generation);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFULLGC_HPP
