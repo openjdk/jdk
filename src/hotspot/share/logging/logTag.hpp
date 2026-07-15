@@ -175,6 +175,7 @@ class outputStream;
   LOG_TAG(refine) \
   LOG_TAG(region) \
   LOG_TAG(reloc) \
+  LOG_TAG(relocator) \
   LOG_TAG(remset) \
   LOG_TAG(resolve) \
   LOG_TAG(safepoint) \

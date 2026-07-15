@@ -1031,6 +1031,10 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
   if( t1 == Type::TOP ) return Type::TOP;
   if( t2 == Type::TOP ) return Type::TOP;
 
+  if (t2 == TypeInt::ZERO) {
+    return Type::TOP;
+  }
+
   // x/x == 1 since we always generate the dynamic divisor check for 0.
   if (in(1) == in(2)) {
     return TypeInt::ONE;
@@ -1066,6 +1070,10 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
   const Type *t2 = phase->type( in(2) );
   if( t1 == Type::TOP ) return Type::TOP;
   if( t2 == Type::TOP ) return Type::TOP;
+
+  if (t2 == TypeLong::ZERO) {
+    return Type::TOP;
+  }
 
   // x/x == 1 since we always generate the dynamic divisor check for 0.
   if (in(1) == in(2)) {
@@ -1380,6 +1388,9 @@ Node* UModINode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 const Type* UModINode::Value(PhaseGVN* phase) const {
+  if (phase->type(in(2)) == TypeInt::ZERO) {
+    return Type::TOP;
+  }
   return unsigned_mod_value<TypeInt, juint, jint>(phase, this);
 }
 
@@ -1520,6 +1531,9 @@ Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 const Type* UModLNode::Value(PhaseGVN* phase) const {
+  if (phase->type(in(2)) == TypeLong::ZERO) {
+    return Type::TOP;
+  }
   return unsigned_mod_value<TypeLong, julong, jlong>(phase, this);
 }
 
@@ -1614,12 +1628,6 @@ const Type* ModFloatingNode::Value(PhaseGVN* phase) const {
 
 //=============================================================================
 
-DivModNode::DivModNode( Node *c, Node *dividend, Node *divisor ) : MultiNode(3) {
-  init_req(0, c);
-  init_req(1, dividend);
-  init_req(2, divisor);
-}
-
 DivModNode* DivModNode::make(Node* div_or_mod, BasicType bt, bool is_unsigned) {
   assert(bt == T_INT || bt == T_LONG, "only int or long input pattern accepted");
 
@@ -1645,8 +1653,8 @@ DivModINode* DivModINode::make(Node* div_or_mod) {
          "only div or mod input pattern accepted");
 
   DivModINode* divmod = new DivModINode(n->in(0), n->in(1), n->in(2));
-  Node*        dproj  = new ProjNode(divmod, DivModNode::div_proj_num);
-  Node*        mproj  = new ProjNode(divmod, DivModNode::mod_proj_num);
+  Node*        dproj  = new ProjNode(divmod, DivModNode::first_proj_num);
+  Node*        mproj  = new ProjNode(divmod, DivModNode::second_proj_num);
   return divmod;
 }
 
@@ -1657,8 +1665,8 @@ DivModLNode* DivModLNode::make(Node* div_or_mod) {
          "only div or mod input pattern accepted");
 
   DivModLNode* divmod = new DivModLNode(n->in(0), n->in(1), n->in(2));
-  Node*        dproj  = new ProjNode(divmod, DivModNode::div_proj_num);
-  Node*        mproj  = new ProjNode(divmod, DivModNode::mod_proj_num);
+  Node*        dproj  = new ProjNode(divmod, DivModNode::first_proj_num);
+  Node*        mproj  = new ProjNode(divmod, DivModNode::second_proj_num);
   return divmod;
 }
 
@@ -1667,11 +1675,11 @@ DivModLNode* DivModLNode::make(Node* div_or_mod) {
 Node *DivModINode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
-  if (proj->_con == div_proj_num) {
-    rm.assignFrom(match->divI_proj_mask());
+  if (proj->_con == first_proj_num) {
+    rm.assignFrom(match->firstI_proj_mask());
   } else {
-    assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm.assignFrom(match->modI_proj_mask());
+    assert(proj->_con == second_proj_num, "must be div or mod projection");
+    rm.assignFrom(match->secondI_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
@@ -1682,11 +1690,11 @@ Node *DivModINode::match( const ProjNode *proj, const Matcher *match ) {
 Node *DivModLNode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
-  if (proj->_con == div_proj_num) {
-    rm.assignFrom(match->divL_proj_mask());
+  if (proj->_con == first_proj_num) {
+    rm.assignFrom(match->firstL_proj_mask());
   } else {
-    assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm.assignFrom(match->modL_proj_mask());
+    assert(proj->_con == second_proj_num, "must be div or mod projection");
+    rm.assignFrom(match->secondL_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
@@ -1698,8 +1706,8 @@ UDivModINode* UDivModINode::make(Node* div_or_mod) {
          "only div or mod input pattern accepted");
 
   UDivModINode* divmod = new UDivModINode(n->in(0), n->in(1), n->in(2));
-  Node*        dproj  = new ProjNode(divmod, DivModNode::div_proj_num);
-  Node*        mproj  = new ProjNode(divmod, DivModNode::mod_proj_num);
+  Node*        dproj  = new ProjNode(divmod, DivModNode::first_proj_num);
+  Node*        mproj  = new ProjNode(divmod, DivModNode::second_proj_num);
   return divmod;
 }
 
@@ -1710,8 +1718,8 @@ UDivModLNode* UDivModLNode::make(Node* div_or_mod) {
          "only div or mod input pattern accepted");
 
   UDivModLNode* divmod = new UDivModLNode(n->in(0), n->in(1), n->in(2));
-  Node*        dproj  = new ProjNode(divmod, DivModNode::div_proj_num);
-  Node*        mproj  = new ProjNode(divmod, DivModNode::mod_proj_num);
+  Node*        dproj  = new ProjNode(divmod, DivModNode::first_proj_num);
+  Node*        mproj  = new ProjNode(divmod, DivModNode::second_proj_num);
   return divmod;
 }
 
@@ -1720,11 +1728,11 @@ UDivModLNode* UDivModLNode::make(Node* div_or_mod) {
 Node* UDivModINode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
-  if (proj->_con == div_proj_num) {
-    rm.assignFrom(match->divI_proj_mask());
+  if (proj->_con == first_proj_num) {
+    rm.assignFrom(match->firstI_proj_mask());
   } else {
-    assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm.assignFrom(match->modI_proj_mask());
+    assert(proj->_con == second_proj_num, "must be div or mod projection");
+    rm.assignFrom(match->secondI_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
@@ -1735,11 +1743,11 @@ Node* UDivModINode::match( const ProjNode *proj, const Matcher *match ) {
 Node* UDivModLNode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
-  if (proj->_con == div_proj_num) {
-    rm.assignFrom(match->divL_proj_mask());
+  if (proj->_con == first_proj_num) {
+    rm.assignFrom(match->firstL_proj_mask());
   } else {
-    assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm.assignFrom(match->modL_proj_mask());
+    assert(proj->_con == second_proj_num, "must be div or mod projection");
+    rm.assignFrom(match->secondL_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
