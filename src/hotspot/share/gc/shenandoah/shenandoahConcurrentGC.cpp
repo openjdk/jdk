@@ -828,10 +828,15 @@ void ShenandoahConcurrentGC::op_final_mark() {
         heap->verifier()->verify_before_evacuation(_generation);
       }
 
-      // Size the collector CAS alloc-region stripes to the concurrent evac worker count, so the slot
-      // count tracks actual evac contention. Safe here: we are at the final-mark safepoint and the
-      // collector alloc regions were released above, so no slot is occupied.
-      heap->allocator()->set_collector_alloc_region_count(ShenandoahWorkerPolicy::calc_workers_for_conc_evac());
+      // Size the collector CAS alloc-region stripes to the concurrent evac worker count, then fill
+      // them from their own collector partitions before evacuation begins. Reserve overflow into
+      // the mutator partition remains on the actual allocation path. Safe here: we are at the
+      // final-mark safepoint and the collector alloc regions were released above.
+      {
+        ShenandoahHeapLocker locker(heap->lock());
+        heap->allocator()->set_collector_alloc_region_count(ShenandoahWorkerPolicy::calc_workers_for_conc_evac());
+        heap->allocator()->reserve_collector_alloc_regions();
+      }
 
       heap->set_evacuation_in_progress(true);
       // From here on, we need to update references.

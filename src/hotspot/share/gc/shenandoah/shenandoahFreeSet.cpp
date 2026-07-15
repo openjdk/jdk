@@ -449,6 +449,8 @@ void ShenandoahFreeSet::unretire_alloc_region(ShenandoahFreeSetPartitionId parti
     // partition empty count/interval is *availability*-based. If we leave it _regular + affiliated,
     // it is skipped by the empty-transfer path yet trips the non-empty path's "ac < region_size"
     // assert. Reset it to a true empty region (the exact inverse of reserve), so both views agree.
+    // Region state transitions require regular regions to pass through trash before becoming empty.
+    r->make_trash();
     r->set_affiliation(FREE);
     r->make_empty();
   }
@@ -574,8 +576,121 @@ template ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc<Shenando
 template ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc<ShenandoahFreeSetPartitionId::Collector>(size_t, bool&);
 template ShenandoahHeapRegion* ShenandoahFreeSet::find_region_for_alloc<ShenandoahFreeSetPartitionId::OldCollector>(size_t, bool&);
 
-ShenandoahHeapRegion* ShenandoahFreeSet::steal_from_mutator(ShenandoahFreeSetPartitionId target_partition,
-                                                            ShenandoahAllocRequest& req) {
+template<ShenandoahFreeSetPartitionId PARTITION>
+int ShenandoahFreeSet::reserve_alloc_regions(int regions_to_reserve, size_t min_free_words,
+                                             ShenandoahHeapRegion** reserved) {
+  shenandoah_assert_heaplocked();
+  assert(0 < regions_to_reserve, "Sanity check");
+  if constexpr (PARTITION == ShenandoahFreeSetPartitionId::Mutator) {
+    update_allocation_bias();
+  }
+  if (_partitions.is_empty(PARTITION)) {
+    return 0;
+  }
+
+  constexpr ShenandoahAffiliation affiliation =
+    (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) ? OLD_GENERATION : YOUNG_GENERATION;
+  const size_t min_free_bytes = min_free_words * HeapWordSize;
+
+  int reserved_count = 0;
+  // Number of empty regions consumed from PARTITION; the empty-region count is adjusted once below.
+  size_t emptied_regions = 0;
+
+  // Reserve a single suitable region from PARTITION found by `iterator`, retiring it from the
+  // partition (membership + interval) but deferring the partition-total recompute to the batch end.
+  auto reserve_one = [&](auto& iterator) {
+    for (idx_t idx = iterator.current(); iterator.has_next() && reserved_count < regions_to_reserve; idx = iterator.next()) {
+      ShenandoahHeapRegion* r = _heap->get_region(idx);
+      if (_heap->is_concurrent_weak_root_in_progress() && r->is_trash()) {
+        continue;
+      }
+      r->try_recycle_under_lock();
+      assert(r->is_affiliated() || r->is_empty(), "Affiliated or empty");
+      // Collectors only take an affiliated region matching their generation, or an empty region.
+      if (!r->is_empty() && r->affiliation() != affiliation) {
+        continue;
+      }
+      if (alloc_capacity(r) < min_free_bytes) {
+        continue;
+      }
+      // The partition's empty-region count is availability-based: a region counts as empty iff its
+      // entire capacity is free (alloc_capacity == region_size_bytes), regardless of its state. So a
+      // full-free region that is already affiliated and _regular (e.g. reserved-but-never-allocated,
+      // or freshly recycled) is still counted as empty and must be decremented here when retired.
+      // Track that separately from the state-based is_empty() prep below.
+      if (alloc_capacity(r) == _partitions.region_size_bytes()) {
+        emptied_regions++;
+      }
+      if (r->is_empty()) {
+        assert(r->affiliation() == FREE, "Empty region must be free");
+        r->set_affiliation(affiliation);
+        r->make_regular_allocation(affiliation);
+        if constexpr (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) {
+          r->end_preemptible_coalesce_and_fill();
+          _heap->old_generation()->clear_cards_for(r);
+        }
+      }
+      // Retire the region from the partition (membership + interval + used pre-charge), but do not
+      // recompute partition totals yet -- that happens once after the whole batch.
+      _partitions.retire_from_partition(PARTITION, idx, r->used());
+      // Activate the region as a CAS alloc region now, so it satisfies the assert_bounds()
+      // invariant (a retired-with-capacity region must be an active alloc region) when the batch's
+      // trailing recompute runs. The flag must be set before activation (ordering contract).
+      if constexpr (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
+        r->set_collector_allocator_reserved(true);
+      }
+      r->set_active_alloc_region();
+      reserved[reserved_count++] = r;
+    }
+  };
+
+  if (_partitions.alloc_from_left_bias(PARTITION)) {
+    ShenandoahLeftRightIterator iterator(&_partitions, PARTITION);
+    reserve_one(iterator);
+  } else {
+    ShenandoahRightLeftIterator iterator(&_partitions, PARTITION);
+    reserve_one(iterator);
+  }
+
+  // Reconcile the deferred per-region retires from the partition scan with a single recompute,
+  // restoring the affiliated/used/interval invariants before any further freeset mutation.
+  if (reserved_count > 0 || emptied_regions > 0) {
+    if (emptied_regions > 0) {
+      _partitions.decrease_empty_region_counts(PARTITION, emptied_regions);
+    }
+    if constexpr (PARTITION == ShenandoahFreeSetPartitionId::Mutator) {
+      recompute_total_used</* Mutator */ true, /* Collector */ false, /* OldCollector */ false>();
+      recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
+                                 /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
+                                 /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
+                                 /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                 /* UnaffiliatedChangesAreYoungNeutral */ false>();
+    } else if constexpr (PARTITION == ShenandoahFreeSetPartitionId::Collector) {
+      recompute_total_used</* Mutator */ false, /* Collector */ true, /* OldCollector */ false>();
+      recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ true,
+                                 /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
+                                 /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
+                                 /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                 /* UnaffiliatedChangesAreYoungNeutral */ false>();
+    } else {
+      recompute_total_used</* Mutator */ false, /* Collector */ false, /* OldCollector */ true>();
+      recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ false,
+                                 /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ false,
+                                 /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
+                                 /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                 /* UnaffiliatedChangesAreYoungNeutral */ true>();
+    }
+    _partitions.assert_bounds();
+  }
+
+  return reserved_count;
+}
+
+template int ShenandoahFreeSet::reserve_alloc_regions<ShenandoahFreeSetPartitionId::Mutator>(int, size_t, ShenandoahHeapRegion**);
+template int ShenandoahFreeSet::reserve_alloc_regions<ShenandoahFreeSetPartitionId::Collector>(int, size_t, ShenandoahHeapRegion**);
+template int ShenandoahFreeSet::reserve_alloc_regions<ShenandoahFreeSetPartitionId::OldCollector>(int, size_t, ShenandoahHeapRegion**);
+
+ShenandoahHeapRegion* ShenandoahFreeSet::steal_from_mutator(ShenandoahFreeSetPartitionId target_partition) {
   shenandoah_assert_heaplocked();
   assert(target_partition != ShenandoahFreeSetPartitionId::Mutator, "Cannot steal from self");
 
@@ -587,14 +702,14 @@ ShenandoahHeapRegion* ShenandoahFreeSet::steal_from_mutator(ShenandoahFreeSetPar
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
     if (can_allocate_from(r)) {
-      if (req.is_old()) {
+      if (target_partition == ShenandoahFreeSetPartitionId::OldCollector) {
         if (!flip_to_old_gc(r)) {
           continue;
         }
       } else {
         flip_to_gc(r);
       }
-      log_debug(gc, free)("Flipped region %zu to gc for request: " PTR_FORMAT, idx, p2i(&req));
+      log_debug(gc, free)("Flipped region %zu from Mutator to %s", idx, partition_name(target_partition));
 
       r->try_recycle_under_lock();
       assert(r->is_empty(), "Must be empty");

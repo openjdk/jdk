@@ -107,14 +107,29 @@ void ShenandoahAllocator::release_collector_alloc_regions() {
   _old_collector_allocator.release_alloc_regions();
 }
 
+void ShenandoahAllocator::reserve_mutator_alloc_regions() {
+  _mutator_allocator.reserve_alloc_regions();
+}
+
+void ShenandoahAllocator::reserve_collector_alloc_regions() {
+  _collector_allocator.reserve_alloc_regions();
+  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    _old_collector_allocator.reserve_alloc_regions();
+  }
+}
+
 void ShenandoahAllocator::set_collector_alloc_region_count(uint workers) {
   _collector_allocator.set_alloc_region_count(workers);
-  _old_collector_allocator.set_alloc_region_count(workers);
+  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    _old_collector_allocator.set_alloc_region_count(workers);
+  }
 }
 
 void ShenandoahAllocator::grow_collector_alloc_region_count(uint workers) {
   _collector_allocator.grow_alloc_region_count(workers);
-  _old_collector_allocator.grow_alloc_region_count(workers);
+  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    _old_collector_allocator.grow_alloc_region_count(workers);
+  }
 }
 
 size_t ShenandoahAllocator::remnant_bytes(ShenandoahFreeSetPartitionId partition) const {

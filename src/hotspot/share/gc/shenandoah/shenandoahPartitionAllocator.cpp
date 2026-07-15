@@ -251,7 +251,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
           }
         }
         if (ShenandoahEvacReserveOverflow) {
-          fresh = _free_set->steal_from_mutator(PARTITION, req);
+          fresh = _free_set->steal_from_mutator(PARTITION);
           if (fresh != nullptr) {
             assert(fresh->is_empty(), "Stolen region must be empty");
             in_new_region = true;
@@ -395,6 +395,37 @@ void ShenandoahPartitionAllocator<PARTITION>::release_alloc_regions() {
   shenandoah_assert_heaplocked();
   for (uint i = 0; i < _alloc_region_count; i++) {
     release_alloc_region(i);
+  }
+}
+
+template<ShenandoahFreeSetPartitionId PARTITION>
+void ShenandoahPartitionAllocator<PARTITION>::reserve_alloc_regions() {
+  shenandoah_assert_heaplocked();
+
+  uint empty_slots[MAX_ALLOC_REGIONS];
+  uint empty_slot_count = 0;
+  for (uint i = 0; i < _alloc_region_count; i++) {
+    if (_alloc_regions[i].load_relaxed() == nullptr) {
+      empty_slots[empty_slot_count++] = i;
+    }
+  }
+  if (empty_slot_count == 0) {
+    return;
+  }
+
+  const size_t min_free_words = ShenandoahHeap::plab_min_size();
+  ShenandoahHeapRegion* reserved[MAX_ALLOC_REGIONS];
+  int reserved_count = _free_set->reserve_alloc_regions<PARTITION>(checked_cast<int>(empty_slot_count),
+                                                                   min_free_words, reserved);
+  assert(reserved_count <= checked_cast<int>(empty_slot_count), "Cannot reserve more regions than empty slots");
+
+  // reserve_alloc_regions() has already prepared, retired, and activated each region. Publish the
+  // pointers only after the batch accounting reconciliation has completed.
+  for (int i = 0; i < reserved_count; i++) {
+    const uint slot = empty_slots[i];
+    assert(_alloc_regions[slot].load_relaxed() == nullptr, "Slot must remain empty under the heap lock");
+    assert(reserved[i]->is_atomic_alloc_region(), "Reserved region must be active before publication");
+    _alloc_regions[slot].release_store(reserved[i]);
   }
 }
 

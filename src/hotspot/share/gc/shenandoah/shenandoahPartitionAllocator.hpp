@@ -111,6 +111,11 @@ public:
   // since rebuild can change region affiliation/membership and invalidate the cache.
   void release_alloc_regions();
 
+  // Proactively reserve regions for all empty stripe slots. This is used for mutators after the
+  // final-mark free-set rebuild, while the heap lock is held, so post-pause TLAB replenishment can
+  // use the lock-free allocation path instead of contending for the heap lock.
+  void reserve_alloc_regions();
+
   // Set the number of active stripe slots (clamped to [1, MAX_ALLOC_REGIONS]). Must be called at a
   // safepoint while all slots are released (empty), because it may lower the count: a non-empty slot
   // at an index >= the new count would be stranded (never scanned, never retired). Used to size the

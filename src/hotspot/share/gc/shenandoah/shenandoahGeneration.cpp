@@ -24,6 +24,7 @@
  */
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -317,6 +318,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
     _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
+    heap->allocator()->reserve_mutator_alloc_regions();
   }
 }
 

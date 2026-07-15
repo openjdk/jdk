@@ -270,8 +270,14 @@ void ShenandoahDegenGC::op_degenerated() {
         // evacuates with up to ParallelGCThreads workers, which may exceed the ConcGCThreads the
         // stripes were sized for at the concurrent evac's final-mark safepoint. Grow-only: if we
         // degenerated mid-evac the collector slots may still be occupied, so we must not lower the
-        // count (that would strand them); newly-added workers simply map to the higher slots.
-        heap->allocator()->grow_collector_alloc_region_count(ShenandoahWorkerPolicy::calc_workers_for_stw_degenerated());
+        // count (that would strand them); newly-added workers simply map to the higher slots. Fill
+        // any empty slots from their own collector partitions before evacuation resumes; reserve
+        // overflow into the mutator partition remains on the actual allocation path.
+        {
+          ShenandoahHeapLocker locker(heap->lock());
+          heap->allocator()->grow_collector_alloc_region_count(ShenandoahWorkerPolicy::calc_workers_for_stw_degenerated());
+          heap->allocator()->reserve_collector_alloc_regions();
+        }
 
         op_evacuate();
         if (heap->cancelled_gc()) {
