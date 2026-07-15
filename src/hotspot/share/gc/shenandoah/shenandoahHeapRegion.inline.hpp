@@ -165,14 +165,19 @@ bool ShenandoahHeapRegion::try_allocate(HeapWord* const obj, size_t const size, 
 
 inline void ShenandoahHeapRegion::adjust_alloc_metadata(const ShenandoahAllocRequest &req, size_t size) {
   // Only need to update alloc metadata for lab alloc, shared alloc is counted implicitly by tlab/gclab allocs
-  if (req.is_lab_alloc()) {
-    if (req.is_mutator_alloc()) {
+  switch (req.type()) {
+    case ShenandoahAllocRequest::_alloc_tlab:
       _tlab_allocs.add_then_fetch(size, memory_order_relaxed);
-    } else if (req.is_old()) {
-      _plab_allocs.add_then_fetch(size, memory_order_relaxed);
-    } else {
+      break;
+    case ShenandoahAllocRequest::_alloc_gclab:
       _gclab_allocs.add_then_fetch(size, memory_order_relaxed);
-    }
+      break;
+    case ShenandoahAllocRequest::_alloc_plab:
+      _plab_allocs.add_then_fetch(size, memory_order_relaxed);
+      break;
+    default:
+      assert(!req.is_lab_alloc(), "Unrecognized LAB allocation type");
+      break;
   }
 }
 

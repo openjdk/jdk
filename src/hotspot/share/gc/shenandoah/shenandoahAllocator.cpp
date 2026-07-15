@@ -49,7 +49,7 @@ static uint mutator_alloc_regions() {
     return MIN2((uint) ShenandoahMutatorAllocRegions, ShenandoahMutatorAllocator::MAX_ALLOC_REGIONS);
   }
   const uint cpu_bound = (uint) MAX2(os::initial_active_processor_count(), 1);
-  const uint heap_bound = (uint) MAX2(ShenandoahHeapRegion::region_count() / 512, (size_t) 2);
+  const uint heap_bound = (uint) MAX2(ShenandoahHeapRegion::region_count() / 256, (size_t) 1);
   return MIN3(cpu_bound, heap_bound, ShenandoahMutatorAllocator::MAX_ALLOC_REGIONS);
 }
 

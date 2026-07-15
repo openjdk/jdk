@@ -48,6 +48,16 @@ uint ShenandoahPartitionAllocator<PARTITION>::alloc_region_slot(Thread* thread) 
   if (_alloc_region_count <= 1u) {
     return 0u;
   }
+
+  if constexpr (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
+    // Returns the current task-local worker ID, or UINT_MAX if this thread
+    // has never been assigned a worker task.
+    const uint worker_id = WorkerThread::worker_id();
+    if (worker_id != UINT_MAX) {
+      return worker_id % _alloc_region_count;
+    }
+  }
+
   // stable per-thread slot, assigned once, count is fixed for the allocator's life.
   uint slot = ShenandoahThreadLocalData::random_probe(thread) % _alloc_region_count;
   assert(slot < _alloc_region_count, "slot in range");
