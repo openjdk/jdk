@@ -2366,10 +2366,7 @@ void Compile::Optimize() {
 
     if (failing())  return;
 
-    if (AlwaysIncrementalInline || StressIncrementalInlining ||
-        _late_inlines.length() > 0) {
-      inline_incrementally(igvn);
-    }
+    inline_incrementally(igvn);
 
     print_method(PHASE_INCREMENTAL_BOXING_INLINE, 2);
 
