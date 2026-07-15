@@ -1425,13 +1425,36 @@ public class ForkJoinPool extends AbstractExecutorService
         /**
          * Runs the given task, as well as remaining local tasks.
          */
-        final void topLevelExec(ForkJoinTask<?> task) {
-            int fifo = config & FIFO;
+        final void topLevelExec(ForkJoinTask<?> task, int fifo) {
+            ++nsteals;
             while (task != null) {
                 task.doExec();
-                task = nextLocalTask(fifo);
+                task = null;
+                int p = top, cap; ForkJoinTask<?>[] a;
+                if ((a = array) == null || (cap = a.length) <= 0)
+                    break;        // currently impossible
+                if (fifo == 0) {  // specialized localPop
+                    int s = p - 1; long k;
+                    if (U.getReference(
+                            a, k = slotOffset((cap - 1) & s)) != null &&
+                        (task = (ForkJoinTask<?>)
+                         U.getAndSetReference(a, k, null)) != null)
+                        top = s;
+                } else {          // specialized localPoll
+                    for (int b = base; p - b > 0; ) {
+                        int nb = b + 1;
+                        if ((task = (ForkJoinTask<?>)U.getAndSetReference(
+                                 a, slotOffset((cap - 1) & b), null)) != null) {
+                            base = nb;
+                            break;
+                        }
+                        if (nb == p)
+                            break;
+                        while (b == (b = U.getIntAcquire(this, BASE)))
+                            Thread.onSpinWait();
+                    }
+                }
             }
-            ++nsteals;
         }
 
         /**
@@ -2013,8 +2036,9 @@ public class ForkJoinPool extends AbstractExecutorService
     final void runWorker(WorkQueue w) {
         if (w != null) {
             int phase = w.phase, r = w.stackPred, src = phase & SMASK;
+            int fifo = (int)config & FIFO;
             for (long e; ((e = runState) & STOP) == 0L; ) {
-                long stat = scan(w, r, phase, src);
+                long stat = scan(w, r, phase, src, fifo);
                 phase = (int)(stat & LMASK);
                 src = (int)(stat >>> 32);
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
@@ -2039,7 +2063,7 @@ public class ForkJoinPool extends AbstractExecutorService
         }
     }
 
-    private long scan(WorkQueue w, int r, int phase, int src) {
+    private long scan(WorkQueue w, int r, int phase, int src, int fifo) {
         WorkQueue[] qs; int n;
         if ((qs = queues) == null || w == null || (n = qs.length) <= 0)
             src = EMPTY_SCAN;
@@ -2085,7 +2109,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                     (src != qid || (qid & 1) == 0) &&
                                     helpSignalWork(a, np))
                                     propagated = nb;
-                                w.topLevelExec(t);
+                                w.topLevelExec(t, fifo);
                                 src = qid;
                                 taken = true;
                             }
@@ -2169,22 +2193,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     else if ((d = deadline) - now <= TIMEOUT_SLOP)
                         canTrim = true;
                     if (canTrim) {
-                        int vp, i; WorkQueue[] vs; WorkQueue v;
-                        long nc = ((w.stackPred & LMASK) |
-                                   ((RC_MASK & c) | (TC_MASK & (c - TC_UNIT))));
-                        if (U.compareAndSetLong(this, CTL, c, nc)) {
-                            w.source = DROPPED;
-                            w.phase = activePhase;  // try to wake up next waiter
-                            if ((vp = (int)nc) != 0 && (vs = queues) != null &&
-                                vs.length > (i = vp & SMASK) && (v = vs[i]) != null &&
-                                U.compareAndSetLong(
-                                    this, CTL, nc,
-                                    ((v.stackPred & LMASK) |
-                                     ((UMASK & (nc + RC_UNIT)) | (nc & TC_MASK))))) {
-                                v.source = TRIM_ON_EMPTY;
-                                v.phase = vp;
-                                U.unpark(v.owner);
-                            }
+                        if (tryTrim(w, c, activePhase)) {
                             trimmed = true;
                             break;
                         }
@@ -2216,6 +2225,34 @@ public class ForkJoinPool extends AbstractExecutorService
     }
 
     /**
+     * Tries to remove and deregister worker after timeout, and release
+     * another to do the same unless new tasks are found.
+     * @return true if trimmed
+     */
+    private boolean tryTrim(WorkQueue w, long c, int activePhase) {
+        if (w != null) {
+            int vp, i; WorkQueue[] vs; WorkQueue v;
+            long nc = ((w.stackPred & LMASK) |
+                       ((RC_MASK & c) | (TC_MASK & (c - TC_UNIT))));
+            if (U.compareAndSetLong(this, CTL, c, nc)) {
+                w.source = DROPPED;
+                w.phase = activePhase;
+                if ((vp = (int)nc) != 0 && (vs = queues) != null &&
+                    vs.length > (i = vp & SMASK) && (v = vs[i]) != null &&
+                    U.compareAndSetLong(this, CTL, // try to wake up next waiter
+                        nc, ((v.stackPred & LMASK) |
+                             ((UMASK & (nc + RC_UNIT)) | (nc & TC_MASK))))) {
+                    v.source = TRIM_ON_EMPTY;
+                    v.phase = vp;
+                    U.unpark(v.owner);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Scans for and returns a polled task, if available.  Used only
      * for untracked polls. Begins scan at a random index to avoid
      * systematic unfairness.
@@ -2223,9 +2260,9 @@ public class ForkJoinPool extends AbstractExecutorService
      * @param submissionsOnly if true, only scan submission queues
      */
     private ForkJoinTask<?> pollScan(boolean submissionsOnly) {
-        long e; boolean rescan = false;
-        outer: while (((e = runState) & STOP) == 0L) {
+        outer: for (long e; ((e = runState) & STOP) == 0L; ) {
             WorkQueue[] qs; int n;
+            boolean rescan = false;
             int r = ThreadLocalRandom.nextSecondarySeed(), step = r >>> 16;
             if (!submissionsOnly)
                 step |= 1;
@@ -2247,13 +2284,14 @@ public class ForkJoinPool extends AbstractExecutorService
                         ForkJoinTask<?> t = (ForkJoinTask<?>)
                             U.getReferenceAcquire(a, bp);
                         if (t == null) {
-                            Object nt = U.getReferenceAcquire(a, np);
-                            if (U.getReference(a, bp) == null &&
-                                b == (b = q.base) && nt == null)
-                                break;
-                            if (pb == (pb = b)) {
-                                rescan = true;
-                                break scan;
+                            if (U.getReference(a, bp) == null) {
+                                Object nt = U.getReferenceAcquire(a, np);
+                                if (b == (b = q.base) && nt == null)
+                                    break;
+                                if (pb == (pb = b)) {
+                                    rescan = true;
+                                    break scan;
+                                }
                             }
                         }
                         else if (q.base == b) {
