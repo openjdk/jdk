@@ -3246,8 +3246,6 @@ static void log_frames(JavaThread* thread) {
 
 static void log_frames_after_thaw(JavaThread* thread, ContinuationWrapper& cont, intptr_t* sp) {
   intptr_t* sp0 = sp;
-  address pc0 = *(address*)(sp - frame::sender_sp_ret_address_offset());
-
   bool preempted = false;
   stackChunkOop tail = cont.tail();
   if (tail != nullptr && tail->preempted()) {
