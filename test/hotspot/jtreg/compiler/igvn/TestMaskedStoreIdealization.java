@@ -108,34 +108,6 @@ public class TestMaskedStoreIdealization {
             // zero, as the original bug only triggered with the first element.
             final int idx = RANDOM.nextBoolean() ? RANDOM.nextInt(0, vec.length) : 0;
 
-            var maskGeneration = Template.make(() -> scope(
-                let("idx", idx),
-                let("boxedTy", vec.elementType.boxedTypeName()),
-                let("species", vec.speciesName),
-                "        VectorMask<#boxedTy> mask = VectorMask.fromLong(#species, ",
-                RANDOM.nextInt(0, 10) == 0 ? RANDOM.nextLong() : "-1 - (1 << #idx)",
-                ");\n"
-            ));
-
-            var indexMapGeneration = Template.make(() -> {
-                // For the scatter tests, the array is one larger than the number of lanes so we can
-                // map indices starting at idx to the next index, omitting idx.
-                int[] indexMap = IntStream.range(0, vec.length)
-                                          .map(i -> i >= idx ? i + 1 : i)
-                                          .toArray();
-                String indexMapStr = Arrays.toString(indexMap)
-                                           .replace('[', '{')
-                                           .replace(']', '}');
-                return scope(
-                    let("idx", idx),
-                    let("len", vec.length),
-                    let("idxMap", indexMapStr),
-                    """
-                            final int[] indexMap = #{idxMap};
-                    """
-                );
-            });
-
             var irVerification = Template.make("op", "arraySize", (Operation op, Integer arraySize) -> {
                 // No IR-verification for random test cases.
                 if (op == Operation.RANDOM) {
@@ -212,12 +184,38 @@ public class TestMaskedStoreIdealization {
                 );
             });
 
-            var randomTestBody = generateRandomTest();
-
-            var testBody = Template.make("testCaseName", "op", "arraySize", (String testCaseName, Operation op, Integer arraySize) -> {
+            var testBody = Template.make("testCaseRandom", "op", "arraySize", (Random testCaseRandom, Operation op, Integer arraySize) -> {
                 if (op == Operation.RANDOM) {
-                    return scope(randomTestBody.asToken());
+                    return scope(generateRandomTest(testCaseRandom).asToken());
                 }
+
+                var maskGeneration = Template.make(() -> scope(
+                    let("idx", idx),
+                    let("boxedTy", vec.elementType.boxedTypeName()),
+                    let("species", vec.speciesName),
+                    "        VectorMask<#boxedTy> mask = VectorMask.fromLong(#species, ",
+                    testCaseRandom.nextInt(0, 10) == 0 ? testCaseRandom.nextLong() : "-1 - (1 << #idx)",
+                    ");\n"
+                ));
+
+                var indexMapGeneration = Template.make(() -> {
+                    // For the scatter tests, the array is one larger than the number of lanes so we can
+                    // map indices starting at idx to the next index, omitting idx.
+                    int[] indexMap = IntStream.range(0, vec.length)
+                                              .map(i -> i >= idx ? i + 1 : i)
+                                              .toArray();
+                    String indexMapStr = Arrays.toString(indexMap)
+                                               .replace('[', '{')
+                                               .replace(']', '}');
+                    return scope(
+                        let("idx", idx),
+                        let("len", vec.length),
+                        let("idxMap", indexMapStr),
+                        """
+                                final int[] indexMap = #{idxMap};
+                        """
+                    );
+                });
 
                 var generation = switch (op) {
                     case STORE_SCATTER              -> indexMapGeneration.asToken();
@@ -272,6 +270,9 @@ public class TestMaskedStoreIdealization {
             });
 
             var testCase = Template.make("op", (Operation op) -> {
+                // To get the same test body twice, use a new random instance for each generated test body with a seed fixed per test case.
+                final int testCaseSeed = RANDOM.nextInt();
+
                 String testCaseName = testName + switch (op) {
                     case STORE_SCATTER              -> "Scatter";
                     case STORE_MASK                 -> "Mask";
@@ -297,7 +298,6 @@ public class TestMaskedStoreIdealization {
                     let("rngCall", vec.elementType.callLibraryRNG()),
                 """
                     @Run(test = "test#{testCaseName}")
-                    @Warmup(10_000)
                     static void run#{testCaseName}(RunInfo info) {
                         final #pty broadcastVal = #rngCall;
                         final #pty arrVal = #rngCall;
@@ -319,14 +319,14 @@ public class TestMaskedStoreIdealization {
                 """
                     static #pty[] test#{testCaseName}(#pty broadcastVal, #pty arrVal) {
                 """,
-                    testBody.asToken(testCaseName, op, arraySize),
+                    testBody.asToken(new Random(testCaseSeed), op, arraySize),
                 """
                     }
 
                     @DontCompile
                     static #pty[] reference#{testCaseName}(#pty broadcastVal, #pty arrVal) {
                 """,
-                    testBody.asToken(testCaseName, op, arraySize),
+                    testBody.asToken(new Random(testCaseSeed), op, arraySize),
                 """
                     }
 
@@ -341,20 +341,20 @@ public class TestMaskedStoreIdealization {
             )).asToken();
         }
 
-        Template.ZeroArgs generateRandomTest() {
-            final int arraySize = RANDOM.nextInt(vec.length + 1, 5 * vec.length);
+        Template.ZeroArgs generateRandomTest(Random testCaseRandom) {
+            final int arraySize = testCaseRandom.nextInt(vec.length + 1, 5 * vec.length);
             var maskHook = new Hook("MaskHook");
             var genRandomMask = Template.make("maskName", "vecTy", (String maskName, VectorType.Vector vecTy) -> scope(
                 let("boxedTy", vecTy.elementType.boxedTypeName()),
                 let("species", vecTy.speciesName),
-                let("maskVal", RANDOM.nextLong()),
+                let("maskVal", testCaseRandom.nextLong()),
                 """
                         VectorMask<#{boxedTy}> #maskName = VectorMask.fromLong(#species, #maskVal);
                 """
             ));
             var genRandomIdxMap = Template.make("mapName", "maxIdx", "len", (String mapName, Integer maxIdx, Integer len) -> {
                 ArrayList<Integer> possibleIndices = new ArrayList(IntStream.range(0, maxIdx).boxed().toList());
-                Collections.shuffle(possibleIndices, RANDOM);
+                Collections.shuffle(possibleIndices, testCaseRandom);
                 return scope(
                     let("map", String.join(", ", possibleIndices.stream().limit(vec.length).map(i -> i.toString()).toList())),
                 """
@@ -363,10 +363,10 @@ public class TestMaskedStoreIdealization {
                 );
             });
             var initialStore = Template.make(() -> {
-                final int offset = RANDOM.nextInt(0, 4) == 0 ? RANDOM.nextInt(0, arraySize - vec.length) : 0;
+                final int offset = testCaseRandom.nextInt(0, 4) == 0 ? testCaseRandom.nextInt(0, arraySize - vec.length) : 0;
                 return scope(
                     let("offset", offset),
-                    switch (RANDOM.nextInt(0,4)) {
+                    switch (testCaseRandom.nextInt(0,4)) {
                         case 0 -> scope(
                             """
                                     v.intoArray(a, #offset);
@@ -399,13 +399,13 @@ public class TestMaskedStoreIdealization {
             });
 
             var storeThatShouldNotBeLost = Template.make(() -> {
-                final int selection = RANDOM.nextInt(0,6);
+                final int selection = testCaseRandom.nextInt(0,6);
                 final VectorType.Vector narrowerVector = CodeGenerationDataNameType.VECTOR_VECTOR_TYPES
                                                             .stream()
                                                             .filter(v -> v.elementType == vec.elementType && v.length <= vec.length)
                                                             // Flip a coin on each reduction step to pick a random element.
-                                                            .reduce(null, (l, r) -> l == null ? r : (RANDOM.nextBoolean() ? l : r));
-                final int offset = RANDOM.nextInt(0, 4) == 0 ? RANDOM.nextInt(0, arraySize - narrowerVector.length) : 0;
+                                                            .reduce(null, (l, r) -> l == null ? r : (testCaseRandom.nextBoolean() ? l : r));
+                final int offset = testCaseRandom.nextInt(0, 4) == 0 ? testCaseRandom.nextInt(0, arraySize - narrowerVector.length) : 0;
                 return scope(
                     let("offset", offset),
                     switch (selection) {
@@ -446,14 +446,14 @@ public class TestMaskedStoreIdealization {
                             """
                             );
                         case 4 -> scope(
-                            let("idx", RANDOM.nextInt(0, arraySize)),
+                            let("idx", testCaseRandom.nextInt(0, arraySize)),
                             """
                                     a[#idx] = arrVal;
                             """
                         );
                         case 5 -> scope(
-                            let("idx", RANDOM.nextInt(0, arraySize - vec.length)),
-                            let("len", RANDOM.nextInt(1, vec.length + 1)),
+                            let("idx", testCaseRandom.nextInt(0, arraySize - vec.length)),
+                            let("len", testCaseRandom.nextInt(1, vec.length + 1)),
                             """
                                     Arrays.fill(a, #idx, #idx + #len, arrVal);
                             """
@@ -464,10 +464,10 @@ public class TestMaskedStoreIdealization {
             });
 
             var storeWithHole = Template.make(() -> {
-                final int offset = RANDOM.nextInt(0, 4) == 0 ? RANDOM.nextInt(0, arraySize - vec.length) : 0;
+                final int offset = testCaseRandom.nextInt(0, 4) == 0 ? testCaseRandom.nextInt(0, arraySize - vec.length) : 0;
                 return scope(
                     let("offset", offset),
-                    switch (RANDOM.nextInt(0,3)) {
+                    switch (testCaseRandom.nextInt(0,3)) {
                         case 0 -> scope(
                             maskHook.insert(genRandomMask.asToken("holeMask", vec)),
                             """
