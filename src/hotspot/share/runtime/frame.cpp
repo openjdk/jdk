@@ -500,23 +500,16 @@ intptr_t* frame::interpreter_frame_local_at(int index) const {
 }
 
 intptr_t* frame::interpreter_frame_expression_stack_at(jint offset) const {
-  const int i = offset * interpreter_frame_expression_stack_direction();
-  const int n = i * Interpreter::stackElementWords;
-  return &(interpreter_frame_expression_stack()[n]);
+  const int n = offset * Interpreter::stackElementWords;
+  return interpreter_frame_expression_stack() - n;
 }
 
 jint frame::interpreter_frame_expression_stack_size() const {
   // Number of elements on the interpreter expression stack
   // Callers should span by stackElementWords
   int element_size = Interpreter::stackElementWords;
-  size_t stack_size = 0;
-  if (frame::interpreter_frame_expression_stack_direction() < 0) {
-    stack_size = (interpreter_frame_expression_stack() -
-                  interpreter_frame_tos_address() + 1)/element_size;
-  } else {
-    stack_size = (interpreter_frame_tos_address() -
-                  interpreter_frame_expression_stack() + 1)/element_size;
-  }
+  size_t stack_size = (interpreter_frame_expression_stack() -
+                        interpreter_frame_tos_address() + 1)/element_size;
   assert(stack_size <= (size_t)max_jint, "stack size too big");
   return (jint)stack_size;
 }
@@ -791,14 +784,8 @@ class InterpreterFrameClosure : public OffsetClosure {
     } else {
       addr = (oop*) _fr->interpreter_frame_expression_stack_at((offset - _max_locals));
       // In case of exceptions, the expression stack is invalid and the esp will be reset to express
-      // this condition. Therefore, we call f only if addr is 'inside' the stack (i.e., addr >= esp for Intel).
-      bool in_stack;
-      if (frame::interpreter_frame_expression_stack_direction() > 0) {
-        in_stack = (intptr_t*)addr <= _fr->interpreter_frame_tos_address();
-      } else {
-        in_stack = (intptr_t*)addr >= _fr->interpreter_frame_tos_address();
-      }
-      if (in_stack) {
+      // this condition. Therefore, we call f only if addr is 'inside' the stack (i.e., addr >= esp).
+      if ((intptr_t*)addr >= _fr->interpreter_frame_tos_address()) {
         _f->do_oop(addr);
       }
     }

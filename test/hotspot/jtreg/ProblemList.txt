@@ -67,9 +67,9 @@ compiler/interpreter/Test6833129.java 8335266 generic-i586
 
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 generic-aarch64
 
-compiler/unsafe/AlignmentGapAccess.java 8373487 generic-all
-
 compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch64
+
+compiler/vectorapi/VectorStoreMaskIdentityTest.java 8388281 generic-all
 
 #############################################################################
 

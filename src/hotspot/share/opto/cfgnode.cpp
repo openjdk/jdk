@@ -693,14 +693,13 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (add_to_worklist) {
         igvn->add_users_to_worklist(this); // Check for further allowed opts
       }
-      for (DUIterator_Last imin, i = last_outs(imin); i >= imin; --i) {
+      uint edges_removed;
+      for (DUIterator_Last imin, i = last_outs(imin); i >= imin; i -= edges_removed) {
+        edges_removed = 1;
         Node* n = last_out(i);
         igvn->hash_delete(n); // Remove from worklist before modifying edges
         if (n->outcnt() == 0) {
-          int uses_found = n->replace_edge(this, phase->C->top(), igvn);
-          if (uses_found > 1) { // (--i) done at the end of the loop.
-            i -= (uses_found - 1);
-          }
+          edges_removed = n->replace_edge(this, phase->C->top(), igvn);
           continue;
         }
         if( n->is_Phi() ) {   // Collapse all Phis
@@ -719,10 +718,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         }
         else if( n->is_Region() ) { // Update all incoming edges
           assert(n != this, "Must be removed from DefUse edges");
-          int uses_found = n->replace_edge(this, parent_ctrl, igvn);
-          if (uses_found > 1) { // (--i) done at the end of the loop.
-            i -= (uses_found - 1);
-          }
+          edges_removed = n->replace_edge(this, parent_ctrl, igvn);
         }
         else {
           assert(n->in(0) == this, "Expect RegionNode to be control parent");
