@@ -440,12 +440,12 @@ static bool is_file_secure(int fd, const char *filename) {
 }
 
 
-// return the user name for the given user id. If the uid cannot be resolved
-// to a passwd entry, return a stable uid-based synthetic name.
+// return the user name for the given user id. If the UID cannot be resolved
+// to a passwd entry, return a stable UID-based synthetic name.
 //
 // the caller is expected to free the allocated memory.
 //
-static char* get_user_name(uid_t uid) {
+[[nodiscard]] static char* get_user_name(uid_t uid) {
   char* user_name = nullptr;
   struct passwd pwent;
 
@@ -496,10 +496,10 @@ static char* get_user_name(uid_t uid) {
     // example in a Docker container started with --user=<uid>:<gid>. Use a
     // synthetic name so the JVM can still publish hsperfdata.
     char uid_name[32];
-    jio_snprintf(uid_name, sizeof(uid_name), "uid" UINT64_FORMAT, (uint64_t)uid);
+    jio_snprintf(uid_name, sizeof(uid_name), "uid" UINT64_FORMAT, static_cast<uint64_t>(uid));
 
     log_info(perf)("Using synthetic user name %s for unresolved uid " UINT64_FORMAT,
-                   uid_name, (uint64_t)uid);
+                   uid_name, static_cast<uint64_t>(uid));
 
     user_name = NEW_C_HEAP_ARRAY(char, strlen(uid_name) + 1, mtInternal);
     strcpy(user_name, uid_name);
@@ -518,8 +518,7 @@ static char* get_user_name(uid_t uid) {
 //
 // the caller is expected to free the allocated memory.
 //
-//
-static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
+[[nodiscard]] static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
 
   // short circuit the directory search if the process doesn't even exist.
   if (kill(vmid, 0) == OS_ERR) {
@@ -659,7 +658,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
 
 // return the name of the user that owns the JVM indicated by the given vmid.
 //
-static char* get_user_name(int vmid, int *nspid, TRAPS) {
+[[nodiscard]] static char* get_user_name(int vmid, int *nspid, TRAPS) {
   char *result = get_user_name_slow(vmid, *nspid, CHECK_NULL);
 
 #if defined(LINUX)
