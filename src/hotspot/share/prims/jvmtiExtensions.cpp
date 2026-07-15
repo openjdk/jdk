@@ -297,7 +297,7 @@ static jvmtiError JNICALL RequestJFRStackTrace(const jvmtiEnv* env, ...) {
         tlh.list(), thread, &target, &thread_oop);
     if (err != JVMTI_ERROR_NONE) {
       // Explicit virtual thread arguments are not supported - vthread
-      // sampling is available via thread=NULL from within the vthread
+      // sampling is available via thread=nullptr from within the vthread
       // itself, where the carrier's walker traverses continuation frames.
       // cv_external_thread_to_JavaThread reports INVALID_THREAD for any
       // vthread because java_lang_Thread::thread(vthread_oop) is null;
