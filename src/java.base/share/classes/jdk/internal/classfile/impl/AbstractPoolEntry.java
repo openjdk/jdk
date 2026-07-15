@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.internal.classfile.impl;
 
 import java.lang.classfile.constantpool.*;
 import java.lang.constant.*;
+import java.lang.invoke.MethodHandleInfo;
 import java.lang.invoke.TypeDescriptor;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -1068,11 +1069,16 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         private DirectMethodHandleDesc computeSymbol() {
+            MemberRefEntry ref = reference();
+            // MethodHandleDesc factory ignores name if type is newInvokeSpecial, we must manually validate
+            if (kind() == MethodHandleInfo.REF_newInvokeSpecial && !ref.name().equalsString(ConstantDescs.INIT_NAME)) {
+                throw new IllegalArgumentException("Expected name <init> for constructor, found " + ref.name());
+            }
             return this.sym = MethodHandleDesc.of(
-                    DirectMethodHandleDesc.Kind.valueOf(kind(), reference() instanceof InterfaceMethodRefEntry),
-                    ((MemberRefEntry) reference()).owner().asSymbol(),
-                    ((MemberRefEntry) reference()).nameAndType().name().stringValue(),
-                    ((MemberRefEntry) reference()).nameAndType().type().stringValue());
+                    DirectMethodHandleDesc.Kind.valueOf(kind(), ref instanceof InterfaceMethodRefEntry),
+                    ref.owner().asSymbol(),
+                    ref.name().stringValue(),
+                    ref.type().stringValue());
         }
 
         @Override
