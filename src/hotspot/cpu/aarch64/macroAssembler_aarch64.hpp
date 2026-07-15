@@ -32,6 +32,7 @@
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/compressedKlass.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -482,6 +483,25 @@ class MacroAssembler: public Assembler {
   WRAP(smaddl) WRAP(smsubl) WRAP(umaddl) WRAP(umsubl)
 #undef WRAP
 
+  using Assembler::andw, Assembler::andr;
+  void andw(Register Rd, Register Rn, uint64_t imm) {
+    if (operand_valid_for_logical_immediate(/*is32*/true, imm)) {
+      Assembler::andw(Rd, Rn, imm);
+    } else {
+      assert(Rd != Rn, "must be");
+      movw(Rd, imm);
+      andw(Rd, Rn, Rd);
+    }
+  }
+  void andr(Register Rd, Register Rn, uint64_t imm) {
+    if (operand_valid_for_logical_immediate(/*is32*/false, imm)) {
+      Assembler::andr(Rd, Rn, imm);
+    } else {
+      assert(Rd != Rn, "must be");
+      mov(Rd, imm);
+      andr(Rd, Rn, Rd);
+    }
+  }
 
   // macro assembly operations needed for aarch64
 
@@ -693,7 +713,6 @@ public:
 #endif
 
   static int patch_oop(address insn_addr, address o);
-  static int patch_narrow_klass(address insn_addr, narrowKlass n);
 
   // Return whether code is emitted to a scratch blob.
   virtual bool in_scratch_emit_size() {
@@ -744,7 +763,7 @@ public:
   // n.b. increment/decrement calls with an Address destination will
   // need to use a scratch register to load the value to be
   // incremented. increment/decrement calls which add or subtract a
-  // constant value greater than 2^12 will need to use a 2nd scratch
+  // constant value greater than 2^24 will need to use a 2nd scratch
   // register to hold the constant. so, a register increment/decrement
   // may trash rscratch2 and an address increment/decrement trash
   // rscratch and rscratch2
@@ -755,11 +774,11 @@ public:
   void decrement(Register reg, int value = 1);
   void decrement(Address dst, int value = 1);
 
-  void incrementw(Address dst, int value = 1);
+  void incrementw(Address dst, int value = 1, Register result = rscratch1);
   void incrementw(Register reg, int value = 1);
 
   void increment(Register reg, int value = 1);
-  void increment(Address dst, int value = 1);
+  void increment(Address dst, int value = 1, Register result = rscratch1);
 
 
   // Alignment
@@ -905,6 +924,7 @@ public:
 
   // oop manipulations
   void load_narrow_klass_compact(Register dst, Register src);
+  void load_narrow_klass(Register dst, Register src);
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
   void cmp_klass(Register obj, Register klass, Register tmp);
@@ -1221,12 +1241,25 @@ public:
     str(rscratch1, adr);
   }
 
+private:
   // A generic CAS; success or failure is in the EQ flag.
   // Clobbers rscratch1
   void cmpxchg(Register addr, Register expected, Register new_val,
-               enum operand_size size,
-               bool acquire, bool release, bool weak,
-               Register result);
+               enum operand_size size, enum atomic_memory_order order,
+               bool weak, Register result);
+
+public:
+  void cmpxchg(Register addr, Register expected, Register new_val,
+               enum operand_size size, enum atomic_memory_order order,
+               Register result = noreg) {
+    cmpxchg(addr, expected, new_val, size, order, /* weak */ false, result);
+  }
+
+  void cmpxchg_weak(Register addr, Register expected, Register new_val,
+                    enum operand_size size, enum atomic_memory_order order,
+                    Register result = noreg) {
+    cmpxchg(addr, expected, new_val, size, order, /* weak */ true, result);
+  }
 
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline
@@ -1321,15 +1354,16 @@ public:
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
   }
-
-  // Check if branches to the non nmethod section require a far jump
+  // Check if the static call stub branch needs a far jump.
   static bool codestub_branch_needs_far_jump() {
     if (AOTCodeCache::is_on_for_dump()) {
-      // To calculate far_codestub_branch_size correctly.
+      // To calculate static_call_stub_size correctly.
       return true;
     }
-    return CodeCache::max_distance_to_non_nmethod() > branch_range;
+    return far_branches();
   }
+  // Check if a branch to the given address needs a far jump.
+  static bool target_needs_far_branch(address addr);
 
   // Emit a direct call/jump if the entry address will always be in range,
   // otherwise a far call/jump.
@@ -1341,17 +1375,9 @@ public:
   // In the case of a far call/jump, the entry address is put in the tmp register.
   // The tmp register is invalidated.
   //
-  // Far_jump returns the amount of the emitted code.
   void far_call(Address entry, Register tmp = rscratch1);
+  // Far_jump returns the amount of the emitted code.
   int far_jump(Address entry, Register tmp = rscratch1);
-
-  static int far_codestub_branch_size() {
-    if (codestub_branch_needs_far_jump()) {
-      return 3 * 4;  // adrp, add, br
-    } else {
-      return 4;
-    }
-  }
 
   // Emit the CompiledIC call idiom
   address ic_call(address entry, jint method_index = 0);
@@ -1735,7 +1761,109 @@ public:
 private:
   // Check the current thread doesn't need a cross modify fence.
   void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
+  void try_to_replace_prev_vector_copy_with_movprfx(FloatRegister dst);
 
+public:
+  void maybe_movprfx(FloatRegister dst, FloatRegister src) {
+    if (dst != src) {
+      sve_movprfx(dst, src);
+    }
+  }
+
+// Wrappers for SVE explicit destructive instructions, overriding the
+// same-signature Assembler entry points to enable movprfx fusion optimization.
+//
+// Implicit destructive instructions (e.g. predicated unary ops like sve_abs/
+// sve_neg/sve_not, whose ISA encoding allows Zd != Zn but whose use as a Java
+// Vector API masked operation requires pass-through of the first source) are
+// not covered here. For those, the .ad file is responsible for emitting
+// movprfx explicitly via maybe_movprfx() before the destructive op.
+#define SVE_DESTRUCTIVE_BINARY_INS(NAME)                                       \
+  using Assembler::NAME;                                                       \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg,                 \
+            FloatRegister Zm) {                                                \
+    if (Zd != Zm) {                                                            \
+      try_to_replace_prev_vector_copy_with_movprfx(Zd);                        \
+    }                                                                          \
+    Assembler::NAME(Zd, T, Pg, Zm);                                            \
+  }
+
+#define SVE_DESTRUCTIVE_BINARY_5(I1, I2, I3, I4, I5)                           \
+  SVE_DESTRUCTIVE_BINARY_INS(I1); SVE_DESTRUCTIVE_BINARY_INS(I2);              \
+  SVE_DESTRUCTIVE_BINARY_INS(I3); SVE_DESTRUCTIVE_BINARY_INS(I4);              \
+  SVE_DESTRUCTIVE_BINARY_INS(I5);
+
+  SVE_DESTRUCTIVE_BINARY_5(sve_add,  sve_and,   sve_asr,   sve_bic,   sve_eor)
+  SVE_DESTRUCTIVE_BINARY_5(sve_fabd, sve_fadd,  sve_fdiv,  sve_fmax,  sve_fmin)
+  SVE_DESTRUCTIVE_BINARY_5(sve_fmul, sve_fsub,  sve_lsl,   sve_lsr,   sve_mul)
+  SVE_DESTRUCTIVE_BINARY_5(sve_orr,  sve_smax,  sve_smin,  sve_sqadd, sve_sqsub)
+  SVE_DESTRUCTIVE_BINARY_5(sve_sub,  sve_uqadd, sve_uqsub, sve_umax,  sve_umin)
+
+#undef SVE_DESTRUCTIVE_BINARY_INS
+#undef SVE_DESTRUCTIVE_BINARY_5
+
+#define SVE_DESTRUCTIVE_SHIFT_IMM_INS(NAME)                                    \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, int shift) {    \
+    try_to_replace_prev_vector_copy_with_movprfx(Zd);                          \
+    Assembler::NAME(Zd, T, Pg, shift);                                         \
+  }
+
+  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_asr);
+  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_lsl);
+  SVE_DESTRUCTIVE_SHIFT_IMM_INS(sve_lsr);
+
+#undef SVE_DESTRUCTIVE_SHIFT_IMM_INS
+
+#define SVE_DESTRUCTIVE_UNPRED_IMM_INS(NAME, IMM_TYPE)                         \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, IMM_TYPE imm) {               \
+    try_to_replace_prev_vector_copy_with_movprfx(Zd);                          \
+    Assembler::NAME(Zd, T, imm);                                               \
+  }
+
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_add, unsigned);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_sub, unsigned);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_and, uint64_t);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_eor, uint64_t);
+  SVE_DESTRUCTIVE_UNPRED_IMM_INS(sve_orr, uint64_t);
+
+#undef SVE_DESTRUCTIVE_UNPRED_IMM_INS
+
+#define SVE_DESTRUCTIVE_TERNARY_INS(NAME)                                      \
+  using Assembler::NAME;                                                       \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg,                 \
+            FloatRegister Zn, FloatRegister Zm) {                              \
+    if (Zd != Zn && Zd != Zm) {                                                \
+      try_to_replace_prev_vector_copy_with_movprfx(Zd);                        \
+    }                                                                          \
+    Assembler::NAME(Zd, T, Pg, Zn, Zm);                                        \
+  }
+
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fmad);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fmla);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fmls);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fmsb);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fnmad);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fnmla);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fnmls);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_fnmsb);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_mla);
+  SVE_DESTRUCTIVE_TERNARY_INS(sve_mls);
+
+#undef SVE_DESTRUCTIVE_TERNARY_INS
+
+#define SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(NAME)                               \
+  using Assembler::NAME;                                                       \
+  void NAME(FloatRegister Zd, FloatRegister Zm, FloatRegister Zk) {            \
+    if (Zd != Zm && Zd != Zk) {                                                \
+      try_to_replace_prev_vector_copy_with_movprfx(Zd);                        \
+    }                                                                          \
+    Assembler::NAME(Zd, Zm, Zk);                                               \
+  }
+
+  SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(sve_bsl);
+  SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(sve_eor3);
+
+#undef SVE_DESTRUCTIVE_TERNARY_UNPRED_INS
 };
 
 #ifdef ASSERT

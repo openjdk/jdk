@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,9 +70,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 #include "utilities/stack.inline.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 Stack<oop, mtGC>              SerialFullGC::_marking_stack;
 Stack<ObjArrayTask, mtGC>     SerialFullGC::_objarray_stack;
@@ -515,6 +512,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
 
   // This is the point where the entire marking should have completed.
   assert(_marking_stack.is_empty(), "Marking should have completed");
+  CodeCache::on_gc_marking_cycle_finish();
 
   {
     GCTraceTime(Debug, gc, phases) tm_m("Weak Processing", gc_timer());
@@ -553,9 +551,6 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
 
     // Prune dead klasses from subklass/sibling/implementor lists.
     Klass::clean_weak_klass_links(unloading_occurred);
-
-    // Clean JVMCI metadata handles.
-    JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
   }
 
   {
@@ -726,10 +721,10 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
   }
 
   // Don't add any more derived pointers during phase3
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   assert(DerivedPointerTable::is_active(), "Sanity");
   DerivedPointerTable::set_active(false);
-#endif
+#endif // COMPILER2
 
   {
     // Adjust the pointers to reflect the new locations
