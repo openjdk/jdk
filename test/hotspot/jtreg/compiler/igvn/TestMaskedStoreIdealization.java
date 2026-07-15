@@ -84,7 +84,7 @@ public class TestMaskedStoreIdealization {
         // Add tests only for the vector shapes that
         tests.addAll(CodeGenerationDataNameType.VECTOR_VECTOR_TYPES
                         .stream()
-                        .filter(vec -> vec.byteSize() <= maxVecByteSize)
+                        .filter(vec -> vec.byteSize() <= maxVecByteSize && vec.elementType instanceof PrimitiveType)
                         .map(vec -> new TestPerShape(vec).generate())
                         .collect(Collectors.toList()));
         tests.add(PrimitiveType.generateLibraryRNG());
@@ -102,7 +102,7 @@ public class TestMaskedStoreIdealization {
 
     record TestPerShape(VectorType.Vector vec) {
         TemplateToken generate() {
-            String testName = vec.elementType.boxedTypeName() + vec.length;
+            final String testName = vec.elementType.boxedTypeName() + vec.length;
 
             // Select the index where we set the mask to false. The index is biased to
             // zero, as the original bug only triggered with the first element.
@@ -114,7 +114,8 @@ public class TestMaskedStoreIdealization {
                     return scope("");
                 }
 
-                final String ptyIR = vec.elementType.abbrev().equals("S") ? "C" : vec.elementType.abbrev();
+                final PrimitiveType pty = (PrimitiveType) vec.elementType;
+                final String ptyIR = pty.abbrev().equals("S") ? "C" : pty.abbrev();
 
                 // Verify that the method contains two VectorStore{Masked|Scatter} nodes.
                 var opVerification = Template.make(() -> {
@@ -218,12 +219,11 @@ public class TestMaskedStoreIdealization {
                 });
 
                 var generation = switch (op) {
-                    case STORE_SCATTER              -> indexMapGeneration.asToken();
-                    case STORE_MASK                 -> maskGeneration.asToken();
-                    case STORE_SCATTER_MASK         ->
+                    case STORE_SCATTER, STORE_VECTOR_AFTER_SCATTER -> indexMapGeneration.asToken();
+                    case STORE_MASK                                -> maskGeneration.asToken();
+                    case STORE_SCATTER_MASK                        ->
                         Template.make(() -> scope(indexMapGeneration.asToken(), maskGeneration.asToken())).asToken();
-                    case STORE_VECTOR_AFTER_SCATTER -> indexMapGeneration.asToken();
-                    case RANDOM                     -> throw new RuntimeException("unreachable");
+                    case RANDOM                                    -> throw new RuntimeException("unreachable");
                 };
 
                 var initStore  = switch (op) {
@@ -296,11 +296,14 @@ public class TestMaskedStoreIdealization {
                     let("species", vec.speciesName),
                     let("idx", idx),
                     let("rngCall", vec.elementType.callLibraryRNG()),
+                    let("broadcastVal", vec.elementType.con()),
+                    let("arrVal", vec.elementType.con()),
                 """
                     @Run(test = "test#{testCaseName}")
+                    @Warmup(10_000)
                     static void run#{testCaseName}(RunInfo info) {
-                        final #pty broadcastVal = #rngCall;
-                        final #pty arrVal = #rngCall;
+                        final #pty broadcastVal = #broadcastVal;
+                        final #pty arrVal = #arrVal;
                         final #pty[] compiledResult = test#{testCaseName}(broadcastVal, arrVal);
 
                         if (!info.isWarmUp()) {
