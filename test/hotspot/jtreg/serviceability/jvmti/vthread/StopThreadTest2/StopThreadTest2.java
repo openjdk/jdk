@@ -67,7 +67,7 @@ public class StopThreadTest2 {
         int asyncInstalledCounter = 0;
         suspendAllVirtualThreads();
         for (Thread vthread : vthreads) {
-            if(stopThread(vthread, new MyException())) {
+            if (stopThread(vthread, new MyException())) {
                 asyncInstalledCounter++;
             }
         }
