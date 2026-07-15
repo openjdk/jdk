@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,6 @@
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #include "opto/c2_globals.hpp"
-#endif
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci_globals.hpp"
 #endif
 
 // For a more detailed description of the stub routine structure
@@ -3072,7 +3069,7 @@ address StubGenerator::generate_base64_decodeBlock() {
 
   // If AVX512 VBMI not supported, just compile non-AVX code
   if(VM_Version::supports_avx512_vbmi() &&
-     VM_Version::supports_avx512bw()) {
+     VM_Version::supports_avx512bw() && VM_Version::supports_bmi2()) {
     __ cmpl(length, 31);     // 32-bytes is break-even for AVX-512
     __ jcc(Assembler::lessEqual, L_lastChunk);
 
@@ -4832,7 +4829,7 @@ void StubGenerator::generate_final_stubs() {
 }
 
 void StubGenerator::generate_compiler_stubs() {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
   // Entry points that are C2 compiler specific.
 
@@ -4890,11 +4887,9 @@ void StubGenerator::generate_compiler_stubs() {
   StubRoutines::_data_cache_writeback = generate_data_cache_writeback();
   StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
 
-#ifdef COMPILER2
-  if ((UseAVX == 2) && EnableX86ECoreOpts) {
+  if ((UseAVX == 2) && EnableX86ECoreOpts && UseCountTrailingZerosInstruction && VM_Version::supports_bmi2()) {
     generate_string_indexof(StubRoutines::_string_indexof_array);
   }
-#endif
 
   if (UseAdler32Intrinsics) {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
@@ -4907,6 +4902,11 @@ void StubGenerator::generate_compiler_stubs() {
   if (UseIntPolyIntrinsics) {
     StubRoutines::_intpoly_montgomeryMult_P256 = generate_intpoly_montgomeryMult_P256();
     StubRoutines::_intpoly_assign = generate_intpoly_assign();
+  }
+
+  if (UseIntPoly25519Intrinsics) {
+    StubRoutines::_intpoly_mult_25519 = generate_intpoly_mult_25519();
+    StubRoutines::_intpoly_square_25519 = generate_intpoly_square_25519();
   }
 
   if (UseMD5Intrinsics) {
@@ -4973,7 +4973,6 @@ void StubGenerator::generate_compiler_stubs() {
     StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
   }
 
-#ifdef COMPILER2
   if (UseMultiplyToLenIntrinsic) {
     StubRoutines::_multiplyToLen = generate_multiplyToLen();
   }
@@ -5018,7 +5017,6 @@ void StubGenerator::generate_compiler_stubs() {
   }
 
 #endif // COMPILER2
-#endif // COMPILER2_OR_JVMCI
 }
 
 StubGenerator::StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) : StubCodeGenerator(code, blob_id, stub_data) {

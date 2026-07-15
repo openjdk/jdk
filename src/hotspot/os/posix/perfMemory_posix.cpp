@@ -118,7 +118,7 @@ static void save_memory_to_file(char* addr, size_t size) {
       }
     }
   }
-  FREE_C_HEAP_ARRAY(char, destfile);
+  FREE_C_HEAP_ARRAY(destfile);
 }
 
 
@@ -483,14 +483,14 @@ static char* get_user_name(uid_t uid) {
                      p->pw_name == nullptr ? "pw_name = null" : "pw_name zero length");
       }
     }
-    FREE_C_HEAP_ARRAY(char, pwbuf);
+    FREE_C_HEAP_ARRAY(pwbuf);
     return nullptr;
   }
 
   char* user_name = NEW_C_HEAP_ARRAY(char, strlen(p->pw_name) + 1, mtInternal);
   strcpy(user_name, p->pw_name);
 
-  FREE_C_HEAP_ARRAY(char, pwbuf);
+  FREE_C_HEAP_ARRAY(pwbuf);
   return user_name;
 }
 
@@ -572,7 +572,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
     DIR* subdirp = open_directory_secure(usrdir_name);
 
     if (subdirp == nullptr) {
-      FREE_C_HEAP_ARRAY(char, usrdir_name);
+      FREE_C_HEAP_ARRAY(usrdir_name);
       continue;
     }
 
@@ -583,7 +583,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
     // symlink can be exploited.
     //
     if (!is_directory_secure(usrdir_name)) {
-      FREE_C_HEAP_ARRAY(char, usrdir_name);
+      FREE_C_HEAP_ARRAY(usrdir_name);
       os::closedir(subdirp);
       continue;
     }
@@ -607,13 +607,13 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
         // don't follow symbolic links for the file
         RESTARTABLE(::lstat(filename, &statbuf), result);
         if (result == OS_ERR) {
-           FREE_C_HEAP_ARRAY(char, filename);
+           FREE_C_HEAP_ARRAY(filename);
            continue;
         }
 
         // skip over files that are not regular files.
         if (!S_ISREG(statbuf.st_mode)) {
-          FREE_C_HEAP_ARRAY(char, filename);
+          FREE_C_HEAP_ARRAY(filename);
           continue;
         }
 
@@ -623,7 +623,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
           if (statbuf.st_ctime > oldest_ctime) {
             char* user = strchr(dentry->d_name, '_') + 1;
 
-            FREE_C_HEAP_ARRAY(char, oldest_user);
+            FREE_C_HEAP_ARRAY(oldest_user);
             oldest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1, mtInternal);
 
             strcpy(oldest_user, user);
@@ -631,11 +631,11 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
           }
         }
 
-        FREE_C_HEAP_ARRAY(char, filename);
+        FREE_C_HEAP_ARRAY(filename);
       }
     }
     os::closedir(subdirp);
-    FREE_C_HEAP_ARRAY(char, usrdir_name);
+    FREE_C_HEAP_ARRAY(usrdir_name);
   }
   os::closedir(tmpdirp);
 
@@ -1105,11 +1105,11 @@ static char* mmap_create_shared(size_t size) {
   log_info(perf, memops)("Trying to open %s/%s", dirname, short_filename);
   fd = create_sharedmem_file(dirname, short_filename, size);
 
-  FREE_C_HEAP_ARRAY(char, user_name);
-  FREE_C_HEAP_ARRAY(char, dirname);
+  FREE_C_HEAP_ARRAY(user_name);
+  FREE_C_HEAP_ARRAY(dirname);
 
   if (fd == -1) {
-    FREE_C_HEAP_ARRAY(char, filename);
+    FREE_C_HEAP_ARRAY(filename);
     return nullptr;
   }
 
@@ -1121,7 +1121,7 @@ static char* mmap_create_shared(size_t size) {
   if (mapAddress == MAP_FAILED) {
     log_debug(perf)("mmap failed - %s", os::strerror(errno));
     remove_file(filename);
-    FREE_C_HEAP_ARRAY(char, filename);
+    FREE_C_HEAP_ARRAY(filename);
     return nullptr;
   }
 
@@ -1171,7 +1171,7 @@ static void delete_shared_memory(char* addr, size_t size) {
     remove_file(backing_store_file_name);
     // Don't.. Free heap memory could deadlock os::abort() if it is called
     // from signal handler. OS will reclaim the heap memory.
-    // FREE_C_HEAP_ARRAY(char, backing_store_file_name);
+    // FREE_C_HEAP_ARRAY(backing_store_file_name);
     backing_store_file_name = nullptr;
   }
 }
@@ -1223,8 +1223,8 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   // store file, we don't follow them when attaching either.
   //
   if (!is_directory_secure(dirname)) {
-    FREE_C_HEAP_ARRAY(char, dirname);
-    FREE_C_HEAP_ARRAY(char, luser);
+    FREE_C_HEAP_ARRAY(dirname);
+    FREE_C_HEAP_ARRAY(luser);
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Process not found");
   }
@@ -1236,9 +1236,9 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   int fd = open_sharedmem_file(filename, file_flags, THREAD);
 
   // free the c heap resources that are no longer needed
-  FREE_C_HEAP_ARRAY(char, luser);
-  FREE_C_HEAP_ARRAY(char, dirname);
-  FREE_C_HEAP_ARRAY(char, filename);
+  FREE_C_HEAP_ARRAY(luser);
+  FREE_C_HEAP_ARRAY(dirname);
+  FREE_C_HEAP_ARRAY(filename);
 
   if (HAS_PENDING_EXCEPTION) {
     assert(fd == OS_ERR, "open_sharedmem_file always return OS_ERR on exceptions");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,14 +136,14 @@ inline void Method::clear_number_of_breakpoints() {
 }
 #endif // INCLUDE_JVMTI
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 inline void Method::interpreter_throwout_increment(Thread* current) {
   MethodCounters* mcs = get_method_counters(current);
   if (mcs != nullptr) {
     mcs->interpreter_throwout_increment();
   }
 }
-#endif
+#endif // COMPILER2
 
 inline int Method::interpreter_throwout_count() const        {
   MethodCounters* mcs = method_counters();

@@ -1348,12 +1348,23 @@ cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsHTRANSFORM hTransform, cmsFloat
     if (!cmsWriteTag(hProfile, DestinationTag, LUT)) goto Error;
 
 
-    if (xform -> InputColorant != NULL) {
+    // Colorant tables have special rules depening on deviceClass
+    if (xform -> InputColorant != NULL &&
+       (deviceClass == cmsSigLinkClass || deviceClass == cmsSigInputClass)) {
+
            if (!cmsWriteTag(hProfile, cmsSigColorantTableTag, xform->InputColorant)) goto Error;
     }
 
     if (xform -> OutputColorant != NULL) {
-           if (!cmsWriteTag(hProfile, cmsSigColorantTableOutTag, xform->OutputColorant)) goto Error;
+
+        if (deviceClass == cmsSigLinkClass) {
+
+            if (!cmsWriteTag(hProfile, cmsSigColorantTableOutTag, xform->OutputColorant)) goto Error;
+        }
+        else
+        {
+            if (!cmsWriteTag(hProfile, cmsSigColorantTableTag, xform->OutputColorant)) goto Error;
+        }
     }
 
     if ((deviceClass == cmsSigLinkClass) && (xform ->Sequence != NULL)) {

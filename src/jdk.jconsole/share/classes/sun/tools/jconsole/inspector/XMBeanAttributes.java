@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -819,6 +819,7 @@ public class XMBeanAttributes extends XTable {
                                                      boolean isSelected,
                                                      int row,
                                                      int column) {
+
             Object val = value;
             if(column == VALUE_COLUMN) {
                 Object obj = getModel().getValueAt(row,
@@ -872,6 +873,9 @@ public class XMBeanAttributes extends XTable {
             Dimension d = comp.getPreferredSize();
             if (d.getHeight() > 220) {
                 comp.setPreferredSize(new Dimension((int) d.getWidth(), 220));
+            }
+            if (comp instanceof JComponent jComp) {
+                jComp.putClientProperty("html.disable", Boolean.TRUE);
             }
         }
         @Override

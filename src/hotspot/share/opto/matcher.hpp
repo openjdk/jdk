@@ -38,7 +38,6 @@
 class Compile;
 class Node;
 class MachNode;
-class MachTypeNode;
 class MachOper;
 
 //---------------------------Matcher-------------------------------------------
@@ -341,7 +340,7 @@ public:
 
   // Identify if a vector mask operation prefers the input/output mask to be
   // saved with a predicate type or not.
-  // - Return true if it prefers a predicate type (i.e. TypeVectMask).
+  // - Return true if it prefers a predicate type (i.e. TypePVectMask).
   // - Return false if it prefers a general vector type (i.e. TypeVectA to TypeVectZ).
   static bool mask_op_prefers_predicate(int opcode, const TypeVect* vt);
 
@@ -419,15 +418,15 @@ public:
   static OptoReg::Name  inline_cache_reg();
   static int            inline_cache_reg_encode();
 
-  // Register for DIVI projection of divmodI
-  static const RegMask& divI_proj_mask();
-  // Register for MODI projection of divmodI
-  static const RegMask& modI_proj_mask();
+  // Register for the first projection of an int pair
+  static const RegMask& firstI_proj_mask();
+  // Register for the second projection of an int pair
+  static const RegMask& secondI_proj_mask();
 
-  // Register for DIVL projection of divmodL
-  static const RegMask& divL_proj_mask();
-  // Register for MODL projection of divmodL
-  static const RegMask& modL_proj_mask();
+  // Register for the first projection of a long pair
+  static const RegMask& firstL_proj_mask();
+  // Register for the second projection of a long pair
+  static const RegMask& secondL_proj_mask();
 
   // Java-Interpreter calling convention
   // (what you use when calling between compiled-Java and Interpreted-Java

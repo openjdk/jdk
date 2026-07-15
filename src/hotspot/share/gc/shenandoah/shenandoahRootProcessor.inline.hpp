@@ -46,7 +46,7 @@ ShenandoahVMWeakRoots<CONCURRENT>::ShenandoahVMWeakRoots(ShenandoahPhaseTimings:
 template <bool CONCURRENT>
 template <typename T>
 void ShenandoahVMWeakRoots<CONCURRENT>::oops_do(T* cl, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMWeakRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMWeaks, worker_id);
   _weak_roots.oops_do(cl);
 }
 
@@ -54,7 +54,7 @@ template <bool CONCURRENT>
 template <typename IsAlive, typename KeepAlive>
 void ShenandoahVMWeakRoots<CONCURRENT>::weak_oops_do(IsAlive* is_alive, KeepAlive* keep_alive, uint worker_id) {
   ShenandoahCleanUpdateWeakOopsClosure<CONCURRENT, IsAlive, KeepAlive> cl(is_alive, keep_alive);
-  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMWeakRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMWeaks, worker_id);
   _weak_roots.oops_do(&cl);
 }
 
@@ -71,7 +71,7 @@ ShenandoahVMRoots<CONCURRENT>::ShenandoahVMRoots(ShenandoahPhaseTimings::Phase p
 template <bool CONCURRENT>
 template <typename T>
 void ShenandoahVMRoots<CONCURRENT>::oops_do(T* cl, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMStrongRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMStrongs, worker_id);
   _strong_roots.oops_do(cl);
 }
 
@@ -104,12 +104,12 @@ template <bool CONCURRENT>
 void ShenandoahClassLoaderDataRoots<CONCURRENT>::cld_do_impl(CldDo f, CLDClosure* clds, uint worker_id) {
   if (CONCURRENT) {
     if (_semaphore.try_acquire()) {
-      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::Classes, worker_id);
       f(clds);
       _semaphore.claim_all();
     }
   } else {
-    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::Classes, worker_id);
     f(clds);
   }
 }
@@ -138,6 +138,49 @@ public:
       _thread_cl->do_thread(t);
     }
     t->oops_do(_f, _cf);
+  }
+};
+
+class ShenandoahInvisibleRootsMarkClosure : public ThreadClosure {
+public:
+  void do_thread(Thread* t) {
+    assert_at_safepoint();
+
+    HeapWord* invisible_root = ShenandoahThreadLocalData::get_invisible_root(t);
+    if (invisible_root == nullptr) {
+      return;
+    }
+    size_t invisible_root_word_size = ShenandoahThreadLocalData::get_invisible_root_word_size(t);
+
+    ShenandoahHeap* const heap = ShenandoahHeap::heap();
+    ShenandoahMarkingContext* const marking_context = heap->marking_context();
+    // Mark the invisible root if it is not marked.
+    if (!marking_context->is_marked(invisible_root)) {
+      bool was_upgraded = false;
+      if (!marking_context->mark_strong(cast_to_oop(invisible_root), was_upgraded)) {
+        return;
+      }
+
+      // Update region liveness data
+      ShenandoahHeapRegion* region = heap->heap_region_containing(invisible_root);
+      if (region->is_regular_or_regular_pinned()) {
+        assert(!ShenandoahHeapRegion::requires_humongous(invisible_root_word_size), "Must not be humongous.");
+        region->increase_live_data_alloc_words(invisible_root_word_size);
+      } else if (region->is_humongous_start()) {
+        DEBUG_ONLY(size_t total_live_words = 0;)
+        do {
+          size_t current = region->get_live_data_words();
+          size_t region_used_words = region->used() >> LogHeapWordSize;
+          DEBUG_ONLY(total_live_words += region_used_words;)
+          assert(current == 0 || current == region_used_words, "Must be");
+          if (current == 0) {
+            region->increase_live_data_alloc_words(region_used_words);
+          }
+          region = heap->get_region(region->index() + 1);
+        } while (region != nullptr && region->is_humongous_continuation());
+        assert(total_live_words == invisible_root_word_size, "Must be");
+      }
+    }
   }
 };
 

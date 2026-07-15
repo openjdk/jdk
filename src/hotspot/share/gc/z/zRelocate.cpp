@@ -1272,7 +1272,7 @@ public:
     for (ZPage* page; _iter.next(&page);) {
       page->object_iterate([&](oop obj) {
         // Remap oops and add remset if needed
-        ZIterator::basic_oop_iterate_safe(obj, remap_and_maybe_add_remset);
+        ZIterator::basic_oop_iterate_safe(obj, obj->klass(), remap_and_maybe_add_remset);
 
         // String dedup
         string_dedup_context.request(obj);
