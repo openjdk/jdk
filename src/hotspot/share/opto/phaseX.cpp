@@ -32,6 +32,7 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/divnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
@@ -2197,6 +2198,107 @@ Node *PhaseIterGVN::transform( Node *n ) {
   return transform_old(n);
 }
 
+DeadPathNode* PhaseIterGVN::dead_path() {
+  DeadPathNode* dead_path_node = C->dead_path();
+  if (!dead_path_node->is_active()) {
+    dead_path_node->activate(this);
+  }
+  assert(C->root()->find_edge(dead_path_node) > 0, "should be reachable from root");
+  return dead_path_node;
+}
+
+
+// If dead_node is a data node, all CFG nodes reachable from dead_node are dead cfg paths. This method follows uses from
+// dead_node until it encounters a cfg node or a phi and eagerly kills these dead cfg paths. This is needed because, in
+// some corner cases, a data node dies but some data paths that use it (and are unreachable at runtime) are not proven
+// dead by igvn, possibly leading to incorrect IR graphs.
+// Also see comment at DeadPathNode declaration.
+void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type* t) {
+  if (t != Type::TOP) {
+    return;
+  }
+  if (!KillPathsReachableByDeadDataNode) {
+    return;
+  }
+  // dead_node is going dead, follow uses
+  ResourceMark rm;
+  Unique_Node_List wq;
+  wq.push(dead_node);
+  for (uint i = 0; i < wq.size(); i++) {
+    Node* n = wq.at(i);
+    if (n != dead_node && (n->is_Phi() || n->is_CFG())) {
+      continue;
+    }
+    for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
+      Node* u = n->fast_out(k);
+      wq.push(u);
+    }
+  }
+  for (uint i = 0; i < wq.size(); i++) {
+    Node* n = wq.at(i);
+    if (n->is_Phi()) {
+      Node* region = n->in(0);
+      // Find out through which of the Phi's input, we reached that Phi and mark the corresponding CFG path dead
+      for (uint j = 1; j < n->req(); j++) {
+        Node* in = n->in(j);
+        // We don't follow uses beyond Phis so if 'in' is a Phi (unless it's dead_node), we couldn't reach this Phi through it
+        if (in == dead_node || (in != nullptr && !in->is_Phi() && wq.member(in))) {
+          if (!region->is_top() && region->in(j) != nullptr && !region->in(j)->is_top()) {
+            // We reached this CFG path through data nodes, record it in dead path to later insert a Halt node, if it
+            // doesn't die in the meantime
+            dead_path()->add_req(region->in(j));
+            _worklist.push(dead_path());
+            replace_input_of(region, j, C->top());
+          }
+          replace_input_of(n, j, C->top());
+          if (in->outcnt() == 0) {
+            remove_dead_node(in, NodeOrigin::Graph);
+          }
+        }
+      }
+      continue;
+    }
+    if (n == dead_node) {
+      continue;
+    }
+    // We don't want to follow CFG nodes but is_CFG() can return false for a cfg projection if its input is top. So
+    // there's no foolproof way of telling if dead_node is a cfg or not and as a consequence we can reach a Region.
+    if (n->is_Region()) {
+      // Find out through which of the Region's input, we reached that Region and mark it dead
+      for (uint j = 1; j < n->req(); j++) {
+        Node* in = n->in(j);
+        // We don't follow uses beyond Regions so if 'in' is a Region, we couldn't reach this Region through it
+        if (in != nullptr && !in->is_Region() && wq.member(in)) {
+          replace_input_of(n, j, C->top());
+          in->remove_dead_region(this, true);
+        }
+      }
+      continue;
+    }
+    // If we reached this CFG node through a data input...
+    if (n->is_CFG()) {
+      Node* control_input = n->in(0);
+      if (control_input != nullptr && !control_input->is_top()) {
+        // record it in dead path to later insert a Halt node, if it doesn't die in the meantime
+        dead_path()->add_req(control_input);
+        _worklist.push(dead_path());
+        replace_input_of(n, 0, C->top());
+      }
+      n->remove_dead_region(this, true);
+      continue;
+    }
+    if (n->outcnt() == 0) {
+      remove_dead_node(n, NodeOrigin::Graph);
+    }
+  }
+#ifdef ASSERT
+  for (uint i = 0; i < wq.size(); i++) {
+    Node* n = wq.at(i);
+    assert(n->is_Region() || n->is_Phi() || n->is_CFG() || n->outcnt() == 0, "node should be dead now");
+  }
+#endif
+}
+
 Node *PhaseIterGVN::transform_old(Node* n) {
   NOT_PRODUCT(set_transforms());
   // Remove 'n' from hash table in case it gets modified
@@ -2288,6 +2390,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
   // If 'k' computes a constant, replace it with a constant
   if (t->singleton() && !k->is_Con()) {
+    make_dependent_paths_dead_if_top(k, t);
     set_progress();
     Node* con = makecon(t);     // Make a constant
     add_users_to_worklist(k);
@@ -2957,10 +3060,14 @@ void PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
     set_type(n, new_type);
     push_child_nodes_to_worklist(worklist, n);
   }
-  if (KillPathsReachableByDeadTypeNode && n->is_Type() && new_type == Type::TOP) {
+  if (KillPathsReachableByDeadDataNode && n->is_Type() && new_type == Type::TOP) {
     // Keep track of Type nodes to kill CFG paths that use Type
     // nodes that become dead.
-    _maybe_top_type_nodes.push(n);
+    _maybe_top_type_or_div_mod_nodes.push(n);
+  }
+  if (KillPathsReachableByDeadDataNode && new_type == Type::TOP && n->is_DivModInteger() &&
+      type(n->in(2)) == n->as_DivModInteger()->zero()) {
+    _maybe_top_type_or_div_mod_nodes.push(n);
   }
 }
 
@@ -3256,16 +3363,16 @@ Node *PhaseCCP::transform( Node *n ) {
   // track all visited nodes, so that we can remove the complement
   Unique_Node_List useful;
 
-  if (KillPathsReachableByDeadTypeNode) {
-    for (uint i = 0; i < _maybe_top_type_nodes.size(); ++i) {
-      Node* type_node = _maybe_top_type_nodes.at(i);
-      if (type(type_node) == Type::TOP) {
+  if (KillPathsReachableByDeadDataNode) {
+    for (uint i = 0; i < _maybe_top_type_or_div_mod_nodes.size(); ++i) {
+      Node* data_node = _maybe_top_type_or_div_mod_nodes.at(i);
+      if (type(data_node) == Type::TOP) {
         ResourceMark rm;
-        type_node->as_Type()->make_paths_from_here_dead(this, nullptr, "ccp");
+        data_node->make_paths_from_here_dead(this, nullptr, "ccp");
       }
     }
   } else {
-    assert(_maybe_top_type_nodes.size() == 0, "we don't need type nodes");
+    assert(_maybe_top_type_or_div_mod_nodes.size() == 0, "we don't need type nodes");
   }
 
   // Initialize the traversal.

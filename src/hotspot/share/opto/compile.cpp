@@ -312,6 +312,8 @@ void Compile::identify_useful_nodes(Unique_Node_List &useful) {
   // If 'top' is cached, declare it useful to preserve cached node
   if (cached_top_node())  { useful.push(cached_top_node()); }
 
+  if (dead_path()) { useful.push(dead_path()); }
+
   // Push all useful nodes onto the list, breadthfirst
   for( uint next = 0; next < useful.size(); ++next ) {
     assert( next < unique(), "Unique useful nodes < total nodes");
@@ -388,7 +390,7 @@ void Compile::remove_useless_node(Node* dead) {
   // it reachable by adding use edges. So, we will NOT count Con nodes
   // as dead to be conservative about the dead node count at any
   // given time.
-  if (!dead->is_Con()) {
+  if (!dead->is_Con() && dead != dead_path()) {
     record_dead_node(dead->_idx);
   }
   if (dead->is_macro()) {
@@ -684,6 +686,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _node_arena_one(mtCompiler, Arena::Tag::tag_node),
       _node_arena_two(mtCompiler, Arena::Tag::tag_node),
       _node_arena(&_node_arena_one),
+      _dead_path(nullptr),
       _mach_constant_base_node(nullptr),
       _Compile_types(mtCompiler, Arena::Tag::tag_type),
       _initial_gvn(nullptr),
@@ -748,11 +751,13 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
       StressIncrementalInlining || StressMacroExpansion ||
       StressMacroElimination || StressUnstableIfTraps ||
-      StressBailout || StressLoopPeeling || StressCountedLoop) {
+      StressBailout || StressLoopPeeling || StressCountedLoop ||
+      StressEliminateAllocations) {
     initialize_stress_seed(directive);
   }
 
   Init(/*do_aliasing=*/ true);
+  set_dead_path(new DeadPathNode());
 
   print_compile_messages();
 
@@ -962,6 +967,7 @@ Compile::Compile(ciEnv* ci_env,
       _node_arena_one(mtCompiler, Arena::Tag::tag_node),
       _node_arena_two(mtCompiler, Arena::Tag::tag_node),
       _node_arena(&_node_arena_one),
+      _dead_path(nullptr),
       _mach_constant_base_node(nullptr),
       _Compile_types(mtCompiler, Arena::Tag::tag_type),
       _initial_gvn(nullptr),
@@ -2051,10 +2057,13 @@ void Compile::inline_string_calls(bool parse_time) {
     _late_inlines_pos = _late_inlines.length();
   }
 
+  assert(!do_cleanup(), "already set");
+
   while (_string_late_inlines.length() > 0) {
     CallGenerator* cg = _string_late_inlines.pop();
     cg->do_late_inline();
     if (failing())  return;
+    set_do_cleanup(false); // ignore and reset
   }
   _string_late_inlines.trunc_to(0);
 }
@@ -2070,10 +2079,13 @@ void Compile::inline_boxing_calls(PhaseIterGVN& igvn) {
 
     _late_inlines_pos = _late_inlines.length();
 
+    assert(!do_cleanup(), "already set");
+
     while (_boxing_late_inlines.length() > 0) {
       CallGenerator* cg = _boxing_late_inlines.pop();
       cg->do_late_inline();
       if (failing())  return;
+      set_do_cleanup(false); // ignore and reset
     }
     _boxing_late_inlines.trunc_to(0);
 
@@ -2623,6 +2635,9 @@ void Compile::Optimize() {
    }
  }
 
+  // Unique DeadPath node should not be used anymore
+  _dead_path = nullptr;
+
  print_method(PHASE_OPTIMIZE_FINISHED, 2);
  DEBUG_ONLY(set_phase_optimize_finished();)
 }
@@ -2647,12 +2662,14 @@ void Compile::check_no_dead_use() const {
 #endif
 
 void Compile::inline_vector_reboxing_calls() {
+  assert(!do_cleanup(), "already set");
   if (C->_vector_reboxing_late_inlines.length() > 0) {
     _late_inlines_pos = C->_late_inlines.length();
     while (_vector_reboxing_late_inlines.length() > 0) {
       CallGenerator* cg = _vector_reboxing_late_inlines.pop();
       cg->do_late_inline();
       if (failing())  return;
+      assert(!do_cleanup(), "should not be set");
       print_method(PHASE_INLINE_VECTOR_REBOX, 3, cg->call_node());
     }
     _vector_reboxing_late_inlines.trunc_to(0);
@@ -3929,6 +3946,21 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     break;
   }
 #endif
+  case Op_DeadPath: {
+    // The CFG inputs are dead paths. Replace the DeadPath with a Region and insert a Halt node.
+    assert(n->req() > 1, "why not removed if no input other than itself?");
+    RegionNode* r = new RegionNode(n->req());
+    for (uint i = 1; i < n->req(); ++i) {
+      r->set_req(i, n->in(i));
+    }
+    n->disconnect_inputs(this);
+    Node* frame = start()->proj_out(TypeFunc::FramePtr);
+    stringStream ss;
+    ss.print("dead path discovered by data nodes during igvn");
+    Node* halt = new HaltNode(r, frame, ss.as_string(comp_arena()));
+    root()->set_req(root()->find_edge(n), halt);
+    break;
+  }
   default:
     assert(!n->is_Call(), "");
     assert(!n->is_Mem(), "");

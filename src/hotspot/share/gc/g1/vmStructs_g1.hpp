@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,9 @@
   nonstatic_field(G1HeapRegion, _bottom,         HeapWord* const)             \
   nonstatic_field(G1HeapRegion, _top,            Atomic<HeapWord*>)           \
   nonstatic_field(G1HeapRegion, _end,            HeapWord* const)             \
-  volatile_nonstatic_field(G1HeapRegion, _pinned_object_count, Atomic<size_t>)\
+  nonstatic_field(G1HeapRegion, _pinned_object_count, Atomic<size_t>)         \
                                                                               \
-  nonstatic_field(G1HeapRegionType, _tag,   G1HeapRegionType::Tag volatile)   \
+  nonstatic_field(G1HeapRegionType, _tag,   Atomic<G1HeapRegionType::Tag>)    \
                                                                               \
                                                                               \
   nonstatic_field(G1HeapRegionTable, _base,             address)              \
@@ -55,7 +55,7 @@
                                                                               \
   nonstatic_field(G1HeapRegionManager, _regions,        G1HeapRegionTable)    \
                                                                               \
-  volatile_nonstatic_field(G1CollectedHeap, _summary_bytes_used, size_t)      \
+  nonstatic_field(G1CollectedHeap, _summary_bytes_used, Atomic<size_t>)       \
   nonstatic_field(G1CollectedHeap, _hrm,                G1HeapRegionManager)  \
   nonstatic_field(G1CollectedHeap, _monitoring_support, G1MonitoringSupport*) \
   nonstatic_field(G1CollectedHeap, _old_set,            G1HeapRegionSetBase)  \
@@ -104,6 +104,6 @@
   declare_toplevel_type(G1HeapRegion*)                                        \
   declare_toplevel_type(G1MonitoringSupport*)                                 \
                                                                               \
-  declare_integer_type(G1HeapRegionType::Tag volatile)
+  declare_integer_type(Atomic<G1HeapRegionType::Tag>)
 
 #endif // SHARE_GC_G1_VMSTRUCTS_G1_HPP
