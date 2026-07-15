@@ -131,8 +131,9 @@ class InlineKlass: public InstanceKlass {
     // only the header, and no payload.
     //
     // But unlike acmp, we need the actual arithmetic value, and resetting irrelevant bits is not correct. To do that, we need
-    // to have a different logic wrt. endianness. The fast path needs to handle differently a when the segment is 8 byte long,
-    // just as valueObjectHashCode does. This is also known by a endianness-dependent test.
+    // to have a different logic wrt. endianness. Moreover, the fast path needs to handle differently a when the segment is 8-byte
+    // long, just as valueObjectHashCode does, while the arithmetic for segments of size 1, 2 or 4 is the same. This is also known
+    // by a endianness-dependent test.
     int _fast_hashcode_offset;   // if < 0, fast hashcode doesn't apply
 #ifdef VM_LITTLE_ENDIAN
     // In little endian, the memory layout, with a 4-byte segment whose value (as returned by getInt) would be 0x01 02 03 04. The
@@ -140,7 +141,7 @@ class InlineKlass: public InstanceKlass {
     //                v- start of payload
     // ....header.... | 04 03 02 01
     //    \___________|___________/
-    // Not to load to far, we load at offset "start of payload" - 4, so, we get some header bytes, and we get the long value
+    // Not to load too far, we load at offset "start of payload" - 4, so, we get some header bytes, and we get the long value
     // 0x01 02 03 04 HH HH HH HH, where HH are header bytes. To get the integer value, we can simply do a unsigned shift right,
     // by 4 bytes (32 bits) in this case.
     // This field is saying by how much we need to shift. Since we keep 1, 2, 4 or 8 bytes, the legal values of _fast_hashcode_shift
@@ -150,12 +151,12 @@ class InlineKlass: public InstanceKlass {
     // Value is not specified (and does not matter) if _fast_hashcode_offset <= 0
     int _fast_hashcode_shift;
 #else
-    // In little endian, the memory layout, with a 4-byte segment whose value (as returned by getInt) would be 0x01 02 03 04. The
+    // In big endian, the memory layout, with a 4-byte segment whose value (as returned by getInt) would be 0x01 02 03 04. The
     // memory layout of the object would be something like:
     //                v- start of payload
     // ....header.... | 01 02 03 04
     //    \___________|___________/
-    // Not to load to far, we load at offset "start of payload" - 4, so, we get some header bytes, and we get the long value
+    // Not to load too far, we load at offset "start of payload" - 4, so, we get some header bytes, and we get the long value
     // 0xHH HH HH HH 01 02 03 04, where HH are header bytes. To get the integer value, we can simply filter out the upper bits, with
     // the mask 0x00 00 00 00 ff ff ff ff in this case.
     // This field is storing the mask. Since we keep 1, 2, 4 or 8 bytes, the legal values of _fast_hashcode_mask

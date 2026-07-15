@@ -5644,9 +5644,16 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
           if (!stopped()) {
             Node* result_empty = get_hashcode_from_header(klass_header, slow_region);
             if (!stopped()) {
+              // Now that we know fast path applies, there are 3 cases to distinguish here,
+              // that unmasked_region/unmasked_result merge:
+              // 1. the object has no segment, the hash is simply the hash of the class object
+              // 2. the object has one segment of size smaller that 8 (1, 2, 4)
+              // 3. the object has one segment of size 8 (long-sized)
+              // See inlineKlass.hpp on why and how to tell them apart.
               RegionNode* unmasked_region = new RegionNode(4);
               Node* unmasked_result = new PhiNode(unmasked_region, TypeInt::INT);
 
+              // Case 1. no segment
               Node* bol_empty_object = BoolCmpI(offset, BoolTest::eq, zerocon(T_INT));
               IfNode* iff_is_empty_object = create_and_map_if(control(), bol_empty_object, PROB_FAIR, COUNT_UNKNOWN);
               unmasked_region->init_req(1, IfTrue(iff_is_empty_object));
@@ -5671,10 +5678,12 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
 #endif
               IfNode* iff_is_long_payload = create_and_map_if(control(), is_long_payload_bol, PROB_FAIR, COUNT_UNKNOWN);
 
+              // Case 2. one segment, less than 8-byte long
               Node* result_int = AddI(MulI(intcon(31), result_empty), ConvL2I(obj_extracted));
               unmasked_region->init_req(2, IfFalse(iff_is_long_payload));
               unmasked_result->init_req(2, result_int);
 
+              // Case 3. one segment, 8-byte long
               Node* result_long = AddI(MulI(intcon(31), result_int), ConvL2I(URShiftL(obj_extracted, intcon(32))));
               unmasked_region->init_req(3, IfTrue(iff_is_long_payload));
               unmasked_result->init_req(3, result_long);
