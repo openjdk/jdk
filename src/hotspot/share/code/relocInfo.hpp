@@ -1229,25 +1229,29 @@ class runtime_call_w_cp_Relocation : public CallRelocation {
   void copy_into(RelocationHolder& holder) const override;
 
  private:
-  friend class RelocationHolder;
-  runtime_call_w_cp_Relocation()
-    : CallRelocation(relocInfo::runtime_call_w_cp_type),
-      _offset(-4) /* <0 = invalid */ { }
+   friend class RelocationHolder;
+   runtime_call_w_cp_Relocation()
+     : CallRelocation(relocInfo::runtime_call_w_cp_type),
+       _offset(-4) /* <0 = invalid */,
+       _target(nullptr) { }
 
-  // On z/Architecture, runtime calls are either a sequence
-  // of two instructions (load destination of call from constant pool + do call)
-  // or a pc-relative call. The pc-relative call is faster, but it can only
-  // be used if the destination of the call is not too far away.
-  // In order to be able to patch a pc-relative call back into one using
-  // the constant pool, we have to remember the location of the call's destination
-  // in the constant pool.
-  int _offset;
+   // On z/Architecture, runtime calls go through the nmethod constant pool
+   // (TOC): the target address is stored there and loaded via LGRL + BASR.
+   // _offset records the byte offset of the TOC slot from ctable_begin() for
+   // diagnostic and self-description purposes; the patcher (set_destination)
+   // derives the slot address directly from the LGRL instruction instead.
+   // _target holds the actual call destination so that pack_data_to() can
+   // register it in the global ExternalsRecorder table.
+   int     _offset;
+   address _target;
 
  public:
-  void set_constant_pool_offset(int offset) { _offset = offset; }
-  int get_constant_pool_offset() { return _offset; }
-  void pack_data_to(CodeSection * dest) override;
-  void unpack_data() override;
+   void set_constant_pool_offset(int offset) { _offset = offset; }
+   int  get_constant_pool_offset()            { return _offset; }
+   void set_call_target(address target)       { _target = target; }
+   address get_call_target()                  { return _target; }
+   void pack_data_to(CodeSection * dest) override;
+   void unpack_data() override;
 };
 
 // Trampoline Relocations.

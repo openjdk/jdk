@@ -2536,35 +2536,31 @@ bool MacroAssembler::is_call_far_patchable_variant2_at(address instruction_addr)
 //                      to the constant pool and a runtime_call relocation is added
 //                      to the code buffer.
 // If toc_offset != -2, target must already be in the constant pool at
-//                      _ctableStart+toc_offset (a caller can retrieve toc_offset
-//                      from the runtime_call relocation).
+//                      _ctableStart+toc_offset.  Note: callers no longer retrieve
+//                      toc_offset from the runtime_call relocation; the patcher
+//                      reads it directly from the LGRL instruction.
 // Special handling of emitting to scratch buffer when there is no constant pool.
-// Slightly changed code pattern. We emit an additional nop if we would
-// not end emitting at a word aligned address. This is to ensure
-// an atomically patchable displacement in brasl instructions.
 //
-// A call_far_patchable comes in different flavors:
-//  - LARL(CP) / LG(CP) / BR (address in constant pool, access via CP register)
-//  - LGRL(CP) / BR          (address in constant pool, pc-relative access)
-//  - BRASL                  (relative address of call target coded in instruction)
-// All flavors occupy the same amount of space. Length differences are compensated
-// by leading nops, such that the instruction sequence always ends at the same
-// byte offset. This is required to keep the return offset constant.
-// Furthermore, the return address (the end of the instruction sequence) is forced
-// to be on a 4-byte boundary. This is required for atomic patching, should we ever
-// need to patch the call target of the BRASL flavor.
+// As of now, only one flavor is emitted for new compilations:
+//  - LGRL(CP) / BASR  (address in constant pool, pc-relative access)
+// The BRASL flavor (relative address of call target coded in instruction) is no
+// longer emitted because the global ExternalsRecorder table must be able to
+// enumerate all runtime call sites.  BRASL instructions from already-compiled
+// nmethods in the code cache are still recognised and handled for compatibility.
+// All flavors occupy the same amount of space; length differences are compensated
+// by leading nops so that the return-address offset is always constant and the
+// last byte is 4-byte aligned.
 // RETURN value: false, if no constant pool entry could be allocated, true otherwise.
 bool MacroAssembler::call_far_patchable(address target, int64_t tocOffset) {
   // Get current pc and ensure word alignment for end of instr sequence.
   const address start_pc = pc();
   const intptr_t       start_off = offset();
   assert(!call_far_patchable_requires_alignment_nop(start_pc), "call_far_patchable requires aligned address");
-  const ptrdiff_t      dist      = (ptrdiff_t)(target - (start_pc + 2)); // Prepend each BRASL with a nop.
   const bool emit_target_to_pool = (tocOffset == -2) && !code_section()->scratch_emit();
-  const bool emit_relative_call  = !emit_target_to_pool &&
-                                   RelAddr::is_in_range_of_RelAddr32(dist) &&
-                                   ReoptimizeCallSequences &&
-                                   !code_section()->scratch_emit();
+  // Disable pc-relative BRASL calls: all runtime call targets must go through
+  // the constant pool (TOC) so that the global ExternalsRecorder table can
+  // track and patch them uniformly.
+  const bool emit_relative_call  = false;
 
   if (emit_relative_call) {
     // Add padding to get the same size as below.
@@ -2653,10 +2649,10 @@ void MacroAssembler::set_dest_of_call_far_patchable_at(address instruction_addr,
 
 // Get dest address of a call_far_patchable instruction.
 address MacroAssembler::get_dest_of_call_far_patchable_at(address instruction_addr, address ctable) {
-  // Dynamic TOC: absolute address in constant pool.
-  // Check variant2 first, it is more frequent.
+  // New code always emits Variant 0 (LGRL+BASR).  Variant 2 (BRASL) is checked
+  // first only for compatibility with already-compiled nmethods in the code cache.
 
-  // Relative address encoded in call instruction.
+  // Relative address encoded in call instruction (BRASL, legacy).
   if (is_call_far_patchable_variant2_at(instruction_addr)) {
     return MacroAssembler::get_target_addr_pcrel(instruction_addr + nop_size()); // Prepend each BRASL with a nop.
 
@@ -4968,9 +4964,16 @@ int MacroAssembler::store_oop_in_toc(AddressLiteral& oop) {
     RelocationHolder rsp = oop.rspec();
     Relocation      *rel = rsp.reloc();
 
-    // Store toc_offset in relocation, used by call_far_patchable.
+    // Store toc_offset and the call target in the relocation.
+    // toc_offset is retained so the relocation is self-describing for
+    // diagnostic purposes.  _target is used by pack_data_to() to register
+    // the address in the global ExternalsRecorder table.
+    // NativeFarCall::set_destination() no longer uses toc_offset; it derives
+    // the TOC slot address directly from the LGRL instruction.
     if ((relocInfo::relocType)rel->type() == relocInfo::runtime_call_w_cp_type) {
-      ((runtime_call_w_cp_Relocation *)(rel))->set_constant_pool_offset(tocOffset);
+      runtime_call_w_cp_Relocation* rcwcp = (runtime_call_w_cp_Relocation*)(rel);
+      rcwcp->set_constant_pool_offset(tocOffset);
+      rcwcp->set_call_target((address)oop.value());
     }
     // Relocate at the load's pc.
     relocate(rsp);

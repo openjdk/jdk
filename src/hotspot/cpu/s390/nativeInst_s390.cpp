@@ -239,18 +239,21 @@ address NativeFarCall::destination() {
 
 
 // Handles both patterns of patchable far calls.
-void NativeFarCall::set_destination(address dest, int toc_offset) {
+void NativeFarCall::set_destination(address dest) {
   address inst_addr = (address)this;
 
   // Set new destination (implementation of call may change here).
   assert(MacroAssembler::is_call_far_patchable_at(inst_addr), "unexpected call type");
 
   if (!MacroAssembler::is_call_far_patchable_pcrelative_at(inst_addr)) {
-    address ctable = CodeCache::find_blob(inst_addr)->ctable_begin();
-    // Need distance of TOC entry from current instruction.
-    toc_offset = (ctable + toc_offset) - inst_addr;
-    // Call is via constant table entry.
-    MacroAssembler::set_dest_of_call_far_patchable_at(inst_addr, dest, toc_offset);
+    // Derive the pc-relative displacement to the TOC slot directly from the
+    // LGRL instruction.  The toc_offset parameter (byte offset from
+    // ctable_begin) is no longer needed now that the global ExternalsRecorder
+    // table owns the target address.
+    long inst_toc_offset = MacroAssembler::get_load_const_from_toc_offset(inst_addr);
+    // Write the new destination into the TOC slot and re-emit the instruction
+    // sequence pointing at that same slot.
+    MacroAssembler::set_dest_of_call_far_patchable_at(inst_addr, dest, inst_toc_offset);
   } else {
     // Here, we have a pc-relative call (brasl).
     // Be aware: dest may have moved in this case, so really patch the displacement,

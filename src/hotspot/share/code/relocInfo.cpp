@@ -458,13 +458,29 @@ void virtual_call_Relocation::unpack_data() {
   _cached_value = x0==0? nullptr: address_from_scaled_offset(x0, point);
 }
 
-void runtime_call_w_cp_Relocation::pack_data_to(CodeSection * dest) {
-  short* p = pack_1_int_to((short *)dest->locs_end(), (jint)(_offset >> 2));
+void runtime_call_w_cp_Relocation::pack_data_to(CodeSection* dest) {
+  // Pack two values into the locs stream:
+  //   [0..3]  4-byte ExternalsRecorder index for the call target address.
+  //   [4..5]  variable-width toc_offset >> 2 (byte offset into the nmethod
+  //           constant pool where the target address is stored, divided by 4).
+  // The fixed-width jint for the index matches the format used by
+  // external_word_Relocation so that AOT relocation patching works uniformly.
+  assert(_target != nullptr, "call target must be set via set_call_target() before packing");
+  short* p = (short*) dest->locs_end();
+  int index = ExternalsRecorder::find_index(_target);
+  p = add_jint(p, index);
+  p = add_var_int(p, (jint)(_offset >> 2));
   dest->set_locs_end((relocInfo*) p);
 }
 
 void runtime_call_w_cp_Relocation::unpack_data() {
-  _offset = unpack_1_int() << 2;
+  // Mirror of pack_data_to(): read the ExternalsRecorder index first (fixed
+  // 4 bytes / 2 shorts), then the toc_offset.
+  short* dp   = data();
+  int    dlen = datalen();
+  int    index = relocInfo::jint_data_at(0, dp, dlen);
+  _target  = ExternalsRecorder::at(index);
+  _offset  = relocInfo::jint_data_at(2, dp, dlen) << 2;
 }
 
 void static_stub_Relocation::pack_data_to(CodeSection* dest) {
