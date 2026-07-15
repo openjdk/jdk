@@ -4829,7 +4829,7 @@ instruct loadNKlassCompactHeaders(iRegN dst, memory mem, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(MEMORY_REF_COST);
   format %{ "load_narrow_klass_compact $dst,$mem \t# compressed class ptr" %}
-  // TODO: s390 port size(VARIABLE_SIZE);
+  // TODO: size()
   ins_encode %{
     __ block_comment("load_narrow_klass_compact_c2 {");
     __ load_narrow_klass_compact_c2($dst$$Register, $mem$$Address);
@@ -6787,7 +6787,7 @@ instruct udivL_reg_reg(roddRegL r5_rodd_dst, iRegL src, revenRegL r4_reven_tmp, 
   match(Set r5_rodd_dst (UDivL r5_rodd_dst src));
   effect(TEMP r4_reven_tmp, KILL cr);
   ins_cost(DEFAULT_COST);
-  // TODO: s390 port size(size(4););
+  // TODO: size(4);
   format %{ "UDIVG $r5_rodd_dst,$r5_rodd_dst,$src" %}
   ins_encode %{
     Register b            = $src$$Register;
