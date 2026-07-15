@@ -25,7 +25,9 @@
  */
 
 
+#include "classfile/systemDictionary.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/continuationGCSupport.hpp"
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -49,6 +51,7 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahMetrics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
@@ -70,7 +73,8 @@
 
 ShenandoahFullGC::ShenandoahFullGC() :
   ShenandoahGC(ShenandoahHeap::heap()->global_generation()),
-  _gc_timer(ShenandoahHeap::heap()->gc_timer()),
+  _heap(ShenandoahHeap::heap()),
+  _gc_timer(_heap->gc_timer()),
   _preserved_marks(new PreservedMarksSet(true)) {}
 
 ShenandoahFullGC::~ShenandoahFullGC() {
@@ -84,11 +88,10 @@ bool ShenandoahFullGC::collect(GCCause::Cause cause) {
 }
 
 void ShenandoahFullGC::vmop_entry_full(GCCause::Cause cause) {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  TraceCollectorStats tcs(heap->monitoring_support()->full_stw_collection_counters());
+  TraceCollectorStats tcs(_heap->monitoring_support()->full_stw_collection_counters());
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_gross);
 
-  heap->try_inject_alloc_failure();
+  _heap->try_inject_alloc_failure();
   VM_ShenandoahFullGC op(cause, this);
   VMThread::execute(&op);
 }
@@ -106,62 +109,59 @@ void ShenandoahFullGC::entry_full(GCCause::Cause cause) {
 }
 
 void ShenandoahFullGC::op_full(GCCause::Cause cause) {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-
-  ShenandoahMetricsSnapshot metrics(heap->free_set());
+  ShenandoahMetricsSnapshot metrics(_heap->free_set());
 
   // Perform full GC
   do_it();
 
-  if (heap->mode()->is_generational()) {
-    ShenandoahGenerationalFullGC::handle_completion(heap);
+  if (_heap->mode()->is_generational()) {
+    ShenandoahGenerationalFullGC::handle_completion(_heap);
   }
 
   if (metrics.is_good_progress()) {
-    heap->notify_gc_progress();
+    _heap->notify_gc_progress();
   } else {
     // Nothing to do. Tell the allocation path that we have failed to make
     // progress, and it can finally fail.
-    heap->notify_gc_no_progress();
+    _heap->notify_gc_no_progress();
   }
 
   // Regardless if progress was made, we record that we completed a full GC.
-  if (heap->mode()->is_generational()) {
+  if (_heap->mode()->is_generational()) {
     // In generational mode, the young heuristics are responsible for this failure
-    heap->young_generation()->heuristics()->record_full_gc(cause);
+    _heap->young_generation()->heuristics()->record_full_gc(cause);
   } else {
     _generation->heuristics()->record_full_gc(cause);
   }
 
-  heap->shenandoah_policy()->record_success_full();
+  _heap->shenandoah_policy()->record_success_full();
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_propagate_gc_state);
-    heap->propagate_gc_state_to_all_threads();
+    _heap->propagate_gc_state_to_all_threads();
   }
 }
 
 void ShenandoahFullGC::do_it() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  heap->release_injected_pins();
+  _heap->release_injected_pins();
   // A full GC must be entered directly, though it is possible for concurrent marking to be
   // in progress.
 
-  if (heap->mode()->is_generational()) {
+  if (_heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::prepare();
   }
 
 #ifdef ASSERT
-  assert(heap->is_idle(), "Full GC should not be running from incomplete cycle");
-  assert(!heap->has_self_forwarded_objects(), "Self forwarded objects should be cleared by concurrent cycle.");
-  for (size_t i = 0, n = heap->num_regions(); i < n; ++i) {
-    ShenandoahHeapRegion* region = heap->get_region(i);
+  assert(_heap->is_idle(), "Full GC should not be running from incomplete cycle");
+  assert(!_heap->has_self_forwarded_objects(), "Self forwarded objects should be cleared by concurrent cycle.");
+  for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
+    ShenandoahHeapRegion* region = _heap->get_region(i);
     assert(!region->has_self_forwards(), "Region %zu should not have self forwarded objects here.", i);
   }
 #endif
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_before_fullgc(_generation);
+    _heap->verifier()->verify_before_fullgc(_generation);
   }
 
   if (VerifyBeforeGC) {
@@ -172,17 +172,17 @@ void ShenandoahFullGC::do_it() {
 
   // Degenerated GC may carry concurrent root flags when upgrading to
   // full GC. We need to reset it before mutators resume.
-  heap->set_concurrent_strong_root_in_progress(false);
-  heap->set_concurrent_weak_root_in_progress(false);
+  _heap->set_concurrent_strong_root_in_progress(false);
+  _heap->set_concurrent_weak_root_in_progress(false);
 
-  heap->set_full_gc_in_progress(true);
+  _heap->set_full_gc_in_progress(true);
 
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
   assert(Thread::current()->is_VM_thread(), "Do full GC only while world is stopped");
 
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_heapdump_pre);
-    heap->pre_full_gc_dump(_gc_timer);
+    _heap->pre_full_gc_dump(_gc_timer);
   }
 
   {
@@ -190,25 +190,25 @@ void ShenandoahFullGC::do_it() {
     // Full GC is supposed to recover from any GC state:
 
     // a0. Remember if we have forwarded objects
-    bool has_forwarded_objects = heap->has_forwarded_objects();
+    bool has_forwarded_objects = _heap->has_forwarded_objects();
 
     // a1. Cancel evacuation, if in progress
-    if (heap->is_evacuation_in_progress()) {
-      heap->set_evacuation_in_progress(false);
+    if (_heap->is_evacuation_in_progress()) {
+      _heap->set_evacuation_in_progress(false);
     }
-    assert(!heap->is_evacuation_in_progress(), "sanity");
+    assert(!_heap->is_evacuation_in_progress(), "sanity");
 
     // a2. Cancel update-refs, if in progress
-    if (heap->is_update_refs_in_progress()) {
-      heap->set_update_refs_in_progress(false);
+    if (_heap->is_update_refs_in_progress()) {
+      _heap->set_update_refs_in_progress(false);
     }
-    assert(!heap->is_update_refs_in_progress(), "sanity");
+    assert(!_heap->is_update_refs_in_progress(), "sanity");
 
     // b. Cancel all concurrent marks, if in progress
-    if (heap->is_concurrent_mark_in_progress()) {
-      heap->cancel_concurrent_mark();
+    if (_heap->is_concurrent_mark_in_progress()) {
+      _heap->cancel_concurrent_mark();
     }
-    assert(!heap->is_concurrent_mark_in_progress(), "sanity");
+    assert(!_heap->is_concurrent_mark_in_progress(), "sanity");
 
     // c. Update roots if this full GC is due to evac-oom, which may carry from-space pointers in roots.
     if (has_forwarded_objects) {
@@ -220,22 +220,22 @@ void ShenandoahFullGC::do_it() {
     rp->abandon_partial_discovery();
 
     // e. Sync pinned region status from the CP marks
-    heap->sync_pinned_region_status();
+    _heap->sync_pinned_region_status();
 
-    if (heap->mode()->is_generational()) {
-      ShenandoahGenerationalFullGC::restore_top_before_promote(heap);
+    if (_heap->mode()->is_generational()) {
+      ShenandoahGenerationalFullGC::restore_top_before_promote(_heap);
     }
 
     // The rest of prologue:
-    _preserved_marks->init(heap->workers()->active_workers());
+    _preserved_marks->init(_heap->workers()->active_workers());
 
-    assert(heap->has_forwarded_objects() == has_forwarded_objects, "This should not change");
+    assert(_heap->has_forwarded_objects() == has_forwarded_objects, "This should not change");
   }
 
   if (UseTLAB) {
     // Note: PLABs are also retired with GCLABs in generational mode.
-    heap->gclabs_retire(ResizeTLAB);
-    heap->tlabs_retire(ResizeTLAB);
+    _heap->gclabs_retire(ResizeTLAB);
+    _heap->tlabs_retire(ResizeTLAB);
   }
 
   OrderAccess::fence();
@@ -245,23 +245,23 @@ void ShenandoahFullGC::do_it() {
   // Once marking is done, which may have fixed up forwarded objects, we can drop it.
   // Coming out of Full GC, we would not have any forwarded objects.
   // This also prevents resolves with fwdptr from kicking in while adjusting pointers in phase3.
-  heap->set_has_forwarded_objects(false);
+  _heap->set_has_forwarded_objects(false);
 
-  heap->set_full_gc_move_in_progress(true);
+  _heap->set_full_gc_move_in_progress(true);
 
   // Setup workers for the rest
   OrderAccess::fence();
 
   // Initialize worker slices
-  ShenandoahHeapRegionSet** worker_slices = NEW_C_HEAP_ARRAY(ShenandoahHeapRegionSet*, heap->max_workers(), mtGC);
-  for (uint i = 0; i < heap->max_workers(); i++) {
+  ShenandoahHeapRegionSet** worker_slices = NEW_C_HEAP_ARRAY(ShenandoahHeapRegionSet*, _heap->max_workers(), mtGC);
+  for (uint i = 0; i < _heap->max_workers(); i++) {
     worker_slices[i] = new ShenandoahHeapRegionSet();
   }
 
   {
     // The rest of code performs region moves, where region status is undefined
     // until all phases run together.
-    ShenandoahHeapLocker lock(heap->lock());
+    ShenandoahHeapLocker lock(_heap->lock());
 
     phase2_calculate_target_addresses(worker_slices);
 
@@ -273,24 +273,24 @@ void ShenandoahFullGC::do_it() {
 
     phase5_epilog();
   }
-  heap->start_idle_span();
+  _heap->start_idle_span();
 
   // Resize metaspace
   MetaspaceGC::compute_new_size();
 
   // Free worker slices
-  for (uint i = 0; i < heap->max_workers(); i++) {
+  for (uint i = 0; i < _heap->max_workers(); i++) {
     delete worker_slices[i];
   }
   FREE_C_HEAP_ARRAY(worker_slices);
 
-  heap->set_full_gc_move_in_progress(false);
-  heap->set_full_gc_in_progress(false);
+  _heap->set_full_gc_move_in_progress(false);
+  _heap->set_full_gc_in_progress(false);
 
-  DEBUG_ONLY(heap->assert_no_self_forwards());
+  DEBUG_ONLY(_heap->assert_no_self_forwards());
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_after_fullgc(_generation);
+    _heap->verifier()->verify_after_fullgc(_generation);
   }
 
   if (VerifyAfterGC) {
@@ -299,7 +299,7 @@ void ShenandoahFullGC::do_it() {
 
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_heapdump_post);
-    heap->post_full_gc_dump(_gc_timer);
+    _heap->post_full_gc_dump(_gc_timer);
   }
 }
 
@@ -307,13 +307,11 @@ void ShenandoahFullGC::phase1_mark_heap() {
   GCTraceTime(Info, gc, phases) time("Phase 1: Mark live objects", _gc_timer);
   ShenandoahGCPhase mark_phase(ShenandoahPhaseTimings::full_gc_mark);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
   _generation->reset_mark_bitmap<true, true>();
-  assert(heap->marking_context()->is_bitmap_clear(), "sanity");
+  assert(_heap->marking_context()->is_bitmap_clear(), "sanity");
   assert(!_generation->is_mark_complete(), "sanity");
 
-  heap->set_unload_classes(_generation->heuristics()->can_unload_classes());
+  _heap->set_unload_classes(_generation->heuristics()->can_unload_classes());
 
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
   // enable ("weak") refs discovery
@@ -321,11 +319,95 @@ void ShenandoahFullGC::phase1_mark_heap() {
 
   ShenandoahSTWMark mark(_generation);
   mark.mark();
-  heap->parallel_cleaning(_generation);
+  parallel_cleaning(_generation);
 
-  if (ShenandoahHeap::heap()->mode()->is_generational()) {
-    ShenandoahGenerationalFullGC::log_live_in_old(heap);
+  if (_heap->mode()->is_generational()) {
+    ShenandoahGenerationalFullGC::log_live_in_old(_heap);
   }
+}
+
+void ShenandoahFullGC::parallel_cleaning(ShenandoahGeneration* generation) {
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
+  assert(ShenandoahHeap::heap()->is_stw_gc_in_progress(), "Only for Full GC");
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_purge);
+  stw_weak_refs(generation);
+  stw_process_weak_roots();
+  stw_unload_classes();
+}
+
+void ShenandoahFullGC::stw_weak_refs(ShenandoahGeneration* generation) {
+  // Weak refs processing
+  ShenandoahPhaseTimings::Phase phase = ShenandoahPhaseTimings::full_gc_weakrefs;
+  ShenandoahTimingsTracker t(phase);
+  ShenandoahGCWorkerPhase worker_phase(phase);
+  generation->ref_processor()->process_references(phase, ShenandoahHeap::heap()->workers(), false /* concurrent */);
+}
+
+// Weak roots are either pre-evacuated (final mark) or updated (final update refs),
+// so they should not have forwarded oops.
+// However, we do need to "null" dead oops in the roots, if can not be done
+// in concurrent cycles.
+void ShenandoahFullGC::stw_process_weak_roots() {
+  uint num_workers = _heap->workers()->active_workers();
+  ShenandoahPhaseTimings::Phase timing_phase = ShenandoahPhaseTimings::full_gc_purge_weak_par;
+  ShenandoahGCPhase phase(timing_phase);
+  ShenandoahGCWorkerPhase worker_phase(timing_phase);
+  // Cleanup weak roots
+  if (_heap->has_forwarded_objects()) {
+    ShenandoahForwardedIsAliveClosure is_alive;
+    ShenandoahNonConcUpdateRefsClosure keep_alive;
+    ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahNonConcUpdateRefsClosure>
+      cleaning_task(timing_phase, &is_alive, &keep_alive, num_workers);
+    _heap->workers()->run_task(&cleaning_task);
+  } else {
+    ShenandoahIsAliveClosure is_alive;
+#ifdef ASSERT
+    ShenandoahAssertNotForwardedClosure verify_cl;
+    ShenandoahParallelWeakRootsCleaningTask<ShenandoahIsAliveClosure, ShenandoahAssertNotForwardedClosure>
+      cleaning_task(timing_phase, &is_alive, &verify_cl, num_workers);
+#else
+    ShenandoahParallelWeakRootsCleaningTask<ShenandoahIsAliveClosure, DoNothingClosure>
+      cleaning_task(timing_phase, &is_alive, &do_nothing_cl, num_workers);
+#endif
+    _heap->workers()->run_task(&cleaning_task);
+  }
+}
+
+void ShenandoahFullGC::stw_unload_classes() {
+  if (!_heap->unload_classes()) return;
+  ClassUnloadingContext ctx(_heap->workers()->active_workers(),
+                            true /* unregister_nmethods_during_purge */,
+                            false /* lock_nmethod_free_separately */);
+
+  // Unload classes and purge SystemDictionary.
+  {
+    ShenandoahPhaseTimings::Phase phase = ShenandoahPhaseTimings::full_gc_purge_class_unload;
+    ShenandoahIsAliveSelector is_alive;
+    {
+      CodeCache::UnlinkingScope scope(is_alive.is_alive_closure());
+      ShenandoahGCPhase gc_phase(phase);
+      ShenandoahGCWorkerPhase worker_phase(phase);
+      bool unloading_occurred = SystemDictionary::do_unloading(_gc_timer);
+
+      ShenandoahClassUnloadingTask unlink_task(phase, unloading_occurred);
+      _heap->workers()->run_task(&unlink_task);
+    }
+    // Release unloaded nmethods's memory.
+    ClassUnloadingContext::context()->purge_and_free_nmethods();
+  }
+
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_purge_cldg);
+    ClassLoaderDataGraph::purge(true /* at_safepoint */);
+  }
+  // Resize and verify metaspace
+  MetaspaceGC::compute_new_size();
+
+  if (_heap->mode()->is_generational()) {
+    _heap->old_generation()->set_parsable(false);
+  }
+
+  DEBUG_ONLY(MetaspaceUtils::verify();)
 }
 
 class ShenandoahPrepareForCompactionObjectClosure : public ObjectClosure {
@@ -493,8 +575,6 @@ void ShenandoahPrepareForCompactionTask::prepare_for_compaction(ClosureType& cl,
 }
 
 void ShenandoahFullGC::calculate_target_humongous_objects() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
   // Compute the new addresses for humongous objects. We need to do this after addresses
   // for regular objects are calculated, and we know what regions in heap suffix are
   // available for humongous moves.
@@ -506,12 +586,12 @@ void ShenandoahFullGC::calculate_target_humongous_objects() {
   // The complication is potential non-movable regions during the scan. If such region is
   // detected, then sliding restarts towards that non-movable region.
 
-  size_t to_begin = heap->num_regions();
-  size_t to_end = heap->num_regions();
+  size_t to_begin = _heap->num_regions();
+  size_t to_end = _heap->num_regions();
 
   log_debug(gc)("Full GC calculating target humongous objects from end %zu", to_end);
-  for (size_t c = heap->num_regions(); c > 0; c--) {
-    ShenandoahHeapRegion *r = heap->get_region(c - 1);
+  for (size_t c = _heap->num_regions(); c > 0; c--) {
+    ShenandoahHeapRegion *r = _heap->get_region(c - 1);
     if (r->is_humongous_continuation() || (r->new_top() == r->bottom())) {
       // To-region candidate: record this, and continue scan
       to_begin = r->index();
@@ -529,7 +609,7 @@ void ShenandoahFullGC::calculate_target_humongous_objects() {
       if (start >= to_begin && start != r->index()) {
         // Fits into current window, and the move is non-trivial. Record the move then, and continue scan.
         _preserved_marks->get(0)->push_if_necessary(old_obj, old_obj->mark());
-        FullGCForwarding::forward_to(old_obj, cast_to_oop(heap->get_region(start)->bottom()));
+        FullGCForwarding::forward_to(old_obj, cast_to_oop(_heap->get_region(start)->bottom()));
         to_end = start;
         continue;
       }
@@ -594,10 +674,8 @@ public:
 };
 
 void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  uint n_workers = heap->workers()->active_workers();
-  size_t n_regions = heap->num_regions();
+  uint n_workers = _heap->workers()->active_workers();
+  size_t n_regions = _heap->num_regions();
 
   // What we want to accomplish: have the dense prefix of data, while still balancing
   // out the parallel work.
@@ -632,7 +710,7 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
   // we target to create.
   size_t total_live = 0;
   for (size_t idx = 0; idx < n_regions; idx++) {
-    ShenandoahHeapRegion *r = heap->get_region(idx);
+    ShenandoahHeapRegion *r = _heap->get_region(idx);
     if (ShenandoahPrepareForCompactionTask::is_candidate_region(r)) {
       total_live += r->get_live_data_words();
     }
@@ -650,7 +728,7 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
   // ends up being, we need to account those as well.
   size_t prefix_end = prefix_regions_total;
   for (size_t idx = 0; idx < prefix_regions_total; idx++) {
-    ShenandoahHeapRegion *r = heap->get_region(idx);
+    ShenandoahHeapRegion *r = _heap->get_region(idx);
     if (!ShenandoahPrepareForCompactionTask::is_candidate_region(r)) {
       prefix_end++;
     }
@@ -672,7 +750,7 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
 
     // Add all prefix regions for this worker
     while (prefix_idx < prefix_end && regs < prefix_regions_per_worker) {
-      ShenandoahHeapRegion *r = heap->get_region(prefix_idx);
+      ShenandoahHeapRegion *r = _heap->get_region(prefix_idx);
       if (ShenandoahPrepareForCompactionTask::is_candidate_region(r)) {
         slice->add_region(r);
         live[wid] += r->get_live_data_words();
@@ -686,7 +764,7 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
   size_t wid = n_workers - 1;
 
   for (size_t tail_idx = prefix_end; tail_idx < n_regions; tail_idx++) {
-    ShenandoahHeapRegion *r = heap->get_region(tail_idx);
+    ShenandoahHeapRegion *r = _heap->get_region(tail_idx);
     if (ShenandoahPrepareForCompactionTask::is_candidate_region(r)) {
       assert(wid < n_workers, "Sanity");
 
@@ -728,7 +806,7 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
   }
 
   for (size_t rid = 0; rid < n_regions; rid++) {
-    bool is_candidate = ShenandoahPrepareForCompactionTask::is_candidate_region(heap->get_region(rid));
+    bool is_candidate = ShenandoahPrepareForCompactionTask::is_candidate_region(_heap->get_region(rid));
     bool is_distributed = map.at(rid);
     assert(is_distributed || !is_candidate, "All candidates are distributed: %zu", rid);
   }
@@ -739,22 +817,20 @@ void ShenandoahFullGC::phase2_calculate_target_addresses(ShenandoahHeapRegionSet
   GCTraceTime(Info, gc, phases) time("Phase 2: Compute new object addresses", _gc_timer);
   ShenandoahGCPhase calculate_address_phase(ShenandoahPhaseTimings::full_gc_calculate_addresses);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
   // About to figure out which regions can be compacted, make sure pinning status
   // had been updated in GC prologue.
-  heap->assert_pinned_region_status();
+  _heap->assert_pinned_region_status();
 
   {
     // Trash the immediately collectible regions before computing addresses
     ShenandoahTrashImmediateGarbageClosure trash_immediate_garbage;
     ShenandoahExcludeRegionClosure<FREE> cl(&trash_immediate_garbage);
-    heap->heap_region_iterate(&cl);
+    _heap->heap_region_iterate(&cl);
 
     // Make sure regions are in good state: committed, active, clean.
     // This is needed because we are potentially sliding the data through them.
     ShenandoahEnsureHeapActiveClosure ecl;
-    heap->heap_region_iterate(&ecl);
+    _heap->heap_region_iterate(&ecl);
   }
 
   // Compute the new addresses for regular objects
@@ -764,7 +840,7 @@ void ShenandoahFullGC::phase2_calculate_target_addresses(ShenandoahHeapRegionSet
     distribute_slices(worker_slices);
 
     ShenandoahPrepareForCompactionTask task(_preserved_marks, worker_slices);
-    heap->workers()->run_task(&task);
+    _heap->workers()->run_task(&task);
   }
 
   // Compute the new addresses for humongous objects
@@ -862,9 +938,7 @@ void ShenandoahFullGC::phase3_update_references() {
   GCTraceTime(Info, gc, phases) time("Phase 3: Adjust pointers", _gc_timer);
   ShenandoahGCPhase adjust_pointer_phase(ShenandoahPhaseTimings::full_gc_adjust_pointers);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  WorkerThreads* workers = heap->workers();
+  WorkerThreads* workers = _heap->workers();
   uint nworkers = workers->active_workers();
   {
 #ifdef COMPILER2
@@ -1014,10 +1088,8 @@ void ShenandoahFullGC::compact_humongous_objects() {
   // humongous regions are already compacted, and do not require further moves, which alleviates
   // sliding costs. We may consider doing this in parallel in the future.
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  for (size_t c = heap->num_regions(); c > 0; c--) {
-    ShenandoahHeapRegion* r = heap->get_region(c - 1);
+  for (size_t c = _heap->num_regions(); c > 0; c--) {
+    ShenandoahHeapRegion* r = _heap->get_region(c - 1);
     if (r->is_humongous_start()) {
       oop old_obj = cast_to_oop(r->bottom());
       if (!FullGCForwarding::is_forwarded(old_obj)) {
@@ -1029,29 +1101,29 @@ void ShenandoahFullGC::compact_humongous_objects() {
 
       size_t old_start = r->index();
       size_t old_end   = old_start + num_regions - 1;
-      size_t new_start = heap->heap_region_index_containing(FullGCForwarding::forwardee(old_obj));
+      size_t new_start = _heap->heap_region_index_containing(FullGCForwarding::forwardee(old_obj));
       size_t new_end   = new_start + num_regions - 1;
       assert(old_start != new_start, "must be real move");
       assert(r->is_stw_move_allowed(), "Region %zu should be movable", r->index());
 
       log_debug(gc)("Full GC compaction moves humongous object from region %zu to region %zu", old_start, new_start);
-      Copy::aligned_conjoint_words(r->bottom(), heap->get_region(new_start)->bottom(), words_size);
+      Copy::aligned_conjoint_words(r->bottom(), _heap->get_region(new_start)->bottom(), words_size);
       ContinuationGCSupport::relativize_stack_chunk(cast_to_oop<HeapWord*>(r->bottom()));
 
-      oop new_obj = cast_to_oop(heap->get_region(new_start)->bottom());
+      oop new_obj = cast_to_oop(_heap->get_region(new_start)->bottom());
       new_obj->init_mark();
 
       {
         ShenandoahAffiliation original_affiliation = r->affiliation();
         for (size_t c = old_start; c <= old_end; c++) {
-          ShenandoahHeapRegion* r = heap->get_region(c);
+          ShenandoahHeapRegion* r = _heap->get_region(c);
           // Leave humongous region affiliation unchanged.
           r->make_regular_bypass();
           r->set_top(r->bottom());
         }
 
         for (size_t c = new_start; c <= new_end; c++) {
-          ShenandoahHeapRegion* r = heap->get_region(c);
+          ShenandoahHeapRegion* r = _heap->get_region(c);
           if (c == new_start) {
             r->make_humongous_start_bypass(original_affiliation);
           } else {
@@ -1108,13 +1180,11 @@ void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_s
   GCTraceTime(Info, gc, phases) time("Phase 4: Move objects", _gc_timer);
   ShenandoahGCPhase compaction_phase(ShenandoahPhaseTimings::full_gc_copy_objects);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
   // Compact regular objects first
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_copy_objects_regular);
     ShenandoahCompactObjectsTask compact_task(worker_slices);
-    heap->workers()->run_task(&compact_task);
+    _heap->workers()->run_task(&compact_task);
   }
 
   // Compact humongous objects after regular object moves
@@ -1126,44 +1196,42 @@ void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_s
 
 void ShenandoahFullGC::phase5_epilog() {
   GCTraceTime(Info, gc, phases) time("Phase 5: Full GC epilog", _gc_timer);
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
   // Reset complete bitmap. We're about to reset the complete-top-at-mark-start pointer
   // and must ensure the bitmap is in sync.
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_copy_objects_reset_complete);
     ShenandoahMCResetCompleteBitmapTask task;
-    heap->workers()->run_task(&task);
+    _heap->workers()->run_task(&task);
   }
 
   // Bring regions in proper states after the collection, and set heap properties.
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_copy_objects_rebuild);
     ShenandoahPostCompactClosure post_compact;
-    heap->heap_region_iterate(&post_compact);
-    heap->collection_set()->clear();
+    _heap->heap_region_iterate(&post_compact);
+    _heap->collection_set()->clear();
     {
-      ShenandoahFreeSet* free_set = heap->free_set();
+      ShenandoahFreeSet* free_set = _heap->free_set();
       size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
       free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
       // We also do not expand old generation size following Full GC because we have scrambled age populations and
       // no longer have objects separated by age into distinct regions.
-      if (heap->mode()->is_generational()) {
+      if (_heap->mode()->is_generational()) {
         ShenandoahGenerationalFullGC::compute_balances();
       }
-      heap->free_set()->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
+      _heap->free_set()->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
     }
 
     // Set mark incomplete because the marking bitmaps have been reset except pinned regions.
     _generation->set_mark_incomplete();
 
-    heap->clear_cancelled_gc();
+    _heap->clear_cancelled_gc();
   }
 
-  _preserved_marks->restore(heap->workers());
+  _preserved_marks->restore(_heap->workers());
   _preserved_marks->reclaim();
 
-  if (heap->mode()->is_generational()) {
-    ShenandoahGenerationalFullGC::rebuild_remembered_set(heap);
+  if (_heap->mode()->is_generational()) {
+    ShenandoahGenerationalFullGC::rebuild_remembered_set(_heap);
   }
 }

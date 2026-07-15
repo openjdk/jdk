@@ -26,7 +26,6 @@
 
 
 #include "cds/aotMappedHeapWriter.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -2185,14 +2184,6 @@ void ShenandoahHeap::do_class_unloading() {
   }
 }
 
-void ShenandoahHeap::stw_weak_refs(ShenandoahGeneration* generation) {
-  // Weak refs processing
-  ShenandoahPhaseTimings::Phase phase = ShenandoahPhaseTimings::full_gc_weakrefs;
-  ShenandoahTimingsTracker t(phase);
-  ShenandoahGCWorkerPhase worker_phase(phase);
-  generation->ref_processor()->process_references(phase, workers(), false /* concurrent */);
-}
-
 void ShenandoahHeap::propagate_gc_state_to_all_threads() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   if (_gc_state_changed) {
@@ -2351,82 +2342,6 @@ void ShenandoahHeap::stop() {
   if (_uncommit_thread != nullptr) {
     _uncommit_thread->stop();
   }
-}
-
-void ShenandoahHeap::stw_unload_classes() {
-  if (!unload_classes()) return;
-  ClassUnloadingContext ctx(_workers->active_workers(),
-                            true /* unregister_nmethods_during_purge */,
-                            false /* lock_nmethod_free_separately */);
-
-  // Unload classes and purge SystemDictionary.
-  {
-    ShenandoahPhaseTimings::Phase phase = ShenandoahPhaseTimings::full_gc_purge_class_unload;
-    ShenandoahIsAliveSelector is_alive;
-    {
-      CodeCache::UnlinkingScope scope(is_alive.is_alive_closure());
-      ShenandoahGCPhase gc_phase(phase);
-      ShenandoahGCWorkerPhase worker_phase(phase);
-      bool unloading_occurred = SystemDictionary::do_unloading(gc_timer());
-
-      ShenandoahClassUnloadingTask unlink_task(phase, unloading_occurred);
-      _workers->run_task(&unlink_task);
-    }
-    // Release unloaded nmethods's memory.
-    ClassUnloadingContext::context()->purge_and_free_nmethods();
-  }
-
-  {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_purge_cldg);
-    ClassLoaderDataGraph::purge(true /* at_safepoint */);
-  }
-  // Resize and verify metaspace
-  MetaspaceGC::compute_new_size();
-
-  if (mode()->is_generational()) {
-    old_generation()->set_parsable(false);
-  }
-
-  DEBUG_ONLY(MetaspaceUtils::verify();)
-}
-
-// Weak roots are either pre-evacuated (final mark) or updated (final update refs),
-// so they should not have forwarded oops.
-// However, we do need to "null" dead oops in the roots, if can not be done
-// in concurrent cycles.
-void ShenandoahHeap::stw_process_weak_roots() {
-  uint num_workers = _workers->active_workers();
-  ShenandoahPhaseTimings::Phase timing_phase = ShenandoahPhaseTimings::full_gc_purge_weak_par;
-  ShenandoahGCPhase phase(timing_phase);
-  ShenandoahGCWorkerPhase worker_phase(timing_phase);
-  // Cleanup weak roots
-  if (has_forwarded_objects()) {
-    ShenandoahForwardedIsAliveClosure is_alive;
-    ShenandoahNonConcUpdateRefsClosure keep_alive;
-    ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahNonConcUpdateRefsClosure>
-      cleaning_task(timing_phase, &is_alive, &keep_alive, num_workers);
-    _workers->run_task(&cleaning_task);
-  } else {
-    ShenandoahIsAliveClosure is_alive;
-#ifdef ASSERT
-    ShenandoahAssertNotForwardedClosure verify_cl;
-    ShenandoahParallelWeakRootsCleaningTask<ShenandoahIsAliveClosure, ShenandoahAssertNotForwardedClosure>
-      cleaning_task(timing_phase, &is_alive, &verify_cl, num_workers);
-#else
-    ShenandoahParallelWeakRootsCleaningTask<ShenandoahIsAliveClosure, DoNothingClosure>
-      cleaning_task(timing_phase, &is_alive, &do_nothing_cl, num_workers);
-#endif
-    _workers->run_task(&cleaning_task);
-  }
-}
-
-void ShenandoahHeap::parallel_cleaning(ShenandoahGeneration* generation) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  assert(is_stw_gc_in_progress(), "Only for Full GC");
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_purge);
-  stw_weak_refs(generation);
-  stw_process_weak_roots();
-  stw_unload_classes();
 }
 
 void ShenandoahHeap::set_has_forwarded_objects(bool cond) {
