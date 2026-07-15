@@ -601,6 +601,14 @@
           "Number of fields in instance limit for scalar replacement")      \
           range(0, max_jint)                                                \
                                                                             \
+  product(bool, StressEliminateAllocations, false, DIAGNOSTIC,              \
+          "Randomly fail allocation elimination attempts")                  \
+                                                                            \
+  product(uint, StressEliminateAllocationsMean, 20, DIAGNOSTIC,             \
+          "The expected number of elimination checks made until "           \
+          "a random failure.")                                              \
+          range(1, max_juint)                                               \
+                                                                            \
   product(bool, OptimizePtrCompare, true,                                   \
           "Use escape analysis to optimize pointers compare")               \
                                                                             \
@@ -914,8 +922,8 @@
           "Use StoreStore barrier instead of Release barrier at the end "   \
           "of constructors")                                                \
                                                                             \
-  develop(bool, KillPathsReachableByDeadTypeNode, true,                     \
-          "When a Type node becomes top, make paths where the node is "     \
+  develop(bool, KillPathsReachableByDeadDataNode, true,                     \
+          "When a data node becomes top, make paths where the node is "     \
           "used dead by replacing them with a Halt node. Turning this off " \
           "could corrupt the graph in rare cases and should be used with "  \
           "care.")                                                          \

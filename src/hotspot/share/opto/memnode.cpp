@@ -1290,9 +1290,12 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
         return res;
       }
 
-      // Type-unsafe stores must be due to array polymorphism
-      const TypePtr* adr_type = this->adr_type();
-      assert(adr_type == nullptr || adr_type->isa_aryptr() != nullptr, "unexpected type-unsafe store");
+      // There are some cases in which the Type of the load is narrower than the Type of the value
+      // that is stored into that location. The most common case is array polymorphism, when the
+      // type of an array element depends on the type of the array. In addition, there are some
+      // corner cases, the first one is concurrent class loading, when CHA can result in a narrower
+      // Type than what is declared only after the child class is loaded, and the second case is
+      // unsafe accesses when we do not check for type safety. See JDK-8388184.
       return nullptr;
     }
 

@@ -107,7 +107,8 @@ public class VectorMultiplyOpt {
     }
 
     @Test
-    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @IR(counts = {"vmuludq", " >0 "}, phase = CompilePhase.FINAL_CODE, applyIfCPUFeature = {"avx", "true"})
     @IR(counts = {"vmulL_uint_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"sve2", "true"})
@@ -135,7 +136,8 @@ public class VectorMultiplyOpt {
     }
 
     @Test
-    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @IR(counts = {"vmuludq", " >0 "}, phase = CompilePhase.FINAL_CODE, applyIfCPUFeature = {"avx", "true"})
     @IR(counts = {"vmulL_uint_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"sve2", "true"})
@@ -163,7 +165,8 @@ public class VectorMultiplyOpt {
     }
 
     @Test
-    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @IR(counts = {"vmuludq", " >0 "}, phase = CompilePhase.FINAL_CODE, applyIfCPUFeature = {"avx", "true"})
     @IR(counts = {"vmulL_uint_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"sve2", "true"})
@@ -191,7 +194,8 @@ public class VectorMultiplyOpt {
     }
 
     @Test
-    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @IR(counts = {"vmuludq", " >0 "}, applyIfCPUFeature = {"avx", "true"}, phase = CompilePhase.FINAL_CODE)
     @IR(counts = {"vmulL_uint_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"sve2", "true"})
@@ -219,7 +223,8 @@ public class VectorMultiplyOpt {
     }
 
     @Test
-    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.VECTOR_CAST_I2L, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.VECTOR_CAST_I2L, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @IR(counts = {"vmuldq", " >0 "}, applyIfCPUFeature = {"avx", "true"}, phase = CompilePhase.FINAL_CODE)
     @IR(counts = {"vmulL_int_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"sve2", "true"})
@@ -250,7 +255,8 @@ public class VectorMultiplyOpt {
 
 
     @Test
-    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.RSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.RSHIFT_VL, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @IR(counts = {"vmuldq", " >0 "}, applyIfCPUFeature = {"avx", "true"}, phase = CompilePhase.FINAL_CODE)
     @IR(counts = {"vmulL_int_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"sve2", "true"})
@@ -280,7 +286,8 @@ public class VectorMultiplyOpt {
     // Same-operand multiplication (v * v) where v has zero-extended high bits.
     // On NEON this should map to the dedicated rule that emits a single xtn.
     @Test
-    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @IR(counts = {"vmuludq", " >0 "}, phase = CompilePhase.FINAL_CODE, applyIfCPUFeature = {"avx", "true"})
     @IR(counts = {"vmulL_uint_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"sve2", "true"})
@@ -309,7 +316,8 @@ public class VectorMultiplyOpt {
     // Same-operand multiplication (v * v) where v has sign-extended high bits.
     // On NEON this should map to the dedicated rule that emits a single xtn.
     @Test
-    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.VECTOR_CAST_I2L, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.VECTOR_CAST_I2L, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @IR(counts = {"vmuldq", " >0 "}, applyIfCPUFeature = {"avx", "true"}, phase = CompilePhase.FINAL_CODE)
     @IR(counts = {"vmulL_int_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
         applyIfCPUFeature = {"sve2", "true"})

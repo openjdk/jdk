@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,10 @@
 
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "memory/iterator.hpp"
+#include "utilities/growableArray.hpp"
 
 class G1ConcurrentMark;
+class G1ParScanThreadState;
 class nmethod;
 
 class G1NMethodClosure : public NMethodClosure {
@@ -36,20 +38,27 @@ class G1NMethodClosure : public NMethodClosure {
   class HeapRegionGatheringOopClosure : public OopClosure {
     G1CollectedHeap* _g1h;
     OopClosure* _work;
+    G1ParScanThreadState* _pss;
+
     nmethod* _nm;
+    GrowableArrayCHeap<G1HeapRegion*, mtGC> _affected_regions;
 
     template <typename T>
     void do_oop_work(T* p);
 
   public:
-    HeapRegionGatheringOopClosure(OopClosure* oc) : _g1h(G1CollectedHeap::heap()), _work(oc), _nm(nullptr) {}
+    HeapRegionGatheringOopClosure(OopClosure* oc, G1ParScanThreadState* pss);
+    ~HeapRegionGatheringOopClosure() = default;
 
     void do_oop(oop* o);
     void do_oop(narrowOop* o);
 
-    void set_nm(nmethod* nm) {
+    void set_nmethod(nmethod* nm) {
+      assert(_affected_regions.is_empty(), "must be");
       _nm = nm;
     }
+
+    void add_to_remsets();
   };
 
   // Mark all oops below TAMS.
@@ -72,8 +81,8 @@ class G1NMethodClosure : public NMethodClosure {
 
   bool _strong;
 public:
-  G1NMethodClosure(uint worker_id, OopClosure* oc, bool strong) :
-    _oc(oc), _marking_oc(worker_id), _strong(strong) { }
+  G1NMethodClosure(uint worker_id, OopClosure* oc, bool strong, G1ParScanThreadState* pss) :
+    _oc(oc, pss), _marking_oc(worker_id), _strong(strong) { }
 
   void do_evacuation_and_fixup(nmethod* nm);
   void do_marking(nmethod* nm);

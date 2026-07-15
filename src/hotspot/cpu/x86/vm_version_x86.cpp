@@ -1270,7 +1270,7 @@ void VM_Version::get_processor_features() {
 
   // Kyber Intrinsics
   // Currently we only have them for AVX512
-  if (supports_evex() && supports_avx512bw()) {
+  if (supports_avx512vlbw()) {
     if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
       UseKyberIntrinsics = true;
     }

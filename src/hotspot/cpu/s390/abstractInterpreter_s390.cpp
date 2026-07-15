@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -197,8 +197,10 @@ void AbstractInterpreter::layout_activation(Method* method,
     assert(is_bottom_frame && (sender_sp == caller->unextended_sp()),
            "must initialize sender_sp of bottom skeleton frame when pushing it");
   } else {
-    assert(caller->is_entry_frame() || caller->is_upcall_stub_frame(), "is there a new frame type??");
-    sender_sp = caller->sp(); // Call_stub only uses it's fp.
+    // For entry, upcall_stub, and native frames, sender_sp is simply the caller's sp.
+    // These frames use the standard C ABI and don't require adjustment.
+    assert(caller->is_entry_frame() || caller->is_upcall_stub_frame() || caller->is_native_frame(), "is there a new frame type??");
+    sender_sp = caller->sp();
   }
 
   interpreter_frame->interpreter_frame_set_method(method);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,10 @@ void G1SurvivorRegions::convert_to_eden() {
 
 void G1SurvivorRegions::clear() {
   _regions.clear();
-  _used_bytes = 0;
+  _used_bytes.store_relaxed(0);
   _regions_on_node.clear();
 }
 
 void G1SurvivorRegions::add_used_bytes(size_t used_bytes) {
-  _used_bytes += used_bytes;
+  _used_bytes.add_then_fetch(used_bytes, memory_order_relaxed);
 }

@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,7 @@ jinfo - generate Java configuration information for a specified Java process
 
 The `jinfo` command prints Java configuration information for a specified Java
 process. The configuration information includes Java system properties and JVM
-command-line flags. If the specified process is running on a 64-bit JVM, then
-you might need to specify the `-J-d64` option, for example:
-
->   `jinfo -J-d64 -sysprops` *pid*
+command-line flags.
 
 This command is unsupported and might not be available in future releases of
 the JDK. In Windows Systems where `dbgeng.dll` is not present, the Debugging

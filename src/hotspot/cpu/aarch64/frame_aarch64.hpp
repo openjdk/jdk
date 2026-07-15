@@ -186,8 +186,6 @@
   // deoptimization support
   void interpreter_frame_set_last_sp(intptr_t* sp);
 
-  static jint interpreter_frame_expression_stack_direction() { return -1; }
-
   // returns the sending frame, without applying any barriers
   inline frame sender_raw(RegisterMap* map) const;
 

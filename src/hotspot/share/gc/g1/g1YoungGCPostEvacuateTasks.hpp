@@ -35,16 +35,18 @@ class G1EvacInfo;
 class G1ParScanThreadStateSet;
 
 // First set of post evacuate collection set tasks containing ("s" means serial):
-// - Merge PSS (s)
+// - Flush PSS (s)
 // - Recalculate Used (s)
 // - Sample Collection Set Candidates (s)
 // - Clear Card Table
 // - Restore evac failure regions (on evacuation failure)
+// - Update code roots (for regions that need code roots to be added)
 class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedTask {
-  class MergePssTask;
+  class FlushPssTask;
   class RecalculateUsedTask;
   class SampleCollectionSetCandidatesTask;
   class RestoreEvacFailureRegionsTask;
+  class UpdateCodeRootsTask;
 
 public:
   G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
@@ -54,10 +56,10 @@ public:
 // Second set of post evacuate collection set tasks containing (s means serial):
 // - Eagerly Reclaim Humongous Objects (s)
 // - Update Derived Pointers (s)
+// - Destroy PSS (s) + Reset the reusable PartialArrayStateManager
 // - Clear Retained Region Data (on evacuation failure)
 // - Free Collection Set
 // - Resize TLABs and Swap Card Table
-// - Reset the reusable PartialArrayStateManager.
 class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class EagerlyReclaimHumongousObjectsTask;
 #ifdef COMPILER2
@@ -67,7 +69,8 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class ProcessEvacuationFailedRegionsTask;
   class FreeCollectionSetTask;
   class ResizeTLABsAndSwapCardTableTask;
-  class ResetPartialArrayStateManagerTask;
+
+  class DestroyPssTask;
 
 public:
   G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,

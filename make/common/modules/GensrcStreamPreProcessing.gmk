@@ -116,7 +116,7 @@ Conv_A = \
 
 # Return integer type with same size as the type
 Conv_memtype = \
-  $(if $(filter float, $1), int, $(if $(filter double, $1), long, $1))
+  $(if $(filter float, $1), int, $(if $(filter double, $1), long, $(if $(filter boolean, $1), byte, $1)))
 
 # Return capitalized integer type with same size as the type
 Conv_Memtype = \

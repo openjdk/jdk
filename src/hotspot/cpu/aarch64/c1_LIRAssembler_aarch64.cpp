@@ -452,16 +452,6 @@ int LIR_Assembler::emit_deopt_handler() {
   return entry_offset;
 }
 
-void LIR_Assembler::add_debug_info_for_branch(address adr, CodeEmitInfo* info) {
-  _masm->code_section()->relocate(adr, relocInfo::poll_type);
-  int pc_offset = code_offset();
-  flush_debug_info(pc_offset);
-  info->record_debug_info(compilation()->debug_info_recorder(), pc_offset);
-  if (info->exception_handlers() != nullptr) {
-    compilation()->add_exception_handlers_for_pco(pc_offset, info->exception_handlers());
-  }
-}
-
 void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   assert(result->is_illegal() || !result->is_single_cpu() || result->as_register() == r0, "word returns are in r0,");
 

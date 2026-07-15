@@ -486,8 +486,9 @@ void JfrConfigureFlightRecorderDCmd::print_help(outputStream* out, bool startup)
     out->print_cr("                      The option redact-argument is best-effort and applies only to");
     out->print_cr("                      command-line arguments in the jdk.JVMInformation event and to");
     out->print_cr("                      the java.command system property in the jdk.InitialSystemProperty");
-    out->print_cr("                      event. Other events, such as jdk.ProcessStart (child processes),");
-    out->print_cr("                      are not redacted.");
+    out->print_cr("                      event, and to matching command-line argument text in the values");
+    out->print_cr("                      of jdk.InitialEnvironmentVariable events. Other events, such as");
+    out->print_cr("                      jdk.ProcessStart (child processes), are not redacted.");
     out->print_cr("");
     out->print_cr("                      If the redact-argument option is not specified, the following");
     out->print_cr("                      filters are used by default:");

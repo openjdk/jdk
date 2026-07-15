@@ -931,7 +931,9 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
 
     // We weren't able to find a value for this field,
     // give up on eliminating this allocation.
-    if (field_val == nullptr) {
+    bool force_scalarization_failure = StressEliminateAllocations &&
+                                       (C->random() % StressEliminateAllocationsMean == 0);
+    if (field_val == nullptr || force_scalarization_failure) {
       uint last = sfpt->req() - 1;
       for (int k = 0;  k < j; k++) {
         sfpt->del_req(last--);
@@ -940,13 +942,21 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
 
 #ifndef PRODUCT
       if (PrintEliminateAllocations) {
-        if (field != nullptr) {
-          tty->print("=== At SafePoint node %d can't find value of field: ", sfpt->_idx);
-          field->print();
-          int field_idx = C->get_alias_index(field_addr_type);
-          tty->print(" (alias_idx=%d)", field_idx);
-        } else { // Array's element
-          tty->print("=== At SafePoint node %d can't find value of array element [%d]", sfpt->_idx, j);
+        tty->print("=== At SafePoint node %d ", sfpt->_idx);
+        if (field_val == nullptr) {
+          tty->print_raw("can't find value of ");
+
+          if (field != nullptr) {
+            tty->print_raw("field: ");
+            field->print();
+            int field_idx = C->get_alias_index(field_addr_type);
+            tty->print(" (alias_idx=%d)", field_idx);
+          } else { // Array's element
+            tty->print("array element [%d]", j);
+          }
+        } else {
+          assert(force_scalarization_failure, "sanity");
+          tty->print_raw("forcibly abort elimination");
         }
         tty->print(", which prevents elimination of: ");
         if (res == nullptr)

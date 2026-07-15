@@ -74,6 +74,7 @@ public:
                                              Register obj, Register tmp, Label& slowpath);
   virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
                                                Register tmp, Label& slow_path);
+  virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& L_error);
 
 #ifdef COMPILER1
   void keepalive_barrier_c1_stub(LIR_Assembler* ce, ShenandoahKeepaliveBarrierStub* stub);

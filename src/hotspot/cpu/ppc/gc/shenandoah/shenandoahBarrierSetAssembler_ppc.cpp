@@ -659,6 +659,26 @@ void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembl
   __ block_comment("} try_peek_weak_handle_in_nmethod (shenandoahgc)");
 }
 
+void ShenandoahBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const char* msg) {
+  if (!VerifyOops) {
+    return;
+  }
+
+  __ mr(R0, obj);
+
+  // This routine is sometimes called before applying GC barriers.
+  // With +COH, verification can touch the klass that may end up loading forwarding pointer instead.
+  Label L_skip;
+  if (UseCompactObjectHeaders) {
+    __ lbz(R0, in_bytes(ShenandoahThreadLocalData::gc_state_offset()), R16_thread);
+    __ andi_(R0, R0, ShenandoahHeap::HAS_FORWARDED);
+    __ bne(CR0, L_skip);
+  }
+
+  __ verify_oop(R0, msg);
+  __ bind(L_skip);
+}
+
 void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                      Register addr, Register count, Register preserve) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");

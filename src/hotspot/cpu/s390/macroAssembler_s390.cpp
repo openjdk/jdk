@@ -32,6 +32,7 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -1932,6 +1933,12 @@ unsigned long MacroAssembler::patched_branch(address dest_pos, unsigned long ins
 // Only called when binding labels (share/vm/asm/assembler.cpp)
 // Pass arguments as intended. Do not pre-calculate distance.
 void MacroAssembler::pd_patch_instruction(address branch, address target, const char* file, int line) {
+
+  if (is_load_const(branch)) {
+    patch_const(branch, (long)target);
+    return;
+  }
+
   unsigned long stub_inst;
   int           inst_len = get_instruction(branch, &stub_inst);
 
@@ -2249,7 +2256,8 @@ void MacroAssembler::call_VM_base(Register oop_result,
                                   Register last_java_sp,
                                   address  entry_point,
                                   bool     allow_relocation,
-                                  bool     check_exceptions) { // Defaults to true.
+                                  bool     check_exceptions, // Defaults to true.
+                                  Label    *last_java_pc) {
   // Allow_relocation indicates, if true, that the generated code shall
   // be fit for code relocation or referenced data relocation. In other
   // words: all addresses must be considered variable. PC-relative addressing
@@ -2263,7 +2271,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
     last_java_sp = Z_SP;  // Load Z_SP as SP.
   }
 
-  set_top_ijava_frame_at_SP_as_last_Java_frame(last_java_sp, Z_R1, allow_relocation);
+  set_top_ijava_frame_at_SP_as_last_Java_frame(last_java_sp, Z_R1, allow_relocation, last_java_pc);
 
   // ARG1 must hold thread address.
   z_lgr(Z_ARG1, Z_thread);
@@ -2309,14 +2317,14 @@ void MacroAssembler::call_VM_base(Register oop_result,
                                   address  entry_point,
                                   bool     check_exceptions) { // Defaults to true.
   bool allow_relocation = true;
-  call_VM_base(oop_result, last_java_sp, entry_point, allow_relocation, check_exceptions);
+  call_VM_base(oop_result, last_java_sp, entry_point, allow_relocation, check_exceptions, nullptr);
 }
 
 // VM calls without explicit last_java_sp.
 
-void MacroAssembler::call_VM(Register oop_result, address entry_point, bool check_exceptions) {
+void MacroAssembler::call_VM(Register oop_result, address entry_point, bool check_exceptions, Label* last_java_pc) {
   // Call takes possible detour via InterpreterMacroAssembler.
-  call_VM_base(oop_result, noreg, entry_point, true, check_exceptions);
+  call_VM_base(oop_result, noreg, entry_point, true, check_exceptions, last_java_pc);
 }
 
 void MacroAssembler::call_VM(Register oop_result, address entry_point, Register arg_1, bool check_exceptions) {
@@ -2348,7 +2356,7 @@ void MacroAssembler::call_VM(Register oop_result, address entry_point, Register 
 
 void MacroAssembler::call_VM_static(Register oop_result, address entry_point, bool check_exceptions) {
   // Call takes possible detour via InterpreterMacroAssembler.
-  call_VM_base(oop_result, noreg, entry_point, false, check_exceptions);
+  call_VM_base(oop_result, noreg, entry_point, false, check_exceptions, nullptr);
 }
 
 void MacroAssembler::call_VM_static(Register oop_result, address entry_point, Register arg_1, Register arg_2,
@@ -2366,7 +2374,7 @@ void MacroAssembler::call_VM_static(Register oop_result, address entry_point, Re
 
 void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address entry_point, bool check_exceptions) {
   // Call takes possible detour via InterpreterMacroAssembler.
-  call_VM_base(oop_result, last_java_sp, entry_point, true, check_exceptions);
+  call_VM_base(oop_result, last_java_sp, entry_point, true, check_exceptions, nullptr);
 }
 
 void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address entry_point, Register arg_1, bool check_exceptions) {
@@ -3810,19 +3818,21 @@ void MacroAssembler::set_last_Java_frame(Register last_Java_sp, Register last_Ja
   BLOCK_COMMENT("} set_last_Java_frame");
 }
 
-void MacroAssembler::reset_last_Java_frame(bool allow_relocation) {
+void MacroAssembler::reset_last_Java_frame(bool check_last_java_sp, bool allow_relocation) {
   BLOCK_COMMENT("reset_last_Java_frame {");
 
-  if (allow_relocation) {
-    asm_assert_mem8_isnot_zero(in_bytes(JavaThread::last_Java_sp_offset()),
-                               Z_thread,
-                               "SP was not set, still zero",
-                               0x202);
-  } else {
-    asm_assert_mem8_isnot_zero_static(in_bytes(JavaThread::last_Java_sp_offset()),
-                                      Z_thread,
-                                      "SP was not set, still zero",
-                                      0x202);
+  if (check_last_java_sp) {
+    if (allow_relocation) {
+      asm_assert_mem8_isnot_zero(in_bytes(JavaThread::last_Java_sp_offset()),
+                                 Z_thread,
+                                 "SP was not set, still zero",
+                                 0x202);
+    } else {
+      asm_assert_mem8_isnot_zero_static(in_bytes(JavaThread::last_Java_sp_offset()),
+                                        Z_thread,
+                                        "SP was not set, still zero",
+                                        0x202);
+    }
   }
 
   // _last_Java_sp = 0
@@ -3836,15 +3846,14 @@ void MacroAssembler::reset_last_Java_frame(bool allow_relocation) {
   return;
 }
 
-void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, bool allow_relocation) {
+void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, bool allow_relocation, Label* jpc) {
   assert_different_registers(sp, tmp1);
 
-  // We cannot trust that code generated by the C++ compiler saves R14
-  // to z_abi_160.return_pc, because sometimes it spills R14 using stmg at
-  // z_abi_160.gpr14 (e.g. InterpreterRuntime::_new()).
-  // Therefore we load the PC into tmp1 and let set_last_Java_frame() save
-  // it into the frame anchor.
-  get_PC(tmp1);
+  if (jpc == nullptr || jpc->is_bound()) {
+    load_const_optimized(tmp1, jpc == nullptr ? pc() : target(*jpc));
+  } else {
+    load_const(tmp1, *jpc);
+  }
   set_last_Java_frame(/*sp=*/sp, /*pc=*/tmp1, allow_relocation);
 }
 
@@ -5890,7 +5899,7 @@ bool is_excluded(Register excluded_register[], Register reg, int n) {
 }
 
 void MacroAssembler::clobber_volatile_registers(Register excluded_register[], int n) {
-  const int magic_number = 0x82;
+  const int magic_number = 0xbadbad;
 
   for (int i = 0; i < 6 /* R0 to R5 */; i++) {
     Register reg = as_Register(i);
@@ -5898,6 +5907,26 @@ void MacroAssembler::clobber_volatile_registers(Register excluded_register[], in
       load_const_optimized(reg, magic_number);
     }
   }
+}
+
+void MacroAssembler::clobber_nonvolatile_registers() {
+  BLOCK_COMMENT("clobber_nonvolatile_registers {");
+  static const Register regs[] = {
+    Z_R6,
+    Z_R7,
+    // don't zap Z_thread (Z_R8)
+    Z_R9,
+    Z_R10,
+    Z_R11,
+    Z_R12,
+    Z_R13
+  };
+  Register bad = regs[0];
+  load_const_optimized(bad, 0xbad0101babe11111);
+  for (uint32_t i = 1; i < (sizeof(regs) / sizeof(Register)); i++) {
+    z_lgr(regs[i], bad);
+  }
+  BLOCK_COMMENT("} clobber_nonvolatile_registers");
 }
 #endif // ASSERT
 
@@ -6149,7 +6178,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp1, obj);
     z_tm(Address(temp1, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-    z_brne(slow);
+    z_brnaz(slow);
   }
 
   // First we need to check if the lock-stack has room for pushing the object reference.
@@ -6740,6 +6769,39 @@ void MacroAssembler::pop_count_int_with_ext3(Register r_dst, Register r_src) {
   z_popcnt(r_dst, r_dst, 8);
 
   BLOCK_COMMENT("} pop_count_int_with_ext3");
+}
+
+void MacroAssembler::post_call_nop() {
+  // Make inline again when loom is always enabled.
+  if (!Continuations::enabled()) {
+    return;
+  }
+  nop();
+  // TODO:
+  // 1. https://bugs.openjdk.org/browse/JDK-8300002
+  // 2. https://bugs.openjdk.org/browse/JDK-8290965
+}
+
+void MacroAssembler::push_cont_fastpath() {
+  BLOCK_COMMENT("push_cont_fastpath {");
+  if (!Continuations::enabled()) return;
+  NearLabel done;
+  z_clg(Z_SP, Address(Z_thread, JavaThread::cont_fastpath_offset()));
+  z_brnh(done); // bcondNotHigh -> less than equal
+  z_stg(Z_SP, Address(Z_thread, JavaThread::cont_fastpath_offset()));
+  bind(done);
+  BLOCK_COMMENT("} push_cont_fastpath");
+}
+
+void MacroAssembler::pop_cont_fastpath() {
+  BLOCK_COMMENT("pop_cont_fastpath {");
+  if (!Continuations::enabled()) return;
+  NearLabel done;
+  z_clg(Z_SP, Address(Z_thread, JavaThread::cont_fastpath_offset()));
+  z_brl(done);
+  z_mvghi(Address(Z_thread, JavaThread::cont_fastpath_offset()), 0);
+  bind(done);
+  BLOCK_COMMENT("} pop_cont_fastpath");
 }
 
 // LOAD HALFWORD IMMEDIATE ON CONDITION (32 <- 16)

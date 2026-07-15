@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,10 @@ class G1CodeRootSet {
   void add(nmethod* method);
   bool remove(nmethod* method);
   void bulk_remove();
+  // Notify the code root set that we are about to add the given
+  // number of code roots. Only to be used during safepoint, not
+  // in parallel to other modifications.
+  void prepare_for_adding_code_roots(size_t num_code_roots);
   bool contains(nmethod* method);
   void clear();
 
