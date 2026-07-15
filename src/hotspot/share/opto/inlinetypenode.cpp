@@ -995,7 +995,7 @@ Node* InlineTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node
   return result;
 }
 
-// Check if a substitutability check between 'lhs' and 'rhs' can be implemented in IR.
+// Check if identityHashCode of 'arg' can be implemented in IR.
 // Set klass_hash to be used as the seed of the hash. It might not be available later,
 // and we want emit_identity_hash_code not to fail on that.
 bool InlineTypeNode::can_emit_identity_hash_code(const PhaseIterGVN& igvn, Node* arg, intptr_t& klass_hash) {
