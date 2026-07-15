@@ -502,9 +502,9 @@ public class IRNode {
         callOfNodes(STATIC_CALL_OF_METHOD, "CallStaticJava");
     }
 
-    public static final String VECTORAPI_BINARY_OP = PREFIX + "VECTORAPI_BINARY_OP" + POSTFIX;
+    public static final String VECTORAPI_INSERT_OP = PREFIX + "VECTORAPI_INSERT_OP" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTORAPI_BINARY_OP, "CallStaticJava(?=.*VectorSupport::binaryOp instptr:)");
+        beforeMatchingNameRegex(VECTORAPI_INSERT_OP, "CallStaticJava(?=.*VectorSupport::insert instptr:)");
     }
 
     public static final String CAST_II = PREFIX + "CAST_II" + POSTFIX;

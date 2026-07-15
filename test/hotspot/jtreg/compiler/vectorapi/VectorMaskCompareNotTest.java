@@ -277,7 +277,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotByte() {
         testCompareMaskNotByte(B_SPECIES, VectorOperators.EQ, (m) -> { return m.not(); });
         verifyResultsByte(B_SPECIES, VectorOperators.EQ);
@@ -290,7 +290,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotByte() {
         testCompareMaskNotByte(B_SPECIES, VectorOperators.NE, (m) -> { return m.not(); });
         verifyResultsByte(B_SPECIES, VectorOperators.NE);
@@ -303,7 +303,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareLTMaskNotByte() {
         testCompareMaskNotByte(B_SPECIES, VectorOperators.LT, (m) -> { return m.not(); });
         verifyResultsByte(B_SPECIES, VectorOperators.LT);
@@ -316,7 +316,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareGTMaskNotByte() {
         testCompareMaskNotByte(B_SPECIES, VectorOperators.GT, (m) -> { return m.not(); });
         verifyResultsByte(B_SPECIES, VectorOperators.GT);
@@ -329,7 +329,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareLEMaskNotByte() {
         testCompareMaskNotByte(B_SPECIES, VectorOperators.LE, (m) -> { return m.not(); });
         verifyResultsByte(B_SPECIES, VectorOperators.LE);
@@ -342,7 +342,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareGEMaskNotByte() {
         testCompareMaskNotByte(B_SPECIES, VectorOperators.GE, (m) -> { return m.not(); });
         verifyResultsByte(B_SPECIES, VectorOperators.GE);
@@ -355,7 +355,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareULTMaskNotByte() {
         testCompareMaskNotByte(B_SPECIES, VectorOperators.ULT, (m) -> { return m.not(); });
         verifyResultsByte(B_SPECIES, VectorOperators.ULT);
@@ -368,7 +368,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareUGTMaskNotByte() {
         testCompareMaskNotByte(B_SPECIES, VectorOperators.UGT, (m) -> { return m.not(); });
         verifyResultsByte(B_SPECIES, VectorOperators.UGT);
@@ -381,7 +381,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareULEMaskNotByte() {
         testCompareMaskNotByte(B_SPECIES, VectorOperators.ULE, (m) -> { return m.not(); });
         verifyResultsByte(B_SPECIES, VectorOperators.ULE);
@@ -394,7 +394,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareUGEMaskNotByte() {
         testCompareMaskNotByte(B_SPECIES, VectorOperators.UGE, (m) -> { return m.not(); });
         verifyResultsByte(B_SPECIES, VectorOperators.UGE);
@@ -408,7 +408,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotShort() {
         testCompareMaskNotShort(S_SPECIES, VectorOperators.EQ, (m) -> { return m.not(); });
         verifyResultsShort(S_SPECIES, VectorOperators.EQ);
@@ -421,7 +421,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotShort() {
         testCompareMaskNotShort(S_SPECIES, VectorOperators.NE, (m) -> { return m.not(); });
         verifyResultsShort(S_SPECIES, VectorOperators.NE);
@@ -434,7 +434,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareLTMaskNotShort() {
         testCompareMaskNotShort(S_SPECIES, VectorOperators.LT, (m) -> { return m.not(); });
         verifyResultsShort(S_SPECIES, VectorOperators.LT);
@@ -447,7 +447,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareGTMaskNotShort() {
         testCompareMaskNotShort(S_SPECIES, VectorOperators.GT, (m) -> { return m.not(); });
         verifyResultsShort(S_SPECIES, VectorOperators.GT);
@@ -460,7 +460,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareLEMaskNotShort() {
         testCompareMaskNotShort(S_SPECIES, VectorOperators.LE, (m) -> { return m.not(); });
         verifyResultsShort(S_SPECIES, VectorOperators.LE);
@@ -473,7 +473,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareGEMaskNotShort() {
         testCompareMaskNotShort(S_SPECIES, VectorOperators.GE, (m) -> { return m.not(); });
         verifyResultsShort(S_SPECIES, VectorOperators.GE);
@@ -486,7 +486,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareULTMaskNotShort() {
         testCompareMaskNotShort(S_SPECIES, VectorOperators.ULT, (m) -> { return m.not(); });
         verifyResultsShort(S_SPECIES, VectorOperators.ULT);
@@ -499,7 +499,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareUGTMaskNotShort() {
         testCompareMaskNotShort(S_SPECIES, VectorOperators.UGT, (m) -> { return m.not(); });
         verifyResultsShort(S_SPECIES, VectorOperators.UGT);
@@ -512,7 +512,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareULEMaskNotShort() {
         testCompareMaskNotShort(S_SPECIES, VectorOperators.ULE, (m) -> { return m.not(); });
         verifyResultsShort(S_SPECIES, VectorOperators.ULE);
@@ -525,7 +525,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareUGEMaskNotShort() {
         testCompareMaskNotShort(S_SPECIES, VectorOperators.UGE, (m) -> { return m.not(); });
         verifyResultsShort(S_SPECIES, VectorOperators.UGE);
@@ -539,7 +539,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotInt() {
         testCompareMaskNotInt(I_SPECIES, VectorOperators.EQ, (m) -> { return m.not(); });
         verifyResultsInt(I_SPECIES, VectorOperators.EQ);
@@ -552,7 +552,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotInt() {
         testCompareMaskNotInt(I_SPECIES, VectorOperators.NE, (m) -> { return m.not(); });
         verifyResultsInt(I_SPECIES, VectorOperators.NE);
@@ -565,7 +565,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareLTMaskNotInt() {
         testCompareMaskNotInt(I_SPECIES, VectorOperators.LT, (m) -> { return m.not(); });
         verifyResultsInt(I_SPECIES, VectorOperators.LT);
@@ -578,7 +578,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareGTMaskNotInt() {
         testCompareMaskNotInt(I_SPECIES, VectorOperators.GT, (m) -> { return m.not(); });
         verifyResultsInt(I_SPECIES, VectorOperators.GT);
@@ -591,7 +591,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareLEMaskNotInt() {
         testCompareMaskNotInt(I_SPECIES, VectorOperators.LE, (m) -> { return m.not(); });
         verifyResultsInt(I_SPECIES, VectorOperators.LE);
@@ -604,7 +604,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareGEMaskNotInt() {
         testCompareMaskNotInt(I_SPECIES, VectorOperators.GE, (m) -> { return m.not(); });
         verifyResultsInt(I_SPECIES, VectorOperators.GE);
@@ -617,7 +617,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareULTMaskNotInt() {
         testCompareMaskNotInt(I_SPECIES, VectorOperators.ULT, (m) -> { return m.not(); });
         verifyResultsInt(I_SPECIES, VectorOperators.ULT);
@@ -630,7 +630,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareUGTMaskNotInt() {
         testCompareMaskNotInt(I_SPECIES, VectorOperators.UGT, (m) -> { return m.not(); });
         verifyResultsInt(I_SPECIES, VectorOperators.UGT);
@@ -643,7 +643,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareULEMaskNotInt() {
         testCompareMaskNotInt(I_SPECIES, VectorOperators.ULE, (m) -> { return m.not(); });
         verifyResultsInt(I_SPECIES, VectorOperators.ULE);
@@ -656,7 +656,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareUGEMaskNotInt() {
         testCompareMaskNotInt(I_SPECIES, VectorOperators.UGE, (m) -> { return m.not(); });
         verifyResultsInt(I_SPECIES, VectorOperators.UGE);
@@ -671,7 +671,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotLong() {
         testCompareMaskNotLong(L_SPECIES, VectorOperators.EQ, (m) -> { return m.not(); });
         verifyResultsLong(L_SPECIES, VectorOperators.EQ);
@@ -688,7 +688,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotLong() {
         testCompareMaskNotLong(L_SPECIES, VectorOperators.NE, (m) -> { return m.not(); });
         verifyResultsLong(L_SPECIES, VectorOperators.NE);
@@ -705,7 +705,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareLTMaskNotLong() {
         testCompareMaskNotLong(L_SPECIES, VectorOperators.LT, (m) -> { return m.not(); });
         verifyResultsLong(L_SPECIES, VectorOperators.LT);
@@ -722,7 +722,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareGTMaskNotLong() {
         testCompareMaskNotLong(L_SPECIES, VectorOperators.GT, (m) -> { return m.not(); });
         verifyResultsLong(L_SPECIES, VectorOperators.GT);
@@ -739,7 +739,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareLEMaskNotLong() {
         testCompareMaskNotLong(L_SPECIES, VectorOperators.LE, (m) -> { return m.not(); });
         verifyResultsLong(L_SPECIES, VectorOperators.LE);
@@ -756,7 +756,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareGEMaskNotLong() {
         testCompareMaskNotLong(L_SPECIES, VectorOperators.GE, (m) -> { return m.not(); });
         verifyResultsLong(L_SPECIES, VectorOperators.GE);
@@ -773,7 +773,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareULTMaskNotLong() {
         testCompareMaskNotLong(L_SPECIES, VectorOperators.ULT, (m) -> { return m.not(); });
         verifyResultsLong(L_SPECIES, VectorOperators.ULT);
@@ -790,7 +790,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareUGTMaskNotLong() {
         testCompareMaskNotLong(L_SPECIES, VectorOperators.UGT, (m) -> { return m.not(); });
         verifyResultsLong(L_SPECIES, VectorOperators.UGT);
@@ -807,7 +807,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareULEMaskNotLong() {
         testCompareMaskNotLong(L_SPECIES, VectorOperators.ULE, (m) -> { return m.not(); });
         verifyResultsLong(L_SPECIES, VectorOperators.ULE);
@@ -824,7 +824,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.VECTOR_MASK_CAST, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareUGEMaskNotLong() {
         testCompareMaskNotLong(L_SPECIES, VectorOperators.UGE, (m) -> { return m.not(); });
         verifyResultsLong(L_SPECIES, VectorOperators.UGE);
@@ -840,7 +840,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotFloat() {
         testCompareMaskNotFloat(F_SPECIES, VectorOperators.EQ, fa, fb, (m) -> { return m.not(); });
         verifyResultsFloat(F_SPECIES, VectorOperators.EQ, fa, fb);
@@ -853,7 +853,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotFloat() {
         testCompareMaskNotFloat(F_SPECIES, VectorOperators.NE, fa, fb, (m) -> { return m.not(); });
         verifyResultsFloat(F_SPECIES, VectorOperators.NE, fa, fb);
@@ -866,7 +866,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotFloatNaN() {
         testCompareMaskNotFloat(F_SPECIES, VectorOperators.EQ, fa, fnan, (m) -> { return m.not(); });
         verifyResultsFloat(F_SPECIES, VectorOperators.EQ, fa, fnan);
@@ -879,7 +879,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotFloatNaN() {
         testCompareMaskNotFloat(F_SPECIES, VectorOperators.NE, fa, fnan, (m) -> { return m.not(); });
         verifyResultsFloat(F_SPECIES, VectorOperators.NE, fa, fnan);
@@ -892,7 +892,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotFloatPositiveInfinity() {
         testCompareMaskNotFloat(F_SPECIES, VectorOperators.EQ, fa, fpinf, (m) -> { return m.not(); });
         verifyResultsFloat(F_SPECIES, VectorOperators.EQ, fa, fpinf);
@@ -905,7 +905,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotFloatPositiveInfinity() {
         testCompareMaskNotFloat(F_SPECIES, VectorOperators.NE, fa, fpinf, (m) -> { return m.not(); });
         verifyResultsFloat(F_SPECIES, VectorOperators.NE, fa, fpinf);
@@ -918,7 +918,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotFloatNegativeInfinity() {
         testCompareMaskNotFloat(F_SPECIES, VectorOperators.EQ, fa, fninf, (m) -> { return m.not(); });
         verifyResultsFloat(F_SPECIES, VectorOperators.EQ, fa, fninf);
@@ -931,7 +931,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotFloatNegativeInfinity() {
         testCompareMaskNotFloat(F_SPECIES, VectorOperators.NE, fa, fninf, (m) -> { return m.not(); });
         verifyResultsFloat(F_SPECIES, VectorOperators.NE, fa, fninf);
@@ -944,7 +944,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotDouble() {
         testCompareMaskNotDouble(D_SPECIES, VectorOperators.EQ, da, db, (m) -> { return m.not(); });
         verifyResultsDouble(D_SPECIES, VectorOperators.EQ, da, db);
@@ -957,7 +957,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotDouble() {
         testCompareMaskNotDouble(D_SPECIES, VectorOperators.NE, da, db, (m) -> { return m.not(); });
         verifyResultsDouble(D_SPECIES, VectorOperators.NE, da, db);
@@ -970,7 +970,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotDoubleNaN() {
         testCompareMaskNotDouble(D_SPECIES, VectorOperators.EQ, da, dnan, (m) -> { return m.not(); });
         verifyResultsDouble(D_SPECIES, VectorOperators.EQ, da, dnan);
@@ -983,7 +983,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotDoubleNaN() {
         testCompareMaskNotDouble(D_SPECIES, VectorOperators.NE, da, dnan, (m) -> { return m.not(); });
         verifyResultsDouble(D_SPECIES, VectorOperators.NE, da, dnan);
@@ -996,7 +996,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotDoublePositiveInfinity() {
         testCompareMaskNotDouble(D_SPECIES, VectorOperators.EQ, da, dpinf, (m) -> { return m.not(); });
         verifyResultsDouble(D_SPECIES, VectorOperators.EQ, da, dpinf);
@@ -1009,7 +1009,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotDoublePositiveInfinity() {
         testCompareMaskNotDouble(D_SPECIES, VectorOperators.NE, da, dpinf, (m) -> { return m.not(); });
         verifyResultsDouble(D_SPECIES, VectorOperators.NE, da, dpinf);
@@ -1022,7 +1022,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotDoubleNegativeInfinity() {
         testCompareMaskNotDouble(D_SPECIES, VectorOperators.EQ, da, dninf, (m) -> { return m.not(); });
         verifyResultsDouble(D_SPECIES, VectorOperators.EQ, da, dninf);
@@ -1035,7 +1035,7 @@ public class VectorMaskCompareNotTest {
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotDoubleNegativeInfinity() {
         testCompareMaskNotDouble(D_SPECIES, VectorOperators.NE, da, dninf, (m) -> { return m.not(); });
         verifyResultsDouble(D_SPECIES, VectorOperators.NE, da, dninf);
@@ -1049,15 +1049,15 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "sve", "true", "avx512", "true", "rvv", "true"  },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "avx2", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareMaskNotByteNegative() {
         testCompareMaskNotByte(B_SPECIES, VectorOperators.EQ, (m) -> {
             // The vector mask is used multiple times.
@@ -1075,15 +1075,15 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "sve", "true", "avx512", "true", "rvv", "true"  },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "avx2", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareMaskNotShortNegative() {
         testCompareMaskNotShort(S_SPECIES, VectorOperators.EQ, (m) -> {
             // The vector mask is used multiple times.
@@ -1101,15 +1101,15 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "sve", "true", "avx512", "true", "rvv", "true"  },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "avx2", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareMaskNotIntNegative() {
         testCompareMaskNotInt(I_SPECIES, VectorOperators.EQ, (m) -> {
             // The vector mask is used multiple times.
@@ -1127,15 +1127,15 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "sve", "true", "avx512", "true", "rvv", "true"  },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V, "= 2",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "avx2", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareMaskNotLongNegative() {
         testCompareMaskNotLong(L_SPECIES, VectorOperators.EQ, (m) -> {
             // The vector mask is used multiple times.
@@ -1153,15 +1153,15 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 3",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "sve", "true", "avx512", "true", "rvv", "true"  },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V, "= 3",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V, "= 3",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureAnd = { "avx2", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareMaskNotFloatNegative() {
         testCompareMaskNotFloat(F_SPECIES, VectorOperators.EQ, fa, fb, (m) -> {
             // The vector mask is used multiple times.
@@ -1183,15 +1183,15 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 3",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureOr = { "sve", "true", "avx512", "true", "rvv", "true"  },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V, "= 3",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V, "= 3",
                    IRNode.VECTOR_MASK_CMP, "= 3" },
         applyIfCPUFeatureAnd = { "avx2", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareMaskNotDoubleNegative() {
         testCompareMaskNotDouble(D_SPECIES, VectorOperators.EQ, da, db, (m) -> {
             // The vector mask is used multiple times.
@@ -1231,17 +1231,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotByteCast() {
         testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.EQ, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
         verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.EQ);
@@ -1251,17 +1251,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotByteCast() {
         testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.NE, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
         verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.NE);
@@ -1271,17 +1271,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareLTMaskNotByteCast() {
         testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.LT, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
         verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.LT);
@@ -1291,17 +1291,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareGTMaskNotByteCast() {
         testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.GT, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
         verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.GT);
@@ -1311,17 +1311,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareLEMaskNotByteCast() {
         testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.LE, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
         verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.LE);
@@ -1331,17 +1331,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareGEMaskNotByteCast() {
         testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.GE, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
         verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.GE);
@@ -1351,17 +1351,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareULTMaskNotByteCast() {
         testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.ULT, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
         verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.ULT);
@@ -1371,17 +1371,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareUGTMaskNotByteCast() {
         testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.UGT, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
         verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.UGT);
@@ -1391,17 +1391,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareULEMaskNotByteCast() {
         testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.ULE, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
         verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.ULE);
@@ -1411,17 +1411,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareUGEMaskNotByteCast() {
         testCompareMaskNotByte(ByteVector.SPECIES_64, VectorOperators.UGE, (m) -> { return m.cast(ShortVector.SPECIES_128).not(); });
         verifyResultsByte(ByteVector.SPECIES_64, VectorOperators.UGE);
@@ -1431,17 +1431,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotShortCast() {
         testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.EQ, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
         verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.EQ);
@@ -1453,17 +1453,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotShortCast() {
         testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.NE, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
         verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.NE);
@@ -1475,17 +1475,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareLTMaskNotShortCast() {
         testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.LT, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
         verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.LT);
@@ -1497,17 +1497,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareGTMaskNotShortCast() {
         testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.GT, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
         verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.GT);
@@ -1519,17 +1519,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareLEMaskNotShortCast() {
         testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.LE, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
         verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.LE);
@@ -1541,17 +1541,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareGEMaskNotShortCast() {
         testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.GE, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
         verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.GE);
@@ -1563,17 +1563,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareULTMaskNotShortCast() {
         testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.ULT, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
         verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.ULT);
@@ -1585,17 +1585,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareUGTMaskNotShortCast() {
         testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.UGT, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
         verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.UGT);
@@ -1607,17 +1607,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareULEMaskNotShortCast() {
         testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.ULE, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
         verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.ULE);
@@ -1629,17 +1629,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareUGEMaskNotShortCast() {
         testCompareMaskNotShort(ShortVector.SPECIES_64, VectorOperators.UGE, (m) -> { return IntVector.SPECIES_128.maskAll(true).xor(m.cast(IntVector.SPECIES_128)); });
         verifyResultsShort(ShortVector.SPECIES_64, VectorOperators.UGE);
@@ -1651,17 +1651,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareEQMaskNotIntCast() {
         testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.EQ, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
         verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.EQ);
@@ -1673,17 +1673,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareNEMaskNotIntCast() {
         testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.NE, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
         verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.NE);
@@ -1695,17 +1695,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareLTMaskNotIntCast() {
         testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.LT, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
         verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.LT);
@@ -1717,17 +1717,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareGTMaskNotIntCast() {
         testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.GT, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
         verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.GT);
@@ -1739,17 +1739,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareLEMaskNotIntCast() {
         testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.LE, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
         verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.LE);
@@ -1761,17 +1761,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareGEMaskNotIntCast() {
         testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.GE, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
         verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.GE);
@@ -1783,17 +1783,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareULTMaskNotIntCast() {
         testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.ULT, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
         verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.ULT);
@@ -1805,17 +1805,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareUGTMaskNotIntCast() {
         testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.UGT, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
         verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.UGT);
@@ -1827,17 +1827,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareULEMaskNotIntCast() {
         testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.ULE, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
         verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.ULE);
@@ -1849,17 +1849,17 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "sve", "true" },
-        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIfAnd = { "MaxVectorSize", "= 16", "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V_MASK, "= 0",
                    IRNode.XOR_V, "= 0",
                    IRNode.VECTOR_MASK_CMP, "= 2" },
         applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testCompareUGEMaskNotIntCast() {
         testCompareMaskNotInt(I_SPECIES_FOR_CAST, VectorOperators.UGE, (m) -> { return L_SPECIES_FOR_CAST.maskAll(true).xor(m.cast(L_SPECIES_FOR_CAST)); });
         verifyResultsInt(I_SPECIES_FOR_CAST, VectorOperators.UGE);
@@ -1871,15 +1871,15 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureOr = { "sve", "true", "avx512", "true", "rvv", "true" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "sve", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     @IR(counts = { IRNode.XOR_V, "= 1",
                    IRNode.VECTOR_MASK_CMP, "= 1" },
         applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" },
-        applyIfAnd = { "TieredCompilation", "true", "CompileThreshold", "10000" })
+        applyIf = { "TieredCompilation", "true" })
     public static void testMaskedCompareMaskNotNegative() {
         int expected = F_SPECIES.length();
         var ones = FloatVector.broadcast(F_SPECIES, 1f);

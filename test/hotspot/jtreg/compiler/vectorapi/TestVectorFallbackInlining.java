@@ -36,85 +36,68 @@ import jdk.incubator.vector.VectorSpecies;
  *          is enabled.
  * @modules jdk.incubator.vector
  * @library /test/lib /
- * @requires os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*"
- * @run driver compiler.vectorapi.TestVectorFallbackInlining
+ * @requires vm.compiler2.enabled
+ * @run driver ${test.main.class}
  */
 
 /**
- * A 512-bit FloatVector operation cannot be intrinsified when AVX-512 is not used
- * (here forced with -XX:UseAVX=2), so the vector intrinsic fails to expand. With
- * IncrementalInlineVector enabled (the default) the fallback implementation
- * (VectorSupport::binaryOp) is inlined into the caller, absorbing the call
- * overhead; with the flag disabled, a static call to the fallback remains.
+ * Vector.withLane with a non-constant lane index cannot be intrinsified: the
+ * insert inline expander bails out because the index is not a compile-time constant.
+ * This is a species- and platform-agnostic limitation of the expander -- it is independent
+ * of the element type, vector shape and the available CPU features -- so the vector
+ * intrinsic reliably fails to expand and the fallback implementation
+ * is exercised on every configuration.
+ *
+ * With IncrementalInlineVector enabled (the default) the fallback is late-inlined into the
+ * caller, so no static call to intrinsic entry point survives; with the flag disabled, the
+ * static call to the fallback remains.
  */
 public class TestVectorFallbackInlining {
-    private static final VectorSpecies<Float> SPECIES = FloatVector.SPECIES_512;
+    private static final VectorSpecies<Float> SPECIES = FloatVector.SPECIES_MAX;
     private static final int LENGTH = 1024;
 
+    // Non-final so the JIT cannot treat the lane index as a compile-time constant, which
+    // is what forces the insert intrinsic to bail out to its fallback implementation.
+    private static int INDEX = SPECIES.length() - 1;
+
     private static final float[] a = new float[LENGTH];
-    private static final float[] b = new float[LENGTH];
     private static final float[] c = new float[LENGTH];
 
     static {
         for (int i = 0; i < LENGTH; i++) {
             a[i] = i;
-            b[i] = LENGTH - i;
         }
     }
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
-                                   "-XX:UseAVX=2",
                                    "-XX:+IncrementalInlineVector");
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
-                                   "-XX:UseAVX=2",
                                    "-XX:-IncrementalInlineVector");
     }
 
     @Test
-    @IR(counts = {IRNode.VECTORAPI_BINARY_OP, ">= 1"},
+    @IR(counts = {IRNode.VECTORAPI_INSERT_OP, ">= 1"},
         applyIf = {"IncrementalInlineVector", "false"})
-    @IR(failOn = {IRNode.VECTORAPI_BINARY_OP},
+    @IR(failOn = {IRNode.VECTORAPI_INSERT_OP},
         applyIf = {"IncrementalInlineVector", "true"})
-    public static void testAdd() {
+    public static void testInsert() {
         for (int i = 0; i < LENGTH; i += SPECIES.length()) {
             FloatVector va = FloatVector.fromArray(SPECIES, a, i);
-            FloatVector vb = FloatVector.fromArray(SPECIES, b, i);
-            va.add(vb).intoArray(c, i);
+            va.withLane(INDEX, 0.0f).intoArray(c, i);
         }
     }
 
-    @Run(test = "testAdd")
+    @Run(test = "testInsert")
     @Warmup(10000)
-    public static void runAdd() {
-        testAdd();
+    public static void runInsert() {
+        testInsert();
         float[] expected = new float[LENGTH];
         for (int i = 0; i < LENGTH; i++) {
-            expected[i] = a[i] + b[i];
+            expected[i] = a[i];
         }
-        Verify.checkEQ(expected, c);
-    }
-
-    @Test
-    @IR(counts = {IRNode.VECTORAPI_BINARY_OP, ">= 1"},
-        applyIf = {"IncrementalInlineVector", "false"})
-    @IR(failOn = {IRNode.VECTORAPI_BINARY_OP},
-        applyIf = {"IncrementalInlineVector", "true"})
-    public static void testMul() {
         for (int i = 0; i < LENGTH; i += SPECIES.length()) {
-            FloatVector va = FloatVector.fromArray(SPECIES, a, i);
-            FloatVector vb = FloatVector.fromArray(SPECIES, b, i);
-            va.mul(vb).intoArray(c, i);
-        }
-    }
-
-    @Run(test = "testMul")
-    @Warmup(10000)
-    public static void runMul() {
-        testMul();
-        float[] expected = new float[LENGTH];
-        for (int i = 0; i < LENGTH; i++) {
-            expected[i] = a[i] * b[i];
+            expected[i + INDEX] = 0.0f;
         }
         Verify.checkEQ(expected, c);
     }

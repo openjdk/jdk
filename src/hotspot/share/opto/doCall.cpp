@@ -167,7 +167,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         cg = nullptr;
       } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
         if (IncrementalInlineVector && allow_inline) {
-          // Try to late inline fallback implementation if intrinsification attempt fails.
+          // Try to incrementally inline fallback implementation if intrinsification attempt fails.
           CallGenerator* fallback_cg;
           {
             InlinePrinterSuspendScope guard(C->inline_printer());
