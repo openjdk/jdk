@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,6 +134,12 @@ public interface JavaLangInvokeAccess {
      * the trusted lookup
      */
     MethodHandle unreflectField(Field field, boolean isSetter) throws IllegalAccessException;
+
+    /**
+     * Produces a variable handle unreflecting from a {@code Field} with
+     * the trusted lookup
+     */
+    VarHandle unreflectFieldVarHandle(Field field) throws IllegalAccessException;
 
     /**
      * Produces a method handle of a virtual method with the trusted lookup.
