@@ -33,9 +33,10 @@ import java.util.Random;
  * @summary C2 VectorAPI: Float16Vector::indexInRange hits fatal error: Not monotonic.
  * @modules jdk.incubator.vector
  * @requires vm.debug == true
- * @run main/othervm -XX:-UncommonNullCast -XX:-MonomorphicArrayCheck -Xbatch
- *                   -XX:CompileCommand=compileonly,compiler.vectorapi.TestFloat16VectorConvergence::test
- *                   compiler.vectorapi.TestFloat16VectorConvergence
+ * @run main ${test.main.class}
+ * @run main/othervm -XX:-UncommonNullCast -Xbatch
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test
+ *                   ${test.main.class}
  */
 public class TestFloat16VectorConvergence {
 
@@ -47,12 +48,13 @@ public class TestFloat16VectorConvergence {
 
     public static void main(String[] args) {
         Random random = new Random(0);
-        Object last = null;
         for (int i = 0; i < 10_000; i++) {
             // A negative offset drives indexInRange into indexPartiallyInRange,
             // which is where the un-foldable Float16 mask unbox is produced.
-            last = test(-70368744177664L, random.nextLong());
+            Object mask = test(-70368744177664L, random.nextLong());
+            if (mask == null) {
+                throw new AssertionError("Unexpected null result from indexInRange");
+            }
         }
-        System.out.println("Test passed: " + (last != null));
     }
 }
