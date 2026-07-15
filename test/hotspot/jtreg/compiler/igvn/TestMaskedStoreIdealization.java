@@ -96,7 +96,8 @@ public class TestMaskedStoreIdealization {
         STORE_SCATTER,
         STORE_MASK,
         STORE_SCATTER_MASK,
-        STORE_VECTOR_AFTER_SCATTER
+        STORE_VECTOR_AFTER_SCATTER,
+        RANDOM
     }
 
     record TestPerShape(VectorType.Vector vec) {
@@ -136,7 +137,12 @@ public class TestMaskedStoreIdealization {
             });
 
             var irVerification = Template.make("op", "arraySize", (Operation op, Integer arraySize) -> {
-                String ptyIR = vec.elementType.abbrev().equals("S") ? "C" : vec.elementType.abbrev();
+                // No IR-verification for random test cases.
+                if (op == Operation.RANDOM) {
+                    return scope("");
+                }
+
+                final String ptyIR = vec.elementType.abbrev().equals("S") ? "C" : vec.elementType.abbrev();
 
                 // Verify that the method contains two VectorStore{Masked|Scatter} nodes.
                 var opVerification = Template.make(() -> {
@@ -145,11 +151,17 @@ public class TestMaskedStoreIdealization {
                         return scope("");
                     }
 
-                    String opIR = switch (op) {
+                    final String opIR = switch (op) {
                         case STORE_SCATTER              -> "STORE_VECTOR_SCATTER";
                         case STORE_MASK                 -> "STORE_VECTOR_MASKED";
                         case STORE_SCATTER_MASK         -> "STORE_VECTOR_SCATTER_MASKED";
                         case STORE_VECTOR_AFTER_SCATTER -> "STORE_VECTOR_SCATTER";
+                        case RANDOM                     -> "";
+                    };
+
+                    final int numMatches = switch (op) {
+                        case STORE_VECTOR_AFTER_SCATTER -> 1;
+                        default                         -> 2;
                     };
 
                     // x64 does not emit specialised scatter nodes/instructions for subword types.
@@ -161,8 +173,9 @@ public class TestMaskedStoreIdealization {
                     return scope(
                         let("opIR", opIR),
                         let("cpuFeatures", cpuFeatures),
+                        let("matches", numMatches),
                         """
-                            @IR(counts = {IRNode.#{opIR}, "= 2"},
+                            @IR(counts = {IRNode.#{opIR}, "=#{matches}"},
                                 applyIfCPUFeatureOr = { #cpuFeatures })
                         """
                     );
@@ -172,7 +185,8 @@ public class TestMaskedStoreIdealization {
                     let("pty", vec.elementType.name()),
                     let("ptyIR", ptyIR),
                     let("idx", idx),
-                    (op == Operation.STORE_MASK || op == Operation.STORE_SCATTER_MASK) ?
+                    switch (op) {
+                        case STORE_MASK, STORE_SCATTER_MASK ->
                         // For masked operations, depending on the generated mask and index map C2 does not manage to elide a branch from
                         // if (mask.allTrue()) {
                         //     intoArray(a, offset);
@@ -185,62 +199,46 @@ public class TestMaskedStoreIdealization {
                                           IRNode.START + "Store#{ptyIR}" + IRNode.MID + "(Memory: @aryptr:#{pty}\\\\[int:#{arraySize}\\\\]).*(:NotNull:exact\\\\[\\\\d+\\\\]).*" + IRNode.END, "<=2"},
                                 applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"},
                                 phase = CompilePhase.BEFORE_MATCHING)
-                        """ :
+                        """;
+                        case STORE_SCATTER ->
                         """
                             @IR(counts = {IRNode.START + "Store#{ptyIR}" + IRNode.MID + "(Memory: @aryptr:#{pty}\\\\[int:#{arraySize}\\\\]).*(:NotNull:exact\\\\[\\\\d+\\\\]).*" + IRNode.END, "=1"},
                                 applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"},
                                 phase = CompilePhase.BEFORE_MATCHING)
-                        """,
+                        """;
+                        case STORE_VECTOR_AFTER_SCATTER, RANDOM -> "";
+                    },
                     opVerification.asToken()
                 );
             });
 
-            var run = Template.make("testCaseName", (String testCaseName) -> scope(
-                let("pty", vec.elementType.name()),
-                let("boxedTy", vec.elementType.boxedTypeName()),
-                let("vecTy", vec.name()),
-                let("lanes", vec.length),
-                let("species", vec.speciesName),
-                let("idx", idx),
-                let("rngCall", vec.elementType.callLibraryRNG()),
-                """
-                    @Run(test = "test#{testCaseName}", mode = RunMode.STANDALONE)
-                    static void run#{testCaseName}() {
-                        final #pty broadcastVal = #rngCall;
-                        final #pty arrVal = #rngCall;
+            var randomTestBody = generateRandomTest();
 
-                        final #pty[] interpreterResult = test#{testCaseName}(broadcastVal, arrVal);
-                        for (int i = 0; i < 12_000; i++) {
-                            test#{testCaseName}(broadcastVal, arrVal);
-                        }
-                        final #pty[] compiledResult = test#{testCaseName}(broadcastVal, arrVal);
-                        if (!Arrays.equals(interpreterResult, compiledResult)) {
-                            throw new RuntimeException("wrong result:\\n" +
-                                                       "  interpreter result: " + Arrays.toString(interpreterResult) + "\\n" +
-                                                       "  compiled result: " + Arrays.toString(compiledResult));
-                        }
-                    }
-                """
-            ));
+            var testBody = Template.make("testCaseName", "op", "arraySize", (String testCaseName, Operation op, Integer arraySize) -> {
+                if (op == Operation.RANDOM) {
+                    return scope(randomTestBody.asToken());
+                }
 
-            var test = Template.make("testCaseName", "op", (String testCaseName, Operation op) -> {
                 var generation = switch (op) {
                     case STORE_SCATTER              -> indexMapGeneration.asToken();
                     case STORE_MASK                 -> maskGeneration.asToken();
                     case STORE_SCATTER_MASK         ->
                         Template.make(() -> scope(indexMapGeneration.asToken(), maskGeneration.asToken())).asToken();
                     case STORE_VECTOR_AFTER_SCATTER -> indexMapGeneration.asToken();
+                    case RANDOM                     -> throw new RuntimeException("unreachable");
                 };
 
                 var initStore  = switch (op) {
                     case STORE_SCATTER, STORE_VECTOR_AFTER_SCATTER -> "        v.intoArray(a, 0, indexMap, 0);\n";
                     case STORE_MASK                                -> "        v.intoArray(a, 0, mask);\n";
                     case STORE_SCATTER_MASK                        -> "        v.intoArray(a, 0, indexMap, 0, mask);\n";
+                    case RANDOM                                    -> throw new RuntimeException("unreachable");
                 };
 
                 var keepStore = switch (op) {
                     case STORE_MASK, STORE_SCATTER, STORE_SCATTER_MASK -> "        a[#idx] = arrVal;\n";
                     case STORE_VECTOR_AFTER_SCATTER                    -> "        v.intoArray(a, 0);\n";
+                    case RANDOM                                        -> throw new RuntimeException("unreachable");
                 };
 
                 var holeStore  = switch (op) {
@@ -248,26 +246,15 @@ public class TestMaskedStoreIdealization {
                     case STORE_MASK                 -> "        v.intoArray(a, 0, mask);\n";
                     case STORE_SCATTER_MASK         -> "        v.intoArray(a, 0, indexMap, 0, mask);\n";
                     case STORE_VECTOR_AFTER_SCATTER -> "";
-                };
-
-                // The array size needs to be one larger than the number of lanes for scatter tests, so we can not write to one element.
-                final int arraySize = switch (op) {
-                    case STORE_SCATTER, STORE_SCATTER_MASK, STORE_VECTOR_AFTER_SCATTER -> vec.length + 1;
-                    case STORE_MASK                                                    -> vec.length;
+                    case RANDOM                     -> throw new RuntimeException("unreachable");
                 };
 
                 return scope(
                     let("pty", vec.elementType.name()),
                     let("vecTy", vec.name()),
-                    let("arraySize", arraySize),
                     let("species", vec.speciesName),
                     let("idx", idx),
                     """
-                        @Test
-                    """,
-                    irVerification.asToken(op, arraySize),
-                    """
-                        static #pty[] test#{testCaseName}(final #pty broadcastVal, final #pty arrVal) {
                             #pty[] a = new #pty[#arraySize];
                     """,
                     generation,
@@ -280,8 +267,6 @@ public class TestMaskedStoreIdealization {
                     holeStore,
                     """
                             return a;
-                        }
-
                     """
                 );
             });
@@ -292,27 +277,71 @@ public class TestMaskedStoreIdealization {
                     case STORE_MASK                 -> "Mask";
                     case STORE_SCATTER_MASK         -> "ScatterMask";
                     case STORE_VECTOR_AFTER_SCATTER -> "VectorAfterScatter";
+                    case RANDOM                     -> "Random";
                 };
+
+                // The array size needs to be one larger than the number of lanes for scatter tests, so we can not write to one element.
+                final int arraySize = switch (op) {
+                    case STORE_SCATTER, STORE_SCATTER_MASK, STORE_VECTOR_AFTER_SCATTER -> vec.length + 1;
+                    case STORE_MASK, RANDOM                                            -> vec.length;
+                };
+
                 return scope(
-                    run.asToken(testCaseName),
-                    test.asToken(testCaseName, op)
+                    let("pty", vec.elementType.name()),
+                    let("testCaseName", testCaseName),
+                    let("boxedTy", vec.elementType.boxedTypeName()),
+                    let("vecTy", vec.name()),
+                    let("lanes", vec.length),
+                    let("species", vec.speciesName),
+                    let("idx", idx),
+                    let("rngCall", vec.elementType.callLibraryRNG()),
+                """
+                    @Run(test = "test#{testCaseName}")
+                    @Warmup(10_000)
+                    static void run#{testCaseName}(RunInfo info) {
+                        final #pty broadcastVal = #rngCall;
+                        final #pty arrVal = #rngCall;
+                        final #pty[] compiledResult = test#{testCaseName}(broadcastVal, arrVal);
+
+                        if (!info.isWarmUp()) {
+                            final #pty[] interpreterResult = reference#{testCaseName}(broadcastVal, arrVal);
+                            if (!Arrays.equals(interpreterResult, compiledResult)) {
+                                throw new RuntimeException("wrong result for test${testCaseName}:\\n" +
+                                                           "  interpreter result: " + Arrays.toString(interpreterResult) + "\\n" +
+                                                           "  compiled result: " + Arrays.toString(compiledResult));
+                            }
+                        }
+                    }
+
+                    @Test
+                """,
+                    irVerification.asToken(op, arraySize),
+                """
+                    static #pty[] test#{testCaseName}(#pty broadcastVal, #pty arrVal) {
+                """,
+                    testBody.asToken(testCaseName, op, arraySize),
+                """
+                    }
+
+                    @DontCompile
+                    static #pty[] reference#{testCaseName}(#pty broadcastVal, #pty arrVal) {
+                """,
+                    testBody.asToken(testCaseName, op, arraySize),
+                """
+                    }
+
+                """
                 );
             });
 
-            var randomTest = Template.make(() -> scope(
-                run.asToken(testName + "Random"),
-                generateRandomTest(testName + "Random")
-            ));
-
             return Template.make(() -> scope(
-                Stream.of(Operation.STORE_SCATTER, Operation.STORE_MASK, Operation.STORE_SCATTER_MASK)
+                Stream.of(Operation.class.getEnumConstants())
                          .map(op -> testCase.asToken(op))
-                         .toList(),
-                randomTest.asToken()
+                         .toList()
             )).asToken();
         }
 
-        TemplateToken generateRandomTest(String testName) {
+        Template.ZeroArgs generateRandomTest() {
             final int arraySize = RANDOM.nextInt(vec.length + 1, 5 * vec.length);
             var maskHook = new Hook("MaskHook");
             var genRandomMask = Template.make("maskName", "vecTy", (String maskName, VectorType.Vector vecTy) -> scope(
@@ -468,10 +497,7 @@ public class TestMaskedStoreIdealization {
             return Template.make(() -> scope(
                 let("pty", vec.elementType.name()),
                 let("arraySize", arraySize),
-                let("testName", testName),
                 """
-                    @Test
-                    static #pty[] test#{testName}(final #pty broadcastVal, final #pty arrVal) {
                         #pty[] a = new #pty[#arraySize];
 
                 """,
@@ -488,10 +514,8 @@ public class TestMaskedStoreIdealization {
                 )),
                 """
                         return a;
-                    }
-
                 """
-            )).asToken();
+            ));
         }
     }
 }
