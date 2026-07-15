@@ -103,7 +103,7 @@ private:
   static void dedup_string(oop obj, StringDedup::Requests* const req);
 
   template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
-  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req, bool update_refs);
+  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req);
 
   template <class T, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
   NOINLINE // Main hot loop, start inlining from here
