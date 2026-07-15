@@ -254,14 +254,22 @@ void Parse::array_store(BasicType bt) {
       assert(UseArrayFlattening && !not_flat && elemtype->is_oopptr()->can_be_inline_type() &&
              (!array_type->klass_is_exact() || array_type->is_flat()), "array can't be a flat array");
       // TODO 8350865 Depending on the available layouts, we can avoid this check in below flat/not-flat branches. Also the safe_for_replace arg is now always true.
-      array = inline_array_null_guard(array, stored_value_casted, 3);
+      bool can_be_flat_and_null_free =
+        elemtype->is_inlinetypeptr() && (elemtype->inline_klass()->has_null_free_atomic_layout() || elemtype->inline_klass()->has_null_free_non_atomic_layout());
+      if (can_be_flat_and_null_free) {
+        array = inline_array_null_guard(array, stored_value_casted, 3);
+        array_type = _gvn.type(array)->is_aryptr();
+      }
       // Reload array type which could have been updated by inline_array_null_guard().
-      array_type = _gvn.type(array)->is_aryptr();
       IdealKit ideal(this);
       ideal.if_then(flat_array_test(array, /* flat = */ false)); {
         // Non-flat array
         if (!array_type->is_flat()) {
           sync_kit(ideal);
+          if (!can_be_flat_and_null_free) {
+            array = inline_array_null_guard(array, stored_value_casted, 3);
+            array_type = _gvn.type(array)->is_aryptr();
+          }
           assert(array_type->is_not_flat() || ideal.ctrl()->in(0)->as_If()->is_flat_array_check(&_gvn), "Should be found");
           inc_sp(3);
           access_store_at(array, adr, adr_type, stored_value_casted, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY, false);
@@ -271,6 +279,7 @@ void Parse::array_store(BasicType bt) {
       } ideal.else_(); {
         // Flat array
         sync_kit(ideal);
+        // Either array can be null-free and flat, and inline_array_null_guard is done above, or it cannot, and we don't need to perform this check.
         if (!array_type->is_not_flat()) {
           // Try to determine the inline klass type of the stored value
           ciInlineKlass* vk = nullptr;
