@@ -473,12 +473,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
              "expression stack size should have been extended");
 #endif // ASSERT
       int top_element = iframe()->interpreter_frame_expression_stack_size()-1;
-      intptr_t* base;
-      if (frame::interpreter_frame_expression_stack_direction() < 0) {
-        base = iframe()->interpreter_frame_expression_stack_at(top_element);
-      } else {
-        base = iframe()->interpreter_frame_expression_stack();
-      }
+      intptr_t* base = iframe()->interpreter_frame_expression_stack_at(top_element);
       Copy::conjoint_jbytes(saved_args,
                             base,
                             popframe_preserved_args_size_in_bytes);
