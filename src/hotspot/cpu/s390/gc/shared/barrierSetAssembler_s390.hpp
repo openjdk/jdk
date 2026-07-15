@@ -67,6 +67,8 @@ public:
 
   virtual void barrier_stubs_init() {}
 
+  virtual void check_oop(MacroAssembler* masm, Register oop, const char* msg);
+
 #ifdef COMPILER2
   OptoReg::Name refine_register(const Node* node,
                                 OptoReg::Name opto_reg) const;
