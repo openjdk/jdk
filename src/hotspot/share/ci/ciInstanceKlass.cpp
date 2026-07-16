@@ -903,18 +903,23 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
               FlatArrayKlass* klass = ((flatArrayOop)oa)->klass();
               LayoutKind lk = klass->layout_kind();
               _out->print(" flat");
-              if (LayoutKindHelper::is_atomic_flat(lk)) {
-                _out->print(" atomic");
-              } else {
-                _out->print(" non-atomic");
-              }
               if (LayoutKindHelper::is_nullable_flat(lk)) {
                 _out->print(" nullable");
               } else {
                 _out->print(" null-free");
               }
+              if (LayoutKindHelper::is_atomic_flat(lk)) {
+                _out->print(" atomic");
+              } else {
+                _out->print(" non-atomic");
+              }
             } else {
               _out->print(" ref");
+              if (oa->klass()->is_null_free_array_klass()) {
+                _out->print(" nullable");
+              } else {
+                _out->print(" null-free");
+              }
             }
             const char* klass_name  = value->klass()->name()->as_quoted_ascii();
             _out->print(" %s", klass_name);

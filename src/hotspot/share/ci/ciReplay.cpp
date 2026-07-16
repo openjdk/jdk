@@ -514,7 +514,6 @@ class CompileReplay : public StackObj {
         return k;
       }
       obj = ciReplay::obj_field(obj, field);
-      // TODO 8350865 I think we need to handle null-free/flat arrays here
       if (obj != nullptr && obj->is_objArray()) {
         objArrayOop arr = oop_cast<objArrayOop>(obj);
         int index = parse_int("index");
@@ -1141,14 +1140,17 @@ class CompileReplay : public StackObj {
                      field_signature[1] == JVM_SIGNATURE_CLASS) {
             const char* flatness = parse_string();
             if (strcmp(flatness, "ref") == 0) {
+              const char* nullability = parse_string();
+              bool null_restricted = (strcmp(nullability, "null-free") == 0);
               Klass* actual_array_klass = parse_klass(CHECK_(true));
               Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
-              value = oopFactory::new_refArray(kelem, length, CHECK_(true));
+              ArrayProperties props = ArrayProperties::Default().with_non_atomic(false).with_null_restricted(null_restricted);
+              value = oopFactory::new_refArray(kelem, length, props, CHECK_(true));
             } else if (strcmp(flatness, "flat") == 0) {
-              const char* atomicity = parse_string();
               const char* nullability = parse_string();
-              bool non_atomic = (strcmp(atomicity, "non-atomic") == 0);
+              const char* atomicity = parse_string();
               bool null_restricted = (strcmp(nullability, "null-free") == 0);
+              bool non_atomic = (strcmp(atomicity, "non-atomic") == 0);
               Klass* actual_array_klass = parse_klass(CHECK_(true));
               Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
               ArrayProperties props = ArrayProperties::Default().with_non_atomic(non_atomic).with_null_restricted(null_restricted);
