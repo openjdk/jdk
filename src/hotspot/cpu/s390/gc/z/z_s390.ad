@@ -78,7 +78,6 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
     }
 
     ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
-    // TODO: Check what is the correct way here, all architecture have different implementations and here i am following ppc
     __ z_lgr(Z_R0_scratch, ref);
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTestBit);
     __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
@@ -109,7 +108,6 @@ instruct zLoadP(iRegP dst, memory mem, flagsReg cr) %{
   predicate(UseZGC && n->as_Load()->barrier_data() != 0);
   match(Set dst (LoadP mem));
   effect(TEMP dst, KILL cr);
-  // TODO: recheck these 2 below
   ins_is_late_expanded_null_check_candidate(true);
   ins_cost(MEMORY_REF_COST);
   size(100);
@@ -124,7 +122,6 @@ instruct zLoadP(iRegP dst, memory mem, flagsReg cr) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-// TODO: x86 has also written match rule for cmpP
 // Store Pointer
 instruct zStoreP(memory mem, iRegP src, iRegP temp, flagsReg cr) %{
   predicate(UseZGC && n->as_Store()->barrier_data() != 0);
@@ -159,7 +156,6 @@ instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-// TODO: current implementation of z_color requires an extra register, either verify we have that or change the implementation
 instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP newval, iRegP newval_temp, iRegP oldval_temp, iRegP oldval, flagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
@@ -170,7 +166,6 @@ instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP newval, iRegP newval_t
   ins_encode %{
     assert_different_registers($oldval$$Register, $mem$$Register);
     const Address mem_addr = Address($mem$$Register, 0);
-// TODO: Check which register we need to uncolor
 
     z_store_barrier(masm, this, mem_addr, $newval$$Register, $newval_temp$$Register, true);
     z_color(masm, this, $res$$Register, $oldval$$Register);
@@ -212,7 +207,6 @@ instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP newval, iRegP newval_temp, 
   ins_pipe(pipe_class_dummy);
 %}
 
-// TODO: Double check this implementation currently this is copied form g1_s390.ad g1GetAndSetP
 instruct zGetAndSetP(iRegP mem, iRegP newval, iRegP temp1, iRegP temp2, flagsReg cr) %{
   match(Set newval (GetAndSetP mem newval));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
@@ -236,4 +230,3 @@ instruct zGetAndSetP(iRegP mem, iRegP newval, iRegP temp1, iRegP temp2, flagsReg
   ins_pipe(pipe_class_dummy);
 %}
 
-//TODO: x86 has also implemented loadP and null check, see if it is required for us

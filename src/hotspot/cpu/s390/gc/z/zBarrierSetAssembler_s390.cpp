@@ -70,7 +70,6 @@ private:
     MacroAssembler* masm = _masm;
 
     //TODO: Optimize this function to only save the required registers
-    //TODO: macroAssembler_s390.cpp:5921 save_volatile_regs
     bool preserve_R2 = _result != Z_R2;
     _nbytes_save = (15 - (preserve_R2 ? 0 : 1)) * BytesPerWord;
     int offset = 160;
@@ -251,7 +250,6 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
   assert_different_registers(ref_addr.index(), rnew_zpointer);
   assert_different_registers(rnew_zaddress, rnew_zpointer);
 
-  //TODO: Check the Relative long instructions
   if (in_nmethod) {
     if (is_atomic) {
       // Atomic operations must ensure that the contents of memory are store-good before
@@ -286,7 +284,6 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     assert_different_registers(rnew_zaddress, rnew_zpointer);
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
     __ z_llill(rnew_zpointer, barrier_Relocation::unpatched);
-    // TODO: check for the condition rnew_zaddress == noreg i.e. nullptr
     if (rnew_zaddress != noreg) {
       // noreg means null, no need to color
       __ z_sllg(rnew_zaddress, rnew_zaddress, ZPointerLoadShift);
@@ -295,9 +292,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       __ z_srlg(rnew_zaddress, rnew_zaddress, ZPointerLoadShift);
     }
   } else {
-    //TODO: check if this assert failure is necssary
     assert(!is_atomic, "atomics outside of nmethods not supported");
-    // TODO: try using z_lgh here.
     // TODO: try using z_oill here.
     __ z_lg(rnew_zpointer, ref_addr);
     __ z_nihf(rnew_zpointer, 0x00000000);
@@ -328,7 +323,6 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ z_lg(temp1, buffer);
 
   // Combined pointer bump and check if the buffer is disabled or full
-  // TODO: z_chy is not implemented and also check if we need to only compare the 8 bits
   __ z_lg(temp2, Address(temp1, ZStoreBarrierBuffer::current_offset()));
   __ z_chi(temp2, (uint8_t)0);
   __ branch_optimized(Assembler::bcondEqual, slow_path);
@@ -370,7 +364,6 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
   } else if (is_atomic) {
     // Atomic accesses can get to the medium fast path because the value was a
     // raw null value. If it was not null, then there is no doubt we need to take a slow path.
-    // TODO: see of there is more efficient way to do this i.e. branch if not zero like in aarch64
     __ z_lg(temp2, ref_addr);
     __ z_ltgr(temp2, temp2);
     __ branch_optimized(Assembler::bcondNotZero, slow_path);
@@ -381,9 +374,6 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     __ z_xgr(temp2, temp2);
     __ z_lg(temp1, Address(Z_thread , ZThreadLocalData::store_good_mask_offset()));
 
-    // temp2 -> 0x0, temp1 -> store_good_mask, ref_addr -> null ptr
-    // check if ref_addr is still have null value or is it changed by some other thread and if that
-    // did happen go to slow_path else store the mask in it
     __ z_csg(temp2, temp1, ref_addr);
 
     __ branch_optimized(Assembler::bcondNotEqual, slow_path);
@@ -470,8 +460,6 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
   BLOCK_COMMENT("} ZBarrierSetAssembler::store_at");
 }
 
-/* array copy */
-// RuntimeTODO: Check if these registers are free or not -> they are not, that is why we put them in stack
 const Register _load_bad_mask = Z_R5, _store_bad_mask = Z_R6, _store_good_mask = Z_R7;
 
 void ZBarrierSetAssembler::copy_load_at_fast(MacroAssembler* masm,
@@ -565,7 +553,7 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
 
   __ bind(done);
 
-  // TODO: Come up with a better solution, i.e. try putting it in the arraycopy_prologue, currently even after calling it, it's not getting executed
+  // TODO: Come up with a better solution, i.e. try putting it in the arraycopy_prologue, currently even after calling it, it's not getting executed, currently we are poping them in the *_oop_copy
   int offset = 8;
   __ restore_return_pc();           offset += 8;
   __ z_lg(Z_R5, offset, Z_SP);      offset += 8;
@@ -762,7 +750,6 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
     z_uncolor(ce, ref);
   } else {
     Label good;
-    // TODO: double check this implementation, this follows aarch64 but ppc has done it differently
     __ z_lgr(Z_R0_scratch, ref->as_register());
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTestBit);
     __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
@@ -814,7 +801,6 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   __ restore_return_pc();
   __ pop_frame();
 
-  // Runtime TODO: verify the result is stored in Z_R0 -> it is being stored in Z_F0
   __ z_lgr(ref, Z_R0);
   __ branch_optimized(Assembler::bcondAlways, *stub->continuation());
 }
@@ -955,8 +941,6 @@ public:
     : _masm(masm),
       _ref(stub->ref()),
       _ref_addr(stub->ref_addr()) {
-
-    // TODO: I am following ppc here, but aarch64 and x86 have different if else conditions
 
     // Desired Register/argument configuration
     // _ref: Z_ARG1
