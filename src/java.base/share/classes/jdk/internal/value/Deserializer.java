@@ -32,19 +32,42 @@ import static java.lang.annotation.ElementType.CONSTRUCTOR;
 import static java.lang.annotation.ElementType.METHOD;
 
 /**
- * Indicates the constructor or static factory to
- * construct a value object during deserialization.
- * The annotation is used by java.io.ObjectStreamClass to select the constructor
- * or factory method to create objects from a stream.
- * This is a temporary measure for legacy serialization migration compatibility;
- * future value object persistence would be handled by other mechanisms.
+ * A JDK internal annotation that facilitates serialization and deserialization of non-record
+ * value classes without requiring those value classes to implement the {@code writeReplace()}
+ * and {@code readObject()} methods.
+ * <p>
+ * Non-record value classes, unless they implement the {@code writeReplace()}
+ * and {@code readObject()} methods, cannot be serialized or deserialized. Certain pre-existing
+ * {@code Serializable} identity classes within the JDK are value classes in preview-mode, and
+ * must remain compatible. Such a value class may choose to annotate a constructor or a static
+ * method in that class with the {@code Deserializer} annotation. During serialization and
+ * deserialization of value objects of those classes, the {@code java.io.ObjectOutputStream} and
+ * {@code java.io.ObjectInputStream} will check for the presence of this annotation and when
+ * present, will relax the requirement of {@code writeReplace()} and {@code readObject()}
+ * methods in that class.
+ * <p>
+ * During deserialization, the constructor or the method annotated with the {@code Deserializer}
+ * will be invoked to create the value object instance from the stream.
+ * <p>
+ * {@code Deserializer} is a temporary measure for legacy serialization migration compatibility;
+ * future value object persistence would be handled by other mechanisms. The {@code Deserializer}
+ * annotation isn't for general purpose usage, even in the classes that belong to the JDK; it is
+ * meant to be used only by a very select few classes and the legacy serialization places several
+ * unspecified restrictions on its usage.
+ * <p>
+ * This annotation only takes effect for classes loaded by the boot loader. The presence of this
+ * annotation in classes loaded outside of the boot loader is ignored.
  *
  * @since 28
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(value={CONSTRUCTOR, METHOD})
+@Target(value = {CONSTRUCTOR, METHOD})
 public @interface Deserializer {
-    /// Identifies the serial field names for the method parameters.
-    /// The serial field type are the corresponding parameter types.
+    /**
+     * The names of the serial fields that the constructor or static method,
+     * annotated with {@code Deserializer}, expects to be passed when invoked during
+     * deserialization of the value object from the stream. The serial field types are
+     * the corresponding parameter types.
+     */
     String[] value();
 }
