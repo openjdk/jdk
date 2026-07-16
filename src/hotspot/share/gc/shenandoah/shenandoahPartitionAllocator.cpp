@@ -101,7 +101,7 @@ bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint inde
 
   // Replace the slot only when new_region is the better region to cache, i.e. it has strictly more
   // remaining capacity than the occupant (an empty slot always installs).
-  if (occupant != nullptr && occupant->free() >> LogHeapWordSize < ShenandoahHeap::plab_min_size()) {
+  if (occupant != nullptr && occupant->free() >> LogHeapWordSize >= ShenandoahHeap::plab_min_size()) {
     return false;
   }
 
@@ -128,9 +128,7 @@ bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint inde
       occupant->set_update_watermark(occupant->stable_top());
       occupant->set_collector_allocator_reserved(false);
     }
-    if (occupant->free() >> LogHeapWordSize >= ShenandoahHeap::plab_min_size()) {
-      _free_set->unretire_alloc_region(PARTITION, occupant);
-    }
+    _free_set->unretire_alloc_region(PARTITION, occupant);
   }
   return true;
 }
