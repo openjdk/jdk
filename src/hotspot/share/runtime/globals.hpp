@@ -1224,16 +1224,6 @@ const int ObjectAlignmentInBytes = 8;
           "Select instruction to prefetch ahead of allocation pointer")     \
           constraint(AllocatePrefetchInstrConstraintFunc, AfterMemoryInit)  \
                                                                             \
-  /* deoptimization */                                                      \
-  product(bool, TraceDeoptimization, false, DIAGNOSTIC,                     \
-          "Trace deoptimization")                                           \
-                                                                            \
-  develop(bool, PrintDeoptimizationDetails, false,                          \
-          "Print more information about deoptimization")                    \
-                                                                            \
-  develop(bool, DebugDeoptimization, false,                                 \
-          "Tracing various information while debugging deoptimization")     \
-                                                                            \
   product(double, SelfDestructTimer, 0.0,                                   \
           "Will cause VM to terminate after a given time "                  \
           "(in fractional minutes) "                                        \
