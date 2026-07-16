@@ -1145,7 +1145,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   // Are jumptables supported
   if (!Matcher::has_match_rule(Op_Jump))  return false;
 
-  bool trim_ranges = !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
+  bool trim_ranges = !C->too_many_traps_or_recompiles(method(), bci(), Deoptimization::Reason_unstable_if);
 
   // Decide if a guard is needed to lop off big ranges at either (or
   // both) end(s) of the input set. We'll call this the default target
