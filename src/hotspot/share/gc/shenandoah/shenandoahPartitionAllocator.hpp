@@ -85,7 +85,7 @@ private:
   // as much room as new_region, the install is declined and new_region is left as an ordinary
   // free-set member (the caller's allocation from it is already accounted).
   //
-  // Returns true iff new_region became the slot's active alloc region.
+  // Returns true if new_region became the slot's active alloc region.
   bool try_install_alloc_region(uint index, ShenandoahHeapRegion* occupant, ShenandoahHeapRegion* new_region);
 
   // Allocate within a single region; the caller must guarantee the region has enough free

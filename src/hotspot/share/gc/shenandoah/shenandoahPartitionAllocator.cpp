@@ -73,7 +73,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in_alloc_regions
                                                                                  uint end_index) {
   assert(end_index < _alloc_region_count, "Must be");
   uint i = start_index;
-  do {
+  while (i != end_index) {
     ShenandoahHeapRegion* r = _alloc_regions[i].load_acquire();
     if (r != nullptr) {
       HeapWord* obj = try_atomic_allocate_in(i, r, req);
@@ -85,7 +85,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in_alloc_regions
     if (++i == _alloc_region_count) {
       i = 0u;
     }
-  } while (i != end_index);
+  }
   return nullptr;
 }
 
@@ -100,27 +100,11 @@ bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint inde
          "Under the lock the slot can only change from occupant to nullptr (fast-path retire)");
 
   // Replace the slot only when new_region is the better region to cache, i.e. it has strictly more
-  // remaining capacity than the occupant (an empty slot always installs). new_region has already
-  // served the current request (allocate_in ran before this), so new_region->free() is its post-
-  // allocation remnant; the caller only calls us when that remnant is still >= PLAB::min_size, so we
-  // never cache a near-empty region. Keeping the larger region maximizes future fast-path hits and
-  // un-wedges a slot stuck on a low-capacity region that keeps failing larger requests. Conversely,
-  // when the occupant still has more room than new_region, we leave it: evicting it would strand
-  // its larger remnant in the free set (reachable only via the slow path).
-  //
-  // occupant->free() is read while the occupant is still an active alloc region, so it is a
-  // concurrent snapshot that may only shrink (its _atomic_top only advances) until the region is
-  // retired; an occasionally-stale value only affects which region we keep (a heuristic), never
-  // correctness.
-  if (occupant != nullptr && occupant->free() >= new_region->free()) {
+  // remaining capacity than the occupant (an empty slot always installs).
+  if (occupant != nullptr && occupant->free() >> LogHeapWordSize < ShenandoahHeap::plab_min_size()) {
     return false;
   }
 
-  // new_region has already been prepared for allocation: the slow path runs allocate_in (hence
-  // ShenandoahHeapRegion::allocate -> make_regular_allocation) on it before reaching this install,
-  // and the lock-free CAS path only bumps _atomic_top without changing region state. So no state
-  // transition is needed here; just assert the expected affiliation and state. make_regular_allocation
-  // turns an empty region regular but leaves an already-pinned region pinned, so accept either.
   constexpr ShenandoahAffiliation affiliation =
     (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) ? OLD_GENERATION : YOUNG_GENERATION;
   assert(new_region->affiliation() == affiliation, "Region affiliation must be established before install");
@@ -135,37 +119,24 @@ bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint inde
   }
   new_region->set_active_alloc_region();
 
-  // Publish new_region into the slot. We hold the heap lock, so the ONLY concurrent mutation
-  // possible is the lock-free fast path retiring a full occupant (occupant -> nullptr); it never
-  // writes a non-null value, and every other writer holds the lock we own. So the slot is either
-  // still `occupant` or has become nullptr.
-  if (_alloc_regions[index].compare_exchange(occupant, new_region) == occupant) {
-    // Won against the observed occupant, atomically claiming it for retirement. If it was a live
-    // (full) region, we now exclusively own it: only this thread may run unset_active_alloc_region()
-    // on it (the fast path's competing retire CAS, if any, failed).
-    if (occupant != nullptr) {
-      bool unset = occupant->unset_active_alloc_region();
-      assert(unset, "Winner of the slot CAS is the unique retirer of the displaced region");
-      if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
-        occupant->set_update_watermark(occupant->stable_top());
-        occupant->set_collector_allocator_reserved(false);
-      }
-      if (occupant->free() >> LogHeapWordSize >= ShenandoahHeap::plab_min_size()) {
-        _free_set->unretire_alloc_region(PARTITION, occupant);
-      }
-    }
-    return true;
+  bool cas_succeeded = false;
+  if (occupant == nullptr ||
+      !((cas_succeeded = _alloc_regions[index].compare_exchange(occupant, new_region) == occupant))) {
+    assert(_alloc_regions[index].load_relaxed() == nullptr, "Slot must be stable at nullptr under the heap lock");
+    _alloc_regions[index].release_store(new_region);
   }
 
-  // The CAS failed, so the fast path retired the full occupant to nullptr between our load and now.
-  // (An empty slot, occupant == nullptr, can never be concurrently mutated to non-null, so the CAS
-  // above would have won.) The fast-path winner already deactivated the occupant. The slot is now
-  // stable at nullptr: only an installer writes a non-null value and only one installer runs at a
-  // time under the heap lock, which we hold, so we can simply publish new_region with a plain
-  // release store; no further CAS is needed.
-  assert(occupant != nullptr, "An empty slot cannot be concurrently mutated; the first CAS must win");
-  assert(_alloc_regions[index].load_relaxed() == nullptr, "Slot must be stable at nullptr under the heap lock");
-  _alloc_regions[index].release_store(new_region);
+  if (cas_succeeded) {
+    bool unset = occupant->unset_active_alloc_region();
+    assert(unset, "Winner of the slot CAS is the unique retirer of the displaced region");
+    if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
+      occupant->set_update_watermark(occupant->stable_top());
+      occupant->set_collector_allocator_reserved(false);
+    }
+    if (occupant->free() >> LogHeapWordSize >= ShenandoahHeap::plab_min_size()) {
+      _free_set->unretire_alloc_region(PARTITION, occupant);
+    }
+  }
   return true;
 }
 
@@ -174,7 +145,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
   // Resolve the current thread once and pass it to alloc_region_slot() instead of having that
   // helper call Thread::current() again on the hot path.
   Thread* const thread = Thread::current();
-  uint slot = alloc_region_slot(thread);
+  uint const slot = alloc_region_slot(thread);
 
   // Fast path: lock-free CAS allocation in THIS thread's stripe slot only (no cross-stripe scan).
   // If the attempt fails but the slot has meanwhile been replaced with a DIFFERENT region (e.g. a
@@ -185,34 +156,17 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
   // region, and slots are only filled under the heap lock, so retries are rate-limited by other
   // threads' (rare) slow-path installs.
   ShenandoahHeapRegion* shared_region = _alloc_regions[slot].load_acquire();
-  while (shared_region != nullptr) {
+  if (shared_region != nullptr) {
     HeapWord* obj = try_atomic_allocate_in(slot, shared_region, req);
     if (obj != nullptr) {
       in_new_region = false;
       return obj;
     }
-    ShenandoahHeapRegion* const current = _alloc_regions[slot].load_acquire();
-    if (current == shared_region) {
-      break;
-    }
-    shared_region = current;
   }
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   // Slow-path
   {
-    // Mutator allocations may yield to safepoint; GC allocations cannot
-    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), req.is_mutator_alloc());
-
-    // Retry the lock-free probe ONLY if the slot changed while we waited for the lock: another thread
-    // may have installed a fresh region (or replaced ours). If the slot still holds the same region
-    // we already failed on above, retrying is pointless: a region's free capacity only shrinks, so
-    // it would deterministically fail again. (shared_region holds the region the fast path tried, or
-    // nullptr if the slot was empty then; a non-null reload that differs means the slot changed.)
-    //
-    // A relaxed load is sufficient here because we hold the heap lock: every writer that publishes a
-    // non-null region into the slot does so under this lock, so our lock acquire already orders their
-    // writes (region state, etc.) before this read. The only concurrent lock-free writer is the fast
-    // path retiring the slot, which only stores nullptr (no payload to order).
+    ShenandoahHeap* const heap = ShenandoahHeap::heap();
+    ShenandoahHeapLocker locker(heap->lock(), req.is_mutator_alloc());
     ShenandoahHeapRegion* const reloaded = _alloc_regions[slot].load_relaxed();
     if (reloaded != nullptr && reloaded != shared_region) {
       HeapWord* obj = try_atomic_allocate_in(slot, reloaded, req);
@@ -230,18 +184,12 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
       }
     }
 
-    bool boundary_changed = false;
     size_t min_req_words = req.is_lab_alloc() ? req.min_size() : req.size();
     // Take a fresh region from the free set, allocate from it, then install it into our slot for
     // subsequent lock-free use (retiring whatever now-full region was there).
     ShenandoahHeapRegion* fresh = _free_set->find_region_for_alloc<PARTITION>(min_req_words, in_new_region);
     // Collector partitions, when the free set has no region of their own to hand out, try the
-    // sibling stripe slots BEFORE stealing a region from the mutator. A sibling slot is an
-    // already-reserved collector region that may still have remnant capacity, so satisfying the
-    // request there avoids taking another whole region away from the mutator. This ordering matters
-    // on small heaps: the evacuation reserve is a thin slice there, and eagerly stealing whole
-    // regions starves mutator allocation and can force premature degeneration. Only when no sibling
-    // slot can satisfy the request do we overflow into the mutator partition (if enabled).
+    // sibling stripe slots BEFORE stealing a region from the mutator.
     if constexpr (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
       if (fresh == nullptr) {
         if (_alloc_region_count > 1) {
@@ -261,6 +209,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
     }
 
     if (fresh != nullptr) {
+      bool boundary_changed = false;
       HeapWord* result = allocate_in(fresh, req, boundary_changed);
       assert(result != nullptr, "Sanity check - allocate_in should always succeed");
       if (in_new_region) {
@@ -275,8 +224,9 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
       if (_free_set->alloc_capacity(fresh) >> LogHeapWordSize >= ShenandoahHeap::plab_min_size()) {
         // shared_region is the slot value loaded above under the lock; find_region_for_alloc does
         // not touch the slots, so it is still a valid CAS expected value for the install.
-        try_install_alloc_region(slot, shared_region, fresh);
-        boundary_changed = true;
+        if (try_install_alloc_region(slot, shared_region, fresh)) {
+          boundary_changed = true;
+        }
       }
       _free_set->notify_allocation(PARTITION, in_new_region, boundary_changed);
       return result;
