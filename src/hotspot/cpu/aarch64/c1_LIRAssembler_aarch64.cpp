@@ -383,8 +383,6 @@ int LIR_Assembler::emit_unwind_handler() {
 
   int offset = code_offset();
 
-  __ block_comment("Emit unwind handler");
-
   // Fetch the exception from TLS and clear out exception related thread state
   __ ldr(r0, Address(rthread, JavaThread::exception_oop_offset()));
   __ str(zr, Address(rthread, JavaThread::exception_oop_offset()));
@@ -2663,7 +2661,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
   };
 
   if (counter_stub != nullptr) {
-    __ ubfx(rscratch1, r_profile_rng, 28 - ratio_shift, ratio_shift);
+    __ ubfx(rscratch1, r_profile_rng, 32 - ratio_shift, ratio_shift);
     __ cbz(rscratch1, *counter_stub->entry());
     __ bind(*counter_stub->continuation());
     __ step_random(r_profile_rng, rscratch2);
