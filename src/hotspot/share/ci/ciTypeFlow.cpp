@@ -600,7 +600,6 @@ void ciTypeFlow::StateVector::do_aload(ciBytecodeStream* str) {
     return;
   }
   ciKlass* element_klass = array_klass->element_klass();
-  // TODO 8350865 Can we check that array_klass is null_free and use mark_as_null_free on the result here?
   if (!element_klass->is_loaded() && element_klass->is_instance_klass()) {
     Untested("unloaded array element class in ciTypeFlow");
     trap(str, element_klass,
