@@ -4021,7 +4021,7 @@ Node* GraphKit::atomic_layout_array_test_and_get_layout_kind(Node* array, Region
 }
 
 // Deoptimize if 'ary' is a null-free inline type array and 'val' is null
-Node* GraphKit::inline_array_null_guard(Node* ary, Node* val, int nargs) {
+Node* GraphKit::inline_array_null_guard(Node* ary, Node* val, int nargs, bool safe_for_replace) {
   RegionNode* region = new RegionNode(3);
   Node* null_ctl = top();
   null_check_oop(val, &null_ctl);
@@ -4045,7 +4045,9 @@ Node* GraphKit::inline_array_null_guard(Node* ary, Node* val, int nargs) {
     const TypeAryPtr* ary_t = _gvn.type(ary)->is_aryptr();
     ary_t = ary_t->cast_to_not_null_free();
     Node* cast = _gvn.transform(new CheckCastPPNode(control(), ary, ary_t));
-    replace_in_map(ary, cast);
+    if (safe_for_replace) {
+      replace_in_map(ary, cast);
+    }
     ary = cast;
   }
   return ary;
