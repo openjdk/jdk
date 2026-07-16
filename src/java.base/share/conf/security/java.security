@@ -756,7 +756,6 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #     Hmac algorithm name (ex: "HmacSHA256" and not "SHA256") to avoid also
 #     disabling PRF algorithms with the same name.
 #
-#
 #   - TLS protocol specific usage constraints are supported by this property:
 #
 #     UsageConstraint:
