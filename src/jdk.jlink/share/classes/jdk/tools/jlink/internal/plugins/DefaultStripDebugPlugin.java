@@ -27,6 +27,7 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.Map;
+import java.util.function.Function;
 
 import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.internal.PluginRepository;
@@ -118,11 +119,6 @@ public final class DefaultStripDebugPlugin extends AbstractPlugin {
         ResourcePoolManager mgr = new ResourcePoolManager(
                 pool.byteOrder(), ((ResourcePoolManager.ResourcePoolImpl)pool).getStringTable());
         return plugin.transform(pool, mgr.resourcePoolBuilder());
-    }
-
-    private static ResourcePool copyTo(ResourcePool pool, ResourcePoolBuilder out) {
-        pool.transformAndCopy(e -> e, out);
-        return out.build();
     }
 
     public interface NativePluginFactory {
