@@ -72,7 +72,7 @@ HeapWord* ShenandoahHeapRegion::allocate(size_t size, const ShenandoahAllocReque
   }
 }
 
-HeapWord* ShenandoahHeapRegion::allocate_atomic(const ShenandoahAllocRequest& req) {
+HeapWord* ShenandoahHeapRegion::allocate_atomic(const ShenandoahAllocRequest& req, bool &ready_for_replenish) {
   const size_t size = req.size();
   assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
 
@@ -90,6 +90,7 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(const ShenandoahAllocRequest& re
     if (free_words >= size) {
       if (try_allocate(obj /*value*/, size, obj /*reference*/)) {
         adjust_alloc_metadata(req, size);
+        ready_for_replenish = (free_words - size) < ShenandoahHeap::plab_min_size();
         return obj;
       }
       if (obj == nullptr) {
@@ -97,13 +98,18 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(const ShenandoahAllocRequest& re
         return nullptr;
       }
     } else {
+      // Region cannot satisfy this request. Mark it for replenish only when it has no room for any
+      // minimum LAB (truly full); otherwise leave it, since a smaller future request may still fit, and
+      // retiring it here would discard usable capacity to one oversized request. Note free_words < size
+      // here, so do not compute free_words - size (unsigned underflow).
+      ready_for_replenish = free_words < ShenandoahHeap::plab_min_size();
       return nullptr;
     }
     SpinPause(); // Spin pause on contention.
   }
 }
 
-HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest& req, size_t &actual_size) {
+HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest& req, size_t &actual_size, bool &ready_for_replenish) {
   assert(req.is_lab_alloc(), "Only lab alloc");
 
   const size_t req_size = req.size();
@@ -127,6 +133,7 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
       if (try_allocate(obj /*value*/, adjusted_size, obj /*reference*/)) {
         actual_size = adjusted_size;
         adjust_alloc_metadata(req, adjusted_size);
+        ready_for_replenish = free_words - adjusted_size < ShenandoahHeap::plab_min_size();
         return obj;
       }
 
@@ -137,6 +144,9 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
     } else {
       log_trace(gc, free)("Failed to shrink TLAB or GCLAB request (%zu) in region %zu to %zu"
                           " because min_size() is %zu", req_size, index(), adjusted_size, min_size);
+      // Region cannot satisfy even the minimum LAB. Mark for replenish only when it has no room for
+      // any minimum LAB (truly full); free_words is the region's actual remaining capacity here.
+      ready_for_replenish = free_words < ShenandoahHeap::plab_min_size();
       return nullptr;
     }
     SpinPause(); // Spin pause on contention.

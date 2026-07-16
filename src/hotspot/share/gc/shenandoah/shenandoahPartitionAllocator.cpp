@@ -76,7 +76,11 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in_alloc_regions
   while (i != end_index) {
     ShenandoahHeapRegion* r = _alloc_regions[i].load_acquire();
     if (r != nullptr) {
-      HeapWord* obj = try_atomic_allocate_in(r, req);
+      bool ready_for_replenish = false;
+      HeapWord* obj = try_atomic_allocate_in(r, req, ready_for_replenish);
+      if (ready_for_replenish) {
+        uninstall_alloc_region(i, r);
+      }
       if (obj != nullptr) {
         in_new_region = false;
         return obj;
@@ -90,14 +94,25 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in_alloc_regions
 }
 
 template<ShenandoahFreeSetPartitionId PARTITION>
-bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint index,
+void ShenandoahPartitionAllocator<PARTITION>::uninstall_alloc_region(uint slot, ShenandoahHeapRegion* occupant) {
+  assert(occupant != nullptr && _alloc_regions[slot].load_relaxed() == occupant, "Must be sane");
+  _alloc_regions[slot].release_store(nullptr);
+
+  bool unset = occupant->unset_active_alloc_region();
+  assert(unset, "Should always succeed");
+  if (PARTITION != ShenandoahFreeSetPartitionId::Mutator) {
+    occupant->set_update_watermark(occupant->stable_top());
+    occupant->set_collector_allocator_reserved(false);
+  }
+}
+
+template<ShenandoahFreeSetPartitionId PARTITION>
+bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint slot,
                                                                        ShenandoahHeapRegion* occupant,
                                                                        ShenandoahHeapRegion* new_region) {
   shenandoah_assert_heaplocked();
   assert(!new_region->is_atomic_alloc_region(), "Fresh region must not already be an active alloc region");
-  assert(occupant == nullptr || occupant == _alloc_regions[index].load_acquire() ||
-         _alloc_regions[index].load_acquire() == nullptr,
-         "Under the lock the slot can only change from occupant to nullptr (fast-path retire)");
+  assert(_alloc_regions[slot].load_relaxed() == occupant, "Must be same");
 
   // Replace the slot only when new_region is the better region to cache, i.e. it has strictly more
   // remaining capacity than the occupant (an empty slot always installs).
@@ -119,7 +134,7 @@ bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint inde
   }
   new_region->set_active_alloc_region();
 
-  _alloc_regions[index].release_store(new_region);
+  _alloc_regions[slot].release_store(new_region);
 
   if (occupant != nullptr) {
     bool unset = occupant->unset_active_alloc_region();
@@ -147,13 +162,20 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
   // or empty. This cannot livelock: a retry requires the slot to have changed to a new non-null
   // region, and slots are only filled under the heap lock, so retries are rate-limited by other
   // threads' (rare) slow-path installs.
-  ShenandoahHeapRegion* shared_region = _alloc_regions[slot].load_acquire();
-  if (shared_region != nullptr) {
-    HeapWord* obj = try_atomic_allocate_in(shared_region, req);
+  ShenandoahHeapRegion* shared_region = _alloc_regions[slot].load_relaxed();
+  bool ready_for_replenish;
+  while (shared_region != nullptr) {
+    ready_for_replenish = false;
+    HeapWord* obj = try_atomic_allocate_in(shared_region, req, ready_for_replenish);
     if (obj != nullptr) {
       in_new_region = false;
       return obj;
     }
+    ShenandoahHeapRegion* current_alloc_region = _alloc_regions[slot].load_relaxed();
+    if (current_alloc_region == shared_region) {
+      break;
+    }
+    shared_region = current_alloc_region;
   }
   // Slow-path
   {
@@ -161,13 +183,19 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
     ShenandoahHeapLocker locker(heap->lock(), req.is_mutator_alloc());
     ShenandoahHeapRegion* const reloaded = _alloc_regions[slot].load_relaxed();
     if (reloaded != nullptr && reloaded != shared_region) {
-      HeapWord* obj = try_atomic_allocate_in(reloaded, req);
+      ready_for_replenish = false;
+      HeapWord* obj = try_atomic_allocate_in(reloaded, req, ready_for_replenish);
       if (obj != nullptr) {
         in_new_region = false;
         return obj;
       }
     }
     shared_region = reloaded;
+
+    if (ready_for_replenish) {
+      uninstall_alloc_region(slot, shared_region);
+      shared_region = nullptr;;
+    }
 
     // OldCollector: verify old generation has room before attempting allocation
     if constexpr (PARTITION == ShenandoahFreeSetPartitionId::OldCollector) {
@@ -294,14 +322,15 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate_in(ShenandoahHeapReg
 
 template<ShenandoahFreeSetPartitionId PARTITION>
 HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_atomic_allocate_in(ShenandoahHeapRegion* r,
-                                                                          ShenandoahAllocRequest& req) {
+                                                                          ShenandoahAllocRequest& req,
+                                                                          bool &ready_for_replenish) {
   size_t actual_size;
   HeapWord* obj = nullptr;
   if (req.is_lab_alloc()) {
-    obj = r->allocate_lab_atomic(req, actual_size);
+    obj = r->allocate_lab_atomic(req, actual_size, ready_for_replenish);
   } else {
     actual_size = req.size();
-    obj = r->allocate_atomic(req);
+    obj = r->allocate_atomic(req, ready_for_replenish);
   }
 
   if (obj != nullptr) {

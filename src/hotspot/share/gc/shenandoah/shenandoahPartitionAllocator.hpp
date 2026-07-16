@@ -74,6 +74,8 @@ private:
   // a last resort. Returns the allocation, or nullptr if no slot in the range could satisfy it.
   HeapWord* try_allocate_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, uint start_index, uint end_index);
 
+
+  void uninstall_alloc_region(uint slot, ShenandoahHeapRegion* occupant);
   // Try to install freshly-allocated new_region into stripe slot index as the active alloc region
   // (heap lock held). occupant is the value the caller already loaded from the slot under the lock;
   // since installs happen only under the lock, the slot can only have changed from occupant to
@@ -96,7 +98,7 @@ private:
   HeapWord* allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& boundary_changed);
 
   // Try the lock-free CAS allocation in slot `index`'s region r; retires the slot if it fills.
-  HeapWord* try_atomic_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req);
+  HeapWord* try_atomic_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool &ready_for_replenish);
 
   // Retire (deactivate + reconcile) the region in stripe slot; heap lock held.
   void release_alloc_region(uint slot);

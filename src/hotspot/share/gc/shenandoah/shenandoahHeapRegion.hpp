@@ -427,10 +427,10 @@ public:
   inline HeapWord* allocate_fill(size_t word_size);
 
   // Allocate object with CAS, return nullptr if full or not enough space for the req
-  inline HeapWord* allocate_atomic(const ShenandoahAllocRequest &req);
+  inline HeapWord* allocate_atomic(const ShenandoahAllocRequest &req, bool &ready_for_replenish);
 
   // Allocate lab with CAS, return nullptr if full or not enough space for the req
-  inline HeapWord* allocate_lab_atomic(const ShenandoahAllocRequest &req, size_t &actual_size);
+  inline HeapWord* allocate_lab_atomic(const ShenandoahAllocRequest &req, size_t &actual_size, bool &ready_for_replenish);
 
   // Use AtomicAccess::cmpxchg to allocate the object,
   // prior value of _atomic_top will be always written to reference prior_atomic_top.
