@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 8358772
+ * @bug 8358772 8388363
  * @summary Demonstrate the use of VectorTypes (Vector API) form the Template Library.
+ * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @modules jdk.incubator.vector
  * @library /test/lib /
