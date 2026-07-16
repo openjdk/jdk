@@ -5397,7 +5397,7 @@ void MacroAssembler::emit_encode_klass_not_null(Register dst, Register src, Regi
   assert_different_registers(tmp, src);
   assert(tmp != noreg, "valid tmp required");
 
-  if (CompressedKlassPointers::base() != nullptr && AOTCodeCache::is_on_for_dump()) {
+  if (AOTCodeCache::is_on_for_dump()) {
     // We are generating code during AOT buildup that will run in *future* processes
     // with likely different encoding settings. Therefore, we have to load the
     // encoding base dynamically, we cannot just bake it in as immediate.
