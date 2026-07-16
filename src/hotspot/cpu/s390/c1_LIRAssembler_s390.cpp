@@ -1034,7 +1034,6 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
     const Address dst = frame_map()->address_for_slot(dest->single_stack_ix());
     if (is_reference_type(type)) {
       if (VerifyOops) {
-        // TODO: See if there is any cleaner way to put it
         BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
         bs->check_oop(_masm, src->as_register(), FILE_AND_LINE);
       }
