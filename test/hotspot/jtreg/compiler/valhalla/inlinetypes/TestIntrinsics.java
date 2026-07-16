@@ -43,7 +43,6 @@ import static compiler.valhalla.inlinetypes.InlineTypes.rL;
 
 import static compiler.lib.ir_framework.IRNode.LOAD;
 import static compiler.lib.ir_framework.IRNode.LOAD_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypes.*;
 
 /*
  * @test
