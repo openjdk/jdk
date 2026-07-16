@@ -35,6 +35,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "prims/downcallLinker.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExtensions.hpp"
@@ -2405,10 +2406,6 @@ static bool is_async_unsafe_method(Method* m) {
          (m->name() == vmSymbols::run_method_name() && m->jvmti_hide_events()));
 }
 
-static bool is_downcall_stub(CodeBlob* cb) {
-  return cb != nullptr && cb->is_runtime_stub() && (strcmp(cb->name(), "nep_invoker_blob") == 0);
-}
-
 class StopThreadAsyncClosure : public AsyncExceptionHandshakeClosure {
  public:
   StopThreadAsyncClosure(OopHandle& exception)
@@ -2485,7 +2482,7 @@ StopThreadClosure::do_vthread(Handle target_h) {
 
   if (_target_jt->at_no_async_entry_count() > 0
       || _target_jt->is_at_poll_safepoint()
-      || is_downcall_stub(_target_jt->last_frame().cb())) {
+      || DowncallLinker::is_downcall_stub(_target_jt->last_frame().cb())) {
     // The target will defer processing of the async exception to
     // some later safepoint poll. We cannot guarantee where that
     // will be so we conservatively skip this case.
