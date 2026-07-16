@@ -275,7 +275,7 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
     /* CRC used as a pseudo-random-number generator */
     // In effect, the CRC instruction is being used here for its
     // linear feedback shift register.
-    movl(temp, 0);
+    xorl(temp, temp);
     crc32(state, temp, /*sizeInBytes*/2);
   } else {
     /* LCG by Marsaglia. From Karl Entacher,

@@ -1464,8 +1464,8 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     Label* success_target = &done;
     Label* failure_target = stub->entry();
 
-    __ testptr(value, value);
     if (op->should_profile()) {
+      __ testptr(value, value);
       Label not_null;
       Register mdo  = klass_RInfo;
       __ mov_metadata(mdo, md->constant_encoding());
