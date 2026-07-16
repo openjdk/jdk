@@ -916,9 +916,9 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
             } else {
               _out->print(" ref");
               if (oa->klass()->is_null_free_array_klass()) {
-                _out->print(" nullable");
-              } else {
                 _out->print(" null-free");
+              } else {
+                _out->print(" nullable");
               }
             }
             const char* klass_name  = value->klass()->name()->as_quoted_ascii();
