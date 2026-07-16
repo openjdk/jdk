@@ -119,8 +119,10 @@ public class TestMaskedStoreIdealization {
 
                 // Verify that the method contains two VectorStore{Masked|Scatter} nodes.
                 var opVerification = Template.make(() -> {
-                    // The nodes are only emitted with more than two lanes.
-                    if (vec.length <= 2) {
+                    // The nodes are only emitted with more than two lanes. Further, scatter instructions are not emitted
+                    // for vectors of subword types.
+                    if (vec.length <= 2 || (vec.elementType.byteSize() < 4 &&
+                        (op == Operation.STORE_SCATTER || op == Operation.STORE_SCATTER_MASK || op == Operation.STORE_VECTOR_AFTER_SCATTER))) {
                         return scope("");
                     }
 
@@ -137,19 +139,12 @@ public class TestMaskedStoreIdealization {
                         default                         -> 2;
                     };
 
-                    // x64 does not emit specialised scatter nodes/instructions for subword types.
-                    String cpuFeatures = "\"sve\", \"true\"";
-                    if (op == Operation.STORE_MASK || vec.elementType.byteSize() >= 4) {
-                        cpuFeatures = cpuFeatures + ", \"avx512\", \"true\"";
-                    }
-
                     return scope(
                         let("opIR", opIR),
-                        let("cpuFeatures", cpuFeatures),
                         let("matches", numMatches),
                         """
                             @IR(counts = {IRNode.#{opIR}, "=#{matches}"},
-                                applyIfCPUFeatureOr = { #cpuFeatures })
+                                applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
                         """
                     );
                 });
@@ -300,7 +295,7 @@ public class TestMaskedStoreIdealization {
                     let("arrVal", vec.elementType.con()),
                 """
                     @Run(test = "test#{testCaseName}")
-                    @Warmup(10_000)
+                    @Warmup(15_000)
                     static void run#{testCaseName}(RunInfo info) {
                         final #pty broadcastVal = #broadcastVal;
                         final #pty arrVal = #arrVal;
