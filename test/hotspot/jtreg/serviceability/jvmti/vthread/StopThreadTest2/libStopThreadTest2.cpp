@@ -43,14 +43,15 @@ Java_StopThreadTest2_resumeAllVirtualThreads(JNIEnv* jni, jclass cls) {
 }
 
 JNIEXPORT jboolean JNICALL
-Java_StopThreadTest2_stopThread(JNIEnv* jni, jclass cls, jthread thread, jobject exception) {
+Java_StopThreadTest2_stopThread(JNIEnv* jni, jclass cls, jthread thread, jobject exception, jboolean allowNotAlive) {
   jvmtiError err = jvmti->StopThread(thread, exception);
   // The target might be suspended at a VirtualThread method
   // so we ignore JVMTI_ERROR_OPAQUE_FRAME.
-  if (err != JVMTI_ERROR_OPAQUE_FRAME) {
-    check_jvmti_status(jni, err, "Error during StopThread()");
+  if (err == JVMTI_ERROR_OPAQUE_FRAME || (allowNotAlive && err == JVMTI_ERROR_THREAD_NOT_ALIVE)) {
+    return false;
   }
-  return err == JVMTI_ERROR_NONE;
+  check_jvmti_status(jni, err, "Error during StopThread()");
+  return true;
 }
 
 JNIEXPORT jint JNICALL
