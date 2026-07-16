@@ -86,7 +86,8 @@ public final class DefaultStripDebugPlugin extends AbstractPlugin {
             result = pipe(result, stripNativePlugin);
         }
         if (!isExcludeFilesPluginEnabled) {
-            return copyTo(result, out);
+            result.transformAndCopy(Function.identity(), out);
+            return out.build();
         }
         ExcludeFilesPlugin excludeFilesPlugin = new ExcludeFilesPlugin();
         excludeFilesPlugin.configure(Map.of(EXCLUDE_FILES_PLUGIN, debugFilePattern(in)));
