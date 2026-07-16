@@ -39,7 +39,7 @@ import jdk.test.lib.Asserts;
  * @run main/othervm -XX:CompileCommand=quiet
  *                   -XX:CompileCommand=compileonly,compiler.intrinsics.VectorizedMismatchReturnDiffTest::testComp*
  *                   -Xbatch -XX:-TieredCompilation
- *                    compiler.intrinsics.VectorizedMismatchReturnDiffTest
+ *                   compiler.intrinsics.VectorizedMismatchReturnDiffTest
  */
 
 public class VectorizedMismatchReturnDiffTest {
