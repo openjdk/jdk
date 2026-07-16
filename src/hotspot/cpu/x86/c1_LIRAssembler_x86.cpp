@@ -1481,7 +1481,6 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ load_klass(recv, value, tmp_load_klass);
       type_profile_helper(mdo, md, data, recv, Rtmp1);
     } else {
-      __ testptr(value, value);
       __ jcc(Assembler::equal, done);
     }
 
