@@ -4643,7 +4643,6 @@ public class TestLWorld {
         }
     }
 
-    // TODO 8350865 We need more copies of these tests for all ValueClass array factories
     static final ValueClassWithInt[] VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC = (ValueClassWithInt[]) ValueClass.newNullRestrictedNonAtomicArray(ValueClassWithInt.class, 2, new ValueClassWithInt(0));
     static final ValueClassWithFloat[] VALUE_CLASS_WITH_FLOAT_ARRAY_NULL_RESTRICTED_NON_ATOMIC = (ValueClassWithFloat[]) ValueClass.newNullRestrictedNonAtomicArray(ValueClassWithFloat.class, 2, new ValueClassWithFloat(0));
     static final SubValueClassWithInt[] SUB_VALUE_CLASS_WITH_INT_ARRAY_NULL_RESTRICTED_NON_ATOMIC = (SubValueClassWithInt[]) ValueClass.newNullRestrictedNonAtomicArray(SubValueClassWithInt.class, 2, new SubValueClassWithInt(0));
