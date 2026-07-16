@@ -124,7 +124,7 @@ void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, 
 
   __ bind(tagged);
   __ testbit(value, exact_log2(JNIHandles::TypeTag::weak_global)); // test for weak tag
-  __ z_btrue(weak_tag);
+  __ branch_optimized(Assembler::bcondNotAllZero, weak_tag);
 
   // resolve global handle
   __ access_load_at(T_OBJECT, IN_NATIVE, Address(value, -JNIHandles::TypeTag::global), value, tmp1, tmp2);
