@@ -119,11 +119,13 @@ public class TestMaskedStoreIdealization {
 
                 // Verify that the method contains two VectorStore{Masked|Scatter} nodes.
                 var opVerification = Template.make(() -> {
-                    // The nodes are only emitted with more than two lanes. Further, scatter instructions are not emitted
-                    // for vectors of subword types.
-                    if (vec.length <= 2 || (vec.elementType.byteSize() < 4 &&
-                        (op == Operation.STORE_SCATTER || op == Operation.STORE_SCATTER_MASK || op == Operation.STORE_VECTOR_AFTER_SCATTER))) {
-                        return scope("");
+                    if (vec.length <= 2) {
+                        return scope("    // No Vector nodes are emitted for vectors of length 2 or shorter.\n");
+                    }
+
+                    if (Set.of(Operation.STORE_SCATTER, Operation.STORE_SCATTER_MASK, Operation.STORE_VECTOR_AFTER_SCATTER).contains(op) &&
+                        vec.elementType.byteSize() < 4) {
+                        return scope("    // StoreVectorScatter is not emitted for vectors of subword types.\n");
                     }
 
                     final String opIR = switch (op) {
