@@ -31,6 +31,9 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPartitionAllocator.hpp"
+
+#include <mutex>
+
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "logging/log.hpp"
 
@@ -73,7 +76,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in_alloc_regions
                                                                                  uint end_index) {
   assert(end_index < _alloc_region_count, "Must be");
   uint i = start_index;
-  while (i != end_index) {
+  do {
     ShenandoahHeapRegion* r = _alloc_regions[i].load_acquire();
     if (r != nullptr) {
       HeapWord* obj = try_atomic_allocate_in(r, req);
@@ -85,7 +88,7 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in_alloc_regions
     if (++i == _alloc_region_count) {
       i = 0u;
     }
-  }
+  } while (i != end_index);
   return nullptr;
 }
 
@@ -132,6 +135,17 @@ bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint inde
   return true;
 }
 
+class ShenandoahHeapLockReleaser : public StackObj {
+  ShenandoahHeapLock* const _lock;
+public:
+  ShenandoahHeapLockReleaser(ShenandoahHeapLock* const lock): _lock(lock) {
+    assert(lock->owned_by_self(), "Must own the lock");
+  }
+  ~ShenandoahHeapLockReleaser() {
+    _lock->unlock();
+  }
+};
+
 template<ShenandoahFreeSetPartitionId PARTITION>
 HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
   // Resolve the current thread once and pass it to alloc_region_slot() instead of having that
@@ -158,7 +172,16 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
   // Slow-path
   {
     ShenandoahHeap* const heap = ShenandoahHeap::heap();
-    ShenandoahHeapLocker locker(heap->lock(), req.is_mutator_alloc());
+    if (!heap->lock()->try_lock()) {
+      HeapWord* obj = try_allocate_in_alloc_regions(req, in_new_region, slot, slot);
+      if (obj != nullptr) {
+        return obj;
+      }
+      heap->lock()->lock(req.is_mutator_alloc());
+    }
+
+    // Now we own the lock, release it at the exit of current block
+    ShenandoahHeapLockReleaser heap_lock_releaser(heap->lock());
     ShenandoahHeapRegion* const reloaded = _alloc_regions[slot].load_relaxed();
     if (reloaded != nullptr && reloaded != shared_region) {
       HeapWord* obj = try_atomic_allocate_in(reloaded, req);
