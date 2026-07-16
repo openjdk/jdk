@@ -322,6 +322,11 @@ void ShenandoahDegenGC::op_degenerated() {
 
       op_cleanup_complete();
 
+      {
+        ShenandoahHeapLocker locker(heap->lock());
+        heap->allocator()->reserve_mutator_alloc_regions();
+      }
+
       if (heap->mode()->is_generational()) {
         ShenandoahGenerationalHeap::heap()->complete_degenerated_cycle();
       }

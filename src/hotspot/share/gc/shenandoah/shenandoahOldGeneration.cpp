@@ -25,7 +25,6 @@
  */
 
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
-#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
@@ -494,7 +493,6 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
       gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trash_regions);
     gen_heap->compute_old_generation_balance(allocation_runway, old_trash_regions, young_trash_regions);
     heap->free_set()->finish_rebuild(young_trash_regions, old_trash_regions, num_old);
-    heap->allocator()->reserve_mutator_alloc_regions();
   }
 }
 

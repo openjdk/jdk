@@ -32,6 +32,7 @@
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
@@ -279,6 +280,11 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
   heap->set_full_gc_move_in_progress(false);
   heap->set_full_gc_in_progress(false);
+
+  {
+    ShenandoahHeapLocker locker(heap->lock());
+    heap->allocator()->reserve_mutator_alloc_regions();
+  }
 
   DEBUG_ONLY(heap->assert_no_self_forwards());
 
