@@ -69,9 +69,8 @@ public sealed interface PackageEntry extends PoolEntry
     /**
      * {@return whether this entry describes the given package}
      * <p>
-     * When the name is empty, this entry is malformed, so this method always
-     * returns {@code false} for a package descriptor representing the unnamed
-     * package.
+     * This method always returns {@code false} for a package descriptor
+     * representing the unnamed package.
      *
      * @param desc the package descriptor
      * @since 25
