@@ -22,8 +22,8 @@
  * questions.
  */
 
-#ifndef CPU_X86_GC_Z_ZADDRESS_S390_HPP
-#define CPU_X86_GC_Z_ZADDRESS_S390_HPP
+#ifndef CPU_S390_GC_Z_ZADDRESS_S390_HPP
+#define CPU_S390_GC_Z_ZADDRESS_S390_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
@@ -32,5 +32,5 @@ const size_t ZPointerLoadShift = 16;
 size_t ZPlatformAddressOffsetBits();
 size_t ZPlatformAddressHeapBaseShift();
 
-#endif // CPU_X86_GC_Z_ZADDRESS_S390_HPP
+#endif // CPU_S390_GC_Z_ZADDRESS_S390_HPP
 

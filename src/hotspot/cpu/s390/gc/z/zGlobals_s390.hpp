@@ -22,12 +22,12 @@
  * questions.
  */
 
-#ifndef CPU_PPC_GC_Z_ZGLOBALS_S390_HPP
-#define CPU_PPC_GC_Z_ZGLOBALS_S390_HPP
+#ifndef CPU_S390_GC_Z_ZGLOBALS_S390_HPP
+#define CPU_S390_GC_Z_ZGLOBALS_S390_HPP
 
 #include "globalDefinitions_s390.hpp"
 
 const size_t ZPlatformCacheLineSize    = DEFAULT_CACHE_LINE_SIZE;
 
-#endif // CPU_PPC_GC_Z_ZGLOBALS_S390_HPP
+#endif // CPU_S390_GC_Z_ZGLOBALS_S390_HPP
 

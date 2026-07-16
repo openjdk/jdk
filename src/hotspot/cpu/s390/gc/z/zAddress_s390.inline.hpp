@@ -22,8 +22,8 @@
  * questions.
  */
 
-#ifndef CPU_PPC_GC_Z_ZADDRESS_S390_INLINE_HPP
-#define CPU_PPC_GC_Z_ZADDRESS_S390_INLINE_HPP
+#ifndef CPU_S390_GC_Z_ZADDRESS_S390_INLINE_HPP
+#define CPU_S390_GC_Z_ZADDRESS_S390_INLINE_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
@@ -35,5 +35,5 @@ inline constexpr int ZPointer::load_shift_lookup(uintptr_t value) {
   return ZPointerLoadShift;
 }
 
-#endif // CPU_PPC_GC_Z_ZADDRESS_PPC_INLINE_HPP
+#endif // CPU_S390_GC_Z_ZADDRESS_S390_INLINE_HPP
 
