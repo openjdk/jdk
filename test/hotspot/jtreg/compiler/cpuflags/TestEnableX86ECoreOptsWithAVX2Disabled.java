@@ -36,7 +36,7 @@ package compiler.cpuflags;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-public class TestEnableX86ECoreOptsWithoutAVX2 {
+public class TestEnableX86ECoreOptsWithAVX2Disabled {
     static final String[] OPTIONS = {
         "-XX:UseSSE=2",
         "-XX:UseSSE=3",
