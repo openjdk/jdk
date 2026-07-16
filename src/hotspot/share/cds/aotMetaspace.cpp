@@ -169,6 +169,9 @@ bool AOTMetaspace::shared_base_valid(char* shared_base) {
   // be the encoding base, since the headers of archived base objects (and with Lilliput,
   // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
   // start as base.
+  // Note that all narrowKlass inside CDS/AOT archives will be precomputed with the
+  // shift that, at build time, will afford us the maximum encoding range of 4GB. We do this
+  // since we don't know how large the class space at runtime will actually be.
   return CLASS_SPACE_ONLY(is_aligned(shared_base, Metaspace::reserve_alignment()))
          NOT_CLASS_SPACE(true);
 }
@@ -1969,6 +1972,8 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
   assert(total_range_size > ccs_begin_offset, "must be");
   if (use_windows_memory_mapping() && use_archive_base_addr) {
     if (base_address != nullptr) {
+      // Note: We already checked the base address for validity at dump time.
+
       // On Windows, we cannot safely split a reserved memory space into two (see JDK-8255917).
       // Hence, we optimistically reserve archive space and class space side-by-side. We only
       // do this for use_archive_base_addr=true since for use_archive_base_addr=false case
