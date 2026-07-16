@@ -3535,8 +3535,8 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // the same time 'st' is live, which might be unschedulable.  So,
     // require exactly ONE user until such time as we clone 'mem' for
     // each of 'mem's uses (thus making the exactly-1-user-rule hold
-    // true). Further, st must be a contiguous store, otherwise
-    // memory_size does not make sense for measurig overlap.
+    // true). Further, 'st' must be a contiguous store, otherwise
+    // memory_size does not make sense for measuring overlap.
     while (st->is_Store() && st->outcnt() == 1 && (!st->is_StoreVector() || st->Opcode() == Op_StoreVector)) {
       // Looking at a dead closed cycle of memory?
       assert(st != st->in(MemNode::Memory), "dead loop in StoreNode::Ideal");
