@@ -922,10 +922,11 @@ public class SimpleDateFormat extends DateFormat {
     /**
      * Sets the start date of the 100-year period used to interpret 2-digit years.
      * <p>
-     * For example, if the start date is set to January 1, 1950, 2-digit years
-     * are interpreted as falling within the 100-year range from 1950 through
-     * 2049. In that case, 50 is interpreted as 1950, 99 as 1999, 00 as 2000,
-     * and 49 as 2049.
+     * For example, given a {@code SimpleDateFormat} with a {@code GregorianCalendar},
+     * if the start date is set to January 1, 1950, 2-digit years are
+     * interpreted as falling within the 100-year range from 1950 through 2049.
+     * In that case, 50 is interpreted as 1950, 99 as 1999, 00 as 2000, and 49
+     * as 2049.
      *
      * @param startDate During parsing, 2-digit years will be placed in the range
      * {@code startDate} to {@code startDate + 100 years}.
