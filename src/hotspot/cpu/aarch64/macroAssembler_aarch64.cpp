@@ -25,6 +25,7 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "cds/archiveBuilder.hpp"
 #include "ci/ciEnv.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compileTask.hpp"
@@ -5385,35 +5386,6 @@ void MacroAssembler::initialize_klass_decode_mode(address base, int shift, const
   log_info(metaspace)("Klass Decode Mode: %d", (int)_klass_decode_mode);
 }
 
-static Register pick_different_tmp(Register dst, Register src) {
-  auto tmps = RegSet::of(r0, r1, r2) - RegSet::of(src, dst);
-  return *tmps.begin();
-}
-
-void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src) {
-  // we have to load the klass base from the AOT constants area but
-  // not the shift because it is not allowed to change
-  int shift = CompressedKlassPointers::shift();
-  assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressed klass shift!");
-  if (dst != src) {
-    // we can load the base into dst, subtract it formthe src and shift down
-    lea(dst, ExternalAddress(CompressedKlassPointers::base_addr()));
-    ldr(dst, dst);
-    sub(dst, src, dst);
-    lsr(dst, dst, shift);
-  } else {
-    // we need an extra register in order to load the coop base
-    Register tmp = pick_different_tmp(dst, src);
-    RegSet regs = RegSet::of(tmp);
-    push(regs, sp);
-    lea(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
-    ldr(tmp, tmp);
-    sub(dst, src, tmp);
-    lsr(dst, dst, shift);
-    pop(regs, sp);
-  }
-}
-
 void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register tmp) {
   emit_encode_klass_not_null(dst, src, tmp, CompressedKlassPointers::base(),
                              CompressedKlassPointers::shift(), klass_decode_mode());
@@ -5421,13 +5393,23 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register 
 
 void MacroAssembler::emit_encode_klass_not_null(Register dst, Register src, Register tmp,
                                                 address base, int shift, KlassDecodeMode decode_mode) {
-  if (CompressedKlassPointers::base() != nullptr && AOTCodeCache::is_on_for_dump()) {
-    encode_klass_not_null_for_aot(dst, src);
-    return;
-  }
 
   assert_different_registers(tmp, src);
   assert(tmp != noreg, "valid tmp required");
+
+  if (CompressedKlassPointers::base() != nullptr && AOTCodeCache::is_on_for_dump()) {
+    // We are generating code during AOT buildup that will run in *future* processes
+    // with likely different encoding settings. Therefore, we have to load the
+    // encoding base dynamically, we cannot just bake it in as immediate.
+    // Note that we only need to do this for base. The encoding shift would be the
+    // same between build time and runtime: the standard precomputed shift.
+    assert(shift == ArchiveBuilder::precomputed_narrow_klass_shift(), "unexpected compressed klass shift!");
+    lea(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
+    ldr(tmp, tmp);
+    sub(dst, src, tmp);
+    lsr(dst, dst, shift);
+    return;
+  }
 
   switch (decode_mode) {
   case KlassDecodeZero:
@@ -5467,28 +5449,6 @@ void MacroAssembler::emit_encode_klass_not_null(Register dst, Register src, Regi
 
 }
 
-void MacroAssembler::decode_klass_not_null_for_aot(Register dst, Register src) {
-  // we have to load the klass base from the AOT constants area but
-  // not the shift because it is not allowed to change
-  int shift = CompressedKlassPointers::shift();
-  assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressed klass shift!");
-  if (dst != src) {
-    // we can load the base into dst then add the offset with a suitable shift
-    lea(dst, ExternalAddress(CompressedKlassPointers::base_addr()));
-    ldr(dst, dst);
-    add(dst, dst, src, LSL,  shift);
-  } else {
-    // we need an extra register in order to load the coop base
-    Register tmp = pick_different_tmp(dst, src);
-    RegSet regs = RegSet::of(tmp);
-    push(regs, sp);
-    lea(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
-    ldr(tmp, tmp);
-    add(dst, tmp,  src, LSL,  shift);
-    pop(regs, sp);
-  }
-}
-
 void  MacroAssembler::decode_klass_not_null(Register dst, Register src, Register tmp) {
   emit_decode_klass_not_null(dst, src, tmp,
                              CompressedKlassPointers::base(),
@@ -5499,13 +5459,21 @@ void  MacroAssembler::decode_klass_not_null(Register dst, Register src, Register
 void MacroAssembler::emit_decode_klass_not_null(Register dst, Register src, Register tmp,
                                                 address base, int shift, KlassDecodeMode decode_mode) {
 
-  if (AOTCodeCache::is_on_for_dump()) {
-    decode_klass_not_null_for_aot(dst, src);
-    return;
-  }
-
   assert_different_registers(tmp, src);
   assert(tmp != noreg, "valid tmp required");
+
+  if (AOTCodeCache::is_on_for_dump()) {
+    // We are generating code during AOT buildup that will run in *future* processes
+    // with likely different encoding settings. Therefore, we have to load the
+    // encoding base dynamically, we cannot just bake it in as immediate.
+    // Note that we only need to do this for base. The encoding shift would be the
+    // same between build time and runtime: the standard precomputed shift.
+    assert(shift == ArchiveBuilder::precomputed_narrow_klass_shift(), "unexpected compressed klass shift!");
+    lea(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
+    ldr(tmp, tmp);
+    add(dst, tmp,  src, LSL,  shift);
+    return;
+  }
 
   switch (decode_mode) {
   case KlassDecodeZero: // 0-1 instructions
