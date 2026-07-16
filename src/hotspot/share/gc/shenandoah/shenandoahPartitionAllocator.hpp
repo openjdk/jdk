@@ -96,10 +96,10 @@ private:
   HeapWord* allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& boundary_changed);
 
   // Try the lock-free CAS allocation in slot `index`'s region r; retires the slot if it fills.
-  HeapWord* try_atomic_allocate_in(uint index, ShenandoahHeapRegion* r, ShenandoahAllocRequest& req);
+  HeapWord* try_atomic_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req);
 
-  // Retire (deactivate + reconcile) the region in stripe slot `index`; heap lock held.
-  void release_alloc_region(uint index);
+  // Retire (deactivate + reconcile) the region in stripe slot; heap lock held.
+  void release_alloc_region(uint slot);
 
 public:
   ShenandoahPartitionAllocator(ShenandoahFreeSet* free_set, uint alloc_region_count);
