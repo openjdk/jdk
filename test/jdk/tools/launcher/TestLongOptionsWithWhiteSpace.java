@@ -56,8 +56,9 @@ public class TestLongOptionsWithWhiteSpace {
 
     public static void main(String[] args) throws Exception {
         for (String[] option : VALID_OPTIONS) {
-            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
-                    option[0], option[1], "-version");
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(option[0],
+                                                                        option[1],
+                                                                        "-version");
 
             output.shouldHaveExitValue(0);
             output.shouldContain("version");
@@ -76,7 +77,7 @@ public class TestLongOptionsWithWhiteSpace {
                                                          "badOption",
                                                          "-version");
 
-            if ("--enable-final-field-mutation".equals(option[0])){
+            if ("--enable-final-field-mutation".equals(option[0])) {
                 output.shouldHaveExitValue(0);
                 output.shouldContain("Unknown module");
             } else {
