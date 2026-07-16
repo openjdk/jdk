@@ -62,6 +62,7 @@ long c1_store_fubar = 0;
 long conjoint_fubar = 0;
 long copy_load_slow_fubar = 0;
 long setup_args_fubar = 0;
+long check_oop_fubar = 0;
 long c2_load_fubar = 0;
 long jobject_fubar = 0;
 long disjoint_fubar = 0;
@@ -1296,27 +1297,41 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
 // Verify a colored pointer
 // TODO: I am following the implementation of ppc because the implementation of verify_oop of s390 matches ppc and the call for verify_oop in the above implementations are also defined just like ppc
 void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const char* msg) {
-  __ stop("check oop");
   if (!VerifyOops) {
     return;
   }
+
+  assert_different_registers(obj, Z_R1);
+
+  int nbytes_save = 3 * BytesPerWord;
+  int offset = 0;
+
+  __ push_frame(nbytes_save);               offset += 8;
+  __ save_return_pc();                      offset += 8;
+
+  __ z_stg(Z_R1, offset, Z_SP);
+
   Label done, skip_uncolor;
   // Skip (colored) null
-  __ z_srlg(Z_R0, obj, ZPointerLoadShift);
-  __ z_ltgr(Z_R0, Z_R0);
-  __ branch_optimized(Assembler::bcondAlways, done);
+  __ z_srlg(Z_R1, obj, ZPointerLoadShift);
+  __ z_ltgr(Z_R1, Z_R1);
+  __ branch_optimized(Assembler::bcondZero, done);
 
   // Check if ZAddressHeapBase << ZPointerLoadShift is set. If so, we need to uncolor.
-  // Runtime TODO: Check if this implementation is correct, (purpose is clear enough)
-  __ z_srlg(Z_R0, obj, ZAddressHeapBaseShift + ZPointerLoadShift);
-  __ z_chi(Z_R0, 0x01);
-  __ z_lgr(Z_R0, obj);
-  __ branch_optimized(Assembler::bcondZero, skip_uncolor);
-  __ z_srlg(Z_R0, obj, ZPointerLoadShift);
+  __ z_slag(Z_R1, obj, 64 - ZAddressHeapBaseShift - ZPointerLoadShift);
+  __ z_lgr(Z_R1, obj);
+  __ branch_optimized(Assembler::bcondNotOverflow, skip_uncolor);
+
+  __ z_srlg(Z_R1, obj, ZPointerLoadShift);
   __ bind(skip_uncolor);
 
-  __ verify_oop(Z_R0, msg);
+  __ verify_oop(Z_R1, msg);
   __ bind(done);
+
+  offset = 8;
+  __ restore_return_pc();                  offset += 8;
+  __ z_lg(Z_R1, offset, Z_SP);
+  __ pop_frame();
 }
 
 #undef __
