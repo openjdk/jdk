@@ -3774,7 +3774,7 @@ void AOTCodeAddressTable::set_c1_stubs_complete() {
 #if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
     ShenandoahBarrierSetC1* bs = (ShenandoahBarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
-    ADD_EXTERNAL_ADDRESS(bs->pre_barrier_c1_runtime_code_blob()->code_begin());
+    ADD_EXTERNAL_ADDRESS(bs->keepalive_barrier_c1_runtime_code_blob()->code_begin());
     ADD_EXTERNAL_ADDRESS(bs->load_reference_barrier_strong_rt_code_blob()->code_begin());
     ADD_EXTERNAL_ADDRESS(bs->load_reference_barrier_strong_native_rt_code_blob()->code_begin());
     ADD_EXTERNAL_ADDRESS(bs->load_reference_barrier_weak_rt_code_blob()->code_begin());

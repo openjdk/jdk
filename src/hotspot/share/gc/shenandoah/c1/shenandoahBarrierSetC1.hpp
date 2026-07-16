@@ -136,6 +136,32 @@ public:
 
   virtual bool generate_c1_runtime_stubs(BufferBlob* buffer_blob);
 
+  // Next methods are used by AOT code caching
+  CodeBlob* keepalive_barrier_c1_runtime_code_blob() {
+    assert(_keepalive_barrier_c1_runtime_code_blob != nullptr, "");
+    return _keepalive_barrier_c1_runtime_code_blob;
+  }
+
+  CodeBlob* load_reference_barrier_strong_rt_code_blob() {
+    assert(_load_reference_barrier_strong_rt_code_blob != nullptr, "");
+    return _load_reference_barrier_strong_rt_code_blob;
+  }
+
+  CodeBlob* load_reference_barrier_strong_native_rt_code_blob() {
+    assert(_load_reference_barrier_strong_native_rt_code_blob != nullptr, "");
+    return _load_reference_barrier_strong_native_rt_code_blob;
+  }
+
+  CodeBlob* load_reference_barrier_weak_rt_code_blob() {
+    assert(_load_reference_barrier_weak_rt_code_blob != nullptr, "");
+    return _load_reference_barrier_weak_rt_code_blob;
+  }
+
+  CodeBlob* load_reference_barrier_phantom_rt_code_blob() {
+    assert(_load_reference_barrier_phantom_rt_code_blob != nullptr, "");
+    return _load_reference_barrier_phantom_rt_code_blob;
+  }
+
 protected:
   virtual void store_at_resolved(LIRAccess& access, LIR_Opr value);
   virtual LIR_Opr resolve_address(LIRAccess& access, bool resolve_in_register);
