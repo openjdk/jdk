@@ -1070,9 +1070,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
     // At compile time we assumed the field wasn't volatile but after
     // loading it turns out it was volatile so we have to throw the
     // compiled code out and let it be regenerated.
-    if (TracePatching) {
-      tty->print_cr("Deoptimizing for patching volatile field reference");
-    }
+    log_debug(deoptimization)("Deoptimizing for patching volatile field reference");
 
     // It's possible the nmethod was invalidated in the last
     // safepoint, but if it's still alive then make it not_entrant.
@@ -1309,9 +1307,7 @@ void Runtime1::patch_code(JavaThread* current, StubId stub_id) {
   // (see another implementation above).
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
 
-  if (TracePatching) {
-    tty->print_cr("Deoptimizing because patch is needed");
-  }
+  log_debug(deoptimization)("Deoptimizing because patch is needed");
 
   RegisterMap reg_map(current,
                       RegisterMap::UpdateMap::skip,
