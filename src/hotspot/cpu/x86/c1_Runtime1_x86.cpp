@@ -680,7 +680,7 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
 
    __ restore_profile_rng();
 
- // get throwing pc (= return address).
+  // get throwing pc (= return address).
   // rdx has been destroyed by the call, so it must be set again
   // the pop is also necessary to simulate the effect of a ret(0)
   __ pop(exception_pc);
