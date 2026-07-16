@@ -727,10 +727,11 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
 
   for (int c = 0; c < concats.length(); c++) {
     StringConcat* sc = concats.at(c);
-    // before calling replace_string_concat(), check if the concat is
-    // too large and skip it
-    uint estimated_nodes = sc->num_arguments() * 150;
-    if (C->check_node_count(estimated_nodes, "string concat too large")) {
+    // Skip string concat optimization if the estimated node expansion
+    // would exceed the node budget. Each argument can generate up to
+    // ~330 nodes in the worst case (int_getChars with full digit extraction).
+    uint estimated_nodes = (uint)sc->num_arguments() * 330;
+    if (C->live_nodes() + estimated_nodes > C->max_node_limit()) {
       continue;
     }
     replace_string_concat(sc);
