@@ -1055,7 +1055,7 @@ void TemplateTable::lstore() {
 void TemplateTable::fstore() {
   transition(ftos, vtos);
   locals_index(Z_R1_scratch);
-  __ freg2mem_opt(Z_ftos, faddress(_masm, Z_R1_scratch));
+  __ freg2mem_opt(Z_ftos, faddress(_masm, Z_R1_scratch), false);
 }
 
 void TemplateTable::dstore() {
@@ -3506,7 +3506,7 @@ void TemplateTable::fast_xaccess(TosState state) {
       __ verify_oop(Z_tos);
       break;
     case ftos:
-      __ mem2freg_opt(Z_ftos, field);
+      __ mem2freg_opt(Z_ftos, field, false);
       break;
     default:
       ShouldNotReachHere();

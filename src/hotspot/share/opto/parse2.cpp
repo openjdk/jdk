@@ -1843,7 +1843,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
     const Type* obj_type = _gvn.type(obj);
     const Type* tboth = obj_type->filter_speculative(cast_type);
     assert(tboth->higher_equal(obj_type) && tboth->higher_equal(cast_type), "sanity");
-    if (tboth == Type::TOP && KillPathsReachableByDeadTypeNode) {
+    if (tboth == Type::TOP && KillPathsReachableByDeadDataNode) {
       // Let dead type node cleaning logic prune effectively dead path for us.
       // CheckCastPP::Value() == TOP and it will trigger the cleanup during GVN.
       // Don't materialize the cast when cleanup is disabled, because

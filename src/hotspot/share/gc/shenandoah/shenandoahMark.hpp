@@ -72,17 +72,17 @@ public:
 private:
 // ---------- Marking loop and tasks
 
-  template <class T, ShenandoahGenerationType GENERATION, bool STRING_DEDUP>
+  template <class T, class OT, ShenandoahGenerationType GENERATION, bool STRING_DEDUP>
   ALWAYSINLINE
   static void do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task, uint worker_id);
 
-  template <class T>
+  template <class T, class OT>
   ALWAYSINLINE
   static void do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop array, Klass* klass, bool weak);
 
-  template <class T>
+  template <class T, class OT>
   ALWAYSINLINE
-  static void do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop array, int chunk, int pow, bool weak);
+  static void do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop array, Klass* klass, int chunk, int pow, bool weak);
 
   template <ShenandoahGenerationType GENERATION>
   ALWAYSINLINE
@@ -105,7 +105,7 @@ private:
   template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
   void mark_loop_prework(uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req, bool update_refs);
 
-  template <class T, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
+  template <class T, class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
   NOINLINE // Main hot loop, start inlining from here
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t, StringDedup::Requests* const req);
 

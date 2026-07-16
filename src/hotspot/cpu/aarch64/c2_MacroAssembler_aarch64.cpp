@@ -2728,7 +2728,8 @@ void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
 void C2_MacroAssembler::select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
                                                      FloatRegister src2, FloatRegister index,
                                                      FloatRegister tmp, unsigned vector_length_in_bytes) {
-  assert_different_registers(dst, src1, src2, tmp);
+  assert_different_registers(src2, tmp);
+  assert_different_registers(index, tmp);
   SIMD_Arrangement size = vector_length_in_bytes == 16 ? T16B : T8B;
 
   if (vector_length_in_bytes == 16) {
@@ -2757,7 +2758,8 @@ void C2_MacroAssembler::select_from_two_vectors_sve(FloatRegister dst, FloatRegi
                                                     FloatRegister src2, FloatRegister index,
                                                     FloatRegister tmp, SIMD_RegVariant T,
                                                     unsigned vector_length_in_bytes) {
-  assert_different_registers(dst, src1, src2, index, tmp);
+  assert_different_registers(src2, tmp);
+  assert_different_registers(index, tmp);
 
   if (vector_length_in_bytes == 8) {
     // We need to fit both the source vectors (src1, src2) in a single vector register because the
@@ -2784,7 +2786,8 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
                                                 FloatRegister tmp, BasicType bt,
                                                 unsigned vector_length_in_bytes) {
 
-  assert_different_registers(dst, src1, src2, index, tmp);
+  assert_different_registers(dst, src1, src2, tmp);
+  assert_different_registers(index, tmp);
 
   // The cases that can reach this method are -
   // - UseSVE = 0/1, vector_length_in_bytes = 8 or 16, excluding double and long types
