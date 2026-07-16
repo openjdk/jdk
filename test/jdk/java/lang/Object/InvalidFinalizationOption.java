@@ -37,7 +37,7 @@ public class InvalidFinalizationOption {
         record TestData(String arg, String expected) { }
 
         TestData[] testData = {
-            new TestData("--finalization",        "Unrecognized option"),
+            new TestData("--finalization",        "Invalid finalization value"),
             new TestData("--finalization=",       "Invalid finalization value"),
             new TestData("--finalization=azerty", "Invalid finalization value")
         };
