@@ -24,19 +24,28 @@
 /*
  * @test
  * @bug 8386116
- * @summary Test suspending and sending async exception to a virtual thread
+ * @summary Test suspending and sending async exception to a yielding virtual thread
  * @requires vm.continuations
  * @requires vm.jvmti
  * @requires test.thread.factory == null
  * @library /test/lib /test/hotspot/jtreg
- * @run junit/othervm/native -agentlib:StopThreadTest2 StopThreadTest2
+ * @run main/othervm/native -agentlib:StopThreadTest2 StopThreadTest2 1
+ */
+
+/*
+ * @test
+ * @bug 8386116
+ * @summary Test suspending and sending async exception to a virtual thread with empty task
+ * @requires vm.continuations
+ * @requires vm.jvmti
+ * @requires test.thread.factory == null
+ * @library /test/lib /test/hotspot/jtreg
+ * @run main/othervm/native -agentlib:StopThreadTest2 StopThreadTest2 2
  */
 
 import jdk.test.lib.Asserts;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.jupiter.api.Test;
 
 public class StopThreadTest2 {
     static final int MAX_VTHREAD_COUNT = Runtime.getRuntime().availableProcessors();
@@ -46,6 +55,15 @@ public class StopThreadTest2 {
     private static native void suspendAllVirtualThreads();
     private static native void resumeAllVirtualThreads();
     private static native boolean stopThread(Thread thread, Throwable th, boolean allowNotAlive);
+
+    public static void main(String args[]) throws Exception {
+        int testCase = (args.length > 0) ? Integer.parseInt(args[0]) : 1;
+        switch (testCase) {
+            case 1 -> testStopAtYield();
+            case 2 -> testStopAtEmptyTask();
+            default -> throw new RuntimeException("Invalid test case");
+        }
+    }
 
     public static void foo(CountDownLatch started) {
         try {
@@ -61,8 +79,7 @@ public class StopThreadTest2 {
     /**
      * Test StopThread targeting virtual thread calling Thread.yield
      */
-    @Test
-    void testStopAtYield() throws Exception {
+    static void testStopAtYield() throws Exception {
         Thread[] vthreads = new Thread[MAX_VTHREAD_COUNT];
         for (int i = 0; i < MAX_VTHREAD_COUNT; i++) {
             var started = new CountDownLatch(1);
@@ -89,15 +106,7 @@ public class StopThreadTest2 {
     /**
      * Test StopThread targeting virtual thread executing empty task
      */
-    @Test
-    void testStopAtEmptyTask() throws Exception {
-        // Run once to make sure all classes before Thread.runWith are
-        // initialized. Otherwise, if this test runs first and we throw
-        // at VirtualThreadStartEvent.<clinit> for example, foo will
-        // never be called for testStopAtYield and the test will hang.
-        Thread vthread0 = Thread.ofVirtual().start(() -> {});
-        vthread0.join();
-
+    static void testStopAtEmptyTask() throws Exception {
         Thread[] vthreads = new Thread[MAX_VTHREAD_COUNT];
         for (int i = 0; i < MAX_VTHREAD_COUNT; i++) {
             vthreads[i] = Thread.ofVirtual().name("VThread#" + i).start(() -> {});
