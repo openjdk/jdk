@@ -87,12 +87,13 @@ bool MemNode::check_if_adr_maybe_raw(Node* adr) {
 
 #ifndef PRODUCT
 void MemNode::dump_spec(outputStream *st) const {
-  if (in(Address) == nullptr)  return; // node is dead
+  if (in(Address) == nullptr) {
+    // node is dead
+    return;
+  }
 #ifndef ASSERT
   // fake the missing field
-  const TypePtr* _adr_type = nullptr;
-  if (in(Address) != nullptr)
-    _adr_type = in(Address)->bottom_type()->isa_ptr();
+  const TypePtr* _adr_type = in(Address)->bottom_type()->isa_ptr();
 #endif
   dump_adr_type(_adr_type, st);
 
@@ -109,6 +110,7 @@ void MemNode::dump_spec(outputStream *st) const {
   if (_unsafe_access) {
     st->print(" unsafe");
   }
+  st->print(" barrier(0x%x)", _barrier_data);
 }
 
 void MemNode::dump_adr_type(const TypePtr* adr_type, outputStream* st) {
@@ -1289,9 +1291,12 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
         return res;
       }
 
-      // Type-unsafe stores must be due to array polymorphism
-      const TypePtr* adr_type = this->adr_type();
-      assert(adr_type == nullptr || adr_type->isa_aryptr() != nullptr, "unexpected type-unsafe store");
+      // There are some cases in which the Type of the load is narrower than the Type of the value
+      // that is stored into that location. The most common case is array polymorphism, when the
+      // type of an array element depends on the type of the array. In addition, there are some
+      // corner cases, the first one is concurrent class loading, when CHA can result in a narrower
+      // Type than what is declared only after the child class is loaded, and the second case is
+      // unsafe accesses when we do not check for type safety. See JDK-8388184.
       return nullptr;
     }
 
@@ -4149,6 +4154,26 @@ MemBarNode* LoadStoreNode::trailing_membar() const {
 }
 
 uint LoadStoreNode::size_of() const { return sizeof(*this); }
+
+#ifndef PRODUCT
+void LoadStoreNode::dump_spec(outputStream* st) const {
+  if (in(MemNode::Address) == nullptr) {
+    // node is dead
+    return;
+  }
+#ifndef ASSERT
+  // fake the missing field
+  const TypePtr* _adr_type = in(MemNode::Address)->bottom_type()->isa_ptr();
+#endif
+  MemNode::dump_adr_type(_adr_type, st);
+
+  Compile* C = Compile::current();
+  if (C->alias_type(_adr_type)->is_volatile()) {
+    st->print(" Volatile!");
+  }
+  st->print(" barrier(0x%x)", _barrier_data);
+}
+#endif
 
 //=============================================================================
 //----------------------------------LoadStoreConditionalNode--------------------

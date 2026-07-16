@@ -674,7 +674,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
     // as interpreted so the skeleton frame will be walkable
     // The correct pc will be set when the skeleton frame is completely filled out
     // The final pc we store in the loop is wrong and will be overwritten below
-    frame_pcs[number_of_frames - 1 - index ] = Interpreter::deopt_entry(vtos, 0) - frame::pc_return_offset;
+    frame_pcs[number_of_frames - 1 - index ] = Interpreter::deopt_entry(vtos, 0);
 
     callee_parameters = array->element(index)->method()->size_of_parameters();
     callee_locals = array->element(index)->method()->max_locals();

@@ -643,6 +643,8 @@ public class LingeredApp {
                         crasher.run();
                     }
                 }
+                // Force a GC now to reduce the risk of one happening during the loop below.
+                System.gc();
                 while (Files.exists(path)) {
                     // Touch the lock to indicate our readiness
                     setLastModified(theLockFileName, epoch());

@@ -529,6 +529,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
+  { "CompilationMode",              JDK_Version::jdk(28), JDK_Version::jdk(29), JDK_Version::jdk(30)},
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "InitiatingHeapOccupancyPercent", JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
@@ -543,25 +544,6 @@ static SpecialFlag const special_jvm_flags[] = {
 #ifdef _LP64
   { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
 #endif
-
-  { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "MaxRAM",                       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "NewSizeThreadIncrease",        JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "NeverActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "AlwaysActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "UseXMMForArrayCopy",           JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "UseNewLongLShift",             JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-
-  {"ShenandoahAccelerationSamplePeriod",   JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  {"ShenandoahRateAccelerationSampleSize", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  {"ShenandoahMomentaryAllocationRateSpikeSampleSize", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  {"ShenandoahAdaptiveSampleFrequencyHz", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  {"ShenandoahAdaptiveSampleSizeSeconds", JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  {"ShenandoahAdaptiveInitialSpikeThreshold",JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  {"ShenandoahAdaptiveDecayFactor",       JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },

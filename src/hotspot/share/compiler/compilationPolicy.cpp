@@ -1470,7 +1470,7 @@ CompLevel CompilationPolicy::transition_from_limited_profile(const methodHandle&
 // Determine if a method should be compiled with a normal entry point at a different level.
 CompLevel CompilationPolicy::call_event(const methodHandle& method, CompLevel cur_level, JavaThread* THREAD) {
   CompLevel osr_level = MIN2((CompLevel) method->highest_osr_comp_level(), common<LoopPredicate>(method, cur_level, THREAD, true));
-  CompLevel next_level = common<CallPredicate>(method, cur_level, THREAD, !TrainingData::have_data() && is_old(method));
+  CompLevel next_level = common<CallPredicate>(method, cur_level, THREAD, is_old(method));
 
   // If OSR method level is greater than the regular method level, the levels should be
   // equalized by raising the regular method level in order to avoid OSRs during each

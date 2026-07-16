@@ -77,8 +77,8 @@ class ciMethod : public ciMetadata {
 
   // Code attributes.
   int _code_size;
-  int _max_stack;
-  int _max_locals;
+  uint _max_stack;
+  u2 _max_locals;
   vmIntrinsicID _intrinsic_id;
   int _handler_count;
   int _interpreter_invocation_count;

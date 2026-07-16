@@ -79,9 +79,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * the number should be formatted according to the customs and conventions of the
  * user's native country, region, or culture.
  *
- * <p>The {@code Locale} class implements IETF BCP 47 which is composed of
- * <a href="https://tools.ietf.org/html/rfc4647">RFC 4647 "Matching of Language
- * Tags"</a> and <a href="https://tools.ietf.org/html/rfc5646">RFC 5646 "Tags
+ * <p>The {@code Locale} class implements
+ * <a href="https://www.rfc-editor.org/info/bcp47">IETF BCP 47</a> which contains
+ * <a href="https://www.rfc-editor.org/info/rfc4647">RFC 4647 "Matching of Language
+ * Tags"</a> and <a href="https://www.rfc-editor.org/info/rfc5646">RFC 5646 "Tags
  * for Identifying Languages"</a> with support for the LDML (UTS#35, "Unicode
  * Locale Data Markup Language") BCP 47-compatible extensions for locale data
  * exchange. Each {@code Locale} is associated with locale data which is provided
@@ -101,7 +102,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>
  * {@code Locale} implements IETF BCP 47 and any deviations should be observed
  * by the comments prefixed by <em>"BCP 47 deviation:"</em>.
- * <a href="https://tools.ietf.org/html/rfc5646">RFC 5646</a>
+ * <a href="https://www.rfc-editor.org/info/rfc5646">RFC 5646</a>
  * combines subtags from various ISO (639, 3166, 15924) standards which are also
  * included in the composition of {@code Locale}.
  * Additionally, the full list of valid codes for each field can be found in the
@@ -119,9 +120,13 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   {@code Locale} always canonicalizes to lower case.</dd>
  *
  *   <dd> <em>Syntax:</em> Well-formed {@code language} values have the form {@code [a-zA-Z]{2,8}}.</dd>
- *   <dd> <em> BCP 47 deviation:</em> this is not the full BCP 47 language production, since it excludes
- *   <a href="https://datatracker.ietf.org/doc/html/rfc5646#section-2.2.2">extlang</a>
- *   (as modern three-letter language codes are preferred).</dd>
+ *   <dd> <em> BCP 47 deviation:</em> {@code Locale} does not retain the
+ *   <a href="https://www.rfc-editor.org/rfc/rfc5646#section-2.2.2">extlang</a>
+ *   subtag. This is because three-letter language codes are preferred over extlang
+ *   subtags. When a {@code Locale} is created from a language tag containing an
+ *   extlang subtag, the first extlang subtag is interpreted as the <i>language</i>
+ *   field. The primary language subtag and any subsequent extlang subtags
+ *   are ignored.</dd>
  *
  *   <dd> <em>Example:</em> "en" (English), "ja" (Japanese), "kok" (Konkani)</dd>
  *
@@ -208,7 +213,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * </dl>
  *
  * <b>BCP 47 deviation:</b> BCP47 defines the following two levels of
- * <a href="https://datatracker.ietf.org/doc/html/rfc5646#section-2.2.9">conformance</a>,
+ * <a href="https://www.rfc-editor.org/rfc/rfc5646#section-2.2.9">conformance</a>,
  * "valid" and "well-formed". A valid tag requires that it is well-formed, its
  * subtag values are registered in the IANA Language Subtag Registry, and it does not
  * contain duplicate variant or extension singleton subtags. The {@code Locale}
@@ -222,8 +227,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <h3><a id="def_locale_extension">Unicode BCP 47 U Extension</a></h3>
  *
- * <p>UTS#35, "Unicode Locale Data Markup Language" defines optional
- * attributes and keywords to override or refine the default behavior
+ * <p>UTS#35, "Unicode Locale Data Markup Language" defines the
+ * <a href="https://www.unicode.org/reports/tr35/#u_Extension">Unicode BCP 47 U Extension</a>,
+ * an extension based on <a href="https://www.rfc-editor.org/info/rfc6067">RFC 6067</a>,
+ * which describes optional attributes and keywords to override or refine the default behavior
  * associated with a locale.  A keyword is represented by a pair of
  * key and type.  For example, "nu-thai" indicates that Thai local
  * digits (value:"thai") should be used for formatting numbers
@@ -410,7 +417,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * with "locale" in the following locale matching documentation.
  *
  * <p>In order to match a user's preferred locales to a set of language
- * tags, <a href="https://tools.ietf.org/html/rfc4647">RFC 4647 Matching of
+ * tags, <a href="https://www.rfc-editor.org/info/rfc4647">RFC 4647 Matching of
  * Language Tags</a> defines two mechanisms: filtering and lookup.
  * <em>Filtering</em> is used to get all matching locales, whereas
  * <em>lookup</em> is to select the best matching locale.
@@ -516,25 +523,24 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>For compatibility reasons, two
  * non-conforming locales are treated as special cases.  These are
  * <b>{@code ja_JP_JP}</b> and <b>{@code th_TH_TH}</b>. These are ill-formed
- * in BCP 47 since the {@linkplain ##def_variant variants} are too short. To ease migration to BCP 47,
- * these are treated specially during construction.  These two cases (and only
- * these) cause a constructor to generate an extension, all other values behave
- * exactly as they did prior to Java 7.
+ * in BCP 47 since the {@linkplain ##def_variant variants} are too short. To ease
+ * migration to BCP 47, these are treated specially during creation. Creation
+ * of these two cases generates a compatibility extension.
  *
  * <p>Java has used {@code ja_JP_JP} to represent Japanese as used in
  * Japan together with the Japanese Imperial calendar. This is now
  * representable using a Unicode locale extension, by specifying the
  * Unicode locale key {@code ca} (for "calendar") and type
- * {@code japanese}. When the Locale constructor is called with the
- * arguments "ja", "JP", "JP", the extension "u-ca-japanese" is
- * automatically added.
+ * {@code japanese}. When a {@code Locale} is created with language "ja", an
+ * empty script, country "JP", variant "JP", and no extensions, the extension
+ * "u-ca-japanese" is automatically added.
  *
  * <p>Java has used {@code th_TH_TH} to represent Thai as used in
  * Thailand together with Thai digits. This is also now representable using
  * a Unicode locale extension, by specifying the Unicode locale key
- * {@code nu} (for "number") and value {@code thai}. When the Locale
- * constructor is called with the arguments "th", "TH", "TH", the
- * extension "u-nu-thai" is automatically added.
+ * {@code nu} (for "number") and value {@code thai}. When a {@code Locale} is
+ * created with language "th", an empty script, country "TH", variant "TH", and
+ * no extensions, the extension "u-nu-thai" is automatically added.
  *
  * <h3><a id="legacy_language_codes">Legacy language codes</a></h3>
  *
@@ -546,6 +552,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * this mapping, so that resources can be named using either convention,
  * see {@link ResourceBundle.Control}.
  *
+ * @spec https://www.rfc-editor.org/info/bcp47
+ *      IETF BCP 47
  * @spec https://www.rfc-editor.org/info/rfc4647
  *      RFC 4647: Matching of Language Tags
  * @spec https://www.rfc-editor.org/info/rfc5646
@@ -1603,9 +1611,9 @@ public final class Locale implements Cloneable, Serializable {
      * <li>Deprecated ISO language codes "iw", "ji", and "in" are
      * converted to "he", "yi", and "id", respectively.
      *
-     * <li>A locale with language "no", country "NO", and variant
-     * "NY", representing Norwegian Nynorsk (Norway), is converted
-     * to a language tag "nn-NO".</li></ul>
+     * <li>A locale with language "no", an empty script, country "NO", variant
+     * "NY", and no extensions, representing Norwegian Nynorsk (Norway), is
+     * converted to a language tag "nn-NO".</li></ul>
      *
      * <p><b>Note:</b> Although the language tag obtained by this
      * method is well-formed (satisfies the syntax requirements
@@ -2684,6 +2692,13 @@ public final class Locale implements Cloneable, Serializable {
          * <li>Locale("th", "TH", "TH") is treated as "th-TH-u-nu-thai"
          * <li>Locale("no", "NO", "NY") is treated as "nn-NO"</ul>
          *
+         * <p>For all three cases, compatibility handling only applies when the script
+         * is empty. Additionally, the Japanese case requires exactly the
+         * {@code u-ca-japanese} extension, the Thai case requires
+         * exactly the {@code u-nu-thai} extension, and the Norwegian case
+         * requires no extensions. If these conditions are not met, the two-letter
+         * variant is treated as ill-formed, and an {@code IllformedLocaleException} is thrown.
+         *
          * @param locale the locale
          * @return This builder.
          * @throws IllformedLocaleException if {@code locale} has
@@ -2985,7 +3000,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * This enum provides constants to select a filtering mode for locale
-     * matching. Refer to <a href="https://tools.ietf.org/html/rfc4647">RFC 4647
+     * matching. Refer to <a href="https://www.rfc-editor.org/info/rfc4647">RFC 4647
      * Matching of Language Tags</a> for details.
      *
      * <p>As an example, think of two Language Priority Lists each of which
@@ -3122,7 +3137,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * This class expresses a <em>Language Range</em> defined in
-     * <a href="https://tools.ietf.org/html/rfc4647">RFC 4647 Matching of
+     * <a href="https://www.rfc-editor.org/info/rfc4647">RFC 4647 Matching of
      * Language Tags</a>. A language range is an identifier which is used to
      * select language tag(s) meeting specific requirements by using the
      * mechanisms described in {@linkplain Locale##LocaleMatching Locale

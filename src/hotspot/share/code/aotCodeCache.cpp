@@ -132,11 +132,12 @@ const char* aot_code_entry_kind_name[] = {
 // Print to error channel when -XX:AOTMode is set to "on"
 static LogStream& load_failure_log() {
   static LogStream err_stream(LogLevel::Error, LogTagSetMapping<LOG_TAGS(aot, codecache, init)>::tagset());
-  static LogStream dbg_stream(LogLevel::Debug, LogTagSetMapping<LOG_TAGS(aot, codecache, init)>::tagset());
+  static LogStream inf_stream(LogLevel::Info, LogTagSetMapping<LOG_TAGS(aot, codecache, init)>::tagset());
   if (RequireSharedSpaces || AbortVMOnAOTCodeFailure) {
     return err_stream;
   } else {
-    return dbg_stream;
+    static LogStream aot_stream(LogLevel::Info, LogTagSetMapping<LOG_TAGS(aot)>::tagset());
+    return inf_stream.is_enabled() ? inf_stream : aot_stream;
   }
 }
 
@@ -370,6 +371,20 @@ void AOTCodeCache::init2() {
     return;
   }
 
+  // Report contents of AOT code cache after verification passed
+  Header* header = opened_cache->_load_header;
+  if (header != nullptr) { // Loading AOT code
+    log_info (aot, codecache, init)("Loaded %u AOT code entries from AOT Code Cache", header->entries_count());
+    log_debug(aot, codecache, init)("  Adapters:  total=%u", header->adapters_count());
+    log_debug(aot, codecache, init)("  Shared Blobs: total=%u", header->shared_blobs_count());
+    log_debug(aot, codecache, init)("  StubGen Blobs:  total=%d", header->stubgen_blobs_count());
+    log_debug(aot, codecache, init)("  C1 Blobs: total=%u", header->C1_blobs_count());
+    log_debug(aot, codecache, init)("  C2 Blobs: total=%u", header->C2_blobs_count());
+    log_debug(aot, codecache, init)("  AOT code cache size: %u bytes", header->cache_size());
+
+    // Read strings
+    opened_cache->load_strings();
+  }
   // initialize aot runtime constants as appropriate to this runtime
   AOTRuntimeConstants::initialize_from_runtime();
 
@@ -522,19 +537,6 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
       set_failed();
       return;
     }
-    load_info_log().print_cr("Loaded %u AOT code entries from AOT Code Cache", _load_header->entries_count());
-    LogStreamHandle(Info, aot, codecache, init) log;
-    if (log.is_enabled()) {
-      log.print_cr("  %s: total=%u", aot_code_entry_kind_name[AOTCodeEntry::Adapter], _load_header->adapters_count());
-      log.print_cr("  %s: total=%u", aot_code_entry_kind_name[AOTCodeEntry::SharedBlob], _load_header->shared_blobs_count());
-      log.print_cr("  %s: total=%u", aot_code_entry_kind_name[AOTCodeEntry::C1Blob], _load_header->C1_blobs_count());
-      log.print_cr("  %s: total=%u", aot_code_entry_kind_name[AOTCodeEntry::C2Blob], _load_header->C2_blobs_count());
-      log.print_cr("  %s: total=%u", aot_code_entry_kind_name[AOTCodeEntry::StubGenBlob], _load_header->stubgen_blobs_count());
-      log.print_cr("  %s: total=%u", aot_code_entry_kind_name[AOTCodeEntry::Nmethod], _load_header->nmethods_count());
-      log.print_cr("  AOT code total size: %u bytes", _load_header->cache_size());
-    }
-    // Read strings
-    load_strings();
   }
   if (_for_dump) {
     _C_store_buffer = NEW_C_HEAP_ARRAY(char, max_aot_code_size() + DATA_ALIGNMENT, mtCode);
@@ -4001,9 +4003,6 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
     id = search_address(addr, _stubs_addr, _stubs_max);
     if (id == BAD_ADDRESS_ID) {
       StubCodeDesc* desc = StubCodeDesc::desc_for(addr);
-      if (desc == nullptr) {
-        desc = StubCodeDesc::desc_for(addr + frame::pc_return_offset);
-      }
       reloc.print_current_on(tty);
       code_blob->print_on(tty);
       code_blob->print_code_on(tty);

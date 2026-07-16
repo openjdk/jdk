@@ -1198,8 +1198,12 @@ class HandlerImpl {
   static int emit_deopt_handler(C2_MacroAssembler* masm);
 
   static uint size_deopt_handler() {
-    // count one branch instruction and one far call instruction sequence
-    return NativeInstruction::instruction_size + MacroAssembler::far_codestub_branch_size();
+    bool use_far_branch = MacroAssembler::target_needs_far_branch(SharedRuntime::deopt_blob()->unpack());
+    // far: adrp, add, blr; near: bl
+    uint target_branch_instructions = use_far_branch ? 3 : 1;
+    // target branch + one branch instruction
+    uint deopt_handler_instructions = target_branch_instructions + 1;
+    return deopt_handler_instructions * NativeInstruction::instruction_size;
   }
 };
 
@@ -2512,25 +2516,25 @@ uint Matcher::float_pressure_limit()
   return (FLOATPRESSURE == -1) ? _FLOAT_REG_mask.size() : FLOATPRESSURE;
 }
 
-const RegMask& Matcher::divI_proj_mask() {
+const RegMask& Matcher::firstI_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
 
-// Register for MODI projection of divmodI.
-const RegMask& Matcher::modI_proj_mask() {
+// Register for the second projection of an int pair
+const RegMask& Matcher::secondI_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
 
-// Register for DIVL projection of divmodL.
-const RegMask& Matcher::divL_proj_mask() {
+// Register for the first projection of a long pair
+const RegMask& Matcher::firstL_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
 
-// Register for MODL projection of divmodL.
-const RegMask& Matcher::modL_proj_mask() {
+// Register for the second projection of a long pair
+const RegMask& Matcher::secondL_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
@@ -8282,6 +8286,34 @@ instruct castII(iRegI dst)
 %}
 
 instruct castII_checked(iRegI dst, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts > 0);
+  match(Set dst (CastII dst));
+  effect(KILL cr);
+
+  format %{ "# castII_checked of $dst" %}
+  ins_encode %{
+    __ verify_int_in_range(_idx, bottom_type()->is_int(), $dst$$Register, rscratch1);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// The unchecked and checked variants for CastII below both use iRegINoSp for src and dst
+// as some consumers of CastII node like ConvHF2F forbid the stack pointer as an input
+// (please see convHF2F_reg_reg rule which requires input to be in an iRegINoSp register).
+instruct castII_nosp(iRegINoSp dst)
+%{
+  predicate(VerifyConstraintCasts == 0);
+  match(Set dst (CastII dst));
+
+  size(0);
+  format %{ "# castII of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castII_checked_nosp(iRegINoSp dst, rFlagsReg cr)
 %{
   predicate(VerifyConstraintCasts > 0);
   match(Set dst (CastII dst));

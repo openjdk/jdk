@@ -501,7 +501,7 @@ class GraphKit : public Phase {
     int n_size = type2size[n_type];
     if      (n_size == 1)  return pop();
     else if (n_size == 2)  return pop_pair();
-    else                   return nullptr;
+    else                   return C->top();
   }
 
   Node* control()               const { return map_not_null()->control(); }

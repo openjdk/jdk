@@ -167,7 +167,7 @@ size_t AOTMetaspace::protection_zone_size() {
   return os::cds_core_region_alignment();
 }
 
-static bool shared_base_valid(char* shared_base) {
+bool AOTMetaspace::shared_base_valid(char* shared_base) {
   // We check user input for SharedBaseAddress at dump time.
 
   // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
@@ -175,10 +175,15 @@ static bool shared_base_valid(char* shared_base) {
   // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
   // start as base.
   //
-  // On AARCH64, The "shared_base" may not be later usable as encoding base, depending on the
+  // The "shared_base" may not be later usable as encoding base, depending on the
   // total size of the reserved area and the precomputed_narrow_klass_shift. This is checked
   // before reserving memory.  Here we weed out values already known to be invalid later.
-  return AARCH64_ONLY(is_aligned(shared_base, 4 * G)) NOT_AARCH64(true);
+  // Since we cannot predict the range, we use the full maximum encoding range
+  // (4G).
+  constexpr size_t range = 4 * G;
+  address addr = (address)shared_base;
+  const int shift = ArchiveBuilder::precomputed_narrow_klass_shift();
+  return CompressedKlassPointers::check_klass_decode_mode(addr, shift, range);
 }
 
 class DumpClassListCLDClosure : public CLDClosure {
@@ -276,7 +281,7 @@ static char* compute_shared_base(size_t cds_max) {
     err = "too high";
   } else if (shared_base_too_high(specified_base, aligned_base, cds_max)) {
     err = "too high";
-  } else if (!shared_base_valid(aligned_base)) {
+  } else if (!AOTMetaspace::shared_base_valid(aligned_base)) {
     err = "invalid for this platform";
   } else {
     return aligned_base;
@@ -294,7 +299,7 @@ static char* compute_shared_base(size_t cds_max) {
 
   // Make sure the default value of SharedBaseAddress specified in globals.hpp is sane.
   assert(!shared_base_too_high(specified_base, aligned_base, cds_max), "Sanity");
-  assert(shared_base_valid(aligned_base), "Sanity");
+  assert(AOTMetaspace::shared_base_valid(aligned_base), "Sanity");
   return aligned_base;
 }
 
@@ -1183,20 +1188,6 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
 
     AOTReferenceObjSupport::initialize(CHECK);
     AOTReferenceObjSupport::stabilize_cached_reference_objects(CHECK);
-
-    if (CDSConfig::is_dumping_aot_linked_classes()) {
-      // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
-      // to null, and it will be initialized again at runtime.
-      log_debug(aot)("Resetting Class::reflectionFactory");
-      TempNewSymbol method_name = SymbolTable::new_symbol("resetArchivedStates");
-      Symbol* method_sig = vmSymbols::void_method_signature();
-      JavaValue result(T_VOID);
-      JavaCalls::call_static(&result, vmClasses::Class_klass(),
-                             method_name, method_sig, CHECK);
-
-      // Perhaps there is a way to avoid hard-coding these names here.
-      // See discussion in JDK-8342481.
-    }
   } else {
     log_info(aot)("Not dumping heap, reset CDSConfig::_is_using_optimized_module_handling");
     CDSConfig::stop_using_optimized_module_handling();
@@ -2016,14 +2007,12 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
   const size_t total_range_size =
       archive_space_size + gap_size + class_space_size;
 
-  // Test that class space base address plus shift can be decoded by aarch64, when restored.
-  const int precomputed_narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
-  if (!CompressedKlassPointers::check_klass_decode_mode(base_address, precomputed_narrow_klass_shift,
-                                                        total_range_size)) {
-    aot_log_info(aot)("CDS initialization: Cannot use SharedBaseAddress " PTR_FORMAT " with precomputed shift %d.",
-                  p2i(base_address), precomputed_narrow_klass_shift);
-    use_archive_base_addr = false;
-  }
+  // The code for dumping the archive ensures that the base address is valid.
+  // Here we validate that the base address plus shift can be decoded when
+  // restored.
+  assert(shared_base_valid((char*)base_address),
+      "Cannot use SharedBaseAddress " PTR_FORMAT " with precomputed shift %d.",
+      p2i(base_address), ArchiveBuilder::precomputed_narrow_klass_shift());
 
   assert(total_range_size > ccs_begin_offset, "must be");
   if (use_windows_memory_mapping() && use_archive_base_addr) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -802,6 +802,12 @@
            intpoly_montgomeryMult_P256, intpoly_montgomeryMult_P256)    \
   do_stub(compiler, intpoly_assign)                                     \
   do_entry(compiler, intpoly_assign, intpoly_assign, intpoly_assign)    \
+  do_stub(compiler, intpoly_mult_25519)                                 \
+  do_entry(compiler, intpoly_mult_25519,                                \
+           intpoly_mult_25519, intpoly_mult_25519)                      \
+  do_stub(compiler, intpoly_square_25519)                               \
+  do_entry(compiler, intpoly_square_25519,                              \
+           intpoly_square_25519, intpoly_square_25519)                  \
   do_stub(compiler, md5_implCompress)                                   \
   do_entry(compiler, md5_implCompress, md5_implCompress,                \
            md5_implCompress)                                            \
