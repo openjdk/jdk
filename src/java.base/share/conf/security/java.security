@@ -741,15 +741,13 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #     suites that start with "TLS_RSA_". Only cipher suites starting with
 #     "TLS_" are allowed to have wildcard characters.
 #
-#   - In addition to the sub-element algorithm matching rules specified in the
-#     jdk.certpath.disabledAlgorithms property, TLS cipher suites can also be
-#     disabled using components of the cipher suite, which include the key
-#     exchange algorithm, the bulk encryption algorithm, the MAC algorithm, and
-#     the PRF or hash algorithm. For example, the key exchange algorithm
-#     "ECDH_ECDSA" will disable all cipher suites that contain ECDH_ECDSA as
-#     the key exchange algorithm. Similarly, the bulk encryption algorithm
-#     "3DES_EDE_CBC" will disable all cipher suites that contain
-#     3DES_EDE_CBC as the bulk encryption algorithm.
+#   - TLS cipher suites can also be disabled using components of the cipher
+#     suite, which include the key exchange algorithm, the bulk encryption
+#     algorithm, the MAC algorithm, and the PRF or hash algorithm. For example,
+#     the key exchange algorithm "ECDH_ECDSA" will disable all cipher suites
+#     that contain ECDH_ECDSA as the key exchange algorithm. Similarly, the
+#     bulk encryption algorithm "3DES_EDE_CBC" will disable all cipher suites
+#     that contain 3DES_EDE_CBC as the bulk encryption algorithm.
 #
 #   - TLS protocol specific usage constraints are supported by this property:
 #
