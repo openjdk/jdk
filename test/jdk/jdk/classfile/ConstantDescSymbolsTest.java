@@ -179,35 +179,35 @@ final class ConstantDescSymbolsTest {
 
     @ParameterizedTest
     @MethodSource("equalityCases")
-    <T, P extends PoolEntry> void testAsSymbolEquality(ValidSymbolCase<T, P> validSymbolCase, String entryState, P p) {
-        var asSymbol = validSymbolCase.translator.extractor.apply(p);
+    <T, P extends PoolEntry> void testAsSymbolEquality(ValidSymbolCase<T, P> validSymbolCase, StatefulPoolEntry<P> entry) {
+        var asSymbol = validSymbolCase.translator.extractor.apply(entry.get());
         assertEquals(validSymbolCase.sym, asSymbol, "asSym vs sym");
         assertEquals(validSymbolCase.other, asSymbol, "asSym vs other sym");
         var tester = validSymbolCase.translator.tester;
-        assertTrue(tester.test(p, validSymbolCase.sym), "matching original");
-        assertTrue(tester.test(p, validSymbolCase.other), "matching an equivalent");
-        assertThrows(NullPointerException.class, () -> tester.test(p, null));
+        assertTrue(tester.test(entry.get(), validSymbolCase.sym), "matching original");
+        assertTrue(tester.test(entry.get(), validSymbolCase.other), "matching an equivalent");
+        assertThrows(NullPointerException.class, () -> tester.test(entry.get(), null));
     }
 
     @ParameterizedTest
     @MethodSource("inequalityCases")
-    <T, P extends PoolEntry> void testAsSymbolInequality(ValidSymbolCase<T, P> validSymbolCase, String stateName, P p) {
-        var asSymbol = validSymbolCase.translator.extractor.apply(p);
+    <T, P extends PoolEntry> void testAsSymbolInequality(ValidSymbolCase<T, P> validSymbolCase, StatefulPoolEntry<P> entry) {
+        var asSymbol = validSymbolCase.translator.extractor.apply(entry.get());
         assertEquals(validSymbolCase.sym, asSymbol, "asSymbol vs original");
         assertNotEquals(validSymbolCase.other, asSymbol, "asSymbol vs inequal");
         var tester = validSymbolCase.translator.tester;
-        assertTrue(tester.test(p, validSymbolCase.sym), "matching original");
-        assertFalse(tester.test(p, validSymbolCase.other), "matching a false target");
-        assertThrows(NullPointerException.class, () -> tester.test(p, null));
+        assertTrue(tester.test(entry.get(), validSymbolCase.sym), "matching original");
+        assertFalse(tester.test(entry.get(), validSymbolCase.other), "matching a false target");
+        assertThrows(NullPointerException.class, () -> tester.test(entry.get(), null));
     }
 
     @ParameterizedTest
     @MethodSource("malformedCases")
-    <T, P extends PoolEntry> void testAsSymbolMalformed(InvalidSymbolCase<T, P> baseCase, String entryState, P p) {
-        assertThrows(IllegalArgumentException.class, () -> baseCase.translator.extractor.apply(p), "fail extraction");
+    <T, P extends PoolEntry> void testAsSymbolMalformed(InvalidSymbolCase<T, P> baseCase, StatefulPoolEntry<P> entry) {
+        assertThrows(IllegalArgumentException.class, () -> baseCase.translator.extractor.apply(entry.get()), "fail extraction");
         var tester = baseCase.translator.tester;
-        assertFalse(tester.test(p, baseCase.target), "matching a false target gracefully");
-        assertThrows(NullPointerException.class, () -> tester.test(p, null));
+        assertFalse(tester.test(entry.get(), baseCase.target), "matching a false target gracefully");
+        assertThrows(NullPointerException.class, () -> tester.test(entry.get(), null));
     }
 
     // Support for complex pool entry creation with different inflation states.
@@ -219,6 +219,9 @@ final class ConstantDescSymbolsTest {
 
     // a pool entry, suitable for testing lazy behaviors and has descriptive name
     record StatefulPoolEntry<P>(String desc, Supplier<P> factory) {
+        P get() {
+            return factory.get();
+        }
     }
 
     // Test pool entry <-> nominal descriptor, also the equals methods
@@ -248,14 +251,14 @@ final class ConstantDescSymbolsTest {
             return Stream.of(new StatefulPoolEntry<>(original.get().toString(), original))
                     .mapMulti((s, sink) -> {
                         sink.accept(s); // unbound
-                        sink.accept(new StatefulPoolEntry<>(s.desc + "+lazy", () -> toBoundEntry(s.factory.get()))); // bound
+                        sink.accept(new StatefulPoolEntry<>(s.desc + "+lazy", () -> toBoundEntry(s.get()))); // bound
                     });
         }
 
         // Add extra stage of entry spawn to "inflate" entries via positive/negative tests
         public StatefulPoolEntry<P> inflateByMatching(StatefulPoolEntry<P> last, T arg, String msg) {
             return new StatefulPoolEntry<>("+matches(" + msg + ")", () -> {
-                var ret = last.factory.get();
+                var ret = last.get();
                 tester.test(ret, arg);
                 return ret;
             });
@@ -265,7 +268,7 @@ final class ConstantDescSymbolsTest {
         // This should not be used if the pool entry may be invalid (i.e. throws IAE)
         public StatefulPoolEntry<P> inflateByComputeSymbol(StatefulPoolEntry<P> last) {
             return new StatefulPoolEntry<>(last.desc + "+asSymbol()", () -> {
-                var ret = last.factory.get();
+                var ret = last.get();
                 extractor.apply(ret);
                 return ret;
             });
@@ -301,7 +304,7 @@ final class ConstantDescSymbolsTest {
                     sink.accept(validSymbolCase.translator.inflateByMatching(src, validSymbolCase.other, "another symbol"));
                     sink.accept(validSymbolCase.translator.inflateByComputeSymbol(src));
                 })
-                .forEach(stateful -> callArgs.accept(Arguments.of(validSymbolCase, stateful.desc, stateful.factory.get())));
+                .forEach(stateful -> callArgs.accept(Arguments.of(validSymbolCase, stateful)));
     }
 
     static Stream<Arguments> equalityCases() {
@@ -352,7 +355,7 @@ final class ConstantDescSymbolsTest {
                     sink.accept(src);
                     sink.accept(invalidSymbolCase.translator.inflateByMatching(src, invalidSymbolCase.target, "target"));
                 })
-                .forEach(stateful -> callArgs.accept(Arguments.of(invalidSymbolCase, stateful.desc, stateful.factory.get())));
+                .forEach(stateful -> callArgs.accept(Arguments.of(invalidSymbolCase, stateful)));
     }
 
     static Stream<Arguments> malformedCases() {
