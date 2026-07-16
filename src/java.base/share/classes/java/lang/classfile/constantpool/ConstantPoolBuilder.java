@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import jdk.internal.classfile.impl.ClassReaderImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
+import jdk.internal.constant.ConstantUtils;
 
 import static java.util.Objects.requireNonNull;
 
@@ -211,10 +212,12 @@ public sealed interface ConstantPoolBuilder
      * provided {@link PackageDesc}}
      *
      * @param packageDesc the symbolic descriptor for the package
+     * @throws IllegalArgumentException if the symbolic descriptor represents
+     *         the unnamed package
      * @see PackageEntry#asSymbol() PackageEntry::asSymbol
      */
     default PackageEntry packageEntry(PackageDesc packageDesc) {
-        return packageEntry(utf8Entry(packageDesc.internalName()));
+        return packageEntry(utf8Entry(ConstantUtils.validateNamedPackage(packageDesc).internalName()));
     }
 
     /**

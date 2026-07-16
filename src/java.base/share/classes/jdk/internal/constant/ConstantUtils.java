@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.constant.PackageDesc;
 import java.lang.invoke.MethodType;
 import java.util.Set;
 
@@ -272,6 +273,21 @@ public final class ConstantUtils {
      */
     public static String validateInternalPackageName(String name) {
         return validateClassOrPackageName(name, true, true);
+    }
+
+    /**
+     * Validates the correctness of a package descriptor for a PackageEntry,
+     * where the unnamed package is not allowed.
+     *
+     * @param desc the package descriptor
+     * @throws IllegalArgumentException if the package descriptor is empty
+     * @throws NullPointerException if the package descriptor is {@code null}
+     */
+    public static PackageDesc validateNamedPackage(PackageDesc desc) {
+        if (desc.internalName().isEmpty()) {
+            throw new IllegalArgumentException("Unnamed package not allowed");
+        }
+        return desc;
     }
 
     /**

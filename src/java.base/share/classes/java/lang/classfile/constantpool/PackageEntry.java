@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,10 @@ public sealed interface PackageEntry extends PoolEntry
 
     /**
      * {@return whether this entry describes the given package}
+     * <p>
+     * When the name is empty, this entry is malformed, so this method always
+     * returns {@code false} for a package descriptor representing the unnamed
+     * package.
      *
      * @param desc the package descriptor
      * @since 25

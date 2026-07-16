@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.Arrays;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.PrimitiveClassDescImpl;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.ModifiedUtf;
@@ -447,6 +448,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public boolean isFieldType(ClassDesc desc) {
+            requireNonNull(desc);
             var sym = typeSym;
             if (sym != null) {
                 return sym instanceof ClassDesc cd && cd.equals(desc);
@@ -489,6 +491,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public boolean isMethodType(MethodTypeDesc desc) {
+            requireNonNull(desc);
             var sym = typeSym;
             if (sym != null) {
                 return sym instanceof MethodTypeDesc mtd && mtd.equals(desc);
@@ -627,6 +630,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public boolean matches(ClassDesc desc) {
+            requireNonNull(desc);
             var sym = this.sym;
             if (sym != null) {
                 return sym.equals(desc);
@@ -694,11 +698,14 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public PackageDesc asSymbol() {
-            return PackageDesc.ofInternalName(asInternalName());
+            return ConstantUtils.validateNamedPackage(PackageDesc.ofInternalName(asInternalName()));
         }
 
         @Override
         public boolean matches(PackageDesc desc) {
+            if (desc.internalName().isEmpty()) {
+                return false; // The unnamed package is not representable
+            }
             return ref1.equalsString(desc.internalName());
         }
 
