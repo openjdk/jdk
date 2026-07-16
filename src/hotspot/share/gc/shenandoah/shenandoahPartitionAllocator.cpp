@@ -163,38 +163,33 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::allocate(ShenandoahAllocReque
   // region, and slots are only filled under the heap lock, so retries are rate-limited by other
   // threads' (rare) slow-path installs.
   ShenandoahHeapRegion* shared_region = _alloc_regions[slot].load_relaxed();
-  bool ready_for_replenish;
-  while (shared_region != nullptr) {
-    ready_for_replenish = false;
+  bool ready_for_replenish = false;
+  if (shared_region != nullptr) {
     HeapWord* obj = try_atomic_allocate_in(shared_region, req, ready_for_replenish);
     if (obj != nullptr) {
       in_new_region = false;
       return obj;
     }
-    ShenandoahHeapRegion* current_alloc_region = _alloc_regions[slot].load_relaxed();
-    if (current_alloc_region == shared_region) {
-      break;
-    }
-    shared_region = current_alloc_region;
   }
   // Slow-path
   {
     ShenandoahHeap* const heap = ShenandoahHeap::heap();
     ShenandoahHeapLocker locker(heap->lock(), req.is_mutator_alloc());
     ShenandoahHeapRegion* const reloaded = _alloc_regions[slot].load_relaxed();
-    if (reloaded != nullptr && reloaded != shared_region) {
-      ready_for_replenish = false;
-      HeapWord* obj = try_atomic_allocate_in(reloaded, req, ready_for_replenish);
-      if (obj != nullptr) {
-        in_new_region = false;
-        return obj;
+    if (reloaded != shared_region) {
+      shared_region = reloaded;
+      if (shared_region != nullptr) {
+        ready_for_replenish = false;
+        HeapWord* obj = try_atomic_allocate_in(reloaded, req, ready_for_replenish);
+        if (ready_for_replenish) {
+          uninstall_alloc_region(slot, reloaded);
+          shared_region = nullptr;
+        }
+        if (obj != nullptr) {
+          in_new_region = false;
+          return obj;
+        }
       }
-    }
-    shared_region = reloaded;
-
-    if (ready_for_replenish) {
-      uninstall_alloc_region(slot, shared_region);
-      shared_region = nullptr;;
     }
 
     // OldCollector: verify old generation has room before attempting allocation
