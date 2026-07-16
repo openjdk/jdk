@@ -2424,6 +2424,9 @@ class StopThreadAsyncClosure : public AsyncExceptionHandshakeClosure {
   }
 };
 
+StopThreadClosure::StopThreadClosure(JavaThread* current_thread, oop exception)
+  : JvmtiUnitedHandshakeClosure("StopThread"), _exception(current_thread, exception) {}
+
 void
 StopThreadClosure::doit(JavaThread* target) {
   OopHandle e(Universe::vm_global(), _exception());
