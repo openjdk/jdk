@@ -272,6 +272,13 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
   // One of these will be the best for a particular CPU.
 
   if (VM_Version::supports_sse4_2()) {
+#ifndef PRODUCT
+    Label not_zero;
+    orl(r_profile_rng, r_profile_rng);
+    jcc(Assembler::notZero, not_zero);
+    stop("non-zero required before step");
+    bind(not_zero);
+#endif
     /* CRC used as a pseudo-random-number generator */
     // In effect, the CRC instruction is being used here for its
     // linear feedback shift register.
@@ -288,6 +295,13 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
 
 void C1_MacroAssembler::save_profile_rng() {
   if (ProfileCaptureRatio > 1) {
+#ifndef PRODUCT
+    Label not_zero;
+    orl(r_profile_rng, r_profile_rng);
+    jcc(Assembler::notZero, not_zero);
+    stop("non-zero required before save");
+    bind(not_zero);
+#endif
     movl(Address(r15_thread, JavaThread::profile_rng_offset()), r_profile_rng);
   }
 }
@@ -295,6 +309,13 @@ void C1_MacroAssembler::save_profile_rng() {
 void C1_MacroAssembler::restore_profile_rng() {
   if (ProfileCaptureRatio > 1) {
     movl(r_profile_rng, Address(r15_thread, JavaThread::profile_rng_offset()));
+#ifndef PRODUCT
+    Label not_zero;
+    orl(r_profile_rng, r_profile_rng);
+    jcc(Assembler::notZero, not_zero);
+    stop("non-zero required after restore");
+    bind(not_zero);
+#endif
   }
 }
 
