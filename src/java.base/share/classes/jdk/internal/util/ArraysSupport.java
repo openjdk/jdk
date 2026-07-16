@@ -700,14 +700,20 @@ public class ArraysSupport {
                         b, bOffset,
                         length, LOG2_ARRAY_FLOAT_INDEX_SCALE);
             }
+            // Mismatched
             if (i >= 0) {
-                // Mismatch at i, check if it's due to NaN normalization
+                // Check if mismatch is not associated with two NaN values
                 if (!Float.isNaN(a[aFromIndex + i]) || !Float.isNaN(b[bFromIndex + i]))
                     return i;
+
                 // Mismatch on two different NaN values that are normalized to match
                 // Fall back to slow mechanism
+                // ISSUE: Consider looping over vectorizedMismatch adjusting ranges
+                // However, requires that returned value be relative to input ranges
                 i++;
-            } else {
+            }
+            // Matched
+            else {
                 return -1;
             }
         }
