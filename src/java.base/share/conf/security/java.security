@@ -746,8 +746,16 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #     algorithm, the MAC algorithm, and the PRF or hash algorithm. For example,
 #     the key exchange algorithm "ECDH_ECDSA" will disable all cipher suites
 #     that contain ECDH_ECDSA as the key exchange algorithm. Similarly, the
-#     bulk encryption algorithm "3DES_EDE_CBC" will disable all cipher suites
-#     that contain 3DES_EDE_CBC as the bulk encryption algorithm.
+#     bulk encryption algorithm "AES_128_CBC" will disable all cipher suites
+#     that contain AES_128_CBC as the bulk encryption algorithm. The
+#     components also abide by the sub-element matching rules specified in
+#     the jdk.certpath.disabledAlgorithms property. For example, "ECDH" will
+#     disable all cipher suites with key exchange algorithms that contain ECDH
+#     in their name, but not ECDHE since that is a different algorithm. To
+#     disable cipher suites with a specific MAC algorithm, use the standard
+#     Hmac algorithm name (ex: "HmacSHA256" and not "SHA256") to avoid also
+#     disabling PRF algorithms with the same name.
+#
 #
 #   - TLS protocol specific usage constraints are supported by this property:
 #
