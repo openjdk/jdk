@@ -287,6 +287,8 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zvbc        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvbc, &ext_v, nullptr))           \
   /* Vector Extension for Half-Precision Floating-Point */                                             \
   decl(Zvfh        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvfh, &ext_v, &ext_Zfh, nullptr)) \
+  /* Vector Extension for Minimal Half-Precision Floating-Point */                                     \
+  decl(Zvfhmin     ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvfhmin, &ext_v, nullptr))        \
   /* Shorthand for Zvkned + Zvknhb + Zvkb + Zvkt */                                                    \
   decl(Zvkn        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvkn, &ext_v, nullptr))           \
   /* Zvkg crypto extension for ghash and gcm */                                                        \
@@ -442,6 +444,7 @@ private:
     RV_ENABLE_EXTENSION(UseZicboz)                  \
     RV_ENABLE_EXTENSION(UseZicond)                  \
     RV_ENABLE_EXTENSION(UseZihintpause)             \
+    RV_ENABLE_EXTENSION(UseZvfhmin)                 \
 
   static void useRVA23U64Profile();
 
