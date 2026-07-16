@@ -45,9 +45,6 @@
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_s390.inline.hpp"
 
-long leal_fubar = 0;
-long fubar = 0;
-
 #define __ _masm->
 
 #ifndef PRODUCT
@@ -602,10 +599,6 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
 
   LIR_Const* c = src->as_constant_ptr();
   Address addr = as_Address(dest->as_address_ptr());
-
-  __ z_nop();
-  __ z_nop();
-  __ z_nop();
 
   int store_offset = -1;
 

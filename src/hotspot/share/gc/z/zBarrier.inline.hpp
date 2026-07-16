@@ -33,6 +33,7 @@
 #include "gc/z/zVerify.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomicAccess.hpp"
+
 // A self heal must always "upgrade" the address metadata bits in
 // accordance with the metadata bits state machine. The following
 // assert verifies the monotonicity of the transitions.
