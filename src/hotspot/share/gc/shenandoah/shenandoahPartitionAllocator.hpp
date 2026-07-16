@@ -144,11 +144,15 @@ public:
   // dereference memory -- so no acquire ordering is needed; this avoids pulling each cached region's
   // hot _atomic_top cache line in with acquire semantics on every accounting read.
   size_t remnant_bytes() const {
+    const size_t min_free_bytes = ShenandoahHeap::plab_min_size() * HeapWordSize;
     size_t total = 0;
     for (uint i = 0; i < _alloc_region_count; i++) {
       ShenandoahHeapRegion* r = _alloc_regions[i].load_relaxed();
       if (r != nullptr) {
-        total += r->free_relaxed();
+        size_t free_bytes = r->free_relaxed();
+        if (free_bytes >= min_free_bytes) {
+          total += free_bytes;
+        }
       }
     }
     return total;
