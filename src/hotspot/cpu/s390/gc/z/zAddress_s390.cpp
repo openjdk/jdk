@@ -35,7 +35,6 @@
 #include <sys/mman.h>
 #endif // LINUX
 
-// TODO: probing is not required for x86 but it is required for ppc and aarch64, chat says it is required for s390 also but double check it.
 
 // Default value if probing is not implemented for a certain platform
 // Max address bit is restricted by implicit assumptions in the code, for instance
@@ -107,5 +106,4 @@ size_t ZPlatformAddressHeapBaseShift() {
 }
 
 void ZGlobalsPointers::pd_set_good_masks() {
-  // TODO: aarch64 and x86 are using this to initialize and clear some variables, basically if you want to do something before the gc starts you can do it here.
 }

@@ -49,32 +49,6 @@
 #include "opto/output.hpp"
 #endif // COMPILER2
 
-long load_fubar = 0;
-long c1_store_runtime_fubar = 0;
-long load_slow_fubar = 0;
-long load_slow_pre_fubar = 0;
-long arraycopy_prologue_fubar = 0;
-long store_fubar = 0;
-long some_fubar = 0;
-long store_slow_fubar = 0;
-long c1_load_fubar = 0;
-long c1_store_fubar = 0;
-long conjoint_fubar = 0;
-long copy_load_slow_fubar = 0;
-long setup_args_fubar = 0;
-long check_oop_fubar = 0;
-long c2_load_fubar = 0;
-long jobject_fubar = 0;
-long disjoint_fubar = 0;
-long atomic_nmethod_fubar = 0;
-long c1_load_runtime_fubar = 0;
-long c1_load_stub_fubar = 0;
-long atomic_null_fubar = 0;
-long atomic_store_medium_fubar = 0;
-long non_atomic_nmethod_fubar = 0;
-long z_color_fubar = 0;
-long c1_store_stub_fubar = 0;
-
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
 #else
@@ -86,10 +60,6 @@ long c1_store_stub_fubar = 0;
 
 // TODO: Put block comments in functions
 
-// Helper for saving and restoring registers across a runtime call that does
-// not have any live vector registers.
-// Purpose: To save all the volatile registers except when Z_R2 is the _result
-// registers the we do not save the Z_R2.
 class ZRuntimeCallSpill {
 private:
   MacroAssembler* _masm;
@@ -166,8 +136,6 @@ public:
   }
 };
 
-// Purpose: The address for the oop is stored in the src, load it in the dst register and check if it is good, if 
-// it is uncolor it else call the runtime
 void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
                                    DecoratorSet decorators,
                                    BasicType type,
@@ -199,8 +167,6 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   assert_different_registers(dst, scratch);
   assert_different_registers(Z_R2, scratch);
 
-  //__ z_ldgr(Z_F0, scratch);
-
   int nbytes_save = 3 * BytesPerWord; // SP, PC, scratch
   int offset = 160;
 
@@ -215,9 +181,6 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   //
   // Fast Path
   //
-
-  //__ load_const_optimized(scratch, (uintptr_t)&load_fubar);
-  //__ z_agsi(0, scratch, 1);
 
   // Load adress
   __ z_lay(scratch, src);
@@ -244,23 +207,12 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   //
 
   {
-    // Purpose: save all the volatile registers except when dst is Z_R2 because we want dst/oop to be present
-    // in the Z_R2.
-
     // Call VM
     ZRuntimeCallSpill rcs(masm, dst);
-
     __ lgr_if_needed(Z_ARG1, dst);
-
-    //__ load_const_optimized(Z_ARG2, (uintptr_t)&load_slow_pre_fubar);
-    //__ z_agsi(0, Z_ARG2, 1);
-
     __ z_lgr(Z_ARG2, scratch);
-
     __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
 
-    //__ load_const_optimized(Z_R3, (uintptr_t)&load_slow_fubar);
-    //__ z_agsi(0, Z_R3, 1);
   }
 
   // Slow-path has already uncolored
@@ -287,10 +239,6 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   __ pop_frame();
 }
 
-// Purpose  we are checking if the address stored at ref_addr is good, bad or null.
-// if it is atomic and good or non-atomic and (good or null) we take the fast path which 
-// is defined here, In fast path the rnew_zaddress constains the address of the oop
-// we color the contents of rnew_zaddress and storing it in rnew_zpointer.
 void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
                                               Address ref_addr,
                                               Register rnew_zaddress,
@@ -305,14 +253,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
 
   //TODO: Check the Relative long instructions
   if (in_nmethod) {
-      // TODO: check what exactly relocate does and where it should be placed here
-
-      // Purpose: Basicaly ref_addr can have three type of value - good, bad and null. in atomic operatoins 
-      // we can only have good value for fast path, for others it can be good as well as null
-
     if (is_atomic) {
-      //__ load_const_optimized(rnew_zpointer, (uintptr_t)&atomic_nmethod_fubar);
-      //__ z_agsi(0, rnew_zpointer, 1);
       // Atomic operations must ensure that the contents of memory are store-good before
       // an atomic operation can execute.
       // A not relocatable object could have spurious raw null pointers in its fields after
@@ -329,14 +270,6 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // Raw null pointers may only exist in the young generation, as they get pruned when
       // the object is relocated to old. And no pre-write barrier needs to perform any action
       // in the young generation.
-      //__ load_const_optimized(rnew_zpointer, (uintptr_t)&non_atomic_nmethod_fubar);
-      //__ z_agsi(0, rnew_zpointer, 1);
-      //__ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadBeforeLoad);
-      //__ z_llill(rnew_zpointer, barrier_Relocation::unpatched);
-      //// RuntimeTODO: check if it is correct, // z_cg(rnew_zpointer, ref_addr);
-      //// TODO: Check if this will work or else implement z_chy
-      //__ z_ng(rnew_zpointer, ref_addr);
-
 
       // Careful: The first instruction emmited here should do a memory access on ref_addr
       // otherwise ImplicitNullCheck will not work and the JVM will crash instead of throwing
@@ -379,14 +312,10 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     }
 
     __ z_sllg(rnew_zpointer, rnew_zpointer, ZPointerLoadShift);
-    // TODO: If I use z_oy here(2nd operand 32 bits) this does not work i.e. the instruction itself is not working it's doing OR
     __ z_og(rnew_zpointer,  Address(Z_thread, ZThreadLocalData::store_good_mask_offset()));
   }
 }
 
-// Purpose: We have a buffer and we are simply storing the ref_addr in the buffer to do it later
-// lazily(ig) if the buffer is enabled and not full. if buffer is disabled or full we take the
-// slow path
 static void store_barrier_buffer_add(MacroAssembler* masm,
                                      Address ref_addr,
                                      Register temp1,
@@ -422,11 +351,6 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
 }  
 
 // TODO: ppc does not have is_native support
-// Purpose: for non_atomics we know it is bad color because in fast path we have taken care
-// of good and null for it, but for atomics we have not taken care of null which we wil do it
-// here. So for non-atomics we straight away go to slow path, for atomics we check it is bad and
-// then we will go to slow path else we will take care of null here.
-// for atomic null we put the good store mask in the ref_addr only
 void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                                                 Address ref_addr,
                                                 Register temp1,
@@ -447,20 +371,14 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // Atomic accesses can get to the medium fast path because the value was a
     // raw null value. If it was not null, then there is no doubt we need to take a slow path.
     // TODO: see of there is more efficient way to do this i.e. branch if not zero like in aarch64
-    //__ load_const_optimized(temp2, (uintptr_t)&atomic_store_medium_fubar);
-    //__ z_agsi(0, temp2, 1);
     __ z_lg(temp2, ref_addr);
     __ z_ltgr(temp2, temp2);
     __ branch_optimized(Assembler::bcondNotZero, slow_path);
-
-    //__ load_const_optimized(temp2, (uintptr_t)&atomic_null_fubar);
-    //__ z_agsi(0, temp2, 1);
 
     // If we get this far, we know there is a young raw null value in the field.
     // Try to self-heal null values for atomic accesses
 
     __ z_xgr(temp2, temp2);
-    // TODO: If relocate does not work out see it that can be replaced by this
     __ z_lg(temp1, Address(Z_thread , ZThreadLocalData::store_good_mask_offset()));
 
     // temp2 -> 0x0, temp1 -> store_good_mask, ref_addr -> null ptr
@@ -473,8 +391,6 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     __ bind(slow_path_continuation);
     __ branch_optimized(Assembler::bcondAlways, medium_path_continuation);
   } else {
-    // We don't know what comes here
-
     // A non-atomic relocatable object won't get to the medium fast path due to a
     // raw null in the young generation. We only get here because the field is bad.
     // In this path we don't need any self healing, so we can avoid a runtime call
@@ -489,10 +405,6 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
   }
 }
 
-// Purpose: src contains the oop address, if the oop itself is not initialized we
-// just color the oop address and put it in temp1 register and pass it to
-// barrierSetAssembler::store_at which will be treated as val register there.
-// if oop is initialized then also we will have store good pointer in temp1.
 void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                                     DecoratorSet decorators,
                                     BasicType type,
@@ -502,9 +414,6 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                                     Register temp2,
                                     Register temp3) {
   BLOCK_COMMENT("ZBarrierSetAssembler::store_at {");
-
-  //__ load_const_optimized(temp1, (uintptr_t)&store_fubar);
-  //__ z_agsi(0, temp1, 1);
 
   bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
 
@@ -544,7 +453,6 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
       {
         // Call VM
         ZRuntimeCallSpill rcs(masm, noreg);
-        // TODO: lay instead of la just to be safe can be tested after implementation is complete. (displacement id la is unsigned)
         __ z_lay(Z_ARG1, dst);
         __ MacroAssembler::call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), Z_ARG1);
       }
@@ -562,16 +470,10 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
   BLOCK_COMMENT("} ZBarrierSetAssembler::store_at");
 }
 
-// TODO: Check if to go with x86, aarch64 or ppc, currently this implementation is according to ppc
-// because BarrierSetAssembler::copy_load_at is not implemented on s390 as well as on ppc but 
-// implemented on x86 and aarch64 -> currently decided to go with ppc
 /* array copy */
-// RuntimeTODO: Check if these registers are free or not 
+// RuntimeTODO: Check if these registers are free or not -> they are not, that is why we put them in stack
 const Register _load_bad_mask = Z_R5, _store_bad_mask = Z_R6, _store_good_mask = Z_R7;
 
-// Purpose: We want to load the oop address for memory to zpointer and then we will check if the
-// pointer has load bad mask, the compare is not making any sense we will jump to the slow path
-// if we have the oop addr has a bad mask?
 void ZBarrierSetAssembler::copy_load_at_fast(MacroAssembler* masm,
                                              Register zpointer,
                                              Register addr,
@@ -584,23 +486,14 @@ void ZBarrierSetAssembler::copy_load_at_fast(MacroAssembler* masm,
   __ bind(continuation);
 }
 
-// Purpose: This is the slow path and we here just calling the runtime and
-// we are trying to color it but we are not putting the good mask or anything
-// we are just shifting the pointer
 void ZBarrierSetAssembler::copy_load_at_slow(MacroAssembler* masm,
                                              Register zpointer,
                                              Register addr,
-                                             // Register temp,
                                              Label& slow_path,
                                              Label& continuation) const {
 
   __ align(32);
   __ bind(slow_path);
-
-  //__ z_ldgr(Z_F1, Z_R1);
-  //__ load_const_optimized(Z_R1, (uintptr_t)&copy_load_slow_fubar);
-  //__ z_agsi(0, Z_R1, 1);
-  //__ z_lgdr(Z_R1, Z_F1);
 
   {
     ZRuntimeCallSpill rcs(masm, Z_R0);
@@ -612,9 +505,6 @@ void ZBarrierSetAssembler::copy_load_at_slow(MacroAssembler* masm,
   __ branch_optimized(Assembler::bcondAlways, continuation);
 }
 
-// Purpose: if oop is not initialized we are checking if the oop addr has a bad 
-// mask or not, if it does continue in our loop or else jump to medium_path which
-// is bound in the copy_store_at_slow, again compare here is not making any sense
 void ZBarrierSetAssembler::copy_store_at_fast(MacroAssembler* masm,
                                               Register zpointer,
                                               Register ref_addr,
@@ -635,11 +525,8 @@ void ZBarrierSetAssembler::copy_store_at_fast(MacroAssembler* masm,
   __ z_stg(zpointer, Address(ref_addr, 0));
 }
 
-// Purpose: this is the slow path of copy store, we are first trying to put it
-// in the barrier buffer, and if that is not possible we are calling the runtime here
 void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
                                               Register addr,
-                                              // Register temp,
                                               Label& medium_path,
                                               Label& continuation,
                                               bool dest_unintialized) const {
@@ -647,7 +534,6 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
     Label slow_path, slow_path_continuation;
     __ align(32);
     __ bind(medium_path);
-    // TODO: Check for slow_path_continuation -> done
     store_barrier_medium(masm, Address(addr, 0), Z_tmp_1, Z_tmp_2, false, false, continuation, slow_path, slow_path_continuation);
     __ bind(slow_path);
     {
@@ -664,21 +550,13 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
 //      count: Z_ARG3 (int >= 0)
 // TODO: Use vector instructions
 void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
-  //__ z_ldgr(Z_F1, Z_R1);
-  //__ load_const_optimized(Z_R1, (uintptr_t)&disjoint_fubar);
-  //__ z_agsi(0, Z_R1, 1);
-  //__ z_lgdr(Z_R1, Z_F1);
-
   const Register zpointer = Z_R1;
-  // RuntimeTODO: Where is zpointer stored?
   Label done, loop, load_bad, load_good, store_bad, store_good;
   __ z_chi(Z_ARG3, 0);
   __ z_bre(done);
   __ align(32);
 
   __ bind(loop);
-  // Purpose: put the value stored at address which is in Z_ARG1 and then store the zpointer value in Address which is
-  // present in Z_ARG2
   copy_load_at_fast(masm, zpointer, Z_ARG1, _load_bad_mask, load_bad, load_good);
   copy_store_at_fast(masm, zpointer, Z_ARG2, _store_bad_mask, _store_good_mask, store_bad, store_good, dest_uninitialized);
   __ add2reg(Z_ARG1, 8);
@@ -687,12 +565,7 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
 
   __ bind(done);
 
-  // TODO: Come up with a better solution, i.e. try putting it in the arraycopy_prologue
-  //__ stop("arraycopy epilogue");
-  //__ z_lgdr(_load_bad_mask, Z_F0);
-  //__ z_lgdr(_store_bad_mask, Z_F1);
-  //__ z_lgdr(_store_good_mask, Z_F2);
-
+  // TODO: Come up with a better solution, i.e. try putting it in the arraycopy_prologue, currently even after calling it, it's not getting executed
   int offset = 8;
   __ restore_return_pc();           offset += 8;
   __ z_lg(Z_R5, offset, Z_SP);      offset += 8;
@@ -702,21 +575,15 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
   __ z_lg(Z_R11, offset, Z_SP);
   __ pop_frame();
 
-  // TODO: look at it again, we can also use __ z_xogr(Z_RET, Z_RET); done
   __ z_xgr(Z_RET, Z_RET);
   __ z_br(Z_R14);
 
-  // These are just here so the gcc would not flag these functions as unused, we jump in these
-  // from their corresponding fast paths
   copy_load_at_slow(masm, zpointer, Z_ARG1, load_bad, load_good);
   copy_store_at_slow(masm, Z_ARG2, store_bad, store_good, dest_uninitialized);
 }
 
 void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
-  //__ load_const_optimized(Z_R1, (uintptr_t)&conjoint_fubar);
-  //__ z_agsi(0, Z_R1, 1);
   const Register zpointer = Z_R1;
-  // TODO: Where is zpointer stored?
   Label done, loop, load_bad, load_good, store_bad, store_good;
   __ z_sllg(Z_R0, Z_ARG3, 3);
   __ z_ltgr(Z_R0, Z_R0);
@@ -736,10 +603,6 @@ void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool
   __ bind(done);
 
   // TODO: Come up with a better solution, i.e. try putting it in the arraycopy_prologue
-//  __ stop("arraycopy epilogue");
-  //__ z_lgdr(_load_bad_mask, Z_F0);
-  //__ z_lgdr(_store_bad_mask, Z_F1);
-  //__ z_lgdr(_store_good_mask, Z_F2);
 
   int offset = 8;
   __ restore_return_pc();           offset += 8;
@@ -751,7 +614,6 @@ void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool
   __ pop_frame();
 
 
-  // TODO: look at it again, we can also use __ z_xogr(Z_RET, Z_RET); done
   __ z_xgr(Z_RET, Z_RET);
   __ z_br(Z_R14);
 
@@ -773,15 +635,6 @@ void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
   }
 
   __ block_comment("arraycopy_prologue (zgc) {");
-
-  //__ z_ldgr(Z_F0, Z_R1);
-  //__ load_const_optimized(Z_R1, (uintptr_t)&arraycopy_prologue_fubar);
-  //__ z_agsi(0, Z_R1, 1);
-  //__ z_lgdr(Z_R1, Z_F0);
-
-  //__ z_ldgr(Z_F0, _load_bad_mask);
-  //__ z_ldgr(Z_F1, _store_bad_mask);
-  //__ z_ldgr(Z_F2, _store_good_mask);
 
   int nbytes_save = 7 * BytesPerWord;                 // SP, PC, R5, R6, R7, R10, R11
   int offset = 0;
@@ -841,11 +694,6 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
   __ branch_optimized(Assembler::bcondAlways, done);
 
   __ bind(tagged);
-//
-  //__ z_ldgr(Z_F0, Z_R1);
-  //__ load_const_optimized(Z_R1, (uintptr_t)&jobject_fubar);
-  //__ z_agsi(0, Z_R1, 1);
-  //__ z_lgdr(Z_R1, Z_F0);
 
   // Test for weak tag
   __ z_tmll(robj, JNIHandles::TypeTag::weak_global);
@@ -886,11 +734,6 @@ static void z_uncolor(LIR_Assembler* ce, LIR_Opr ref) {
 }
 
 static void z_color(LIR_Assembler* ce, LIR_Opr ref) {
-  //__ z_ldgr(Z_F2, Z_R1);
-  //__ load_const_optimized(Z_R1, (uintptr_t)&z_color_fubar);
-  //__ z_agsi(0, Z_R1, 1);
-  //__ z_lgdr(Z_R1, Z_F2);
-
   __ z_sllg(ref->as_register(), ref->as_register(), ZPointerLoadShift);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
   __ z_oill(ref->as_register(), barrier_Relocation::unpatched);
@@ -904,8 +747,6 @@ void ZBarrierSetAssembler::generate_c1_color(LIR_Assembler* ce, LIR_Opr ref) con
   z_color(ce, ref);
 }
 
-// TODO: It just take to oop ref pointer compare it with the corresponding good mask
-// and if good uncolor it else jump to the slow path
 void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
                                                     LIR_Opr ref,
                                                     ZLoadBarrierStubC1* stub,
@@ -913,18 +754,11 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
   
 
   if (on_non_strong) {
-    //__ z_ldgr(Z_F0, Z_R1);
-    //__ load_const_optimized(Z_R1, (uintptr_t)&c1_load_fubar);
-    //__ z_agsi(0, Z_R1, 1);
-    //__ z_lgdr(Z_R1, Z_F0);
-    // Test against MarkBad mask
     __ z_lgr(Z_R0_scratch, ref->as_register());
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
     __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
 
-    // Slow path if not zero
     __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
-    // Fast path: convert to colorless
     z_uncolor(ce, ref);
   } else {
     Label good;
@@ -941,7 +775,6 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
   __ bind(*stub->continuation());
 }
 
-// purpose: this is the slow path, it just set ups the arguments and call the runtime stub
 void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
                                                          ZLoadBarrierStubC1* stub) const {
   // Stub entry
@@ -950,11 +783,6 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   Register ref = stub->ref()->as_register();
   Register ref_addr = noreg;
   Register temp = noreg;
-
-  //__ z_ldgr(Z_F0, Z_R1);
-  //__ load_const_optimized(Z_R1, (uintptr_t)&c1_load_stub_fubar);
-  //__ z_agsi(0, Z_R1, 1);
-  //__ z_lgdr(Z_R1, Z_F0);
 
   if (stub->tmp()->is_valid()) {
     //Load address into tmp register
@@ -983,12 +811,6 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   __ z_stg(ref_addr, offset, Z_SP);
   __ call_stub(stub->runtime_stub());
 
-  //__ add2reg(Z_SP, - 2 * BytesPerWord);
-  //ce->store_parameter(ref_addr, 1);
-  //ce->store_parameter(ref, 0);
-  //__ call_stub(stub->runtime_stub());
-  //__ add2reg(Z_SP, 2 * BytesPerWord);
-
   __ restore_return_pc();
   __ pop_frame();
 
@@ -997,22 +819,14 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   __ branch_optimized(Assembler::bcondAlways, *stub->continuation());
 }
 
-// Purpose: It is just setting up the arguments and calling the store_barrier which we defined earlier
-// It will jump to the medium and slow path through there only, the medium_path for this is bounnd below
-// in generate_c1_store_barrier_stub
 void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
                                                      LIR_Address* addr,
                                                      LIR_Opr new_zaddress,
                                                      LIR_Opr new_zpointer,
                                                      ZStoreBarrierStubC1* stub) const {
-  //__ z_ldgr(Z_F1, Z_R1);
-  //__ load_const_optimized(Z_R1, (uintptr_t)&c1_store_fubar);
-  //__ z_agsi(0, Z_R1, 1);
-  //__ z_lgdr(Z_R1, Z_F1);
   Register rnew_zaddress = new_zaddress->as_register();
   Register rnew_zpointer = new_zpointer->as_register();
 
-  // TODO: Why is this here?
   Register rbase = addr->base()->as_pointer_register();
   store_barrier_fast(ce->masm(),
                      ce->as_Address(addr),
@@ -1024,7 +838,6 @@ void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
                      *stub->continuation());
 }
 
-// Purpose: This is the medium path and the slow path for the c1 store barrier
 void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
                                                           ZStoreBarrierStubC1* stub) const {
   // Stub entry
@@ -1037,7 +850,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
   store_barrier_medium(ce->masm(),
                        ce->as_Address(stub->ref_addr()->as_address_ptr()),
                        Z_R1,
-                       scratch, /* This is probelematic, R2, R3, R4 and R5 all are used here, I think I can pass stub->new_zpointer()->as_register() here */
+                       scratch,
                        false /* is_native */,
                        stub->is_atomic(),
                        *stub->continuation(),
@@ -1046,9 +859,6 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 
   __ bind(slow);
 
-  //__ load_const_optimized(scratch, (uintptr_t)&c1_store_stub_fubar);
-  //__ z_agsi(0, scratch, 1);
- 
   // Pass store address in the stack
   __ z_lay(scratch, ce->as_Address(stub->ref_addr()->as_address_ptr()));
 
@@ -1069,13 +879,8 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 #undef __
 #define __ sasm->
 
-// Purpose: We are just calling the VM here
 void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *sasm,
                                                                  DecoratorSet decorators) const {
-
-  //int offset = 176;
-  //__ z_ldy(Z_F0, offset, Z_SP);              offset += 8;     // ref
-  //__ z_ldy(Z_F1, offset, Z_SP);                               // ref_addr
 
   int nbytes_save = 15 * BytesPerWord;                        // R1 to R5, F0 to F7, SP, PC
   // TODO: use frame::z_abi_160_size instead of just writing 160
@@ -1083,7 +888,6 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
 
   __ push_frame_abi160(nbytes_save);         offset += 8;
   __ save_return_pc();                       offset += 8;
-  // TODO: If anything goes wrong, check here if something useful was stored in the float registers or i can save these register if the c1_load_stub
   __ save_volatile_regs(Z_SP, offset, true, false);
 
   offset = 16 + 160 + nbytes_save + 160;
@@ -1092,9 +896,6 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
   __ z_lg(Z_ARG2, offset, Z_SP);                                    // ref_addr
 
   __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
-
-  //__ load_const_optimized(Z_R1, (uintptr_t)&c1_load_runtime_fubar);
-  //__ z_agsi(0, Z_R1, 1);
 
   //TODO: Why are we verifying oop, ppc does it but x86 and aarch64 does not -> they are also doing it, but in the load_stub
   // I don't know why but keeping this is causing a test failure (TestVerifyOops.java#id0), the error is weired we to
@@ -1111,7 +912,6 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
   __ z_br(Z_R14);
 }
 
-// Purpose: We are pushing all the volatile registers except Z_R0 onto the stack and calling the VM
 void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler* sasm,
                                                                   bool self_healing) const {
 
@@ -1122,24 +922,13 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
   __ save_return_pc();                      offset += 8;
   __ save_volatile_regs(Z_SP, offset, true, false);
 
-  //__ z_lgdr(Z_ARG1, Z_F0);
   __ z_lg(Z_ARG1, 160 + nbytes_save + 16, Z_SP);
-
-  //__ push_frame(nbytes_save);
-  //__ save_return_pc();
-  //// TODO: check if we need to save R0 as well -> no, aarch64 is not saving it and ppc as well i think
-  //__ save_volatile_regs(Z_SP, stack_parameters, true, false);
-//
-  //__ z_lgr(Z_ARG1, Z_R0);
 
   if (self_healing) {
     __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr());
   } else {
     __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr());
   }
-
-  //__ load_const_optimized(Z_R5, (uintptr_t)&c1_store_runtime_fubar);
-  //__ z_agsi(0, Z_R5, 1);
 
   offset = 168;
   __ restore_return_pc();                   offset += 8;
@@ -1156,8 +945,6 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
 #undef __
 #define __ _masm->
 
-// Purpose: We have _ref and _ref_addr stored in different registers and we want them in the
-// Z_ARG1 and Z_ARG2 registers respectively. We are just going through the different combinations
 class ZSetupArguments {
   MacroAssembler* const _masm;
   const Register        _ref;
@@ -1176,10 +963,6 @@ public:
     // _ref_addr: Z_ARG2
 
     // '_ref_addr' can be unspecified. In that case, the barrier will not heal the reference.
-    //__ z_ldgr(Z_F0, Z_R1);
-    //__ load_const_optimized(Z_R1, (uintptr_t)&setup_args_fubar);
-    //__ z_agsi(0, Z_R1, 1);
-    //__ z_lgdr(Z_R1, Z_F0);
     if (_ref_addr.base() == noreg) {
       // TODO: Check the usage of this assert?
       assert_different_registers(_ref, noreg, Z_R0);
@@ -1221,21 +1004,12 @@ public:
 #undef __
 #define __ masm->
 
-// Runtime TODO: Check the path from where we are calling these functions
-// Purpose: We are just setting up the arguments and calling the runtime
 void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, ZLoadBarrierStubC2* stub) const {
-  // TODO: ppc, x86 and aarch64 all have slightly different implementations fot this, I am following x86
-
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   BLOCK_COMMENT("ZLoadBarrierStubC2");
 
   // Stub entry
   __ bind(*stub->entry());
-
-  //__ z_ldgr(Z_F0, Z_R1);
-  //__ load_const_optimized(Z_R1, (uintptr_t)&c2_load_fubar);
-  //__ z_agsi(0, Z_R1, 1);
-  //__ z_lgdr(Z_R1, Z_F0);
 
   {
     SaveLiveRegisters save_live_registers(masm, stub);
@@ -1246,8 +1020,6 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
   __ branch_optimized(Assembler::bcondAlways, *stub->continuation());
 }
 
-// Purpose: We are also here just calling the runtime but we are also trying it is_atomic null condition and
-// trying to put it in the buffer
 void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, ZStoreBarrierStubC2* stub) const {
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   BLOCK_COMMENT("ZStoreBarrierStubC2");
@@ -1255,13 +1027,12 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   // Stub entry
   __ bind(*stub->entry());
 
-   //__ stop("generate c2 store barrier stub");
   Label slow;
   Label slow_continuation;
   store_barrier_medium(masm,
                        stub->ref_addr(),
                        stub->new_zpointer(),
-                       Z_R1_scratch,          // TODO: Check if this is live or not
+                       Z_R1_scratch,
                        stub->is_native(),
                        stub->is_atomic(),
                        *stub->continuation(),
@@ -1295,7 +1066,6 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
 #define __ masm->
 
 // Verify a colored pointer
-// TODO: I am following the implementation of ppc because the implementation of verify_oop of s390 matches ppc and the call for verify_oop in the above implementations are also defined just like ppc
 void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const char* msg) {
   if (!VerifyOops) {
     return;
@@ -1352,17 +1122,6 @@ static uint16_t patch_barrier_relocation_value(int format) {
   }
 }
 
-// TODO: the __ relocate() will be replaced by a suitable load immediate, store immediate etc to store the above Good and Bad
-// masks during every epoch of the gc. I do not know where and how are these instructions are decided. This implementation follows
-// ppc and luckily for them the pathced instructions are li, ori, cmpli and andi. These masks are needed to be loaded in the 
-// emitted instructions itself and on ppc the place to put these instructions are the last 16 bits (addr + 2), but depending upon
-// emitted instructions on s390 the place to put these masks may change. See aarch64 for reference.
-
-// Purpose: __relocate() in itself would not emit an instruction but rather it will put something in the argument of the
-// instruction which is emitted next. The emitted instruction for s390 are lhi, oill, cghi.
-// lhi: 32 bit instruction with immediate bit placed at 16-31
-// chi: 32 bit instruction with immediate bit placed at 16-31
-// oill: 32 bit instruction with immediate bit placed at 16-31
 void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
   *(uint16_t*)(addr + 2) = patch_barrier_relocation_value(format);
   ICache::invalidate_word(addr);

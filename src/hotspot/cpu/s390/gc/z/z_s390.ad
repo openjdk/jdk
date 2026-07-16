@@ -34,11 +34,6 @@ source %{
 
 #include "gc/z/zBarrierSetAssembler.hpp"
 
-long zLoadP_fubar = 0;
-long zcolor_fubar = 0;
-long keep_alive_fubar = 0;
-long GetAndSet_fubar = 0;
-
 static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Register src) {
   assert_different_registers(src, dst);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
@@ -54,13 +49,7 @@ static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) 
   __ z_srlg(ref, ref, ZPointerLoadShift);
 }
 
-// Purpose: Compare the reference with the mask and jump to the runtime if not equal, else just uncolor it
 static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
-  //__ z_ldgr(Z_F0, Z_R1);
-  //__ load_const_optimized(Z_R1, (uintptr_t)&keep_alive_fubar);
-  //__ z_agsi(0, Z_R1, 1);
-  //__ z_lgdr(Z_R1, Z_F0);
-
   __ z_lgr(Z_R0_scratch, ref);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
   __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
@@ -73,7 +62,6 @@ static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node
   __ bind(*stub->continuation());
 }
 
-// Purpose: Check is pointer is good if it is just uncolor it else call the runtime
 static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   if (node->barrier_data() == ZBarrierElided) {
@@ -85,7 +73,6 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
         ((node->barrier_data() & ZBarrierPhantom) != 0);
 
     if (on_non_strong) {
-      //__ stop("non strong load barrier");
       z_keep_alive_load_barrier(masm, node, ref_addr, ref);
       return;
     }
@@ -102,7 +89,6 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
   }
 }
 
-//Purpose: Check if oop is initialized if it not just color it else call store_barrier_fast
 static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register rnew_zaddress, Register rnew_zpointer, bool is_atomic) {
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   if (node->barrier_data() == ZBarrierElided) {
@@ -131,10 +117,6 @@ instruct zLoadP(iRegP dst, memory mem, flagsReg cr) %{
   format %{ "LG      $dst,$mem\t # ptr" %}
 
   ins_encode %{
-    //__ z_ldgr(Z_F0, Z_R1);
-    //__ load_const_optimized(Z_R1, (uintptr_t)&zLoadP_fubar);
-    //__ z_agsi(0, Z_R1, 1);
-    //__ z_lgdr(Z_R1, Z_F0);
     __ z_lg($dst$$Register, $mem$$Address);
     z_load_barrier(masm, this, $mem$$Address, $dst$$Register);
   %}
@@ -148,6 +130,7 @@ instruct zStoreP(memory mem, iRegP src, iRegP temp, flagsReg cr) %{
   predicate(UseZGC && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem src));
   effect(TEMP temp, KILL cr);
+  // TODO: update the sizes of these instructions
   size(100);
 
   //TODO: double check the instruction cost
@@ -187,11 +170,6 @@ instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP newval, iRegP newval_t
   ins_encode %{
     assert_different_registers($oldval$$Register, $mem$$Register);
     const Address mem_addr = Address($mem$$Register, 0);
-    //z_store_barrier(masm, this, mem_addr, $newval$$Register, $newval_temp$$Register, true /* is_atomic */);
-    //z_color(masm, this, $oldval_temp$$Register, $oldval$$Register);
-    //__ z_lg($res$$Register, mem_addr);
-    //__ z_csg($oldval_temp$$Register, $newval_temp$$Register, mem_addr);
-    //z_uncolor(masm, this, $res$$Register);
 // TODO: Check which register we need to uncolor
 
     z_store_barrier(masm, this, mem_addr, $newval$$Register, $newval_temp$$Register, true);
@@ -246,9 +224,6 @@ instruct zGetAndSetP(iRegP mem, iRegP newval, iRegP temp1, iRegP temp2, flagsReg
   ins_encode %{
     Label retry;
     const Address mem_addr = Address($mem$$Register, 0);
-
-    //__ load_const_optimized($temp1$$Register, (uintptr_t)&GetAndSet_fubar);
-    //__ z_agsi(0, $temp1$$Register, 1);
 
     z_store_barrier(masm, this, mem_addr, $newval$$Register, $temp1$$Register, true /* is_atomic */);
     __ z_lg($temp2$$Register, mem_addr);
