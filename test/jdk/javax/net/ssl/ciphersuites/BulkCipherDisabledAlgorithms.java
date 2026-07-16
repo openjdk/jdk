@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8387124
- * @summary Test TLS cipher suite disabling via jdk.tls.disabledAlgorithms
- *          using both cipher suite names and bulk cipher components.
+ * @summary Verify that disabling bulk cipher algorithms in
+ *          jdk.tls.disabledAlgorithms disables associated TLS cipher suites.
  * @library /test/lib
  *          /javax/net/ssl/TLSCommon
  *          /javax/net/ssl/templates
@@ -51,22 +51,26 @@ public class BulkCipherDisabledAlgorithms {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            List<String[]> tests = buildTests();
+            // Sanity check: all enabled cipher suites should work before
+            // applying any jdk.tls.disabledAlgorithms restrictions.
+            testAllCipherSuitesEnabled();
+
+            // Verify that disabling a bulk cipher algorithm disables cipher
+            // suites that use that algorithm.
+            List<String[]> tests = buildCipherSuitesDisabled();
 
             for (String[] test : tests) {
                 String suite = test[0];
-                String disabled = test[1];
-                String expected = test[2];
+                String bulkCipher = test[1];
 
                 System.out.println("=================================================");
                 System.out.println("Testing: suite=" + suite +
-                        ", disabled=" + disabled +
-                        ", expected=" + expected);
+                        ", bulkCipher=" + bulkCipher);
 
                 Proc p = Proc.create(
                         BulkCipherDisabledAlgorithms.class.getName())
-                        .args(suite, expected)
-                        .secprop("jdk.tls.disabledAlgorithms", disabled)
+                        .args(suite)
+                        .secprop("jdk.tls.disabledAlgorithms", bulkCipher)
                         .inheritIO();
 
                 p.start().waitFor(0);
@@ -77,10 +81,18 @@ public class BulkCipherDisabledAlgorithms {
         }
 
         String suite = args[0];
-        String expected = args[1];
-        boolean expectedDisabled = "disabled".equals(expected);
 
-        testHandshake(suite, expectedDisabled);
+        testCipherSuiteDisabled(suite);
+
+        testHandshake(suite, true);
+    }
+
+    private static void testAllCipherSuitesEnabled() throws Exception {
+        CipherSuite[] suites = getCipherSuites();
+
+        for (CipherSuite suite : suites) {
+            testHandshake(suite.name(), false);
+        }
     }
 
     private static CipherSuite[] getCipherSuites() throws NoSuchAlgorithmException {
@@ -92,32 +104,15 @@ public class BulkCipherDisabledAlgorithms {
                 .toArray(CipherSuite[]::new);
     }
 
-    private static List<String[]> buildTests() throws NoSuchAlgorithmException {
+    private static List<String[]> buildCipherSuitesDisabled() throws NoSuchAlgorithmException {
         List<String[]> tests = new ArrayList<>();
         CipherSuite[] suites = getCipherSuites();
 
         for (CipherSuite suite : suites) {
             String suiteName = suite.name();
-            String bulk = extractBulkCipher(suiteName);
+            String bulkCipher = extractBulkCipher(suiteName);
 
-            tests.add(new String[] { suiteName, bulk, "disabled" });
-
-            for (CipherSuite other : suites) {
-                // Negative test case: disable a different bulk cipher than the one
-                // used by the current suite. This ensures that the suite remains
-                // enabled and a successful TLS handshake can still be negotiated.
-                if (other == suite) {
-                    continue;
-                }
-
-                String otherBulk = extractBulkCipher(other.name());
-
-                if (!bulk.equals(otherBulk)
-                        && !suiteName.contains(otherBulk)) {
-                    tests.add(new String[] { suiteName, otherBulk, "enabled" });
-                    break;
-                }
-            }
+            tests.add(new String[] { suiteName, bulkCipher });
         }
 
         return tests;
@@ -141,37 +136,47 @@ public class BulkCipherDisabledAlgorithms {
         }
     }
 
-    private static void testHandshake(String suite, boolean expectedDisabled) throws Exception {
+    private static void testCipherSuiteDisabled(String suite) throws NoSuchAlgorithmException {
+        boolean visible = Arrays.asList(getCipherSuites())
+                .contains(CipherSuite.cipherSuite(suite));
+
+        if (visible) {
+            throw new RuntimeException(
+                    "Cipher suite '" + suite + "' visible but expected to be disabled");
+        }
+    }
+
+    private static void testHandshake(String cipherSuite, boolean expectedDisabled) throws Exception {
         try {
-            new TLSHandshakeTest(suite).run();
+            new TLSHandshakeTest(cipherSuite).run();
 
             if (expectedDisabled) {
                 throw new RuntimeException(
-                        "Handshake succeeded but should fail: " + suite);
+                        "Handshake succeeded but should fail: " + cipherSuite);
             }
         } catch (SSLHandshakeException e) {
             if (!expectedDisabled) {
                 throw new RuntimeException(
-                        "Handshake failed unexpectedly: " + suite, e);
+                        "Handshake failed unexpectedly: " + cipherSuite, e);
             }
         }
     }
 
     private static class TLSHandshakeTest extends SSLSocketTemplate {
-        private final String suite;
+        private final String cipherSuite;
 
-        TLSHandshakeTest(String suite) {
-            this.suite = suite;
+        TLSHandshakeTest(String cipherSuite) {
+            this.cipherSuite = cipherSuite;
         }
 
         @Override
         protected void configureClientSocket(SSLSocket socket) {
-            socket.setEnabledCipherSuites(new String[] { suite });
+            socket.setEnabledCipherSuites(new String[] { cipherSuite });
         }
 
         @Override
         protected void configureServerSocket(SSLServerSocket socket) {
-            socket.setEnabledCipherSuites(new String[] { suite });
+            socket.setEnabledCipherSuites(new String[] { cipherSuite });
         }
     }
 }
