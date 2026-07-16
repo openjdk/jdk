@@ -678,7 +678,7 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // verify that there is really a valid exception in rax
   __ verify_not_null_oop(exception_oop);
 
-   __ restore_profile_rng();
+  __ restore_profile_rng();
 
   // get throwing pc (= return address).
   // rdx has been destroyed by the call, so it must be set again
