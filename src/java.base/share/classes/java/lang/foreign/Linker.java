@@ -632,7 +632,7 @@ public sealed interface Linker permits AbstractLinker {
      *     <li>The invocation occurs in a thread {@code T} such that
      *         {@code A.isAccessibleBy(T) == true}.
      *         Otherwise, the invocation throws {@link WrongThreadException}; and</li>
-     *     <li>{@code A} is <a href="MemorySegment.html#segment-alignment">kept alive</a>
+     *     <li>{@code A} is {@linkplain MemorySegment##keep-alive kept alive}
      *         during the invocation.
      *</ul>
      * <p>

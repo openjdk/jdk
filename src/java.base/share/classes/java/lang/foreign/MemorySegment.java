@@ -1031,7 +1031,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * underlying operating system may have paged out some of this segment's data
      * by the time that an invocation of this method returns.
      * <p>
-     * This memory segment is <a href="MemorySegment.html#keep-alive">kept alive</a>
+     * This memory segment is {@linkplain MemorySegment##keep-alive kept alive}
      * during the invocation of this method.
      *
      * @return  {@code true} if it is likely that the contents of this segment
@@ -1054,7 +1054,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * method may cause some number of page faults and I/O operations to
      * occur.
      * <p>
-     * This memory segment is <a href="MemorySegment.html#keep-alive">kept alive</a>
+     * This memory segment is {@linkplain MemorySegment##keep-alive kept alive}
      * during the invocation of this method.
      *
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
@@ -1074,7 +1074,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * after invoking this method may cause some number of page faults and I/O operations
      * to occur (as this segment's contents might need to be paged back in).
      * <p>
-     * This memory segment is <a href="MemorySegment.html#keep-alive">kept alive</a>
+     * This memory segment is {@linkplain MemorySegment##keep-alive kept alive}
      * during the invocation of this method.
      *
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
