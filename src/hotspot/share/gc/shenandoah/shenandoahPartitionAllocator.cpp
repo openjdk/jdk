@@ -128,7 +128,6 @@ bool ShenandoahPartitionAllocator<PARTITION>::try_install_alloc_region(uint inde
       occupant->set_update_watermark(occupant->stable_top());
       occupant->set_collector_allocator_reserved(false);
     }
-    _free_set->unretire_alloc_region(PARTITION, occupant);
   }
   return true;
 }
