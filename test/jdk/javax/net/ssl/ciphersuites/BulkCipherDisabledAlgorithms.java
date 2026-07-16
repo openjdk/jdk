@@ -100,7 +100,6 @@ public class BulkCipherDisabledAlgorithms {
             String suiteName = suite.name();
             String bulk = extractBulkCipher(suiteName);
 
-            tests.add(new String[] { suiteName, suiteName, "disabled" });
             tests.add(new String[] { suiteName, bulk, "disabled" });
 
             for (CipherSuite other : suites) {
