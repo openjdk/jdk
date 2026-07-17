@@ -103,8 +103,7 @@ Java_GetXSpace_getSpace0
     }
 
     if (totalSpaceIsEstimated == JNI_TRUE) {
-        // if GetDiskSpaceInformationW is unavailable ("The specified
-        // procedure could not be found"), fall back to GetDiskFreeSpaceExW
+        // fall back to GetDiskFreeSpaceExW
         ULARGE_INTEGER freeBytesAvailable;
         ULARGE_INTEGER totalNumberOfBytes;
         ULARGE_INTEGER totalNumberOfFreeBytes;
