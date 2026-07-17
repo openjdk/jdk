@@ -300,6 +300,7 @@ public:
   do_var(bool,  UseSHA3Intrinsics) \
   do_var(bool,  UseSHA512Intrinsics) \
   do_var(bool,  UseVectorizedMismatchIntrinsic) \
+  do_var(bool,  VMContinuations) \
   do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \
   do_fun(bool,  JavaAssertions_systemClassDefault,      JavaAssertions::systemClassDefault()) \
   do_fun(bool,  JavaAssertions_userClassDefault,        JavaAssertions::userClassDefault()) \
