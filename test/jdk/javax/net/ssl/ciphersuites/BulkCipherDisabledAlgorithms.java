@@ -34,12 +34,16 @@
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
+
 import jdk.test.lib.process.Proc;
 
 /*
@@ -57,20 +61,19 @@ public class BulkCipherDisabledAlgorithms {
 
             // Verify that disabling a bulk cipher algorithm disables cipher
             // suites that use that algorithm.
-            List<String[]> tests = buildCipherSuitesDisabled();
+            Map<String, List<String>> cipherSuitesByBulkCipher = groupCipherSuitesByBulkCipher();
 
-            for (String[] test : tests) {
-                String suite = test[0];
-                String bulkCipher = test[1];
+            for (Map.Entry<String, List<String>> entry : cipherSuitesByBulkCipher.entrySet()) {
+                String disabledBulkCipher = entry.getKey();
+                List<String> disabledCipherSuites = entry.getValue();
 
-                System.out.println("=================================================");
-                System.out.println("Testing: suite=" + suite +
-                        ", bulkCipher=" + bulkCipher);
-
+                // Verify that all cipher suites associated with the disabled
+                // bulk cipher become unavailable.
                 Proc p = Proc.create(
                         BulkCipherDisabledAlgorithms.class.getName())
-                        .args(suite)
-                        .secprop("jdk.tls.disabledAlgorithms", bulkCipher)
+                        .args(disabledBulkCipher,
+                                String.join(",", disabledCipherSuites))
+                        .secprop("jdk.tls.disabledAlgorithms", disabledBulkCipher)
                         .inheritIO();
 
                 p.start().waitFor(0);
@@ -80,11 +83,17 @@ public class BulkCipherDisabledAlgorithms {
             return;
         }
 
-        String suite = args[0];
+        String disabledBulkCipher = args[0];
+        List<String> disabledCipherSuites = Arrays.asList(args[1].split(","));
 
-        testCipherSuiteDisabled(suite);
+        for (String disabledCipherSuite : disabledCipherSuites) {
+            System.out.println("=================================================");
+            System.out.println("Testing: suite=" + disabledCipherSuite +
+                    ", disabled bulk cipher=" + disabledBulkCipher);
 
-        testHandshake(suite, true);
+            testCipherSuiteDisabled(disabledCipherSuite);
+            testHandshake(disabledCipherSuite, true);
+        }
     }
 
     private static void testAllCipherSuitesEnabled() throws Exception {
@@ -104,18 +113,24 @@ public class BulkCipherDisabledAlgorithms {
                 .toArray(CipherSuite[]::new);
     }
 
-    private static List<String[]> buildCipherSuitesDisabled() throws NoSuchAlgorithmException {
-        List<String[]> tests = new ArrayList<>();
+    private static Map<String, List<String>> groupCipherSuitesByBulkCipher() throws NoSuchAlgorithmException {
+        Map<String, List<String>> cipherSuitesByBulkCipher = new LinkedHashMap<>();
         CipherSuite[] suites = getCipherSuites();
 
         for (CipherSuite suite : suites) {
             String suiteName = suite.name();
             String bulkCipher = extractBulkCipher(suiteName);
+            List<String> suitesForBulk = cipherSuitesByBulkCipher.get(bulkCipher);
 
-            tests.add(new String[] { suiteName, bulkCipher });
+            if (suitesForBulk == null) {
+                suitesForBulk = new ArrayList<>();
+                cipherSuitesByBulkCipher.put(bulkCipher, suitesForBulk);
+            }
+
+            suitesForBulk.add(suiteName);
         }
 
-        return tests;
+        return cipherSuitesByBulkCipher;
     }
 
     /**
