@@ -27,8 +27,6 @@ package java.sql;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 
 /**
  * <P>A thin wrapper around {@code java.util.Date} that allows
@@ -485,17 +483,6 @@ public class Timestamp extends java.util.Date {
     private static final int MILLIS_PER_SECOND = 1000;
 
     /**
-     * The epoch millisecond value of 0002-01-01T00:00:00.000 at UTC in
-     * the Julian-Gregorian hybrid calendar system.
-     * We cannot use 1st January 1AD as different timezones could possibly
-     * offset the date back into BC, thus resulting in the incorrect BC year.
-     * While a one year margin is considerably larger than any possible
-     * timezone offset, it gives us a comfortable distance while still
-     * providing a faster code path for almost 1970 years.
-     */
-    private static final long TWO_AD_AT_UTC_EPOCH_MILLIS = -62104233600000L;
-
-    /**
      * Obtains an instance of {@code Timestamp} from a {@code LocalDateTime}
      * object, with the same year, month, day of month, hours, minutes,
      * seconds and nanos date-time value as the provided {@code LocalDateTime}.
@@ -530,41 +517,14 @@ public class Timestamp extends java.util.Date {
      */
     @SuppressWarnings("deprecation")
     public LocalDateTime toLocalDateTime() {
-        // The underlying date does not expose any direct way of determining if
-        // the year is a BC year. As a result, we need to rederive the calendar
-        // of the date in order to find the correct year.
-        // However, deriving a new calendar is a relatively expensive operation
-        // that we would ideally avoid if possible.
-        // Given that we can comfortably state that any dates on or after
-        // 0002-01-01 are AD, we can use a much faster local date time
-        // derivation for these dates.
-        if (getTime() >= TWO_AD_AT_UTC_EPOCH_MILLIS) {
-            return LocalDateTime.of(getYear() + 1900,
-                                    getMonth() + 1,
-                                    getDate(),
-                                    getHours(),
-                                    getMinutes(),
-                                    getSeconds(),
-                                    getNanos());
-        }
-        final GregorianCalendar calendar = new GregorianCalendar();
-        calendar.setTime(this);
-
-        int year = getYear() + 1900;
-        if (calendar.get(Calendar.ERA) == GregorianCalendar.BC) {
-            // Adjust the BC date into a negative astronomical date.
-            // As there is no year 0 in the Gregorian calendar
-            // we also have to adjust the BC year by 1.
-            // 1 BC becomes year 0, 2 BC becomes year -1 and so on.
-            year = 1 - year;
-        }
-        return LocalDateTime.of(year,
-                                getMonth() + 1,
-                                getDate(),
-                                getHours(),
-                                getMinutes(),
-                                getSeconds(),
-                                getNanos());
+        return LocalDateTime.of(
+            Date.toProlepticYear(getYear() + 1900, getTime()),
+            getMonth() + 1,
+            getDate(),
+            getHours(),
+            getMinutes(),
+            getSeconds(),
+            getNanos());
     }
 
     /**
