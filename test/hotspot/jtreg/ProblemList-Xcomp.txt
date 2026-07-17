@@ -62,5 +62,5 @@ gc/arguments/TestNewSizeFlags.java 8299116 macosx-aarch64
 #############################################################################
 
 # Valhalla failures start here:
-runtime/cds/appcds/aotCache/AOTMapTest.java#valhalla 8378071 generic-all
-runtime/cds/appcds/cacheObject/ArchivedFlatArrayTest.java 8378071 generic-all
+runtime/cds/appcds/aotCache/AOTMapTest.java#valhalla 8388438 generic-all
+runtime/cds/appcds/cacheObject/ArchivedFlatArrayTest.java 8388438 generic-all
