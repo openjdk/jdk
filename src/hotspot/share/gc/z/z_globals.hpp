@@ -96,7 +96,7 @@
   product(uint, ZOldGCThreads, 0, DIAGNOSTIC,                               \
           "Number of GC threads for the old generation")                    \
                                                                             \
-  product(uintx, ZIndexDistributorStrategy, 0, DIAGNOSTIC,                  \
+  product(uint, ZIndexDistributorStrategy, 0, DIAGNOSTIC,                   \
           "Strategy used to distribute indices to parallel workers "        \
           "0: Claim tree "                                                  \
           "1: Simple Striped ")                                             \
