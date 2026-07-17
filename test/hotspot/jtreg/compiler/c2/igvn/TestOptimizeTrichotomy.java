@@ -94,87 +94,87 @@ public class TestOptimizeTrichotomy {
 
     // ------------------------- Failing cases for JDK-8385157 ------------------------------
 
-////    // test0: Test2.java as reported in JDK-8385157, reported wrong result with -Xcomp
-////    public static boolean test0_flag = true;
-////    public static final boolean test0_gold = test0(42);
-////
-////    @Test
-////    @Arguments(values = {Argument.NUMBER_42})
-////    public static boolean test0(int n) {
-////        int a = test0_flag ? -3 : Integer.MAX_VALUE;
-////        // Note: the following CmpI is optimized into a CmpU
-////        //   n + Integer.MIN_VALUE > a + Integer.MIN_VALUE
-////        // ->
-////        //   n >u a
-////        // And so this ends up in the same pattern as test1, but
-////        // reproduces before started intrinsifying Ingeger.compareUnsigned
-////        if (a > n || n + Integer.MIN_VALUE > a + Integer.MIN_VALUE) {
-////            return true;
-////        }
-////        return false;
-////    }
-////
-////    @Check(test = "test0")
-////    public void checkTest0(boolean val) {
-////        if (val != test0_gold) {
-////            throw new RuntimeException("wrong value: " + val + " vs " + test0_gold);
-////        }
-////    }
-////
-////    // test1: Test4.java as reported in JDK-8385157, reported wrong result with -Xcomp
-////    public static boolean test1_flag = true;
-////    public static final boolean test1_gold = test1(42);
-////
-////    @Test
-////    @Arguments(values = {Argument.NUMBER_42})
-////    public static boolean test1(int n) {
-////        int a = test1_flag ? -3 : Integer.MAX_VALUE;
-////        // RegionNode::optimize_trichotomy
-////        // thinks that the comparisons below operate on the same inputs compare(n, a),
-////        // but misses to check the Opcode for CmpI vs CmpU.
-////        if (a > n || Integer.compareUnsigned(n, a) > 0) {
-////            return true;
-////        }
-////        return false;
-////    }
-////
-////    @Check(test = "test1")
-////    public void checkTest1(boolean val) {
-////        if (val != test1_gold) {
-////            throw new RuntimeException("wrong value: " + val + " vs " + test1_gold);
-////        }
-////    }
-////
-////    // Another case found by the TestFoldComparesFuzzer.java
-////    @Test
-////    static boolean test2(int a, int b) {
-////        a = Math.min(1886969202, Math.max(-2002597787, a));
-////        b = Math.min(130, Math.max(-33554430, b));
-////        if (!(b  >=  a) || (Integer.compareUnsigned(a, b) <= 0)) {
-////            return true;
-////        }
-////        return false;
-////    }
-////
-////    @DontCompile
-////    static boolean reference2(int a, int b) {
-////        a = Math.min(1886969202, Math.max(-2002597787, a));
-////        b = Math.min(130, Math.max(-33554430, b));
-////        if (!(b  >=  a) || (Integer.compareUnsigned(a, b) <= 0)) {
-////            return true;
-////        }
-////        return false;
-////    }
-////
-////    @Run(test = {"test2"})
-////    static void runTest2() {
-////        var p = IntPair.balancedTrichotomy();
-////        boolean v0 = test2(p.x, p.y);
-////        boolean v1 = reference2(p.x, p.y);
-////        if (v0 != v1) {
-////            throw new RuntimeException("wrong value: " + v0 + " vs " + v1);
-////        }
-////    }
+    // test0: Test2.java as reported in JDK-8385157, reported wrong result with -Xcomp
+    public static boolean test0_flag = true;
+    public static final boolean test0_gold = test0(42);
+
+    @Test
+    @Arguments(values = {Argument.NUMBER_42})
+    public static boolean test0(int n) {
+        int a = test0_flag ? -3 : Integer.MAX_VALUE;
+        // Note: the following CmpI is optimized into a CmpU
+        //   n + Integer.MIN_VALUE > a + Integer.MIN_VALUE
+        // ->
+        //   n >u a
+        // And so this ends up in the same pattern as test1, but
+        // reproduces before started intrinsifying Ingeger.compareUnsigned
+        if (a > n || n + Integer.MIN_VALUE > a + Integer.MIN_VALUE) {
+            return true;
+        }
+        return false;
+    }
+
+    @Check(test = "test0")
+    public void checkTest0(boolean val) {
+        if (val != test0_gold) {
+            throw new RuntimeException("wrong value: " + val + " vs " + test0_gold);
+        }
+    }
+
+    // test1: Test4.java as reported in JDK-8385157, reported wrong result with -Xcomp
+    public static boolean test1_flag = true;
+    public static final boolean test1_gold = test1(42);
+
+    @Test
+    @Arguments(values = {Argument.NUMBER_42})
+    public static boolean test1(int n) {
+        int a = test1_flag ? -3 : Integer.MAX_VALUE;
+        // RegionNode::optimize_trichotomy
+        // thinks that the comparisons below operate on the same inputs compare(n, a),
+        // but misses to check the Opcode for CmpI vs CmpU.
+        if (a > n || Integer.compareUnsigned(n, a) > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    @Check(test = "test1")
+    public void checkTest1(boolean val) {
+        if (val != test1_gold) {
+            throw new RuntimeException("wrong value: " + val + " vs " + test1_gold);
+        }
+    }
+
+    // Another case found by the TestFoldComparesFuzzer.java
+    @Test
+    static boolean test2(int a, int b) {
+        a = Math.min(1886969202, Math.max(-2002597787, a));
+        b = Math.min(130, Math.max(-33554430, b));
+        if (!(b  >=  a) || (Integer.compareUnsigned(a, b) <= 0)) {
+            return true;
+        }
+        return false;
+    }
+
+    @DontCompile
+    static boolean reference2(int a, int b) {
+        a = Math.min(1886969202, Math.max(-2002597787, a));
+        b = Math.min(130, Math.max(-33554430, b));
+        if (!(b  >=  a) || (Integer.compareUnsigned(a, b) <= 0)) {
+            return true;
+        }
+        return false;
+    }
+
+    @Run(test = {"test2"})
+    static void runTest2() {
+        var p = IntPair.balancedTrichotomy();
+        boolean v0 = test2(p.x, p.y);
+        boolean v1 = reference2(p.x, p.y);
+        if (v0 != v1) {
+            throw new RuntimeException("wrong value: " + v0 + " vs " + v1);
+        }
+    }
 
     // ------------------- IR tests to check that optimization was performed ------------------------
 
