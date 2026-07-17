@@ -350,6 +350,7 @@ class MacroAssembler: public Assembler {
 
   // oop manipulations
   void load_narrow_klass_compact(Register dst, Register src);
+  void load_narrow_klass(Register dst, Register src);
   void load_klass(Register dst, Register src, Register tmp);
   void store_klass(Register dst, Register src, Register tmp);
 
@@ -443,6 +444,9 @@ class MacroAssembler: public Assembler {
   // Sign extension
   void sign_extend_short(Register reg);
   void sign_extend_byte(Register reg);
+
+  // Clean up a subword typed value to the representation in compliance with JVMS §2.3
+  void narrow_subword_type(Register reg, BasicType bt);
 
   // Division by power of 2, rounding towards 0
   void division_with_shift(Register reg, int shift_value);
@@ -1178,6 +1182,8 @@ public:
   using Assembler::vmovdqa;
   void vmovdqa(XMMRegister dst, AddressLiteral src,                 Register rscratch = noreg);
   void vmovdqa(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+  void vmovdqa(XMMRegister dst, Address        src, int vector_len);
+  void vmovdqa(Address     dst, XMMRegister    src, int vector_len);
 
   // AVX512 Unaligned
   void evmovdqu(BasicType type, KRegister kmask, Address     dst, XMMRegister src, bool merge, int vector_len);
@@ -2068,10 +2074,10 @@ public:
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
 
-#ifdef COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   void generate_fill_avx3(BasicType type, Register to, Register value,
                           Register count, Register rtmp, XMMRegister xtmp);
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   void vallones(XMMRegister dst, int vector_len);
 

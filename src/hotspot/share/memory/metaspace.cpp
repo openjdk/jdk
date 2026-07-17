@@ -739,6 +739,9 @@ void Metaspace::global_initialize() {
     AOTMetaspace::initialize_runtime_shared_and_meta_spaces();
     // If any of the archived space fails to map, UseSharedSpaces
     // is reset to false.
+  } else {
+    // Trivially set the range to empty to satisfy the assert in MetaspaceObj::is_pointer_in_aot_cache()
+    MetaspaceObj::set_aot_metaspace_range(nullptr, nullptr);
   }
 #endif // INCLUDE_CDS
 
@@ -864,8 +867,10 @@ size_t Metaspace::max_allocation_word_size() {
 // Callers are responsible for checking null.
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
                               MetaspaceObj::Type type) {
-  assert(word_size <= Metaspace::max_allocation_word_size(),
-         "allocation size too large (%zu)", word_size);
+  if (word_size > Metaspace::max_allocation_word_size()) {
+    log_warning(gc, metaspace)("allocation size too large (%zu words)", word_size);
+    return nullptr;
+  }
 
   assert(loader_data != nullptr, "Should never pass around a null loader_data. "
         "ClassLoaderData::the_null_class_loader_data() should have been used.");
@@ -910,7 +915,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
     tracer()->report_metaspace_allocation_failure(loader_data, word_size, type, mdtype);
 
     // Allocation failed.
-    if (is_init_completed()) {
+    if (is_init_completed() && word_size <= Metaspace::max_allocation_word_size()) {
       // Only start a GC if the bootstrapping has completed.
       // Try to clean out some heap memory and retry. This can prevent premature
       // expansion of the metaspace.

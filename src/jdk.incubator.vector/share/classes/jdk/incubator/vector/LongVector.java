@@ -2220,6 +2220,9 @@ public abstract sealed class LongVector extends AbstractVector<Long>
         LongVector that = (LongVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         LongVector iotaVector = (LongVector) iotaShuffle().toBitsVector();
         LongVector filter = broadcast((long)origin);
         VectorMask<Long> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);

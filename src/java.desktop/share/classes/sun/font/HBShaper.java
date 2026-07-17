@@ -174,6 +174,17 @@ public class HBShaper {
         MethodHandle tmp1 = LINKER.downcallHandle(malloc_symbol, mallocDescriptor);
         malloc_handle = tmp1;
 
+        MemorySegment free_symbol = SYM_LOOKUP.findOrThrow("free");
+        long free_address = free_symbol.address();
+        FunctionDescriptor setFreeFnDescriptor = FunctionDescriptor.ofVoid(JAVA_LONG);
+        MemorySegment set_free = SYM_LOOKUP.findOrThrow("HBSetFreeFn");
+        @SuppressWarnings("restricted")
+        MethodHandle set_free_handle = LINKER.downcallHandle(set_free, setFreeFnDescriptor);
+        try {
+            set_free_handle.invokeExact(free_address);
+        } catch (Throwable t) {
+        }
+
         FunctionDescriptor createFaceDescriptor =
             FunctionDescriptor.of(ADDRESS, ADDRESS);
         MemorySegment create_face_symbol = SYM_LOOKUP.findOrThrow("HBCreateFace");
@@ -188,7 +199,6 @@ public class HBShaper {
         dispose_face_handle = tmp3;
 
         FunctionDescriptor shapeDesc = FunctionDescriptor.ofVoid(
-            JAVA_FLOAT,  // ptSize
             ADDRESS,     // matrix
             ADDRESS,     // face
             ADDRESS,     // chars
@@ -276,7 +286,6 @@ public class HBShaper {
                    JAVA_INT,               // offset
                    JAVA_FLOAT,             // startX
                    JAVA_FLOAT,             // startX
-                   JAVA_FLOAT,             // devScale
                    JAVA_INT,               // charCount
                    JAVA_INT,               // glyphCount
                    ADDRESS,                // glyphInfo
@@ -423,7 +432,6 @@ public class HBShaper {
     static void shape(
         Font2D font2D,
         FontStrike fontStrike,
-        float ptSize,
         float[] mat,
         MemorySegment hbface,
         char[] text,
@@ -454,7 +462,7 @@ public class HBShaper {
                 MemorySegment chars = arena.allocateFrom(JAVA_CHAR, text);
 
                 jdk_hb_shape_handle.invokeExact(
-                     ptSize, matrix, hbface, chars, text.length,
+                     matrix, hbface, chars, text.length,
                      script, offset, limit,
                      baseIndex, startX, startY, flags, slot,
                      hb_jdk_font_funcs_struct,
@@ -564,7 +572,6 @@ public class HBShaper {
         int offset,
         float startX,
         float startY,
-        float devScale,
         int charCount,
         int glyphCount,
         MemorySegment /* hb_glyph_info_t* */ glyphInfo,
@@ -575,7 +582,7 @@ public class HBShaper {
         Point2D.Float startPt = scopedVars.get().point();
         float x=0, y=0;
         float advX, advY;
-        float scale = 1.0f / HBFloatToFixedScale / devScale;
+        float scale = 1.0f / HBFloatToFixedScale;
 
         int initialCount = gvdata._count;
 

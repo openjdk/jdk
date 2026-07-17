@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,8 +90,8 @@ get_time_stamp(char *tbuf, size_t ltbuf)
 static const char *
 file_basename(const char *file)
 {
-    char *p1;
-    char *p2;
+    const char* p1;
+    const char* p2;
 
     if ( file==NULL )
         return "unknown";

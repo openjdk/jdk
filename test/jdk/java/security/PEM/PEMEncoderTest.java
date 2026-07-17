@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import static jdk.test.lib.Asserts.assertThrows;
 
 public class PEMEncoderTest {
 
-    static Map<String, DEREncodable> keymap;
+    static Map<String, BinaryEncodable> keymap;
     static String pkcs8DefaultAlgExpect;
 
     public static void main(String[] args) throws Exception {
@@ -79,8 +79,12 @@ public class PEMEncoderTest {
         keymap.keySet().forEach(key -> test(key, PEMEncoder.of()));
         System.out.println("Same instance re-encode testToString:");
         keymap.keySet().forEach(key -> testToString(key, encoder));
+        System.out.println("Same instance encode/encodeToString consistency test:");
+        keymap.keySet().forEach(key -> testEncodeConsistency(key, encoder));
         System.out.println("New instance re-encode testToString:");
         keymap.keySet().forEach(key -> testToString(key, PEMEncoder.of()));
+        System.out.println("New instance encode/encodeToString consistency test:");
+        keymap.keySet().forEach(key -> testEncodeConsistency(key, PEMEncoder.of()));
         System.out.println("Same instance Encoder testEncodedKeySpec:");
         testEncodedKeySpec(encoder);
         System.out.println("New instance Encoder testEncodedKeySpec:");
@@ -90,6 +94,8 @@ public class PEMEncoderTest {
         keymap = generateObjKeyMap(PEMData.encryptedList);
         System.out.println("Same instance Encoder match test:");
         keymap.keySet().forEach(key -> testEncryptedMatch(key, encoder));
+        System.out.println("Same instance encrypted encode/encodeToString consistency test:");
+        keymap.keySet().forEach(key -> testEncodeConsistency(key, encoder));
         System.out.println("Same instance Encoder new withEnc test:");
         keymap.keySet().forEach(key -> testEncrypted(key, encoder));
         System.out.println("New instance Encoder and withEnc test:");
@@ -150,10 +156,36 @@ public class PEMEncoderTest {
             throw new AssertionError("encoder tried to encrypt " +
                 "an EncryptedPrivateKeyInfo.");
         } catch (IllegalArgumentException _) {}
+
+        // Check PEM string exact
+        String expected = encoder.encodeToString(decoder.decode(
+            PEMData.ecsecp256.pem()));
+        PEMData.Entry e = PEMData.ecsecp256.makeCRLF("ecsecp256CRLF");
+        System.out.println("Exact PEM String check with CRLF only PEM:");
+        PEMData.checkResultsExact(expected, encoder.encodeToString(
+            decoder.decode(e.pem())));
+        System.out.println("Exact PEM String check with CR only PEM:");
+        e = PEMData.ecsecp256.makeCR("ecsecp256CR");
+        PEMData.checkResultsExact(expected, encoder.encodeToString(
+            decoder.decode(e.pem())));
+        System.out.println("Exact PEM String check with NoCRLF only PEM:");
+        e = PEMData.ecsecp256.makeValidNoCRLF("ecsecp256ValidNoCRLF");
+        System.out.println(HexFormat.of().formatHex(e.pem().getBytes(StandardCharsets.UTF_8)));
+        System.out.println("EOL: " + HexFormat.of().formatHex(System.lineSeparator().getBytes(StandardCharsets.UTF_8)));
+        PEMData.checkResultsExact(expected, encoder.encodeToString(
+            decoder.decode(e.pem())));
+
+        // Independent structural check for the new byte-oriented utility path.
+        System.out.println("Testing consistency between pemEncodedFromArray()" +
+            "and pemEncoded():");
+        testPemEncodedFromArray();
+
+        // Encode an empty PEM content
+        encoder.encode(new PEM("X", ""));
     }
 
     static Map generateObjKeyMap(List<PEMData.Entry> list) {
-        Map<String, DEREncodable> keymap = new HashMap<>();
+        Map<String, BinaryEncodable> keymap = new HashMap<>();
         PEMDecoder pemd = PEMDecoder.of();
         for (PEMData.Entry entry : list) {
             try {
@@ -202,6 +234,49 @@ public class PEMEncoderTest {
         System.out.println("PASS: " + entry.name());
     }
 
+    static void testEncodeConsistency(String key, PEMEncoder encoder) {
+        byte[] encoding;
+        String pem;
+        PEMData.Entry entry = PEMData.getEntry(key);
+        try {
+            encoding = encoder.encode(keymap.get(key));
+            pem = encoder.encodeToString(keymap.get(key));
+        } catch (RuntimeException e) {
+            throw new AssertionError("Encoder consistency failure with " +
+                entry.name(), e);
+        }
+
+        assertEquals(new String(encoding, StandardCharsets.ISO_8859_1), pem);
+        System.out.println("PASS: " + entry.name());
+    }
+
+    static void testPemEncodedFromArray() {
+        byte[] data = {1, 2, 3, 4, 5};
+        String type = Pem.CERTIFICATE;
+        String base64 = Base64.getMimeEncoder(64, "\r\n".getBytes(
+            StandardCharsets.ISO_8859_1)).encodeToString(data);
+        var expected = ("-----BEGIN " + type + "-----\r\n" +
+            base64 + (!base64.endsWith("\n") ? "\r\n" : "") +
+            "-----END " + type + "-----\r\n");
+        var result = Pem.pemEncoded(type, base64.getBytes(StandardCharsets.ISO_8859_1));
+        if (!Arrays.equals(result, expected.getBytes(StandardCharsets.ISO_8859_1))) {
+            throw new AssertionError(
+                "result =\n" + new String(result, StandardCharsets.ISO_8859_1) +
+                "expected =\n " + expected);
+        }
+
+        // Empty data should still include a CRLF before footer.
+        byte[] empty = new byte[0];
+        String emptyBase64 = Base64.getMimeEncoder(64, "\r\n".getBytes(
+            StandardCharsets.ISO_8859_1)).encodeToString(empty);
+        String emptyExpected = "-----BEGIN " + type + "-----\r\n" +
+            emptyBase64 + (!emptyBase64.endsWith("\n") ? "\r\n" : "") +
+            "-----END " + type + "-----\r\n";
+        assertEquals(new String(Pem.pemEncoded(type, empty),
+            StandardCharsets.ISO_8859_1), emptyExpected);
+        System.out.println("PASS");
+    }
+
     /*
      Test cannot verify PEM was the same as known PEM because we have no
      public access to the AlgoritmID.params and PBES2Parameters.
@@ -237,7 +312,7 @@ public class PEMEncoderTest {
         try {
             encoder.encodeToString(keymap.get(key));
         } catch (RuntimeException e) {
-            throw new AssertionError("Encrypted encoder failured with " +
+            throw new AssertionError("Encrypted encoder failed with " +
                 entry.name(), e);
         }
 

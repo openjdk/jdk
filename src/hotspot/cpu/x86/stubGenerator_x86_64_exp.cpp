@@ -397,13 +397,14 @@ address StubGenerator::generate_libmExp() {
 
 #if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_exp(GrowableArray<address>& external_addresses) {
-#define ADD(addr) external_addresses.append((address)addr);
-  ADD(_cv);
-  ADD(((address)_cv+16));
-  ADD(((address)_cv+32));
-  ADD(((address)_cv+48));
-  ADD(((address)_cv+64));
-  ADD(((address)_cv+80));
+#define ADD(addr) external_addresses.append((address)(addr));
+  address cv = (address)_cv;
+  ADD(cv);
+  ADD(cv + 16);
+  ADD(cv + 32);
+  ADD(cv + 48);
+  ADD(cv + 64);
+  ADD(cv + 80);
   ADD(_mmask);
   ADD(_bias);
   ADD(_Tbl_addr);

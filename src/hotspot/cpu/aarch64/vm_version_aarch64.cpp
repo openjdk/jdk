@@ -57,7 +57,9 @@ bool VM_Version::_cache_dic_enabled;
 bool VM_Version::_cache_idc_enabled;
 bool VM_Version::_ic_ivau_trapped;
 
-const char* VM_Version::_features_names[MAX_CPU_FEATURES] = { nullptr };
+#define DECLARE_CPU_FEATURE_NAME(id, name) XSTR(name),
+const char* VM_Version::_features_names[] = { CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_NAME)};
+#undef DECLARE_CPU_FEATURE_NAME
 
 static SpinWait get_spin_wait_desc() {
   SpinWait spin_wait(OnSpinWaitInst, OnSpinWaitInstCount, OnSpinWaitDelay);
@@ -104,11 +106,6 @@ static bool has_neoverse_n1_errata_1542419() {
 }
 
 void VM_Version::initialize() {
-#define SET_CPU_FEATURE_NAME(id, name, bit) \
-  _features_names[bit] = XSTR(name);
-  CPU_FEATURE_FLAGS(SET_CPU_FEATURE_NAME)
-#undef SET_CPU_FEATURE_NAME
-
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
@@ -305,9 +302,9 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  CHECK_CPU_FEATURE(supports_crc32, CRC32);
-  CHECK_CPU_FEATURE(supports_lse, LSE);
-  CHECK_CPU_FEATURE(supports_aes, AES);
+  CHECK_CPU_FEATURE(UseCRC32, CRC32, supports_crc32(), "CRC32" MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseLSE, LSE, supports_lse(), "LSE" MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), "AES" MULTI_INST_WARNING_MSG);
 
   if (_cpu == CPU_ARM &&
       model_is_in({ CPU_MODEL_ARM_NEOVERSE_V1, CPU_MODEL_ARM_NEOVERSE_V2,
@@ -455,6 +452,10 @@ void VM_Version::initialize() {
       warning("ChaCha20 intrinsic requires ASIMD instructions");
     }
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+
+  if (FLAG_IS_DEFAULT(UseIntPolyIntrinsics)) {
+     UseIntPolyIntrinsics = true;
   }
 
   if (supports_feature(CPU_ASIMD)) {
@@ -660,6 +661,10 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
   }
 
+  if (FLAG_IS_DEFAULT(UseIntPoly25519Intrinsics)) {
+    FLAG_SET_DEFAULT(UseIntPoly25519Intrinsics, true);
+  }
+
   if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
     FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
   }
@@ -789,9 +794,9 @@ void VM_Version::store_cpu_features(void* buf) {
   *(uint64_t*)buf = _features;
 }
 
-bool VM_Version::supports_features(void* features_buffer) {
+bool VM_Version::verify_aot_code_cache_features(void* features_buffer) {
   uint64_t features_to_test = *(uint64_t*)features_buffer;
-  return (_features & features_to_test) == features_to_test;
+  return (_features == features_to_test);
 }
 
 #if defined(LINUX)

@@ -596,4 +596,5 @@ public:
 
   void reconstruct_frame_pointer(Register rtmp);
 
+  int vector_iota_entry_index(BasicType bt);
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

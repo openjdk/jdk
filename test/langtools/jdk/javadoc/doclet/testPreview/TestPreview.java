@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      8250768 8261976 8277300 8282452 8287597 8325325 8325874 8297879
- *           8331947 8281533 8343239 8318416 8346109 8359024
+ *           8331947 8281533 8343239 8318416 8346109 8359024 8386589
  * @summary  test generated docs for items declared using preview
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -160,15 +160,15 @@ public class TestPreview extends JavadocTester {
         checkOutput("java.base/preview/package-summary.html", true,
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="../module-summary.html">java.base</a></li>
-                    <li><a href="package-summary.html" class="current-selection">preview</a></li>
+                    <li><a href="../module-summary.html" title="Module java.base">java.base</a></li>
+                    <li><a href="package-summary.html" title="Package preview" class="current-selection">preview</a></li>
                     </ol>""");
         checkOutput("java.base/preview/Core.html", true,
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="../module-summary.html">java.base</a></li>
-                    <li><a href="package-summary.html">preview</a></li>
-                    <li><a href="Core.html" class="current-selection">Core</a></li>
+                    <li><a href="../module-summary.html" title="Module java.base">java.base</a></li>
+                    <li><a href="package-summary.html" title="Package preview">preview</a></li>
+                    <li><a href="Core.html" title="Class Core" class="current-selection">Core</a></li>
                     </ol>""",
                 """
                     <div class="block">Preview feature. Links: <a href="CoreRecord.html" title="cla\
@@ -239,6 +239,42 @@ public class TestPreview extends JavadocTester {
                 </div>
                 <div class="block">Preview feature</div>
                 </div>
+                """);
+    }
+
+    // 8386589 pre-existing permanent API that is later retrofitted
+    // to permit a @PreviewFeature API should not be flagged as a preview feature
+    @Test
+    public void nonPreviewPermitsPreview(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                public sealed interface Core permits BasicChild, PreviewChild {
+                }
+                """, """
+                package p;
+                public non-sealed interface BasicChild extends Core {
+                }
+                ""","""
+                package p;
+                import jdk.internal.javac.PreviewFeature;
+                @PreviewFeature(feature = PreviewFeature.Feature.TEST)
+                public non-sealed interface PreviewChild extends Core {
+                }
+                """);
+        javadoc("-d", "out-non-preview-permits-preview",
+                "--add-exports", "java.base/jdk.internal.javac=ALL-UNNAMED",
+                "--source-path",
+                src.toString(),
+                "p");
+        checkExit(Exit.OK);
+        checkOutput("p/Core.html", false,
+                """
+                <div class="preview-comment">Programs can only use <code>Core</code> when preview features are enabled.</div>
+                """);
+        checkOutput("p/PreviewChild.html", true,
+                """
+                <div class="preview-comment">Programs can only use <code>PreviewChild</code> when preview features are enabled.</div>
                 """);
     }
 

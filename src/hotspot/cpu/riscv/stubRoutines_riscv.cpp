@@ -42,8 +42,12 @@
 #define DEFINE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
   address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = CAST_FROM_FN_PTR(address, init_function);
 
-STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
+#define DEFINE_ARCH_ENTRY_ARRAY(arch, blob_name, stub_name, field_name, getter_name, count) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  [count] ;
 
+STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT, DEFINE_ARCH_ENTRY_ARRAY)
+
+#undef DEFINE_ARCH_ENTRY_ARRAY
 #undef DEFINE_ARCH_ENTRY_INIT
 #undef DEFINE_ARCH_ENTRY
 

@@ -78,7 +78,7 @@ public:
 
   virtual bool      is_parse() const           { return true; }
   virtual JVMState* generate(JVMState* jvms);
-  int is_osr() { return _is_osr; }
+  bool              is_osr() const             { return _is_osr; }
 
 };
 
@@ -173,6 +173,10 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call, false, _separate_io_proj);
   Node* ret = kit.set_results_for_java_call(call, _separate_io_proj);
+  if (is_late_inline() && !call->is_boxing_method() && ret->is_Proj()) {
+    // If late inlining for this call happens in a dead part of the graph it can leave a dead loop behind
+    ret->mark_not_dead_loop_safe();
+  }
   kit.push_node(method()->return_type()->basic_type(), ret);
   return kit.transfer_exceptions_into_jvms();
 }
@@ -271,6 +275,10 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call, false /*must_throw*/, _separate_io_proj);
   Node* ret = kit.set_results_for_java_call(call, _separate_io_proj);
+  if (is_late_inline() && ret->is_Proj()) {
+    // If late inlining for this call happens in a dead part of the graph it can leave a dead loop behind
+    ret->mark_not_dead_loop_safe();
+  }
   kit.push_node(method()->return_type()->basic_type(), ret);
 
   // Represent the effect of an implicit receiver null_check
@@ -646,6 +654,12 @@ void CallGenerator::do_late_inline_helper() {
     for (uint i1 = 0; i1 < size; i1++) {
       map->init_req(i1, call->in(i1));
     }
+    // Call node has in(ReturnAdr) set to top() node.
+    // We have to set map->in(ReturnAdr) to correct value
+    // because it is used by uncommon traps.
+    Node* ret_adr = C->start()->proj_out_or_null(TypeFunc::ReturnAdr);
+    precond(ret_adr != nullptr);
+    map->set_req(TypeFunc::ReturnAdr, ret_adr);
 
     // Make sure the state is a MergeMem for parsing.
     if (!map->in(TypeFunc::Memory)->is_MergeMem()) {
@@ -661,6 +675,7 @@ void CallGenerator::do_late_inline_helper() {
       map->set_req(TypeFunc::Parms + i1, top);
     }
     jvms->set_map(map);
+    precond(ret_adr == jvms->map()->returnadr());
 
     // Make enough space in the expression stack to transfer
     // the incoming arguments and return value.
@@ -702,26 +717,32 @@ void CallGenerator::do_late_inline_helper() {
       C->inline_printer()->record(method(), jvms, InliningResult::SUCCESS, "late inline succeeded");
     }
 
-    // Capture any exceptional control flow
-    GraphKit kit(new_jvms);
-
-    // Find the result object
-    Node* result = C->top();
-    int   result_size = method()->return_type()->size();
-    if (result_size != 0 && !kit.stopped()) {
-      result = (result_size == 1) ? kit.pop() : kit.pop_pair();
-    }
-
-    if (call->is_CallStaticJava() && call->as_CallStaticJava()->is_boxing_method()) {
-      result = kit.must_be_not_null(result, false);
-    }
-
     if (inline_cg()->is_inline()) {
       C->set_has_loops(C->has_loops() || inline_cg()->method()->has_loops());
       C->env()->notice_inlined_method(inline_cg()->method());
     }
     C->set_inlining_progress(true);
-    C->set_do_cleanup(kit.stopped()); // path is dead; needs cleanup
+
+    // Find the result object and capture any exceptional control flow.
+    GraphKit kit(new_jvms);
+    Node* result = C->top();
+
+    assert(!C->do_cleanup(), "already set");
+    if (kit.stopped()) {
+      C->set_do_cleanup(true); // path is dead; needs cleanup
+    } else {
+      result = kit.pop_node(method()->return_type()->basic_type());
+      if (result != C->top() && !result_not_used) {
+        if (call->is_CallStaticJava() &&
+            call->as_CallStaticJava()->is_boxing_method()) {
+          result = kit.must_be_not_null(result, false);
+        }
+        // Limit result type propagation until next IGVN cleanup.
+        const Type* result_type = kit.gvn().type(callprojs.resproj);
+        result = kit.gvn().transform(new OpaqueParseNode(C, result, result_type));
+      }
+    }
+
     kit.replace_call(call, result, true, do_asserts);
   }
 }

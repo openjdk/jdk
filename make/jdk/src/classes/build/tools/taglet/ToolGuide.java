@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 
 package build.tools.taglet;
 
+import java.net.URI;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.lang.reflect.Field;
 
 import javax.lang.model.element.Element;
 
@@ -91,6 +91,11 @@ public class ToolGuide implements Taglet {
 
     @Override
     public String toString(List<? extends DocTree> tags, Element elem) {
+        throw new UnsupportedOperationException();
+    }
+
+    // @Override - requires JDK-8373922 in build JDK
+    public String toString(List<? extends DocTree> tags, Element elem, URI docRoot) {
 
         if (tags.isEmpty())
             return "";
@@ -118,7 +123,7 @@ public class ToolGuide implements Taglet {
                 if (label.isEmpty()) {
                     label = name;
                 }
-                String rootParent = currentPath().replaceAll("[^/]+", "..");
+                String rootParent = docRoot.resolve("..").toString();
 
                 String url = String.format("%s/%s/%s.html",
                         rootParent, BASE_URL, name);
@@ -141,22 +146,4 @@ public class ToolGuide implements Taglet {
 
         return sb.toString();
     }
-
-    private static ThreadLocal<String> CURRENT_PATH = null;
-
-    private String currentPath() {
-        if (CURRENT_PATH == null) {
-            try {
-                Field f = Class.forName("jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter")
-                               .getField("CURRENT_PATH");
-                @SuppressWarnings("unchecked")
-                ThreadLocal<String> tl = (ThreadLocal<String>) f.get(null);
-                CURRENT_PATH = tl;
-            } catch (ReflectiveOperationException e) {
-                throw new RuntimeException("Cannot determine current path", e);
-            }
-        }
-        return CURRENT_PATH.get();
-    }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Intel Corporation. All rights reserved.
+ * Copyright (c) 2024, 2026, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -676,7 +676,7 @@ address StubGenerator::generate_intpoly_assign() {
   // KNOWN Lengths:
   //   MontgomeryIntPolynP256:  5 = 4 + 1
   //   IntegerPolynomial1305:   5 = 4 + 1
-  //   IntegerPolynomial25519: 10 = 8 + 2
+  //   IntegerPolynomial25519:  5 = 4 + 1
   //   IntegerPolynomialP256:  10 = 8 + 2
   //   Curve25519OrderField:   10 = 8 + 2
   //   Curve25519OrderField:   10 = 8 + 2
@@ -788,7 +788,7 @@ address StubGenerator::generate_intpoly_assign() {
 
 #if INCLUDE_CDS
 void StubGenerator::init_AOTAddressTable_poly_mont(GrowableArray<address>& external_addresses) {
-#define ADD(addr) external_addresses.append((address)addr);
+#define ADD(addr) external_addresses.append((address)(addr));
   // use accessors to retrieve all correct addresses
   ADD(shift_1L());
   ADD(shift_1R());

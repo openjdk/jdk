@@ -74,7 +74,7 @@ static jlong *double_signflip_pool = double_quadword(&fp_signmask_pool[4*2], (jl
 #if INCLUDE_CDS
 // publish external addresses defined in this file
 void LIR_Assembler::init_AOTAddressTable(GrowableArray<address>& external_addresses) {
-#define ADD(addr) external_addresses.append((address)addr);
+#define ADD(addr) external_addresses.append((address)(addr));
   ADD(float_signmask_pool);
   ADD(double_signmask_pool);
   ADD(float_signflip_pool);
@@ -697,7 +697,9 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
       }
       break;
 
-    case T_BOOLEAN: // fall through
+    case T_BOOLEAN:
+      __ movb(as_Address(addr), c->as_jint() & 1);
+      break;
     case T_BYTE:
       __ movb(as_Address(addr), c->as_jint() & 0xFF);
       break;

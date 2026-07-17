@@ -189,7 +189,7 @@ KlassInfoTable::~KlassInfoTable() {
     for (int index = 0; index < _num_buckets; index++) {
       _buckets[index].empty();
     }
-    FREE_C_HEAP_ARRAY(KlassInfoBucket, _buckets);
+    FREE_C_HEAP_ARRAY(_buckets);
     _buckets = nullptr;
   }
 }

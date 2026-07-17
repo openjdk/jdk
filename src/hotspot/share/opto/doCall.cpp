@@ -415,6 +415,22 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   }
 }
 
+// After Compile::over_inlining_cutoff, should we decline inlining the callee, or should we try
+// inlining again later
+bool Compile::should_delay_after_inlining_cutoff(ciMethod* callee, ciMethod* caller) {
+  if (!IncrementalInline) {
+    return false;
+  }
+
+  if (DelayAfterInliningCutoff) {
+    return true;
+  } else if (callee->force_inline() || caller->is_compiled_lambda_form()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 // Return true for methods that shouldn't be inlined early so that
 // they are easier to analyze and optimize as intrinsics.
 bool Compile::should_delay_string_inlining(ciMethod* call_method, JVMState* jvms) {
@@ -551,6 +567,7 @@ void Parse::do_call() {
   // Bump max node limit for JSR292 users
   if (bc() == Bytecodes::_invokedynamic || orig_callee->is_method_handle_intrinsic()) {
     C->set_max_node_limit(3*MaxNodeLimit);
+    C->set_node_count_inlining_cutoff(LiveNodeCountInliningCutoff);
   }
 
   // uncommon-trap when callee is unloaded, uninitialized or will not link

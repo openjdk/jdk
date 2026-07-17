@@ -133,7 +133,7 @@ NamedThread::NamedThread() :
 {}
 
 NamedThread::~NamedThread() {
-  FREE_C_HEAP_ARRAY(char, _name);
+  FREE_C_HEAP_ARRAY(_name);
 }
 
 void NamedThread::set_name(const char* format, ...) {
