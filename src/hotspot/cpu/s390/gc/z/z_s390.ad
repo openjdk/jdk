@@ -132,7 +132,7 @@ instruct zStoreP(memory mem, iRegP src, iRegP temp, flagsReg cr) %{
 
   //TODO: double check the instruction cost
   ins_cost(2 * MEMORY_REF_COST);
-  format %{ "STG     $mem, $src\t # ptr" %}
+  format %{ "STG     $mem,$src\t # ptr" %}
   ins_encode %{
     z_store_barrier(masm, this, $mem$$Address, $src$$Register, $temp$$Register, false /* is_atomic */);
     __ z_stg($temp$$Register, $mem$$Address);
@@ -148,7 +148,7 @@ instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
   size(100);
 
   ins_cost(MEMORY_REF_COST);
-  format %{ "STG     $mem, null\t # ptr" %}
+  format %{ "STG     $mem,null\t # ptr" %}
   ins_encode %{
     z_store_barrier(masm, this, $mem$$Address, noreg, $temp$$Register, false /* is_atomic */);
     __ z_stg($temp$$Register, $mem$$Address);
@@ -156,10 +156,10 @@ instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP newval, iRegP newval_temp, iRegP oldval_temp, iRegP oldval, flagsReg cr) %{
+instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP oldval, iRegP newval, iRegP oldval_temp, iRegP newval_temp, flagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP res, TEMP newval_temp, TEMP oldval_temp, USE mem, KILL cr);
+  effect(TEMP_DEF res, USE mem, TEMP oldval_temp, TEMP newval_temp, KILL cr);
   size(200);
 
   format %{ "CompareAndExchangeP $oldval, $newval, $mem" %}
@@ -175,15 +175,14 @@ instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP newval, iRegP newval_t
   ins_pipe(pipe_class_dummy);
 %}
 
-// TODO: Check if number and placements of these arguments matter? and if so where it's decided
-instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP newval, iRegP newval_temp, iRegP oldval_temp, iRegP oldval, flagsReg cr) %{
+instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP oldval, iRegP newval, iRegP oldval_temp, iRegP newval_temp, flagsReg cr) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP res, TEMP newval_temp, TEMP oldval_temp, USE mem, USE oldval, KILL cr);
+  effect(TEMP_DEF res, USE mem, USE oldval, TEMP oldval_temp, TEMP newval_temp, KILL cr);
   size(100);
 
-  format %{ "$res = CompareAndSwapP $oldval,$newval,$mem" %}
+  format %{ "CompareAndSwapP $oldval,$newval,$mem" %}
 
   ins_encode %{
     assert_different_registers($oldval$$Register, $mem$$Register);
@@ -207,13 +206,13 @@ instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP newval, iRegP newval_temp, 
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct zGetAndSetP(iRegP mem, iRegP newval, iRegP temp1, iRegP temp2, flagsReg cr) %{
+instruct zGetAndSetP(iRegP newval, iRegP mem, iRegP temp1, iRegP temp2, flagsReg cr) %{
   match(Set newval (GetAndSetP mem newval));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP temp1,TEMP temp2, KILL cr);
+  effect(TEMP temp1, TEMP temp2, KILL cr);
   size(100);
 
-  format %{ "XCHGP   $newval,[$mem]\t # EXCHANGE (oop, atomic), temp $temp1" %}
+  format %{ "GetAndSetP   $newval,[$mem]\t # EXCHANGE (oop, atomic), temp $temp1" %}
 
   ins_encode %{
     Label retry;
