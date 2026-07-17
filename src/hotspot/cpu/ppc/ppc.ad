@@ -1398,7 +1398,7 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
   const bool method_is_frameless      = false /* TODO: PPC port C->is_frameless_method()*/;
 
-  const Register return_pc            = R20; // Must match return_addr() in frame section.
+  const Register return_pc            = R20;
   const Register callers_sp           = R21;
   const Register push_frame_temp      = R22;
   const Register toc_temp             = R23;
@@ -3427,6 +3427,60 @@ encode %{
 
 //----------FRAME--------------------------------------------------------------
 // Definition of frame structure and management information.
+//
+//  S T A C K   L A Y O U T    Allocators stack-slot number
+//                             |   (to get allocators register number
+//  G  Owned by    |        |  v    add OptoReg::stack0())
+//  r   CALLER     |        |
+//  o     |        +--------+      pad to even-align allocators stack-slot
+//  w     V        |  pad0  |        numbers; owned by CALLER
+//  t   -----------+--------+----> Matcher::_in_arg_limit, unaligned
+//  h     ^        |   in   |  5
+//        |        |  args  |  4   Holes in incoming args owned by SELF
+//  |     |        |        |  3
+//  |     |        +--------+
+//  V     |        | old out|      Empty on Intel, window on Sparc
+//        |    old |preserve|      Must be even aligned.
+//        |     SP-+--------+----> Matcher::_old_SP, even aligned
+//        |        |   in   |  3   area for Intel ret address
+//     Owned by    |preserve|      Empty on Sparc.
+//       SELF      +--------+
+//        |        |  pad2  |  2   pad to align old SP
+//        |        +--------+  1
+//        |        | locks  |  0
+//        |        +--------+----> OptoReg::stack0(), even aligned
+//        |        |  pad1  | 11   pad to align new SP
+//        |        +--------+
+//        |        |        | 10
+//        |        | spills |  9   spills
+//        V        |        |  8   (pad0 slot for callee)
+//      -----------+--------+----> Matcher::_out_arg_limit, unaligned
+//        ^        |  out   |  7
+//        |        |  args  |  6   Holes in outgoing args owned by CALLEE
+//     Owned by    +--------+
+//      CALLEE     | new out|  6   Empty on Intel, window on Sparc
+//        |    new |preserve|      Must be even-aligned.
+//        |     SP-+--------+----> Matcher::_new_SP, even aligned
+//        |        |        |
+//
+// Note 1: Only region 8-11 is determined by the allocator.  Region 0-5 is
+//         known from SELF's arguments and the Java calling convention.
+//         Region 6-7 is determined per call site.
+// Note 2: If the calling convention leaves holes in the incoming argument
+//         area, those holes are owned by SELF.  Holes in the outgoing area
+//         are owned by the CALLEE.  Holes should not be necessary in the
+//         incoming area, as the Java calling convention is completely under
+//         the control of the AD file.  Doubles can be sorted and packed to
+//         avoid holes.  Holes in the outgoing arguments may be necessary for
+//         varargs C calling conventions.
+// Note 3: Region 0-3 is even aligned, with pad2 as needed.  Region 3-5 is
+//         even aligned with pad0 as needed.
+//         Region 6 is even aligned.  Region 6-7 is NOT even aligned;
+//         region 6-11 is even aligned; it may be padded out more so that
+//         the region from SP to FP meets the minimum stack alignment.
+// Note 4: For I2C adapters, the incoming FP may not meet the minimum stack
+//         alignment.  Region 11, pad1, may be dynamically extended so that
+//         SP meets the minimum alignment.
 
 frame %{
   // These two registers define part of the calling convention between
@@ -3457,19 +3511,10 @@ frame %{
   // return address specifies a type (REG or STACK) and a number
   // representing the register number (i.e. - use a register name) or
   // stack slot.
-  //
-  // A: Link register is stored in stack slot ...
-  // M:  ... but it's in the caller's frame according to PPC-64 ABI.
-  // J: Therefore, we make sure that the link register is also in R11_scratch1
-  //    at the end of the prolog.
-  // B: We use R20, now.
-  //return_addr(REG R20);
-
-  // G: After reading the comments made by all the luminaries on their
-  //    failure to tell the compiler where the return address really is,
-  //    I hardly dare to try myself.  However, I'm convinced it's in slot
-  //    4 what apparently works and saves us some spills.
-  return_addr(STACK 4);
+  // Ret Addr is on stack 4 slots (16 bytes) above _old_SP.
+  // That's the after-PROLOG location. Actually it is passed in the LR register and
+  // the prolog saves in the caller's abi section.
+  return_addr(STACK OptoReg::reg2stack(_old_SP) + 4);
 
   // Location of compiled Java return values.  Same as C
   return_value %{

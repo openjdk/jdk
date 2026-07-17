@@ -178,6 +178,12 @@ void Matcher::match( ) {
   if (C->failing()) {
     return;
   }
+
+  // Compute the old incoming SP (may be called FP) as
+  //   OptoReg::stack0() + locks + in_preserve_stack_slots + pad2.
+  _old_SP = C->compute_old_SP();
+  assert( is_even(_old_SP), "must be even" );
+
   assert(_return_addr_mask.is_empty(),
          "return address mask must be empty initially");
   _return_addr_mask.insert(return_addr());
@@ -251,11 +257,6 @@ void Matcher::match( ) {
 #endif
 
   // Do some initial frame layout.
-
-  // Compute the old incoming SP (may be called FP) as
-  //   OptoReg::stack0() + locks + in_preserve_stack_slots + pad2.
-  _old_SP = C->compute_old_SP();
-  assert( is_even(_old_SP), "must be even" );
 
   // Compute highest incoming stack argument as
   //   _old_SP + out_preserve_stack_slots + incoming argument size.

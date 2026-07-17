@@ -4696,12 +4696,9 @@ frame
   // return address specifies a type (REG or STACK) and a number
   // representing the register number (i.e. - use a register name) or
   // stack slot.
-  // Ret Addr is on stack in slot 0 if no locks or verification or alignment.
-  // Otherwise, it is above the locks and verification slot and alignment word
-  return_addr(STACK - 2 +
-              align_up((Compile::current()->in_preserve_stack_slots() +
-                        Compile::current()->fixed_slots()),
-                       stack_alignment_in_slots()));
+  // Ret Addr is on stack 2 slots below _old_SP, i.e. in slot 0 if no locks
+  // or verification or alignment.
+  return_addr(STACK OptoReg::reg2stack(_old_SP) - 2);
 
   // Location of compiled Java return values.  Same as C for now.
   return_value
