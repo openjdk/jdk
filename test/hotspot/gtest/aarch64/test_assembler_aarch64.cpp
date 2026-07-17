@@ -30,8 +30,14 @@
 #include "asm/macroAssembler.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "unittest.hpp"
+
+// remove comment for debug log
+//#define LOG_PLEASE
+#include "testutils.hpp"
 
 #define __ _masm.
 
@@ -488,4 +494,160 @@ TEST_VM(AssemblerAArch64, merge_ldst_after_expand) {
   asm_check((const unsigned int *)code.insts()->start(), insns, sizeof insns / sizeof insns[0]);
 }
 
+TEST_VM(AssemblerAArch64, native_instruction_load_predicates) {
+  static uint32_t insns[] = {
+    0x58000000, // ldr x0, #0
+    0x18000000, // ldr w0, #0
+    0x1C000000, // ldr s0, #0 (VR bit set to 1, enabling SIMD/FP register)
+  };
+
+  NativeInstruction* ni_ldr = nativeInstruction_at(&insns[0]);
+  EXPECT_TRUE(ni_ldr->is_load_literal());
+  EXPECT_TRUE(ni_ldr->is_ldr_gpr_literal());
+  EXPECT_FALSE(ni_ldr->is_ldrw_gpr_literal());
+
+  NativeInstruction* ni_ldrw = nativeInstruction_at(&insns[1]);
+  EXPECT_TRUE(ni_ldrw->is_load_literal());
+  EXPECT_FALSE(ni_ldrw->is_ldr_gpr_literal());
+  EXPECT_TRUE(ni_ldrw->is_ldrw_gpr_literal());
+
+  NativeInstruction* ni_ldrs = nativeInstruction_at(&insns[2]);
+  EXPECT_TRUE(ni_ldrs->is_load_literal());
+  EXPECT_FALSE(ni_ldrs->is_ldr_gpr_literal());
+  EXPECT_FALSE(ni_ldrs->is_ldrw_gpr_literal());
+}
+
+struct GtestFriendToMacroAssembler {
+
+  typedef MacroAssembler::KlassDecodeMode Mode;
+
+  typedef address (*decode_function)(narrowKlass encoded);
+  typedef narrowKlass (*encode_function)(address decoded);
+
+  using CKP = CompressedKlassPointers;
+  using MA = MacroAssembler;
+
+  static void build_and_run_encode_decode_klass(address base, int shift,
+                                                Mode expected_mode) {
+
+    if ((shift + CKP::narrow_klass_pointer_bits()) > 32) {
+      return; // unsupported
+    }
+
+    LOG_HERE("base " PTR_FORMAT " shift %d => mode %d: ",
+             p2u(base), shift, (int)expected_mode);
+
+    // Test if the given base+shift value (with an assumed maximum Klass* range)
+    // yields the expected decode mode
+    const Mode real_mode = MA::klass_decode_mode(base, shift, CKP::max_klass_range_size());
+
+    ASSERT_EQ(real_mode, expected_mode) << " different mode?";
+
+    // Now generate encode and decode functions for this base and shift ...
+    BufferBlob* bb = BufferBlob::create("test_decode_klass", 512);
+    CodeBuffer code(bb);
+    address entry_encode = nullptr;
+    address entry_decode = nullptr;
+
+    {
+      MA masm(&code);
+
+      entry_encode = masm.pc();
+      masm.emit_encode_klass_not_null(c_rarg0,    // x0: dst+return
+                                      c_rarg0,    // x0: src
+                                      rscratch1,  // x8: tmp
+                                      base, shift,
+                                      real_mode);
+      masm.ret(lr);
+
+      entry_decode = masm.pc();
+      masm.emit_decode_klass_not_null(c_rarg0,    // x0: dst+return
+                                      c_rarg0,    // x0: src
+                                      rscratch1,  // x8: tmp
+                                      base, shift,
+                                      real_mode);
+      masm.ret(lr);
+
+      masm.flush(); // icache invalidate
+    }
+
+    {
+      MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current()));
+
+      // ... and call it with some values spread over the full width of the narrowKlass range.
+      const narrowKlass highest = right_n_bits<narrowKlass>(CKP::narrow_klass_pointer_bits());
+
+      const struct { narrowKlass encoded; address decoded; } testvalues [] = {
+          { 0, base },
+          // The highest value we can express with the current narrowKlass width
+          { highest, (address)(p2u(base) + ((uint64_t)highest << shift)) },
+          // midpoint
+          { highest / 2, (address)(p2u(base) + (((uint64_t)highest / 2) << shift)) }
+      };
+      constexpr int num_testvalues = sizeof(testvalues) / sizeof(testvalues[0]);
+
+      for (int i = 0; i < num_testvalues; i++) {
+        const narrowKlass encoded = testvalues[i].encoded;
+        const address decoded = testvalues[i].decoded;
+
+        const narrowKlass encoded_real = ((encode_function)entry_encode)(decoded);
+        LOG_HERE("   encode: " PTR_FORMAT " => " UINT32_FORMAT_X, p2u(decoded), encoded_real);
+        EXPECT_EQ(encoded_real, encoded) << " bad encode?";
+
+        const address decoded_real = ((decode_function)entry_decode)(encoded);
+        LOG_HERE("   decode: " UINT32_FORMAT_X " => " PTR_FORMAT, encoded, p2u(decoded_real));
+        EXPECT_EQ(decoded_real, decoded) << " bad decode?";
+      }
+    }
+    BufferBlob::free(bb);
+  }
+
+  static void test_decode_encode_klass() {
+
+    for (int shift = 0; shift < CKP::max_shift(); shift++) {
+
+      // test zero-based
+      build_and_run_encode_decode_klass((address)nullptr, shift, MA::KlassDecodeZero);
+
+      // test XOR-based encoding
+      // Base must be a valid immediate that does not intersect the highest left-shifted nKlass
+      const int lowest_xor_base_bit = 32;
+      const int highest_xor_base_bit = 51; // highest user address space bit on all our platforms
+
+      // Highest base bit set
+      build_and_run_encode_decode_klass((address)nth_bit(highest_xor_base_bit), shift, MA::KlassDecodeXor);
+      // lowest base bit set
+      build_and_run_encode_decode_klass((address)nth_bit(lowest_xor_base_bit), shift, MA::KlassDecodeXor);
+      // all base bits set
+      build_and_run_encode_decode_klass((address)(right_n_bits(highest_xor_base_bit - lowest_xor_base_bit) << lowest_xor_base_bit),
+          shift, MA::KlassDecodeXor);
+
+      // test movk-based
+      // Only bits in the third quadrant and not a valid immediate
+      build_and_run_encode_decode_klass((address)0x0000'A000'0000'0000ULL, 0, MA::KlassDecodeMovk);
+
+      // test Fallback mode.
+      // base has low bits that intersect with nKlass, no other mode would work
+      build_and_run_encode_decode_klass((address)(0x5'0000'0000ULL + os::vm_page_size()),
+                                        shift, MA::KlassDecodeFallback);
+      build_and_run_encode_decode_klass((address)(0x5'0000'0000ULL - os::vm_page_size()),
+                                        shift, MA::KlassDecodeFallback);
+
+      // a base that has ones in all four quadrants to trigger the full movz+3*movk path
+      // when loading the immediate
+      build_and_run_encode_decode_klass((address)right_n_bits(52),
+                                        shift, MA::KlassDecodeFallback);
+
+      // spread over multiple 16-bit quadrants and not encodable as immediate,
+      // no other mode would work
+      build_and_run_encode_decode_klass((address)0x00AA'AAA0'0000'0000ULL,
+                                        shift, MA::KlassDecodeFallback);
+    }
+  }
+};
+
+// Run this with and without UseCompactObjectHeaders
+TEST_VM(AssemblerAArch64, decode_encode_klass_not_null) {
+  GtestFriendToMacroAssembler::test_decode_encode_klass();
+}
 #endif  // AARCH64

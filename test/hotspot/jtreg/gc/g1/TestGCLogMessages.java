@@ -170,7 +170,8 @@ public class TestGCLogMessages {
 
         // Post Evacuate Cleanup 1
         new LogMessageWithLevel("Post Evacuate Cleanup 1:", Level.DEBUG),
-        new LogMessageWithLevel("Merge Per-Thread State \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Flush Per-Thread State \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Update Code Roots \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("LAB Waste:", Level.DEBUG),
         new LogMessageWithLevel("LAB Undo Waste:", Level.DEBUG),
         new LogMessageWithLevel("Pending Cards:", Level.DEBUG),
@@ -188,7 +189,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Serial Free Collection Set:", Level.TRACE),
         new LogMessageWithLevel("Young Free Collection Set \\(ms\\):", Level.TRACE),
         new LogMessageWithLevel("Non-Young Free Collection Set \\(ms\\):", Level.TRACE),
-        new LogMessageWithLevel("Reset Partial Array State Manager \\(ms\\)", Level.TRACE),
+        new LogMessageWithLevel("Destroy Per-Thread State \\(ms\\):", Level.TRACE),
 
         // Misc Top-level
         new LogMessageWithLevel("Rebuild Free List:", Level.DEBUG),

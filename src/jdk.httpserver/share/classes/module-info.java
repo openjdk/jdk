@@ -83,7 +83,7 @@ import com.sun.net.httpserver.*;
  *  If the value is less than or equal to zero, there is no limit.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.maxReqTime}</b> (default: -1)<br>
- * The maximum time in milliseconds allowed to receive a request headers and body.
+ * The maximum time in seconds allowed to receive a request headers and body.
  * In practice, the actual time is a function of request size, network speed, and handler
  * processing delays. A value less than or equal to zero means the time is not limited.
  * If the limit is exceeded then the connection is terminated and the handler will receive a
@@ -91,7 +91,7 @@ import com.sun.net.httpserver.*;
  * that may mean requests are aborted later than the specified interval.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.maxRspTime}</b> (default: -1)<br>
- * The maximum time in milliseconds allowed to receive a response headers and body.
+ * The maximum time in seconds allowed to receive a response headers and body.
  * In practice, the actual time is a function of response size, network speed, and handler
  * processing delays. A value less than or equal to zero means the time is not limited.
  * If the limit is exceeded then the connection is terminated and the handler will receive a

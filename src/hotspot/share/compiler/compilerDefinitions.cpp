@@ -272,7 +272,11 @@ void CompilerConfig::set_compilation_policy_flags() {
   }
 
 #ifdef COMPILER2
-  if (HotCodeHeap) {
+  if (HotCodeHeap && !is_c2_enabled()) {
+    warning("HotCodeHeap disabled because C2 is disabled.");
+    FLAG_SET_ERGO(HotCodeHeap, false);
+    FLAG_SET_ERGO(HotCodeHeapSize, 0);
+  } else if (HotCodeHeap) {
     if (FLAG_IS_DEFAULT(SegmentedCodeCache)) {
       FLAG_SET_ERGO(SegmentedCodeCache, true);
     } else if (!SegmentedCodeCache) {
@@ -283,10 +287,6 @@ void CompilerConfig::set_compilation_policy_flags() {
       FLAG_SET_ERGO(NMethodRelocation, true);
     } else if (!NMethodRelocation) {
       vm_exit_during_initialization("HotCodeHeap requires NMethodRelocation enabled");
-    }
-
-    if (!is_c2_enabled()) {
-      vm_exit_during_initialization("HotCodeHeap requires C2 enabled");
     }
 
     if (HotCodeMinSamplingMs > HotCodeMaxSamplingMs) {
@@ -472,6 +472,10 @@ void CompilerConfig::ergo_initialize() {
   }
 
 #ifdef COMPILER2
+  // Xcomp has no reasonable profiling information, enable inlining cold methods
+  if (Arguments::is_compiler_only() && FLAG_IS_DEFAULT(InlineColdMethods)) {
+    FLAG_SET_DEFAULT(InlineColdMethods, true);
+  }
   if (!EliminateLocks) {
     EliminateNestedLocks = false;
   }

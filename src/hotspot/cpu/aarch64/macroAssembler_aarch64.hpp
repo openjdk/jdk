@@ -32,11 +32,13 @@
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/compressedKlass.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class OopMap;
+struct GtestFriendToMacroAssembler;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -45,6 +47,7 @@ class OopMap;
 
 class MacroAssembler: public Assembler {
   friend class LIR_Assembler;
+  friend struct GtestFriendToMacroAssembler;
 
  public:
   using Assembler::mov;
@@ -90,28 +93,31 @@ class MacroAssembler: public Assembler {
 
   void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions = true);
 
+ private:
+
   enum KlassDecodeMode {
     KlassDecodeNone,
     KlassDecodeZero,
     KlassDecodeXor,
-    KlassDecodeMovk
+    KlassDecodeMovk,
+    KlassDecodeFallback
   };
 
-  // Calculate decoding mode based on given parameters, used for checking then ultimately setting.
-  static KlassDecodeMode klass_decode_mode(address base, int shift, const size_t range);
-
- private:
   static KlassDecodeMode _klass_decode_mode;
 
   // Returns above setting with asserts
   static KlassDecodeMode klass_decode_mode();
 
- public:
-  // Checks the decode mode and returns false if not compatible with preferred decoding mode.
-  static bool check_klass_decode_mode(address base, int shift, const size_t range);
+  // Calculate decoding mode based on given parameters, used for checking then ultimately setting.
+  static KlassDecodeMode klass_decode_mode(address base, int shift, const size_t range);
 
-  // Sets the decode mode and returns false if cannot be set.
-  static bool set_klass_decode_mode(address base, int shift, const size_t range);
+  void emit_encode_klass_not_null(Register dst, Register src, Register tmp,
+                                  address base, int shift, KlassDecodeMode decode_mode);
+  void emit_decode_klass_not_null(Register dst, Register src, Register tmp,
+                                  address base, int shift, KlassDecodeMode decode_mode);
+ public:
+  // Determines the decode mode best suited for the given encoding parameters.
+  static void initialize_klass_decode_mode(address base, int shift, const size_t range);
 
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
@@ -307,19 +313,27 @@ class MacroAssembler: public Assembler {
   }
 
   inline void lslw(Register Rd, Register Rn, unsigned imm) {
-    ubfmw(Rd, Rn, ((32 - imm) & 31), (31 - imm));
+    if (imm > 0 || Rd != Rn) {
+      ubfmw(Rd, Rn, ((32 - imm) & 31), (31 - imm));
+    }
   }
 
   inline void lsl(Register Rd, Register Rn, unsigned imm) {
-    ubfm(Rd, Rn, ((64 - imm) & 63), (63 - imm));
+    if (imm > 0 || Rd != Rn) {
+      ubfm(Rd, Rn, ((64 - imm) & 63), (63 - imm));
+    }
   }
 
   inline void lsrw(Register Rd, Register Rn, unsigned imm) {
-    ubfmw(Rd, Rn, imm, 31);
+    if (imm > 0 || Rd != Rn) {
+      ubfmw(Rd, Rn, imm, 31);
+    }
   }
 
   inline void lsr(Register Rd, Register Rn, unsigned imm) {
-    ubfm(Rd, Rn, imm, 63);
+    if (imm > 0 || Rd != Rn) {
+      ubfm(Rd, Rn, imm, 63);
+    }
   }
 
   inline void rorw(Register Rd, Register Rn, unsigned imm) {
@@ -923,9 +937,10 @@ public:
 
   // oop manipulations
   void load_narrow_klass_compact(Register dst, Register src);
-  void load_klass(Register dst, Register src);
-  void store_klass(Register dst, Register src);
-  void cmp_klass(Register obj, Register klass, Register tmp);
+  void load_narrow_klass(Register dst, Register src);
+  void load_klass(Register dst, Register src, Register tmp);
+  void store_klass(Register dst, Register src, Register tmp);
+  void cmp_klass(Register obj, Register klass, Register tmp, Register tmp2);
   void cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2);
 
   void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
@@ -970,12 +985,8 @@ public:
 
   void set_narrow_oop(Register dst, jobject obj);
 
-  void decode_klass_not_null_for_aot(Register dst, Register src);
-  void encode_klass_not_null_for_aot(Register dst, Register src);
-  void encode_klass_not_null(Register r);
-  void decode_klass_not_null(Register r);
-  void encode_klass_not_null(Register dst, Register src);
-  void decode_klass_not_null(Register dst, Register src);
+  void encode_klass_not_null(Register dst, Register src, Register tmp);
+  void decode_klass_not_null(Register dst, Register src, Register tmp);
 
   void set_narrow_klass(Register dst, Klass* k);
 
@@ -1239,12 +1250,25 @@ public:
     str(rscratch1, adr);
   }
 
+private:
   // A generic CAS; success or failure is in the EQ flag.
   // Clobbers rscratch1
   void cmpxchg(Register addr, Register expected, Register new_val,
-               enum operand_size size,
-               bool acquire, bool release, bool weak,
-               Register result);
+               enum operand_size size, enum atomic_memory_order order,
+               bool weak, Register result);
+
+public:
+  void cmpxchg(Register addr, Register expected, Register new_val,
+               enum operand_size size, enum atomic_memory_order order,
+               Register result = noreg) {
+    cmpxchg(addr, expected, new_val, size, order, /* weak */ false, result);
+  }
+
+  void cmpxchg_weak(Register addr, Register expected, Register new_val,
+                    enum operand_size size, enum atomic_memory_order order,
+                    Register result = noreg) {
+    cmpxchg(addr, expected, new_val, size, order, /* weak */ true, result);
+  }
 
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline
@@ -1339,15 +1363,16 @@ public:
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
   }
-
-  // Check if branches to the non nmethod section require a far jump
+  // Check if the static call stub branch needs a far jump.
   static bool codestub_branch_needs_far_jump() {
     if (AOTCodeCache::is_on_for_dump()) {
-      // To calculate far_codestub_branch_size correctly.
+      // To calculate static_call_stub_size correctly.
       return true;
     }
-    return CodeCache::max_distance_to_non_nmethod() > branch_range;
+    return far_branches();
   }
+  // Check if a branch to the given address needs a far jump.
+  static bool target_needs_far_branch(address addr);
 
   // Emit a direct call/jump if the entry address will always be in range,
   // otherwise a far call/jump.
@@ -1359,17 +1384,9 @@ public:
   // In the case of a far call/jump, the entry address is put in the tmp register.
   // The tmp register is invalidated.
   //
-  // Far_jump returns the amount of the emitted code.
   void far_call(Address entry, Register tmp = rscratch1);
+  // Far_jump returns the amount of the emitted code.
   int far_jump(Address entry, Register tmp = rscratch1);
-
-  static int far_codestub_branch_size() {
-    if (codestub_branch_needs_far_jump()) {
-      return 3 * 4;  // adrp, add, br
-    } else {
-      return 4;
-    }
-  }
 
   // Emit the CompiledIC call idiom
   address ic_call(address entry, jint method_index = 0);
@@ -1843,13 +1860,19 @@ public:
 
 #undef SVE_DESTRUCTIVE_TERNARY_INS
 
-  using Assembler::sve_eor3;
-  void sve_eor3(FloatRegister Zd, FloatRegister Zm, FloatRegister Zk) {
-    if (Zd != Zm && Zd != Zk) {
-      try_to_replace_prev_vector_copy_with_movprfx(Zd);
-    }
-    Assembler::sve_eor3(Zd, Zm, Zk);
+#define SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(NAME)                               \
+  using Assembler::NAME;                                                       \
+  void NAME(FloatRegister Zd, FloatRegister Zm, FloatRegister Zk) {            \
+    if (Zd != Zm && Zd != Zk) {                                                \
+      try_to_replace_prev_vector_copy_with_movprfx(Zd);                        \
+    }                                                                          \
+    Assembler::NAME(Zd, Zm, Zk);                                               \
   }
+
+  SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(sve_bsl);
+  SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(sve_eor3);
+
+#undef SVE_DESTRUCTIVE_TERNARY_UNPRED_INS
 };
 
 #ifdef ASSERT
