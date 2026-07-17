@@ -137,6 +137,9 @@ void ShenandoahControlThread::run_service() {
       }
       heap->print_after_gc();
 
+      // Try to reduce concurrent worker count
+      decrease_concurrent_worker_count();
+
       // Notify waiters that a cycle is completed. They'll decide for themselves to continue waiting or not.
       notify_gc_waiters();
 
@@ -325,14 +328,14 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
     if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      _alloc_waiters_count.add_then_fetch(1UL);
+      _alloc_stall_count.add_then_fetch(1UL);
+      increase_concurrent_worker_count();
     }
 
     notify_control_thread(cause);
     ml.wait();
     current_gc_id = get_gc_id();
     if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      _alloc_waiters_count.sub_then_fetch(1UL);
       break;
     }
   }

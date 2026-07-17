@@ -271,7 +271,10 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     }
   }
 
-  // If this cycle completed successfully, notify threads waiting for gc
+  // Try to reduce concurrent workers
+  decrease_concurrent_worker_count();
+
+  // Notify threads waiting for GC
   notify_gc_waiters();
 
   _heap->free_set()->log_status_under_lock();
@@ -683,8 +686,9 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
   const size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id && !should_terminate()) {
     if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      _alloc_waiters_count.add_then_fetch(1UL);
-      log_debug(gc, thread)("Alloc waiters count now: %zu", alloc_waiters_count());
+      _alloc_stall_count.add_then_fetch(1UL);
+      increase_concurrent_worker_count();
+      log_debug(gc, thread)("Alloc stall count now: %zu", alloc_stall_count());
     }
 
     // Make requests to run a cycle until at least one is completed
@@ -692,9 +696,6 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
     ml.wait();
     current_gc_id = get_gc_id();
     if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      // exit early to retry the allocation
-      _alloc_waiters_count.sub_then_fetch(1UL);
-      log_debug(gc, thread)("Woke up: alloc waiters count now: %zu", alloc_waiters_count());
       break;
     }
   }

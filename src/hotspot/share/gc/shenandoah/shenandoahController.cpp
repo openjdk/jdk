@@ -33,7 +33,7 @@ ShenandoahController::ShenandoahController():
   _gc_id(0),
   _phase(UNSET),
   _gc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahGCWaiters_lock", true),
-  _alloc_waiters_count(0),
+  _alloc_stall_count(0),
   _concurrent_worker_count(ConcGCThreads) { }
 
 void ShenandoahController::update_gc_id() {
@@ -57,23 +57,38 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
   request_gc(cause);
 }
 
-void ShenandoahController::adjust_concurrent_worker_count() {
-  const size_t stalls = _alloc_waiters_count.load_relaxed();
-  const size_t conc_threads = checked_cast<size_t>(ConcGCThreads);
-  if (stalls > 0) {
-    // boost the concurrent worker threads based on the number of stalls, but do not
-    // exceed parallel gc thread count.
-    _concurrent_worker_count = MIN2(conc_threads + stalls, checked_cast<size_t>(ParallelGCThreads));
-  } else {
-    // no stalls, backoff slowly. Making this a little 'sticky' allows us to use
-    // more threads during a mark phase that follows a cycle which had allocation stalls.
-    _concurrent_worker_count = MAX2(_concurrent_worker_count - 1, conc_threads);
+void ShenandoahController::increase_concurrent_worker_count() {
+  while (true) {
+    const size_t workers = _concurrent_worker_count.load_relaxed();
+    if (workers == ParallelGCThreads) {
+      break;
+    }
+
+    const size_t new_value = MIN2(workers + 1, checked_cast<size_t>(ParallelGCThreads));
+    if (_concurrent_worker_count.compare_set(workers, new_value, memory_order_relaxed)) {
+      break;
+    }
+  }
+}
+
+void ShenandoahController::decrease_concurrent_worker_count() {
+  if (_alloc_stall_count.exchange(0) == 0) {
+    // There were no stalls during this cycle, try to reduce the concurrent gc workers
+    while (true) {
+      const size_t workers = _concurrent_worker_count.load_relaxed();
+      if (workers == ConcGCThreads) {
+        break;
+      }
+
+      const size_t new_value = MAX2(workers - 1, checked_cast<size_t>(ConcGCThreads));
+      if (_concurrent_worker_count.compare_set(workers, new_value, memory_order_relaxed)) {
+        break;
+      }
+    }
   }
 }
 
 void ShenandoahController::notify_gc_waiters() {
-  adjust_concurrent_worker_count();
-
   MonitorLocker ml(&_gc_waiters_lock);
   ml.notify_all();
 }
