@@ -92,6 +92,37 @@ public class IrreducibleLoopFuzzer {
         comp.invoke("compiler.loopopts.templated.Templated", "test", new Object[] {} );
     }
 
+    static interface JasmType {
+        String name();
+        String prefix();
+        int slots();
+        Object pushCon();
+    }
+
+    static class IntType implements JasmType {
+        public String name() { return "int"; }
+        public String prefix() { return "i"; }
+        public int slots() { return 1; }
+        public Object pushCon() { return "ldc " + RANDOM.nextInt() + ";\n"; }
+    }
+
+    static class LongType implements JasmType {
+        public String name() { return "long"; }
+        public String prefix() { return "l"; }
+        public int slots() { return 2; }
+        public Object pushCon() { return "ldc2_w " + RANDOM.nextLong() + "L;\n"; }
+    }
+
+    static final JasmType INTS = new IntType();
+    static final JasmType LONGS = new LongType();
+
+    static final List<JasmType> TYPES = List.of(
+        INTS,
+        LONGS
+    );
+
+    static record Local(int index, JasmType type) {}
+
     static class Block {
         static int count = 0;
 
@@ -99,7 +130,7 @@ public class IrreducibleLoopFuzzer {
         Block out0 = null;
         Block out1 = null;
 
-        public Object token() {
+        public Object token(Method method) {
             // Swap randomly.
             final boolean r = RANDOM.nextBoolean();
             final Block b0 = r ? out0 : out1;
@@ -115,9 +146,9 @@ public class IrreducibleLoopFuzzer {
                 """,
                 (goto0 != null) ? scope(
                     let("goto0", goto0.name),
+                    method.pushType(INTS),
+                    method.pushType(INTS),
                     """
-                    iconst_0;
-                    iconst_1;
                     if_icmple #goto0;
                     """
                 ) : "",
@@ -137,13 +168,25 @@ public class IrreducibleLoopFuzzer {
         }
     }
 
-    static class Graph {
-        final Block entry;
-        public final List<Block> blocks = new ArrayList<Block>();
+    static class Method {
+        private final Block entry;
+        private final List<Block> blocks = new ArrayList<Block>();
 
-        public Graph() {
+        private final List<Local> locals = new ArrayList<Local>();
+        private final int localsSize;
+
+        public Method() {
             this.entry = new Block();
             blocks.add(this.entry);
+
+            int n = 1 + RANDOM.nextInt(10);
+            int j = 0;
+            for (int i = 0; i < n; i++) {
+                JasmType t = TYPES.get(RANDOM.nextInt(TYPES.size()));
+                locals.add(new Local(j, t));
+                j += t.slots();
+            }
+            this.localsSize = j;
         }
 
         public void mutate() {
@@ -163,12 +206,50 @@ public class IrreducibleLoopFuzzer {
             blocks.add(b1);
             blocks.add(b2);
         }
+
+        public Object pushType(JasmType type) {
+            List<Local> localIndices = locals.stream()
+                .filter(l -> l.type == type)
+                .toList();
+            if (localIndices.size() > 0 && RANDOM.nextBoolean()) {
+                var l = localIndices.get(RANDOM.nextInt(localIndices.size()));
+                return l.type.prefix() + "load " + l.index + ";\n";
+            }
+            return type.pushCon();
+        }
+
+
+        public Object token() {
+
+            var template = Template.make(() -> scope(
+                let("localsSize", localsSize),
+                """
+                public static Method test:"()V"
+                stack 20 locals #localsSize
+                {
+                // Init locals:
+                """,
+                locals.stream().map(l -> scope(
+                    l.type.pushCon(),
+                    l.type.prefix() + "store " + l.index + ";\n"
+                )).toList(),
+                """
+                // Blocks:
+                """,
+                blocks.stream().map(b -> b.token(this)).toList(),
+                """
+                }
+                """
+
+            ));
+            return template.asToken();
+        }
     }
 
     public static String generate() {
-        Graph graph = new Graph();
+        Method method = new Method();
         for (int i = 0; i < 10; i++) {
-            graph.mutate();
+            method.mutate();
         }
 
         var template = Template.make(() -> scope(
@@ -176,13 +257,9 @@ public class IrreducibleLoopFuzzer {
             package compiler/loopopts/templated;
 
             super public class Templated {
-                public static Method test:"()V"
-                stack 20 locals 20
-                {
             """,
-            graph.blocks.stream().map(Block::token).toList(),
+            method.token(),
             """
-                }
             }
             """
         ));
