@@ -128,6 +128,11 @@ const char* aot_code_entry_kind_name[] = {
 #undef DECL_KIND_STRING
 };
 
+// Used when logging, we need the human-readable name
+const char* AOTCodeCache::get_kind_name(const AOTCodeEntry::Kind kind) {
+  return aot_code_entry_kind_name[kind];
+}
+
 // Stream to printing AOTCodeCache loading failure.
 // Print to error channel when -XX:AOTMode is set to "on"
 static LogStream& load_failure_log() {
@@ -374,14 +379,17 @@ void AOTCodeCache::init2() {
   // Report contents of AOT code cache after verification passed
   Header* header = opened_cache->_load_header;
   if (header != nullptr) { // Loading AOT code
-    log_info (aot, codecache, init)("Loaded %u AOT code entries from AOT Code Cache", header->entries_count());
-    log_debug(aot, codecache, init)("  Adapters:  total=%u", header->adapters_count());
-    log_debug(aot, codecache, init)("  Shared Blobs: total=%u", header->shared_blobs_count());
-    log_debug(aot, codecache, init)("  StubGen Blobs:  total=%d", header->stubgen_blobs_count());
-    log_debug(aot, codecache, init)("  C1 Blobs: total=%u", header->C1_blobs_count());
-    log_debug(aot, codecache, init)("  C2 Blobs: total=%u", header->C2_blobs_count());
-    log_debug(aot, codecache, init)("  AOT code cache size: %u bytes", header->cache_size());
-
+    load_info_log().print_cr("Loaded %u AOT code entries from AOT Code Cache", header->entries_count());
+    LogStreamHandle(Info, aot, codecache, init) log;
+    if (log.is_enabled()) {
+      log.print_cr("  %s: total=%u", aot_code_entry_kind_name[AOTCodeEntry::Adapter], header->adapters_count());
+      log.print_cr("  %s: total=%u", aot_code_entry_kind_name[AOTCodeEntry::SharedBlob], header->shared_blobs_count());
+      log.print_cr("  %s: total=%u", aot_code_entry_kind_name[AOTCodeEntry::C1Blob], header->C1_blobs_count());
+      log.print_cr("  %s: total=%u", aot_code_entry_kind_name[AOTCodeEntry::C2Blob], header->C2_blobs_count());
+      log.print_cr("  %s: total=%u", aot_code_entry_kind_name[AOTCodeEntry::StubGenBlob], header->stubgen_blobs_count());
+      log.print_cr("  %s: total=%u", aot_code_entry_kind_name[AOTCodeEntry::Nmethod], header->nmethods_count());
+      log.print_cr("  AOT code total size: %u bytes", header->cache_size());
+    }
     // Read strings
     opened_cache->load_strings();
   }

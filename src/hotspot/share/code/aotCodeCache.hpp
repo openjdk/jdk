@@ -449,6 +449,7 @@ enum class DataKind: int {
 struct AOTCodeEntryStats;
 
 class AOTCodeCache : public CHeapObj<mtCode> {
+  friend class AOTMapLogger;
 
 // Classes used to describe AOT code cache.
 protected:
@@ -768,6 +769,9 @@ public:
   static void enable_caching() NOT_CDS_RETURN;
   static void disable_caching() NOT_CDS_RETURN;
   static bool is_caching_enabled() NOT_CDS_RETURN_(false);
+
+  //Helper for logging
+  static const char *get_kind_name(AOTCodeEntry::Kind kind);
 
   // It is used before AOTCodeCache is initialized.
   static bool maybe_dumping_code() NOT_CDS_RETURN_(false);
