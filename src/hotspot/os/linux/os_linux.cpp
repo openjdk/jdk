@@ -4508,11 +4508,11 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return nullptr;
 }
 
-size_t os::vm_min_address() {
+uintptr_t os::vm_min_address() {
   return os::Linux::vm_min_address();
 }
 
-size_t os::vm_max_address() {
+uintptr_t os::vm_max_address() {
   return os::Linux::vm_max_address();
 }
 
