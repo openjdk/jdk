@@ -108,6 +108,35 @@ public @interface IR {
      */
     String[] applyIf() default {};
 
+
+    /**
+     * Define a list of at least two VM flag precondition which <i><b>all</b> must hold</i> when applying the IR rule.
+     * If the one of the VM flag preconditions does not hold, then the IR rule is not applied. This is useful if
+     * commonly used flags alter the IR in such a way that an IR rule would fail. This can also be defined as conjunction
+     * of preconditions.
+     * <p>
+     * A precondition is a (flag, value) string pair where the flag must be a valid VM flag and the value must conform
+     * with the type of the VM flag. A number based flag value can be proceeded with an additional comparator
+     * ({@code =, !=, <, <=, =>, >}) where the equality operator is optional (default if no comparator is specified).
+     * <p>
+     * Use  {@link #applyIfOr()} for disjunction and for single precondition constraints use {@link #applyIf()}.
+     */
+    String[] applyIfAnd() default {};
+
+    /**
+     * Define a list of at least two VM flag precondition from which <i><b>at least one</b> must hold</i> when applying
+     * the IR rule. If none of the VM flag preconditions holds, then the IR rule is not applied. This is useful if
+     * commonly used flags alter the IR in such a way that an IR rule would fail. This can also be defined as disjunction
+     * of preconditions.
+     * <p>
+     * A precondition is a (flag, value) string pair where the flag must be a valid VM flag and the value must conform
+     * with the type of the VM flag. A number based flag value can be proceeded with an additional comparator
+     * ({@code =, !=, <, <=, =>, >}) where the equality operator is optional (default if no comparator is specified).
+     * <p>
+     * Use  {@link #applyIfAnd()} for conjunction and for single precondition constraints use {@link #applyIf()}.
+     */
+    String[] applyIfOr() default {};
+
     /**
      * Accepts a single pair composed of a platform string followed by a true/false
      * value where a true value necessitates that we are currently testing on that platform and vice versa.
@@ -149,32 +178,4 @@ public @interface IR {
      * IR verifications checks are enforced if any of the specified feature constraint is met.
      */
     String[] applyIfCPUFeatureOr() default {};
-
-    /**
-     * Define a list of at least two VM flag precondition which <i><b>all</b> must hold</i> when applying the IR rule.
-     * If the one of the VM flag preconditions does not hold, then the IR rule is not applied. This is useful if
-     * commonly used flags alter the IR in such a way that an IR rule would fail. This can also be defined as conjunction
-     * of preconditions.
-     * <p>
-     * A precondition is a (flag, value) string pair where the flag must be a valid VM flag and the value must conform
-     * with the type of the VM flag. A number based flag value can be proceeded with an additional comparator
-     * ({@code =, !=, <, <=, =>, >}) where the equality operator is optional (default if no comparator is specified).
-     * <p>
-     * Use  {@link #applyIfOr()} for disjunction and for single precondition constraints use {@link #applyIf()}.
-     */
-    String[] applyIfAnd() default {};
-
-    /**
-     * Define a list of at least two VM flag precondition from which <i><b>at least one</b> must hold</i> when applying
-     * the IR rule. If none of the VM flag preconditions holds, then the IR rule is not applied. This is useful if
-     * commonly used flags alter the IR in such a way that an IR rule would fail. This can also be defined as disjunction
-     * of preconditions.
-     * <p>
-     * A precondition is a (flag, value) string pair where the flag must be a valid VM flag and the value must conform
-     * with the type of the VM flag. A number based flag value can be proceeded with an additional comparator
-     * ({@code =, !=, <, <=, =>, >}) where the equality operator is optional (default if no comparator is specified).
-     * <p>
-     * Use  {@link #applyIfAnd()} for conjunction and for single precondition constraints use {@link #applyIf()}.
-     */
-    String[] applyIfOr() default {};
 }
