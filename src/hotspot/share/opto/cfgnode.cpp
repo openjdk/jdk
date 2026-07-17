@@ -972,6 +972,10 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
     case Op_CmpUL:
       break;
     default:
+      // If the assert below fails, consider if it is safe
+      // for optimization (add above), or should also be
+      // excluded (add below).
+      //
       // Floats and pointers don't exactly obey trichotomy.
       // To be on the safe side, don't transform their tests.
       assert(cmp1->Opcode() == Op_CmpF ||
