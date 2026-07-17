@@ -2247,7 +2247,8 @@ bool ShenandoahHeap::try_cancel_gc(GCCause::Cause cause) {
   while (true) {
     const GCCause::Cause prev = _cancelled_gc.get();
     if (prev != GCCause::_no_gc && prev != GCCause::_shenandoah_concurrent_gc && cause != GCCause::_shenandoah_stop_vm) {
-      // Only two previous cancellations are replaceable. We make an exception for stopping the VM.
+      // Only when the gc has not been cancelled, or it has been cancelled to interrupt an old marking cycle
+      // do we allow the new cancellation request to happen. We make an exception for stopping the VM.
       return false;
     }
 
