@@ -505,21 +505,6 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   return instructions * NativeInstruction::instruction_size;
 }
 
-int MacroAssembler::patch_narrow_klass(address insn_addr, narrowKlass n) {
-  // Metadata pointers are either narrow (32 bits) or wide (48 bits).
-  // We encode narrow ones by setting the upper 16 bits in the first
-  // instruction.
-  NativeInstruction *insn = nativeInstruction_at(insn_addr);
-  assert(Instruction_aarch64::extract(insn->encoding(), 31, 21) == 0b11010010101 &&
-         nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
-
-  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
-
-  Instruction_aarch64::patch(insn_addr, 20, 5, n >> 16);
-  Instruction_aarch64::patch(insn_addr+4, 20, 5, n & 0xffff);
-  return 2 * NativeInstruction::instruction_size;
-}
-
 void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp) {
   ldr(tmp, Address(rthread, JavaThread::polling_word_offset()));
   if (at_return) {
@@ -637,20 +622,18 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
   }
 }
 
-static inline bool target_needs_far_branch(address addr) {
+bool MacroAssembler::target_needs_far_branch(address addr) {
   if (AOTCodeCache::is_on_for_dump()) {
     return true;
   }
-  // codecache size <= 128M
-  if (!MacroAssembler::far_branches()) {
+  if (!far_branches()) {
     return false;
   }
-  // codecache size > 240M
-  if (MacroAssembler::codestub_branch_needs_far_jump()) {
-    return true;
+  if (CodeCache::is_non_nmethod(addr) &&
+      CodeCache::max_distance_to_non_nmethod() <= branch_range) {
+    return false;
   }
-  // codecache size: 128M..240M
-  return !CodeCache::is_non_nmethod(addr);
+  return true;
 }
 
 void MacroAssembler::far_call(Address entry, Register tmp) {
@@ -2162,7 +2145,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   Register offset = rscratch2;
 
   Label L_loop_search_receiver, L_loop_search_empty;
-  Label L_restart, L_found_recv, L_found_empty, L_polymorphic, L_count_update;
+  Label L_restart, L_found_recv, L_found_empty, L_count_update;
 
   // The code here recognizes three major cases:
   //   A. Fastest: receiver found in the table
@@ -2192,20 +2175,19 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   //     if (receiver(i) == recv) goto found_recv(i);
   //   }
   //
-  //   // Fast: no receiver, but profile is full
+  //   // Fast: no receiver, but profile is not full
   //   for (i = 0; i < receiver_count(); i++) {
   //     if (receiver(i) == null) goto found_null(i);
   //   }
-  //   goto polymorphic
+  //
+  //   // Slow: profile is full, polymorphic case
+  //   count++;
+  //   return
   //
   //   // Slow: try to install receiver
   // found_null(i):
   //   CAS(&receiver(i), null, recv);
   //   goto restart
-  //
-  // polymorphic:
-  //   count++;
-  //   return
   //
   // found_recv(i):
   //   *receiver_count(i)++
@@ -2223,7 +2205,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   sub(rscratch1, offset, end_receiver_offset);
   cbnz(rscratch1, L_loop_search_receiver);
 
-  // Fast: no receiver, but profile is full
+  // Fast: no receiver, but profile is not full
   mov(offset, base_receiver_offset);
   bind(L_loop_search_empty);
     ldr(rscratch1, Address(mdp, offset));
@@ -2231,9 +2213,13 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   add(offset, offset, receiver_step);
   sub(rscratch1, offset, end_receiver_offset);
   cbnz(rscratch1, L_loop_search_empty);
-  b(L_polymorphic);
 
-  // Slow: try to install receiver
+  // Slow: Receiver is not found and table is full.
+  // Increment polymorphic counter instead of receiver slot.
+  mov(offset, poly_count_offset);
+  b(L_count_update);
+
+  // Slowest: try to install receiver
   bind(L_found_empty);
 
   // Atomically swing receiver slot: null -> recv.
@@ -2243,8 +2229,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // offset is no longer needed after the address is computed.
 
   lea(rscratch2, Address(mdp, offset));
-  cmpxchg(/*addr*/ rscratch2, /*expected*/ zr, /*new*/ recv, Assembler::xword,
-          /*acquire*/ false, /*release*/ false, /*weak*/ true, noreg);
+  cmpxchg_weak(/*addr*/ rscratch2, /*expected*/ zr, /*new*/ recv, Assembler::xword, memory_order_relaxed);
 
   // CAS success means the slot now has the receiver we want. CAS failure means
   // something had claimed the slot concurrently: it can be the same receiver we want,
@@ -2252,17 +2237,11 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   // and just restart the search from the beginning.
   b(L_restart);
 
-  // Counter updates:
-
-  // Increment polymorphic counter instead of receiver slot.
-  bind(L_polymorphic);
-  mov(offset, poly_count_offset);
-  b(L_count_update);
-
   // Found a receiver, convert its slot offset to corresponding count offset.
   bind(L_found_recv);
   add(offset, offset, receiver_to_count_step);
 
+  // Finally, update the counter
   bind(L_count_update);
   increment(Address(mdp, offset), DataLayout::counter_increment);
 }
@@ -2667,7 +2646,7 @@ int MacroAssembler::corrected_idivq(Register result, Register ra, Register rb,
 
 void MacroAssembler::membar(Membar_mask_bits order_constraint) {
   address prev = pc() - NativeMembar::instruction_size;
-  address last = code()->last_insn();
+  address last = code()->last_merge_candidate();
   if (last != nullptr && nativeInstruction_at(last)->is_Membar() && prev == last) {
     NativeMembar *bar = NativeMembar_at(prev);
     if (AlwaysMergeDMB) {
@@ -2699,21 +2678,21 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
       }
     }
   }
-  code()->set_last_insn(pc());
+  code()->set_last_merge_candidate(pc());
   dmb(Assembler::barrier(order_constraint));
 }
 
 bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size_in_bytes, bool is_store) {
   if (ldst_can_merge(rt, adr, size_in_bytes, is_store)) {
     merge_ldst(rt, adr, size_in_bytes, is_store);
-    code()->clear_last_insn();
+    code()->clear_last_merge_candidate();
     return true;
   } else {
     assert(size_in_bytes == 8 || size_in_bytes == 4, "only 8 bytes or 4 bytes load/store is supported.");
     const uint64_t mask = size_in_bytes - 1;
     if (adr.getMode() == Address::base_plus_offset &&
         (adr.offset() & mask) == 0) { // only supports base_plus_offset.
-      code()->set_last_insn(pc());
+      code()->set_last_merge_candidate(pc());
     }
     return false;
   }
@@ -2831,7 +2810,7 @@ void MacroAssembler::decrementw(Register reg, int value)
 {
   if (value < 0)  { incrementw(reg, -value);      return; }
   if (value == 0) {                               return; }
-  if (value < (1 << 12)) { subw(reg, reg, value); return; }
+  if (value < (1 << 24)) { subw(reg, reg, value); return; }
   /* else */ {
     guarantee(reg != rscratch2, "invalid dst for register decrement");
     movw(rscratch2, (unsigned)value);
@@ -2843,7 +2822,7 @@ void MacroAssembler::decrement(Register reg, int value)
 {
   if (value < 0)  { increment(reg, -value);      return; }
   if (value == 0) {                              return; }
-  if (value < (1 << 12)) { sub(reg, reg, value); return; }
+  if (value < (1 << 24)) { sub(reg, reg, value); return; }
   /* else */ {
     assert(reg != rscratch2, "invalid dst for register decrement");
     mov(rscratch2, (uint64_t)value);
@@ -2855,7 +2834,7 @@ void MacroAssembler::decrementw(Address dst, int value)
 {
   assert(!dst.uses(rscratch1), "invalid dst for address decrement");
   if (dst.getMode() == Address::literal) {
-    assert(abs(value) < (1 << 12), "invalid value and address mode combination");
+    assert(abs(value) < (1 << 24), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
   }
@@ -2868,7 +2847,7 @@ void MacroAssembler::decrement(Address dst, int value)
 {
   assert(!dst.uses(rscratch1), "invalid address for decrement");
   if (dst.getMode() == Address::literal) {
-    assert(abs(value) < (1 << 12), "invalid value and address mode combination");
+    assert(abs(value) < (1 << 24), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
   }
@@ -2881,7 +2860,7 @@ void MacroAssembler::incrementw(Register reg, int value)
 {
   if (value < 0)  { decrementw(reg, -value);      return; }
   if (value == 0) {                               return; }
-  if (value < (1 << 12)) { addw(reg, reg, value); return; }
+  if (value < (1 << 24)) { addw(reg, reg, value); return; }
   /* else */ {
     assert(reg != rscratch2, "invalid dst for register increment");
     movw(rscratch2, (unsigned)value);
@@ -2893,7 +2872,7 @@ void MacroAssembler::increment(Register reg, int value)
 {
   if (value < 0)  { decrement(reg, -value);      return; }
   if (value == 0) {                              return; }
-  if (value < (1 << 12)) { add(reg, reg, value); return; }
+  if (value < (1 << 24)) { add(reg, reg, value); return; }
   /* else */ {
     assert(reg != rscratch2, "invalid dst for register increment");
     movw(rscratch2, (unsigned)value);
@@ -2901,30 +2880,34 @@ void MacroAssembler::increment(Register reg, int value)
   }
 }
 
-void MacroAssembler::incrementw(Address dst, int value)
+void MacroAssembler::incrementw(Address dst, int value, Register result)
 {
-  assert(!dst.uses(rscratch1), "invalid dst for address increment");
+  assert(!dst.uses(result), "invalid dst for address increment");
+  assert(result->is_valid(), "must be");
+  assert_different_registers(result, rscratch2);
   if (dst.getMode() == Address::literal) {
-    assert(abs(value) < (1 << 12), "invalid value and address mode combination");
+    assert(abs(value) < (1 << 24), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
   }
-  ldrw(rscratch1, dst);
-  incrementw(rscratch1, value);
-  strw(rscratch1, dst);
+  ldrw(result, dst);
+  incrementw(result, value);
+  strw(result, dst);
 }
 
-void MacroAssembler::increment(Address dst, int value)
+void MacroAssembler::increment(Address dst, int value, Register result)
 {
-  assert(!dst.uses(rscratch1), "invalid dst for address increment");
+  assert(!dst.uses(result), "invalid dst for address increment");
+  assert(result->is_valid(), "must be");
+  assert_different_registers(result, rscratch2);
   if (dst.getMode() == Address::literal) {
-    assert(abs(value) < (1 << 12), "invalid value and address mode combination");
+    assert(abs(value) < (1 << 24), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
   }
-  ldr(rscratch1, dst);
-  increment(rscratch1, value);
-  str(rscratch1, dst);
+  ldr(result, dst);
+  increment(result, value);
+  str(result, dst);
 }
 
 // Push lots of registers in the bit set supplied.  Don't push sp.
@@ -3508,9 +3491,33 @@ void MacroAssembler::reinit_heapbase()
 void MacroAssembler::cmpxchg(Register addr, Register expected,
                              Register new_val,
                              enum operand_size size,
-                             bool acquire, bool release,
+                             enum atomic_memory_order order,
                              bool weak,
                              Register result) {
+  bool acquire, release;
+
+  switch (order) {
+    case memory_order_relaxed:
+      acquire = false;
+      release = false;
+      break;
+    case memory_order_acquire:
+      acquire = true;
+      release = false;
+      break;
+    case memory_order_release:
+      acquire = false;
+      release = true;
+      break;
+    case memory_order_acq_rel:
+    case memory_order_seq_cst:
+      acquire = true;
+      release = true;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
   if (result == noreg)  result = rscratch1;
   BLOCK_COMMENT("cmpxchg {");
   if (UseLSE) {
@@ -3876,7 +3883,7 @@ bool MacroAssembler::ldst_can_merge(Register rt,
                                     size_t cur_size_in_bytes,
                                     bool is_store) const {
   address prev = pc() - NativeInstruction::instruction_size;
-  address last = code()->last_insn();
+  address last = code()->last_merge_candidate();
 
   if (last == nullptr || !nativeInstruction_at(last)->is_Imm_LdSt()) {
     return false;
@@ -5088,7 +5095,7 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   ldr(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
-// Loads the obj's Klass* into dst.
+// Loads the obj's narrow Klass from a compact object header (+COH) into dst.
 // Preserves all registers (incl src, rscratch1 and rscratch2).
 // Input:
 // src - the oop we want to load the klass from.
@@ -5099,12 +5106,17 @@ void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
   lsr(dst, dst, markWord::klass_shift);
 }
 
-void MacroAssembler::load_klass(Register dst, Register src) {
+// Loads the obj's narrow Klass from any header (compact or not) into dst.
+void MacroAssembler::load_narrow_klass(Register dst, Register src) {
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(dst, src);
   } else {
     ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
   }
+}
+
+void MacroAssembler::load_klass(Register dst, Register src) {
+  load_narrow_klass(dst, src);
   decode_klass_not_null(dst);
 }
 
@@ -7194,8 +7206,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register t1, R
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
   orr(mark, mark, markWord::unlocked_value);
   eor(t, mark, markWord::unlocked_value);
-  cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::xword,
-          /*acquire*/ true, /*release*/ false, /*weak*/ false, noreg);
+  cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::xword, memory_order_acquire);
   br(Assembler::NE, slow);
 
   bind(push);
@@ -7263,8 +7274,7 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Register t2, Registe
   // Try to unlock. Transition lock bits 0b00 => 0b01
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
   orr(t, mark, markWord::unlocked_value);
-  cmpxchg(obj, mark, t, Assembler::xword,
-          /*acquire*/ false, /*release*/ true, /*weak*/ false, noreg);
+  cmpxchg(obj, mark, t, Assembler::xword, memory_order_release);
   br(Assembler::EQ, unlocked);
 
   bind(push_and_slow);
@@ -7292,4 +7302,27 @@ void MacroAssembler::neon_vector_rotate(FloatRegister dst, SIMD_Arrangement T,
     ushr(dst, T, src, esize - lshift);
     sli(dst, T, src, lshift);
   }
+}
+
+void MacroAssembler::try_to_replace_prev_vector_copy_with_movprfx(FloatRegister dst) {
+  if (code_section()->is_empty()) {
+    return;
+  }
+
+  address prev = pc() - NativeInstruction::instruction_size;
+  uint32_t insn = nativeInstruction_at(prev)->encoding();
+  if (!NativeInstruction::is_neon_vector_mov_alias(insn) &&
+      !NativeInstruction::is_sve_vector_mov_alias(insn)) {
+    return;
+  }
+
+  // The destructive instruction must reuse the mov alias destination.
+  uint32_t rd = Instruction_aarch64::extract(insn, 4, 0);
+  if (rd != (uint32_t)dst->encoding()) {
+    return;
+  }
+
+  uint32_t rn = Instruction_aarch64::extract(insn, 9, 5);
+  Instruction_aarch64::patch(prev, 31, 0,
+                             NativeInstruction::encode_sve_movprfx(rd, rn));
 }

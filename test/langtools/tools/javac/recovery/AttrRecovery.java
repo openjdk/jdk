@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301580 8322159 8333107 8332230 8338678 8351260 8366196 8372336 8373094
+ * @bug 8301580 8322159 8333107 8332230 8338678 8351260 8366196 8372336 8373094 8384229 8387865
  * @summary Verify error recovery w.r.t. Attr
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -795,6 +795,93 @@ public class AttrRecovery {
         List<String> expected = List.of(
             "C.java:1:15: compiler.err.doesnt.exist: unknown",
             "1 error"
+        );
+
+        assertEquals(expected, actual);
+    }
+
+    @Test //JDK-8384229
+    public void testStaticFieldTypeLookup() throws Exception {
+        Path out = base.resolve("out");
+
+        Files.createDirectories(out);
+
+        new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "-XDdev")
+                .sources("""
+                         package test;
+                         import static test.A.Object;
+                         enum A {
+                             Object;
+                         }
+                         class Test {
+                             void foo() {
+                                 Object f = "";
+                             }
+                         }
+                         """)
+                .outdir(out)
+                .run()
+                .writeAll();
+
+        new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "-XDdev")
+                .sources("""
+                         package test;
+                         import static test.A.Object;
+                         enum A {
+                             Object;
+                         }
+                         class Test {
+                             private static final Object f = "";
+                         }
+                         """)
+                .outdir(out)
+                .run()
+                .writeAll();
+
+        new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "-XDdev")
+                .sources("""
+                         package test;
+                         import static test.A.Object;
+                         class A {
+                             public static java.lang.Object Object() { return null; }
+                         }
+                         class Test {
+                             private static final Object f = Object();
+                         }
+                         """)
+                .outdir(out)
+                .run()
+                .writeAll();
+    }
+
+    @Test //JDK-8387865
+    public void testThisEscapeUnknownField() throws Exception {
+        String code = """
+                      public class C {
+                          public C() {
+                              this.unknown = unknown;
+                          }
+                      }
+                      """;
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "-XDdev",
+                         "-XDshould-stop.at=WARN", "-Xlint:this-escape")
+                .sources(code)
+                .outdir(base)
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "C.java:3:13: compiler.err.cant.resolve: kindname.variable, unknown, , ",
+                "C.java:3:24: compiler.err.cant.resolve.location: kindname.variable, unknown, , , (compiler.misc.location: kindname.class, C, null)",
+                "2 errors"
         );
 
         assertEquals(expected, actual);
