@@ -41,8 +41,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          other objects, including arrays, are <em>identity objects</em>. See
  *          The Java Language Specification {@jls value-objects-8.1.1.5 Value Classes}.
  *          <p>
- *          All classes are identity classes and all objects are identity objects when
- *          preview features are disabled.
+ *          When preview features are disabled, all classes are identity classes and
+ *          all objects are identity objects.
  *          <p>
  *          It is not possible to synchronize on a value object. An attempt to {@code
  *          synchronize} on a value object causes {@link IdentityException} to be thrown.
@@ -50,7 +50,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          The {@link #finalize()} method of a value class will never be invoked by
  *          the garbage collector.
  *          <p>
- *          A {@linkplain java.lang.ref.Reference Reference Object} can only refer to an
+ *          A {@linkplain java.lang.ref.Reference Reference object} can only refer to an
  *          object with identity. Creating a reference object with a value object as
  *          the referent throws {@code IdentityException}.
  *      </div>
@@ -171,10 +171,10 @@ public class Object {
      * that is, for any non-null reference values {@code x} and
      * {@code y}, this method returns {@code true} if and only
      * if {@code x} and {@code y} refer to the same identity object or
-     * both refer to statewise-equivalent value objects
-     * ({@code x == y} has the value {@code true}).
-     *
-     * In other words, under the reference equality equivalence
+     * indistinguishable value objects ({@code x == y} has the value
+     * {@code true}).
+     * <p>
+     * In other words, under the object equality equivalence
      * relation, each equivalence class only has a single element.
      *
      * @apiNote
@@ -199,7 +199,7 @@ public class Object {
     /**
      * Creates and returns a copy of this object.  The precise meaning
      * of "copy" may depend on the class of the object. The general
-     * intent is that, for any identity object {@code x}, the expression:
+     * intent is that, for any object {@code x}, the expression:
      * <blockquote>
      * <pre>
      * x.clone() != x</pre></blockquote>
@@ -207,7 +207,10 @@ public class Object {
      * <blockquote>
      * <pre>
      * x.clone().getClass() == x.getClass()</pre></blockquote>
-     * will be {@code true} for any object, but these are not absolute requirements.
+     * will also be {@code true}, but these are not absolute requirements.
+     * The clone of a value object, in particular, may be indistinguishable from
+     * the original.
+     * <p>
      * While it is typically the case that:
      * <blockquote>
      * <pre>
@@ -230,10 +233,8 @@ public class Object {
      * the case that no fields in the object returned by {@code super.clone}
      * need to be modified.
      * <p>
-     * For a value object {@code x}, the expectation that {@code x.clone() != x} is not
-     * meaningful. Value classes that contain references to identity objects may override
-     * {@code clone} to perform a "deep copy" of the identity objects, returning an object
-     * with references to the copied identity objects.
+     * Value classes may similarly perform deep copies of any mutable field
+     * values before constructing a new class instance with those copies.
      *
      * @apiNote
      * It should be rare for new classes to implement the {@link Cloneable} interface.
@@ -257,8 +258,8 @@ public class Object {
      * contents of the fields are not themselves cloned. Thus, this method
      * performs a "shallow copy" of this object, not a "deep copy" operation.
      * <p>
-     * For a value object, this method returns an object that is <em>statewise
-     * equivalent</em> to this object.
+     * For a value object, this method returns an object that is indistinguishable
+     * from this object.
      * <p>
      * The class {@code Object} does not itself implement the interface
      * {@code Cloneable}, so calling the {@code clone} method on an object
