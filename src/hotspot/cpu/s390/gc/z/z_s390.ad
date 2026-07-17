@@ -189,9 +189,9 @@ instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP oldval, iRegP newval, iRegP
     const Address mem_addr = Address($mem$$Register, 0);
     z_store_barrier(masm, this, mem_addr, $newval$$Register, $newval_temp$$Register, true /* is_atomic */);
     z_color(masm, this, $oldval_temp$$Register, $oldval$$Register);
+
+    __ z_csg($oldval_temp$$Register, $newval_temp$$Register, mem_addr);
     if (VM_Version::has_LoadStoreConditional()) {
-      __ z_csg($oldval_temp$$Register, $newval_temp$$Register, mem_addr);
-      // TODO: double check if cc is set to 0 if failed, chat is saying otherwise but this is part of already implemented code
       __ load_const_optimized(Z_R0_scratch, 0L);           // false (failed)
       __ load_const_optimized($res$$Register, 1L);         // true  (succeed)
       __ z_locgr($res$$Register, Z_R0_scratch, Assembler::bcondNotEqual);
