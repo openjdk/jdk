@@ -65,6 +65,16 @@ import compiler.lib.template_framework.library.VectorType;
  * Regular method compilations of Java code is structured, so no irreducible loops.
  * OSR can create some irreducible loops, but with Jasm we have the full freedom
  * to create arbitrary code graphs.
+ *
+ * Idea:
+ * - Create control-flow graph:
+ *   - Initially: start and sink nodes.
+ *   - Expansion: replace edges with:
+ *     - if-else
+ *     - reducible loop
+ *     - irreducible loop
+ * - Variable types
+ * - Stack height and types
  */
 public class IrreducibleLoopFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -82,18 +92,101 @@ public class IrreducibleLoopFuzzer {
         comp.invoke("compiler.loopopts.templated.Templated", "test", new Object[] {} );
     }
 
-    public static String generate() {
-        return """
-               package compiler/loopopts/templated;
+    static class Block {
+        static int count = 0;
 
-               super public class Templated {
-                   public static Method test:"()V"
-                   stack 20 locals 20
-                   {
-                       return;
-                   }
-               }
-               """;
+        final String name = "L" + (count++);
+        Block out0 = null;
+        Block out1 = null;
+
+        public Object token() {
+            // Swap randomly.
+            final boolean r = RANDOM.nextBoolean();
+            final Block b0 = r ? out0 : out1;
+            final Block b1 = r ? out1 : out0;
+            // If possible, make goto1 non-null.
+            final Block goto0 = (b0 == null) ? b0 : b1;
+            final Block goto1 = (b0 == null) ? b1 : b0;
+            var template = Template.make(() -> scope(
+                let("name", name),
+                """
+                #name:
+                // do stuff.
+                """,
+                (goto0 != null) ? scope(
+                    let("goto0", goto0.name),
+                    """
+                    iconst_0;
+                    iconst_1;
+                    if_icmple #goto0;
+                    """
+                ) : "",
+                (goto1 != null) ? scope(
+                    let("goto1", goto1.name),
+                    """
+                    goto #goto1;
+                    """
+                ) : scope(
+                    """
+                    return;
+                    """
+                )
+
+            ));
+            return template.asToken();
+        }
+    }
+
+    static class Graph {
+        final Block entry;
+        public final List<Block> blocks = new ArrayList<Block>();
+
+        public Graph() {
+            this.entry = new Block();
+            blocks.add(this.entry);
+        }
+
+        public void mutate() {
+            Block b = blocks.get(RANDOM.nextInt(blocks.size()));
+
+            // if/else
+            Block b0 = new Block();
+            Block b1 = new Block();
+            Block b2 = new Block();
+            b2.out0 = b.out0;
+            b2.out1 = b.out1;
+            b0.out0 = b2;
+            b1.out0 = b2;
+            b.out0 = b0;
+            b.out1 = b1;
+            blocks.add(b0);
+            blocks.add(b1);
+            blocks.add(b2);
+        }
+    }
+
+    public static String generate() {
+        Graph graph = new Graph();
+        for (int i = 0; i < 10; i++) {
+            graph.mutate();
+        }
+
+        var template = Template.make(() -> scope(
+            """
+            package compiler/loopopts/templated;
+
+            super public class Templated {
+                public static Method test:"()V"
+                stack 20 locals 20
+                {
+            """,
+            graph.blocks.stream().map(Block::token).toList(),
+            """
+                }
+            }
+            """
+        ));
+        return template.render();
     }
 }
 
