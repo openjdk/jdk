@@ -428,9 +428,8 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
   assert(!EscapeBarrier::objs_are_deoptimized(deoptee_thread, deoptee.id()), "must relock just once");
   assert(thread == Thread::current(), "should be");
   HandleMark hm(thread);
-#ifndef PRODUCT
   bool first = true;
-#endif // !PRODUCT
+
   // Start locking from outermost/oldest frame
   for (int i = (chunk->length() - 1); i >= 0; i--) {
     compiledVFrame* cvf = chunk->at(i);
