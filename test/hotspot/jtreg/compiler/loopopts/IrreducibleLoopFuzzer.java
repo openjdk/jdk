@@ -124,6 +124,23 @@ public class IrreducibleLoopFuzzer {
 
     static record Local(int index, JasmType type) {}
 
+    static record Operation(List<JasmType> in, List<JasmType> out, String op) {}
+
+    static final List<Operation> OPERATIONS = List.of(
+        // Copy
+        new Operation(List.of(INTS),  List.of(INTS),  null),
+        new Operation(List.of(LONGS), List.of(LONGS), null),
+        // Arithmetic
+        new Operation(List.of(INTS, INTS), List.of(INTS), "iadd"),
+        new Operation(List.of(INTS, INTS), List.of(INTS), "imul"),
+        new Operation(List.of(INTS, INTS), List.of(INTS), "iand"),
+        new Operation(List.of(LONGS, LONGS), List.of(LONGS), "ladd"),
+        new Operation(List.of(LONGS, LONGS), List.of(LONGS), "lmul"),
+        new Operation(List.of(LONGS, LONGS), List.of(LONGS), "land"),
+        new Operation(List.of(INTS), List.of(LONGS), "i2l"),
+        new Operation(List.of(LONGS), List.of(INTS), "l2i")
+    );
+
     static class Block {
         static int count = 0;
 
@@ -223,11 +240,30 @@ public class IrreducibleLoopFuzzer {
             return type.pushCon();
         }
 
+        public Object popType(JasmType type) {
+            List<Local> localIndices = locals.stream()
+                .filter(l -> l.type == type)
+                .toList();
+            if (localIndices.size() > 0 && RANDOM.nextBoolean()) {
+                var l = localIndices.get(RANDOM.nextInt(localIndices.size()));
+                return l.type.prefix() + "store " + l.index + ";\n";
+            }
+            return switch(type.slots()) {
+                case 1 -> "pop;\n";
+                case 2 -> "pop2;\n";
+                default -> throw new RuntimeException("not supported: " + type);
+            };
+        }
+
         public Object ballancedOp() {
+            Operation op = OPERATIONS.get(RANDOM.nextInt(OPERATIONS.size()));
             var template = Template.make(() -> scope(
                 """
-                // ballanced op
-                """
+                // ballanced op:
+                """,
+                op.in.stream().map(t -> pushType(t)).toList(),
+                (op.op == null) ? "" : scope(let("op", op.op), "#op;\n"),
+                op.out.stream().map(t -> popType(t)).toList()
             ));
             return template.asToken();
         }
