@@ -58,21 +58,18 @@ compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
 compiler/vectorapi/VectorRebracket128Test.java 8330538 generic-all
 
-compiler/vectorization/TestVectorAlgorithms.java#noSuperWord 8376803 aix-ppc64,linux-s390x
-compiler/vectorization/TestVectorAlgorithms.java#vanilla 8376803 aix-ppc64,linux-s390x
-compiler/vectorization/TestVectorAlgorithms.java#noOptimizeFill 8376803 aix-ppc64,linux-s390x
-
 compiler/floatingpoint/TestSubnormalFloat.java 8317810 generic-i586
 compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
 
 compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 
 compiler/interpreter/Test6833129.java 8335266 generic-i586
-compiler/intrinsics/TestReturnOopSetForJFRWriteCheckpoint.java 8286300 linux-s390x
 
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 generic-aarch64
 
-compiler/unsafe/AlignmentGapAccess.java 8373487 generic-all
+compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch64
+
+compiler/vectorapi/VectorStoreMaskIdentityTest.java 8388281 generic-all
 
 #############################################################################
 
@@ -86,10 +83,10 @@ gc/TestAllocHumongousFragment.java#aggressive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#g1 8298781 generic-all
 gc/TestAllocHumongousFragment.java#static 8298781 generic-all
 gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
-gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 8382335 generic-all
-gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8382335 generic-all
-gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8382335 generic-all
-gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8382335 generic-all
+gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 8386964 generic-all
+gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
+gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8386964 generic-all
+gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
 
 #############################################################################
 
@@ -103,12 +100,10 @@ runtime/os/TestTracePageSizes.java#compiler-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
-runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
 runtime/Thread/TestAlwaysPreTouchStacks.java 8383372 macosx-aarch64
 
-applications/ctw/modules/jdk_jfr.java 8286300 linux-s390x
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJFREvents.java 8327723 linux-x64
@@ -139,6 +134,8 @@ serviceability/sa/ClhsdbThreadContext.java        8356704 windows-x64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 
+serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8385679 generic-all
+
 #############################################################################
 
 # :hotspot_misc
@@ -163,6 +160,7 @@ vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t006/TestDescription.java 8372206 generic-all
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
+vmTestbase/nsk/jvmti/unit/timers/JvmtiTest/TestDescription.java 8235348 windows-x64
 
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all
