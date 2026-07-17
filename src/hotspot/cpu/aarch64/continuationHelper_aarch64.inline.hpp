@@ -48,7 +48,7 @@ static inline void patch_return_pc_with_preempt_stub(frame& f) {
     // compiled method so that the target returns to the preempt cleanup stub.
     intptr_t* caller_sp = f.sp() + f.cb()->frame_size();
     ContinuationHelper::patch_return_address_at(&caller_sp[-1],
-      StubRoutines::cont_preempt_stub());
+                                                StubRoutines::cont_preempt_stub());
   } else {
     // The target will check for preemption once it returns to the interpreter
     // or the native wrapper code and will manually jump to the preempt stub.

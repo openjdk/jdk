@@ -216,7 +216,7 @@ inline intptr_t* AnchorMark::anchor_mark_set_pd() {
       // We need to move up return pc and fp. They will be read next in
       // set_anchor() and set as _last_Java_pc and _last_Java_fp respectively.
       ContinuationHelper::patch_return_address_at(&_last_sp_from_frame[-1],
-        _top_frame.pc());
+                                                  _top_frame.pc());
       _last_sp_from_frame[-2] = (intptr_t)_top_frame.fp();
     }
     _is_interpreted = true;
@@ -342,7 +342,7 @@ inline intptr_t* ThawBase::push_cleanup_continuation() {
 
   // We only need to set the return pc. rfp will be restored back in gen_continuation_enter().
   ContinuationHelper::patch_return_address_at(&sp[-1],
-    ContinuationEntry::cleanup_pc());
+                                              ContinuationEntry::cleanup_pc());
   return sp;
 }
 
@@ -352,7 +352,7 @@ inline intptr_t* ThawBase::push_preempt_adapter() {
 
   // We only need to set the return pc. rfp will be restored back in generate_cont_preempt_stub().
   ContinuationHelper::patch_return_address_at(&sp[-1],
-    StubRoutines::cont_preempt_stub());
+                                              StubRoutines::cont_preempt_stub());
   return sp;
 }
 
