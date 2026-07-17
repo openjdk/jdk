@@ -1156,6 +1156,7 @@ public class Check {
                 boolean isRecordField = isInstanceField && (sym.owner.flags_field & RECORD) != 0;
                 if (allowValueClasses && (isInstanceFieldOfValueClass || isRecordField)) {
                     implicit |= FINAL | STRICT;
+                    preview.markUsesPreview(pos); // STRICT_INIT is a preview VM feature
                     mask = ValueFieldFlags;
                 } else {
                     mask = VarFlags;

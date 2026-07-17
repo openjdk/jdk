@@ -43,7 +43,9 @@ import java.io.File;
 
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
 import java.lang.classfile.Instruction;
+import java.lang.classfile.MethodModel;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.instruction.FieldInstruction;
 import java.lang.constant.ConstantDescs;
@@ -1600,5 +1602,90 @@ class ValueObjectCompilationTests extends CompilationTestCase {
                     """,
                     "aconst_null,putstatic,getstatic,astore_2,aload_0,aload_2,putfield,aload_0,aload_2," +
                     "putfield,aload_0,invokespecial,return");
+    }
+
+    @Test
+    void testIdentityRecordUsesPreview() throws Exception {
+        String source_withComponents =
+                """
+                record IdentityRecord(int x, int y) {
+                    IdentityRecord(int x, int y) {
+                        this.x = x;
+                        if (x < 0) {
+                            y = -y;
+                        }
+                        this.y = y;
+                    }
+                }
+                """;
+        String source_noComponents =
+                """
+                record IdentityRecord() {}
+                """;
+
+        // --enable-preview - use preview VM features
+        String[] previousOptions = getCompileOptions();
+        try {
+            setCompileOptions("--enable-preview",
+                    "-source", Integer.toString(Runtime.version().feature()),
+                    "-Xlint:preview");
+
+            File dir = assertOK(true, source_withComponents);
+            File classFile = new File(dir, "IdentityRecord.class");
+            Assert.check(classFile.exists(), "missing class file");
+            var classModel = ClassFile.of().parse(classFile.toPath());
+            Assert.check(classModel.minorVersion() == ClassFile.PREVIEW_MINOR_VERSION,
+                    "identity records should produce preview class files when compiled with preview enabled");
+            Assert.check(classModel.fields().stream().allMatch(f -> f.flags().has(AccessFlag.STRICT_INIT)),
+                    "identity record component instance field should be strictly initialized with preview enabled");
+            var constructor = classModel.methods()
+                    .stream()
+                    .filter(mm -> mm.methodName().equalsString(ConstantDescs.INIT_NAME))
+                    .findFirst()
+                    .orElseThrow();
+            System.err.println(constructor.toDebugString());
+            var stackMaps = constructor.code().orElseThrow().findAttribute(Attributes.stackMapTable()).orElseThrow();
+            Assert.check(stackMaps.entries().getFirst().frameType() == 246,
+                    "identity record constructor StackMapTable should declare unset fields with preview enabled");
+
+            dir = assertOK(true, source_noComponents);
+            classFile = new File(dir, "IdentityRecord.class");
+            Assert.check(classFile.exists(), "missing class file");
+            Assert.check(ClassFile.of().parse(classFile.toPath()).minorVersion() == 0,
+                    "identity records with no components should not produce preview class files even with preview enabled");
+        } finally {
+            setCompileOptions(previousOptions);
+        }
+
+        // No preview - no preview VM features
+        previousOptions = getCompileOptions();
+        try {
+            setCompileOptions("-source", "28");
+
+            File dir = assertOK(true, source_withComponents);
+            File classFile = new File(dir, "IdentityRecord.class");
+            Assert.check(classFile.exists(), "missing class file");
+            var classModel = ClassFile.of().parse(classFile.toPath());
+            Assert.check(classModel.minorVersion() == 0,
+                    "identity records should not preview class files for older releases");
+            Assert.check(classModel.fields().stream().noneMatch(f -> f.flags().has(AccessFlag.STRICT_INIT)),
+                    "identity record component instance field should not be strictly initialized for older releases");
+            var constructor = classModel.methods()
+                    .stream()
+                    .filter(mm -> mm.methodName().equalsString(ConstantDescs.INIT_NAME))
+                    .findFirst()
+                    .orElseThrow();
+            var stackMaps = constructor.code().orElseThrow().findAttribute(Attributes.stackMapTable()).orElseThrow();
+            Assert.check(stackMaps.entries().getFirst().frameType() != 246,
+                    "identity record constructor StackMapTable should not declare unset fields for older releases");
+
+            dir = assertOK(true, source_noComponents);
+            classFile = new File(dir, "IdentityRecord.class");
+            Assert.check(classFile.exists(), "missing class file");
+            Assert.check(ClassFile.of().parse(classFile.toPath()).minorVersion() == 0,
+                    "identity records with no components should not produce preview class files for older releases");
+        } finally {
+            setCompileOptions(previousOptions);
+        }
     }
 }
