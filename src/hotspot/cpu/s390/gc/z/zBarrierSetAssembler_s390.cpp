@@ -22,7 +22,6 @@
  * questions.
  */
 
-// TODO: Check which of these are useless
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zBarrier.inline.hpp"
@@ -52,8 +51,6 @@
 #undef __
 #define __ masm->
 
-// TODO: Put block comments in functions
-
 class ZRuntimeCallSpill {
 private:
   MacroAssembler* _masm;
@@ -66,7 +63,7 @@ private:
     //TODO: Optimize this function to only save the required registers
     bool preserve_R2 = _result != Z_R2;
     _nbytes_save = (15 - (preserve_R2 ? 0 : 1)) * BytesPerWord;
-    int offset = 160;
+    int offset = frame::z_abi_160_size;
 
     __ push_frame_abi160(_nbytes_save);   offset += 8;
     __ save_return_pc();                  offset += 8;
@@ -161,7 +158,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   assert_different_registers(Z_R2, scratch);
 
   int nbytes_save = 3 * BytesPerWord; // SP, PC, scratch
-  int offset = 160;
+  int offset = frame::z_abi_160_size;
 
   __ push_frame_abi160(nbytes_save);        offset += 8;
   __ save_return_pc();                      offset += 8;
@@ -209,7 +206,6 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   }
 
   // Slow-path has already uncolored
-  // TODO: Check if this L_handle_null != nullptr condition is even required.
   if (L_handle_null != nullptr) {
     __ z_ltgr(dst, dst);
     __ branch_optimized(Assembler::bcondEqual, *L_handle_null);
@@ -230,6 +226,8 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   __ z_lg(scratch, 176, Z_SP);
   __ restore_return_pc();
   __ pop_frame();
+
+  BLOCK_COMMENT("ZBarrierSetAssembler::load_at {");
 }
 
 void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
@@ -338,7 +336,6 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ z_stg(temp1, Address(temp2, in_bytes(ZStoreBarrierEntry::prev_offset())));
 }  
 
-// TODO: ppc does not have is_native support
 void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                                                 Address ref_addr,
                                                 Register temp1,
@@ -620,12 +617,12 @@ void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
 
   int nbytes_save = 7 * BytesPerWord;                 // SP, PC, R5, R6, R7, R10, R11
   int offset = 0;
-  __ push_frame(nbytes_save);      offset += 8;
-  __ save_return_pc();                 offset += 8;
-  __ z_stg(Z_R5, offset, Z_SP);        offset += 8;
-  __ z_stg(Z_R6, offset, Z_SP);        offset += 8;
-  __ z_stg(Z_R7, offset, Z_SP);        offset += 8;
-  __ z_stg(Z_R10, offset, Z_SP);       offset += 8;
+  __ push_frame(nbytes_save);                         offset += 8;
+  __ save_return_pc();                                offset += 8;
+  __ z_stg(Z_R5, offset, Z_SP);                       offset += 8;
+  __ z_stg(Z_R6, offset, Z_SP);                       offset += 8;
+  __ z_stg(Z_R7, offset, Z_SP);                       offset += 8;
+  __ z_stg(Z_R10, offset, Z_SP);                      offset += 8;
   __ z_stg(Z_R11, offset, Z_SP);
 
   load_copy_masks(masm, _load_bad_mask, _store_bad_mask, _store_good_mask, dest_uninitialized);
@@ -783,7 +780,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
 
   // Setup arguments and call runtime stub
   int nbytes_save = 4 * BytesPerWord; /* SP, PC, 2 args */
-  int offset = 160;
+  int offset = frame::z_abi_160_size;
 
   //TODO: I do not think so that we need abi160 here.
   __ push_frame_abi160(nbytes_save);     offset += 8;
@@ -862,29 +859,22 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *sasm,
                                                                  DecoratorSet decorators) const {
 
-  int nbytes_save = 15 * BytesPerWord;                        // R1 to R5, F0 to F7, SP, PC
-  // TODO: use frame::z_abi_160_size instead of just writing 160
-  int offset = 160;
+  int nbytes_save = 15 * BytesPerWord;                               // R1 to R5, F0 to F7, SP, PC
+  int offset = frame::z_abi_160_size;
 
   __ push_frame_abi160(nbytes_save);         offset += 8;
   __ save_return_pc();                       offset += 8;
   __ save_volatile_regs(Z_SP, offset, true, false);
 
-  offset = 16 + 160 + nbytes_save + 160;
+  offset = 16 + frame::z_abi_160_size + nbytes_save + frame::z_abi_160_size;
 
-  __ z_lg(Z_ARG1, offset, Z_SP);            offset += 8;            // ref
-  __ z_lg(Z_ARG2, offset, Z_SP);                                    // ref_addr
+  __ z_lg(Z_ARG1, offset, Z_SP);             offset += 8;            // ref
+  __ z_lg(Z_ARG2, offset, Z_SP);                                     // ref_addr
 
   __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
-
-  //TODO: Why are we verifying oop, ppc does it but x86 and aarch64 does not -> they are also doing it, but in the load_stub
-  // I don't know why but keeping this is causing a test failure (TestVerifyOops.java#id0), the error is weired we to
-  // hit c1_load_stub_fubar only once and the after that we somehow only hit c1_load_runtime_fubar. This happen even if I
-  // put c1_load_stub_fubar in this fuction only just above the call_VM call.
-  //__ verify_oop(Z_RET, "Bad pointer after barrier invocation");
   __ z_lgr(Z_R0, Z_RET);
 
-  offset = 168;
+  offset = frame::z_abi_160_size + 8;
   __ restore_return_pc();                    offset += 8;
   __ restore_volatile_regs(Z_SP, offset, true, false);
   __ pop_frame();
@@ -895,14 +885,14 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
 void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler* sasm,
                                                                   bool self_healing) const {
 
-  int nbytes_save = 15 * BytesPerWord; /* R1 to R5, F0 to F7, SP, PC */
-  int offset = 160;
+  int nbytes_save = 15 * BytesPerWord;                               /* R1 to R5, F0 to F7, SP, PC */
+  int offset = frame::z_abi_160_size;
 
-  __ push_frame_abi160(nbytes_save);        offset += 8;
-  __ save_return_pc();                      offset += 8;
+  __ push_frame_abi160(nbytes_save);         offset += 8;
+  __ save_return_pc();                       offset += 8;
   __ save_volatile_regs(Z_SP, offset, true, false);
 
-  __ z_lg(Z_ARG1, 160 + nbytes_save + 16, Z_SP);
+  __ z_lg(Z_ARG1, frame::z_abi_160_size + nbytes_save + 16, Z_SP);
 
   if (self_healing) {
     __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr());
@@ -910,7 +900,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
     __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr());
   }
 
-  offset = 168;
+  offset = frame::z_abi_160_size + 8;
   __ restore_return_pc();                   offset += 8;
   __ restore_volatile_regs(Z_SP, offset, true, false);
   __ pop_frame();
@@ -942,14 +932,12 @@ public:
 
     // '_ref_addr' can be unspecified. In that case, the barrier will not heal the reference.
     if (_ref_addr.base() == noreg) {
-      // TODO: Check the usage of this assert?
-      assert_different_registers(_ref, noreg, Z_R0);
+      assert_different_registers(_ref, noreg);
 
       __ lgr_if_needed(Z_ARG1, _ref);
       __ z_lghi(Z_ARG2, 0);
     } else {
-      // TODO: Check the usage of this assert? Why Z_R0 -> I think it's more related to ppc
-      assert_different_registers(_ref, _ref_addr.base(), Z_R0, noreg);
+      assert_different_registers(_ref, _ref_addr.base(), noreg);
 
       if (_ref == Z_ARG1) {
         __ z_lay(Z_ARG2, _ref_addr);
