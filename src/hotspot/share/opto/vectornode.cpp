@@ -2391,7 +2391,7 @@ Node* VectorMaskOpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (n != nullptr) {
     return n;
   }
-  return nullptr;
+  return TypeNode::Ideal(phase, can_reshape);
 }
 
 Node* VectorMaskCastNode::Identity(PhaseGVN* phase) {
