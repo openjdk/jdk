@@ -518,7 +518,7 @@ public class Timestamp extends java.util.Date {
     @SuppressWarnings("deprecation")
     public LocalDateTime toLocalDateTime() {
         return LocalDateTime.of(
-            Date.toProlepticYear(getYear() + 1900, getTime()),
+            Date.toGregorianProlepticYear(getYear() + 1900, getTime()),
             getMonth() + 1,
             getDate(),
             getHours(),

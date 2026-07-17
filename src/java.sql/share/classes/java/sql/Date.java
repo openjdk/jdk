@@ -314,7 +314,7 @@ public class Date extends java.util.Date {
     @SuppressWarnings("deprecation")
     public LocalDate toLocalDate() {
         return LocalDate.of(
-            toProlepticYear(getYear() + 1900, getTime()),
+            toGregorianProlepticYear(getYear() + 1900, getTime()),
             getMonth() + 1,
             getDate());
     }
@@ -329,7 +329,7 @@ public class Date extends java.util.Date {
      * used to determine the calendar era.
      * @return the proleptic year corresponding to {@code year} and {@code millis}
      */
-    static int toProlepticYear(int year, long millis) {
+    static int toGregorianProlepticYear(int year, long millis) {
         // We need to determine the era of the year using the given millis.
         // However, deriving a new calendar is a relatively expensive operation
         // that we would ideally avoid if possible.
