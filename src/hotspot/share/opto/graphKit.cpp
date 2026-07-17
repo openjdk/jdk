@@ -3240,9 +3240,10 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
 Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replace) {
   kill_dead_locals();           // Benefit all the uncommon traps
   assert( !stopped(), "dead parse path should be checked in callers" );
-  assert(!TypePtr::NULL_PTR->higher_equal(_gvn.type(superklass)->is_klassptr()),
+  const TypeKlassPtr* klass_ptr_type = _gvn.type(superklass)->isa_klassptr();
+  assert(klass_ptr_type != nullptr && !TypePtr::NULL_PTR->higher_equal(klass_ptr_type),
          "must check for not-null not-dead klass in callers");
-
+  const TypeKlassPtr* improved_klass_ptr_type = klass_ptr_type->try_improve();
   // Make the merge point
   enum { _obj_path = 1, _fail_path, _null_path, PATH_LIMIT };
   RegionNode* region = new RegionNode(PATH_LIMIT);
@@ -3278,11 +3279,10 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
 
   // Do we know the type check always succeed?
   bool known_statically = false;
-  if (_gvn.type(superklass)->singleton()) {
-    const TypeKlassPtr* superk = _gvn.type(superklass)->is_klassptr();
+  if (improved_klass_ptr_type->singleton()) {
     const TypeKlassPtr* subk = _gvn.type(obj)->is_oopptr()->as_klass_type();
     if (subk->is_loaded()) {
-      int static_res = C->static_subtype_check(superk, subk);
+      int static_res = C->static_subtype_check(improved_klass_ptr_type, subk);
       known_statically = (static_res == Compile::SSC_always_true || static_res == Compile::SSC_always_false);
     }
   }
@@ -3305,7 +3305,11 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
   }
 
   // Generate the subtype check
-  Node* not_subtype_ctrl = gen_subtype_check(not_null_obj, superklass);
+  Node* improved_superklass = superklass;
+  if (improved_klass_ptr_type != klass_ptr_type && improved_klass_ptr_type->singleton()) {
+    improved_superklass = makecon(improved_klass_ptr_type);
+  }
+  Node* not_subtype_ctrl = gen_subtype_check(not_null_obj, improved_superklass);
 
   // Plug in the success path to the general merge in slot 1.
   region->init_req(_obj_path, control());
@@ -3401,7 +3405,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
 
   // Null check; get casted pointer; set region slot 3
   Node* null_ctl = top();
-  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null, safe_for_replace, speculative_not_null);
+  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null, false /*safe_for_replace*/, speculative_not_null);
 
   // If not_null_obj is dead, only null-path is taken
   if (stopped()) {              // Doing instance-of on a null?
@@ -3429,7 +3433,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
     // a speculative type use it to perform an exact cast.
     ciKlass* spec_obj_type = obj_type->speculative_type();
     if (spec_obj_type != nullptr || data != nullptr) {
-      cast_obj = maybe_cast_profiled_receiver(not_null_obj, improved_klass_ptr_type, spec_obj_type, safe_for_replace);
+      cast_obj = maybe_cast_profiled_receiver(not_null_obj, improved_klass_ptr_type, spec_obj_type, false /*safe_for_replace*/);
       if (cast_obj != nullptr) {
         if (failure_control != nullptr) // failure is now impossible
           (*failure_control) = top();
@@ -3467,24 +3471,17 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   region->init_req(_obj_path, control());
   phi   ->init_req(_obj_path, cast_obj);
 
-  // A merge of null or Casted-NotNull obj
-  Node* res = _gvn.transform(phi);
-
-  // Note I do NOT always 'replace_in_map(obj,result)' here.
-  //  if( tk->klass()->can_be_primary_super()  )
-    // This means that if I successfully store an Object into an array-of-String
-    // I 'forget' that the Object is really now known to be a String.  I have to
-    // do this because we don't have true union types for interfaces - if I store
-    // a Baz into an array-of-Interface and then tell the optimizer it's an
-    // Interface, I forget that it's also a Baz and cannot do Baz-like field
-    // references to it.  FIX THIS WHEN UNION TYPES APPEAR!
-  //  replace_in_map( obj, res );
-
   // Return final merged results
   set_control( _gvn.transform(region) );
   record_for_igvn(region);
 
-  return record_profiled_receiver_for_speculation(res);
+  // A merge of null or Casted-NotNull obj
+  Node* res = _gvn.transform(phi);
+  res = record_profiled_receiver_for_speculation(res);
+  if (safe_for_replace) {
+    replace_in_map(obj, res);
+  }
+  return res;
 }
 
 //------------------------------next_monitor-----------------------------------
@@ -4208,13 +4205,13 @@ Node* GraphKit::load_String_value(Node* str, bool set_ctrl) {
   const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
                                                      false, nullptr, 0);
   const TypePtr* value_field_type = string_type->add_offset(value_offset);
-  const TypeAryPtr* value_type = TypeAryPtr::make(TypePtr::NotNull,
+  const TypeAryPtr* value_type = TypeAryPtr::make(TypePtr::BotPTR,
                                                   TypeAry::make(TypeInt::BYTE, TypeInt::POS),
                                                   ciTypeArrayKlass::make(T_BYTE), true, 0);
   Node* p = basic_plus_adr(str, str, value_offset);
   Node* load = access_load_at(str, p, value_field_type, value_type, T_OBJECT,
                               IN_HEAP | (set_ctrl ? C2_CONTROL_DEPENDENT_LOAD : 0) | MO_UNORDERED);
-  return load;
+  return must_be_not_null(load, true);
 }
 
 Node* GraphKit::load_String_coder(Node* str, bool set_ctrl) {

@@ -103,7 +103,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZbb, false, DIAGNOSTIC, "Use Zbb instructions")               \
   product(bool, UseZbkb, false, EXPERIMENTAL, "Use Zbkb instructions")           \
   product(bool, UseZbs, false, DIAGNOSTIC, "Use Zbs instructions")               \
-  product(bool, UseZfa, false, EXPERIMENTAL, "Use Zfa instructions")             \
+  product(bool, UseZfa, false, DIAGNOSTIC, "Use Zfa instructions")               \
   product(bool, UseZfh, false, DIAGNOSTIC, "Use Zfh instructions")               \
   product(bool, UseZfhmin, false, DIAGNOSTIC, "Use Zfhmin instructions")         \
   product(bool, UseZacas, false, EXPERIMENTAL, "Use Zacas instructions")         \
@@ -117,13 +117,13 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZihintpause, false, EXPERIMENTAL,                             \
           "Use Zihintpause instructions")                                        \
   product(bool, UseZtso, false, EXPERIMENTAL, "Assume Ztso memory model")        \
-  product(bool, UseZvbb, false, EXPERIMENTAL, "Use Zvbb instructions")           \
+  product(bool, UseZvbb, false, DIAGNOSTIC, "Use Zvbb instructions")             \
   product(bool, UseZvbc, false, EXPERIMENTAL, "Use Zvbc instructions")           \
   product(bool, UseZvfh, false, DIAGNOSTIC, "Use Zvfh instructions")             \
-  product(bool, UseZvkn, false, EXPERIMENTAL,                                    \
+  product(bool, UseZvkg, false, DIAGNOSTIC, "Use Zvkg instructions")             \
+  product(bool, UseZvkn, false, DIAGNOSTIC,                                      \
           "Use Zvkn group extension, Zvkned, Zvknhb, Zvkb, Zvkt")                \
   product(bool, UseCtxFencei, false, EXPERIMENTAL,                               \
-          "Use PR_RISCV_CTX_SW_FENCEI_ON to avoid explicit icache flush")        \
-  product(bool, UseZvkg, false, EXPERIMENTAL, "Use Zvkg instructions")
+          "Use PR_RISCV_CTX_SW_FENCEI_ON to avoid explicit icache flush")
 
 #endif // CPU_RISCV_GLOBALS_RISCV_HPP

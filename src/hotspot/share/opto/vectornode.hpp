@@ -1075,6 +1075,7 @@ class XorVNode : public VectorNode {
   virtual int Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   Node* Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape);
+  Node* Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_reshape);
 };
 
 // Vector xor byte, short, int, long as a reduction
@@ -1802,6 +1803,24 @@ class VectorBlendNode : public VectorNode {
   Node* vec_mask() const { return in(3); }
 };
 
+// Vector bitwise blend (bit-select): (sel & vec_true) | (~sel & vec_false).
+class VectorBitwiseBlendNode : public VectorNode {
+ public:
+  VectorBitwiseBlendNode(Node* vec_false, Node* vec_true, Node* sel, const TypeVect* vt)
+    : VectorNode(vec_false, vec_true, sel, vt) {
+    assert(vec_false->bottom_type()->isa_vect() != nullptr &&
+           vec_true->bottom_type()->isa_vect() != nullptr &&
+           sel->bottom_type()->isa_vect() != nullptr,
+           "inputs must all be vectors");
+    uint vlen = vt->length();
+    assert(vec_false->bottom_type()->is_vect()->length() == vlen &&
+           vec_true->bottom_type()->is_vect()->length() == vlen &&
+           sel->bottom_type()->is_vect()->length() == vlen,
+           "mismatched vector length");
+  }
+  virtual int Opcode() const;
+};
+
 // Rearrange lane elements from a source vector under the control of a shuffle
 // (indexes) vector. Each lane in the shuffle vector specifies which lane from
 // the source vector to select for the corresponding output lane. All indexes
@@ -2137,11 +2156,10 @@ class VectorBoxAllocateNode : public CallStaticJavaNode {
 // vector value. This is a macro node expanded during vector optimization
 // phase.
 class VectorUnboxNode : public VectorNode {
- protected:
-  uint size_of() const { return sizeof(*this); }
- public:
-  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* obj, Node* mem)
+public:
+  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* ctrl, Node* obj, Node* mem)
     : VectorNode(mem, obj, vec_type) {
+    init_req(0, ctrl);
     init_class_id(Class_VectorUnbox);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -2152,6 +2170,10 @@ class VectorUnboxNode : public VectorNode {
   Node* mem() const { return in(1); }
   virtual Node* Identity(PhaseGVN* phase);
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+private:
+  uint size_of() const { return sizeof(*this); }
+  bool depends_only_on_test_impl() const { return false; }
 };
 
 // Lane-wise right rotation of the first input by the second input.

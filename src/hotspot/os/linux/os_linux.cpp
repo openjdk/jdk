@@ -112,6 +112,7 @@
 # include <sys/time.h>
 # include <sys/times.h>
 # include <sys/types.h>
+# include <sys/un.h>
 # include <sys/utsname.h>
 # include <syscall.h>
 # include <time.h>
@@ -1547,11 +1548,47 @@ int os::current_process_id() {
   return ::getpid();
 }
 
-// DLL functions
+static bool is_writable_directory(const char* name) {
+  struct stat mystat;
+  int ret_val = stat(name, &mystat);
+  return (ret_val != -1 && S_ISDIR(mystat.st_mode) > 0 && access(name, R_OK|W_OK|X_OK) == 0);
+}
 
-// This must be hard coded because it's the system's temporary
-// directory not the java application's temp directory, ala java.io.tmpdir.
-const char* os::get_temp_directory() { return "/tmp"; }
+// Check that a given alternate temporary directory name specifies an absolute path and is an existing, writable
+// directory.
+
+// If it is not an absolute path, revert back to hardcoded /tmp. If the directory is non existant or not
+// writable give a warning but use AltTempDir. In the latter case, we may be connecting to a process that is
+// inside a container.
+//
+// Since the attach mechanism uses the socket name length, this limits the length of the alternate
+// temporary directory name.  We don't check that here since the temporary directory is
+// used for many things. The perfData and attach code will check it.
+
+void os::pd_check_temp_directory() {
+  if (AltTempDir != nullptr && AltTempDir[0] != '\0') {
+    if (AltTempDir[0] != '/') {
+      log_warning(os)("Warning: AltTempDir is ignored because it must be an absolute pathname");
+      AltTempDir = nullptr;
+    } else {
+      if (!is_writable_directory(AltTempDir)) {
+        // This is only a warning and still uses AltTempDir, which is needed to attach to a
+        // containerized process from the host.
+        log_warning(os)("Warning: AltTempDir is not an existing or writable directory");
+      }
+    }
+  } else {
+    if (!is_writable_directory("/tmp")) {
+      log_warning(os)("Warning: /tmp is not writable. Consider using -XX:AltTempDir=/<dir> to set a writable temp directory");
+    }
+    AltTempDir = nullptr; // avoid checking AltTempDir[0] again.
+  }
+}
+
+const char* os::get_temp_directory() {
+  // AltTempDir is already checked.
+  return AltTempDir != nullptr ? AltTempDir : "/tmp";
+}
 
 // check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {
@@ -2183,6 +2220,10 @@ void os::print_os_info(outputStream* st) {
     st->cr();
   }
 
+  if (os::Linux::print_numa_info(st)) {
+    st->cr();
+  }
+
   VM_Version::print_platform_virtualization_info(st);
 
   os::Linux::print_steal_info(st);
@@ -2619,6 +2660,97 @@ bool os::Linux::print_container_info(outputStream* st) {
     OSContainer::print_container_metric(st, "current number of tasks", !supported ? "not supported" : "no tasks");
   }
 
+  return true;
+}
+
+#define SYS_DEVICES_NODE "/sys/devices/system/node"
+
+static size_t read_sysfs_file(const char* path, char* buf, size_t sz) {
+  FILE* f = os::fopen(path, "r");
+  if (f == nullptr) return 0;
+  size_t n = fread(buf, 1, sz - 1, f);
+  fclose(f);
+  buf[n] = '\0';
+  while (n > 0 && (buf[n-1] == '\n' || buf[n-1] == '\r')) buf[--n] = '\0';
+  return n;
+}
+
+static void print_numa_memory_info(outputStream* st, int node) {
+  char path[256];
+  char line[256];
+  long long mem_total = -1;
+  long long mem_free = -1;
+  os::snprintf_checked(path, sizeof(path), SYS_DEVICES_NODE "/node%d/meminfo", node);
+  FILE* f = os::fopen(path, "r");
+  if (f == nullptr) {
+    return;
+  }
+
+  while (fgets(line, sizeof(line), f) != nullptr) {
+    long long mval;
+    if (sscanf(line, "Node %*d MemTotal: %lld kB", &mval) == 1) mem_total = mval;
+    if (sscanf(line, "Node %*d MemFree: %lld kB",  &mval) == 1) mem_free  = mval;
+  }
+  fclose(f);
+
+  if (mem_total >= 0) { st->print_cr("mem size: %lld kB", mem_total); }
+  if (mem_free >= 0) { st->print_cr("mem free: %lld kB", mem_free); }
+}
+
+static void print_numa_cpu_list(outputStream* st, int node) {
+  char path[256];
+  char buf[1024];
+  os::snprintf_checked(path, sizeof(path), SYS_DEVICES_NODE "/node%d/cpulist", node);
+  if (read_sysfs_file(path, buf, sizeof(buf)) > 0) {
+    st->print_cr("cpus: %s", buf);
+  } else {
+    st->print_cr("cpus: (unavailable)");
+  }
+}
+
+bool os::Linux::print_numa_info(outputStream* st) {
+  if (!UseNUMA) {
+    // If NUMA optimizations are not enabled we don't print anything
+    return false;
+  }
+
+  char buf[1024];
+  if (read_sysfs_file("/sys/devices/system/node/online", buf, sizeof(buf)) > 0) {
+    st->print_cr("NUMA nodes online: %s", buf);
+  } else {
+    return false;
+  }
+
+  bool first = true;
+  int node_count = 0;
+
+  if (nindex_to_node() == nullptr) {
+    return false;
+  }
+
+  for (int node: *nindex_to_node()) {
+    char nodepath[256];
+    os::snprintf_checked(nodepath, sizeof(nodepath), SYS_DEVICES_NODE "/node%d", node);
+    DIR* currd = os::opendir(nodepath);
+    if (currd == nullptr) continue;
+    if (first) {
+      st->cr();
+      first = false;
+    }
+    os::closedir(currd);
+
+    st->print_cr("NUMA node %d", node);
+    StreamIndentor si(st);
+    print_numa_cpu_list(st, node);
+    print_numa_memory_info(st, node);
+    node_count++;
+  }
+
+  if (node_count == 0) {
+    return false;
+  }
+
+  st->print_cr("Total NUMA node count: %d", node_count);
   return true;
 }
 
@@ -4567,20 +4699,6 @@ void os::Linux::numa_init() {
   if (UseNUMA && !UseNUMAInterleaving) {
     FLAG_SET_ERGO_IF_DEFAULT(UseNUMAInterleaving, true);
   }
-
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC && UseNUMA && UseLargePages && !can_commit_large_page_memory()) {
-    // With static large pages we cannot uncommit a page, so there's no way
-    // we can make the adaptive lgrp chunk resizing work. If the user specified both
-    // UseNUMA and UseLargePages on the command line - warn and disable adaptive resizing.
-    if (UseAdaptiveSizePolicy || UseAdaptiveNUMAChunkSizing) {
-      warning("UseNUMA is not fully compatible with +UseLargePages, "
-              "disabling adaptive resizing (-XX:-UseAdaptiveSizePolicy -XX:-UseAdaptiveNUMAChunkSizing)");
-      UseAdaptiveSizePolicy = false;
-      UseAdaptiveNUMAChunkSizing = false;
-    }
-  }
-#endif
 }
 
 void os::Linux::disable_numa(const char* reason, bool warning) {

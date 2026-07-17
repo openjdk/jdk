@@ -489,6 +489,25 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ jmp(wrapup);
 
     __ bind(start_simd_check);
+    // Query CPUID 0xD sub-leaf 5, 6, and 7 offsets for AVX-512 XSAVE components
+    __ movl(rax, 0xD);
+    __ movl(rcx, 5);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::opmask_xstate_offset_offset())));
+    __ movl(Address(rsi, 0), rbx);
+
+    __ movl(rax, 0xD);
+    __ movl(rcx, 6);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::zmm0to15_hi256_xstate_offset_offset())));
+    __ movl(Address(rsi, 0), rbx);
+
+    __ movl(rax, 0xD);
+    __ movl(rcx, 7);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::zmm16to31_xstate_offset_offset())));
+    __ movl(Address(rsi, 0), rbx);
+
     //
     // Some OSs have a bug when upper 128/256bits of YMM/ZMM
     // registers are not restored after a signal processing.
@@ -1251,7 +1270,7 @@ void VM_Version::get_processor_features() {
 
   // Kyber Intrinsics
   // Currently we only have them for AVX512
-  if (supports_evex() && supports_avx512bw()) {
+  if (supports_avx512vlbw()) {
     if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
       UseKyberIntrinsics = true;
     }
@@ -1405,6 +1424,10 @@ void VM_Version::get_processor_features() {
       warning("Intrinsics for Polynomial crypto functions not available on this CPU.");
     }
     FLAG_SET_DEFAULT(UseIntPolyIntrinsics, false);
+  }
+
+  if (FLAG_IS_DEFAULT(UseIntPoly25519Intrinsics)) {
+    UseIntPoly25519Intrinsics = true;
   }
 
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {

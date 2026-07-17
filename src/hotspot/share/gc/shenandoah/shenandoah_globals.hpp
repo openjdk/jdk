@@ -461,6 +461,12 @@
   product(bool, ShenandoahAllocFailureALot, false, DIAGNOSTIC,              \
           "Testing: make lots of artificial allocation failures.")          \
                                                                             \
+  product(uintx, ShenandoahPinRegionRate, 0, DIAGNOSTIC,                    \
+          "Testing: rate at which to artificially pin regions. Expressed "  \
+          "as N in 1000 chances for a region to be randomly pinned per "    \
+          "injection attempt.")                                             \
+          range(0, 1000)                                                    \
+                                                                            \
   product(uintx, ShenandoahCoalesceChance, 0, DIAGNOSTIC,                   \
           "Testing: Abandon remaining mixed collections with this "         \
           "likelihood. Following each mixed collection, abandon all "       \
@@ -469,11 +475,6 @@
           "cause the old regions to be made parsable, rather than being "   \
           "evacuated.")                                                     \
           range(0, 100)                                                     \
-                                                                            \
-  product(intx, ShenandoahMarkScanPrefetch, 32, EXPERIMENTAL,               \
-          "How many objects to prefetch ahead when traversing mark bitmaps."\
-          "Set to 0 to disable prefetching.")                               \
-          range(0, 256)                                                     \
                                                                             \
   product(uintx, ShenandoahMarkLoopStride, 1000, EXPERIMENTAL,              \
           "How many items to process during one marking iteration before "  \
@@ -499,9 +500,6 @@
   product(bool, ShenandoahCardBarrier, false, DIAGNOSTIC,                   \
           "Turn on/off card-marking post-write barrier in Shenandoah: "     \
           " true when ShenandoahGCMode is generational, false otherwise")   \
-                                                                            \
-  product(bool, ShenandoahCASBarrier, true, DIAGNOSTIC,                     \
-          "Turn on/off CAS barriers in Shenandoah")                         \
                                                                             \
   product(bool, ShenandoahCloneBarrier, true, DIAGNOSTIC,                   \
           "Turn on/off clone barriers in Shenandoah")                       \
@@ -531,10 +529,6 @@
   product(bool, ShenandoahAllowOldMarkingPreemption, true, DIAGNOSTIC,      \
           "Allow young generation collections to suspend concurrent"        \
           " marking in the old generation.")                                \
-                                                                            \
-  product(uintx, ShenandoahAgingCyclePeriod, 1, EXPERIMENTAL,               \
-          "With generational mode, increment the age of objects and"        \
-          "regions each time this many young-gen GC cycles are completed.") \
                                                                             \
   develop(bool, ShenandoahEnableCardStats, false,                           \
           "Enable statistics collection related to clean & dirty cards")    \

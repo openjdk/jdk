@@ -336,6 +336,8 @@ public class WhiteBox {
 
   // Compiler
 
+  public native boolean isC2Included();
+
   public native int     matchesMethod(Executable method, String pattern);
   public native int     matchesInline(Executable method, String pattern);
   public native boolean shouldPrintAssembly(Executable method, int comp_level);
