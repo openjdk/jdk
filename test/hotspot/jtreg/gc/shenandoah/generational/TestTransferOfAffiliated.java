@@ -24,9 +24,6 @@
 
 package gc.shenandoah.generational;
 
-import java.util.Random;
-import jdk.test.lib.Asserts;
-
 /*
  * @test id=generational
  * @summary Test that we do not attempt to transfer to the old
@@ -35,6 +32,7 @@ import jdk.test.lib.Asserts;
  * @key stress randomness
  * @requires vm.gc.Shenandoah
  * @requires vm.flagless
+ * @requires os.maxMemory >= 2g
  * @library /test/lib
  *
  * @run main/othervm/timeout=960 -Xms1g -Xmx1g
@@ -43,7 +41,6 @@ import jdk.test.lib.Asserts;
  *     -XX:+AlwaysPreTouch
  *     -XX:+UseShenandoahGC
  *     -XX:ShenandoahGCMode=generational
- *     -XX:+UnlockExperimentalVMOptions
  *     -XX:ShenandoahMinFreeThreshold=5
  *     -XX:ShenandoahGuaranteedYoungGCInterval=0
  *     -XX:ShenandoahGuaranteedOldGCInterval=0
@@ -51,6 +48,11 @@ import jdk.test.lib.Asserts;
  *     -XX:ShenandoahPromoEvacWaste=3.0
  *     gc.shenandoah.generational.TestTransferOfAffiliated
  */
+
+import java.util.Random;
+
+import jdk.test.lib.Asserts;
+
 public class TestTransferOfAffiliated {
     // Heap size is 1 GB.  HeapRegionSize is 512KB of memory.
     // Note: 512KB/region * 2048 regions = 1 GB.
@@ -88,7 +90,7 @@ public class TestTransferOfAffiliated {
     //
     //  The number of InnerIntegers for each InnerArray is 256K (half
     // the region size) / 16 bytes / Integer
-    final static int INNER_INTEGERS = (256 * 1024) / 16;
+    static final int INNER_INTEGERS = (256 * 1024) / 16;
 
     // Assume heap size is 1 GB. We want to consume approximately
     // 384MB of live data.  Each InnerArray, including its referenced
@@ -97,7 +99,7 @@ public class TestTransferOfAffiliated {
     static final int OUTER_ARRAY_SLOTS = 768;
 
     static final Random r = new Random(42);
-    
+
     static int truncateAbsolute(int i) {
         if (i < 0) {
             i = -i;
@@ -114,7 +116,7 @@ public class TestTransferOfAffiliated {
             arg = -arg;
         }
         if (arg < 0) {
-            // negative of -1 equals -1
+            // negative of Integer.min_value EQUALS Integer.MIN_VALUE
             arg = 0;
         }
         return arg;
@@ -148,10 +150,10 @@ public class TestTransferOfAffiliated {
             // We just do a "spot check", because it consumes too much
             // CPU time if we check all previous values.
             for (int j = 0; j < spotCheckCount; j++) {
-                int spot_index = truncateAbsolute(r.nextInt());
-                if ((array[spot_index] != null) &&
+                int spotIndex = truncateAbsolute(r.nextInt());
+                if ((array[spotIndex] != null) &&
                     (newValueCPUIntensive ==
-                     cpuIntensive(array[spot_index].intValue()))) {
+                     cpuIntensive(array[spotIndex].intValue()))) {
                     rejectThisValue = true;
                     break;
                 }
@@ -221,7 +223,7 @@ public class TestTransferOfAffiliated {
         // observed with fast-debug builds of the JVM before integration of
         // https://github.com/openjdk/jdk/pull/31563.
 
-        Asserts.assertTrue(accumulator == 775993600L,
+        Asserts.assertEQ(775993600L, accumulator,
                            "Proper execution is demonstrated by matching " +
                            "expected accumulator value with no JVM " +
                            "assert failures");
