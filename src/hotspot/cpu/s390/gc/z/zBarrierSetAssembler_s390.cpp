@@ -24,21 +24,15 @@
 
 // TODO: Check which of these are useless
 #include "asm/macroAssembler.inline.hpp"
-#include "asm/register.hpp"
-#include "code/codeBlob.hpp"
-#include "code/vmreg.inline.hpp"
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "gc/z/zThreadLocalData.hpp"
-#include "memory/resourceArea.hpp"
 #include "register_s390.hpp"
 #include "runtime/jniHandles.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
