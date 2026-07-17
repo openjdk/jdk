@@ -895,8 +895,6 @@ void RegionNode::remove_unreachable_subgraph(PhaseIterGVN* igvn) {
 //         Region                Region                    Region
 //
 // The method returns true if 'this' is modified and false otherwise.
-// TODO: the bug seems to be here.
-// Investigate if CmpU should be allowed at all.
 bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
   int idx1 = 1, idx2 = 2;
   Node* region = nullptr;
