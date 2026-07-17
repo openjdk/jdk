@@ -777,8 +777,8 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 # In some environments, certain algorithms may be undesirable for certain
 # cryptographic services. For example, "MD2" is generally no longer considered
 # to be a secure hash algorithm.  This section describes the mechanism for
-# disabling algorithms at the JCA/JCE level based on service name and algorithm
-# name.
+# disabling algorithms and identifying legacy algorithms at the JCA/JCE
+# level based on service name and algorithm name.
 #
 # If a system property of the same name is also specified, it supersedes the
 # security property value defined here.
@@ -786,7 +786,10 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 # The syntax of the disabled services string is described as follows:
 #       "DisabledService {, DisabledService}"
 #
-#   DisabledService:
+# The syntax of the legacy services string is described as follows:
+#       "LegacyService {, LegacyService}"
+#
+#   DisabledService and LegacyService:
 #       Service.AlgorithmName
 #
 # Service:  (one of the following, more services may be added later)
@@ -795,7 +798,7 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 #   AlgorithmName:
 #       (see below)
 #
-# The "AlgorithmName" is the standard algorithm name of the disabled
+# The "AlgorithmName" is the standard algorithm name of the affected
 # service. See the Java Security Standard Algorithm Names Specification
 # for information about Standard Algorithm Names.  Matching is
 # performed using a case-insensitive exact matching rule. For Cipher service,
@@ -805,18 +808,28 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
 # unsupported services at the time of checking, an ExceptionInInitializerError
 # with a cause of IllegalArgumentException will be thrown.
 #
-# Note: The restriction is applied in the various getInstance(...) methods
-# of the supported Service classes, i.e. Cipher, KeyStore, MessageDigest,
-# and Signature. If the algorithm is disabled, a NoSuchAlgorithmException will
-# be thrown by the getInstance methods of Cipher, MessageDigest, and Signature
-# and a KeyStoreException by the getInstance methods of KeyStore.
+# Note: The jdk.crypto.disabledAlgorithms property is enforced in the various
+# getInstance(...) methods of the supported Service classes, i.e. Cipher,
+# KeyStore, MessageDigest, and Signature. If the algorithm is disabled, a
+# NoSuchAlgorithmException will be thrown by the getInstance methods of
+# Cipher, MessageDigest, and Signature and a KeyStoreException by the
+# getInstance methods of KeyStore.
 #
-# Note: This property is currently used by the JDK Reference implementation.
-# It is not guaranteed to be examined and used by other implementations.
+# Note: The jdk.crypto.legacyAlgorithms property is checked in the
+# getInstance(...) methods of the supported Service classes, i.e. Cipher,
+# KeyStore, MessageDigest, and Signature. If the algorithm is considered legacy, the
+# JDK emits a warning at runtime when the algorithm is requested.
+# This warning is shown once per caller for each legacy algorithm.
+# If the algorithm is also disabled, the warning will not be shown.
+#
+# Note: These properties are currently used by the JDK Reference implementation.
+# They are not guaranteed to be examined and used by other implementations.
 #
 # Example:
 #   jdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding, MessageDigest.MD2
+#   jdk.crypto.legacyAlgorithms=Cipher.RSA/ECB/PKCS1Padding, MessageDigest.MD2
 #
+#jdk.crypto.legacyAlgorithms=
 #jdk.crypto.disabledAlgorithms=
 
 #

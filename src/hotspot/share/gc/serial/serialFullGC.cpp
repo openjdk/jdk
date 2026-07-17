@@ -512,6 +512,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
 
   // This is the point where the entire marking should have completed.
   assert(_marking_stack.is_empty(), "Marking should have completed");
+  CodeCache::on_gc_marking_cycle_finish();
 
   {
     GCTraceTime(Debug, gc, phases) tm_m("Weak Processing", gc_timer());

@@ -32,8 +32,8 @@ class G1ServiceTaskQueue;
 class G1ServiceThread;
 
 class G1ServiceTask : public CHeapObj<mtGC> {
-  friend class G1ServiceTaskQueue;
   friend class G1ServiceThread;
+  friend class G1ServiceTaskQueue;
 
   // The next absolute time this task should be executed.
   jlong _time;

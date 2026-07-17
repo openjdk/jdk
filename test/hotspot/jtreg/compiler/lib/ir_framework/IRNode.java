@@ -2442,6 +2442,12 @@ public class IRNode {
         vectorNode(VECTOR_BLEND_D, "VectorBlend", TYPE_DOUBLE);
     }
 
+    public static final String VECTOR_BITWISE_BLEND = PREFIX + "VECTOR_BITWISE_BLEND" + POSTFIX;
+    static {
+        String regex = START + "VectorBitwiseBlend" + MID + END;
+        afterBarrierExpansionToBeforeMatching(VECTOR_BITWISE_BLEND, regex);
+    }
+
     public static final String VECTOR_MASK_CMP_I = VECTOR_PREFIX + "VECTOR_MASK_CMP_I" + POSTFIX;
     static {
         vectorNode(VECTOR_MASK_CMP_I, "VectorMaskCmp", TYPE_INT);
@@ -2845,6 +2851,36 @@ public class IRNode {
     public static final String VSTOREMASK_TRUECOUNT = PREFIX + "VSTOREMASK_TRUECOUNT" + POSTFIX;
     static {
         machOnlyNameRegex(VSTOREMASK_TRUECOUNT, "vstoremask_truecount_neon");
+    }
+
+    public static final String X86_VMULUDQ_REG = PREFIX + "X86_VMULUDQ_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VMULUDQ_REG, "vmuludq_reg");
+    }
+
+    public static final String X86_VMULDQ_REG = PREFIX + "X86_VMULDQ_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VMULDQ_REG, "vmuldq_reg");
+    }
+
+    public static final String AARCH64_VMULL_UINT_SVE2 = PREFIX + "AARCH64_VMULL_UINT_SVE2" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMULL_UINT_SVE2, "vmulL_uint_sve2");
+    }
+
+    public static final String AARCH64_VMULL_INT_SVE2 = PREFIX + "AARCH64_VMULL_INT_SVE2" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMULL_INT_SVE2, "vmulL_int_sve2");
+    }
+
+    public static final String AARCH64_VMULL_UINT_NEON = PREFIX + "AARCH64_VMULL_UINT_NEON" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMULL_UINT_NEON, "vmulL_uint_neon");
+    }
+
+    public static final String AARCH64_VMULL_INT_NEON = PREFIX + "AARCH64_VMULL_INT_NEON" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMULL_INT_NEON, "vmulL_int_neon");
     }
 
     public static final String X86_SCONV_D2I = PREFIX + "X86_SCONV_D2I" + POSTFIX;

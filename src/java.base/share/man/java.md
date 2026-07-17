@@ -483,7 +483,7 @@ the JVM.
         without any warnings.
 
     -   `warn`: This mode is identical to `allow` except that a warning message is
-        issued for the first illegal final field mutation performaed in a module.
+        issued for the first illegal final field mutation performed in a module.
         This mode is the default for the current JDK but will change in a future
         release.
 
@@ -1215,9 +1215,11 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         be replaced with `[REDACTED]`. The option `redact-argument` is best-effort
         and applies only to command-line arguments in the `jdk.JVMInformation`
         event and to the `java.command` system property in the
-        `jdk.InitialSystemProperty` event. Other events, such as `jdk.ProcessStart`
-        (child processes), are not redacted. Use `-XX:FlightRecorderOptions:help`
-        to see the default filters used by the `redact-argument` option.
+        `jdk.InitialSystemProperty` event, and to matching command-line argument
+        text in the values of `jdk.InitialEnvironmentVariable` events. Other
+        events, such as `jdk.ProcessStart` (child processes), are not redacted.
+        Use `-XX:FlightRecorderOptions:help` to see the default filters used by
+        the `redact-argument` option.
 
     `redact-key=`key-filter
     :   Replace the value of environment variables and system properties
@@ -1568,14 +1570,14 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     This option is similar to `-Xss`.
 
-[`-XX:+UseCompactObjectHeaders`]{#-XX__UseCompactObjectHeaders}
-:   Enables compact object headers. By default, this option is disabled.
-    Enabling this option reduces memory footprint in the Java heap by
-    4 bytes per object (on average) and often improves performance.
+[`-XX:-UseCompactObjectHeaders`]{#-XX__UseCompactObjectHeaders}
+:   Disables compact object headers. By default, this option is enabled and
+    compact object headers are used.  Using compact object headers reduces
+    memory footprint in the Java heap by 4 bytes per object (on average) and
+    often improves performance.
 
-    The feature remains disabled by default while it continues to be evaluated.
-    In a future release it is expected to be enabled by default, and
-    eventually will be the only mode of operation.
+    This option can be used if performance regressions are suspected. In a future
+    release compact object headers is expected to become the only mode of operation.
 
 [`-XX:-UseCompressedOops`]{#-XX__UseCompressedOops}
 :   Disables the use of compressed pointers. By default, this option is
@@ -2267,6 +2269,23 @@ performed by the Java HotSpot VM.
 
 These `java` options provide the ability to gather system information and
 perform extensive debugging.
+
+[`-XX:AltTempDir=`]{#-XX_AltTempDir}*/path*
+:   **Linux-only:** On Linux, the usual directory to use for temporary files is `/tmp`. In some secure container
+    environments however, `/tmp` is made read-only and so is unusable by the VM for its temporary files. To accommodate
+    this uncommon circumstance the `-XX:AltTempDir` flag can be used to tell the VM to use a different temporary directory.
+
+    It is important to note that this setting controls not only where the VM places its own temporary files, but also the location
+    it will look for the special files used by other VMs as part of the attach protocol for tools like `jcmd` and `jstack`. That
+    means that both VMs must use the same setting of this flag. For example, if you start a target VM with
+    `java -XX:AltTempDir=/scratch/vmTmp` then you must run e.g. `jcmd -J-XX:AltTempDir=/scratch/vmTmp` to interact with that target VM.
+
+    The directory path must of course be writable and accessible to both the target and tool VM, so the simplest arrangement
+    is to always run both in the same container.
+
+    The value for `AltTempDir` must be an absolute directory path starting with `/`. The length of the `AltTempDir` path should be
+    fairly small (less than approximately 80 characters) if it is to be used with the attach protocol due to path length limits
+    for socket files.
 
 [`-XX:+DisableAttachMechanism`]{#-XX__DisableAttachMechanism}
 :   Disables the mechanism that lets tools attach to the JVM. By default, this
@@ -2997,14 +3016,6 @@ they're used.
 :   Enables the use of Java Flight Recorder (JFR) during the runtime of the
     application. Since JDK 8u40 this option has not been required to use JFR.
 
-[`-XX:+ParallelRefProcEnabled`]{#-XX__ParallelRefProcEnabled}
-:   Enables parallel reference processing. By default, collectors employing multiple
-    threads perform parallel reference processing if the number of parallel threads
-    to use is larger than one.
-    The option is available only when the throughput or G1 garbage collector is used
-    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
-    threads always perform reference processing in parallel.
-
 ## Obsolete Java Options
 
 These `java` options are still accepted but ignored, and a warning is issued
@@ -3016,6 +3027,18 @@ when they're used.
     This option was deprecated in JDK 16 by [JEP
     396](https://openjdk.org/jeps/396) and made obsolete in JDK 17
     by [JEP 403](https://openjdk.org/jeps/403).
+
+## Removed Java Options
+
+These `java` options have been removed in JDK @@VERSION_SPECIFICATION@@ and using them results in an error of:
+
+>   `Unrecognized VM option` *option-name*
+
+[`-XX:+AggressiveHeap`]{#-XX__AggressiveHeap}
+:   Enabled Java heap optimization. This set various parameters to be
+    optimal for long-running jobs with intensive memory allocation, based on
+    the configuration of the computer (RAM and CPU). By default, the option
+    was disabled and the heap sizes configured less aggressively.
 
 [`-XX:+NeverActAsServerClassMachine`]{#-XX__NeverActAsServerClassMachine}
 :   Enabled the "Client VM emulation" mode, which used only the C1 JIT compiler,
@@ -3037,17 +3060,17 @@ when they're used.
     -XX:{+|-}UseJVMCICompiler
     ```
 
-[`-XX:+AggressiveHeap`]{#-XX__AggressiveHeap}
-:   Enabled Java heap optimization. This set various parameters to be
-    optimal for long-running jobs with intensive memory allocation, based on
-    the configuration of the computer (RAM and CPU). By default, the option
-    was disabled and the heap sizes configured less aggressively.
-
-## Removed Java Options
-
-No documented java options have been removed in JDK @@VERSION_SPECIFICATION@@.
+[`-XX:+ParallelRefProcEnabled`]{#-XX__ParallelRefProcEnabled}
+:   Enables parallel reference processing. By default, collectors employing multiple
+    threads perform parallel reference processing if the number of parallel threads
+    to use is larger than one.
+    The option is available only when the throughput or G1 garbage collector is used
+    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
+    threads always perform reference processing in parallel.
 
 For the lists and descriptions of options removed in previous releases see the *Removed Java Options* section in:
+
+-   [The `java` Command, Release 27](https://docs.oracle.com/en/java/javase/27/docs/specs/man/java.html)
 
 -   [The `java` Command, Release 26](https://docs.oracle.com/en/java/javase/26/docs/specs/man/java.html)
 
