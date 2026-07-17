@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -519,7 +519,12 @@ public interface ReferenceType
      * The Field must be valid for this type;
      * that is, it must be declared in this type, a superclass, a
      * superinterface, or an implemented interface.
-     *
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     * If preview features are enabled, this method does not prevent a
+     * strictly-initialized field from being read before it has been initialized.
+     *      </div>
+     * </div>
      * @param field the field containing the requested value
      * @return the {@link Value} of the instance field.
      * @throws java.lang.IllegalArgumentException if the field is not valid for
@@ -533,6 +538,12 @@ public interface ReferenceType
      * The Fields must be valid for this type;
      * that is, they must be declared in this type, a superclass, a
      * superinterface, or an implemented interface.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     * If preview features are enabled, this method does not prevent a
+     * strictly-initialized field from being read before it has been initialized.
+     *      </div>
+     * </div>
      *
      * @param fields a list of {@link Field} objects containing the
      * requested values.

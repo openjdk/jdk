@@ -97,10 +97,11 @@ public interface StackFrame extends Mirror, Locatable {
      * The {@link ObjectReference} for 'this' is only available for
      * non-native instance methods.
      * <p>
-     * If 'this' is a {@linkplain Class#isValue() value object} under
-     * construction, the returned {@code ObjectReference} will refer to a
-     * <em>snapshot</em> of the value object, not a reference to the actual value
-     * object under construction. Consequently, the returned
+     * If 'this' is a {@linkplain
+     * ObjectReference##valueObjects value object<sup class="preview-mark">PREVIEW</sup>}
+     * under construction, the returned {@code ObjectReference} will refer to a
+     * <em>snapshot</em> of the value object, not a reference
+     * to the actual value object under construction. Consequently, the returned
      * {@code ObjectReference} will not reflect changes to the value object that
      * happen later during construction.
      *
