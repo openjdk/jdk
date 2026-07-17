@@ -501,6 +501,10 @@ protected:
   // Usually returns new_type.  Returns old_type if new_type is only a slight
   // improvement, such that it would take many (>>10) steps to reach 2**32.
 
+  DeadPathNode* dead_path();
+
+  void make_dependent_paths_dead_if_top(Node* dead_node, const Type* t);
+
 public:
 
   PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor
@@ -695,7 +699,7 @@ protected:
 // Should be replaced with combined CCP & GVN someday.
 class PhaseCCP : public PhaseIterGVN {
   Unique_Node_List _root_and_safepoints;
-  Unique_Node_List _maybe_top_type_nodes;
+  Unique_Node_List _maybe_top_type_or_div_mod_nodes;
   // Non-recursive.  Use analysis to transform single Node.
   virtual Node* transform_once(Node* n);
 

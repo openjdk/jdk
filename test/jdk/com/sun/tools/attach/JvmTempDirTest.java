@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,23 +35,29 @@ import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
- * @bug 8033104
- * @summary Test to make sure attach and jvmstat works correctly when java.io.tmpdir is set
+ * @bug 8384557
+ * @summary Test to make sure attach and jvmstat work correctly when -XX:AltTempDir is set.
  *
+ * @requires os.family == "linux"
  * @library /test/lib
  * @modules jdk.attach
  *          jdk.jartool/sun.tools.jar
  *
  * @run build Application RunnerUtil
- * @run main/timeout=200 TempDirTest
+ * @run main/timeout=200 JvmTempDirTest
  */
 
 /*
+ * This test is similar to TempDirTest.java. The property java.io.tmpdir does not affect how
+ * jdk.attach works, but -XX:AltTempDir does.
+ *
  * This test runs with an extra long timeout since it takes a really long time with -Xcomp
  * when starting many processes.
  */
 
-public class TempDirTest {
+import jdk.test.lib.util.FileUtils;
+
+public class JvmTempDirTest {
 
     private static long startTime;
 
@@ -59,32 +65,76 @@ public class TempDirTest {
 
         startTime = System.currentTimeMillis();
 
-        Path clientTmpDir = Files.createTempDirectory("TempDirTest-client");
-        clientTmpDir.toFile().deleteOnExit();
-        Path targetTmpDir = Files.createTempDirectory("TempDirTest-target");
-        targetTmpDir.toFile().deleteOnExit();
+        Path clientTmpDir = Files.createTempDirectory(Path.of("/tmp"), "c");
+        Path targetTmpDir = Files.createTempDirectory(Path.of("/tmp"), "t");
 
-        // Run the test with all possible combinations of setting java.io.tmpdir.
-        // Note that the attach mechanism doesn't really use java.io.tmpdir, but this test verifies
-        // that different java.io.tmpdir settings for client and target don't break the attach mechanism.
-        runExperiment(null, null);
-        runExperiment(clientTmpDir, null);
-        runExperiment(clientTmpDir, targetTmpDir);
-        runExperiment(null, targetTmpDir);
+        try {
+            // Run the test with all possible combinations of setting AltTempDir.
+            // Different setting will cause the attach mechanism to fail.
+            String notFound = "not found in VM list";
+            runExperiment(null, null, true, null);
+            runExperiment(targetTmpDir, targetTmpDir, true, null);
+            runExperiment(clientTmpDir, clientTmpDir, true, null);
 
+            runExperiment(clientTmpDir, null, false, notFound);
+            runExperiment(clientTmpDir, targetTmpDir, false, notFound);
+            runExperiment(null, targetTmpDir, false, notFound);
+        } finally {
+            FileUtils.deleteFileTreeWithRetry(clientTmpDir);
+            FileUtils.deleteFileTreeWithRetry(targetTmpDir);
+        }
+
+        String name = String.valueOf('a').repeat(200);
+        Path veryLongDir = Files.createTempDirectory(Path.of("/tmp"), name);
+        try {
+            runExperiment(veryLongDir, veryLongDir, false, "Socket file path too long");
+        } finally {
+            FileUtils.deleteFileTreeWithRetry(veryLongDir);
+        }
+
+        // Test a directory with only proc in one part of the name.
+        Path procTempDir = Files.createTempDirectory(Path.of("/tmp"), "proc");
+        Path procDir = Files.createDirectory(procTempDir.resolve("proc"));
+        try {
+            runExperiment(procDir, procDir, true, null);
+        } finally {
+            FileUtils.deleteFileTreeWithRetry(procDir);
+            FileUtils.deleteFileTreeWithRetry(procTempDir);
+        }
+
+        Path hsperfDir = Files.createTempDirectory(Path.of("/tmp"), "hsperfdata_");
+        try {
+            runExperiment(hsperfDir, hsperfDir, true, null);
+        } finally {
+            FileUtils.deleteFileTreeWithRetry(hsperfDir);
+        }
+
+        // Create /tmp/tmp<tempdir>, and try to use /tmp/tmp<tempdir>/noexist
+        Path tmpDir = Files.createTempDirectory(Path.of("/tmp"), "tmp");
+        try {
+            Path noExist = tmpDir.resolve("noexist");
+            runNoExistTest(noExist);
+        } finally {
+            FileUtils.deleteFileTreeWithRetry(tmpDir);
+        }
+
+        Path relativeDir = Files.createTempDirectory(Path.of("."), "a");
+        try {
+            runRelativeTest(relativeDir);
+        } finally {
+            FileUtils.deleteFileTreeWithRetry(relativeDir);
+        }
     }
-
-    private static int counter = 0;
 
     /*
      * The actual test is in the nested class TestMain.
      * The responsibility of this class is to:
      * 1. Start the Application class in a separate process.
      * 2. Find the pid and shutdown port of the running Application.
-     * 3. Launches the tests in nested class TestMain that will attach to the Application.
+     * 3. Launch the tests in nested class TestMain that will attach to the Application.
      * 4. Shut down the Application.
      */
-    public static void runExperiment(Path clientTmpDir, Path targetTmpDir) throws Throwable {
+    public static void runExperiment(Path clientTmpDir, Path targetTmpDir, boolean shouldPass, String message) throws Throwable {
 
         System.out.print("### Running tests with overridden tmpdir for");
         System.out.print(" client: " + (clientTmpDir == null ? "no" : "yes"));
@@ -94,17 +144,16 @@ public class TempDirTest {
         long elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
         System.out.println("Started after " + elapsedTime + "s");
 
-        final String pidFile = "TempDirTest.Application.pid-" + counter++;
         ProcessThread processThread = null;
         try {
             String[] tmpDirArg = null;
             if (targetTmpDir != null) {
-                tmpDirArg = new String[] {"-Djava.io.tmpdir=" + targetTmpDir};
+                tmpDirArg = new String[] {"-XX:AltTempDir=" + targetTmpDir};
             }
             processThread = RunnerUtil.startApplication(tmpDirArg);
-            launchTests(processThread.getPid(), clientTmpDir);
+            launchTests(processThread.getPid(), clientTmpDir, shouldPass, message);
         } catch (Throwable t) {
-            System.out.println("TempDirTest got unexpected exception: " + t);
+            System.out.println("JvmTempDirTest got unexpected exception: " + t);
             t.printStackTrace();
             throw t;
         } finally {
@@ -121,29 +170,33 @@ public class TempDirTest {
      * Runs the actual tests in nested class TestMain.
      * The reason for running the tests in a separate process
      * is that we need to modify the class path and
-     * the -Djava.io.tmpdir property.
+     * the -XX:AltTempDir argument.
      */
-    private static void launchTests(long pid, Path clientTmpDir) throws Throwable {
-        final String sep = File.separator;
+    private static void launchTests(long pid, Path clientTmpDir, boolean shouldPass, String message) throws Throwable {
 
         String classpath =
             System.getProperty("test.class.path", "");
 
         String[] tmpDirArg = null;
         if (clientTmpDir != null) {
-            tmpDirArg = new String [] {"-Djava.io.tmpdir=" + clientTmpDir};
+            tmpDirArg = new String [] {"-XX:AltTempDir=" + clientTmpDir};
         }
 
-        // Arguments : [-Djava.io.tmpdir=] -classpath cp TempDirTest$TestMain pid
+        // Arguments : [-XX:AltTempDir=] -classpath cp JvmTempDirTest$TestMain pid
         String[] args = RunnerUtil.concat(
                 tmpDirArg,
                 new String[] {
                     "-classpath",
                     classpath,
-                    "TempDirTest$TestMain",
+                    "JvmTempDirTest$TestMain",
                     Long.toString(pid) });
         OutputAnalyzer output = ProcessTools.executeTestJava(args);
-        output.shouldHaveExitValue(0);
+        if (shouldPass) {
+            output.shouldHaveExitValue(0);
+        } else {
+            output.shouldContain(message);
+            output.shouldNotHaveExitValue(0);
+        }
     }
 
     /**
@@ -183,5 +236,23 @@ public class TempDirTest {
             }
             System.out.println(" - attach.test property set as expected");
         }
+    }
+
+    private static void runNoExistTest(Path tmpDir) throws Throwable {
+        // Arguments : [-XX:AltTempDir=] -version
+        String[] args = new String[] { "-XX:AltTempDir=" + tmpDir, "-version" };
+        OutputAnalyzer output = ProcessTools.executeTestJava(args);
+        output.shouldMatch("\\[warning\\]\\[os *\\] Warning: AltTempDir is not an existing or writable directory");
+        // Still passes, it's just a warning.
+        output.shouldHaveExitValue(0);
+    }
+
+    private static void runRelativeTest(Path tmpDir) throws Throwable {
+        // Arguments : [-XX:AltTempDir=] -version
+        String[] args = new String[] { "-XX:AltTempDir=" + tmpDir, "-version" };
+        OutputAnalyzer output = ProcessTools.executeTestJava(args);
+        output.shouldMatch("\\[warning\\]\\[os *\\] Warning: AltTempDir is ignored because it must be an absolute pathname");
+        // Still passes, it's just a warning.
+        output.shouldHaveExitValue(0);
     }
 }

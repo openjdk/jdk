@@ -925,8 +925,8 @@
   product(bool, PreloadReduceTraps, true, DIAGNOSTIC,                       \
           "Preload code should avoid traps as much as possible.")           \
                                                                             \
-  develop(bool, KillPathsReachableByDeadTypeNode, true,                     \
-          "When a Type node becomes top, make paths where the node is "     \
+  develop(bool, KillPathsReachableByDeadDataNode, true,                     \
+          "When a data node becomes top, make paths where the node is "     \
           "used dead by replacing them with a Halt node. Turning this off " \
           "could corrupt the graph in rare cases and should be used with "  \
           "care.")                                                          \

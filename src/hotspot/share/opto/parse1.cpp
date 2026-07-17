@@ -2000,7 +2000,8 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       if (phi != nullptr) {
         assert(n != top() || r->in(pnum) == top(), "live value must not be garbage");
         assert(phi->region() == r, "");
-        phi->set_req(pnum, n);  // Then add 'n' to the merge
+        phi->set_req(pnum, maybe_narrow_phi_input(r->in(pnum), n, _gvn.type(phi)));
+
         if (pnum == PhiNode::Input) {
           // Last merge for this Phi.
           // So far, Phis have had a reasonable type from ciTypeFlow.
@@ -2177,6 +2178,21 @@ int Parse::Block::add_new_path() {
   return pnum;
 }
 
+// The verifier ensures that the ciType of phi is not narrower than its inputs. However, since
+// TypeOopPtr::make_from_klass may be aggressive if it finds that the ciType has only a single
+// concrete subtype, and concurrent class loading/unloading may change this property during the
+// compilation process, it may be the case that the Type of phi is narrower than its inputs. In
+// those cases, we need to insert a CheckCastPP, otherwise several PhiNode idealization may be
+// unsound, as we may replace a Phi which has a narrower Type with one of its input which has a
+// wider Type.
+Node* Parse::maybe_narrow_phi_input(Node* ctrl, Node* n, const Type* phi_type) {
+  if (phi_type->isa_oopptr() != nullptr && !_gvn.type(n)->higher_equal(phi_type)) {
+    n = new CheckCastPPNode(ctrl, n, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing);
+    n = _gvn.transform(n);
+  }
+  return n;
+}
+
 //------------------------------ensure_phi-------------------------------------
 // Turn the idx'th entry of the current map into a Phi
 PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
@@ -2225,9 +2241,18 @@ PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
     return nullptr;
   }
 
-  PhiNode* phi = PhiNode::make(region, o, t);
+  PhiNode* phi = new PhiNode(region, t);
   gvn().set_type(phi, t);
-  if (C->do_escape_analysis()) record_for_igvn(phi);
+  for (uint i = 1; i < phi->req(); i++) {
+    Node* ctrl = region->in(i);
+    if (ctrl != nullptr) {
+      phi->init_req(i, maybe_narrow_phi_input(ctrl, o, t));
+    }
+  }
+
+  if (C->do_escape_analysis()) {
+    record_for_igvn(phi);
+  }
   map->set_req(idx, phi);
   return phi;
 }
