@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.Collections;
 import java.util.Random;
 import jdk.test.lib.Utils;
 import java.util.stream.IntStream;
@@ -142,7 +143,11 @@ public class IrreducibleLoopFuzzer {
                 let("name", name),
                 """
                 #name:
-                // do stuff.
+                // body:
+                """,
+                method.blockBody(),
+                """
+                // branch:
                 """,
                 (goto0 != null) ? scope(
                     let("goto0", goto0.name),
@@ -218,6 +223,19 @@ public class IrreducibleLoopFuzzer {
             return type.pushCon();
         }
 
+        public Object ballancedOp() {
+            var template = Template.make(() -> scope(
+                """
+                // ballanced op
+                """
+            ));
+            return template.asToken();
+        }
+
+        public Object blockBody() {
+            int n = RANDOM.nextInt(3);
+            return Collections.nCopies(n, ballancedOp());
+        }
 
         public Object token() {
 
