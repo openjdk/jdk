@@ -230,6 +230,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * @since   1.0
  */
 @jdk.internal.ValueBased
+// See doc/value-class-preview.md for an overview of value class generation
 public final /*value*/ class Character
         implements java.io.Serializable, Comparable<Character>, Constable {
     /**

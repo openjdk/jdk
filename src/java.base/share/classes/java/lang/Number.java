@@ -62,6 +62,7 @@ package java.lang;
  * @jls 5.1.3 Narrowing Primitive Conversion
  * @since   1.0
  */
+// See doc/value-class-preview.md for an overview of value class generation
 public abstract /*value*/ class Number implements java.io.Serializable {
     /**
      * Constructor for subclasses to call.

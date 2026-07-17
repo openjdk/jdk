@@ -82,6 +82,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @since 1.0
  */
 @jdk.internal.ValueBased
+// See doc/value-class-preview.md for an overview of value class generation
 public final /*value*/ class Float extends Number
         implements Comparable<Float>, Constable, ConstantDesc {
     /**

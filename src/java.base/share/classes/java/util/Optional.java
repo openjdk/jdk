@@ -71,6 +71,7 @@ import java.util.stream.Stream;
  */
 @jdk.internal.ValueBased
 @TrustFinalFields
+// See doc/value-class-preview.md for an overview of value class generation
 public final /*value*/ class Optional<T> {
     /**
      * Common instance for {@code empty()}.

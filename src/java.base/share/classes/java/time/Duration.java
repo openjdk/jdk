@@ -138,6 +138,7 @@ import java.util.regex.Pattern;
  * @since 1.8
  */
 @jdk.internal.ValueBased
+// See doc/value-class-preview.md for an overview of value class generation
 public final /*value*/ class Duration
         implements TemporalAmount, Comparable<Duration>, Serializable {
 

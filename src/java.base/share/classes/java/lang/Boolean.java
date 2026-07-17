@@ -63,6 +63,7 @@ import java.util.Optional;
  * @since   1.0
  */
 @jdk.internal.ValueBased
+// See doc/value-class-preview.md for an overview of value class generation
 public final /*value*/ class Boolean
         implements java.io.Serializable, Comparable<Boolean>, Constable
 {

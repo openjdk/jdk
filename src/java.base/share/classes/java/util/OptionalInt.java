@@ -64,6 +64,7 @@ import java.util.stream.IntStream;
  * @since 1.8
  */
 @jdk.internal.ValueBased
+// See doc/value-class-preview.md for an overview of value class generation
 public final /*value*/ class OptionalInt {
     /**
      * Common instance for {@code empty()}.

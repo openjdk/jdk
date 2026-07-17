@@ -25,6 +25,7 @@
 
 ################################################################################
 # Generate the value class replacements for selected java.base source files
+# See doc/value-class-preview.md for an overview of value class generation
 
 JAVA_BASE_VALUE_CLASS_REPLACEMENTS := \
     java/lang/Byte.java \

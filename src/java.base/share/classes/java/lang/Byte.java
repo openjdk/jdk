@@ -70,6 +70,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * @since   1.1
  */
 @jdk.internal.ValueBased
+// See doc/value-class-preview.md for an overview of value class generation
 public final /*value*/ class Byte extends Number
         implements Comparable<Byte>, Constable {
 
