@@ -25,10 +25,11 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 
-#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahStripedCounter.hpp"
 #include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/mutex.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -43,9 +44,6 @@ public:
     return os::elapsed_frequency();
   }
 };
-
-using ShenandoahAllocRateSampleLock = ShenandoahLock;
-using ShenandoahAllocRateSampleLocker = ShenandoahLocker<ShenandoahAllocRateSampleLock>;
 
 // Snapshot values used by heuristic triggers to avoid lock contention
 struct ShenandoahAnticipatedConsumption {
@@ -112,7 +110,7 @@ class ShenandoahAllocRate {
   static constexpr size_t ALLOC_SAMPLE_MIN = M;
   static constexpr size_t ALLOC_SAMPLE_MAX = G;
 
-  ShenandoahAllocRateSampleLock _sample_lock;
+  PaddedMonitor _sample_lock;
   ShenandoahStripedCounter _unsampled;
   // Packed minimum_sample_size and log_per_stripe_threshold for one alloc-path load.
   Atomic<uint64_t> _sample_params;
@@ -142,7 +140,8 @@ public:
                                const uint baseline_window_size = ShenandoahAllocRateSampleWindow,
                                const uint recent_window_size = ShenandoahRecentAllocRateSampleWindow,
                                const uint momentary_window_size = ShenandoahMomentaryAllocRateSampleWindow)
-    : _last_sample_time(Clock::elapsed_counter())
+    : _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
+    , _last_sample_time(Clock::elapsed_counter())
     , _baseline(baseline_window_size)
     , _recent(recent_window_size)
     , _momentary(momentary_window_size)
@@ -174,13 +173,13 @@ public:
 
   // Returns the weighted average of the samples.
   double weighted_average() {
-    ShenandoahAllocRateSampleLocker locker(&_sample_lock);
+    MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
     return _baseline.weighted_average();
   }
 
   // Returns the upper bound of the confidence interval about the mean in terms of the given deviation.
   double upper_bound(const double standard_deviations) {
-    ShenandoahAllocRateSampleLocker locker(&_sample_lock);
+    MonitorLocker locker(&_sample_lock, Mutex::_no_safepoint_check_flag);
     return upper_bound_no_lock(standard_deviations);
   }
 
