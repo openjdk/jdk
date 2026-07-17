@@ -33,6 +33,7 @@
 class ShenandoahHeap;
 class ShenandoahBarrierSetAssembler;
 class ShenandoahCardTable;
+class ShenandoahMarkingContext;
 
 class ShenandoahBarrierSet: public BarrierSet {
 private:
@@ -83,8 +84,6 @@ public:
 
   template <class T>
   inline void arraycopy_barrier(T* src, T* dst, size_t count);
-  inline void clone_barrier(oop src);
-  void clone_barrier_runtime(oop src);
 
   // Support for optimizing compilers to call the barrier set on slow path allocations
   // that did not enter a TLAB. Used for e.g. ReduceInitialCardMarks to take any
@@ -95,16 +94,13 @@ public:
   void on_thread_attach(Thread* thread) override;
   void on_thread_detach(Thread* thread) override;
 
-  static inline oop resolve_forwarded_not_null(oop p);
-  static inline oop resolve_forwarded(oop p);
-
   template <DecoratorSet decorators, typename T>
   inline void satb_barrier(T* field);
   inline void satb_enqueue(oop value);
 
   inline void keep_alive_if_weak(DecoratorSet decorators, oop value);
 
-  inline void enqueue(oop obj);
+  inline void enqueue(oop obj, bool filter = true);
 
   inline oop load_reference_barrier(oop obj);
 
@@ -124,25 +120,26 @@ public:
   inline oop oop_xchg(DecoratorSet decorators, T* addr, oop new_value);
 
   template <DecoratorSet decorators, typename T>
-  void write_ref_field_post(T* field);
+  void write_ref_field_post(T* field, oop new_value);
 
   void write_ref_array(HeapWord* start, size_t count);
 
 private:
   template <bool IS_GENERATIONAL, class T>
   void arraycopy_marking(T* dst, size_t count);
+
+  template <bool IS_GENERATIONAL, class T>
+  bool is_above_tams(const ShenandoahMarkingContext* ctx, T* dst) const;
+
   template <class T>
   inline void arraycopy_evacuation(T* src, size_t count);
   template <class T>
   inline void arraycopy_update(T* src, size_t count);
 
-  inline void clone_evacuation(oop src);
-  inline void clone_update(oop src);
+  template <bool EVAC>
+  inline void clone_work(oop src);
 
-  template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>
-  inline void arraycopy_work(T* src, size_t count);
-
-  inline bool need_bulk_update(HeapWord* dst);
+  inline bool need_bulk_update(HeapWord* dst) const;
 public:
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = ShenandoahBarrierSet>

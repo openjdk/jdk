@@ -173,7 +173,6 @@ public:
 };
 
 class os: AllStatic {
-  friend class JVMCIVMStructs;
   friend class MallocTracker;
 
 #ifdef ASSERT
@@ -258,12 +257,18 @@ class os: AllStatic {
   static void initialize_initial_active_processor_count();
 
   LINUX_ONLY(static void pd_init_container_support();)
+  LINUX_ONLY(static void pd_check_temp_directory();)
 
  public:
   static void init(void);                      // Called before command line parsing
 
   static void init_container_support() {       // Called during command line parsing.
      LINUX_ONLY(pd_init_container_support();)
+  }
+
+  static void check_temp_directory() {
+    // Only applicable on linux.
+    LINUX_ONLY(pd_check_temp_directory();)
   }
 
   static void init_before_ergo(void);          // Called after command line parsing
@@ -441,9 +446,9 @@ class os: AllStatic {
  public:
   // get allowed minimum java stack size
   static jlong get_minimum_java_stack_size();
-  // Find committed memory region within specified range (start, start + size),
-  // return true if found any
-  static bool committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size);
+  // Find the first resident memory region within the specified range (start, start + size) beginning at the start address.
+  // Returns true if successful or false if none are found.
+  static bool first_resident_in_range(address start, size_t size, address& resident_start, size_t& resident_size);
 
   // OS interface to Virtual Memory
 
@@ -602,7 +607,7 @@ class os: AllStatic {
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
   static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
-                                       char* addr, bool executable);
+                                       char* addr, MemTag mem_tag, bool executable);
   static void   large_page_init();
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();

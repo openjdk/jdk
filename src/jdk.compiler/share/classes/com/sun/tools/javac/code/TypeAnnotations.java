@@ -705,7 +705,7 @@ public class TypeAnnotations {
 
                 @Override
                 public Type visitType(Type t, List<TypeCompound> s) {
-                    return t.annotatedType(s);
+                    return t.hasTag(TypeTag.VOID) ? t : t.annotatedType(s);
                 }
             };
 
@@ -1233,27 +1233,9 @@ public class TypeAnnotations {
             try {
                 currentLambda = tree;
 
-                int i = 0;
-                for (JCVariableDecl param : tree.params) {
-                    if (!param.mods.annotations.isEmpty()) {
-                        // Nothing to do for separateAnnotationsKinds if
-                        // there are no annotations of either kind.
-                        final TypeAnnotationPosition pos =  TypeAnnotationPosition
-                                .methodParameter(tree, i, param.vartype.pos);
-                        push(param);
-                        try {
-                            if (!param.declaredUsingVar()) {
-                                separateAnnotationsKinds(param, param.vartype, param.sym.type, param.sym, pos);
-                            }
-                        } finally {
-                            pop();
-                        }
-                    }
-                    ++i;
-                }
-
                 scan(tree.body);
-                scan(tree.params);
+
+                //parameters are handled separately as variables
             } finally {
                 currentLambda = prevLambda;
             }
@@ -1278,8 +1260,12 @@ public class TypeAnnotations {
                             TypeAnnotationPosition.exceptionParameter(currentLambda,
                                                                       tree.pos);
                         separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
+                    } else if (currentLambda != null && !tree.declaredUsingVar() && currentLambda.params.contains(tree)) {
+                        final TypeAnnotationPosition pos =  TypeAnnotationPosition
+                                .methodParameter(currentLambda, currentLambda.params.indexOf(tree), tree.vartype.pos);
+                        separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
                     } else {
-                        // (real) parameters are handled in visitMethodDef or visitLambda.
+                        // method parameters are handled in visitMethodDef.
                     }
                 }
             } else if (tree.sym.getKind() == ElementKind.FIELD) {

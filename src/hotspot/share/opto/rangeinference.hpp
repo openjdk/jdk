@@ -222,12 +222,16 @@ public:
     return TypeIntHelper::int_type_union(this, &o);
   }
 
+  bool contains(U u) const {
+    S s = S(u);
+    return s >= _lo && s <= _hi && u >= _ulo && u <= _uhi && _bits.is_satisfied_by(u);
+  }
+
   // These allow TypeIntMirror to mimick the behaviors of TypeInt* and TypeLong*, so they can be
   // passed into RangeInference methods. These are only used in testing, so they are implemented in
   // the test file.
   static TypeIntMirror make(const TypeIntMirror& t, int widen);
   const TypeIntMirror* operator->() const;
-  bool contains(U u) const;
   bool contains(const TypeIntMirror& o) const;
   bool operator==(const TypeIntMirror& o) const;
 
@@ -365,20 +369,23 @@ private:
     return CT<CTP>::make(res, MAX2(t1->_widen, t2->_widen));
   }
 
+  template <class CTP>
+  static TypeIntMirror<S<CTP>, U<CTP>> infer_and_impl(const TypeIntMirror<S<CTP>, U<CTP>>& st1, const TypeIntMirror<S<CTP>, U<CTP>>& st2) {
+    S<CTP> lo = std::numeric_limits<S<CTP>>::min();
+    S<CTP> hi = std::numeric_limits<S<CTP>>::max();
+    U<CTP> ulo = std::numeric_limits<U<CTP>>::min();
+    // The unsigned value of the result of 'and' is always not greater than both of its inputs
+    // since there is no position at which the bit is 1 in the result and 0 in either input
+    U<CTP> uhi = MIN2(st1._uhi, st2._uhi);
+    U<CTP> zeros = st1._bits._zeros | st2._bits._zeros;
+    U<CTP> ones = st1._bits._ones & st2._bits._ones;
+    return TypeIntMirror<S<CTP>, U<CTP>>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}});
+  }
+
 public:
   template <class CTP>
   static CTP infer_and(CTP t1, CTP t2) {
-    return infer_binary(t1, t2, [&](const TypeIntMirror<S<CTP>, U<CTP>>& st1, const TypeIntMirror<S<CTP>, U<CTP>>& st2) {
-      S<CTP> lo = std::numeric_limits<S<CTP>>::min();
-      S<CTP> hi = std::numeric_limits<S<CTP>>::max();
-      U<CTP> ulo = std::numeric_limits<U<CTP>>::min();
-      // The unsigned value of the result of 'and' is always not greater than both of its inputs
-      // since there is no position at which the bit is 1 in the result and 0 in either input
-      U<CTP> uhi = MIN2(st1._uhi, st2._uhi);
-      U<CTP> zeros = st1._bits._zeros | st2._bits._zeros;
-      U<CTP> ones = st1._bits._ones & st2._bits._ones;
-      return TypeIntMirror<S<CTP>, U<CTP>>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}});
-    });
+    return infer_binary(t1, t2, infer_and_impl<CTP>);
   }
 
   template <class CTP>
@@ -441,6 +448,104 @@ public:
 
     TypeIntPrototype<S<CTP>, U<CTP>> proto{{slo, shi}, {ulo, uhi}, known_bits};
     return CT<CTP>::make(proto, t1->_widen);
+  }
+
+  // Bit compression selects the source bits corresponding to true mask bits, packs them and places
+  // them contiguously at destination bit positions starting from least significant bit, remaining
+  // higher order bits are set to zero.
+  template <class CTP>
+  static CTP infer_compress_bits(CTP t1, CTP t2) {
+    return infer_binary(t1, t2, [](const TypeIntMirror<S<CTP>, U<CTP>>& st1, const TypeIntMirror<S<CTP>, U<CTP>>& st2) {
+      S<CTP> lo = std::numeric_limits<S<CTP>>::min();
+      const S<CTP> hi = std::numeric_limits<S<CTP>>::max();
+      const U<CTP> ulo = U<CTP>(0);
+      // Integer.compress(v, mask) == Integer.compress(v & mask, mask)
+      // Integer.compress(v, mask) u<= v
+      // So, Integer.compress(v, mask) u<= (v & mask)
+      const U<CTP> uhi = infer_and_impl<CTP>(st1, st2)._uhi;
+      // If the mask has at least 1 unset bit, then the result must have its highest bit unset, and
+      // since the only value with no unset bit is the maximum unsigned value, if st2 does not
+      // contain that value, the result must be non-negative
+      if (!st2.contains(std::numeric_limits<U<CTP>>::max())) {
+        lo = S<CTP>(0);
+      }
+
+      U<CTP> zeros = U<CTP>(0);
+      U<CTP> ones = U<CTP>(0);
+      // Firstly, try to collect known bits by traversing from the lowest to the highest bits, we
+      // can collect bits up to the first position at which the corresponding bit in the second
+      // operand is unknown.
+      // For example, consider Integer.compress(v, mask), with:
+      //   v    = 0bxyztuv
+      //   mask = 0b*1*110
+      // we can walk the lowest 3 bits of the operands, and determine that the result must be
+      //          0b****tu
+      {
+        // The bit index in result that will be taken from the current bit in the first operand,
+        // can only be known if we have not encountered any unknown bit in the second operand
+        int res_bit_idx = 0;
+        for (int op_bit_idx = 0; op_bit_idx < HotSpotNumerics::type_width<U<CTP>>(); op_bit_idx++) {
+          // If the bit is 0 in the second operand, the corresponding bit value in the first
+          // operand is irrelevant
+          U<CTP> op_bit_mask = U<CTP>(1) << op_bit_idx;
+          if ((st2._bits._zeros & op_bit_mask) != U<CTP>(0)) {
+            continue;
+          }
+
+          // No further analysis is possible
+          if ((st2._bits._ones & op_bit_mask) == U<CTP>(0)) {
+            break;
+          }
+
+          // The bit of the second operand at op_bit_idx must be 1
+          U<CTP> res_bit_mask = U<CTP>(1) << res_bit_idx;
+          if ((st1._bits._zeros & op_bit_mask) != U<CTP>(0)) {
+            zeros |= res_bit_mask;
+          } else if ((st1._bits._ones & op_bit_mask) != U<CTP>(0)) {
+            ones |= res_bit_mask;
+          }
+          res_bit_idx++;
+        }
+      }
+
+      // Secondly, try to infer the number of leading zeros by traversing from the highest to the
+      // lowest bits. Integer.compress(v, mask) == Integer.compress(v & mask, mask), so the number
+      // of leading zeros in the result is not less than the number of leading zeros in (v & mask).
+      // Furthermore, in the remaining bits, for each bit in the second operand that must be 0, an
+      // addition leading zero in result is guaranteed.
+      // For example, consider Integer.compress(v, mask), with:
+      //          v = 0b*01***
+      //       mask = 0b0x1*0*
+      //   v & mask = 0b001*0*
+      // So the result must have at least 2 leading zeros. Furthermore, we can see that it is
+      // irrelevant whether the bit x in mask is 0 or 1, because the bit in result corresponding to
+      // x must be 0, and the result must have no higher set bit in either case. As a result, we
+      // can assume mask = 0b001*0*. And since mask has at least 3 unset bits, the result must have
+      // at least 3 leading zeros.
+      {
+        // The bit index in result that is determined to be 0
+        int res_bit_idx = HotSpotNumerics::type_width<U<CTP>>() - 1;
+        // Whether we have encountered a bit that is not known 0 in either the first or the second
+        // operand
+        bool leading_zeros = true;
+        for (int op_bit_idx = HotSpotNumerics::type_width<U<CTP>>() - 1; op_bit_idx >= 0; op_bit_idx--) {
+          U<CTP> op_bit_mask = U<CTP>(1) << op_bit_idx;
+          if ((st2._bits._zeros & op_bit_mask) != U<CTP>(0)) {
+            zeros |= (U<CTP>(1) << res_bit_idx);
+            res_bit_idx--;
+          } else if (leading_zeros) {
+            if ((st1._bits._zeros & op_bit_mask) != U<CTP>(0)) {
+              zeros |= (U<CTP>(1) << res_bit_idx);
+              res_bit_idx--;
+            } else {
+              leading_zeros = false;
+            }
+          }
+        }
+      }
+
+      return TypeIntMirror<S<CTP>, U<CTP>>::make(TypeIntPrototype<S<CTP>, U<CTP>>{{lo, hi}, {ulo, uhi}, {zeros, ones}});
+    });
   }
 };
 

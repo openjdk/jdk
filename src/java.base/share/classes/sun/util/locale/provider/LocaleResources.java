@@ -131,11 +131,12 @@ public class LocaleResources {
 
     // Input Skeleton map for "preferred" and "allowed"
     // Map<"preferred"/"allowed", Map<"region", "skeleton">>
-    private static Map<String, Map<String, String>> inputSkeletons;
+    private static final LazyConstant<Map<String, Map<String, String>>> INPUT_SKELETONS =
+        LazyConstant.of(LocaleResources::initSkeletons);
 
     // Skeletons for "j" and "C" input skeleton symbols for this locale
-    private String jPattern;
-    private String CPattern;
+    private final LazyConstant<String> jPattern = LazyConstant.of(() -> resolveInputSkeleton("preferred"));
+    private final LazyConstant<String> CPattern = LazyConstant.of(this::initCPattern);
 
     LocaleResources(ResourceBundleBasedAdapter adapter, Locale locale) {
         this.locale = locale;
@@ -607,8 +608,6 @@ public class LocaleResources {
     }
 
     private String getLocalizedPatternImpl(String requestedTemplate, String calType) {
-        initSkeletonIfNeeded();
-
         // input skeleton substitution
         var skeleton = substituteInputSkeletons(requestedTemplate);
 
@@ -657,12 +656,14 @@ public class LocaleResources {
             .orElse(null);
     }
 
-    private void initSkeletonIfNeeded() {
+    private static Map<String, Map<String, String>> initSkeletons() {
         // "preferred"/"allowed" input skeleton maps
-        if (inputSkeletons == null) {
-            inputSkeletons = new HashMap<>();
-            Pattern p = Pattern.compile("([^:]+):([^;]+);");
-            ResourceBundle r = localeData.getDateFormatData(Locale.ROOT);
+        var inputSkeletons = new HashMap<String, Map<String, String>>();
+        Pattern p = Pattern.compile("([^:]+):([^;]+);");
+
+        // CLDR is guaranteed to implement ResourceBundleBasedAdapter
+        if (LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR) instanceof ResourceBundleBasedAdapter rbba) {
+            var r = rbba.getLocaleData().getDateFormatData(Locale.ROOT);
             Stream.of("preferred", "allowed").forEach(type -> {
                 var inputRegionsKey = SKELETON_INPUT_REGIONS_KEY + "." + type;
                 Map<String, String> typeMap = new HashMap<>();
@@ -676,19 +677,17 @@ public class LocaleResources {
                 inputSkeletons.put(type, typeMap);
             });
         }
+        return inputSkeletons;
+    }
 
-        // j/C patterns for this locale
-        if (jPattern == null) {
-            jPattern = resolveInputSkeleton("preferred");
-            CPattern = resolveInputSkeleton("allowed");
-            // hack: "allowed" contains reversed order for hour/period, e.g, "hB" which should be "Bh" as a skeleton
-            if (CPattern.length() == 2) {
-                var ba = new byte[2];
-                ba[0] = (byte)CPattern.charAt(1);
-                ba[1] = (byte)CPattern.charAt(0);
-                CPattern = new String(ba);
-            }
+    private String initCPattern() {
+        // C patterns for this locale
+        var cp = resolveInputSkeleton("allowed");
+        // hack: "allowed" contains reversed order for hour/period, e.g, "hB" which should be "Bh" as a skeleton
+        if (cp.length() == 2) {
+            cp = "" + cp.charAt(1) + cp.charAt(0);
         }
+        return cp;
     }
 
     /**
@@ -698,11 +697,22 @@ public class LocaleResources {
      * @return resolved skeletons for this locale, defaults to "h" if none found.
      */
     private String resolveInputSkeleton(String type) {
-        var regionToSkeletonMap = inputSkeletons.get(type);
-        return regionToSkeletonMap.getOrDefault(locale.getLanguage() + "-" + locale.getCountry(),
-            regionToSkeletonMap.getOrDefault(locale.getCountry(),
-                regionToSkeletonMap.getOrDefault(locale.getLanguage() + "-001",
-                    regionToSkeletonMap.getOrDefault("001", "h"))));
+        var regionToSkeletonMap = INPUT_SKELETONS.get().get(type);
+
+        if (regionToSkeletonMap != null) {
+            for (var region: new String[] {
+                locale.getLanguage() + "-" + locale.getCountry(),
+                locale.getCountry(),
+                locale.getLanguage() + "-001",
+                "001"}) {
+                var hour = regionToSkeletonMap.get(region);
+                if (hour != null) {
+                    return hour;
+                }
+            }
+        }
+
+        return "h";
     }
 
     /**
@@ -714,8 +724,8 @@ public class LocaleResources {
      */
     private String substituteInputSkeletons(String requestedTemplate) {
         var cCount = requestedTemplate.chars().filter(c -> c == 'C').count();
-        return requestedTemplate.replaceAll("j", jPattern)
-                .replaceFirst("C+", CPattern.replaceAll("([hkHK])", "$1".repeat((int)cCount)));
+        return requestedTemplate.replaceAll("j", jPattern.get())
+                .replaceFirst("C+", CPattern.get().replaceAll("([hkHK])", "$1".repeat((int)cCount)));
     }
 
     /**

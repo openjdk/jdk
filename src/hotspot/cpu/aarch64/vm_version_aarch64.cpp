@@ -302,9 +302,9 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  CHECK_CPU_FEATURE(UseCRC32, CRC32, supports_crc32(), MULTI_INST_WARNING_MSG);
-  CHECK_CPU_FEATURE(UseLSE, LSE, supports_lse(), MULTI_INST_WARNING_MSG);
-  CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseCRC32, CRC32, supports_crc32(), "CRC32" MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseLSE, LSE, supports_lse(), "LSE" MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), "AES" MULTI_INST_WARNING_MSG);
 
   if (_cpu == CPU_ARM &&
       model_is_in({ CPU_MODEL_ARM_NEOVERSE_V1, CPU_MODEL_ARM_NEOVERSE_V2,
@@ -452,6 +452,10 @@ void VM_Version::initialize() {
       warning("ChaCha20 intrinsic requires ASIMD instructions");
     }
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+
+  if (FLAG_IS_DEFAULT(UseIntPolyIntrinsics)) {
+     UseIntPolyIntrinsics = true;
   }
 
   if (supports_feature(CPU_ASIMD)) {
@@ -655,6 +659,10 @@ void VM_Version::initialize() {
 
   if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
     FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseIntPoly25519Intrinsics)) {
+    FLAG_SET_DEFAULT(UseIntPoly25519Intrinsics, true);
   }
 
   if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {

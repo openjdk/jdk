@@ -57,6 +57,7 @@ class CallStaticJavaNode;
 class CloneMap;
 class CompilationFailureInfo;
 class ConnectionGraph;
+class DeadPathNode;
 class IdealGraphPrinter;
 class InlineTree;
 class Matcher;
@@ -106,7 +107,6 @@ enum LoopOptsMode {
   LoopOptsDefault,
   LoopOptsNone,
   LoopOptsMaxUnroll,
-  LoopOptsShenandoahExpand,
   LoopOptsSkipSplitIf,
   LoopOptsVerify,
   PostLoopOptsExpandReachabilityFences
@@ -428,7 +428,7 @@ public:
 private:
   RootNode*             _root;                  // Unique root of compilation, or null after bail-out.
   Node*                 _top;                   // Unique top node.  (Reset by various phases.)
-
+  DeadPathNode*         _dead_path;             // Unique DeadPath node
   Node*                 _immutable_memory;      // Initial memory state
 
   Node*                 _recent_alloc_obj;
@@ -600,11 +600,11 @@ public:
   int               fixed_slots() const         { assert(_fixed_slots >= 0, "");         return _fixed_slots; }
   void          set_fixed_slots(int n)          { _fixed_slots = n; }
   void          set_inlining_progress(bool z)   { _inlining_progress = z; }
-  int               inlining_progress() const   { return _inlining_progress; }
+  bool              inlining_progress() const   { return _inlining_progress; }
   void          set_inlining_incrementally(bool z) { _inlining_incrementally = z; }
-  int               inlining_incrementally() const { return _inlining_incrementally; }
+  bool              inlining_incrementally() const { return _inlining_incrementally; }
   void          set_do_cleanup(bool z)          { _do_cleanup = z; }
-  int               do_cleanup() const          { return _do_cleanup; }
+  bool              do_cleanup() const          { return _do_cleanup; }
   bool              major_progress() const      { return _major_progress; }
   void          set_major_progress()            { _major_progress = true; }
   void          restore_major_progress(bool progress) { _major_progress = _major_progress || progress; }
@@ -898,6 +898,12 @@ public:
   Arena*       old_arena()                 { return (&_node_arena_one == _node_arena) ? &_node_arena_two : &_node_arena_one; }
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
+  DeadPathNode* dead_path() const          { return _dead_path; }
+
+  void set_dead_path(DeadPathNode* dead_path) {
+    assert(_dead_path == nullptr, "can only set once");
+    _dead_path = dead_path;
+  }
   StartNode*   start() const;              // (Derived from root.)
   void         verify_start(StartNode* s) const NOT_DEBUG_RETURN;
   Node*        immutable_memory();
@@ -1258,6 +1264,7 @@ public:
   void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes);
   void final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
   void handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned);
+  void handle_mulhi_mul_op(Node* n, bool is_unsigned);
 
   // Logic cone optimization.
   void optimize_logic_cones(PhaseIterGVN &igvn);

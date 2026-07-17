@@ -200,8 +200,8 @@ public class Raster {
      * @throws IllegalArgumentException if {@code bands} is less than 1
      * @throws IllegalArgumentException if {@code w} and {@code h} are not
      *         both > 0
-     * @throws IllegalArgumentException if the product of {@code w}
-     *         and {@code h} is greater than {@code Integer.MAX_VALUE}
+     * @throws IllegalArgumentException if the product of {@code w},
+     *         {@code h} and {@code bands} is greater than {@code Integer.MAX_VALUE}
      * @throws RasterFormatException if computing either
      *         {@code location.x + w} or
      *         {@code location.y + h} results in integer overflow
@@ -217,6 +217,14 @@ public class Raster {
         if (lsz > Integer.MAX_VALUE) {
             throw new IllegalArgumentException("Dimensions (width="+w+
                                                " height="+h+") are too large");
+        }
+        if (bands < 1) {
+            throw new IllegalArgumentException("Number of bands ("+
+                                               bands+") must be greater than 0");
+        }
+        long slsz = (long)w * bands;
+        if (slsz > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("width * bands is too large");
         }
         int[] bandOffsets = new int[bands];
         for (int i = 0; i < bands; i++) {
@@ -300,6 +308,13 @@ public class Raster {
         if (bandOffsets == null) {
             throw new NullPointerException("bandOffsets is null");
         }
+        for (int i = 0; i < bandOffsets.length; i++) {
+            int off = bandOffsets[i];
+            if ((off > pixelStride) || (off > scanlineStride)) {
+                throw new IllegalArgumentException("Band offset " + off + " is too large for stride");
+            }
+        }
+
         lsz = (long)w * pixelStride;
         if (lsz > scanlineStride) {
             throw new IllegalArgumentException("w * pixelStride is too large");
@@ -795,6 +810,21 @@ public class Raster {
         if (dataBuffer == null) {
             throw new NullPointerException("DataBuffer cannot be null");
         }
+        if (pixelStride < 0) {
+            throw new IllegalArgumentException("pixelStride is < 0");
+        }
+        if (scanlineStride < 0) {
+            throw new IllegalArgumentException("scanlineStride is < 0");
+        }
+        if (bandOffsets == null) {
+            throw new NullPointerException("bandOffsets is null");
+        }
+        for (int i = 0; i < bandOffsets.length; i++) {
+            int off = bandOffsets[i];
+            if ((off > pixelStride) || (off > scanlineStride)) {
+                throw new IllegalArgumentException("Band offset " + off + " is too large for stride");
+            }
+        }
 
         if (location == null) {
             location = new Point(0, 0);
@@ -904,6 +934,14 @@ public class Raster {
         if (bandOffsets.length != bands) {
             throw new IllegalArgumentException(
                                    "bankIndices.length != bandOffsets.length");
+        }
+
+        int numBanks = dataBuffer.getNumBanks();
+        for (int i = 0; i < bands; i++) {
+            if (bankIndices[i] >= numBanks) {
+                throw new ArrayIndexOutOfBoundsException("Bank[" + i + "] == " + bankIndices[i] +
+                         " and there are only " + numBanks + " banks.");
+            }
         }
 
         if (location == null) {

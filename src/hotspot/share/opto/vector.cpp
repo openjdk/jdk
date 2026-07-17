@@ -29,6 +29,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/vector.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 static bool is_vector_mask(ciKlass* klass) {
@@ -365,7 +366,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   // If boxed mask value is present in a predicate register, it must be
   // spilled to a vector though a VectorStoreMaskOperation before actual StoreVector
   // operation to vector payload field.
-  if (is_mask && (value->bottom_type()->isa_vectmask() || bt != T_BOOLEAN)) {
+  if (is_mask && (value->bottom_type()->isa_pvectmask() || bt != T_BOOLEAN)) {
     value = gvn.transform(VectorStoreMaskNode::make(gvn, value, bt, num_elem));
     // Although type of mask depends on its definition, in terms of storage everything is stored in boolean array.
     bt = T_BOOLEAN;
@@ -455,11 +456,12 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
       gvn.record_for_igvn(local_mem);
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       C2OptAccess access(gvn, ctrl, local_mem, decorators, T_OBJECT, obj, addr);
+      vec_field_ld = bs->load_at(access, Type::get_const_basic_type(T_OBJECT));
 
       // For proper aliasing, attach concrete payload type.
       ciKlass* payload_klass = ciTypeArrayKlass::make(bt);
       const Type* payload_type = TypeAryPtr::make_from_klass(payload_klass)->cast_to_ptr_type(TypePtr::NotNull);
-      vec_field_ld = bs->load_at(access, payload_type);
+      vec_field_ld = gvn.transform(new CheckCastPPNode(ctrl, vec_field_ld, payload_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
     }
 
     Node* adr = kit.array_element_address(vec_field_ld, gvn.intcon(0), bt);
