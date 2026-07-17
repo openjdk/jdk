@@ -103,8 +103,7 @@ public @interface IR {
      * with the type of the VM flag. A number based flag value can be proceeded with an additional comparator
      * ({@code =, !=, <, <=, =>, >}) where the equality operator is optional (default if no comparator is specified).
      * <p>
-     * For multiple preconditions, use {@link #applyIfAnd()} or
-     * {@link #applyIfOr()} depending on the use case.
+     * For multiple preconditions, use {@link #applyIfAnd()} or {@link #applyIfOr()} depending on the use case.
      */
     String[] applyIf() default {};
 
