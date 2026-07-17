@@ -42,7 +42,7 @@ inline void G1CollectorState::set_in_full_gc() {
 
 inline void G1CollectorState::set_in_concurrent_start_gc() {
   _phase = Phase::YoungConcurrentStart;
-  _initiate_conc_mark_if_possible = false;
+  set_initiate_conc_mark_if_possible(false);
 }
 inline void G1CollectorState::set_in_prepare_mixed_gc() {
   _phase = Phase::YoungPrepareMixed;
@@ -77,19 +77,22 @@ inline bool G1CollectorState::initiate_conc_mark_if_possible() const {
 
 inline bool G1CollectorState::is_in_concurrent_cycle() const {
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  return cm->is_in_concurrent_cycle();
+  return cm->is_fully_initialized() && cm->is_in_concurrent_cycle();
 }
+
 inline bool G1CollectorState::is_in_marking() const {
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  return cm->is_in_marking();
+  return cm->is_fully_initialized() && cm->is_in_marking();
 }
+
 inline bool G1CollectorState::is_in_mark_or_rebuild() const {
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  return is_in_marking() || cm->is_in_rebuild_or_scrub();
+  return cm->is_fully_initialized() && cm->is_in_marking_or_rebuild();
 }
+
 inline bool G1CollectorState::is_in_reset_for_next_cycle() const {
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  return cm->is_in_reset_for_next_cycle();
+  return cm->is_fully_initialized() && cm->is_in_reset_for_next_cycle();
 }
 
 inline void G1CollectorState::assert_is_young_pause(Pause type) {

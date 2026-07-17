@@ -111,9 +111,6 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
     return this;
   }
-  if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
-    return TypeNode::Ideal(phase, can_reshape);
-  }
   return nullptr;
 }
 
@@ -468,6 +465,11 @@ const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
   if (in_type != nullptr && my_type != nullptr) {
     TypePtr::PTR in_ptr = in_type->ptr();
     if (in_ptr == TypePtr::Null) {
+      // A null input cast to a type that cannot be null (e.g. NotNull) describes
+      // an impossible value: the join is empty, so the result must be TOP.
+      if (my_type->join_ptr(TypePtr::Null) == TypePtr::TopPTR) {
+        return Type::TOP;
+      }
       result = in_type;
     } else if (in_ptr != TypePtr::Constant) {
       result =  my_type->cast_to_ptr_type(my_type->join_ptr(in_ptr));

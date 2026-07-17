@@ -2105,7 +2105,6 @@ class CountedLoopConverter {
     bool is_valid() const { return _is_valid; }
     Node* incr() const { return _incr; }
 
-    // Optional truncation for: CHAR: (i+1)&0x7fff, BYTE: ((i+1)<<8)>>8, or SHORT: ((i+1)<<16)>>16
     Node* outer_trunc() const { return _outer_trunc; } // the outermost truncating node (either the & or the final >>)
     Node* inner_trunc() const { return _inner_trunc; } // the inner truncating node, if applicable (the << in a <</>> pair)
     const TypeInteger* trunc_type() const { return _trunc_type; }

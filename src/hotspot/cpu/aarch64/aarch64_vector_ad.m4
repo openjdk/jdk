@@ -241,9 +241,9 @@ source %{
           return false;
         }
         break;
-      // At the time of writing this, the Vector API has no half-float (FP16) species.
-      // Consequently, AddReductionVHF and MulReductionVHF are only produced by the
-      // auto-vectorizer, which requires strictly ordered semantics for FP reductions.
+      // AddReductionVHF and MulReductionVHF are currently only produced by the
+      // auto-vectorizer (the Vector API does not yet intrinsify Float16 reductions),
+      // which requires strictly ordered semantics for FP reductions.
       //
       // There is no direct Neon instruction that performs strictly ordered floating
       // point add reduction. Hence, on Neon only machines, the add reduction operation
@@ -307,6 +307,13 @@ source %{
           return false; // NEON only, since SLI/USHR are not available in SVE
         }
         break;
+      case Op_VectorBitwiseBlend:
+        // Use NEON BSL when UseSVE < 2; SVE1 has no BSL so larger vectors are
+        // not supported on UseSVE == 1 machines.
+        if (UseSVE < 2 && length_in_bytes > 16) {
+          return false;
+        }
+        break;
       default:
         break;
     }
@@ -330,6 +337,7 @@ source %{
       case Op_MulReductionVL:
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
+      case Op_VectorBitwiseBlend:
         return false;
       case Op_SaturatingAddV:
       case Op_SaturatingSubV:
@@ -354,9 +362,9 @@ source %{
         opcode = Op_StoreVectorScatterMasked;
         break;
       // Currently, the masked versions of the following 8 Float16 operations are disabled.
-      // When the support for Float16 vector classes is added in VectorAPI and the masked
-      // Float16 IR can be generated, these masked operations will be enabled and relevant
-      // backend support added.
+      // The Vector API does not yet emit predicated Float16 IR. When such masked IR can be
+      // generated, these masked operations will be enabled and the relevant backend support
+      // added.
       case Op_AddVHF:
       case Op_SubVHF:
       case Op_MulVHF:
@@ -728,7 +736,8 @@ BINARY_OP_NEON_SVE_PAIRWISE(vmulI, MulVI, mulv, sve_mul, S)
 // vector mul - LONG
 
 instruct vmulL_neon(vReg dst, vReg src1, vReg src2) %{
-  predicate(UseSVE == 0);
+  predicate(UseSVE == 0 && !n->as_MulVL()->has_int_inputs() &&
+            !n->as_MulVL()->has_uint_inputs());
   match(Set dst (MulVL src1 src2));
   format %{ "vmulL_neon $dst, $src1, $src2\t# 2L" %}
   ins_encode %{
@@ -746,8 +755,47 @@ instruct vmulL_neon(vReg dst, vReg src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
+dnl VMUL_L_NEON($1,     $2     )
+dnl VMUL_L_NEON(kind,   insn   )
+define(`VMUL_L_NEON', `dnl
+// Specialization of vmulL_$1_neon when both inputs are the same IR node
+// (e.g. v * v). Avoids one redundant xtn and saves one temporary register.
+instruct vmulL_$1_neon_same(vReg dst, vReg src, vReg tmp) %{
+  predicate(UseSVE == 0 && n->as_MulVL()->has_$1_inputs() &&
+            n->in(1) == n->in(2));
+  match(Set dst (MulVL src src));
+  effect(TEMP tmp);
+  format %{ "vmulL_$1_neon_same $dst, $src, $src\t# 2L. KILL $tmp" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    assert(length_in_bytes == 16, "must be");
+    __ xtn($tmp$$FloatRegister, __ T2S, $src$$FloatRegister, __ T2D);
+    __ $2($dst$$FloatRegister, __ T2S, $tmp$$FloatRegister, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmulL_$1_neon(vReg dst, vReg src1, vReg src2, vReg tmp1, vReg tmp2) %{
+  predicate(UseSVE == 0 && n->as_MulVL()->has_$1_inputs() &&
+            n->in(1) != n->in(2));
+  match(Set dst (MulVL src1 src2));
+  effect(TEMP tmp1, TEMP tmp2);
+  format %{ "vmulL_$1_neon $dst, $src1, $src2\t# 2L. KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    assert(length_in_bytes == 16, "must be");
+    __ xtn($tmp1$$FloatRegister, __ T2S, $src1$$FloatRegister, __ T2D);
+    __ xtn($tmp2$$FloatRegister, __ T2S, $src2$$FloatRegister, __ T2D);
+    __ $2($dst$$FloatRegister, __ T2S, $tmp1$$FloatRegister, $tmp2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+')dnl
+VMUL_L_NEON(int,  smullv)
+VMUL_L_NEON(uint, umullv)
 instruct vmulL_sve(vReg dst_src1, vReg src2) %{
-  predicate(UseSVE > 0);
+  predicate(UseSVE == 1 || (UseSVE == 2 && !n->as_MulVL()->has_int_inputs() &&
+            !n->as_MulVL()->has_uint_inputs()));
   match(Set dst_src1 (MulVL dst_src1 src2));
   format %{ "vmulL_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
@@ -756,6 +804,21 @@ instruct vmulL_sve(vReg dst_src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
+dnl VMUL_L_SVE2($1,     $2        )
+dnl VMUL_L_SVE2(kind,   sve2_insn )
+define(`VMUL_L_SVE2', `dnl
+instruct vmulL_$1_sve2(vReg dst, vReg src1, vReg src2) %{
+  predicate(UseSVE == 2 && n->as_MulVL()->has_$1_inputs());
+  match(Set dst (MulVL src1 src2));
+  format %{ "vmulL_$1_sve2 $dst, $src1, $src2" %}
+  ins_encode %{
+    __ $2($dst$$FloatRegister, __ D, $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+')dnl
+VMUL_L_SVE2(int,  sve_smullb)
+VMUL_L_SVE2(uint, sve_umullb)
 // vector mul - floating-point
 BINARY_OP(vmulHF, MulVHF, fmul, sve_fmul, H)
 BINARY_OP(vmulF,  MulVF,  fmul, sve_fmul, S)
@@ -4750,6 +4813,31 @@ instruct vblend_sve(vReg dst, vReg src1, vReg src2, pReg pg) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_sel($dst$$FloatRegister, __ elemType_to_regVariant(bt),
                $pg$$PRegister, $src2$$FloatRegister, $src1$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ------------------------------ Vector bitwise blend -------------------------
+
+instruct vbitwise_blend_neon_sve1(vReg src1, vReg src2, vReg dst_src3) %{
+  predicate(UseSVE < 2 &&
+            VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src3 (VectorBitwiseBlend (Binary src1 src2) dst_src3));
+  format %{ "vbitwise_blend_neon_sve1 $src1, $src2, $dst_src3" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    Assembler::SIMD_Arrangement T = length_in_bytes == 16 ? __ T16B : __ T8B;
+    __ bsl($dst_src3$$FloatRegister, T, $src2$$FloatRegister, $src1$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vbitwise_blend_sve2(vReg src1, vReg dst_src2, vReg src3) %{
+  predicate(UseSVE == 2);
+  match(Set dst_src2 (VectorBitwiseBlend (Binary src1 dst_src2) src3));
+  format %{ "vbitwise_blend_sve2 $src1, $dst_src2, $src3" %}
+  ins_encode %{
+    __ sve_bsl($dst_src2$$FloatRegister, $src1$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
