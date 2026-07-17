@@ -3984,7 +3984,6 @@ Node* GraphKit::null_free_array_test(Node* array, bool null_free) {
 Node* GraphKit::null_free_atomic_array_test(Node* array, ciInlineKlass* vk) {
   assert(vk->has_null_free_atomic_layout() || vk->has_null_free_non_atomic_layout(), "Can't be null-free and flat");
 
-  // TODO 8350865 Add a stress flag to always access atomic if layout exists?
   if (!vk->has_null_free_non_atomic_layout()) {
     return intcon(1); // Always atomic
   } else if (!vk->has_null_free_atomic_layout()) {
