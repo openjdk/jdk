@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 # @test
 # @bug 4990825
+# @requires vm.gc.Parallel
 # @run shell jstatGcNewOutput1.sh
 # @summary Test that output of 'jstat -gcnew 0' has expected line counts
 

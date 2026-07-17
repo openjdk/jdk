@@ -222,9 +222,9 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
     split_verifier.verify_class(THREAD);
     exception_name = split_verifier.result();
 
-    // If dumping {classic, final} static archive, don't bother to run the old verifier, as
+    // If dumping classic static archive, don't bother to run the old verifier, as
     // the class will be excluded from the archive anyway.
-    bool can_failover = !(CDSConfig::is_dumping_classic_static_archive() || CDSConfig::is_dumping_final_static_archive()) &&
+    bool can_failover = !(CDSConfig::is_dumping_classic_static_archive()) &&
       klass->major_version() < NOFAILOVER_MAJOR_VERSION;
 
     if (can_failover && !HAS_PENDING_EXCEPTION &&  // Split verifier doesn't set PENDING_EXCEPTION for failure
@@ -233,9 +233,9 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
       log_info(verification)("Fail over class verification to old verifier for: %s", klass->external_name());
       log_info(class, init)("Fail over class verification to old verifier for: %s", klass->external_name());
 #if INCLUDE_CDS
-      // Exclude any classes that are verified with the old verifier, as the old verifier
-      // doesn't call SystemDictionaryShared::add_verification_constraint()
-      if (CDSConfig::is_dumping_archive()) {
+      // Exclude any classes that are verified with the old verifier when the verification constraints
+      // cannot be preserved.
+      if (CDSConfig::is_dumping_archive() && !CDSConfig::is_preserving_verification_constraints()) {
         SystemDictionaryShared::log_exclusion(klass, "Verified with old verifier");
         SystemDictionaryShared::set_excluded(klass);
       }
@@ -244,6 +244,10 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
       exception_message = message_buffer;
       exception_name = inference_verify(
         klass, message_buffer, message_buffer_len, THREAD);
+
+      if (exception_name == nullptr && !HAS_PENDING_EXCEPTION) {
+        klass->set_fail_over_verified();
+      }
     }
     if (exception_name != nullptr) {
       exception_message = split_verifier.exception_message();

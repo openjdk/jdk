@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciRuntime.hpp"
-#endif
 
 class NativeNMethodCmpBarrier: public NativeInstruction {
 public:
@@ -167,16 +164,7 @@ static int entry_barrier_offset(nmethod* nm) {
 }
 
 static NativeNMethodCmpBarrier* native_nmethod_barrier(nmethod* nm) {
-  address barrier_address;
-#if INCLUDE_JVMCI
-  if (nm->is_compiled_by_jvmci()) {
-    barrier_address = nm->code_begin() + nm->jvmci_nmethod_data()->nmethod_entry_patch_offset();
-  } else
-#endif
-    {
-      barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
-    }
-
+  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
   NativeNMethodCmpBarrier* barrier = reinterpret_cast<NativeNMethodCmpBarrier*>(barrier_address);
   barrier->verify();
   return barrier;
@@ -199,11 +187,3 @@ int BarrierSetNMethod::guard_value(nmethod* nm) {
   NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
   return cmp->get_immediate();
 }
-
-
-#if INCLUDE_JVMCI
-bool BarrierSetNMethod::verify_barrier(nmethod* nm, err_msg& msg) {
-  NativeNMethodCmpBarrier* barrier = native_nmethod_barrier(nm);
-  return barrier->check_barrier(msg);
-}
-#endif

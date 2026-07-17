@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 /*
- * @test
- * @library /test/lib /
+ * @test id=debug
+ * @library /test/lib
  * @bug 8356000
  * @requires vm.flagless
  * @requires vm.bits == "64"
@@ -33,8 +33,8 @@
  */
 
 /*
- * @test
- * @library /test/lib /
+ * @test id=product
+ * @library /test/lib
  * @bug 8356000
  * @requires vm.flagless
  * @requires vm.bits == "64"
@@ -44,15 +44,10 @@
 
 package compiler.arguments;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.function.Function;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cli.CommandLineOptionTest;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class TestCompilerCounts {
 

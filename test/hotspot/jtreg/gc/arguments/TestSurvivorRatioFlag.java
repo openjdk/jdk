@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ public class TestSurvivorRatioFlag {
          * Depending on selected young GC we verify that:
          * - for DefNew and ParNew: eden_size / survivor_size is close to expectedRatio;
          * - for PSNew:             survivor_size equal to young_gen_size / expectedRatio;
-         * - for G1:                survivor_regions <= young_list_length / expectedRatio.
+         * - for G1:                survivor_regions <= num_young_regions / expectedRatio.
          */
         public static Void verifySurvivorRatio(int expectedRatio) {
             GCTypes.YoungGCType type = GCTypes.YoungGCType.getYoungGCType();
@@ -166,8 +166,8 @@ public class TestSurvivorRatioFlag {
             MemoryUsage survivorUsage = HeapRegionUsageTool.getSurvivorUsage();
 
             int regionSize = wb.g1RegionSize();
-            int youngListLength = (int) Math.max(NEW_SIZE / regionSize, 1);
-            int expectedSurvivorRegions = (int) Math.ceil(youngListLength / (double) expectedRatio);
+            int numYoungRegions = (int) Math.max(NEW_SIZE / regionSize, 1);
+            int expectedSurvivorRegions = (int) Math.ceil(numYoungRegions / (double) expectedRatio);
             int observedSurvivorRegions = (int) (survivorUsage.getCommitted() / regionSize);
 
             if (expectedSurvivorRegions < observedSurvivorRegions) {

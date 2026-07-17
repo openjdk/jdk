@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
- * Copyright (c) 2024 IBM Corporation. All rights reserved.
+ * Copyright (c) 2024, 2026, IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -525,12 +525,13 @@ class MacroAssembler: public Assembler {
     Register        last_java_sp,     // To set up last_Java_frame in stubs; use noreg otherwise.
     address         entry_point,      // The entry point.
     bool            allow_relocation, // Flag to request generation of relocatable code.
-    bool            check_exception); // Flag which indicates if exception should be checked.
+    bool            check_exception,  // Flag which indicates if exception should be checked.
+    Label           *last_java_pc);
 
   // Call into the VM.
   // Passes the thread pointer (in Z_ARG1) as a prepended argument.
   // Makes sure oop return values are visible to the GC.
-  void call_VM(Register oop_result, address entry_point, bool check_exceptions = true);
+  void call_VM(Register oop_result, address entry_point, bool check_exceptions = true, Label* last_java_pc = nullptr);
   void call_VM(Register oop_result, address entry_point, Register arg_1, bool check_exceptions = true);
   void call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2, bool check_exceptions = true);
   void call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2,
@@ -574,6 +575,8 @@ class MacroAssembler: public Assembler {
 
   // Get the pc where the last call will return to. Returns _last_calls_return_pc.
   inline address last_calls_return_pc();
+
+  void post_call_nop();
 
   static int ic_check_size();
   int ic_check(int end_alignment);
@@ -805,14 +808,14 @@ class MacroAssembler: public Assembler {
   // Support for last Java frame (but use call_VM instead where possible).
  private:
   void set_last_Java_frame(Register last_Java_sp, Register last_Java_pc, bool allow_relocation);
-  void reset_last_Java_frame(bool allow_relocation);
-  void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, bool allow_relocation);
+  void reset_last_Java_frame(bool check_last_java_sp, bool allow_relocation);
+  void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, bool allow_relocation, Label* last_java_pc = nullptr);
  public:
   inline void set_last_Java_frame(Register last_java_sp, Register last_Java_pc);
   inline void set_last_Java_frame_static(Register last_java_sp, Register last_Java_pc);
-  inline void reset_last_Java_frame(void);
-  inline void reset_last_Java_frame_static(void);
-  inline void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1);
+  inline void reset_last_Java_frame(bool check_last_java_sp = true);
+  inline void reset_last_Java_frame_static(bool check_last_java_sp = true);
+  inline void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, Label* jpc = nullptr);
   inline void set_top_ijava_frame_at_SP_as_last_Java_frame_static(Register sp, Register tmp1);
 
   void set_thread_state(JavaThreadState new_state);
@@ -979,6 +982,10 @@ class MacroAssembler: public Assembler {
   }
   void asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id);
 
+  // Load bad values into registers that are nonvolatile according to the ABI except Z_thread.
+  // This is done after vthread preemption and before vthread resume.
+  void clobber_nonvolatile_registers() NOT_DEBUG_RETURN;
+
   // Save and restore functions: Exclude Z_R0.
   void save_volatile_regs(   Register dst, int offset, bool include_fp, bool include_flags);
   void restore_volatile_regs(Register src, int offset, bool include_fp, bool include_flags);
@@ -1109,8 +1116,13 @@ class MacroAssembler: public Assembler {
   void pop_count_int_with_ext3(Register dst, Register src);
   void pop_count_long_with_ext3(Register dst, Register src);
 
+  void push_cont_fastpath();
+  void pop_cont_fastpath();
+
   void load_on_condition_imm_32(Register dst, int64_t i2, branch_condition cc);
   void load_on_condition_imm_64(Register dst, int64_t i2, branch_condition cc);
+
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register tmp1);
 };
 
 #ifdef ASSERT

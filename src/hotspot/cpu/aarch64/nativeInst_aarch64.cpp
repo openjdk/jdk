@@ -37,9 +37,6 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciEnv.hpp"
-#endif
 
 void NativeCall::verify() {
   assert(NativeCall::is_call_at((address)this), "unexpected code at call site");
@@ -126,7 +123,7 @@ void NativeCall::insert(address code_pos, address entry) { Unimplemented(); }
 void NativeMovConstReg::verify() {
   if (! (nativeInstruction_at(instruction_address())->is_movz() ||
         is_adrp_at(instruction_address()) ||
-        is_ldr_literal_at(instruction_address())) ) {
+        is_load_literal_at(instruction_address())) ) {
     fatal("should be MOVZ or ADRP or LDR (literal)");
   }
 }
@@ -273,17 +270,17 @@ bool NativeInstruction::is_safepoint_poll() {
   // a safepoint_poll is implemented in two steps as either
   //
   // adrp(reg, polling_page);
-  // ldr(zr, [reg, #offset]);
+  // ldrw(zr, [reg, #offset]);
   //
   // or
   //
   // mov(reg, polling_page);
-  // ldr(zr, [reg, #offset]);
+  // ldrw(zr, [reg, #offset]);
   //
   // or
   //
   // ldr(reg, [rthread, #offset]);
-  // ldr(zr, [reg, #offset]);
+  // ldrw(zr, [reg, #offset]);
   //
   // however, we cannot rely on the polling page address load always
   // directly preceding the read from the page. C1 does that but C2
@@ -304,9 +301,19 @@ bool NativeInstruction::is_adrp_at(address instr) {
   return (Instruction_aarch64::extract(insn, 31, 24) & 0b10011111) == 0b10010000;
 }
 
-bool NativeInstruction::is_ldr_literal_at(address instr) {
+bool NativeInstruction::is_load_literal_at(address instr) {
   unsigned insn = *(unsigned*)instr;
   return (Instruction_aarch64::extract(insn, 29, 24) & 0b011011) == 0b00011000;
+}
+
+bool NativeInstruction::is_ldr_gpr_literal_at(address instr) {
+  unsigned insn = *(unsigned*)instr;
+  return Instruction_aarch64::extract(insn, 31, 24) == 0b01011000;
+}
+
+bool NativeInstruction::is_ldrw_gpr_literal_at(address instr) {
+  unsigned insn = *(unsigned*)instr;
+  return Instruction_aarch64::extract(insn, 31, 24) == 0b00011000;
 }
 
 bool NativeInstruction::is_ldrw_to_zr(address instr) {
@@ -362,30 +369,6 @@ void NativeCallTrampolineStub::set_destination(address new_destination) {
   set_ptr_at(data_offset, new_destination);
   OrderAccess::release();
 }
-
-#if INCLUDE_JVMCI
-// Generate a trampoline for a branch to dest.  If there's no need for a
-// trampoline, simply patch the call directly to dest.
-void NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS) {
-  MacroAssembler a(&cbuf);
-
-  if (!a.far_branches()) {
-    // If not using far branches, patch this call directly to dest.
-    set_destination(dest);
-  } else if (!is_NativeCallTrampolineStub_at(instruction_address() + displacement())) {
-    // If we want far branches and there isn't a trampoline stub, emit one.
-    address stub = a.emit_trampoline_stub(instruction_address() - cbuf.insts()->start(), dest);
-    if (stub == nullptr) {
-      JVMCI_ERROR("could not emit trampoline stub - code cache is full");
-    }
-    // The relocation created while emitting the stub will ensure this
-    // call instruction is subsequently patched to call the stub.
-  } else {
-    // Not sure how this can be happen but be defensive
-    JVMCI_ERROR("single-use stub should not exist");
-  }
-}
-#endif
 
 void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));

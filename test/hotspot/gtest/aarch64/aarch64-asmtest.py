@@ -1121,7 +1121,7 @@ class SVEVectorOp(Instruction):
         self._bitwiseop = False
         if name[0] == 'f':
             self._width = RegVariant(2, 3)
-        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic", "eor3"]):
+        elif not self._isPredicated and (name in ["and", "bic", "bsl", "eor", "eor3", "orr"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
         elif name == "revb":
@@ -1150,7 +1150,7 @@ class SVEVectorOp(Instruction):
                         width +
                         [str(self.reg[i]) for i in range(1, self.numRegs)]))
     def astr(self):
-        firstArg = 0 if self._name == "eor3" else 1
+        firstArg = 0 if self._name in ["bsl", "eor3"] else 1
         formatStr = "%s%s" + ''.join([", %s" for i in range(firstArg, self.numRegs)])
         if self._dnm == 'dn':
             formatStr += ", %s"
@@ -2163,6 +2163,10 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         # SVE2 instructions
                         ["histcnt",  "__ sve_histcnt(z16, __ S, p0, z16, z16);",           "histcnt\tz16.s, p0/z, z16.s, z16.s"],
                         ["histcnt",  "__ sve_histcnt(z17, __ D, p0, z17, z17);",           "histcnt\tz17.d, p0/z, z17.d, z17.d"],
+                        ["umullb",   "__ sve_umullb(z16, __ H, z17, z18);",                "umullb\tz16.h, z17.b, z18.b"],
+                        ["umullt",   "__ sve_umullt(z19, __ S, z20, z21);",                "umullt\tz19.s, z20.h, z21.h"],
+                        ["smullb",   "__ sve_smullb(z22, __ D, z23, z24);",                "smullb\tz22.d, z23.s, z24.s"],
+                        ["smullt",   "__ sve_smullt(z25, __ H, z26, z27);",                "smullt\tz25.h, z26.b, z27.b"],
 ])
 
 print "\n// FloatImmediateOp"
@@ -2258,6 +2262,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        # SVE2 instructions
                        ["bext", "ZZZ"],
                        ["bdep", "ZZZ"],
+                       ["bsl", "ZZZ"],
                        ["eor3", "ZZZ"],
                        ["sqadd", "ZPZ", "m", "dn"],
                        ["sqsub", "ZPZ", "m", "dn"],
