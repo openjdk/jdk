@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,7 @@
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field) \
   volatile_nonstatic_field(JavaFrameAnchor,         _last_Java_fp,                  intptr_t*)               \
               static_field(VM_Version,              _features,                      VM_Version::VM_Features) \
-           nonstatic_field(VM_Version::VM_Features, _features_bitmap[0],            uint64_t)                \
-              static_field(VM_Version::VM_Features, _features_bitmap_size,          int)
+           nonstatic_field(VM_Version::VM_Features, _features_bitmap[0],            uint64_t)
 
 #define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type) \
   declare_toplevel_type(VM_Version::VM_Features)

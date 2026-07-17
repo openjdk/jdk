@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4911081 8130181
+ * @bug 4911081 8130181 8358549
  * @library /test/lib
  * @summary verify that Provider.Service.supportsParameter() works
  * @author Andreas Sterbenz
@@ -112,7 +112,9 @@ public class SupportsParameter {
             put("Signature.DSA0", "foo.DSA0");
 
             put("Signature.DSA", "foo.DSA");
-            put("Signature.DSA SupportedKeyClasses",
+            // Extra spaces between "Signature.DSA" and "SupportedKeyClasses"
+            // are used to verify that whitespace is trimmed.
+            put("Signature.DSA    SupportedKeyClasses",
                 "java.security.interfaces.DSAPublicKey" +
                 "|java.security.interfaces.DSAPrivateKey");
 

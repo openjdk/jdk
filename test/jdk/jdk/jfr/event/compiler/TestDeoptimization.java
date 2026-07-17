@@ -62,7 +62,7 @@ public class TestDeoptimization {
     private final static String TYPE_NAME = Dummy.class.getName().replace(".", "/");
     private final static String METHOD_NAME = "dummyMethod";
     private static final String METHOD_DESCRIPTOR = "(Z)V";
-    private static final String[] COMPILER =  { "c2",  "jvmci" };
+    private static final String COMPILER =  "c2";
 
     public static void main(String[] args) throws Throwable {
         new TestDeoptimization().doTest();
@@ -136,13 +136,12 @@ public class TestDeoptimization {
     private void verifyDeoptimizationEventFields(RecordedEvent event) {
         Events.assertEventThread(event);
         Events.assertField(event, "compileId").atLeast(0);
-        Events.assertField(event, "compiler").containsAny(COMPILER);
+        Events.assertField(event, "compiler").equal(COMPILER);
         Events.assertField(event, "lineNumber").equal(43);
         Events.assertField(event, "bci").atMost(1);
-        // Both graal and c2 traps at ifeq. c2 deopt reinterpret from unstable ifeq, while Graal deopt reinterpret from next instruction after last state change.
-        Events.assertField(event, "instruction").containsAny("ifeq", "iload_0");
+        Events.assertField(event, "instruction").equal("ifeq");
         Events.assertField(event, "action").notEmpty().equal("reinterpret");
-        Events.assertField(event, "reason").notEmpty().containsAny("unstable_if", "null_assert_or_unreached0");
+        Events.assertField(event, "reason").notEmpty().containsAny("unstable_if", "null_assert");
     }
 }
 

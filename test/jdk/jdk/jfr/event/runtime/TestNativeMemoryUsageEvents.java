@@ -62,7 +62,6 @@ public class TestNativeMemoryUsageEvents {
         "GC",
         "GCCardSet",
         "Compiler",
-        "JVMCI",
         "Internal",
         "Other",
         "Symbol",
