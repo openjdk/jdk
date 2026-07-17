@@ -69,16 +69,12 @@ public class TestOptimizeTrichotomy {
         // Balanced trichotomy:
         // we statistically ensure all paths of the signed trichotomy are taken,
         // so we don't get any unstable-if traps.
-        static IntPair balancedTrichotomySigned() {
+        static IntPair balancedTrichotomy() {
             int a = RANDOM.nextInt();
             int b = RANDOM.nextInt();
-            int lo = Math.min(a, b);
-            int hi = Math.max(a, b);
             return switch(RANDOM.nextInt(3)) {
                 case 0 -> new IntPair(a, a);
-                case 1 -> new IntPair(lo, hi);
-                case 2 -> new IntPair(hi, lo);
-                default -> throw new RuntimeException("impossible");
+                default -> new IntPair(a, b);
             };
         }
     }
@@ -191,7 +187,7 @@ public class TestOptimizeTrichotomy {
 
     @Run(test = {"testIR0"})
     static void runTestIR0() {
-        var p = IntPair.balancedTrichotomySigned();
+        var p = IntPair.balancedTrichotomy();
         boolean v0 = testIR0(p.x, p.y);
         boolean v1 = referenceIR0(p.x, p.y);
         if (v0 != v1) {
@@ -202,7 +198,7 @@ public class TestOptimizeTrichotomy {
     @Test
     @IR(counts = {IRNode.CMP_I, "= 1", IRNode.CMP_U, "= 0", IRNode.CMOVE_I, "= 0"}, phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.CMP_I, "= 1", IRNode.CMP_U, "= 0", IRNode.CMOVE_I, "= 1"})
-    // Should be able to optimize to "a <= b", already during parsing.
+    // Should be able to optimize to "a >= b", already during parsing.
     static boolean testIR1(int a, int b) {
         if (a > b || a == b) {
             return true;
@@ -220,9 +216,67 @@ public class TestOptimizeTrichotomy {
 
     @Run(test = {"testIR1"})
     static void runTestIR1() {
-        var p = IntPair.balancedTrichotomySigned();
+        var p = IntPair.balancedTrichotomy();
         boolean v0 = testIR1(p.x, p.y);
         boolean v1 = referenceIR1(p.x, p.y);
+        if (v0 != v1) {
+            throw new RuntimeException("wrong value: " + v0 + " vs " + v1);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1", IRNode.CMOVE_I, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1", IRNode.CMOVE_I, "= 1"})
+    // Should be able to optimize to "a <=u b", already during parsing.
+    static boolean testIR2(int a, int b) {
+        if ((Integer.compareUnsigned(a, b) < 0) || (Integer.compareUnsigned(a, b) == 0)) {
+            return true;
+        }
+        return false;
+    }
+
+    @DontCompile
+    static boolean referenceIR2(int a, int b) {
+        if ((Integer.compareUnsigned(a, b) < 0) || (Integer.compareUnsigned(a, b) == 0)) {
+            return true;
+        }
+        return false;
+    }
+
+    @Run(test = {"testIR2"})
+    static void runTestIR2() {
+        var p = IntPair.balancedTrichotomy();
+        boolean v0 = testIR2(p.x, p.y);
+        boolean v1 = referenceIR2(p.x, p.y);
+        if (v0 != v1) {
+            throw new RuntimeException("wrong value: " + v0 + " vs " + v1);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1", IRNode.CMOVE_I, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.CMP_I, "= 0", IRNode.CMP_U, "= 1", IRNode.CMOVE_I, "= 1"})
+    // Should be able to optimize to "a >=u b", already during parsing.
+    static boolean testIR3(int a, int b) {
+        if ((Integer.compareUnsigned(a, b) > 0) || (Integer.compareUnsigned(a, b) == 0)) {
+            return true;
+        }
+        return false;
+    }
+
+    @DontCompile
+    static boolean referenceIR3(int a, int b) {
+        if ((Integer.compareUnsigned(a, b) > 0) || (Integer.compareUnsigned(a, b) == 0)) {
+            return true;
+        }
+        return false;
+    }
+
+    @Run(test = {"testIR3"})
+    static void runTestIR3() {
+        var p = IntPair.balancedTrichotomy();
+        boolean v0 = testIR3(p.x, p.y);
+        boolean v1 = referenceIR3(p.x, p.y);
         if (v0 != v1) {
             throw new RuntimeException("wrong value: " + v0 + " vs " + v1);
         }
