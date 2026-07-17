@@ -1950,7 +1950,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return nullptr;
 }
 
-size_t os::vm_min_address() {
+uintptr_t os::vm_min_address() {
 #ifdef __APPLE__
   // On MacOS, the lowest 4G are denied to the application (see "PAGEZERO" resp.
   // -pagezero_size linker option).

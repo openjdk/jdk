@@ -1988,8 +1988,12 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
 }
 
 uintptr_t os::vm_min_address() {
-  // On 64-bit AIX, the lower 4GB are not available in user space
-  return 4 * G;
+  // On AIX, we need to make sure we don't block the sbrk. However, this is
+  // done at actual reservation time, where we honor a "no-mmap" area following
+  // the break. See MaxExpectedDataSegmentSize. So we can return a very low
+  // address here.
+  assert(is_aligned(os::vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
+  return os::vm_min_address_default;
 }
 
 uintptr_t os::vm_max_address() {

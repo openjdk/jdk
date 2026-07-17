@@ -2045,7 +2045,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
 
   char* const absolute_min = (char*) os::vm_min_address();
 #ifdef _LP64
-  // Note: for backward compatibility reasons, we limit ourselves to 48 bits even if more were possible.
+  // Note: for backward compatibility reasons, we limit ourselves to 48 bits even if the address space is larger
   char* const absolute_max = (char*) MIN2(os::vm_max_address() + 1, nth_bit<uintptr_t>(48));
 #else
   char* const absolute_max = (char*) (3 * G);
