@@ -30,6 +30,7 @@
 #include "code/dependencyContext.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
+#include "code/vtableStubs.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -37,6 +38,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
@@ -61,6 +63,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vmThread.hpp"
 #include "sanitizers/leak.hpp"
 #include "services/memoryService.hpp"
@@ -812,7 +815,8 @@ void CodeCache::update_cold_gc_count() {
   size_t used = max - free;
   double gc_interval = time - last_time;
 
-  _unloading_threshold_gc_requested = false;
+  AtomicAccess::store(&_unloading_threshold_gc_state, UnloadingRequestState::Idle);
+
   _last_unloading_time = time;
   _last_unloading_used = used;
 
@@ -887,7 +891,7 @@ void CodeCache::gc_on_allocation() {
   double free_ratio = double(free) / double(max);
   if (free_ratio <= StartAggressiveSweepingAt / 100.0)  {
     // In case the GC is concurrent, we make sure only one thread requests the GC.
-    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
+    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_state, UnloadingRequestState::Idle, UnloadingRequestState::Active) == UnloadingRequestState::Idle) {
       log_info(codecache)("Triggering aggressive GC due to having only %.3f%% free memory", free_ratio * 100.0);
       Universe::heap()->collect(GCCause::_codecache_GC_aggressive);
     }
@@ -913,7 +917,7 @@ void CodeCache::gc_on_allocation() {
   // it is eventually invoked to avoid trouble.
   if (allocated_since_last_ratio > threshold) {
     // In case the GC is concurrent, we make sure only one thread requests the GC.
-    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
+    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_state, UnloadingRequestState::Idle, UnloadingRequestState::Active) == UnloadingRequestState::Idle) {
       log_info(codecache)("Triggering threshold (%.3f%%) GC due to allocating %.3f%% since last unloading (%.3f%% used -> %.3f%% used)",
                           threshold * 100.0, allocated_since_last_ratio * 100.0, last_used_ratio * 100.0, used_ratio * 100.0);
       Universe::heap()->collect(GCCause::_codecache_GC_threshold);
@@ -933,7 +937,7 @@ uint64_t CodeCache::_cold_gc_count = INT_MAX;
 
 double CodeCache::_last_unloading_time = 0.0;
 size_t CodeCache::_last_unloading_used = 0;
-volatile bool CodeCache::_unloading_threshold_gc_requested = false;
+volatile CodeCache::UnloadingRequestState CodeCache::_unloading_threshold_gc_state = UnloadingRequestState::Idle;
 TruncatedSeq CodeCache::_unloading_gc_intervals(10 /* samples */);
 TruncatedSeq CodeCache::_unloading_allocation_rates(10 /* samples */);
 
@@ -966,6 +970,23 @@ void CodeCache::on_gc_marking_cycle_finish() {
   assert(is_gc_marking_cycle_active(), "Marking cycle started before last one finished");
   ++_gc_epoch;
   update_cold_gc_count();
+}
+
+void CodeCache::defer_unloading_gc_request() {
+  assert_at_safepoint();
+  assert(_unloading_threshold_gc_state == UnloadingRequestState::Active, "only defer active requests");
+  AtomicAccess::store(&_unloading_threshold_gc_state, UnloadingRequestState::Deferred);
+}
+
+void CodeCache::clear_deferred_unloading_gc_request() {
+  // Codecache marking may still be active after aborting gc marking, so we can not
+  // use is_marking_active() to check whether we are in the correct state to clear
+  // the deferred state.
+  // Requests are only deferred outside GC marking, and only cleared after
+  // at the end of whitebox, we can just clear it if it was Deferred.
+  AtomicAccess::cmpxchg(&_unloading_threshold_gc_state,
+                        UnloadingRequestState::Deferred,
+                        UnloadingRequestState::Idle);
 }
 
 void CodeCache::arm_all_nmethods() {
@@ -1161,8 +1182,8 @@ size_t CodeCache::max_distance_to_non_nmethod() {
     CodeHeap* blob = get_code_heap(CodeBlobType::NonNMethod);
     // the max distance is minimized by placing the NonNMethod segment
     // in between MethodProfiled and MethodNonProfiled segments
-    size_t dist1 = (size_t)blob->high() - (size_t)_low_bound;
-    size_t dist2 = (size_t)_high_bound - (size_t)blob->low();
+    size_t dist1 = (size_t)blob->high_boundary() - (size_t)_low_bound;
+    size_t dist2 = (size_t)_high_bound - (size_t)blob->low_boundary();
     return dist1 > dist2 ? dist1 : dist2;
   }
 }
@@ -1916,13 +1937,8 @@ void CodeCache::print_codelist(outputStream* st) {
     nmethod* nm = iter.method();
     ResourceMark rm;
     char* method_name = nm->method()->name_and_sig_as_C_string();
-    const char* jvmci_name = nullptr;
-#if INCLUDE_JVMCI
-    jvmci_name = nm->jvmci_name();
-#endif
-    st->print_cr("%d %d %d %s%s%s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
-                 nm->compile_id(), nm->comp_level(), nm->get_state(),
-                 method_name, jvmci_name ? " jvmci_name=" : "", jvmci_name ? jvmci_name : "",
+    st->print_cr("%d %d %d %s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
+                 nm->compile_id(), nm->comp_level(), nm->get_state(), method_name,
                  (intptr_t)nm->header_begin(), (intptr_t)nm->code_begin(), (intptr_t)nm->code_end());
   }
 }
@@ -1941,6 +1957,18 @@ void CodeCache::log_state(outputStream* st) {
 }
 
 #ifdef LINUX
+static bool is_stub_code_blob(CodeBlob* cb) {
+  if (!cb->is_buffer_blob()) {
+    return false;
+  }
+  for (StubCodeDesc* d = StubCodeDesc::first(); d != nullptr; d = StubCodeDesc::next(d)) {
+    if (cb->code_contains(d->begin())) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   char fname[JVM_MAXPATHLEN];
@@ -1963,22 +1991,33 @@ void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   AllCodeBlobsIterator iter(AllCodeBlobsIterator::not_unloading);
   while (iter.next()) {
     CodeBlob *cb = iter.method();
+    if (is_stub_code_blob(cb) || cb->is_vtable_blob()) {
+      // Individual stub routines and vtable stubs are dumped after the main loop.
+      continue;
+    }
     ResourceMark rm;
     const char* method_name = nullptr;
-    const char* jvmci_name = nullptr;
     if (cb->is_nmethod()) {
       nmethod* nm = cb->as_nmethod();
       method_name = nm->method()->external_name();
-#if INCLUDE_JVMCI
-      jvmci_name = nm->jvmci_name();
-#endif
     } else {
       method_name = cb->name();
     }
-    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s%s%s",
-                (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(),
-                method_name, jvmci_name ? " jvmci_name=" : "", jvmci_name ? jvmci_name : "");
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s",
+                (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(), method_name);
   }
+  for (StubCodeDesc* d = StubCodeDesc::first(); d != nullptr; d = StubCodeDesc::next(d)) {
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s %s",
+                (intptr_t)d->begin(), (intptr_t)d->size_in_bytes(),
+                d->group(), d->name());
+  }
+  VtableStubs::vtable_stub_do([&](VtableStub* s) {
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s [%d]",
+                (intptr_t)s->code_begin(),
+                (intptr_t)s->code_size(),
+                s->is_vtable_stub() ? "vtable stub" : "itable stub",
+                s->index());
+  });
 }
 #endif // LINUX
 

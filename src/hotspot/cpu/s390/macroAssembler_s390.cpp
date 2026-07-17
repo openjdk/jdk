@@ -32,6 +32,7 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -39,6 +40,7 @@
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/methodData.hpp"
 #include "prims/methodHandles.hpp"
 #include "registerSaver_s390.hpp"
 #include "runtime/icache.hpp"
@@ -1931,6 +1933,12 @@ unsigned long MacroAssembler::patched_branch(address dest_pos, unsigned long ins
 // Only called when binding labels (share/vm/asm/assembler.cpp)
 // Pass arguments as intended. Do not pre-calculate distance.
 void MacroAssembler::pd_patch_instruction(address branch, address target, const char* file, int line) {
+
+  if (is_load_const(branch)) {
+    patch_const(branch, (long)target);
+    return;
+  }
+
   unsigned long stub_inst;
   int           inst_len = get_instruction(branch, &stub_inst);
 
@@ -2248,7 +2256,8 @@ void MacroAssembler::call_VM_base(Register oop_result,
                                   Register last_java_sp,
                                   address  entry_point,
                                   bool     allow_relocation,
-                                  bool     check_exceptions) { // Defaults to true.
+                                  bool     check_exceptions, // Defaults to true.
+                                  Label    *last_java_pc) {
   // Allow_relocation indicates, if true, that the generated code shall
   // be fit for code relocation or referenced data relocation. In other
   // words: all addresses must be considered variable. PC-relative addressing
@@ -2262,7 +2271,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
     last_java_sp = Z_SP;  // Load Z_SP as SP.
   }
 
-  set_top_ijava_frame_at_SP_as_last_Java_frame(last_java_sp, Z_R1, allow_relocation);
+  set_top_ijava_frame_at_SP_as_last_Java_frame(last_java_sp, Z_R1, allow_relocation, last_java_pc);
 
   // ARG1 must hold thread address.
   z_lgr(Z_ARG1, Z_thread);
@@ -2308,14 +2317,14 @@ void MacroAssembler::call_VM_base(Register oop_result,
                                   address  entry_point,
                                   bool     check_exceptions) { // Defaults to true.
   bool allow_relocation = true;
-  call_VM_base(oop_result, last_java_sp, entry_point, allow_relocation, check_exceptions);
+  call_VM_base(oop_result, last_java_sp, entry_point, allow_relocation, check_exceptions, nullptr);
 }
 
 // VM calls without explicit last_java_sp.
 
-void MacroAssembler::call_VM(Register oop_result, address entry_point, bool check_exceptions) {
+void MacroAssembler::call_VM(Register oop_result, address entry_point, bool check_exceptions, Label* last_java_pc) {
   // Call takes possible detour via InterpreterMacroAssembler.
-  call_VM_base(oop_result, noreg, entry_point, true, check_exceptions);
+  call_VM_base(oop_result, noreg, entry_point, true, check_exceptions, last_java_pc);
 }
 
 void MacroAssembler::call_VM(Register oop_result, address entry_point, Register arg_1, bool check_exceptions) {
@@ -2347,7 +2356,7 @@ void MacroAssembler::call_VM(Register oop_result, address entry_point, Register 
 
 void MacroAssembler::call_VM_static(Register oop_result, address entry_point, bool check_exceptions) {
   // Call takes possible detour via InterpreterMacroAssembler.
-  call_VM_base(oop_result, noreg, entry_point, false, check_exceptions);
+  call_VM_base(oop_result, noreg, entry_point, false, check_exceptions, nullptr);
 }
 
 void MacroAssembler::call_VM_static(Register oop_result, address entry_point, Register arg_1, Register arg_2,
@@ -2365,7 +2374,7 @@ void MacroAssembler::call_VM_static(Register oop_result, address entry_point, Re
 
 void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address entry_point, bool check_exceptions) {
   // Call takes possible detour via InterpreterMacroAssembler.
-  call_VM_base(oop_result, last_java_sp, entry_point, true, check_exceptions);
+  call_VM_base(oop_result, last_java_sp, entry_point, true, check_exceptions, nullptr);
 }
 
 void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address entry_point, Register arg_1, bool check_exceptions) {
@@ -3809,19 +3818,21 @@ void MacroAssembler::set_last_Java_frame(Register last_Java_sp, Register last_Ja
   BLOCK_COMMENT("} set_last_Java_frame");
 }
 
-void MacroAssembler::reset_last_Java_frame(bool allow_relocation) {
+void MacroAssembler::reset_last_Java_frame(bool check_last_java_sp, bool allow_relocation) {
   BLOCK_COMMENT("reset_last_Java_frame {");
 
-  if (allow_relocation) {
-    asm_assert_mem8_isnot_zero(in_bytes(JavaThread::last_Java_sp_offset()),
-                               Z_thread,
-                               "SP was not set, still zero",
-                               0x202);
-  } else {
-    asm_assert_mem8_isnot_zero_static(in_bytes(JavaThread::last_Java_sp_offset()),
-                                      Z_thread,
-                                      "SP was not set, still zero",
-                                      0x202);
+  if (check_last_java_sp) {
+    if (allow_relocation) {
+      asm_assert_mem8_isnot_zero(in_bytes(JavaThread::last_Java_sp_offset()),
+                                 Z_thread,
+                                 "SP was not set, still zero",
+                                 0x202);
+    } else {
+      asm_assert_mem8_isnot_zero_static(in_bytes(JavaThread::last_Java_sp_offset()),
+                                        Z_thread,
+                                        "SP was not set, still zero",
+                                        0x202);
+    }
   }
 
   // _last_Java_sp = 0
@@ -3835,15 +3846,14 @@ void MacroAssembler::reset_last_Java_frame(bool allow_relocation) {
   return;
 }
 
-void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, bool allow_relocation) {
+void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, bool allow_relocation, Label* jpc) {
   assert_different_registers(sp, tmp1);
 
-  // We cannot trust that code generated by the C++ compiler saves R14
-  // to z_abi_160.return_pc, because sometimes it spills R14 using stmg at
-  // z_abi_160.gpr14 (e.g. InterpreterRuntime::_new()).
-  // Therefore we load the PC into tmp1 and let set_last_Java_frame() save
-  // it into the frame anchor.
-  get_PC(tmp1);
+  if (jpc == nullptr || jpc->is_bound()) {
+    load_const_optimized(tmp1, jpc == nullptr ? pc() : target(*jpc));
+  } else {
+    load_const(tmp1, *jpc);
+  }
   set_last_Java_frame(/*sp=*/sp, /*pc=*/tmp1, allow_relocation);
 }
 
@@ -5889,7 +5899,7 @@ bool is_excluded(Register excluded_register[], Register reg, int n) {
 }
 
 void MacroAssembler::clobber_volatile_registers(Register excluded_register[], int n) {
-  const int magic_number = 0x82;
+  const int magic_number = 0xbadbad;
 
   for (int i = 0; i < 6 /* R0 to R5 */; i++) {
     Register reg = as_Register(i);
@@ -5897,6 +5907,26 @@ void MacroAssembler::clobber_volatile_registers(Register excluded_register[], in
       load_const_optimized(reg, magic_number);
     }
   }
+}
+
+void MacroAssembler::clobber_nonvolatile_registers() {
+  BLOCK_COMMENT("clobber_nonvolatile_registers {");
+  static const Register regs[] = {
+    Z_R6,
+    Z_R7,
+    // don't zap Z_thread (Z_R8)
+    Z_R9,
+    Z_R10,
+    Z_R11,
+    Z_R12,
+    Z_R13
+  };
+  Register bad = regs[0];
+  load_const_optimized(bad, 0xbad0101babe11111);
+  for (uint32_t i = 1; i < (sizeof(regs) / sizeof(Register)); i++) {
+    z_lgr(regs[i], bad);
+  }
+  BLOCK_COMMENT("} clobber_nonvolatile_registers");
 }
 #endif // ASSERT
 
@@ -6148,7 +6178,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp1, obj);
     z_tm(Address(temp1, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-    z_brne(slow);
+    z_brnaz(slow);
   }
 
   // First we need to check if the lock-stack has room for pushing the object reference.
@@ -6741,6 +6771,39 @@ void MacroAssembler::pop_count_int_with_ext3(Register r_dst, Register r_src) {
   BLOCK_COMMENT("} pop_count_int_with_ext3");
 }
 
+void MacroAssembler::post_call_nop() {
+  // Make inline again when loom is always enabled.
+  if (!Continuations::enabled()) {
+    return;
+  }
+  nop();
+  // TODO:
+  // 1. https://bugs.openjdk.org/browse/JDK-8300002
+  // 2. https://bugs.openjdk.org/browse/JDK-8290965
+}
+
+void MacroAssembler::push_cont_fastpath() {
+  BLOCK_COMMENT("push_cont_fastpath {");
+  if (!Continuations::enabled()) return;
+  NearLabel done;
+  z_clg(Z_SP, Address(Z_thread, JavaThread::cont_fastpath_offset()));
+  z_brnh(done); // bcondNotHigh -> less than equal
+  z_stg(Z_SP, Address(Z_thread, JavaThread::cont_fastpath_offset()));
+  bind(done);
+  BLOCK_COMMENT("} push_cont_fastpath");
+}
+
+void MacroAssembler::pop_cont_fastpath() {
+  BLOCK_COMMENT("pop_cont_fastpath {");
+  if (!Continuations::enabled()) return;
+  NearLabel done;
+  z_clg(Z_SP, Address(Z_thread, JavaThread::cont_fastpath_offset()));
+  z_brl(done);
+  z_mvghi(Address(Z_thread, JavaThread::cont_fastpath_offset()), 0);
+  bind(done);
+  BLOCK_COMMENT("} pop_cont_fastpath");
+}
+
 // LOAD HALFWORD IMMEDIATE ON CONDITION (32 <- 16)
 void MacroAssembler::load_on_condition_imm_32(Register dst, int64_t i2, branch_condition cc) {
   if (VM_Version::has_LoadStoreConditional2()) { // z_lochi works on z13 or above
@@ -6765,4 +6828,157 @@ void MacroAssembler::load_on_condition_imm_64(Register dst, int64_t i2, branch_c
     z_lghi(dst, i2);
     bind(done);
   }
+}
+
+// Handle the receiver type profile update given the "recv" klass.
+//
+// Normally updates the ReceiverData (RD) that starts at "mdp" + "mdp_offset".
+// If there are no matching or claimable receiver entries in RD, updates
+// the polymorphic counter.
+//
+// This code expected to run by either the interpreter or JIT-ed code, without
+// extra synchronization. For safety, receiver cells are claimed atomically, which
+// avoids grossly misrepresenting the profiles under concurrent updates. For speed,
+// counter updates are not atomic.
+//
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register scratch) {
+  Register r0_tmp = Z_R0_scratch;  // cannot be used in address calculation
+  assert_different_registers(recv, mdp, scratch, r0_tmp);
+
+  int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
+  int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
+  int poly_count_offset      = in_bytes(CounterData::count_offset());
+  int receiver_step          = in_bytes(ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
+  int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+
+  // Adjust for MDP offsets.
+  base_receiver_offset += mdp_offset;
+  end_receiver_offset  += mdp_offset;
+  poly_count_offset    += mdp_offset;
+
+#ifdef ASSERT
+  // We are about to walk the MDO slots without asking for offsets.
+  // Check that our math hits all the right spots.
+  for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
+    int real_recv_offset  = mdp_offset + in_bytes(ReceiverTypeData::receiver_offset(c));
+    int real_count_offset = mdp_offset + in_bytes(ReceiverTypeData::receiver_count_offset(c));
+    int offset = base_receiver_offset + receiver_step*c;
+    int count_offset = offset + receiver_to_count_step;
+    assert(offset == real_recv_offset, "receiver slot math");
+    assert(count_offset == real_count_offset, "receiver count math");
+  }
+  int real_poly_count_offset = mdp_offset + in_bytes(CounterData::count_offset());
+  assert(poly_count_offset == real_poly_count_offset, "poly counter math");
+#endif
+
+  // Corner case: no profile table. Increment poly counter and exit.
+  if (ReceiverTypeData::row_limit() == 0) {
+    add2mem_64(Address(mdp, poly_count_offset), DataLayout::counter_increment, scratch);
+    return;
+  }
+
+  NearLabel L_loop_search_receiver, L_loop_search_empty;
+  NearLabel L_restart, L_found_recv, L_found_empty, L_count_update;
+  Register offset = scratch;
+
+  // The code here recognizes three major cases:
+  //   A. Fastest: receiver found in the table
+  //   B. Fast: no receiver in the table, and the table is full
+  //   C. Slow: no receiver in the table, free slots in the table
+  //
+  // The case A performance is most important, as perfectly-behaved code would end up
+  // there, especially with larger TypeProfileWidth. The case B performance is
+  // important as well, this is where bulk of code would land for normally megamorphic
+  // cases. The case C performance is not essential, its job is to deal with installation
+  // races, we optimize for code density instead. Case C needs to make sure that receiver
+  // rows are only claimed once. This makes sure we never overwrite a row for another
+  // receiver and never duplicate the receivers in the list, making profile type-accurate.
+  //
+  // It is very tempting to handle these cases in a single loop, and claim the first slot
+  // without checking the rest of the table. But, profiling code should tolerate free slots
+  // in the table, as class unloading can clear them. After such cleanup, the receiver
+  // we need might be _after_ the free slot. Therefore, we need to let at least full scan
+  // to complete, before trying to install new slots. Splitting the code in several tight
+  // loops also helpfully optimizes for cases A and B.
+  //
+  // This code is effectively:
+  //
+  // restart:
+  //   // Fastest: receiver is already installed
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == recv) goto found_recv(i);
+  //   }
+  //
+  //   // Fast: no receiver, but profile is not full
+  //   for (i = 0; i < receiver_count(); i++) {
+  //     if (receiver(i) == null) goto found_null(i);
+  //   }
+  //   goto polymorphic
+  //
+  //   // Slow: try to install receiver
+  // found_null(i):
+  //   CAS(&receiver(i), null, recv);
+  //   goto restart
+  //
+  // polymorphic:
+  //   count++;
+  //   return
+  //
+  // found_recv(i):
+  //   *receiver_count(i)++
+  //
+
+  bind(L_restart);
+
+  // Fastest: receiver is already installed
+  load_const_optimized(offset, base_receiver_offset);
+
+  bind(L_loop_search_receiver);
+    z_cg(recv, Address(mdp, offset));
+    z_bre(L_found_recv);
+    add2reg(offset, receiver_step);
+    compare64_and_branch(offset, end_receiver_offset, bcondNotEqual, L_loop_search_receiver);
+
+  // Fast: no receiver, but profile is not full
+  load_const_optimized(offset, base_receiver_offset);
+
+  bind(L_loop_search_empty);
+    z_ltg(r0_tmp, Address(mdp, offset));
+    z_brz(L_found_empty);
+    add2reg(offset, receiver_step);
+    compare64_and_branch(offset, end_receiver_offset, bcondNotEqual, L_loop_search_empty);
+
+  // Slow: Receiver is not found and table is full.
+  // Increment polymorphic counter instead of receiver slot.
+  load_const_optimized(offset, poly_count_offset);
+  z_bru(L_count_update);
+
+  // Slowest: try to install receiver
+  bind(L_found_empty);
+
+  {
+    // Atomically swing receiver slot: null -> recv.
+    // Use compare-and-swap to claim the slot.
+    Register receiver_addr = offset;
+    z_agr(receiver_addr, mdp); // receiver_addr = mdp + offset
+
+    // r0_tmp is used as expected value (0), recv is the new value
+    z_lghi(r0_tmp, 0);
+    z_csg(r0_tmp, recv, 0, receiver_addr);
+  }
+
+  // CAS success means the slot now has the receiver we want. CAS failure means
+  // something had claimed the slot concurrently: it can be the same receiver we want,
+  // or something else. Since this is a slow path, we can optimize for code density,
+  // and just restart the search from the beginning.
+  z_bru(L_restart);
+
+  // Found a receiver, convert its slot offset to corresponding count offset.
+  bind(L_found_recv);
+  add2reg(offset, receiver_to_count_step);
+
+  // Finally, update the counter
+  bind(L_count_update);
+  z_agr(offset, mdp);
+  add2mem_64(Address(offset), DataLayout::counter_increment, r0_tmp);
 }

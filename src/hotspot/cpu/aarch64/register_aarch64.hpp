@@ -28,6 +28,7 @@
 
 #include "asm/register.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class VMRegImpl;
@@ -513,26 +514,37 @@ template<int N> bool vs_write_before_read(const VSeq<N>& vout, const VSeq<N>& vi
 
 template<int N>
 VSeq<N/2> vs_front(const VSeq<N>& v) {
-  static_assert(N > 0 && ((N & 1) == 0), "sequence length must be even");
+  static_assert(N > 0 && is_even(N), "sequence length must be even");
   return VSeq<N/2>(v.base(), v.delta());
 }
 
 template<int N>
 VSeq<N/2> vs_back(const VSeq<N>& v) {
-  static_assert(N > 0 && ((N & 1) == 0), "sequence length must be even");
+  static_assert(N > 0 && is_even(N), "sequence length must be even");
   return VSeq<N/2>(v.base() + N / 2 * v.delta(), v.delta());
 }
 
 template<int N>
 VSeq<N/2> vs_even(const VSeq<N>& v) {
-  static_assert(N > 0 && ((N & 1) == 0), "sequence length must be even");
+  static_assert(N > 0 && is_even(N), "sequence length must be even");
   return VSeq<N/2>(v.base(), v.delta() * 2);
 }
 
 template<int N>
 VSeq<N/2> vs_odd(const VSeq<N>& v) {
-  static_assert(N > 0 && ((N & 1) == 0), "sequence length must be even");
+  static_assert(N > 0 && is_even(N), "sequence length must be even");
   return VSeq<N/2>(v.base() + v.delta(), v.delta() * 2);
+}
+
+template<int N>
+FloatRegister vs_head(const VSeq<N>& v) {
+  static_assert(N > 1, "sequence length must be greater than 1");
+  return v.base();
+}
+
+template<int N>
+VSeq<N-1> vs_tail(const VSeq<N>& v) {
+  return VSeq<N-1>(v.base() + v.delta(), v.delta());
 }
 
 // convenience method to construct a vector register sequence that

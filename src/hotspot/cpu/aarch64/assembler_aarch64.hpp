@@ -3151,6 +3151,34 @@ public:
     _pmull(Vd, Ta, Vn, Vm, Tb);
   }
 
+  //Vector by element variant of UMULL
+  void _umullv(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,
+                SIMD_Arrangement Tb, FloatRegister Vm, SIMD_RegVariant Ts, int lane) {
+    starti;
+    int size = (Ta == T4S) ? 0b01 : 0b10;
+    int q = (Tb == T4H || Tb == T2S) ? 0 : 1;
+    int h = (size == 0b01) ? ((lane >> 2) & 1) : ((lane >> 1) & 1);
+    int l = (size == 0b01) ? ((lane >> 1) & 1) : (lane & 1);
+    assert(Ta == T4S || Ta == T2D, "umull{2}v destination register must have arrangement T4S or T2D");
+    assert(size == 0b10 ? lane < 4 : lane < 8, "umull{2}v assumes lane < 4 when using half-words and lane < 8 otherwise");
+    assert(Ts == H ? Vm->encoding() < 16 : Vm->encoding() < 32, "umull{2}v requires Vm to be in range V0..V15 when Ts is H");
+    f(0, 31), f(q, 30), f(0b101111, 29, 24), f(size, 23, 22), f(l, 21); //f(m, 20);
+    rf(Vm, 16), f(0b1010, 15, 12), f(h, 11), f(0, 10), rf(Vn, 5), rf(Vd, 0);
+  }
+
+  //Vector by element variant of UMULL
+  void umullv(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,
+               SIMD_Arrangement Tb, FloatRegister Vm, SIMD_RegVariant Ts, int lane) {
+    assert(Ta == T4S ? (Tb == T4H && Ts == H) : (Tb == T2S && Ts == S), "umullv register arrangements must adhere to spec");
+    _umullv(Vd, Ta, Vn, Tb, Vm, Ts, lane);
+  }
+
+  void umull2v(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,
+               SIMD_Arrangement Tb, FloatRegister Vm, SIMD_RegVariant Ts, int lane) {
+    assert(Ta == T4S ? (Tb == T8H && Ts == H) : (Tb == T4S && Ts == S), "umull2v register arrangements must adhere to spec");
+    _umullv(Vd, Ta, Vn, Tb, Vm, Ts, lane);
+  }
+
   void uqxtn(FloatRegister Vd, SIMD_Arrangement Tb, FloatRegister Vn, SIMD_Arrangement Ta) {
     starti;
     int size_b = (int)Tb >> 1;
@@ -4292,14 +4320,31 @@ public:
 #undef INSN
 
 // SVE2 bitwise ternary operations
-#define INSN(NAME, opc)                                               \
-  void NAME(FloatRegister Zdn, FloatRegister Zm, FloatRegister Zk) {  \
-    starti;                                                           \
-    f(0b00000100, 31, 24), f(opc, 23, 21), rf(Zm, 16);                \
-    f(0b001110, 15, 10), rf(Zk, 5), rf(Zdn, 0);                       \
+#define INSN(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Zdn, FloatRegister Zm, FloatRegister Zk) {   \
+    starti;                                                            \
+    f(0b00000100, 31, 24), f(op1, 23, 21), rf(Zm, 16);                 \
+    f(0b00111, 15, 11), f(op2, 10), rf(Zk, 5), rf(Zdn, 0);             \
   }
 
-  INSN(sve_eor3, 0b001); // Bitwise exclusive OR of three vectors
+  INSN(sve_eor3, 0b001, 0b0); // Bitwise exclusive OR of three vectors
+  INSN(sve_bsl,  0b001, 0b1); // Bitwise select
+#undef INSN
+
+// SVE2 widening integer multiply - vector
+#define INSN(NAME, is_unsigned, is_top)                                                \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, FloatRegister Zm) { \
+    starti;                                                                            \
+    assert(T != B && T != Q, "invalid size");                                          \
+    int op = 0b011100 | (is_unsigned ? 0b10 : 0) | (is_top ? 0b1 : 0);                 \
+    f(0b01000101, 31, 24), f(T, 23, 22), f(0, 21), rf(Zm, 16);                         \
+    f(op, 15, 10), rf(Zn, 5), rf(Zd, 0);                                               \
+  }
+
+  INSN(sve_umullb, /* is_unsigned */ true,  /* is_top */ false); // Unsigned widening multiply of bottom elements
+  INSN(sve_umullt, /* is_unsigned */ true,  /* is_top */ true ); // Unsigned widening multiply of top elements
+  INSN(sve_smullb, /* is_unsigned */ false, /* is_top */ false); // Signed widening multiply of bottom elements
+  INSN(sve_smullt, /* is_unsigned */ false, /* is_top */ true ); // Signed widening multiply of top elements
 #undef INSN
 
 // SVE2 saturating operations - predicate

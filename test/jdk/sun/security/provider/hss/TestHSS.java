@@ -167,9 +167,9 @@ public class TestHSS {
         PublicKey pk1;
 
         // build public key
-        RawKeySpec rks = new RawKeySpec(pk);
         KeyFactory kf = KeyFactory.getInstance(ALG, provider);
-        pk1 = kf.generatePublic(rks);
+        pk1 = (PublicKey) kf.translateKey(KeyUtil
+                .newRawPublicKey(ALG, pk));
 
         var v = Signature.getInstance(ALG);
         v.initVerify(pk1);
