@@ -24,7 +24,8 @@
 /**
  * @test
  * @summary Basic array hashCode functionality
- * @run main/othervm --add-exports java.base/jdk.internal.util=ALL-UNNAMED
+ * @modules java.base/jdk.internal.util
+ * @run main/othervm
  *     --add-opens java.base/jdk.internal.util=ALL-UNNAMED -Xcomp -Xbatch HashCode
  */
 
@@ -32,6 +33,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+
+import jdk.internal.util.ArraysSupport;
 
 public class HashCode {
     private static String[] tests = { "", " ", "a", "abcdefg",
@@ -270,7 +273,7 @@ public class HashCode {
             int from = 5;
 
             for (int len : lengths) {
-                int hashCode = (int) vectorizedHashCode.invoke(null, paddedBytes, from, len, initial, T_BYTE);
+                int hashCode = ArraysSupport.hashCode(paddedBytes, from, len, initial);
                 int e = signedByteHash(paddedBytes, from, len, initial);
                 if (hashCode != e) {
                     throw new RuntimeException("T_BYTE subrange failed: len = " + len
@@ -278,7 +281,7 @@ public class HashCode {
                             + ", hashCode = " + hashCode);
                 }
 
-                hashCode = (int) vectorizedHashCode.invoke(null, paddedBytes, from, len, initial, T_BOOLEAN);
+                hashCode = ArraysSupport.hashCodeOfUnsigned(paddedBytes, from, len, initial);
                 e = unsignedByteHash(paddedBytes, from, len, initial);
                 if (hashCode != e) {
                     throw new RuntimeException("T_BOOLEAN subrange failed: len = " + len
@@ -286,7 +289,7 @@ public class HashCode {
                             + ", hashCode = " + hashCode);
                 }
 
-                hashCode = (int) vectorizedHashCode.invoke(null, paddedChars, from, len, initial, T_CHAR);
+                hashCode = ArraysSupport.hashCode(paddedChars, from, len, initial);
                 e = charHash(paddedChars, from, len, initial);
                 if (hashCode != e) {
                     throw new RuntimeException("T_CHAR subrange failed: len = " + len
@@ -294,7 +297,7 @@ public class HashCode {
                             + ", hashCode = " + hashCode);
                 }
 
-                hashCode = (int) vectorizedHashCode.invoke(null, paddedUtf16Bytes, from, len, initial, T_CHAR);
+                hashCode = ArraysSupport.hashCodeOfUTF16(paddedUtf16Bytes, from, len, initial);
                 e = charHash(paddedChars, from, len, initial);
                 if (hashCode != e) {
                     throw new RuntimeException("T_CHAR byte[] UTF-16 subrange failed: len = " + len
@@ -302,7 +305,7 @@ public class HashCode {
                             + ", hashCode = " + hashCode);
                 }
 
-                hashCode = (int) vectorizedHashCode.invoke(null, paddedShorts, from, len, initial, T_SHORT);
+                hashCode = ArraysSupport.hashCode(paddedShorts, from, len, initial);
                 e = shortHash(paddedShorts, from, len, initial);
                 if (hashCode != e) {
                     throw new RuntimeException("T_SHORT subrange failed: len = " + len
@@ -310,7 +313,7 @@ public class HashCode {
                             + ", hashCode = " + hashCode);
                 }
 
-                hashCode = (int) vectorizedHashCode.invoke(null, paddedInts, from, len, initial, T_INT);
+                hashCode = ArraysSupport.hashCode(paddedInts, from, len, initial);
                 e = intHash(paddedInts, from, len, initial);
                 if (hashCode != e) {
                     throw new RuntimeException("T_INT subrange failed: len = " + len
@@ -318,7 +321,7 @@ public class HashCode {
                             + ", hashCode = " + hashCode);
                 }
             }
-            System.out.println("vectorizedHashCode subrange tests passed");
+            System.out.println("ArraysSupport subrange tests passed");
         } catch (RuntimeException e) {
             System.out.println(e.getMessage());
             failed = true;
