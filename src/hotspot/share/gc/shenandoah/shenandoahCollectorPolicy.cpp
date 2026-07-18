@@ -171,6 +171,21 @@ bool ShenandoahCollectorPolicy::should_handle_requested_gc(GCCause::Cause cause)
   return true;
 }
 
+// Some causes should not be allowed to preempt others. We must make sure that
+// regulator requests and allocation failures do not preempt a shutdown request.
+int ShenandoahCollectorPolicy::cause_priority(GCCause::Cause cause) {
+  if (cause == GCCause::_shenandoah_stop_vm)               return 5;
+  if (cause == GCCause::_shenandoah_upgrade_to_full_gc)    return 4;
+  // Explicit gc will escalate an allocation failure from a young to global cycle
+  if (is_explicit_gc(cause))                               return 3;
+  if (is_allocation_failure(cause))                        return 2;
+  if (cause == GCCause::_shenandoah_concurrent_gc)         return 1;
+  if (cause == GCCause::_no_gc)                            return 0;
+  // Unanticipated gc causes are treated as an allocation failure and cannot be
+  // preempted by regulator requests
+  return 2;
+}
+
 template<typename T>
 size_t shenandoah_sum_array(T* a, size_t length) {
   size_t sum = 0;
