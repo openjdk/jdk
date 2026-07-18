@@ -1582,8 +1582,7 @@ void TemplateTable::convert() {
 void TemplateTable::lcmp() {
   transition(ltos, itos);
   __ pop_l(x11);
-  __ cmp_l2i(t0, x11, x10);
-  __ mv(x10, t0);
+  __ cmp_l2i(x10, x11, x10);
 }
 
 void TemplateTable::float_cmp(bool is_float, int unordered_result) {
