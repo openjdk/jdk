@@ -143,19 +143,9 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   // TODO: Implement a better solution
 
   BLOCK_COMMENT("ZBarrierSetAssembler::load_at {");
-
   //TODO: temp1 can be noreg and Z_R0(both can't be used here), temp2 can be noreg and same as dst(can't be used here) put a assert_different_registers for this and change the calls.
-  Register scratch = noreg;
-  if (dst != src.base() && src.base() != Z_R2) {
-    scratch = src.base();
-  } else if (dst != Z_R4) {
-    scratch = Z_R4;
-  } else {
-    scratch = Z_R5;
-  }
-
+  Register scratch = Z_R5;
   assert_different_registers(dst, scratch);
-  assert_different_registers(Z_R2, scratch);
 
   int nbytes_save = 3 * BytesPerWord; // SP, PC, scratch
   int offset = frame::z_abi_160_size;
@@ -177,6 +167,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   // Load oop at address
   __ z_lg(dst, 0, scratch);
+  __ z_lgr(Z_R0_scratch, dst);
 
   const bool on_non_strong =
       (decorators & ON_WEAK_OOP_REF) != 0 ||
@@ -184,12 +175,11 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   // Test Address bad mask
   if (on_non_strong) {
-    __ z_ng(dst, mark_bad_mask_from_thread(Z_thread));
+    __ z_ng(Z_R0_scratch, mark_bad_mask_from_thread(Z_thread));
   } else {
-    __ z_ng(dst, load_bad_mask_from_thread(Z_thread));
+    __ z_ng(Z_R0_scratch, load_bad_mask_from_thread(Z_thread));
   }
 
-  __ z_lg(dst, 0, scratch);
   __ branch_optimized(Assembler::bcondZero, uncolor);
 
   //
@@ -223,7 +213,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   __ bind(done);
 
-  __ z_lg(scratch, 176, Z_SP);
+  __ z_lg(scratch, frame::z_abi_160_size + 16, Z_SP);
   __ restore_return_pc();
   __ pop_frame();
 
@@ -248,10 +238,8 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // an atomic operation can execute.
       // A not relocatable object could have spurious raw null pointers in its fields after
       // getting promoted to the old generation.
-      __ z_lg(rnew_zpointer, ref_addr);
-      __ z_nihf(rnew_zpointer, 0x00000000);
-      __ z_nilh(rnew_zpointer, 0x0000);
-      // TODO: try using z_oill
+      __ z_llgh(rnew_zpointer, ref_addr);
+      // TODO: we can use cij here but that will require to change the relocate
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
       __ z_cghi(rnew_zpointer, barrier_Relocation::unpatched);
       __ branch_optimized(Assembler::bcondNotEqual, medium_path);
@@ -265,30 +253,25 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // otherwise ImplicitNullCheck will not work and the JVM will crash instead of throwing
       // a null pointer exception. Run C1NullCheckOfNullStore.java test case after doing any
       // changes here.
-      __ z_lg(rnew_zpointer, ref_addr);
-      __ z_nihf(rnew_zpointer, 0x00000000);
-      __ z_nilh(rnew_zpointer, 0x0000);
+      __ z_llgh(rnew_zpointer, ref_addr);
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadBeforeLoad);
       __ z_nill(rnew_zpointer, barrier_Relocation::unpatched);
       __ branch_optimized(Assembler::bcondNotZero, medium_path);
     }
     __ bind(medium_path_continuation);
     assert_different_registers(rnew_zaddress, rnew_zpointer);
-    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
-    __ z_llill(rnew_zpointer, barrier_Relocation::unpatched);
     if (rnew_zaddress != noreg) {
       // noreg means null, no need to color
-      __ z_sllg(rnew_zaddress, rnew_zaddress, ZPointerLoadShift);
-      __ z_ogr(rnew_zpointer, rnew_zaddress);
-      // TODO: try to optimize it later -> the contents of rnew_zaddress should not change
-      __ z_srlg(rnew_zaddress, rnew_zaddress, ZPointerLoadShift);
+      __ z_sllg(rnew_zpointer, rnew_zaddress, ZPointerLoadShift);
+      __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
+      __ z_oill(rnew_zpointer, barrier_Relocation::unpatched);
+    } else {
+      __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
+      __ z_llill(rnew_zpointer, barrier_Relocation::unpatched);
     }
   } else {
     assert(!is_atomic, "atomics outside of nmethods not supported");
-    // TODO: try using z_oill here.
-    __ z_lg(rnew_zpointer, ref_addr);
-    __ z_nihf(rnew_zpointer, 0x00000000);
-    __ z_nilh(rnew_zpointer, 0x0000);
+    __ z_llgh(rnew_zpointer, ref_addr);
     __ z_cg(rnew_zpointer, Address(Z_thread, ZThreadLocalData::store_bad_mask_offset()));
     __ branch_optimized(Assembler::bcondNotEqual, medium_path);
     __ bind(medium_path_continuation);
