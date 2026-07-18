@@ -445,6 +445,7 @@ private:
     RV_ENABLE_EXTENSION(UseZicond)                  \
     RV_ENABLE_EXTENSION(UseZihintpause)             \
     RV_ENABLE_EXTENSION(UseZvfhmin)                 \
+    RV_ENABLE_EXTENSION(UseZvbb)                    \
 
   static void useRVA23U64Profile();
 
