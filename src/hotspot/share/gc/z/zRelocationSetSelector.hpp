@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ private:
 
   // Selected set
   size_t _npages_selected;
-  size_t _relocate;
+  size_t _nbytes_to_relocate;
 
 public:
   ZRelocationSetSelectorGroupStats();
@@ -55,7 +55,7 @@ public:
   size_t empty() const;
 
   size_t npages_selected() const;
-  size_t relocate() const;
+  size_t nbytes_to_relocate() const;
 };
 
 class ZRelocationSetSelectorStats {
@@ -129,7 +129,7 @@ private:
 
   size_t total() const;
   size_t empty() const;
-  size_t relocate() const;
+  size_t nbytes_to_relocate() const;
 
 public:
   ZRelocationSetSelector(double fragmentation_limit);

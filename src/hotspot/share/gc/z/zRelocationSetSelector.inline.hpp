@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@ inline size_t ZRelocationSetSelectorGroupStats::npages_selected() const {
   return _npages_selected;
 }
 
-inline size_t ZRelocationSetSelectorGroupStats::relocate() const {
-  return _relocate;
+inline size_t ZRelocationSetSelectorGroupStats::nbytes_to_relocate() const {
+  return _nbytes_to_relocate;
 }
 
 inline bool ZRelocationSetSelectorStats::has_relocatable_pages() const {
@@ -203,10 +203,12 @@ inline size_t ZRelocationSetSelector::empty() const {
   return sum;
 }
 
-inline size_t ZRelocationSetSelector::relocate() const {
+inline size_t ZRelocationSetSelector::nbytes_to_relocate() const {
   size_t sum = 0;
   for (ZPageAge age : ZPageAgeRangeAll) {
-    sum += _small.stats(age).relocate() + _medium.stats(age).relocate() + _large.stats(age).relocate();
+    sum += _small.stats(age).nbytes_to_relocate() +
+           _medium.stats(age).nbytes_to_relocate() +
+           _large.stats(age).nbytes_to_relocate();
   }
   return sum;
 }

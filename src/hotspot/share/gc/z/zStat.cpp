@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1497,7 +1497,7 @@ void ZStatRelocation::print_page_summary() {
     summary.total += stats.total();
     summary.empty += stats.empty();
     summary.npages_selected += stats.npages_selected();
-    summary.relocate += stats.relocate();
+    summary.nbytes_to_relocate += stats.nbytes_to_relocate();
   };
 
   for (ZPageAge age : ZPageAgeRangeAll) {
@@ -1525,7 +1525,7 @@ void ZStatRelocation::print_page_summary() {
              .right("%zu", in_place_count)
              .right("%zuM", summary.total / M)
              .right("%zuM", summary.empty / M)
-             .right("%zuM", summary.relocate /M)
+             .right("%zuM", summary.nbytes_to_relocate / M)
              .end());
   };
 

@@ -39,7 +39,7 @@ ZRelocationSetSelectorGroupStats::ZRelocationSetSelectorGroupStats()
     _live(0),
     _empty(0),
     _npages_selected(0),
-    _relocate(0) {}
+    _nbytes_to_relocate(0) {}
 
 ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
                                                          ZPageType page_type,
@@ -187,7 +187,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
 
   // Update statistics
   for (uint i = 0; i < ZPageAgeCount; ++i) {
-    _stats[i]._relocate = live_bytes_per_age[i] - rejected_live_bytes_per_age[i];
+    _stats[i]._nbytes_to_relocate = live_bytes_per_age[i] - rejected_live_bytes_per_age[i];
     _stats[i]._npages_selected = npages_per_age[i] - rejected_npages_per_age[i];
   }
 
@@ -219,11 +219,15 @@ void ZRelocationSetSelectorGroup::select() {
     s._total += _stats[i].total();
     s._empty += _stats[i].empty();
     s._npages_selected += _stats[i].npages_selected();
-    s._relocate += _stats[i].relocate();
+    s._nbytes_to_relocate += _stats[i].nbytes_to_relocate();
   }
 
   // Send event
-  event.commit((u8)_page_type, s._npages_candidates, s._total, s._empty, s._npages_selected, s._relocate);
+  event.commit((u8)_page_type,
+               s._npages_candidates,
+               s._total, s._empty,
+               s._npages_selected,
+               s._nbytes_to_relocate);
 }
 
 ZRelocationSetSelector::ZRelocationSetSelector(double fragmentation_limit)
@@ -247,7 +251,7 @@ void ZRelocationSetSelector::select() {
   _small.select();
 
   // Send event
-  event.commit(total(), empty(), relocate());
+  event.commit(total(), empty(), nbytes_to_relocate());
 }
 
 ZRelocationSetSelectorStats ZRelocationSetSelector::stats() const {
