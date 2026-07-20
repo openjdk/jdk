@@ -560,8 +560,6 @@ public class HotSpotAgent {
                 machDesc = new MachineDescriptionAMD64();
             } else if (cpu.equals("ppc64")) {
                 machDesc = new MachineDescriptionPPC64();
-            } else if (cpu.equals("aarch64")) {
-                machDesc = new MachineDescriptionAArch64();
             } else if (cpu.equals("riscv64")) {
                 machDesc = new MachineDescriptionRISCV64();
             } else {
