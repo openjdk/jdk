@@ -2354,7 +2354,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     }
   }
 
-  uint use_op = use->Opcode();
+  int use_op = use->Opcode();
   if(use->is_Cmp()) {       // Enable CMP/BOOL optimization
     add_users_to_worklist0(use, worklist); // Put Bool on worklist
     if (use->outcnt() > 0) {
@@ -2490,6 +2490,15 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_AddI || use_op == Op_AddL) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
+    });
+  }
+  // If changed AddI/AddL inputs, check for add users:
+  // e.g. x + (y + n)      ->  x + (y + C)     ->  (x + y) + C
+  //      before mutation      after mutation      optimized by
+  //                                               AddNode::Ideal
+  if (use_op == Op_AddI || use_op == Op_AddL) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) {
+      return u->Opcode() == use_op;
     });
   }
   // If changed LShiftI/LShiftL inputs, check AddI/AddL users for their
