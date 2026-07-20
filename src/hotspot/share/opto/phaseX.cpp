@@ -2668,6 +2668,22 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     const int add_op = (use_op == Op_MulI) ? Op_AddI : Op_AddL;
     add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == add_op; });
   }
+
+  // We may have a loop-phi that is about to close the AddI recursion,
+  // and we would have to ensure AddNode::commute is called for the AddI.
+  // E.g. use = Phi(x, n)      ->  use = Phi(x, u)     ->  use = Phi(x, u)
+  //      u   = AddI(y, use)       u   = AddI(y, use)  ->  u   = AddI(use, y)
+  //      current state,           After mutation,         After commute,
+  //      before mutation          before commute          canonical loop incr
+  if (use->is_Phi() &&
+      use->in(0) != nullptr &&
+      use->in(0)->is_Loop() &&
+      use->req() == 3 &&
+      n == use->in(LoopNode::LoopBackControl)) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_Add();
+    });
+  }
 }
 
 /**
