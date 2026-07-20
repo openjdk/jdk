@@ -759,8 +759,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   int nbytes_save = 4 * BytesPerWord; /* SP, PC, 2 args */
   int offset = 0;
 
-  //TODO: I do not think so that we need abi160 here.
-  __ push_frame(nbytes_save);     offset += 8;
+  __ push_frame(nbytes_save);            offset += 8;
   __ save_return_pc();                   offset += 8;
   __ z_stg(ref, offset, Z_SP);           offset += 8;
   __ z_stg(ref_addr, offset, Z_SP);
@@ -1022,6 +1021,7 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const c
   __ push_frame(nbytes_save);               offset += 8;
   __ save_return_pc();                      offset += 8;
 
+  // TODO: Try to see if any register is free here, maybe float registers?
   __ z_stg(Z_R1, offset, Z_SP);
 
   Label done, skip_uncolor;
