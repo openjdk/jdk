@@ -232,7 +232,7 @@ abstract public class CDSAppTester {
         String[] cmdLine = new String[0];
         cmdLine = addClassOrModulePath(runMode, cmdLine);
         cmdLine = addWhiteBox(cmdLine);
-        if (runMode == RunMode.TRAINING) {
+        if (runMode == RunMode.ASSEMBLY) {
             cmdLine = StringArrayUtils.concat(cmdLine, "-XX:+UnlockDiagnosticVMOptions", "-XX:+AOTCompatibleOopCompression");
         }
         return cmdLine;
