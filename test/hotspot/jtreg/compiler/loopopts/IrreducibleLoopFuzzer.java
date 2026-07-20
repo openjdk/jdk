@@ -100,6 +100,7 @@ public class IrreducibleLoopFuzzer {
         String prefix();
         int slots();
         Object pushCon();
+        List<Operation> ifGotoOperations(String label);
     }
 
     static class IntType implements JasmType {
@@ -107,6 +108,13 @@ public class IrreducibleLoopFuzzer {
         public String prefix() { return "i"; }
         public int slots() { return 1; }
         public Object pushCon() { return "ldc " + RANDOM.nextInt() + ";\n"; }
+
+        public List<Operation> ifGotoOperations(String label) {
+            return List.of(
+                new Operation(List.of(INTS, INTS),  List.of(),  "if_icmple " + label + ";\n"),
+                new Operation(List.of(INTS, INTS),  List.of(),  "if_icmplt " + label + ";\n")
+            );
+        }
     }
 
     static class LongType implements JasmType {
@@ -114,6 +122,13 @@ public class IrreducibleLoopFuzzer {
         public String prefix() { return "l"; }
         public int slots() { return 2; }
         public Object pushCon() { return "ldc2_w " + RANDOM.nextLong() + "L;\n"; }
+
+        public List<Operation> ifGotoOperations(String label) {
+            return List.of(
+                new Operation(List.of(LONGS, LONGS),  List.of(),  "lcmp; ifle " + label + ";\n"),
+                new Operation(List.of(LONGS, LONGS),  List.of(),  "lcmp; iflt " + label + ";\n")
+            );
+        }
     }
 
     static final JasmType INTS = new IntType();
@@ -123,6 +138,10 @@ public class IrreducibleLoopFuzzer {
         INTS,
         LONGS
     );
+
+    static JasmType randomType() {
+        return TYPES.get(RANDOM.nextInt(TYPES.size()));
+    }
 
     static record Local(int index, JasmType type) {}
 
@@ -170,13 +189,7 @@ public class IrreducibleLoopFuzzer {
                 // branch:
                 """,
                 (goto0 != null) ? scope(
-                    let("goto0", goto0.name),
-                    // TODO: non-int checks
-                    method.pushType(INTS),
-                    method.pushType(INTS),
-                    """
-                    if_icmple #goto0;
-                    """
+                    method.maybeGoto(goto0.name)
                 ) : "",
                 (goto1 != null) ? scope(
                     let("goto1", goto1.name),
@@ -208,7 +221,7 @@ public class IrreducibleLoopFuzzer {
             int n = 1 + RANDOM.nextInt(10);
             int j = 0;
             for (int i = 0; i < n; i++) {
-                JasmType t = TYPES.get(RANDOM.nextInt(TYPES.size()));
+                JasmType t = randomType();
                 locals.add(new Local(j, t));
                 j += t.slots();
             }
@@ -266,11 +279,25 @@ public class IrreducibleLoopFuzzer {
                 """
                 // ballanced op:
                 """,
+                randomOp(OPERATIONS)
+            ));
+            return template.asToken();
+        }
+
+        public Object randomOp(List<Operation> ops) {
+            Operation op = ops.get(RANDOM.nextInt(ops.size()));
+            var template = Template.make(() -> scope(
                 op.in.stream().map(t -> pushType(t)).toList(),
                 (op.op == null) ? "" : scope(let("op", op.op), "#op;\n"),
                 op.out.stream().map(t -> popType(t)).toList()
             ));
             return template.asToken();
+        }
+
+        public Object maybeGoto(String label) {
+            JasmType type = randomType();
+            List<Operation> ops = type.ifGotoOperations(label);
+            return randomOp(ops);
         }
 
         // TODO: non-ballanced, have stack depth at block boundary.
