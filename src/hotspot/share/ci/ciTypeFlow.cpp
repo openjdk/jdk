@@ -608,7 +608,7 @@ void ciTypeFlow::StateVector::do_aload(ciBytecodeStream* str) {
           Deoptimization::Action_reinterpret));
   } else {
     ciType* maybe_null_free_element_klass = element_klass;
-    if (array_klass->is_null_free()) {
+    if (array_klass->is_refined() && array_klass->is_elem_null_free()) {
       maybe_null_free_element_klass = outer()->mark_as_null_free(element_klass);
     }
     push(maybe_null_free_element_klass);
