@@ -155,43 +155,12 @@ public class DefaultStripDebugPluginTest {
         }
     }
 
-    // Disable the internal exclude-files stage: debug files must be retained.
-    public void testExcludeFilesDisabled() {
-        MockStripPlugin javaPlugin = new MockStripPlugin(false);
-        MockStripPlugin nativePlugin = new MockStripPlugin(true);
-        TestNativeStripPluginFactory nativeFactory =
-                                 new TestNativeStripPluginFactory(nativePlugin);
-        DefaultStripDebugPlugin plugin = new DefaultStripDebugPlugin(javaPlugin,
-                                                                     nativeFactory);
-        plugin.enableExcludeFilesPlugin(false);
-
-        ResourcePoolManager inManager = new ResourcePoolManager();
-        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DEBUGINFO_PATH,
-                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
-        inManager.add(ResourcePoolEntry.create(MockStripPlugin.DIZ_PATH,
-                ResourcePoolEntry.Type.NATIVE_LIB, new byte[]{0, 1, 2, 3}));
-        ResourcePoolManager outManager = new ResourcePoolManager();
-        ResourcePool pool = plugin.transform(inManager.resourcePool(),
-                                             outManager.resourcePoolBuilder());
-        if (!pool.findEntry(MockStripPlugin.JAVA_PATH).isPresent() ||
-            !pool.findEntry(MockStripPlugin.NATIVE_PATH).isPresent()) {
-            throw new AssertionError("Expected both native and java to get called");
-        }
-        if (!pool.findEntry(MockStripPlugin.DEBUGINFO_PATH).isPresent()) {
-            throw new AssertionError(".debuginfo file should have been retained");
-        }
-        if (!pool.findEntry(MockStripPlugin.DIZ_PATH).isPresent()) {
-            throw new AssertionError(".diz file should have been retained");
-        }
-    }
-
     public static void main(String[] args) {
         DefaultStripDebugPluginTest test = new DefaultStripDebugPluginTest();
         test.testNoNativeStripPluginPresent();
         test.testWithNativeStripPresent();
         test.testOnlyNativePlugin();
         test.testNoOperation();
-        test.testExcludeFilesDisabled();
     }
 
     public static class MockStripPlugin implements Plugin {

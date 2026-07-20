@@ -27,7 +27,6 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.Map;
-import java.util.function.Function;
 
 import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.internal.PluginRepository;
@@ -52,7 +51,6 @@ public final class DefaultStripDebugPlugin extends AbstractPlugin {
     private final NativePluginFactory stripNativePluginFactory;
 
     private boolean isJavaStripPluginEnabled = true;
-    private boolean isExcludeFilesPluginEnabled = true;
 
     public DefaultStripDebugPlugin() {
         this(new StripJavaDebugAttributesPlugin(),
@@ -70,13 +68,13 @@ public final class DefaultStripDebugPlugin extends AbstractPlugin {
         isJavaStripPluginEnabled = enableJavaStripPlugin;
     }
 
-    public void enableExcludeFilesPlugin(boolean enableExcludeFilesPlugin) {
-        isExcludeFilesPluginEnabled = enableExcludeFilesPlugin;
-    }
-
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         Plugin stripNativePlugin = stripNativePluginFactory.create();
+
+        String pattern = debugFilePattern(in);
+        ExcludeFilesPlugin excludeFilesPlugin = new ExcludeFilesPlugin();
+        excludeFilesPlugin.configure(Map.of(EXCLUDE_FILES_PLUGIN, pattern));
 
         ResourcePool result = in;
         if (isJavaStripPluginEnabled) {
@@ -86,12 +84,6 @@ public final class DefaultStripDebugPlugin extends AbstractPlugin {
             stripNativePlugin.configure(Map.of(STRIP_NATIVE_DEBUG_PLUGIN, EXCLUDE_DEBUGINFO));
             result = pipe(result, stripNativePlugin);
         }
-        if (!isExcludeFilesPluginEnabled) {
-            result.transformAndCopy(Function.identity(), out);
-            return out.build();
-        }
-        ExcludeFilesPlugin excludeFilesPlugin = new ExcludeFilesPlugin();
-        excludeFilesPlugin.configure(Map.of(EXCLUDE_FILES_PLUGIN, debugFilePattern(in)));
         return excludeFilesPlugin.transform(result, out);
     }
 

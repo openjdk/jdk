@@ -224,7 +224,6 @@ public final class TaskHelper {
 
         // Duplicated here so as to avoid a direct dependency on platform specific plugin
         private static final String STRIP_NATIVE_DEBUG_SYMBOLS_NAME = "strip-native-debug-symbols";
-        private static final String EXCLUDE_FILES_NAME = "exclude-files";
         private ModuleLayer pluginsLayer = ModuleLayer.boot();
         private final List<Plugin> plugins;
         private String lastSorter;
@@ -236,8 +235,6 @@ public final class TaskHelper {
         private final Map<Plugin, List<Map<String, String>>> pluginToMaps = new HashMap<>();
         private final List<PluginOption> pluginsOptions = new ArrayList<>();
         private final List<PluginOption> mainOptions = new ArrayList<>();
-        // plugin names disabled via --disable-plugin
-        private final Set<String> disabledPlugins = new HashSet<>();
 
         private PluginsHelper() throws BadArgs {
 
@@ -252,7 +249,6 @@ public final class TaskHelper {
             mainOptions.add(new PluginOption(true, (task, opt, arg) -> {
                     for (Plugin plugin : plugins) {
                         if (plugin.getName().equals(arg)) {
-                            disabledPlugins.add(arg);
                             pluginToMaps.remove(plugin);
                             return;
                         }
@@ -470,12 +466,6 @@ public final class TaskHelper {
             // disable StripJavaDebugAttributesPlugin within DefaultStripDebug plugin if both enabled
             if (seenPlugins.contains(StripJavaDebugAttributesPlugin.NAME) && defaultStripDebugPlugin != null) {
                 defaultStripDebugPlugin.enableJavaStripPlugin(false);
-            }
-
-            // disable the internal ExcludeFilesPlugin within DefaultStripDebug plugin if
-            // the exclude-files plugin was explicitly disabled via --disable-plugin
-            if (defaultStripDebugPlugin != null && disabledPlugins.contains(EXCLUDE_FILES_NAME)) {
-                defaultStripDebugPlugin.enableExcludeFilesPlugin(false);
             }
 
             // recreate or postprocessing don't require an output directory.
