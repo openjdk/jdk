@@ -159,6 +159,7 @@ protected:
 
  public:
   static void initialize_chunk_pool();
+  static void suspend_chunk_pool_cleaning(bool suspend);
 
   // Start the chunk_pool cleaner task
   static void start_chunk_pool_cleaner_task();

@@ -176,7 +176,7 @@ class MallocMemorySnapshot {
 
   // Total malloc'd memory amount
   size_t total() const {
-    return _all_mallocs.size() + malloc_overhead() + total_arena();
+    return _all_mallocs.size() + malloc_overhead();
   }
 
   // Total peak malloc
@@ -193,10 +193,6 @@ class MallocMemorySnapshot {
   size_t total_arena() const;
 
   void copy_to(MallocMemorySnapshot* s);
-
-  // Make adjustment by subtracting chunks used by arenas
-  // from total chunks to get total free chunk size
-  void make_adjustment();
 };
 
 /*
@@ -243,7 +239,6 @@ class MallocMemorySummary : AllStatic {
 
    static void snapshot(MallocMemorySnapshot* s) {
      as_snapshot()->copy_to(s);
-     s->make_adjustment();
    }
 
    // The memory used by malloc tracking headers
@@ -282,6 +277,9 @@ class MallocTracker : AllStatic {
   // Record  malloc on specified memory block
   static void* record_malloc(void* malloc_base, size_t size, MemTag mem_tag,
     const NativeCallStack& stack);
+
+  static void chunk_assigned_to_arena(void* memblock, MemTag new_tag);
+  static void add_chunk_to_pool(void* memblock);
 
   // Given a block returned by os::malloc() or os::realloc():
   // deaccount block from NMT, mark its header as dead and return pointer to header.

@@ -87,6 +87,7 @@ class ChunkPool {
   // Our four static pools
   static constexpr int _num_pools = 4;
   static ChunkPool _pools[_num_pools];
+  volatile static bool _suspend_cleaning;
 
   Chunk*       _first;
   const size_t _size;         // (inner payload) size of the chunks this pool serves
@@ -110,7 +111,6 @@ class ChunkPool {
   // Clear this pool of all contained chunks
   void prune() {
     // Free all chunks with ChunkPoolLocker lock
-    // so NMT adjustment is stable.
     ChunkPoolLocker lock;
     Chunk* cur = _first;
     Chunk* next = nullptr;
@@ -136,6 +136,7 @@ public:
   ChunkPool(size_t size) : _first(nullptr), _size(size) {}
 
   static void clean() {
+    if (_suspend_cleaning) return;
     NativeHeapTrimmer::SuspendMark sm("chunk pool cleaner");
     for (int i = 0; i < _num_pools; i++) {
       _pools[i].prune();
@@ -145,6 +146,9 @@ public:
   // Returns an initialized and null-terminated Chunk of requested size
   static Chunk* allocate_chunk(Arena* arena, size_t length, AllocFailType alloc_failmode);
   static void deallocate_chunk(Chunk* p);
+  static void set_suspend_cleaning(bool suspend) {
+    _suspend_cleaning = suspend;
+  }
 };
 
 static bool on_compiler_thread() {
@@ -194,6 +198,7 @@ Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType allo
     }
     chunk = (Chunk*)p;
   }
+  MemTracker::chunk_assigned_to_arena(chunk, arena->get_mem_tag());
   ::new(chunk) Chunk(length);
   // We rely on arena alignment <= malloc alignment.
   assert(is_aligned(chunk, ARENA_AMALLOC_ALIGNMENT), "Chunk start address misaligned.");
@@ -218,18 +223,19 @@ void ChunkPool::deallocate_chunk(Chunk* c) {
     c->set_stamp(0);
   }
 
+  MemTracker::add_chunk_to_pool(c);
+
   // If this is a standard-sized chunk, return it to its pool; otherwise free it.
   ChunkPool* pool = ChunkPool::get_pool_for_size(c->length());
   if (pool != nullptr) {
     pool->return_to_pool(c);
   } else {
-    // Free chunks under a lock so that NMT adjustment is stable.
-    ChunkPoolLocker lock;
     os::free(c);
   }
 }
 
 ChunkPool ChunkPool::_pools[] = { Chunk::size, Chunk::medium_size, Chunk::init_size, Chunk::tiny_size };
+volatile bool ChunkPool::_suspend_cleaning = false;
 
 class ChunkPoolCleaner : public PeriodicTask {
   static const int cleaning_interval = 5000; // cleaning interval in ms
@@ -240,6 +246,10 @@ class ChunkPoolCleaner : public PeriodicTask {
      ChunkPool::clean();
    }
 };
+
+void Arena::suspend_chunk_pool_cleaning(bool suspend) {
+  ChunkPool::set_suspend_cleaning(suspend);
+}
 
 void Arena::start_chunk_pool_cleaner_task() {
 #ifdef ASSERT

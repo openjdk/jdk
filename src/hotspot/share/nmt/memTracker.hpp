@@ -90,6 +90,22 @@ class MemTracker : AllStatic {
     return mem_base;
   }
 
+  static inline void chunk_assigned_to_arena(void* memblock, MemTag new_tag) {
+    assert(memblock != nullptr, "caller should handle null");
+    if (!enabled()) {
+      return;
+    }
+    MallocTracker::chunk_assigned_to_arena(memblock, new_tag);
+  }
+
+  static inline void add_chunk_to_pool(void* memblock) {
+    assert(memblock != nullptr, "caller should handle null");
+    if (!enabled()) {
+      return;
+    }
+    MallocTracker::add_chunk_to_pool(memblock);
+  }
+
   // Record malloc free and return malloc base address
   static inline void* record_free(void* memblock) {
     // Never turned on

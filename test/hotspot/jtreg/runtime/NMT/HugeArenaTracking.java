@@ -98,6 +98,7 @@ public class HugeArenaTracking {
     NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
             new String[] { "scale=K" },
             new String[] { "Test (reserved=1KB, committed=1KB)",
+                           "(malloc=0KB tag=Test",
                            "(arena=1KB #1) (peak=" });
 
     wb.NMTFreeArena(arena2);

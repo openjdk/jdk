@@ -88,7 +88,6 @@ void MemReporterBase::print_malloc(const MemoryCounter* c, MemTag mem_tag) const
       amount_in_current_scale(amount), scale);
   }
 
-  // blends out mtChunk count number
   if (count > 0) {
     out->print(" #%zu", count);
   }
@@ -705,7 +704,7 @@ void MemSummaryDiffReporter::diff_summary_of_tag(MemTag mem_tag,
     if (amount_in_current_scale(current_malloc_amount) > 0 ||
         diff_in_current_scale(current_malloc_amount, early_malloc_amount) != 0) {
       out->print("(");
-      print_malloc_diff(current_malloc_amount, (mem_tag == mtChunk) ? 0 : current_malloc->malloc_count(),
+      print_malloc_diff(current_malloc_amount, current_malloc->malloc_count(),
         early_malloc_amount, early_malloc->malloc_count(), mtNone);
       out->print_cr(")");
     }
