@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,6 @@ struct GradShaderInOut {
 struct ColShaderInOut_XOR {
     float4 position [[position]];
     float  ptSize [[point_size]];
-    float2 orig_pos;
     half4  color;
 };
 
@@ -677,7 +676,6 @@ vertex ColShaderInOut_XOR vert_col_xorMode(VertexInput in [[stage_in]],
     float4 pos4 = float4(in.position, 0.0, 1.0);
     out.position = transform.transformMatrix*pos4;
     out.ptSize = 1.0;
-    out.orig_pos = in.position;
     out.color = half4(uniforms.color.r, uniforms.color.g, uniforms.color.b, uniforms.color.a);
     return out;
 }
@@ -685,7 +683,7 @@ vertex ColShaderInOut_XOR vert_col_xorMode(VertexInput in [[stage_in]],
 fragment half4 frag_col_xorMode(ColShaderInOut_XOR in [[stage_in]],
         texture2d<float, access::read> renderTexture [[texture(0)]])
 {
-    uint2 texCoord = {(unsigned int)(in.orig_pos.x), (unsigned int)(in.orig_pos.y)};
+    uint2 texCoord = {(unsigned int)(in.position.x), (unsigned int)(in.position.y)};
 
     float4 pixelColor = renderTexture.read(texCoord);
     half4 color = in.color;
