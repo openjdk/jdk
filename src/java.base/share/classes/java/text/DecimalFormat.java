@@ -250,7 +250,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *          <td>{@link DecimalFormatSymbols#getExponentSeparator()}
  *          <td>Number
  *          <td>Separates mantissa and exponent in scientific notation. This value
- *              is case sensistive. <em>Need not be quoted in prefix or suffix.</em>
+ *              is case sensitive. <em>Need not be quoted in prefix or suffix.</em>
  *     <tr>
  *          <th scope="row">{@code ;}
  *          <td>{@link DecimalFormatSymbols#getPatternSeparator()}
