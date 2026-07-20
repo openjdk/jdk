@@ -69,6 +69,7 @@ public class PanelRepaint extends Panel implements FocusListener {
 
     public static Frame createUI() {
         Frame f = new Frame("Panel Repaint Test");
+        f.setResizable(false);
         f.setLayout(new BorderLayout());
         PanelRepaint pr = new PanelRepaint();
         pr.setLayout(null);
