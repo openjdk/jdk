@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,15 +50,17 @@ final class ZipDecompressor implements ResourceDecompressor {
         }
         byte[] bytesOut = new byte[(int) originalSize];
 
-        Inflater inflater = new Inflater();
-        inflater.setInput(bytesIn, offset, bytesIn.length - offset);
-
         int count = 0;
-        while (!inflater.finished() && count < originalSize) {
-            count += inflater.inflate(bytesOut, count, bytesOut.length - count);
-        }
+        Inflater inflater = new Inflater();
+        try {
+            inflater.setInput(bytesIn, offset, bytesIn.length - offset);
 
-        inflater.end();
+            while (!inflater.finished() && count < originalSize) {
+                count += inflater.inflate(bytesOut, count, bytesOut.length - count);
+            }
+        } finally {
+            inflater.end();
+        }
 
         if (count != originalSize) {
             throw new IOException("Resource content size mismatch");

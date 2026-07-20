@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,8 @@ public class SupportedDHKeys {
     public static void main(String[] args) throws Exception {
         for (SupportedKeySize keySize : SupportedKeySize.values()) {
             System.out.println("Checking " + keySize.primeSize + " ...");
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", "SunJCE");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH",
+                                    System.getProperty("test.provider.name", "SunJCE"));
             kpg.initialize(keySize.primeSize);
             KeyPair kp = kpg.generateKeyPair();
             checkKeyPair(kp, keySize.primeSize);

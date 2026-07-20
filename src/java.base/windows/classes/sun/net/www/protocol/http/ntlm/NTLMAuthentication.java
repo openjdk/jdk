@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,14 @@
 package sun.net.www.protocol.http.ntlm;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.PasswordAuthentication;
-import java.net.UnknownHostException;
 import java.net.URL;
 import java.util.Locale;
-import java.util.Objects;
-import java.util.Properties;
 import sun.net.NetProperties;
 import sun.net.www.HeaderParser;
 import sun.net.www.protocol.http.AuthenticationInfo;
 import sun.net.www.protocol.http.AuthScheme;
 import sun.net.www.protocol.http.HttpURLConnection;
-import sun.security.action.GetPropertyAction;
 
 /**
  * NTLMAuthentication:
@@ -46,14 +41,11 @@ import sun.security.action.GetPropertyAction;
  * @author Michael McMahon
  */
 
-public class NTLMAuthentication extends AuthenticationInfo {
-
-    private static final long serialVersionUID = 100L;
+public final class NTLMAuthentication extends AuthenticationInfo {
 
     private static final NTLMAuthenticationCallback NTLMAuthCallback =
-        NTLMAuthenticationCallback.getNTLMAuthenticationCallback();
+            NTLMAuthenticationCallback.getNTLMAuthenticationCallback();
 
-    private String hostname;
     /* Domain to use if not specified by user */
     private static final String defaultDomain;
     /* Whether cache is enabled for NTLM */
@@ -68,45 +60,16 @@ public class NTLMAuthentication extends AuthenticationInfo {
     private static final TransparentAuth authMode;
 
     static {
-        Properties props = GetPropertyAction.privilegedGetProperties();
-        defaultDomain = props.getProperty("http.auth.ntlm.domain", "domain");
-        String ntlmCacheProp = props.getProperty("jdk.ntlm.cache", "true");
+        defaultDomain = System.getProperty("http.auth.ntlm.domain", "domain");
+        String ntlmCacheProp = System.getProperty("jdk.ntlm.cache", "true");
         ntlmCache = Boolean.parseBoolean(ntlmCacheProp);
-        @SuppressWarnings("removal")
-        String modeProp = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<String>() {
-                public String run() {
-                    return NetProperties.get("jdk.http.ntlm.transparentAuth");
-                }
-            });
-
+        String modeProp = NetProperties.get("jdk.http.ntlm.transparentAuth");
         if ("trustedHosts".equalsIgnoreCase(modeProp))
             authMode = TransparentAuth.TRUSTED_HOSTS;
         else if ("allHosts".equalsIgnoreCase(modeProp))
             authMode = TransparentAuth.ALL_HOSTS;
         else
             authMode = TransparentAuth.DISABLED;
-    }
-
-    @SuppressWarnings("removal")
-    private void init0() {
-
-        hostname = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<String>() {
-            public String run() {
-                String localhost;
-                try {
-                    localhost = InetAddress.getLocalHost().getHostName().toUpperCase(Locale.ROOT);
-                } catch (UnknownHostException e) {
-                     localhost = "localhost";
-                }
-                return localhost;
-            }
-        });
-        int x = hostname.indexOf ('.');
-        if (x != -1) {
-            hostname = hostname.substring (0, x);
-        }
     }
 
     String username;
@@ -147,7 +110,6 @@ public class NTLMAuthentication extends AuthenticationInfo {
             ntdomain = null;
             password = null;
         }
-        init0();
     }
 
    /**
@@ -240,10 +202,10 @@ public class NTLMAuthentication extends AuthenticationInfo {
      * @param p A source of header values for this connection, not used because
      *          HeaderParser converts the fields to lower case, use raw instead
      * @param raw The raw header field.
-     * @return true if all goes well, false if no headers were set.
+     * @throws IOException if no headers were set
      */
     @Override
-    public boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
+    public void setHeaders(HttpURLConnection conn, HeaderParser p, String raw) throws IOException {
 
         // no need to synchronize here:
         //   already locked by s.n.w.p.h.HttpURLConnection
@@ -260,10 +222,9 @@ public class NTLMAuthentication extends AuthenticationInfo {
             if (seq.isComplete()) {
                 conn.authObj(null);
             }
-            return true;
         } catch (IOException e) {
             conn.authObj(null);
-            return false;
+            throw e;
         }
     }
 }

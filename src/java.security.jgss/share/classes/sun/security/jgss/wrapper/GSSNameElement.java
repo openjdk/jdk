@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import sun.security.util.DerInputStream;
 import sun.security.util.DerOutputStream;
 import sun.security.util.ObjectIdentifier;
 
-import javax.security.auth.kerberos.ServicePermission;
 import java.io.IOException;
 import java.lang.ref.Cleaner;
 import java.security.Provider;
@@ -167,29 +166,6 @@ public class GSSNameElement implements GSSNameSpi {
         cleanable = Krb5Util.cleaner.register(this, disposerFor(stub, pName));
 
         setPrintables();
-
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null && !Realm.AUTODEDUCEREALM) {
-            String krbName = getKrbName();
-            int atPos = krbName.lastIndexOf('@');
-            if (atPos != -1) {
-                String atRealm = krbName.substring(atPos);
-                // getNativeNameType() can modify NT_GSS_KRB5_PRINCIPAL to null
-                if ((nameType == null
-                            || nameType.equals(GSSUtil.NT_GSS_KRB5_PRINCIPAL))
-                        && new String(nameBytes).endsWith(atRealm)) {
-                    // Created from Kerberos name with realm, no need to check
-                } else {
-                    try {
-                        sm.checkPermission(new ServicePermission(atRealm, "-"));
-                    } catch (SecurityException se) {
-                        // Do not chain the actual exception to hide info
-                        throw new GSSException(GSSException.FAILURE);
-                    }
-                }
-            }
-        }
 
         if (SunNativeProvider.DEBUG) {
             SunNativeProvider.debug("Imported " + printableName + " w/ type " +

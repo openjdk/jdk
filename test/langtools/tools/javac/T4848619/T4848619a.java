@@ -2,7 +2,7 @@
  * @test    /nodynamiccopyright/
  * @bug     4848619
  * @summary static final variable declared after use and self initialized
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile/fail/ref=T4848619a.out -XDrawDiagnostics T4848619a.java
  */
 

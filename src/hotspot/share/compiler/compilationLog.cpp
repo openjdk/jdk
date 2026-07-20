@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compilationLog.hpp"
 #include "compiler/compileTask.hpp"
@@ -52,21 +51,24 @@ void CompilationLog::log_nmethod(JavaThread* thread, nmethod* nm) {
 
 void CompilationLog::log_failure(JavaThread* thread, CompileTask* task, const char* reason, const char* retry_message) {
   StringLogMessage lm;
-  lm.print("%4d   COMPILE SKIPPED: %s", task->compile_id(), reason);
-  if (retry_message != nullptr) {
-    lm.append(" (%s)", retry_message);
+  stringStream sstr(lm.buffer(), lm.size());
+  if (task == nullptr) {
+    sstr.print("Id not known, task was 0;  COMPILE SKIPPED: %s", reason);
+  } else {
+    sstr.print("%4d   COMPILE SKIPPED: %s", task->compile_id(), reason);
   }
-  lm.print("\n");
+  if (retry_message != nullptr) {
+    sstr.print(" (%s)", retry_message);
+  }
   log(thread, "%s", (const char*)lm);
 }
 
 void CompilationLog::log_metaspace_failure(const char* reason) {
   // Note: This method can be called from non-Java/compiler threads to
   // log the global metaspace failure that might affect profiling.
-  ResourceMark rm;
   StringLogMessage lm;
-  lm.print("%4d   COMPILE PROFILING SKIPPED: %s", -1, reason);
-  lm.print("\n");
+  stringStream sstr(lm.buffer(), lm.size());
+  sstr.print("%4d   COMPILE PROFILING SKIPPED: %s", -1, reason);
   log(Thread::current(), "%s", (const char*)lm);
 }
 

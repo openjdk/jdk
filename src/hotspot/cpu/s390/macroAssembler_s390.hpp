@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
- * Copyright (c) 2024 IBM Corporation. All rights reserved.
+ * Copyright (c) 2024, 2026, IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,9 @@ class MacroAssembler: public Assembler {
   unsigned int mul_reg64_const16(Register rval, Register work, int cval);
 
   // Generic operation r1 := r2 + imm.
-  void add2reg(Register r1, int64_t imm, Register r2 = noreg);
+  void add2reg   (Register r1, int64_t imm, Register r2 = noreg);
+  void add2reg_32(Register r1, int64_t imm, Register r2 = noreg);
+
   // Generic operation r := b + x + d.
   void add2reg_with_index(Register r, int64_t d, Register x, Register b = noreg);
 
@@ -197,6 +199,7 @@ class MacroAssembler: public Assembler {
 
   // Test a bit in memory. Result is reflected in CC.
   void testbit(const Address &a, unsigned int bit);
+  void testbit_ushort(const Address &a, unsigned int bit);
   // Test a bit in a register. Result is reflected in CC.
   void testbit(Register r, unsigned int bitPos);
 
@@ -481,6 +484,10 @@ class MacroAssembler: public Assembler {
   // Pop current C frame and restore return PC register (Z_R14).
   void pop_frame_restore_retPC(int frame_size_in_bytes);
 
+#ifdef ASSERT
+  void clobber_volatile_registers(Register excluded_register[], int n);
+#endif // ASSERT
+
   //
   // Calls
   //
@@ -518,12 +525,13 @@ class MacroAssembler: public Assembler {
     Register        last_java_sp,     // To set up last_Java_frame in stubs; use noreg otherwise.
     address         entry_point,      // The entry point.
     bool            allow_relocation, // Flag to request generation of relocatable code.
-    bool            check_exception); // Flag which indicates if exception should be checked.
+    bool            check_exception,  // Flag which indicates if exception should be checked.
+    Label           *last_java_pc);
 
   // Call into the VM.
   // Passes the thread pointer (in Z_ARG1) as a prepended argument.
   // Makes sure oop return values are visible to the GC.
-  void call_VM(Register oop_result, address entry_point, bool check_exceptions = true);
+  void call_VM(Register oop_result, address entry_point, bool check_exceptions = true, Label* last_java_pc = nullptr);
   void call_VM(Register oop_result, address entry_point, Register arg_1, bool check_exceptions = true);
   void call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2, bool check_exceptions = true);
   void call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2,
@@ -567,6 +575,8 @@ class MacroAssembler: public Assembler {
 
   // Get the pc where the last call will return to. Returns _last_calls_return_pc.
   inline address last_calls_return_pc();
+
+  void post_call_nop();
 
   static int ic_check_size();
   int ic_check(int end_alignment);
@@ -694,7 +704,7 @@ class MacroAssembler: public Assembler {
                                      Label*   L_success,
                                      Label*   L_failure,
                                      Label*   L_slow_path,
-                                     RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
+                                     Register super_check_offset = noreg);
 
   // The rest of the type check; must be wired to a corresponding fast path.
   // It does not repeat the fast path logic, so don't use it standalone.
@@ -706,25 +716,62 @@ class MacroAssembler: public Assembler {
                                      Register Rarray_ptr, // tmp
                                      Register Rlength,    // tmp
                                      Label* L_success,
-                                     Label* L_failure);
+                                     Label* L_failure,
+                                     bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                            Register super_klass,
+                                            Register temp_reg,
+                                            Register temp2_reg,
+                                            Label* L_success,
+                                            Label* L_failure,
+                                            bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_table(Register sub_klass,
+                                           Register super_klass,
+                                           Register temp_reg,
+                                           Register temp2_reg,
+                                           Register temp3_reg,
+                                           Register temp4_reg,
+                                           Register result_reg,
+                                           Label* L_success,
+                                           Label* L_failure,
+                                           bool set_cond_codes = false);
+
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
 
   void repne_scan(Register r_addr, Register r_value, Register r_count, Register r_scratch);
 
-  void lookup_secondary_supers_table(Register r_sub_klass,
-                                     Register r_super_klass,
-                                     Register r_temp1,
-                                     Register r_temp2,
-                                     Register r_temp3,
-                                     Register r_temp4,
-                                     Register r_result,
-                                     u1 super_klass_slot);
+  // Secondary subtype checking
+  void lookup_secondary_supers_table_var(Register sub_klass,
+                                         Register r_super_klass,
+                                         Register temp1,
+                                         Register temp2,
+                                         Register temp3,
+                                         Register temp4,
+                                         Register result);
+
+  void lookup_secondary_supers_table_const(Register r_sub_klass,
+                                           Register r_super_klass,
+                                           Register r_temp1,
+                                           Register r_temp2,
+                                           Register r_temp3,
+                                           Register r_temp4,
+                                           Register r_result,
+                                           u1 super_klass_slot);
 
   void lookup_secondary_supers_table_slow_path(Register r_super_klass,
                                                Register r_array_base,
                                                Register r_array_index,
                                                Register r_bitmap,
+                                               Register r_temp,
                                                Register r_result,
-                                               Register r_temp1);
+                                               bool is_stub);
 
   void verify_secondary_supers_table(Register r_sub_klass,
                                      Register r_super_klass,
@@ -750,12 +797,10 @@ class MacroAssembler: public Assembler {
   // Kills registers tmp1_reg and tmp2_reg and preserves the condition code.
   void increment_counter_eq(address counter_address, Register tmp1_reg, Register tmp2_reg);
 
-  void compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2);
-  void compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2);
-  void lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Label& slow);
-  void lightweight_unlock(Register obj, Register tmp1, Register tmp2, Label& slow);
-  void compiler_fast_lock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2);
-  void compiler_fast_unlock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2);
+  void fast_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Label& slow);
+  void fast_unlock(Register obj, Register tmp1, Register tmp2, Label& slow);
+  void compiler_fast_lock_object(Register obj, Register box, Register tmp1, Register tmp2);
+  void compiler_fast_unlock_object(Register obj, Register box, Register tmp1, Register tmp2);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
   void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
@@ -763,21 +808,21 @@ class MacroAssembler: public Assembler {
   // Support for last Java frame (but use call_VM instead where possible).
  private:
   void set_last_Java_frame(Register last_Java_sp, Register last_Java_pc, bool allow_relocation);
-  void reset_last_Java_frame(bool allow_relocation);
-  void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, bool allow_relocation);
+  void reset_last_Java_frame(bool check_last_java_sp, bool allow_relocation);
+  void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, bool allow_relocation, Label* last_java_pc = nullptr);
  public:
   inline void set_last_Java_frame(Register last_java_sp, Register last_Java_pc);
   inline void set_last_Java_frame_static(Register last_java_sp, Register last_Java_pc);
-  inline void reset_last_Java_frame(void);
-  inline void reset_last_Java_frame_static(void);
-  inline void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1);
+  inline void reset_last_Java_frame(bool check_last_java_sp = true);
+  inline void reset_last_Java_frame_static(bool check_last_java_sp = true);
+  inline void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, Label* jpc = nullptr);
   inline void set_top_ijava_frame_at_SP_as_last_Java_frame_static(Register sp, Register tmp1);
 
   void set_thread_state(JavaThreadState new_state);
 
   // Read vm result from thread.
-  void get_vm_result  (Register oop_result);
-  void get_vm_result_2(Register result);
+  void get_vm_result_oop  (Register oop_result);
+  void get_vm_result_metadata(Register result);
 
   // Vm result is currently getting hijacked to for oop preservation.
   void set_vm_result(Register oop_result);
@@ -803,6 +848,12 @@ class MacroAssembler: public Assembler {
   void load_klass(Register klass, Register src_oop);
   void store_klass(Register klass, Register dst_oop, Register ck = noreg); // Klass will get compressed if ck not provided.
   void store_klass_gap(Register s, Register dst_oop);
+  void load_narrow_klass_compact(Register dst, Register src);
+  // Compares the narrow Klass pointer of an object to a given narrow Klass
+  void cmp_klass(Register klass, Register obj, Register tmp);
+  // Compares the Klass pointer of two objects obj1 and obj2. Result is in the condition flags.
+  // Uses tmp1 and tmp2 as temporary registers.
+  void cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2);
 
   // This function calculates the size of the code generated by
   //   decode_klass_not_null(register dst)
@@ -841,8 +892,7 @@ class MacroAssembler: public Assembler {
   void oop_decoder(Register Rdst, Register Rsrc, bool maybenull,
                    Register Rbase = Z_R1, int pow2_offset = -1);
 
-  void resolve_oop_handle(Register result);
-  void load_mirror_from_const_method(Register mirror, Register const_method);
+  void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
   void load_method_holder(Register holder, Register method);
 
   //--------------------------
@@ -931,6 +981,10 @@ class MacroAssembler: public Assembler {
     asm_assert_mems_zero(false, false, 8, mem_offset, mem_base, msg, id);
   }
   void asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id);
+
+  // Load bad values into registers that are nonvolatile according to the ABI except Z_thread.
+  // This is done after vthread preemption and before vthread resume.
+  void clobber_nonvolatile_registers() NOT_DEBUG_RETURN;
 
   // Save and restore functions: Exclude Z_R0.
   void save_volatile_regs(   Register dst, int offset, bool include_fp, bool include_flags);
@@ -1062,24 +1116,13 @@ class MacroAssembler: public Assembler {
   void pop_count_int_with_ext3(Register dst, Register src);
   void pop_count_long_with_ext3(Register dst, Register src);
 
-};
+  void push_cont_fastpath();
+  void pop_cont_fastpath();
 
-/**
- * class SkipIfEqual:
- *
- * Instantiating this class will result in assembly code being output that will
- * jump around any code emitted between the creation of the instance and it's
- * automatic destruction at the end of a scope block, depending on the value of
- * the flag passed to the constructor, which will be checked at run-time.
- */
-class SkipIfEqual {
- private:
-  MacroAssembler* _masm;
-  Label _label;
+  void load_on_condition_imm_32(Register dst, int64_t i2, branch_condition cc);
+  void load_on_condition_imm_64(Register dst, int64_t i2, branch_condition cc);
 
- public:
-  SkipIfEqual(MacroAssembler*, const bool* flag_addr, bool value, Register _rscratch);
-  ~SkipIfEqual();
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register tmp1);
 };
 
 #ifdef ASSERT

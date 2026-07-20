@@ -28,16 +28,18 @@
 #include "gc/shenandoah/shenandoahGC.hpp"
 
 class VM_ShenandoahDegeneratedGC;
+class ShenandoahGeneration;
 
 class ShenandoahDegenGC : public ShenandoahGC {
   friend class VM_ShenandoahDegeneratedGC;
 private:
   const ShenandoahDegenPoint  _degen_point;
   bool _abbreviated;
+  const bool _do_old_gc_bootstrap;
 
 public:
-  ShenandoahDegenGC(ShenandoahDegenPoint degen_point);
-  bool collect(GCCause::Cause cause);
+  ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation, bool do_old_gc_bootstrap = false);
+  bool collect(GCCause::Cause cause) override;
 
 private:
   void vmop_degenerated();
@@ -51,8 +53,8 @@ private:
   void op_cleanup_early();
 
   void op_evacuate();
-  void op_init_updaterefs();
-  void op_updaterefs();
+  void op_init_update_refs();
+  void op_update_refs();
   void op_update_roots();
   void op_cleanup_complete();
 
@@ -64,6 +66,8 @@ private:
   void upgrade_to_full();
 
   const char* degen_event_message(ShenandoahDegenPoint point) const;
+
+  bool has_in_place_promotions(const ShenandoahHeap* heap) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHDEGENERATEDGC_HPP

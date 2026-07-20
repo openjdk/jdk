@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,6 @@ final class TestEncoder extends XMLEncoder {
     }
 
     public static void test(Object provider, Object object, Object value) {
-        System.setSecurityManager(new SecurityManager());
-
         TestEncoder encoder = new TestEncoder();
         encoder.setPersistenceDelegate(
                 object.getClass(),

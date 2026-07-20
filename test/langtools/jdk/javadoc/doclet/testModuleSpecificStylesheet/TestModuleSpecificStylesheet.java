@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8219313
+ * @bug 8219313 8347058
  * @summary Support module specific stylesheets
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -82,22 +82,22 @@ public class TestModuleSpecificStylesheet extends JavadocTester {
 
         checkOutput("ma/module-summary.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../ma/doc-files/spanstyle.css" title="Style">""");
+                    <link rel="stylesheet" type="text/css" href="../ma/doc-files/spanstyle.css">""");
 
         checkOutput("ma/pa/package-summary.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../../ma/doc-files/spanstyle.css" title="Style">""");
+                    <link rel="stylesheet" type="text/css" href="../../ma/doc-files/spanstyle.css">""");
 
         checkOutput("ma/pa/A.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../../ma/doc-files/spanstyle.css" title="Style">""");
+                    <link rel="stylesheet" type="text/css" href="../../ma/doc-files/spanstyle.css">""");
 
         checkOutput("ma/pa/pb/B.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../../../ma/doc-files/spanstyle.css" title="Style">""");
+                    <link rel="stylesheet" type="text/css" href="../../../ma/doc-files/spanstyle.css">""");
 
         checkOutput("ma/pa/pb/package-summary.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../../../ma/doc-files/spanstyle.css" title="Style">""");
+                    <link rel="stylesheet" type="text/css" href="../../../ma/doc-files/spanstyle.css">""");
     }
 }

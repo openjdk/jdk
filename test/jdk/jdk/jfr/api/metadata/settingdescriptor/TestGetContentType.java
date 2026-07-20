@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,10 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @summary Test SettingDescriptor.getContentType()
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.api.metadata.settingdescriptor.TestGetDescription
+ * @run main/othervm jdk.jfr.api.metadata.settingdescriptor.TestGetContentType
  */
 public class TestGetContentType {
 
@@ -49,7 +49,7 @@ public class TestGetContentType {
         Asserts.assertNull(plain.getContentType());
 
         SettingDescriptor annotatedType = Events.getSetting(type, "annotatedType");
-        Asserts.assertNull(annotatedType.getContentType(), Timestamp.class.getName());
+        Asserts.assertEquals(annotatedType.getContentType(), Timestamp.class.getName());
 
         SettingDescriptor newName = Events.getSetting(type, "newName");
         Asserts.assertEquals(newName.getContentType(), Timespan.class.getName());
@@ -58,7 +58,7 @@ public class TestGetContentType {
         Asserts.assertNull(overridden.getContentType());
 
         SettingDescriptor protectedBase = Events.getSetting(type, "protectedBase");
-        Asserts.assertEquals(protectedBase.getContentType(), Frequency.class);
+        Asserts.assertEquals(protectedBase.getContentType(), Frequency.class.getName());
 
         SettingDescriptor publicBase = Events.getSetting(type, "publicBase");
         Asserts.assertEquals(publicBase.getContentType(), Timestamp.class.getName());

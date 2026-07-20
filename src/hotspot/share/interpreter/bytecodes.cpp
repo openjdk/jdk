@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
@@ -403,7 +402,7 @@ int Bytecodes::special_length_at(Bytecodes::Code code, address bcp, address end)
   case _fast_binaryswitch: // fall through
   case _fast_linearswitch:
     { address aligned_bcp = align_up(bcp + 1, jintSize);
-      if (end != nullptr && aligned_bcp + 2*jintSize >= end) {
+      if (end != nullptr && aligned_bcp + 2*jintSize > end) {
         return -1; // don't read past end of code buffer
       }
       // Promote calculation to 64 bits to do range checks, used by the verifier.

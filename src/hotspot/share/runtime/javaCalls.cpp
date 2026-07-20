@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -46,9 +45,6 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciJavaClasses.hpp"
-#endif
 
 // -----------------------------------------------------
 // Implementation of JavaCallWrapper
@@ -59,6 +55,7 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   guarantee(thread->is_Java_thread(), "crucial check - the VM thread cannot and must not escape to Java code");
   assert(!thread->owns_locks(), "must release all locks when leaving VM");
   guarantee(thread->can_call_java(), "cannot make java calls from the native compiler");
+  assert(!thread->preempting(), "Unexpected Java upcall whilst processing preemption");
   _result   = result;
 
   // Allocate handle block for Java code. This must be done before we change thread_state to _thread_in_Java_or_stub,
@@ -92,17 +89,13 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   _anchor.copy(_thread->frame_anchor());
   _thread->frame_anchor()->clear();
 
-  debug_only(_thread->inc_java_call_counter());
+  DEBUG_ONLY(_thread->inc_java_call_counter());
   _thread->set_active_handles(new_handles);     // install new handle block and reset Java frame linkage
-
-  MACOS_AARCH64_ONLY(_thread->enable_wx(WXExec));
 }
 
 
 JavaCallWrapper::~JavaCallWrapper() {
   assert(_thread == JavaThread::current(), "must still be the same thread");
-
-  MACOS_AARCH64_ONLY(_thread->enable_wx(WXWrite));
 
   // restore previous handle block & Java frame linkage
   JNIHandleBlock *_old_handles = _thread->active_handles();
@@ -110,17 +103,12 @@ JavaCallWrapper::~JavaCallWrapper() {
 
   _thread->frame_anchor()->zap();
 
-  debug_only(_thread->dec_java_call_counter());
+  DEBUG_ONLY(_thread->dec_java_call_counter());
 
   // Old thread-local info. has been restored. We are not back in the VM.
   ThreadStateTransition::transition_from_java(_thread, _thread_in_vm);
 
   // State has been restored now make the anchor frame visible for the profiler.
-  // Do this after the transition because this allows us to put an assert
-  // the Java->vm transition which checks to see that stack is not walkable
-  // on sparc/ia64 which will catch violations of the resetting of last_Java_frame
-  // invariants (i.e. _flags always cleared on return to Java)
-
   _thread->frame_anchor()->copy(&_anchor);
 
   // Release handles after we are marked as being inside the VM again, since this
@@ -248,7 +236,7 @@ void JavaCalls::call_special(JavaValue* result, Handle receiver, Klass* klass, S
 void JavaCalls::call_static(JavaValue* result, Klass* klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {
   CallInfo callinfo;
   LinkInfo link_info(klass, name, signature);
-  LinkResolver::resolve_static_call(callinfo, link_info, true, CHECK);
+  LinkResolver::resolve_static_call(callinfo, link_info, ClassInitMode::init, CHECK);
   methodHandle method(THREAD, callinfo.selected_method());
   assert(method.not_null(), "should have thrown exception");
 
@@ -337,11 +325,11 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
   assert(!thread->handle_area()->no_handle_mark_active(), "cannot call out to Java here");
 
   // Verify the arguments
-  if (JVMCI_ONLY(args->alternative_target().is_null() &&) (DEBUG_ONLY(true ||) CheckJNICalls)) {
+  if ((DEBUG_ONLY(true ||) CheckJNICalls)) {
     args->verify(method, result->get_type());
   }
   // Ignore call if method is empty
-  if (JVMCI_ONLY(args->alternative_target().is_null() &&) method->is_empty_method()) {
+  if (method->is_empty_method()) {
     assert(result->get_type() == T_VOID, "an empty method must return a void value");
     return;
   }
@@ -402,38 +390,27 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
           // Since the call stub sets up like the interpreter we call the from_interpreted_entry
           // so we can go compiled via a i2c.
           entry_point = method->from_interpreted_entry();
-#if INCLUDE_JVMCI
-          // Gets the alternative target (if any) that should be called
-          Handle alternative_target = args->alternative_target();
-          if (!alternative_target.is_null()) {
-            // Must extract verified entry point from HotSpotNmethod after VM to Java
-            // transition in JavaCallWrapper constructor so that it is safe with
-            // respect to nmethod sweeping.
-            address verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(nullptr, alternative_target());
-            if (verified_entry_point != nullptr) {
-              thread->set_jvmci_alternate_call_target(verified_entry_point);
-              entry_point = method->adapter()->get_i2c_entry();
-            }
-          }
-#endif
         }
       }
-      StubRoutines::call_stub()(
-        (address)&link,
-        // (intptr_t*)&(result->_value), // see NOTE above (compiler problem)
-        result_val_address,          // see NOTE above (compiler problem)
-        result_type,
-        method(),
-        entry_point,
-        parameter_address,
-        args->size_of_parameters(),
-        CHECK
-      );
+      {
+        MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
+        StubRoutines::call_stub()(
+          (address)&link,
+          // (intptr_t*)&(result->_value), // see NOTE above (compiler problem)
+          result_val_address,          // see NOTE above (compiler problem)
+          result_type,
+          method(),
+          entry_point,
+          parameter_address,
+          args->size_of_parameters(),
+          CHECK
+        );
+      }
 
       result = link.result();  // circumvent MS C++ 5.0 compiler bug (result is clobbered across call)
       // Preserve oop return value across possible gc points
       if (oop_result_flag) {
-        thread->set_vm_result(result->get_oop());
+        thread->set_vm_result_oop(result->get_oop());
       }
     }
   } // Exit JavaCallWrapper (can block - potential return oop must be preserved)
@@ -444,8 +421,8 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 
   // Restore possible oop return
   if (oop_result_flag) {
-    result->set_oop(thread->vm_result());
-    thread->set_vm_result(nullptr);
+    result->set_oop(thread->vm_result_oop());
+    thread->set_vm_result_oop(nullptr);
   }
 }
 
@@ -559,7 +536,7 @@ class SignatureChekker : public SignatureIterator {
                 "Bad JNI oop argument %d: " PTR_FORMAT, _pos, v);
       // Verify the pointee.
       oop vv = resolve_indirect_oop(v, _value_state[_pos]);
-      guarantee(oopDesc::is_oop_or_null(vv, true),
+      guarantee(oopDesc::is_oop_or_null(vv),
                 "Bad JNI oop argument %d: " PTR_FORMAT " -> " PTR_FORMAT,
                 _pos, v, p2i(vv));
     }

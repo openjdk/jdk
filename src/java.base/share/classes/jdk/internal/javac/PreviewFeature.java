@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,11 @@ public @interface PreviewFeature {
      */
     public Feature feature();
 
+    /**
+     * A reflective preview API may be used without causing a compilation error
+     * when preview features are disabled (JLS {@jls 1.5.1}), but still causes
+     * a preview warning.
+     */
     public boolean reflective() default false;
 
     /**
@@ -64,24 +69,21 @@ public @interface PreviewFeature {
      * Values should be annotated with the feature's {@code JEP}.
      */
     public enum Feature {
-        // not used, but required for interim javac to not warn.
-        VIRTUAL_THREADS,
-        FOREIGN,
-        @JEP(number=459, title="String Templates", status="Second Preview")
-        STRING_TEMPLATES,
-        @JEP(number=477, title="Implicitly Declared Classes and Instance Main Methods", status="Third Preview")
-        IMPLICIT_CLASSES,
-        @JEP(number=481, title="Scoped Values", status="Third Preview")
-        SCOPED_VALUES,
-        @JEP(number=480, title="Structured Concurrency", status="Third Preview")
+        @JEP(number=533, title="Structured Concurrency", status="Seventh Preview")
         STRUCTURED_CONCURRENCY,
-        @JEP(number=466, title="ClassFile API", status="Second Preview")
-        CLASSFILE_API,
-        @JEP(number=473, title="Stream Gatherers", status="Second Preview")
-        STREAM_GATHERERS,
-        @JEP(number=476, title="Module Import Declarations", status="Preview")
-        MODULE_IMPORTS,
-        LANGUAGE_MODEL,
+        @JEP(number = 531, title = "Lazy Constants", status = "Third Preview")
+        LAZY_CONSTANTS,
+        @JEP(number=538, title="PEM Encodings of Cryptographic Objects",
+            status="Third Preview")
+        PEM_API,
+        /**
+         * Indicates a preview API exists to allow access to the environment
+         * where all preview features of the current Java SE release are enabled.
+         * Such an API is usually {@link #reflective()} and never intended to
+         * become permanent.  This "feature" does not have a JEP and its APIs
+         * are not displayed in the "Preview API" page in Javadoc output.
+         */
+        PREVIEW_SUPPORT,
         /**
          * A key for testing.
          */

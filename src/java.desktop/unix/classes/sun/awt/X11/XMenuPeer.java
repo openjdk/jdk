@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.Vector;
 import sun.util.logging.PlatformLogger;
 import sun.awt.AWTAccessor;
 
-public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
+public final class XMenuPeer extends XMenuItemPeer implements MenuPeer {
 
     /************************************************
      *

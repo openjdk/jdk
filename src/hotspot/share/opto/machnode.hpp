@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ public:
     return ::as_FloatRegister(reg(ra_, node, idx));
   }
 
-#if defined(IA32) || defined(AMD64)
+#if defined(AMD64)
   KRegister  as_KRegister(PhaseRegAlloc *ra_, const Node *node)   const {
     return ::as_KRegister(reg(ra_, node));
   }
@@ -134,6 +134,14 @@ public:
     return ::as_VectorSRegister(reg(ra_, node, idx));
   }
 #endif
+#if defined(S390)
+  VectorRegister as_VectorRegister(PhaseRegAlloc *ra_, const Node *node) const {
+    return ::as_VectorRegister(reg(ra_, node));
+  }
+  VectorRegister as_VectorRegister(PhaseRegAlloc *ra_, const Node *node, int idx) const {
+    return ::as_VectorRegister(reg(ra_, node, idx));
+ }
+#endif
 #if defined(AARCH64)
   PRegister as_PRegister(PhaseRegAlloc* ra_, const Node* node) const {
     return ::as_PRegister(reg(ra_, node));
@@ -148,6 +156,7 @@ public:
   virtual jdouble constantD() const;
   virtual jfloat  constantF() const;
   virtual jlong   constantL() const;
+  virtual jshort  constantH() const;
   virtual TypeOopPtr *oop() const;
   virtual int  ccode() const;
   // A zero, default, indicates this value is not needed.
@@ -211,7 +220,7 @@ public:
 // ADLC inherit from this class.
 class MachNode : public Node {
 public:
-  MachNode() : Node((uint)0), _barrier(0), _num_opnds(0), _opnds(nullptr) {
+  MachNode() : Node((uint)0), _bottom_type(nullptr), _barrier(0), _num_opnds(0), _opnds(nullptr) {
     init_class_id(Class_Mach);
   }
   // Required boilerplate
@@ -257,6 +266,7 @@ public:
   int  operand_index(uint operand) const;
   int  operand_index(const MachOper *oper) const;
   int  operand_index(Node* m) const;
+  int  operand_num_edges(uint operand) const;
 
   // Register class input is expected in
   virtual const RegMask &in_RegMask(uint) const;
@@ -271,6 +281,9 @@ public:
   // both an input and an output).  It is necessary when the input and
   // output have choices - but they must use the same choice.
   virtual uint two_adr( ) const { return 0; }
+
+  // Capture the type of the matched ideal node
+  const Type* _bottom_type;
 
   // The GC might require some barrier metadata for machine code emission.
   uint8_t _barrier;
@@ -321,7 +334,18 @@ public:
   virtual MachNode *Expand( State *, Node_List &proj_list, Node* mem ) { return this; }
 
   // Bottom_type call; value comes from operand0
-  virtual const class Type *bottom_type() const { return _opnds[0]->type(); }
+  virtual const Type* bottom_type() const {
+    if (_bottom_type != nullptr) {
+      return _bottom_type;
+    }
+    const Type* res = _opnds[0]->type();
+    // The type system around pointers is complex, do not rely on operand type then
+    assert(res != nullptr, "must be not null");
+    assert(is_MachTemp() || res->isa_ptr() == nullptr, "must not be a pointer");
+    assert(is_MachTemp() || res->isa_narrowoop() == nullptr, "must not be a narrow oop");
+    return res;
+  }
+
   virtual uint ideal_reg() const {
     const Type *t = _opnds[0]->type();
     if (t == TypeInt::CC) {
@@ -377,6 +401,13 @@ public:
 
   // Returns true if this node is a check that can be implemented with a trap.
   virtual bool is_TrapBasedCheckNode() const { return false; }
+
+  // Whether this node is expanded during code emission into a sequence of
+  // instructions and the first instruction can perform an implicit null check.
+  virtual bool is_late_expanded_null_check_candidate() const {
+    return false;
+  }
+
   void set_removed() { add_flag(Flag_is_removed_by_peephole); }
   bool get_removed() { return (flags() & Flag_is_removed_by_peephole) != 0; }
 
@@ -399,20 +430,6 @@ public:
   virtual uint oper_input_base() const { return 0; }
   virtual uint rule()            const { return 9999999; }
   virtual const class Type *bottom_type() const { return _opnds == nullptr ? Type::CONTROL : MachNode::bottom_type(); }
-};
-
-//------------------------------MachTypeNode----------------------------
-// Machine Nodes that need to retain a known Type.
-class MachTypeNode : public MachNode {
-  virtual uint size_of() const { return sizeof(*this); } // Size is bigger
-public:
-  MachTypeNode( ) {}
-  const Type *_bottom_type;
-
-  virtual const class Type *bottom_type() const { return _bottom_type; }
-#ifndef PRODUCT
-  virtual void dump_spec(outputStream *st) const;
-#endif
 };
 
 //------------------------------MachBreakpointNode----------------------------
@@ -460,12 +477,12 @@ public:
 
 //------------------------------MachConstantNode-------------------------------
 // Machine node that holds a constant which is stored in the constant table.
-class MachConstantNode : public MachTypeNode {
+class MachConstantNode : public MachNode {
 protected:
   ConstantTable::Constant _constant;  // This node's constant.
 
 public:
-  MachConstantNode() : MachTypeNode() {
+  MachConstantNode() : MachNode() {
     init_class_id(Class_MachConstant);
   }
 
@@ -490,6 +507,7 @@ public:
   int  constant_offset() const { return ((MachConstantNode*) this)->constant_offset(); }
   // Unchecked version to avoid assertions in debug output.
   int  constant_offset_unchecked() const;
+  virtual uint size_of() const { return sizeof(MachConstantNode); }
 };
 
 //------------------------------MachUEPNode-----------------------------------
@@ -524,17 +542,15 @@ public:
 //------------------------------MachEpilogNode--------------------------------
 // Machine function Epilog Node
 class MachEpilogNode : public MachIdealNode {
+private:
+  bool _do_polling;
 public:
   MachEpilogNode(bool do_poll = false) : _do_polling(do_poll) {}
   virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
   virtual int reloc() const;
   virtual const Pipeline *pipeline() const;
-
-private:
-  bool _do_polling;
-
-public:
+  virtual uint size_of() const { return sizeof(MachEpilogNode); }
   bool do_polling() const { return _do_polling; }
 
 #ifndef PRODUCT
@@ -558,6 +574,7 @@ public:
 
   virtual int ideal_Opcode() const { return Op_Con; } // bogus; see output.cpp
   virtual const Pipeline *pipeline() const;
+  virtual uint size_of() const { return sizeof(MachNopNode); }
 #ifndef PRODUCT
   virtual const char *Name() const { return "Nop"; }
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;
@@ -721,7 +738,7 @@ public:
   virtual const class Type *bottom_type() const { return TypeTuple::IFBOTH; }
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual const RegMask &in_RegMask(uint) const;
-  virtual const RegMask &out_RegMask() const { return RegMask::Empty; }
+  virtual const RegMask& out_RegMask() const { return RegMask::EMPTY; }
 #ifndef PRODUCT
   virtual const char *Name() const { return "NullCheck"; }
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;
@@ -738,7 +755,10 @@ public:
 // occasional callbacks to the machine model for important info.
 class MachProjNode : public ProjNode {
 public:
-  MachProjNode( Node *multi, uint con, const RegMask &out, uint ideal_reg ) : ProjNode(multi,con), _rout(out), _ideal_reg(ideal_reg) {
+  MachProjNode(Node* multi, uint con, const RegMask& out, uint ideal_reg)
+      : ProjNode(multi, con),
+        _rout(out, Compile::current()->comp_arena()),
+        _ideal_reg(ideal_reg) {
     init_class_id(Class_MachProj);
   }
   RegMask _rout;
@@ -750,7 +770,7 @@ public:
   virtual int   Opcode() const;
   virtual const Type *bottom_type() const;
   virtual const TypePtr *adr_type() const;
-  virtual const RegMask &in_RegMask(uint) const { return RegMask::Empty; }
+  virtual const RegMask& in_RegMask(uint) const { return RegMask::EMPTY; }
   virtual const RegMask &out_RegMask() const { return _rout; }
   virtual uint  ideal_reg() const { return _ideal_reg; }
   // Need size_of() for virtual ProjNode::clone()
@@ -785,6 +805,7 @@ public:
   MachJumpNode() : MachConstantNode() {
     init_class_id(Class_MachJump);
   }
+  virtual uint size_of() const { return sizeof(MachJumpNode); }
 };
 
 //------------------------------MachGotoNode-----------------------------------
@@ -883,6 +904,7 @@ public:
     assert(verify_jvms(jvms), "jvms must match");
     set_req(_jvmadj + jvms->monoff() + idx, c);
   }
+  virtual uint size_of() const { return sizeof(MachSafePointNode); }
 };
 
 //------------------------------MachCallNode----------------------------------
@@ -939,7 +961,6 @@ public:
   ciMethod* _method;                 // Method being direct called
   bool      _override_symbolic_info; // Override symbolic call site info from bytecode
   bool      _optimized_virtual;      // Tells if node is a static call or an optimized virtual
-  bool      _method_handle_invoke;   // Tells if the call has to preserve SP
   bool      _arg_escape;             // ArgEscape in parameter list
   MachCallJavaNode() : MachCallNode(), _override_symbolic_info(false) {
     init_class_id(Class_MachCallJava);
@@ -997,6 +1018,7 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+  virtual uint size_of() const { return sizeof(MachCallDynamicJavaNode); }
 };
 
 //------------------------------MachCallRuntimeNode----------------------------
@@ -1030,6 +1052,7 @@ public:
   bool _reachable;
   const char* _halt_reason;
   virtual JVMState* jvms() const;
+  virtual uint size_of() const { return sizeof(MachHaltNode); }
   bool is_reachable() const {
     return _reachable;
   }

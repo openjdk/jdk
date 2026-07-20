@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,39 +327,27 @@ public class AdaptorMulticasting {
     }
 
     /**
-     * Test getTimeToLive/setTimeToLive/getTTL/getTTL and IP_MULTICAST_TTL socket
+     * Test getTimeToLive/setTimeToLive and IP_MULTICAST_TTL socket
      * option.
      */
     static void testTimeToLive(MulticastSocket s) throws IOException {
         // should be 1 by default
         assertTrue(s.getTimeToLive() == 1);
-        assertTrue(s.getTTL() == 1);
         assertTrue(s.getOption(IP_MULTICAST_TTL) == 1);
 
         // setTimeToLive
         for (int ttl = 0; ttl <= 2; ttl++) {
             s.setTimeToLive(ttl);
             assertTrue(s.getTimeToLive() == ttl);
-            assertTrue(s.getTTL() == ttl);
             assertTrue(s.getOption(IP_MULTICAST_TTL) == ttl);
         }
         assertThrows(IllegalArgumentException.class, () -> s.setTimeToLive(-1));
-
-        // setTTL
-        for (byte ttl = (byte) -2; ttl <= 2; ttl++) {
-            s.setTTL(ttl);
-            assertTrue(s.getTTL() == ttl);
-            int intValue = Byte.toUnsignedInt(ttl);
-            assertTrue(s.getTimeToLive() == intValue);
-            assertTrue(s.getOption(IP_MULTICAST_TTL) == intValue);
-        }
 
         // setOption(IP_MULTICAST_TTL)
         for (int ttl = 0; ttl <= 2; ttl++) {
             s.setOption(IP_MULTICAST_TTL, ttl);
             assertTrue(s.getOption(IP_MULTICAST_TTL) == ttl);
             assertTrue(s.getTimeToLive() == ttl);
-            assertTrue(s.getTTL() == ttl);
         }
 
         // bad values for IP_MULTICAST_TTL
@@ -419,7 +407,7 @@ public class AdaptorMulticasting {
         // send message to multicast group
         DatagramPacket p = new DatagramPacket(message, message.length);
         p.setSocketAddress(target);
-        s.send(p, (byte) 1);
+        s.send(p);
 
         // receive message
         s.setSoTimeout(0);
@@ -463,7 +451,7 @@ public class AdaptorMulticasting {
         // send datagram to multicast group
         DatagramPacket p = new DatagramPacket(message, message.length);
         p.setSocketAddress(target);
-        s.send(p, (byte) 1);
+        s.send(p);
 
         // datagram should not be received
         s.setSoTimeout(500);

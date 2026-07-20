@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,8 +29,8 @@
 #include "nmt/mallocHeader.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/threadCritical.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 class outputStream;
@@ -62,9 +62,9 @@ class MemoryCounter {
   }
 
   inline void allocate(size_t sz) {
-    size_t cnt = Atomic::add(&_count, size_t(1), memory_order_relaxed);
+    size_t cnt = AtomicAccess::add(&_count, size_t(1), memory_order_relaxed);
     if (sz > 0) {
-      size_t sum = Atomic::add(&_size, sz, memory_order_relaxed);
+      size_t sum = AtomicAccess::add(&_size, sz, memory_order_relaxed);
       update_peak(sum, cnt);
     }
   }
@@ -72,29 +72,29 @@ class MemoryCounter {
   inline void deallocate(size_t sz) {
     assert(count() > 0, "Nothing allocated yet");
     assert(size() >= sz, "deallocation > allocated");
-    Atomic::dec(&_count, memory_order_relaxed);
+    AtomicAccess::dec(&_count, memory_order_relaxed);
     if (sz > 0) {
-      Atomic::sub(&_size, sz, memory_order_relaxed);
+      AtomicAccess::sub(&_size, sz, memory_order_relaxed);
     }
   }
 
   inline void resize(ssize_t sz) {
     if (sz != 0) {
       assert(sz >= 0 || size() >= size_t(-sz), "Must be");
-      size_t sum = Atomic::add(&_size, size_t(sz), memory_order_relaxed);
+      size_t sum = AtomicAccess::add(&_size, size_t(sz), memory_order_relaxed);
       update_peak(sum, _count);
     }
   }
 
-  inline size_t count() const { return Atomic::load(&_count); }
-  inline size_t size()  const { return Atomic::load(&_size);  }
+  inline size_t count() const { return AtomicAccess::load(&_count); }
+  inline size_t size()  const { return AtomicAccess::load(&_size);  }
 
   inline size_t peak_count() const {
-    return Atomic::load(&_peak_count);
+    return AtomicAccess::load(&_peak_count);
   }
 
   inline size_t peak_size() const {
-    return Atomic::load(&_peak_size);
+    return AtomicAccess::load(&_peak_size);
   }
 };
 
@@ -145,7 +145,7 @@ class MallocMemory {
 class MallocMemorySummary;
 
 // A snapshot of malloc'd memory, includes malloc memory
-// usage by types and memory used by tracking itself.
+// usage by tags and memory used by tracking itself.
 class MallocMemorySnapshot {
   friend class MallocMemorySummary;
 
@@ -155,18 +155,18 @@ class MallocMemorySnapshot {
 
 
  public:
-  inline MallocMemory* by_type(MemTag mem_tag) {
+  inline MallocMemory* by_tag(MemTag mem_tag) {
     int index = NMTUtil::tag_to_index(mem_tag);
     return &_malloc[index];
   }
 
-  inline const MallocMemory* by_type(MemTag mem_tag) const {
+  inline const MallocMemory* by_tag(MemTag mem_tag) const {
     int index = NMTUtil::tag_to_index(mem_tag);
     return &_malloc[index];
   }
 
   inline size_t malloc_overhead() const {
-    return _all_mallocs.count() * sizeof(MallocHeader);
+    return _all_mallocs.count() * MallocHeader::malloc_overhead();
   }
 
   // Total malloc invocation count
@@ -205,7 +205,7 @@ class MallocMemorySnapshot {
 class MallocMemorySummary : AllStatic {
  private:
   // Reserve memory for placement of MallocMemorySnapshot object
-  static MallocMemorySnapshot _snapshot;
+  static DeferredStatic<MallocMemorySnapshot> _snapshot;
   static bool _have_limits;
 
   // Called when a total limit break was detected.
@@ -220,25 +220,25 @@ class MallocMemorySummary : AllStatic {
    static void initialize();
 
    static inline void record_malloc(size_t size, MemTag mem_tag) {
-     as_snapshot()->by_type(mem_tag)->record_malloc(size);
+     as_snapshot()->by_tag(mem_tag)->record_malloc(size);
      as_snapshot()->_all_mallocs.allocate(size);
    }
 
    static inline void record_free(size_t size, MemTag mem_tag) {
-     as_snapshot()->by_type(mem_tag)->record_free(size);
+     as_snapshot()->by_tag(mem_tag)->record_free(size);
      as_snapshot()->_all_mallocs.deallocate(size);
    }
 
    static inline void record_new_arena(MemTag mem_tag) {
-     as_snapshot()->by_type(mem_tag)->record_new_arena();
+     as_snapshot()->by_tag(mem_tag)->record_new_arena();
    }
 
    static inline void record_arena_free(MemTag mem_tag) {
-     as_snapshot()->by_type(mem_tag)->record_arena_free();
+     as_snapshot()->by_tag(mem_tag)->record_arena_free();
    }
 
    static inline void record_arena_size_change(ssize_t size, MemTag mem_tag) {
-     as_snapshot()->by_type(mem_tag)->record_arena_size_change(size);
+     as_snapshot()->by_tag(mem_tag)->record_arena_size_change(size);
    }
 
    static void snapshot(MallocMemorySnapshot* s) {
@@ -252,7 +252,7 @@ class MallocMemorySummary : AllStatic {
    }
 
   static MallocMemorySnapshot* as_snapshot() {
-    return &_snapshot;
+    return _snapshot.get();
   }
 
   // MallocLimit: returns true if allocating s bytes on f would trigger
@@ -269,7 +269,7 @@ class MallocTracker : AllStatic {
 
   // The overhead that is incurred by switching on NMT (we need, per malloc allocation,
   // space for header and 16-bit footer)
-  static const size_t overhead_per_malloc = sizeof(MallocHeader) + sizeof(uint16_t);
+  static inline size_t overhead_per_malloc() { return MallocHeader::malloc_overhead(); }
 
   // Parameter name convention:
   // memblock :   the beginning address for user data
@@ -311,15 +311,6 @@ class MallocTracker : AllStatic {
   // totally failproof. Only use this during debugging or when you can afford
   // signals popping up, e.g. when writing an hs_err file.
   static bool print_pointer_information(const void* p, outputStream* st);
-
-  static inline MallocHeader* malloc_header(void *memblock) {
-    assert(memblock != nullptr, "null pointer");
-    return (MallocHeader*)memblock -1;
-  }
-  static inline const MallocHeader* malloc_header(const void *memblock) {
-    assert(memblock != nullptr, "null pointer");
-    return (const MallocHeader*)memblock -1;
-  }
 };
 
 #endif // SHARE_NMT_MALLOCTRACKER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,11 +72,17 @@ public class Compiler {
     }
 
     public void jar(Path directory, String jarName, String...files) {
+        Path classDirPath = getClassDir();
+        Path baseDir = classDirPath.resolve(directory);
+        Path jarPath = baseDir.resolve(jarName);
+        jar(directory, jarPath, files);
+    }
+
+    public void jar(Path directory, Path jarPath, String...files) {
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
         Path classDirPath = getClassDir();
         Path baseDir = classDirPath.resolve(directory);
-        Path jarPath = baseDir.resolve(jarName);
         new JarTask(tb, jarPath.toString())
                 .manifest(manifest)
                 .baseDir(baseDir.toString())

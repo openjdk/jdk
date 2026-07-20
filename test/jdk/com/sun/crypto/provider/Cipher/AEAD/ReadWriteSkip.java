@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class ReadWriteSkip {
     static final int BLOCK = 50;
     static final int SAVE = 45;
     static final int DISCARD = BLOCK - SAVE;
-    static final String PROVIDER = "SunJCE";
+    static final String PROVIDER = System.getProperty("test.provider.name", "SunJCE");
     static final String AES = "AES";
     static final String GCM = "GCM";
     static final String PADDING = "NoPadding";

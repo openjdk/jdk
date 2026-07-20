@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -67,7 +67,7 @@ import jdk.xml.internal.XMLSecurityManager;
  * @author Eric Ye, IBM
  * @author K.Venugopal SUN Microsystems
  * @author Sunitha Reddy, SUN Microsystems
- * @LastModified: July 2023
+ * @LastModified: Nov 2024
  */
 public abstract class XMLScanner
         implements XMLComponent {
@@ -1527,7 +1527,7 @@ public abstract class XMLScanner
                 reportFatalError("MaxEntitySizeLimit", new Object[]{"%" + entityName,
                     fLimitAnalyzer.getValue(XMLSecurityManager.Limit.PARAMETER_ENTITY_SIZE_LIMIT),
                     fSecurityManager.getLimit(XMLSecurityManager.Limit.PARAMETER_ENTITY_SIZE_LIMIT),
-                    fSecurityManager.getStateLiteral(XMLSecurityManager.Limit.PARAMETER_ENTITY_SIZE_LIMIT)});
+                    XMLSecurityManager.Limit.PARAMETER_ENTITY_SIZE_LIMIT.systemProperty()});
             }
         } else {
             fLimitAnalyzer.addValue(XMLSecurityManager.Limit.GENERAL_ENTITY_SIZE_LIMIT, entityName, len);
@@ -1536,7 +1536,7 @@ public abstract class XMLScanner
                 reportFatalError("MaxEntitySizeLimit", new Object[]{entityName,
                     fLimitAnalyzer.getValue(XMLSecurityManager.Limit.GENERAL_ENTITY_SIZE_LIMIT),
                     fSecurityManager.getLimit(XMLSecurityManager.Limit.GENERAL_ENTITY_SIZE_LIMIT),
-                    fSecurityManager.getStateLiteral(XMLSecurityManager.Limit.GENERAL_ENTITY_SIZE_LIMIT)});
+                    XMLSecurityManager.Limit.GENERAL_ENTITY_SIZE_LIMIT.systemProperty()});
             }
         }
         if (fSecurityManager.isOverLimit(XMLSecurityManager.Limit.TOTAL_ENTITY_SIZE_LIMIT, fLimitAnalyzer)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.util.calendar;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import sun.security.action.GetPropertyAction;
 
 /**
  *
@@ -146,8 +145,7 @@ public final class LocalGregorianCalendar extends BaseCalendar {
         }
 
         // Append an era to the predefined eras if it's given by the property.
-        String prop = GetPropertyAction
-                .privilegedGetProperty("jdk.calendar.japanese.supplemental.era");
+        String prop = System.getProperty("jdk.calendar.japanese.supplemental.era");
         if (prop != null) {
             Era era = parseEraEntry(prop);
             if (era != null) {

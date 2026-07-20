@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.test.lib.jfr.TestClassLoader;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules java.base/jdk.internal.misc
@@ -70,6 +70,8 @@ public final class TestClassDefineEvent {
                     "Expected type " + cl.getClass().getName() + ", got type " + definingClassLoaderType.getName());
                 Asserts.assertEquals(cl.getName(), definingClassLoader.getName(),
                     "Defining Class Loader should have the same name as the original class loader");
+                Asserts.assertTrue(event.getString("source").startsWith("file:/"), "Invalid source location");
+                Asserts.assertTrue(event.getString("source").endsWith(TEST_CLASS_NAME.substring(TEST_CLASS_NAME.lastIndexOf('.') + 1) + ".class"), "Invalid source location");
                 foundTestClasses = true;
             }
         }

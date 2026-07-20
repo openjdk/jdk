@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.function.Executable;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 
 public class InterruptibleOrNot {
     // DatagramChannel implementation class
@@ -60,7 +61,7 @@ public class InterruptibleOrNot {
     }
 
     /**
-     * Call DatagramChannel.receive with the interrupt status set, the DatagramChannel
+     * Call DatagramChannel.receive with the interrupted status set, the DatagramChannel
      * is interruptible.
      */
     @Test
@@ -71,7 +72,7 @@ public class InterruptibleOrNot {
             assertThrows(ClosedByInterruptException.class, () -> dc.receive(buf));
             assertFalse(dc.isOpen());
         } finally {
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
         }
     }
 
@@ -88,16 +89,17 @@ public class InterruptibleOrNot {
             assertThrows(ClosedByInterruptException.class, () -> dc.receive(buf));
             assertFalse(dc.isOpen());
         } finally {
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
         }
     }
 
     /**
-     * Call DatagramChannel.receive with the interrupt status set, the DatagramChannel
+     * Call DatagramChannel.receive with the interrupted status set, the DatagramChannel
      * is not interruptible.
      */
     @Test
     public void testInterruptBeforeUninterruptibleReceive() throws Exception {
+        assumeFalse(Thread.currentThread().isVirtual());
         try (DatagramChannel dc = boundDatagramChannel(false)) {
             ByteBuffer buf = ByteBuffer.allocate(100);
             onReceive(() -> {
@@ -109,7 +111,7 @@ public class InterruptibleOrNot {
             assertThrows(AsynchronousCloseException.class, () -> dc.receive(buf));
             assertFalse(dc.isOpen());
         } finally {
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
         }
     }
 
@@ -134,12 +136,12 @@ public class InterruptibleOrNot {
             assertThrows(AsynchronousCloseException.class, () -> dc.receive(buf));
             assertFalse(dc.isOpen());
         } finally {
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
         }
     }
 
     /**
-     * Call DatagramChannel.send with the interrupt status set, the DatagramChannel
+     * Call DatagramChannel.send with the interrupted status set, the DatagramChannel
      * is interruptible.
      */
     @Test
@@ -156,7 +158,7 @@ public class InterruptibleOrNot {
     }
 
     /**
-     * Call DatagramChannel.send with the interrupt status set, the DatagramChannel
+     * Call DatagramChannel.send with the interrupted status set, the DatagramChannel
      * is not interruptible.
      */
     @Test
@@ -169,7 +171,7 @@ public class InterruptibleOrNot {
             assertEquals(100, n);
             assertTrue(dc.isOpen());
         } finally {
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
         }
     }
 

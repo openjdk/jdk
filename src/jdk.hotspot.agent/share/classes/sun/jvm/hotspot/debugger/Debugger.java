@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public interface Debugger extends SymbolLookup, ThreadAccess {
 
   /** Support for remote debugging. Get the name of the CPU type on
       which this debugger is running (to be able to properly configure
-      the local system). Typical return value is "x86"; see
+      the local system). Typical return value is "amd64"; see
       utilities/PlatformInfo.java. */
   public String getCPU() throws DebuggerException;
 

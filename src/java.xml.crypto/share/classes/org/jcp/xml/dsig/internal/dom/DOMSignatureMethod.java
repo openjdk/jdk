@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -33,6 +33,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.DSAKey;
@@ -64,6 +65,7 @@ import sun.security.util.KeyUtil;
 public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
 
     private static final String DOM_SIGNATURE_PROVIDER = "org.jcp.xml.dsig.internal.dom.SignatureProvider";
+    private static final String DOM_SIGNATURE_RANDOM = "jdk.xmldsig.SecureRandom";
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(DOMSignatureMethod.class);
@@ -100,6 +102,14 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519";
     static final String ED448 =
         "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448";
+    static final String ECDSA_SHA3_224 =
+        "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-224";
+    static final String ECDSA_SHA3_256 =
+        "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-256";
+    static final String ECDSA_SHA3_384 =
+        "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-384";
+    static final String ECDSA_SHA3_512 =
+        "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-512";
 
     // see RFC 6931 for these algorithm definitions
     static final String ECDSA_RIPEMD160 =
@@ -241,6 +251,14 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return new SHA384withECDSA(smElem);
         } else if (alg.equals(ECDSA_SHA512)) {
             return new SHA512withECDSA(smElem);
+        } else if (alg.equals(ECDSA_SHA3_224)) {
+            return new SHA3_224withECDSA(smElem);
+        } else if (alg.equals(ECDSA_SHA3_256)) {
+            return new SHA3_256withECDSA(smElem);
+        } else if (alg.equals(ECDSA_SHA3_384)) {
+            return new SHA3_384withECDSA(smElem);
+        } else if (alg.equals(ECDSA_SHA3_512)) {
+            return new SHA3_512withECDSA(smElem);
         } else if (alg.equals(ECDSA_RIPEMD160)) {
             return new RIPEMD160withECDSA(smElem);
         } else if (alg.equals(SignatureMethod.HMAC_SHA1)) {
@@ -374,7 +392,12 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
                 throw new XMLSignatureException(nsae);
             }
         }
-        signature.initSign((PrivateKey)key);
+        SecureRandom sr = (SecureRandom)context.getProperty(DOM_SIGNATURE_RANDOM);
+        if (sr != null) {
+            signature.initSign((PrivateKey) key, sr);
+        } else {
+            signature.initSign((PrivateKey) key);
+        }
         LOG.debug("Signature provider: {}", signature.getProvider());
         LOG.debug("JCA Algorithm: {}", getJCAAlgorithm());
 
@@ -1157,6 +1180,94 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         @Override
         String getJCAFallbackAlgorithm() {
             return "SHA512withECDSA";
+        }
+    }
+
+    static final class SHA3_224withECDSA extends AbstractECDSASignatureMethod {
+        SHA3_224withECDSA(AlgorithmParameterSpec params)
+                throws InvalidAlgorithmParameterException {
+            super(params);
+        }
+        SHA3_224withECDSA(Element dmElem) throws MarshalException {
+            super(dmElem);
+        }
+        @Override
+        public String getAlgorithm() {
+            return ECDSA_SHA3_224;
+        }
+        @Override
+        String getJCAAlgorithm() {
+            return "SHA3-224withECDSAinP1363Format";
+        }
+        @Override
+        String getJCAFallbackAlgorithm() {
+            return "SHA3-224withECDSA";
+        }
+    }
+
+    static final class SHA3_256withECDSA extends AbstractECDSASignatureMethod {
+        SHA3_256withECDSA(AlgorithmParameterSpec params)
+                throws InvalidAlgorithmParameterException {
+            super(params);
+        }
+        SHA3_256withECDSA(Element dmElem) throws MarshalException {
+            super(dmElem);
+        }
+        @Override
+        public String getAlgorithm() {
+            return ECDSA_SHA3_256;
+        }
+        @Override
+        String getJCAAlgorithm() {
+            return "SHA3-256withECDSAinP1363Format";
+        }
+        @Override
+        String getJCAFallbackAlgorithm() {
+            return "SHA3-256withECDSA";
+        }
+    }
+
+    static final class SHA3_384withECDSA extends AbstractECDSASignatureMethod {
+        SHA3_384withECDSA(AlgorithmParameterSpec params)
+                throws InvalidAlgorithmParameterException {
+            super(params);
+        }
+        SHA3_384withECDSA(Element dmElem) throws MarshalException {
+            super(dmElem);
+        }
+        @Override
+        public String getAlgorithm() {
+            return ECDSA_SHA3_384;
+        }
+        @Override
+        String getJCAAlgorithm() {
+            return "SHA3-384withECDSAinP1363Format";
+        }
+        @Override
+        String getJCAFallbackAlgorithm() {
+            return "SHA3-384withECDSA";
+        }
+    }
+
+    static final class SHA3_512withECDSA extends AbstractECDSASignatureMethod {
+        SHA3_512withECDSA(AlgorithmParameterSpec params)
+                throws InvalidAlgorithmParameterException {
+            super(params);
+        }
+        SHA3_512withECDSA(Element dmElem) throws MarshalException {
+            super(dmElem);
+        }
+        @Override
+        public String getAlgorithm() {
+            return ECDSA_SHA3_512;
+        }
+        @Override
+        String getJCAAlgorithm() {
+            return "SHA3-512withECDSAinP1363Format";
+        }
+        @Override
+        String getJCAFallbackAlgorithm() {
+            return "SHA3-512withECDSA";
         }
     }
 

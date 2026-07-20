@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -70,20 +70,13 @@ failures=0
 go() {
   CP="$TESTCLASSES$SEP$TESTD"
   echo ''
-  sh -xc "$JAVA $SECURITY_MANAGER -Djavax.accessibility.assistive_technologies=$PROVIDER1$COMMA$PROVIDER2 -cp $CP Load $1 $2 $3" 2>&1
+  sh -xc "$JAVA -Djavax.accessibility.assistive_technologies=$PROVIDER1$COMMA$PROVIDER2 -cp $CP Load $1 $2 $3" 2>&1
   if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 }
 
 # find one provider
 PROVIDER1="FooProvider"
 go pass $PROVIDER1
-
-# start using security manager
-SECURITY_MANAGER="-Djava.security.manager -Djava.security.policy=$TESTSRC/accessibilityProvider.sp"
-
-# find one provider (with security manager)
-go pass $PROVIDER1
-SECURITY_MANAGER=
 
 # fail if no provider found
 PROVIDER1="NoProvider"

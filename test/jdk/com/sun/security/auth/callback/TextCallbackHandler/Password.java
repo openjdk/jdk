@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,35 +25,118 @@
  * @test
  * @bug 6825240 6829785
  * @summary Password.readPassword() echos the input when System.Console is null
- * @run main/manual Password
- */
-
-/*
- * This scenario cannot be automated because util/Password.java verifies the given input stream is
- * equal to the initialSystemIn. This prevents the test from providing a custom input stream.
- *
- *  Steps to run the test:
- *  1) Compile the class using the JDK version being tested: '<JdkBin>/javac Password.java'
- *  2) Run the test using the JDK version being tested: '<JdkBin>/java -cp . Password'
- *  3) Type in the first password, it should not be visible in the console
- *  4) Type in the second password, it should be visible in the console
- *  5) The final output line displays the entered passwords, both should be visible
+ * @library /test/lib
+ * @run main/manual/othervm Password
  */
 
 import com.sun.security.auth.callback.TextCallbackHandler;
+
+
 import javax.security.auth.callback.*;
+import javax.swing.*;
+
+import jdk.test.lib.UIBuilder;
+
+import java.util.Arrays;
 
 public class Password {
-   public static void main(String args[]) throws Exception {
-        TextCallbackHandler h = new TextCallbackHandler();
-        PasswordCallback nc = new PasswordCallback("Invisible: ", false);
-        PasswordCallback nc2 = new PasswordCallback("Visible: ", true);
 
-        System.out.println("Two passwords will be prompted for. The first one " +
-                "should have echo off, the second one on. Otherwise, this test fails");
-        Callback[] callbacks = { nc, nc2 };
+    private static final int TIMEOUT_MS = 240000;
+    private volatile boolean failed = false;
+    private volatile boolean aborted = false;
+    private Thread currentThread = null;
+
+    public static void password() throws Exception {
+
+        TextCallbackHandler h = new TextCallbackHandler();
+        PasswordCallback nc =
+                new PasswordCallback("Please input something, your input should be VISIBLE: ", true);
+        PasswordCallback nc2 =
+                new PasswordCallback("Please input something again, your input should be INVISIBLE: ", false);
+        Callback[] callbacks = {nc, nc2};
         h.handle(callbacks);
         System.out.println("You input " + new String(nc.getPassword()) +
                 " and " + new String(nc2.getPassword()));
-   }
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (Arrays.asList(args).contains("--password")) {
+            password();
+        } else {
+            final String instructions = String.format("%s/bin/java -cp \"%s\" Password --password",
+                    System.getProperty("java.home").replace("\\","/"),
+                    System.getProperty("java.class.path").replace("\\","/")
+            );
+
+            boolean testFailed = new Password().validate(
+                    "Please copy and execute the following script in the terminal / Windows Command Prompt window. " +
+                            "Two passwords will be prompted for.\n" +
+                            "Enter something at each prompt and press Enter/Return.\n" +
+                            "If the first input is visible and the second is invisible, this test PASSES. Otherwise, this test FAILS.\n" +
+                            "Once the test is complete please select whether the test has passed.\n",
+                    instructions);
+
+            if (testFailed) {
+                throw new RuntimeException("Test has failed");
+            }
+        }
+    }
+
+    public boolean validate(String instruction, String message) {
+        failed = false;
+        currentThread = Thread.currentThread();
+        final JDialog dialog = new UIBuilder.DialogBuilder()
+                .setTitle("Password")
+                .setInstruction(instruction)
+                .setMessage(message)
+                .setPassAction(e -> pass())
+                .setFailAction(e -> fail())
+                .setCloseAction(this::abort)
+                .build();
+
+        SwingUtilities.invokeLater(() -> {
+            try {
+                dialog.setVisible(true);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            Thread.sleep(TIMEOUT_MS);
+            //Timed out, so fail the test
+            throw new RuntimeException(
+                    "Timed out after " + TIMEOUT_MS / 1000 + " seconds");
+        } catch (final InterruptedException e) {
+            if (aborted) {
+                throw new RuntimeException("TEST ABORTED");
+            }
+
+            if (failed) {
+                System.out.println("TEST FAILED");
+                System.out.println(message);
+            } else {
+                System.out.println("TEST PASSED");
+            }
+        } finally {
+            dialog.dispose();
+        }
+
+        return failed;
+    }
+
+    public void pass() {
+        failed = false;
+        currentThread.interrupt();
+    }
+
+    public void fail() {
+        failed = true;
+        currentThread.interrupt();
+    }
+
+    public void abort() {
+        aborted = true;
+        currentThread.interrupt();
+    }
 }

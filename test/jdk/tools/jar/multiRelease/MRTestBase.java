@@ -62,17 +62,17 @@ public class MRTestBase {
         Path classes = Paths.get(usr, "classes", "base");
         Files.createDirectories(classes);
         Path source = Paths.get(src, "data", test, "base", "version");
-        javac(classes, source.resolve("Main.java"), source.resolve("Version.java"));
+        javac(8, classes, source.resolve("Main.java"), source.resolve("Version.java"));
 
         classes = Paths.get(usr, "classes", "v9");
         Files.createDirectories(classes);
         source = Paths.get(src, "data", test, "v9", "version");
-        javac(classes, source.resolve("Version.java"));
+        javac(9, classes, source.resolve("Version.java"));
 
         classes = Paths.get(usr, "classes", "v10");
         Files.createDirectories(classes);
         source = Paths.get(src, "data", test, "v10", "version");
-        javac(classes, source.resolve("Version.java"));
+        javac(10, classes, source.resolve("Version.java"));
     }
 
     protected void checkMultiRelease(String jarFile,
@@ -101,23 +101,17 @@ public class MRTestBase {
         }
     }
 
-    void javac(Path dest, Path... sourceFiles) throws Throwable {
-        javac(dest, List.of(), sourceFiles);
-    }
-
-    void javac(Path dest, List<String> extraParameters, Path... sourceFiles) throws Throwable {
-
+    void javac(int release, Path dest, Path... sourceFiles) throws Throwable {
         List<String> commands = new ArrayList<>();
         String opts = System.getProperty("test.compiler.opts");
         if (!opts.isEmpty()) {
             commands.addAll(Arrays.asList(opts.split(" +")));
         }
+        commands.add("--release");
+        commands.add(String.valueOf(release));
         commands.add("-d");
         commands.add(dest.toString());
-        Stream.of(sourceFiles)
-                .map(Object::toString)
-                .forEach(x -> commands.add(x));
-        commands.addAll(extraParameters);
+        Stream.of(sourceFiles).map(Object::toString).forEach(commands::add);
 
         StringWriter sw = new StringWriter();
         try (PrintWriter pw = new PrintWriter(sw)) {

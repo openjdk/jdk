@@ -31,14 +31,12 @@
 package javax.management.modelmbean;
 
 import static com.sun.jmx.defaults.JmxProperties.MODELMBEAN_LOGGER;
-import com.sun.jmx.mbeanserver.GetPropertyAction;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.lang.reflect.Method;
-import java.security.AccessController;
 import java.lang.System.Logger.Level;
 
 import javax.management.Descriptor;
@@ -136,9 +134,9 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
          * on the {@code Method} object that contain the {@link
          * DescriptorKey} meta-annotation.
          *
+         * @param description A human readable description of the operation.
          * @param operationMethod The java.lang.reflect.Method object
          * describing the MBean operation.
-         * @param description A human readable description of the operation.
          */
 
         public ModelMBeanOperationInfo(String description,
@@ -160,10 +158,10 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
          * contributed by any annotations on the {@code Method} object
          * that contain the {@link DescriptorKey} meta-annotation.
          *
-         * @param operationMethod The java.lang.reflect.Method object
-         * describing the MBean operation.
          * @param description A human readable description of the
          * operation.
+         * @param operationMethod The java.lang.reflect.Method object
+         * describing the MBean operation.
          * @param descriptor An instance of Descriptor containing the
          * appropriate metadata for this instance of the
          * ModelMBeanOperationInfo.  If it is null a default

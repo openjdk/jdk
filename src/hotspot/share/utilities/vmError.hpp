@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,10 @@
 #ifndef SHARE_UTILITIES_VMERROR_HPP
 #define SHARE_UTILITIES_VMERROR_HPP
 
+#include "memory/allStatic.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 class Decoder;
 class frame;
@@ -46,14 +49,14 @@ class VMError : public AllStatic {
 
   // additional info for crashes
   static address     _pc;               // faulting PC
-  static void*       _siginfo;          // ExceptionRecord on Windows,
+  static const void* _siginfo;          // ExceptionRecord on Windows,
                                         // siginfo_t on Solaris/Linux
-  static void*       _context;          // ContextRecord on Windows,
+  static const void* _context;          // ContextRecord on Windows,
                                         // ucontext_t on Solaris/Linux
 
-  // records if VMError::print_native_stack was used to
+  // records if frame-based stack walking was used to
   // print the native stack instead of os::platform_print_native_stack
-  static bool        _print_native_stack_used;
+  static bool        _print_stack_from_frame_used;
 
   // additional info for VM internal errors
   static const char* _filename;
@@ -71,7 +74,7 @@ class VMError : public AllStatic {
 
   // Thread id of the first error. We must be able to handle native thread,
   // so use thread id instead of Thread* to identify thread.
-  static volatile intptr_t _first_error_tid;
+  static Atomic<intptr_t> _first_error_tid;
 
   // Core dump status, false if we have been unable to write a core/minidump for some reason
   static bool coredump_status;
@@ -83,16 +86,16 @@ class VMError : public AllStatic {
 
   // Timeout handling:
   // Timestamp at which error reporting started; -1 if no error reporting in progress.
-  static volatile jlong _reporting_start_time;
+  static Atomic<jlong> _reporting_start_time;
   // Whether or not error reporting did timeout.
-  static volatile bool _reporting_did_timeout;
+  static Atomic<bool> _reporting_did_timeout;
   // Timestamp at which the last error reporting step started; -1 if no error reporting
   //   in progress.
-  static volatile jlong _step_start_time;
+  static Atomic<jlong> _step_start_time;
   // Whether or not the last error reporting step did timeout.
-  static volatile bool _step_did_timeout;
+  static Atomic<bool> _step_did_timeout;
   // Whether or not the last error reporting step did succeed.
-  static volatile bool _step_did_succeed;
+  static Atomic<bool> _step_did_succeed;
 
   // Install secondary signal handler to handle secondary faults during error reporting
   // (see VMError::crash_handler)
@@ -108,11 +111,7 @@ class VMError : public AllStatic {
   static void print_stack_trace(outputStream* st, JavaThread* jt,
                                 char* buf, int buflen, bool verbose = false);
 
-  static const char* get_filename_only() {
-    char separator = os::file_separator()[0];
-    const char* p = strrchr(_filename, separator);
-    return p ? p+1 : _filename;
-  }
+  static const char* get_filename_only();
 
   static bool should_report_bug(unsigned int id) {
     return (id != OOM_MALLOC_ERROR) && (id != OOM_MMAP_ERROR);
@@ -144,15 +143,13 @@ class VMError : public AllStatic {
   static jlong get_step_start_time();
   static void clear_step_start_time();
 
-  WINDOWS_ONLY([[noreturn]] static void raise_fail_fast(void* exrecord, void* context);)
+  // Handshake/safepoint timed out threads
+  static Atomic<Thread*> _handshake_timed_out_thread;
+  static Atomic<Thread*> _safepoint_timed_out_thread;
+
+  WINDOWS_ONLY([[noreturn]] static void raise_fail_fast(const void* exrecord, const void* context);)
 
 public:
-
-  // print_source_info: if true, we try to resolve the source information on platforms that support it
-  //  (useful but may slow down, timeout or misfunction in error situations)
-  // max_frames: if not -1, overrides StackPrintLimit
-  static void print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info,
-                                 int max_frames, char* buf, int buf_size);
 
   // return a string to describe the error
   static char* error_string(char* buf, int buflen);
@@ -166,28 +163,28 @@ public:
   // main error reporting function
   [[noreturn]]
   ATTRIBUTE_PRINTF(6, 7)
-  static void report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo,
-                             void* context, const char* detail_fmt, ...);
+  static void report_and_die(Thread* thread, unsigned int sig, address pc, const void* siginfo,
+                             const void* context, const char* detail_fmt, ...);
 
   [[noreturn]]
   ATTRIBUTE_PRINTF(6, 7)
-  static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
-                             const char* detail_fmt, ...);
+  static void report_and_die(Thread* thread, const void* context, const char* filename,
+                             int lineno, const char* message, const char* detail_fmt, ...);
 
   [[noreturn]]
   ATTRIBUTE_PRINTF(3, 0)
   static void report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
-                             Thread* thread, address pc, void* siginfo, void* context,
+                             Thread* thread, address pc, const void* siginfo, const void* context,
                              const char* filename, int lineno, size_t size);
 
   [[noreturn]]
   static void report_and_die(Thread* thread, unsigned int sig, address pc,
-                             void* siginfo, void* context);
+                             const void* siginfo, const void* context);
 
   [[noreturn]]
   ATTRIBUTE_PRINTF(6, 0)
-  static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
-                             const char* detail_fmt, va_list detail_args);
+  static void report_and_die(Thread* thread, const void* context, const char* filename,
+                             int lineno, const char* message, const char* detail_fmt, va_list detail_args);
 
   [[noreturn]]
   ATTRIBUTE_PRINTF(6, 0)
@@ -225,6 +222,12 @@ public:
   // permissions.
   static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen);
 
+  static bool was_assert_poison_crash(const void* sigInfo);
+
+  static void set_handshake_timed_out_thread(Thread* thread);
+  static void set_safepoint_timed_out_thread(Thread* thread);
+  static Thread* get_handshake_timed_out_thread();
+  static Thread* get_safepoint_timed_out_thread();
 };
 
 class VMErrorCallback {
@@ -248,5 +251,53 @@ public:
   VMErrorCallbackMark(VMErrorCallback* callback);
   ~VMErrorCallbackMark();
 };
+
+// Convenient construction for creating ad-hoc VMErrorCallback which automatically
+// calls the provided invocable f if a VM crash occurs within its lifetime.
+// Can be used to instrument a build for more detailed contextual information
+// gathering. Especially useful when hunting down intermittent bugs, or issues
+// only reproducible in environments where access to a debugger is not readily
+// available. Example use:
+/*
+  {
+    // Note the lambda is invoked after an error occurs within this thread,
+    // and during on_error's lifetime. If state prior to the crash is required,
+    // capture a copy of it first.
+    auto important_value = get_the_value();
+
+    OnVMError on_error([&](outputStream* st) {
+      // Dump the important bits.
+      st->print("Prior value: ");
+      important_value.print_on(st);
+      st->print("During crash: ")
+      get_the_value().print_on(st);
+      // Dump whole the whole state.
+      this->print_on(st);
+    });
+
+    // When VM crashes, the above lambda will be invoked and print relevant info.
+    might_cause_vm_crash();
+  }
+*/
+template <typename CallableType>
+class OnVMError : public VMErrorCallback {
+  CallableType _callable;
+  VMErrorCallbackMark _mark;
+
+  void call(outputStream* st) final { _callable(st); }
+
+public:
+  template <typename Callable>
+  OnVMError(Callable&& callable) : VMErrorCallback(), _callable(static_cast<Callable&&>(callable)), _mark(this) {}
+};
+
+// This deduction rule enables creating a type with out using auto, decltype
+// and/or helping construction functions. It enables the generic template type
+// to be deduced in the following code:
+//   OnVMError on_error([&](outputStream* st) { ... })
+// Rather than having to something along the lines of:
+//   auto f = [&](outputStream* st) { ... };
+//   OnVMError<decltype(f)> on_error(f);
+template <typename CallableType> OnVMError(CallableType) -> OnVMError<CallableType>;
 
 #endif // SHARE_UTILITIES_VMERROR_HPP

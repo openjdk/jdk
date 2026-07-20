@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,13 @@
 
 /**
  * @test
- * @bug 8218948
+ * @bug 8218948 8347841
  * @summary TCK tests that check the time zone names between DFS.getZoneStrings()
  *      and SDF.format("z*")
  * @run main SDFTCKZoneNamesTest
  */
 import java.text.*;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -325,6 +326,9 @@ public class SDFTCKZoneNamesTest {
         SimpleDateFormat sdf = new SimpleDateFormat();
         Date date = new Date(1234567890);
         for (String[] tz : sdf.getDateFormatSymbols().getZoneStrings()) {
+            if (ZoneId.SHORT_IDS.containsKey(tz[0])) {
+                continue;
+            }
             sdf.setTimeZone(TimeZone.getTimeZone(tz[0]));
             for (int i = 0; i < patterns.length && passed; i++) {
                 StringBuffer result = new StringBuffer("qwerty");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@
 #ifndef CfgFile_h
 #define CfgFile_h
 
-#include <map>
-#include "tstrings.h"
+#include "StringProcessing.h"
 
 
 class CfgFile {
@@ -85,16 +84,23 @@ public:
     CfgFile& setPropertyValue(const SectionName& sectionName,
         const PropertyName& name, const tstring_array& value);
 
-    typedef std::map<tstring, tstring> Macros;
+    void swap(CfgFile& other) {
+        std::swap(data, other.data);
+        std::swap(empty, other.empty);
+    }
+
+    typedef StringProcessing::VariableValues Macros;
 
     /**
-     * Returns copy of this instance with the given macros expanded.
+     * Returns copy of this instance with the given macros and environment variables expanded.
      */
     CfgFile expandMacros(const Macros& macros) const;
 
     static CfgFile load(const tstring& path);
 
     static tstring asString(Properties::const_reference property);
+
+    static bool asBoolean(Properties::const_reference property);
 
     static tstring asPathList(Properties::const_reference property);
 
@@ -126,6 +132,7 @@ namespace PropertyName {
     extern const CfgFile::PropertyName memory;
     extern const CfgFile::PropertyName arguments;
     extern const CfgFile::PropertyName javaOptions;
+    extern const CfgFile::PropertyName winNorestart;
 } // namespace AppPropertyName
 
 #endif // CfgFile_h

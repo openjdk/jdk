@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary Compress Hello HelloImpl HelloImpl_Stub
- * @run main/othervm/policy=security.policy/timeout=240 UseCustomSocketFactory
+ * @run main/othervm/timeout=240 UseCustomSocketFactory
  */
 
 import java.io.*;
@@ -57,7 +57,6 @@ public class UseCustomSocketFactory {
 
         System.out.println("\nRegression test for bug 4148850\n");
 
-        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
         int registryPort = -1;
 
         try {
@@ -80,9 +79,6 @@ public class UseCustomSocketFactory {
         }
 
         JavaVM serverVM = new JavaVM("HelloImpl",
-                                     "-Djava.security.manager=allow" +
-                                     " -Djava.security.policy=" +
-                                     TestParams.defaultPolicy +
                                      " -Drmi.registry.port=" +
                                      registryPort,
                                      "");

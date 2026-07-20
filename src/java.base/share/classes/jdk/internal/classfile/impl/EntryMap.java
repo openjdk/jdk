@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,7 @@ public final class EntryMap {
             throw new IllegalArgumentException("hash must be nonzero");
 
         int ptr = (hash & mask1) << 1;
+        var data = this.data;
         int k = data[ptr];
         if (k == 0) {
             data[ptr] = hash;

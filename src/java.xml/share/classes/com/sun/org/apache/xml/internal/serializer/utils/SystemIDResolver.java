@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,7 +42,7 @@ import com.sun.org.apache.xml.internal.serializer.utils.URI.MalformedURIExceptio
  *
  * @xsl.usage internal
  *
- * @LastModified: Jan 2022
+ * @LastModified: Nov 2024
  */
 public final class SystemIDResolver
 {
@@ -52,8 +52,7 @@ public final class SystemIDResolver
    *
    * <p>The relative URI is a local filesystem path. The path can be
    * absolute or relative. If it is a relative path, it is resolved relative
-   * to the system property "user.dir" if it is available; if not (i.e. in an
-   * Applet perhaps which throws SecurityException) then we just return the
+   * to the system property "user.dir" if it is available; if not then we just return the
    * relative path. The space and backslash characters are also replaced to
    * generate a good absolute URI.</p>
    *
@@ -71,15 +70,7 @@ public final class SystemIDResolver
     String absolutePath = localPath;
     if (!isAbsolutePath(localPath))
     {
-      try
-      {
         absolutePath = getAbsolutePathFromRelativePath(localPath);
-      }
-      // user.dir not accessible from applet
-      catch (SecurityException se)
-      {
-        return "file:" + localPath;
-      }
     }
 
     String urlString;
@@ -244,14 +235,9 @@ public final class SystemIDResolver
             if (secondColonIndex > 0)
             {
               String localPath = systemId.substring(secondColonIndex-1);
-              try {
-                if (!isAbsolutePath(localPath))
-                  absoluteURI = systemId.substring(0, secondColonIndex-1) +
+              if (!isAbsolutePath(localPath))
+                absoluteURI = systemId.substring(0, secondColonIndex-1) +
                                 getAbsolutePathFromRelativePath(localPath);
-              }
-              catch (SecurityException se) {
-                return systemId;
-              }
             }
           }
         }

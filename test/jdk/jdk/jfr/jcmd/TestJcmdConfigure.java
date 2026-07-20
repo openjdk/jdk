@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@ package jdk.jfr.jcmd;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import jdk.jfr.internal.Repository;
-import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.Options;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
@@ -38,7 +39,7 @@ import jdk.test.lib.Utils;
 /**
  * @test
  * @summary The test verifies JFR.configure command
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
@@ -127,21 +128,22 @@ public class TestJcmdConfigure {
     }
 
     private static void testRepository(){
-        final String findWhat = "[info][jfr] Same base repository path " + REPOSITORYPATH_1 + " is set";
+        final Pattern findWhat = Pattern.compile("\\[info *\\]\\[jfr *\\] Same base repository path " +
+                                                 Pattern.quote(REPOSITORYPATH_1) + " is set");
 
         try {
             JcmdHelper.jcmd("JFR.configure", REPOSITORYPATH_SETTING_1);
-            SafePath initialPath = Repository.getRepository().getRepositoryPath();
+            Path initialPath = Repository.getRepository().getRepositoryPath();
 
             JcmdHelper.jcmd("JFR.configure", REPOSITORYPATH_SETTING_1);
-            SafePath samePath = Repository.getRepository().getRepositoryPath();
+            Path samePath = Repository.getRepository().getRepositoryPath();
             Asserts.assertTrue(samePath.equals(initialPath));
 
             List<String> lines = Files.readAllLines(Paths.get(JFR_UNIFIED_LOG_FILE));
-            Asserts.assertTrue(lines.stream().anyMatch(l->l.contains(findWhat)));
+            Asserts.assertTrue(lines.stream().anyMatch(l -> findWhat.matcher(l).find()));
 
             JcmdHelper.jcmd("JFR.configure", REPOSITORYPATH_SETTING_2);
-            SafePath changedPath = Repository.getRepository().getRepositoryPath();
+            Path changedPath = Repository.getRepository().getRepositoryPath();
 
             Asserts.assertFalse(changedPath.equals(initialPath));
 

@@ -339,6 +339,22 @@ invoker_requestInvoke(jbyte invokeType, jbyte options, jint id,
 }
 
 static void
+saveGlobalRefHelper(JNIEnv *env, jobject obj, jobject *pobj)
+{
+    // In order to keep -Xcheck:jni happy, we have to clear any pending
+    // exception before calling saveGlobalRef(). We also need to restore
+    // it for the caller of this function.
+    jthrowable exception = JNI_FUNC_PTR(env,ExceptionOccurred)(env);
+    if (exception != NULL) {
+        JNI_FUNC_PTR(env,ExceptionClear)(env);
+    }
+    saveGlobalRef(env, obj, pobj);
+    if (exception != NULL) {
+        JNI_FUNC_PTR(env,Throw)(env, exception);
+    }
+}
+
+static void
 invokeConstructor(JNIEnv *env, InvokeRequest *request)
 {
     jobject object;
@@ -349,7 +365,7 @@ invokeConstructor(JNIEnv *env, InvokeRequest *request)
                                      request->arguments);
     request->returnValue.l = NULL;
     if (object != NULL) {
-        saveGlobalRef(env, object, &(request->returnValue.l));
+        saveGlobalRefHelper(env, object, &(request->returnValue.l));
     }
 }
 
@@ -367,7 +383,7 @@ invokeStatic(JNIEnv *env, InvokeRequest *request)
                                    request->arguments);
         request->returnValue.l = NULL;
         if (object != NULL) {
-            saveGlobalRef(env, object, &(request->returnValue.l));
+            saveGlobalRefHelper(env, object, &(request->returnValue.l));
         }
         return;
     }
@@ -455,7 +471,7 @@ invokeVirtual(JNIEnv *env, InvokeRequest *request)
                              request->arguments);
         request->returnValue.l = NULL;
         if (object != NULL) {
-            saveGlobalRef(env, object, &(request->returnValue.l));
+            saveGlobalRefHelper(env, object, &(request->returnValue.l));
         }
         return;
     }
@@ -545,7 +561,7 @@ invokeNonvirtual(JNIEnv *env, InvokeRequest *request)
                                        request->arguments);
         request->returnValue.l = NULL;
         if (object != NULL) {
-            saveGlobalRef(env, object, &(request->returnValue.l));
+            saveGlobalRefHelper(env, object, &(request->returnValue.l));
         }
         return;
     }

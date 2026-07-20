@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/disassembler.hpp"
@@ -164,7 +163,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     // Therefore add 3 to address that byte within "_flags".
     // Reload method. VM call above may have destroyed register contents
     __ get_method(method);
-    __ testbit(method2_(method, access_flags), JVM_ACC_STATIC_BIT);
+    __ testbit_ushort(method2_(method, access_flags), JVM_ACC_STATIC_BIT);
     method = noreg;  // end of life
     __ z_btrue(isStatic);
 
@@ -638,6 +637,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
   Register sp_before_i2c_extension = Z_bcp;
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
   __ z_lg(sp_before_i2c_extension, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+  __ z_slag(sp_before_i2c_extension, sp_before_i2c_extension, Interpreter::logStackElementSize);
+  __ z_agr(sp_before_i2c_extension, Z_fp);
   __ resize_frame_absolute(sp_before_i2c_extension, Z_locals/*tmp*/, true/*load_fp*/);
 
   // TODO(ZASM): necessary??
@@ -716,10 +717,33 @@ address TemplateInterpreterGenerator::generate_safept_entry_for (TosState state,
                                                                 address runtime_entry) {
   address entry = __ pc();
   __ push(state);
+  __ push_cont_fastpath();
   __ call_VM(noreg, runtime_entry);
+  __ pop_cont_fastpath();
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for (vtos));
   return entry;
 }
+
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  if (!Continuations::enabled()) return nullptr;
+  address start = __ pc();
+  __ z_lg(Z_fp, _z_common_abi(callers_sp), Z_SP);
+  {
+    Register top_frame_sp = Z_R1_scratch; // anyway going to load it with correct value
+    __ z_lg(top_frame_sp, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+    __ z_slag(top_frame_sp, top_frame_sp, Interpreter::logStackElementSize);
+    __ z_agr(top_frame_sp, Z_fp);
+
+    __ resize_frame_absolute(top_frame_sp, /* temp = */ Z_R0, /* load_fp = */ true);
+  }
+  __ restore_bcp();
+  __ restore_locals();
+  __ restore_esp();
+
+  __ z_br(Z_R14);
+  return start;
+}
+
 
 //
 // Helpers for commoning out cases in the various type of method entries.
@@ -878,7 +902,7 @@ void TemplateInterpreterGenerator::lock_method(void) {
   address reentry = nullptr;
   {
     Label L;
-    __ testbit(method2_(method, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
+    __ testbit_ushort(method2_(method, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
     __ z_btrue(L);
     reentry = __ stop_chain_static(reentry, "method doesn't need synchronization");
     __ bind(L);
@@ -892,7 +916,7 @@ void TemplateInterpreterGenerator::lock_method(void) {
     Label     done;
     Label     static_method;
 
-    __ testbit(method2_(method, access_flags), JVM_ACC_STATIC_BIT);
+    __ testbit_ushort(method2_(method, access_flags), JVM_ACC_STATIC_BIT);
     __ z_btrue(static_method);
 
     // non-static method: Load receiver obj from stack.
@@ -1094,6 +1118,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   // ... and push the new frame F0.
   __ push_frame(top_frame_size, fp, true /*copy_sp*/, false);
+
+  __ z_lcgr(top_frame_size);  // negate
+  __ z_srag(top_frame_size, top_frame_size, Interpreter::logStackElementSize);
+  // Store relativized top_frame_sp
+  __ z_stg(top_frame_size, _z_ijava_state_neg(top_frame_sp), fp);
   }
 
   //=============================================================================
@@ -1102,6 +1131,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   {
   // locals
   const Register local_addr = Z_ARG4;
+  const Register constants_addr = Z_ARG2;
 
   BLOCK_COMMENT("generate_fixed_frame: initialize interpreter state {");
 
@@ -1117,8 +1147,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ z_stg(Z_R10, _z_ijava_state_neg(sender_sp), fp);
 
   // Load cp cache and save it at the end of this block.
-  __ z_lg(Z_R1_scratch, Address(const_method, ConstMethod::constants_offset()));
-  __ z_lg(Z_R1_scratch, Address(Z_R1_scratch, ConstantPool::cache_offset()));
+  __ z_lg(constants_addr, Address(const_method, ConstMethod::constants_offset()));
+  __ z_lg(Z_R1_scratch, Address(constants_addr, ConstantPool::cache_offset()));
 
   // z_ijava_state->method = method;
   __ z_stg(Z_method, _z_ijava_state_neg(method), fp);
@@ -1130,7 +1160,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ z_agr(Z_locals, Z_esp);
   // z_ijava_state->locals - i*BytesPerWord points to i-th Java local (i starts at 0)
   // z_ijava_state->locals = Z_esp + parameter_count bytes
-  __ z_stg(Z_locals, _z_ijava_state_neg(locals), fp);
+
+  __ z_sgrk(Z_R0, Z_locals, fp); // Z_R0 = Z_locals - fp();
+  __ z_srlg(Z_R0, Z_R0, Interpreter::logStackElementSize);
+  // Store relativized Z_locals, see frame::interpreter_frame_locals().
+  __ z_stg(Z_R0, _z_ijava_state_neg(locals), fp);
 
   // z_ijava_state->oop_temp = nullptr;
   __ store_const(Address(fp, oop_tmp_offset), 0);
@@ -1164,15 +1198,22 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // z_ijava_state->monitors = fp - frame::z_ijava_state_size - Interpreter::stackElementSize;
   // z_ijava_state->esp = Z_esp = z_ijava_state->monitors;
   __ add2reg(Z_esp, -frame::z_ijava_state_size, fp);
-  __ z_stg(Z_esp, _z_ijava_state_neg(monitors), fp);
+
+  __ z_sgrk(Z_R0, Z_esp, fp);
+  __ z_srag(Z_R0, Z_R0, Interpreter::logStackElementSize);
+  __ z_stg(Z_R0, _z_ijava_state_neg(monitors), fp);
+
   __ add2reg(Z_esp, -Interpreter::stackElementSize);
-  __ z_stg(Z_esp, _z_ijava_state_neg(esp), fp);
+
+  __ save_esp(fp);
 
   // z_ijava_state->cpoolCache = Z_R1_scratch (see load above);
   __ z_stg(Z_R1_scratch, _z_ijava_state_neg(cpoolCache), fp);
 
   // Get mirror and store it in the frame as GC root for this Method*.
-  __ load_mirror_from_const_method(Z_R1_scratch, const_method);
+  __ mem2reg_opt(Z_R1_scratch, Address(constants_addr, ConstantPool::pool_holder_offset()));
+  __ mem2reg_opt(Z_R1_scratch, Address(Z_R1_scratch, Klass::java_mirror_offset()));
+  __ resolve_oop_handle(Z_R1_scratch, Z_R0_scratch, Z_R1_scratch);
   __ z_stg(Z_R1_scratch, _z_ijava_state_neg(mirror), fp);
 
   BLOCK_COMMENT("} generate_fixed_frame: initialize interpreter state");
@@ -1202,7 +1243,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
 // Various method entries
 
-// Math function, frame manager must set up an interpreter state, etc.
+// Math function, template interpreter must set up an interpreter state, etc.
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
 
   // Decide what to do: Use same platform specific instructions and runtime calls as compilers.
@@ -1224,6 +1265,9 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_sin  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);   break;
     case Interpreter::java_lang_math_cos  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);   break;
     case Interpreter::java_lang_math_tan  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);   break;
+    case Interpreter::java_lang_math_sinh : /* run interpreted */ break;
+    case Interpreter::java_lang_math_tanh : /* run interpreted */ break;
+    case Interpreter::java_lang_math_cbrt : /* run interpreted */ break;
     case Interpreter::java_lang_math_abs  : /* run interpreted */ break;
     case Interpreter::java_lang_math_sqrt : /* runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt); not available */ break;
     case Interpreter::java_lang_math_log  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);   break;
@@ -1343,15 +1387,17 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // Make sure method is native and not abstract.
 #ifdef ASSERT
+  // _access_flags must be a 16 bit value.
+  assert(sizeof(AccessFlags) == 2, "testbit_ushort will fail");
   address reentry = nullptr;
   { Label L;
-    __ testbit(method_(access_flags), JVM_ACC_NATIVE_BIT);
+    __ testbit_ushort(method_(access_flags), JVM_ACC_NATIVE_BIT);
     __ z_btrue(L);
     reentry = __ stop_chain_static(reentry, "tried to execute non-native method as native");
     __ bind(L);
   }
   { Label L;
-    __ testbit(method_(access_flags), JVM_ACC_ABSTRACT_BIT);
+    __ testbit_ushort(method_(access_flags), JVM_ACC_ABSTRACT_BIT);
     __ z_bfalse(L);
     reentry = __ stop_chain_static(reentry, "tried to execute abstract method as non-abstract");
     __ bind(L);
@@ -1397,7 +1443,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 #ifdef ASSERT
     { Label L;
       __ get_method(Z_R1_scratch);
-      __ testbit(method2_(Z_R1_scratch, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
+      __ testbit_ushort(method2_(Z_R1_scratch, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
       __ z_bfalse(L);
       reentry = __ stop_chain_static(reentry, "method needs synchronization");
       __ bind(L);
@@ -1440,8 +1486,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   __ bind(call_signature_handler);
 
+  bool support_vthread_preemption = Continuations::enabled();
+
   // We have a TOP_IJAVA_FRAME here, which belongs to us.
-  __ set_top_ijava_frame_at_SP_as_last_Java_frame(Z_SP, Z_R1/*tmp*/);
+  Label last_java_pc;
+  Label *resume_pc = support_vthread_preemption ? &last_java_pc : nullptr;
+
+  __ set_top_ijava_frame_at_SP_as_last_Java_frame(Z_SP, Z_R1/*tmp*/, resume_pc);
 
   // Call signature handler and pass locals address in Z_ARG1.
   __ z_lgr(Z_ARG1, Z_locals);
@@ -1455,7 +1506,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Pass mirror handle if static call.
   {
     Label method_is_not_static;
-    __ testbit(method2_(Rmethod, access_flags), JVM_ACC_STATIC_BIT);
+    __ testbit_ushort(method2_(Rmethod, access_flags), JVM_ACC_STATIC_BIT);
     __ z_bfalse(method_is_not_static);
     // Load mirror from interpreter frame.
     __ z_lg(Z_R1, _z_ijava_state_neg(mirror), Z_fp);
@@ -1498,7 +1549,18 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // overwritten since "__ call_stub(signature_handler);" (except for
   // ARG1 and ARG2 for static methods).
 
+  if (support_vthread_preemption) {
+    // Rresult_handler is a nonvolatile register. Its value will be preserved across
+    // the native call but only if the call isn't preempted. To preserve its value even
+    // in the case of preemption we save it in the lresult slot. It is restored at
+    // resume_pc if, and only if the call was preempted. This works because only
+    // j.l.Object::wait calls are preempted which don't return a result.
+
+    __ z_stg(Rresult_handler, _z_ijava_state_neg(lresult), Z_fp);
+  }
+  __ push_cont_fastpath();
   __ call_c(Z_R1/*native_method_entry*/);
+  __ pop_cont_fastpath();
 
   // NOTE: frame::interpreter_frame_result() depends on these stores.
   __ z_stg(Z_RET, _z_ijava_state_neg(lresult), Z_fp);
@@ -1582,6 +1644,32 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ z_lg(Z_bcp, Address(Rmethod, Method::const_offset())); // get constMethod
   __ add2reg(Z_bcp, in_bytes(ConstMethod::codes_offset())); // get codebase
 
+  if (support_vthread_preemption) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ z_ltg(Z_R1_scratch, Address(Z_thread, JavaThread::preempt_alternate_return_offset()));
+    __ z_brz(not_preempted); // if 0, jump to not_preempted
+    __ z_mvghi(Address(Z_thread, JavaThread::preempt_alternate_return_offset()), 0);
+    __ z_br(Z_R1_scratch);
+
+    // Execution will be resumed here when the vthread becomes runnable again.
+    __ bind(*resume_pc);
+    __ restore_after_resume();
+    // We saved the result handler before the call
+    __ z_lg(Rresult_handler, _z_ijava_state_neg(lresult), Z_fp);
+#ifdef ASSERT
+    // Clobber result slots. Only native methods returning void can be preemted currently.
+    __ load_const(Z_RET, UCONST64(0xbad01001));
+    __ z_stg(Z_RET, _z_ijava_state_neg(lresult), Z_fp);
+    __ z_stg(Z_RET, _z_ijava_state_neg(fresult), Z_fp);
+    // reset_last_Java_frame() below asserts that a last java sp is set
+    __ asm_assert_mem8_is_zero(in_bytes(JavaThread::last_Java_sp_offset()),
+         Z_thread, FILE_AND_LINE ": Last java sp should not be set when resuming", 69);
+    __ z_stg(Z_RET, in_bytes(JavaThread::last_Java_sp_offset()), Z_thread);
+#endif
+    __ bind(not_preempted);
+  }
+
   if (CheckJNICalls) {
     // clear_pending_jni_exception_check
     __ clear_mem(Address(Z_thread, JavaThread::pending_jni_exception_check_fn_offset()), sizeof(oop));
@@ -1620,7 +1708,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ add2reg(Rfirst_monitor, -(frame::z_ijava_state_size + (int)sizeof(BasicObjectLock)), Z_fp);
 #ifdef ASSERT
     NearLabel ok;
-    __ z_lg(Z_R1, _z_ijava_state_neg(monitors), Z_fp);
+    __ get_monitors(Z_R1);
     __ compareU64_and_branch(Rfirst_monitor, Z_R1, Assembler::bcondEqual, ok);
     reentry = __ stop_chain_static(reentry, "native_entry:unlock: inconsistent z_ijava_state.monitors");
     __ bind(ok);
@@ -1713,13 +1801,13 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 #ifdef ASSERT
   address reentry = nullptr;
   { Label L;
-    __ testbit(method_(access_flags), JVM_ACC_NATIVE_BIT);
+    __ testbit_ushort(method_(access_flags), JVM_ACC_NATIVE_BIT);
     __ z_bfalse(L);
     reentry = __ stop_chain_static(reentry, "tried to execute native method as non-native");
     __ bind(L);
   }
   { Label L;
-    __ testbit(method_(access_flags), JVM_ACC_ABSTRACT_BIT);
+    __ testbit_ushort(method_(access_flags), JVM_ACC_ABSTRACT_BIT);
     __ z_bfalse(L);
     reentry = __ stop_chain_static(reentry, "tried to execute abstract method as non-abstract");
     __ bind(L);
@@ -1769,7 +1857,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 #ifdef ASSERT
     { Label L;
       __ get_method(Z_R1_scratch);
-      __ testbit(method2_(Z_R1_scratch, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
+      __ testbit_ushort(method2_(Z_R1_scratch, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
       __ z_bfalse(L);
       reentry = __ stop_chain_static(reentry, "method needs synchronization");
       __ bind(L);
@@ -1999,12 +2087,20 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
   return __ addr_at(entry_off);
 }
 
+address TemplateInterpreterGenerator::generate_currentThread() {
+  uint64_t entry_off = __ offset();
+
+  __ z_lg(Z_RET, Address(Z_thread, JavaThread::vthread_offset()));
+  __ resolve_oop_handle(Z_RET, Z_R0_scratch, Z_R1_scratch);
+
+  // Restore caller sp for c2i case.
+  __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
+  __ z_br(Z_R14);
+
+  return __ addr_at(entry_off);
+}
+
 // Not supported
-address TemplateInterpreterGenerator::generate_currentThread() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
@@ -2040,6 +2136,14 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Frame accessors use Z_fp.
   // Z_ARG1 (==Z_tos): exception
   // Z_ARG2          : Return address/pc that threw exception.
+  {
+    Register top_frame_sp = Z_R1_scratch; // anyway going to load it with correct value
+    __ z_lg(top_frame_sp, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+    __ z_slag(top_frame_sp, top_frame_sp, Interpreter::logStackElementSize);
+    __ z_agr(top_frame_sp, Z_fp);
+
+    __ resize_frame_absolute(top_frame_sp, /* temp = */ Z_R0, /* load_fp = */ true);
+  }
   __ restore_bcp();    // R13 points to call/send.
   __ restore_locals();
 
@@ -2132,6 +2236,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                    JavaThread::popframe_force_deopt_reexecution_bit,
                    Z_tmp_1, false);
 
+    __ pop_cont_fastpath();
     // Continue in deoptimization handler.
     __ z_br(Z_R14);
 
@@ -2147,6 +2252,15 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                        false,  // install_monitor_exception
                        false); // notify_jvmdi
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
+  __ pop_cont_fastpath();
+  {
+    Register top_frame_sp = Z_R1_scratch;
+    __ z_lg(top_frame_sp, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+    __ z_slag(top_frame_sp, top_frame_sp, Interpreter::logStackElementSize);
+    __ z_agr(top_frame_sp, Z_fp);
+
+    __ resize_frame_absolute(top_frame_sp, /* temp = */ Z_R0, /* load_fp = */ true);
+  }
   __ restore_bcp();
   __ restore_locals();
   __ restore_esp();
@@ -2212,8 +2326,9 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // Remove the activation (without doing throws on illegalMonitorExceptions).
   __ remove_activation(vtos, noreg/*ret.pc already loaded*/, false/*throw exc*/, true/*install exc*/, false/*notify jvmti*/);
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
+  __ pop_cont_fastpath();
 
-  __ get_vm_result(Z_ARG1);     // Restore exception.
+  __ get_vm_result_oop(Z_ARG1);     // Restore exception.
   __ verify_oop(Z_ARG1);
   __ z_lgr(Z_ARG2, return_pc);  // Restore return address.
 
@@ -2310,7 +2425,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
     // Skip runtime call, if the trace threshold is not yet reached.
     __ load_absolute_address(Z_tmp_1, (address)&BytecodeCounter::_counter_value);
     __ load_absolute_address(Z_tmp_2, (address)&TraceBytecodesAt);
-    __ load_sized_value(Z_tmp_1, Address(Z_tmp_1), 4, false /*signed*/);
+    __ load_sized_value(Z_tmp_1, Address(Z_tmp_1), 8, false /*signed*/);
     __ load_sized_value(Z_tmp_2, Address(Z_tmp_2), 8, false /*signed*/);
     __ compareU64_and_branch(Z_tmp_1, Z_tmp_2, Assembler::bcondLow, counter_below_trace_threshold);
   }
@@ -2340,7 +2455,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 // Make feasible for old CPUs.
 void TemplateInterpreterGenerator::count_bytecode() {
   __ load_absolute_address(Z_R1_scratch, (address) &BytecodeCounter::_counter_value);
-  __ add2mem_32(Address(Z_R1_scratch), 1, Z_R0_scratch);
+  __ add2mem_64(Address(Z_R1_scratch), 1, Z_R0_scratch);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template * t) {
@@ -2387,7 +2502,7 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 
   __ load_absolute_address(Z_tmp_1, (address)&BytecodeCounter::_counter_value);
   __ load_absolute_address(Z_tmp_2, (address)&StopInterpreterAt);
-  __ load_sized_value(Z_tmp_1, Address(Z_tmp_1), 4, false /*signed*/);
+  __ load_sized_value(Z_tmp_1, Address(Z_tmp_1), 8, false /*signed*/);
   __ load_sized_value(Z_tmp_2, Address(Z_tmp_2), 8, false /*signed*/);
   __ compareU64_and_branch(Z_tmp_1, Z_tmp_2, Assembler::bcondLow, L);
   assert(Z_tmp_1->is_nonvolatile(), "must be nonvolatile to preserve Z_tos");

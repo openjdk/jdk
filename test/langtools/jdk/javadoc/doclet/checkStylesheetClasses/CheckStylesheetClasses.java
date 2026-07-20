@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8267574
+ * @bug 8267574 8378228
  * @summary check stylesheet names against HtmlStyle
  * @modules jdk.javadoc/jdk.javadoc.internal.html
  *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup
@@ -118,30 +118,29 @@ public class CheckStylesheetClasses {
         htmlStyleNames.removeIf(s -> s.endsWith("-summary") && !styleSheetNames.contains(s));
 
         // signature classes
-        removeAll(htmlStyleNames, "annotations", "element-name", "extends-implements",
+        removeAll(htmlStyleNames, "element-name", "extends-implements",
                 "modifiers", "permits", "return-type");
 
         // misc: these are defined in HtmlStyle, and used by the doclet
         removeAll(htmlStyleNames, "col-plain", "external-link", "header",
-                "hierarchy", "index", "package-uses", "packages", "permits-note",
-                "serialized-package-container", "source-container");
+                "package-uses", "packages", "permits-note", "serialized-package-container",
+                "source-container");
 
         // Remove names from styleSheetNames if they are false positives,
         // or used by other code (i.e. not HtmlStyle),
         // or if they are unused and therefore candidates to be deleted.
 
         // false positives: file extensions and URL components
-        removeAll(styleSheetNames, "css", "png", "w3", "org");
+        removeAll(styleSheetNames, "css", "svg", "w3", "org");
 
         // for doc-comment authors; maybe worthy of inclusion in HtmlStyle, just to be documented
         removeAll(styleSheetNames, "borderless", "plain", "striped");
 
-        // used in search.js and search-page.js; may be worth documenting in HtmlStyle
-        removeAll(styleSheetNames, "result-highlight", "result-item", "anchor-link",
-                "search-tag-desc-result", "search-tag-holder-result", "page-search-header",
-                "ui-autocomplete", "ui-autocomplete-category", "ui-state-active", "ui-menu",
-                "ui-menu-item-wrapper", "ui-static-link", "expanded", "search-result-link",
-                "two-column-search-results", "sort-asc", "sort-desc", "visible");
+        // used in search.js; may be worth documenting in HtmlStyle
+        removeAll(styleSheetNames, "result-highlight", "anchor-link", "expanded", "overlay",
+                "page-search-header", "result-table", "search-result-desc", "search-result-label",
+                "search-result-link", "selected", "sort-asc", "sort-desc", "two-column-search-results",
+                "visible");
 
         // very JDK specific
         styleSheetNames.remove("module-graph");

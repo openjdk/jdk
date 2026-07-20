@@ -38,8 +38,6 @@ import jdk.test.lib.process.ProcessTools;
  * @library /test/lib
  * @build bootreporter.StringIdCallback bootreporter.StringIdCallbackReporter
  *        asmlib.Instrumentor NativeMethodPrefixAgent
- * @enablePreview
- * @comment The test uses asmlib/Instrumentor.java which relies on ClassFile API PreviewFeature.
  * @run main/native NativeMethodPrefixApp roleDriver
  */
 public class NativeMethodPrefixApp implements StringIdCallback {
@@ -87,7 +85,6 @@ public class NativeMethodPrefixApp implements StringIdCallback {
 
     private static void launchApp(final Path agentJar) throws Exception {
         final OutputAnalyzer oa = ProcessTools.executeTestJava(
-                "--enable-preview", // due to usage of ClassFile API PreviewFeature in the agent
                 "-javaagent:" + agentJar.toString(),
                 "-Djava.library.path=" + testLibraryPath,
                 NativeMethodPrefixApp.class.getName());

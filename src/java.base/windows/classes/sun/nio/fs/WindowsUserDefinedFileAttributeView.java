@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,19 +100,13 @@ class WindowsUserDefinedFileAttributeView
         return Collections.unmodifiableList(list);
     }
 
-    @SuppressWarnings("removal")
     @Override
     public List<String> list() throws IOException  {
-        if (System.getSecurityManager() != null)
-            checkAccess(file.getPathForPermissionCheck(), true, false);
         return listUsingStreamEnumeration();
     }
 
-    @SuppressWarnings("removal")
     @Override
     public int size(String name) throws IOException  {
-        if (System.getSecurityManager() != null)
-            checkAccess(file.getPathForPermissionCheck(), true, false);
 
         // wrap with channel
         FileChannel fc = null;
@@ -122,9 +116,9 @@ class WindowsUserDefinedFileAttributeView
             if (!followLinks)
                 opts.add(WindowsChannelFactory.OPEN_REPARSE_POINT);
             fc = WindowsChannelFactory
-                .newFileChannel(join(file, name), null, opts, 0L);
+                .newFileChannel(join(file, name), opts, 0L);
         } catch (WindowsException x) {
-            x.rethrowAsIOException(join(file.getPathForPermissionCheck(), name));
+            x.rethrowAsIOException(join(file.getPathForExceptionMessage(), name));
         }
         try {
             long size = fc.size();
@@ -136,12 +130,8 @@ class WindowsUserDefinedFileAttributeView
         }
     }
 
-    @SuppressWarnings("removal")
     @Override
     public int read(String name, ByteBuffer dst) throws IOException {
-        if (System.getSecurityManager() != null)
-            checkAccess(file.getPathForPermissionCheck(), true, false);
-
         // wrap with channel
         FileChannel fc = null;
         try {
@@ -150,9 +140,9 @@ class WindowsUserDefinedFileAttributeView
             if (!followLinks)
                 opts.add(WindowsChannelFactory.OPEN_REPARSE_POINT);
             fc = WindowsChannelFactory
-                .newFileChannel(join(file, name), null, opts, 0L);
+                .newFileChannel(join(file, name), opts, 0L);
         } catch (WindowsException x) {
-            x.rethrowAsIOException(join(file.getPathForPermissionCheck(), name));
+            x.rethrowAsIOException(join(file.getPathForExceptionMessage(), name));
         }
 
         // read to EOF (nothing we can do if I/O error occurs)
@@ -172,12 +162,8 @@ class WindowsUserDefinedFileAttributeView
         }
     }
 
-    @SuppressWarnings("removal")
     @Override
     public int write(String name, ByteBuffer src) throws IOException {
-        if (System.getSecurityManager() != null)
-            checkAccess(file.getPathForPermissionCheck(), false, true);
-
         /**
          * Creating a named stream will cause the unnamed stream to be created
          * if it doesn't already exist. To avoid this we open the unnamed stream
@@ -210,9 +196,9 @@ class WindowsUserDefinedFileAttributeView
             FileChannel named = null;
             try {
                 named = WindowsChannelFactory
-                    .newFileChannel(join(file, name), null, opts, 0L);
+                    .newFileChannel(join(file, name), opts, 0L);
             } catch (WindowsException x) {
-                x.rethrowAsIOException(join(file.getPathForPermissionCheck(), name));
+                x.rethrowAsIOException(join(file.getPathForExceptionMessage(), name));
             }
             // write value (nothing we can do if I/O error occurs)
             try {
@@ -229,12 +215,8 @@ class WindowsUserDefinedFileAttributeView
         }
     }
 
-    @SuppressWarnings("removal")
     @Override
     public void delete(String name) throws IOException {
-        if (System.getSecurityManager() != null)
-            checkAccess(file.getPathForPermissionCheck(), false, true);
-
         String path = WindowsLinkSupport.getFinalPath(file, followLinks);
         String toDelete = join(path, name);
         try {

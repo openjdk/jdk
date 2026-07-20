@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,18 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
+
 ################################################################################
 ## Build libverify
 ################################################################################
 
-LIBVERIFY_OPTIMIZATION := HIGH
-ifeq ($(call isTargetOs, linux)+$(COMPILE_WITH_DEBUG_SYMBOLS), true+true)
-  LIBVERIFY_OPTIMIZATION := LOW
-endif
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBVERIFY, \
     NAME := verify, \
-    OPTIMIZATION := $(LIBVERIFY_OPTIMIZATION), \
-    DISABLED_WARNINGS_gcc_check_code.c := unused-variable, \
-    DISABLED_WARNINGS_clang_check_code.c := unused-variable, \
+    OPTIMIZATION := HIGH, \
     EXTRA_HEADER_DIRS := libjava, \
     JDK_LIBS := libjvm, \
 ))
@@ -59,8 +57,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     ProcessImpl_md.c_CFLAGS := $(VERSION_CFLAGS), \
     java_props_md.c_CFLAGS := \
         -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"', \
-    DISABLED_WARNINGS_gcc_ProcessImpl_md.c := unused-result, \
-    DISABLED_WARNINGS_clang_TimeZone_md.c := unused-variable, \
     JDK_LIBS := libjvm, \
     LIBS_linux := $(LIBDL), \
     LIBS_aix := $(LIBDL) $(LIBM), \
@@ -77,7 +73,7 @@ TARGETS += $(BUILD_LIBJAVA)
 ## Build libzip
 ################################################################################
 
-BUILD_LIBZIP_EXCLUDES :=
+LIBZIP_EXCLUDES :=
 ifeq ($(USE_EXTERNAL_LIBZ), true)
   LIBZIP_EXCLUDES += zlib
 endif
@@ -167,6 +163,14 @@ endif
 ifeq ($(call isTargetOs, aix), true)
   # AIX requires a static libjli because the compiler doesn't support '-rpath'
   BUILD_LIBJLI_TYPE := STATIC_LIBRARY
+
+  # This is the object file to provide the dladdr API, which is not
+  # part of AIX. It occurs several times in the jdk code base.
+  # Do not include it. When statically linking the java
+  # launcher with all JDK and VM static libraries, we use the
+  # --whole-archive linker option. The duplicate objects in different
+  # static libraries cause linking errors due to duplicate symbols.
+  LIBJLI_STATIC_EXCLUDE_OBJS += java_md_aix.o
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
@@ -182,7 +186,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
         unused-function, \
     DISABLED_WARNINGS_clang_java_md_macosx.m := unused-variable, \
     LIBS_unix := $(LIBZ_LIBS), \
-    LIBS_linux := $(LIBDL) -lpthread, \
+    LIBS_linux := $(LIBDL) $(LIBPTHREAD), \
     LIBS_macosx := \
         -framework ApplicationServices \
         -framework Cocoa \
@@ -192,3 +196,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
 ))
 
 TARGETS += $(BUILD_LIBJLI)
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

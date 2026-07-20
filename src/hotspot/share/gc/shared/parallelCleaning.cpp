@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,15 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/parallelCleaning.hpp"
 #include "logging/log.hpp"
-#include "memory/resourceArea.hpp"
-#include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "oops/klass.inline.hpp"
 
-CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, bool unloading_occurred) :
+CodeCacheUnloadingTask::CodeCacheUnloadingTask(bool unloading_occurred) :
   _unloading_occurred(unloading_occurred),
-  _num_workers(num_workers),
   _first_nmethod(nullptr),
   _claimed_nmethod(nullptr) {
   // Get first alive nmethod
@@ -42,7 +38,7 @@ CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, bool unloading_
   if(iter.next()) {
     _first_nmethod = iter.method();
   }
-  _claimed_nmethod = _first_nmethod;
+  _claimed_nmethod.store_relaxed(_first_nmethod);
 }
 
 CodeCacheUnloadingTask::~CodeCacheUnloadingTask() {
@@ -56,7 +52,7 @@ void CodeCacheUnloadingTask::claim_nmethods(nmethod** claimed_nmethods, int *num
   do {
     *num_claimed_nmethods = 0;
 
-    first = _claimed_nmethod;
+    first = _claimed_nmethod.load_relaxed();
     last = NMethodIterator(NMethodIterator::all, first);
 
     if (first != nullptr) {
@@ -70,7 +66,7 @@ void CodeCacheUnloadingTask::claim_nmethods(nmethod** claimed_nmethods, int *num
       }
     }
 
-  } while (Atomic::cmpxchg(&_claimed_nmethod, first, last.method()) != first);
+  } while (!_claimed_nmethod.compare_set(first, last.method()));
 }
 
 void CodeCacheUnloadingTask::work(uint worker_id) {
@@ -96,40 +92,26 @@ void CodeCacheUnloadingTask::work(uint worker_id) {
   }
 }
 
-KlassCleaningTask::KlassCleaningTask() :
-  _clean_klass_tree_claimed(0),
-  _klass_iterator() {
-}
-
-bool KlassCleaningTask::claim_clean_klass_tree_task() {
-  if (_clean_klass_tree_claimed) {
-    return false;
-  }
-
-  return Atomic::cmpxchg(&_clean_klass_tree_claimed, 0, 1) == 0;
-}
-
-InstanceKlass* KlassCleaningTask::claim_next_klass() {
-  Klass* klass;
-  do {
-    klass =_klass_iterator.next_klass();
-  } while (klass != nullptr && !klass->is_instance_klass());
-
-  // this can be null so don't call InstanceKlass::cast
-  return static_cast<InstanceKlass*>(klass);
-}
-
 void KlassCleaningTask::work() {
-  ResourceMark rm;
+  for (ClassLoaderData* cur = _cld_iterator_atomic.next(); cur != nullptr; cur = _cld_iterator_atomic.next()) {
+      class CleanKlasses : public KlassClosure {
+      public:
 
-  // One worker will clean the subklass/sibling klass tree.
-  if (claim_clean_klass_tree_task()) {
-    Klass::clean_subklass_tree();
-  }
+        void do_klass(Klass* klass) override {
+          klass->clean_subklass(true);
 
-  // All workers will help cleaning the classes,
-  InstanceKlass* klass;
-  while ((klass = claim_next_klass()) != nullptr) {
-    clean_klass(klass);
+          Klass* sibling = klass->next_sibling(true);
+          klass->set_next_sibling(sibling);
+
+          if (klass->is_instance_klass()) {
+            Klass::clean_weak_instanceklass_links(InstanceKlass::cast(klass));
+          }
+
+          assert(klass->subklass() == nullptr || klass->subklass()->is_loader_alive(), "must be");
+          assert(klass->next_sibling(false) == nullptr || klass->next_sibling(false)->is_loader_alive(), "must be");
+        }
+      } cl;
+
+      cur->classes_do(&cl);
   }
 }

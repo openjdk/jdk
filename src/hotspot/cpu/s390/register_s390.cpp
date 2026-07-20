@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,13 +23,7 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "register_s390.hpp"
-
-
-const int ConcreteRegisterImpl::max_gpr = Register::number_of_registers * 2;
-const int ConcreteRegisterImpl::max_fpr = ConcreteRegisterImpl::max_gpr +
-                                          FloatRegister::number_of_registers * 2;
 
 const char* Register::name() const {
   const char* names[number_of_registers] = {
@@ -54,5 +48,11 @@ const char* VectorRegister::name() const {
     "Z_V16", "Z_V17", "Z_V18", "Z_V19", "Z_V20", "Z_V21", "Z_V22", "Z_V23",
     "Z_V24", "Z_V25", "Z_V26", "Z_V27", "Z_V28", "Z_V29", "Z_V30", "Z_V31"
   };
-  return is_valid() ? names[encoding()] : "fnoreg";
+  return is_valid() ? names[encoding()] : "vnoreg";
+}
+
+// Method to convert a FloatRegister to a VectorRegister (VectorRegister)
+VectorRegister FloatRegister::to_vr() const {
+  if (*this == fnoreg) { return vnoreg; }
+  return as_VectorRegister(encoding());
 }

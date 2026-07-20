@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.nio.cs;
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.*;
-import java.security.*;
 
 public class CharsetMapping {
     public static final char UNMAPPABLE_DECODING = '\uFFFD';
@@ -129,13 +128,8 @@ public class CharsetMapping {
     }
 
     // init the CharsetMapping object from the .dat binary file
-    @SuppressWarnings("removal")
     public static CharsetMapping get(final InputStream is) {
-        return AccessController.doPrivileged(new PrivilegedAction<>() {
-            public CharsetMapping run() {
-                return new CharsetMapping().load(is);
-            }
-        });
+        return new CharsetMapping().load(is);
     }
 
     public static class Entry {

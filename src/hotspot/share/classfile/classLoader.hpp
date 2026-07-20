@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,6 @@ public:
 
   virtual bool is_modules_image() const { return false; }
   virtual bool is_jar_file() const { return false; }
-  // Is this entry created from the "Class-path" attribute from a JAR Manifest?
-  virtual bool from_class_path_attr() const { return false; }
   virtual const char* name() const = 0;
   virtual JImageFile* jimage() const { return nullptr; }
   virtual void close_jimage() {}
@@ -90,19 +88,19 @@ class ClassPathZipEntry: public ClassPathEntry {
  private:
   jzfile* _zip;              // The zip archive
   const char*   _zip_name;   // Name of zip archive
-  bool _from_class_path_attr; // From the "Class-path" attribute of a jar file
  public:
   bool is_jar_file() const { return true;  }
-  bool from_class_path_attr() const { return _from_class_path_attr; }
   const char* name() const { return _zip_name; }
-  ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append, bool from_class_path_attr);
+  ClassPathZipEntry(jzfile* zip, const char* zip_name);
   virtual ~ClassPathZipEntry();
+  bool has_entry(JavaThread* current, const char* name);
   u1* open_entry(JavaThread* current, const char* name, jint* filesize, bool nul_terminate);
   ClassFileStream* open_stream(JavaThread* current, const char* name);
 };
 
 
-// For java image files
+// A singleton path entry which takes ownership of the initialized JImageFile
+// reference. Not used for exploded builds.
 class ClassPathImageEntry: public ClassPathEntry {
 private:
   const char* _name;
@@ -110,11 +108,12 @@ private:
 public:
   bool is_modules_image() const;
   const char* name() const { return _name == nullptr ? "" : _name; }
-  JImageFile* jimage() const;
-  JImageFile* jimage_non_null() const;
+  // Called to close the JImage during os::abort (normally not called).
   void close_jimage();
-  ClassPathImageEntry(JImageFile* jimage, const char* name);
+  // Takes effective ownership of the static JImageFile pointer.
+  ClassPathImageEntry(const char* name);
   virtual ~ClassPathImageEntry() { ShouldNotReachHere(); }
+
   ClassFileStream* open_stream(JavaThread* current, const char* name);
   ClassFileStream* open_stream_for_loader(JavaThread* current, const char* name, ClassLoaderData* loader_data);
 };
@@ -140,6 +139,7 @@ public:
 class ClassLoader: AllStatic {
  public:
   enum ClassLoaderType {
+    OTHER = 0,
     BOOT_LOADER = 1,      /* boot loader */
     PLATFORM_LOADER  = 2, /* PlatformClassLoader */
     APP_LOADER  = 3       /* AppClassLoader */
@@ -186,6 +186,7 @@ class ClassLoader: AllStatic {
 
   // Count the time taken to hash the scondary superclass arrays.
   static PerfCounter* _perf_secondary_hash_time;
+  static PerfCounter* _perf_change_wx_time;
 
   // The boot class path consists of 3 ordered pieces:
   //  1. the module/path pairs specified to --patch-module
@@ -202,10 +203,10 @@ class ClassLoader: AllStatic {
   static GrowableArray<ModuleClassPathList*>* _patch_mod_entries;
 
   // 2. the base piece
-  //    Contains the ClassPathEntry of the modular java runtime image.
+  //    Contains the ClassPathImageEntry of the modular java runtime image.
   //    If no java runtime image is present, this indicates a
   //    build with exploded modules is being used instead.
-  static ClassPathEntry* _jrt_entry;
+  static ClassPathImageEntry* _jrt_entry;
   static GrowableArray<ModuleClassPathList*>* _exploded_entries;
   enum { EXPLODED_ENTRY_SIZE = 80 }; // Initial number of exploded modules
 
@@ -214,28 +215,13 @@ class ClassLoader: AllStatic {
   //    Note: boot loader append path does not support named modules.
   static ClassPathEntry* volatile _first_append_entry_list;
   static ClassPathEntry* first_append_entry() {
-    return Atomic::load_acquire(&_first_append_entry_list);
+    return AtomicAccess::load_acquire(&_first_append_entry_list);
   }
 
   // Last entry in linked list of appended ClassPathEntry instances
   static ClassPathEntry* volatile _last_append_entry;
 
-  // Info used by CDS
-  CDS_ONLY(static ClassPathEntry* _app_classpath_entries;)
-  CDS_ONLY(static ClassPathEntry* _last_app_classpath_entry;)
-  CDS_ONLY(static ClassPathEntry* _module_path_entries;)
-  CDS_ONLY(static ClassPathEntry* _last_module_path_entry;)
-  CDS_ONLY(static void setup_app_search_path(JavaThread* current, const char* class_path);)
-  CDS_ONLY(static void setup_module_search_path(JavaThread* current, const char* path);)
-  static bool add_to_app_classpath_entries(JavaThread* current,
-                                           ClassPathEntry* entry,
-                                           bool check_for_duplicates);
-  CDS_ONLY(static void add_to_module_path_entries(const char* path,
-                                           ClassPathEntry* entry);)
-
  public:
-  CDS_ONLY(static ClassPathEntry* app_classpath_entries() {return _app_classpath_entries;})
-  CDS_ONLY(static ClassPathEntry* module_path_entries() {return _module_path_entries;})
 
   static bool has_bootclasspath_append() { return first_append_entry() != nullptr; }
 
@@ -257,9 +243,7 @@ class ClassLoader: AllStatic {
   static void* zip_library_handle();
   static jzfile* open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread);
   static ClassPathEntry* create_class_path_entry(JavaThread* current,
-                                                 const char *path, const struct stat* st,
-                                                 bool is_boot_append,
-                                                 bool from_class_path_attr);
+                                                 const char *path, const struct stat* st);
 
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
@@ -269,10 +253,7 @@ class ClassLoader: AllStatic {
   static PackageEntry* get_package_entry(Symbol* pkg_name, ClassLoaderData* loader_data);
   static int crc32(int crc, const char* buf, int len);
   static bool update_class_path_entry_list(JavaThread* current,
-                                           const char *path,
-                                           bool check_for_duplicates,
-                                           bool is_boot_append,
-                                           bool from_class_path_attr);
+                                           const char *path);
   static void print_bootclasspath();
 
   // Timing
@@ -289,6 +270,9 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_shared_classload_time()    { return _perf_shared_classload_time; }
   static PerfCounter* perf_secondary_hash_time() {
     return _perf_secondary_hash_time;
+  }
+  static PerfCounter* perf_change_wx_time() {
+    return _perf_change_wx_time;
   }
   static PerfCounter* perf_sys_classload_time()       { return _perf_sys_classload_time; }
   static PerfCounter* perf_app_classload_time()       { return _perf_app_classload_time; }
@@ -356,8 +340,6 @@ class ClassLoader: AllStatic {
   // Initialization
   static void initialize(TRAPS);
   static void classLoader_init2(JavaThread* current);
-  CDS_ONLY(static void initialize_shared_path(JavaThread* current);)
-  CDS_ONLY(static void initialize_module_path(TRAPS);)
 
   static int compute_Object_vtable();
 
@@ -366,35 +348,23 @@ class ClassLoader: AllStatic {
   static bool is_in_patch_mod_entries(Symbol* module_name);
 
 #if INCLUDE_CDS
-  // Sharing dump and restore
-
-  // Helper function used by CDS code to get the number of boot classpath
-  // entries during shared classpath setup time.
-  static int num_boot_classpath_entries();
-
-  static ClassPathEntry* get_next_boot_classpath_entry(ClassPathEntry* e);
-
-  // Helper function used by CDS code to get the number of app classpath
-  // entries during shared classpath setup time.
-  static int num_app_classpath_entries();
-
-  // Helper function used by CDS code to get the number of module path
-  // entries during shared classpath setup time.
-  static int num_module_path_entries();
-  static void  exit_with_path_failure(const char* error, const char* message);
-  static char* skip_uri_protocol(char* source);
+  static char* uri_to_path(const char* uri);
   static void  record_result(JavaThread* current, InstanceKlass* ik,
                              const ClassFileStream* stream, bool redefined);
+  static void record_result_for_builtin_loader(s2 classpath_index, InstanceKlass* result, bool redefined);
+  static void record_hidden_class(InstanceKlass* ik);
+  static void append_boot_classpath(ClassPathEntry* new_entry);
 #endif
 
+  // Retrieves additional VM options prior to flags processing. Options held
+  // in the JImage file are retrieved without fully initializing it. (this is
+  // the only JImage lookup which can succeed before init_jimage() is called).
   static char* lookup_vm_options();
 
-  // Determines if the named module is present in the
-  // modules jimage file or in the exploded modules directory.
-  static bool is_module_observable(const char* module_name);
-
-  static JImageLocationRef jimage_find_resource(JImageFile* jf, const char* module_name,
-                                                const char* file_name, jlong &size);
+  // Called once, after all flags are processed, to finish initializing the
+  // JImage file. Until this is called, jimage_find_resource(), and any other
+  // JImage resource lookups or access will fail.
+  static void set_preview_mode(bool enable_preview);
 
   static void  trace_class_path(const char* msg, const char* name = nullptr);
 
@@ -411,7 +381,7 @@ class ClassLoader: AllStatic {
   static void add_to_boot_append_entries(ClassPathEntry* new_entry);
 
   // creates a class path zip entry (returns null if JAR file cannot be opened)
-  static ClassPathZipEntry* create_class_path_zip_entry(const char *apath, bool is_boot_append);
+  static ClassPathZipEntry* create_class_path_zip_entry(const char *path);
 
   static bool string_ends_with(const char* str, const char* str_to_find);
 

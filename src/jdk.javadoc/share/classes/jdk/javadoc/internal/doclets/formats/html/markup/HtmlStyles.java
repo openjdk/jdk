@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,6 +163,16 @@ public enum HtmlStyles implements HtmlStyle {
      * The class used for list elements in the table of contents.
      */
     tocList,
+
+    /**
+     * The class used for lexical order toggle in the table of contents.
+     */
+    tocSortToggle,
+
+     /**
+     * The class used to indicate the state of the lexical sort toggle.
+     */
+    tocSortIsActive,
 
     //</editor-fold>
 
@@ -688,6 +698,16 @@ public enum HtmlStyles implements HtmlStyle {
     permits,
 
     /**
+     * The class used for a {@code sup} element marking an element as preview feature.
+     */
+    previewMark,
+
+    /**
+     * The class used for a {@code sup} element marking a method as restricted.
+     */
+    restrictedMark,
+
+    /**
      * The class of a {@code span} containing the return type in the signature of a method element.
      */
     returnType,
@@ -698,14 +718,6 @@ public enum HtmlStyles implements HtmlStyle {
      */
     typeParameters,
 
-    /**
-     * The class of a {@code span} containing type parameters in the signature of an element,
-     * used when the type parameters are too long to be displayed inline.
-     * @implNote
-     * The threshold for choosing between {@code typeParameters} and {@code typeParametersLong}
-     * is 50 characters.
-     */
-    typeParametersLong,
     //</editor-fold>
 
     //<editor-fold desc="search index and results">
@@ -721,6 +733,16 @@ public enum HtmlStyles implements HtmlStyle {
      * The class for a {@code div} element in the search page which contains additional information.
      */
     pageSearchInfo,
+
+    /**
+     * The class for a {@code div} element in the search widget containing the search form inputs.
+     */
+    searchForm,
+
+    /**
+     * The class for a {@code div} element in the search widget containing search-related links.
+     */
+    searchLinks,
 
     /**
      * The class for a link in the static "Index" pages to a custom searchable item,
@@ -856,6 +878,11 @@ public enum HtmlStyles implements HtmlStyle {
      * The class of the {@code body} element for the search page.
      */
     searchPage,
+
+    /**
+     * The class of the {@code body} element for the search tags page.
+     */
+    searchTagsPage,
 
     /**
      * The class of the {@code body} element for the serialized-forms page.

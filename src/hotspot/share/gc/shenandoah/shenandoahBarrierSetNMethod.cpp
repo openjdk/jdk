@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
@@ -42,9 +41,9 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return true;
   }
 
-  ShenandoahReentrantLock* lock = ShenandoahNMethod::lock_for_nmethod(nm);
+  ShenandoahNMethodLock* lock = ShenandoahNMethod::lock_for_nmethod(nm);
   assert(lock != nullptr, "Must be");
-  ShenandoahReentrantLocker locker(lock);
+  ShenandoahNMethodLocker locker(lock);
 
   if (!is_armed(nm)) {
     // Some other thread managed to complete while we were

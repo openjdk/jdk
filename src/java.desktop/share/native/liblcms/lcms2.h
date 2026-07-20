@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -52,7 +52,7 @@
 //
 //---------------------------------------------------------------------------------
 //
-// Version 2.16
+// Version 2.19
 //
 
 #ifndef _lcms2_H
@@ -65,6 +65,13 @@
 // Uncomment this one if your compiler/machine does NOT support the
 // "long long" type.
 // #define CMS_DONT_USE_INT64        1
+
+// Uncomment this one to enable large file support on file/stream I/O.
+// LittleCMS is still limited by ICC 32-bit offsets and sizes, so the
+// practical maximum remains 4 GiB minus profile overhead. Be careful
+// because such huge profiles have to be loaded into memory and that's
+// usually a very bad idea.
+// #define CMS_LARGE_FILE_SUPPORT    1
 
 // Uncomment this if your compiler doesn't work with fast floor function
 // #define CMS_DONT_USE_FAST_FLOOR 1
@@ -93,6 +100,9 @@
 // Uncomment this to remove the "register" storage class
 // #define CMS_NO_REGISTER_KEYWORD 1
 
+// Uncomment this to remove visibility attribute when building shared objects
+// #define CMS_NO_VISIBILITY 1
+
 // ********** End of configuration toggles ******************************
 
 // Needed for streams
@@ -113,7 +123,7 @@ extern "C" {
 #endif
 
 // Version/release
-#define LCMS_VERSION        2160
+#define LCMS_VERSION        2190
 
 // I will give the chance of redefining basic types for compilers that are not fully C99 compliant
 #ifndef CMS_BASIC_TYPES_ALREADY_DEFINED
@@ -194,6 +204,9 @@ typedef double               cmsFloat64Number;
 #ifdef CMS_DONT_USE_INT64
     typedef cmsUInt32Number      cmsUInt64Number[2];
     typedef cmsInt32Number       cmsInt64Number[2];
+#   if defined(CMS_LARGE_FILE_SUPPORT)
+#      error "You need int64 for large file support"
+#   endif
 #endif
 
 // Derivative types
@@ -277,7 +290,7 @@ typedef int                  cmsBool;
 #     define CMSAPI
 #  endif
 #else  // not Windows
-#  ifdef HAVE_FUNC_ATTRIBUTE_VISIBILITY
+#  if defined(HAVE_FUNC_ATTRIBUTE_VISIBILITY) && !defined(CMS_NO_VISIBILITY)
 #     define CMSEXPORT
 #     define CMSAPI    __attribute__((visibility("default")))
 #  else
@@ -530,7 +543,13 @@ typedef enum {
     cmsSigLinkClass                         = 0x6C696E6B,  // 'link'
     cmsSigAbstractClass                     = 0x61627374,  // 'abst'
     cmsSigColorSpaceClass                   = 0x73706163,  // 'spac'
-    cmsSigNamedColorClass                   = 0x6e6d636c   // 'nmcl'
+    cmsSigNamedColorClass                   = 0x6e6d636c,  // 'nmcl'
+
+                                                            // iccMAX only
+    cmsSigColorEncodingSpaceClass           = 0x63656E63,  // 'cenc'
+    cmsSigMultiplexIdentificationClass      = 0x6D696420,  // 'mid '
+    cmsSigMultiplexLinkClass                = 0x6d6c6e6b,  // 'mlnk'
+    cmsSigMultiplexVisualizationClass       = 0x6d766973   // 'mvis'
 
 } cmsProfileClassSignature;
 
@@ -987,7 +1006,6 @@ typedef void* cmsHTRANSFORM;
 // IEEE 754-2008 "half"
 #define TYPE_GRAY_HALF_FLT    (FLOAT_SH(1)|COLORSPACE_SH(PT_GRAY)|CHANNELS_SH(1)|BYTES_SH(2))
 #define TYPE_RGB_HALF_FLT     (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|CHANNELS_SH(3)|BYTES_SH(2))
-#define TYPE_RGBA_HALF_FLT    (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2))
 #define TYPE_CMYK_HALF_FLT    (FLOAT_SH(1)|COLORSPACE_SH(PT_CMYK)|CHANNELS_SH(4)|BYTES_SH(2))
 
 #define TYPE_RGBA_HALF_FLT    (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2))
@@ -1105,8 +1123,12 @@ CMSAPI int               CMSEXPORT cmsGetEncodedCMMversion(void);
 // Support of non-standard functions --------------------------------------------------------------------------------------
 
 CMSAPI int               CMSEXPORT cmsstrcasecmp(const char* s1, const char* s2);
-CMSAPI long int          CMSEXPORT cmsfilelength(FILE* f);
 
+#ifdef CMS_LARGE_FILE_SUPPORT
+CMSAPI long long int     CMSEXPORT cmsfilelength(FILE* f);
+#else
+CMSAPI long int          CMSEXPORT cmsfilelength(FILE* f);
+#endif
 
 // Context handling --------------------------------------------------------------------------------------------------------
 
@@ -1529,6 +1551,7 @@ CMSAPI cmsHPROFILE       CMSEXPORT cmsCreateProfilePlaceholder(cmsContext Contex
 CMSAPI cmsContext        CMSEXPORT cmsGetProfileContextID(cmsHPROFILE hProfile);
 CMSAPI cmsInt32Number    CMSEXPORT cmsGetTagCount(cmsHPROFILE hProfile);
 CMSAPI cmsTagSignature   CMSEXPORT cmsGetTagSignature(cmsHPROFILE hProfile, cmsUInt32Number n);
+CMSAPI cmsBool           CMSEXPORT cmsGetTagOffsetAndSize(cmsHPROFILE hProfile, cmsUInt32Number n, cmsUInt32Number* offset, cmsUInt32Number* size);
 CMSAPI cmsBool           CMSEXPORT cmsIsTag(cmsHPROFILE hProfile, cmsTagSignature sig);
 
 // Read and write pre-formatted data
@@ -1552,6 +1575,8 @@ CMSAPI void              CMSEXPORT cmsGetHeaderAttributes(cmsHPROFILE hProfile, 
 CMSAPI void              CMSEXPORT cmsGetHeaderProfileID(cmsHPROFILE hProfile, cmsUInt8Number* ProfileID);
 CMSAPI cmsBool           CMSEXPORT cmsGetHeaderCreationDateTime(cmsHPROFILE hProfile, struct tm *Dest);
 CMSAPI cmsUInt32Number   CMSEXPORT cmsGetHeaderRenderingIntent(cmsHPROFILE hProfile);
+CMSAPI cmsUInt32Number   CMSEXPORT cmsGetHeaderCMM(cmsHPROFILE hProfile);
+
 
 CMSAPI void              CMSEXPORT cmsSetHeaderFlags(cmsHPROFILE hProfile, cmsUInt32Number Flags);
 CMSAPI cmsUInt32Number   CMSEXPORT cmsGetHeaderManufacturer(cmsHPROFILE hProfile);
@@ -1893,6 +1918,13 @@ CMSAPI cmsContext       CMSEXPORT cmsGetTransformContextID(cmsHTRANSFORM hTransf
 // Grab the input/output formats
 CMSAPI cmsUInt32Number CMSEXPORT cmsGetTransformInputFormat(cmsHTRANSFORM hTransform);
 CMSAPI cmsUInt32Number CMSEXPORT cmsGetTransformOutputFormat(cmsHTRANSFORM hTransform);
+
+// Access the optimized pipeline and gamut-check pipeline inside a transform.
+CMSAPI cmsPipeline*    CMSEXPORT cmsGetTransformPipeline(cmsHTRANSFORM hTransform);
+CMSAPI cmsPipeline*    CMSEXPORT cmsGetTransformGamutCheckPipeline(cmsHTRANSFORM hTransform);
+// Grab colorants
+CMSAPI cmsNAMEDCOLORLIST* CMSEXPORT cmsGetTransformInputColorants(cmsHTRANSFORM hTransform);
+CMSAPI cmsNAMEDCOLORLIST* CMSEXPORT cmsGetTransformOutputColorants(cmsHTRANSFORM hTransform);
 
 // For backwards compatibility
 CMSAPI cmsBool          CMSEXPORT cmsChangeBuffersFormat(cmsHTRANSFORM hTransform,

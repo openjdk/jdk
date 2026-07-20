@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,11 +67,6 @@ public interface OperatingSystemMXBean extends PlatformManagedObject {
      *
      * @return the operating system name.
      *
-     * @throws  java.lang.SecurityException
-     *     if a security manager exists and its
-     *     <code>checkPropertiesAccess</code> method doesn't allow access
-     *     to this system property.
-     * @see java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see java.lang.System#getProperty
      */
     public String getName();
@@ -82,11 +77,6 @@ public interface OperatingSystemMXBean extends PlatformManagedObject {
      *
      * @return the operating system architecture.
      *
-     * @throws  java.lang.SecurityException
-     *     if a security manager exists and its
-     *     <code>checkPropertiesAccess</code> method doesn't allow access
-     *     to this system property.
-     * @see java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see java.lang.System#getProperty
      */
     public String getArch();
@@ -97,11 +87,6 @@ public interface OperatingSystemMXBean extends PlatformManagedObject {
      *
      * @return the operating system version.
      *
-     * @throws  java.lang.SecurityException
-     *     if a security manager exists and its
-     *     <code>checkPropertiesAccess</code> method doesn't allow access
-     *     to this system property.
-     * @see java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see java.lang.System#getProperty
      */
     public String getVersion();

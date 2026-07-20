@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import jdk.jfr.Recording;
 /**
  * @test
  * @summary Tests that it's possible to dump to /dev/null without a livelock
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR & (os.family != "windows")
  * @library /test/lib
  * @run main/othervm -Xlog:jfr jdk.jfr.api.recording.dump.TestDumpDevNull

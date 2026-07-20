@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ public class WindowsPopupMenuUI extends BasicPopupMenuUI {
         return new WindowsPopupMenuUI();
     }
 
+    @Override
     public void installListeners() {
         super.installListeners();
         if (! UIManager.getBoolean("Button.showMnemonics") &&
@@ -88,14 +89,16 @@ public class WindowsPopupMenuUI extends BasicPopupMenuUI {
      * @return Popup that will show the JPopupMenu
      * @since 1.4
      */
+    @Override
     public Popup getPopup(JPopupMenu popupMenu, int x, int y) {
         PopupFactory popupFactory = PopupFactory.getSharedInstance();
         return popupFactory.getPopup(popupMenu.getInvoker(), popupMenu, x, y);
     }
 
-    static class MnemonicListener implements ChangeListener {
+    static final class MnemonicListener implements ChangeListener {
         JRootPane repaintRoot = null;
 
+        @Override
         public void stateChanged(ChangeEvent ev) {
             MenuSelectionManager msm = (MenuSelectionManager)ev.getSource();
             MenuElement[] path = msm.getSelectedPath();

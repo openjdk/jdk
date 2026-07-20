@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6786690 6820360 8025633 8026567 8175200 8183511 8186332 8074407 8182765
- *      8230136
+ *      8230136 8352249
  * @summary This test verifies the nesting of definition list tags.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -184,15 +184,15 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dd><code>test</code> - boolean value</dd>
                     <dt>Throws:</dt>
                     <dd><code>java.lang.IllegalArgumentException</code> - if the <code>owner</code>'s
-                         <code>GraphicsConfiguration</code> is not from a screen device</dd>
+                        <code>GraphicsConfiguration</code> is not from a screen device</dd>
                     <dd><code>java.awt.HeadlessException</code></dd>
                     </dl>""",
                 """
                     <dl class="notes">
                     <dt>Parameters:</dt>
                     <dd><code>undecorated</code> - <code>true</code> if no decorations are
-                             to be enabled;
-                             <code>false</code> if decorations are to be enabled.</dd>
+                            to be enabled;
+                            <code>false</code> if decorations are to be enabled.</dd>
                     <dt>Since:</dt>
                     <dd>1.4</dd>
                     <dt>See Also:</dt>
@@ -238,7 +238,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 """
                     <span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">As of JDK version 1.5, replaced by
-                     <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
+                    <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
                     </div>
                     <div class="block">This field indicates whether the C1 is undecorated.</div>
                     <dl class="notes">
@@ -254,7 +254,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 """
                     <span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">As of JDK version 1.5, replaced by
-                     <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
+                    <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
                     </div>
                     <div class="block">Reads the object stream.</div>
                     <dl class="notes">
@@ -303,15 +303,15 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dd><code>test</code> - boolean value</dd>
                     <dt>Throws:</dt>
                     <dd><code>java.lang.IllegalArgumentException</code> - if the <code>owner</code>'s
-                         <code>GraphicsConfiguration</code> is not from a screen device</dd>
+                        <code>GraphicsConfiguration</code> is not from a screen device</dd>
                     <dd><code>java.awt.HeadlessException</code></dd>
                     </dl>""",
                 """
                     <dl class="notes">
                     <dt>Parameters:</dt>
                     <dd><code>undecorated</code> - <code>true</code> if no decorations are
-                             to be enabled;
-                             <code>false</code> if decorations are to be enabled.</dd>
+                            to be enabled;
+                            <code>false</code> if decorations are to be enabled.</dd>
                     <dt>Since:</dt>
                     <dd>1.4</dd>
                     <dt>See Also:</dt>
@@ -348,7 +348,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 """
                     <span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">As of JDK version 1.5, replaced by
-                     <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
+                    <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
                     </div>
                     <div class="block">This field indicates whether the C1 is undecorated.</div>
                     <dl class="notes">
@@ -364,7 +364,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 """
                     <span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">As of JDK version 1.5, replaced by
-                     <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
+                    <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
                     </div>
                     <div class="block">Reads the object stream.</div>
                     <dl class="notes">
@@ -412,13 +412,13 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <pre>boolean undecorated</pre>
                     <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">As of JDK version 1.5, replaced by
-                     <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
+                    <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
                     </div>
                     </li>""",
                 """
                     <span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">As of JDK version 1.5, replaced by
-                     <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
+                    <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
                     </div>
                     </li>""");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 #define SHARE_CI_BCESCAPEANALYZER_HPP
 
 #ifdef COMPILER2
-#include "ci/ciObject.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodData.hpp"
+#include "ci/ciObject.hpp"
 #include "code/dependencies.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.hpp"
@@ -151,6 +151,12 @@ class BCEscapeAnalyzer : public ArenaObj {
 
   // Copy dependencies from this analysis into "deps"
   void copy_dependencies(Dependencies *deps);
+
+  // Returns true if the datasize computation for iterate_blocks would
+  // overflow, i.e. the allocation size exceeds what can be represented.
+  // On success, sets datasize to the computed allocation size in bytes.
+  // Extracted as a public static method for testability (JDK-8216486).
+  static bool datasize_overflow(uint numblocks, uint stkSize, uint numLocals, size_t& datasize);
 
 #ifndef PRODUCT
   // dump escape information

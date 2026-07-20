@@ -29,7 +29,6 @@ import java.nio.file.*;
 import java.util.*;
 
 import jdk.internal.util.ArraysSupport;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Base implementation class for watch keys.
@@ -44,7 +43,7 @@ abstract class AbstractWatchKey implements WatchKey {
      */
     static final int MAX_EVENT_LIST_SIZE;
     static {
-        String rawValue = GetPropertyAction.privilegedGetProperty(
+        String rawValue = System.getProperty(
             "jdk.nio.file.WatchService.maxEventsPerPoll",
             String.valueOf(DEFAULT_MAX_EVENT_LIST_SIZE));
         int intValue;

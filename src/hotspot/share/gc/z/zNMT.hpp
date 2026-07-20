@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,10 @@
 
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zMemory.hpp"
-#include "gc/z/zVirtualMemory.hpp"
 #include "memory/allStatic.hpp"
-#include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/nativeCallStack.hpp"
 
 class ZNMT : public AllStatic {
 private:
@@ -42,10 +39,12 @@ public:
   static void initialize();
 
   static void reserve(zaddress_unsafe start, size_t size);
-  static void commit(zoffset offset, size_t size);
-  static void uncommit(zoffset offset, size_t size);
+  static void unreserve(zaddress_unsafe start, size_t size);
 
-  static void map(zaddress_unsafe addr, size_t size, zoffset offset);
+  static void commit(zbacking_offset offset, size_t size);
+  static void uncommit(zbacking_offset offset, size_t size);
+
+  static void map(zaddress_unsafe addr, size_t size, zbacking_offset offset);
   static void unmap(zaddress_unsafe addr, size_t size);
 };
 

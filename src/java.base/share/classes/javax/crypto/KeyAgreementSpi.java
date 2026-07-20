@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,18 +205,30 @@ public abstract class KeyAgreementSpi {
      * {@code generateSecret} to change the private information used in
      * subsequent operations.
      *
-     * @param algorithm the requested secret key algorithm
+     * @param algorithm the requested secret key algorithm. This is different
+     *      from the {@code KeyAgreement} algorithm provided to the
+     *      {@code getInstance} method. See the SecretKey Algorithms section in the
+     *      <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+     *      Java Security Standard Algorithm Names Specification</a>
+     *      for information about standard secret key algorithm names.
+     *      Specify "Generic" if the output will be used as the input keying
+     *      material of a key derivation function (KDF).
      *
-     * @return the shared secret key
+     * @return the shared secret key. The length of the key material
+     *      may be adjusted to be compatible with the specified algorithm,
+     *      regardless of whether the key is extractable. If {@code algorithm}
+     *      is specified as "Generic" and it is supported by the implementation,
+     *      the full shared secret is returned.
      *
      * @exception IllegalStateException if this key agreement has not been
      * initialized or if {@code doPhase} has not been called to supply the
      * keys for all parties in the agreement
-     * @exception NoSuchAlgorithmException if the requested secret key
-     * algorithm is not available
+     * @exception NoSuchAlgorithmException if the specified secret key
+     * algorithm is not supported
      * @exception InvalidKeyException if the shared secret key material cannot
      * be used to generate a secret key of the requested algorithm type (e.g.,
      * the key material is too short)
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     protected abstract SecretKey engineGenerateSecret(String algorithm)
         throws IllegalStateException, NoSuchAlgorithmException,

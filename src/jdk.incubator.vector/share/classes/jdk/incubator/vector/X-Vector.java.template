@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,15 +41,69 @@ import static jdk.internal.vm.vector.VectorSupport.*;
 import static jdk.incubator.vector.VectorIntrinsics.*;
 
 import static jdk.incubator.vector.VectorOperators.*;
+#if[FP16]
+import jdk.incubator.vector.Float16;
+import static jdk.incubator.vector.Float16.*;
+import static java.lang.Float.*;
+#end[FP16]
 
 #warn This file is preprocessed before being compiled
 
 /**
  * A specialized {@link Vector} representing an ordered immutable sequence of
+#if[FP16]
+ * 16-bit data values in the IEEE 754 binary16 format.
+ * <p>
+ * The scalar {@linkplain Float16Vector#elementType() element type} of {@code Float16Vector}
+ * is the class {@link Float16}, a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class holding 16-bit data in IEEE 754 binary16 format. However, the {@code Float16}
+ * class is not used by vector operations that accept scalar element values, or
+ * arrays of scalar element values. Instead, the primitive type {@code short} is
+ * used to explicitly hold 16-bit data in IEEE 754 binary16 format. For such operations
+ * it may be necessary to explicitly convert between floating-point values of {@code Float16}
+ * or {@code float} and values of {@code short} using the appropriate conversion
+ * methods on {@code Float16} or {@code Float}.
+ *
+ * <p>
+ * The specifications for operations on elements of this class are written as if
+ * {@code Float16} is a primitive floating-point type. An operation referencing a
+ * Java operator is mapped to a method on {@code Float16} that specifies that
+ * operator's semantics. For example, the semantics of the {@code +} operator,
+ * as referenced by {@link Vector#add(Vector)} and {@link VectorOperators#ADD},
+ * is mapped to the method {@link Float16#add(Float16, Float16)}.
+ * An operation referencing a method on {@link Math} is mapped to a method of the
+ * same name on {@code Float16}, if it exists. For example, {@link Math#fma} is
+ * mapped to {@link Float16#fma}, as referenced by {@link Float16Vector#fma(short, short)}
+ * and {@link VectorOperators#FMA}.
+ * Otherwise, if there is no equivalent method on {@code Float16}, the expression that is
+ * an invocation of a method on {@code Math} is mapped to an expression that converts
+ * the {@code Float16} arguments to {@code double} values or {@code float} values as
+ * required by the method's parameter types, invokes the method on {@code Math} with
+ * the converted values, and converts the resulting {@code double} or {@code float} value
+ * to a {@code Float16} value. For example, {@link Math#sin} is mapped to the expression
+ * {@code Float16.valueOf(Math.sin(a.doubleValue()))}, where {@code a} is the
+ * {@code Float16} lane value, as referenced by {@link VectorOperators#SIN}.
+ *
+ * @apiNote
+ * {@code Float16} is currently a value-based class and therefore cannot be optimally
+ * used as the scalar element type of vector operations until it becomes a value class
+ * that behaves similarly to the primitive type {@code short} and to arrays of {@code short}.
+ * For example, accessing {@code Float16} vectors using arrays requires those arrays be
+ * {@code short[]} arrays. Accessing vectors using memory segments requires, naturally,
+ * that consecutive 16-bits of memory hold 16-bit data values in the IEEE 754 binary16
+ * format.
+ * @see Float16
+ * @see Float16#float16ToRawShortBits(Float16)
+ * @see Float16#shortBitsToFloat16(short)
+ * @see Float#floatToFloat16(float)
+ * @see Float#float16ToFloat(short)
+#else[FP16]
  * {@code $type$} values.
+#end[FP16]
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
+public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtype$>
+         permits $Type$Vector64, $Type$Vector128, $Type$Vector256, $Type$Vector512, $Type$VectorMax {
 
     $abstractvectortype$($type$[] vec) {
         super(vec);
@@ -61,7 +115,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     static final int FORBID_OPCODE_KIND = VO_ONLYFP;
 #end[FP]
 
-    static final ValueLayout.Of$Type$ ELEMENT_LAYOUT = ValueLayout.JAVA_$TYPE$.withByteAlignment(1);
+    static final ValueLayout.Of$ElemLayout$ ELEMENT_LAYOUT = ValueLayout.JAVA_$TYPE$.withByteAlignment(1);
+
+    static final int LANE_TYPE_ORDINAL = $laneType$;
+
+    static final int LANEBITS_TYPE_ORDINAL = $lanebitsType$;
 
     @ForceInline
     static int opCode(Operator op) {
@@ -84,11 +142,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     // The various shape-specific subclasses
     // also specialize them by wrapping
     // them in a call like this:
-    //    return (Byte128Vector)
-    //       super.bOp((Byte128Vector) o);
+    //    return (ByteVector128)
+    //       super.bOp((ByteVector128) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
-    // into a sharply type- and size-specific
+    // into a sharply-typed and size-specific
     // wrapper in the subclass file, so that
     // the JIT can specialize the code.
     // The code is only inlined and expanded
@@ -153,7 +211,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
     /*package-private*/
     interface FUnOp {
-        $type$ apply(int i, $type$ a);
+        $fallbacktype$ apply(int i, $fallbacktype$ a);
     }
 
     /*package-private*/
@@ -165,7 +223,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $type$[] vec = vec();
         $type$[] res = new $type$[length()];
         for (int i = 0; i < res.length; i++) {
+#if[FP16]
+            res[i] = floatToFloat16(f.apply(i, float16ToFloat(vec[i])));
+#else[FP16]
             res[i] = f.apply(i, vec[i]);
+#end[FP16]
         }
         return vectorFactory(res);
     }
@@ -185,16 +247,60 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $type$[] res = new $type$[length()];
         boolean[] mbits = ((AbstractMask<$Boxtype$>)m).getBits();
         for (int i = 0; i < res.length; i++) {
+#if[FP16]
+            res[i] = mbits[i] ? floatToFloat16(f.apply(i, float16ToFloat(vec[i]))) : vec[i];
+#else[FP16]
             res[i] = mbits[i] ? f.apply(i, vec[i]) : vec[i];
+#end[FP16]
         }
         return vectorFactory(res);
     }
 
+#if[FP16]
+    /*package-private*/
+    interface FUnRawOp {
+        $type$ apply(int i, $type$ a);
+    }
+
+    /*package-private*/
+    abstract
+    $abstractvectortype$ uRawOp(FUnRawOp f);
+    @ForceInline
+    final
+    $abstractvectortype$ uRawOpTemplate(FUnRawOp f) {
+        $type$[] vec = vec();
+        $type$[] res = new $type$[length()];
+        for (int i = 0; i < res.length; i++) {
+            res[i] = f.apply(i, vec[i]);
+        }
+        return vectorFactory(res);
+    }
+
+    /*package-private*/
+    abstract
+    $abstractvectortype$ uRawOp(VectorMask<$Boxtype$> m,
+                             FUnRawOp f);
+    @ForceInline
+    final
+    $abstractvectortype$ uRawOpTemplate(VectorMask<$Boxtype$> m,
+                                     FUnRawOp f) {
+        if (m == null) {
+            return uRawOpTemplate(f);
+        }
+        $type$[] vec = vec();
+        $type$[] res = new $type$[length()];
+        boolean[] mbits = ((AbstractMask<$Boxtype$>)m).getBits();
+        for (int i = 0; i < res.length; i++) {
+            res[i] = mbits[i] ? f.apply(i, vec[i]) : vec[i];
+        }
+        return vectorFactory(res);
+    }
+#end[FP16]
     // Binary operator
 
     /*package-private*/
     interface FBinOp {
-        $type$ apply(int i, $type$ a, $type$ b);
+        $fallbacktype$ apply(int i, $fallbacktype$ a, $fallbacktype$ b);
     }
 
     /*package-private*/
@@ -209,7 +315,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $type$[] vec1 = this.vec();
         $type$[] vec2 = (($abstractvectortype$)o).vec();
         for (int i = 0; i < res.length; i++) {
+#if[FP16]
+            res[i] = floatToFloat16(f.apply(i, float16ToFloat(vec1[i]), float16ToFloat(vec2[i])));
+#else[FP16]
             res[i] = f.apply(i, vec1[i], vec2[i]);
+#end[FP16]
         }
         return vectorFactory(res);
     }
@@ -232,7 +342,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $type$[] vec2 = (($abstractvectortype$)o).vec();
         boolean[] mbits = ((AbstractMask<$Boxtype$>)m).getBits();
         for (int i = 0; i < res.length; i++) {
+#if[FP16]
+            res[i] = mbits[i] ? floatToFloat16(f.apply(i, float16ToFloat(vec1[i]), float16ToFloat(vec2[i]))) : vec1[i];
+#else[FP16]
             res[i] = mbits[i] ? f.apply(i, vec1[i], vec2[i]) : vec1[i];
+#end[FP16]
         }
         return vectorFactory(res);
     }
@@ -305,7 +419,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $type$[] vec = vec();
         boolean[] mbits = ((AbstractMask<$Boxtype$>)m).getBits();
         for (int i = 0; i < vec.length; i++) {
+#if[FP16]
+            v = mbits[i] ? floatToFloat16(f.apply(i, float16ToFloat(v), float16ToFloat(vec[i]))) : v;
+#else[FP16]
             v = mbits[i] ? f.apply(i, v, vec[i]) : v;
+#end[FP16]
         }
         return v;
     }
@@ -315,7 +433,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     $type$ rOpTemplate($type$ v, FBinOp f) {
         $type$[] vec = vec();
         for (int i = 0; i < vec.length; i++) {
+#if[FP16]
+            v = floatToFloat16(f.apply(i, float16ToFloat(v), float16ToFloat(vec[i])));
+#else[FP16]
             v = f.apply(i, v, vec[i]);
+#end[FP16]
         }
         return v;
     }
@@ -511,13 +633,21 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     /*package-private*/
     @ForceInline
     static long toBits($type$ e) {
+#if[FP16]
+        return e;
+#else[FP16]
         return {#if[FP]? $Type$.$type$ToRaw$Bitstype$Bits(e): e};
+#end[FP16]
     }
 
     /*package-private*/
     @ForceInline
     static $type$ fromBits(long bits) {
+#if[FP16]
+        return (short)bits;
+#else[FP16]
         return {#if[FP]?$Type$.$bitstype$BitsTo$Type$}(($bitstype$)bits);
+#end[FP16]
     }
 
     static $abstractvectortype$ expandHelper(Vector<$Boxtype$> v, VectorMask<$Boxtype$> m) {
@@ -550,12 +680,30 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         return r;
     }
 
+    static $abstractvectortype$ selectFromTwoVectorHelper(Vector<$Boxtype$> indexes, Vector<$Boxtype$> src1, Vector<$Boxtype$> src2) {
+        int vlen = indexes.length();
+        $type$[] res = new $type$[vlen];
+        $type$[] vecPayload1 = (($abstractvectortype$)indexes).vec();
+        $type$[] vecPayload2 = (($abstractvectortype$)src1).vec();
+        $type$[] vecPayload3 = (($abstractvectortype$)src2).vec();
+        for (int i = 0; i < vlen; i++) {
+#if[FP16]
+            int index = shortBitsToFloat16(vecPayload1[i]).intValue();
+            int wrapped_index = VectorIntrinsics.wrapToRange(index, 2 * vlen);
+#else[FP16]
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+#end[FP16]
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
+        }
+        return (($abstractvectortype$)src1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
     // sometimes makes a lone /** {@inheritDoc} */
     // comment drop the method altogether,
-    // apparently if the method mentions an
+    // apparently if the method mentions a
     // parameter or return type of Vector<$Boxtype$>
     // instead of Vector<E> as originally specified.
     // Adding an empty HTML fragment appears to
@@ -575,11 +723,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     public static $abstractvectortype$ zero(VectorSpecies<$Boxtype$> species) {
         $Type$Species vsp = ($Type$Species) species;
 #if[FP]
-        return VectorSupport.fromBitsCoerced(vsp.vectorType(), $type$.class, species.length(),
-                        toBits(0.0f), MODE_BROADCAST, vsp,
+        return VectorSupport.fromBitsCoerced(vsp.vectorType(), LANE_TYPE_ORDINAL, species.length(),
+                        toBits({#if[FP16]?(short) 0:0.0f}), MODE_BROADCAST, vsp,
                         ((bits_, s_) -> s_.rvOp(i -> bits_)));
 #else[FP]
-        return VectorSupport.fromBitsCoerced(vsp.vectorType(), $type$.class, species.length(),
+        return VectorSupport.fromBitsCoerced(vsp.vectorType(), LANE_TYPE_ORDINAL, species.length(),
                                 0, MODE_BROADCAST, vsp,
                                 ((bits_, s_) -> s_.rvOp(i -> bits_)));
 #end[FP]
@@ -699,14 +847,19 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 return blend(broadcast(-1), compare(NE, 0));
             }
 #if[BITWISE]
-            if (op == NOT) {
+            else if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
             }
 #end[BITWISE]
+#if[FP]
+            else if (opKind(op, VO_MATHLIB)) {
+                return unaryMathOp(op);
+            }
+#end[FP]
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
-            opc, getClass(), null, $type$.class, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, null,
             UN_IMPL.find(op, opc, $abstractvectortype$::unaryOperations));
     }
@@ -729,17 +882,31 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
 #if[BITWISE]
-            if (op == NOT) {
+            else if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
             }
 #end[BITWISE]
+#if[FP]
+            else if (opKind(op, VO_MATHLIB)) {
+                return blend(unaryMathOp(op), m);
+            }
+#end[FP]
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
-            opc, getClass(), maskClass, $type$.class, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, m,
             UN_IMPL.find(op, opc, $abstractvectortype$::unaryOperations));
     }
+
+#if[FP]
+    @ForceInline
+    final
+    $abstractvectortype$ unaryMathOp(VectorOperators.Unary op) {
+        return VectorMathLibrary.unaryMathOp(op, opCode(op), vspecies(), $abstractvectortype$::unaryOperations,
+                                             this);
+    }
+#end[FP]
 
     private static final
     ImplCache<Unary, UnaryOperation<$abstractvectortype$, VectorMask<$Boxtype$>>>
@@ -747,27 +914,32 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
     private static UnaryOperation<$abstractvectortype$, VectorMask<$Boxtype$>> unaryOperations(int opc_) {
         switch (opc_) {
+#if[FP16]
             case VECTOR_OP_NEG: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) -a);
+                    v0.uOp(m, (i, a) -> Float16.negate(Float16.valueOf(a)).floatValue());
+#else[FP16]
+            case VECTOR_OP_NEG: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) -a);
+#end[FP16]
             case VECTOR_OP_ABS: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.abs(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.abs(a));
 #if[!FP]
 #if[intOrLong]
             case VECTOR_OP_BIT_COUNT: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) $Boxtype$.bitCount(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) $Boxtype$.bitCount(a));
             case VECTOR_OP_TZ_COUNT: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) $Boxtype$.numberOfTrailingZeros(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) $Boxtype$.numberOfTrailingZeros(a));
             case VECTOR_OP_LZ_COUNT: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) $Boxtype$.numberOfLeadingZeros(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) $Boxtype$.numberOfLeadingZeros(a));
             case VECTOR_OP_REVERSE: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) $Boxtype$.reverse(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) $Boxtype$.reverse(a));
 #else[intOrLong]
             case VECTOR_OP_BIT_COUNT: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) bitCount(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) bitCount(a));
             case VECTOR_OP_TZ_COUNT: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) numberOfTrailingZeros(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) numberOfTrailingZeros(a));
             case VECTOR_OP_LZ_COUNT: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) numberOfLeadingZeros(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) numberOfLeadingZeros(a));
             case VECTOR_OP_REVERSE: return (v0, m) ->
                     v0.uOp(m, (i, a) -> reverse(a));
 #end[intOrLong]
@@ -777,43 +949,47 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                     v0.uOp(m, (i, a) -> a);
 #else[byte]
             case VECTOR_OP_REVERSE_BYTES: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) $Boxtype$.reverseBytes(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) $Boxtype$.reverseBytes(a));
 #end[byte]
 #end[BITWISE]
 #end[!FP]
 #if[FP]
             case VECTOR_OP_SIN: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.sin(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.sin(a));
             case VECTOR_OP_COS: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.cos(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.cos(a));
             case VECTOR_OP_TAN: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.tan(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.tan(a));
             case VECTOR_OP_ASIN: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.asin(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.asin(a));
             case VECTOR_OP_ACOS: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.acos(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.acos(a));
             case VECTOR_OP_ATAN: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.atan(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.atan(a));
             case VECTOR_OP_EXP: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.exp(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.exp(a));
             case VECTOR_OP_LOG: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.log(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.log(a));
             case VECTOR_OP_LOG10: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.log10(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.log10(a));
             case VECTOR_OP_SQRT: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.sqrt(a));
+#if[FP16]
+                    v0.uOp(m, (i, a) -> Float16.sqrt(Float16.valueOf(a)).floatValue());
+#else[FP16]
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.sqrt(a));
+#end[FP16]
             case VECTOR_OP_CBRT: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.cbrt(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.cbrt(a));
             case VECTOR_OP_SINH: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.sinh(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.sinh(a));
             case VECTOR_OP_COSH: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.cosh(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.cosh(a));
             case VECTOR_OP_TANH: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.tanh(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.tanh(a));
             case VECTOR_OP_EXPM1: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.expm1(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.expm1(a));
             case VECTOR_OP_LOG1P: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> ($type$) Math.log1p(a));
+                    v0.uOp(m, (i, a) -> ($fallbacktype$) Math.log1p(a));
 #end[FP]
             default: return null;
         }
@@ -843,6 +1019,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                     = this{#if[FP]?.viewAsIntegralLanes()}.compare(EQ, ($bitstype$) 0);
                 return this.blend(that, mask{#if[FP]?.cast(vspecies())});
             }
+#if[FP]
+            else if (opKind(op, VO_MATHLIB)) {
+                return binaryMathOp(op, that);
+            }
+#end[FP]
 #if[BITWISE]
 #if[!FP]
             if (opKind(op, VO_SHIFT)) {
@@ -866,7 +1047,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
         int opc = opCode(op);
         return VectorSupport.binaryOp(
-            opc, getClass(), null, $type$.class, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, that, null,
             BIN_IMPL.find(op, opc, $abstractvectortype$::binaryOperations));
     }
@@ -902,6 +1083,12 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 return this.blend(that, mask);
 #end[FP]
             }
+#if[FP]
+            else if (opKind(op, VO_MATHLIB)) {
+                return this.blend(binaryMathOp(op, that), m);
+            }
+#end[FP]
+
 #if[BITWISE]
 #if[!FP]
             if (opKind(op, VO_SHIFT)) {
@@ -927,10 +1114,19 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
         int opc = opCode(op);
         return VectorSupport.binaryOp(
-            opc, getClass(), maskClass, $type$.class, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, that, m,
             BIN_IMPL.find(op, opc, $abstractvectortype$::binaryOperations));
     }
+
+#if[FP]
+    @ForceInline
+    final
+    $abstractvectortype$ binaryMathOp(VectorOperators.Binary op, $abstractvectortype$ that) {
+        return VectorMathLibrary.binaryMathOp(op, opCode(op), vspecies(), $abstractvectortype$::binaryOperations,
+                                              this, that);
+    }
+#end[FP]
 
     private static final
     ImplCache<Binary, BinaryOperation<$abstractvectortype$, VectorMask<$Boxtype$>>>
@@ -939,34 +1135,46 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     private static BinaryOperation<$abstractvectortype$, VectorMask<$Boxtype$>> binaryOperations(int opc_) {
         switch (opc_) {
             case VECTOR_OP_ADD: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> ($type$)(a + b));
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)(a + b));
             case VECTOR_OP_SUB: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> ($type$)(a - b));
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)(a - b));
             case VECTOR_OP_MUL: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> ($type$)(a * b));
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)(a * b));
             case VECTOR_OP_DIV: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> ($type$)(a / b));
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)(a / b));
             case VECTOR_OP_MAX: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> ($type$)Math.max(a, b));
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)Math.max(a, b));
             case VECTOR_OP_MIN: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> ($type$)Math.min(a, b));
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)Math.min(a, b));
 #if[BITWISE]
             case VECTOR_OP_AND: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> ($type$)(a & b));
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)(a & b));
             case VECTOR_OP_OR: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> ($type$)(a | b));
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)(a | b));
             case VECTOR_OP_XOR: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> ($type$)(a ^ b));
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)(a ^ b));
             case VECTOR_OP_LSHIFT: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, n) -> ($type$)(a << n));
+                    v0.bOp(v1, vm, (i, a, n) -> ($fallbacktype$)(a << n));
             case VECTOR_OP_RSHIFT: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, n) -> ($type$)(a >> n));
+                    v0.bOp(v1, vm, (i, a, n) -> ($fallbacktype$)(a >> n));
             case VECTOR_OP_URSHIFT: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, n) -> ($type$)((a & LSHR_SETUP_MASK) >>> n));
+                    v0.bOp(v1, vm, (i, a, n) -> ($fallbacktype$)((a & LSHR_SETUP_MASK) >>> n));
             case VECTOR_OP_LROTATE: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> rotateLeft(a, (int)n));
             case VECTOR_OP_RROTATE: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> rotateRight(a, (int)n));
+            case VECTOR_OP_UMAX: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)VectorMath.maxUnsigned(a, b));
+            case VECTOR_OP_UMIN: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)VectorMath.minUnsigned(a, b));
+            case VECTOR_OP_SADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)(VectorMath.addSaturating(a, b)));
+            case VECTOR_OP_SSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)(VectorMath.subSaturating(a, b)));
+            case VECTOR_OP_SUADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)(VectorMath.addSaturatingUnsigned(a, b)));
+            case VECTOR_OP_SUSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$)(VectorMath.subSaturatingUnsigned(a, b)));
 #if[intOrLong]
             case VECTOR_OP_COMPRESS_BITS: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> $Boxtype$.compress(a, n));
@@ -976,13 +1184,17 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 #end[BITWISE]
 #if[FP]
             case VECTOR_OP_OR: return (v0, v1, vm) ->
+#if[FP16]
+                    v0.bOp(v1, vm, (i, a, b) -> FloatVector.fromBits(FloatVector.toBits(a) | FloatVector.toBits(b)));
+#else[FP16]
                     v0.bOp(v1, vm, (i, a, b) -> fromBits(toBits(a) | toBits(b)));
+#end[FP16]
             case VECTOR_OP_ATAN2: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> ($type$) Math.atan2(a, b));
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$) Math.atan2(a, b));
             case VECTOR_OP_POW: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> ($type$) Math.pow(a, b));
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$) Math.pow(a, b));
             case VECTOR_OP_HYPOT: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> ($type$) Math.hypot(a, b));
+                    v0.bOp(v1, vm, (i, a, b) -> ($fallbacktype$) Math.hypot(a, b));
 #end[FP]
             default: return null;
         }
@@ -1078,13 +1290,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     public final
     $abstractvectortype$ lanewise(VectorOperators.Binary op,
                                   long e) {
-        $type$ e1 = ($type$) e;
+        $type$ e1 = {#if[FP16]?float16ToRawShortBits(Float16.valueOf(e)):($type$) e};
 #if[BITWISE]
         if ((long)e1 != e
             // allow shift ops to clip down their int parameters
             && !(opKind(op, VO_SHIFT) && (int)e1 == e)) {
 #else[BITWISE]
-        if ((long)e1 != e) {
+        if ({#if[FP16]?shortBitsToFloat16(e1).longValue():(long)e1} != e) {
 #end[BITWISE]
             vspecies().checkValue(e);  // for exception
         }
@@ -1105,13 +1317,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     public final
     $abstractvectortype$ lanewise(VectorOperators.Binary op,
                                   long e, VectorMask<$Boxtype$> m) {
-        $type$ e1 = ($type$) e;
+        $type$ e1 = {#if[FP16]?float16ToRawShortBits(Float16.valueOf(e)):($type$) e};
 #if[BITWISE]
         if ((long)e1 != e
             // allow shift ops to clip down their int parameters
             && !(opKind(op, VO_SHIFT) && (int)e1 == e)) {
 #else[BITWISE]
-        if ((long)e1 != e) {
+        if ({#if[FP16]?shortBitsToFloat16(e1).longValue():(long)e1} != e) {
 #end[BITWISE]
             vspecies().checkValue(e);  // for exception
         }
@@ -1134,7 +1346,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         e &= SHIFT_MASK;
         int opc = opCode(op);
         return VectorSupport.broadcastInt(
-            opc, getClass(), null, $type$.class, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, e, null,
             BIN_INT_IMPL.find(op, opc, $abstractvectortype$::broadcastIntOperations));
     }
@@ -1155,7 +1367,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         e &= SHIFT_MASK;
         int opc = opCode(op);
         return VectorSupport.broadcastInt(
-            opc, getClass(), maskClass, $type$.class, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, e, m,
             BIN_INT_IMPL.find(op, opc, $abstractvectortype$::broadcastIntOperations));
     }
@@ -1186,12 +1398,12 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     // since our lane types are first-class types, not just dressed
     // up ints.
     private static final int SHIFT_MASK = ($Boxtype$.SIZE - 1);
-#if[byteOrShort]
+#if[byteOrStrictShort]
     // Also simulate >>> on sub-word variables with a mask.
     private static final int LSHR_SETUP_MASK = ((1 << $Boxtype$.SIZE) - 1);
-#else[byteOrShort]
+#else[byteOrStrictShort]
     private static final $type$ LSHR_SETUP_MASK = -1;
-#end[byteOrShort]
+#end[byteOrStrictShort]
 #end[BITWISE]
 
     // Ternary lanewise support
@@ -1204,7 +1416,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     // and broadcast, but it would be more surprising not to continue
     // the obvious pattern started by unary and binary.
 
-   /**
+    /**
      * {@inheritDoc} <!--workaround-->
      * @see #lanewise(VectorOperators.Ternary,$type$,$type$,VectorMask)
      * @see #lanewise(VectorOperators.Ternary,Vector,$type$,VectorMask)
@@ -1239,7 +1451,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 #end[BITWISE]
         int opc = opCode(op);
         return VectorSupport.ternaryOp(
-            opc, getClass(), null, $type$.class, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, that, tother, null,
             TERN_IMPL.find(op, opc, $abstractvectortype$::ternaryOperations));
     }
@@ -1281,7 +1493,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 #end[BITWISE]
         int opc = opCode(op);
         return VectorSupport.ternaryOp(
-            opc, getClass(), maskClass, $type$.class, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, that, tother, m,
             TERN_IMPL.find(op, opc, $abstractvectortype$::ternaryOperations));
     }
@@ -1294,7 +1506,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         switch (opc_) {
 #if[FP]
             case VECTOR_OP_FMA: return (v0, v1_, v2_, m) ->
+#if[FP16]
+                    v0.tOp(v1_, v2_, m, (i, a, b, c) -> float16ToRawShortBits(Float16.fma(shortBitsToFloat16(a), shortBitsToFloat16(b), shortBitsToFloat16(c))));
+#else[FP16]
                     v0.tOp(v1_, v2_, m, (i, a, b, c) -> Math.fma(a, b, c));
+#end[FP16]
 #end[FP]
             default: return null;
         }
@@ -1917,7 +2133,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      * Computes the bitwise logical conjunction ({@code &})
      * of this vector and a second input vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "and" operation ({@code &})
      * to each pair of corresponding lane values.
      *
@@ -1950,7 +2166,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      * Computes the bitwise logical conjunction ({@code &})
      * of this vector and a scalar.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "and" operation ({@code &})
      * to each pair of corresponding lane values.
      *
@@ -1974,7 +2190,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      * Computes the bitwise logical disjunction ({@code |})
      * of this vector and a second input vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "or" operation ({@code |})
      * to each pair of corresponding lane values.
      *
@@ -2007,7 +2223,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      * Computes the bitwise logical disjunction ({@code |})
      * of this vector and a scalar.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "or" operation ({@code |})
      * to each pair of corresponding lane values.
      *
@@ -2177,7 +2393,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      * Computes the bitwise logical complement ({@code ~})
      * of this vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "not" operation ({@code ~})
      * to each lane value.
      *
@@ -2323,7 +2539,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 // first kill the sign:
                 bits = bits.and($Boxbitstype$.MAX_VALUE);
                 // next find the bit pattern for infinity:
-                $bitstype$ infbits = ($bitstype$) toBits($Boxtype$.POSITIVE_INFINITY);
+                $bitstype$ infbits = ($bitstype$) toBits({#if[FP16]?float16ToRawShortBits($Boxtype$.POSITIVE_INFINITY):$Boxtype$.POSITIVE_INFINITY});
                 // now compare:
                 if (op == IS_FINITE) {
                     m = bits.compare(LT, infbits);
@@ -2377,7 +2593,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 // first kill the sign:
                 bits = bits.and($Boxbitstype$.MAX_VALUE);
                 // next find the bit pattern for infinity:
-                $bitstype$ infbits = ($bitstype$) toBits($Boxtype$.POSITIVE_INFINITY);
+                $bitstype$ infbits = ($bitstype$) toBits({#if[FP16]?float16ToRawShortBits($Boxtype$.POSITIVE_INFINITY):$Boxtype$.POSITIVE_INFINITY});
                 // now compare:
                 if (op == IS_FINITE) {
                     m = bits.compare(LT, infbits, m);
@@ -2413,7 +2629,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         that.check(this);
         int opc = opCode(op);
         return VectorSupport.compare(
-            opc, getClass(), maskType, $type$.class, length(),
+            opc, getClass(), maskType, laneTypeOrdinal(), length(),
             this, that, null,
             (cond, v0, v1, m1) -> {
                 AbstractMask<$Boxtype$> m
@@ -2435,7 +2651,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         m.check(maskType, this);
         int opc = opCode(op);
         return VectorSupport.compare(
-            opc, getClass(), maskType, $type$.class, length(),
+            opc, getClass(), maskType, laneTypeOrdinal(), length(),
             this, that, m,
             (cond, v0, v1, m1) -> {
                 AbstractMask<$Boxtype$> cmpM
@@ -2448,14 +2664,23 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     }
 
     @ForceInline
-    private static boolean compareWithOp(int cond, $type$ a, $type$ b) {
+    private static boolean compareWithOp(int cond, $carriertype$ a, $carriertype$ b) {
         return switch (cond) {
+#if[FP16]
+            case BT_eq -> Float.float16ToFloat(a) == Float.float16ToFloat(b);
+            case BT_ne -> Float.float16ToFloat(a) != Float.float16ToFloat(b);
+            case BT_lt -> Float.float16ToFloat(a) < Float.float16ToFloat(b);
+            case BT_le -> Float.float16ToFloat(a) <= Float.float16ToFloat(b);
+            case BT_gt -> Float.float16ToFloat(a) > Float.float16ToFloat(b);
+            case BT_ge -> Float.float16ToFloat(a) >= Float.float16ToFloat(b);
+#else[FP16]
             case BT_eq -> a == b;
             case BT_ne -> a != b;
             case BT_lt -> a < b;
             case BT_le -> a <= b;
             case BT_gt -> a > b;
             case BT_ge -> a >= b;
+#end[FP16]
 #if[!FP]
             case BT_ult -> $Boxtype$.compareUnsigned(a, b) < 0;
             case BT_ule -> $Boxtype$.compareUnsigned(a, b) <= 0;
@@ -2570,7 +2795,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     blendTemplate(Class<M> maskType, $abstractvectortype$ v, M m) {
         v.check(this);
         return VectorSupport.blend(
-            getClass(), maskType, $type$.class, length(),
+            getClass(), maskType, laneTypeOrdinal(), length(),
             this, v, m,
             (v0, v1, m_) -> v0.bOp(v1, m_, (i, a, b) -> b));
     }
@@ -2587,7 +2812,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         // make sure VLENGTH*scale doesn't overflow:
         vsp.checkScale(scale);
         return VectorSupport.indexVector(
-            getClass(), $type$.class, length(),
+            getClass(), laneTypeOrdinal(), length(),
             this, scale, vsp,
             (v, scale_, s)
             -> {
@@ -2596,7 +2821,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 // and multiply.
                 $abstractvectortype$ iota = s.iota();
                 $type$ sc = ($type$) scale_;
-                return v.add(sc == 1 ? iota : iota.mul(sc));
+                return v.add(sc == 1 ? iota : iota.mul({#if[FP16]?float16ToRawShortBits(Float16.valueOf(sc)):sc}));
             });
     }
 
@@ -2660,9 +2885,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $abstractvectortype$ that = ($abstractvectortype$) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+#if[FP]
+        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)(length() - origin));
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
+#else[FP]
+        $abstractvectortype$ filter = broadcast(($type$)(length() - origin));
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+#end[FP]
+        AbstractShuffle<$Boxtype$> iota = iotaShuffle(origin, 1, true);
         return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
@@ -2690,9 +2921,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     @ForceInline
     $abstractvectortype$ sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+#if[FP]
+        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)(length() - origin));
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
+#else[FP]
+        $abstractvectortype$ filter = broadcast(($type$)(length() - origin));
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+#end[FP]
+        AbstractShuffle<$Boxtype$> iota = iotaShuffle(origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2711,10 +2948,18 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $abstractvectortype$ that = ($abstractvectortype$) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
-                                                                  (broadcast(($type$)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
+        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+#if[FP]
+        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)origin);
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter).cast(vspecies());
+#else[FP]
+        $abstractvectortype$ filter = broadcast(($type$)origin);
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);
+#end[FP]
+        AbstractShuffle<$Boxtype$> iota = iotaShuffle(-origin, 1, true);
         return that.blend(this.rearrange(iota), blendMask);
     }
 
@@ -2751,10 +2996,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     $abstractvectortype$
     unsliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.GE,
-                                                                  (broadcast(($type$)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+#if[FP]
+        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)origin);
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.GE, filter).cast(vspecies());
+#else[FP]
+        $abstractvectortype$ filter = broadcast(($type$)origin);
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.GE, filter);
+#end[FP]
+        AbstractShuffle<$Boxtype$> iota = iotaShuffle(-origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2770,19 +3020,19 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      */
     @Override
     public abstract
-    $abstractvectortype$ rearrange(VectorShuffle<$Boxtype$> m);
+    $abstractvectortype$ rearrange(VectorShuffle<$Boxtype$> shuffle);
 
     /*package-private*/
     @ForceInline
     final
     <S extends VectorShuffle<$Boxtype$>>
     $abstractvectortype$ rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        shuffle.checkIndexes();
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
-            getClass(), shuffletype, null, $type$.class, length(),
+            getClass(), shuffletype, null, laneTypeOrdinal(), length(),
             this, shuffle, null,
-            (v1, s_, m_) -> v1.uOp((i, a) -> {
-                int ei = s_.laneSource(i);
+            (v1, s_, m_) -> v1.{#if[FP16]?uRawOp:uOp}((i, a) -> {
+                int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
     }
@@ -2803,19 +3053,14 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
-        VectorMask<$Boxtype$> valid = shuffle.laneIsValid();
-        if (m.andNot(valid).anyTrue()) {
-            shuffle.checkIndexes();
-            throw new AssertionError();
-        }
         return VectorSupport.rearrangeOp(
-                   getClass(), shuffletype, masktype, $type$.class, length(),
+                   getClass(), shuffletype, masktype, laneTypeOrdinal(), length(),
                    this, shuffle, m,
-                   (v1, s_, m_) -> v1.uOp((i, a) -> {
-                        int ei = s_.laneSource(i);
-                        return ei < 0  || !m_.laneIsSet(i) ? 0 : v1.lane(ei);
+                   (v1, s_, m_) -> v1.{#if[FP16]?uRawOp:uOp}((i, a) -> {
+                        int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
+                        return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
 
@@ -2835,53 +3080,69 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                            S shuffle,
                                            $abstractvectortype$ v) {
         VectorMask<$Boxtype$> valid = shuffle.laneIsValid();
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         $abstractvectortype$ r0 =
             VectorSupport.rearrangeOp(
-                getClass(), shuffletype, null, $type$.class, length(),
-                this, ws, null,
-                (v0, s_, m_) -> v0.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                getClass(), shuffletype, null, laneTypeOrdinal(), length(),
+                this, shuffle, null,
+                (v0, s_, m_) -> v0.{#if[FP16]?uRawOp:uOp}((i, a) -> {
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
         $abstractvectortype$ r1 =
             VectorSupport.rearrangeOp(
-                getClass(), shuffletype, null, $type$.class, length(),
-                v, ws, null,
-                (v1, s_, m_) -> v1.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                getClass(), shuffletype, null, laneTypeOrdinal(), length(),
+                v, shuffle, null,
+                (v1, s_, m_) -> v1.{#if[FP16]?uRawOp:uOp}((i, a) -> {
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
     }
 
+    @Override
     @ForceInline
-    private final
-    VectorShuffle<$Boxtype$> toShuffle0($Type$Species dsp) {
+    final <F> VectorShuffle<F> bitsToShuffle0(AbstractSpecies<F> dsp) {
+#if[FP]
+        throw new AssertionError();
+#else[FP]
+        assert(dsp.length() == vspecies().length());
         $type$[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
             sa[i] = (int) a[i];
         }
         return VectorShuffle.fromArray(dsp, sa, 0);
+#end[FP]
     }
 
-    /*package-private*/
     @ForceInline
-    final
-    VectorShuffle<$Boxtype$> toShuffleTemplate(Class<?> shuffleType) {
-        $Type$Species vsp = vspecies();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     getClass(), $type$.class, length(),
-                                     shuffleType, byte.class, length(),
-                                     this, vsp,
-                                     $Type$Vector::toShuffle0);
+    final <F>
+    VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap) {
+        assert(dsp.elementSize() == vspecies().elementSize());
+#if[FP16]
+        ShortVector idx = convert(VectorOperators.H2S, 0).reinterpretAsShorts();
+#end[FP16]
+#if[float]
+        IntVector idx = convert(VectorOperators.F2I, 0).reinterpretAsInts();
+#end[float]
+#if[double]
+        LongVector idx = convert(VectorOperators.D2L, 0).reinterpretAsLongs();
+#end[double]
+#if[!FP]
+        $Type$Vector idx = this;
+#end[!FP]
+        $Bitstype$Vector wrapped = idx.lanewise(VectorOperators.AND, length() - 1);
+        if (!wrap) {
+            $Bitstype$Vector wrappedEx = wrapped.lanewise(VectorOperators.SUB, length());
+            VectorMask<$Boxbitstype$> inBound = wrapped.compare(VectorOperators.EQ, idx);
+            wrapped = wrappedEx.blend(wrapped, inBound);
+        }
+        return wrapped.bitsToShuffle(dsp);
     }
 
     /**
      * {@inheritDoc} <!--workaround-->
-     * @since 19
+     * @since {#if[FP16]?27:19}
      */
     @Override
     public abstract
@@ -2894,13 +3155,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     $Type$Vector compressTemplate(Class<M> masktype, M m) {
       m.check(masktype, this);
       return ($Type$Vector) VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_COMPRESS, getClass(), masktype,
-                                                        $type$.class, length(), this, m,
+                                                        laneTypeOrdinal(), length(), this, m,
                                                         (v1, m1) -> compressHelper(v1, m1));
     }
 
     /**
      * {@inheritDoc} <!--workaround-->
-     * @since 19
+     * @since {#if[FP16]?27:19}
      */
     @Override
     public abstract
@@ -2913,7 +3174,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     $Type$Vector expandTemplate(Class<M> masktype, M m) {
       m.check(masktype, this);
       return ($Type$Vector) VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_EXPAND, getClass(), masktype,
-                                                        $type$.class, length(), this, m,
+                                                        laneTypeOrdinal(), length(), this, m,
                                                         (v1, m1) -> expandHelper(v1, m1));
     }
 
@@ -2928,7 +3189,10 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     /*package-private*/
     @ForceInline
     final $abstractvectortype$ selectFromTemplate($abstractvectortype$ v) {
-        return v.rearrange(this.toShuffle());
+        return ($Type$Vector)VectorSupport.selectFromOp(getClass(), null, laneTypeOrdinal(),
+                                                        length(), this, v, null,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle()));
     }
 
     /**
@@ -2940,9 +3204,31 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
     /*package-private*/
     @ForceInline
-    final $abstractvectortype$ selectFromTemplate($abstractvectortype$ v,
-                                                  AbstractMask<$Boxtype$> m) {
-        return v.rearrange(this.toShuffle(), m);
+    final
+    <M extends VectorMask<$Boxtype$>>
+    $abstractvectortype$ selectFromTemplate($abstractvectortype$ v,
+                                            Class<M> masktype, M m) {
+        m.check(masktype, this);
+        return ($Type$Vector)VectorSupport.selectFromOp(getClass(), masktype, laneTypeOrdinal(),
+                                                        length(), this, v, m,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle(), _m));
+    }
+
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    $abstractvectortype$ selectFrom(Vector<$Boxtype$> v1, Vector<$Boxtype$> v2);
+
+
+    /*package-private*/
+    @ForceInline
+    final $abstractvectortype$ selectFromTemplate($abstractvectortype$ v1, $abstractvectortype$ v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), laneTypeOrdinal(), length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations
@@ -3072,7 +3358,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      *
      * This is a lane-wise ternary operation which applies an operation
      * conforming to the specification of
-     * {@link Math#fma($type$,$type$,$type$) Math.fma(a,b,c)}
+     * {@link Math#fma($fallbacktype$,$fallbacktype$,$fallbacktype$) Math.fma(a,b,c)}
      * to each lane.
 #if[intOrFloat]
      * The operation is adapted to cast the operands and the result,
@@ -3113,7 +3399,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      *
      * This is a lane-wise ternary operation which applies an operation
      * conforming to the specification of
-     * {@link Math#fma($type$,$type$,$type$) Math.fma(a,b,c)}
+     * {@link Math#fma($fallbacktype$,$fallbacktype$,$fallbacktype$) Math.fma(a,b,c)}
      * to each lane.
 #if[intOrFloat]
      * The operation is adapted to cast the operands and the result,
@@ -3290,7 +3576,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         }
         int opc = opCode(op);
         return fromBits(VectorSupport.reductionCoerced(
-            opc, getClass(), maskClass, $type$.class, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, m,
             REDUCE_IMPL.find(op, opc, $abstractvectortype$::reductionOperations)));
     }
@@ -3308,7 +3594,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         }
         int opc = opCode(op);
         return fromBits(VectorSupport.reductionCoerced(
-            opc, getClass(), null, $type$.class, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, null,
             REDUCE_IMPL.find(op, opc, $abstractvectortype$::reductionOperations)));
     }
@@ -3320,13 +3606,21 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     private static ReductionOperation<$abstractvectortype$, VectorMask<$Boxtype$>> reductionOperations(int opc_) {
         switch (opc_) {
             case VECTOR_OP_ADD: return (v, m) ->
-                    toBits(v.rOp(($type$)0, m, (i, a, b) -> ($type$)(a + b)));
+                    toBits(v.rOp(($type$)0, m, (i, a, b) -> ($fallbacktype$)(a + b)));
             case VECTOR_OP_MUL: return (v, m) ->
-                    toBits(v.rOp(($type$)1, m, (i, a, b) -> ($type$)(a * b)));
+                    toBits(v.rOp(($type$){#if[FP16]?floatToFloat16(1.0f):1}, m, (i, a, b) -> ($fallbacktype$)(a * b)));
             case VECTOR_OP_MIN: return (v, m) ->
-                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> ($type$) Math.min(a, b)));
+                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> ($fallbacktype$) Math.min(a, b)));
             case VECTOR_OP_MAX: return (v, m) ->
-                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> ($type$) Math.max(a, b)));
+                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> ($fallbacktype$) Math.max(a, b)));
+#if[!FP]
+            case VECTOR_OP_UMIN: return (v, m) ->
+                    toBits(v.rOp(UMAX_VALUE, m, (i, a, b) -> ($type$) VectorMath.minUnsigned(a, b)));
+            case VECTOR_OP_UMAX: return (v, m) ->
+                    toBits(v.rOp(UMIN_VALUE, m, (i, a, b) -> ($type$) VectorMath.maxUnsigned(a, b)));
+            case VECTOR_OP_SUADD: return (v, m) ->
+                    toBits(v.rOp(($type$)0, m, (i, a, b) -> ($type$) VectorMath.addSaturatingUnsigned(a, b)));
+#end[!FP]
 #if[BITWISE]
             case VECTOR_OP_AND: return (v, m) ->
                     toBits(v.rOp(($type$)-1, m, (i, a, b) -> ($type$)(a & b)));
@@ -3340,11 +3634,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     }
 
 #if[FP]
-    private static final $type$ MIN_OR_INF = $Boxtype$.NEGATIVE_INFINITY;
-    private static final $type$ MAX_OR_INF = $Boxtype$.POSITIVE_INFINITY;
+    private static final $type$ MIN_OR_INF = {#if[FP16]?float16ToRawShortBits($Boxtype$.NEGATIVE_INFINITY):$Boxtype$.NEGATIVE_INFINITY};
+    private static final $type$ MAX_OR_INF = {#if[FP16]?float16ToRawShortBits($Boxtype$.POSITIVE_INFINITY):$Boxtype$.POSITIVE_INFINITY};
 #else[FP]
     private static final $type$ MIN_OR_INF = $Boxtype$.MIN_VALUE;
     private static final $type$ MAX_OR_INF = $Boxtype$.MAX_VALUE;
+    private static final $type$ UMIN_VALUE = ($type$)0;   // Minimum unsigned value
+    private static final $type$ UMAX_VALUE = ($type$)-1;  // Maximum unsigned value
 #end[FP]
 
     public @Override abstract long reduceLanesToLong(VectorOperators.Associative op);
@@ -3409,11 +3705,24 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         return a;
     }
 
+#if[FP16]
+    // Returns the lane values boxed as Float16 elements.
+    @ForceInline
+    final Float16[] toFloat16Array() {
+        short[] bits = vec();
+        Float16[] a = new Float16[bits.length];
+        for (int i = 0; i < bits.length; i++) {
+            a[i] = Float16.shortBitsToFloat16(bits[i]);
+        }
+        return a;
+    }
+
+#end[FP16]
 #if[int]
     /**
      * {@inheritDoc} <!--workaround-->
      * This is an alias for {@link #toArray()}
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code $abstractvectortype$},
      * there will be no loss of range or precision.
      */
@@ -3427,7 +3736,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 #if[!FP]
 #if[!long]
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code $abstractvectortype$},
      * there will be no loss of precision or range,
      * and so no {@code UnsupportedOperationException} will
@@ -3452,7 +3761,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     /**
      * {@inheritDoc} <!--workaround-->
      * This is an alias for {@link #toArray()}
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code $abstractvectortype$},
      * there will be no loss of range or precision.
      */
@@ -3465,7 +3774,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     /** {@inheritDoc} <!--workaround-->
 #if[!FP]
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code $abstractvectortype$},
      * there will be no loss of precision or range,
      * and so no {@code UnsupportedOperationException} will
@@ -3489,7 +3798,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     /** {@inheritDoc} <!--workaround-->
      * @implNote
      * This is an alias for {@link #toArray()}
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code $abstractvectortype$},
      * there will be no loss of precision.
      */
@@ -3502,13 +3811,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     /** {@inheritDoc} <!--workaround-->
 #if[long]
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code $abstractvectortype$},
      * up to nine bits of precision may be lost
      * for lane values of large magnitude.
 #else[long]
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code $abstractvectortype$},
      * there will be no loss of precision.
 #end[long]
@@ -3519,14 +3828,18 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $type$[] a = toArray();
         double[] res = new double[a.length];
         for (int i = 0; i < a.length; i++) {
-            res[i] = (double) a[i];
+            res[i] = (double) {#if[FP16]?shortBitsToFloat16(a[i]).doubleValue():a[i]};
         }
         return res;
     }
 #end[double]
 
     /**
+#if[FP16]
+     * Loads a vector from an array of type {@code $type$[]} holding IEEE 754 binary16 values
+#else[FP16]
      * Loads a vector from an array of type {@code $type$[]}
+#end[FP16]
      * starting at an offset.
      * For each vector lane, where {@code N} is the vector lane index, the
      * array element at index {@code offset + N} is placed into the
@@ -3550,7 +3863,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     }
 
     /**
+#if[FP16]
+     * Loads a vector from an array of type {@code $type$[]} holding IEEE 754 binary16 values
+#else[FP16]
      * Loads a vector from an array of type {@code $type$[]}
+#end[FP16]
      * starting at an offset and using a mask.
      * Lanes where the mask is unset are filled with the default
      * value of {@code $type$} ({#if[FP]?positive }zero).
@@ -3580,13 +3897,18 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<$Boxtype$>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
     /**
      * Gathers a new vector composed of elements from an array of type
+#if[FP16]
+     * {@code $type$[]} holding IEEE 754 binary16 values,
+#else[FP16]
      * {@code $type$[]},
+#end[FP16]
      * using indexes obtained by adding a fixed {@code offset} to a
      * series of secondary offsets from an <em>index map</em>.
      * The index map is a contiguous sequence of {@code VLENGTH}
@@ -3637,20 +3959,43 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         }
 
         // Check indices are within array bounds.
-        for (int i = 0; i < vsp.length(); i += lsp.length()) {
-            IntVector vix = IntVector
-                .fromArray(lsp, indexMap, mapOffset + i)
-                .add(offset);
-            VectorIntrinsics.checkIndex(vix, a.length);
+        IntVector vix0 = IntVector.fromArray(lsp, indexMap, mapOffset).add(offset);
+        VectorIntrinsics.checkIndex(vix0, a.length);
+
+        int vlen = vsp.length();
+        int idx_vlen = lsp.length();
+        IntVector vix1 = null;
+        if (vlen >= idx_vlen * 2) {
+            vix1 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen).add(offset);
+            VectorIntrinsics.checkIndex(vix1, a.length);
+        }
+
+#if[byte]
+        IntVector vix2 = null;
+        IntVector vix3 = null;
+        if (vlen == idx_vlen * 4) {
+            vix2 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen * 2).add(offset);
+            VectorIntrinsics.checkIndex(vix2, a.length);
+            vix3 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen * 3).add(offset);
+            VectorIntrinsics.checkIndex(vix3, a.length);
         }
 
         return VectorSupport.loadWithMap(
-            vectorType, null, $type$.class, vsp.laneCount(),
-            lsp.vectorType(),
-            a, ARRAY_BASE, null, null,
+            vectorType, null, LANE_TYPE_ORDINAL, vsp.laneCount(),
+            lsp.vectorType(), lsp.length(),
+            a, ARRAY_BASE, vix0, vix1, vix2, vix3, null,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(n -> c[idx + iMap[idy+n]]));
+#else[byte]
+        return VectorSupport.loadWithMap(
+            vectorType, null, LANE_TYPE_ORDINAL, vsp.laneCount(),
+            lsp.vectorType(), lsp.length(),
+            a, ARRAY_BASE, vix0, vix1, null, null, null,
+            a, offset, indexMap, mapOffset, vsp,
+            (c, idx, iMap, idy, s, vm) ->
+            s.vOp(n -> c[idx + iMap[idy+n]]));
+#end[byte]
     }
 #else[byteOrShort]
     @ForceInline
@@ -3672,7 +4017,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         // Index vector: vix[0:n] = k -> offset + indexMap[mapOffset + k]
         IntVector vix;
         if (isp.laneCount() != vsp.laneCount()) {
-            // For $Type$MaxVector,  if vector length is non-power-of-two or
+            // For $Type$VectorMax,  if vector length is non-power-of-two or
             // 2048 bits, indexShape of $Type$ species is S_MAX_BIT.
             // Assume that vector length is 2048, then the lane count of $Type$
             // vector is 32. When converting $Type$ species to int species,
@@ -3680,7 +4025,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             // is 64. So when loading index vector (IntVector), only lower half
             // of index data is needed.
             vix = IntVector
-                .fromArray(isp, indexMap, mapOffset, IntMaxVector.IntMaxMask.LOWER_HALF_TRUE_MASK)
+                .fromArray(isp, indexMap, mapOffset, IntVectorMax.IntMaskMax.LOWER_HALF_TRUE_MASK)
                 .add(offset);
         } else {
             vix = IntVector
@@ -3697,9 +4042,9 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         return VectorSupport.loadWithMap(
-            vectorType, null, $type$.class, vsp.laneCount(),
-            isp.vectorType(),
-            a, ARRAY_BASE, vix, null,
+            vectorType, null, LANE_TYPE_ORDINAL, vsp.laneCount(),
+            isp.vectorType(), isp.length(),
+            a, ARRAY_BASE, vix, null, null, null, null,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(n -> c[idx + iMap[idy+n]]));
@@ -3708,7 +4053,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
     /**
      * Gathers a new vector composed of elements from an array of type
+#if[FP16]
+     * {@code $type$[]} holding IEEE 754 binary16 values,
+#else[FP16]
      * {@code $type$[]},
+#end[FP16]
      * under the control of a mask, and
      * using indexes obtained by adding a fixed {@code offset} to a
      * series of secondary offsets from an <em>index map</em>.
@@ -3757,7 +4106,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         }
     }
 
-#if[short]
+#if[strictShort]
     /**
      * Loads a vector from an array of type {@code char[]}
      * starting at an offset.
@@ -3816,7 +4165,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             return vsp.dummyVector().fromCharArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<$Boxtype$>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromCharArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -3907,7 +4257,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $Type$Species vsp = ($Type$Species) species;
         return vsp.vOp(m, n -> (short) a[offset + indexMap[mapOffset + n]]);
     }
-#end[short]
+#end[strictShort]
 
 #if[byte]
     /**
@@ -3975,7 +4325,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             return vsp.dummyVector().fromBooleanArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<$Boxtype$>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromBooleanArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -4095,7 +4446,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      *         for any lane {@code N} in the vector
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
-     * @since 19
+     * @since {#if[FP16]?27:19}
      */
     @ForceInline
     public static
@@ -4154,7 +4505,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      *         where the mask is set
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
-     * @since 19
+     * @since {#if[FP16]?27:19}
      */
     @ForceInline
     public static
@@ -4167,7 +4518,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_IN_RANGE).maybeSwap(bo);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, $sizeInBytes$, ms.byteSize());
+        ((AbstractMask<$Boxtype$>)m)
+            .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), $sizeInBytes$);
         return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_OUT_OF_RANGE).maybeSwap(bo);
     }
 
@@ -4193,7 +4545,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         offset = checkFromIndexSize(offset, length(), a.length);
         $Type$Species vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this,
             a, offset,
@@ -4235,7 +4587,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         } else {
             $Type$Species vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<$Boxtype$>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoArray0(a, offset, m);
         }
@@ -4294,14 +4647,14 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         // Index vector: vix[0:n] = i -> offset + indexMap[mo + i]
         IntVector vix;
         if (isp.laneCount() != vsp.laneCount()) {
-            // For $Type$MaxVector,  if vector length  is 2048 bits, indexShape
+            // For $Type$VectorMax,  if vector length  is 2048 bits, indexShape
             // of $Type$ species is S_MAX_BIT. and the lane count of $Type$
             // vector is 32. When converting $Type$ species to int species,
             // indexShape is still S_MAX_BIT, but the lane count of int vector
             // is 64. So when loading index vector (IntVector), only lower half
             // of index data is needed.
             vix = IntVector
-                .fromArray(isp, indexMap, mapOffset, IntMaxVector.IntMaxMask.LOWER_HALF_TRUE_MASK)
+                .fromArray(isp, indexMap, mapOffset, IntVectorMax.IntMaskMax.LOWER_HALF_TRUE_MASK)
                 .add(offset);
         } else {
             vix = IntVector
@@ -4319,8 +4672,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         VectorSupport.storeWithMap(
-            vsp.vectorType(), null, vsp.elementType(), vsp.laneCount(),
-            isp.vectorType(),
+            vsp.vectorType(), null, LANE_TYPE_ORDINAL, vsp.laneCount(),
+            isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, null,
             a, offset, indexMap, mapOffset,
@@ -4390,7 +4743,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     }
 #end[byteOrShort]
 
-#if[short]
+#if[strictShort]
     /**
      * Stores this vector into an array of type {@code char[]}
      * starting at an offset.
@@ -4412,7 +4765,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         offset = checkFromIndexSize(offset, length(), a.length);
         $Type$Species vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, charArrayAddress(a, offset), false,
             this,
             a, offset,
@@ -4455,7 +4808,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         } else {
             $Type$Species vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<$Boxtype$>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoCharArray0(a, offset, m);
         }
@@ -4545,7 +4899,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                  arr[off + j] = (char) e;
              });
     }
-#end[short]
+#end[strictShort]
 
 #if[byte]
     /**
@@ -4573,7 +4927,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $Type$Species vsp = vspecies();
         ByteVector normalized = this.and((byte) 1);
         VectorSupport.store(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, booleanArrayAddress(a, offset), false,
             normalized,
             a, offset,
@@ -4619,7 +4973,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         } else {
             $Type$Species vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<$Boxtype$>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoBooleanArray0(a, offset, m);
         }
@@ -4719,7 +5074,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
     /**
      * {@inheritDoc} <!--workaround-->
-     * @since 19
+     * @since {#if[FP16]?27:19}
      */
     @Override
     @ForceInline
@@ -4736,7 +5091,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
     /**
      * {@inheritDoc} <!--workaround-->
-     * @since 19
+     * @since {#if[FP16]?27:19}
      */
     @Override
     @ForceInline
@@ -4752,7 +5107,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             }
             $Type$Species vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
-                checkMaskFromIndexSize(offset, vsp, m, $sizeInBytes$, ms.byteSize());
+                ((AbstractMask<$Boxtype$>)m)
+                    .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), $sizeInBytes$);
             }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
@@ -4785,7 +5141,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     $abstractvectortype$ fromArray0Template($type$[] a, int offset) {
         $Type$Species vsp = vspecies();
         return VectorSupport.load(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
@@ -4802,7 +5158,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         m.check(species());
         $Type$Species vsp = vspecies();
         return VectorSupport.loadMasked(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
@@ -4838,20 +5194,43 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
         // Check indices are within array bounds.
         // FIXME: Check index under mask controlling.
-        for (int i = 0; i < vsp.length(); i += lsp.length()) {
-            IntVector vix = IntVector
-                .fromArray(lsp, indexMap, mapOffset + i)
-                .add(offset);
-            VectorIntrinsics.checkIndex(vix, a.length);
+        IntVector vix0 = IntVector.fromArray(lsp, indexMap, mapOffset).add(offset);
+        VectorIntrinsics.checkIndex(vix0, a.length);
+
+        int vlen = vsp.length();
+        int idx_vlen = lsp.length();
+        IntVector vix1 = null;
+        if (vlen >= idx_vlen * 2) {
+            vix1 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen).add(offset);
+            VectorIntrinsics.checkIndex(vix1, a.length);
+        }
+
+#if[byte]
+        IntVector vix2 = null;
+        IntVector vix3 = null;
+        if (vlen == idx_vlen * 4) {
+            vix2 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen * 2).add(offset);
+            VectorIntrinsics.checkIndex(vix2, a.length);
+            vix3 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen * 3).add(offset);
+            VectorIntrinsics.checkIndex(vix3, a.length);
         }
 
         return VectorSupport.loadWithMap(
-            vectorType, maskClass, $type$.class, vsp.laneCount(),
-            lsp.vectorType(),
-            a, ARRAY_BASE, null, m,
+            vectorType, maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
+            lsp.vectorType(), lsp.length(),
+            a, ARRAY_BASE, vix0, vix1, vix2, vix3, m,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(vm, n -> c[idx + iMap[idy+n]]));
+#else[byte]
+        return VectorSupport.loadWithMap(
+            vectorType, maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
+            lsp.vectorType(), lsp.length(),
+            a, ARRAY_BASE, vix0, vix1, null, null, m,
+            a, offset, indexMap, mapOffset, vsp,
+            (c, idx, iMap, idy, s, vm) ->
+            s.vOp(vm, n -> c[idx + iMap[idy+n]]));
+#end[byte]
     }
 #else[byteOrShort]
     @ForceInline
@@ -4874,7 +5253,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         // Index vector: vix[0:n] = k -> offset + indexMap[mapOffset + k]
         IntVector vix;
         if (isp.laneCount() != vsp.laneCount()) {
-            // For $Type$MaxVector,  if vector length is non-power-of-two or
+            // For $Type$VectorMax,  if vector length is non-power-of-two or
             // 2048 bits, indexShape of $Type$ species is S_MAX_BIT.
             // Assume that vector length is 2048, then the lane count of $Type$
             // vector is 32. When converting $Type$ species to int species,
@@ -4882,7 +5261,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             // is 64. So when loading index vector (IntVector), only lower half
             // of index data is needed.
             vix = IntVector
-                .fromArray(isp, indexMap, mapOffset, IntMaxVector.IntMaxMask.LOWER_HALF_TRUE_MASK)
+                .fromArray(isp, indexMap, mapOffset, IntVectorMax.IntMaskMax.LOWER_HALF_TRUE_MASK)
                 .add(offset);
         } else {
             vix = IntVector
@@ -4900,16 +5279,16 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         return VectorSupport.loadWithMap(
-            vectorType, maskClass, $type$.class, vsp.laneCount(),
-            isp.vectorType(),
-            a, ARRAY_BASE, vix, m,
+            vectorType, maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
+            isp.vectorType(), isp.length(),
+            a, ARRAY_BASE, vix, null, null, null, m,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(vm, n -> c[idx + iMap[idy+n]]));
     }
 #end[byteOrShort]
 
-#if[short]
+#if[strictShort]
     /*package-private*/
     abstract
     $abstractvectortype$ fromCharArray0(char[] a, int offset);
@@ -4918,7 +5297,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     $abstractvectortype$ fromCharArray0Template(char[] a, int offset) {
         $Type$Species vsp = vspecies();
         return VectorSupport.load(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, charArrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
@@ -4935,13 +5314,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         m.check(species());
         $Type$Species vsp = vspecies();
         return VectorSupport.loadMasked(
-                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+                vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
                 a, charArrayAddress(a, offset), false, m, offsetInRange,
                 a, offset, vsp,
                 (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                             (arr_, off_, i) -> (short) arr_[off_ + i]));
     }
-#end[short]
+#end[strictShort]
 
 #if[byte]
     /*package-private*/
@@ -4952,7 +5331,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     $abstractvectortype$ fromBooleanArray0Template(boolean[] a, int offset) {
         $Type$Species vsp = vspecies();
         return VectorSupport.load(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, booleanArrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
@@ -4969,7 +5348,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         m.check(species());
         $Type$Species vsp = vspecies();
         return VectorSupport.loadMasked(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, booleanArrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
@@ -4984,7 +5363,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     $abstractvectortype$ fromMemorySegment0Template(MemorySegment ms, long offset) {
         $Type$Species vsp = vspecies();
         return ScopedMemoryAccess.loadFromMemorySegment(
-                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, vsp,
                 (msp, off, s) -> {
                     return s.ldLongOp((MemorySegment) msp, off, $abstractvectortype$::memorySegmentGet);
@@ -5000,7 +5379,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $Type$Species vsp = vspecies();
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
-                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+                vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, m, vsp, offsetInRange,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, $abstractvectortype$::memorySegmentGet);
@@ -5018,7 +5397,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     void intoArray0Template($type$[] a, int offset) {
         $Type$Species vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, a, offset,
             (arr, off, v)
@@ -5035,7 +5414,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         m.check(species());
         $Type$Species vsp = vspecies();
         VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
@@ -5065,14 +5444,14 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         // Index vector: vix[0:n] = i -> offset + indexMap[mo + i]
         IntVector vix;
         if (isp.laneCount() != vsp.laneCount()) {
-            // For $Type$MaxVector,  if vector length  is 2048 bits, indexShape
+            // For $Type$VectorMax,  if vector length  is 2048 bits, indexShape
             // of $Type$ species is S_MAX_BIT. and the lane count of $Type$
             // vector is 32. When converting $Type$ species to int species,
             // indexShape is still S_MAX_BIT, but the lane count of int vector
             // is 64. So when loading index vector (IntVector), only lower half
             // of index data is needed.
             vix = IntVector
-                .fromArray(isp, indexMap, mapOffset, IntMaxVector.IntMaxMask.LOWER_HALF_TRUE_MASK)
+                .fromArray(isp, indexMap, mapOffset, IntVectorMax.IntMaskMax.LOWER_HALF_TRUE_MASK)
                 .add(offset);
         } else {
             vix = IntVector
@@ -5091,8 +5470,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         VectorSupport.storeWithMap(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            isp.vectorType(),
+            vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
+            isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, m,
             a, offset, indexMap, mapOffset,
@@ -5116,7 +5495,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $Type$Species vsp = vspecies();
         ByteVector normalized = this.and((byte) 1);
         VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, booleanArrayAddress(a, offset), false,
             normalized, m, a, offset,
             (arr, off, v, vm)
@@ -5130,7 +5509,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     void intoMemorySegment0(MemorySegment ms, long offset) {
         $Type$Species vsp = vspecies();
         ScopedMemoryAccess.storeIntoMemorySegment(
-                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
                 this,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v) -> {
@@ -5147,7 +5526,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $Type$Species vsp = vspecies();
         m.check(vsp);
         ScopedMemoryAccess.storeIntoMemorySegmentMasked(
-                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+                vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
                 this, m,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v, vm) -> {
@@ -5155,7 +5534,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 });
     }
 
-#if[short]
+#if[strictShort]
     /*package-private*/
     abstract
     void intoCharArray0(char[] a, int offset, VectorMask<$Boxtype$> m);
@@ -5166,36 +5545,16 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         m.check(species());
         $Type$Species vsp = vspecies();
         VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, charArrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
             -> v.stOp(arr, (int) off, vm,
                       (arr_, off_, i, e) -> arr_[off_ + i] = (char) e));
     }
-#end[short]
+#end[strictShort]
 
     // End of low-level memory operations.
-
-    private static
-    void checkMaskFromIndexSize(int offset,
-                                $Type$Species vsp,
-                                VectorMask<$Boxtype$> m,
-                                int scale,
-                                int limit) {
-        ((AbstractMask<$Boxtype$>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
-
-    private static
-    void checkMaskFromIndexSize(long offset,
-                                $Type$Species vsp,
-                                VectorMask<$Boxtype$> m,
-                                int scale,
-                                long limit) {
-        ((AbstractMask<$Boxtype$>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
 
     @ForceInline
     private void conditionalStoreNYI(int offset,
@@ -5226,6 +5585,22 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         return this;
     }
 
+    @Override
+    @ForceInline
+    final
+    $abstractvectortype$ swapIfNeeded(AbstractSpecies<?> srcSpecies) {
+#if[byte]
+        return this;
+#else[byte]
+        int subLanesPerSrc = subLanesToSwap(srcSpecies);
+        if (subLanesPerSrc < 0) {
+            return this;
+        }
+        VectorShuffle<$Boxtype$> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
+        return ($abstractvectortype$) this.rearrange(shuffle);
+#end[byte]
+    }
+
     static final int ARRAY_SHIFT =
         31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_$TYPE$_INDEX_SCALE);
     static final long ARRAY_BASE =
@@ -5236,7 +5611,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         return ARRAY_BASE + (((long)index) << ARRAY_SHIFT);
     }
 
-#if[short]
+#if[strictShort]
     static final int ARRAY_CHAR_SHIFT =
             31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_CHAR_INDEX_SCALE);
     static final long ARRAY_CHAR_BASE =
@@ -5246,7 +5621,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     static long charArrayAddress(char[] a, int index) {
         return ARRAY_CHAR_BASE + (((long)index) << ARRAY_CHAR_SHIFT);
     }
-#end[short]
+#end[strictShort]
 
 #if[byte]
     static final int ARRAY_BOOLEAN_SHIFT =
@@ -5303,7 +5678,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
     /**
      * {@inheritDoc} <!--workaround-->
-#if[byteOrShort]
+#if[byte]
      *
      * @implNote This method always throws
      * {@code UnsupportedOperationException}, because there is no floating
@@ -5311,23 +5686,27 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      * of this method is arbitrarily designated as
      * {@code Vector<?>}.  Future versions of this API may change the return
      * type if additional floating point types become available.
-#end[byteOrShort]
+#end[byte]
      */
     @ForceInline
     @Override
     public final
-    {#if[byteOrShort]?Vector<?>:$Fptype$Vector}
+#if[FP16]
+    $Type$Vector
+#else[FP16]
+    {#if[byte]?Vector<?>:$Fptype$Vector}
+#end[FP16]
     viewAsFloatingLanes() {
 #if[FP]
         return this;
 #else[FP]
         LaneType flt = LaneType.$TYPE$.asFloating();
-#if[!byteOrShort]
+#if[!byte]
         return ($Fptype$Vector) asVectorRaw(flt);
-#else[!byteOrShort]
+#else[!byte]
         // asFloating() will throw UnsupportedOperationException for the unsupported type $type$
         throw new AssertionError("Cannot reach here");
-#end[!byteOrShort]
+#end[!byte]
 #end[FP]
     }
 
@@ -5344,10 +5723,19 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      * {@code "[0,1,2...]"}, reporting the lane values of this vector,
      * in lane order.
      *
+#if[FP16]
+     * The string is produced as if by a call to {@link
+     * java.util.Arrays#toString(Object[]) Arrays.toString()},
+     * as appropriate to a {@code Float16} array whose elements
+     * are obtained by applying {@link Float16#shortBitsToFloat16(short)}
+     * to each element of the {@code short[]} array returned by
+     * {@link #toArray this.toArray()}.
+#else[FP16]
      * The string is produced as if by a call to {@link
      * java.util.Arrays#toString($type$[]) Arrays.toString()},
      * as appropriate to the {@code $type$} array returned by
      * {@link #toArray this.toArray()}.
+#end[FP16]
      *
      * @return a string of the form {@code "[0,1,2...]"}
      * reporting the lane values of this vector
@@ -5356,8 +5744,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     @ForceInline
     public final
     String toString() {
+#if[FP16]
+        // Render the lanes as Float16 values; Float16.toString produces
+        // human-readable text and canonicalizes NaN, Infinity and -0.0
+        // independent of the underlying bit encoding.
+        return Arrays.toString(toFloat16Array());
+#else[FP16]
         // now that toArray is strongly typed, we can define this
         return Arrays.toString(toArray());
+#end[FP16]
     }
 
     /**
@@ -5383,8 +5778,14 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     @ForceInline
     public final
     int hashCode() {
+#if[FP16]
+        // Hash the lanes as Float16 values; Float16.hashCode canonicalizes NaN
+        // so that all NaN representations contribute the same hash code.
+        return Objects.hash(species(), Arrays.hashCode(toFloat16Array()));
+#else[FP16]
         // now that toArray is strongly typed, we can define this
         return Objects.hash(species(), Arrays.hashCode(toArray()));
+#end[FP16]
     }
 
     // ================================================
@@ -5399,9 +5800,10 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         private $Type$Species(VectorShape shape,
                 Class<? extends $abstractvectortype$> vectorType,
                 Class<? extends AbstractMask<$Boxtype$>> maskType,
+                Class<? extends AbstractShuffle<$Boxtype$>> shuffleType,
                 Function<Object, $abstractvectortype$> vectorFactory) {
-            super(shape, LaneType.of($type$.class),
-                  vectorType, maskType,
+            super(shape, LaneType.of($elemtype$.class),
+                  vectorType, maskType, shuffleType,
                   vectorFactory);
             assert(this.elementSize() == $Boxtype$.SIZE);
         }
@@ -5411,7 +5813,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         @Override
         @ForceInline
         public final Class<$Boxtype$> elementType() {
-            return $type$.class;
+            return $elemtype$.class;
         }
 
         @Override
@@ -5440,7 +5842,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         final $abstractvectortype$ broadcastBits(long bits) {
             return ($abstractvectortype$)
                 VectorSupport.fromBitsCoerced(
-                    vectorType, $type$.class, laneCount,
+                    vectorType, laneTypeOrdinal(), laneCount,
                     bits, MODE_BROADCAST, this,
                     (bits_, s_) -> s_.rvOp(i -> bits_));
         }
@@ -5468,8 +5870,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             return value;
 #else[long]
             // Do the conversion, and then test it for failure.
-            $type$ e = ($type$) value;
-            if ((long) e != value) {
+            $type$ e = {#if[FP16]?float16ToRawShortBits(Float16.valueOf(value)):($type$) value};
+            if ({#if[FP16]?shortBitsToFloat16(e).longValue():(long) e} != value) {
                 throw badElementBits(value, e);
             }
             return toBits(e);
@@ -5479,10 +5881,18 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         /*package-private*/
         @ForceInline
         static long toIntegralChecked($type$ e, boolean convertToInt) {
+#if[FP16]
+            float ef = shortBitsToFloat16(e).floatValue();
+            long value = convertToInt ? (int) ef : (long) ef;
+            if ((float) value != ef) {
+                throw badArrayBits(e, convertToInt, value);
+            }
+#else[FP16]
             long value = convertToInt ? (int) e : (long) e;
             if (($type$) value != e) {
                 throw badArrayBits(e, convertToInt, value);
             }
+#end[FP16]
             return value;
         }
 
@@ -5494,11 +5904,19 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             $type$[] va = new $type$[laneCount()];
             for (int i = 0; i < va.length; i++) {
                 int lv = values[i];
+#if[FP16]
+                $type$ v = float16ToRawShortBits(Float16.valueOf(lv));
+                va[i] = v;
+                if (Float16.valueOf(lv).intValue() != lv) {
+                    throw badElementBits(lv, v);
+                }
+#else[FP16]
                 $type$ v = ($type$) lv;
                 va[i] = v;
                 if ((int)v != lv) {
                     throw badElementBits(lv, v);
                 }
+#end[FP16]
             }
             return dummyVector().fromArray0(va, 0);
         }
@@ -5629,13 +6047,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         @Override
         @ForceInline
         public final $abstractvectortype$ zero() {
-            if ((Class<?>) vectorType() == $Type$MaxVector.class)
-                return $Type$MaxVector.ZERO;
+            if ((Class<?>) vectorType() == $Type$VectorMax.class)
+                return $Type$VectorMax.ZERO;
             switch (vectorBitSize()) {
-                case 64: return $Type$64Vector.ZERO;
-                case 128: return $Type$128Vector.ZERO;
-                case 256: return $Type$256Vector.ZERO;
-                case 512: return $Type$512Vector.ZERO;
+                case 64: return $Type$Vector64.ZERO;
+                case 128: return $Type$Vector128.ZERO;
+                case 256: return $Type$Vector256.ZERO;
+                case 512: return $Type$Vector512.ZERO;
             }
             throw new AssertionError();
         }
@@ -5643,13 +6061,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         @Override
         @ForceInline
         public final $abstractvectortype$ iota() {
-            if ((Class<?>) vectorType() == $Type$MaxVector.class)
-                return $Type$MaxVector.IOTA;
+            if ((Class<?>) vectorType() == $Type$VectorMax.class)
+                return $Type$VectorMax.IOTA;
             switch (vectorBitSize()) {
-                case 64: return $Type$64Vector.IOTA;
-                case 128: return $Type$128Vector.IOTA;
-                case 256: return $Type$256Vector.IOTA;
-                case 512: return $Type$512Vector.IOTA;
+                case 64: return $Type$Vector64.IOTA;
+                case 128: return $Type$Vector128.IOTA;
+                case 256: return $Type$Vector256.IOTA;
+                case 512: return $Type$Vector512.IOTA;
             }
             throw new AssertionError();
         }
@@ -5658,23 +6076,30 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         @Override
         @ForceInline
         public final VectorMask<$Boxtype$> maskAll(boolean bit) {
-            if ((Class<?>) vectorType() == $Type$MaxVector.class)
-                return $Type$MaxVector.$Type$MaxMask.maskAll(bit);
+            if ((Class<?>) vectorType() == $Type$VectorMax.class)
+                return $Type$VectorMax.$Type$MaskMax.maskAll(bit);
             switch (vectorBitSize()) {
-                case 64: return $Type$64Vector.$Type$64Mask.maskAll(bit);
-                case 128: return $Type$128Vector.$Type$128Mask.maskAll(bit);
-                case 256: return $Type$256Vector.$Type$256Mask.maskAll(bit);
-                case 512: return $Type$512Vector.$Type$512Mask.maskAll(bit);
+                case 64: return $Type$Vector64.$Type$Mask64.maskAll(bit);
+                case 128: return $Type$Vector128.$Type$Mask128.maskAll(bit);
+                case 256: return $Type$Vector256.$Type$Mask256.maskAll(bit);
+                case 512: return $Type$Vector512.$Type$Mask512.maskAll(bit);
             }
             throw new AssertionError();
         }
     }
 
     /**
+#if[FP16]
+     * Finds a species for an element type of {@code $elemtype$} and shape.
+     *
+     * @param s the shape
+     * @return a species for an element type of {@code $elemtype$} and shape
+#else[FP16]
      * Finds a species for an element type of {@code $type$} and shape.
      *
      * @param s the shape
      * @return a species for an element type of {@code $type$} and shape
+#end[FP16]
      * @throws IllegalArgumentException if no such species exists for the shape
      */
     static $Type$Species species(VectorShape s) {
@@ -5692,43 +6117,48 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_64
         = new $Type$Species(VectorShape.S_64_BIT,
-                            $Type$64Vector.class,
-                            $Type$64Vector.$Type$64Mask.class,
-                            $Type$64Vector::new);
+                            $Type$Vector64.class,
+                            $Type$Vector64.$Type$Mask64.class,
+                            $Type$Vector64.$Type$Shuffle64.class,
+                            $Type$Vector64::new);
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_128
         = new $Type$Species(VectorShape.S_128_BIT,
-                            $Type$128Vector.class,
-                            $Type$128Vector.$Type$128Mask.class,
-                            $Type$128Vector::new);
+                            $Type$Vector128.class,
+                            $Type$Vector128.$Type$Mask128.class,
+                            $Type$Vector128.$Type$Shuffle128.class,
+                            $Type$Vector128::new);
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_256
         = new $Type$Species(VectorShape.S_256_BIT,
-                            $Type$256Vector.class,
-                            $Type$256Vector.$Type$256Mask.class,
-                            $Type$256Vector::new);
+                            $Type$Vector256.class,
+                            $Type$Vector256.$Type$Mask256.class,
+                            $Type$Vector256.$Type$Shuffle256.class,
+                            $Type$Vector256::new);
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_512
         = new $Type$Species(VectorShape.S_512_BIT,
-                            $Type$512Vector.class,
-                            $Type$512Vector.$Type$512Mask.class,
-                            $Type$512Vector::new);
+                            $Type$Vector512.class,
+                            $Type$Vector512.$Type$Mask512.class,
+                            $Type$Vector512.$Type$Shuffle512.class,
+                            $Type$Vector512::new);
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<$Boxtype$> SPECIES_MAX
         = new $Type$Species(VectorShape.S_Max_BIT,
-                            $Type$MaxVector.class,
-                            $Type$MaxVector.$Type$MaxMask.class,
-                            $Type$MaxVector::new);
+                            $Type$VectorMax.class,
+                            $Type$VectorMax.$Type$MaskMax.class,
+                            $Type$VectorMax.$Type$ShuffleMax.class,
+                            $Type$VectorMax::new);
 
     /**
      * Preferred species for {@link $Type$Vector}s.
      * A preferred species is a species of maximal bit-size for the platform.
      */
     public static final VectorSpecies<$Boxtype$> SPECIES_PREFERRED
-        = ($Type$Species) VectorSpecies.ofPreferred($type$.class);
+        = ($Type$Species) VectorSpecies.ofPreferred($elemtype$.class);
 }
 

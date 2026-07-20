@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ class MarkerSegment implements Cloneable {
     /**
      * Deep copy of data array.
      */
+    @Override
     protected Object clone() {
         MarkerSegment newGuy = null;
         try {
@@ -190,6 +191,9 @@ class MarkerSegment implements Cloneable {
 
     static void write2bytes(ImageOutputStream ios,
                             int value) throws IOException {
+        if (value < 0 || value > 0xffff) {
+            throw new IIOException("Invalid 2-byte value: " + value);
+        }
         ios.write((value >> 8) & 0xff);
         ios.write(value & 0xff);
 

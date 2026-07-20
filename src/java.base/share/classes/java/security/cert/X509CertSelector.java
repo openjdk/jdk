@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,9 @@ import sun.security.x509.*;
  * provide the necessary locking. Multiple threads each manipulating
  * separate objects need not synchronize.
  *
+ * @spec https://www.rfc-editor.org/info/rfc5280
+ *      RFC 5280: Internet X.509 Public Key Infrastructure Certificate
+ *              and Certificate Revocation List (CRL) Profile
  * @see CertSelector
  * @see X509Certificate
  *
@@ -194,6 +197,9 @@ public class X509CertSelector implements CertSelector {
      *                 (or {@code null})
      * @throws IOException if a parsing error occurs (incorrect form for DN)
      *
+     * @spec https://www.rfc-editor.org/info/rfc2253
+     *      RFC 2253: Lightweight Directory Access Protocol (v3):
+     *              UTF-8 String Representation of Distinguished Names
      * @deprecated Use {@link #setIssuer(X500Principal)} or
      * {@link #setIssuer(byte[])} instead. This method should not be relied on
      * as it can fail to match some certificates because of a loss of encoding
@@ -286,6 +292,9 @@ public class X509CertSelector implements CertSelector {
      *                  (or {@code null})
      * @throws IOException if a parsing error occurs (incorrect form for DN)
      *
+     * @spec https://www.rfc-editor.org/info/rfc2253
+     *      RFC 2253: Lightweight Directory Access Protocol (v3):
+     *              UTF-8 String Representation of Distinguished Names
      * @deprecated Use {@link #setSubject(X500Principal)} or
      * {@link #setSubject(byte[])} instead. This method should not be relied
      * on as it can fail to match some certificates because of a loss of
@@ -728,6 +737,12 @@ public class X509CertSelector implements CertSelector {
      *             RFC 5280, section 4.2.1.6)
      * @param name the name in string form (not {@code null})
      * @throws IOException if a parsing error occurs
+     *
+     * @spec https://www.rfc-editor.org/info/rfc2253
+     *      RFC 2253: Lightweight Directory Access Protocol (v3):
+     *              UTF-8 String Representation of Distinguished Names
+     * @spec https://www.rfc-editor.org/info/rfc822
+     *      RFC 822: STANDARD FOR THE FORMAT OF ARPA INTERNET TEXT MESSAGES
      */
     public void addSubjectAlternativeName(int type, String name)
             throws IOException {
@@ -1269,6 +1284,9 @@ public class X509CertSelector implements CertSelector {
      * @return the required issuer distinguished name in RFC 2253 format
      *         (or {@code null})
      *
+     * @spec https://www.rfc-editor.org/info/rfc2253
+     *      RFC 2253: Lightweight Directory Access Protocol (v3):
+     *              UTF-8 String Representation of Distinguished Names
      * @deprecated Use {@link #getIssuer()} or {@link #getIssuerAsBytes()}
      * instead. This method should not be relied on as it can fail to match
      * some certificates because of a loss of encoding information in the
@@ -1328,6 +1346,9 @@ public class X509CertSelector implements CertSelector {
      * @return the required subject distinguished name in RFC 2253 format
      *         (or {@code null})
      *
+     * @spec https://www.rfc-editor.org/info/rfc2253
+     *      RFC 2253: Lightweight Directory Access Protocol (v3):
+     *              UTF-8 String Representation of Distinguished Names
      * @deprecated Use {@link #getSubject()} or {@link #getSubjectAsBytes()}
      * instead. This method should not be relied on as it can fail to match
      * some certificates because of a loss of encoding information in the

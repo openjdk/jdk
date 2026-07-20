@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,6 +24,7 @@ import java.util.ListResourceBundle;
 
 /**
  * @author Morten Jorgensen
+ * @LastModified: Dec 2024
  */
 public class ErrorMessages extends ListResourceBundle {
 
@@ -275,10 +275,16 @@ public class ErrorMessages extends ListResourceBundle {
         "An attribute whose value must be an NCName had the value ''{0}''"},
 
         {BasisLibrary.UNALLOWED_EXTENSION_FUNCTION_ERR,
-        "Use of the extension function ''{0}'' is not allowed when the secure processing feature is set to true."},
+        "Use of the extension function ''{0}'' is not allowed when extension "
+              + "functions are disabled by the secure processing feature or "
+              + "the property ''jdk.xml.enableExtensionFunctions''. "
+              + "To enable extension functions, set ''jdk.xml.enableExtensionFunctions'' to ''true''."},
 
         {BasisLibrary.UNALLOWED_EXTENSION_ELEMENT_ERR,
-        "Use of the extension element ''{0}'' is not allowed when the secure processing feature is set to true."},
+        "Use of the extension element ''{0}'' is not allowed when extension "
+              + "functions are disabled by the secure processing feature or "
+              + "the property ''jdk.xml.enableExtensionFunctions''. "
+              + "To enable extension functions, set ''jdk.xml.enableExtensionFunctions'' to ''true''."},
     };
     }
 

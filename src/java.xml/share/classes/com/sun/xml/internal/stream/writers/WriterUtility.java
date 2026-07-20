@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,7 +240,7 @@ public class WriterUtility {
 
     private CharsetEncoder getDefaultEncoder(){
         try{
-            String encoding = SecuritySupport.getSystemProperty("file.encoding");
+            String encoding = System.getProperty("file.encoding");
             if(encoding != null){
                 return Charset.forName(encoding).newEncoder();
             }

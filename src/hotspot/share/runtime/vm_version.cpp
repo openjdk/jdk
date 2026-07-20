@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -33,7 +32,6 @@ void VM_Version_init() {
   guarantee(VM_Version::supports_cx8(), "Support for 64-bit atomic operations is required");
   if (log_is_enabled(Info, os, cpu)) {
     char buf[1024];
-    ResourceMark rm;
     LogStream ls(Log(os, cpu)::info());
     os::print_cpu_info(&ls, buf, sizeof(buf));
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,17 @@
  */
 
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
-import jdk.jpackage.test.TKit;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
+import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.Functional;
-import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.RunnablePackageTest.Action;
 
 /**
  * Test --install-dir parameter. Output of the test should be
@@ -54,73 +58,134 @@ import jdk.jpackage.test.Annotations.Parameter;
 /*
  * @test
  * @summary jpackage with --install-dir
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @compile InstallDirTest.java
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
+ * @compile -Xlint:all -Werror InstallDirTest.java
+ * @requires (jpackage.test.SQETest != null)
+ * @run main/othervm/timeout=4000 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=InstallDirTest.testCommon
  */
 
 /*
  * @test
  * @summary jpackage with --install-dir
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @compile InstallDirTest.java
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @requires (os.family == "linux")
+ * @compile -Xlint:all -Werror InstallDirTest.java
  * @requires (jpackage.test.SQETest == null)
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=InstallDirTest.testLinuxInvalid
+ * @run main/othervm/timeout=4000 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=InstallDirTest
  */
 public class InstallDirTest {
 
-    public static void testCommon() {
-        final Map<PackageType, Path> INSTALL_DIRS = Functional.identity(() -> {
-            Map<PackageType, Path> reply = new HashMap<>();
-            reply.put(PackageType.WIN_MSI, Path.of("TestVendor\\InstallDirTest1234"));
-            reply.put(PackageType.WIN_EXE, reply.get(PackageType.WIN_MSI));
-
-            reply.put(PackageType.LINUX_DEB, Path.of("/opt/jpackage"));
-            reply.put(PackageType.LINUX_RPM, reply.get(PackageType.LINUX_DEB));
-
-            reply.put(PackageType.MAC_PKG, Path.of("/Applications/jpackage"));
-            reply.put(PackageType.MAC_DMG, reply.get(PackageType.MAC_PKG));
-
-            return reply;
-        }).get();
-
+    @Test
+    @Parameter(value = "TestVendor\\InstallDirTest1234", ifOS = OperatingSystem.WINDOWS)
+    @Parameter(value = "/opt/jpackage", ifOS = OperatingSystem.LINUX)
+    @Parameter(value = "/Applications/jpackage", ifOS = OperatingSystem.MACOS)
+    public static void testCommon(Path installDir) {
         new PackageTest().configureHelloApp()
         .addInitializer(cmd -> {
-            cmd.addArguments("--install-dir", INSTALL_DIRS.get(
-                    cmd.packageType()));
+            cmd.addArguments("--install-dir", installDir);
         }).run();
     }
 
+    @Test(ifOS = OperatingSystem.LINUX)
     @Parameter("/")
     @Parameter(".")
     @Parameter("foo")
     @Parameter("/opt/foo/.././.")
     public static void testLinuxInvalid(String installDir) {
-        testLinuxBad(installDir, "Invalid installation directory");
-    }
-
-    private static void testLinuxBad(String installDir,
-            String errorMessageSubstring) {
         new PackageTest().configureHelloApp()
         .setExpectedExitCode(1)
         .forTypes(PackageType.LINUX)
         .addInitializer(cmd -> {
             cmd.addArguments("--install-dir", installDir);
-            cmd.saveConsoleOutput(true);
-        })
-        .addBundleVerifier((cmd, result) -> {
-            TKit.assertTextStream(errorMessageSubstring).apply(
-                    result.getOutput().stream());
+            cmd.validateErr(JPackageCommand.makeError("error.invalid-install-dir", installDir));
         })
         .run();
+    }
+
+    record TestSpec(Path installDir, boolean runtimeInstaller) {
+
+        TestSpec {
+            Objects.requireNonNull(installDir);
+        }
+
+        static Builder build() {
+            return new Builder();
+        }
+
+        static final class Builder {
+
+            Builder acceptedInstallDir(String v) {
+                installDir = Path.of(v);
+                return this;
+            }
+
+            Builder runtimeInstaller() {
+                runtimeInstaller = true;
+                return this;
+            }
+
+            TestSpec create() {
+                return new TestSpec(installDir, runtimeInstaller);
+            }
+
+            private Path installDir;
+            private boolean runtimeInstaller;
+        }
+
+        @Override
+        public String toString() {
+            final var sb = new StringBuilder();
+            sb.append(installDir);
+            if (runtimeInstaller) {
+                sb.append(", runtime");
+            }
+            return sb.toString();
+        }
+
+        void run() {
+            final var test = new PackageTest().ignoreBundleOutputDir();
+            if (runtimeInstaller) {
+                test.addInitializer(cmd -> {
+                    cmd.removeArgumentWithValue("--input");
+                });
+            } else {
+                test.configureHelloApp();
+            }
+
+            test.addInitializer(JPackageCommand::setFakeRuntime).addInitializer(cmd -> {
+                cmd.setArgumentValue("--install-dir", installDir);
+            }).run(Action.CREATE_AND_UNPACK);
+        }
+    }
+
+    @Test(ifOS = OperatingSystem.MACOS)
+    @ParameterSupplier
+    public static void testMac(TestSpec testSpec) {
+        testSpec.run();
+    }
+
+    public static List<Object[]> testMac() {
+        return Stream.of(
+                TestSpec.build().acceptedInstallDir("/foo"),
+                TestSpec.build().acceptedInstallDir("/foo/bar"),
+                TestSpec.build().acceptedInstallDir("/foo").runtimeInstaller(),
+                TestSpec.build().acceptedInstallDir("/foo/bar").runtimeInstaller(),
+
+                TestSpec.build().acceptedInstallDir("/Library/Java/JavaVirtualMachines"),
+                TestSpec.build().acceptedInstallDir("/Applications").runtimeInstaller(),
+
+                TestSpec.build().acceptedInstallDir("/Applications"),
+                TestSpec.build().acceptedInstallDir("/Applications/foo/bar/buz"),
+
+                TestSpec.build().runtimeInstaller().acceptedInstallDir("/Library/Java/JavaVirtualMachines"),
+                TestSpec.build().runtimeInstaller().acceptedInstallDir("/Library/Java/JavaVirtualMachines/foo/bar/buz")
+        ).map(TestSpec.Builder::create).map(testSpec -> {
+            return new Object[] { testSpec };
+        }).toList();
     }
 }

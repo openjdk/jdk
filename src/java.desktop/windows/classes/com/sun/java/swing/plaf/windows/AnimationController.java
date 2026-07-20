@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
 
 package com.sun.java.swing.plaf.windows;
 
-import java.security.AccessController;
-import sun.security.action.GetBooleanAction;
-
 import java.util.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
@@ -41,8 +38,6 @@ import static com.sun.java.swing.plaf.windows.TMSchema.State.*;
 import com.sun.java.swing.plaf.windows.TMSchema.Part;
 import com.sun.java.swing.plaf.windows.TMSchema.Prop;
 import com.sun.java.swing.plaf.windows.XPStyle.Skin;
-
-import sun.awt.AppContext;
 
 /**
  * A class to help mimic Vista theme animations.  The only kind of
@@ -65,15 +60,13 @@ import sun.awt.AppContext;
  *
  * @author Igor Kushnirskiy
  */
-class AnimationController implements ActionListener, PropertyChangeListener {
+final class AnimationController implements ActionListener, PropertyChangeListener {
 
-    @SuppressWarnings("removal")
     private static final boolean VISTA_ANIMATION_DISABLED =
-        AccessController.doPrivileged(new GetBooleanAction("swing.disablevistaanimation"));
+                        Boolean.getBoolean("swing.disablevistaanimation");
 
 
-    private static final Object ANIMATION_CONTROLLER_KEY =
-        new StringBuilder("ANIMATION_CONTROLLER_KEY");
+    private static AnimationController animationController;
 
     private final Map<JComponent, Map<Part, AnimationState>> animationStateMap =
             new WeakHashMap<JComponent, Map<Part, AnimationState>>();
@@ -84,13 +77,10 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         new javax.swing.Timer(1000/30, this);
 
     private static synchronized AnimationController getAnimationController() {
-        AppContext appContext = AppContext.getAppContext();
-        Object obj = appContext.get(ANIMATION_CONTROLLER_KEY);
-        if (obj == null) {
-            obj = new AnimationController();
-            appContext.put(ANIMATION_CONTROLLER_KEY, obj);
+        if (animationController == null) {
+            animationController = new AnimationController();
         }
-        return (AnimationController) obj;
+        return animationController;
     }
 
     private AnimationController() {
@@ -257,6 +247,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
+    @Override
     public synchronized void propertyChange(PropertyChangeEvent e) {
         if ("lookAndFeel" == e.getPropertyName()
             && ! (e.getNewValue() instanceof WindowsLookAndFeel) ) {
@@ -264,6 +255,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
+    @Override
     public synchronized void actionPerformed(ActionEvent e) {
         java.util.List<JComponent> componentsToRemove = null;
         java.util.List<Part> partsToRemove = null;
@@ -318,12 +310,11 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         timer.stop();
         UIManager.removePropertyChangeListener(this);
         synchronized (AnimationController.class) {
-            AppContext.getAppContext()
-                .put(ANIMATION_CONTROLLER_KEY, null);
+            animationController = null;
         }
     }
 
-    private static class AnimationState {
+    private static final class AnimationState {
         private final State startState;
 
         //animation duration in nanoseconds
@@ -411,7 +402,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
-    private static class PartUIClientPropertyKey
+    private static final class PartUIClientPropertyKey
           implements UIClientPropertyKey {
 
         private static final Map<Part, PartUIClientPropertyKey> map =
@@ -430,6 +421,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         private PartUIClientPropertyKey(Part part) {
             this.part  = part;
         }
+        @Override
         public String toString() {
             return part.toString();
         }

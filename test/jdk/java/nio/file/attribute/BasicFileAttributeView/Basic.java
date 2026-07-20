@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,12 @@
  */
 
 /* @test
- * @bug 4313887 6838333
+ * @bug 4313887 6838333 8364277
  * @summary Unit test for java.nio.file.attribute.BasicFileAttributeView
- * @library ../..
+ * @library ../.. /test/lib
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
+ * @run main/othervm --enable-native-access=ALL-UNNAMED Basic
  */
 
 import java.nio.file.*;
@@ -32,6 +35,9 @@ import java.nio.file.attribute.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.io.*;
+
+import jdk.test.lib.Platform;
+import jdk.test.lib.util.FileUtils;
 
 public class Basic {
 
@@ -97,6 +103,17 @@ public class Basic {
         check(!attrs.isOther(), "is not other");
     }
 
+    static void checkAttributesOfJunction(Path junction)
+        throws IOException
+    {
+        BasicFileAttributes attrs =
+            Files.readAttributes(junction, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        check(!attrs.isSymbolicLink(), "is a link");
+        check(!attrs.isDirectory(), "is a directory");
+        check(!attrs.isRegularFile(), "is not a regular file");
+        check(attrs.isOther(), "is other");
+    }
+
     static void attributeReadWriteTests(Path dir)
         throws IOException
     {
@@ -114,12 +131,18 @@ public class Basic {
         Path link = dir.resolve("link");
         try {
             Files.createSymbolicLink(link, file);
-        } catch (UnsupportedOperationException x) {
-            return;
-        } catch (IOException x) {
-            return;
+            checkAttributesOfLink(link);
+        } catch (IOException | UnsupportedOperationException x) {
+            if (!Platform.isWindows())
+                return;
         }
-        checkAttributesOfLink(link);
+
+        // NTFS junctions are Windows-only
+        if (Platform.isWindows()) {
+            Path junction = dir.resolve("junction");
+            FileUtils.createWinDirectoryJunction(junction, dir);
+            checkAttributesOfJunction(junction);
+        }
     }
 
     public static void main(String[] args) throws IOException {

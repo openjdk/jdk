@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,9 @@ package com.sun.naming.internal;
 import javax.naming.NamingEnumeration;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.*;
 
 /**
@@ -52,21 +46,6 @@ import java.util.*;
 
 public final class VersionHelper {
     private static final VersionHelper helper = new VersionHelper();
-
-    /**
-     * Determines whether classes may be loaded from an arbitrary URL code base.
-     */
-    private static final boolean TRUST_URL_CODE_BASE;
-
-    static {
-        // System property to control whether classes may be loaded from an
-        // arbitrary URL code base
-        PrivilegedAction<String> act
-                = () -> System.getProperty("com.sun.jndi.ldap.object.trustURLCodebase", "false");
-        @SuppressWarnings("removal")
-        String trust = AccessController.doPrivileged(act);
-        TRUST_URL_CODE_BASE = "true".equalsIgnoreCase(trust);
-    }
 
     static final String[] PROPS = new String[]{
         javax.naming.Context.INITIAL_CONTEXT_FACTORY,
@@ -102,22 +81,6 @@ public final class VersionHelper {
     }
 
     /**
-     * @param className A non-null fully qualified class name.
-     * @param codebase  A non-null, space-separated list of URL strings.
-     */
-    public Class<?> loadClass(String className, String codebase)
-            throws ClassNotFoundException, MalformedURLException {
-        if (TRUST_URL_CODE_BASE) {
-            ClassLoader parent = getContextClassLoader();
-            ClassLoader cl
-                    = URLClassLoader.newInstance(getUrlArray(codebase), parent);
-            return loadClass(className, cl);
-        } else {
-            return null;
-        }
-    }
-
-    /**
      * Package private.
      * <p>
      * This internal method is used with Thread Context Class Loader (TCCL),
@@ -136,37 +99,19 @@ public final class VersionHelper {
 
     /*
      * Returns a JNDI property from the system properties. Returns
-     * null if the property is not set, or if there is no permission
-     * to read it.
+     * null if the property is not set.
      */
-    @SuppressWarnings("removal")
     String getJndiProperty(int i) {
-        PrivilegedAction<String> act = () -> {
-            try {
-                return System.getProperty(PROPS[i]);
-            } catch (SecurityException e) {
-                return null;
-            }
-        };
-        return AccessController.doPrivileged(act);
+        return System.getProperty(PROPS[i]);
     }
 
     /*
      * Reads each property in PROPS from the system properties, and
      * returns their values -- in order -- in an array.  For each
      * unset property, the corresponding array element is set to null.
-     * Returns null if there is no permission to call System.getProperties().
      */
     String[] getJndiProperties() {
-        PrivilegedAction<Properties> act = () -> {
-            try {
-                return System.getProperties();
-            } catch (SecurityException e) {
-                return null;
-            }
-        };
-        @SuppressWarnings("removal")
-        Properties sysProps = AccessController.doPrivileged(act);
+        Properties sysProps = System.getProperties();
         if (sysProps == null) {
             return null;
         }
@@ -199,16 +144,12 @@ public final class VersionHelper {
      * Returns the resource of a given name associated with a particular
      * class (never null), or null if none can be found.
      */
-    @SuppressWarnings("removal")
     InputStream getResourceAsStream(Class<?> c, String name) {
-        PrivilegedAction<InputStream> act = () -> {
-            try {
-                return c.getModule().getResourceAsStream(resolveName(c, name));
-             } catch (IOException x) {
-                 return null;
-             }
-        };
-        return AccessController.doPrivileged(act);
+        try {
+            return c.getModule().getResourceAsStream(resolveName(c, name));
+        } catch (IOException x) {
+            return null;
+        }
     }
 
     /*
@@ -217,20 +158,16 @@ public final class VersionHelper {
      *
      * @param filename  The file name, sans directory.
      */
-    @SuppressWarnings("removal")
     InputStream getJavaHomeConfStream(String filename) {
-        PrivilegedAction<InputStream> act = () -> {
-            try {
-                String javahome = System.getProperty("java.home");
-                if (javahome == null) {
-                    return null;
-                }
-                return Files.newInputStream(Path.of(javahome, "conf", filename));
-            } catch (Exception e) {
+        try {
+            String javahome = System.getProperty("java.home");
+            if (javahome == null) {
                 return null;
             }
-        };
-        return AccessController.doPrivileged(act);
+            return Files.newInputStream(Path.of(javahome, "conf", filename));
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /*
@@ -239,19 +176,12 @@ public final class VersionHelper {
      * loader.  Null represents the bootstrap class loader in some
      * Java implementations.
      */
-    @SuppressWarnings("removal")
     NamingEnumeration<InputStream> getResources(ClassLoader cl,
                                                 String name) throws IOException {
         Enumeration<URL> urls;
-        PrivilegedExceptionAction<Enumeration<URL>> act = () ->
-                (cl == null)
-                        ? ClassLoader.getSystemResources(name)
-                        : cl.getResources(name);
-        try {
-            urls = AccessController.doPrivileged(act);
-        } catch (PrivilegedActionException e) {
-            throw (IOException) e.getException();
-        }
+        urls = (cl == null)
+                ? ClassLoader.getSystemResources(name)
+                : cl.getResources(name);
         return new InputStreamEnumeration(urls);
     }
 
@@ -265,39 +195,18 @@ public final class VersionHelper {
      * Please don't expose this method as public.
      * @throws SecurityException if the class loader is not accessible
      */
-    @SuppressWarnings("removal")
     ClassLoader getContextClassLoader() {
-
-        PrivilegedAction<ClassLoader> act = () -> {
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
-            if (loader == null) {
-                // Don't use bootstrap class loader directly!
-                loader = ClassLoader.getSystemClassLoader();
-            }
-            return loader;
-        };
-        return AccessController.doPrivileged(act);
-    }
-
-    private static URL[] getUrlArray(String codebase)
-            throws MalformedURLException {
-        // Parse codebase into separate URLs
-        StringTokenizer parser = new StringTokenizer(codebase);
-        List<URL> list = new ArrayList<>();
-        while (parser.hasMoreTokens()) {
-            @SuppressWarnings("deprecation")
-            var u = new URL(parser.nextToken());
-            list.add(u);
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if (loader == null) {
+            // Don't use bootstrap class loader directly!
+            loader = ClassLoader.getSystemClassLoader();
         }
-        return list.toArray(new URL[0]);
+        return loader;
     }
 
     /**
      * Given an enumeration of URLs, an instance of this class represents
-     * an enumeration of their InputStreams.  Each operation on the URL
-     * enumeration is performed within a doPrivileged block.
-     * This is used to enumerate the resources under a foreign codebase.
-     * This class is not MT-safe.
+     * an enumeration of their InputStreams.
      */
     private class InputStreamEnumeration implements
             NamingEnumeration<InputStream> {
@@ -314,19 +223,15 @@ public final class VersionHelper {
          * Returns the next InputStream, or null if there are no more.
          * An InputStream that cannot be opened is skipped.
          */
-        @SuppressWarnings("removal")
         private InputStream getNextElement() {
-            PrivilegedAction<InputStream> act = () -> {
-                while (urls.hasMoreElements()) {
-                    try {
-                        return urls.nextElement().openStream();
-                    } catch (IOException e) {
-                        // skip this URL
-                    }
+            while (urls.hasMoreElements()) {
+                try {
+                    return urls.nextElement().openStream();
+                } catch (IOException e) {
+                    // skip this URL
                 }
-                return null;
-            };
-            return AccessController.doPrivileged(act);
+            }
+            return null;
         }
 
         public boolean hasMore() {

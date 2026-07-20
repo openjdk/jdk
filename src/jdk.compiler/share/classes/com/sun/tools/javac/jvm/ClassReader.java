@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeCompleter;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Directive.*;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
@@ -64,12 +63,13 @@ import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
+import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
@@ -118,10 +118,6 @@ public class ClassReader {
     /** Switch: allow records
      */
     boolean allowRecords;
-
-   /** Lint option: warn about classfile issues
-     */
-    boolean lintClassfile;
 
     /** Switch: warn (instead of error) on illegal UTF-8
      */
@@ -198,6 +194,9 @@ public class ClassReader {
     int majorVersion;
     /** The minor version number of the class file being read. */
     int minorVersion;
+
+    /** true if the class file being read is a preview class file. */
+    boolean previewClassFile;
 
     /** UTF-8 validation level */
     Convert.Validation utf8validation;
@@ -300,8 +299,6 @@ public class ClassReader {
         profile = Profile.instance(context);
 
         typevars = WriteableScope.create(syms.noSymbol);
-
-        lintClassfile = Lint.instance(context).isEnabled(LintCategory.CLASSFILE);
 
         initAttributeReaders();
     }
@@ -849,11 +846,10 @@ public class ClassReader {
                 if (majorVersion > version.major || (majorVersion == version.major && minorVersion >= version.minor))
                     return true;
 
-                if (lintClassfile && !warnedAttrs.contains(name)) {
+                if (!warnedAttrs.contains(name)) {
                     JavaFileObject prev = log.useSource(currentClassFile);
                     try {
-                        log.warning(LintCategory.CLASSFILE, (DiagnosticPosition) null,
-                                    Warnings.FutureAttr(name, version.major, version.minor, majorVersion, minorVersion));
+                        log.warning(LintWarnings.FutureAttr(name, version.major, version.minor, majorVersion, minorVersion));
                     } finally {
                         log.useSource(prev);
                     }
@@ -1200,9 +1196,6 @@ public class ClassReader {
                             ModuleSymbol rsym = poolReader.getModule(nextChar());
                             Set<RequiresFlag> flags = readRequiresFlags(nextChar());
                             if (rsym == syms.java_base && majorVersion >= V54.major) {
-                                if (flags.contains(RequiresFlag.TRANSITIVE)) {
-                                    throw badClassFile("bad.requires.flag", RequiresFlag.TRANSITIVE);
-                                }
                                 if (flags.contains(RequiresFlag.STATIC_PHASE)) {
                                     throw badClassFile("bad.requires.flag", RequiresFlag.STATIC_PHASE);
                                 }
@@ -1374,9 +1367,7 @@ public class ClassReader {
         else
             self.fullname = ClassSymbol.formFullName(self.name, self.owner);
 
-        if (m != null) {
-            ((ClassType)sym.type).setEnclosingType(m.type);
-        } else if ((self.flags_field & STATIC) == 0) {
+        if ((self.flags_field & STATIC) == 0 && (m == null || (m.flags_field & STATIC) == 0)) {
             ((ClassType)sym.type).setEnclosingType(c.type);
         } else {
             ((ClassType)sym.type).setEnclosingType(Type.noType);
@@ -1557,6 +1548,9 @@ public class ClassReader {
             } else if (proxy.type.tsym.flatName() == syms.restrictedInternalType.tsym.flatName()) {
                 Assert.check(sym.kind == MTH);
                 sym.flags_field |= RESTRICTED;
+            } else if (proxy.type.tsym.flatName() == syms.requiresIdentityInternalType.tsym.flatName()) {
+                Assert.check(sym.kind == VAR);
+                sym.flags_field |= REQUIRES_IDENTITY;
             } else {
                 if (proxy.type.tsym == syms.annotationTargetType.tsym) {
                     target = proxy;
@@ -1573,6 +1567,9 @@ public class ClassReader {
                 }  else if (proxy.type.tsym == syms.restrictedType.tsym) {
                     Assert.check(sym.kind == MTH);
                     sym.flags_field |= RESTRICTED;
+                }  else if (proxy.type.tsym == syms.requiresIdentityType.tsym) {
+                    Assert.check(sym.kind == VAR);
+                    sym.flags_field |= REQUIRES_IDENTITY;
                 }
                 proxies.append(proxy);
             }
@@ -1604,9 +1601,7 @@ public class ClassReader {
         } else if (parameterAnnotations.length != numParameters) {
             //the RuntimeVisibleParameterAnnotations and RuntimeInvisibleParameterAnnotations
             //provide annotations for a different number of parameters, ignore:
-            if (lintClassfile) {
-                log.warning(LintCategory.CLASSFILE, Warnings.RuntimeVisibleInvisibleParamAnnotationsMismatch(currentClassFile));
-            }
+            log.warning(LintWarnings.RuntimeVisibleInvisibleParamAnnotationsMismatch(currentClassFile));
             for (int pnum = 0; pnum < numParameters; pnum++) {
                 readAnnotations();
             }
@@ -2047,15 +2042,27 @@ public class ClassReader {
         }
 
         Attribute.Compound deproxyCompound(CompoundAnnotationProxy a) {
-            Type annotationType = resolvePossibleProxyType(a.type);
-            ListBuffer<Pair<Symbol.MethodSymbol,Attribute>> buf = new ListBuffer<>();
-            for (List<Pair<Name,Attribute>> l = a.values;
-                 l.nonEmpty();
-                 l = l.tail) {
-                MethodSymbol meth = findAccessMethod(annotationType, l.head.fst);
-                buf.append(new Pair<>(meth, deproxy(meth.type.getReturnType(), l.head.snd)));
+            DeferredDiagnosticHandler deferred = log.new DeferredDiagnosticHandler();
+            Type annotationType = syms.objectType;
+            try {
+                annotationType = resolvePossibleProxyType(a.type);
+                ListBuffer<Pair<Symbol.MethodSymbol,Attribute>> buf = new ListBuffer<>();
+                for (List<Pair<Name,Attribute>> l = a.values;
+                     l.nonEmpty();
+                     l = l.tail) {
+                    MethodSymbol meth = findAccessMethod(annotationType, l.head.fst);
+                    buf.append(new Pair<>(meth, deproxy(meth.type.getReturnType(), l.head.snd)));
+                }
+                return new Attribute.Compound(annotationType, buf.toList());
+            } finally {
+                if (!annotationType.tsym.type.hasTag(TypeTag.ERROR)) {
+                    //if the annotation type does not exists
+                    //throw away warnings reported while de-proxying the annotation,
+                    //as the annotation's library is probably missing from the classpath:
+                    deferred.reportDeferredDiagnostics();
+                }
+                log.popDiagnosticHandler(deferred);
             }
-            return new Attribute.Compound(annotationType, buf.toList());
         }
 
         MethodSymbol findAccessMethod(Type container, Name name) {
@@ -2071,14 +2078,12 @@ public class ClassReader {
             // The method wasn't found: emit a warning and recover
             JavaFileObject prevSource = log.useSource(requestingOwner.classfile);
             try {
-                if (lintClassfile) {
-                    if (failure == null) {
-                        log.warning(Warnings.AnnotationMethodNotFound(container, name));
-                    } else {
-                        log.warning(Warnings.AnnotationMethodNotFoundReason(container,
+                if (failure == null) {
+                    log.warning(LintWarnings.AnnotationMethodNotFound(container, name));
+                } else {
+                    log.warning(LintWarnings.AnnotationMethodNotFoundReason(container,
                                                                             name,
                                                                             failure.getDetailValue()));//diagnostic, if present
-                    }
                 }
             } finally {
                 log.useSource(prevSource);
@@ -2152,15 +2157,21 @@ public class ClassReader {
                 failure = ex;
             }
             if (enumerator == null) {
-                if (failure != null) {
-                    log.warning(Warnings.UnknownEnumConstantReason(currentClassFile,
-                                                                   enumTypeSym,
-                                                                   proxy.enumerator,
-                                                                   failure.getDiagnostic()));
-                } else {
-                    log.warning(Warnings.UnknownEnumConstant(currentClassFile,
-                                                             enumTypeSym,
-                                                             proxy.enumerator));
+                // The enumerator wasn't found: emit a warning and recover
+                JavaFileObject prevSource = log.useSource(requestingOwner.classfile);
+                try {
+                    if (failure != null) {
+                        log.warning(LintWarnings.UnknownEnumConstantReason(currentClassFile,
+                                                                       enumTypeSym,
+                                                                       proxy.enumerator,
+                                                                       failure.getDiagnostic()));
+                    } else {
+                        log.warning(LintWarnings.UnknownEnumConstant(currentClassFile,
+                                                                 enumTypeSym,
+                                                                 proxy.enumerator));
+                    }
+                } finally {
+                    log.useSource(prevSource);
                 }
                 result = new Attribute.Enum(enumTypeSym.type,
                         new VarSymbol(0, proxy.enumerator, syms.botType, enumTypeSym));
@@ -2192,7 +2203,7 @@ public class ClassReader {
 
         Type resolvePossibleProxyType(Type t) {
             if (t instanceof ProxyType proxyType) {
-                Assert.check(requestingOwner.owner.kind == MDL);
+                Assert.check(requestingOwner.owner instanceof ModuleSymbol);
                 ModuleSymbol prevCurrentModule = currentModule;
                 currentModule = (ModuleSymbol) requestingOwner.owner;
                 try {
@@ -2352,6 +2363,12 @@ public class ClassReader {
             this.attributes = attributes;
         }
 
+        /**
+         * A supertype_index value of 65535 specifies that the annotation appears on the superclass
+         * in an extends clause of a class declaration, see JVMS 4.7.20.1
+         */
+        public static final int SUPERCLASS_INDEX = 65535;
+
         @Override
         public Void visitClassSymbol(Symbol.ClassSymbol s, Void unused) {
             ClassType t = (ClassType) s.type;
@@ -2361,7 +2378,7 @@ public class ClassReader {
                 interfaces.add(addTypeAnnotations(itf, classExtends(i++)));
             }
             t.interfaces_field = interfaces.toList();
-            t.supertype_field = addTypeAnnotations(t.supertype_field, classExtends(65535));
+            t.supertype_field = addTypeAnnotations(t.supertype_field, classExtends(SUPERCLASS_INDEX));
             if (t.typarams_field != null) {
                 t.typarams_field =
                         rewriteTypeParameters(
@@ -2668,6 +2685,7 @@ public class ClassReader {
             // won't pass the "hasOuterInstance" check above, but those that don't have an
             // enclosing method (i.e. from initializers) will pass that check.
             boolean local = forceLocal =
+                    currentOwner.owner.kind != TYP ||
                     !currentOwner.owner.members().includes(currentOwner, LookupKind.NON_RECURSIVE);
             if (!currentOwner.name.isEmpty() && !local)
                 type = new MethodType(adjustMethodParams(flags, type.getParameterTypes()),
@@ -2808,9 +2826,8 @@ public class ClassReader {
             params.append(param);
             if (parameterAnnotations != null) {
                 ParameterAnnotations annotations = parameterAnnotations[annotationIndex];
-                if (annotations != null && annotations.proxies != null
-                        && !annotations.proxies.isEmpty()) {
-                    annotate.normal(new AnnotationCompleter(param, annotations.proxies));
+                if (annotations != null && annotations.proxies != null) {
+                    attachAnnotations(param, annotations.proxies);
                 }
             }
             nameIndexLvt += Code.width(t);
@@ -2948,9 +2965,7 @@ public class ClassReader {
 
     private void dropParameterAnnotations() {
         parameterAnnotations = null;
-        if (lintClassfile) {
-            log.warning(LintCategory.CLASSFILE, Warnings.RuntimeInvisibleParameterAnnotations(currentClassFile));
-        }
+        log.warning(LintWarnings.RuntimeInvisibleParameterAnnotations(currentClassFile));
     }
     /**
      * Creates the parameter at the position {@code mpIndex} in the parameter list of the owning method.
@@ -3022,7 +3037,9 @@ public class ClassReader {
      *  `typevars'.
      */
     protected void enterTypevars(Symbol sym, Type t) {
-        if (t.getEnclosingType() != null) {
+        if (sym.owner.kind == MTH) {
+            enterTypevars(sym.owner, sym.owner.type);
+        } else if (t.getEnclosingType() != null) {
             if (!t.getEnclosingType().hasTag(TypeTag.NONE)) {
                 enterTypevars(sym.owner, t.getEnclosingType());
             }
@@ -3155,14 +3172,18 @@ public class ClassReader {
                 if (name == names.empty)
                     name = names.one;
                 ClassSymbol member = enterClass(name, outer);
-                if ((flags & STATIC) == 0) {
-                    ((ClassType)member.type).setEnclosingType(outer.type);
-                    if (member.erasure_field != null)
-                        ((ClassType)member.erasure_field).setEnclosingType(types.erasure(outer.type));
-                }
-                if (c == outer && member.owner == c) {
-                    member.flags_field = flags;
-                    enterMember(c, member);
+                if ((member.flags_field & FROM_SOURCE) == 0) {
+                    if ((flags & STATIC) == 0) {
+                        ((ClassType)member.type).setEnclosingType(outer.type);
+                        if (member.erasure_field != null)
+                            ((ClassType)member.erasure_field).setEnclosingType(types.erasure(outer.type));
+                    }
+                    if (c == outer && member.owner == c) {
+                        member.flags_field = flags;
+                        enterMember(c, member);
+                    }
+                } else if ((flags & STATIC) != (member.flags_field & STATIC)) {
+                    log.warning(LintWarnings.InconsistentInnerClasses(member, currentClassFile));
                 }
             }
         }
@@ -3179,7 +3200,7 @@ public class ClassReader {
         majorVersion = nextChar();
         int maxMajor = Version.MAX().major;
         int maxMinor = Version.MAX().minor;
-        boolean previewClassFile =
+        previewClassFile =
                 minorVersion == ClassFile.PREVIEW_MINOR_VERSION;
         if (majorVersion > maxMajor ||
             majorVersion * 1000 + minorVersion <

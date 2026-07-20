@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,14 @@
 
 package jdk.internal.classfile.impl;
 
-import java.util.function.Consumer;
-
 import java.lang.classfile.CustomAttribute;
 import java.lang.classfile.FieldBuilder;
 import java.lang.classfile.FieldElement;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
 
 public final class DirectFieldBuilder
         extends AbstractDirectBuilder<FieldModel>
@@ -48,9 +49,9 @@ public final class DirectFieldBuilder
                               FieldModel original) {
         super(constantPool, context);
         setOriginal(original);
-        this.name = name;
-        this.desc = type;
-        this.flags = flags;
+        this.name = requireNonNull(name);
+        this.desc = requireNonNull(type);
+        this.flags = Util.checkFlags(flags);
     }
 
     @Override
@@ -58,7 +59,7 @@ public final class DirectFieldBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute<?>) element);
+            writeAttribute((CustomAttribute<?>) requireNonNull(element));
         }
         return this;
     }
@@ -70,7 +71,7 @@ public final class DirectFieldBuilder
 
     @Override
     public FieldBuilder withFlags(int flags) {
-        setFlags(flags);
+        setFlags(Util.checkFlags(flags));
         return this;
     }
 
@@ -80,9 +81,7 @@ public final class DirectFieldBuilder
 
     @Override
     public void writeTo(BufWriterImpl buf) {
-        buf.writeU2(flags);
-        buf.writeIndex(name);
-        buf.writeIndex(desc);
+        buf.writeU2U2U2(flags, buf.cpIndex(name), buf.cpIndex(desc));
         attributes.writeTo(buf);
     }
 }

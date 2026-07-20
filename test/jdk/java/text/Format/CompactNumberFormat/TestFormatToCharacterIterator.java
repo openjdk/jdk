@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,14 +20,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8177552
  * @summary Checks the functioning of
  *          CompactNumberFormat.formatToCharacterIterator method
  * @modules jdk.localedata
- * @run testng/othervm TestFormatToCharacterIterator
+ * @run junit/othervm TestFormatToCharacterIterator
  */
+
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.AttributedCharacterIterator;
@@ -36,10 +42,10 @@ import java.text.Format;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Set;
-import static org.testng.Assert.assertEquals;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestFormatToCharacterIterator {
 
     private static final NumberFormat FORMAT_DZ = NumberFormat
@@ -54,7 +60,6 @@ public class TestFormatToCharacterIterator {
             .getCompactNumberInstance(Locale.ENGLISH,
                     NumberFormat.Style.LONG);
 
-    @DataProvider(name = "fieldPositions")
     Object[][] compactFieldPositionData() {
         return new Object[][]{
             // compact format instance, number, resulted string, attributes/fields, attribute positions
@@ -149,22 +154,23 @@ public class TestFormatToCharacterIterator {
         };
     }
 
-    @Test(dataProvider = "fieldPositions")
-    public void testFormatToCharacterIterator(NumberFormat fmt, Object number,
+    @ParameterizedTest
+    @MethodSource("compactFieldPositionData")
+    void testFormatToCharacterIterator(NumberFormat fmt, Object number,
             String expected, Format.Field[] expectedFields, int[] positions) {
         AttributedCharacterIterator iterator = fmt.formatToCharacterIterator(number);
-        assertEquals(getText(iterator), expected, "Incorrect formatting of the number '"
+        assertEquals(expected, getText(iterator), "Incorrect formatting of the number '"
                 + number + "'");
 
         iterator.first();
         // Check start and end index of the formatted string
-        assertEquals(iterator.getBeginIndex(), 0, "Incorrect start index: "
+        assertEquals(0, iterator.getBeginIndex(), "Incorrect start index: "
                 + iterator.getBeginIndex() + " of the formatted string: " + expected);
-        assertEquals(iterator.getEndIndex(), expected.length(), "Incorrect end index: "
+        assertEquals(expected.length(), iterator.getEndIndex(), "Incorrect end index: "
                 + iterator.getEndIndex() + " of the formatted string: " + expected);
 
         // Check the attributes returned by the formatToCharacterIterator
-        assertEquals(iterator.getAllAttributeKeys(), Set.of(expectedFields),
+        assertEquals(Set.of(expectedFields), iterator.getAllAttributeKeys(),
                 "Attributes do not match while formatting number: " + number);
 
         // Check the begin and end index for attributes
@@ -173,10 +179,10 @@ public class TestFormatToCharacterIterator {
         do {
             int start = iterator.getRunStart();
             int end = iterator.getRunLimit();
-            assertEquals(start, positions[currentPosition],
+            assertEquals(positions[currentPosition], start,
                     "Incorrect start position for the attribute(s): "
                     + iterator.getAttributes().keySet());
-            assertEquals(end, positions[currentPosition + 1],
+            assertEquals(positions[currentPosition + 1], end,
                     "Incorrect end position for the attribute(s): "
                     + iterator.getAttributes().keySet());
             currentPosition = currentPosition + 2;

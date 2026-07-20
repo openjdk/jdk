@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
@@ -61,8 +60,6 @@ TEST_VM(metaspace, arena_growth_policy_##spacetype##_##is_class) { \
   test_arena_growth_policy(Metaspace::spacetype, is_class); \
 }
 
-DEFINE_GROWTH_POLICY_TEST(ReflectionMetaspaceType, true)
-DEFINE_GROWTH_POLICY_TEST(ReflectionMetaspaceType, false)
 DEFINE_GROWTH_POLICY_TEST(ClassMirrorHolderMetaspaceType, true)
 DEFINE_GROWTH_POLICY_TEST(ClassMirrorHolderMetaspaceType, false)
 DEFINE_GROWTH_POLICY_TEST(StandardMetaspaceType, true)

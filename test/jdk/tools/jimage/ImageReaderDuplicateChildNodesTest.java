@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import jdk.internal.jimage.ImageReader;
+import jdk.internal.jimage.PreviewMode;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -54,7 +55,7 @@ public class ImageReaderDuplicateChildNodesTest {
         System.out.println("Running test against image " + imagePath);
         final String integersParentResource = "/modules/java.base/java/lang";
         final String integerResource = integersParentResource + "/Integer.class";
-        try (final ImageReader reader = ImageReader.open(imagePath)) {
+        try (final ImageReader reader = ImageReader.open(imagePath, PreviewMode.DISABLED)) {
             // find the child node/resource first
             final ImageReader.Node integerNode = reader.findNode(integerResource);
             if (integerNode == null) {
@@ -68,17 +69,17 @@ public class ImageReaderDuplicateChildNodesTest {
                         + " in " + imagePath);
             }
             // now verify that the parent node which is a directory, doesn't have duplicate children
-            final List<ImageReader.Node> children = parent.getChildren();
-            if (children == null || children.isEmpty()) {
+            final List<String> childNames = parent.getChildNames().toList();
+            if (childNames.isEmpty()) {
                 throw new RuntimeException("ImageReader did not return any child resources under "
                         + integersParentResource + " in " + imagePath);
             }
             final Set<ImageReader.Node> uniqueChildren = new HashSet<>();
-            for (final ImageReader.Node child : children) {
-                final boolean unique = uniqueChildren.add(child);
+            for (final String childName : childNames) {
+                final boolean unique = uniqueChildren.add(reader.findNode(childName));
                 if (!unique) {
                     throw new RuntimeException("ImageReader returned duplicate child resource "
-                            + child + " under " + parent + " from image " + imagePath);
+                            + childName + " under " + parent + " from image " + imagePath);
                 }
             }
         }

@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8182774
- * @enablePreview
  * @summary test on class with a verification error
  * @modules jdk.jdeps/com.sun.tools.javap
  */

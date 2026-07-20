@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,133 +24,182 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.ShortPathUtils.adjustPath;
+
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.PathUtils;
 
 /**
  * WiX pipeline. Compiles and links WiX sources.
  */
-public class WixPipeline {
-    WixPipeline() {
-        sources = new ArrayList<>();
-        lightOptions = new ArrayList<>();
+final class WixPipeline {
+
+    static final class Builder {
+        Builder() {
+        }
+
+        WixPipeline create(WixToolset toolset) {
+            Objects.requireNonNull(toolset);
+            Objects.requireNonNull(workDir);
+            Objects.requireNonNull(wixObjDir);
+            if (sources.isEmpty()) {
+                throw new IllegalArgumentException("no sources");
+            }
+
+            final var absWorkDir = workDir.normalize().toAbsolutePath();
+
+            final var absObjWorkDir = PathUtils.normalizedAbsolutePath(wixObjDir);
+
+            final var absSources = sources.stream().map(source -> {
+                return source.copyWithPath(PathUtils.normalizedAbsolutePath(source.path));
+            }).toList();
+
+            return new WixPipeline(
+                    toolset,
+                    adjustPath(absWorkDir),
+                    absObjWorkDir,
+                    wixVariables.createdImmutableCopy(),
+                    mapLightOptions(PathUtils::normalizedAbsolutePath),
+                    absSources,
+                    msiMutators);
+        }
+
+        Builder setWixObjDir(Path v) {
+            wixObjDir = v;
+            return this;
+        }
+
+        Builder setWorkDir(Path v) {
+            workDir = v;
+            return this;
+        }
+
+        Builder putWixVariables(WixVariables v) {
+            wixVariables.putAll(v);
+            return this;
+        }
+
+        Builder putWixVariables(Map<String, String> v) {
+            wixVariables.putAll(v);
+            return this;
+        }
+
+        Builder addSource(Path source, WixVariables wixVariables) {
+            sources.add(new WixSource(source, wixVariables.createdImmutableCopy()));
+            return this;
+        }
+
+        Builder addMsiMutator(MsiMutator msiMutator, List<String> args) {
+            msiMutators.add(new MsiMutatorWithArgs(msiMutator, args));
+            return this;
+        }
+
+        Builder addSource(Path source) {
+            return addSource(source, WixVariables.EMPTY);
+        }
+
+        Builder addLightOptions(String ... v) {
+            lightOptions.addAll(List.of(v));
+            return this;
+        }
+
+        private List<String> mapLightOptions(UnaryOperator<Path> normalizePath) {
+            var pathOptions = Set.of("-b", "-loc");
+            List<String> reply = new ArrayList<>();
+            boolean convPath = false;
+            for (var opt : lightOptions) {
+                if (convPath) {
+                    opt = normalizePath.apply(Path.of(opt)).toString();
+                    convPath = false;
+                } else if (pathOptions.contains(opt)) {
+                    convPath = true;
+                }
+                reply.add(opt);
+            }
+            return reply;
+        }
+
+        private Path workDir;
+        private Path wixObjDir;
+        private final WixVariables wixVariables = new WixVariables();
+        private final List<String> lightOptions = new ArrayList<>();
+        private final List<WixSource> sources = new ArrayList<>();
+        private final List<MsiMutatorWithArgs> msiMutators = new ArrayList<>();
     }
 
-    WixPipeline setToolset(WixToolset v) {
-        toolset = v;
-        return this;
+    static Builder build() {
+        return new Builder();
     }
 
-    WixPipeline setWixVariables(Map<String, String> v) {
-        wixVariables = v;
-        return this;
-    }
+    private WixPipeline(
+            WixToolset toolset,
+            Path workDir,
+            Path wixObjDir,
+            WixVariables wixVariables,
+            List<String> lightOptions,
+            List<WixSource> sources,
+            List<MsiMutatorWithArgs> msiMutators) {
 
-    WixPipeline setWixObjDir(Path v) {
-        wixObjDir = v;
-        return this;
-    }
-
-    WixPipeline setWorkDir(Path v) {
-        workDir = v;
-        return this;
-    }
-
-    WixPipeline addSource(Path source, Map<String, String> wixVariables) {
-        WixSource entry = new WixSource();
-        entry.source = source;
-        entry.variables = wixVariables;
-        sources.add(entry);
-        return this;
-    }
-
-    WixPipeline addLightOptions(String ... v) {
-        lightOptions.addAll(List.of(v));
-        return this;
+        this.toolset = Objects.requireNonNull(toolset);
+        this.workDir = Objects.requireNonNull(workDir);
+        this.wixObjDir = Objects.requireNonNull(wixObjDir);
+        this.wixVariables = Objects.requireNonNull(wixVariables);
+        this.lightOptions = Objects.requireNonNull(lightOptions);
+        this.sources = Objects.requireNonNull(sources);
+        this.msiMutators = Objects.requireNonNull(msiMutators);
     }
 
     void buildMsi(Path msi) throws IOException {
-        Objects.requireNonNull(workDir);
+
+        // Use short path to the output msi to workaround
+        // WiX limitations of handling long paths.
+        var transientMsi = wixObjDir.resolve("a.msi");
+
+        var configRoot = workDir.resolve(transientMsi).getParent();
+
+        for (var msiMutator : msiMutators) {
+            msiMutator.addToConfigRoot(configRoot);
+        }
 
         switch (toolset.getType()) {
-            case Wix3 -> buildMsiWix3(msi);
-            case Wix4 -> buildMsiWix4(msi);
-            default -> throw new IllegalArgumentException();
+            case Wix3 -> buildMsiWix3(transientMsi);
+            case Wix4 -> buildMsiWix4(transientMsi);
         }
-    }
 
-    private void addWixVariblesToCommandLine(
-            Map<String, String> otherWixVariables, List<String> cmdline) {
-        Stream.of(wixVariables, Optional.ofNullable(otherWixVariables).
-                orElseGet(Collections::emptyMap)).filter(Objects::nonNull).
-                reduce((a, b) -> {
-                    a.putAll(b);
-                    return a;
-                }).ifPresent(wixVars -> {
-            var entryStream = wixVars.entrySet().stream();
+        for (var msiMutator : msiMutators) {
+            msiMutator.execute(configRoot, workDir.resolve(transientMsi));
+        }
 
-            Stream<String> stream;
-            switch (toolset.getType()) {
-                case Wix3 -> {
-                    stream = entryStream.map(wixVar -> {
-                        return String.format("-d%s=%s", wixVar.getKey(), wixVar.
-                                getValue());
-                    });
-                }
-                case Wix4 -> {
-                    stream = entryStream.map(wixVar -> {
-                        return Stream.of("-d", String.format("%s=%s", wixVar.
-                                getKey(), wixVar.getValue()));
-                    }).flatMap(Function.identity());
-                }
-                default -> {
-                    throw new IllegalArgumentException();
-                }
-            }
-
-            stream.reduce(cmdline, (ctnr, wixVar) -> {
-                ctnr.add(wixVar);
-                return ctnr;
-            }, (x, y) -> {
-                x.addAll(y);
-                return x;
-            });
-        });
+        IOUtils.copyFile(workDir.resolve(transientMsi), msi);
     }
 
     private void buildMsiWix4(Path msi) throws IOException {
-        var mergedSrcWixVars = sources.stream().map(wixSource -> {
-            return Optional.ofNullable(wixSource.variables).orElseGet(
-                    Collections::emptyMap).entrySet().stream();
-        }).flatMap(Function.identity()).collect(Collectors.toMap(
-                Map.Entry::getKey, Map.Entry::getValue));
 
         List<String> cmdline = new ArrayList<>(List.of(
                 toolset.getToolPath(WixTool.Wix4).toString(),
                 "build",
                 "-nologo",
                 "-pdbtype", "none",
-                "-intermediatefolder", wixObjDir.toAbsolutePath().toString(),
+                "-intermediatefolder", wixObjDir.toString(),
                 "-ext", "WixToolset.Util.wixext",
                 "-arch", WixFragmentBuilder.is64Bit() ? "x64" : "x86"
         ));
 
         cmdline.addAll(lightOptions);
 
-        addWixVariblesToCommandLine(mergedSrcWixVars, cmdline);
+        addWixVariablesToCommandLine(sources.stream(), cmdline::addAll);
 
         cmdline.addAll(sources.stream().map(wixSource -> {
-            return wixSource.source.toAbsolutePath().toString();
+            return wixSource.path.toString();
         }).toList());
 
         cmdline.addAll(List.of("-out", msi.toString()));
@@ -175,24 +224,27 @@ public class WixPipeline {
         lightCmdline.addAll(lightOptions);
         wixObjs.stream().map(Path::toString).forEach(lightCmdline::add);
 
-        Files.createDirectories(IOUtils.getParent(msi));
         execute(lightCmdline);
     }
 
     private Path compileWix3(WixSource wixSource) throws IOException {
-        Path wixObj = wixObjDir.toAbsolutePath().resolve(IOUtils.replaceSuffix(
-                IOUtils.getFileName(wixSource.source), ".wixobj"));
+        Path wixObj = wixObjDir.toAbsolutePath().resolve(PathUtils.replaceSuffix(
+                wixSource.path.getFileName(), ".wixobj"));
 
         List<String> cmdline = new ArrayList<>(List.of(
                 toolset.getToolPath(WixTool.Candle3).toString(),
                 "-nologo",
-                wixSource.source.toAbsolutePath().toString(),
+                wixSource.path.toString(),
                 "-ext", "WixUtilExtension",
                 "-arch", WixFragmentBuilder.is64Bit() ? "x64" : "x86",
-                "-out", wixObj.toAbsolutePath().toString()
+                "-out", wixObj.toString()
         ));
 
-        addWixVariblesToCommandLine(wixSource.variables, cmdline);
+        if (toolset.needFipsParameter()) {
+            cmdline.add("-fips");
+        }
+
+        addWixVariablesToCommandLine(Stream.of(wixSource), cmdline::addAll);
 
         execute(cmdline);
 
@@ -200,19 +252,50 @@ public class WixPipeline {
     }
 
     private void execute(List<String> cmdline) throws IOException {
-        Executor.of(new ProcessBuilder(cmdline).directory(workDir.toFile())).
-                executeExpectSuccess();
+        Executor.of(new ProcessBuilder(cmdline).directory(workDir.toFile())).executeExpectSuccess();
     }
 
-    private static final class WixSource {
-        Path source;
-        Map<String, String> variables;
+    private void addWixVariablesToCommandLine(Stream<WixSource> wixSources, Consumer<List<String>> sink) {
+        sink.accept(wixSources.map(WixSource::variables).reduce(wixVariables, (a, b) -> {
+            return new WixVariables().putAll(a).putAll(b);
+        }).toWixCommandLine(toolset.getType()));
     }
 
-    private WixToolset toolset;
-    private Map<String, String> wixVariables;
-    private List<String> lightOptions;
-    private Path wixObjDir;
-    private Path workDir;
-    private List<WixSource> sources;
+    private record WixSource(Path path, WixVariables variables) {
+        WixSource {
+            Objects.requireNonNull(path);
+            Objects.requireNonNull(variables);
+        }
+
+        WixSource copyWithPath(Path path) {
+            return new WixSource(path, variables);
+        }
+    }
+
+    private record MsiMutatorWithArgs(MsiMutator mutator, List<String> args) {
+        MsiMutatorWithArgs {
+            Objects.requireNonNull(mutator);
+            Objects.requireNonNull(args);
+        }
+
+        void addToConfigRoot(Path configRoot) throws IOException {
+            mutator.addToConfigRoot(configRoot);
+        }
+
+        void execute(Path configRoot, Path transientMsi) throws IOException {
+            Executor.of("cscript", "//Nologo")
+                    .args(PathUtils.normalizedAbsolutePathString(configRoot.resolve(mutator.pathInConfigRoot())))
+                    .args(PathUtils.normalizedAbsolutePathString(transientMsi))
+                    .args(args)
+                    .executeExpectSuccess();
+        }
+    }
+
+    private final WixToolset toolset;
+    private final WixVariables wixVariables;
+    private final List<String> lightOptions;
+    private final Path wixObjDir;
+    private final Path workDir;
+    private final List<WixSource> sources;
+    private final List<MsiMutatorWithArgs> msiMutators;
 }

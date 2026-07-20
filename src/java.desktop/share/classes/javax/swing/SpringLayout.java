@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,15 @@ package javax.swing;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.FontMetrics;
 import java.awt.Insets;
 import java.awt.LayoutManager2;
-import java.awt.Rectangle;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A <code>SpringLayout</code> lays out the children of its associated container
@@ -184,7 +188,6 @@ import java.util.*;
  * @author      Joe Winchester
  * @since       1.4
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class SpringLayout implements LayoutManager2 {
     private Map<Component, Constraints> componentConstraints = new HashMap<Component, Constraints>();
 
@@ -404,8 +407,7 @@ public class SpringLayout implements LayoutManager2 {
             boolean valid = true;
             List<String> history = horizontal ? horizontalHistory :
                                                 verticalHistory;
-            if (history.contains(name)) {
-                history.remove(name);
+            if (history.remove(name)) {
                 valid = false;
             } else if (history.size() == 2 && value != null) {
                 history.remove(0);

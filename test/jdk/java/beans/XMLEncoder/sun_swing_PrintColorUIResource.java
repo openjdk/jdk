@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 6589532
  * @summary Tests PrintColorUIResource value encoding
  * @modules java.desktop/sun.swing
- * @run main/othervm -Djava.security.manager=allow sun_swing_PrintColorUIResource
+ * @run main/othervm sun_swing_PrintColorUIResource
  * @author Sergey Malenkov
  */
 
@@ -36,7 +36,7 @@ import sun.swing.PrintColorUIResource;
 
 public final class sun_swing_PrintColorUIResource extends AbstractTest<Color> {
     public static void main(String[] args) {
-        new sun_swing_PrintColorUIResource().test(true);
+        new sun_swing_PrintColorUIResource().test();
     }
 
     protected Color getObject() {

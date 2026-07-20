@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,14 @@
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/generationCounters.hpp"
+#include "runtime/mutex.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryService.hpp"
-#include "runtime/mutex.hpp"
 
 class CollectorCounters;
 class G1CollectedHeap;
+class G1OldGenerationCounters;
+class G1YoungGenerationCounters;
 class HSpaceCounters;
 class MemoryPool;
 
@@ -120,10 +122,10 @@ class MemoryPool;
 // path as low-overhead as possible.
 
 class G1MonitoringSupport : public CHeapObj<mtGC> {
-  friend class VMStructs;
-  friend class G1YoungGCMonitoringScope;
-  friend class G1FullGCMonitoringScope;
   friend class G1ConcGCMonitoringScope;
+  friend class G1FullGCMonitoringScope;
+  friend class G1YoungGCMonitoringScope;
+  friend class VMStructs;
 
   G1CollectedHeap* _g1h;
 
@@ -146,10 +148,10 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   //  young collection set counters.  The _eden_counters,
   // _from_counters, and _to_counters are associated with
   // this "generational" counter.
-  GenerationCounters*  _young_gen_counters;
+  G1YoungGenerationCounters*  _young_gen_counters;
   //  old collection set counters. The _old_space_counters
   // below are associated with this "generational" counter.
-  GenerationCounters*  _old_gen_counters;
+  G1OldGenerationCounters*  _old_gen_counters;
   // Counters for the capacity and used for
   //   the whole heap
   HSpaceCounters*      _old_space_counters;
@@ -244,6 +246,6 @@ public:
 
 class G1ConcGCMonitoringScope : public G1MonitoringScope {
 public:
-  G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support);
+  G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support, bool affects_memory_pools);
 };
 #endif // SHARE_GC_G1_G1MONITORINGSUPPORT_HPP

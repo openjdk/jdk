@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@
  * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true
  */
 
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -65,8 +64,8 @@ public class MultiNSTClient {
                 sb.append(" ");
             });
             String params = sb.toString();
-            System.setProperty("test.java.opts",
-                "-Dtest.src=" + System.getProperty("test.src") +
+            System.setProperty("test.java.opts", System.getProperty("test.java.opts") +
+                " -Dtest.src=" + System.getProperty("test.src") +
                     " -Dtest.jdk=" + System.getProperty("test.jdk") +
                     " -Dtest.root=" + System.getProperty("test.root") +
                     " -Djavax.net.debug=ssl,handshake " + params
@@ -77,11 +76,9 @@ public class MultiNSTClient {
             System.out.println("test.java.opts: " +
                 System.getProperty("test.java.opts"));
 
-            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                Utils.addTestJavaOpts("MultiNSTClient", "p"));
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("MultiNSTClient", "p");
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
-            System.out.println("I'm here");
             boolean pass = true;
             try {
                 List<String> list = output.stderrShouldContain("MultiNST PSK").
@@ -99,10 +96,12 @@ public class MultiNSTClient {
                 for (int i = 0; i < 2; i++) {
                     String svr = serverPSK.getFirst();
                     String cli = clientPSK.getFirst();
-                    if (svr.regionMatches(svr.length() - 16, cli, cli.length() - 16, 16)) {
+                    if (svr.regionMatches(svr.length() - 16, cli,
+                        cli.length() - 16, 16)) {
                         System.out.println("entry " + (i + 1) + " match.");
                     } else {
-                        System.out.println("entry " + (i + 1) + " server and client PSK didn't match:");
+                        System.out.println("entry " + (i + 1) +
+                            " server and client PSK didn't match:");
                         System.out.println("  server: " + svr);
                         System.out.println("  client: " + cli);
                         pass = false;
@@ -127,8 +126,8 @@ public class MultiNSTClient {
         }
 
         TLSBase.Server server = new TLSBase.Server();
-
-        System.out.println("------  Start connection");
+        server.serverLatch.await();
+        System.out.println("------  Server ready, starting original client.");
         TLSBase.Client initial = new TLSBase.Client();
         SSLSession initialSession = initial.connect().getSession();
         System.out.println("id = " + hex.formatHex(initialSession.getId()));

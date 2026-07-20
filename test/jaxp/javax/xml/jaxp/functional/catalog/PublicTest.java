@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,35 @@
 
 package catalog;
 
-import static catalog.CatalogTestUtils.CATALOG_PUBLIC;
-import static catalog.CatalogTestUtils.catalogResolver;
-import static catalog.ResolutionChecker.checkNoMatch;
-import static catalog.ResolutionChecker.checkPubIdResolution;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogResolver;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
+import static catalog.CatalogTestUtils.CATALOG_PUBLIC;
+import static catalog.CatalogTestUtils.catalogResolver;
+import static catalog.ResolutionChecker.checkNoMatch;
+import static catalog.ResolutionChecker.checkPubIdResolution;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.PublicTest
- * @run testng/othervm catalog.PublicTest
+ * @run junit/othervm catalog.PublicTest
  * @summary Get matched URIs from public entries.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class PublicTest {
 
-    @Test(dataProvider = "publicId-matchedUri")
+    @ParameterizedTest
+    @MethodSource("data")
     public void testPublic(String publicId, String matchedUri) {
         checkPubIdResolution(createResolver(), publicId, matchedUri);
     }
 
-    @DataProvider(name = "publicId-matchedUri")
-    public Object[][] data() {
+    public static Object[][] data() {
         return new Object[][] {
                 // The matched URI of the specified public id is defined in a
                 // public entry. The match is an absolute path.
@@ -83,12 +82,12 @@ public class PublicTest {
     /*
      * If no match is found, a CatalogException should be thrown.
      */
-    @Test(expectedExceptions = CatalogException.class)
+    @Test
     public void testNoMatch() {
-        checkNoMatch(createResolver());
+        assertThrows(CatalogException.class, () -> checkNoMatch(createResolver()));
     }
 
-    private CatalogResolver createResolver() {
+    private static CatalogResolver createResolver() {
         return catalogResolver(CATALOG_PUBLIC);
     }
 }

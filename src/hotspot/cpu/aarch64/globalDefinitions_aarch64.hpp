@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,8 +35,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORTS_NATIVE_CX8
 
-#define SUPPORT_MONITOR_COUNT
-
 // Aarch64 was not originally defined to be multi-copy-atomic, but now
 // is.  See: "Simplifying ARM Concurrency: Multicopy-atomic Axiomatic
 // and Operational Models for ARMv8"
@@ -46,7 +44,7 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #define DEFAULT_CACHE_LINE_SIZE 64
 
 // The default padding size for data structures to avoid false sharing.
-#define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
+#define DEFAULT_PADDING_SIZE (2*DEFAULT_CACHE_LINE_SIZE)
 
 // According to the ARMv8 ARM, "Concurrent modification and execution
 // of instructions can lead to the resulting instruction performing
@@ -63,7 +61,9 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 // evidence that it's worth doing.
 #define DEOPTIMIZE_WHEN_PATCHING
 
+#if !defined(_WINDOWS)
 #define SUPPORT_RESERVED_STACK_AREA
+#endif
 
 #if defined(__APPLE__) || defined(_WIN64)
 #define R18_RESERVED

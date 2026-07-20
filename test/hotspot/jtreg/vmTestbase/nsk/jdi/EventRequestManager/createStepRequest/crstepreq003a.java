@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,10 @@ public class crstepreq003a {
 
     static Object waitnotifyObj = new Object();
 
+    static Thread thread0;
+    static Thread thread1;
+    static Thread thread2;
+
     //------------------------------------------------------ mutable common method
 
     public static void main (String argv[]) {
@@ -72,21 +76,21 @@ public class crstepreq003a {
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ test case section
                 case 0:
 
-                    Thread thread0 = JDIThreadFactory.newThread(new Thread0crstepreq003a("thread0"));
+                    thread0 = JDIThreadFactory.newThread(new Thread0crstepreq003a("thread0"));
                     threadStart(thread0);
                     threadJoin (thread0, "0");
                     break;
 
                 case 1:
 
-                    Thread thread1 = JDIThreadFactory.newThread(new Thread0crstepreq003a("thread1"));
+                    thread1 = JDIThreadFactory.newThread(new Thread0crstepreq003a("thread1"));
                     threadStart(thread1);
                     threadJoin (thread1, "1");
                     break;
 
                 case 2:
 
-                    Thread thread2 = JDIThreadFactory.newThread(new Thread0crstepreq003a("thread2"));
+                    thread2 = JDIThreadFactory.newThread(new Thread0crstepreq003a("thread2"));
                     threadStart(thread2);
                     threadJoin (thread2, "2");
 

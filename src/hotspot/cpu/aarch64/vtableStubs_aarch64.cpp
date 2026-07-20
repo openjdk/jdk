@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,9 +23,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/vtableStubs.hpp"
 #include "interp_masm_aarch64.hpp"
@@ -79,7 +79,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   // get receiver klass
   address npe_addr = __ pc();
-  __ load_klass(r16, j_rarg0);
+  __ load_klass(r16, j_rarg0, rscratch1);
 
 #ifndef PRODUCT
   if (DebugVtables) {
@@ -189,7 +189,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
   // get receiver klass (also an implicit null-check)
   address npe_addr = __ pc();
-  __ load_klass(recv_klass_reg, j_rarg0);
+  __ load_klass(recv_klass_reg, j_rarg0, rscratch1);
 
   // Receiver subtype check against REFC.
   // Get selected method from declaring class and itable index
@@ -197,7 +197,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
                                   temp_reg, temp_reg2, itable_index, L_no_such_interface);
 
   // Reduce "estimate" such that "padding" does not drop below 8.
-  const ptrdiff_t estimate = 144;
+  const ptrdiff_t estimate = AOTCodeCache::is_on_for_dump() ? 148 : 144;
   const ptrdiff_t codesize = __ pc() - start_pc;
   slop_delta  = (int)(estimate - codesize);
   slop_bytes += slop_delta;

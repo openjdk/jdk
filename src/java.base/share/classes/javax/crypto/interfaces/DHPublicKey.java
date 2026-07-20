@@ -47,7 +47,6 @@ public interface DHPublicKey extends DHKey, java.security.PublicKey {
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
     long serialVersionUID = -6628103563352519193L;
 

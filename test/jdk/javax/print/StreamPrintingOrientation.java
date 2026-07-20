@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,95 +24,109 @@
 /*
  * @test
  * @bug 4904236
- * @summary You would see a cross-platform print dialog being popped up. Check whether orientation is shown as LANDSCAPE. Click 'OK'. 'streamexample.ps' will be created in the same dir where this application was executed. Pass if the orientation in the ps file is landscape.
- * @run main/manual StreamPrintingOrientation
+ * @key printer
+ * @summary StreamPrintService ignores the PrintReqAttrSet when printing through 2D Printing
+ * @run main StreamPrintingOrientation
  */
 
-import java.awt.*;
-import java.awt.print.*;
-import javax.print.*;
-import javax.print.attribute.standard.*;
-import javax.print.attribute.*;
-import java.io.FileOutputStream;
 import java.io.File;
-import java.util.Locale;
+import java.io.FileOutputStream;
+import java.nio.file.Files;
 
-class StreamPrintingOrientation implements Printable {
-        /**
-         * Constructor
-         */
-         public StreamPrintingOrientation() {
-                super();
-        }
-        /**
-         * Starts the application.
-         */
-        public static void main(java.lang.String[] args) {
-                StreamPrintingOrientation pd = new StreamPrintingOrientation();
-                PrinterJob pj = PrinterJob.getPrinterJob();
-                HashPrintRequestAttributeSet prSet = new HashPrintRequestAttributeSet();
-                PrintService service = null;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+import javax.print.attribute.Attribute;
+import javax.print.PrintService;
+import javax.print.StreamPrintServiceFactory;
+import javax.print.attribute.standard.Copies;
+import javax.print.attribute.standard.JobName;
+import javax.print.attribute.standard.OrientationRequested;
+import javax.print.attribute.HashPrintRequestAttributeSet;
 
-                FileOutputStream fos = null;
-                File f = null, f1 = null;
-                String mType = "application/postscript";
+public class StreamPrintingOrientation implements Printable {
 
-                try {
-                        f = new File("streamexample.ps");
-                        fos = new FileOutputStream(f);
-                        StreamPrintServiceFactory[] factories = PrinterJob.lookupStreamPrintServices(mType);
-                        if (factories.length > 0)
-                                service = factories[0].getPrintService(fos);
+    public static void main(String[] args) throws Exception {
+        StreamPrintingOrientation pd = new StreamPrintingOrientation();
+        PrinterJob pj = PrinterJob.getPrinterJob();
+        HashPrintRequestAttributeSet prSet = new HashPrintRequestAttributeSet();
+        PrintService service = null;
 
-                        if (service != null) {
-                                System.out.println("Stream Print Service "+service);
-                                pj.setPrintService(service);
-                        } else {
-                                throw new RuntimeException("No stream Print Service available.");
-                        }
-                } catch (Exception e) {
-                        e.printStackTrace();
-                }
+        FileOutputStream fos = null;
+        String mType = "application/postscript";
 
-                pj.setPrintable(pd);
-                prSet.add(OrientationRequested.LANDSCAPE);
-                prSet.add(new Copies(3));
-                prSet.add(new JobName("orientation test", null));
-                System.out.println("open PrintDialog..");
-                if (pj.printDialog(prSet)) {
-                        try {
-                                System.out.println("\nValues in attr set passed to print method");
-                                Attribute attr[] = prSet.toArray();
-                                for (int x = 0; x < attr.length; x ++) {
-                                        System.out.println("Name "+attr[x].getName()+"  "+attr[x]);
-                                }
-                                System.out.println("About to print the data ...");
-                                if (service != null) {
-                                        System.out.println("TEST: calling Print");
-                                        pj.print(prSet);
-                                        System.out.println("TEST: Printed");
-                                }
-                        }
-                        catch (PrinterException pe) {
-                                pe.printStackTrace();
-                        }
-                }
-
+        File fl = new File("stream_landscape.ps");
+        fl.deleteOnExit();
+        fos = new FileOutputStream(fl);
+        StreamPrintServiceFactory[] factories = PrinterJob.lookupStreamPrintServices(mType);
+        if (factories.length > 0) {
+            service = factories[0].getPrintService(fos);
         }
 
-        //printable interface
-        public int print(Graphics g, PageFormat pf, int pi) throws PrinterException {
-
-                if (pi > 0) {
-                        return Printable.NO_SUCH_PAGE;
-                }
-                // Simply draw two rectangles
-                Graphics2D g2 = (Graphics2D)g;
-                g2.setColor(Color.black);
-                g2.translate(pf.getImageableX(), pf.getImageableY());
-                System.out.println("StreamPrinting Test Width "+pf.getWidth()+" Height "+pf.getHeight());
-                g2.drawRect(1,1,200,300);
-                g2.drawRect(1,1,25,25);
-                return Printable.PAGE_EXISTS;
+        if (service != null) {
+            System.out.println("Stream Print Service " + service);
+            pj.setPrintService(service);
+        } else {
+            throw new RuntimeException("No stream Print Service available.");
         }
+
+        pj.setPrintable(pd);
+        prSet.add(OrientationRequested.LANDSCAPE);
+        prSet.add(new Copies(1));
+        prSet.add(new JobName("orientation test", null));
+        System.out.println("open PrintDialog..");
+
+        System.out.println("\nValues in attr set passed to print method");
+        Attribute attr[] = prSet.toArray();
+        for (int x = 0; x < attr.length; x++) {
+            System.out.println("Name " + attr[x].getName() + "  " + attr[x]);
+        }
+        System.out.println("About to print the data ...");
+        if (service != null) {
+            System.out.println("TEST: calling Print");
+            pj.print(prSet);
+            System.out.println("TEST: Printed");
+        }
+
+        File fp = new File("stream_portrait.ps");
+        fp.deleteOnExit();
+        fos = new FileOutputStream(fp);
+        if (factories.length > 0) {
+            service = factories[0].getPrintService(fos);
+        }
+
+        pj.setPrintService(service);
+        pj.setPrintable(pd);
+        prSet.add(OrientationRequested.PORTRAIT);
+        prSet.add(new Copies(1));
+        prSet.add(new JobName("orientation test", null));
+        if (service != null) {
+            pj.print(prSet);
+        }
+
+        if (Files.mismatch(fl.toPath(), fp.toPath()) == -1) {
+            throw new RuntimeException("Printing stream orientation is same " +
+                                       "for both PORTRAIT and LANDSCAPE");
+        }
+    }
+
+    //printable interface
+    public int print(Graphics g, PageFormat pf, int pi) throws PrinterException {
+
+        if (pi > 0) {
+            return Printable.NO_SUCH_PAGE;
+        }
+        // Simply draw two rectangles
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setColor(Color.black);
+        g2.translate(pf.getImageableX(), pf.getImageableY());
+        System.out.println("StreamPrinting Test Width " + pf.getWidth() + " Height " + pf.getHeight());
+        g2.drawRect(1, 1, 200, 300);
+        g2.drawRect(1, 1, 25, 25);
+        return Printable.PAGE_EXISTS;
+    }
 }

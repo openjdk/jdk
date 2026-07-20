@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,14 @@
 
 /*
  * @test
- * @bug 6212869
+ * @bug 6212869 8347841
  * @summary Determine if lastModified() works after TimeZone.setDefault()
  * @run main/othervm TimeZoneLastModified
  */
 
 import java.io.File;
-import java.util.Date;
+import java.time.ZoneId;
 import java.util.TimeZone;
-import java.text.SimpleDateFormat;
 
 public class TimeZoneLastModified {
     // Tue, 04 Jun 2002 13:56:50.002 GMT
@@ -40,6 +39,9 @@ public class TimeZoneLastModified {
     public static void main(String[] args) throws Throwable {
         int failures = test(null);
         for (String timeZoneID : TimeZone.getAvailableIDs()) {
+            if (ZoneId.SHORT_IDS.containsKey(timeZoneID)) {
+                continue;
+            }
             failures += test(timeZoneID);
         }
         if (failures != 0) {

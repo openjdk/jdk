@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
 #include "opto/optoreg.hpp"
@@ -34,14 +33,6 @@ extern void reg_mask_init();
 
 void Compile::pd_compiler2_init() {
   guarantee(CodeEntryAlignment >= InteriorEntryAlignment, "" );
-  // QQQ presumably all 64bit cpu's support this. Seems like the ifdef could
-  // simply be left out.
-#ifndef AMD64
-  if (!VM_Version::supports_cmov()) {
-    ConditionalMoveLimit = 0;
-  }
-#endif // AMD64
-
   if (UseAVX < 3) {
     int delta = XMMRegister::max_slots_per_register * XMMRegister::number_of_registers;
     int bottom = ConcreteRegisterImpl::max_fpr;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package com.sun.tools.jnativescan;
 
+import com.sun.tools.jnativescan.JNativeScanTask.Diagnostics;
 import com.sun.tools.jnativescan.RestrictedUse.NativeMethodDecl;
 import com.sun.tools.jnativescan.RestrictedUse.RestrictedMethodRefs;
 
@@ -32,7 +33,6 @@ import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.instruction.InvokeInstruction;
-import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
 import java.util.*;
@@ -44,60 +44,47 @@ class NativeMethodFinder {
     private static final String RESTRICTED_NAME = "Ljdk/internal/javac/Restricted+Annotation;";
 
     private final Map<MethodRef, Boolean> cache = new HashMap<>();
-    private final ClassResolver classesToScan;
-    private final ClassResolver systemClassResolver;
+    private final Diagnostics diagnostics;
+    private final SystemClassResolver systemClassResolver;
 
-    private NativeMethodFinder(ClassResolver classesToScan, ClassResolver systemClassResolver) {
-        this.classesToScan = classesToScan;
+    private NativeMethodFinder(Diagnostics diagnostics, SystemClassResolver systemClassResolver) {
+        this.diagnostics = diagnostics;
         this.systemClassResolver = systemClassResolver;
     }
 
-    public static NativeMethodFinder create(ClassResolver classesToScan, ClassResolver systemClassResolver) throws JNativeScanFatalError, IOException {
-        return new NativeMethodFinder(classesToScan, systemClassResolver);
+    public static NativeMethodFinder create(Diagnostics diagnostics, SystemClassResolver systemClassResolver) throws JNativeScanFatalError, IOException {
+        return new NativeMethodFinder(diagnostics, systemClassResolver);
     }
 
-    public SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> findAll() throws JNativeScanFatalError {
-        SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> restrictedMethods
-                = new TreeMap<>(Comparator.comparing(ClassFileSource::path));
-        classesToScan.forEach((_, info) -> {
-            ClassModel classModel = info.model();
-            List<RestrictedUse> perClass = new ArrayList<>();
-            classModel.methods().forEach(methodModel -> {
+    public List<RestrictedUse> find(ClassModel model) throws JNativeScanFatalError {
+        return model.methods().stream().<RestrictedUse>mapMulti((methodModel, sink) -> {
                 if (methodModel.flags().has(AccessFlag.NATIVE)) {
-                    perClass.add(new NativeMethodDecl(MethodRef.ofModel(methodModel)));
+                    sink.accept(new NativeMethodDecl(MethodRef.ofModel(methodModel)));
                 } else {
-                    SortedSet<MethodRef> perMethod = new TreeSet<>(Comparator.comparing(MethodRef::toString));
-                    methodModel.code().ifPresent(code -> {
-                         try {
-                             code.forEach(e -> {
-                                 switch (e) {
-                                     case InvokeInstruction invoke -> {
-                                         MethodRef ref = MethodRef.ofInvokeInstruction(invoke);
-                                         if (isRestrictedMethod(ref)) {
-                                             perMethod.add(ref);
-                                         }
-                                     }
-                                     default -> {
-                                     }
-                                 }
-                             });
-                         } catch (JNativeScanFatalError e) {
-                             throw new JNativeScanFatalError("Error while processing method: " +
-                                     MethodRef.ofModel(methodModel), e);
-                         }
-                    });
+                    SortedSet<MethodRef> perMethod = findRestrictedMethodInvocations(methodModel);
                     if (!perMethod.isEmpty()) {
-                        perClass.add(new RestrictedMethodRefs(MethodRef.ofModel(methodModel), perMethod));
+                        sink.accept(new RestrictedMethodRefs(MethodRef.ofModel(methodModel), perMethod));
                     }
                 }
-            });
-            if (!perClass.isEmpty()) {
-                restrictedMethods.computeIfAbsent(info.source(),
-                                _ -> new TreeMap<>(Comparator.comparing(JNativeScanTask::qualName)))
-                        .put(classModel.thisClass().asSymbol(), perClass);
+            })
+            .toList();
+    }
+
+    private SortedSet<MethodRef> findRestrictedMethodInvocations(MethodModel methodModel) {
+        SortedSet<MethodRef> perMethod = new TreeSet<>(Comparator.comparing(MethodRef::toString));
+        methodModel.code().ifPresent(code -> code.forEach(e -> {
+            if (e instanceof InvokeInstruction invoke) {
+                MethodRef ref = MethodRef.ofInvokeInstruction(invoke);
+                try {
+                    if (isRestrictedMethod(ref)) {
+                        perMethod.add(ref);
+                    }
+                } catch (JNativeScanFatalError ex) {
+                    diagnostics.error(MethodRef.ofModel(methodModel), ex);
+                }
             }
-        });
-        return restrictedMethods;
+        }));
+        return perMethod;
     }
 
     private boolean isRestrictedMethod(MethodRef ref) throws JNativeScanFatalError {
@@ -106,11 +93,14 @@ class NativeMethodFinder {
                 // no restricted methods in arrays atm, and we can't look them up since they have no class file
                 return false;
             }
-            Optional<ClassResolver.Info> info = systemClassResolver.lookup(methodRef.owner());
-            if (!info.isPresent()) {
+            Optional<ClassModel> modelOpt = systemClassResolver.lookup(methodRef.owner());
+            if (!modelOpt.isPresent()) {
+                // The target class is not in a system module. Since only system modules
+                // contain classes with restricted methods, we can safely assume that
+                // the target method is not restricted.
                 return false;
             }
-            ClassModel classModel = info.get().model();
+            ClassModel classModel = modelOpt.get();
             Optional<MethodModel> methodModel = findMethod(classModel, methodRef.name(), methodRef.type());
             if (!methodModel.isPresent()) {
                 // If we are here, the method was referenced through a subclass of the class containing the actual

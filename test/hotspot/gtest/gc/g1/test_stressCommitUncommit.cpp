@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/shared/workerThread.hpp"
-#include "memory/virtualspace.hpp"
+#include "memory/memoryReserver.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
@@ -52,7 +51,7 @@ WorkerThreads* G1MapperWorkers::_workers = nullptr;
 
 class G1TestCommitUncommit : public WorkerTask {
   G1RegionToSpaceMapper* _mapper;
-  uint _claim_id;
+  Atomic<uint> _claim_id;
 public:
   G1TestCommitUncommit(G1RegionToSpaceMapper* mapper) :
       WorkerTask("Stress mapper"),
@@ -60,7 +59,7 @@ public:
       _claim_id(0) { }
 
   void work(uint worker_id) {
-    uint index = Atomic::fetch_then_add(&_claim_id, 1u);
+    uint index = _claim_id.fetch_then_add(1u);
 
     for (int i = 0; i < 100000; i++) {
       // Stress commit and uncommit of a single region. The same
@@ -81,7 +80,10 @@ TEST_VM(G1RegionToSpaceMapper, smallStressAdjacent) {
   size_t size = G1BlockOffsetTable::compute_size(num_regions * region_size / HeapWordSize);
   size_t page_size = os::vm_page_size();
 
-  ReservedSpace rs(size, os::vm_page_size());
+  ReservedSpace rs = MemoryReserver::reserve(size,
+                                             os::vm_allocation_granularity(),
+                                             os::vm_page_size(),
+                                             mtTest);
 
   G1RegionToSpaceMapper* small_mapper  =
     G1RegionToSpaceMapper::create_mapper(rs,
@@ -89,7 +91,7 @@ TEST_VM(G1RegionToSpaceMapper, smallStressAdjacent) {
                                          page_size,
                                          region_size,
                                          G1BlockOffsetTable::heap_map_factor(),
-                                         mtGC);
+                                         mtTest);
 
 
 
@@ -105,15 +107,17 @@ TEST_VM(G1RegionToSpaceMapper, largeStressAdjacent) {
   size_t size = G1BlockOffsetTable::compute_size(num_regions * region_size / HeapWordSize);
   size_t page_size = os::vm_page_size();
 
-  ReservedSpace rs(size, page_size);
-
+  ReservedSpace rs = MemoryReserver::reserve(size,
+                                             os::vm_allocation_granularity(),
+                                             os::vm_page_size(),
+                                             mtTest);
   G1RegionToSpaceMapper* large_mapper  =
     G1RegionToSpaceMapper::create_mapper(rs,
                                          size,
                                          page_size,
                                          region_size,
                                          G1BlockOffsetTable::heap_map_factor(),
-                                         mtGC);
+                                         mtTest);
 
   G1TestCommitUncommit task(large_mapper);
   G1MapperWorkers::run_task(&task);

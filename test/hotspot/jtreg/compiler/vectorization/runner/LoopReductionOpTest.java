@@ -25,19 +25,10 @@
  * @test
  * @summary Vectorization test on reduction operations
  * @library /test/lib /
- *
- * @build jdk.test.whitebox.WhiteBox
- *        compiler.vectorization.runner.VectorizationTestRunner
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.LoopReductionOpTest
- *
- * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") | (os.simpleArch == "riscv64")
  * @requires vm.compiler2.enabled
  *
+ * @run driver ${test.main.class}
  */
 
 package compiler.vectorization.runner;
@@ -78,7 +69,7 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse3", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse3", "true", "rvv", "true"},
         counts = {IRNode.LOAD_VECTOR_I, ">0",
                   IRNode.ADD_REDUCTION_V, ">0"})
     public int reductionAddSumOfArray() {
@@ -119,7 +110,7 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true", "rvv", "true"},
         counts = {IRNode.LOAD_VECTOR_I, ">0",
                   IRNode.ADD_REDUCTION_V, ">0"})
     public int reductionAddSumOfMultiple() {
@@ -175,9 +166,13 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
-    @IR(applyIfCPUFeatureOr = {"avx2", "true"},
+    @IR(applyIfCPUFeature = {"avx2", "true"},
+        counts = {IRNode.ADD_REDUCTION_V, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        applyIf = {"MaxVectorSize", ">=32" },
         counts = {IRNode.ADD_REDUCTION_V, ">0"})
     public long reductionWithNonReductionDifferentSizes() {
         long res = 0L;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,8 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary
- * @run main/othervm/policy=security.policy CheckVMID
+ * @run main/othervm -Djdk.net.hosts.file=nonExistentFile
+ *                   CheckVMID
  */
 
 import java.rmi.dgc.VMID;
@@ -46,8 +47,6 @@ public class CheckVMID {
     public static void main(String[] args) {
 
         System.err.println("\nRegression test for bug 4171370\n");
-
-        TestLibrary.suggestSecurityManager(null);
 
         try {
             System.err.println("Create a VMID");

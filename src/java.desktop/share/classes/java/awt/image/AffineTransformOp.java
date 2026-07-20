@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,13 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
      * {@code getBounds2D(BufferedImage)}
      * are not necessarily the same as the coordinates of the
      * {@code BufferedImage} returned by this method.  If the
-     * upper-left corner coordinates of the rectangle are
+     * application provides a {@code dst} that is always returned.
+     * If {@code dst} is {@code null} and a destination {code BufferedImage}
+     * with the transformed dimensions cannot be created, the {@code src}
+     * dimensions will be substituted.
+     *
+     * <p>
+     * If the upper-left corner coordinates of the rectangle are
      * negative then this part of the rectangle is not drawn.  If the
      * upper-left corner coordinates of the  rectangle are positive
      * then the filtered image is drawn at that position in the
@@ -224,7 +230,7 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
         BufferedImage origDst = dst;
 
         if (dst == null) {
-            dst = createCompatibleDestImage(src, null);
+            dst = createCompatibleDestImageInt(src, null);
             dstCM = srcCM;
             origDst = dst;
         }
@@ -272,7 +278,7 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
                 }
                 else {
                     needToConvert = true;
-                    dst = createCompatibleDestImage(src, null);
+                    dst = createCompatibleDestImageInt(src, null);
                 }
             }
 
@@ -320,7 +326,12 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
      * {@code getBounds2D(Raster)}
      * are not necessarily the same as the coordinates of the
      * {@code WritableRaster} returned by this method.  If the
-     * upper-left corner coordinates of rectangle are negative then
+     * application provides a {@code dst} that is always returned.
+     * If {@code dst} is {@code null} and a destination {code Raster}
+     * with the transformed dimensions cannot be created, the {@code src}
+     * dimensions will be substituted.
+     * <p>
+     * If the upper-left corner coordinates of rectangle are negative then
      * this part of the rectangle is not drawn.  If the coordinates
      * of the rectangle are positive then the filtered image is drawn at
      * that position in the destination {@code Raster}.
@@ -342,7 +353,7 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
             throw new NullPointerException("src image is null");
         }
         if (dst == null) {
-            dst = createCompatibleDestRaster(src);
+            dst = createCompatibleDestRasterInt(src);
         }
         if (src == dst) {
             throw new IllegalArgumentException("src image cannot be the "+
@@ -422,7 +433,7 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
     /**
      * Creates a zeroed destination image with the correct size and number of
      * bands.  A {@code RasterFormatException} may be thrown if the
-     * transformed width or height is equal to 0.
+     * transformed width or height is less than or equal to 0, or too large.
      * <p>
      * If {@code destCM} is null,
      * an appropriate {@code ColorModel} is used; this
@@ -437,9 +448,36 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
      */
     public BufferedImage createCompatibleDestImage (BufferedImage src,
                                                     ColorModel destCM) {
-        BufferedImage image;
         Rectangle r = getBounds2D(src).getBounds();
+        try {
+            return createCompatibleDestImage(src, destCM, r);
+        } catch (Exception e) {
+             if (e instanceof RasterFormatException) {
+                 throw e;
+             } else {
+                 RasterFormatException re =
+                     new RasterFormatException("Could not create transformed image of size " + r);
+                     re.initCause(e);
+                     throw re;
+             }
+        }
+    }
 
+    private BufferedImage createCompatibleDestImageInt(BufferedImage src,
+                                                      ColorModel destCM) {
+
+       try {
+           return createCompatibleDestImage(src, destCM);
+       } catch (Exception e) {
+           return createCompatibleDestImage(src, destCM, src.getRaster().getBounds());
+       }
+    }
+
+    private BufferedImage createCompatibleDestImage(BufferedImage src,
+                                                    ColorModel destCM,
+                                                    Rectangle r) {
+
+        BufferedImage image;
         // If r.x (or r.y) is < 0, then we want to only create an image
         // that is in the positive range.
         // If r.x (or r.y) is > 0, then we need to create an image that
@@ -482,14 +520,38 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
     /**
      * Creates a zeroed destination {@code Raster} with the correct size
      * and number of bands.  A {@code RasterFormatException} may be thrown
-     * if the transformed width or height is equal to 0.
+     * if the transformed width or height is less than or equal to 0, or too large.
      *
      * @param src The {@code Raster} to be transformed.
      *
      * @return The zeroed destination {@code Raster}.
      */
     public WritableRaster createCompatibleDestRaster (Raster src) {
-        Rectangle2D r = getBounds2D(src);
+        Rectangle r = getBounds2D(src).getBounds();
+        try {
+            return createCompatibleDestRaster(src, r);
+        } catch (Exception e) {
+             if (e instanceof RasterFormatException) {
+                 throw e;
+             } else {
+                 RasterFormatException re =
+                     new RasterFormatException("Could not create transformed raster of size " + r);
+                     re.initCause(e);
+                     throw re;
+             }
+        }
+    }
+
+    private WritableRaster createCompatibleDestRasterInt(Raster src) {
+       try {
+           return createCompatibleDestRaster(src);
+       } catch (Exception e) {
+           Rectangle r = src.getBounds();
+           return createCompatibleDestRaster(src, r);
+       }
+    }
+
+    private WritableRaster createCompatibleDestRaster (Raster src, Rectangle r) {
 
         return src.createCompatibleWritableRaster((int)r.getX(),
                                                   (int)r.getY(),

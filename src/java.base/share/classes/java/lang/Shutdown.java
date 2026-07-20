@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,10 @@ class Shutdown {
     private static int currentRunningHook = -1;
 
     /* The preceding static fields are protected by this lock */
-    private static class Lock { };
-    private static Object lock = new Lock();
+    private static final Object lock = new Object();
 
     /* Lock object for the native halt method */
-    private static Object haltLock = new Lock();
+    private static final Object haltLock = new Object();
 
     /**
      * Add a new system shutdown hook.  Checks the shutdown state and
@@ -157,8 +156,10 @@ class Shutdown {
      * which should pass a nonzero status code.
      */
     static void exit(int status) {
-        logRuntimeExit(status);         // Log without holding the lock;
-
+        // log only if VM is fully initialized
+        if (VM.isBooted()) {
+            logRuntimeExit(status);         // Log without holding the lock;
+        }
         synchronized (Shutdown.class) {
             /* Synchronize on the class object, causing any other thread
              * that attempts to initiate shutdown to stall indefinitely

@@ -25,26 +25,26 @@
  * @test id=default
  * @summary Stress ScopedValue stack overflow recovery path
  * @enablePreview
- * @run main/othervm/timeout=300 StressStackOverflow
+ * @run main/othervm/timeout=300 ${test.main.class}
  */
 
 /*
  * @test id=no-TieredCompilation
  * @enablePreview
- * @run main/othervm/timeout=300 -XX:-TieredCompilation StressStackOverflow
+ * @run main/othervm/timeout=300 -XX:-TieredCompilation ${test.main.class}
  */
 
 /*
  * @test id=TieredStopAtLevel1
  * @enablePreview
- * @run main/othervm/timeout=300 -XX:TieredStopAtLevel=1 StressStackOverflow
+ * @run main/othervm/timeout=300 -XX:TieredStopAtLevel=1 ${test.main.class}
  */
 
 /*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @enablePreview
- * @run main/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations StressStackOverflow
+ * @run main/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations ${test.main.class}
  */
 
 import java.lang.ScopedValue.CallableOp;
@@ -169,7 +169,7 @@ public class StressStackOverflow {
     void runInNewThread(Runnable op) {
         var threadFactory
                 = (ThreadLocalRandom.current().nextBoolean() ? Thread.ofPlatform() : Thread.ofVirtual()).factory();
-        try (var scope = new StructuredTaskScope<>("", threadFactory)) {
+        try (var scope = StructuredTaskScope.open(cf -> cf.withThreadFactory(threadFactory))) {
             var handle = scope.fork(() -> {
                 op.run();
                 return null;
@@ -186,7 +186,7 @@ public class StressStackOverflow {
     public void run() {
         try {
             ScopedValue.where(inheritedValue, 42).where(el, 0).run(() -> {
-                try (var scope = new StructuredTaskScope<>()) {
+                try (var scope = StructuredTaskScope.open()) {
                     try {
                         if (ThreadLocalRandom.current().nextBoolean()) {
                             // Repeatedly test Scoped Values set by ScopedValue::call(), get(), and run()

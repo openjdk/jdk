@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,70 @@
 #
 
 m4_include([util_paths.m4])
+
+###############################################################################
+# Overwrite the existing version of AC_PROG_CC with our own custom variant.
+# Unlike the regular AC_PROG_CC, the compiler list must always be passed.
+AC_DEFUN([AC_PROG_CC],
+[
+  AC_LANG_PUSH(C)
+  AC_ARG_VAR([CC], [C compiler command])
+  AC_ARG_VAR([CFLAGS], [C compiler flags])
+
+  _AC_ARG_VAR_LDFLAGS()
+  _AC_ARG_VAR_LIBS()
+  _AC_ARG_VAR_CPPFLAGS()
+
+  AC_CHECK_TOOLS(CC, [$1])
+
+  test -z "$CC" && AC_MSG_FAILURE([no acceptable C compiler found in \$PATH])
+
+  # Provide some information about the compiler.
+  _AS_ECHO_LOG([checking for _AC_LANG compiler version])
+  set X $ac_compile
+  ac_compiler=$[2]
+  for ac_option in --version -v -V -qversion -version; do
+    _AC_DO_LIMIT([$ac_compiler $ac_option >&AS_MESSAGE_LOG_FD])
+  done
+
+  m4_expand_once([_AC_COMPILER_EXEEXT])
+  m4_expand_once([_AC_COMPILER_OBJEXT])
+
+  _AC_PROG_CC_G
+
+  AC_LANG_POP(C)
+])
+
+###############################################################################
+# Overwrite the existing version of AC_PROG_CXX with our own custom variant.
+# Unlike the regular AC_PROG_CXX, the compiler list must always be passed.
+AC_DEFUN([AC_PROG_CXX],
+[
+  AC_LANG_PUSH(C++)
+  AC_ARG_VAR([CXX], [C++ compiler command])
+  AC_ARG_VAR([CXXFLAGS], [C++ compiler flags])
+
+  _AC_ARG_VAR_LDFLAGS()
+  _AC_ARG_VAR_LIBS()
+  _AC_ARG_VAR_CPPFLAGS()
+
+  AC_CHECK_TOOLS(CXX, [$1])
+
+  # Provide some information about the compiler.
+  _AS_ECHO_LOG([checking for _AC_LANG compiler version])
+  set X $ac_compile
+  ac_compiler=$[2]
+  for ac_option in --version -v -V -qversion; do
+    _AC_DO_LIMIT([$ac_compiler $ac_option >&AS_MESSAGE_LOG_FD])
+  done
+
+  m4_expand_once([_AC_COMPILER_EXEEXT])
+  m4_expand_once([_AC_COMPILER_OBJEXT])
+
+  _AC_PROG_CXX_G
+
+  AC_LANG_POP(C++)
+])
 
 ################################################################################
 # Create a function/macro that takes a series of named arguments. The call is
@@ -502,6 +566,14 @@ AC_DEFUN([UTIL_CHECK_TYPE_file],
   fi
 ])
 
+AC_DEFUN([UTIL_CHECK_TYPE_executable],
+[
+  # Check that the argument is an existing file that the user has execute access to.
+  if (test ! -x "$1") || (test ! -f "$1") ; then
+    FAILURE="File $1 does not exist or is not executable"
+  fi
+])
+
 AC_DEFUN([UTIL_CHECK_TYPE_directory],
 [
   # Check that the argument is an existing directory
@@ -511,7 +583,7 @@ AC_DEFUN([UTIL_CHECK_TYPE_directory],
 
   if test "[x]ARG_CHECK_FOR_FILES" != "x:"; then
     for file in ARG_CHECK_FOR_FILES; do
-      found_files=$($ECHO $(ls $1/$file 2> /dev/null))
+      found_files=$($ECHO $($LS -d $1/$file 2> /dev/null))
       if test "x$found_files" = x; then
         FAILURE="Directory $1 does not contain $file"
         break
@@ -584,7 +656,7 @@ AC_DEFUN([UTIL_CHECK_TYPE_features],
 # Arguments:
 #   NAME: The base name of this option (i.e. what follows --with-). Required.
 #   TYPE: The type of the value. Can be one of "string", "integer", "file",
-#     "directory", "literal", "multivalue" or "features". Required.
+#     "executable", "directory", "literal", "multivalue" or "features". Required.
 #   DEFAULT: The default value for this option. Can be any valid string.
 #     Required.
 #   OPTIONAL: If this feature can be disabled. Defaults to false. If true,
@@ -694,7 +766,7 @@ UTIL_DEFUN_NAMED([UTIL_ARG_WITH],
   # Need to assign since we can't expand ARG TYPE inside the m4 quoted if statement
   TEST_TYPE="ARG_TYPE"
   # Additional [] needed to keep m4 from mangling shell constructs.
-  [ if [[ ! "$TEST_TYPE" =~ ^(string|integer|file|directory|literal|multivalue|features)$ ]] ; then ]
+  [ if [[ ! "$TEST_TYPE" =~ ^(string|integer|file|executable|directory|literal|multivalue|features)$ ]] ; then ]
     AC_MSG_ERROR([Internal error: Argument TYPE to [UTIL_ARG_WITH] must be a valid type, was: 'ARG_TYPE'])
   fi
 

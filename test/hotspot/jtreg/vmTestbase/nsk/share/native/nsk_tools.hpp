@@ -160,7 +160,7 @@ void nsk_printHexBytes(const char indent[], int columns,
 /*************************************************************/
 
 /**
- * Returns str or "<NULL>" if str is null; useful for printing strings.
+ * Returns str or "<null>" if str is null; useful for printing strings.
  */
 const char* nsk_null_string(const char* str);
 

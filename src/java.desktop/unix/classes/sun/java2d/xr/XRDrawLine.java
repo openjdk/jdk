@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  */
 package sun.java2d.xr;
 
-public class XRDrawLine {
+public final class XRDrawLine {
     static final int BIG_MAX = ((1 << 29) - 1);
     static final int BIG_MIN = (-(1 << 29));
 

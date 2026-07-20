@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.io.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.Clock;
 import java.util.function.Predicate;
 import static jdk.internal.logger.SurrogateLogger.isFilteredFrame;
@@ -767,14 +765,10 @@ public class LogRecord implements java.io.Serializable {
     /*
      * CallerFinder is a stateful predicate.
      */
-    @SuppressWarnings("removal")
     static final class CallerFinder implements Predicate<StackWalker.StackFrame> {
-        private static final StackWalker WALKER;
-        static {
-            final PrivilegedAction<StackWalker> action =
-                () -> StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-            WALKER = AccessController.doPrivileged(action);
-        }
+        private static final StackWalker WALKER =
+                StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+
 
         /**
          * Returns StackFrame of the caller's frame.

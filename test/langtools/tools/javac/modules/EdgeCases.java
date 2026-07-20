@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154283 8167320 8171098 8172809 8173068 8173117 8176045 8177311 8241519 8297988
+ * @bug 8154283 8167320 8171098 8172809 8173068 8173117 8176045 8177311 8241519 8297988 8387377
  * @summary tests for multi-module mode compilation
  * @library /tools/lib
  * @modules
@@ -37,7 +37,9 @@
  */
 
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.Writer;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -60,9 +62,14 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
+import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
+import javax.tools.JavaCompiler.CompilationTask;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import com.sun.source.tree.CompilationUnitTree;
@@ -73,6 +80,9 @@ import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symtab;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import javax.lang.model.element.ModuleElement.DirectiveKind;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
@@ -1153,4 +1163,149 @@ public class EdgeCases extends ModuleTestBase {
         }
     }
 
+    @Test
+    public void testJavaSEHasRequiresTransitiveJavaBase(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path a = src.resolve("a");
+        tb.writeJavaFiles(a,
+                          "module a { requires java.se; }",
+                          """
+                          package test;
+                          import module java.se;
+                          public class Test {
+                              ArrayList<String> l;
+                          }
+                          """);
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        AtomicBoolean seenJavaSEDependency = new AtomicBoolean();
+
+        List<String> log;
+
+        log = new JavacTask(tb)
+            .outdir(classes)
+            .options("-XDrawDiagnostics", "-XDshould-stop.at=FLOW",
+                     "--release", "24")
+            .callback(verifyJavaSEDependency(true, seenJavaSEDependency))
+            .files(findJavaFiles(src))
+            .run(Task.Expect.FAIL)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "Test.java:2:8: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.module.imports), 24, 25",
+                "1 error");
+
+        if (!expected.equals(log))
+            throw new Exception("expected output not found: " + log);
+
+        if (!seenJavaSEDependency.get()) {
+            throw new AssertionError("Didn't find the java.se dependency!");
+        }
+
+        seenJavaSEDependency.set(false);
+
+        new JavacTask(tb)
+            .outdir(classes)
+            .options("--enable-preview",
+                     "--source", System.getProperty("java.specification.version"))
+            .callback(verifyJavaSEDependency(true, seenJavaSEDependency))
+            .files(findJavaFiles(src))
+            .run(Task.Expect.SUCCESS)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        if (!seenJavaSEDependency.get()) {
+            throw new AssertionError("Didn't find the java.se dependency!");
+        }
+    }
+        private Consumer<com.sun.source.util.JavacTask> verifyJavaSEDependency(
+                boolean expectedTransitive,
+                AtomicBoolean seenJavaSEDependency) {
+            return t -> {
+                    t.addTaskListener(new TaskListener() {
+                        @Override
+                        public void finished(TaskEvent e) {
+                            if (e.getKind() == TaskEvent.Kind.ANALYZE) {
+                                ModuleElement javaBase =
+                                        t.getElements().getModuleElement("java.base");
+                                ModuleElement javaSE =
+                                        t.getElements().getModuleElement("java.se");
+                                RequiresDirective requiresJavaBase =
+                                        javaSE.getDirectives()
+                                              .stream()
+                                              .filter(d -> d.getKind() == DirectiveKind.REQUIRES)
+                                              .map(d -> (RequiresDirective) d)
+                                              .filter(d -> d.getDependency() == javaBase)
+                                              .findAny()
+                                              .orElseThrow();
+                                if (requiresJavaBase.isTransitive() != expectedTransitive) {
+                                    throw new AssertionError("Expected: " + expectedTransitive + ", " +
+                                                             "but got: " + requiresJavaBase.isTransitive());
+                                }
+                                seenJavaSEDependency.set(true);
+                            }
+                        }
+                    });
+                };
+        }
+
+    @Test //JDK-8387377
+    public void testLargeNumberOfAutomaticModules(Path base) throws Exception {
+        final int moduleCount = 1_000;
+        Path lib = base.resolve("lib");
+
+        tb.createDirectories(lib);
+
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
+            JavaFileManager generateAutomaticModules = new ForwardingJavaFileManager<JavaFileManager>(fm) {
+                @Override
+                public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
+                    if (location == StandardLocation.MODULE_PATH) {
+                        Set<Location> modules = new HashSet<>();
+                        for (int i = 0; i < moduleCount; i++) {
+                            modules.add(new AutomaticModuleLocation("m" + i));
+                        }
+                        return List.of(modules);
+                    }
+                    return super.listLocationsForModules(location);
+                }
+                @Override
+                public String inferModuleName(Location location) throws IOException {
+                    return location instanceof AutomaticModuleLocation aut
+                            ? aut.name
+                            : super.inferModuleName(location);
+                }
+                private class AutomaticModuleLocation implements Location {
+                    private final String name;
+                    public AutomaticModuleLocation(String name) {
+                        this.name = name;
+                    }
+                    @Override
+                    public String getName() {
+                        return name;
+                    }
+                    @Override
+                    public boolean isModuleOrientedLocation() {
+                        return false;
+                    }
+                    @Override
+                    public boolean isOutputLocation() {
+                        return false;
+                    }
+                }
+            };
+            CompilationTask task =
+                    compiler.getTask(null,
+                                     generateAutomaticModules,
+                                     null,
+                                     List.of("--add-modules", "ALL-MODULE-PATH"),
+                                     null,
+                                     List.of(SimpleJavaFileObject.forSource(URI.create("mem://Test.java"),
+                                                                            "")));
+            task.call();
+        }
+    }
 }

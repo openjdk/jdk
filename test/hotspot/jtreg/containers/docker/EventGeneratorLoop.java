@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@ import jdk.jfr.Event;
 import jdk.jfr.Description;
 import jdk.jfr.Label;
 
+import java.util.concurrent.TimeUnit;
+
 
 // This class generates simple event in a loop for a specified time.
 public class EventGeneratorLoop {
@@ -44,16 +46,21 @@ public class EventGeneratorLoop {
             throw new IllegalArgumentException("Expecting one argument: time to run (seconds)");
         }
         int howLong = Integer.parseInt(args[0]);
+        long endTime = System.nanoTime() + TimeUnit.SECONDS.toNanos(howLong);
 
         System.out.println(MAIN_METHOD_STARTED + ", argument is " + howLong);
 
-        for (int i=0; i < howLong; i++) {
+        int count = 0;
+        while (System.nanoTime() < endTime) {
             SimpleEvent ev = new SimpleEvent();
             ev.msg = "Hello";
-            ev.count = i;
+            ev.count = count++;
             ev.commit();
 
-            try { Thread.sleep(1000); } catch (InterruptedException e) {}
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ignore) {
+            }
             System.out.print(".");
         }
 

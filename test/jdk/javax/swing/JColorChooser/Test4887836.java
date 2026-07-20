@@ -26,10 +26,12 @@ import java.awt.Font;
 import javax.swing.JColorChooser;
 import javax.swing.UIManager;
 
+import jtreg.SkippedException;
+
 /*
  * @test
  * @bug 4887836
- * @library /java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame
  * @summary Checks for white area under the JColorChooser Swatch tab
  * @run main/manual Test4887836
@@ -38,6 +40,13 @@ import javax.swing.UIManager;
 public class Test4887836 {
 
     public static void main(String[] args) throws Exception {
+
+        // ColorChooser UI design is different for GTK L&F.
+        // There is no Swatches tab available for GTK L&F, skip the testing.
+        if (UIManager.getLookAndFeel().getName().contains("GTK")) {
+            throw new SkippedException("Test not applicable for GTK L&F");
+        }
+
         String instructions = """
                                 If you do not see white area under the \"Swatches\" tab,
                                 then test passed, otherwise it failed.""";
@@ -45,9 +54,7 @@ public class Test4887836 {
         PassFailJFrame.builder()
                 .title("Test4759306")
                 .instructions(instructions)
-                .rows(5)
                 .columns(40)
-                .testTimeOut(10)
                 .testUI(Test4887836::createColorChooser)
                 .build()
                 .awaitAndCheck();

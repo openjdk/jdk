@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
 /* @test 1.4 00/10/18
    @bug 4231349
    @summary test runtime.exec on windows for extra space in cmd
+   @requires (os.family == "windows")
  */
 import java.io.*;
 
 public class Space {
     public static void main(String[] args) throws Exception {
-        if (File.separatorChar == '\\') {
-            try {
+        try {
             Process p = Runtime.getRuntime().exec( "cmd /c echo hello" );
             BufferedReader reader = new BufferedReader(
                                     new InputStreamReader(p.getInputStream()));
@@ -38,10 +38,9 @@ public class Space {
             String echo = reader.readLine();
             if (echo.length() == 6)
                 throw new RuntimeException("Extra space in command.");
-            } catch (IOException e) {
-            // not Win NT - cmd doesnt exist
+        } catch (IOException e) {
+            // not Win NT - cmd doesn't exist
             return;
-            }
         }
     }
 }

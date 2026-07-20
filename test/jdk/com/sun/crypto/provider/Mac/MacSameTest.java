@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,8 @@ public class MacSameTest implements MacTest {
             NoSuchProviderException, InvalidKeyException {
         Mac mac;
         try {
-            mac = Mac.getInstance(algo, "SunJCE");
+            mac = Mac.getInstance(algo,
+                    System.getProperty("test.provider.name", "SunJCE"));
         } catch (NoSuchAlgorithmException nsae) {
             // depending on Solaris configuration,
             // it can support HMAC or not with Mac

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 #include "decoder_elf.hpp"
@@ -115,6 +114,11 @@ ElfFile* ElfDecoder::get_elf_file(const char* filepath) {
 
   file = new (std::nothrow)ElfFile(filepath);
   if (file != nullptr) {
+    _decoder_status = file->get_status();
+    if (has_error()) {
+      delete file;
+      return nullptr;
+    }
     if (_opened_elf_files != nullptr) {
       file->set_next(_opened_elf_files);
     }

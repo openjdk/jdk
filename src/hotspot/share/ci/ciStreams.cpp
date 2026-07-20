@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciKlass.hpp"
@@ -127,7 +126,7 @@ Bytecodes::Code ciBytecodeStream::next_wide_or_table(Bytecodes::Code bc) {
   }
 
   default:
-    fatal("unhandled bytecode");
+    fatal("unhandled bytecode : Current Method = %s, BCI = %d, OPCODE = %s (0x%X)", _method->name()->as_utf8(), cur_bci(), Bytecodes::name(bc), bc);
   }
   return bc;
 }

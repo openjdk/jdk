@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "threadHelper.inline.hpp"
@@ -106,7 +105,7 @@ TEST_VM(SymbolTable, test_symbol_refcount_parallel) {
   char symbol_name[symbol_name_length];
   // Find a symbol where there will probably be only one instance.
   for (int i = 0; i < 100; i++) {
-    os::snprintf(symbol_name, symbol_name_length, "some_symbol%d", i);
+    os::snprintf_checked(symbol_name, symbol_name_length, "some_symbol%d", i);
     TempNewSymbol ts = SymbolTable::new_symbol(symbol_name);
     if (ts->refcount() == 1) {
       EXPECT_TRUE(ts->refcount() == 1) << "Symbol is just created";
@@ -159,7 +158,7 @@ TEST_VM(SymbolTable, test_cleanup_delay) {
   constexpr int symbol_name_length = 30;
   char symbol_name[symbol_name_length];
   for (uint i = 1; i < TempSymbolCleanupDelayer::QueueSize; i++) {
-    os::snprintf(symbol_name, symbol_name_length, "temp-filler-%d", i);
+    os::snprintf_checked(symbol_name, symbol_name_length, "temp-filler-%d", i);
     TempNewSymbol s = SymbolTable::new_symbol(symbol_name);
     ASSERT_EQ(s->refcount(), 2) << "TempNewSymbol refcount just created is 2";
   }
@@ -178,7 +177,7 @@ TEST_VM(SymbolTable, test_cleanup_delay_drain) {
   char symbol_name[symbol_name_length];
   TempNewSymbol symbols[TempSymbolCleanupDelayer::QueueSize] = {};
   for (uint i = 0; i < TempSymbolCleanupDelayer::QueueSize; i++) {
-    os::snprintf(symbol_name, symbol_name_length, "temp-%d", i);
+    os::snprintf_checked(symbol_name, symbol_name_length, "temp-%d", i);
     TempNewSymbol s = SymbolTable::new_symbol(symbol_name);
     symbols[i] = s;
   }

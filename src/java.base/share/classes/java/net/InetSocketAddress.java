@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,10 +204,6 @@ public class InetSocketAddress
      * <p>
      * An attempt will be made to resolve the hostname into an InetAddress.
      * If that attempt fails, the address will be flagged as <I>unresolved</I>.
-     * <p>
-     * If there is a security manager, its {@code checkConnect} method
-     * is called with the host name as its argument to check the permission
-     * to resolve it. This could result in a SecurityException.
      * <P>
      * A valid port value is between 0 and 65535.
      * A port number of {@code zero} will let the system pick up an
@@ -217,9 +213,6 @@ public class InetSocketAddress
      * @param   port    The port number
      * @throws IllegalArgumentException if the port parameter is outside the range
      * of valid port values, or if the hostname parameter is {@code null}.
-     * @throws SecurityException if a security manager is present and
-     *                           permission to resolve the host name is
-     *                           denied.
      * @see     #isUnresolved()
      */
     public InetSocketAddress(String hostname, int port) {

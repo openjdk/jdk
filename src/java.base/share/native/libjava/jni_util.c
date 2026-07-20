@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ JNU_ThrowByNameWithLastError(JNIEnv *env, const char *name,
             (*env)->Throw(env, x);
         }
     }
-    if (!(*env)->ExceptionOccurred(env)) {
+    if (!(*env)->ExceptionCheck(env)) {
         JNU_ThrowByName(env, name, defaultDetail);
     }
 }
@@ -166,7 +166,7 @@ JNU_ThrowByNameWithMessageAndLastError
         }
     }
 
-    if (!(*env)->ExceptionOccurred(env)) {
+    if (!(*env)->ExceptionCheck(env)) {
         if (messagelen > 0) {
             JNU_ThrowByName(env, name, message);
         } else {

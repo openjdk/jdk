@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,69 +23,88 @@
 
 /**
  * @test
- * @bug 8331681
+ * @bug 8331681 8351435
  * @summary Verify the java.base's console provider handles the prompt correctly.
  * @library /test/lib
- * @run main/othervm --limit-modules java.base ConsolePromptTest
- * @run main/othervm -Djdk.console=java.base ConsolePromptTest
  */
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Objects;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 
 public class ConsolePromptTest {
+
+    private static final List<List<String>> VARIANTS = List.of(
+        List.of("--limit-modules", "java.base"),
+        List.of("-Djdk.console=java.base")
+    );
 
     public static void main(String... args) throws Throwable {
         for (Method m : ConsolePromptTest.class.getDeclaredMethods()) {
             if (m.getName().startsWith("test")) {
-                m.invoke(new ConsolePromptTest());
+                for (List<String> variant : VARIANTS) {
+                    try {
+                        m.invoke(new ConsolePromptTest(variant));
+                    } catch (InvocationTargetException e) {
+                        if (e.getCause() instanceof SkippedException se) {
+                            throw se;
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
             }
         }
     }
 
+    private final List<String> extraParams;
+
+    public ConsolePromptTest(List<String> extraParams) {
+        this.extraParams = extraParams;
+    }
+
     void testCorrectOutputReadLine() throws Exception {
-        doRunConsoleTest("testCorrectOutputReadLine", "inp", "%s");
+        doRunConsoleTest("testCorrectOutputReadLine");
     }
 
     void testCorrectOutputReadPassword() throws Exception {
-        doRunConsoleTest("testCorrectOutputReadPassword", "inp", "%s");
+        doRunConsoleTest("testCorrectOutputReadPassword");
     }
 
-    void doRunConsoleTest(String testName,
-                          String input,
-                          String expectedOut) throws Exception {
-        ProcessBuilder builder =
-                ProcessTools.createTestJavaProcessBuilder(ConsoleTest.class.getName(),
-                                                          testName);
-        OutputAnalyzer output = ProcessTools.executeProcess(builder, input);
-
-        output.waitFor();
-
-        if (output.getExitValue() != 0) {
-            throw new AssertionError("Unexpected return value: " + output.getExitValue() +
-                                     ", actualOut: " + output.getStdout() +
-                                     ", actualErr: " + output.getStderr());
+    void doRunConsoleTest(String testName) throws Exception {
+        // check "expect" command availability
+        var expect = Paths.get("/usr/bin/expect");
+        if (!Files.exists(expect) || !Files.isExecutable(expect)) {
+            throw new SkippedException("'expect' command not found. Test ignored.");
         }
 
-        String actualOut = output.getStdout();
+        // invoking "expect" command
+        var testSrc = System.getProperty("test.src", ".");
+        var jdkDir = System.getProperty("test.jdk");
 
-        if (!Objects.equals(expectedOut, actualOut)) {
-            throw new AssertionError("Unexpected stdout content. " +
-                                     "Expected: '" + expectedOut + "'" +
-                                     ", got: '" + actualOut + "'");
-        }
+        List<String> command = new ArrayList<>();
 
-        String expectedErr = "";
-        String actualErr = output.getStderr();
+        command.add("expect");
+        command.add("-n");
+        command.add(testSrc + "/consolePrompt.exp");
+        command.add("%s");
+        command.add(jdkDir + "/bin/java");
+        command.addAll(extraParams);
+        command.add("-cp");
+        command.add(System.getProperty("java.class.path"));
+        command.add(ConsoleTest.class.getName());
+        command.add(testName);
 
-        if (!Objects.equals(expectedErr, actualErr)) {
-            throw new AssertionError("Unexpected stderr content. " +
-                                     "Expected: '" + expectedErr + "'" +
-                                     ", got: '" + actualErr + "'");
-        }
+        OutputAnalyzer output = ProcessTools.executeProcess(command.toArray(String[]::new));
+        output.reportDiagnosticSummary();
+        output.shouldHaveExitValue(0);
     }
 
     public static class ConsoleTest {

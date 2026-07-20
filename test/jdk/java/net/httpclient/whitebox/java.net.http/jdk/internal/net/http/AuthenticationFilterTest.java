@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
 package jdk.internal.net.http;
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.testng.annotations.AfterClass;
 
 import java.lang.ref.Reference;
 import java.net.Authenticator;
@@ -38,7 +35,6 @@ import java.net.URL;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.security.AccessController;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -56,12 +52,15 @@ import static java.util.stream.Collectors.joining;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AuthenticationFilterTest {
 
-    @DataProvider(name = "uris")
-    public Object[][] responses() {
+    public static Object[][] responses() {
         return new Object[][] {
                 { "http://foo.com", HTTP_1_1, null },
                 { "http://foo.com", HTTP_2, null },
@@ -136,7 +135,8 @@ public class AuthenticationFilterTest {
         return s == null || s.isEmpty();
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("responses")
     public void testAuthentication(String uri, Version v, String proxy) throws Exception {
         String test = format("testAuthentication: {\"%s\", %s, \"%s\"}", uri, v, proxy);
         try {
@@ -147,8 +147,8 @@ public class AuthenticationFilterTest {
         }
     }
 
-    @AfterClass
-    public void printDiagnostic() {
+    @AfterAll
+    public static void printDiagnostic() {
         if (FAILED.isEmpty()) {
             out.println("All tests passed");
             return;
@@ -184,7 +184,7 @@ public class AuthenticationFilterTest {
         HttpClientImpl client = facade.impl;
         AuthenticationFilter filter = new AuthenticationFilter();
 
-        assertEquals(authenticator.COUNTER.get(), 0);
+        assertEquals(0, authenticator.COUNTER.get());
 
         // Creates the first HttpRequestImpl, and call filter.request() with
         // it. The expectation is that the filter will not add any credentials,
@@ -196,15 +196,14 @@ public class AuthenticationFilterTest {
         HttpRequestImpl origReq = new HttpRequestImpl(reqBuilder);
         HttpRequestImpl req = new HttpRequestImpl(origReq, ps);
         MultiExchange<?> multi = new MultiExchange<Void>(origReq, req, client,
-                BodyHandlers.replacing(null),
-                null, AccessController.getContext());
+                BodyHandlers.replacing(null), null);
         Exchange<?> exchange = new Exchange<>(req, multi);
         out.println("\nSimulating unauthenticated request to " + uri);
         filter.request(req, multi);
         HttpHeaders hdrs = req.getSystemHeadersBuilder().build();
         assertFalse(hdrs.firstValue(authorization(true)).isPresent());
         assertFalse(hdrs.firstValue(authorization(false)).isPresent());
-        assertEquals(authenticator.COUNTER.get(), 0);
+        assertEquals(0, authenticator.COUNTER.get());
 
         // Creates the Response to the first request, and call filter.response
         // with it. That response has a 401 or 407 status code.
@@ -223,9 +222,9 @@ public class AuthenticationFilterTest {
 
         out.println("Checking filter's response to "
                 + unauthorized + " from " + uri);
-        assertTrue(next != null, "next should not be null");
+        assertNotNull(next, "next should not be null");
         String[] up = check(reqURI, next.getSystemHeadersBuilder().build(), proxy);
-        assertEquals(authenticator.COUNTER.get(), 1);
+        assertEquals(1, authenticator.COUNTER.get());
 
         // Now simulate a new successful exchange to get the credentials in the cache
         // We first call filter.request with the request that was previously
@@ -243,8 +242,8 @@ public class AuthenticationFilterTest {
         HttpHeaders h = HttpHeaders.of(Collections.emptyMap(), ACCEPT_ALL);
         response = new Response(next, exchange,h, null, 200, v);
         next = filter.response(response);
-        assertTrue(next == null, "next should be null");
-        assertEquals(authenticator.COUNTER.get(), 1);
+        assertNull(next, "next should be null");
+        assertEquals(1, authenticator.COUNTER.get());
 
         // Now verify that the cache is used for the next request to the same server.
         // We're going to create a request to the same server by appending "/bar" to
@@ -266,14 +265,13 @@ public class AuthenticationFilterTest {
         HttpRequestImpl origReq2 = new HttpRequestImpl(reqBuilder2);
         HttpRequestImpl req2 = new HttpRequestImpl(origReq2, ps);
         MultiExchange<?> multi2 = new MultiExchange<Void>(origReq2, req2, client,
-                HttpResponse.BodyHandlers.replacing(null),
-                null, AccessController.getContext());
+                HttpResponse.BodyHandlers.replacing(null), null);
         filter.request(req2, multi2);
         out.println("Check that filter has added credentials from cache for " + reqURI2
                 + " with proxy " + req2.proxy());
         String[] up2 = check(reqURI, req2.getSystemHeadersBuilder().build(), proxy);
         assertTrue(Arrays.deepEquals(up, up2), format("%s:%s != %s:%s", up2[0], up2[1], up[0], up[1]));
-        assertEquals(authenticator.COUNTER.get(), 1);
+        assertEquals(1, authenticator.COUNTER.get());
 
         // Now verify that the cache is not used if we send a request to a different server.
         // We're going to append ".bar" to the original request host name, and feed that
@@ -298,8 +296,7 @@ public class AuthenticationFilterTest {
         HttpRequestImpl origReq3 = new HttpRequestImpl(reqBuilder3);
         HttpRequestImpl req3 = new HttpRequestImpl(origReq3, ps);
         MultiExchange<?> multi3 = new MultiExchange<Void>(origReq3, req3, client,
-                HttpResponse.BodyHandlers.replacing(null),
-                null, AccessController.getContext());
+                HttpResponse.BodyHandlers.replacing(null), null);
         filter.request(req3, multi3);
         HttpHeaders h3 = req3.getSystemHeadersBuilder().build();
         if (proxy == null) {
@@ -320,7 +317,7 @@ public class AuthenticationFilterTest {
                 java.util.stream.Stream.of(getAuthorization(h3, false))
                         .collect(joining(":")));
         assertFalse(h3.firstValue(authorization(false)).isPresent());
-        assertEquals(authenticator.COUNTER.get(), 1);
+        assertEquals(1, authenticator.COUNTER.get());
 
         // Now we will verify that credentials for proxies are not used for servers and
         // conversely.
@@ -342,8 +339,7 @@ public class AuthenticationFilterTest {
         HttpRequestImpl origReq4 = new HttpRequestImpl(reqBuilder4);
         HttpRequestImpl req4 = new HttpRequestImpl(origReq4, fakeProxy);
         MultiExchange<?> multi4 = new MultiExchange<Void>(origReq4, req4, client,
-                HttpResponse.BodyHandlers.replacing(null), null,
-                AccessController.getContext());
+                HttpResponse.BodyHandlers.replacing(null), null);
         out.println("Simulating new request to " + reqURI4 + " with a proxy " + req4.proxy());
         assertTrue((req4.proxy() == null) == (proxy != null),
                 "(req4.proxy() == null) == (proxy != null) should be true");
@@ -370,7 +366,7 @@ public class AuthenticationFilterTest {
             String[] up4 = check(reqURI, h4, proxy);
             assertTrue(Arrays.deepEquals(up, up4),  format("%s:%s != %s:%s", up4[0], up4[1], up[0], up[1]));
         }
-        assertEquals(authenticator.COUNTER.get(), 1);
+        assertEquals(1, authenticator.COUNTER.get());
 
         if (proxy != null) {
             // Now if we were using a proxy, we're going to send the same request than
@@ -383,10 +379,9 @@ public class AuthenticationFilterTest {
             HttpRequestImpl origReq5 = new HttpRequestImpl(reqBuilder5);
             HttpRequestImpl req5 = new HttpRequestImpl(origReq5, NO_PROXY);
             MultiExchange<?> multi5 = new MultiExchange<Void>(origReq5, req5, client,
-                    HttpResponse.BodyHandlers.replacing(null), null,
-                    AccessController.getContext());
+                    HttpResponse.BodyHandlers.replacing(null), null);
             out.println("Simulating new request to " + reqURI + " with a proxy " + req5.proxy());
-            assertTrue(req5.proxy() == null, "req5.proxy() should be null");
+            assertNull(req5.proxy(), "req5.proxy() should be null");
             Exchange<?> exchange5 = new Exchange<>(req5, multi5);
             filter.request(req5, multi5);
             out.println("Check that filter has not added server credentials from cache for "
@@ -404,7 +399,7 @@ public class AuthenticationFilterTest {
                     java.util.stream.Stream.of(getAuthorization(h5, true))
                             .collect(joining(":")));
             assertFalse(h5.firstValue(authorization(true)).isPresent());
-            assertEquals(authenticator.COUNTER.get(), 1);
+            assertEquals(1, authenticator.COUNTER.get());
 
             // Now simulate a 401 response from the server
             HttpHeadersBuilder headers5Builder = new HttpHeadersBuilder();
@@ -416,11 +411,11 @@ public class AuthenticationFilterTest {
             out.println("Simulating " + unauthorized
                     + " response from " + uri);
             HttpRequestImpl next5 = filter.response(response5);
-            assertEquals(authenticator.COUNTER.get(), 2);
+            assertEquals(2, authenticator.COUNTER.get());
 
             out.println("Checking filter's response to "
                     + unauthorized + " from " + uri);
-            assertTrue(next5 != null, "next5 should not be null");
+            assertNotNull(next5, "next5 should not be null");
             String[] up5 = check(reqURI, next5.getSystemHeadersBuilder().build(), null);
 
             // now simulate a 200 response from the server
@@ -429,7 +424,7 @@ public class AuthenticationFilterTest {
             h = HttpHeaders.of(Map.of(), ACCEPT_ALL);
             response5 = new Response(next5, exchange5, h, null, 200, v);
             filter.response(response5);
-            assertEquals(authenticator.COUNTER.get(), 2);
+            assertEquals(2, authenticator.COUNTER.get());
 
             // now send the request again, with proxy this time, and it should have both
             // server auth and proxy auth
@@ -437,10 +432,9 @@ public class AuthenticationFilterTest {
             HttpRequestImpl origReq6 = new HttpRequestImpl(reqBuilder6);
             HttpRequestImpl req6 = new HttpRequestImpl(origReq6, ps);
             MultiExchange<?> multi6 = new MultiExchange<Void>(origReq6, req6, client,
-                    HttpResponse.BodyHandlers.replacing(null), null,
-                    AccessController.getContext());
+                    HttpResponse.BodyHandlers.replacing(null), null);
             out.println("Simulating new request to " + reqURI + " with a proxy " + req6.proxy());
-            assertTrue(req6.proxy() != null, "req6.proxy() should not be null");
+            assertNotNull(req6.proxy(), "req6.proxy() should not be null");
             Exchange<?> exchange6 = new Exchange<>(req6, multi6);
             filter.request(req6, multi6);
             out.println("Check that filter has added server credentials from cache for "
@@ -451,7 +445,7 @@ public class AuthenticationFilterTest {
                     + reqURI + " (proxy: " + req6.proxy()  + ")");
             String[] up6 = check(reqURI, h6, proxy);
             assertTrue(Arrays.deepEquals(up, up6), format("%s:%s != %s:%s", up6[0], up6[1], up[0], up[1]));
-            assertEquals(authenticator.COUNTER.get(), 2);
+            assertEquals(2, authenticator.COUNTER.get());
         }
 
         if (proxy == null && uri.contains("x/y/z")) {
@@ -461,10 +455,9 @@ public class AuthenticationFilterTest {
             HttpRequestImpl origReq7 = new HttpRequestImpl(reqBuilder7);
             HttpRequestImpl req7 = new HttpRequestImpl(origReq7, ps);
             MultiExchange<?> multi7 = new MultiExchange<Void>(origReq7, req7, client,
-                    HttpResponse.BodyHandlers.replacing(null), null,
-                    AccessController.getContext());
+                    HttpResponse.BodyHandlers.replacing(null), null);
             out.println("Simulating new request to " + reqURI7 + " with a proxy " + req7.proxy());
-            assertTrue(req7.proxy() == null, "req7.proxy() should be null");
+            assertNull(req7.proxy(), "req7.proxy() should be null");
             Exchange<?> exchange7 = new Exchange<>(req7, multi7);
             filter.request(req7, multi7);
             out.println("Check that filter has not added server credentials from cache for "
@@ -483,7 +476,7 @@ public class AuthenticationFilterTest {
                     java.util.stream.Stream.of(getAuthorization(h7, true))
                             .collect(joining(":")));
             assertFalse(h7.firstValue(authorization(true)).isPresent());
-            assertEquals(authenticator.COUNTER.get(), 1);
+            assertEquals(1, authenticator.COUNTER.get());
 
         }
 
@@ -524,7 +517,7 @@ public class AuthenticationFilterTest {
         out.println("user:password: " + u + ":" + p);
         String protocol = proxy != null ? "http" : reqURI.getScheme();
         String expectedUser = "u." + protocol;
-        assertEquals(u, expectedUser);
+        assertEquals(expectedUser, u);
         String host = proxy == null ? reqURI.getHost() :
                 proxy.substring(0, proxy.lastIndexOf(':'));
         int port = proxy == null ? reqURI.getPort()
@@ -532,7 +525,7 @@ public class AuthenticationFilterTest {
         String expectedPw = concat(requestorType(proxy!=null),
                 "basic", protocol, host,
                 port, "earth", reqURI.toURL());
-        assertEquals(p, expectedPw);
+        assertEquals(expectedPw, p);
         return new String[] {u, p};
     }
 

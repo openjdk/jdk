@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
@@ -117,7 +116,7 @@ void LogTestFixture::clear_snapshot() {
   for (size_t i = 0; i < _n_snapshots; i++) {
     os::free(_configuration_snapshot[i]);
   }
-  FREE_C_HEAP_ARRAY(char*, _configuration_snapshot);
+  FREE_C_HEAP_ARRAY(_configuration_snapshot);
   _configuration_snapshot = nullptr;
   _n_snapshots = 0;
 }

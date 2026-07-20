@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, BELLSOFT. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
 *
 * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
-*                   -server -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+*                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
 *                   compiler.intrinsics.math.TestMinMaxIntrinsics
 */
 

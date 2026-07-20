@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 # @test
 # @bug 4990825
+# @requires vm.gc.Parallel
 # @run shell jstatGcOldCapacityOutput1.sh
-# @summary Test that output of 'jstat -gcoldcapcaity 0' has expected line counts
+# @summary Test that output of 'jstat -gcoldcapacity 0' has expected line counts
 
 . ${TESTSRC-.}/../../jvmstat/testlibrary/utils.sh
 
@@ -34,4 +35,9 @@ verify_os
 JSTAT="${TESTJAVA}/bin/jstat"
 
 ${JSTAT} ${COMMON_JSTAT_FLAGS} -gcoldcapacity 0 2>&1 | awk -f ${TESTSRC}/gcOldCapacityOutput1.awk
+RC=$?
+if [ $RC -ne 0 ]; then
+  exit $RC
+fi
+
 ${JSTAT} ${COMMON_JSTAT_FLAGS} -J-XX:+UseParallelGC -gcoldcapacity 0 2>&1 | awk -f ${TESTSRC}/gcOldCapacityOutput1.awk

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,12 @@ package sun.security.provider;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
+import java.security.DigestException;
 import java.security.ProviderException;
 import java.util.Arrays;
 import java.util.Objects;
 
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.Math.min;
@@ -95,10 +97,29 @@ public abstract class SHA3 extends DigestBase {
     private SHA3(String name, int digestLength, byte suffix, int c) {
         super(name, digestLength, (WIDTH - c));
         this.suffix = suffix;
+        blockSizeCheck();
+    }
+
+    @Override
+    protected void implDigestFixedLengthPreprocessed(
+            byte[] input, int inLen, byte[] output, int outOffset, int outLen) {
+        implReset();
+
+        implCompress(input, 0);
+        implDigest0(output, outOffset, outLen);
     }
 
     private void implCompressCheck(byte[] b, int ofs) {
         Objects.requireNonNull(b);
+        Preconditions.checkIndex(ofs + blockSize - 1, b.length, Preconditions.AIOOBE_FORMATTER);
+    }
+
+    private void blockSizeCheck() {
+        switch(blockSize) {
+            case 72, 104, 136, 144, 168: break;
+            default:
+                throw new ProviderException("Invalid SHA3 blocksize:" + blockSize);
+        }
     }
 
     /**
@@ -134,9 +155,6 @@ public abstract class SHA3 extends DigestBase {
      * DigestBase calls implReset() when necessary.
      */
     void implDigest(byte[] out, int ofs) {
-        // Moving this allocation to the block where it is used causes a little
-        // performance drop, that is why it is here.
-        byte[] byteState = new byte[8];
         if (engineGetDigestLength() == 0) {
             // This is an XOF, so the digest() call is illegal.
             throw new ProviderException("Calling digest() is not allowed in an XOF");
@@ -144,8 +162,12 @@ public abstract class SHA3 extends DigestBase {
 
         finishAbsorb();
 
+        implDigest0(out, ofs, engineGetDigestLength());
+    }
+
+    void implDigest0(byte[] out, int ofs, int outLen) {
         int availableBytes = blockSize;
-        int numBytes = engineGetDigestLength();
+        int numBytes = outLen;
 
         while (numBytes > availableBytes) {
             for (int i = 0; i < availableBytes / 8; i++) {
@@ -161,6 +183,10 @@ public abstract class SHA3 extends DigestBase {
             asLittleEndian.set(out, ofs, state[i]);
             ofs += 8;
         }
+
+        // Moving this allocation to the block where it is used causes a little
+        // performance drop, that is why it is here.
+        byte[] byteState = new byte[8];
         if (numBytes % 8 != 0) {
             asLittleEndian.set(byteState, 0, state[numLongs]);
             System.arraycopy(byteState, 0, out, ofs, numBytes % 8);
@@ -465,6 +491,11 @@ public abstract class SHA3 extends DigestBase {
             return engineDigest();
         }
 
+        public int digest(byte[] out, int offs, int len)
+                throws DigestException {
+            return engineDigest(out, offs, len);
+        }
+
         public void squeeze(byte[] output, int offset, int numBytes) {
             implSqueeze(output, offset, numBytes);
         }
@@ -474,8 +505,27 @@ public abstract class SHA3 extends DigestBase {
 
         public void reset() {
             engineReset();
+            // engineReset (final in DigestBase) skips implReset if there's
+            // no update. This works for MessageDigest, since digest() always
+            // resets. But for XOF, squeeze() may be called without update,
+            // and still modifies state. So we always call implReset here
+            // to ensure correct behavior.
+            implReset();
         }
     }
+
+    public static final class SHAKE128Hash extends SHA3 {
+        public SHAKE128Hash() {
+            super("SHAKE128-256", 32, (byte) 0x1F, 32);
+        }
+    }
+
+    public static final class SHAKE256Hash extends SHA3 {
+        public SHAKE256Hash() {
+            super("SHAKE256-512", 64, (byte) 0x1F, 64);
+        }
+    }
+
 
     /*
      * The SHAKE128 extendable output function.

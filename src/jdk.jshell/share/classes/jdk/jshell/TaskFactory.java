@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -717,7 +717,7 @@ class TaskFactory {
                 //if it was not enhanced yet:
                 //ignore any errors:
                 JavaFileObject prev = log.useSource(null);
-                DiscardDiagnosticHandler h = new DiscardDiagnosticHandler(log);
+                DiscardDiagnosticHandler h = log.new DiscardDiagnosticHandler();
                 parserFactory.runPermitIntersectionTypes(() -> {
                     try {
                         //parse the type as a cast, i.e. "(<typeName>) x". This is to support
@@ -819,9 +819,9 @@ class TaskFactory {
         }
 
         @Override
-        public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepEndPos, boolean keepLineMap, boolean parseModuleInfo) {
+        public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepLineMap, boolean parseModuleInfo) {
             com.sun.tools.javac.parser.Lexer lexer = scannerFactory.newScanner(input, keepDocComments);
-            return new JavacParser(this, lexer, keepDocComments, keepLineMap, keepEndPos, parseModuleInfo) {
+            return new JavacParser(this, lexer, keepDocComments, keepLineMap, parseModuleInfo) {
                 @Override
                 public JCExpression parseType(boolean allowVar, com.sun.tools.javac.util.List<JCTree.JCAnnotation> annotations) {
                     int pos = token.pos;

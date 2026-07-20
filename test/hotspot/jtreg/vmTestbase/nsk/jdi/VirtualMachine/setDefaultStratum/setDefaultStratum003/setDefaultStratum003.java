@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,9 @@ package nsk.jdi.VirtualMachine.setDefaultStratum.setDefaultStratum003;
 
 import java.io.*;
 import java.util.*;
+import com.sun.jdi.ReferenceType;
 import com.sun.jdi.request.*;
+import com.sun.jdi.ThreadReference;
 import nsk.share.Consts;
 import nsk.share.jdi.EventHandler;
 import nsk.share.jdi.sde.*;
@@ -150,8 +152,12 @@ public class setDefaultStratum003 extends SDEDebugger {
         StepEventListener stepEventListener = new StepEventListener();
         eventHandler.addListener(stepEventListener);
 
+        ReferenceType debuggeeClass = debuggee.classByName(SDEDebuggee.class.getName());
+        ThreadReference mainThread =
+            debuggee.threadByFieldNameOrThrow(debuggeeClass, "mainThread",
+                                              SDEDebuggee.mainThreadName);
         StepRequest stepRequest = debuggee.getEventRequestManager().createStepRequest(
-                debuggee.threadByName(SDEDebuggee.mainThreadName),
+                mainThread,
                 StepRequest.STEP_LINE,
                 StepRequest.STEP_INTO);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ typedef struct {
 
 #define UNSAFE_TO_SUB(a, b) \
     (((b >= 0) && (a < 0) && (a < (INT_MIN + b))) || \
-     ((b < 0) && (a >= 0) && (-b > (INT_MAX - a)))) \
+     ((b < 0) && (a >= 0) && (a > (INT_MAX + b)))) \
 
 /*
  * The SurfaceDataRasInfo structure is used to pass in and return various

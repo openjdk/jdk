@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -85,7 +84,7 @@ static size_t probe_valid_max_address_bit() {
       munmap(result_addr, page_size);
     }
   }
-  log_info_p(gc, init)("Probing address space for the highest valid bit: " SIZE_FORMAT, max_address_bit);
+  log_info_p(gc, init)("Probing address space for the highest valid bit: %zu", max_address_bit);
   return MAX2(max_address_bit, MINIMUM_MAX_ADDRESS_BIT);
 #else // LINUX
   return DEFAULT_MAX_ADDRESS_BIT;
@@ -96,7 +95,7 @@ size_t ZPlatformAddressOffsetBits() {
   static const size_t valid_max_address_offset_bits = probe_valid_max_address_bit() + 1;
   const size_t max_address_offset_bits = valid_max_address_offset_bits - 3;
   const size_t min_address_offset_bits = max_address_offset_bits - 2;
-  const size_t address_offset = round_up_power_of_2(MaxHeapSize * ZVirtualToPhysicalRatio);
+  const size_t address_offset = ZGlobalsPointers::min_address_offset_request();
   const size_t address_offset_bits = log2i_exact(address_offset);
   return clamp(address_offset_bits, min_address_offset_bits, max_address_offset_bits);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 #define SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 
-#include "gc/serial/cSpaceCounters.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/serial/serialBlockOffsetTable.hpp"
 #include "gc/shared/generationCounters.hpp"
@@ -34,6 +33,7 @@
 
 class CardTableRS;
 class ContiguousSpace;
+class HSpaceCounters;
 
 // TenuredGeneration models the heap containing old (promoted/tenured) objects
 // contained in a single contiguous space. This generation is covered by a card
@@ -68,7 +68,7 @@ class TenuredGeneration: public Generation {
   ContiguousSpace*    _the_space;       // Actual space holding objects
 
   GenerationCounters* _gen_counters;
-  CSpaceCounters*     _space_counters;
+  HSpaceCounters*     _space_counters;
 
   // Avg amount promoted; used for avoiding promotion undo
   // This class does not update deviations if the sample is zero.
@@ -102,15 +102,9 @@ public:
   MemRegion prev_used_region() const { return _prev_used_region; }
   void save_used_region()   { _prev_used_region = used_region(); }
 
-  // Returns true if this generation cannot be expanded further
-  // without a GC.
-  bool is_maximal_no_gc() const {
-    return _virtual_space.uncommitted_size() == 0;
-  }
-
   HeapWord* block_start(const void* addr) const;
 
-  void scan_old_to_young_refs(HeapWord* saved_top_in_old_gen);
+  void scan_old_to_young_refs();
 
   bool is_in(const void* p) const;
 
@@ -132,21 +126,14 @@ public:
   // Allocate and returns a block of the requested size, or returns "null".
   // Assumes the caller has done any necessary locking.
   inline HeapWord* allocate(size_t word_size);
+  // Multi-threaded version.
+  inline HeapWord* par_allocate(size_t word_size);
 
   // Expand the old-gen then invoke allocate above.
   HeapWord* expand_and_allocate(size_t size);
 
   void gc_prologue();
   void gc_epilogue();
-
-  bool should_allocate(size_t word_size, bool is_tlab) {
-    bool result = false;
-    size_t overflow_limit = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
-    if (!is_tlab) {
-      result = (word_size > 0) && (word_size < overflow_limit);
-    }
-    return result;
-  }
 
   // Performance Counter support
   void update_counters();

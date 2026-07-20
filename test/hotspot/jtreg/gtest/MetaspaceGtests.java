@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,12 +40,14 @@
  * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=1
  */
 
-/* @test id=no-ccs
- * @summary Run metaspace-related gtests with compressed class pointers off
+
+/* @test id=UseCompactObjectHeaders
+ * @summary Run metaspace-related gtests with tiny classpointers
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @requires vm.bits == 64
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:-UseCompressedClassPointers
+ * @requires vm.debug
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UseCompactObjectHeaders
  */

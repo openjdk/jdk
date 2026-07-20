@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@ public class LoginModuleDebug {
                 // debug option set to true - no extra info
                 Arguments.of("debug",
                         "true",
-                        "krb5loginmodule:",
-                        "krb5loginmodule\\["),
+                        "krb5loginmodule\\[.*\\|main|" + DATE_REGEX + ".*\\]:",
+                        "krb5loginmodule:"),
                 // debug option set to false
                 Arguments.of("debug",
                         "false",
@@ -59,19 +59,9 @@ public class LoginModuleDebug {
                         "bar",
                         "",
                         "krb5loginmodule"),
-                // thread info only
+                // test for thread and timestamp info
                 Arguments.of("debug",
                         "true+thread",
-                        "krb5loginmodule\\[.*\\|main|\\.*java.*]:",
-                        "\\|" + DATE_REGEX + ".*\\]:"),
-                // timestamp info only
-                Arguments.of("debug",
-                        "true+timestamp",
-                        "krb5loginmodule\\[" + DATE_REGEX + ".*\\]",
-                        "\\|main\\]:"),
-                // both thread and timestamp
-                Arguments.of("debug",
-                        "true+timestamp+thread",
                         "krb5loginmodule\\[.*\\|main|" + DATE_REGEX + ".*\\]:",
                         "krb5loginmodule:")
         );

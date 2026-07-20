@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.awt.color.ICC_Profile;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -250,6 +251,24 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
                 } else {
                     newGuy = new MarkerSegment(buffer);
                     newGuy.loadData(buffer);
+                }
+                break;
+            case JPEG.APP1:
+                newGuy = new MarkerSegment(buffer);
+                newGuy.loadData(buffer);
+
+                if (newGuy.data.length > 5 &&
+                        newGuy.data[0] == 'E' &&
+                        newGuy.data[1] == 'x' &&
+                        newGuy.data[2] == 'i' &&
+                        newGuy.data[3] == 'f' &&
+                        newGuy.data[4] == 0) {
+                    try {
+                        newGuy = new ExifMarkerSegment(newGuy);
+                    } catch(Exception e) {
+                        // This is intentionally empty.
+                        // Now we fallback to keeping the generic MarkerSegment
+                    }
                 }
                 break;
             case JPEG.APP2:
@@ -706,6 +725,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
     // Implement Cloneable, but restrict access
 
+    @Override
     protected Object clone() {
         JPEGMetadata newGuy = null;
         try {
@@ -736,6 +756,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
     // Tree methods
 
+    @Override
     public Node getAsTree(String formatName) {
         if (formatName == null) {
             throw new IllegalArgumentException("null formatName!");
@@ -791,6 +812,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
     // Standard tree node methods
 
+    @Override
     protected IIOMetadataNode getStandardChromaNode() {
         hasAlpha = false;  // Unless we find otherwise
 
@@ -931,6 +953,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
         return chroma;
     }
 
+    @Override
     protected IIOMetadataNode getStandardCompressionNode() {
 
         IIOMetadataNode compression = new IIOMetadataNode("Compression");
@@ -961,6 +984,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
         return compression;
     }
 
+    @Override
     protected IIOMetadataNode getStandardDimensionNode() {
         // If we have a JFIF marker segment, we know a little
         // otherwise all we know is the orientation, which is always normal
@@ -1007,6 +1031,36 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
         return dim;
     }
 
+    @Override
+    protected IIOMetadataNode getStandardDocumentNode() {
+        IIOMetadataNode doc = null;
+
+        ExifMarkerSegment exifMarkerSegment =
+                (ExifMarkerSegment) findMarkerSegment
+                        (ExifMarkerSegment.class, true);
+
+        if (exifMarkerSegment != null) {
+            // If there is an Exif marker segment get the image creation time.
+            LocalDateTime ict = exifMarkerSegment.getImageCreationTime();
+            if (ict != null) {
+                doc = new IIOMetadataNode("Document");
+                IIOMetadataNode dateTime = new IIOMetadataNode("ImageCreationTime");
+                dateTime.setAttribute("year", String.valueOf(ict.getYear()));
+                dateTime.setAttribute("month", String.valueOf(ict.getMonthValue()));
+                dateTime.setAttribute("day", String.valueOf(ict.getDayOfMonth()));
+                dateTime.setAttribute("hour", String.valueOf(ict.getHour()));
+                dateTime.setAttribute("minute", String.valueOf(ict.getMinute()));
+                dateTime.setAttribute("second", String.valueOf(ict.getSecond()));
+                doc.appendChild(dateTime);
+            }
+        } else {
+            doc = super.getStandardDocumentNode();
+        }
+
+        return doc;
+    }
+
+    @Override
     protected IIOMetadataNode getStandardTextNode() {
         IIOMetadataNode text = null;
         // Add a text entry for each COM Marker Segment
@@ -1025,6 +1079,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
         return text;
     }
 
+    @Override
     protected IIOMetadataNode getStandardTransparencyNode() {
         IIOMetadataNode trans = null;
         if (hasAlpha == true) {
@@ -1038,10 +1093,12 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
     // Editing
 
+    @Override
     public boolean isReadOnly() {
         return false;
     }
 
+    @Override
     public void mergeTree(String formatName, Node root)
         throws IIOInvalidTreeException {
         if (formatName == null) {
@@ -2112,6 +2169,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
     }
 
 
+    @Override
     public void setFromTree(String formatName, Node root)
         throws IIOInvalidTreeException {
         if (formatName == null) {
@@ -2356,6 +2414,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
     //// End of writer support
 
+    @Override
     public void reset() {
         if (resetSequence != null) {  // Otherwise no need to reset
             markerSequence = resetSequence;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,10 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.ClassFileBuilder;
-import java.lang.classfile.ClassFileTransform;
+import java.lang.classfile.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-
-import java.lang.classfile.ClassBuilder;
-import java.lang.classfile.ClassElement;
-import java.lang.classfile.ClassTransform;
-import java.lang.classfile.ClassFileElement;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CodeTransform;
-import java.lang.classfile.FieldBuilder;
-import java.lang.classfile.FieldElement;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.FieldTransform;
-import java.lang.classfile.MethodBuilder;
-import java.lang.classfile.MethodElement;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.MethodTransform;
 
 public final class TransformImpl {
     // ClassTransform
@@ -138,9 +120,9 @@ public final class TransformImpl {
 
         @Override
         public ClassTransform andThen(ClassTransform next) {
-            if (next instanceof ClassMethodTransform cmt)
-                return new ClassMethodTransform(transform.andThen(cmt.transform),
-                                                mm -> filter.test(mm) && cmt.filter.test(mm));
+            // Optimized for shared _ -> true filter in ClassTransform.transformingMethods(MethodTransform)
+            if (next instanceof ClassMethodTransform(var nextTransform, var nextFilter) && filter == nextFilter)
+                return new ClassMethodTransform(transform.andThen(nextTransform), filter);
             else
                 return UnresolvedClassTransform.super.andThen(next);
         }
@@ -161,9 +143,9 @@ public final class TransformImpl {
 
         @Override
         public ClassTransform andThen(ClassTransform next) {
-            if (next instanceof ClassFieldTransform cft)
-                return new ClassFieldTransform(transform.andThen(cft.transform),
-                                               mm -> filter.test(mm) && cft.filter.test(mm));
+            // Optimized for shared _ -> true filter in ClassTransform.transformingFields(FieldTransform)
+            if (next instanceof ClassFieldTransform(var nextTransform, var nextFilter) && filter == nextFilter)
+                return new ClassFieldTransform(transform.andThen(nextTransform), filter);
             else
                 return UnresolvedClassTransform.super.andThen(next);
         }
@@ -226,8 +208,8 @@ public final class TransformImpl {
 
         @Override
         public MethodTransform andThen(MethodTransform next) {
-            return (next instanceof TransformImpl.MethodCodeTransform mct)
-                   ? new TransformImpl.MethodCodeTransform(xform.andThen(mct.xform))
+            return (next instanceof MethodCodeTransform(var nextXform))
+                   ? new TransformImpl.MethodCodeTransform(xform.andThen(nextXform))
                    : UnresolvedMethodTransform.super.andThen(next);
 
         }

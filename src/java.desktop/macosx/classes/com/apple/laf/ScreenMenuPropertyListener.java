@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.beans.*;
 import javax.accessibility.*;
 import javax.swing.*;
 
-class ScreenMenuPropertyListener implements PropertyChangeListener {
+final class ScreenMenuPropertyListener implements PropertyChangeListener {
     ScreenMenuPropertyHandler fMenu;
 
     ScreenMenuPropertyListener(final ScreenMenuPropertyHandler mc) {
@@ -42,6 +42,7 @@ class ScreenMenuPropertyListener implements PropertyChangeListener {
      * @param e A PropertyChangeEvent object describing the event source
      *       and the property that has changed.
      */
+    @Override
     public void propertyChange(final PropertyChangeEvent e) {
         final String propertyName = e.getPropertyName();
 

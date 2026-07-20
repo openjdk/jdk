@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- # @bug 8186087 8196748 8212807
+ # @bug 8186087 8196748 8212807 8268611
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.compiler
@@ -126,9 +126,9 @@ public class Basic extends MRTestBase {
         Path classes = Paths.get("classes");
 
         // valid
-        for (String release : List.of("10000", "09", "00010", "10")) {
+        for (String release : List.of("09", "00010", "10")) {
             jarTool("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
-                    "--release", release, "-C", classes.resolve("v10").toString(), ".")
+                    "--release", release, "-C", classes.resolve("v9").toString(), ".")
                     .shouldHaveExitValue(SUCCESS)
                     .shouldBeEmptyIgnoreVMWarnings();
         }
@@ -207,26 +207,16 @@ public class Basic extends MRTestBase {
 
         compare(jarfile, names);
 
+        // 8268611: The following creates an invalid JAR, which gets deleted.
         // write the v9 version/Version.class entry in base and the v10
         // version/Version.class entry in versions/9 section
         jarTool("uf", jarfile, "-C", classes.resolve("v9").toString(), "version",
                 "--release", "9", "-C", classes.resolve("v10").toString(), ".")
-                .shouldHaveExitValue(SUCCESS);
-
-        checkMultiRelease(jarfile, true);
-
-        names = Map.of(
-                "version/Main.class",
-                new String[]{"base", "version", "Main.class"},
-
-                "version/Version.class",
-                new String[]{"v9", "version", "Version.class"},
-
-                "META-INF/versions/9/version/Version.class",
-                new String[]{"v10", "version", "Version.class"}
-        );
-
-        compare(jarfile, names);
+                .shouldNotHaveExitValue(SUCCESS)
+                .shouldContain("META-INF/versions/9/version/Version.class")
+                .shouldContain(" has class file version 54,")
+                .shouldContain(" but class file version 53 or less is required")
+                .shouldContain(" to target release 9 of the Java Platform");
 
         FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
         FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));
@@ -247,7 +237,7 @@ public class Basic extends MRTestBase {
 
         // replace the v9 class
         Path source = Paths.get(src, "data", "test04", "v9", "version");
-        javac(classes.resolve("v9"), source.resolve("Version.java"));
+        javac(9, classes.resolve("v9"), source.resolve("Version.java"));
 
         jarTool("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
@@ -269,7 +259,7 @@ public class Basic extends MRTestBase {
 
         // add the new v9 class
         Path source = Paths.get(src, "data", "test05", "v9", "version");
-        javac(classes.resolve("v9"), source.resolve("Extra.java"));
+        javac(9, classes.resolve("v9"), source.resolve("Extra.java"));
 
         jarTool("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
@@ -291,7 +281,7 @@ public class Basic extends MRTestBase {
 
         // add the new v9 class
         Path source = Paths.get(src, "data", "test06", "v9", "version");
-        javac(classes.resolve("v9"), source.resolve("Extra.java"));
+        javac(9, classes.resolve("v9"), source.resolve("Extra.java"));
 
         jarTool("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
@@ -313,7 +303,7 @@ public class Basic extends MRTestBase {
 
         // add the new v9 class
         Path source = Paths.get(src, "data", "test01", "base", "version");
-        javac(classes.resolve("v9"), source.resolve("Version.java"));
+        javac(9, classes.resolve("v9"), source.resolve("Version.java"));
 
         jarTool("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
@@ -382,11 +372,11 @@ public class Basic extends MRTestBase {
 
         // add a base class with a nested class
         Path source = Paths.get(src, "data", "test10", "base", "version");
-        javac(classes.resolve("base"), source.resolve("Nested.java"));
+        javac(8, classes.resolve("base"), source.resolve("Nested.java"));
 
         // add a versioned class with a nested class
         source = Paths.get(src, "data", "test10", "v9", "version");
-        javac(classes.resolve("v9"), source.resolve("Nested.java"));
+        javac(9, classes.resolve("v9"), source.resolve("Nested.java"));
 
         jarTool("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
@@ -407,14 +397,14 @@ public class Basic extends MRTestBase {
 
         // add a base class with a nested class
         Path source = Paths.get(src, "data", "test10", "base", "version");
-        javac(classes.resolve("base"), source.resolve("Nested.java"));
+        javac(8, classes.resolve("base"), source.resolve("Nested.java"));
 
         // remove the top level class, thus isolating the nested class
         Files.delete(classes.resolve("base").resolve("version").resolve("Nested.class"));
 
         // add a versioned class with a nested class
         source = Paths.get(src, "data", "test10", "v9", "version");
-        javac(classes.resolve("v9"), source.resolve("Nested.java"));
+        javac(9, classes.resolve("v9"), source.resolve("Nested.java"));
 
         List<String> output = jarTool("cf", jarfile,
                 "-C", classes.resolve("base").toString(), ".",
@@ -460,11 +450,11 @@ public class Basic extends MRTestBase {
 
         // add a base class with a nested class
         Path source = Paths.get(src, "data", "test10", "base", "version");
-        javac(classes.resolve("base"), source.resolve("Nested.java"));
+        javac(8, classes.resolve("base"), source.resolve("Nested.java"));
 
         // add a versioned class with a nested class
         source = Paths.get(src, "data", "test10", "v9", "version");
-        javac(classes.resolve("v9"), source.resolve("Nested.java"));
+        javac(9, classes.resolve("v9"), source.resolve("Nested.java"));
 
         // remove the top level class, thus isolating the nested class
         Files.delete(classes.resolve("v9").resolve("version").resolve("Nested.class"));
@@ -489,11 +479,11 @@ public class Basic extends MRTestBase {
 
         // add a base class with a nested and nested-nested class
         Path source = Paths.get(src, "data", "test13", "base", "version");
-        javac(classes.resolve("base"), source.resolve("Nested.java"));
+        javac(8, classes.resolve("base"), source.resolve("Nested.java"));
 
         // add a versioned class with a nested and nested-nested class
         source = Paths.get(src, "data", "test13", "v10", "version");
-        javac(classes.resolve("v10"), source.resolve("Nested.java"));
+        javac(10, classes.resolve("v10"), source.resolve("Nested.java"));
 
         jarTool("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "10", "-C", classes.resolve("v10").toString(), ".")
@@ -535,7 +525,7 @@ public class Basic extends MRTestBase {
 
         jar("ufm", jarfile, manifest.toString(),
                 "-C", classes.resolve("base").toString(), ".",
-                "--release", "9", "-C", classes.resolve("v10").toString(), ".")
+                "--release", "9", "-C", classes.resolve("v9").toString(), ".")
                 .shouldHaveExitValue(SUCCESS)
                 .shouldContain("WARNING: Duplicate name in Manifest: Multi-release.");
 

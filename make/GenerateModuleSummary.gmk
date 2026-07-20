@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
 # questions.
 #
 
-# Default target declared first
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
-include ModuleTools.gmk
+################################################################################
+
+include $(TOPDIR)/make/ModuleTools.gmk
 
 GENGRAPHS_DIR := $(IMAGES_OUTPUTDIR)/gengraphs
 SPEC_DOTFILES_DIR := $(GENGRAPHS_DIR)/spec-dotfiles
@@ -50,3 +49,7 @@ $(GENGRAPHS_DIR)/module-summary.html: $(BUILD_JIGSAW_TOOLS) $(GENGRAPHS_DIR)/tec
 	$(TOOL_MODULESUMMARY) -o $@ --module-path $(IMAGES_OUTPUTDIR)/jmods
 
 all: $(GENGRAPHS_DIR)/jdk.dot $(GENGRAPHS_DIR)/module-summary.html $(SPEC_DOTFILES_DIR)/java.se.dot
+
+################################################################################
+
+include MakeFileEnd.gmk

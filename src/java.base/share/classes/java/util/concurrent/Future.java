@@ -50,6 +50,26 @@ package java.util.concurrent;
  * declare types of the form {@code Future<?>} and
  * return {@code null} as a result of the underlying task.
  *
+ * <p>Cancellation of a Future need not abruptly terminate its
+ * computation. Method {@code cancel} causes {@code isCancelled()} to
+ * return {@code true} unless already {@code isDone()}; in either case
+ * {@code isDone()} subsequently reports {@code true}. This suppresses
+ * execution by an {@link ExecutorService} if not already started.
+ * There are several options for suppressing unnecessary computation
+ * or unblocking a running Future that will not generate a
+ * result. When task bodies are simple and short, no special attention
+ * is warranted.  Computational methods in Future-aware code bodies
+ * (for example {@link ForkJoinTask}, {@link FutureTask}) may inspect
+ * their own {@code isDone()} status before or while engaging in
+ * expensive computations. In blocking I/O or communication contexts,
+ * the optional {@code mayInterruptIfRunning} argument of {@code
+ * cancel} may be used to support conventions that tasks should
+ * unblock and exit when {@link Thread#interrupted}, whether checked
+ * inside a task body or as a response to an {@link
+ * InterruptedException}.  It is still preferable to additionally
+ * check {@code isDone()} status when possible to avoid unintended
+ * effects of other uses of {@link Thread#interrupt}.
+ *
  * <p><b>Sample Usage</b> (Note that the following classes are all
  * made-up.)
  *

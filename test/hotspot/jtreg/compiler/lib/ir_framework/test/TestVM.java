@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ package compiler.lib.ir_framework.test;
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.Compiler;
 import compiler.lib.ir_framework.shared.*;
+import compiler.lib.ir_framework.test.network.MessageTag;
+import compiler.lib.ir_framework.test.network.TestVmSocket;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.whitebox.WhiteBox;
@@ -39,7 +41,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * This class' main method is called from {@link TestFramework} and represents the so-called "test VM". The class is
+ * This class' main method is called from {@link TestFramework} and represents the so-called "Test VM". The class is
  * the heart of the framework and is responsible for executing all the specified tests in the test class. It uses the
  * Whitebox API and reflection to achieve this task.
  */
@@ -56,7 +58,7 @@ public class TestVM {
                                   TestFramework in main() of your test? Make sure to
                                   only call setup/run methods and no checks or
                                   assertions from main() of your test!
-                                - Are you rerunning the test VM (TestVM class)
+                                - Are you rerunning the Test VM (TestVM class)
                                   directly after a JTreg run? Make sure to start it
                                   from within JTwork/scratch and with the flag
                                   -DReproduce=true!
@@ -73,6 +75,7 @@ public class TestVM {
      */
     public static final int WARMUP_ITERATIONS = Integer.parseInt(System.getProperty("Warmup", "2000"));
 
+    private static final boolean ALLOW_METHOD_NOT_COMPILABLE = Boolean.getBoolean("AllowNotCompilable");
     private static final boolean TIERED_COMPILATION = (Boolean)WHITE_BOX.getVMFlag("TieredCompilation");
     private static final CompLevel TIERED_COMPILATION_STOP_AT_LEVEL;
     private static final boolean CLIENT_VM = Platform.isClient();
@@ -89,7 +92,7 @@ public class TestVM {
 
     static final boolean XCOMP = Platform.isComp();
     static final boolean VERBOSE = Boolean.getBoolean("Verbose");
-    private static final boolean PRINT_TIMES = Boolean.getBoolean("PrintTimes");
+    private static final boolean PRINT_TIMES = Boolean.getBoolean("PrintTimes") || VERBOSE;
     public static final boolean USE_COMPILER = WHITE_BOX.getBooleanVMFlag("UseCompiler");
     static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
     private static final String TESTLIST = System.getProperty("Test", "");
@@ -97,7 +100,7 @@ public class TestVM {
     private static final boolean DUMP_REPLAY = Boolean.getBoolean("DumpReplay");
     private static final boolean GC_AFTER = Boolean.getBoolean("GCAfter");
     private static final boolean SHUFFLE_TESTS = Boolean.parseBoolean(System.getProperty("ShuffleTests", "true"));
-    // Use separate flag as VERIFY_IR could have been set by user but due to other flags it was disabled by flag VM.
+    // Use separate flag as VERIFY_IR could have been set by user but due to other flags it was disabled by Flag VM.
     private static final boolean PRINT_VALID_IR_RULES = Boolean.getBoolean("ShouldDoIRVerification");
     protected static final long PER_METHOD_TRAP_LIMIT = (Long)WHITE_BOX.getVMFlag("PerMethodTrapLimit");
     protected static final boolean PROFILE_INTERPRETER = (Boolean)WHITE_BOX.getVMFlag("ProfileInterpreter");
@@ -111,7 +114,7 @@ public class TestVM {
     private final List<String> excludeList;
     private final List<String> testList;
     private Set<Class<?>> helperClasses = null; // Helper classes that contain framework annotations to be processed.
-    private final IREncodingPrinter irMatchRulePrinter;
+    private final ApplicableIRRulesPrinter irMatchRulePrinter;
     private final Class<?> testClass;
     private final Map<Executable, CompLevel> forceCompileMap = new HashMap<>();
 
@@ -122,7 +125,7 @@ public class TestVM {
         this.excludeList = createTestFilterList(EXCLUDELIST, testClass);
 
         if (PRINT_VALID_IR_RULES) {
-            irMatchRulePrinter = new IREncodingPrinter();
+            irMatchRulePrinter = new ApplicableIRRulesPrinter();
         } else {
             irMatchRulePrinter = null;
         }
@@ -152,10 +155,11 @@ public class TestVM {
     }
 
     /**
-     * Main entry point of the test VM.
+     * Main entry point of the Test VM.
      */
     public static void main(String[] args) {
         try {
+            TestVmSocket.connect();
             String testClassName = args[0];
             System.out.println("TestVM main() called - about to run tests in class " + testClassName);
             Class<?> testClass = getClassObject(testClassName, "test");
@@ -164,7 +168,7 @@ public class TestVM {
             framework.addHelperClasses(args);
             framework.start();
         } finally {
-            TestFrameworkSocket.closeClientSocket();
+            TestVmSocket.close();
         }
     }
 
@@ -290,7 +294,7 @@ public class TestVM {
                     BaseTest baseTest = new BaseTest(test, shouldExcludeTest(m.getName()));
                     allTests.add(baseTest);
                     if (PRINT_VALID_IR_RULES) {
-                        irMatchRulePrinter.emitRuleEncoding(m, baseTest.isSkipped());
+                        irMatchRulePrinter.emitApplicableIRRules(m, baseTest.isSkipped());
                     }
                 } catch (TestFormatException e) {
                     // Failure logged. Continue and report later.
@@ -577,15 +581,21 @@ public class TestVM {
         if (EXCLUDE_RANDOM) {
             compLevel = compLevel.excludeCompilationRandomly(m);
         }
+        boolean allowNotCompilable = testAnno.allowNotCompilable() || ALLOW_METHOD_NOT_COMPILABLE;
         ArgumentsProvider argumentsProvider = ArgumentsProviderBuilder.build(m, setupMethodMap);
-        DeclaredTest test = new DeclaredTest(m, argumentsProvider, compLevel, warmupIterations);
+        DeclaredTest test = new DeclaredTest(m, argumentsProvider, compLevel, warmupIterations, allowNotCompilable);
         declaredTests.put(m, test);
         testMethodMap.put(m.getName(), m);
     }
 
     private void checkTestAnnotations(Method m, Test testAnno) {
-        TestFormat.check(!testMethodMap.containsKey(m.getName()),
-                         "Cannot overload two @Test methods: " + m + ", " + testMethodMap.get(m.getName()));
+        List<Method> overloads = Arrays.stream(testClass.getDeclaredMethods()).filter(other -> !m.equals(other) && m.getName().equals(other.getName())).toList();
+        TestFormat.check(overloads.isEmpty(),
+                "Cannot overload @Test methods, but method " + m + " has " + overloads.size() + " overload" + (overloads.size() == 1 ? "" : "s") + ":" +
+                overloads.stream().map(String::valueOf).collect(Collectors.joining("\n    - ", "\n    - ", ""))
+        );
+        TestFramework.check(!testMethodMap.containsKey(m.getName()),
+                            "Cannot overload two @Test methods: " + m + ", " + testMethodMap.get(m.getName()));
         TestFormat.check(testAnno != null, m + " must be a method with a @Test annotation");
 
         Check checkAnno = getAnnotation(m, Check.class);
@@ -683,7 +693,7 @@ public class TestVM {
         allTests.add(checkedTest);
         if (PRINT_VALID_IR_RULES) {
             // Only need to emit IR verification information if IR verification is actually performed.
-            irMatchRulePrinter.emitRuleEncoding(testMethod, checkedTest.isSkipped());
+            irMatchRulePrinter.emitApplicableIRRules(testMethod, checkedTest.isSkipped());
         }
     }
 
@@ -751,7 +761,7 @@ public class TestVM {
         CustomRunTest customRunTest = new CustomRunTest(m, getAnnotation(m, Warmup.class), runAnno, tests, shouldExcludeTest);
         allTests.add(customRunTest);
         if (PRINT_VALID_IR_RULES) {
-            tests.forEach(test -> irMatchRulePrinter.emitRuleEncoding(test.getTestMethod(), customRunTest.isSkipped()));
+            tests.forEach(test -> irMatchRulePrinter.emitApplicableIRRules(test.getTestMethod(), customRunTest.isSkipped()));
         }
     }
 
@@ -819,14 +829,13 @@ public class TestVM {
         forceCompileMap.forEach((key, value) -> builder.append("- ").append(key).append(" at CompLevel.").append(value)
                                                        .append(System.lineSeparator()));
         throw new TestRunException("Could not force compile the following @ForceCompile methods:"
-                                   + System.lineSeparator() + builder.toString());
+                                   + System.lineSeparator() + builder);
     }
 
     /**
      * Once all framework tests are collected, they are run in this method.
      */
     private void runTests() {
-        TreeMap<Long, String> durations = (PRINT_TIMES || VERBOSE) ? new TreeMap<>() : null;
         long startTime = System.nanoTime();
         List<AbstractTest> testList;
         boolean testFilterPresent = testFilterPresent();
@@ -855,7 +864,7 @@ public class TestVM {
                 System.out.println("Run " + test.toString());
             }
             if (testFilterPresent) {
-                TestFrameworkSocket.write("Run " + test.toString(), TestFrameworkSocket.TESTLIST_TAG, true);
+                TestVmSocket.sendWithTag(MessageTag.TEST_LIST, "Run " + test.toString());
             }
             try {
                 test.run();
@@ -863,17 +872,18 @@ public class TestVM {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
                 e.printStackTrace(pw);
-                builder.append(test.toString()).append(":").append(System.lineSeparator()).append(sw.toString())
+                builder.append(test).append(":").append(System.lineSeparator()).append(sw)
                        .append(System.lineSeparator()).append(System.lineSeparator());
                 failures++;
             }
-            if (PRINT_TIMES || VERBOSE) {
+            if (PRINT_TIMES) {
                 long endTime = System.nanoTime();
                 long duration = (endTime - startTime);
-                durations.put(duration, test.getName());
                 if (VERBOSE) {
-                    System.out.println("Done " + test.getName() + ": " + duration + " ns = " + (duration / 1000000) + " ms");
+                    System.out.println("Done " + test.getName() + ": " + duration + " ns = " + (duration / 1_000_000) + " ms");
                 }
+                // Will be correctly formatted later.
+                TestVmSocket.sendWithTag(MessageTag.PRINT_TIMES, test.getName() + "," + duration);
             }
             if (GC_AFTER) {
                 System.out.println("doing GC");
@@ -881,19 +891,11 @@ public class TestVM {
             }
         }
 
-        // Print execution times
-        if (VERBOSE || PRINT_TIMES) {
-            System.out.println(System.lineSeparator() + System.lineSeparator() + "Test execution times:");
-            for (Map.Entry<Long, String> entry : durations.entrySet()) {
-                System.out.format("%-10s%15d ns%n", entry.getValue() + ":", entry.getKey());
-            }
-        }
-
         if (failures > 0) {
             // Finally, report all occurred exceptions in a nice format.
             String msg = System.lineSeparator() + System.lineSeparator() + "Test Failures (" + failures + ")"
                          + System.lineSeparator() + "----------------" + "-".repeat(String.valueOf(failures).length());
-            throw new TestRunException(msg + System.lineSeparator() + builder.toString());
+            throw new TestRunException(msg + System.lineSeparator() + builder);
         }
     }
 

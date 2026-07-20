@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageType.hpp"
 #include "gc/z/zVirtualMemory.hpp"
+#include "runtime/atomic.hpp"
 
 class ObjectClosure;
 class ZForwardingAllocator;
@@ -59,15 +60,16 @@ private:
   const size_t           _object_alignment_shift;
   const AttachedArray    _entries;
   ZPage* const           _page;
-  ZPageAge               _from_age;
-  ZPageAge               _to_age;
-  volatile bool          _claimed;
+  const uint32_t         _partition_id;
+  const ZPageAge         _from_age;
+  const ZPageAge         _to_age;
+  Atomic<bool>           _claimed;
   mutable ZConditionLock _ref_lock;
-  volatile int32_t       _ref_count;
-  volatile bool          _done;
+  Atomic<int32_t>        _ref_count;
+  Atomic<bool>           _done;
 
   // Relocated remembered set fields support
-  volatile ZPublishState _relocated_remembered_fields_state;
+  Atomic<ZPublishState>  _relocated_remembered_fields_state;
   PointerArray           _relocated_remembered_fields_array;
   uint32_t               _relocated_remembered_fields_publish_young_seqnum;
 
@@ -76,7 +78,7 @@ private:
   zoffset_end            _in_place_top_at_start;
 
   // Debugging
-  volatile Thread*       _in_place_thread;
+  Atomic<Thread*>        _in_place_thread;
 
   ZForwardingEntry* entries() const;
   ZForwardingEntry at(ZForwardingCursor* cursor) const;
@@ -107,6 +109,8 @@ public:
   zoffset_end end() const;
   size_t size() const;
   size_t object_alignment_shift() const;
+
+  uint32_t partition_id() const;
 
   bool is_promotion() const;
 

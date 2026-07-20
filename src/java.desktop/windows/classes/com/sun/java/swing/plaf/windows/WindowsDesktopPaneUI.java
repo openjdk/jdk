@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ public class WindowsDesktopPaneUI extends BasicDesktopPaneUI
         return new WindowsDesktopPaneUI();
     }
 
+    @Override
     protected void installDesktopManager() {
         desktopManager = desktop.getDesktopManager();
         if(desktopManager == null) {
@@ -48,10 +49,12 @@ public class WindowsDesktopPaneUI extends BasicDesktopPaneUI
         }
     }
 
+    @Override
     protected void installDefaults() {
         super.installDefaults();
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     protected void installKeyboardActions() {
         super.installKeyboardActions();

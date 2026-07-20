@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -173,7 +173,7 @@ public class TestDereferencePath {
             ValueLayout.ADDRESS.withTargetLayout(ValueLayout.JAVA_INT).withName("x"));
 
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment segment = arena.allocate(struct.byteSize() + 1).asSlice(1);
+            MemorySegment segment = arena.allocate(struct.byteSize() + 1, struct.byteAlignment()).asSlice(1);
             VarHandle vhX = struct.varHandle(PathElement.groupElement("x"), PathElement.dereferenceElement());
             vhX.set(segment, 0L, 42); // should throw
         }

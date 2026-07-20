@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.internal.reflect;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
@@ -209,7 +210,7 @@ final class MethodHandleAccessorFactory {
     }
 
     private static MethodHandle getDirectMethod(Method method, boolean callerSensitive) throws IllegalAccessException {
-        var mtype = methodType(method.getReturnType(), method.getParameterTypes());
+        var mtype = methodType(method.getReturnType(), reflectionFactory.getExecutableSharedParameterTypes(method));
         var isStatic = Modifier.isStatic(method.getModifiers());
         var dmh = isStatic ? JLIA.findStatic(method.getDeclaringClass(), method.getName(), mtype)
                                         : JLIA.findVirtual(method.getDeclaringClass(), method.getName(), mtype);
@@ -231,7 +232,7 @@ final class MethodHandleAccessorFactory {
     private static MethodHandle findCallerSensitiveAdapter(Method method) throws IllegalAccessException {
         String name = method.getName();
         // append a Class parameter
-        MethodType mtype = methodType(method.getReturnType(), method.getParameterTypes())
+        MethodType mtype = methodType(method.getReturnType(), reflectionFactory.getExecutableSharedParameterTypes(method))
                                 .appendParameterTypes(Class.class);
         boolean isStatic = Modifier.isStatic(method.getModifiers());
 
@@ -347,36 +348,39 @@ final class MethodHandleAccessorFactory {
      * Native accessor, i.e. VM reflection implementation, is used if one of
      * the following conditions is met:
      * 1. during VM early startup before method handle support is fully initialized
-     * 2. a Java native method
-     * 3. -Djdk.reflect.useNativeAccessorOnly=true is set
+     * 2. -Djdk.reflect.useNativeAccessorOnly=true is set
+     * 3. a signature polymorphic method
      * 4. the member takes a variable number of arguments and the last parameter
      *    is not an array (see details below)
      * 5. the member's method type has an arity >= 255
      *
+     * Conditions 3-5 are due to the restrictions of method handles.
      * Otherwise, direct invocation of method handles is used.
      */
     private static boolean useNativeAccessor(Executable member) {
         if (!VM.isJavaLangInvokeInited())
             return true;
 
-        if (Modifier.isNative(member.getModifiers()))
-            return true;
-
         if (ReflectionFactory.useNativeAccessorOnly())  // for testing only
             return true;
 
-        // MethodHandle::withVarargs on a member with varargs modifier bit set
-        // verifies that the last parameter of the member must be an array type.
-        // The JVMS does not require the last parameter descriptor of the method descriptor
-        // is an array type if the ACC_VARARGS flag is set in the access_flags item.
-        // Hence the reflection implementation does not check the last parameter type
-        // if ACC_VARARGS flag is set.  Workaround this by invoking through
-        // the native accessor.
+        // java.lang.invoke cannot find the underlying native stubs of signature
+        // polymorphic methods that core reflection must invoke.
+        // Fall back to use the native implementation instead.
+        if (member instanceof Method method && isSignaturePolymorphicMethod(method))
+            return true;
+
+        // For members with ACC_VARARGS bit set, MethodHandles produced by lookup
+        // always have variable arity set and hence the last parameter of the member
+        // must be an array type.  Such restriction does not exist in core reflection
+        // and the JVM, which always use fixed-arity invocations.  Fall back to use
+        // the native implementation instead.
         int paramCount = member.getParameterCount();
         if (member.isVarArgs() &&
-                (paramCount == 0 || !(member.getParameterTypes()[paramCount-1].isArray()))) {
+                (paramCount == 0 || !(reflectionFactory.getExecutableSharedParameterTypes(member)[paramCount-1].isArray()))) {
             return true;
         }
+
         // A method handle cannot be created if its type has an arity >= 255
         // as the method handle's invoke method consumes an extra argument
         // of the method handle itself. Fall back to use the native implementation.
@@ -396,7 +400,7 @@ final class MethodHandleAccessorFactory {
      */
     private static int slotCount(Executable member) {
         int slots = 0;
-        Class<?>[] ptypes = member.getParameterTypes();
+        Class<?>[] ptypes = reflectionFactory.getExecutableSharedParameterTypes(member);
         for (Class<?> ptype : ptypes) {
             if (ptype == double.class || ptype == long.class) {
                 slots++;
@@ -404,6 +408,31 @@ final class MethodHandleAccessorFactory {
         }
         return ptypes.length + slots +
                 (Modifier.isStatic(member.getModifiers()) ? 0 : 1);
+    }
+
+    /**
+     * Signature-polymorphic methods.  Lookup has special rules for these methods,
+     * but core reflection must observe them as they are declared, and reflective
+     * invocation must invoke the native method stubs that throw UOE.
+     *
+     * @param method the method to check
+     * @return {@code true} if this method is signature polymorphic
+     * @jls 15.12.3 Compile-Time Step 3: Is the Chosen Method Appropriate?
+     * @jvms 2.9.3 Signature Polymorphic Methods
+     */
+    public static boolean isSignaturePolymorphicMethod(Method method) {
+        // ACC_NATIVE and ACC_VARARGS
+        if (!method.isVarArgs() || !Modifier.isNative(method.getModifiers())) {
+            return false;
+        }
+        // Declared in MethodHandle or VarHandle
+        var declaringClass = method.getDeclaringClass();
+        if (declaringClass != MethodHandle.class && declaringClass != VarHandle.class) {
+            return false;
+        }
+        // Single parameter of declared type Object[]
+        Class<?>[] parameters = reflectionFactory.getExecutableSharedParameterTypes(method);
+        return parameters.length == 1 && parameters[0] == Object[].class;
     }
 
     /*
@@ -414,4 +443,5 @@ final class MethodHandleAccessorFactory {
     }
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final ReflectionFactory reflectionFactory = ReflectionFactory.getReflectionFactory();
 }

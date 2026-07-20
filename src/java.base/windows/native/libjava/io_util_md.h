@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ jint handleAppend(FD fd, const void *buf, jint len);
 void fileDescriptorClose(JNIEnv *env, jobject this);
 JNIEXPORT jlong JNICALL
 handleLseek(FD fd, jlong offset, jint whence);
+jboolean handleIsRegularFile(JNIEnv* env, FD fd);
 
 /*
  * Returns an opaque handle to file named by "path".  If an error occurs,
@@ -82,6 +83,7 @@ FD getFD(JNIEnv *env, jobject cur, jfieldID fid);
 #define IO_Available handleAvailable
 #define IO_SetLength handleSetLength
 #define IO_GetLength handleGetLength
+#define IO_IsRegularFile handleIsRegularFile
 
 /*
  * Setting the handle field in Java_java_io_FileDescriptor_set for

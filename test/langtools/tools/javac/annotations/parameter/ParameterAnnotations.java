@@ -21,11 +21,10 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8024694 8334870
  * @summary Check javac can handle various Runtime(In)VisibleParameterAnnotations attribute combinations
- * @enablePreview
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -642,6 +641,7 @@ public class ParameterAnnotations extends TestRunner {
 
         Task.Result result = new JavacTask(tb)
                 .options("-classpath", classes.toString(),
+                        "-processorpath", System.getProperty("test.classes"),
                         "-processor", TestAP.class.getName(),
                         "-XDrawDiagnostics",
                         "-Xlint:classfile")

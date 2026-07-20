@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
  * @summary Basic test for jhsdb launcher
  * @library /test/lib
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @build jdk.test.lib.apps.*
- * @run main BasicLauncherTest
+ * @run main/timeout=480 BasicLauncherTest
  */
 
 import java.io.BufferedReader;

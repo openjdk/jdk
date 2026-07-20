@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +23,48 @@
  *
  */
 
-#include "precompiled.hpp"
 
-#include "jfr/jfrEvents.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcWhen.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "utilities/debug.hpp"
 
 ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
 
-ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause) :
+const char* ShenandoahGCSession::cycle_end_message(ShenandoahGenerationType type) {
+  switch (type) {
+    case NON_GEN:
+      return "end of GC cycle";
+    case GLOBAL:
+      return "end of Global GC cycle";
+    case YOUNG:
+      return "end of Young GC cycle";
+    case OLD:
+      return "end of Old GC cycle";
+    default:
+      ShouldNotReachHere();
+      return "end of GC cycle";
+  }
+}
+
+ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation,
+                                         bool is_degenerated, bool is_out_of_cycle) :
   _heap(ShenandoahHeap::heap()),
+  _generation(generation),
   _timer(_heap->gc_timer()),
   _tracer(_heap->tracer()) {
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
-
-  _heap->shenandoah_policy()->record_collection_cause(cause);
-  _heap->set_gc_cause(cause);
+  _heap->on_cycle_start(cause, _generation, is_degenerated, is_out_of_cycle);
   _timer->register_gc_start();
   _tracer->report_gc_start(cause, _timer->gc_start());
   _heap->trace_heap_before_gc(_tracer);
 
-  _heap->heuristics()->record_cycle_start();
   _trace_cycle.initialize(_heap->cycle_memory_manager(), cause,
-          "end of GC cycle",
+          cycle_end_message(_generation->type()),
           /* allMemoryPoolsAffected */    true,
           /* recordGCBeginTime = */       true,
           /* recordPreGCUsage = */        true,
@@ -65,13 +77,12 @@ ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause) :
 }
 
 ShenandoahGCSession::~ShenandoahGCSession() {
-  _heap->heuristics()->record_cycle_end();
+  _heap->on_cycle_end(_generation);
   _timer->register_gc_end();
   _heap->trace_heap_after_gc(_tracer);
-  _tracer->report_gc_reference_stats(_heap->ref_processor()->reference_process_stats());
+  _tracer->report_gc_reference_stats(_generation->ref_processor()->reference_process_stats());
   _tracer->report_gc_end(_timer->gc_end(), _timer->time_partitions());
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
-  _heap->set_gc_cause(GCCause::_no_gc);
 }
 
 ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, const char* notification_message, SvcGCMarker::reason_type type) :
@@ -132,7 +143,7 @@ bool ShenandoahTimingsTracker::is_current_phase_valid() {
 ShenandoahGCPhase::ShenandoahGCPhase(ShenandoahPhaseTimings::Phase phase) :
   ShenandoahTimingsTracker(phase),
   _timer(ShenandoahHeap::heap()->gc_timer()) {
-  _timer->register_gc_phase_start(ShenandoahPhaseTimings::phase_name(phase), Ticks::now());
+  _timer->register_gc_phase_start(ShenandoahPhaseTimings::phase_desc(phase), Ticks::now());
 }
 
 ShenandoahGCPhase::~ShenandoahGCPhase() {
@@ -153,9 +164,9 @@ ShenandoahWorkerSession::ShenandoahWorkerSession(uint worker_id) {
 }
 
 ShenandoahConcurrentWorkerSession::~ShenandoahConcurrentWorkerSession() {
-  _event.commit(GCId::current(), ShenandoahPhaseTimings::phase_name(ShenandoahGCPhase::current_phase()));
+  _event.commit(GCId::current(), ShenandoahPhaseTimings::phase_desc(ShenandoahGCPhase::current_phase()));
 }
 
 ShenandoahParallelWorkerSession::~ShenandoahParallelWorkerSession() {
-  _event.commit(GCId::current(), WorkerThread::worker_id(), ShenandoahPhaseTimings::phase_name(ShenandoahGCPhase::current_phase()));
+  _event.commit(GCId::current(), WorkerThread::worker_id(), ShenandoahPhaseTimings::phase_desc(ShenandoahGCPhase::current_phase()));
 }

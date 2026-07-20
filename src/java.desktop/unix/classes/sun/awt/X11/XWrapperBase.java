@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import sun.util.logging.PlatformLogger;
 abstract class XWrapperBase {
     static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.wrappers");
 
+    @Override
     public String toString() {
         String ret = "";
 
@@ -62,6 +63,7 @@ abstract class XWrapperBase {
         }
     }
     public abstract long getPData();
+    @Override
     public XEvent clone() {
         long copy = XlibWrapper.unsafe.allocateMemory(getDataSize());
         XlibWrapper.unsafe.copyMemory(getPData(), copy, getDataSize());

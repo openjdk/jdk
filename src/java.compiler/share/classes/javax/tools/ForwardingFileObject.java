@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.util.Objects;
  * additional fields and methods.
  *
  * <p>Unless stated otherwise, references in this class to "<em>this file object</em>"
- * should be interpreted as referring indirectly to the {@link #fileObject delegate file object}.
+ * should be interpreted as referring indirectly to the {@linkplain #fileObject delegate file object}.
  *
  * @param <F> the kind of file object forwarded to by this object
  * @since 1.6

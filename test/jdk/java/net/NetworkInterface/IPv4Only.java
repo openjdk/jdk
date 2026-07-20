@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,18 @@
  */
 
 
-import java.net.*;
-import java.util.*;
+
 import jdk.test.lib.net.IPSupport;
+
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 
 public class IPv4Only {
     public static void main(String[] args) throws Exception {
+        IPSupport.printPlatformSupport(System.out);
         if (IPSupport.hasIPv4()) {
             System.out.println("Testing IPv4");
             Enumeration<NetworkInterface> nifs = NetworkInterface.getNetworkInterfaces();
@@ -43,7 +49,7 @@ public class IPv4Only {
                 Enumeration<InetAddress> addrs = nif.getInetAddresses();
                 while (addrs.hasMoreElements()) {
                    InetAddress hostAddr = addrs.nextElement();
-                   if ( hostAddr instanceof Inet6Address ){
+                   if (hostAddr instanceof Inet6Address){
                         throw new RuntimeException( "NetworkInterfaceV6List failed - found v6 address " + hostAddr.getHostAddress() );
                    }
                 }

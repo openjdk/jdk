@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,79 +54,13 @@ JNIEXPORT void JNICALL
 J2dTraceImpl(int level, jboolean cr, const char *string, ...);
 
 #ifndef DEBUG
-#define J2dTrace(level, string)
-#define J2dTrace1(level, string, arg1)
-#define J2dTrace2(level, string, arg1, arg2)
-#define J2dTrace3(level, string, arg1, arg2, arg3)
-#define J2dTrace4(level, string, arg1, arg2, arg3, arg4)
-#define J2dTrace5(level, string, arg1, arg2, arg3, arg4, arg5)
-#define J2dTrace6(level, string, arg1, arg2, arg3, arg4, arg5, arg6)
-#define J2dTrace7(level, string, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
-#define J2dTrace8(level, string, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
-#define J2dTraceLn(level, string)
-#define J2dTraceLn1(level, string, arg1)
-#define J2dTraceLn2(level, string, arg1, arg2)
-#define J2dTraceLn3(level, string, arg1, arg2, arg3)
-#define J2dTraceLn4(level, string, arg1, arg2, arg3, arg4)
-#define J2dTraceLn5(level, string, arg1, arg2, arg3, arg4, arg5)
-#define J2dTraceLn6(level, string, arg1, arg2, arg3, arg4, arg5, arg6)
-#define J2dTraceLn7(level, string, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
-#define J2dTraceLn8(level, string, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
+#define J2dTrace(level, ...)
+#define J2dTraceLn(level, ...)
 #else /* DEBUG */
-#define J2dTrace(level, string) { \
-            J2dTraceImpl(level, JNI_FALSE, string); \
-        }
-#define J2dTrace1(level, string, arg1) { \
-            J2dTraceImpl(level, JNI_FALSE, string, arg1); \
-        }
-#define J2dTrace2(level, string, arg1, arg2) { \
-            J2dTraceImpl(level, JNI_FALSE, string, arg1, arg2); \
-        }
-#define J2dTrace3(level, string, arg1, arg2, arg3) { \
-            J2dTraceImpl(level, JNI_FALSE, string, arg1, arg2, arg3); \
-        }
-#define J2dTrace4(level, string, arg1, arg2, arg3, arg4) { \
-            J2dTraceImpl(level, JNI_FALSE, string, arg1, arg2, arg3, arg4); \
-        }
-#define J2dTrace5(level, string, arg1, arg2, arg3, arg4, arg5) { \
-            J2dTraceImpl(level, JNI_FALSE, string, arg1, arg2, arg3, arg4, arg5); \
-        }
-#define J2dTrace6(level, string, arg1, arg2, arg3, arg4, arg5, arg6) { \
-            J2dTraceImpl(level, JNI_FALSE, string, arg1, arg2, arg3, arg4, arg5, arg6); \
-        }
-#define J2dTrace7(level, string, arg1, arg2, arg3, arg4, arg5, arg6, arg7) { \
-            J2dTraceImpl(level, JNI_FALSE, string, arg1, arg2, arg3, arg4, arg5, arg6, arg7); \
-        }
-#define J2dTrace8(level, string, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) { \
-            J2dTraceImpl(level, JNI_FALSE, string, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); \
-        }
-#define J2dTraceLn(level, string) { \
-            J2dTraceImpl(level, JNI_TRUE, string); \
-        }
-#define J2dTraceLn1(level, string, arg1) { \
-            J2dTraceImpl(level, JNI_TRUE, string, arg1); \
-        }
-#define J2dTraceLn2(level, string, arg1, arg2) { \
-            J2dTraceImpl(level, JNI_TRUE, string, arg1, arg2); \
-        }
-#define J2dTraceLn3(level, string, arg1, arg2, arg3) { \
-            J2dTraceImpl(level, JNI_TRUE, string, arg1, arg2, arg3); \
-        }
-#define J2dTraceLn4(level, string, arg1, arg2, arg3, arg4) { \
-            J2dTraceImpl(level, JNI_TRUE, string, arg1, arg2, arg3, arg4); \
-        }
-#define J2dTraceLn5(level, string, arg1, arg2, arg3, arg4, arg5) { \
-            J2dTraceImpl(level, JNI_TRUE, string, arg1, arg2, arg3, arg4, arg5); \
-        }
-#define J2dTraceLn6(level, string, arg1, arg2, arg3, arg4, arg5, arg6) { \
-            J2dTraceImpl(level, JNI_TRUE, string, arg1, arg2, arg3, arg4, arg5, arg6); \
-        }
-#define J2dTraceLn7(level, string, arg1, arg2, arg3, arg4, arg5, arg6, arg7) { \
-            J2dTraceImpl(level, JNI_TRUE, string, arg1, arg2, arg3, arg4, arg5, arg6, arg7); \
-        }
-#define J2dTraceLn8(level, string, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) { \
-            J2dTraceImpl(level, JNI_TRUE, string, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); \
-        }
+#define J2dTrace(level, ...) \
+            J2dTraceImpl(level, JNI_FALSE, __VA_ARGS__)
+#define J2dTraceLn(level, ...) \
+            J2dTraceImpl(level, JNI_TRUE, __VA_ARGS__)
 #endif /* DEBUG */
 
 
@@ -136,42 +70,10 @@ J2dTraceImpl(int level, jboolean cr, const char *string, ...);
  * areas.
  */
 
-#define J2dRlsTrace(level, string) { \
-            J2dTraceImpl(level, JNI_FALSE, string); \
-        }
-#define J2dRlsTrace1(level, string, arg1) { \
-            J2dTraceImpl(level, JNI_FALSE, string, arg1); \
-        }
-#define J2dRlsTrace2(level, string, arg1, arg2) { \
-            J2dTraceImpl(level, JNI_FALSE, string, arg1, arg2); \
-        }
-#define J2dRlsTrace3(level, string, arg1, arg2, arg3) { \
-            J2dTraceImpl(level, JNI_FALSE, string, arg1, arg2, arg3); \
-        }
-#define J2dRlsTrace4(level, string, arg1, arg2, arg3, arg4) { \
-            J2dTraceImpl(level, JNI_FALSE, string, arg1, arg2, arg3, arg4); \
-        }
-#define J2dRlsTrace5(level, string, arg1, arg2, arg3, arg4, arg5) { \
-            J2dTraceImpl(level, JNI_FALSE, string, arg1, arg2, arg3, arg4, arg5); \
-        }
-#define J2dRlsTraceLn(level, string) { \
-            J2dTraceImpl(level, JNI_TRUE, string); \
-        }
-#define J2dRlsTraceLn1(level, string, arg1) { \
-            J2dTraceImpl(level, JNI_TRUE, string, arg1); \
-        }
-#define J2dRlsTraceLn2(level, string, arg1, arg2) { \
-            J2dTraceImpl(level, JNI_TRUE, string, arg1, arg2); \
-        }
-#define J2dRlsTraceLn3(level, string, arg1, arg2, arg3) { \
-            J2dTraceImpl(level, JNI_TRUE, string, arg1, arg2, arg3); \
-        }
-#define J2dRlsTraceLn4(level, string, arg1, arg2, arg3, arg4) { \
-            J2dTraceImpl(level, JNI_TRUE, string, arg1, arg2, arg3, arg4); \
-        }
-#define J2dRlsTraceLn5(level, string, arg1, arg2, arg3, arg4, arg5) { \
-            J2dTraceImpl(level, JNI_TRUE, string, arg1, arg2, arg3, arg4, arg5); \
-        }
+#define J2dRlsTrace(level, ...) \
+            J2dTraceImpl(level, JNI_FALSE, __VA_ARGS__)
+#define J2dRlsTraceLn(level, ...) \
+            J2dTraceImpl(level, JNI_TRUE, __VA_ARGS__)
 
 #ifdef __cplusplus
 }

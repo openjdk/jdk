@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,20 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.DottedVersion;
 
-final class WixToolset {
+record WixToolset(Map<WixTool, WixTool.ToolInfo> tools) {
 
-    static enum WixToolsetType {
+    WixToolset {
+        tools = Map.copyOf(tools);
+    }
+
+    enum WixToolsetType {
         // Wix v4+
         Wix4(WixTool.Wix4),
         // Wix v3+
@@ -49,10 +56,6 @@ final class WixToolset {
         private final Set<WixTool> tools;
     }
 
-    private WixToolset(Map<WixTool, WixTool.ToolInfo> tools) {
-        this.tools = tools;
-    }
-
     WixToolsetType getType() {
         return Stream.of(WixToolsetType.values()).filter(toolsetType -> {
             return toolsetType.getTools().equals(tools.keySet());
@@ -60,23 +63,33 @@ final class WixToolset {
     }
 
     Path getToolPath(WixTool tool) {
-        return tools.get(tool).path;
+        return tools.get(tool).path();
     }
 
     DottedVersion getVersion() {
-        return tools.values().iterator().next().version;
+        return tools.values().iterator().next().version();
     }
 
-    static WixToolset create(Set<WixTool> requiredTools, Map<WixTool, WixTool.ToolInfo> allTools) {
+    boolean needFipsParameter() {
+        return tools.values().stream()
+                .filter(WixTool.CandleInfo.class::isInstance)
+                .map(WixTool.CandleInfo.class::cast)
+                .anyMatch(WixTool.CandleInfo::fips);
+    }
+
+    static Optional<WixToolset> create(WixToolsetType type, Map<WixTool, WixTool.ToolInfo> allTools) {
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(allTools);
+
+        var requiredTools = type.getTools();
+
         var filteredTools = allTools.entrySet().stream().filter(e -> {
             return requiredTools.contains(e.getKey());
         }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         if (filteredTools.keySet().equals(requiredTools)) {
-            return new WixToolset(filteredTools);
+            return Optional.of(new WixToolset(filteredTools));
         } else {
-            return null;
+            return Optional.empty();
         }
     }
-
-    private final Map<WixTool, WixTool.ToolInfo> tools;
 }

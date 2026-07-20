@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,17 @@
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
-/**
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/*
  * @test
  * @bug 8183743
  * @summary Test to verify the new overload method with Charset functions the same
  * as the existing method that takes a charset name.
- * @run testng EncodingTest
+ * @run junit ${test.main.class}
  */
 public class EncodingTest {
     public static enum ParameterType {
@@ -41,8 +42,7 @@ public class EncodingTest {
         CHARSET
     }
 
-    @DataProvider(name = "encode")
-    public Object[][] getDecodeParameters() {
+    public static Object[][] getDecodeParameters() {
         return new Object[][]{
             {"The string \u00FC@foo-bar"},
             // the string from javadoc example
@@ -74,19 +74,20 @@ public class EncodingTest {
      * @param s the string to be encoded
      * @throws Exception if the test fails
      */
-    @Test(dataProvider = "encode")
+    @ParameterizedTest
+    @MethodSource("getDecodeParameters")
     public void encode(String s) throws Exception {
         String encoded1 = URLEncoder.encode(s, StandardCharsets.UTF_8.name());
         String encoded2 = URLEncoder.encode(s, StandardCharsets.UTF_8);
-        Assert.assertEquals(encoded1, encoded2);
+        assertEquals(encoded2, encoded1);
 
         // cross check
         String returned1 = URLDecoder.decode(encoded1, StandardCharsets.UTF_8.name());
         String returned2 = URLDecoder.decode(encoded2, StandardCharsets.UTF_8);
-        Assert.assertEquals(returned1, returned2);
+        assertEquals(returned2, returned1);
     }
 
-    String charactersRange(char c1, char c2) {
+    private static String charactersRange(char c1, char c2) {
         StringBuilder sb = new StringBuilder(c2 - c1);
         for (char c = c1; c < c2; c++) {
             sb.append(c);

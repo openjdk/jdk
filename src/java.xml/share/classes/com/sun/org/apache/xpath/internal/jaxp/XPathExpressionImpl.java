@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,11 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFunctionException;
 import javax.xml.xpath.XPathFunctionResolver;
 import javax.xml.xpath.XPathVariableResolver;
+
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlFeatures;
+import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -39,7 +43,7 @@ import org.xml.sax.InputSource;
  * The XPathExpression interface encapsulates a (compiled) XPath expression.
  *
  * @author  Ramesh Mandava
- * @LastModified: May 2022
+ * @LastModified: Nov 2025
  */
 public class XPathExpressionImpl extends XPathImplUtil implements XPathExpression {
 
@@ -49,7 +53,9 @@ public class XPathExpressionImpl extends XPathImplUtil implements XPathExpressio
      * from the context.
      */
     protected XPathExpressionImpl() {
-        this(null, null, null, null, false, new JdkXmlFeatures(false));
+        this(null, null, null, null, false, JdkXmlConfig.getInstance(false).getXMLFeatures(true),
+            JdkXmlConfig.getInstance(false).getXMLSecurityManager(false),
+            JdkXmlConfig.getInstance(false).getXMLSecurityPropertyManager(false));
     };
 
     protected XPathExpressionImpl(com.sun.org.apache.xpath.internal.XPath xpath,
@@ -57,13 +63,16 @@ public class XPathExpressionImpl extends XPathImplUtil implements XPathExpressio
             XPathFunctionResolver functionResolver,
             XPathVariableResolver variableResolver) {
         this(xpath, prefixResolver, functionResolver, variableResolver,
-             false, new JdkXmlFeatures(false));
+             false, JdkXmlConfig.getInstance(false).getXMLFeatures(true),
+            JdkXmlConfig.getInstance(false).getXMLSecurityManager(false),
+            JdkXmlConfig.getInstance(false).getXMLSecurityPropertyManager(false));
     };
 
     protected XPathExpressionImpl(com.sun.org.apache.xpath.internal.XPath xpath,
             JAXPPrefixResolver prefixResolver,XPathFunctionResolver functionResolver,
             XPathVariableResolver variableResolver, boolean featureSecureProcessing,
-            JdkXmlFeatures featureManager) {
+            JdkXmlFeatures featureManager, XMLSecurityManager xmlSecMgr,
+            XMLSecurityPropertyManager xmlSecPropMgr) {
         this.xpath = xpath;
         this.prefixResolver = prefixResolver;
         this.functionResolver = functionResolver;
@@ -72,6 +81,8 @@ public class XPathExpressionImpl extends XPathImplUtil implements XPathExpressio
         this.overrideDefaultParser = featureManager.getFeature(
                 JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
         this.featureManager = featureManager;
+        this.xmlSecMgr = xmlSecMgr;
+        this.xmlSecPropMgr = xmlSecPropMgr;
     };
 
     public void setXPath (com.sun.org.apache.xpath.internal.XPath xpath) {

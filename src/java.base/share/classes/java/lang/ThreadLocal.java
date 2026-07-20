@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.misc.TerminatingThreadLocal;
-import sun.security.action.GetPropertyAction;
 
 /**
  * This class provides thread-local variables.  These variables differ from
@@ -195,27 +194,6 @@ public class ThreadLocal<T> {
     }
 
     /**
-     * Returns {@code true} if there is a value in the current carrier thread's copy of
-     * this thread-local variable, even if that values is {@code null}.
-     *
-     * @return {@code true} if current carrier thread has associated value in this
-     *         thread-local variable; {@code false} if not
-     */
-    boolean isCarrierThreadLocalPresent() {
-        assert this instanceof CarrierThreadLocal<T>;
-        return isPresent(Thread.currentCarrierThread());
-    }
-
-    private boolean isPresent(Thread t) {
-        ThreadLocalMap map = getMap(t);
-        if (map != null) {
-            return map.getEntry(this) != null;
-        } else {
-            return false;
-        }
-    }
-
-    /**
      * Variant of set() to establish initialValue. Used instead
      * of set() in case user has overridden the set() method.
      *
@@ -232,8 +210,8 @@ public class ThreadLocal<T> {
         if (this instanceof TerminatingThreadLocal<?> ttl) {
             TerminatingThreadLocal.register(ttl);
         }
-        if (TRACE_VTHREAD_LOCALS) {
-            dumpStackIfVirtualThread();
+        if (TRACE_VTHREAD_LOCALS && t == Thread.currentThread() && t.isVirtual()) {
+            printStackTrace();
         }
         return value;
     }
@@ -249,8 +227,8 @@ public class ThreadLocal<T> {
      */
     public void set(T value) {
         set(Thread.currentThread(), value);
-        if (TRACE_VTHREAD_LOCALS) {
-            dumpStackIfVirtualThread();
+        if (TRACE_VTHREAD_LOCALS && Thread.currentThread().isVirtual()) {
+            printStackTrace();
         }
     }
 
@@ -303,7 +281,11 @@ public class ThreadLocal<T> {
      * @return the map
      */
     ThreadLocalMap getMap(Thread t) {
-        return t.threadLocals;
+        if (this instanceof TerminatingThreadLocal<T>) {
+            return t.terminatingThreadLocals();
+        } else {
+            return t.threadLocals();
+        }
     }
 
     /**
@@ -314,7 +296,12 @@ public class ThreadLocal<T> {
      * @param firstValue value for the initial entry of the map
      */
     void createMap(Thread t, T firstValue) {
-        t.threadLocals = new ThreadLocalMap(this, firstValue);
+        var map = new ThreadLocalMap(this, firstValue);
+        if (this instanceof TerminatingThreadLocal<T>) {
+            t.setTerminatingThreadLocals(map);
+        } else {
+            t.setThreadLocals(map);
+        }
     }
 
     /**
@@ -799,42 +786,39 @@ public class ThreadLocal<T> {
         }
     }
 
-
     /**
      * Reads the value of the jdk.traceVirtualThreadLocals property to determine if
      * a stack trace should be printed when a virtual thread sets a thread local.
      */
     private static boolean traceVirtualThreadLocals() {
-        String propValue = GetPropertyAction.privilegedGetProperty("jdk.traceVirtualThreadLocals");
+        String propValue = System.getProperty("jdk.traceVirtualThreadLocals");
         return (propValue != null)
                 && (propValue.isEmpty() || Boolean.parseBoolean(propValue));
     }
 
     /**
-     * Print a stack trace if the current thread is a virtual thread.
+     * Print the stack trace of the current thread, skipping the printStackTrace frame.
+     * A thread local is used to detect reentrancy as the printing may itself use
+     * thread locals.
      */
-    static void dumpStackIfVirtualThread() {
-        if (Thread.currentThread() instanceof VirtualThread vthread) {
+    private void printStackTrace() {
+        Thread t = Thread.currentThread();
+        ThreadLocalMap map = getMap(t);
+        if (map.getEntry(DUMPING_STACK) == null) {
+            map.set(DUMPING_STACK, true);
             try {
-                var stack = StackWalkerHolder.STACK_WALKER.walk(s ->
+                var stack = StackWalker.getInstance().walk(s ->
                         s.skip(1)  // skip caller
                          .collect(Collectors.toList()));
-
-                // switch to carrier thread to avoid recursive use of thread-locals
-                vthread.executeOnCarrierThread(() -> {
-                    System.out.println(vthread);
-                    for (StackWalker.StackFrame frame : stack) {
-                        System.out.format("    %s%n", frame.toStackTraceElement());
-                    }
-                    return null;
-                });
-            } catch (Exception e) {
-                throw new InternalError(e);
+                System.out.println(t);
+                for (StackWalker.StackFrame frame : stack) {
+                    System.out.format("    %s%n", frame.toStackTraceElement());
+                }
+            } finally {
+                map.remove(DUMPING_STACK);
             }
         }
     }
 
-    private static class StackWalkerHolder {
-        static final StackWalker STACK_WALKER = StackWalker.getInstance();
-    }
+    private static final ThreadLocal<Boolean> DUMPING_STACK = new ThreadLocal<>();
 }

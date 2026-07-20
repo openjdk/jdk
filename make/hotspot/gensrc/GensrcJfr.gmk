@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,12 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # Setup make rules for JFR gensrc file generation.
-#
+################################################################################
 
 include $(TOPDIR)/make/ToolsHotspot.gmk
 
@@ -44,3 +47,8 @@ $(eval $(call SetupExecute, jfr_gen_headers, \
 ))
 
 TARGETS += $(jfr_gen_headers)
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

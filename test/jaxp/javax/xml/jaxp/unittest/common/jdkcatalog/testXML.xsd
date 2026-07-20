@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:xml="http://www.w3.org/XML/1998/namespace"
+           targetNamespace="http://xml.xsd.test/testXMLXSD"
+           xmlns="http://xml.xsd.test/testXMLXSD"
+           elementFormDefault="qualified">
+
+    <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd">
+      <xs:annotation>
+        <xs:documentation>
+          Get access to the xml: attribute groups for xml:lang
+          as declared on 'schema' and 'documentation' below
+        </xs:documentation>
+      </xs:annotation>
+    </xs:import>
+    <!-- Define a root element that uses xml:lang and xml:base attributes -->
+    <xs:element name="testXMLXSD">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <xs:element name="message" type="xs:string"/>
+            </xs:sequence>
+            <xs:attribute ref="xml:lang"/>
+            <xs:attribute ref="xml:base"/>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

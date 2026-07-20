@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import jdk.jfr.AnnotationElement;
 import jdk.jfr.Event;
 import jdk.jfr.SettingControl;
 import jdk.jfr.ValueDescriptor;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Internal data structure that describes a type,
@@ -148,7 +149,7 @@ public class Type implements Comparable<Type> {
         return null;
     }
 
-    static boolean isKnownType(Class<?> type) {
+    public static boolean isKnownType(Class<?> type) {
         if (type.isPrimitive()) {
             return true;
         }
@@ -185,14 +186,9 @@ public class Type implements Comparable<Type> {
                 Type type = PrivateAccess.getInstance().getType(subField);
                 return type.getField(post);
             }
-        } else {
-            for (ValueDescriptor v : getFields()) {
-                if (name.equals(v.getName())) {
-                    return v;
-                }
-            }
+            return null;
         }
-        return null;
+        return Utils.findField(getFields(), name);
     }
 
     public List<ValueDescriptor> getFields() {

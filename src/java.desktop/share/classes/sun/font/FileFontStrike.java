@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.awt.geom.Rectangle2D;
 import java.util.concurrent.ConcurrentHashMap;
 import static sun.awt.SunHints.*;
 import sun.java2d.pipe.OutlineTextRenderer;
-
 
 public class FileFontStrike extends PhysicalStrike {
 
@@ -109,18 +108,9 @@ public class FileFontStrike extends PhysicalStrike {
     NativeStrike[] nativeStrikes;
 
     static final int MAX_IMAGE_SIZE = OutlineTextRenderer.THRESHHOLD;
+
     /* Used only for communication to native layer */
     private int intPtSize;
-
-    /* Perform global initialisation needed for Windows native rasterizer */
-    private static native boolean initNative();
-    private static boolean isXPorLater = false;
-    static {
-        if (FontUtilities.isWindows && !FontUtilities.useJDKScaler &&
-            !GraphicsEnvironment.isHeadless()) {
-            isXPorLater = initNative();
-        }
-    }
 
     FileFontStrike(FileFont fileFont, FontStrikeDesc desc) {
         super(fileFont, desc);
@@ -202,7 +192,6 @@ public class FileFontStrike extends PhysicalStrike {
             this.disposer = new FontStrikeDisposer(fileFont, desc);
             initGlyphCache();
             pScalerContext = NullFontScaler.getNullScalerContext();
-            SunFontManager.getInstance().deRegisterBadFont(fileFont);
             return;
         }
         /* First, see if native code should be used to create the glyph.
@@ -212,7 +201,7 @@ public class FileFontStrike extends PhysicalStrike {
          * except that the advance returned by GDI is always overwritten by
          * the JDK rasteriser supplied one (see getGlyphImageFromWindows()).
          */
-        if (FontUtilities.isWindows && isXPorLater &&
+        if (FontUtilities.isWindows &&
             !FontUtilities.useJDKScaler &&
             !GraphicsEnvironment.isHeadless() &&
             !fileFont.useJavaRasterizer &&
@@ -939,11 +928,6 @@ public class FileFontStrike extends PhysicalStrike {
             gp.transform(AffineTransform.getTranslateInstance(x, y));
         }
         return gp;
-    }
-
-    GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
-        return fileFont.getGlyphVectorOutline(pScalerContext,
-                                              glyphs, glyphs.length, x, y);
     }
 
     protected void adjustPoint(Point2D.Float pt) {

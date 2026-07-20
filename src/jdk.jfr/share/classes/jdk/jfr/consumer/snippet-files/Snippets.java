@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,27 @@ public class Snippets {
                  .stream().map(EventType::getName).filter(pr)
                  .forEach(eventName -> s.onEvent(eventName, event -> count++)));
                 s.start();
+                System.out.println(count + " events matches " + regExp);
+            }
+        }
+        // @end
+    }
+
+    class RecordingStreamMetadata {
+        // @start region="RecordingStreamMetadata"
+        static long count = 0;
+        public static void main(String... args) throws Exception {
+            String regExp = args[0];
+            var pr = Pattern.compile(regExp).asMatchPredicate();
+            Configuration c = Configuration.getConfiguration("default");
+            try (var s = new RecordingStream(c)) {
+                s.setOrdered(false);
+                s.onMetadata(metadata -> metadata.getAddedEventTypes()
+                 .stream().map(EventType::getName).filter(pr)
+                 .forEach(eventName -> s.onEvent(eventName, event -> count++)));
+                s.startAsync();
+                System.out.println("Running recording for 5 s. Please wait.");
+                s.awaitTermination(Duration.ofSeconds(5));
                 System.out.println(count + " events matches " + regExp);
             }
         }

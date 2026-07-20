@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@ import static com.sun.crypto.provider.KWUtil.*;
  * <a href=https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38F.pdf>
  * "Recommendation for Block Cipher Modes of Operation: Methods for Key Wrapping"</a>
  * and represents AES cipher in KW mode.
+ *
+ * @spec https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38F.pdf
+ *      Recommendation for Block Cipher Modes of Operation: Methods for Key Wrapping
  */
 class AESKeyWrap extends FeedbackCipher {
 
@@ -47,7 +50,7 @@ class AESKeyWrap extends FeedbackCipher {
     };
 
     AESKeyWrap() {
-        super(new AESCrypt());
+        super(new AES_Crypt());
     }
 
     /**

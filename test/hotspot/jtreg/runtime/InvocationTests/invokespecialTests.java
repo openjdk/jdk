@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @summary Run invokespecial invocation tests
  * @requires vm.flagless
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
+ * @library /testlibrary/asm
+ * @modules java.base/jdk.internal.misc
  * @compile invokespecial/Checker.java invokespecial/ClassGenerator.java invokespecial/Generator.java
  *
  * @run driver/timeout=1800 invokespecialTests current-int
@@ -41,8 +41,8 @@
  * @summary Run invokespecial invocation tests
  * @requires vm.flagless
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
+ * @library /testlibrary/asm
+ * @modules java.base/jdk.internal.misc
  * @compile invokespecial/Checker.java invokespecial/ClassGenerator.java invokespecial/Generator.java
  *
  * @run driver/timeout=1800 invokespecialTests current-comp
@@ -54,8 +54,8 @@
  * @summary Run invokespecial invocation tests
  * @requires vm.flagless
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
+ * @library /testlibrary/asm
+ * @modules java.base/jdk.internal.misc
  * @compile invokespecial/Checker.java invokespecial/ClassGenerator.java invokespecial/Generator.java
  *
  * @run driver/timeout=1800 invokespecialTests old-int
@@ -71,7 +71,6 @@ public class invokespecialTests {
         System.out.println("\ninvokespecial invocation tests, option: " + option +
                            ", class file version: " + classFileVersion);
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xmx128M", option,
-            "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
             "invokespecial.Generator", "--classfile_version=" + classFileVersion);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,38 +24,29 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CustomAttribute;
-import java.lang.classfile.FieldBuilder;
-import java.lang.classfile.MethodBuilder;
-import java.lang.classfile.PseudoInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.components.ClassPrinter;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.reflect.AccessFlag;
 import java.util.AbstractList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
-import java.lang.classfile.Attribute;
-import java.lang.classfile.AttributeMapper;
-import java.lang.classfile.Attributes;
-import java.lang.classfile.BufWriter;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.Opcode;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.ModuleEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
-import java.lang.constant.ModuleDesc;
-import java.lang.reflect.AccessFlag;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.classfile.ClassFile.ACC_STATIC;
-import java.lang.classfile.attribute.CodeAttribute;
-import java.lang.classfile.components.ClassPrinter;
-import java.util.function.Consumer;
-
 import static jdk.internal.constant.PrimitiveClassDescImpl.CD_double;
 import static jdk.internal.constant.PrimitiveClassDescImpl.CD_long;
 import static jdk.internal.constant.PrimitiveClassDescImpl.CD_void;
@@ -65,7 +56,7 @@ import static jdk.internal.constant.PrimitiveClassDescImpl.CD_void;
  * represented as JVM type descriptor strings and symbols are represented as
  * name strings
  */
-public class Util {
+public final class Util {
 
     private Util() {
     }
@@ -143,16 +134,43 @@ public class Util {
     }
 
     public static String toInternalName(ClassDesc cd) {
-        var desc = cd.descriptorString();
-        if (desc.charAt(0) == 'L')
-            return desc.substring(1, desc.length() - 1);
-        throw new IllegalArgumentException(desc);
+        if (cd instanceof ClassOrInterfaceDescImpl coi) {
+            return coi.internalName();
+        }
+        throw new IllegalArgumentException(cd.descriptorString());
     }
 
     public static ClassDesc toClassDesc(String classInternalNameOrArrayDesc) {
         return classInternalNameOrArrayDesc.charAt(0) == '['
                 ? ClassDesc.ofDescriptor(classInternalNameOrArrayDesc)
                 : ClassDesc.ofInternalName(classInternalNameOrArrayDesc);
+    }
+
+    /// Sanitizes an input list to make it immutable, and verify its size can
+    /// be represented with U1, throwing IAE otherwise.
+    public static <T> List<T> sanitizeU1List(List<T> input) {
+        var copy = List.copyOf(input);
+        checkU1(copy.size(), "list size");
+        return copy;
+    }
+
+    /// Sanitizes an input list to make it immutable, and verify its size can
+    /// be represented with U2, throwing IAE otherwise.
+    public static <T> List<T> sanitizeU2List(Collection<T> input) {
+        var copy = List.copyOf(input);
+        checkU2(copy.size(), "list size");
+        return copy;
+    }
+
+    /// Sanitizes an input nested list of parameter annotations.
+    public static List<List<Annotation>> sanitizeParameterAnnotations(List<List<Annotation>> input) {
+        var array = input.toArray().clone();
+        checkU1(array.length, "parameter count");
+        for (int i = 0; i < array.length; i++) {
+            array[i] = sanitizeU2List((List<?>) array[i]);
+        }
+
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
     }
 
     public static<T, U> List<U> mappedList(List<? extends T> list, Function<T, U> mapper) {
@@ -171,16 +189,18 @@ public class Util {
 
     public static List<ClassEntry> entryList(List<? extends ClassDesc> list) {
         var result = new Object[list.size()]; // null check
-        for (int i = 0; i < result.length; i++) {
-            result[i] = TemporaryConstantPool.INSTANCE.classEntry(list.get(i));
+        int i = 0;
+        for (var entry : list) {
+            result[i++] = TemporaryConstantPool.INSTANCE.classEntry(entry);
         }
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(result);
     }
 
     public static List<ModuleEntry> moduleEntryList(List<? extends ModuleDesc> list) {
         var result = new Object[list.size()]; // null check
-        for (int i = 0; i < result.length; i++) {
-            result[i] = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(list.get(i).name()));
+        int i = 0;
+        for (var entry : list) {
+            result[i++] = TemporaryConstantPool.INSTANCE.moduleEntry(entry);
         }
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(result);
     }
@@ -193,6 +213,31 @@ public class Util {
     public static IllegalArgumentException badOpcodeKindException(Opcode op, Opcode.Kind k) {
         return new IllegalArgumentException(
                 String.format("Wrong opcode kind specified; found %s(%s), expected %s", op, op.kind(), k));
+    }
+
+    /// Ensures the given value won't be truncated when written as a u1
+    public static int checkU1(int incoming, String valueName) {
+        if ((incoming & ~0xFF) != 0) {
+            throw outOfRangeException(incoming, valueName, "u1");
+        }
+        return incoming;
+    }
+
+    /// Ensures the given value won't be truncated when written as a u2
+    public static char checkU2(int incoming, String valueName) {
+        if ((incoming & ~0xFFFF) != 0)
+            throw outOfRangeException(incoming, valueName, "u2");
+        return (char) incoming;
+    }
+
+    public static IllegalArgumentException outOfRangeException(int value, String fieldName, String typeName) {
+        return new IllegalArgumentException(
+                String.format("%s out of range of %s: %d", fieldName, typeName, value));
+    }
+
+    /// Ensures the given mask won't be truncated when written as an access flag
+    public static char checkFlags(int mask) {
+        return checkU2(mask, "access flags");
     }
 
     public static int flagsToBits(AccessFlag.Location location, Collection<AccessFlag> flags) {
@@ -229,16 +274,8 @@ public class Util {
         return ((AbstractPoolEntry.Utf8EntryImpl) utf8).methodTypeSymbol();
     }
 
-    public static ClassDesc fieldTypeSymbol(NameAndTypeEntry nat) {
-        return fieldTypeSymbol(nat.type());
-    }
-
-    public static MethodTypeDesc methodTypeSymbol(NameAndTypeEntry nat) {
-        return methodTypeSymbol(nat.type());
-    }
-
     @SuppressWarnings("unchecked")
-    private static <T extends Attribute<T>> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
+    public static <T extends Attribute<T>> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
         if (attr instanceof CustomAttribute<?> ca) {
             var mapper = (AttributeMapper<T>) ca.attributeMapper();
             mapper.writeAttribute(writer, (T) ca);
@@ -248,17 +285,22 @@ public class Util {
         }
     }
 
+    @ForceInline
     public static void writeAttributes(BufWriterImpl buf, List<? extends Attribute<?>> list) {
-        buf.writeU2(list.size());
-        for (var e : list) {
-            writeAttribute(buf, e);
+        int size = list.size();
+        Util.checkU2(size, "attributes count");
+        buf.writeU2(size);
+        for (int i = 0; i < size; i++) {
+            writeAttribute(buf, list.get(i));
         }
     }
 
-    static void writeList(BufWriterImpl buf, List<Writable> list) {
-        buf.writeU2(list.size());
-        for (var e : list) {
-            e.writeTo(buf);
+    @ForceInline
+    static void writeList(BufWriterImpl buf, Writable[] array, int size) {
+        Util.checkU2(size, "member count");
+        buf.writeU2(size);
+        for (int i = 0; i < size; i++) {
+            array[i].writeTo(buf);
         }
     }
 
@@ -290,12 +332,15 @@ public class Util {
                             ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.code()) {
                                 @Override
                                 public void writeBody(BufWriterImpl b) {
-                                    b.writeU2(-1);//max stack
-                                    b.writeU2(-1);//max locals
+                                    b.writeU2U2(-1, -1);//max stack & locals
                                     b.writeInt(bytecode.length());
                                     b.writeBytes(bytecode.array(), 0, bytecode.length());
-                                    b.writeU2(0);//exception handlers
-                                    b.writeU2(0);//attributes
+                                    b.writeU2U2(0, 0);//exception handlers & attributes
+                                }
+
+                                @Override
+                                public Utf8Entry attributeName() {
+                                    return cp.utf8Entry(Attributes.NAME_CODE);
                                 }
                     }))));
             ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, dump);
@@ -336,5 +381,75 @@ public class Util {
 
     interface WritableLocalVariable {
         boolean writeLocalTo(BufWriterImpl buf);
+    }
+
+    /**
+     * Returns the hash code of a class or interface L descriptor given the internal name.
+     */
+    public static int descriptorStringHash(int length, int hash) {
+        if (length > 0xffff)
+            throw new IllegalArgumentException("String too long: ".concat(Integer.toString(length)));
+        return 'L' * pow31(length + 1) + hash * 31 + ';';
+    }
+
+    // k is at most 65536, length of Utf8 entry + 1
+    public static int pow31(int k) {
+        int r = 1;
+        // calculate the power contribution from index-th octal digit
+        // from least to most significant (right to left)
+        // e.g. decimal 26=octal 32, power(26)=powerOctal(2,0)*powerOctal(3,1)
+        for (int i = 0; i < SIGNIFICANT_OCTAL_DIGITS; i++) {
+            r *= powerOctal(k & 7, i);
+            k >>= 3;
+        }
+        return r;
+    }
+
+    // The inverse of 31 in Z/2^32Z* modulo group, a * INVERSE_31 * 31 = a
+    static final int INVERSE_31 = 0xbdef7bdf;
+
+    // k is at most 65536 = octal 200000, only consider 6 octal digits
+    // Note: 31 powers repeat beyond 1 << 27, only 9 octal digits matter
+    static final int SIGNIFICANT_OCTAL_DIGITS = 6;
+
+    // for base k, storage is k * log_k(N)=k/ln(k) * ln(N)
+    // k = 2 or 4 is better for space at the cost of more multiplications
+    /**
+     * The code below is as if:
+     * {@snippet lang=java :
+     * int[] powers = new int[7 * SIGNIFICANT_OCTAL_DIGITS];
+     *
+     * for (int i = 1, k = 31; i <= 7; i++, k *= 31) {
+     *    int t = powers[powersIndex(i, 0)] = k;
+     *    for (int j = 1; j < SIGNIFICANT_OCTAL_DIGITS; j++) {
+     *        t *= t;
+     *        t *= t;
+     *        t *= t;
+     *        powers[powersIndex(i, j)] = t;
+     *    }
+     * }
+     * }
+     * This is converted to explicit initialization to avoid bootstrap overhead.
+     * Validated in UtilTest.
+     */
+    static final @Stable int[] powers = new int[] {
+            0x0000001f, 0x000003c1, 0x0000745f, 0x000e1781, 0x01b4d89f, 0x34e63b41, 0x67e12cdf,
+            0x94446f01, 0x50a9de01, 0x84304d01, 0x7dd7bc01, 0x8ca02b01, 0xff899a01, 0x25940901,
+            0x4dbf7801, 0xe3bef001, 0xc1fe6801, 0xe87de001, 0x573d5801, 0x0e3cd001, 0x0d7c4801,
+            0x54fbc001, 0xb9f78001, 0x2ef34001, 0xb3ef0001, 0x48eac001, 0xede68001, 0xa2e24001,
+            0x67de0001, 0xcfbc0001, 0x379a0001, 0x9f780001, 0x07560001, 0x6f340001, 0xd7120001,
+            0x3ef00001, 0x7de00001, 0xbcd00001, 0xfbc00001, 0x3ab00001, 0x79a00001, 0xb8900001,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+
+    static int powersIndex(int digit, int index) {
+        return (digit - 1) + index * 7;
+    }
+
+    // (31 ^ digit) ^ (8 * index) = 31 ^ (digit * (8 ^ index))
+    // digit: 0 - 7
+    // index: 0 - SIGNIFICANT_OCTAL_DIGITS - 1
+    private static int powerOctal(int digit, int index) {
+        return digit == 0 ? 1 : powers[powersIndex(digit, index) & 0x3F]; // & 0x3F eliminates bound check
     }
 }

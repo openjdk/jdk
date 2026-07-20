@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,9 @@ import java.util.Arrays;
 /*
  * @test
  * @bug 8004260
- * @summary Test making a proxy instance that implements a non-public
- *          interface with and without security manager installed
+ * @summary Test making a proxy instance that implements a non-public interface
  * @build p.Foo p.Bar
- * @run main/othervm -Djava.security.manager=allow SimpleProxy
+ * @run main/othervm SimpleProxy
  */
 public class SimpleProxy {
     public static void main(String[] args) throws Exception {
@@ -40,17 +39,6 @@ public class SimpleProxy {
         Class<?> barClass = Class.forName("p.Bar");
 
         makeProxy(loader, fooClass);
-
-        System.setSecurityManager(new SecurityManager());
-        try {
-            makeProxy(loader, barClass);
-            throw new RuntimeException("should fail to new proxy instance of a non-public interface");
-        } catch (AccessControlException e) {
-            if (e.getPermission().getClass() != ReflectPermission.class ||
-                    !e.getPermission().getName().equals("newProxyInPackage.p")) {
-                throw e;
-            }
-        }
     }
 
     private static void makeProxy(ClassLoader loader, Class<?> cls) {

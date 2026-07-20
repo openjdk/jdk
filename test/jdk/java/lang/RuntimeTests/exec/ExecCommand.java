@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @bug 8012453 8016046
  * @requires (os.family == "windows")
- * @run testng/othervm -Djava.security.manager=allow ExecCommand
+ * @run testng/othervm ExecCommand
  * @summary workaround for legacy applications with Runtime.getRuntime().exec(String command)
  */
 
@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.Arrays;
 import java.util.List;
@@ -56,48 +55,6 @@ public class ExecCommand {
     private static final String JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS =
             "jdk.lang.Process.allowAmbiguousCommands";
 
-    static class SecurityMan extends SecurityManager {
-        public static String unquote(String str)
-        {
-            int length = (str == null)
-                ? 0
-                : str.length();
-
-            if (length > 1
-                && str.charAt(0) == '\"'
-                && str.charAt(length - 1) == '\"')
-            {
-               return str.substring(1, length - 1);
-            }
-            return str;
-        }
-
-        @Override public void checkExec(String cmd) {
-            String ncmd = (new File(unquote(cmd))).getPath();
-            if ( ncmd.equals(".\\Program")
-              || ncmd.equals("\".\\Program")
-              || ncmd.equals(".\\Program Files\\do.cmd")
-              || ncmd.equals(".\\Program.cmd")
-              || ncmd.equals("cmd"))
-            {
-                return;
-            }
-            super.checkExec(cmd);
-        }
-
-        public void checkPermission(Permission perm) {
-            if (perm instanceof RuntimePermission ||
-                    perm instanceof java.lang.reflect.ReflectPermission)
-                return;
-            super.checkPermission(perm);
-        };
-        @Override public void checkRead(String file) {}       // TestNG reads files
-        @Override public void checkWrite(String file) {}      // TestNG writes files
-        @Override public void checkDelete(String file) {}
-        @Override public void checkPropertiesAccess() {}
-        @Override public void checkPropertyAccess(String name) {}  // TestNG reads properties
-    }
-
     private static final List<String> doCmdCopy = List.of(
         ".\\Program.cmd",
         ".\\Program Files\\doNot.cmd",
@@ -106,7 +63,7 @@ public class ExecCommand {
     @BeforeClass
     void setup() throws Exception {
 
-        // Create files to be execute
+        // Create files to be executed
         try {
             new File(".\\Program Files").mkdirs();
             for (String cmdFile : doCmdCopy) {
@@ -124,11 +81,10 @@ public class ExecCommand {
      * Sequence of tests and test results in the TEST_RTE_ARGS DataProvider below.
      * The ordinals are used as indices in the lists of expected results.
      */
-    private enum Mode {
-        UNSET_NO_SM, // 0) no SM and default allowAmbiguousCommands; equivalent to true
-        EMPTY_NO_SM, // 1) no SM and allowAmbiguousCommand is empty; equivalent to true
-        FALSE_NO_SM, // 2) no SM and allowAmbiguousCommands = false
-        EMPTY_SM,    // 3) SM and default allowAmbiguousCommands is empty; equivalent to false
+    private enum AmbiguousMode {
+        UNSET,      // 0) default allowAmbiguousCommands; equivalent to true
+        EMPTY,      // 1) allowAmbiguousCommand is empty; equivalent to true
+        FALSE,      // 2) allowAmbiguousCommands = false
     };
 
     /**
@@ -143,42 +99,35 @@ public class ExecCommand {
                         "dirOut.txt",
                         Arrays.asList(null,
                                 null,
-                                FileNotFoundException.class,
                                 FileNotFoundException.class)
                 },
                 {"cmd /C dir > \".\\Program Files\\dirOut.txt\"",
                         "./Program Files/dirOut.txt",
                         Arrays.asList(null,
                                 null,
-                                FileNotFoundException.class,
                                 FileNotFoundException.class)
                 },
                 {".\\Program Files\\do.cmd",
                         null,
                         Arrays.asList(null,
                                 null,
-                                IOException.class,
                                 IOException.class)
                 },
                 {"\".\\Program Files\\doNot.cmd\" arg",
                         null,
-                        Arrays.asList(null,
-                                null,
-                                null,
-                                AccessControlException.class)
+                        Arrays.asList(null, null, null)
                 },
                 {"\".\\Program Files\\do.cmd\" arg",
                         null,
-                        // AccessControlException
-                        Arrays.asList(null, null, null, null)
+                        Arrays.asList(null, null, null)
                 },
                 {"\".\\Program.cmd\" arg",
                         null,
-                        Arrays.asList(null, null, null, null)
+                        Arrays.asList(null, null, null)
                 },
                 {".\\Program.cmd arg",
                         null,
-                        Arrays.asList(null, null, null, null)
+                        Arrays.asList(null, null, null)
                 },
         };
     }
@@ -194,10 +143,9 @@ public class ExecCommand {
         // "true" by default with the legacy verification procedure
         Properties props = System.getProperties();
         props.remove(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS);
-        System.setSecurityManager(null);
 
         testCommandMode(command, "Ambiguous Unset", testFile,
-                perModeExpected.get(Mode.UNSET_NO_SM.ordinal()));
+                perModeExpected.get(AmbiguousMode.UNSET.ordinal()));
     }
 
     /**
@@ -209,9 +157,8 @@ public class ExecCommand {
     void testCommandAmbiguousEmpty(String command, String testFile, List<Class<Exception>> perModeExpected) {
         Properties props = System.getProperties();
         props.setProperty(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS, "");
-        System.setSecurityManager(null);
         testCommandMode(command, "Ambiguous Empty", testFile,
-                perModeExpected.get(Mode.EMPTY_NO_SM.ordinal()));
+                perModeExpected.get(AmbiguousMode.EMPTY.ordinal()));
     }
 
     /**
@@ -223,25 +170,9 @@ public class ExecCommand {
     void testCommandAmbiguousFalse(String command, String testFile, List<Class<Exception>> perModeExpected) {
         Properties props = System.getProperties();
         props.setProperty(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS, "false");
-        System.setSecurityManager(null);
 
         testCommandMode(command, "Ambiguous false", testFile,
-                perModeExpected.get(Mode.FALSE_NO_SM.ordinal()));
-    }
-
-    /**
-     * Test each command with SecurityManager and default allowAmbiguousCommands is empty.
-     * @param command a command
-     * @param perModeExpected an expected Exception class or null
-     */
-    @Test(dataProvider = "TEST_RTE_ARGS")
-    void testCommandWithSM(String command, String testFile, List<Class<Exception>> perModeExpected) {
-        Properties props = System.getProperties();
-        props.setProperty(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS, "");
-        System.setSecurityManager(new SecurityMan());
-
-        testCommandMode(command, "SecurityManager and Ambiguous Empty", testFile,
-                perModeExpected.get(Mode.EMPTY_SM.ordinal()));
+                perModeExpected.get(AmbiguousMode.FALSE.ordinal()));
     }
 
     private void testCommandMode(String command, String kind,

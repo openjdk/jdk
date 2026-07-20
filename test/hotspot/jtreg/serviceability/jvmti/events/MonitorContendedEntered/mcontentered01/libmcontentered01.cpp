@@ -32,7 +32,6 @@ extern "C" {
 /* ========================================================================== */
 
 /* scaffold objects */
-static JNIEnv *jni = nullptr;
 static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 
@@ -127,7 +126,6 @@ static int clean() {
  */
 static void JNICALL
 agentProc(jvmtiEnv *jvmti, JNIEnv *agentJNI, void *arg) {
-  jni = agentJNI;
 
 /* wait for initial sync */
   if (!agent_wait_for_sync(timeout))

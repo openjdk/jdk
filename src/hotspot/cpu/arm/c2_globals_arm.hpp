@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ define_pd_global(intx, ConditionalMoveLimit,         4);
 // C2 gets to use all the float/double registers
 define_pd_global(intx, FreqInlineSize,               175);
 define_pd_global(intx, InteriorEntryAlignment,       16);  // = CodeEntryAlignment
-define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 // The default setting 16/16 seems to work best.
 // (For _228_jack 16/16 is 2% better than 4/4, 16/4, 32/32, 32/16, or 16/32.)
 //define_pd_global(intx, OptoLoopAlignment,            16);  // = 4*wordSize
@@ -64,6 +63,7 @@ define_pd_global(bool, OptoBundling,                 false);
 define_pd_global(bool, OptoScheduling,               true);
 define_pd_global(bool, OptoRegScheduling,            false);
 define_pd_global(bool, SuperWordLoopUnrollAnalysis,  false);
+define_pd_global(uint, SuperWordStoreToLoadForwardingFailureDetection, 16);
 define_pd_global(bool, IdealizeClearArrayNode,       true);
 
 #ifdef _LP64
@@ -79,9 +79,6 @@ define_pd_global(size_t, NonProfiledCodeHeapSize,    21*M);
 define_pd_global(size_t, ProfiledCodeHeapSize,       22*M);
 define_pd_global(size_t, NonNMethodCodeHeapSize,     5*M );
 define_pd_global(size_t, CodeCacheExpansionSize,     64*K);
-
-// Ergonomics related flags
-define_pd_global(uint64_t, MaxRAM,                   128ULL*G);
 #else
 // InitialCodeCacheSize derived from specjbb2000 run.
 define_pd_global(size_t, InitialCodeCacheSize,       1536*K); // Integral multiple of CodeCacheExpansionSize
@@ -90,15 +87,10 @@ define_pd_global(size_t, NonProfiledCodeHeapSize,    13*M);
 define_pd_global(size_t, ProfiledCodeHeapSize,       14*M);
 define_pd_global(size_t, NonNMethodCodeHeapSize,     5*M );
 define_pd_global(size_t, CodeCacheExpansionSize,     32*K);
-// Ergonomics related flags
-define_pd_global(uint64_t, MaxRAM,                   4ULL*G);
 #endif
-define_pd_global(uintx, CodeCacheMinBlockLength,     6);
+define_pd_global(size_t, CodeCacheMinBlockLength,    6);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
 define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed
-
-// Ergonomics related flags
-define_pd_global(bool, NeverActAsServerClassMachine, false);
 
 #endif // CPU_ARM_C2_GLOBALS_ARM_HPP

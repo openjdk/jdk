@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ Java_java_lang_ClassLoader_defineClass1(JNIEnv *env,
 
     (*env)->GetByteArrayRegion(env, data, offset, length, body);
 
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         goto free_body;
     }
 
@@ -259,7 +259,7 @@ Java_java_lang_ClassLoader_defineClass0(JNIEnv *env,
 
     (*env)->GetByteArrayRegion(env, data, offset, length, body);
 
-    if ((*env)->ExceptionOccurred(env))
+    if ((*env)->ExceptionCheck(env))
         goto free_body;
 
     if (name != NULL) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  */
 
+import static jdk.test.lib.process.ProcessTools.executeProcess;
+import static org.testng.Assert.assertTrue;
+
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -33,21 +36,20 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.test.lib.compiler.CompilerUtils;
-import static jdk.test.lib.process.ProcessTools.*;
-
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 
 /**
  * @test
- * @bug 8174826
+ * @bug 8174826 8345573
  * @library /test/lib
- * @modules jdk.compiler jdk.jlink
+ * @modules jdk.compiler jdk.jlink/jdk.tools.jlink.internal
  * @build BindServices jdk.test.lib.process.ProcessTools
  *        jdk.test.lib.compiler.CompilerUtils
- * @run testng BindServices
+ * @run testng/othervm BindServices
  */
 
 public class BindServices {
@@ -56,21 +58,23 @@ public class BindServices {
 
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MODS_DIR = Paths.get("mods");
+    private static final boolean LINKABLE_RUNTIME = LinkableRuntimeImage.isLinkableRuntime();
+    private static final boolean JMODS_EXIST = Files.exists(Paths.get(JAVA_HOME, "jmods"));
 
-    private static final String MODULE_PATH =
-        Paths.get(JAVA_HOME, "jmods").toString() +
-            File.pathSeparator + MODS_DIR.toString();
+    private static final String MODULE_PATH = (JMODS_EXIST ? Paths.get(JAVA_HOME, "jmods").toString() +
+                                                             File.pathSeparator : "") +
+                                                 MODS_DIR.toString();
 
     // the names of the modules in this test
     private static String[] modules = new String[] {"m1", "m2", "m3"};
 
 
-    private static boolean hasJmods() {
-        if (!Files.exists(Paths.get(JAVA_HOME, "jmods"))) {
-            System.err.println("Test skipped. NO jmods directory");
-            return false;
+    private static boolean isExplodedJDKImage() {
+        if (!JMODS_EXIST && !LINKABLE_RUNTIME) {
+            System.err.println("Test skipped. Not a linkable runtime and no JMODs");
+            return true;
         }
-        return true;
+        return false;
     }
 
     /*
@@ -78,7 +82,7 @@ public class BindServices {
      */
     @BeforeTest
     public void compileAll() throws Throwable {
-        if (!hasJmods()) return;
+        if (isExplodedJDKImage()) return;
 
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
@@ -89,7 +93,7 @@ public class BindServices {
 
     @Test
     public void noServiceBinding() throws Throwable {
-        if (!hasJmods()) return;
+        if (isExplodedJDKImage()) return;
 
         Path dir = Paths.get("noServiceBinding");
 
@@ -103,7 +107,7 @@ public class BindServices {
 
     @Test
     public void fullServiceBinding() throws Throwable {
-        if (!hasJmods()) return;
+        if (isExplodedJDKImage()) return;
 
         Path dir = Paths.get("fullServiceBinding");
 
@@ -122,7 +126,7 @@ public class BindServices {
 
     @Test
     public void testVerbose() throws Throwable {
-        if (!hasJmods()) return;
+        if (isExplodedJDKImage()) return;
 
         Path dir = Paths.get("verbose");
 
@@ -153,7 +157,7 @@ public class BindServices {
 
     @Test
     public void testVerboseAndNoBindServices() throws Throwable {
-        if (!hasJmods()) return;
+        if (isExplodedJDKImage()) return;
 
         Path dir = Paths.get("verboseNoBind");
 

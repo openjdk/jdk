@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
  * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase /test/lib
  * @run main/othervm
- *      -XX:MetaspaceSize=10m
- *      -XX:MaxMetaspaceSize=10m
+ *      -XX:MetaspaceSize=20m
+ *      -XX:MaxMetaspaceSize=20m
  *      -Xlog:gc*:gc.log
  *      metaspace.shrink_grow.ShrinkGrowTest.ShrinkGrowTest
  */

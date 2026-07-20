@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
@@ -474,7 +473,7 @@ RootChunkAreaLUT::~RootChunkAreaLUT() {
   for (int i = 0; i < _num; i++) {
     _arr[i].~RootChunkArea();
   }
-  FREE_C_HEAP_ARRAY(RootChunkArea, _arr);
+  FREE_C_HEAP_ARRAY(_arr);
 }
 
 #ifdef ASSERT

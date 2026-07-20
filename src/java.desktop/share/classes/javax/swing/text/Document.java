@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -471,24 +471,31 @@ public interface Document {
     public void remove(int offs, int len) throws BadLocationException;
 
     /**
-     * Inserts a string of content.  This will cause a DocumentEvent
-     * of type DocumentEvent.EventType.INSERT to be sent to the
-     * registered DocumentListeners, unless an exception is thrown.
-     * The DocumentEvent will be delivered by calling the
-     * insertUpdate method on the DocumentListener.
-     * The offset and length of the generated DocumentEvent
-     * will indicate what change was actually made to the Document.
-     * <p style="text-align:center"><img src="doc-files/Document-insert.gif"
+     * Inserts a string of content.  This will cause a {@code DocumentEvent}
+     * of type {@code DocumentEvent.EventType.INSERT} to be sent to the
+     * registered {@code DocumentListener}s, unless an exception is thrown.
+     * The {@code DocumentEvent} will be delivered by calling the
+     * {@code insertUpdate} method on the {@code DocumentListener}.
+     * The offset and length of the generated {@code DocumentEvent}
+     * will indicate what change was actually made to the {@code Document}.
+     * <p>
+     * For example, if the document contains the text
+     * <i>&lsquo;The brown fox&rsquo;</i>,
+     * calling {@code insert(4, "quick ", null)} will insert the word
+     * <i>&lsquo;quick&rsquo;</i> and the following space into the text,
+     * and all the marks at 4 and above will be moved by 6 (the number
+     * of inserted characters).
+     * <p style="text-align:center"><img src="doc-files/Document-insert.svg"
      *  alt="Diagram shows insertion of 'quick' in 'The quick brown fox'">
      * <p>
-     * If the Document structure changed as result of the insertion,
-     * the details of what Elements were inserted and removed in
+     * If the {@code Document} structure changed as result of the insertion,
+     * the details of what {@code Element}s were inserted and removed in
      * response to the change will also be contained in the generated
-     * DocumentEvent.  It is up to the implementation of a Document
+     * {@code DocumentEvent}.  It is up to the implementation of a {@code Document}
      * to decide how the structure should change in response to an
      * insertion.
      * <p>
-     * If the Document supports undo/redo, an UndoableEditEvent will
+     * If the {@code Document} supports undo/redo, an {@code UndoableEditEvent} will
      * also be generated.
      *
      * @param offset  the offset into the document to insert the content &gt;= 0.
@@ -496,7 +503,7 @@ public interface Document {
      *    will move.
      * @param str    the string to insert
      * @param a      the attributes to associate with the inserted
-     *   content.  This may be null if there are no attributes.
+     *   content.  This may be {@code null} if there are no attributes.
      * @throws BadLocationException  the given insert position is not a valid
      * position within the document
      * @see javax.swing.event.DocumentEvent

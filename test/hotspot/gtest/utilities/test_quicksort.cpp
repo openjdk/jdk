@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/quickSort.hpp"
@@ -130,7 +129,7 @@ TEST(QuickSort, random) {
     // Compare sorting to stdlib::qsort()
     qsort(expected_array, length, sizeof(int), test_stdlib_comparator);
     EXPECT_TRUE(sort_and_compare(test_array, expected_array, length, test_comparator));
-    FREE_C_HEAP_ARRAY(int, test_array);
-    FREE_C_HEAP_ARRAY(int, expected_array);
+    FREE_C_HEAP_ARRAY(test_array);
+    FREE_C_HEAP_ARRAY(expected_array);
   }
 }

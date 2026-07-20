@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8214031 8214114 8236546
+ * @bug 8214031 8214114 8236546 8353565
  * @summary Verify switch expressions embedded in various statements work properly.
  * @compile ExpressionSwitchEmbedding.java
  * @run main ExpressionSwitchEmbedding
@@ -32,6 +32,7 @@
 public class ExpressionSwitchEmbedding {
     public static void main(String... args) {
         new ExpressionSwitchEmbedding().run();
+        new ExpressionSwitchEmbedding().runStackMapMergingTest();
     }
 
     private void run() {
@@ -329,6 +330,110 @@ public class ExpressionSwitchEmbedding {
             }
         }
     }
+
+    private void runStackMapMergingTest() {
+        //JDK-8353565: verify that two types neither of which is a subtype of the other
+        //can be merged while computing StackMaps.
+        if (!(computeTypeAtMergePoint1(E.A, E.A) instanceof Impl1a)) {
+            throw new AssertionError("Unexpected result");
+        }
+        if (runMethodForInterfaceTypeAtMergePoint1(E.A, E.A) != 1) {
+            throw new AssertionError("Unexpected result");
+        }
+        if (runMethodForInterfaceTypeAtMergePoint2(E.A, E.A) != 2) {
+            throw new AssertionError("Unexpected result");
+        }
+    }
+
+    private Root computeTypeAtMergePoint1(E e1, E e2) {
+        return (Root) switch (e1) {
+            case A -> switch (e2) {
+                case A -> new Impl1a();
+                case B -> new Impl1b();
+                case C -> new Impl1c();
+            };
+            case B -> switch (e2) {
+                case A -> new Impl2a();
+                case B -> new Impl2b();
+                case C -> new Impl2c();
+            };
+            case C -> switch (e2) {
+                case A -> new Impl3a();
+                case B -> new Impl3b();
+                case C -> new Impl3c();
+            };
+        };
+    }
+
+    private int runMethodForInterfaceTypeAtMergePoint1(E e1, E e2) {
+        return (switch (e1) {
+            case A -> switch (e2) {
+                case A -> new C1();
+                case B -> new C1();
+                case C -> new C1();
+            };
+            case B -> switch (e2) {
+                case A -> new C2();
+                case B -> new C2();
+                case C -> new C2();
+            };
+            case C -> switch (e2) {
+                case A -> new C3();
+                case B -> new C3();
+                case C -> new C3();
+            };
+        }).test1();
+    }
+
+    private int runMethodForInterfaceTypeAtMergePoint2(E e1, E e2) {
+        return (switch (e1) {
+            case A -> switch (e2) {
+                case A -> new C1();
+                case B -> new C1();
+                case C -> new C1();
+            };
+            case B -> switch (e2) {
+                case A -> new C2();
+                case B -> new C2();
+                case C -> new C2();
+            };
+            case C -> switch (e2) {
+                case A -> new C3();
+                case B -> new C3();
+                case C -> new C3();
+            };
+        }).test2();
+    }
+
+    private static class Root {}
+    private static class Base1 extends Root {}
+    private static class Impl1a extends Base1 {}
+    private static class Impl1b extends Base1 {}
+    private static class Impl1c extends Base1 {}
+    private static class Base2 extends Root {}
+    private static class Impl2a extends Base2 {}
+    private static class Impl2b extends Base2 {}
+    private static class Impl2c extends Base2 {}
+    private static class Base3 extends Root {}
+    private static class Impl3a extends Base3 {}
+    private static class Impl3b extends Base3 {}
+    private static class Impl3c extends Base3 {}
+
+    private static interface RootInterface1 {
+        public default int test1() {
+            return 1;
+        }
+    }
+    private static interface RootInterface2 {
+        public default int test2() {
+            return 2;
+        }
+    }
+    private static class C1 implements RootInterface1, RootInterface2 {}
+    private static class C2 implements RootInterface1, RootInterface2 {}
+    private static class C3 implements RootInterface1, RootInterface2 {}
+
+    enum E {A, B, C;}
 
     private void throwException() {
         throw new RuntimeException();

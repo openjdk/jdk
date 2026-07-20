@@ -26,6 +26,7 @@
 /*
  * @test id=debug
  * @bug 8251158
+ * @key randomness
  * @library /test/lib
  * @modules java.base/jdk.internal.misc java.management
  * @build jdk.test.whitebox.WhiteBox
@@ -37,6 +38,7 @@
 /*
  * @test id=ndebug
  * @bug 8251158
+ * @key randomness
  * @library /test/lib
  * @modules java.base/jdk.internal.misc java.management
  * @build jdk.test.whitebox.WhiteBox
@@ -45,19 +47,21 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestMetaspaceAllocation
  */
 
+import jdk.test.lib.Unit;
+
 public class TestMetaspaceAllocation {
 
     public static void main(String[] args) {
 
         MetaspaceTestContext context = new MetaspaceTestContext();
-        MetaspaceTestArena arena1 = context.createArena(false, 1024 * 1024 * 4);
-        MetaspaceTestArena arena2 = context.createArena(true,1024 * 1024 * 4);
+        MetaspaceTestArena arena1 = context.createArena(false, 32L * Unit.M.size());
+        MetaspaceTestArena arena2 = context.createArena(true, 32L * Unit.M.size());
 
-        Allocation a1 = arena1.allocate(100);
-        Allocation a2 = arena2.allocate(100);
+        Allocation a1 = arena1.allocate(800);
+        Allocation a2 = arena2.allocate(800);
 
-        long used = context.usedWords();
-        long committed = context.committedWords();
+        long used = context.usedBytes();
+        long committed = context.committedBytes();
 
         System.out.println("used " + used + " committed " + committed);
 

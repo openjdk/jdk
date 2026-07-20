@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "waitBarrier_linux.hpp"
-#include <sys/syscall.h>
+
 #include <linux/futex.h>
+#include <sys/syscall.h>
 
 // 32-bit RISC-V has no SYS_futex syscall.
 #ifdef RISCV32

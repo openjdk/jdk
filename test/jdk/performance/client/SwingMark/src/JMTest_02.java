@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -66,14 +66,6 @@ public class JMTest_02 extends AbstractSwingTest {
     int             UP = 38;
 
     int      repeat = 15;
-
-    /**
-      * This test cannot run as an applet because it
-      * posts events to the event queue
-      */
-    public boolean canRunInApplet() {
-        return false;
-    }
 
     public JComponent getTestComponent() {
         JPanel panel = new JPanel();

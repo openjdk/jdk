@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
  * @test
  * @bug 6256805
  * @summary Tests invalid XML character encoding
- * @run main/othervm -Djava.security.manager=allow java_lang_Character
+ * @run main/othervm java_lang_Character
  * @author Sergey Malenkov
  */
 
 public final class java_lang_Character extends AbstractTest<Character> {
     public static void main(String[] args) {
-        new java_lang_Character().test(true);
+        new java_lang_Character().test();
     }
 
     protected Character getObject() {

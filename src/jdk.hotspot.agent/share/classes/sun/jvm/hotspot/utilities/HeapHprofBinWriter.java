@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -888,6 +888,16 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         out.writeInt(index);
         out.writeInt(DUMMY_STACK_TRACE_ID);
         writeLocalJNIHandles(jt, index);
+
+        int depth = 0;
+        var jvf = jt.getLastJavaVFrameDbg();
+        while (jvf != null) {
+            writeStackRefs(index, depth, jvf.getLocals());
+            writeStackRefs(index, depth, jvf.getExpressions());
+
+            depth++;
+            jvf = jvf.javaSender();
+        }
     }
 
     protected void writeLocalJNIHandles(JavaThread jt, int index) throws IOException {
@@ -926,6 +936,23 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         }
     }
 
+    protected void writeStackRefs(int threadIndex, int frameIndex, StackValueCollection values) throws IOException {
+        for (int index = 0; index < values.size(); index++) {
+            if (values.get(index).getType() == BasicType.getTObject()) {
+                OopHandle oopHandle = values.oopHandleAt(index);
+                Oop oop = objectHeap.newOop(oopHandle);
+                if (oop != null) {
+                    int size = BYTE_SIZE + OBJ_ID_SIZE + INT_SIZE * 2;
+                    writeHeapRecordPrologue(size);
+                    out.writeByte((byte) HPROF_GC_ROOT_JAVA_FRAME);
+                    writeObjectID(oop);
+                    out.writeInt(threadIndex);
+                    out.writeInt(frameIndex);
+                }
+            }
+        }
+    }
+
     protected void writeGlobalJNIHandle(Address handleAddr) throws IOException {
         OopHandle oopHandle = handleAddr.getOopHandleAt(0);
         Oop oop = objectHeap.newOop(oopHandle);
@@ -938,6 +965,22 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             // use JNIHandle address as ID
             writeObjectID(getAddressValue(handleAddr));
         }
+    }
+
+    @Override
+    protected void writeStickyClasses() throws IOException {
+        ClassLoaderData.theNullClassLoaderData().classesDo(k -> {
+            if (k instanceof InstanceKlass) {
+                try {
+                    int size = 1 + (int)VM.getVM().getAddressSize();
+                    writeHeapRecordPrologue(size);
+                    out.writeByte((byte)HPROF_GC_ROOT_STICKY_CLASS);
+                    writeClassID(k);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+        });
     }
 
     protected void writeObjectArray(ObjArray array) throws IOException {
@@ -1005,56 +1048,56 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
     private void writeBooleanArray(TypeArray array, int length) throws IOException {
         for (int index = 0; index < length; index++) {
-             long offset = BOOLEAN_BASE_OFFSET + index * BOOLEAN_SIZE;
+             long offset = (long) BOOLEAN_BASE_OFFSET + index * BOOLEAN_SIZE;
              out.writeBoolean(array.getHandle().getJBooleanAt(offset));
         }
     }
 
     private void writeByteArray(TypeArray array, int length) throws IOException {
         for (int index = 0; index < length; index++) {
-             long offset = BYTE_BASE_OFFSET + index * BYTE_SIZE;
+             long offset = (long) BYTE_BASE_OFFSET + index * BYTE_SIZE;
              out.writeByte(array.getHandle().getJByteAt(offset));
         }
     }
 
     private void writeShortArray(TypeArray array, int length) throws IOException {
         for (int index = 0; index < length; index++) {
-             long offset = SHORT_BASE_OFFSET + index * SHORT_SIZE;
+             long offset = (long) SHORT_BASE_OFFSET + index * SHORT_SIZE;
              out.writeShort(array.getHandle().getJShortAt(offset));
         }
     }
 
     private void writeIntArray(TypeArray array, int length) throws IOException {
         for (int index = 0; index < length; index++) {
-             long offset = INT_BASE_OFFSET + index * INT_SIZE;
+             long offset = (long) INT_BASE_OFFSET + index * INT_SIZE;
              out.writeInt(array.getHandle().getJIntAt(offset));
         }
     }
 
     private void writeLongArray(TypeArray array, int length) throws IOException {
         for (int index = 0; index < length; index++) {
-             long offset = LONG_BASE_OFFSET + index * LONG_SIZE;
+             long offset = (long) LONG_BASE_OFFSET + index * LONG_SIZE;
              out.writeLong(array.getHandle().getJLongAt(offset));
         }
     }
 
     private void writeCharArray(TypeArray array, int length) throws IOException {
         for (int index = 0; index < length; index++) {
-             long offset = CHAR_BASE_OFFSET + index * CHAR_SIZE;
+             long offset = (long) CHAR_BASE_OFFSET + index * CHAR_SIZE;
              out.writeChar(array.getHandle().getJCharAt(offset));
         }
     }
 
     private void writeFloatArray(TypeArray array, int length) throws IOException {
         for (int index = 0; index < length; index++) {
-             long offset = FLOAT_BASE_OFFSET + index * FLOAT_SIZE;
+             long offset = (long) FLOAT_BASE_OFFSET + index * FLOAT_SIZE;
              out.writeFloat(array.getHandle().getJFloatAt(offset));
         }
     }
 
     private void writeDoubleArray(TypeArray array, int length) throws IOException {
         for (int index = 0; index < length; index++) {
-             long offset = DOUBLE_BASE_OFFSET + index * DOUBLE_SIZE;
+             long offset = (long) DOUBLE_BASE_OFFSET + index * DOUBLE_SIZE;
              out.writeDouble(array.getHandle().getJDoubleAt(offset));
         }
     }
@@ -1275,6 +1318,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         OopHandle handle = (oop != null)? oop.getHandle() : null;
         long address = getAddressValue(handle);
         writeObjectID(address);
+    }
+
+    private void writeClassID(Klass k) throws IOException {
+        writeObjectID(k.getJavaMirror());
     }
 
     private void writeSymbolID(Symbol sym) throws IOException {

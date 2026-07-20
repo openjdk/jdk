@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.lang.reflect.*;
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * InvocationHandler for dynamic proxy implementation of Annotation.
@@ -481,16 +479,11 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         return value;
     }
 
-    @SuppressWarnings("removal")
     private Method[] computeMemberMethods() {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<Method[]>() {
-                public Method[] run() {
-                    final Method[] methods = type.getDeclaredMethods();
-                    validateAnnotationMethods(methods);
-                    AccessibleObject.setAccessible(methods, true);
-                    return methods;
-                }});
+        final Method[] methods = type.getDeclaredMethods();
+        validateAnnotationMethods(methods);
+        AccessibleObject.setAccessible(methods, true);
+        return methods;
     }
 
     private transient volatile Method[] memberMethods;
@@ -681,13 +674,6 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
         UnsafeAccessor.setType(this, t);
         UnsafeAccessor.setMemberValues(this, mv);
-    }
-
-    /**
-     * Gets an unmodifiable view on the member values.
-     */
-    Map<String, Object> memberValues() {
-        return Collections.unmodifiableMap(memberValues);
     }
 
     private static class UnsafeAccessor {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/stackMapTable.hpp"
 #include "classfile/verifier.hpp"
@@ -34,6 +33,10 @@
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 
+// None of the error routines below take in a free-form, potentially unbounded
+// string, and names are all limited to < 64K, so we know that all formatted
+// strings passed to fthrow will not be excessively large.
+
 void ClassFileParser::classfile_parse_error(const char* msg, TRAPS) const {
   assert(_class_name != nullptr, "invariant");
   ResourceMark rm(THREAD);
@@ -41,11 +44,11 @@ void ClassFileParser::classfile_parse_error(const char* msg, TRAPS) const {
                      msg, _class_name->as_C_string());
 }
 
+// The caller is required/expected to have a ResourceMark in this case.
 void ClassFileParser::classfile_parse_error(const char* msg,
                                             int index,
                                             TRAPS) const {
   assert(_class_name != nullptr, "invariant");
-  ResourceMark rm(THREAD);
   Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_ClassFormatError(),
                      msg, index, _class_name->as_C_string());
 }
@@ -86,6 +89,12 @@ void ClassFileParser::classfile_icce_error(const char* msg,
   ResourceMark rm(THREAD);
   Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IncompatibleClassChangeError(),
                      msg, _class_name->as_klass_external_name(), k->external_name());
+}
+
+void ClassFileParser::classfile_icce_error(const char* msg,
+                                           TRAPS) const {
+  ResourceMark rm(THREAD);
+  Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IncompatibleClassChangeError(), msg);
 }
 
 void ClassFileParser::classfile_ucve_error(const char* msg,

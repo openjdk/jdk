@@ -83,7 +83,7 @@ public class NativeWinSysTerminal extends AbstractWindowsTerminal<java.lang.fore
                 type = type != null ? type : OSUtils.IS_CONEMU ? TYPE_WINDOWS_CONEMU : TYPE_WINDOWS;
                 writer = new NativeWinConsoleWriter();
             } else {
-                int m = inMode.get(java.lang.foreign.ValueLayout.JAVA_INT, 0);
+                int m = outMode.get(java.lang.foreign.ValueLayout.JAVA_INT, 0);
                 if (enableVtp(console, m)) {
                     type = type != null ? type : TYPE_WINDOWS_VTP;
                     writer = new NativeWinConsoleWriter();

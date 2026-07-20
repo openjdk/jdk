@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,20 @@
 #define SHARE_UTILITIES_CLASSPATHSTREAM_HPP
 
 class ClasspathStream : public StackObj {
-  const char* _class_path;
-  int _len;
-  int _start;
-  int _end;
-
+  const char* _cp;
+  static char separator();
+  void skip_blank_paths();
 public:
-  ClasspathStream(const char* class_path) {
-    _class_path = class_path;
-    _len = (int)strlen(class_path);
-    _start = 0;
-    _end = 0;
-  }
+  // The caller should ensure that class_path is alive during the
+  // lifetime of this ClasspathStream.
+  ClasspathStream(const char* class_path);
 
   bool has_next() {
-    return _start < _len;
+    return *_cp != '\0';
   }
 
+  // Call this only after you checked has_next().
+  // Returns a resource-allocated string.
   const char* get_next();
 };
 

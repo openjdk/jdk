@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,10 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.AccessController;
 import java.security.cert.Extension;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.*;
-import sun.security.action.GetBooleanAction;
-import sun.security.action.GetIntegerAction;
-import sun.security.action.GetPropertyAction;
 import sun.security.provider.certpath.CertId;
 import sun.security.provider.certpath.OCSP;
 import sun.security.provider.certpath.OCSPResponse;
@@ -63,20 +59,17 @@ final class StatusResponseManager {
      * Create a StatusResponseManager with default parameters.
      */
     StatusResponseManager() {
-        @SuppressWarnings("removal")
-        int cap = AccessController.doPrivileged(
-                new GetIntegerAction("jdk.tls.stapling.cacheSize",
-                    DEFAULT_CACHE_SIZE));
+        int cap = Integer.getInteger(
+                "jdk.tls.stapling.cacheSize",
+                DEFAULT_CACHE_SIZE);
         cacheCapacity = cap > 0 ? cap : 0;
 
-        @SuppressWarnings("removal")
-        int life = AccessController.doPrivileged(
-                new GetIntegerAction("jdk.tls.stapling.cacheLifetime",
-                    DEFAULT_CACHE_LIFETIME));
+        int life = Integer.getInteger(
+                "jdk.tls.stapling.cacheLifetime",
+                DEFAULT_CACHE_LIFETIME);
         cacheLifetime = life > 0 ? life : 0;
 
-        String uriStr = GetPropertyAction
-                .privilegedGetProperty("jdk.tls.stapling.responderURI");
+        String uriStr = System.getProperty("jdk.tls.stapling.responderURI");
         URI tmpURI;
         try {
             tmpURI = ((uriStr != null && !uriStr.isEmpty()) ?
@@ -86,10 +79,9 @@ final class StatusResponseManager {
         }
         defaultResponder = tmpURI;
 
-        respOverride = GetBooleanAction
-                .privilegedGetProperty("jdk.tls.stapling.responderOverride");
-        ignoreExtensions = GetBooleanAction
-                .privilegedGetProperty("jdk.tls.stapling.ignoreExtensions");
+        respOverride = Boolean.getBoolean("jdk.tls.stapling.responderOverride");
+        ignoreExtensions = Boolean.getBoolean
+                ("jdk.tls.stapling.ignoreExtensions");
 
         threadMgr = new ScheduledThreadPoolExecutor(DEFAULT_CORE_THREADS,
                 r -> {
@@ -127,13 +119,13 @@ final class StatusResponseManager {
 
         if (cert.getExtensionValue(
                 PKIXExtensions.OCSPNoCheck_Id.toString()) != null) {
-            if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                 SSLLogger.fine(
                     "OCSP NoCheck extension found.  OCSP will be skipped");
             }
             return null;
         } else if (defaultResponder != null && respOverride) {
-            if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
               SSLLogger.fine(
                     "Responder override: URI is " + defaultResponder);
             }
@@ -173,7 +165,7 @@ final class StatusResponseManager {
         Map<X509Certificate, byte[]> responseMap = new HashMap<>();
         List<OCSPFetchCall> requestList = new ArrayList<>();
 
-        if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
             SSLLogger.fine(
                 "Beginning check: Type = " + type + ", Chain length = " +
                 chain.length);
@@ -200,7 +192,8 @@ final class StatusResponseManager {
                     requestList.add(new OCSPFetchCall(sInfo, ocspReq));
                 }
             } catch (IOException exc) {
-                if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                     SSLLogger.fine(
                         "Exception during CertId creation: ", exc);
                 }
@@ -227,14 +220,15 @@ final class StatusResponseManager {
                         requestList.add(new OCSPFetchCall(sInfo, ocspReq));
                     }
                 } catch (IOException exc) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                         SSLLogger.fine(
                             "Exception during CertId creation: ", exc);
                     }
                 }
             }
         } else {
-            if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                 SSLLogger.fine("Unsupported status request type: " + type);
             }
         }
@@ -257,25 +251,43 @@ final class StatusResponseManager {
                     }
 
                     if (!task.isCancelled()) {
-                        StatusInfo info = task.get();
+                        StatusInfo info;
+                        try {
+                            info = task.get();
+                        } catch (ExecutionException exc) {
+                            // Check for an underlying cause available and log
+                            // that, otherwise just log the ExecutionException
+                            Throwable cause = Optional.ofNullable(
+                                    exc.getCause()).orElse(exc);
+                            if (SSLLogger.isOn() &&
+                                    SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
+                                SSLLogger.fine("Exception during OCSP fetch: " +
+                                        cause);
+                            }
+                            continue;
+                        }
                         if (info != null && info.responseData != null) {
                             responseMap.put(info.cert,
                                     info.responseData.ocspBytes);
-                        } else if (SSLLogger.isOn &&
-                                SSLLogger.isOn("respmgr")) {
+                        } else if (SSLLogger.isOn() &&
+                                SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                             SSLLogger.fine(
                                 "Completed task had no response data");
                         }
                     } else {
-                        if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                        if (SSLLogger.isOn() &&
+                                SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                             SSLLogger.fine("Found cancelled task");
                         }
                     }
                 }
-            } catch (InterruptedException | ExecutionException exc) {
-                // Not sure what else to do here
-                if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
-                    SSLLogger.fine("Exception when getting data: ", exc);
+            } catch (InterruptedException intex) {
+                // Log and reset the interrupted state
+                Thread.currentThread().interrupt();
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
+                    SSLLogger.fine("Interrupt occurred while fetching: " +
+                            intex);
                 }
             }
         }
@@ -301,7 +313,8 @@ final class StatusResponseManager {
         for (Extension ext : ocspRequest.extensions) {
             if (ext.getId().equals(
                     PKIXExtensions.OCSPNonce_Id.toString())) {
-                if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                     SSLLogger.fine(
                             "Nonce extension found, skipping cache check");
                 }
@@ -316,14 +329,14 @@ final class StatusResponseManager {
         // and do not return it as a cache hit.
         if (respEntry != null && respEntry.nextUpdate != null &&
                 respEntry.nextUpdate.before(new Date())) {
-            if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                 SSLLogger.fine(
                     "nextUpdate threshold exceeded, purging from cache");
             }
             respEntry = null;
         }
 
-        if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
             SSLLogger.fine(
                     "Check cache for SN" + Debug.toString(cid.getSerialNumber())
                         + ": " + (respEntry != null ? "HIT" : "MISS"));
@@ -486,7 +499,7 @@ final class StatusResponseManager {
          */
         @Override
         public StatusInfo call() {
-            if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                 SSLLogger.fine(
                     "Starting fetch for SN " +
                     Debug.toString(statInfo.cid.getSerialNumber()));
@@ -498,13 +511,15 @@ final class StatusResponseManager {
                 if (statInfo.responder == null) {
                     // If we have no URI then there's nothing to do
                     // but return.
-                    if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                         SSLLogger.fine(
                             "Null URI detected, OCSP fetch aborted");
                     }
                     return statInfo;
                 } else {
-                    if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                         SSLLogger.fine(
                             "Attempting fetch from " + statInfo.responder);
                     }
@@ -534,7 +549,8 @@ final class StatusResponseManager {
                         statInfo.cid);
 
                 // Get the response status and act on it appropriately
-                if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                     SSLLogger.fine("OCSP Status: " + cacheEntry.status +
                         " (" + respBytes.length + " bytes)");
                 }
@@ -547,7 +563,8 @@ final class StatusResponseManager {
                     addToCache(statInfo.cid, cacheEntry);
                 }
             } catch (IOException ioe) {
-                if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                     SSLLogger.fine("Caught exception: ", ioe);
                 }
             }
@@ -566,12 +583,14 @@ final class StatusResponseManager {
             // If no cache lifetime has been set on entries then
             // don't cache this response if there is no nextUpdate field
             if (entry.nextUpdate == null && cacheLifetime == 0) {
-                if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                     SSLLogger.fine("Not caching this OCSP response");
                 }
             } else {
                 responseCache.put(certId, entry);
-                if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {
                     SSLLogger.fine(
                         "Added response for SN " +
                         Debug.toString(certId.getSerialNumber()) +
@@ -582,8 +601,7 @@ final class StatusResponseManager {
 
     }
 
-    static final StaplingParameters processStapling(
-            ServerHandshakeContext shc) {
+    static StaplingParameters processStapling(ServerHandshakeContext shc) {
         StaplingParameters params = null;
         SSLExtension ext = null;
         CertStatusRequestType type = null;
@@ -594,7 +612,7 @@ final class StatusResponseManager {
         // is necessary.  Also, we will only staple if we're doing a full
         // handshake.
         if (!shc.sslContext.isStaplingEnabled(false) || shc.isResumption) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine("Staping disabled or is a resumed session");
             }
             return null;
@@ -617,7 +635,8 @@ final class StatusResponseManager {
         // selection yet, only accept a request if the ResponderId field
         // is empty.  Finally, we'll only do this in (D)TLS 1.2 or earlier.
         if (statReqV2 != null && !shc.negotiatedProtocol.useTLS13PlusSpec()) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+            if (SSLLogger.isOn() &&
+                    SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                 SSLLogger.fine("SH Processing status_request_v2 extension");
             }
             // RFC 6961 stapling
@@ -654,8 +673,8 @@ final class StatusResponseManager {
                 req = reqItems[ocspIdx];
                 type = CertStatusRequestType.valueOf(req.statusType);
             } else {
-                if (SSLLogger.isOn &&
-                        SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.finest("Warning: No suitable request " +
                             "found in the status_request_v2 extension.");
                 }
@@ -672,7 +691,8 @@ final class StatusResponseManager {
         // we will try processing an asserted status_request.
         if ((statReq != null) &&
                 (ext == null || type == null || req == null)) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake,verbose")) {
+            if (SSLLogger.isOn() &&
+                    SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                 SSLLogger.fine("SH Processing status_request extension");
             }
             ext = SSLExtension.CH_STATUS_REQUEST;
@@ -686,7 +706,8 @@ final class StatusResponseManager {
                 if (ocspReq.responderIds.isEmpty()) {
                     req = ocspReq;
                 } else {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.finest("Warning: No suitable request " +
                             "found in the status_request extension.");
                     }
@@ -698,7 +719,7 @@ final class StatusResponseManager {
         // find a suitable StatusRequest, then stapling is disabled.
         // The ext, type and req variables must have been set to continue.
         if (type == null || req == null || ext == null) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine("No suitable status_request or " +
                         "status_request_v2, stapling is disabled");
             }
@@ -715,7 +736,7 @@ final class StatusResponseManager {
         }
 
         if (x509Possession == null) {       // unlikely
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.finest("Warning: no X.509 certificates found.  " +
                         "Stapling is disabled.");
             }
@@ -737,7 +758,8 @@ final class StatusResponseManager {
             responses = statRespMgr.get(fetchType, req, certs,
                     shc.statusRespTimeout, TimeUnit.MILLISECONDS);
             if (!responses.isEmpty()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.finest("Response manager returned " +
                             responses.size() + " entries.");
                 }
@@ -746,8 +768,8 @@ final class StatusResponseManager {
                 if (type == CertStatusRequestType.OCSP) {
                     byte[] respDER = responses.get(certs[0]);
                     if (respDER == null || respDER.length == 0) {
-                        if (SSLLogger.isOn &&
-                                SSLLogger.isOn("ssl,handshake")) {
+                        if (SSLLogger.isOn() &&
+                                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                             SSLLogger.finest("Warning: Null or zero-length " +
                                     "response found for leaf certificate. " +
                                     "Stapling is disabled.");
@@ -757,7 +779,8 @@ final class StatusResponseManager {
                 }
                 params = new StaplingParameters(ext, type, req, responses);
             } else {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.finest("Warning: no OCSP responses obtained.  " +
                             "Stapling is disabled.");
                 }
@@ -765,7 +788,7 @@ final class StatusResponseManager {
         } else {
             // This should not happen, but if lazy initialization of the
             // StatusResponseManager doesn't occur we should turn off stapling.
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.finest("Warning: lazy initialization " +
                         "of the StatusResponseManager failed.  " +
                         "Stapling is disabled.");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,11 @@ package java.io;
 
 import java.nio.CharBuffer;
 import java.nio.ReadOnlyBufferException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
-import jdk.internal.misc.InternalLock;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * Abstract class for reading character streams.  The only methods that a
@@ -141,6 +144,124 @@ public abstract class Reader implements Readable, Closeable {
     }
 
     /**
+     * Returns a {@code Reader} that reads characters from a
+     * {@code CharSequence}. The reader is initially open and reading starts at
+     * the first character in the sequence.
+     *
+     * <p> The returned reader supports the {@link #mark mark()} and
+     * {@link #reset reset()} operations.
+     *
+     * <p> The resulting reader is not safe for use by multiple
+     * concurrent threads. If the reader is to be used by more than one
+     * thread it should be controlled by appropriate synchronization.
+     *
+     * <p> If the sequence changes while the reader is open, e.g. the length
+     * changes, the behavior is undefined.
+     *
+     * @param cs {@code CharSequence} providing the character stream.
+     * @return a {@code Reader} which reads characters from {@code cs}
+     * @throws NullPointerException if {@code cs} is {@code null}
+     *
+     * @since 24
+     */
+    public static Reader of(final CharSequence cs) {
+        Objects.requireNonNull(cs);
+
+        return new Reader() {
+            private boolean isClosed;
+            private int next = 0;
+            private int mark = 0;
+
+            /** Check to make sure that the stream has not been closed */
+            private void ensureOpen() throws IOException {
+                if (isClosed)
+                    throw new IOException("Stream closed");
+            }
+
+            @Override
+            public int read() throws IOException {
+                ensureOpen();
+                if (next >= cs.length())
+                    return -1;
+                return cs.charAt(next++);
+            }
+
+            @Override
+            public int read(char[] cbuf, int off, int len) throws IOException {
+                ensureOpen();
+                Objects.checkFromIndexSize(off, len, cbuf.length);
+                if (len == 0) {
+                    return 0;
+                }
+                int length = cs.length();
+                if (next >= length)
+                    return -1;
+                int n = Math.min(length - next, len);
+                cs.getChars(next, next + n, cbuf, off);
+                next += n;
+                return n;
+            }
+
+            @Override
+            public String readAllAsString() throws IOException {
+                ensureOpen();
+                int len = cs.length();
+                String result = cs.subSequence(next, len).toString();
+                next += result.length();
+                return result;
+            }
+
+            @Override
+            public List<String> readAllLines() throws IOException {
+                return readAllAsString().lines().toList();
+            }
+
+            @Override
+            public long skip(long n) throws IOException {
+                ensureOpen();
+                if (next >= cs.length())
+                    return 0;
+                // Bound skip by beginning and end of the source
+                long r = Math.min(cs.length() - next, n);
+                r = Math.max(-next, r);
+                next += (int)r;
+                return r;
+            }
+
+            @Override
+            public boolean ready() throws IOException {
+                ensureOpen();
+                return true;
+            }
+
+            @Override
+            public boolean markSupported() {
+                return true;
+            }
+
+            @Override
+            public void mark(int readAheadLimit) throws IOException {
+                if (readAheadLimit < 0){
+                    throw new IllegalArgumentException("Read-ahead limit < 0");
+                }
+                ensureOpen();
+                mark = next;
+            }
+
+            @Override
+            public void reset() throws IOException {
+                ensureOpen();
+                next = mark;
+            }
+
+            @Override
+            public void close() {
+                isClosed = true;
+            }
+        };
+    }
+
+    /**
      * The object used to synchronize operations on this stream.  For
      * efficiency, a character-stream object may use an object other than
      * itself to protect critical sections.  A subclass should therefore use
@@ -168,21 +289,6 @@ public abstract class Reader implements Readable, Closeable {
             throw new NullPointerException();
         }
         this.lock = lock;
-    }
-
-    /**
-     * For use by BufferedReader to create a character-stream reader that uses an
-     * internal lock when BufferedReader is not extended and the given reader is
-     * trusted, otherwise critical sections will synchronize on the given reader.
-     */
-    Reader(Reader in) {
-        Class<?> clazz = in.getClass();
-        if (getClass() == BufferedReader.class &&
-                (clazz == InputStreamReader.class || clazz == FileReader.class)) {
-            this.lock = InternalLock.newLockOr(in);
-        } else {
-            this.lock = in;
-        }
     }
 
     /**
@@ -294,6 +400,157 @@ public abstract class Reader implements Readable, Closeable {
      */
     public abstract int read(char[] cbuf, int off, int len) throws IOException;
 
+    /**
+     * Reads all remaining characters as lines of text. This method blocks until
+     * all remaining characters have been read and end of stream is detected,
+     * or an exception is thrown. This method does not close the reader.
+     *
+     * <p> When this reader reaches the end of the stream, further
+     * invocations of this method will return an empty list.
+     *
+     * <p> A <i>line</i> is either a sequence of zero or more characters
+     * followed by a line terminator, or it is a sequence of one or
+     * more characters followed by the end of the stream.
+     * A line does not include the line terminator.
+     *
+     * <p> A <i>line terminator</i> is one of the following:
+     * a line feed character {@code "\n"} (U+000A),
+     * a carriage return character {@code "\r"} (U+000D),
+     * or a carriage return followed immediately by a line feed
+     * {@code "\r\n"} (U+000D U+000A).
+     *
+     * <p> The behavior for the case where the reader is
+     * <i>asynchronously closed</i>, or the thread interrupted during the
+     * read, is highly reader specific, and therefore not specified.
+     *
+     * <p> If an I/O error occurs reading from the stream then it
+     * may do so after some, but not all, characters have been read.
+     * Consequently the stream may not be at end of stream and may
+     * be in an inconsistent state. It is strongly recommended that the reader
+     * be promptly closed if an I/O error occurs.
+     *
+     * @apiNote
+     * This method is intended for simple cases where it is appropriate and
+     * convenient to read the entire input into a list of lines. It is not
+     * suitable for reading input from an unknown origin, as this may result
+     * in the allocation of an arbitrary amount of memory.
+     *
+     * @return     the remaining characters as lines of text stored in an
+     *             unmodifiable {@code List} of {@code String}s in the order
+     *             they are read
+     *
+     * @throws     IOException  If an I/O error occurs
+     * @throws     OutOfMemoryError  If the number of remaining characters
+     *             exceeds the implementation limit for {@code String}.
+     *
+     * @see String#lines
+     * @see #readAllAsString
+     * @see java.nio.file.Files#readAllLines
+     *
+     * @since 25
+     */
+    public List<String> readAllLines() throws IOException {
+        List<String> lines = new ArrayList<>();
+        char[] cb = new char[1024];
+
+        int start = 0;
+        int pos = 0;
+        int limit = 0;
+        boolean skipLF = false;
+        int n;
+        while ((n = read(cb, pos, cb.length - pos)) != -1) {
+            limit = pos + n;
+            while (pos < limit) {
+                if (skipLF) {
+                    if (cb[pos] == '\n') {
+                        pos++;
+                        start++;
+                    }
+                    skipLF = false;
+                }
+                while (pos < limit) {
+                    char c = cb[pos++];
+                    if (c == '\n' || c == '\r') {
+                        lines.add(new String(cb, start, pos - 1 - start));
+                        skipLF = (c == '\r');
+                        start = pos;
+                        break;
+                    }
+                }
+                if (pos == limit) {
+                    int len = limit - start;
+                    if (len >= cb.length/2) {
+                        // allocate larger buffer and copy chars to beginning
+                        int newLength = ArraysSupport.newLength(cb.length,
+                                            TRANSFER_BUFFER_SIZE, cb.length);
+                        char[] tmp = new char[newLength];
+                        System.arraycopy(cb, start, tmp, 0, len);
+                        cb = tmp;
+                    } else if (start != 0 && len != 0) {
+                        // move fragment to beginning of buffer
+                        System.arraycopy(cb, start, cb, 0, len);
+                    }
+                    pos = limit = len;
+                    start = 0;
+                    break;
+                }
+            }
+        }
+        // add a string if EOS terminates the last line
+        if (limit > start)
+            lines.add(new String(cb, start, limit - start));
+
+        return Collections.unmodifiableList(lines);
+    }
+
+    /**
+     * Reads all remaining characters into a string. This method blocks until
+     * all remaining characters including all line separators have been read
+     * and end of stream is detected, or an exception is thrown. The resulting
+     * string will contain line separators as they appear in the stream. This
+     * method does not close the reader.
+     *
+     * <p> When this reader reaches the end of the stream, further
+     * invocations of this method will return an empty string.
+     *
+     * <p> The behavior for the case where the reader
+     * is <i>asynchronously closed</i>, or the thread interrupted during the
+     * read, is highly reader specific, and therefore not specified.
+     *
+     * <p> If an I/O error occurs reading from the stream then it
+     * may do so after some, but not all, characters have been read.
+     * Consequently the stream may not be at end of stream and may
+     * be in an inconsistent state. It is strongly recommended that the reader
+     * be promptly closed if an I/O error occurs.
+     *
+     * @apiNote
+     * This method is intended for simple cases where it is appropriate and
+     * convenient to read the entire input into a {@code String}. It is not
+     * suitable for reading input from an unknown origin, as this may result
+     * in the allocation of an arbitrary amount of memory.
+     *
+     * @return     a {@code String} containing all remaining characters
+     *
+     * @throws     IOException       If an I/O error occurs
+     * @throws     OutOfMemoryError  If the number of remaining characters
+     *                               exceeds the implementation limit for
+     *                               {@code String}.
+     *
+     * @see #readAllLines
+     * @see java.nio.file.Files#readString
+     *
+     * @since 25
+     */
+    public String readAllAsString() throws IOException {
+        StringBuilder result = new StringBuilder();
+        char[] cbuf = new char[TRANSFER_BUFFER_SIZE];
+        int nread;
+        while ((nread = read(cbuf, 0, cbuf.length)) != -1) {
+            result.append(cbuf, 0, nread);
+        }
+        return result.toString();
+    }
+
     /** Maximum skip-buffer size */
     private static final int maxSkipBufferSize = 8192;
 
@@ -316,33 +573,19 @@ public abstract class Reader implements Readable, Closeable {
     public long skip(long n) throws IOException {
         if (n < 0L)
             throw new IllegalArgumentException("skip value is negative");
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                return implSkip(n);
-            } finally {
-                locker.unlock();
+        synchronized (lock) {
+            int nn = (int) Math.min(n, maxSkipBufferSize);
+            if ((skipBuffer == null) || (skipBuffer.length < nn))
+                skipBuffer = new char[nn];
+            long r = n;
+            while (r > 0) {
+                int nc = read(skipBuffer, 0, (int)Math.min(r, nn));
+                if (nc == -1)
+                    break;
+                r -= nc;
             }
-        } else {
-            synchronized (lock) {
-                return implSkip(n);
-            }
+            return n - r;
         }
-    }
-
-    private long implSkip(long n) throws IOException {
-        int nn = (int) Math.min(n, maxSkipBufferSize);
-        if ((skipBuffer == null) || (skipBuffer.length < nn))
-            skipBuffer = new char[nn];
-        long r = n;
-        while (r > 0) {
-            int nc = read(skipBuffer, 0, (int)Math.min(r, nn));
-            if (nc == -1)
-                break;
-            r -= nc;
-        }
-        return n - r;
     }
 
     /**

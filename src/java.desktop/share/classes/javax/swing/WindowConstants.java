@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,10 +71,7 @@ public interface WindowConstants
     public static final int DISPOSE_ON_CLOSE = 2;
 
     /**
-     * The exit application default window close operation. Attempting
-     * to set this on Windows that support this, such as
-     * <code>JFrame</code>, may throw a <code>SecurityException</code> based
-     * on the <code>SecurityManager</code>.
+     * The exit application default window close operation.
      * It is recommended you only use this in an application.
      *
      * @since 1.4

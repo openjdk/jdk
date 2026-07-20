@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @author Charlie Lai
  * @bug 4394746
  * @summary     Resources should not be loaded until necessar
- * @run main/othervm/policy=Format.policy -Djava.security.auth.login.config=file:${test.src}/Format.config Format
+ * @run main/othervm -Djava.security.auth.login.config=file:${test.src}/Format.config Format
  *
  */
 
@@ -117,13 +117,7 @@ public class Format
             System.out.println("Test 8: " + npe.getMessage());
         }
 
-        try {
-            Subject.getSubject(null);
-            throw new SecurityException("test 9 failed");
-        } catch (NullPointerException npe) {
-            // good
-            System.out.println("Test 9: " + npe.getMessage());
-        }
+        // test 9 was on Subject.getSubject(null);
 
         try {
             Subject.doAs(null, (java.security.PrivilegedAction)null);

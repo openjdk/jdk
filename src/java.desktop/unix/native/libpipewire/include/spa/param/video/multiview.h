@@ -59,12 +59,11 @@ enum spa_video_multiview_mode {
                                 *   sequence. This method only applies to
                                 *   raw video buffers at the moment.
                                 *   Specific view identification is via
-                                *   \ref spa_video_multiview_meta on raw
-                                *   video buffers. */
+                                *   metadata on raw video buffers. */
     SPA_VIDEO_MULTIVIEW_MODE_SEPARATED,        /**< Multiple views are provided as separate
                              *   \ref spa_data framebuffers attached
                              *   to each \ref spa_buffer, described
-                             *   by the \ref spa_video_multiview_meta */
+                             *   by the metadata */
     /* future expansion for annotated modes */
 };
 
@@ -97,9 +96,7 @@ enum spa_video_multiview_flags {
     SPA_VIDEO_MULTIVIEW_FLAGS_MIXED_MONO = (1 << 15),    /**< The video stream contains both
                                  *   mono and multiview portions,
                                  *   signalled on each buffer by the
-                                 *   absence or presence of the
-                                 *   \ref SPA_VIDEO_BUFFER_FLAG_MULTIPLE_VIEW
-                                 *   buffer flag. */
+                                 *   absence or presence of a buffer flag. */
 };
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,8 +101,8 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * </blockquote>
  *
  * <p>If the specified locale contains "ca" (calendar), "rg" (region override),
- * and/or "tz" (timezone) <a href="../util/Locale.html#def_locale_extension">Unicode
- * extensions</a>, the calendar, the country and/or the time zone for formatting
+ * and/or "tz" (timezone) {@linkplain Locale##def_locale_extension Unicode
+ * extensions}, the calendar, the country and/or the time zone for formatting
  * are overridden. If both "ca" and "rg" are specified, the calendar from the "ca"
  * extension supersedes the implicit one from the "rg" extension.
  *
@@ -953,7 +953,7 @@ public abstract class DateFormat extends Format {
         private static final Field[] calendarToFieldMapping =
                                              new Field[Calendar.FIELD_COUNT];
 
-        /** Calendar field. */
+        /** @serial Calendar field. */
         private int calendarField;
 
         /**

@@ -209,41 +209,85 @@ public final class TerminalBuilder {
         return this;
     }
 
+    /**
+     * Forces the usage of the give terminal provider.
+     *
+     * @param provider The {@link TerminalProvider}'s name to use when creating the Terminal.
+     * @return The builder.
+     */
     public TerminalBuilder provider(String provider) {
         this.provider = provider;
         return this;
     }
 
+    /**
+     * Sets the list of providers to try when creating the terminal.
+     * If not specified, the system property {@link #PROP_PROVIDERS} will be used if set.
+     * Else, the value {@link #PROP_PROVIDERS_DEFAULT} will be used.
+     *
+     * @param providers The list of {@link TerminalProvider}'s names to check when creating the Terminal.
+     * @return The builder.
+     */
     public TerminalBuilder providers(String providers) {
         this.providers = providers;
         return this;
     }
 
+    /**
+     * Enables or disables the {@link #PROP_PROVIDER_JNA}/{@code jna} terminal provider.
+     * If not specified, the system property {@link #PROP_JNA} will be used if set.
+     * If not specified, the provider will be checked.
+     */
     public TerminalBuilder jna(boolean jna) {
         this.jna = jna;
         return this;
     }
 
+    /**
+     * Enables or disables the {@link #PROP_PROVIDER_JANSI}/{@code jansi} terminal provider.
+     * If not specified, the system property {@link #PROP_JANSI} will be used if set.
+     * If not specified, the provider will be checked.
+     */
     public TerminalBuilder jansi(boolean jansi) {
         this.jansi = jansi;
         return this;
     }
 
+    /**
+     * Enables or disables the {@link #PROP_PROVIDER_JNI}/{@code jni} terminal provider.
+     * If not specified, the system property {@link #PROP_JNI} will be used if set.
+     * If not specified, the provider will be checked.
+     */
     public TerminalBuilder jni(boolean jni) {
         this.jni = jni;
         return this;
     }
 
+    /**
+     * Enables or disables the {@link #PROP_PROVIDER_EXEC}/{@code exec} terminal provider.
+     * If not specified, the system property {@link #PROP_EXEC} will be used if set.
+     * If not specified, the provider will be checked.
+     */
     public TerminalBuilder exec(boolean exec) {
         this.exec = exec;
         return this;
     }
 
+    /**
+     * Enables or disables the {@link #PROP_PROVIDER_FFM}/{@code ffm} terminal provider.
+     * If not specified, the system property {@link #PROP_FFM} will be used if set.
+     * If not specified, the provider will be checked.
+     */
     public TerminalBuilder ffm(boolean ffm) {
         this.ffm = ffm;
         return this;
     }
 
+    /**
+     * Enables or disables the {@link #PROP_PROVIDER_DUMB}/{@code dumb} terminal provider.
+     * If not specified, the system property {@link #PROP_DUMB} will be used if set.
+     * If not specified, the provider will be checked.
+     */
     public TerminalBuilder dumb(boolean dumb) {
         this.dumb = dumb;
         return this;

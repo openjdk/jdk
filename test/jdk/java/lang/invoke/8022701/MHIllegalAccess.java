@@ -25,7 +25,6 @@
  * @test
  * @bug 8022701
  * @summary Illegal access exceptions via methodhandle invocations threw wrong error.
- * @enablePreview
  * @compile -XDignore.symbol.file BogoLoader.java InvokeSeveralWays.java MHIllegalAccess.java MethodSupplier.java
  * @run main/othervm MHIllegalAccess
  */

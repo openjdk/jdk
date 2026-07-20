@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,16 +48,20 @@ public class JcmdWithNMTDisabled {
       ProcessBuilder pb;
       OutputAnalyzer output;
       String testjdkPath = System.getProperty("test.jdk");
+      String compilejdkPath = System.getProperty("compile.jdk");
 
       // First run without enabling NMT (not in debug, where NMT is by default on)
       if (!Platform.isDebugBuild()) {
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Dtest.jdk=" + testjdkPath, "JcmdWithNMTDisabled");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+          "-Dtest.jdk=" + testjdkPath, "-Dcompile.jdk=" + compilejdkPath, "JcmdWithNMTDisabled");
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
       }
 
       // Then run with explicitly disabling NMT, should not be any difference
-      pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Dtest.jdk=" + testjdkPath, "-XX:NativeMemoryTracking=off", "JcmdWithNMTDisabled");
+      pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        "-Dtest.jdk=" + testjdkPath, "-Dcompile.jdk=" + compilejdkPath,
+        "-XX:NativeMemoryTracking=off", "JcmdWithNMTDisabled");
       output = new OutputAnalyzer(pb.start());
       output.shouldHaveExitValue(0);
 

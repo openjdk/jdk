@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import javax.tools.SimpleJavaFileObject;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.parser.ParserFactory;
-import com.sun.tools.javac.tree.EndPosTable;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
@@ -51,7 +51,6 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.Factory;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
-import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 
 public class TestLog
 {
@@ -96,9 +95,8 @@ public class TestLog
         CharSequence cs = fo.getCharContent(true);
         Parser parser = pfac.newParser(cs, false, genEndPos, false);
         JCTree.JCCompilationUnit tree = parser.parseCompilationUnit();
-        log.setEndPosTable(fo, tree.endPositions);
 
-        TreeScanner ts = new LogTester(log, tree.endPositions);
+        TreeScanner ts = new LogTester(log);
         ts.scan(tree);
 
         check(log.nerrors, 4, "errors");
@@ -117,9 +115,8 @@ public class TestLog
     }
 
     private static class LogTester extends TreeScanner {
-        LogTester(Log log, EndPosTable endPosTable) {
+        LogTester(Log log) {
             this.log = log;
-            this.endPosTable = endPosTable;
         }
 
         public void visitIf(JCTree.JCIf tree) {
@@ -130,14 +127,14 @@ public class TestLog
             log.error(tree.pos(), Errors.NotStmt);
             log.error(nil, Errors.NotStmt);
 
-            log.warning(Warnings.DivZero);
-            log.warning(tree.pos, Warnings.DivZero);
-            log.warning(tree.pos(), Warnings.DivZero);
-            log.warning(nil, Warnings.DivZero);
+            // some warnings that will be emitted during parsing
+            log.warning(Warnings.ExtraneousSemicolon);
+            log.warning(tree.pos, Warnings.ExtraneousSemicolon);
+            log.warning(tree.pos(), Warnings.ExtraneousSemicolon);
+            log.warning(nil, Warnings.ExtraneousSemicolon);
         }
 
         private Log log;
-        private EndPosTable endPosTable;
     }
 
     private static class StringJavaFileObject extends SimpleJavaFileObject {

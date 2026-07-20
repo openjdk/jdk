@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,12 @@
  * @summary Checks deserialization of compact number format
  * @library /java/text/testlib
  * @build TestDeserializeCNF HexDumpReader
- * @run testng/othervm TestDeserializeCNF
+ * @run junit/othervm TestDeserializeCNF
  */
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,8 +42,10 @@ import java.math.RoundingMode;
 import java.text.CompactNumberFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
-import static org.testng.Assert.*;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestDeserializeCNF {
 
     // This object is serialized in cnf1.ser.txt with HALF_UP
@@ -60,8 +63,8 @@ public class TestDeserializeCNF {
     private static final String FILE_COMPACT_FORMAT1 = "cnf1.ser.txt";
     private static final String FILE_COMPACT_FORMAT2 = "cnf2.ser.txt";
 
-    @BeforeTest
-    public void mutateInstances() {
+    @BeforeAll
+    void mutateInstances() {
         COMPACT_FORMAT1.setRoundingMode(RoundingMode.HALF_UP);
         COMPACT_FORMAT1.setGroupingSize(3);
         COMPACT_FORMAT1.setParseBigDecimal(true);
@@ -71,18 +74,18 @@ public class TestDeserializeCNF {
     }
 
     @Test
-    public void testDeserialization() throws IOException, ClassNotFoundException {
+    void testDeserialization() throws IOException, ClassNotFoundException {
         try (InputStream istream1 = HexDumpReader.getStreamFromHexDump(FILE_COMPACT_FORMAT1);
                 ObjectInputStream ois1 = new ObjectInputStream(istream1);
                 InputStream istream2 = HexDumpReader.getStreamFromHexDump(FILE_COMPACT_FORMAT2);
                 ObjectInputStream ois2 = new ObjectInputStream(istream2);) {
 
             CompactNumberFormat obj1 = (CompactNumberFormat) ois1.readObject();
-            assertEquals(obj1, COMPACT_FORMAT1, "Deserialized instance is not"
+            assertEquals(COMPACT_FORMAT1, obj1, "Deserialized instance is not"
                     + " equal to the instance serialized in " + FILE_COMPACT_FORMAT1);
 
             CompactNumberFormat obj2 = (CompactNumberFormat) ois2.readObject();
-            assertEquals(obj2, COMPACT_FORMAT2, "Deserialized instance is not"
+            assertEquals(COMPACT_FORMAT2, obj2, "Deserialized instance is not"
                     + " equal to the instance serialized in " + FILE_COMPACT_FORMAT2);
         }
     }

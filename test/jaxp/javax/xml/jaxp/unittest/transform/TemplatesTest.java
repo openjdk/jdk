@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,14 @@ import java.io.StringReader;
 import javax.xml.transform.*;
 import javax.xml.transform.stream.StreamSource;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.TemplatesTest
  * @run testng/othervm transform.TemplatesTest
  * @summary This class contains tests for Templates.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class TemplatesTest {
 
     /**

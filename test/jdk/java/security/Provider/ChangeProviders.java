@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,13 @@
 /*
  * @test
  * @bug 4856968 7054918 8130181 8175874
- * @library ../testlibrary
+ * @library /test/lib
  * @summary make sure add/insert/removeProvider() work correctly
  * @author Andreas Sterbenz
  */
 
-import java.util.*;
-
 import java.security.*;
+import jdk.test.lib.security.ProvidersSnapshot;
 
 public class ChangeProviders extends Provider {
 

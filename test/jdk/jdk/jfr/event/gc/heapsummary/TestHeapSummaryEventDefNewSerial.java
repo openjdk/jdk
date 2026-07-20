@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,13 @@ import jdk.test.lib.jfr.GCHelper;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @requires vm.gc == "Serial" | vm.gc == null
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:+UseSerialGC jdk.jfr.event.gc.heapsummary.TestHeapSummaryEventDefNewSerial
  */
 
-/**
- * @test
- * @bug 8264008
- * @key jfr
- * @requires vm.hasJFR & vm.bits == 64
- * @requires vm.gc == "Serial" | vm.gc == null
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseSerialGC -XX:-UseCompressedClassPointers
- *                   jdk.jfr.event.gc.heapsummary.TestHeapSummaryEventDefNewSerial
- */
 public class TestHeapSummaryEventDefNewSerial {
     public static void main(String[] args) throws Exception {
         HeapSummaryEventAllGcs.test(GCHelper.gcDefNew, GCHelper.gcSerialOld);

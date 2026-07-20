@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,17 +41,14 @@ import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Issue2290Test
  * @run testng/othervm transform.Issue2290Test
  * @summary Test XSL extension for RTF works, for https://issues.apache.org/jira/i#browse/XALANJ-2290.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Issue2290Test {
 
     @Test

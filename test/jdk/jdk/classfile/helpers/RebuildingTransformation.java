@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.*;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
-import java.lang.classfile.components.CodeStackTracker;
+import jdk.internal.classfile.components.CodeStackTracker;
 
 class RebuildingTransformation {
 
@@ -59,8 +59,8 @@ class RebuildingTransformation {
                                     case RuntimeVisibleTypeAnnotationsAttribute a -> fb.with(RuntimeVisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), null, null)));
                                     case SignatureAttribute a -> fb.with(SignatureAttribute.of(Signature.parseFrom(a.asTypeSignature().signatureString())));
                                     case SyntheticAttribute a -> fb.with(SyntheticAttribute.of());
-                                    case CustomAttribute a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName());
-                                    case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName());
+                                    case CustomAttribute<?> a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName().stringValue());
+                                    case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName().stringValue());
                                 }
                             }
                         });
@@ -91,8 +91,8 @@ class RebuildingTransformation {
                                     case RuntimeVisibleTypeAnnotationsAttribute a -> mb.with(RuntimeVisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), null, null)));
                                     case SignatureAttribute a -> mb.with(SignatureAttribute.of(MethodSignature.parseFrom(a.asMethodSignature().signatureString())));
                                     case SyntheticAttribute a -> mb.with(SyntheticAttribute.of());
-                                    case CustomAttribute a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName());
-                                    case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName());
+                                    case CustomAttribute<?> a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName().stringValue());
+                                    case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName().stringValue());
                                 }
                             }
                         });
@@ -131,7 +131,7 @@ class RebuildingTransformation {
                                         case RuntimeVisibleAnnotationsAttribute rvaa -> rcac.accept(RuntimeVisibleAnnotationsAttribute.of(transformAnnotations(rvaa.annotations())));
                                         case RuntimeVisibleTypeAnnotationsAttribute rvtaa -> rcac.accept(RuntimeVisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(rvtaa.annotations(), null, null)));
                                         case SignatureAttribute sa -> rcac.accept(SignatureAttribute.of(Signature.parseFrom(sa.asTypeSignature().signatureString())));
-                                        default -> throw new AssertionError("Unexpected record component attribute: " + rca.attributeName());
+                                        default -> throw new AssertionError("Unexpected record component attribute: " + rca.attributeName().stringValue());
                                     }}).toArray(Attribute[]::new))).toArray(RecordComponentInfo[]::new)));
                     case RuntimeInvisibleAnnotationsAttribute a -> clb.with(RuntimeInvisibleAnnotationsAttribute.of(transformAnnotations(a.annotations())));
                     case RuntimeInvisibleTypeAnnotationsAttribute a -> clb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), null, null)));
@@ -142,8 +142,8 @@ class RebuildingTransformation {
                     case SourceFileAttribute a -> clb.with(SourceFileAttribute.of(a.sourceFile().stringValue()));
                     case SourceIDAttribute a -> clb.with(SourceIDAttribute.of(a.sourceId().stringValue()));
                     case SyntheticAttribute a -> clb.with(SyntheticAttribute.of());
-                    case CustomAttribute a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName());
-                    case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName());
+                    case CustomAttribute<?> a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName().stringValue());
+                    case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName().stringValue());
                 }
             }
         });
@@ -594,8 +594,10 @@ class RebuildingTransformation {
                             StackMapFrameInfo.of(labels.computeIfAbsent(fr.target(), l -> cob.newLabel()),
                                     transformFrameTypeInfos(fr.locals(), cob, labels),
                                     transformFrameTypeInfos(fr.stack(), cob, labels))).toList()));
-                case CustomAttribute a ->
-                    throw new AssertionError("Unexpected custom attribute: " + a.attributeName());
+                case CustomAttribute<?> a ->
+                    throw new AssertionError("Unexpected custom attribute: " + a.attributeName().stringValue());
+                case UnknownAttribute a ->
+                    throw new AssertionError("Unexpected unknown attribute: " + a.attributeName().stringValue());
             }
         }
     }

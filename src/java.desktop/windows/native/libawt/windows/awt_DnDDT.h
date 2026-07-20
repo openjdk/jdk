@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,18 +49,18 @@ class AwtDropTarget : virtual public IDropTarget {
 
         // IUnknown
 
-        virtual HRESULT __stdcall QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject);
+        virtual HRESULT QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject);
 
-        virtual ULONG   __stdcall AddRef(void);
-        virtual ULONG   __stdcall Release(void);
+        virtual ULONG   AddRef(void);
+        virtual ULONG   Release(void);
 
         // IDropTarget
 
-        virtual HRESULT __stdcall DragEnter(IDataObject __RPC_FAR *pDataObject, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect);
-        virtual HRESULT __stdcall DragOver(DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect);
-        virtual HRESULT __stdcall DragLeave(void);
+        virtual HRESULT DragEnter(IDataObject __RPC_FAR *pDataObject, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect);
+        virtual HRESULT DragOver(DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect);
+        virtual HRESULT DragLeave(void);
 
-        virtual HRESULT __stdcall Drop(IDataObject __RPC_FAR *pDataObject, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect);
+        virtual HRESULT Drop(IDataObject __RPC_FAR *pDataObject, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect);
 
         // AwtDropTarget
 
@@ -186,7 +186,7 @@ class AwtDropTarget : virtual public IDropTarget {
 
         static const unsigned int CACHE_INCR;
 
-        static int __cdecl _compar(const void *, const void *);
+        static int _compar(const void *, const void *);
 };
 
 

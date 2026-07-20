@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @bug 8048123 8054214 8173423
+ * @bug 8048123 8054214 8173423 8350646
  * @summary Test for jdk.calendar.japanese.supplemental.era support
  * @library /test/lib
  * @build SupplementalJapaneseEraTest
- * @run testng/othervm SupplementalJapaneseEraTestRun
+ * @run junit/othervm SupplementalJapaneseEraTestRun
  */
 
 import java.util.Calendar;
@@ -45,11 +45,12 @@ import static java.util.Calendar.YEAR;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SupplementalJapaneseEraTestRun {
-    @DataProvider(name = "validprop")
     Object[][] validPropertyData() {
         return new Object[][] {
                 //Tests with valid property values
@@ -58,7 +59,6 @@ public class SupplementalJapaneseEraTestRun {
         };
     }
 
-    @DataProvider(name = "invalidprop")
     Object[][] invalidPropertyData() {
         return new Object[][] {
                 //Tests with invalid property values
@@ -76,7 +76,8 @@ public class SupplementalJapaneseEraTestRun {
         };
     }
 
-    @Test(dataProvider = "validprop")
+    @ParameterizedTest
+    @MethodSource("validPropertyData")
     public void ValidPropertyValuesTest(String prop)
             throws Throwable {
         //get the start time of the fictional next era
@@ -84,7 +85,8 @@ public class SupplementalJapaneseEraTestRun {
         testRun(prop + startTime, List.of("-t"));
     }
 
-    @Test(dataProvider = "invalidprop")
+    @ParameterizedTest
+    @MethodSource("invalidPropertyData")
     public void InvalidPropertyValuesTest(String prop)
             throws Throwable {
         //get the start time of the fictional next era

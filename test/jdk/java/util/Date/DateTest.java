@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4143459
+ * @bug 4143459 8347841
  * @summary test Date
  * @run junit DateTest
  */
@@ -56,7 +56,7 @@ public class DateTest
             d.setMonth(Calendar.JANUARY);
             d.setDate(1);
             d.setHours(6);
-            TimeZone.setDefault(TimeZone.getTimeZone("PST"));
+            TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
             if (d.getHours() != 22) {
                 fail("Fail: Date.setHours()/getHours() ignoring default zone");
             }
@@ -79,7 +79,7 @@ public class DateTest
             Date ref = new Date(883634400000L); // This is Thu Jan 1 1998 6:00 am GMT
             String refstr = "Jan 1 1998 6:00";
             TimeZone GMT = TimeZone.getTimeZone("GMT");
-            TimeZone PST = TimeZone.getTimeZone("PST");
+            TimeZone PST = TimeZone.getTimeZone("America/Los_Angeles");
 
             String[] names = { "year", "month", "date", "day of week", "hour", "offset" };
             int[] GMT_EXP = { 98, Calendar.JANUARY, 1, Calendar.THURSDAY - Calendar.SUNDAY, 6, 0 };
@@ -207,7 +207,7 @@ public class DateTest
     {
       TimeZone save = TimeZone.getDefault();
       try {
-        TimeZone.setDefault(TimeZone.getTimeZone("PST"));
+        TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
         Date d1=new java.util.Date(97,8,13,10,8,13);
         System.out.println("d       = "+d1);
         Date d2=new java.util.Date(97,8,13,30,8,13); // 20 hours later

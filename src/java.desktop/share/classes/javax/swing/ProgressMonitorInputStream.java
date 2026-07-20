@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,10 +73,10 @@ public class ProgressMonitorInputStream extends FilterInputStream
     /**
      * Constructs an object to monitor the progress of an input stream.
      *
-     * @param message Descriptive text to be placed in the dialog box
-     *                if one is popped up.
      * @param parentComponent The component triggering the operation
      *                        being monitored.
+     * @param message Descriptive text to be placed in the dialog box
+     *                if one is popped up.
      * @param in The input stream to be monitored.
      */
     public ProgressMonitorInputStream(Component parentComponent,

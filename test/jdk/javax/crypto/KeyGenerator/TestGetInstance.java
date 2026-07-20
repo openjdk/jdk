@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 4898428
  * @summary test that the new getInstance() implementation works correctly
  * @author Andreas Sterbenz
+ * @run main TestGetInstance des
+ * @run main TestGetInstance aes
  */
 
 import java.security.*;
@@ -43,15 +45,17 @@ public class TestGetInstance {
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();
 
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
 
         KeyGenerator kg;
 
-        kg = KeyGenerator.getInstance("des");
+        String algo = args[0];
+        kg = KeyGenerator.getInstance(algo);
         System.out.println("Default: " + kg.getProvider().getName());
-        kg = KeyGenerator.getInstance("des", "SunJCE");
+        kg = KeyGenerator.getInstance(algo,
+                System.getProperty("test.provider.name", "SunJCE"));
         same(p, kg.getProvider());
-        kg = KeyGenerator.getInstance("des", p);
+        kg = KeyGenerator.getInstance(algo, p);
         same(p, kg.getProvider());
 
         try {
@@ -61,7 +65,8 @@ public class TestGetInstance {
             System.out.println(e);
         }
         try {
-            kg = KeyGenerator.getInstance("foo", "SunJCE");
+            kg = KeyGenerator.getInstance("foo",
+                    System.getProperty("test.provider.name", "SunJCE"));
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
@@ -74,13 +79,15 @@ public class TestGetInstance {
         }
 
         try {
-            kg = KeyGenerator.getInstance("foo", "SUN");
+            kg = KeyGenerator.getInstance("foo",
+                    System.getProperty("test.provider.name", "SUN"));
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
         }
         try {
-            kg = KeyGenerator.getInstance("foo", Security.getProvider("SUN"));
+            kg = KeyGenerator.getInstance("foo",
+                    Security.getProvider(System.getProperty("test.provider.name", "SUN")));
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);

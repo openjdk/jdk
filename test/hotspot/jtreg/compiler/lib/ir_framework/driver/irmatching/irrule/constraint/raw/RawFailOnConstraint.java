@@ -29,7 +29,7 @@ import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.SuccessOnlyConstraintException;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawIRNode;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
-import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
+import compiler.lib.ir_framework.driver.network.testvm.java.VMInfo;
 import compiler.lib.ir_framework.shared.Comparison;
 
 /**

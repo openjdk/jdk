@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,6 @@ public class Kinds {
         AMBIGUOUS(Category.RESOLUTION_TARGET),                         // overloaded       target
         HIDDEN(Category.RESOLUTION_TARGET),                            // not overloaded   non-target
         STATICERR(Category.RESOLUTION_TARGET),                         // overloaded?      target
-        MISSING_ENCL(Category.RESOLUTION),                             // not overloaded   non-target
         BAD_RESTRICTED_TYPE(Category.RESOLUTION),                      // not overloaded   non-target
         ABSENT_VAR(Category.RESOLUTION_TARGET, KindName.VAR),          // not overloaded   non-target
         WRONG_MTHS(Category.RESOLUTION_TARGET, KindName.METHOD),       // overloaded       target

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciSymbols.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "opto/castnode.hpp"
@@ -30,25 +29,25 @@
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/vector.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 static bool is_vector_mask(ciKlass* klass) {
   return klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
 }
 
-static bool is_vector_shuffle(ciKlass* klass) {
-  return klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
-}
-
-
 void PhaseVector::optimize_vector_boxes() {
-  Compile::TracePhase tp("vector_elimination", &timers[_t_vector_elimination]);
+  Compile::TracePhase tp(_t_vector_elimination);
 
   // Signal GraphKit it's post-parse phase.
   assert(C->inlining_incrementally() == false, "sanity");
   C->set_inlining_incrementally(true);
 
   C->igvn_worklist()->ensure_empty(); // should be done with igvn
+
+  if (StressMacroExpansion) {
+    C->shuffle_macro_nodes();
+  }
 
   expand_vunbox_nodes();
   scalarize_vbox_nodes();
@@ -66,14 +65,14 @@ void PhaseVector::optimize_vector_boxes() {
 void PhaseVector::do_cleanup() {
   if (C->failing())  return;
   {
-    Compile::TracePhase tp("vector_pru", &timers[_t_vector_pru]);
+    Compile::TracePhase tp(_t_vector_pru);
     ResourceMark rm;
     PhaseRemoveUseless pru(C->initial_gvn(), *C->igvn_worklist());
     if (C->failing())  return;
   }
   {
-    Compile::TracePhase tp("incrementalInline_igvn", &timers[_t_vector_igvn]);
-    _igvn.reset_from_gvn(C->initial_gvn());
+    Compile::TracePhase tp(_t_vector_igvn);
+    _igvn.reset();
     _igvn.optimize();
     if (C->failing())  return;
   }
@@ -317,7 +316,7 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
                                            VectorSet &visited) {
   // JDK-8304948 shows an example that there may be a cycle in the graph.
   if (visited.test_set(vbox->_idx)) {
-    assert(vbox->is_Phi(), "should be phi");
+    assert(vbox->is_Phi() || vbox->is_CheckCastPP(), "either phi or expanded");
     return vbox; // already visited
   }
 
@@ -328,18 +327,15 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
     return expand_vbox_alloc_node(vbox_alloc, vect, box_type, vect_type);
   }
 
-  // Handle the case when both the allocation input and vector input to
-  // VectorBoxNode are Phi. This case is generated after the transformation of
-  // Phi: Phi (VectorBox1 VectorBox2) => VectorBox (Phi1 Phi2).
-  // With this optimization, the relative two allocation inputs of VectorBox1 and
-  // VectorBox2 are gathered into Phi1 now. Similarly, the original vector
-  // inputs of two VectorBox nodes are in Phi2.
-  //
-  // See PhiNode::merge_through_phi in cfg.cpp for more details.
-  if (vbox->is_Phi() && vect->is_Phi()) {
-    assert(vbox->as_Phi()->region() == vect->as_Phi()->region(), "");
+  // Handle the case when the allocation input to VectorBoxNode is a Phi.
+  // This is generated after the transformation in PhiNode::merge_through_phi:
+  //   Phi (VectorBox1 VectorBox2) => VectorBox (Phi1 Phi2)
+  // The vector input may also be a Phi (Phi2 above), or it may have been
+  // value-numbered to a single node if all inputs were identical.
+  if (vbox->is_Phi()) {
+    bool same_region = vect->is_Phi() && vbox->as_Phi()->region() == vect->as_Phi()->region();
     for (uint i = 1; i < vbox->req(); i++) {
-      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect->in(i),
+      Node* new_box = expand_vbox_node_helper(vbox->in(i), same_region ? vect->in(i) : vect,
                                               box_type, vect_type, visited);
       if (!new_box->is_Phi()) {
         C->initial_gvn()->hash_delete(vbox);
@@ -349,26 +345,7 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
     return C->initial_gvn()->transform(vbox);
   }
 
-  // Handle the case when the allocation input to VectorBoxNode is a phi
-  // but the vector input is not, which can definitely be the case if the
-  // vector input has been value-numbered. It seems to be safe to do by
-  // construction because VectorBoxNode and VectorBoxAllocate come in a
-  // specific order as a result of expanding an intrinsic call. After that, if
-  // any of the inputs to VectorBoxNode are value-numbered they can only
-  // move up and are guaranteed to dominate.
-  if (vbox->is_Phi() && (vect->is_Vector() || vect->is_LoadVector())) {
-    for (uint i = 1; i < vbox->req(); i++) {
-      Node* new_box = expand_vbox_node_helper(vbox->in(i), vect,
-                                              box_type, vect_type, visited);
-      if (!new_box->is_Phi()) {
-        C->initial_gvn()->hash_delete(vbox);
-        vbox->set_req(i, new_box);
-      }
-    }
-    return C->initial_gvn()->transform(vbox);
-  }
-
-  assert(!vbox->is_Phi(), "should be expanded");
+  assert(vbox->is_CheckCastPP(), "should be expanded");
   // TODO: assert that expanded vbox is initialized with the same value (vect).
   return vbox; // already expanded
 }
@@ -389,7 +366,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   // If boxed mask value is present in a predicate register, it must be
   // spilled to a vector though a VectorStoreMaskOperation before actual StoreVector
   // operation to vector payload field.
-  if (is_mask && (value->bottom_type()->isa_vectmask() || bt != T_BOOLEAN)) {
+  if (is_mask && (value->bottom_type()->isa_pvectmask() || bt != T_BOOLEAN)) {
     value = gvn.transform(VectorStoreMaskNode::make(gvn, value, bt, num_elem));
     // Although type of mask depends on its definition, in terms of storage everything is stored in boolean array.
     bt = T_BOOLEAN;
@@ -460,8 +437,6 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     if (is_vector_mask(from_kls)) {
       bt = T_BOOLEAN;
-    } else if (is_vector_shuffle(from_kls)) {
-      bt = T_BYTE;
     }
 
     ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbols::payload_name(),
@@ -481,14 +456,13 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
       gvn.record_for_igvn(local_mem);
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       C2OptAccess access(gvn, ctrl, local_mem, decorators, T_OBJECT, obj, addr);
-      const Type* type = TypeOopPtr::make_from_klass(field->type()->as_klass());
-      vec_field_ld = bs->load_at(access, type);
-    }
+      vec_field_ld = bs->load_at(access, Type::get_const_basic_type(T_OBJECT));
 
-    // For proper aliasing, attach concrete payload type.
-    ciKlass* payload_klass = ciTypeArrayKlass::make(bt);
-    const Type* payload_type = TypeAryPtr::make_from_klass(payload_klass)->cast_to_ptr_type(TypePtr::NotNull);
-    vec_field_ld = gvn.transform(new CastPPNode(nullptr, vec_field_ld, payload_type));
+      // For proper aliasing, attach concrete payload type.
+      ciKlass* payload_klass = ciTypeArrayKlass::make(bt);
+      const Type* payload_type = TypeAryPtr::make_from_klass(payload_klass)->cast_to_ptr_type(TypePtr::NotNull);
+      vec_field_ld = gvn.transform(new CheckCastPPNode(ctrl, vec_field_ld, payload_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+    }
 
     Node* adr = kit.array_element_address(vec_field_ld, gvn.intcon(0), bt);
     const TypePtr* adr_type = adr->bottom_type()->is_ptr();
@@ -506,9 +480,6 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     if (is_vector_mask(from_kls)) {
       vec_val_load = gvn.transform(new VectorLoadMaskNode(vec_val_load, TypeVect::makemask(masktype, num_elem)));
-    } else if (is_vector_shuffle(from_kls) && !vec_unbox->is_shuffle_to_vector()) {
-      assert(vec_unbox->bottom_type()->is_vect()->element_basic_type() == masktype, "expect shuffle type consistency");
-      vec_val_load = gvn.transform(new VectorLoadShuffleNode(vec_val_load, TypeVect::make(masktype, num_elem)));
     }
 
     gvn.hash_delete(vec_unbox);

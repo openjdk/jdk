@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8159855
  * @summary test ToolProvider SPI
- * @run main/othervm -Djava.security.manager=allow ToolProviderTest
+ * @run main/othervm ToolProviderTest
  */
 
 import java.io.IOException;
@@ -44,18 +44,8 @@ public class ToolProviderTest {
 
     void run() throws Exception {
         initServices();
-
-        System.out.println("Validate an NPE is thrown with null arguments");
-
+        test();
         testNullArgs();
-
-        System.out.println("test without security manager present:");
-        test();
-
-        System.setSecurityManager(new SecurityManager());
-
-        System.out.println("test with security manager present:");
-        test();
     }
 
     private void test() throws Exception {
@@ -102,10 +92,6 @@ public class ToolProviderTest {
     }
 
     public static class TestProvider implements ToolProvider {
-        public TestProvider() {
-            checkPrivileges();
-        }
-
         public String name() {
             return "test";
         }
@@ -113,22 +99,6 @@ public class ToolProviderTest {
         public int run(PrintWriter out, PrintWriter err, String... args) {
             out.println("Test: " + Arrays.toString(args));
             return 0;
-        }
-
-        private void checkPrivileges() {
-            boolean haveSecurityManager = (System.getSecurityManager() != null);
-            try {
-                // validate appropriate privileges by checking access to a
-                // system property
-                System.getProperty("java.home");
-                if (haveSecurityManager) {
-                    throw new Error("exception not thrown");
-                }
-            } catch (SecurityException e) {
-                if (!haveSecurityManager) {
-                    throw new Error("unexpected exception: " + e);
-                }
-            }
         }
     }
 }

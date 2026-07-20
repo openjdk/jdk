@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,9 @@ public:
   T get_acquire(zoffset offset) const;
   void release_put(zoffset offset, T value);
   void release_put(zoffset offset, size_t size, T value);
+
+  const T* addr(zoffset offset) const;
+  T* addr(zoffset offset);
 };
 
 template <typename T, bool Parallel>

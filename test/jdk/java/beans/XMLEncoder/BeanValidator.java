@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ final class BeanValidator {
         try {
             this.cache.put(object1, object2);
             // validate values of public fields
-            for (Field field : getFields(type)) {
+            for (Field field : type.getFields()) {
                 int mod = field.getModifiers();
                 if (!Modifier.isStatic(mod)) {
                     log("validate field", field.getName());
@@ -239,22 +239,7 @@ final class BeanValidator {
         catch (NoSuchMethodException exception) {
             log(exception);
         }
-        catch (SecurityException exception) {
-            log(exception);
-        }
         return false;
-    }
-
-    private static final Field[] FIELDS = {};
-
-    private Field[] getFields(Class type) {
-        try {
-            return type.getFields();
-        }
-        catch (SecurityException exception) {
-            log(exception);
-        }
-        return FIELDS;
     }
 
     private static final PropertyDescriptor[] DESCRIPTORS = {};

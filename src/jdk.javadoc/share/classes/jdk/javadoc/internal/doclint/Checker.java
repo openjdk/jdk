@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -678,7 +678,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     // <editor-fold defaultstate="collapsed" desc="HTML attributes">
 
-    @Override @DefinedBy(Api.COMPILER_TREE) @SuppressWarnings("fallthrough")
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitAttribute(AttributeTree tree, Void ignore) {
         // for now, ensure we're in an HTML StartElementTree;
         // in time, we might check uses of attributes in other tree nodes
@@ -1004,12 +1004,15 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReference(ReferenceTree tree, Void ignore) {
-        Element e = env.trees.getElement(getCurrentPath());
-        if (e == null) {
-            reportBadReference(tree);
-        } else if ((inLink || inSee)
-                && e.getKind() == ElementKind.CLASS && e.asType().getKind() != TypeKind.DECLARED) {
-            reportBadReference(tree);
+        // Exclude same-file anchor links from reference checks
+        if (!tree.getSignature().startsWith("##")) {
+            if (inLink || inSee) {
+                if (env.trees.getElement(getCurrentPath()) == null) {
+                    reportBadReference(tree);
+                }
+            } else if (env.trees.getType(getCurrentPath()) == null) {
+                reportBadReference(tree);
+            }
         }
         return super.visitReference(tree, ignore);
     }

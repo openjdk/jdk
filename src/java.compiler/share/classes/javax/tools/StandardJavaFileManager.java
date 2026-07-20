@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ import java.util.List;
  * </ul>
  *
  * <p>All implementations of this interface must support Path objects representing
- * files in the {@linkplain java.nio.file.FileSystems#getDefault() default file system.}
+ * files in the {@linkplain java.nio.file.FileSystems#getDefault() default file system}.
  * It is recommended that implementations should support Path objects from any filesystem.</p>
  *
  *

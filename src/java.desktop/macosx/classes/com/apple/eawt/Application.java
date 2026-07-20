@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,13 +73,13 @@ import sun.lwawt.macosx.CPlatformWindow;
  *
  * @since 1.4
  */
-public class Application {
+public final class Application {
     private static native void nativeInitializeApplicationDelegate();
+    private static native void nativeInstallOpenURLEventHandler();
 
     static Application sApplication = null;
 
     static {
-        checkSecurity();
         Toolkit.getDefaultToolkit(); // Start AppKit
         if (!Beans.isDesignTime()) {
             nativeInitializeApplicationDelegate();
@@ -88,20 +88,12 @@ public class Application {
         sApplication = new Application();
     }
 
-    private static void checkSecurity() {
-        @SuppressWarnings("removal")
-        final SecurityManager security = System.getSecurityManager();
-        if (security == null) return;
-        security.checkPermission(new RuntimePermission("canProcessApplicationEvents"));
-    }
-
     /**
      * @return the singleton representing this Mac OS X Application
      *
      * @since 1.4
      */
     public static Application getApplication() {
-        checkSecurity();
         return sApplication;
     }
 
@@ -118,7 +110,6 @@ public class Application {
      */
     @Deprecated
     public Application() {
-        checkSecurity();
     }
 
     /**
@@ -221,6 +212,7 @@ public class Application {
      * @since Java for Mac OS X 10.5 Update 8
      */
     public void setOpenURIHandler(final OpenURIHandler openURIHandler) {
+        nativeInstallOpenURLEventHandler();
         eventHandler.openURIDispatcher.setHandler(openURIHandler);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,8 @@
 #ifndef SHARE_COMPILER_COMPILERDIRECTIVES_HPP
 #define SHARE_COMPILER_COMPILERDIRECTIVES_HPP
 
-#include "classfile/vmIntrinsics.hpp"
-#include "ci/ciMetadata.hpp"
 #include "ci/ciMethod.hpp"
-#include "compiler/compiler_globals.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "opto/phasetype.hpp"
 #include "utilities/bitMap.hpp"
@@ -46,6 +44,7 @@
     cflags(MemStat,                 uintx, 0, MemStat) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
     cflags(PrintCompilation,        bool, PrintCompilation, PrintCompilation) \
+    cflags(PrintCompilation2,       bool, PrintCompilation2, PrintCompilation2) \
     cflags(PrintInlining,           bool, PrintInlining, PrintInlining) \
     cflags(PrintNMethods,           bool, PrintNMethods, PrintNMethods) \
     cflags(BackgroundCompilation,   bool, BackgroundCompilation, BackgroundCompilation) \
@@ -85,11 +84,13 @@ NOT_PRODUCT(cflags(PrintIdeal,          bool, PrintIdeal, PrintIdeal)) \
     cflags(TraceSpilling,           bool, TraceSpilling, TraceSpilling) \
     cflags(Vectorize,               bool, false, Vectorize) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \
-NOT_PRODUCT(cflags(IGVPrintLevel,       intx, PrintIdealGraphLevel, IGVPrintLevel)) \
+NOT_PRODUCT(cflags(PhasePrintLevel, intx, PrintPhaseLevel, PhasePrintLevel)) \
+NOT_PRODUCT(cflags(IGVPrintLevel,   intx, PrintIdealGraphLevel, IGVPrintLevel)) \
     cflags(IncrementalInlineForceCleanup, bool, IncrementalInlineForceCleanup, IncrementalInlineForceCleanup) \
     cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit)
 #define compilerdirectives_c2_string_flags(cflags) \
 NOT_PRODUCT(cflags(TraceAutoVectorization, ccstrlist, "", TraceAutoVectorization)) \
+NOT_PRODUCT(cflags(TraceMergeStores, ccstrlist, "", TraceMergeStores)) \
 NOT_PRODUCT(cflags(PrintIdealPhase,     ccstrlist, "", PrintIdealPhase))
 #else
   #define compilerdirectives_c2_other_flags(cflags)
@@ -105,23 +106,26 @@ class CompilerDirectives;
 class DirectiveSet;
 
 class DirectivesStack : AllStatic {
+  // To allow access to private methods
+  friend class CompilerDirectiveMatcher;
+  friend class DirectiveSetPtr;
 private:
   static CompilerDirectives* _top;
   static CompilerDirectives* _bottom;
   static int _depth;
 
   static void pop_inner(); // no lock version of pop
+  static DirectiveSet* getMatchingDirective(const methodHandle& mh, int comp_level);
+  static DirectiveSet* getDefaultDirective(AbstractCompiler* comp);
+  static void release(DirectiveSet* set);
+  static void release(CompilerDirectives* dir);
 public:
   static void init();
-  static DirectiveSet* getMatchingDirective(const methodHandle& mh, AbstractCompiler* comp);
-  static DirectiveSet* getDefaultDirective(AbstractCompiler* comp);
   static void push(CompilerDirectives* directive);
   static void pop(int count);
   static bool check_capacity(int request_size, outputStream* st);
   static void clear();
   static void print(outputStream* st);
-  static void release(DirectiveSet* set);
-  static void release(CompilerDirectives* dir);
 };
 
 class DirectiveSet : public CHeapObj<mtCompiler> {
@@ -131,6 +135,7 @@ private:
   TriBoolArray<(size_t)vmIntrinsics::number_of_intrinsics(), int> _intrinsic_control_words;
   CHeapBitMap _ideal_phase_name_set;
   CHeapBitMap _trace_auto_vectorization_tags;
+  CHeapBitMap _trace_merge_stores_tags;
 
 public:
   DirectiveSet(CompilerDirectives* directive);
@@ -140,9 +145,10 @@ public:
   bool parse_and_add_inline(char* str, const char*& error_msg);
   void append_inline(InlineMatcher* m);
   bool should_inline(ciMethod* inlinee);
-  bool should_not_inline(ciMethod* inlinee);
+  bool should_not_inline(ciMethod* inlinee, int comp_level);
+  bool should_delay_inline(ciMethod* inlinee);
   void print_inline(outputStream* st);
-  DirectiveSet* compilecommand_compatibility_init(const methodHandle& method);
+  DirectiveSet* compilecommand_compatibility_init(const methodHandle& method, int comp_level);
   bool is_exclusive_copy() { return _directive == nullptr; }
   bool matches_inline(const methodHandle& method, int inline_action);
   static DirectiveSet* clone(DirectiveSet const* src);
@@ -202,7 +208,7 @@ void set_##name(void* value) {                                      \
   void set_ideal_phase_name_set(const BitMap& set) {
     _ideal_phase_name_set.set_from(set);
   };
-  bool should_print_phase(const CompilerPhaseType cpt) const {
+  bool should_print_ideal_phase(const CompilerPhaseType cpt) const {
     return _ideal_phase_name_set.at(cpt);
   };
   void set_trace_auto_vectorization_tags(const CHeapBitMap& tags) {
@@ -211,9 +217,15 @@ void set_##name(void* value) {                                      \
   const CHeapBitMap& trace_auto_vectorization_tags() {
     return _trace_auto_vectorization_tags;
   };
+  void set_trace_merge_stores_tags(const CHeapBitMap& tags) {
+    _trace_merge_stores_tags.set_from(tags);
+  };
+  const CHeapBitMap& trace_merge_stores_tags() {
+    return _trace_merge_stores_tags;
+  };
 
-  void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" INTX_FORMAT " ", n, v); } }
-  void print_uintx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" UINTX_FORMAT " ", n, v); } }
+  void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:%zd ", n, v); } }
+  void print_uintx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:%zu ", n, v); } }
   void print_bool(outputStream* st, ccstr n, bool v, bool mod) { if (mod) { st->print("%s:%s ", n, v ? "true" : "false"); } }
   void print_double(outputStream* st, ccstr n, double v, bool mod) { if (mod) { st->print("%s:%f ", n, v); } }
   void print_ccstr(outputStream* st, ccstr n, ccstr v, bool mod) { if (mod) { st->print("%s:%s ", n, v); } }
@@ -275,7 +287,7 @@ class ControlIntrinsicValidator {
 
   ~ControlIntrinsicValidator() {
     if (_bad != nullptr) {
-      FREE_C_HEAP_ARRAY(char, _bad);
+      FREE_C_HEAP_ARRAY(_bad);
     }
   }
 
@@ -316,6 +328,42 @@ public:
 
   DirectiveSet* _c1_store;
   DirectiveSet* _c2_store;
+};
+
+// Helper class to get a matching CompilerDirective using RAII pattern.
+// CompileDirective ref count is decremented in the destructor.
+class CompilerDirectiveMatcher {
+private:
+  DirectiveSet* _match;
+
+  void release_match() {
+    if (_match != nullptr) {
+      DirectivesStack::release(_match);
+      _match = nullptr;
+    }
+  }
+
+public:
+  // Use this constructor to get default directive
+  CompilerDirectiveMatcher(AbstractCompiler* comp) {
+    _match = DirectivesStack::getDefaultDirective(comp);
+  }
+
+  CompilerDirectiveMatcher(const methodHandle& mh, int comp_level) {
+    _match = DirectivesStack::getMatchingDirective(mh, comp_level);
+  }
+
+  ~CompilerDirectiveMatcher() {
+    release_match();
+  }
+
+  DirectiveSet* directive_set() const { return _match; }
+
+  void transfer_from(CompilerDirectiveMatcher& src) {
+    release_match();
+    _match = src._match;
+    src._match = nullptr;
+  }
 };
 
 #endif // SHARE_COMPILER_COMPILERDIRECTIVES_HPP

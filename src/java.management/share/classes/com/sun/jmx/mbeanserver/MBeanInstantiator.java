@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,18 +33,12 @@ import java.io.ObjectInputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.Permission;
-import java.security.Permissions;
-import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.Map;
 import java.lang.System.Logger.Level;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanException;
-import javax.management.MBeanPermission;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.OperationsException;
@@ -52,8 +46,6 @@ import javax.management.ReflectionException;
 import javax.management.RuntimeErrorException;
 import javax.management.RuntimeMBeanException;
 import javax.management.RuntimeOperationsException;
-import sun.reflect.misc.ConstructorUtil;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * Implements the MBeanInstantiator interface. Provides methods for
@@ -95,7 +87,6 @@ public class MBeanInstantiator {
                              "Exception occurred during object instantiation");
         }
 
-        ReflectUtil.checkPackageAccess(className);
         try {
             if (clr == null) throw new ClassNotFoundException(className);
             theClass = clr.loadClass(className);
@@ -169,7 +160,6 @@ public class MBeanInstantiator {
                     continue;
                 }
 
-                ReflectUtil.checkPackageAccess(signature[i]);
                 // Ok we do not have a primitive type ! We need to build
                 // the signature of the method
                 //
@@ -210,8 +200,6 @@ public class MBeanInstantiator {
     public Object instantiate(Class<?> theClass)
         throws ReflectionException, MBeanException {
 
-        checkMBeanPermission(theClass, null, null, "instantiate");
-
         Object moi;
 
         // ------------------------------
@@ -223,7 +211,6 @@ public class MBeanInstantiator {
         }
         // Instantiate the new object
         try {
-            ReflectUtil.checkPackageAccess(theClass);
             ensureClassAccess(theClass);
             moi= cons.newInstance();
         } catch (InvocationTargetException e) {
@@ -262,8 +249,6 @@ public class MBeanInstantiator {
                               String signature[], ClassLoader loader)
         throws ReflectionException, MBeanException {
 
-        checkMBeanPermission(theClass, null, null, "instantiate");
-
         // Instantiate the new object
         // ------------------------------
         // ------------------------------
@@ -293,7 +278,6 @@ public class MBeanInstantiator {
                 NoSuchMethodException("No such constructor"));
         }
         try {
-            ReflectUtil.checkPackageAccess(theClass);
             ensureClassAccess(theClass);
             moi = cons.newInstance(params);
         }
@@ -408,7 +392,6 @@ public class MBeanInstantiator {
              IllegalArgumentException(), "Null className passed in parameter");
         }
 
-        ReflectUtil.checkPackageAccess(className);
         Class<?> theClass;
         if (loaderName == null) {
             // Load the class using the agent class loader
@@ -611,7 +594,6 @@ public class MBeanInstantiator {
      * Return the Default Loader Repository used by this instantiator object.
      **/
     public ModifiableClassLoaderRepository getClassLoaderRepository() {
-        checkMBeanPermission((String)null, null, null, "getClassLoaderRepository");
         return clr;
     }
 
@@ -627,7 +609,6 @@ public class MBeanInstantiator {
                 IllegalArgumentException("The class name cannot be null"),
                               "Exception occurred during object instantiation");
         }
-        ReflectUtil.checkPackageAccess(className);
         try {
             if (loader == null)
                 loader = MBeanInstantiator.class.getClassLoader();
@@ -678,7 +659,6 @@ public class MBeanInstantiator {
                 // We need to load the class through the class
                 // loader of the target object.
                 //
-                ReflectUtil.checkPackageAccess(signature[i]);
                 tab[i] = Class.forName(signature[i], false, aLoader);
             }
         } catch (ClassNotFoundException e) {
@@ -700,7 +680,7 @@ public class MBeanInstantiator {
 
     private Constructor<?> findConstructor(Class<?> c, Class<?>[] params) {
         try {
-            return ConstructorUtil.getConstructor(c, params);
+            return c.getConstructor(params);
         } catch (Exception e) {
             return null;
         }
@@ -715,31 +695,6 @@ public class MBeanInstantiator {
             primitiveClasses.put(c.getName(), c);
     }
 
-    private static void checkMBeanPermission(Class<?> clazz,
-                                             String member,
-                                             ObjectName objectName,
-                                             String actions) {
-        if (clazz != null) {
-            checkMBeanPermission(clazz.getName(), member, objectName, actions);
-        }
-    }
-
-    private static void checkMBeanPermission(String classname,
-                                             String member,
-                                             ObjectName objectName,
-                                             String actions)
-        throws SecurityException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            Permission perm = new MBeanPermission(classname,
-                                                  member,
-                                                  objectName,
-                                                  actions);
-            sm.checkPermission(perm);
-        }
-    }
-
     private static void ensureClassAccess(Class<?> clazz)
             throws IllegalAccessException
     {
@@ -752,20 +707,8 @@ public class MBeanInstantiator {
     private ClassLoader getClassLoader(final ObjectName name) {
         if(clr == null){
             return null;
+        } else {
+            return clr.getClassLoader(name);
         }
-        // Restrict to getClassLoader permission only
-        Permissions permissions = new Permissions();
-        permissions.add(new MBeanPermission("*", null, name, "getClassLoader"));
-        ProtectionDomain protectionDomain = new ProtectionDomain(null, permissions);
-        ProtectionDomain[] domains = {protectionDomain};
-        @SuppressWarnings("removal")
-        AccessControlContext ctx = new AccessControlContext(domains);
-        @SuppressWarnings("removal")
-        ClassLoader loader = AccessController.doPrivileged(new PrivilegedAction<>() {
-            public ClassLoader run() {
-                return clr.getClassLoader(name);
-            }
-        }, ctx);
-        return loader;
     }
 }

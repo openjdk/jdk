@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/serial/serialMemoryPools.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
@@ -41,7 +40,7 @@ size_t ContiguousSpacePool::used_in_bytes() {
 }
 
 MemoryUsage ContiguousSpacePool::get_memory_usage() {
-  size_t maxSize   = (available_for_allocation() ? max_size() : 0);
+  size_t maxSize   = max_size();
   size_t used      = used_in_bytes();
   size_t committed = _space->capacity();
 
@@ -65,7 +64,7 @@ size_t SurvivorContiguousSpacePool::committed_in_bytes() {
 }
 
 MemoryUsage SurvivorContiguousSpacePool::get_memory_usage() {
-  size_t maxSize = (available_for_allocation() ? max_size() : 0);
+  size_t maxSize = max_size();
   size_t used    = used_in_bytes();
   size_t committed = committed_in_bytes();
 
@@ -86,7 +85,7 @@ size_t TenuredGenerationPool::used_in_bytes() {
 MemoryUsage TenuredGenerationPool::get_memory_usage() {
   size_t used      = used_in_bytes();
   size_t committed = _gen->capacity();
-  size_t maxSize   = (available_for_allocation() ? max_size() : 0);
+  size_t maxSize   = max_size();
 
   return MemoryUsage(initial_size(), used, committed, maxSize);
 }

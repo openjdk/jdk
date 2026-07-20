@@ -9,7 +9,7 @@ import jdk.jfr.Recording;
 /**
  * @test TestRecorderListenerWithDump
  *
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @run main/othervm jdk.jfr.api.recorder.TestRecorderListenerWithDump
  */

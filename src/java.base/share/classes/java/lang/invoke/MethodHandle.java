@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@ package java.lang.invoke;
 
 
 import jdk.internal.loader.ClassLoaders;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
+import jdk.internal.vm.annotation.DontInline;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.constant.ClassDesc;
@@ -440,6 +443,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
+@AOTSafeClassInitializer
 public abstract sealed class MethodHandle implements Constable
     permits NativeMethodHandle, DirectMethodHandle,
             DelegatingMethodHandle, BoundMethodHandle {
@@ -856,6 +860,7 @@ public abstract sealed class MethodHandle implements Constable
      * @throws WrongMethodTypeException if the conversion cannot be made
      * @see MethodHandles#explicitCastArguments
      */
+    @ForceInline
     public final MethodHandle asType(MethodType newType) {
         // Fast path alternative to a heavyweight {@code asType} call.
         // Return 'this' if the conversion will be a no-op.
@@ -867,7 +872,7 @@ public abstract sealed class MethodHandle implements Constable
         if (at != null) {
             return at;
         }
-        return setAsTypeCache(asTypeUncached(newType));
+        return setAsTypeCache(newType);
     }
 
     private MethodHandle asTypeCached(MethodType newType) {
@@ -885,7 +890,16 @@ public abstract sealed class MethodHandle implements Constable
         return null;
     }
 
-    private MethodHandle setAsTypeCache(MethodHandle at) {
+    /*
+     * We disable inlining here to prevent complex code in the slow path
+     * of MethodHandle::asType from being inlined into that method.
+     * Excessive inlining into MethodHandle::asType can cause that method
+     * to become too big, which will then cause performance issues during
+     * var handle and method handle calls.
+     */
+    @DontInline
+    private MethodHandle setAsTypeCache(MethodType newType) {
+        MethodHandle at = asTypeUncached(newType);
         // Don't introduce a strong reference in the cache if newType depends on any class loader other than
         // current method handle already does to avoid class loader leaks.
         if (isSafeToCache(at.type)) {
@@ -1879,8 +1893,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
                 if (oldForm != newForm) {
                     assert (newForm.customized == null || newForm.customized == this);
                     newForm.prepare(); // as in MethodHandle.<init>
-                    UNSAFE.putReference(this, FORM_OFFSET, newForm);
-                    UNSAFE.fullFence();
+                    UNSAFE.putReferenceRelease(this, FORM_OFFSET, newForm); // properly publish newForm
                 }
             } finally {
                 updateInProgress = false;

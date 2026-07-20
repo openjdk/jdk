@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8151893 8259709
+ * @bug 8151893 8259709 8314180
  * @summary Tests for the jdk.xml.dsig.secureValidationPolicy security property
  * @modules java.xml.crypto/org.jcp.xml.dsig.internal.dom
  */
@@ -47,7 +47,8 @@ public class SecureValidationPolicy {
             "http://www.w3.org/2000/09/xmldsig#dsa-sha1",
             "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
             "http://www.w3.org/2007/05/xmldsig-more#sha1-rsa-MGF1",
-            "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1");
+            "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1",
+            "http://www.w3.org/TR/1999/REC-xpath-19991116");
 
         // Test expected defaults
         System.out.println("Testing defaults");

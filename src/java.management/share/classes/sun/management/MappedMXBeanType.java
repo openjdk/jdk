@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.*;
 import java.io.InvalidObjectException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import javax.management.openmbean.*;
 import static javax.management.openmbean.SimpleType.*;
 
@@ -610,19 +606,14 @@ public abstract class MappedMXBeanType {
         Method fromMethod = null;
         Method toMethod = null;
 
-        @SuppressWarnings("removal")
         CompositeDataMXBeanType(Class<?> c) throws OpenDataException {
             this.javaClass = c;
             this.mappedTypeClass = COMPOSITE_DATA_CLASS;
 
             // check if a static from method exists
             try {
-                fromMethod = AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
-                        public Method run() throws NoSuchMethodException {
-                            return javaClass.getMethod("from", COMPOSITE_DATA_CLASS);
-                        }
-                    });
-            } catch (PrivilegedActionException e) {
+                fromMethod = javaClass.getMethod("from", COMPOSITE_DATA_CLASS);
+            } catch (NoSuchMethodException e) {
                 // ignore NoSuchMethodException since we allow classes
                 // that has no from method to be embedded in another class.
             }
@@ -637,12 +628,7 @@ public abstract class MappedMXBeanType {
                 this.isCompositeData = false;
 
                 // Make a CompositeData containing all the getters
-                final Method[] methods =
-                    AccessController.doPrivileged(new PrivilegedAction<>() {
-                            public Method[] run() {
-                                return javaClass.getMethods();
-                            }
-                        });
+                final Method[] methods = javaClass.getMethods();
                 final List<String> names = new ArrayList<>();
                 final List<OpenType<?>> types = new ArrayList<>();
 

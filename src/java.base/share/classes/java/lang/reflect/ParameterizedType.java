@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,11 +66,15 @@ public interface ParameterizedType extends Type {
     Type[] getActualTypeArguments();
 
     /**
-     * Returns the {@code Type} object representing the class or interface
-     * that declared this type.
+     * {@return the {@code Type} object representing the class or interface
+     * that declared this type}
      *
-     * @return the {@code Type} object representing the class or interface
-     *     that declared this type
+     * @apiNote
+     * All {@code ParameterizedType} objects from core reflection return a
+     * {@link Class}. The static {@code Type} return type allows other
+     * implementations to represent classes and interfaces not in the current
+     * runtime.
+     *
      * @since 1.5
      */
     Type getRawType();

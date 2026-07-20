@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,24 @@
 
 /* @test
  * @bug 8185582 8197989
- * @modules java.base/java.util.zip:open java.base/jdk.internal.vm.annotation
  * @summary Check the resources of Inflater, Deflater and ZipFile are always
  *          cleaned/released when the instance is not unreachable
+ * @modules java.base/java.util.zip:open java.base/jdk.internal.vm.annotation
+ * @library /test/lib
+ * @comment The test relies on the Cleaner to invoke the cleaning actions. So
+ *          we use "othervm" to prevent any Cleaner delays that could be contributed by any
+ *          other tests or code that might have executed on the agentvm prior to this test
+ *          execution
+ * @run main/othervm TestCleaner
  */
 
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.*;
 import jdk.internal.vm.annotation.DontInline;
+import jdk.test.lib.util.ForceGC;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class TestCleaner {
@@ -59,11 +67,11 @@ public class TestCleaner {
         Field zsRefDef = Deflater.class.getDeclaredField("zsRef");
         Field zsRefInf = Inflater.class.getDeclaredField("zsRef");
         if (!zsRefDef.trySetAccessible() || !zsRefInf.trySetAccessible()) {
-            throw new RuntimeException("'zsRef' is not accesible");
+            throw new RuntimeException("'zsRef' is not accessible");
         }
         if (addrOf(zsRefDef.get(new Deflater())) == -1 ||
             addrOf(zsRefInf.get(new Inflater())) == -1) {
-            throw new RuntimeException("'addr' is not accesible");
+            throw new RuntimeException("'addr' is not accessible");
         }
         List<Object> list = new ArrayList<>();
         byte[] buf1 = new byte[1024];
@@ -84,16 +92,17 @@ public class TestCleaner {
             }
         }
 
-        int n = 10;
-        long cnt = list.size();
-        while (n-- > 0 && cnt != 0) {
-            Thread.sleep(100);
-            System.gc();
-            cnt = list.stream().filter(o -> addrOf(o) != 0).count();
+        final AtomicLong numNotYetCleaned = new AtomicLong();
+        // trigger GC
+        final boolean resourcesCleaned = ForceGC.wait(() -> {
+            final long remaining = list.stream().filter(o -> addrOf(o) != 0).count();
+            numNotYetCleaned.set(remaining);
+            return remaining == 0;
+        });
+        if (!resourcesCleaned) {
+            throw new RuntimeException(numNotYetCleaned.get()
+                    + " resources haven't yet been cleaned");
         }
-        if (cnt != 0)
-            throw new RuntimeException("cleaner failed to clean : " + cnt);
-
     }
 
     @DontInline
@@ -139,17 +148,18 @@ public class TestCleaner {
         if (zsrc != null) {
             Field zfileField = zsrc.getClass().getDeclaredField("zfile");
             if (!zfileField.trySetAccessible()) {
-                throw new RuntimeException("'ZipFile.Source.zfile' is not accesible");
+                throw new RuntimeException("'ZipFile.Source.zfile' is not accessible");
             }
-            //System.out.println("zffile: " +  zfileField.get(zsrc));
-            int n = 10;
-            while (n-- > 0 && zfileField.get(zsrc) != null) {
-                System.out.println("waiting gc ... " + n);
-                System.gc();
-                Thread.sleep(100);
-            }
-            if (zfileField.get(zsrc) != null) {
-                throw new RuntimeException("cleaner failed to clean zipfile.");
+            final boolean resourceCleaned = ForceGC.wait(() -> {
+                try {
+                    return zfileField.get(zsrc) == null;
+                } catch (IllegalAccessException e) {
+                    // shouldn't happen
+                    throw new RuntimeException(e);
+                }
+            });
+            if (!resourceCleaned) {
+                throw new RuntimeException("cleaner failed to clean zipfile " + zip);
             }
         }
     }

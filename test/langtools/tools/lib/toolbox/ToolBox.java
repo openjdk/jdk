@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,12 +102,6 @@ public class ToolBox {
     public static final String testSrc = System.getProperty("test.src");
     /** The location of the test JDK for this test, or null if not set. */
     public static final String testJDK = System.getProperty("test.jdk");
-    /** The timeout factor for slow systems. */
-    public static final float timeoutFactor;
-    static {
-        String ttf = System.getProperty("test.timeout.factor");
-        timeoutFactor = (ttf == null) ? 1.0f : Float.parseFloat(ttf);
-    }
 
     /** The current directory. */
     public static final Path currDir = Path.of(".");
@@ -482,8 +476,8 @@ public class ToolBox {
         throw new IOException("File not deleted: " + path);
     }
 
-    private static final int RETRY_DELETE_MILLIS = isWindows() ? (int)(500 * timeoutFactor): 0;
-    private static final int MAX_RETRY_DELETE_MILLIS = isWindows() ? (int)(15 * 1000 * timeoutFactor) : 0;
+    private static final int RETRY_DELETE_MILLIS = isWindows() ? 500 : 0;
+    private static final int MAX_RETRY_DELETE_MILLIS = isWindows() ? 60 * 1000 : 0;
 
     /**
      * Moves a file.
@@ -670,6 +664,27 @@ public class ToolBox {
      */
     public Path getJDKTool(String tool) {
         return Path.of(testJDK, "bin", tool);
+    }
+
+    /**
+     * Finds a file with a path relative to the langtools test root directory.
+     *
+     * @param path the desired path from test/langtools
+     * @return the file, if found
+     */
+    public Path findFromTestRoot(String path) {
+        Path testSrc = Path.of(System.getProperty("test.src", "."));
+
+        for (Path d = testSrc; d != null; d = d.getParent()) {
+            if (Files.exists(d.resolve("TEST.ROOT"))) {
+                Path file = d.resolve(path);
+                if (Files.exists(file)) {
+                    return file;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestMissingSystemClass extends JNativeScanTestBase {
 
@@ -49,12 +52,15 @@ public class TestMissingSystemClass extends JNativeScanTestBase {
 
     @Test
     public void testSingleJarClassPath() {
-        assertFailure(jnativescan("--class-path", MISSING_SYSTEM.toString(), "--release", "21"))
-                .stdoutShouldBeEmpty()
+        List<String> stderr = assertSuccess(jnativescan("--class-path", MISSING_SYSTEM.toString(), "--release", "21"))
+                .stdoutShouldContain("<no restricted methods>")
+                .stderrShouldContain("Error(s) while processing classes")
                 .stderrShouldContain("Error while processing method")
                 .stderrShouldContain("missingsystem.App::main(String[])void")
-                .stderrShouldContain("CAUSED BY:")
                 .stderrShouldContain("System class can not be found")
-                .stderrShouldContain("java.lang.Compiler");
+                .stderrShouldContain("java.lang.Compiler")
+                .stderrAsLines();
+
+        assertEquals(2, stderr.size(), "Unexpected number of lines in stderr");
     }
 }

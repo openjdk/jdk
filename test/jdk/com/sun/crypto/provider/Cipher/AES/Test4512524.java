@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,12 @@ public class Test4512524 {
     public void execute(String mode) throws Exception {
 
         String transformation = ALGO+"/"+mode+"/"+PADDING;
-        Cipher ci = Cipher.getInstance(transformation, "SunJCE");
+        Cipher ci = Cipher.getInstance(transformation,
+                System.getProperty("test.provider.name", "SunJCE"));
 
         // TEST FIX 4512524
-        KeyGenerator kg = KeyGenerator.getInstance(ALGO, "SunJCE");
+        KeyGenerator kg = KeyGenerator.getInstance(ALGO,
+                System.getProperty("test.provider.name", "SunJCE"));
         kg.init(KEYSIZE*8);
         SecretKey key = kg.generateKey();
 

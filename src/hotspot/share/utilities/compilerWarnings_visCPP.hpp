@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,39 +30,17 @@
 #define PRAGMA_DIAG_PUSH _Pragma("warning(push)")
 #define PRAGMA_DIAG_POP  _Pragma("warning(pop)")
 
-// The Visual Studio implementation of FORBID_C_FUNCTION explicitly does
-// nothing, because there doesn't seem to be a way to implement it for Visual
-// Studio.  What seems the most likely approach is to use deprecation warnings,
-// but that runs into problems.
-//
-// (1) Declaring the function deprecated (using either __declspec(deprecated)
-// or the C++14 [[deprecated]] attribute) fails with warnings like this:
-//   warning C4273: 'exit': inconsistent dll linkage
-// It seems attributes are not simply additive with this compiler.
-//
-// (2) Additionally adding __declspec(dllimport) to deal with (1) fails with
-// warnings like this:
-//   error C2375: 'vsnprintf': redefinition; different linkage
-// It seems some functions in the set of interest have different linkage than
-// others ("exit" is marked imported while "vsnprintf" is not, for example).
-// That makes it difficult to provide a generic macro.
-//
-// (3) Using __pragma(deprecated(name)) fails with
-//   warning C4995: 'frobnicate': name was marked as #pragma deprecated
-// for a *declaration* (not a use) of a 'frobnicate' function.
-//
-// ALLOW_C_FUNCTIONS disables deprecation warnings over the statement scope.
-// Some of the functions we're interested in allowing are conditionally
-// deprecated on Windows, under the control of various preprocessor defines
-// such as _CRT_SECURE_NO_WARNINGS.  Annotating vetted uses allows those
-// warnings to catch unchecked uses.
+#define PRAGMA_DEPRECATED_IGNORED PRAGMA_DISABLE_MSVC_WARNING(4996)
 
-#define FORBID_C_FUNCTION(signature, alternative)
+// This macro is used by the IMPORTED variants of FORBID_C_FUNCTION.
+//
+// Some, but not all, functions we want to forbid using must include a
+// `__declspec(dllimport)` in the declaration.  Failure to do so where needed
+// leads to "redefinition; different linkage" errors for the forbidding
+// declaration. But including a dllimport specifier if not present in the
+// compiler's header leads to the same errors.  It seems one must just know
+// which are imported and which are not, and use the specifier accordingly.
 
-#define ALLOW_C_FUNCTION(name, ...)             \
-  PRAGMA_DIAG_PUSH                              \
-  PRAGMA_DISABLE_MSVC_WARNING(4996)             \
-  __VA_ARGS__                                   \
-  PRAGMA_DIAG_POP
+#define FORBIDDEN_FUNCTION_IMPORT_SPEC __declspec(dllimport)
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_VISCPP_HPP

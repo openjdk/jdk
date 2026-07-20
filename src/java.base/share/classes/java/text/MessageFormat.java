@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ package java.text;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.ObjectStreamException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -109,17 +110,21 @@ import java.util.Objects;
  * </pre></blockquote>
  *
  * <p>
- * The <i>ArgumentIndex</i> value is a non-negative integer written
+ * The {@code ArgumentIndex} value is a non-negative integer written
  * using the digits {@code '0'} through {@code '9'}, and represents an index into the
  * {@code arguments} array passed to the {@code format} methods
  * or the result array returned by the {@code parse} methods.
  * <p>
- * The <i>FormatType</i> and <i>FormatStyle</i> values are used to create
+ * Any constructor or method that takes a String pattern parameter will throw an {@code IllegalArgumentException} if the
+ * pattern contains an {@code ArgumentIndex} value that is equal to or exceeds an implementation limit.
+ * <p>
+ * The {@code FormatType} and {@code FormatStyle} values are used to create
  * a {@code Format} instance for the format element. The following
  * table shows how the values map to {@code Format} instances. These values
  * are case-insensitive when passed to {@link #applyPattern(String)}. Combinations
  * not shown in the table are illegal. A <i>SubformatPattern</i> must
  * be a valid pattern string for the {@code Format} subclass used.
+ * @implNote In the reference implementation, the limit of {@code ArgumentIndex} is 10,000.
  *
  * <table class="plain">
  * <caption style="display:none">Shows how FormatType and FormatStyle values map to Format instances</caption>
@@ -311,15 +316,15 @@ import java.util.Objects;
  *       <th scope="row" style="font-weight:normal" rowspan=3>{@code list}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
  *       <td>{@link ListFormat#getInstance(Locale, ListFormat.Type, ListFormat.Style)
- *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#STANDARD}, {@link ListFormat.Style#FULL})
+ *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#STANDARD}, {@link ListFormat.Style#FULL}{@code )}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code or}
  *       <td>{@link ListFormat#getInstance(Locale, ListFormat.Type, ListFormat.Style)
- *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#OR}, {@link ListFormat.Style#FULL})
+ *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#OR}, {@link ListFormat.Style#FULL}{@code )}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code unit}
  *       <td>{@link ListFormat#getInstance(Locale, ListFormat.Type, ListFormat.Style)
- *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#UNIT}, {@link ListFormat.Style#FULL}}
+ *       ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#UNIT}, {@link ListFormat.Style#FULL}{@code )}
  * </tbody>
  * </table>
  *
@@ -1181,6 +1186,8 @@ public class MessageFormat extends Format {
                 maximumArgumentNumber = argumentNumbers[i];
             }
         }
+
+        // Constructors/applyPattern ensure that resultArray.length < MAX_ARGUMENT_INDEX
         Object[] resultArray = new Object[maximumArgumentNumber + 1];
 
         int patternOffset = 0;
@@ -1459,6 +1466,9 @@ public class MessageFormat extends Format {
      * @serial
      */
     private int[] argumentNumbers = new int[INITIAL_FORMATS];
+    // Implementation limit for ArgumentIndex pattern element. Valid indices must
+    // be less than this value
+    private static final int MAX_ARGUMENT_INDEX = 10000;
 
     /**
      * One less than the number of entries in {@code offsets}.  Can also be thought of
@@ -1639,6 +1649,11 @@ public class MessageFormat extends Format {
                                                + argumentNumber);
         }
 
+        if (argumentNumber >= MAX_ARGUMENT_INDEX) {
+            throw new IllegalArgumentException(
+                    argumentNumber + " exceeds the ArgumentIndex implementation limit");
+        }
+
         // resize format information arrays if necessary
         if (offsetNumber >= formats.length) {
             int newLength = formats.length * 2;
@@ -1698,12 +1713,7 @@ public class MessageFormat extends Format {
             throw new IllegalArgumentException("unknown format type: " + type);
         }
         // Get the style if recognized, otherwise treat style as a SubformatPattern
-        FormatStyle fStyle;
-        try {
-            fStyle = FormatStyle.fromString(style);
-        } catch (IllegalArgumentException iae) {
-            fStyle = FormatStyle.SUBFORMATPATTERN;
-        }
+        FormatStyle fStyle = FormatStyle.fromString(style);
         return switch (fType) {
             case NUMBER -> switch (fStyle) {
                 case DEFAULT -> NumberFormat.getInstance(locale);
@@ -1961,41 +1971,43 @@ public class MessageFormat extends Format {
     }
 
     // Corresponding to the FormatStyle pattern
+    // WARNING: fromString is dependent on ordinal positioning and Enum names.
     private enum FormatStyle {
-        DEFAULT(""),
-        SHORT("short"),
-        MEDIUM("medium"),
-        LONG("long"),
-        FULL("full"),
-        INTEGER("integer"),
-        CURRENCY("currency"),
-        PERCENT("percent"),
-        COMPACT_SHORT("compact_short"),
-        COMPACT_LONG("compact_long"),
-        OR("or"),
-        UNIT("unit"),
-        SUBFORMATPATTERN(null);
+        // Special styles
+        DEFAULT,
+        SUBFORMATPATTERN,
+        // Pre-defined styles
+        SHORT,
+        MEDIUM,
+        LONG,
+        FULL,
+        INTEGER,
+        CURRENCY,
+        PERCENT,
+        COMPACT_SHORT,
+        COMPACT_LONG,
+        OR,
+        UNIT;
 
-        private final String text;
-
-        // Differs from FormatType in that the text String is
-        // not guaranteed to match the Enum name, thus a text field is used
-        FormatStyle(String text) {
-            this.text = text;
-        }
-
-        // This method returns a FormatStyle (excluding SUBFORMATPATTERN)
-        // that matches the passed String. If no FormatStyle is found,
-        // an IllegalArgumentException is thrown
+        // Returns a FormatStyle corresponding to the input text.
+        // DEFAULT is the empty String.
+        // Pre-defined styles are lower case versions of their enum name
+        // (but compared case-insensitive for historical compatibility).
+        // SUBFORMATPATTERN is anything else.
         private static FormatStyle fromString(String text) {
-            for (FormatStyle style : values()) {
-                // Also check trimmed case-insensitive for historical reasons
-                if (style != FormatStyle.SUBFORMATPATTERN &&
-                        text.trim().compareToIgnoreCase(style.text) == 0) {
-                    return style;
+            var style = text.trim();
+            if (style.isEmpty()) {
+                return FormatStyle.DEFAULT;
+            }
+            var styles = values();
+            // Match starting at the pre-defined styles -> [SHORT:]
+            for (int i = SHORT.ordinal(); i < styles.length; i++) {
+                var fStyle = styles[i];
+                if (style.compareToIgnoreCase(fStyle.name()) == 0) {
+                    return fStyle;
                 }
             }
-            throw new IllegalArgumentException();
+            return FormatStyle.SUBFORMATPATTERN;
         }
     }
 
@@ -2006,24 +2018,53 @@ public class MessageFormat extends Format {
      */
     @java.io.Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        boolean isValid = maxOffset >= -1
-                && formats.length > maxOffset
-                && offsets.length > maxOffset
-                && argumentNumbers.length > maxOffset;
+        ObjectInputStream.GetField fields = in.readFields();
+        if (fields.defaulted("argumentNumbers") || fields.defaulted("offsets")
+                || fields.defaulted("formats") || fields.defaulted("locale")
+                || fields.defaulted("pattern") || fields.defaulted("maxOffset")){
+            throw new InvalidObjectException("Stream has missing data");
+        }
+
+        locale = (Locale) fields.get("locale", null);
+        String patt = (String) fields.get("pattern", null);
+        int maxOff = fields.get("maxOffset", -2);
+        int[] argNums = ((int[]) fields.get("argumentNumbers", null)).clone();
+        int[] offs = ((int[]) fields.get("offsets", null)).clone();
+        Format[] fmts = ((Format[]) fields.get("formats", null)).clone();
+
+        // Check arrays/maxOffset have correct value/length
+        boolean isValid = maxOff >= -1 && argNums.length > maxOff
+                && offs.length > maxOff && fmts.length > maxOff;
+
+        // Check the correctness of arguments and offsets
         if (isValid) {
-            int lastOffset = pattern.length() + 1;
-            for (int i = maxOffset; i >= 0; --i) {
-                if ((offsets[i] < 0) || (offsets[i] > lastOffset)) {
+            int lastOffset = patt.length();
+            for (int i = maxOff; i >= 0; --i) {
+                if (argNums[i] < 0 || argNums[i] >= MAX_ARGUMENT_INDEX
+                        || offs[i] < 0 || offs[i] > lastOffset) {
                     isValid = false;
                     break;
                 } else {
-                    lastOffset = offsets[i];
+                    lastOffset = offs[i];
                 }
             }
         }
+
         if (!isValid) {
-            throw new InvalidObjectException("Could not reconstruct MessageFormat from corrupt stream.");
+            throw new InvalidObjectException("Stream has invalid data");
         }
+        maxOffset = maxOff;
+        pattern = patt;
+        offsets = offs;
+        formats = fmts;
+        argumentNumbers = argNums;
+    }
+
+    /**
+     * Serialization without data not supported for this class.
+     */
+    @java.io.Serial
+    private void readObjectNoData() throws ObjectStreamException {
+        throw new InvalidObjectException("Deserialized MessageFormat objects need data");
     }
 }

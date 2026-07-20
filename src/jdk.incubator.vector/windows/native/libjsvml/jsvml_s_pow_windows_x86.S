@@ -291,7 +291,7 @@ _unwind___jsvml_powf16_ha_z0_B1_B9:
 
         ALIGN 004H
 _unwind___jsvml_powf16_ha_z0_B11_B15:
-        DD      3472641
+        DD      2948353
         DD      9131261
         DD      8942834
         DD      9004264
@@ -312,10 +312,6 @@ _unwind___jsvml_powf16_ha_z0_B11_B15:
         DD      3573831
         DD      3831868
         DD      4089905
-        DD      8682278
-        DD      8743709
-        DD      8805140
-        DD      8866571
         DD      11392000
         DD      11469056
 
@@ -654,7 +650,7 @@ _unwind___jsvml_powf8_ha_l9_B6_B10:
         DD      imagerel _unwind___jsvml_powf8_ha_l9_B6_B10
 
 .pdata  ENDS
-_RDATA  SEGMENT     READ PAGE   'DATA'
+_RDATA  SEGMENT     READONLY PAGE   'DATA'
         ALIGN  32
 __VPACK_ODD_ind_2742_0_4        DD      1
         DD      3
@@ -2703,7 +2699,7 @@ _unwind___jsvml_spow_ha_cout_rare_internal_B1_B64:
 _DATA   SEGMENT      'DATA'
 _DATA   ENDS
 
-_RDATA  SEGMENT     READ  'DATA'
+_RDATA  SEGMENT     READONLY  'DATA'
         DD 8 DUP (0H)
         PUBLIC __jsvml_spow_ha_data_internal_avx512
 __jsvml_spow_ha_data_internal_avx512    DD      0

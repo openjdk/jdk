@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import nsk.share.jdi.*;
  */
 public class invokemethod009t {
     static Log log;
+    static Thread testThread = null;
 
     public static void main(String args[]) {
         System.exit(run(args) + Consts.JCK_STATUS_BASE);
@@ -56,7 +57,8 @@ public class invokemethod009t {
         invokemethod009tDummySuperSuperClass invokemethod009tdummySSCls =
             new invokemethod009tDummySuperSuperClass();
 
-        Thread.currentThread().setName(invokemethod009.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(invokemethod009.DEBUGGEE_THRNAME);
 
         pipe.println(invokemethod009.COMMAND_READY);
         String cmd = pipe.readln();

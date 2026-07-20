@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/istream.hpp"
@@ -266,7 +265,7 @@ bool inputStream::expand_buffer(size_t new_length) {
   } else {
     // realloc
     COV(EXB_R);
-    new_buf = REALLOC_C_HEAP_ARRAY(char, _buffer, new_length, mtInternal);
+    new_buf = REALLOC_C_HEAP_ARRAY(_buffer, new_length, mtInternal);
     assert(new_buf != nullptr, "would have exited VM if OOM");
   }
 

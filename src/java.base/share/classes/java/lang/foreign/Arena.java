@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,9 +246,9 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
     }
 
     /**
-     * {@return a new confined arena} Segments allocated with the confined arena can be
-     *          {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by the thread
-     *          that created the arena, the arena's <em>owner thread</em>.
+     * {@return a new confined arena} Segments allocated with the confined arena can
+     *          only be {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by the
+     *          thread that created the arena, the arena's <em>owner thread</em>.
      * <p>
      * Memory segments {@linkplain #allocate(long, long) allocated} by the returned arena
      * are zero-initialized.

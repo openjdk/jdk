@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,11 @@
 
 package com.sun.jndi.ldap;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.naming.NamingException;
 import javax.naming.ldap.spi.LdapDnsProvider;
 import javax.naming.ldap.spi.LdapDnsProviderResult;
-import sun.security.util.SecurityConstants;
 
 /**
  * The {@code LdapDnsProviderService} is responsible for creating and providing
@@ -50,25 +47,10 @@ final class LdapDnsProviderService {
     /**
      * Creates a new instance of LdapDnsProviderService
      */
-    @SuppressWarnings("removal")
     private LdapDnsProviderService() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            providers = ServiceLoader.load(
-                    LdapDnsProvider.class,
-                    ClassLoader.getSystemClassLoader());
-        } else {
-            final PrivilegedAction<ServiceLoader<LdapDnsProvider>> pa =
-                    () -> ServiceLoader.load(
-                            LdapDnsProvider.class,
-                            ClassLoader.getSystemClassLoader());
-
-            providers = AccessController.doPrivileged(
-                pa,
-                null,
-                new RuntimePermission("ldapDnsProvider"),
-                SecurityConstants.GET_CLASSLOADER_PERMISSION);
-        }
+        providers = ServiceLoader.load(
+                LdapDnsProvider.class,
+                ClassLoader.getSystemClassLoader());
     }
 
     /**

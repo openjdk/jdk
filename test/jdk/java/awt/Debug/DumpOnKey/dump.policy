@@ -1,3 +1,0 @@
-grant {
-    permission java.awt.AWTPermission "createRobot";
-};

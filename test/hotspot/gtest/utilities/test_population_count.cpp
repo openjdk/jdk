@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cppstdlib/limits.hpp"
 #include "runtime/os.hpp"
 #include "utilities/population_count.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
-
-#include <limits>
 
 #define BITS_IN_BYTE_ARRAY_SIZE 256
 

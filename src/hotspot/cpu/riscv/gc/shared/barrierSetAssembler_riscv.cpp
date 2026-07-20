@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -218,7 +217,7 @@ address BarrierSetAssembler::patching_epoch_addr() {
 }
 
 void BarrierSetAssembler::increment_patching_epoch() {
-  Atomic::inc(&_patching_epoch);
+  AtomicAccess::inc(&_patching_epoch);
 }
 
 void BarrierSetAssembler::clear_patching_epoch() {
@@ -227,14 +226,9 @@ void BarrierSetAssembler::clear_patching_epoch() {
 
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  Assembler::IncompressibleScope scope(masm); // Fixed length: see entry_barrier_offset()
 
-  if (bs_nm == nullptr) {
-    return;
-  }
-
-  Assembler::IncompressibleRegion ir(masm);  // Fixed length: see entry_barrier_offset()
-
-  Label local_guard;
+  Label local_guard, skip_barrier;
   NMethodPatchingType patching_type = nmethod_patching_type();
 
   if (slow_path == nullptr) {
@@ -247,10 +241,6 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   __ lwu(t0, *guard);
 
   switch (patching_type) {
-    case NMethodPatchingType::conc_data_patch:
-      // Subsequent loads of oops must occur after load of guard value.
-      // BarrierSetNMethod::disarm sets guard with release semantics.
-      __ membar(MacroAssembler::LoadLoad); // fall through to stw_instruction_and_data_patch
     case NMethodPatchingType::stw_instruction_and_data_patch:
       {
         // With STW patching, no data or instructions are updated concurrently,
@@ -281,7 +271,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
           // order, while allowing other independent instructions to be reordered.
           // Note: This may be slower than using a membar(load|load) (fence r,r).
           // Because processors will not start the second load until the first comes back.
-          // This means you can’t overlap the two loads,
+          // This means you can't overlap the two loads,
           // which is stronger than needed for ordering (stronger than TSO).
           __ srli(ra, t0, 32);
           __ orr(t1, t1, ra);
@@ -300,32 +290,29 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
       ShouldNotReachHere();
   }
 
+  Label& barrier_target = slow_path == nullptr ? skip_barrier : *slow_path;
   if (slow_path == nullptr) {
-    Label skip_barrier;
-    __ beq(t0, t1, skip_barrier);
+    __ beq(t0, t1, barrier_target, true /* is_far */);
+  } else {
+    __ bne(t0, t1, barrier_target, true /* is_far */);
+  }
 
+  if (slow_path == nullptr) {
     __ rt_call(StubRoutines::method_entry_barrier());
-
     __ j(skip_barrier);
 
     __ bind(local_guard);
 
     MacroAssembler::assert_alignment(__ pc());
     __ emit_int32(0); // nmethod guard value. Skipped over in common case.
-    __ bind(skip_barrier);
   } else {
-    __ beq(t0, t1, *continuation);
-    __ j(*slow_path);
     __ bind(*continuation);
   }
+
+  __ bind(skip_barrier);
 }
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
-  BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs == nullptr) {
-    return;
-  }
-
   Label bad_call;
   __ beqz(xmethod, bad_call);
 
@@ -365,8 +352,14 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ bne(tmp1, tmp2, error);
 
   // Make sure klass is 'reasonable', which is not zero.
-  __ load_klass(obj, obj, tmp1); // get klass
-  __ beqz(obj, error);           // if klass is null it is broken
+  __ load_narrow_klass(tmp1, obj); // get klass
+  __ beqz(tmp1, error);           // if klass is null it is broken
+}
+
+void BarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                                          Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle without barriers.
+  __ ld(obj, Address(weak_handle));
 }
 
 #ifdef COMPILER2
@@ -383,7 +376,6 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
 
   return opto_reg;
 }
-
 #undef __
 #define __ _masm->
 

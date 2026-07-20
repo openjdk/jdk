@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @bug 8282241
  * @summary Verifies class redefinition correctly updates generic_signature and source_file_name attributes
  * @requires vm.jvmti
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.instrument
+ * @modules java.instrument
+ * @library /testlibrary/asm
  * @library /test/lib
  * @run main RedefineClassHelper
  * @run main/othervm -javaagent:redefineagent.jar --add-opens=java.base/java.lang=ALL-UNNAMED RedefineGenericSignatureTest
@@ -35,6 +35,11 @@
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.attribute.SourceFileAttribute;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -42,10 +47,10 @@ import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.util.List;
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
@@ -141,27 +146,28 @@ public class RedefineGenericSignatureTest {
     private byte[] getNewClassBytes() {
         byte[] bytecode = InMemoryJavaCompiler.compile(GenericSignatureTarget.class.getName(), newTargetClassSource);
 
-        ClassWriter cw = new ClassWriter(0);
-        ClassReader cr = new ClassReader(bytecode);
-        cr.accept(new ClassVisitor(Opcodes.ASM7, cw) {
+        ClassFile context = ClassFile.of();
+        return context.transformClass(context.parse(bytecode), new ClassTransform() {
             private boolean sourceSet = false;
             @Override
-            public void visitSource(String source, String debug) {
-                sourceSet = true;
-                log("Changing source: \"" + source + "\" -> \"" + sourceFileNameNew + "\"");
-                super.visitSource(sourceFileNameNew, debug);
+            public void accept(ClassBuilder builder, ClassElement element) {
+                if (element instanceof SourceFileAttribute src) {
+                    sourceSet = true;
+                    log("Changing source: \"" + src.sourceFile() + "\" -> \"" + sourceFileNameNew + "\"");
+                    builder.with(SourceFileAttribute.of(sourceFileNameNew));
+                } else {
+                    builder.with(element);
+                }
             }
 
             @Override
-            public void visitEnd() {
+            public void atEnd(ClassBuilder builder) {
                 if (!sourceSet) {
                     log("Set source: \"" + sourceFileNameNew + "\"");
-                    super.visitSource(sourceFileNameNew, null);
+                    builder.with(SourceFileAttribute.of(sourceFileNameNew));
                 }
-                super.visitEnd();
             }
-        }, 0);
-        return cw.toByteArray();
+        });
     }
 
     private void runTest() throws Throwable {

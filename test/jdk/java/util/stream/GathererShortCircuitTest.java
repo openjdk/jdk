@@ -32,7 +32,6 @@ import static org.junit.jupiter.api.Assumptions.*;
  * @test
  * @bug 8328316
  * @summary Testing Gatherer behavior under short circuiting
- * @enablePreview
  * @run junit GathererShortCircuitTest
  */
 

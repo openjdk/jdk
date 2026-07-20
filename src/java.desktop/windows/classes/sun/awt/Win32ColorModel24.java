@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.awt.Transparency;
  * in the reverse order from the base ComponentColorModel to match
  * the ordering on a Windows 24-bit display.
  */
-public class Win32ColorModel24 extends ComponentColorModel {
+public final class Win32ColorModel24 extends ComponentColorModel {
     public Win32ColorModel24() {
         super(ColorSpace.getInstance(ColorSpace.CS_sRGB),
               new int[] {8, 8, 8}, false, false,
@@ -53,6 +53,7 @@ public class Win32ColorModel24 extends ComponentColorModel {
      * @see WritableRaster
      * @see SampleModel
      */
+    @Override
     public WritableRaster createCompatibleWritableRaster (int w, int h) {
         int[] bOffs = {2, 1, 0};
         return Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
@@ -65,6 +66,7 @@ public class Win32ColorModel24 extends ComponentColorModel {
      * has a data layout compatible with this ColorModel.
      * @see SampleModel
      */
+    @Override
     public SampleModel createCompatibleSampleModel(int w, int h) {
         int[] bOffs = {2, 1, 0};
         return new PixelInterleavedSampleModel(DataBuffer.TYPE_BYTE,

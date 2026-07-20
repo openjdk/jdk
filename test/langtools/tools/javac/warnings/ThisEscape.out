@@ -35,4 +35,5 @@ ThisEscape.java:652:55: compiler.warn.possible.this.escape
 ThisEscape.java:672:18: compiler.warn.possible.this.escape
 ThisEscape.java:669:48: compiler.warn.possible.this.escape.location
 ThisEscape.java:726:32: compiler.warn.possible.this.escape
-37 warnings
+ThisEscape.java:794:45: compiler.warn.possible.this.escape
+38 warnings

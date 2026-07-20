@@ -257,7 +257,7 @@ import sun.reflect.annotation.AnnotationType;
  * {@link java.lang.annotation.AnnotationFormatError} is thrown.
  *
  * <p>Finally, attempting to read a member whose definition has evolved
- * incompatibly will result in a {@link
+ * incompatibly will result in an {@link
  * java.lang.annotation.AnnotationTypeMismatchException} or an
  * {@link java.lang.annotation.IncompleteAnnotationException}.
  *
@@ -286,7 +286,6 @@ public interface AnnotatedElement {
      * @return true if an annotation for the specified annotation
      *     type is present on this element, else false
      * @throws NullPointerException if the given annotation class is null
-     * @since 1.5
      */
     default boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
         return getAnnotation(annotationClass) != null;
@@ -302,7 +301,6 @@ public interface AnnotatedElement {
      * @return this element's annotation for the specified annotation type if
      *     present on this element, else null
      * @throws NullPointerException if the given annotation class is null
-     * @since 1.5
      */
     <T extends Annotation> T getAnnotation(Class<T> annotationClass);
 
@@ -316,7 +314,6 @@ public interface AnnotatedElement {
      * have no effect on the arrays returned to other callers.
      *
      * @return annotations present on this element
-     * @since 1.5
      */
     Annotation[] getAnnotations();
 
@@ -478,7 +475,6 @@ public interface AnnotatedElement {
      * have no effect on the arrays returned to other callers.
      *
      * @return annotations directly present on this element
-     * @since 1.5
      */
     Annotation[] getDeclaredAnnotations();
 }

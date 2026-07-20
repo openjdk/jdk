@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 class BytecodeCounter: AllStatic {
  private:
-  NOT_PRODUCT(static int   _counter_value;)
+  NOT_PRODUCT(static uintx _counter_value;)
   NOT_PRODUCT(static jlong _reset_time;)
 
   friend class TemplateInterpreterGenerator;
@@ -43,7 +43,7 @@ class BytecodeCounter: AllStatic {
   static void reset()                      PRODUCT_RETURN;
 
   // Counter info (all info since last reset)
-  static int    counter_value()            PRODUCT_RETURN0 NOT_PRODUCT({ return _counter_value; });
+  static uintx  counter_value()            PRODUCT_RETURN0 NOT_PRODUCT({ return _counter_value; });
   static double elapsed_time()             PRODUCT_RETURN0; // in seconds
   static double frequency()                PRODUCT_RETURN0; // bytecodes/seconds
 

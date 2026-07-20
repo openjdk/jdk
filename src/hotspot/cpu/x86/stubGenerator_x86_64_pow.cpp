@@ -1,6 +1,6 @@
 /*
-* Copyright (c) 2016, 2021, Intel Corporation. All rights reserved.
-* Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+* Copyright (c) 2016, 2025, Intel Corporation. All rights reserved.
+* Copyright (C) 2021, Tencent. All rights reserved.
 * Intel Math Library (LIBM) Source Code
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -25,7 +25,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
 
@@ -760,8 +759,15 @@ ATTRIBUTE_ALIGNED(8) static const juint _DOUBLE0DOT5[] = {
 #define __ _masm->
 
 address StubGenerator::generate_libmPow() {
-  StubCodeMark mark(this, "StubRoutines", "libmPow");
-  address start = __ pc();
+  StubId stub_id = StubId::stubgen_dpow_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  StubCodeMark mark(this, stub_id);
+  start = __ pc();
 
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;
   Label L_2TAG_PACKET_4_0_2, L_2TAG_PACKET_5_0_2, L_2TAG_PACKET_6_0_2, L_2TAG_PACKET_7_0_2;
@@ -1859,7 +1865,45 @@ address StubGenerator::generate_libmPow() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
 #undef __
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_pow(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr));
+  address HIGHMASK_Y = (address)_HIGHMASK_Y;
+  address e_coeff    = (address)_e_coeff;
+  address coeff_h    = (address)_coeff_h;
+  address coeff_pow  = (address)_coeff_pow;
+
+  ADD(_HIGHSIGMASK);
+  ADD(_LOG2_E);
+  ADD(HIGHMASK_Y);
+  ADD(HIGHMASK_Y + 8);
+  ADD(_T_exp);
+  ADD(e_coeff);
+  ADD(e_coeff + 16);
+  ADD(e_coeff + 32);
+  ADD(coeff_h);
+  ADD(coeff_h + 8);
+  ADD(_HIGHMASK_LOG_X);
+  ADD(_HALFMASK);
+  ADD(coeff_pow);
+  ADD(coeff_pow + 16);
+  ADD(coeff_pow + 32);
+  ADD(coeff_pow + 48);
+  ADD(coeff_pow + 64);
+  ADD(coeff_pow + 80);
+  ADD(_L_tbl_pow);
+  ADD(_log2_pow);
+  ADD(_DOUBLE2);
+  ADD(_DOUBLE0);
+  ADD(_DOUBLE0DOT5);
+#undef ADD
+}
+#endif // INCLUDE_CDS

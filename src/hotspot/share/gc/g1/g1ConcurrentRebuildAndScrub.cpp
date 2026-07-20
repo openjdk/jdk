@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
-
-#include "gc/g1/g1ConcurrentRebuildAndScrub.hpp"
 
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
+#include "gc/g1/g1ConcurrentRebuildAndScrub.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -182,7 +180,10 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       assert(should_rebuild_or_scrub(hr), "must be");
 
       log_trace(gc, marking)("Scrub and rebuild region: " HR_FORMAT " pb: " PTR_FORMAT " TARS: " PTR_FORMAT " TAMS: " PTR_FORMAT,
-                             HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr)), p2i(_cm->top_at_mark_start(hr)));
+                             HR_FORMAT_PARAMS(hr),
+                             p2i(pb),
+                             p2i(_cm->top_at_rebuild_start(hr)),
+                             p2i(_cm->top_at_mark_start_or_bottom(hr)));
 
       {
         // Step 1: Scan the given region from bottom to parsable_bottom.
@@ -247,7 +248,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
     G1RebuildRSAndScrubRegionClosure(G1ConcurrentMark* cm, bool should_rebuild_remset, uint worker_id) :
       _cm(cm),
       _bitmap(_cm->mark_bitmap()),
-      _rebuild_closure(G1CollectedHeap::heap(), worker_id),
+      _rebuild_closure(G1CollectedHeap::heap(), worker_id + cm->worker_id_offset()),
       _should_rebuild_remset(should_rebuild_remset),
       _processed_words(0) { }
 

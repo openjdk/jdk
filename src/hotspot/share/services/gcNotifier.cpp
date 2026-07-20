@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "memoryManager.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -36,9 +38,6 @@
 #include "services/gcNotifier.hpp"
 #include "services/management.hpp"
 #include "services/memoryService.hpp"
-#include "memoryManager.hpp"
-#include "memory/oopFactory.hpp"
-#include "memory/resourceArea.hpp"
 
 GCNotificationRequest *GCNotifier::first_request = nullptr;
 GCNotificationRequest *GCNotifier::last_request = nullptr;

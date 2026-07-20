@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,7 +29,7 @@ import java.util.Locale;
 /**
 * International friendly string comparison with case-order
  * @author Igor Hersht, igorh@ca.ibm.com
- * @LastModified: Oct 2017
+ * @LastModified: Jan 2025
 */
 public class StringComparable implements Comparable<StringComparable>  {
 
@@ -52,7 +52,7 @@ public class StringComparable implements Comparable<StringComparable>  {
          m_mask = getMask(m_collator.getStrength());
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     public final static Comparable getComparator( final String text, final Locale locale,
             final Collator collator, final String caseOrder){
         if((caseOrder == null) ||(caseOrder.length() == 0)){// no case-order specified

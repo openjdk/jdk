@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 /*
  * @test
  * @bug 6690018
+ * @enablePreview
  * @summary RSAClientKeyExchange NullPointerException
  * @run main/othervm RSAExport
  */
@@ -197,17 +198,24 @@
  *
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.PEMDecoder;
 import java.security.Security;
 import java.security.KeyStore;
 import java.security.KeyFactory;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.spec.*;
-import java.security.interfaces.*;
-import javax.net.ssl.*;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 import java.math.BigInteger;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.RSAPrivateKeySpec;
 
 public class RSAExport {
 
@@ -312,7 +320,7 @@ public class RSAExport {
     /*
      * Turn on SSL debugging?
      */
-    static boolean debug = false;
+    static boolean debug = Boolean.getBoolean("test.debug");
 
     /*
      * If the client or server is doing some kind of object creation
@@ -386,7 +394,7 @@ public class RSAExport {
 
         // Enable RSA_EXPORT cipher suites only.
         try {
-            String enabledSuites[] = {
+            String[] enabledSuites = {
                 "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
                 "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA"};
             sslSocket.setEnabledCipherSuites(enabledSuites);
@@ -471,22 +479,20 @@ public class RSAExport {
 
     void startServer(boolean newThread) throws Exception {
         if (newThread) {
-            serverThread = new Thread() {
-                public void run() {
-                    try {
-                        doServerSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our server thread just died.
-                         *
-                         * Release the client, if not active already...
-                         */
-                        System.err.println("Server died..." + e);
-                        serverReady = true;
-                        serverException = e;
-                    }
+            serverThread = new Thread(() -> {
+                try {
+                    doServerSide();
+                } catch (Exception e) {
+                    /*
+                     * Our server thread just died.
+                     *
+                     * Release the client, if not active already...
+                     */
+                    System.err.println("Server died..." + e);
+                    serverReady = true;
+                    serverException = e;
                 }
-            };
+            });
             serverThread.start();
         } else {
             doServerSide();
@@ -495,19 +501,17 @@ public class RSAExport {
 
     void startClient(boolean newThread) throws Exception {
         if (newThread) {
-            clientThread = new Thread() {
-                public void run() {
-                    try {
-                        doClientSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our client thread just died.
-                         */
-                        System.err.println("Client died...");
-                        clientException = e;
-                    }
+            clientThread = new Thread(() -> {
+                try {
+                    doClientSide();
+                } catch (Exception e) {
+                    /*
+                     * Our client thread just died.
+                     */
+                    System.err.println("Client died...");
+                    clientException = e;
                 }
-            };
+            });
             clientThread.start();
         } else {
             doClientSide();
@@ -517,11 +521,10 @@ public class RSAExport {
     // Get the SSL context
     private SSLContext getSSLContext(boolean authnRequired) throws Exception {
         // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
-        ByteArrayInputStream is =
-                    new ByteArrayInputStream(trusedCertStr.getBytes());
-        Certificate trustedCert = cf.generateCertificate(is);
+        final PEMDecoder pemDecoder = PEMDecoder.of();
+
+        Certificate trustedCert = pemDecoder.decode(trusedCertStr, X509Certificate.class);
 
         // create a key store
         KeyStore ks = KeyStore.getInstance("JKS");
@@ -540,8 +543,7 @@ public class RSAExport {
                     (RSAPrivateKey)kf.generatePrivate(priKeySpec);
 
             // generate certificate chain
-            is = new ByteArrayInputStream(serverCertStr.getBytes());
-            Certificate serverCert = cf.generateCertificate(is);
+            Certificate serverCert = pemDecoder.decode(serverCertStr, X509Certificate.class);
 
             Certificate[] chain = new Certificate[2];
             chain[0] = serverCert;

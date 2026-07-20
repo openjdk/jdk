@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ import java.io.ByteArrayOutputStream;
 /**
  * Platform-specific support for the data transfer subsystem.
  */
-public class XDataTransferer extends DataTransferer {
+public final class XDataTransferer extends DataTransferer {
     static final XAtom FILE_NAME_ATOM = XAtom.get("FILE_NAME");
     static final XAtom DT_NET_FILE_ATOM = XAtom.get("_DT_NETFILE");
     static final XAtom PNG_ATOM = XAtom.get("PNG");
@@ -161,6 +161,7 @@ public class XDataTransferer extends DataTransferer {
         return getTargetNameForAtom(format);
     }
 
+    @Override
     public ToolkitThreadBlockedHandler getToolkitThreadBlockedHandler() {
         return XToolkitThreadBlockedHandler.getToolkitThreadBlockedHandler();
     }

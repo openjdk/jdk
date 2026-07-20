@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.invoke.MethodHandles;
 
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
@@ -38,6 +39,7 @@ import static java.util.Objects.requireNonNull;
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for the class
  * constant corresponding to a primitive type (e.g., {@code int.class}).
  */
+@AOTSafeClassInitializer // identity-sensitive static final fields
 public final class PrimitiveClassDescImpl
         extends DynamicConstantDesc<Class<?>> implements ClassDesc {
 
@@ -91,6 +93,31 @@ public final class PrimitiveClassDescImpl
         if (wrapper != null)
             return wrapper;
         return this.lazyWrapper = Wrapper.forBasicType(descriptorString().charAt(0));
+    }
+
+    @Override
+    public boolean isPrimitive() {
+        return true;
+    }
+
+    @Override
+    public ClassDesc arrayType(int rank) {
+        ConstantUtils.validateArrayRank(rank);
+        if (this == CD_void)
+            throw new IllegalArgumentException("not a valid reference type descriptor: " + "[".repeat(rank) + "V");
+        return ArrayClassDescImpl.ofValidated(this, rank);
+    }
+
+    @Override
+    public ClassDesc arrayType() {
+        if (this == CD_void)
+            throw new IllegalArgumentException("not a valid reference type descriptor: [V");
+        return ArrayClassDescImpl.ofValidated(this, 1);
+    }
+
+    @Override
+    public String displayName() {
+        return wrapper().primitiveSimpleName();
     }
 
     @Override

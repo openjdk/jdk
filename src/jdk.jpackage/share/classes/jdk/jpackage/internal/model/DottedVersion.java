@@ -1,0 +1,280 @@
+/*
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package jdk.jpackage.internal.model;
+
+import java.math.BigInteger;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+/**
+ * Dotted numeric version string. E.g.: 1.0.37, 10, 0.5
+ */
+public final class DottedVersion {
+
+    private DottedVersion(String version, boolean greedy) {
+        if (version.isEmpty()) {
+            if (greedy) {
+                throw new IllegalArgumentException(I18N.getString("error.version-string-empty"));
+            } else {
+                this.components = new Component[0];
+                this.suffix = "";
+            }
+        } else {
+            var ds = new DigitsSupplier(version);
+            components = Stream.generate(ds::getNextDigits).takeWhile(Objects::nonNull).map(
+                    digits -> {
+                        if (digits.isEmpty()) {
+                            if (!greedy) {
+                                return null;
+                            } else {
+                                throw ds.createException();
+                            }
+                        }
+
+                        try {
+                            return new Component(digits);
+                        } catch (NumberFormatException ex) {
+                            if (!greedy) {
+                                return null;
+                            } else {
+                                throw new IllegalArgumentException(MessageFormat.format(I18N.
+                                        getString("error.version-string-invalid-component"), version,
+                                        digits));
+                            }
+                        }
+                    }).takeWhile(Objects::nonNull).toArray(Component[]::new);
+            suffix = ds.getUnprocessedString();
+            if (!suffix.isEmpty() && greedy) {
+                throw ds.createException();
+            }
+        }
+    }
+
+    private DottedVersion(Component[] components, String suffix) {
+        this.components = components;
+        this.suffix = suffix;
+    }
+
+    private static class DigitsSupplier {
+
+        DigitsSupplier(String input) {
+            if (input.isEmpty()) {
+                throw new IllegalArgumentException();
+            }
+            this.input = input;
+        }
+
+        String getNextDigits() {
+            if (stoped) {
+                return null;
+            }
+
+            var sb = new StringBuilder();
+            while (cursor != input.length()) {
+                var chr = input.charAt(cursor++);
+                if (Character.isDigit(chr)) {
+                    sb.append(chr);
+                } else {
+                    var curStopAtDot = (chr == '.');
+                    if (!curStopAtDot) {
+                        if (sb.isEmpty() && lastDotPos >= 0) {
+                            cursor = lastDotPos;
+                        } else {
+                            cursor--;
+                        }
+                        stoped = true;
+                    } else if (!sb.isEmpty()) {
+                        lastDotPos = cursor - 1;
+                    } else {
+                        cursor = Math.max(lastDotPos, 0);
+                        stoped = true;
+                    }
+                    return sb.toString();
+                }
+            }
+
+            if (sb.isEmpty()) {
+                cursor = lastDotPos;
+            }
+
+            stoped = true;
+            return sb.toString();
+        }
+
+        String getUnprocessedString() {
+            return input.substring(cursor);
+        }
+
+        IllegalArgumentException createException() {
+            final String tail;
+            if (lastDotPos >= 0) {
+                tail = input.substring(lastDotPos + 1);
+            } else {
+                tail = getUnprocessedString();
+            }
+
+            final String errMessage;
+            if (tail.isEmpty()) {
+                errMessage = MessageFormat.format(I18N.getString(
+                        "error.version-string-zero-length-component"), input);
+            } else {
+                errMessage = MessageFormat.format(I18N.getString(
+                        "error.version-string-invalid-component"), input, tail);
+            }
+            return new IllegalArgumentException(errMessage);
+        }
+
+        private int cursor;
+        private int lastDotPos = -1;
+        private boolean stoped;
+        private final String input;
+    }
+
+    public static DottedVersion greedy(String version) {
+        return new DottedVersion(version, true);
+    }
+
+    public static DottedVersion lazy(String version) {
+        return new DottedVersion(version, false);
+    }
+
+    public static int compareComponents(DottedVersion a, DottedVersion b) {
+        int result = 0;
+        BigInteger[] aComponents = a.getComponents();
+        BigInteger[] bComponents = b.getComponents();
+        for (int i = 0; i < Math.max(aComponents.length, bComponents.length)
+                && result == 0; ++i) {
+            final BigInteger x;
+            if (i < aComponents.length) {
+                x = aComponents[i];
+            } else {
+                x = BigInteger.ZERO;
+            }
+
+            final BigInteger y;
+            if (i < bComponents.length) {
+                y = bComponents[i];
+            } else {
+                y = BigInteger.ZERO;
+            }
+            result = x.compareTo(y);
+        }
+
+        return result;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 29 * hash + Arrays.deepHashCode(this.components);
+        hash = 29 * hash + Objects.hashCode(this.suffix);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final DottedVersion other = (DottedVersion) obj;
+        if (!Objects.equals(this.suffix, other.suffix)) {
+            return false;
+        }
+        return Arrays.deepEquals(this.components, other.components);
+    }
+
+    public DottedVersion trim(int limit) {
+        if (limit < 0) {
+            throw new IllegalArgumentException();
+        } else if (limit >= components.length) {
+            return this;
+        } else {
+            return new DottedVersion(Arrays.copyOf(components, limit), suffix);
+        }
+    }
+
+    public DottedVersion pad(int limit) {
+        if (limit < 0) {
+            throw new IllegalArgumentException();
+        } else if (limit <= components.length) {
+            return this;
+        } else {
+            var newComponents = Arrays.copyOf(components, limit);
+            Arrays.fill(newComponents, components.length, newComponents.length, Component.ZERO);
+            return new DottedVersion(newComponents, suffix);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return Stream.of(components).map(Component::toString).collect(Collectors.joining(".")) + suffix;
+    }
+
+    public String getUnprocessedSuffix() {
+        return suffix;
+    }
+
+    public String toComponentsString() {
+        return Stream.of(components).map(Component::parsedValue).map(BigInteger::toString).collect(Collectors.joining("."));
+    }
+
+    public int getComponentsCount() {
+        return components.length;
+    }
+
+    public BigInteger[] getComponents() {
+        return Stream.of(components).map(Component::parsedValue).toArray(BigInteger[]::new);
+    }
+
+    private record Component(BigInteger parsedValue, String strValue) {
+        Component {
+            Objects.requireNonNull(parsedValue);
+            Objects.requireNonNull(strValue);
+        }
+
+        Component(String strValue) {
+            this(new BigInteger(strValue), strValue);
+        }
+
+        @Override
+        public String toString() {
+            return strValue;
+        }
+
+        static final Component ZERO = new Component(BigInteger.ZERO, "0");
+    }
+
+    private final Component[] components;
+    private final String suffix;
+}

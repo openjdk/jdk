@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,16 @@ package jdk.jfr.api.metadata.annotations;
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.Period;
+import jdk.jfr.FlightRecorder;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm jdk.jfr.api.metadata.annotations.TestLabel
+ * @run main/othervm jdk.jfr.api.metadata.annotations.TestPeriod
  */
 public class TestPeriod {
 
@@ -44,6 +45,7 @@ public class TestPeriod {
 
     public static void main(String[] args) throws Exception {
         EventType periodicEvent = EventType.getEventType(PeriodicEvent.class);
+        FlightRecorder.addPeriodicEvent(PeriodicEvent.class, () -> {});
         String defaultValue = Events.getSetting(periodicEvent, Period.NAME).getDefaultValue();
         Asserts.assertEQ(defaultValue, "47 s", "Incorrect default value for period");
     }

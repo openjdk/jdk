@@ -76,8 +76,8 @@ class ciMethod : public ciMetadata {
 
   // Code attributes.
   int _code_size;
-  int _max_stack;
-  int _max_locals;
+  uint _max_stack;
+  u2 _max_locals;
   vmIntrinsicID _intrinsic_id;
   int _handler_count;
   int _interpreter_invocation_count;
@@ -352,7 +352,6 @@ class ciMethod : public ciMetadata {
   bool is_getter      () const;
   bool is_setter      () const;
   bool is_accessor    () const;
-  bool is_initializer () const;
   bool is_empty       () const;
   bool can_be_statically_bound() const           { return _can_be_statically_bound; }
   bool has_reserved_stack_access() const         { return _has_reserved_stack_access; }
@@ -361,12 +360,11 @@ class ciMethod : public ciMetadata {
   bool is_vector_method() const;
   bool is_object_initializer() const;
   bool is_scoped() const;
+  bool is_old() const;
 
   bool can_be_statically_bound(ciInstanceKlass* context) const;
 
   bool can_omit_stack_trace() const;
-
-  bool equals(const ciMethod* m) const;
 
   // Replay data methods
   static void dump_name_as_ascii(outputStream* st, Method* method);

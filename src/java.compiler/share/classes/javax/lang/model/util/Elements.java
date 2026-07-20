@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,11 +56,11 @@ public interface Elements {
      * <ul>
      *     <li>find non-empty packages with the given name returned by
      *         {@link #getPackageElement(ModuleElement, CharSequence)},
-     *         where the provided ModuleSymbol is any
+     *         where the provided ModuleElement is any
      *         {@linkplain java.lang.module##root-modules root module},
      *     </li>
      *     <li>if the above yields an empty list, search
-     *         {@link #getAllModuleElements() all modules} for observable
+     *         {@linkplain #getAllModuleElements() all modules} for observable
      *         packages with the given name
      *     </li>
      * </ul>
@@ -81,8 +81,8 @@ public interface Elements {
      * @implSpec The default implementation of this method returns
      * {@code null}.
      *
-     * @param name  fully qualified package name, or an empty string for an unnamed package
      * @param module module relative to which the lookup should happen
+     * @param name  fully qualified package name, or an empty string for an unnamed package
      * @return the specified package, or {@code null} if it cannot be found
      * @see #getAllPackageElements
      * @since 9
@@ -143,11 +143,11 @@ public interface Elements {
      * <ul>
      *     <li>find type elements with the given name returned by
      *         {@link #getTypeElement(ModuleElement, CharSequence)},
-     *         where the provided ModuleSymbol is any
+     *         where the provided ModuleElement is any
      *         {@linkplain java.lang.module##root-modules root module},
      *     </li>
      *     <li>if the above yields an empty list, search
-     *         {@link #getAllModuleElements() all modules} for observable
+     *         {@linkplain #getAllModuleElements() all modules} for observable
      *         type elements with the given name
      *     </li>
      * </ul>
@@ -167,8 +167,8 @@ public interface Elements {
      * @implSpec The default implementation of this method returns
      * {@code null}.
      *
-     * @param name  the canonical name
      * @param module module relative to which the lookup should happen
+     * @param name  the canonical name
      * @return the named type element, or {@code null} if it cannot be found
      * @see #getAllTypeElements
      * @since 9
@@ -617,7 +617,7 @@ public interface Elements {
 
     /**
      * Returns all members of a type element, whether inherited or
-     * declared directly.  For a class the result also includes its
+     * declared directly.  For a class, the result also includes its
      * constructors, but not local or anonymous classes.
      *
      * @apiNote Elements of certain kinds can be isolated using
@@ -778,6 +778,12 @@ public interface Elements {
      *                           elements.getTypeElement("I"));
      * }
      *
+     * @apiNote This method examines the method's name, signature, subclass relationship, and accessibility
+     * in determining whether one method overrides another, as specified in JLS {@jls 8.4.8.1}.
+     * In addition, an implementation may have stricter checks including method modifiers, return types and
+     * exception types as described in JLS {@jls 8.4.8.1} and {@jls 8.4.8.3}.
+     * Note that such additional compile-time checks are not guaranteed and may vary between implementations.
+     *
      * @param overrider  the first method, possible overrider
      * @param overridden  the second method, possibly being overridden
      * @param type   the class or interface of which the first method is a member
@@ -878,10 +884,10 @@ public interface Elements {
      * accessor.
      *
      * @implSpec The default implementation of this method checks if the element
-     * enclosing the accessor has kind {@link ElementKind#RECORD RECORD} if that is
-     * the case, then all the record components on the accessor's enclosing element
-     * are retrieved by invoking {@link ElementFilter#recordComponentsIn(Iterable)}.
-     * If the accessor of at least one of the record components retrieved happen to
+     * enclosing the accessor has kind {@link ElementKind#RECORD RECORD}, if that is
+     * the case, then all the record components of the accessor's enclosing element
+     * are isolated by invoking {@link ElementFilter#recordComponentsIn(Iterable)}.
+     * If the accessor of at least one of the record components retrieved happens to
      * be equal to the accessor passed as a parameter to this method, then that
      * record component is returned, in any other case {@code null} is returned.
      *

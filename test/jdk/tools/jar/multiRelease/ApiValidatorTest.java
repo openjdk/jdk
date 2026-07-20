@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,8 @@ public class ApiValidatorTest extends MRTestBase {
         String base = classTemplate.replace(METHOD_SIG, sigBase);
         String v10 = classTemplate.replace(METHOD_SIG, sigV10);
 
-        compileTemplate(classes.resolve("base"), base);
-        compileTemplate(classes.resolve("v10"), v10);
+        compileTemplate(8, classes.resolve("base"), base);
+        compileTemplate(10, classes.resolve("v10"), v10);
 
         String jarfile = root.resolve("test.jar").toString();
         OutputAnalyzer result = jar("cf", jarfile,
@@ -135,8 +135,8 @@ public class ApiValidatorTest extends MRTestBase {
         String base = classTemplate.replace(API, "");
         String v10 = classTemplate.replace(API, publicAPI);
 
-        compileTemplate(classes.resolve("base"), base);
-        compileTemplate(classes.resolve("v10"), v10);
+        compileTemplate(8, classes.resolve("base"), base);
+        compileTemplate(10, classes.resolve("v10"), v10);
 
         String failureMessage = "contains a class with different api from earlier version";
 
@@ -176,8 +176,8 @@ public class ApiValidatorTest extends MRTestBase {
         String base = classTemplate.replace(API, "");
         String v10 = classTemplate.replace(API, privateAPI);
 
-        compileTemplate(classes.resolve("base"), base);
-        compileTemplate(classes.resolve("v10"), v10);
+        compileTemplate(8, classes.resolve("base"), base);
+        compileTemplate(10, classes.resolve("v10"), v10);
 
         String jarfile = root.resolve("test.jar").toString();
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
@@ -208,12 +208,12 @@ public class ApiValidatorTest extends MRTestBase {
         };
     }
 
-    private void compileTemplate(Path classes, String template) throws Throwable {
+    private void compileTemplate(int release, Path classes, String template) throws Throwable {
         Path classSourceFile = Files.createDirectories(
                 classes.getParent().resolve("src").resolve(classes.getFileName()))
                 .resolve("C.java");
         Files.write(classSourceFile, template.getBytes());
-        javac(classes, classSourceFile);
+        javac(release, classes, classSourceFile);
     }
 
      /* Modular multi-release checks */
@@ -452,7 +452,7 @@ public class ApiValidatorTest extends MRTestBase {
             sourceFiles[i + 1] = sourceFile;
         }
 
-        javac(classes, sourceFiles);
+        javac(9, classes, sourceFiles);
     }
 
     @SafeVarargs

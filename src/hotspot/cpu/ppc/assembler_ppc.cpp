@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -76,21 +75,44 @@ int Assembler::branch_destination(int inst, int pos) {
   return r;
 }
 
-// Low-level andi-one-instruction-macro.
-void Assembler::andi(Register a, Register s, const long ui16) {
-  if (is_power_of_2(((unsigned long) ui16)+1)) {
+// Low-level andi-one-instruction-macro. May clobber CR0.
+void Assembler::andi(Register a, Register s, julong int_or_long_const) {
+  // Instructions which don't set CR0 are preferred.
+  if (int_or_long_const == 0) {
+    // should not be handled as pow2minus1
+    li(a, 0);
+  } else if (is_power_of_2(int_or_long_const + 1)) {
     // pow2minus1
-    clrldi(a, s, 64 - log2i_exact((((unsigned long) ui16)+1)));
-  } else if (is_power_of_2((jlong) ui16)) {
-    // pow2
-    rlwinm(a, s, 0, 31 - log2i_exact((jlong) ui16), 31 - log2i_exact((jlong) ui16));
-  } else if (is_power_of_2((jlong)-ui16)) {
-    // negpow2
-    clrrdi(a, s, log2i_exact((jlong)-ui16));
+    clrldi(a, s, 64 - log2i_exact(int_or_long_const + 1));
+  } else if (is_power_of_2(-int_or_long_const)) {
+    // negpow2 (includes (julong)min_jlong)
+    clrrdi(a, s, log2i_exact(-int_or_long_const));
+  } else if (is_uimm((jlong)int_or_long_const, 32) && has_consecutive_ones(int_or_long_const)) {
+    // consecutive ones
+    rlwinm(a, s, 0, count_leading_zeros((uint32_t)int_or_long_const),
+                    31 - count_trailing_zeros((uint32_t)int_or_long_const));
+  } else if (is_uimm((jlong)int_or_long_const, 16)) {
+    // side effect: clobbers CR0
+    andi_(a, s, int_or_long_const);
   } else {
-    assert(is_uimm(ui16, 16), "must be 16-bit unsigned immediate");
-    andi_(a, s, ui16);
+    assert(is_uimm((jlong)int_or_long_const, 32) && (int_or_long_const & 0xFFFF) == 0,
+           "not encodable: " UINT64_FORMAT_X, int_or_long_const);
+    // side effect: clobbers CR0
+    andis_(a, s, int_or_long_const >> 16);
   }
+}
+
+// Check if int_or_long_const is supported by Assembler::andi.
+bool Assembler::andi_supports(julong int_or_long_const) {
+  // 16 bit always possible by andi_ (but other instructions are preferred)
+  if (is_uimm((jlong)int_or_long_const, 16)) return true;
+
+  // special cases 32 bit: higher 16 bit and consecutive ones are supported
+  if (is_uimm((jlong)int_or_long_const, 32) &&
+   ((int_or_long_const & 0xFFFF) == 0 || has_consecutive_ones(int_or_long_const))) return true;
+
+  // special cases 64 bit: clrldi, clrrdi
+  return is_power_of_2(int_or_long_const + 1) || is_power_of_2(-int_or_long_const);
 }
 
 // RegisterOrConstant version.
@@ -448,7 +470,6 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp, bool retur
       xa = (x >> 48) & 0xffff;
       xb = (x >> 32) & 0xffff; // No sign compensation, we use lis+ori or li to allow usage of R0.
       bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
-      bool return_xd = false;
 
       if (xa_loaded) { lis(tmp, xa); }
       if (xc) { lis(d, xc); }
@@ -564,20 +585,20 @@ void Assembler::test_asm() {
   li(     R3, -4711);
 
   // PPC 1, section 3.3.9, Fixed-Point Compare Instructions
-  cmpi(   CCR7,  0, R27, 4711);
-  cmp(    CCR0, 1, R14, R11);
-  cmpli(  CCR5,  1, R17, 45);
-  cmpl(   CCR3, 0, R9,  R10);
+  cmpi(   CR7,  0, R27, 4711);
+  cmp(    CR0, 1, R14, R11);
+  cmpli(  CR5,  1, R17, 45);
+  cmpl(   CR3, 0, R9,  R10);
 
-  cmpwi(  CCR7,  R27, 4711);
-  cmpw(   CCR0, R14, R11);
-  cmplwi( CCR5,  R17, 45);
-  cmplw(  CCR3, R9,  R10);
+  cmpwi(  CR7,  R27, 4711);
+  cmpw(   CR0, R14, R11);
+  cmplwi( CR5,  R17, 45);
+  cmplw(  CR3, R9,  R10);
 
-  cmpdi(  CCR7,  R27, 4711);
-  cmpd(   CCR0, R14, R11);
-  cmpldi( CCR5,  R17, 45);
-  cmpld(  CCR3, R9,  R10);
+  cmpdi(  CR7,  R27, 4711);
+  cmpd(   CR0, R14, R11);
+  cmpldi( CR5,  R17, 45);
+  cmpld(  CR3, R9,  R10);
 
   // PPC 1, section 3.3.11, Fixed-Point Logical Instructions
   andi_(  R4,  R5,  0xff);
@@ -717,23 +738,23 @@ void Assembler::test_asm() {
   bcctr( 4, 6, 0);
   bcctrl(4, 6, 0);
 
-  blt(CCR0, lbl2);
-  bgt(CCR1, lbl2);
-  beq(CCR2, lbl2);
-  bso(CCR3, lbl2);
-  bge(CCR4, lbl2);
-  ble(CCR5, lbl2);
-  bne(CCR6, lbl2);
-  bns(CCR7, lbl2);
+  blt(CR0, lbl2);
+  bgt(CR1, lbl2);
+  beq(CR2, lbl2);
+  bso(CR3, lbl2);
+  bge(CR4, lbl2);
+  ble(CR5, lbl2);
+  bne(CR6, lbl2);
+  bns(CR7, lbl2);
 
-  bltl(CCR0, lbl2);
-  bgtl(CCR1, lbl2);
-  beql(CCR2, lbl2);
-  bsol(CCR3, lbl2);
-  bgel(CCR4, lbl2);
-  blel(CCR5, lbl2);
-  bnel(CCR6, lbl2);
-  bnsl(CCR7, lbl2);
+  bltl(CR0, lbl2);
+  bgtl(CR1, lbl2);
+  beql(CR2, lbl2);
+  bsol(CR3, lbl2);
+  bgel(CR4, lbl2);
+  blel(CR5, lbl2);
+  bnel(CR6, lbl2);
+  bnsl(CR7, lbl2);
   blr();
 
   sync();
@@ -796,7 +817,7 @@ void Assembler::test_asm() {
   fcfid( F22, F23);
 
   // PPC 1, section 4.6.7 Floating-Point Compare Instructions
-  fcmpu( CCR7, F24, F25);
+  fcmpu( CR7, F24, F25);
 
   tty->print_cr("\ntest_asm disassembly (0x%lx 0x%lx):", p2i(code()->insts_begin()), p2i(code()->insts_end()));
   code()->decode();

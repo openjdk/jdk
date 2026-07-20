@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ class PSPromotionLAB : public CHeapObj<mtGC> {
   void set_end(HeapWord* value)    { _end = value; }
 
   // The shared initialize code invokes this.
-  debug_only(virtual bool lab_is_valid(MemRegion lab) { return false; });
+  DEBUG_ONLY(virtual bool lab_is_valid(MemRegion lab) { return false; });
 
   PSPromotionLAB() : _top(nullptr), _bottom(nullptr), _end(nullptr), _state(zero_size) { }
 
@@ -95,7 +95,7 @@ class PSYoungPromotionLAB : public PSPromotionLAB {
   // Not MT safe
   inline HeapWord* allocate(size_t size);
 
-  debug_only(virtual bool lab_is_valid(MemRegion lab);)
+  DEBUG_ONLY(virtual bool lab_is_valid(MemRegion lab);)
 };
 
 class PSOldPromotionLAB : public PSPromotionLAB {
@@ -127,7 +127,7 @@ class PSOldPromotionLAB : public PSPromotionLAB {
     return nullptr;
   }
 
-  debug_only(virtual bool lab_is_valid(MemRegion lab));
+  DEBUG_ONLY(virtual bool lab_is_valid(MemRegion lab));
 };
 
 #endif // SHARE_GC_PARALLEL_PSPROMOTIONLAB_HPP

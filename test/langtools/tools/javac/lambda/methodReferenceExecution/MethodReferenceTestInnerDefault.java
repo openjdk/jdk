@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
  * @test
  * @bug 8003639
  * @summary convert lambda testng tests to jtreg and add them
- * @run testng MethodReferenceTestInnerDefault
+ * @run junit MethodReferenceTestInnerDefault
  */
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Robert Field
@@ -60,9 +59,9 @@ interface InDefB extends InDefA {
     }
 }
 
-@Test
 public class MethodReferenceTestInnerDefault implements InDefB {
 
+    @Test
     public void testMethodReferenceInnerDefault() {
         (new In()).testMethodReferenceInnerDefault();
     }
@@ -73,13 +72,13 @@ public class MethodReferenceTestInnerDefault implements InDefB {
             IDSs q;
 
             q = MethodReferenceTestInnerDefault.this::xsA__;
-            assertEquals(q.m("*"), "A__xsA:*");
+            assertEquals("A__xsA:*", q.m("*"));
 
             q = MethodReferenceTestInnerDefault.this::xsAB_;
-            assertEquals(q.m("*"), "AB_xsB:*");
+            assertEquals("AB_xsB:*", q.m("*"));
 
             q = MethodReferenceTestInnerDefault.this::xs_B_;
-            assertEquals(q.m("*"), "_B_xsB:*");
+            assertEquals("_B_xsB:*", q.m("*"));
         }
     }
 

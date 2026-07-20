@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,120 +21,216 @@
  * questions.
  */
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameters;
+import static jdk.jpackage.test.WindowsHelper.getWixTypeFromVerboseJPackageOutput;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.test.Annotations.Parameters;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
-
-import static jdk.jpackage.test.WindowsHelper.getTempDirectory;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.WindowsHelper.WixType;
 
 /*
  * @test
  * @summary Custom l10n of msi installers in jpackage
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile WinL10nTest.java
+ * @compile -Xlint:all -Werror WinL10nTest.java
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinL10nTest
  */
 
-public class WinL10nTest {
+public record WinL10nTest(
+        Collection<WixFileInitializer> wxlFileInitializers,
+        Collection<String> expectedCultures,
+        Optional<Locale> locale,
+        boolean enableWixUIExtension) {
 
-    public WinL10nTest(WixFileInitializer wxlFileInitializers[],
-            String[] expectedCultures, String expectedErrorMessage,
-            String userLanguage, String userCountry,
-            boolean enableWixUIExtension) {
-        this.wxlFileInitializers = wxlFileInitializers;
-        this.expectedCultures = expectedCultures;
-        this.expectedErrorMessage = expectedErrorMessage;
-        this.userLanguage = userLanguage;
-        this.userCountry = userCountry;
-        this.enableWixUIExtension = enableWixUIExtension;
+    public WinL10nTest {
+        Objects.requireNonNull(wxlFileInitializers);
+        Objects.requireNonNull(expectedCultures);
+        Objects.requireNonNull(locale);
+    }
+
+    public WinL10nTest(Collection<String> expectedCultures, Locale locale, boolean enableWixUIExtension) {
+        this(List.of(), expectedCultures, Optional.of(locale), enableWixUIExtension);
+    }
+
+    public WinL10nTest(Collection<WixFileInitializer> wxlFileInitializers, Collection<String> expectedCultures) {
+        this(wxlFileInitializers, expectedCultures, Optional.empty(), false);
+    }
+
+    public WinL10nTest(WinL10nTest other) {
+        this(other.wxlFileInitializers, other.expectedCultures, other.locale, other.enableWixUIExtension);
+    }
+
+    @Override
+    public String toString() {
+        var tokens = new ArrayList<String>();
+        if (!wxlFileInitializers.isEmpty()) {
+            tokens.add(String.format("wxlFileInitializers=%s", wxlFileInitializers));
+        }
+        if (!expectedCultures.isEmpty()) {
+            tokens.add(String.format("expectedCultures=%s", expectedCultures));
+        }
+        locale.ifPresent(l -> {
+            tokens.add(String.format("locale=%s", l));
+        });
+        if (enableWixUIExtension) {
+            tokens.add("enableWixUIExtension=true");
+        }
+        return String.join(", ", tokens);
     }
 
     @Parameters
     public static List<Object[]> data() {
-        return List.of(new Object[][]{
-            {null, new String[] {"en-us"}, null, null, null, false},
-            {null, new String[] {"en-us"}, null, "en", "US", false},
-            {null, new String[] {"en-us"}, null, "en", "US", true},
-            {null, new String[] {"de-de"}, null, "de", "DE", false},
-            {null, new String[] {"de-de"}, null, "de", "DE", true},
-            {null, new String[] {"ja-jp"}, null, "ja", "JP", false},
-            {null, new String[] {"ja-jp"}, null, "ja", "JP", true},
-            {null, new String[] {"zh-cn"}, null, "zh", "CN", false},
-            {null, new String[] {"zh-cn"}, null, "zh", "CN", true},
-            {new WixFileInitializer[] {
+
+        List<WinL10nTest> testCases = new ArrayList<>();
+
+        testCases.add(new WinL10nTest(List.of(), List.of("en-us"), Optional.empty(), false));
+        for (var enableWixUIExtension : List.of(true, false)) {
+            testCases.add(new WinL10nTest(List.of("en-us"), Locale.of("en", "US"), enableWixUIExtension));
+            testCases.add(new WinL10nTest(List.of("de-de"), Locale.of("de", "DE"), enableWixUIExtension));
+            testCases.add(new WinL10nTest(List.of("ja-jp"), Locale.of("ja", "JP"), enableWixUIExtension));
+            testCases.add(new WinL10nTest(List.of("zh-cn"), Locale.of("zh", "CN"), enableWixUIExtension));
+        }
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("a.wxl", "en-us")
-            }, new String[] {"en-us"}, null, null, null, false},
-            {new WixFileInitializer[] {
+        ), List.of("en-us")));
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("a.wxl", "fr")
-            }, new String[] {"fr", "en-us"}, null, null, null, false},
-            {new WixFileInitializer[] {
+        ), List.of("fr", "en-us")));
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("a.wxl", "fr"),
                 WixFileInitializer.create("b.wxl", "fr")
-            }, new String[] {"fr", "en-us"}, null, null, null, false},
-            {new WixFileInitializer[] {
+        ), List.of("fr", "en-us")));
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("a.wxl", "it"),
                 WixFileInitializer.create("b.wxl", "fr")
-            }, new String[] {"it", "fr", "en-us"}, null, null, null, false},
-            {new WixFileInitializer[] {
+        ), List.of("it", "fr", "en-us")));
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("c.wxl", "it"),
                 WixFileInitializer.create("b.wxl", "fr")
-            }, new String[] {"fr", "it", "en-us"}, null, null, null, false},
-            {new WixFileInitializer[] {
+        ), List.of("fr", "it", "en-us")));
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("a.wxl", "fr"),
                 WixFileInitializer.create("b.wxl", "it"),
                 WixFileInitializer.create("c.wxl", "fr"),
                 WixFileInitializer.create("d.wxl", "it")
-            }, new String[] {"fr", "it", "en-us"}, null, null, null, false},
-            {new WixFileInitializer[] {
+        ), List.of("fr", "it", "en-us")));
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("c.wxl", "it"),
                 WixFileInitializer.createMalformed("b.wxl")
-            }, null, null, null, null, false},
-            {new WixFileInitializer[] {
+        ), List.of()));
+
+        testCases.add(new WinL10nTest(List.of(
                 WixFileInitializer.create("MsiInstallerStrings_de.wxl", "de")
-            }, new String[] {"en-us"}, null, null, null, false}
-        });
+        ), List.of("en-us")));
+
+        return testCases.stream().map(testCase -> {
+            return new Object[] { testCase };
+        }).toList();
     }
 
-    private static Stream<String> getBuildCommandLine(Executor.Result result) {
-        return result.getOutput().stream().filter(createToolCommandLinePredicate("light").or(
-                createToolCommandLinePredicate("wix")));
+    private record OutputAnalizer(Executor.Result result, WixType wixType, Optional<String> wixBuildCommandLine) {
+
+        OutputAnalizer {
+            Objects.requireNonNull(result);
+            Objects.requireNonNull(wixType);
+            Objects.requireNonNull(wixBuildCommandLine);
+        }
+
+        OutputAnalizer(Locale locale, Executor.Result result) {
+            this(result, getWixTypeFromVerboseJPackageOutput(locale, result));
+        }
+
+        OutputAnalizer(Executor.Result result, WixType wixType) {
+            this(result, wixType, findWixBuildCommandLine(result, wixType));
+        }
+
+        String getWixBuildCommandLine() {
+            return wixBuildCommandLine.orElseThrow(() -> {
+                return new IllegalStateException("WiX build command line not found");
+            });
+        }
+
+        void verifyCulturesInCmdline(String... cultures) {
+            if (cultures.length == 0) {
+                throw new IllegalArgumentException("Cultures list must be non-empty");
+            }
+
+            var cmdline = getWixBuildCommandLine();
+
+            var expected = switch (wixType) {
+                case WIX3 -> {
+                    yield "-cultures:" + String.join(";", cultures);
+                }
+                case WIX4 -> {
+                    yield Stream.of(cultures).map(culture -> {
+                        return String.join(" ", "-culture", culture);
+                    }).collect(Collectors.joining(" "));
+                }
+            };
+            TKit.assertTextStream(expected).label("WiX build command line").apply(List.of(cmdline));
+        }
+
+        private static Optional<String> findWixBuildCommandLine(Executor.Result result, WixType wixType) {
+            Objects.requireNonNull(result);
+            Objects.requireNonNull(wixType);
+            return result.stdout().stream()
+                    .filter(JPackageCommand::withTimestamp)
+                    .map(JPackageCommand::stripTimestamp)
+                    .map(String::stripLeading)
+                    .filter(createToolCommandLinePredicate(wixType.buildTool()))
+                    .findFirst();
+        }
+
+        private static final Predicate<String> createToolCommandLinePredicate(String wixToolFileName) {
+            Objects.requireNonNull(wixToolFileName);
+            return s -> {
+                if (!s.startsWith("Running ")) {
+                    return false;
+                }
+
+                // Accommodate for:
+                //     'C:\Program Files (x86)\WiX Toolset v3.14\bin\light.exe' ...
+                //     light.exe ...
+                return Stream.of("Running %s ", "\\%s ", "\\%s' ").map(format -> {
+                    return String.format(format, wixToolFileName);
+                }).anyMatch(s::contains) && s.contains(" -out ");
+            };
+        }
     }
 
-    private static boolean isWix3(Executor.Result result) {
-        return result.getOutput().stream().anyMatch(createToolCommandLinePredicate("light"));
-    }
-
-    private final static Predicate<String> createToolCommandLinePredicate(String wixToolName) {
-        var toolFileName = wixToolName + ".exe";
-        return (s) -> {
-            s = s.trim();
-            return s.startsWith(toolFileName) || ((s.contains(String.format("\\%s ", toolFileName)) && s.
-                    contains(" -out ")));
-        };
-    }
-
-    private static List<TKit.TextStreamVerifier> createDefaultL10nFilesLocVerifiers(Path tempDir) {
+    private static List<TKit.TextStreamVerifier> createDefaultL10nFilesLocVerifiers(Path wixSrcDir) {
         return Arrays.stream(DEFAULT_L10N_FILES).map(loc ->
-                TKit.assertTextStream("-loc " + tempDir.resolve(
-                        String.format("config/MsiInstallerStrings_%s.wxl", loc)).normalize()))
+                TKit.assertTextStream("-loc " + wixSrcDir.resolve(
+                        String.format("MsiInstallerStrings_%s.wxl", loc))))
                 .toList();
     }
 
@@ -142,13 +238,7 @@ public class WinL10nTest {
     public void test() throws IOException {
         final Path tempRoot = TKit.createTempDirectory("tmp");
 
-        final boolean allWxlFilesValid;
-        if (wxlFileInitializers != null) {
-            allWxlFilesValid = Stream.of(wxlFileInitializers).allMatch(
-                    WixFileInitializer::isValid);
-        } else {
-            allWxlFilesValid = true;
-        }
+        final boolean allWxlFilesValid = wxlFileInitializers.stream().allMatch(WixFileInitializer::isValid);
 
         PackageTest test = new PackageTest()
         .forTypes(PackageType.WINDOWS)
@@ -158,22 +248,31 @@ public class WinL10nTest {
             // 2. Instruct test to save jpackage output.
             cmd.setFakeRuntime().saveConsoleOutput(true);
 
+            // Need summary to pick WiX version.
+            // Need errors to pick up errors.
+            // Need tools to pick up tool command lines jpackage invokes
+            // Suppress trace as it interfers with output validators.
+            cmd.setEnabledMessageCategories(
+                    MessageCategory.SUMMARY,
+                    MessageCategory.ERRORS,
+                    MessageCategory.TOOLS
+            ).setDisabledMessageCategories(MessageCategory.TRACE);
+
             boolean withJavaOptions = false;
 
             // Set JVM default locale that is used to select primary l10n file.
-            if (userLanguage != null) {
-                withJavaOptions = true;
-                cmd.addArguments("-J-Duser.language=" + userLanguage);
-            }
-            if (userCountry != null) {
-                withJavaOptions = true;
-                cmd.addArguments("-J-Duser.country=" + userCountry);
-            }
-
-            if (withJavaOptions) {
+            locale.ifPresent(l -> {
+                cmd.addArguments("-J-Duser.language=" + l.getLanguage());
+                cmd.addArguments("-J-Duser.country=" + l.getCountry());
+                // Force UTF8 encoding of the output of jpackage command.
+                // This is the default encoding of the output for the command executor.
+                // This is needed to properly handle JP and CN l10n-s.
+                cmd.addArguments("-J-Dstdout.encoding=UTF-8");
+                cmd.addArguments("-J-Dstderr.encoding=UTF-8");
+                cmd.addArguments("-J-Dfile.encoding=UTF-8");
                 // Use jpackage as a command to allow "-J" options come through
                 cmd.useToolProvider(false);
-            }
+            });
 
             // Cultures handling is affected by the WiX extensions used.
             // By default only WixUtilExtension is used, this flag
@@ -183,55 +282,45 @@ public class WinL10nTest {
             }
 
             // Preserve config dir to check the set of copied l10n files.
-            Path tempDir = getTempDirectory(cmd, tempRoot);
-            Files.createDirectories(tempDir.getParent());
-            cmd.addArguments("--temp", tempDir.toString());
+            Path tempDir = tempRoot.resolve(cmd.packageType().name());
+            cmd.addArguments("--temp", tempDir);
         })
         .addBundleVerifier((cmd, result) -> {
-            if (expectedCultures != null) {
-                String expected;
-                if (isWix3(result)) {
-                    expected = "-cultures:" + String.join(";", expectedCultures);
-                } else {
-                    expected = Stream.of(expectedCultures).map(culture -> {
-                        return String.join(" ", "-culture", culture);
-                    }).collect(Collectors.joining(" "));
-                }
-                TKit.assertTextStream(expected).apply(getBuildCommandLine(result));
-            }
 
-            if (expectedErrorMessage != null) {
-                TKit.assertTextStream(expectedErrorMessage)
-                        .apply(result.getOutput().stream());
+            var outputAnalizer = new OutputAnalizer(locale.orElseGet(Locale::getDefault), result);
+
+            if (!expectedCultures.isEmpty()) {
+                outputAnalizer.verifyCulturesInCmdline(expectedCultures.toArray(String[]::new));
             }
 
             if (wxlFileInitializers != null) {
-                var wixSrcDir = Path.of(cmd.getArgumentValue("--temp")).resolve("config");
+                var wixSrcDir = Path.of(cmd.getArgumentValue("--temp")).resolve(
+                        "config").normalize().toAbsolutePath();
 
                 if (allWxlFilesValid) {
                     for (var v : wxlFileInitializers) {
                         if (!v.name.startsWith("MsiInstallerStrings_")) {
-                            v.createCmdOutputVerifier(wixSrcDir).apply(getBuildCommandLine(result));
+                            v.createCmdOutputVerifier(wixSrcDir).apply(List.of(outputAnalizer.getWixBuildCommandLine()));
                         }
                     }
-                    Path tempDir = getTempDirectory(cmd, tempRoot).toAbsolutePath();
-                    for (var v : createDefaultL10nFilesLocVerifiers(tempDir)) {
-                        v.apply(getBuildCommandLine(result));
+
+                    for (var v : createDefaultL10nFilesLocVerifiers(wixSrcDir)) {
+                        v.apply(List.of(outputAnalizer.getWixBuildCommandLine()));
                     }
                 } else {
-                    Stream.of(wxlFileInitializers)
+                    wxlFileInitializers.stream()
                             .filter(Predicate.not(WixFileInitializer::isValid))
                             .forEach(v -> v.createCmdOutputVerifier(
-                                    wixSrcDir).apply(result.getOutput().stream()));
-                    TKit.assertFalse(getBuildCommandLine(result).findAny().isPresent(),
-                            "Check light.exe was not invoked");
+                                    wixSrcDir).apply(result.getOutput()));
+                    TKit.assertTrue(outputAnalizer.wixBuildCommandLine().isEmpty(),
+                            String.format("Check %s was not invoked", outputAnalizer.wixType.buildTool()));
                 }
             }
         });
 
-        if (wxlFileInitializers != null) {
+        if (!wxlFileInitializers.isEmpty()) {
             test.addInitializer(cmd -> {
-                resourceDir = TKit.createTempDirectory("resources");
+                var resourceDir = TKit.createTempDirectory("resources");
 
                 cmd.addArguments("--resource-dir", resourceDir);
 
@@ -241,20 +330,12 @@ public class WinL10nTest {
             });
         }
 
-        if (expectedErrorMessage != null || !allWxlFilesValid) {
+        if (!allWxlFilesValid) {
             test.setExpectedExitCode(1);
         }
 
         test.run();
     }
-
-    final private WixFileInitializer[] wxlFileInitializers;
-    final private String[] expectedCultures;
-    final private String expectedErrorMessage;
-    final private String userLanguage;
-    final private String userCountry;
-    final private boolean enableWixUIExtension;
-    private Path resourceDir;
 
     private static class WixFileInitializer {
         static WixFileInitializer create(String name, String culture) {
@@ -281,10 +362,9 @@ public class WinL10nTest {
                 }
 
                 @Override
-                TKit.TextStreamVerifier createCmdOutputVerifier(Path root) {
+                TKit.TextStreamVerifier createCmdOutputVerifier(Path wixSrcDir) {
                     return TKit.assertTextStream(String.format(
-                            "Failed to parse %s file",
-                            root.resolve("b.wxl").toAbsolutePath()));
+                            "Failed to parse %s file", wixSrcDir.resolve("b.wxl")));
                 }
             };
         }
@@ -302,9 +382,8 @@ public class WinL10nTest {
                             + "\" xmlns=\"http://schemas.microsoft.com/wix/2006/localization\" Codepage=\"1252\"/>"));
         }
 
-        TKit.TextStreamVerifier createCmdOutputVerifier(Path root) {
-            return TKit.assertTextStream(
-                    "-loc " + root.resolve(name).toAbsolutePath().normalize());
+        TKit.TextStreamVerifier createCmdOutputVerifier(Path wixSrcDir) {
+            return TKit.assertTextStream("-loc " + wixSrcDir.resolve(name));
         }
 
         boolean isValid() {

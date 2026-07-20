@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1999-2004
  *  David Corcoran <corcoran@musclecard.com>
- * Copyright (C) 2002-2011
+ * Copyright (C) 2002-2024
  *  Ludovic Rousseau <ludovic.rousseau@free.fr>
  * Copyright (C) 2005
  *  Martin Paljak <martin@paljak.pri.ee>
@@ -192,7 +192,8 @@ extern const SCARD_IO_REQUEST g_rgSCardT0Pci, g_rgSCardT1Pci, g_rgSCardRawPci;
 /** @ingroup ErrorCodes */
 #define SCARD_E_INVALID_CHV        ((LONG)0x8010002A) /**< The supplied PIN is incorrect. */
 /** @ingroup ErrorCodes */
-#define SCARD_E_UNKNOWN_RES_MNG        ((LONG)0x8010002B) /**< An unrecognized error code was returned from a layered component. */
+#define SCARD_E_UNKNOWN_RES_MSG        ((LONG)0x8010002B) /**< An unrecognized error code was returned from a layered component. */
+#define SCARD_E_UNKNOWN_RES_MNG        SCARD_E_UNKNOWN_RES_MSG
 /** @ingroup ErrorCodes */
 #define SCARD_E_NO_SUCH_CERTIFICATE    ((LONG)0x8010002C) /**< The requested certificate does not exist. */
 /** @ingroup ErrorCodes */
@@ -279,7 +280,7 @@ extern const SCARD_IO_REQUEST g_rgSCardT0Pci, g_rgSCardT1Pci, g_rgSCardRawPci;
 #define INFINITE            0xFFFFFFFF    /**< Infinite timeout */
 #endif
 
-#define PCSCLITE_VERSION_NUMBER        "1.9.9"    /**< Current version */
+#define PCSCLITE_VERSION_NUMBER        "2.3.0"    /**< Current version */
 /** Maximum readers context (a slot is count as a reader) */
 #define PCSCLITE_MAX_READERS_CONTEXTS            16
 

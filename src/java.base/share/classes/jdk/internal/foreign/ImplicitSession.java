@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ final class ImplicitSession extends SharedSession {
 
     public ImplicitSession(Cleaner cleaner) {
         super();
+        this.state = NONCLOSEABLE;
         cleaner.register(this, resourceList);
     }
 
@@ -53,11 +54,6 @@ final class ImplicitSession extends SharedSession {
     @Override
     public void acquire0() {
         // do nothing
-    }
-
-    @Override
-    public boolean isCloseable() {
-        return false;
     }
 
     @Override

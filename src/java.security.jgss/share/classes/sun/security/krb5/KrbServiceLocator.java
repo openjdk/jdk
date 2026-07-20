@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,6 @@
 
 package sun.security.krb5;
 
-import sun.security.krb5.internal.Krb5;
-
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Random;
@@ -38,6 +33,8 @@ import java.util.StringTokenizer;
 import javax.naming.*;
 import javax.naming.directory.*;
 import javax.naming.spi.NamingManager;
+
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
  * This class discovers the location of Kerberos services by querying DNS,
@@ -71,7 +68,6 @@ class KrbServiceLocator {
      * @return An ordered list of hostports for the Kerberos service or null if
      *          the service has not been located.
      */
-    @SuppressWarnings("removal")
     static String[] getKerberosService(String realmName) {
 
         // search realm in SRV TXT records
@@ -86,18 +82,8 @@ class KrbServiceLocator {
             if (!(ctx instanceof DirContext)) {
                 return null; // cannot create a DNS context
             }
-            Attributes attrs = null;
-            try {
-                // both connect and accept are needed since DNS is thru UDP
-                attrs = AccessController.doPrivileged(
-                        (PrivilegedExceptionAction<Attributes>)
-                                () -> ((DirContext)ctx).getAttributes(
-                                        dnsUrl, SRV_TXT_ATTR),
-                        null,
-                        new java.net.SocketPermission("*", "connect,accept"));
-            } catch (PrivilegedActionException e) {
-                throw (NamingException)e.getCause();
-            }
+            Attributes attrs = ((DirContext)ctx).getAttributes(
+                                 dnsUrl, SRV_TXT_ATTR);
             Attribute attr;
 
             if (attrs != null && ((attr = attrs.get(SRV_TXT)) != null)) {
@@ -129,7 +115,9 @@ class KrbServiceLocator {
                 }
             }
         } catch (NamingException e) {
-            // ignore
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
+            }
         }
         return records;
     }
@@ -144,7 +132,6 @@ class KrbServiceLocator {
      * @return An ordered list of hostports for the Kerberos service or null if
      *          the service has not been located.
      */
-    @SuppressWarnings("removal")
     static String[] getKerberosService(String realmName, String protocol) {
 
         String dnsUrl = "dns:///_kerberos." + protocol + "." + realmName;
@@ -160,18 +147,8 @@ class KrbServiceLocator {
                 return null; // cannot create a DNS context
             }
 
-            Attributes attrs = null;
-            try {
-                // both connect and accept are needed since DNS is thru UDP
-                attrs = AccessController.doPrivileged(
-                        (PrivilegedExceptionAction<Attributes>)
-                                () -> ((DirContext)ctx).getAttributes(
-                                        dnsUrl, SRV_RR_ATTR),
-                        null,
-                        new java.net.SocketPermission("*", "connect,accept"));
-            } catch (PrivilegedActionException e) {
-                throw (NamingException)e.getCause();
-            }
+            Attributes attrs = ((DirContext)ctx).getAttributes(
+                                 dnsUrl, SRV_RR_ATTR);
 
             Attribute attr;
 
@@ -212,8 +189,9 @@ class KrbServiceLocator {
                 hostports = extractHostports(srvRecords);
             }
         } catch (NamingException e) {
-            // e.printStackTrace();
-            // ignore
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
+            }
         }
         return hostports;
     }

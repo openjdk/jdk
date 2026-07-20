@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ package java.text;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
-import static java.text.DateFormatSymbols.*;
+import java.time.ZoneOffset;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -56,6 +56,8 @@ import sun.util.calendar.CalendarUtils;
 import sun.util.calendar.ZoneInfoFile;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.TimeZoneNameUtility;
+
+import static java.text.DateFormatSymbols.*;
 
 /**
  * {@code SimpleDateFormat} is a concrete class for formatting and
@@ -91,7 +93,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>
  * The following pattern letters are defined (all other characters from
  * {@code 'A'} to {@code 'Z'} and from {@code 'a'} to
- * {@code 'z'} are reserved):
+ * {@code 'z'} not in the table below are reserved). {@link #applyPattern(String)},
+ * {@link #applyLocalizedPattern(String)}, and the {@link #SimpleDateFormat(String)
+ * SimpleDateFormat constructors} throw {@code IllegalArgumentException} when
+ * passed a pattern containing an unquoted reserved character.
  * <blockquote>
  * <table class="striped">
  * <caption style="display:none">Chart shows pattern letters, date/time component, presentation, and examples.</caption>
@@ -915,10 +920,15 @@ public class SimpleDateFormat extends DateFormat {
     }
 
     /**
-     * Sets the 100-year period 2-digit years will be interpreted as being in
-     * to begin on the date the user specifies.
+     * Sets the start date of the 100-year period used to interpret 2-digit years.
+     * <p>
+     * For example, given a {@code SimpleDateFormat} with a {@code GregorianCalendar},
+     * if the start date is set to January 1, 1950, 2-digit years are
+     * interpreted as falling within the 100-year range from 1950 through 2049.
+     * In that case, 50 is interpreted as 1950, 99 as 1999, 00 as 2000, and 49
+     * as 2049.
      *
-     * @param startDate During parsing, two digit years will be placed in the range
+     * @param startDate During parsing, 2-digit years will be placed in the range
      * {@code startDate} to {@code startDate + 100 years}.
      * @see #get2DigitYearStart
      * @throws NullPointerException if {@code startDate} is {@code null}.
@@ -929,11 +939,8 @@ public class SimpleDateFormat extends DateFormat {
     }
 
     /**
-     * Returns the beginning date of the 100-year period 2-digit years are interpreted
-     * as being within.
+     * {@return the start date of the 100-year period used to interpret 2-digit years}
      *
-     * @return the start of the 100-year period into which two digit years are
-     * parsed
      * @see #set2DigitYearStart
      * @since 1.2
      */
@@ -1290,15 +1297,22 @@ public class SimpleDateFormat extends DateFormat {
 
         case PATTERN_ZONE_NAME: // 'z'
             if (current == null) {
+                TimeZone tz = calendar.getTimeZone();
+                String tzid = tz.getID();
+                int zoneOffset = calendar.get(Calendar.ZONE_OFFSET);
+                int dstOffset = calendar.get(Calendar.DST_OFFSET) + zoneOffset;
+
+                // Check if an explicit metazone DST offset exists
+                String explicitDstOffset = TimeZoneNameUtility.explicitDstOffset(tzid);
+                boolean daylight = explicitDstOffset != null ?
+                    dstOffset == ZoneOffset.of(explicitDstOffset).getTotalSeconds() * 1_000 :
+                    dstOffset != zoneOffset;
                 if (formatData.locale == null || formatData.isZoneStringsSet) {
-                    int zoneIndex =
-                        formatData.getZoneIndex(calendar.getTimeZone().getID());
+                    int zoneIndex = formatData.getZoneIndex(tzid);
                     if (zoneIndex == -1) {
-                        value = calendar.get(Calendar.ZONE_OFFSET) +
-                            calendar.get(Calendar.DST_OFFSET);
-                        buffer.append(ZoneInfoFile.toCustomID(value));
+                        buffer.append(ZoneInfoFile.toCustomID(dstOffset));
                     } else {
-                        int index = (calendar.get(Calendar.DST_OFFSET) == 0) ? 1: 3;
+                        int index = daylight ? 3 : 1;
                         if (count < 4) {
                             // Use the short name
                             index++;
@@ -1307,8 +1321,6 @@ public class SimpleDateFormat extends DateFormat {
                         buffer.append(zoneStrings[zoneIndex][index]);
                     }
                 } else {
-                    TimeZone tz = calendar.getTimeZone();
-                    boolean daylight = (calendar.get(Calendar.DST_OFFSET) != 0);
                     int tzstyle = (count < 4 ? TimeZone.SHORT : TimeZone.LONG);
                     buffer.append(tz.getDisplayName(daylight, tzstyle, formatData.locale));
                 }

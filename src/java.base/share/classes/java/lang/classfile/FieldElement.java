@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,25 +24,24 @@
  */
 package java.lang.classfile;
 
-import java.lang.classfile.attribute.ConstantValueAttribute;
-import java.lang.classfile.attribute.DeprecatedAttribute;
-import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
-import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
-import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import java.lang.classfile.attribute.SignatureAttribute;
-import java.lang.classfile.attribute.SyntheticAttribute;
-import java.lang.classfile.attribute.UnknownAttribute;
-import jdk.internal.javac.PreviewFeature;
+import java.lang.classfile.attribute.*;
 
 /**
- * A marker interface for elements that can appear when traversing
- * a {@link FieldModel} or be presented to a {@link FieldBuilder}.
+ * Marker interface for a member element of a {@link FieldModel}.  Such an
+ * element can appear when traversing a {@link FieldModel} unless otherwise
+ * specified, be supplied to a {@link FieldBuilder}, and be processed by a
+ * {@link FieldTransform}.
+ * <p>
+ * {@link AccessFlags} is the only member element of a field that appear exactly
+ * once during the traversal of a {@link FieldModel}.
  *
+ * @see ClassFileElement##membership Membership Elements
+ * @see ClassElement
+ * @see MethodElement
+ * @see CodeElement
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface FieldElement extends ClassFileElement
         permits AccessFlags,
                 CustomAttribute, ConstantValueAttribute, DeprecatedAttribute,

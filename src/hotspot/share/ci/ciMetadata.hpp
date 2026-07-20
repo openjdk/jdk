@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ class ciMetadata: public ciBaseObject {
 
   Metadata* constant_encoding() { return _metadata; }
 
-  bool equals(ciMetadata* obj) const { return (this == obj); }
+  bool equals(const ciMetadata* obj) const { return (this == obj); }
 
   uint hash() { return ident() * 31; } // ???
 

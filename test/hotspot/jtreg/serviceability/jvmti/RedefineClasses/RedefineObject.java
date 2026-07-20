@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- *          java.base/jdk.internal.org.objectweb.asm
  *          java.compiler
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
@@ -41,19 +40,15 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.lang.RuntimeException;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassFileVersion;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.security.ProtectionDomain;
-import java.util.Arrays;
-
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-
-import static jdk.internal.org.objectweb.asm.Opcodes.ASM6;
-import static jdk.internal.org.objectweb.asm.Opcodes.V1_8;
 
 public class RedefineObject {
 
@@ -69,31 +64,14 @@ public class RedefineObject {
                           Class<?> classBeingRedefined,
                           ProtectionDomain protectionDomain, byte[] classfileBuffer)
                 throws IllegalClassFormatException {
-            ClassWriter cw = new ClassWriter(0);
-            // Force an older ASM to force a bytecode update
-            ClassVisitor cv = new DummyClassVisitor(ASM6, cw) { };
-            ClassReader cr = new ClassReader(classfileBuffer);
-            cr.accept(cv, 0);
-            byte[] bytes = cw.toByteArray();
-            return bytes;
-        }
-
-        public class DummyClassVisitor extends ClassVisitor {
-
-            public DummyClassVisitor(int api, ClassVisitor cv) {
-                super(api, cv);
-            }
-
-            public void visit(
-                    final int version,
-                    final int access,
-                    final String name,
-                    final String signature,
-                    final String superName,
-                    final String[] interfaces) {
-                // Artificially lower to JDK 8 version to force a redefine
-                cv.visit(V1_8, access, name, signature, superName, interfaces);
-            }
+            return ClassFile.of().transformClass(ClassFile.of().parse(classfileBuffer), (classBuilder, classElement) -> {
+                if (classElement instanceof ClassFileVersion cfv) {
+                    // Force a redefine with different class file versions
+                    classBuilder.with(ClassFileVersion.of(cfv.majorVersion() - 1, 0));
+                } else {
+                    classBuilder.with(classElement);
+                }
+            });
         }
 
         @Override public byte[] transform(ClassLoader loader, String className,

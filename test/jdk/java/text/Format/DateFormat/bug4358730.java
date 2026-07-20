@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @test
- * @bug 4358730
+ * @bug 4358730 8347841
  * @summary test that confirms Zero-Padding on year.
  * @run junit bug4358730
  */
@@ -56,7 +56,7 @@ public class bug4358730 {
         Locale saveLocale = Locale.getDefault();
 
         try {
-            TimeZone.setDefault(TimeZone.getTimeZone("PST"));
+            TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
             Locale.setDefault(Locale.US);
             SimpleDateFormat sdf = new SimpleDateFormat();
 

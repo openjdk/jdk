@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,17 +202,13 @@ public abstract class SctpChannel
      *          If another thread interrupts the current thread
      *          while the connect operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  java.nio.channels.UnresolvedAddressException
      *          If the given remote address is not fully resolved
      *
      * @throws  java.nio.channels.UnsupportedAddressTypeException
      *          If the type of the given remote address is not supported
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed
-     *          and it does not permit access to the given remote peer
      *
      * @throws  UnsupportedOperationException
      *          If the SCTP protocol is not supported
@@ -280,11 +276,6 @@ public abstract class SctpChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and its
-     *          {@link SecurityManager#checkListen checkListen} method denies
-     *          the operation
      */
     public abstract SctpChannel bind(SocketAddress local)
         throws IOException;
@@ -399,11 +390,6 @@ public abstract class SctpChannel
      * method will block until the connection is established or an I/O error
      * occurs.
      *
-     * <P> If a security manager has been installed then this method verifies
-     * that its {@link java.lang.SecurityManager#checkConnect checkConnect}
-     * method permits connecting to the address and port number of the given
-     * remote peer.
-     *
      * <p> This method may be invoked at any time. If a {@link #send send} or
      * {@link #receive receive} operation upon this channel is invoked while an
      * invocation of this method is in progress then that operation will first
@@ -436,17 +422,13 @@ public abstract class SctpChannel
      *          If another thread interrupts the current thread
      *          while the connect operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  java.nio.channels.UnresolvedAddressException
      *          If the given remote address is not fully resolved
      *
      * @throws  java.nio.channels.UnsupportedAddressTypeException
      *          If the type of the given remote address is not supported
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed
-     *          and it does not permit access to the given remote peer
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -501,17 +483,13 @@ public abstract class SctpChannel
      *          If another thread interrupts the current thread
      *          while the connect operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  java.nio.channels.UnresolvedAddressException
      *          If the given remote address is not fully resolved
      *
      * @throws  java.nio.channels.UnsupportedAddressTypeException
      *          If the type of the given remote address is not supported
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed
-     *          and it does not permit access to the given remote peer
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -574,7 +552,7 @@ public abstract class SctpChannel
      *          If another thread interrupts the current thread
      *          while the connect operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -798,7 +776,7 @@ public abstract class SctpChannel
      *          If another thread interrupts the current thread
      *          while the read operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  java.nio.channels.NotYetConnectedException
      *          If this channel is not yet connected
@@ -865,7 +843,7 @@ public abstract class SctpChannel
      *          If another thread interrupts the current thread
      *          while the read operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  java.nio.channels.NotYetConnectedException
      *          If this channel is not yet connected

@@ -54,11 +54,6 @@ class PhaseCFG;
 #define DEBUG_ARG(x)
 #endif
 
-// Define the initial sizes for allocation of the resizable code buffer
-enum {
-  initial_const_capacity =   4 * 1024
-};
-
 class BufferSizingData {
 public:
   int _stub;
@@ -114,7 +109,6 @@ public:
   // Convert Nodes to instruction bits and pass off to the VM
   void Output();
   bool need_stack_bang(int frame_size_in_bytes) const;
-  bool need_register_stack_bang() const;
   void compute_loop_first_inst_sizes();
 
   void install_code(ciMethod*         target,

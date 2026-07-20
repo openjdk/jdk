@@ -176,7 +176,16 @@ class Eval {
     List<Snippet> toScratchSnippets(String userSource) {
         try {
             preserveState = true;
-            return sourceToSnippets(userSource);
+            List<Snippet> result = sourceToSnippetsWithWrappers(userSource);
+            result.forEach(snippet -> {
+                if (snippet.diagnostics() == null || snippet.diagnostics().isEmpty()) {
+                    //if no better diagnostics set yet, do trial compilation, and
+                    //set diagnostic found:
+                    DiagList fullDiagnostics = state.taskFactory.analyze(snippet.outerWrap(), AnalyzeTask::getDiagnostics);
+                    snippet.setDiagnostics(fullDiagnostics);
+                }
+            });
+            return result;
         } finally {
             preserveState = false;
         }
@@ -328,7 +337,7 @@ class Eval {
             Set<String> anonymousClasses = Collections.emptySet();
             StringBuilder sbBrackets = new StringBuilder();
             Tree baseType = vt.getType();
-            if (baseType != null) {
+            if (vt.getType() != null && vt.getType().getKind() != Tree.Kind.VAR_TYPE) {
                 tds.scan(baseType); // Not dependent on initializer
                 fullTypeName = displayType = typeName = EvalPretty.prettyExpr((JCTree) vt.getType(), false);
                 while (baseType instanceof ArrayTypeTree) {

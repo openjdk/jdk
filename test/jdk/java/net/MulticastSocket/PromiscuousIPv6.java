@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,9 @@
 /*
  * @test
  * @bug 8215294
- * @requires os.family == "linux"
+ * @requires os.family == "linux" & !(os.version ~= "3\\.10\\.0.*")
+ * @comment This test should only be run on Linux.
+ *          The behavior under test is known NOT to work on Linux 3.10.0* kernels.
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
  *        PromiscuousIPv6
@@ -148,18 +150,6 @@ public class PromiscuousIPv6 {
     }
 
     public static void main(String args[]) throws IOException {
-        String os = System.getProperty("os.name");
-
-        if (!os.equals("Linux")) {
-            throw new SkippedException("This test should be run only on Linux");
-        } else {
-            String osVersion = System.getProperty("os.version");
-            String prefix = "3.10.0";
-            if (osVersion.startsWith(prefix)) {
-                throw new SkippedException(
-                        String.format("The behavior under test is known NOT to work on '%s' kernels", prefix));
-            }
-        }
 
         NetworkConfiguration.printSystemConfiguration(System.out);
         List<NetworkInterface> nifs = NetworkConfiguration.probe()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -462,10 +462,14 @@ public class TestEdDSA {
      * when the algorithm ID for a specific curve is specified.
      */
     private static void runCurveMixTest() throws Exception {
-        runCurveMixTest("SunEC", "Ed25519", 448);
-        runCurveMixTest("SunEC", "Ed25519", "Ed448");
-        runCurveMixTest("SunEC", "Ed448", 255);
-        runCurveMixTest("SunEC", "Ed448", "Ed25519");
+        runCurveMixTest(System.getProperty("test.provider.name", "SunEC"),
+                "Ed25519", 448);
+        runCurveMixTest(System.getProperty("test.provider.name", "SunEC"),
+                "Ed25519", "Ed448");
+        runCurveMixTest(System.getProperty("test.provider.name", "SunEC"),
+                "Ed448", 255);
+        runCurveMixTest(System.getProperty("test.provider.name", "SunEC"),
+                "Ed448", "Ed25519");
     }
 
     private static void runCurveMixTest(String providerName, String name,

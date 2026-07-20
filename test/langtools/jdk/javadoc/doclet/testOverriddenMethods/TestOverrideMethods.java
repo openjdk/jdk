@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8157000 8192850 8182765 8223607 8261976 8281376 8313204
+ * @bug 8157000 8192850 8182765 8223607 8261976 8281376 8313204 8345777 8350920
  * @summary  test the behavior of --override-methods option
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -79,27 +79,53 @@ public class TestOverrideMethods  extends JavadocTester {
 
         checkOrder("pkg5/Classes.C.html",
                 // Check nested classes
-                "Nested classes/interfaces declared in class&nbsp;pkg5.",
-                "Classes.P",
+                "Nested classes/interfaces declared in class&nbsp;",
+                "Classes.P.html#nested-class-summary",
                 "Classes.P.PN.html",
-                "Classes.P.PN.html",
-                """
-                    type parameter in Classes.P.PN">K""",
-                "type parameter in Classes.P.PN",
+                "K",
                 "V",
+
+                // Check summary table for inherited nested classes
+                "summary-table three-column-summary",
+                "Modifier and Type",
+                "Class",
+                "Description",
+                "class&nbsp;",
+                "Classes.P.PN.html",
+                "Classes.P.PN.html#type-param-K",
+                "Classes.P.PN.html#type-param-V",
+                "A nested class in parent",
 
                 // Check properties
                 """
-                    Properties declared in class&nbsp;pkg5.<a href="Classes.P.html""",
+                    Properties declared in class&nbsp;<a href="Classes.P.html#property-summary""",
                 "Classes.P",
                 """
                     Classes.P.html#rateProperty">rate""",
 
+                // Check summary table for inherited properties
+                "summary-table three-column-summary",
+                "Type",
+                "Property",
+                "Description",
+                "Classes.DoubleProperty",
+                "Classes.P.html#rateProperty",
+                "rate",
+
                 // Check fields
                 """
-                    Fields declared in class&nbsp;pkg5.<a href="Classes.P.html""",
+                    Fields declared in class&nbsp;<a href="Classes.P.html#field-summary""",
                 "Classes.P",
                 "Classes.P.html#field0\">field0",
+
+                // Check summary table for inherited fields
+                "summary-table three-column-summary",
+                "Modifier and Type",
+                "Field",
+                "Description",
+                "int",
+                "Classes.P.html#field0",
+                "field0",
 
                 // Check method summary
                 "Method Summary",
@@ -116,9 +142,28 @@ public class TestOverrideMethods  extends JavadocTester {
 
                 // Check footnotes
                 """
-                    Methods declared in class&nbsp;pkg5.<a href="Classes.GP.html""",
+                    Methods declared in class&nbsp;<a href="Classes.GP.html#method-summary""",
                 "Classes.GP",
-                "Classes.GP.html#m0()\">m0",
+                """
+                    Classes.GP.html#m0()" title="m0()">m0""",
+
+                // Check summary table for inherited methods
+                "summary-table three-column-summary",
+                "Modifier and Type",
+                "Method",
+                "Description",
+                "void",
+                "Classes.GP.html#m0()",
+                "m0",
+                "m0 in grand parent",
+
+                // Check methods from java.lang.Object
+                """
+                    <h3 id="methods-inherited-from-class-java.lang.Object">Methods declared in clas\
+                    s&nbsp;java.lang.Object</h3>
+                    <code>clone, equals, finalize, getClass, hashCode, notify, notifyAll, toString,\
+                     wait, wait, wait</code></div>
+                    </section>""",
 
                 // Check method details for override
                 """
@@ -132,16 +177,20 @@ public class TestOverrideMethods  extends JavadocTester {
 
         checkOrder("pkg5/Classes.C.html",
                 // Check footnotes 2
-                "Methods declared in class&nbsp;pkg5.",
                 """
-                    Classes.P.html#getRate()">getRate""",
-                "Classes.P.html#m2()\">m2",
-                "Classes.P.html#m3()\">m3",
-                "Classes.P.html#m4(K,V)\">m4",
+                    Methods declared in class&nbsp;<a href="Classes.P.html#method-summary""",
                 """
-                    Classes.P.html#rateProperty()">rateProperty""",
+                    Classes.P.html#getRate()" title="getRate()">getRate""",
                 """
-                    Classes.P.html#setRate(double)">setRate""",
+                    Classes.P.html#m2()" title="m2()">m2""",
+                """
+                    Classes.P.html#m3()" title="m3()">m3""",
+                """
+                    Classes.P.html#m4(K,V)" title="m4(Object, Object)">m4""",
+                """
+                    Classes.P.html#rateProperty()" title="rateProperty()">rateProperty""",
+                """
+                    Classes.P.html#setRate(double)" title="setRate(double)">setRate""",
 
                 // Check @link
                 """
@@ -182,6 +231,21 @@ public class TestOverrideMethods  extends JavadocTester {
                 "#m7()\"><code>m7()"
         );
 
+        checkOrder("pkg5/Classes.P.html",
+                // Check table of contents for inherited members
+                """
+                    <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
+                    <li><a href="#property-summary" tabindex="0">Property Summary</a></li>
+                    <li><a href="#field-summary" tabindex="0">Field Summary</a></li>
+                    <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
+                    <li><a href="#method-summary" tabindex="0">Method Summary</a>
+                    <ol class="toc-list">
+                    <li><a href="#methods-inherited-from-class-pkg5.Classes.GP" tabindex="0">Method\
+                    s declared in class&nbsp;Classes.GP</a></li>
+                    <li><a href="#methods-inherited-from-class-java.lang.Object" tabindex="0">Metho\
+                    ds declared in class&nbsp;java.lang.Object</a></li>
+                    </ol>""");
+
         // Tests for interfaces
 
         // Make sure the static methods in the super interface
@@ -221,18 +285,19 @@ public class TestOverrideMethods  extends JavadocTester {
                     Interfaces.C.html#o()"><code>Interfaces.C.o()""",
 
                 // Check nested classes
-                "Nested classes/interfaces declared in interface&nbsp;pkg5.",
+                "Nested classes/interfaces declared in interface&nbsp;",
                 "Interfaces.A",
                 "Interfaces.A.AA.html",
                 "Interfaces.A.AA",
 
                 // Check properties
                 """
-                    Properties declared in interface&nbsp;pkg5.<a href="Interfaces.A.html" title="interface in pkg5">Interfaces.A</a>""",
+                    Properties declared in interface&nbsp;<a href="Interfaces.A.html#property-summa\
+                    ry" title="interface in pkg5">Interfaces.A</a>""",
 
                 // Check Fields
                 """
-                    Fields declared in interface&nbsp;pkg5.<a href="Interfaces.A.html""",
+                    Fields declared in interface&nbsp;<a href="Interfaces.A.html#field-summary""",
                 "Interfaces.A.html#f",
                 "Interfaces.A.html#QUOTE\">QUOTE",
                 "Interfaces.A.html#rate\">rate",
@@ -244,20 +309,23 @@ public class TestOverrideMethods  extends JavadocTester {
 
                 // Check footnotes
                 """
-                    Methods declared in interface&nbsp;pkg5.<a href="Interfaces.A.html""",
+                    Methods declared in interface&nbsp;<a href="Interfaces.A.html#method-summary""",
                 """
-                    Interfaces.A.html#getRate()">getRate""",
+                    Interfaces.A.html#getRate()" title="getRate()">getRate""",
                 """
-                    Interfaces.A.html#rateProperty()">rateProperty""",
-                "Interfaces.A.html#setRate(double)",
+                    Interfaces.A.html#rateProperty()" title="rateProperty()">rateProperty""",
                 """
-                    Methods declared in interface&nbsp;pkg5.<a href="Interfaces.B.html""",
-                "Interfaces.B.html#m1()\">m1",
-                "Interfaces.B.html#m3()\">m3",
+                    Interfaces.A.html#setRate(double)" title="setRate(double)">setRate""",
                 """
-                    Methods declared in interface&nbsp;pkg5.<a href="Interfaces.C.html""",
+                    Methods declared in interface&nbsp;<a href="Interfaces.B.html#method-summary""",
                 """
-                    <a href="Interfaces.C.html#o()">o</a>"""
+                    Interfaces.B.html#m1()" title="m1()">m1""",
+                """
+                    Interfaces.B.html#m3()" title="m3()">m3""",
+                """
+                    Methods declared in interface&nbsp;<a href="Interfaces.C.html#method-summary""",
+                """
+                    <a href="Interfaces.C.html#o()" title="o()">o</a>"""
         );
 
         // Test synthetic values and valuesof of an enum.
@@ -376,10 +444,35 @@ public class TestOverrideMethods  extends JavadocTester {
                     """,
                 """
                     <div class="inherited-list">
-                    <h3 id="methods-inherited-from-class-pkg6.Base">Methods declared in class&nbsp;p\
-                    kg6.<a href="Base.html" title="class in pkg6">Base</a></h3>
-                    <code><a href="Base.html#m1()">m1</a>, <a href="Base.html#m3()">m3</a>, <a href="Base.html#m9()">m9</a></code></div>
-                    """);
+                    <h3 id="methods-inherited-from-class-pkg6.Base">Methods declared in class&nbsp;<\
+                    a href="Base.html#method-summary" title="class in pkg6">Base</a></h3>
+                    <code><a href="Base.html#m1()" title="m1()">m1</a>, <a href="Base.html#m3()" tit\
+                    le="m3()">m3</a>, <a href="Base.html#m9()" title="m9()">m9</a></code>
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>java.lang.Object</code></div>
+                    <div class="col-second even-row-color"><code><a href="Base.html#m1()" class="mem\
+                    ber-name-link">m1</a>()</code></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">This is Base::m1.</div>
+                    </div>
+                    <div class="col-first odd-row-color"><code><a href="#type-param-T" title="type p\
+                    arameter in Sub">T</a></code></div>
+                    <div class="col-second odd-row-color"><code><a href="Base.html#m3()" class="memb\
+                    er-name-link">m3</a>()</code></div>
+                    <div class="col-last odd-row-color">
+                    <div class="block">This is Base::m3.</div>
+                    </div>
+                    <div class="col-first even-row-color"><code>abstract java.lang.Object</code></div>
+                    <div class="col-second even-row-color"><code><a href="Base.html#m9()" class="mem\
+                    ber-name-link">m9</a>()</code></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">This is Base::m9.</div>
+                    </div>
+                    </div>
+                    </div>""");
     }
 
     @Test
@@ -399,9 +492,25 @@ public class TestOverrideMethods  extends JavadocTester {
                 """
                     <div class="inherited-list">
                     <h3 id="methods-inherited-from-class-pkg7.AnnotatedBase">Methods declared in int\
-                    erface&nbsp;pkg7.<a href="AnnotatedBase.html" title="interface in pkg7">Annotate\
-                    dBase</a></h3>
-                    <code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">m1</a></code></div>""");
+                    erface&nbsp;<a href="AnnotatedBase.html#method-summary" title="interface in pkg7\
+                    ">AnnotatedBase</a></h3>
+                    <code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)" title="m1(Class\
+                    , int[])">m1</a></code>
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>java.lang.Iterable<wbr>&lt;java.lang\
+                    .String&gt;</code></div>
+                    <div class="col-second even-row-color"><code><a href="AnnotatedBase.html#m1(java\
+                    .lang.Class,int%5B%5D)" class="member-name-link">m1</a><wbr>(java.lang.Class&lt;\
+                    ? extends java.lang.CharSequence&gt;&nbsp;p1,
+                     int[]&nbsp;p2)</code></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">This is AnnotatedBase::m1.</div>
+                    </div>
+                    </div>
+                    </div>""");
 
         checkOutput("pkg7/AnnotatedSub2.html", true,
                 """

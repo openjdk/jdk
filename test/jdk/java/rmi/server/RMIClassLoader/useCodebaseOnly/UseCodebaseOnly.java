@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary Receiver UseCodebaseOnly_Stub Foo Bar
- * @run main/othervm/policy=security.policy UseCodebaseOnly
+ * @build TestLibrary Receiver UseCodebaseOnly_Stub Foo Bar TestLoaderHandler
+ * @run main/othervm UseCodebaseOnly
  */
 
 import java.net.*;
@@ -58,6 +58,8 @@ public class UseCodebaseOnly
     public static void main(String[] args) {
 
         System.err.println("\nRegression test for bug 4174006\n");
+
+        System.setProperty("java.rmi.server.RMIClassLoaderSpi", "TestLoaderHandler");
 
         URL localCodebase = null, remoteCodebase = null;
         try {
@@ -87,8 +89,6 @@ public class UseCodebaseOnly
             localCodebase);
         ClassLoader localCodebaseLoader =
             URLClassLoader.newInstance(new URL[] { localCodebase });
-
-        TestLibrary.suggestSecurityManager(null);
 
         System.err.println("Creating remote object.");
         UseCodebaseOnly obj = null;

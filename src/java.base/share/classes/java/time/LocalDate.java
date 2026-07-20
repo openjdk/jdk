@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.ObjectStreamField;
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.IsoEra;
@@ -102,6 +104,8 @@ import java.time.zone.ZoneRules;
 import java.util.Objects;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+
+import jdk.internal.util.DateTimeHelper;
 
 /**
  * A date without a time-zone in the ISO-8601 calendar system,
@@ -141,6 +145,22 @@ public final class LocalDate
         implements Temporal, TemporalAdjuster, ChronoLocalDate, Serializable {
 
     /**
+     * For backward compatibility of the serialized {@code LocalDate.class} object,
+     * explicitly declare the types of the serialized fields as defined in Java SE 8.
+     * Instances of {@code LocalDate} are serialized using the dedicated
+     * serialized form by {@code writeReplace}.
+     * @serialField year int The year.
+     * @serialField month short The month-of-year.
+     * @serialField day short The day-of-month.
+     */
+    @Serial
+    private static final ObjectStreamField[] serialPersistentFields = {
+            new ObjectStreamField("year", int.class),
+            new ObjectStreamField("month", short.class),
+            new ObjectStreamField("day", short.class)
+    };
+
+    /**
      * The minimum supported {@code LocalDate}, '-999999999-01-01'.
      * This could be used by an application as a "far past" date.
      */
@@ -174,17 +194,17 @@ public final class LocalDate
     static final long DAYS_0000_TO_1970 = (DAYS_PER_CYCLE * 5L) - (30L * 365L + 7L);
 
     /**
-     * The year.
+     * @serial The year.
      */
-    private final int year;
+    private final transient int year;
     /**
-     * The month-of-year.
+     * @serial The month-of-year.
      */
-    private final short month;
+    private final transient byte month;
     /**
-     * The day-of-month.
+     * @serial The day-of-month.
      */
-    private final short day;
+    private final transient byte day;
 
     //-----------------------------------------------------------------------
     /**
@@ -488,8 +508,8 @@ public final class LocalDate
      */
     private LocalDate(int year, int month, int dayOfMonth) {
         this.year = year;
-        this.month = (short) month;
-        this.day = (short) dayOfMonth;
+        this.month = (byte) month;
+        this.day = (byte) dayOfMonth;
     }
 
     //-----------------------------------------------------------------------
@@ -2131,10 +2151,7 @@ public final class LocalDate
      */
     @Override
     public int hashCode() {
-        int yearValue = year;
-        int monthValue = month;
-        int dayValue = day;
-        return (yearValue & 0xFFFFF800) ^ ((yearValue << 11) + (monthValue << 6) + (dayValue));
+        return (year & 0xFFFFF800) ^ ((year << 11) + (month << 6) + day);
     }
 
     //-----------------------------------------------------------------------
@@ -2148,35 +2165,8 @@ public final class LocalDate
     @Override
     public String toString() {
         var buf = new StringBuilder(10);
-        formatTo(buf);
+        DateTimeHelper.formatTo(buf, this);
         return buf.toString();
-    }
-
-    /**
-     * Prints the toString result to the given buf, avoiding extra string allocations.
-     * Requires extra capacity of 10 to avoid StringBuilder reallocation.
-     */
-    void formatTo(StringBuilder buf) {
-        int yearValue = year;
-        int monthValue = month;
-        int dayValue = day;
-        int absYear = Math.abs(yearValue);
-        if (absYear < 1000) {
-            if (yearValue < 0) {
-                buf.append('-');
-            }
-            buf.repeat('0', absYear < 10 ? 3 : absYear < 100 ? 2 : 1);
-            buf.append(absYear);
-        } else {
-            if (yearValue > 9999) {
-                buf.append('+');
-            }
-            buf.append(yearValue);
-        }
-        buf.append(monthValue < 10 ? "-0" : "-")
-           .append(monthValue)
-           .append(dayValue < 10 ? "-0" : "-")
-           .append(dayValue);
     }
 
     //-----------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import sun.java2d.SurfaceData;
  * that is faster than our current fallback (which creates
  * a temporary GDI DIB)
  */
-public class GDIBlitLoops extends Blit {
+public final class GDIBlitLoops extends Blit {
 
     // Store these values to be passed to native code
     int rmask, gmask, bmask;
@@ -134,6 +134,7 @@ public class GDIBlitLoops extends Blit {
      * Composite data because we only register these loops for
      * SrcNoEa composite operations.
      */
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy, int w, int h)

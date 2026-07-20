@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,6 @@ import sun.util.logging.PlatformLogger;
 import java.io.IOException;
 import java.io.InputStream;
 
-import sun.awt.AppContext;
-import sun.awt.AWTPermissions;
 import sun.awt.SunToolkit;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
@@ -223,18 +221,6 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
       throws UnsupportedFlavorException, IOException,
         InvalidDnDOperationException
     {
-
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        try {
-            if (!dropInProcess && sm != null) {
-                sm.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
-            }
-        } catch (Exception e) {
-            Thread currentThread = Thread.currentThread();
-            currentThread.getUncaughtExceptionHandler().uncaughtException(currentThread, e);
-            return null;
-        }
 
         Long lFormat = null;
         Transferable localTransferable = local;
@@ -571,7 +557,6 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
                                       final long nativeCtxt,
                                       final int eventID,
                                       final boolean dispatchType) {
-        AppContext appContext = SunToolkit.targetToAppContext(component);
 
         EventDispatcher dispatcher =
             new EventDispatcher(this, dropAction, actions, formats, nativeCtxt,
@@ -585,7 +570,7 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
         }
 
         // schedule callback
-        SunToolkit.postEvent(appContext, event);
+        SunToolkit.postEvent(event);
 
         eventPosted(event);
 

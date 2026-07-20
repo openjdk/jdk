@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,7 @@ public abstract class ShellFolder extends File {
                 managerClass = null;
             }
         // swallow the exceptions below and use default shell folder
-        } catch (ClassNotFoundException | SecurityException | NullPointerException e) {
+        } catch (ClassNotFoundException | NullPointerException e) {
         }
 
         if (managerClass == null) {

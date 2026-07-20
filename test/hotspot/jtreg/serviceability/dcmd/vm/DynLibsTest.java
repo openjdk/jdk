@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test
@@ -37,16 +38,28 @@ import jdk.test.lib.dcmd.JMXExecutor;
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng DynLibsTest
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DynLibsTest
  */
 
 public class DynLibsTest {
 
     public void run(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("VM.dynlibs");
-        output.shouldContain(Platform.buildSharedLibraryName("jvm"));
-        output.shouldContain(Platform.buildSharedLibraryName("java"));
-        output.shouldContain(Platform.buildSharedLibraryName("management"));
+        if (WhiteBox.getWhiteBox().isStatic()) {
+            // On static JDK, JDK/VM native libraries are statically
+            // linked with the launcher. There is no separate mapping
+            // for libjvm, libjava, etc.
+            output.shouldContain("java");
+            output.shouldNotContain(Platform.buildSharedLibraryName("jvm"));
+            output.shouldNotContain(Platform.buildSharedLibraryName("java"));
+            output.shouldNotContain(Platform.buildSharedLibraryName("management"));
+        } else {
+            output.shouldContain(Platform.buildSharedLibraryName("jvm"));
+            output.shouldContain(Platform.buildSharedLibraryName("java"));
+            output.shouldContain(Platform.buildSharedLibraryName("management"));
+        }
     }
 
     @Test

@@ -82,8 +82,10 @@ import java.util.function.LongBinaryOperator;
 public class LongAccumulator extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;
 
+    /** @serial */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private final LongBinaryOperator function;
+    /** @serial */
     private final long identity;
 
     /**

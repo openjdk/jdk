@@ -30,8 +30,11 @@
 
 package sun.security.krb5.internal;
 
+import java.io.Serial;
+
 public class KrbErrException extends sun.security.krb5.KrbException {
 
+    @Serial
     private static final long serialVersionUID = 2186533836785448317L;
 
     public KrbErrException(int i) {

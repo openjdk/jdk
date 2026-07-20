@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ import jdk.xml.internal.SecuritySupport;
  * @author Sunitha Reddy
  * @see javax.xml.datatype.Duration
  * @since 1.5
- * @LastModified: Aug 2020
+ * @LastModified: Nov 2024
  */
 
 public class XMLGregorianCalendarImpl
@@ -2418,9 +2418,9 @@ public class XMLGregorianCalendarImpl
      */
     private Locale getDefaultLocale() {
 
-        String lang = SecuritySupport.getSystemProperty("user.language.format");
-        String country = SecuritySupport.getSystemProperty("user.country.format");
-        String variant = SecuritySupport.getSystemProperty("user.variant.format");
+        String lang = System.getProperty("user.language.format");
+        String country = System.getProperty("user.country.format");
+        String variant = System.getProperty("user.variant.format");
         Locale locale = null;
         if (lang != null) {
             if (country != null) {

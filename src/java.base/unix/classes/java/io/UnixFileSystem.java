@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,22 @@ package java.io;
 
 import java.util.Properties;
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetPropertyAction;
 
 final class UnixFileSystem extends FileSystem {
-
     private final char slash;
     private final char colon;
     private final String userDir;
 
+    private String getPathForSysCalls(String path) {
+        return path.isEmpty() ? getCWD().getPath() : path;
+    }
+
+    private File getFileForSysCalls(File file) {
+        return file.getPath().isEmpty() ? getCWD() : file;
+    }
+
     UnixFileSystem() {
-        Properties props = GetPropertyAction.privilegedGetProperties();
+        Properties props = System.getProperties();
         slash = props.getProperty("file.separator").charAt(0);
         colon = props.getProperty("path.separator").charAt(0);
         userDir = StaticProperty.userDir();
@@ -150,17 +156,12 @@ final class UnixFileSystem extends FileSystem {
     @Override
     public String resolve(File f) {
         if (isAbsolute(f)) return f.getPath();
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertyAccess("user.dir");
-        }
         return resolve(userDir, f.getPath());
     }
 
     @Override
     public String canonicalize(String path) throws IOException {
-        return canonicalize0(path);
+        return canonicalize0(getPathForSysCalls(path));
     }
     private native String canonicalize0(String path) throws IOException;
 
@@ -170,13 +171,13 @@ final class UnixFileSystem extends FileSystem {
 
     @Override
     public int getBooleanAttributes(File f) {
-        int rv = getBooleanAttributes0(f);
+        int rv = getBooleanAttributes0(getFileForSysCalls(f));
         return rv | isHidden(f);
     }
 
     @Override
     public boolean hasBooleanAttributes(File f, int attributes) {
-        int rv = getBooleanAttributes0(f);
+        int rv = getBooleanAttributes0(getFileForSysCalls(f));
         if ((attributes & BA_HIDDEN) != 0) {
             rv |= isHidden(f);
         }
@@ -189,25 +190,25 @@ final class UnixFileSystem extends FileSystem {
 
     @Override
     public boolean checkAccess(File f, int access) {
-        return checkAccess0(f, access);
+        return checkAccess0(getFileForSysCalls(f), access);
     }
     private native boolean checkAccess0(File f, int access);
 
     @Override
     public long getLastModifiedTime(File f) {
-        return getLastModifiedTime0(f);
+        return getLastModifiedTime0(getFileForSysCalls(f));
     }
     private native long getLastModifiedTime0(File f);
 
     @Override
     public long getLength(File f) {
-        return getLength0(f);
+        return getLength0(getFileForSysCalls(f));
     }
     private native long getLength0(File f);
 
     @Override
     public boolean setPermission(File f, int access, boolean enable, boolean owneronly) {
-        return setPermission0(f, access, enable, owneronly);
+        return setPermission0(getFileForSysCalls(f), access, enable, owneronly);
     }
     private native boolean setPermission0(File f, int access, boolean enable, boolean owneronly);
 
@@ -221,37 +222,37 @@ final class UnixFileSystem extends FileSystem {
 
     @Override
     public boolean delete(File f) {
-        return delete0(f);
+        return delete0(getFileForSysCalls(f));
     }
     private native boolean delete0(File f);
 
     @Override
     public String[] list(File f) {
-        return list0(f);
+        return list0(getFileForSysCalls(f));
     }
     private native String[] list0(File f);
 
     @Override
     public boolean createDirectory(File f) {
-        return createDirectory0(f);
+        return createDirectory0(getFileForSysCalls(f));
     }
     private native boolean createDirectory0(File f);
 
     @Override
     public boolean rename(File f1, File f2) {
-        return rename0(f1, f2);
+        return rename0(getFileForSysCalls(f1), getFileForSysCalls(f2));
     }
     private native boolean rename0(File f1, File f2);
 
     @Override
     public boolean setLastModifiedTime(File f, long time) {
-        return setLastModifiedTime0(f, time);
+        return setLastModifiedTime0(getFileForSysCalls(f), time);
     }
     private native boolean setLastModifiedTime0(File f, long time);
 
     @Override
     public boolean setReadOnly(File f) {
-        return setReadOnly0(f);
+        return setReadOnly0(getFileForSysCalls(f));
     }
     private native boolean setReadOnly0(File f);
 
@@ -259,23 +260,14 @@ final class UnixFileSystem extends FileSystem {
 
     @Override
     public File[] listRoots() {
-        try {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkRead("/");
-            }
-            return new File[] { new File("/") };
-        } catch (SecurityException x) {
-            return new File[0];
-        }
+        return new File[] { new File("/") };
     }
 
     /* -- Disk usage -- */
 
     @Override
     public long getSpace(File f, int t) {
-        return getSpace0(f, t);
+        return getSpace0(getFileForSysCalls(f), t);
     }
     private native long getSpace0(File f, int t);
 
@@ -285,7 +277,7 @@ final class UnixFileSystem extends FileSystem {
 
     @Override
     public int getNameMax(String path) {
-        long nameMax = getNameMax0(path);
+        long nameMax = getNameMax0(getPathForSysCalls(path));
         if (nameMax > Integer.MAX_VALUE) {
             nameMax = Integer.MAX_VALUE;
         }

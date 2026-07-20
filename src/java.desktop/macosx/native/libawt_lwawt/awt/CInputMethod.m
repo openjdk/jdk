@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,10 +316,10 @@ JNI_COCOA_ENTER(env);
         }
 
         if ((*env)->CallBooleanMethod(env, returnValue, jm_listContains, localeObj) == JNI_FALSE) {
-            if ((*env)->ExceptionOccurred(env)) (*env)->ExceptionClear(env);
+            if ((*env)->ExceptionCheck(env)) (*env)->ExceptionClear(env);
             (*env)->CallBooleanMethod(env, returnValue, jm_listAdd, localeObj);
         }
-        if ((*env)->ExceptionOccurred(env)) (*env)->ExceptionClear(env);
+        if ((*env)->ExceptionCheck(env)) (*env)->ExceptionClear(env);
 
         (*env)->DeleteLocalRef(env, localeObj);
     }

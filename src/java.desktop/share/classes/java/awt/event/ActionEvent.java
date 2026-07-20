@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,13 +206,13 @@ public class ActionEvent extends AWTEvent {
      *                     the class description for {@link ActionEvent}
      * @param command A string that may specify a command (possibly one
      *                of several) associated with the event
+     * @param when   A long that gives the time the event occurred.
+     *               Passing negative or zero value
+     *               is not recommended
      * @param modifiers The modifier keys down during event
      *                  (shift, ctrl, alt, meta).
      *                  Passing negative parameter is not recommended.
      *                  Zero value means that no modifiers were passed
-     * @param when   A long that gives the time the event occurred.
-     *               Passing negative or zero value
-     *               is not recommended
      * @throws IllegalArgumentException if {@code source} is null
      * @see #getSource()
      * @see #getID()

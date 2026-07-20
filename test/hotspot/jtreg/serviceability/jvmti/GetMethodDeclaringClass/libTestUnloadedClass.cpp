@@ -39,9 +39,9 @@ static std::atomic<jmethodID> ring_buffer[BUFFER_SIZE];
 
 void get_method_details(jmethodID method) {
   jclass method_class;
-  char *class_name = NULL;
+  char *class_name = nullptr;
   if (_jvmti->GetMethodDeclaringClass(method, &method_class) == JVMTI_ERROR_NONE) {
-    if (_jvmti->GetClassSignature(method_class, &class_name, NULL) == JVMTI_ERROR_NONE) {
+    if (_jvmti->GetClassSignature(method_class, &class_name, nullptr) == JVMTI_ERROR_NONE) {
       _jvmti->Deallocate((unsigned char *)class_name);
     }
   }
@@ -49,14 +49,14 @@ void get_method_details(jmethodID method) {
 
 void* read_ringbuffer(void* arg) {
   JNIEnv *env;
-  _jvm->AttachCurrentThreadAsDaemon((void **)&env, NULL);
+  _jvm->AttachCurrentThreadAsDaemon((void **)&env, nullptr);
   for (;;) {
     jmethodID id = ring_buffer[rand() % BUFFER_SIZE].load(std::memory_order_relaxed);
     if (id != (jmethodID)0) {
       get_method_details(id);
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 static void JNICALL ClassPrepareCallback(jvmtiEnv *jvmti_env,
@@ -66,8 +66,8 @@ static void JNICALL ClassPrepareCallback(jvmtiEnv *jvmti_env,
   static bool reader_created = false;
   static int ring_buffer_idx = 0;
 
-  char *class_name = NULL;
-  if (jvmti_env->GetClassSignature(klass, &class_name, NULL) != JVMTI_ERROR_NONE) {
+  char *class_name = nullptr;
+  if (jvmti_env->GetClassSignature(klass, &class_name, nullptr) != JVMTI_ERROR_NONE) {
     return;
   }
   // We only care MyClass and only one thread loads it
@@ -79,7 +79,7 @@ static void JNICALL ClassPrepareCallback(jvmtiEnv *jvmti_env,
 
   if (!reader_created) {
     pthread_t tid;
-    pthread_create(&tid, NULL, read_ringbuffer, NULL);
+    pthread_create(&tid, nullptr, read_ringbuffer, nullptr);
     reader_created = true;
   }
 
@@ -119,7 +119,7 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) 
   }
 
   // Enable the ClassPrepare event
-  error = _jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL);
+  error = _jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, nullptr);
   if (error != JVMTI_ERROR_NONE) {
     fprintf(stderr, "Error enabling ClassPrepare event: %d\n", error);
     return JNI_ERR;

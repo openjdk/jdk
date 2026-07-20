@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Testing Classfile stack maps generator.
- * @bug 8305990 8320222 8320618 8335475 8338623 8338661
+ * @bug 8305990 8320222 8320618 8335475 8338623 8338661 8343436 8386700
  * @build testdata.*
  * @run junit StackMapsTest
  */
@@ -33,7 +33,7 @@ import java.lang.classfile.*;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.StackMapFrameInfo;
 import java.lang.classfile.attribute.StackMapTableAttribute;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
@@ -344,8 +344,27 @@ class StackMapsTest {
         }
     }
 
+    @ParameterizedTest
+    @EnumSource(ClassFile.StackMapsOption.class)
+    void testI2LCounters(ClassFile.StackMapsOption option) {
+        var cf = ClassFile.of(option);
+        var bytes = cf.build(ClassDesc.of("Test"), clb -> clb
+            .withMethodBody("a", MTD_long_int, ACC_STATIC, cob ->
+                    cob.iload(0)
+                       .i2l()
+                       .lreturn()));
+
+        var cm = ClassFile.of().parse(bytes);
+        for (var method : cm.methods()) {
+            var code = (CodeAttribute) method.code().orElseThrow();
+            assertEquals(1, code.maxLocals());
+            assertEquals(2, code.maxStack());
+        }
+    }
+
     private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
     private static final MethodTypeDesc MTD_int_String = MethodTypeDesc.of(CD_int, CD_String);
+    private static final MethodTypeDesc MTD_long_int = MethodTypeDesc.of(CD_long, CD_int);
 
     @ParameterizedTest
     @EnumSource(ClassFile.StackMapsOption.class)
@@ -385,9 +404,9 @@ class StackMapsTest {
                                     StackMapTableAttribute.of(List.of(
                                     StackMapFrameInfo.of(f2,
                                             List.of(),
-                                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.ITEM_LONG)),
+                                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.LONG)),
                                     StackMapFrameInfo.of(f3,
-                                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.ITEM_LONG),
+                                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.LONG),
                                             List.of()))));
                         }
                 ));
@@ -395,5 +414,30 @@ class StackMapsTest {
         var code = (CodeAttribute) ClassFile.of().parse(bytes).methods().getFirst().code().orElseThrow();
         assertEquals(2, code.maxLocals());
         assertEquals(2, code.maxStack());
+    }
+
+    @Test
+    void testStaleLocals() {
+        byte[] bytes = ClassFile.of().build(ClassDesc.of("Repro"), clb -> clb
+            .withMethodBody("m", MethodTypeDesc.of(CD_void, CD_int), ACC_STATIC, cob -> {
+                var cond = cob.newLabel();
+                var back = cob.newLabel();
+                var fwd = cob.newLabel();
+                cob.iconst_0()
+                   .istore(1) // stale slot 1 holding of a long incorrectly clears slot 0 in the second round
+                   .iload(1)
+                   .ifeq(cond) // conditional branch triggers merge of frames
+                   .goto_(fwd)
+                   .labelBinding(cond)
+                   .iload(0) // invalid stack frame when slot 0 is cleared
+                   .pop()
+                   .labelBinding(back)
+                   .return_()
+                   .labelBinding(fwd)
+                   .lconst_0()
+                   .lstore(0) // long overrides slots 0 and 1
+                   .goto_(back); // back jump with modified locals triggers second round with stale slots
+            }));
+        assertEmpty(ClassFile.of().verify(bytes));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,7 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "downcallLinker.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 
 #include <cerrno>
@@ -32,15 +30,34 @@
 #include <Winsock2.h>
 #endif
 
+// keep in synch with jdk.internal.foreign.abi.CapturableState
+enum PreservableValues {
+  NONE = 0,
+  GET_LAST_ERROR = 1,
+  WSA_GET_LAST_ERROR = 1 << 1,
+  ERRNO = 1 << 2
+};
+
+// We call this from _thread_in_native, right before a downcall
+JVM_LEAF(void, DowncallLinker::capture_state_pre(int32_t* value_ptr, int captured_state_mask))
+#ifdef _WIN64
+  if (captured_state_mask & GET_LAST_ERROR) {
+    SetLastError(*value_ptr);
+  }
+  value_ptr++;
+  if (captured_state_mask & WSA_GET_LAST_ERROR) {
+    WSASetLastError(*value_ptr);
+    *value_ptr = WSAGetLastError();
+  }
+  value_ptr++;
+#endif
+  if (captured_state_mask & ERRNO) {
+    errno = *value_ptr;
+  }
+JVM_END
+
 // We call this from _thread_in_native, right after a downcall
-JVM_LEAF(void, DowncallLinker::capture_state(int32_t* value_ptr, int captured_state_mask))
-  // keep in synch with jdk.internal.foreign.abi.PreservableValues
-  enum PreservableValues {
-    NONE = 0,
-    GET_LAST_ERROR = 1,
-    WSA_GET_LAST_ERROR = 1 << 1,
-    ERRNO = 1 << 2
-  };
+JVM_LEAF(void, DowncallLinker::capture_state_post(int32_t* value_ptr, int captured_state_mask))
 #ifdef _WIN64
   if (captured_state_mask & GET_LAST_ERROR) {
     *value_ptr = GetLastError();

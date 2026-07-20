@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/debugInfo.hpp"
 #include "oops/access.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -31,9 +30,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/stackValue.hpp"
-#if INCLUDE_ZGC
-#include "gc/z/zBarrier.inline.hpp"
-#endif
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #endif
@@ -42,7 +38,7 @@ class RegisterMap;
 class SmallRegisterMap;
 
 template StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv);
-template StackValue* StackValue::create_stack_value(const frame* fr, const SmallRegisterMap* reg_map, ScopeValue* sv);
+template StackValue* StackValue::create_stack_value(const frame* fr, const SmallRegisterMapNoArgs* reg_map, ScopeValue* sv);
 
 template<typename RegisterMapT>
 StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMapT* reg_map, ScopeValue* sv) {
@@ -261,7 +257,7 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
 }
 
 template address StackValue::stack_value_address(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv);
-template address StackValue::stack_value_address(const frame* fr, const SmallRegisterMap* reg_map, ScopeValue* sv);
+template address StackValue::stack_value_address(const frame* fr, const SmallRegisterMapNoArgs* reg_map, ScopeValue* sv);
 
 template<typename RegisterMapT>
 address StackValue::stack_value_address(const frame* fr, const RegisterMapT* reg_map, ScopeValue* sv) {
@@ -293,7 +289,7 @@ address StackValue::stack_value_address(const frame* fr, const RegisterMapT* reg
   return value_addr;
 }
 
-BasicLock* StackValue::resolve_monitor_lock(const frame* fr, Location location) {
+BasicLock* StackValue::resolve_monitor_lock(const frame& fr, Location location) {
   assert(location.is_stack(), "for now we only look at the stack");
   int word_offset = location.stack_offset() / wordSize;
   // (stack picture)
@@ -304,7 +300,7 @@ BasicLock* StackValue::resolve_monitor_lock(const frame* fr, Location location) 
   // the word_offset is the distance from the stack pointer to the lowest address
   // The frame's original stack pointer, before any extension by its callee
   // (due to Compiler1 linkage on SPARC), must be used.
-  return (BasicLock*) (fr->unextended_sp() + word_offset);
+  return (BasicLock*) (fr.unextended_sp() + word_offset);
 }
 
 

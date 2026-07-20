@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,27 @@ public class TransPatterns extends TreeTranslator {
 
     @Override
     public void visitTypeTest(JCInstanceOf tree) {
-        if (tree.pattern instanceof JCPattern pattern) {
+        // Translates regular instanceof type operation to instanceof pattern operator when
+        // the expression was originally T but was subsequently erased to Object.
+        //
+        // $expr instanceof $primitiveType
+        // =>
+        // $expr instanceof T $temp && $temp instanceof $primitiveType
+        if (tree.erasedExprOriginalType!=null && !types.isSameType(tree.expr.type, tree.erasedExprOriginalType)) {
+            BindingSymbol temp = new BindingSymbol(Flags.FINAL | Flags.SYNTHETIC,
+                    names.fromString("temp" + variableIndex++ + target.syntheticNameChar()),
+                    tree.erasedExprOriginalType,
+                    currentMethodSym);
+
+            JCVariableDecl tempDecl = make.at(tree.pos()).VarDef(temp, null);
+
+            JCTree resultExpr =
+                    makeBinary(Tag.AND,
+                            make.TypeTest(tree.expr, make.BindingPattern(tempDecl).setType(tree.erasedExprOriginalType)).setType(syms.booleanType),
+                            make.TypeTest(make.Ident(tempDecl), tree.pattern).setType(syms.booleanType));
+
+            result = translate(resultExpr);
+        } else if (tree.pattern instanceof JCPattern pattern) {
             //first, resolve any record patterns:
             JCExpression extraConditions = null;
             if (pattern instanceof JCRecordPattern recordPattern) {
@@ -224,16 +244,7 @@ public class TransPatterns extends TreeTranslator {
                 JCExpression translatedExpr = translate(tree.expr);
                 Symbol exprSym = TreeInfo.symbol(translatedExpr);
 
-                if (exprSym != null &&
-                    exprSym.kind == Kind.VAR &&
-                    exprSym.owner.kind.matches(Kinds.KindSelector.VAL_MTH)) {
-                    currentValue = (VarSymbol) exprSym;
-                } else {
-                    currentValue = new VarSymbol(Flags.FINAL | Flags.SYNTHETIC,
-                            names.fromString("patt" + variableIndex++ + target.syntheticNameChar() + "temp"),
-                            tempType,
-                            currentMethodSym);
-                }
+                currentValue = generateTempOrReuse(exprSym, tempType);
 
                 Type principalType = types.erasure(TreeInfo.primaryPatternType((pattern)));
                 JCExpression resultExpression = (JCExpression) this.<JCTree>translate(pattern);
@@ -247,12 +258,14 @@ public class TransPatterns extends TreeTranslator {
                     extraConditions = translate(extraConditions);
                     resultExpression = makeBinary(Tag.AND, resultExpression, extraConditions);
                 }
-                if (currentValue != exprSym) {
-                    resultExpression =
-                            make.at(tree.pos).LetExpr(make.VarDef(currentValue, translatedExpr),
-                                                      resultExpression).setType(syms.booleanType);
-                    ((LetExpr) resultExpression).needsCond = true;
-                }
+                List<JCStatement> tempVars = currentValue != exprSym
+                        ? List.of(make.VarDef(currentValue, translatedExpr))
+                        : List.nil();
+                resultExpression =
+                        make.at(tree.pos).LetExpr(tempVars,
+                                                  resultExpression).setType(syms.booleanType);
+                ((LetExpr) resultExpression).needsCond = true;
+                ((LetExpr) resultExpression).needsLineNumberTableEntry = true;
                 result = bindingContext.decorateExpression(resultExpression);
             } finally {
                 currentValue = prevCurrentValue;
@@ -261,6 +274,27 @@ public class TransPatterns extends TreeTranslator {
         } else {
             super.visitTypeTest(tree);
         }
+    }
+
+    // Reuse a non-constant local or parameter for the type test expression;
+    // otherwise synthesize a temp, since constant locals may not have bytecode local slots.
+    private VarSymbol generateTempOrReuse(Symbol exprSym, Type tempType) {
+        VarSymbol exprVar = exprSym != null &&
+                exprSym.kind == Kind.VAR &&
+                exprSym.owner.kind.matches(Kinds.KindSelector.VAL_MTH)
+                ? (VarSymbol) exprSym
+                : null;
+        if (exprVar != null && exprVar.getConstValue() == null) {
+            return exprVar;
+        }
+        VarSymbol temp = new VarSymbol(Flags.FINAL | Flags.SYNTHETIC,
+                names.fromString("patt" + variableIndex++ + target.syntheticNameChar() + "temp"),
+                tempType,
+                currentMethodSym);
+        if (exprVar != null) {
+            temp.setData(exprVar.getConstantValue());
+        }
+        return temp;
     }
 
     @Override
@@ -901,7 +935,7 @@ public class TransPatterns extends TreeTranslator {
                         JCBindingPattern binding = (JCBindingPattern) instanceofCheck.pattern;
                         hasUnconditional =
                                 (!types.erasure(binding.type).isPrimitive() ? instanceofCheck.allowNull :
-                                types.isUnconditionallyExact(commonNestedExpression.type, types.erasure(binding.type))) &&
+                                types.isUnconditionallyExactTypeBased(commonNestedExpression.type, types.erasure(binding.type))) &&
                                 accList.tail.isEmpty();
                         List<JCCaseLabel> newLabel;
 
@@ -993,7 +1027,7 @@ public class TransPatterns extends TreeTranslator {
                        !currentNullable &&
                        !previousCompletesNormally &&
                        !currentCompletesNormally &&
-                       new TreeDiffer(List.of(commonBinding), List.of(currentBinding))
+                       new TreeDiffer(types, List.of(commonBinding), List.of(currentBinding))
                                .scan(commonNestedExpression, currentNestedExpression)) {
                 accummulator.add(c.head);
             } else {
@@ -1021,7 +1055,12 @@ public class TransPatterns extends TreeTranslator {
     private LoadableConstant toLoadableConstant(JCCaseLabel l, Type selector) {
         if (l.hasTag(Tag.PATTERNCASELABEL)) {
             Type principalType = principalType(((JCPatternCaseLabel) l).pat);
-            if (((JCPatternCaseLabel) l).pat.type.isReference()) {
+
+            if (target.switchBootstrapOnlyAllowsReferenceTypesAsCaseLabels()) {
+                principalType = types.boxedTypeOrType(principalType);
+            }
+
+            if (principalType.isReference()) {
                 if (types.isSubtype(selector, principalType)) {
                     return (LoadableConstant) selector;
                 } else {
@@ -1518,7 +1557,8 @@ public class TransPatterns extends TreeTranslator {
             //=>
             //(let T N; (let T' N$temp = E; N$temp instanceof T && (N = (T) N$temp == (T) N$temp)) && /*use of N*/)
             for (VarSymbol vsym : hoistedVarMap.values()) {
-                expr = make.at(expr.pos).LetExpr(makeHoistedVarDecl(expr.pos, vsym), expr).setType(expr.type);
+                int pos = TreeInfo.getStartPos(expr);
+                expr = make.at(pos).LetExpr(makeHoistedVarDecl(pos, vsym), expr).setType(expr.type);
             }
             return expr;
         }

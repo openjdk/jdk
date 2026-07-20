@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
 
 package sun.util.locale.provider;
 
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import java.time.format.DateTimeFormatterPatternProvider;
 import java.text.BreakIterator;
 import java.text.Collator;
 import java.text.DateFormat;
@@ -40,6 +38,7 @@ import java.text.spi.DateFormatProvider;
 import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
+import java.time.format.FormatStyle;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
@@ -69,43 +68,31 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         return LocaleProviderAdapter.Type.SPI;
     }
 
-    @SuppressWarnings("removal")
     @Override
+    @SuppressWarnings(value={"unchecked", "deprecation"})
     protected <P extends LocaleServiceProvider> P findInstalledProvider(final Class<P> c) {
-        try {
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
-                @Override
-                @SuppressWarnings(value={"unchecked", "deprecation"})
-                public P run() {
-                    P delegate = null;
-
-                    for (LocaleServiceProvider provider :
-                             ServiceLoader.load(c, ClassLoader.getSystemClassLoader())) {
-                        if (delegate == null) {
-                            try {
-                                delegate =
-                                    (P) Class.forName(SPILocaleProviderAdapter.class.getCanonicalName() +
-                                              "$" +
-                                              c.getSimpleName() +
-                                              "Delegate")
-                                              .newInstance();
-                            }  catch (ClassNotFoundException |
-                                      InstantiationException |
-                                      IllegalAccessException e) {
-                                throw new ServiceConfigurationError(
-                                    "SPI locale provider cannot be instantiated.", e);
-                            }
-                        }
-
-                        ((Delegate)delegate).addImpl(provider);
-                    }
-                    return delegate;
+        P delegate = null;
+        for (LocaleServiceProvider provider :
+                 ServiceLoader.load(c, ClassLoader.getSystemClassLoader())) {
+            if (delegate == null) {
+                try {
+                    delegate =
+                        (P) Class.forName(SPILocaleProviderAdapter.class.getCanonicalName() +
+                                  "$" +
+                                  c.getSimpleName() +
+                                  "Delegate")
+                                  .newInstance();
+                }  catch (ClassNotFoundException |
+                          InstantiationException |
+                          IllegalAccessException e) {
+                    throw new ServiceConfigurationError(
+                        "SPI locale provider cannot be instantiated.", e);
                 }
-            });
-        }  catch (PrivilegedActionException e) {
-            throw new ServiceConfigurationError(
-                "SPI locale provider cannot be instantiated.", e);
+            }
+
+            ((Delegate)delegate).addImpl(provider);
         }
+        return delegate;
     }
 
     /*
@@ -588,6 +575,39 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
             locale = CalendarDataUtility.findRegionOverride(locale);
             TimeZoneNameProvider tznp = getImpl(locale);
             return tznp.getGenericDisplayName(ID, style, locale);
+        }
+    }
+
+    static class DateTimeFormatterPatternProviderDelegate extends DateTimeFormatterPatternProvider implements Delegate<DateTimeFormatterPatternProvider> {
+        private final Map<Locale, DateTimeFormatterPatternProvider> map = new ConcurrentHashMap<>();
+
+        @Override
+        public Map<Locale, DateTimeFormatterPatternProvider> getDelegateMap() {
+            return map;
+        }
+
+        @Override
+        public Locale[] getAvailableLocales() {
+            return getAvailableLocalesDelegate();
+        }
+
+        @Override
+        public boolean isSupportedLocale(Locale locale) {
+            return isSupportedLocaleDelegate(locale);
+        }
+
+        @Override
+        public String getDateTimeFormatterPattern(FormatStyle dateStyle, FormatStyle timeStyle, String calType, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
+            DateTimeFormatterPatternProvider jdtp = getImpl(locale);
+            return jdtp.getDateTimeFormatterPattern(dateStyle, timeStyle, calType, locale);
+        }
+
+        @Override
+        public String getDateTimeFormatterPattern(String requestedTemplate, String calType, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
+            DateTimeFormatterPatternProvider jdtp = getImpl(locale);
+            return jdtp.getDateTimeFormatterPattern(requestedTemplate, calType, locale);
         }
     }
 }

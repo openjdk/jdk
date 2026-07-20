@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,13 @@ Java_nsk_stress_jni_JNIter004_CheckSum (JNIEnv *env, jobject jobj, jstring jstr)
     digest[i] = 0;
   }
   str = (char *)c_malloc(env, len * sizeof(char));
-  /*     const char *threadName = env->GetStringUTFChars(jstr, 0); */
+  /*     const char *threadName = env->GetStringUTFChars(jstr, nullptr); */
 
   CHECK(env->MonitorEnter(jobj));
   if (upper == 0) {
     tmp = (jchar *) c_malloc(env, DIGESTLENGTH * sizeof(char));
   }
-  critstr = env->GetStringCritical(jstr, 0); CE
+  critstr = env->GetStringCritical(jstr, nullptr); CE
   for (i = 0; i < len; i++) {
     str[i] = (char) critstr[i];
   }
@@ -101,7 +101,7 @@ Java_nsk_stress_jni_JNIter004_CheckCompare (JNIEnv *env, jobject jobj, jstring j
     return JNI_FALSE;
   }
   tmp = (jchar *)c_malloc(env, DIGESTLENGTH * sizeof(char));
-  critstr = env->GetStringCritical(jstr, 0); CE
+  critstr = env->GetStringCritical(jstr, nullptr); CE
   for (i = 0; i < strlen; i++) {
     str[i] = (char) critstr[i];
   }
@@ -121,7 +121,7 @@ Java_nsk_stress_jni_JNIter004_CheckCompare (JNIEnv *env, jobject jobj, jstring j
   /* Compare  */
   /*     env->MonitorEnter(jobj); */
 
-  ch = (jchar *)env->GetPrimitiveArrayCritical(cArr, 0); CE
+  ch = (jchar *)env->GetPrimitiveArrayCritical(cArr, nullptr); CE
 
   printf("Comparing: ");
   for (i = 0; i < len; i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,105 +25,98 @@
  * @test
  * @bug 4869502 4869539
  * @key printer
- * @summary Confirm that ToPage is populated for argument =2. Range is disabled for argument = 0.
- * @run main/manual PrintDlgPageable
+ * @summary Confirm that ToPage is populated for argument = 2. Range is disabled for argument = 0.
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual PrintDlgPageable 0
+ * @run main/manual PrintDlgPageable 2
  */
-import java.awt.*;
-import java.awt.print.*;
-import java.util.Locale;
 
-import javax.print.*;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.print.PageFormat;
+import java.awt.print.Pageable;
+import java.awt.print.Printable;
+import java.awt.print.PrinterJob;
+import java.awt.print.PrinterException;
 
-class PrintDlgPageable implements Printable {
+public class PrintDlgPageable implements Printable {
+
     public static int arg;
-        /**
-         * Constructor
-         */
-         public PrintDlgPageable() {
-                super();
+    public PrintDlgPageable() {
+        super();
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length < 1) {
+            System.out.println("usage: java PrintDlgPageable { 0 | 2}");
+            return;
         }
-        /**
-         * Starts the application.
-         */
-        public static void main(java.lang.String[] args) {
-            if (args.length < 1) {
-                System.out.println("usage: java PrintDlgPageable { 0 | 2}");
-                return;
+        arg = Integer.parseInt(args[0]);
+
+        String INSTRUCTIONS = " A pagedialog will be shown.";
+
+        if (arg == 0) {
+            INSTRUCTIONS += "\n Confirm that page range is disabled.";
+        } else if (arg == 2) {
+            INSTRUCTIONS += "\n Confirm ToPage is populated with pagerange 2";
+        }
+        INSTRUCTIONS += "\nCancel the print dialog. Press PASS if it so seen else press FAIL.";
+
+        PrinterJob pj = PrinterJob.getPrinterJob();
+        PageableHandler handler = new PageableHandler();
+        pj.setPageable(handler);
+
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
+            .title("Instructions")
+            .instructions(INSTRUCTIONS)
+            .columns(35)
+            .build();
+
+        if (pj.printDialog()) {
+            try {
+                pj.print();
+            } catch (PrinterException pe) {
+                pe.printStackTrace();
             }
-            arg = Integer.parseInt(args[0]);
-                PrintDlgPageable pd = new PrintDlgPageable();
-                PrinterJob pj = PrinterJob.getPrinterJob();
-                PageableHandler handler = new PageableHandler();
-                pj.setPageable(handler);
-
-                System.out.println("open PrintDialog..");
-                if (pj.printDialog()) {
-                        try {
-                                System.out.println("About to print the data ...");
-                                pj.print();
-                                System.out.println("Printed");
-                        }
-                        catch (PrinterException pe) {
-                                pe.printStackTrace();
-                        }
-                }
-
         }
+        passFailJFrame.awaitAndCheck();
+    }
 
-        //printable interface
-        public int print(Graphics g, PageFormat pf, int pi) throws
-PrinterException {
+    //printable interface
+    public int print(Graphics g, PageFormat pf, int pi) throws PrinterException {
 
-                /*if (pi > 0) {
-                        System.out.println("pi is greater than 0");
-                        return Printable.NO_SUCH_PAGE;
-                }*/
-                // Simply draw two rectangles
-                Graphics2D g2 = (Graphics2D)g;
-                g2.setColor(Color.black);
-                g2.translate(pf.getImageableX(), pf.getImageableY());
-                g2.drawRect(1,1,200,300);
-                g2.drawRect(1,1,25,25);
-                System.out.println("print method called "+pi + " Orientation "+pf.getOrientation());
-                return Printable.PAGE_EXISTS;
-        }
+        // Simply draw two rectangles
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setColor(Color.black);
+        g2.translate(pf.getImageableX(), pf.getImageableY());
+        g2.drawRect(1, 1, 200, 300);
+        g2.drawRect(1, 1, 25, 25);
+        return Printable.PAGE_EXISTS;
+    }
 }
 
 class PageableHandler implements Pageable {
 
-        PageFormat pf = new PageFormat();
+    PageFormat pf = new PageFormat();
 
-        public int getNumberOfPages() {
-                return PrintDlgPageable.arg;
-                //return 0;
-        }
+    public int getNumberOfPages() {
+        return PrintDlgPageable.arg;
+    }
 
-        public Printable getPrintable(int pageIndex) {
-                return new PrintDlgPageable();
-        }
+    public Printable getPrintable(int pageIndex) {
+        return new PrintDlgPageable();
+    }
 
-        public PageFormat getPageFormat(int pageIndex) {
-                System.out.println("getPageFormat called "+pageIndex);
-                if (pageIndex == 0) {
-                        pf.setOrientation(PageFormat.PORTRAIT);
-                        System.out.println("Orientation returned from Pageable "+findOrientation(pf.getOrientation()));
-                        return pf;
-                } else {
-                        pf.setOrientation(PageFormat.LANDSCAPE);
-                        System.out.println("Orientation returned from Pageable "+findOrientation(pf.getOrientation()));
-                        return pf;
-                }
+    public PageFormat getPageFormat(int pageIndex) {
+        if (pageIndex == 0) {
+            pf.setOrientation(PageFormat.PORTRAIT);
+            return pf;
+        } else {
+            pf.setOrientation(PageFormat.LANDSCAPE);
+            return pf;
         }
+    }
 
-        public String findOrientation(int orient) {
-                if (orient == PageFormat.LANDSCAPE) {
-                        return "LANDSCAPE";
-                }else if (orient == PageFormat.PORTRAIT) {
-                        return "PORTRAIT";
-                } else if (orient == PageFormat.REVERSE_LANDSCAPE) {
-                        return "REVERSE LANDSCAPE";
-                } else {
-                        return null;
-                }
-        }
 }

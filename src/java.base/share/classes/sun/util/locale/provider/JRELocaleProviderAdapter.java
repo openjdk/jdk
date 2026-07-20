@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,13 @@
 
 package sun.util.locale.provider;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.text.spi.BreakIteratorProvider;
 import java.text.spi.CollatorProvider;
 import java.text.spi.DateFormatProvider;
 import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
+import java.time.format.DateTimeFormatterPatternProvider;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -50,7 +47,6 @@ import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
-import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.resources.LocaleData;
 import sun.util.spi.CalendarProvider;
 
@@ -83,37 +79,35 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
      * Getter method for Locale Service Providers
      */
     @Override
-    @SuppressWarnings("unchecked")
     public <P extends LocaleServiceProvider> P getLocaleServiceProvider(Class<P> c) {
-        switch (c.getSimpleName()) {
-        case "BreakIteratorProvider":
-            return (P) getBreakIteratorProvider();
-        case "CollatorProvider":
-            return (P) getCollatorProvider();
-        case "DateFormatProvider":
-            return (P) getDateFormatProvider();
-        case "DateFormatSymbolsProvider":
-            return (P) getDateFormatSymbolsProvider();
-        case "DecimalFormatSymbolsProvider":
-            return (P) getDecimalFormatSymbolsProvider();
-        case "NumberFormatProvider":
-            return (P) getNumberFormatProvider();
-        case "CurrencyNameProvider":
-            return (P) getCurrencyNameProvider();
-        case "LocaleNameProvider":
-            return (P) getLocaleNameProvider();
-        case "TimeZoneNameProvider":
-            return (P) getTimeZoneNameProvider();
-        case "CalendarDataProvider":
-            return (P) getCalendarDataProvider();
-        case "CalendarNameProvider":
-            return (P) getCalendarNameProvider();
-        case "CalendarProvider":
-            return (P) getCalendarProvider();
-        case "JavaTimeDateTimePatternProvider":
-            return (P) getJavaTimeDateTimePatternProvider();
-        default:
-            throw new InternalError("should not come down here");
+        if (c == BreakIteratorProvider.class) {
+            return c.cast(getBreakIteratorProvider());
+        } else if (c == CollatorProvider.class) {
+            return c.cast(getCollatorProvider());
+        } else if (c == DateFormatProvider.class) {
+            return c.cast(getDateFormatProvider());
+        } else if (c == DateFormatSymbolsProvider.class) {
+            return c.cast(getDateFormatSymbolsProvider());
+        } else if (c == DecimalFormatSymbolsProvider.class) {
+            return c.cast(getDecimalFormatSymbolsProvider());
+        } else if (c == NumberFormatProvider.class) {
+            return c.cast(getNumberFormatProvider());
+        } else if (c == CurrencyNameProvider.class) {
+            return c.cast(getCurrencyNameProvider());
+        } else if (c == LocaleNameProvider.class) {
+            return c.cast(getLocaleNameProvider());
+        } else if (c == TimeZoneNameProvider.class) {
+            return c.cast(getTimeZoneNameProvider());
+        } else if (c == CalendarDataProvider.class) {
+            return c.cast(getCalendarDataProvider());
+        } else if (c == CalendarNameProvider.class) {
+            return c.cast(getCalendarNameProvider());
+        } else if (c == CalendarProvider.class) {
+            return c.cast(getCalendarProvider());
+        } else if (c == DateTimeFormatterPatternProvider.class) {
+            return c.cast(getDateTimeFormatterPatternProvider());
+        } else {
+            throw new InternalError("Unknown LocaleServiceProvider class");
         }
     }
 
@@ -131,7 +125,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     protected volatile CalendarNameProvider calendarNameProvider;
 
     private volatile CalendarProvider calendarProvider;
-    private volatile JavaTimeDateTimePatternProvider javaTimeDateTimePatternProvider;
+    private volatile DateTimeFormatterPatternProvider dateTimeFormatterPatternProvider;
 
     /*
      * Getter methods for java.text.spi.* providers
@@ -139,12 +133,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public BreakIteratorProvider getBreakIteratorProvider() {
         if (breakIteratorProvider == null) {
-            @SuppressWarnings("removal")
-            BreakIteratorProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<BreakIteratorProvider>) () ->
-                    new BreakIteratorProviderImpl(
-                        getAdapterType(),
-                        getLanguageTagSet("FormatData")));
+            BreakIteratorProvider provider = new BreakIteratorProviderImpl(
+                    getAdapterType(),
+                    getLanguageTagSet("FormatData"));
 
             synchronized (this) {
                 if (breakIteratorProvider == null) {
@@ -158,12 +149,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public CollatorProvider getCollatorProvider() {
         if (collatorProvider == null) {
-            @SuppressWarnings("removal")
-            CollatorProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<CollatorProvider>) () ->
-                    new CollatorProviderImpl(
-                        getAdapterType(),
-                        getLanguageTagSet("CollationData")));
+            CollatorProvider provider = new CollatorProviderImpl(
+                    getAdapterType(),
+                    getLanguageTagSet("CollationData"));
 
             synchronized (this) {
                 if (collatorProvider == null) {
@@ -177,12 +165,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public DateFormatProvider getDateFormatProvider() {
         if (dateFormatProvider == null) {
-            @SuppressWarnings("removal")
-            DateFormatProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<DateFormatProvider>) () ->
-                    new DateFormatProviderImpl(
-                        getAdapterType(),
-                        getLanguageTagSet("FormatData")));
+            DateFormatProvider provider = new DateFormatProviderImpl(
+                    getAdapterType(),
+                    getLanguageTagSet("FormatData"));
 
             synchronized (this) {
                 if (dateFormatProvider == null) {
@@ -196,12 +181,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public DateFormatSymbolsProvider getDateFormatSymbolsProvider() {
         if (dateFormatSymbolsProvider == null) {
-            @SuppressWarnings("removal")
-            DateFormatSymbolsProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<DateFormatSymbolsProvider>) () ->
-                    new DateFormatSymbolsProviderImpl(
-                        getAdapterType(),
-                        getLanguageTagSet("FormatData")));
+            DateFormatSymbolsProvider provider = new DateFormatSymbolsProviderImpl(
+                    getAdapterType(),
+                    getLanguageTagSet("FormatData"));
 
             synchronized (this) {
                 if (dateFormatSymbolsProvider == null) {
@@ -215,12 +197,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public DecimalFormatSymbolsProvider getDecimalFormatSymbolsProvider() {
         if (decimalFormatSymbolsProvider == null) {
-            @SuppressWarnings("removal")
-            DecimalFormatSymbolsProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<DecimalFormatSymbolsProvider>) () ->
-                    new DecimalFormatSymbolsProviderImpl(
-                        getAdapterType(),
-                        getLanguageTagSet("FormatData")));
+            DecimalFormatSymbolsProvider provider = new DecimalFormatSymbolsProviderImpl(
+                    getAdapterType(),
+                    getLanguageTagSet("FormatData"));
 
             synchronized (this) {
                 if (decimalFormatSymbolsProvider == null) {
@@ -234,12 +213,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public NumberFormatProvider getNumberFormatProvider() {
         if (numberFormatProvider == null) {
-            @SuppressWarnings("removal")
-            NumberFormatProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<NumberFormatProvider>) () ->
-                    new NumberFormatProviderImpl(
+            NumberFormatProvider provider = new NumberFormatProviderImpl(
                         getAdapterType(),
-                        getLanguageTagSet("FormatData")));
+                        getLanguageTagSet("FormatData"));
 
             synchronized (this) {
                 if (numberFormatProvider == null) {
@@ -256,12 +232,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public CurrencyNameProvider getCurrencyNameProvider() {
         if (currencyNameProvider == null) {
-            @SuppressWarnings("removal")
-            CurrencyNameProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<CurrencyNameProvider>) () ->
-                    new CurrencyNameProviderImpl(
+            CurrencyNameProvider provider = new CurrencyNameProviderImpl(
                         getAdapterType(),
-                        getLanguageTagSet("CurrencyNames")));
+                        getLanguageTagSet("CurrencyNames"));
 
             synchronized (this) {
                 if (currencyNameProvider == null) {
@@ -275,12 +248,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public LocaleNameProvider getLocaleNameProvider() {
         if (localeNameProvider == null) {
-            @SuppressWarnings("removal")
-            LocaleNameProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<LocaleNameProvider>) () ->
-                    new LocaleNameProviderImpl(
+            LocaleNameProvider provider = new LocaleNameProviderImpl(
                         getAdapterType(),
-                        getLanguageTagSet("LocaleNames")));
+                        getLanguageTagSet("LocaleNames"));
 
             synchronized (this) {
                 if (localeNameProvider == null) {
@@ -294,12 +264,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public TimeZoneNameProvider getTimeZoneNameProvider() {
         if (timeZoneNameProvider == null) {
-            @SuppressWarnings("removal")
-            TimeZoneNameProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<TimeZoneNameProvider>) () ->
-                    new TimeZoneNameProviderImpl(
+            TimeZoneNameProvider provider = new TimeZoneNameProviderImpl(
                         getAdapterType(),
-                        getLanguageTagSet("TimeZoneNames")));
+                        getLanguageTagSet("TimeZoneNames"));
 
             synchronized (this) {
                 if (timeZoneNameProvider == null) {
@@ -313,12 +280,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public CalendarDataProvider getCalendarDataProvider() {
         if (calendarDataProvider == null) {
-            @SuppressWarnings("removal")
-            CalendarDataProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<CalendarDataProvider>) () ->
-                    new CalendarDataProviderImpl(
+            CalendarDataProvider provider = new CalendarDataProviderImpl(
                         getAdapterType(),
-                        getLanguageTagSet("CalendarData")));
+                        getLanguageTagSet("CalendarData"));
 
             synchronized (this) {
                 if (calendarDataProvider == null) {
@@ -332,12 +296,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public CalendarNameProvider getCalendarNameProvider() {
         if (calendarNameProvider == null) {
-            @SuppressWarnings("removal")
-            CalendarNameProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<CalendarNameProvider>) () ->
-                    new CalendarNameProviderImpl(
+            CalendarNameProvider provider = new CalendarNameProviderImpl(
                         getAdapterType(),
-                        getLanguageTagSet("FormatData")));
+                        getLanguageTagSet("FormatData"));
 
             synchronized (this) {
                 if (calendarNameProvider == null) {
@@ -354,12 +315,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public CalendarProvider getCalendarProvider() {
         if (calendarProvider == null) {
-            @SuppressWarnings("removal")
-            CalendarProvider provider = AccessController.doPrivileged(
-                (PrivilegedAction<CalendarProvider>) () ->
-                    new CalendarProviderImpl(
+            CalendarProvider provider = new CalendarProviderImpl(
                         getAdapterType(),
-                        getLanguageTagSet("CalendarData")));
+                        getLanguageTagSet("CalendarData"));
 
             synchronized (this) {
                 if (calendarProvider == null) {
@@ -371,25 +329,22 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     }
 
     /**
-     * Getter methods for sun.text.spi.JavaTimeDateTimePatternProvider provider
+     * Getter methods for java.time.format.DateTimeFormatterPatternProvider provider
      */
     @Override
-    public JavaTimeDateTimePatternProvider getJavaTimeDateTimePatternProvider() {
-        if (javaTimeDateTimePatternProvider == null) {
-            @SuppressWarnings("removal")
-            JavaTimeDateTimePatternProvider provider = AccessController.doPrivileged(
-                    (PrivilegedAction<JavaTimeDateTimePatternProvider>) ()
-                    -> new JavaTimeDateTimePatternImpl(
+    public DateTimeFormatterPatternProvider getDateTimeFormatterPatternProvider() {
+        if (dateTimeFormatterPatternProvider == null) {
+            DateTimeFormatterPatternProvider provider = new DateTimeFormatterPatternProviderImpl(
                             getAdapterType(),
-                            getLanguageTagSet("FormatData")));
+                            getLanguageTagSet("FormatData"));
 
             synchronized (this) {
-                if (javaTimeDateTimePatternProvider == null) {
-                    javaTimeDateTimePatternProvider = provider;
+                if (dateTimeFormatterPatternProvider == null) {
+                    dateTimeFormatterPatternProvider = provider;
                 }
             }
         }
-        return javaTimeDateTimePatternProvider;
+        return dateTimeFormatterPatternProvider;
     }
 
     @Override
@@ -461,30 +416,23 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
         String supportedLocaleString = BaseLocaleDataMetaInfo.getSupportedLocaleString(category);
 
         // Use ServiceLoader to dynamically acquire installed locales' tags.
-        try {
-            @SuppressWarnings("removal")
-            String nonBaseTags = AccessController.doPrivileged((PrivilegedExceptionAction<String>) () -> {
-                StringBuilder tags = new StringBuilder();
-                for (LocaleDataMetaInfo ldmi :
-                        ServiceLoader.loadInstalled(LocaleDataMetaInfo.class)) {
-                    if (ldmi.getType() == LocaleProviderAdapter.Type.JRE) {
-                        String t = ldmi.availableLanguageTags(category);
-                        if (t != null) {
-                            if (!tags.isEmpty()) {
-                                tags.append(' ');
-                            }
-                            tags.append(t);
-                        }
+        StringBuilder tags = new StringBuilder();
+        for (LocaleDataMetaInfo ldmi :
+                ServiceLoader.loadInstalled(LocaleDataMetaInfo.class)) {
+            if (ldmi.getType() == LocaleProviderAdapter.Type.JRE) {
+                String t = ldmi.availableLanguageTags(category);
+                if (t != null) {
+                    if (!tags.isEmpty()) {
+                        tags.append(' ');
                     }
+                    tags.append(t);
                 }
-                return tags.toString();
-            });
-
-            if (nonBaseTags != null) {
-                supportedLocaleString += " " + nonBaseTags;
             }
-        } catch (PrivilegedActionException pae) {
-            throw new InternalError(pae.getCause());
+        }
+        String nonBaseTags = tags.toString();
+
+        if (nonBaseTags != null) {
+            supportedLocaleString += " " + nonBaseTags;
         }
 
         return supportedLocaleString;
@@ -539,5 +487,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
                    "ja-JP-JP".equals(oldname) ||
                    "th-TH-TH".equals(oldname) ||
                    "no-NO-NY".equals(oldname);
+    }
+
+    public Set<Locale> baseModuleLocales() {
+        return Set.of(Locale.ROOT);
     }
 }

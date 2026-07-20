@@ -45,14 +45,14 @@ import javax.lang.model.type.*;
  * <dfn>{@index "type annotation"}</dfn>.
  *
  * The terms <em>directly present</em>, <em>present</em>,
- * <em>indirectly present</em>, and <em>associated </em> are used
+ * <em>indirectly present</em>, and <em>associated</em> are used
  * throughout this interface to describe precisely which annotations,
  * either declaration annotations or type annotations, are returned by
  * the methods in this interface.
  *
  * <p>In the definitions below, an annotation <i>A</i> has an
  * annotation interface <i>AI</i>. If <i>AI</i> is a repeatable annotation
- * interface, the type of the containing annotation is <i>AIC</i>.
+ * interface, the type of the container annotation is <i>AIC</i>.
  *
  * <p>Annotation <i>A</i> is <dfn>{@index "directly present"}</dfn> on a construct
  * <i>C</i> if either:
@@ -78,7 +78,7 @@ import javax.lang.model.type.*;
  * Specification</cite> (JLS {@jls 8.10.1}).
  *
  * If there are multiple annotations of type <i>AI</i> present on
- * <i>C</i>, then if <i>AI</i> is repeatable annotation interface, an
+ * <i>C</i>, then if <i>AI</i> is a repeatable annotation interface, an
  * annotation of type <i>AIC</i> is {@linkplain javax.lang.model.util.Elements#getOrigin(AnnotatedConstruct, AnnotationMirror) implicitly declared} on <i>C</i>.
  * <li> A representation of <i>A</i> appears in the executable output
  * for <i>C</i>, such as the {@code RuntimeVisibleAnnotations} (JVMS {@jvms 4.7.16}) or
@@ -189,10 +189,11 @@ public interface AnnotatedConstruct {
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
 
     /**
-     * Returns annotations that are <em>associated</em> with this construct.
+     * Returns annotations of the specified type that are <em>associated</em>
+     * with this construct.
      *
-     * If there are no annotations associated with this construct, the
-     * return value is an array of length 0.
+     * If there are no annotations of the specified type associated with this
+     * construct, the return value is an array of length 0.
      *
      * The order of annotations which are directly or indirectly
      * present on a construct <i>C</i> is computed as if indirectly present

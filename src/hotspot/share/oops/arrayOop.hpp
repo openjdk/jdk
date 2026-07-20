@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,11 +79,10 @@ private:
   }
 
   // The _length field is not declared in C++.  It is allocated after the
-  // declared nonstatic fields in arrayOopDesc if not compressed, otherwise
-  // it occupies the second half of the _klass field in oopDesc.
+  // mark-word when using compact headers (+UseCompactObjectHeaders), otherwise
+  // after the compressed Klass*.
   static int length_offset_in_bytes() {
-    return UseCompressedClassPointers ? klass_gap_offset_in_bytes() :
-                               (int)sizeof(arrayOopDesc);
+    return oopDesc::base_offset_in_bytes();
   }
 
   // Returns the offset of the first element.

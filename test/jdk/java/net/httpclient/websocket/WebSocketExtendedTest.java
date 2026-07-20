@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,29 +24,28 @@
 /*
  * @test
  * @bug 8159053
- *
- *
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.internal.httpclient.websocket.debug=true
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.websocket.writeBufferSize=1024
- *      -Djdk.httpclient.websocket.intermediateBufferSize=2048 WebSocketExtendedTest
+ *      -Djdk.httpclient.websocket.intermediateBufferSize=2048 ${test.main.class}
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import jdk.internal.net.http.websocket.Frame;
 
 import java.io.IOException;
 import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.newBuilder;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /*
@@ -54,7 +53,7 @@ import static org.testng.Assert.assertTrue;
  * possible fragmentation.
  */
 public class WebSocketExtendedTest {
-// * run testng/othervm
+// * run junit/othervm
 // *      -Djdk.httpclient.websocket.writeBufferSize=16
 // *      -Djdk.httpclient.sendBufferSize=32 WebSocketTextTest
 
@@ -67,7 +66,8 @@ public class WebSocketExtendedTest {
 
     // FIXME ensure subsequent (sendText/Binary, false) only CONTINUATIONs
 
-    @Test(dataProvider = "binary")
+    @ParameterizedTest
+    @MethodSource("binary")
     public void binary(ByteBuffer expected) throws IOException, InterruptedException {
         try (DummyWebSocketServer server = new DummyWebSocketServer()) {
             server.open();
@@ -77,92 +77,17 @@ public class WebSocketExtendedTest {
                     .join();
             ws.sendBinary(expected.duplicate(), true).join();
             ws.abort();
-            ByteBuffer data = server.read();
-            List<Frame> frames = readFrames(data);
-            assertEquals(frames.size(), 1);
-            Frame f = frames.get(0);
-            assertTrue(f.last);
-            assertEquals(f.opcode, Frame.Opcode.BINARY);
-            assertEquals(f.data, expected);
+            List<DummyWebSocketServer.DecodedFrame> frames = server.readFrames();
+            assertEquals(1, frames.size());
+            DummyWebSocketServer.DecodedFrame f = frames.get(0);
+            assertTrue(f.last());
+            assertEquals(Frame.Opcode.BINARY, f.opcode());
+            assertEquals(expected, f.data());
         }
     }
 
-    private static List<Frame> readFrames(ByteBuffer src) {
-        List<Frame> frames = new ArrayList<>();
-        Frame.Consumer consumer = new Frame.Consumer() {
-
-            ByteBuffer data;
-            Frame.Opcode opcode;
-            Frame.Masker masker = new Frame.Masker();
-            boolean last;
-
-            @Override
-            public void fin(boolean value) {
-                last = value;
-            }
-
-            @Override
-            public void rsv1(boolean value) {
-                if (value) {
-                    throw new AssertionError();
-                }
-            }
-
-            @Override
-            public void rsv2(boolean value) {
-                if (value) {
-                    throw new AssertionError();
-                }
-            }
-
-            @Override
-            public void rsv3(boolean value) {
-                if (value) {
-                    throw new AssertionError();
-                }
-            }
-
-            @Override
-            public void opcode(Frame.Opcode value) {
-                opcode = value;
-            }
-
-            @Override
-            public void mask(boolean value) {
-                if (!value) { // Frames from the client MUST be masked
-                    throw new AssertionError();
-                }
-            }
-
-            @Override
-            public void payloadLen(long value) {
-                data = ByteBuffer.allocate((int) value);
-            }
-
-            @Override
-            public void maskingKey(int value) {
-                masker.mask(value);
-            }
-
-            @Override
-            public void payloadData(ByteBuffer data) {
-                masker.transferMasking(data, this.data);
-            }
-
-            @Override
-            public void endFrame() {
-                frames.add(new Frame(opcode, this.data.flip(), last));
-            }
-        };
-
-        Frame.Reader r = new Frame.Reader();
-        while (src.hasRemaining()) {
-            r.readFrame(src, consumer);
-        }
-        return frames;
-    }
-
-    @Test(dataProvider = "pingPong")
+    @ParameterizedTest
+    @MethodSource("pingPongSizes")
     public void ping(ByteBuffer expected) throws Exception {
         try (DummyWebSocketServer server = new DummyWebSocketServer()) {
             server.open();
@@ -172,19 +97,19 @@ public class WebSocketExtendedTest {
                     .join();
             ws.sendPing(expected.duplicate()).join();
             ws.abort();
-            ByteBuffer data = server.read();
-            List<Frame> frames = readFrames(data);
-            assertEquals(frames.size(), 1);
-            Frame f = frames.get(0);
-            assertEquals(f.opcode, Frame.Opcode.PING);
+            List<DummyWebSocketServer.DecodedFrame> frames = server.readFrames();
+            assertEquals(1, frames.size());
+            DummyWebSocketServer.DecodedFrame f = frames.get(0);
+            assertEquals(Frame.Opcode.PING, f.opcode());
             ByteBuffer actual = ByteBuffer.allocate(expected.remaining());
-            actual.put(f.data);
+            actual.put(f.data());
             actual.flip();
-            assertEquals(actual, expected);
+            assertEquals(expected, actual);
         }
     }
 
-    @Test(dataProvider = "pingPong")
+    @ParameterizedTest
+    @MethodSource("pingPongSizes")
     public void pong(ByteBuffer expected) throws Exception {
         try (DummyWebSocketServer server = new DummyWebSocketServer()) {
             server.open();
@@ -194,19 +119,19 @@ public class WebSocketExtendedTest {
                     .join();
             ws.sendPong(expected.duplicate()).join();
             ws.abort();
-            ByteBuffer data = server.read();
-            List<Frame> frames = readFrames(data);
-            assertEquals(frames.size(), 1);
-            Frame f = frames.get(0);
-            assertEquals(f.opcode, Frame.Opcode.PONG);
+            List<DummyWebSocketServer.DecodedFrame> frames = server.readFrames();
+            assertEquals(1, frames.size());
+            DummyWebSocketServer.DecodedFrame f = frames.get(0);
+            assertEquals(Frame.Opcode.PONG, f.opcode());
             ByteBuffer actual = ByteBuffer.allocate(expected.remaining());
-            actual.put(f.data);
+            actual.put(f.data());
             actual.flip();
-            assertEquals(actual, expected);
+            assertEquals(expected, actual);
         }
     }
 
-    @Test(dataProvider = "close")
+    @ParameterizedTest
+    @MethodSource("closeArguments")
     public void close(int statusCode, String reason) throws Exception {
         try (DummyWebSocketServer server = new DummyWebSocketServer()) {
             server.open();
@@ -216,20 +141,20 @@ public class WebSocketExtendedTest {
                     .join();
             ws.sendClose(statusCode, reason).join();
             ws.abort();
-            ByteBuffer data = server.read();
-            List<Frame> frames = readFrames(data);
-            assertEquals(frames.size(), 1);
-            Frame f = frames.get(0);
-            assertEquals(f.opcode, Frame.Opcode.CLOSE);
-            ByteBuffer actual = ByteBuffer.allocate(Frame.MAX_CONTROL_FRAME_PAYLOAD_SIZE);
-            actual.put(f.data);
+            List<DummyWebSocketServer.DecodedFrame> frames = server.readFrames();
+            assertEquals(1, frames.size());
+            DummyWebSocketServer.DecodedFrame f = frames.get(0);
+            assertEquals(Frame.Opcode.CLOSE, f.opcode());
+            ByteBuffer actual = ByteBuffer.allocate(Frame.MAX_CONTROL_FRAME_PAYLOAD_LENGTH);
+            actual.put(f.data());
             actual.flip();
-            assertEquals(actual.getChar(), statusCode);
-            assertEquals(StandardCharsets.UTF_8.decode(actual).toString(), reason);
+            assertEquals(statusCode, actual.getChar());
+            assertEquals(reason, StandardCharsets.UTF_8.decode(actual).toString());
         }
     }
 
-    @Test(dataProvider = "text")
+    @ParameterizedTest
+    @MethodSource("texts")
     public void text(String expected) throws Exception {
         try (DummyWebSocketServer server = new DummyWebSocketServer()) {
             server.open();
@@ -239,19 +164,16 @@ public class WebSocketExtendedTest {
                     .join();
             ws.sendText(expected, true).join();
             ws.abort();
-            ByteBuffer data = server.read();
-            List<Frame> frames = readFrames(data);
-
+            List<DummyWebSocketServer.DecodedFrame> frames = server.readFrames();
             int maxBytes = (int) StandardCharsets.UTF_8.newEncoder().maxBytesPerChar() * expected.length();
             ByteBuffer actual = ByteBuffer.allocate(maxBytes);
-            frames.stream().forEachOrdered(f -> actual.put(f.data));
+            frames.stream().forEachOrdered(f -> actual.put(f.data()));
             actual.flip();
-            assertEquals(StandardCharsets.UTF_8.decode(actual).toString(), expected);
+            assertEquals(expected, StandardCharsets.UTF_8.decode(actual).toString());
         }
     }
 
-    @DataProvider(name = "pingPong")
-    public Object[][] pingPongSizes() {
+    public static Object[][] pingPongSizes() {
         return new Object[][]{
                 {bytes(  0)},
                 {bytes(  1)},
@@ -260,8 +182,7 @@ public class WebSocketExtendedTest {
         };
     }
 
-    @DataProvider(name = "close")
-    public Object[][] closeArguments() {
+    public static Object[][] closeArguments() {
         return new Object[][]{
                 {WebSocket.NORMAL_CLOSURE, utf8String( 0)},
                 {WebSocket.NORMAL_CLOSURE, utf8String( 1)},
@@ -299,16 +220,14 @@ public class WebSocketExtendedTest {
         return str.toString();
     }
 
-    @DataProvider(name = "text")
-    public Object[][] texts() {
+    public static Object[][] texts() {
         return new Object[][]{
                 {utf8String(   0)},
                 {utf8String(1024)},
         };
     }
 
-    @DataProvider(name = "binary")
-    public Object[][] binary() {
+    public static Object[][] binary() {
         return new Object[][]{
                 {bytes(   0)},
                 {bytes(1024)},

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/memTracker.hpp"
@@ -50,7 +49,7 @@ static void test_pointer(const void* p, bool expected_return_code, const char* e
 
 static void test_for_live_c_heap_block(size_t sz, ssize_t offset) {
   char* c = NEW_C_HEAP_ARRAY(char, sz, mtTest);
-  LOG_HERE("C-block starts " PTR_FORMAT ", size " SIZE_FORMAT ".", p2i(c), sz);
+  LOG_HERE("C-block starts " PTR_FORMAT ", size %zu.", p2i(c), sz);
   memset(c, 0, sz);
   if (MemTracker::enabled()) {
     const char* expected_string = "into live malloced block";
@@ -64,7 +63,7 @@ static void test_for_live_c_heap_block(size_t sz, ssize_t offset) {
     // NMT disabled: we should see nothing.
     test_pointer(c + offset, false, "");
   }
-  FREE_C_HEAP_ARRAY(char, c);
+  FREE_C_HEAP_ARRAY(c);
 }
 
 #ifdef LINUX
@@ -73,7 +72,7 @@ static void test_for_dead_c_heap_block(size_t sz, ssize_t offset) {
     return;
   }
   char* c = NEW_C_HEAP_ARRAY(char, sz, mtTest);
-  LOG_HERE("C-block starts " PTR_FORMAT ", size " SIZE_FORMAT ".", p2i(c), sz);
+  LOG_HERE("C-block starts " PTR_FORMAT ", size %zu.", p2i(c), sz);
   memset(c, 0, sz);
   // We cannot just free the allocation to try dead block printing, since the memory
   // may be immediately reused by concurrent code. Instead, we mark the block as dead
@@ -91,7 +90,7 @@ static void test_for_dead_c_heap_block(size_t sz, ssize_t offset) {
   test_pointer(c + offset, true, expected_string);
 
   hdr->revive();
-  FREE_C_HEAP_ARRAY(char, c);
+  FREE_C_HEAP_ARRAY(c);
 }
 #endif
 
@@ -114,7 +113,7 @@ TEST_VM(NMT, DISABLED_location_printing_cheap_dead_7) { test_for_dead_c_heap_blo
 #endif
 
 static void test_for_mmap(size_t sz, ssize_t offset) {
-  char* addr = os::reserve_memory(sz, false, mtTest);
+  char* addr = os::reserve_memory(sz, mtTest);
   if (MemTracker::enabled()) {
     test_pointer(addr + offset, true, "in mmap'd memory region");
   } else {

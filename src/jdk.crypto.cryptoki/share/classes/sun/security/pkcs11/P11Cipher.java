@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.security.pkcs11;
 
 import java.nio.ByteBuffer;
@@ -742,8 +743,8 @@ final class P11Cipher extends CipherSpi {
                 int inOfs = 0;
                 byte[] inArray = null;
 
-                if (inBuffer instanceof DirectBuffer dInBuffer) {
-                    inAddr = dInBuffer.address();
+                if (inBuffer instanceof DirectBuffer) {
+                    inAddr = NIO_ACCESS.getBufferAddress(inBuffer);
                     inOfs = origPos;
                 } else if (inBuffer.hasArray()) {
                     inArray = inBuffer.array();
@@ -753,8 +754,8 @@ final class P11Cipher extends CipherSpi {
                 long outAddr = 0;
                 int outOfs = 0;
                 byte[] outArray = null;
-                if (outBuffer instanceof DirectBuffer dOutBuffer) {
-                    outAddr = dOutBuffer.address();
+                if (outBuffer instanceof DirectBuffer) {
+                    outAddr = NIO_ACCESS.getBufferAddress(outBuffer);
                     outOfs = outBuffer.position();
                 } else {
                     if (outBuffer.hasArray()) {
@@ -1012,8 +1013,8 @@ final class P11Cipher extends CipherSpi {
                 long outAddr = 0;
                 byte[] outArray = null;
                 int outOfs = 0;
-                if (outBuffer instanceof DirectBuffer dOutBuffer) {
-                    outAddr = dOutBuffer.address();
+                if (outBuffer instanceof DirectBuffer) {
+                    outAddr = NIO_ACCESS.getBufferAddress(outBuffer);
                     outOfs = outBuffer.position();
                 } else {
                     if (outBuffer.hasArray()) {
@@ -1197,7 +1198,9 @@ final class P11Cipher extends CipherSpi {
     }
 
     private void handleException(PKCS11Exception e)
-            throws ShortBufferException, IllegalBlockSizeException {
+            throws ShortBufferException, IllegalBlockSizeException,
+            BadPaddingException {
+
         if (e.match(CKR_BUFFER_TOO_SMALL)) {
             throw (ShortBufferException)
                     (new ShortBufferException().initCause(e));
@@ -1205,6 +1208,9 @@ final class P11Cipher extends CipherSpi {
                 e.match(CKR_ENCRYPTED_DATA_LEN_RANGE)) {
             throw (IllegalBlockSizeException)
                     (new IllegalBlockSizeException(e.toString()).initCause(e));
+        } else if (e.match(CKR_ENCRYPTED_DATA_INVALID)) {
+            throw (BadPaddingException)
+                    (new BadPaddingException(e.toString()).initCause(e));
         }
     }
 

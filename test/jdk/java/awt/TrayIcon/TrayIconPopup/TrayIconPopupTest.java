@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,8 +20,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.awt.*;
-import java.awt.event.*;
+
+import jdk.test.lib.Platform;
+import jtreg.SkippedException;
+
+import java.awt.AWTException;
+import java.awt.Dialog;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.MenuItem;
+import java.awt.Point;
+import java.awt.PopupMenu;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
 /*
@@ -29,12 +43,18 @@ import java.awt.image.BufferedImage;
  * @key headful
  * @summary Check if a JPopupMenu can be displayed when TrayIcon is
  *          right clicked. It uses a JWindow as the parent of the JPopupMenu
- * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @modules java.desktop/java.awt:open
- * @library /java/awt/patchlib
- * @library /lib/client ../
- * @build java.desktop/java.awt.Helper
- * @build ExtendedRobot SystemTrayIconHelper
+ * @library
+ *          /java/awt/patchlib
+ *          /java/awt/TrayIcon
+ *          /lib/client
+ *          /test/lib
+ * @build
+ *          java.desktop/java.awt.Helper
+ *          jdk.test.lib.Platform
+ *          jtreg.SkippedException
+ *          ExtendedRobot
+ *          SystemTrayIconHelper
  * @run main TrayIconPopupTest
  */
 
@@ -43,27 +63,34 @@ public class TrayIconPopupTest {
     TrayIcon icon;
     ExtendedRobot robot;
 
-    boolean actionPerformed = false;
-    Object actionLock = new Object();
+    volatile boolean actionPerformed = false;
+    final Object actionLock = new Object();
+
     static final int ATTEMPTS = 10;
 
     PopupMenu popup;
     Dialog window;
 
     public static void main(String[] args) throws Exception {
-        if (!SystemTray.isSupported()) {
-            System.out.println("SystemTray not supported on the platform under test. " +
-                    "Marking the test passed");
-        } else {
-            if (System.getProperty("os.name").toLowerCase().startsWith("win"))
-                System.err.println("Test can fail if the icon hides to a tray icons pool " +
-                        "in Windows 7, which is behavior by default.\n" +
-                        "Set \"Right mouse click\" -> \"Customize notification icons\" -> " +
-                        "\"Always show all icons and notifications on the taskbar\" true " +
-                        "to avoid this problem. Or change behavior only for Java SE " +
-                        "tray icon.");
-            new TrayIconPopupTest().doTest();
+        if (Platform.isOnWayland()) {
+            // The current robot implementation does not support
+            // clicking in the system tray area.
+            throw new SkippedException("Skipped on Wayland");
         }
+
+        if (!SystemTray.isSupported()) {
+            throw new SkippedException("SystemTray is not supported on this platform.");
+        }
+
+        if (Platform.isWindows()) {
+            System.err.println("Test can fail if the icon hides to a tray icons pool " +
+                    "in Windows 7, which is behavior by default.\n" +
+                    "Set \"Right mouse click\" -> \"Customize notification icons\" -> " +
+                    "\"Always show all icons and notifications on the taskbar\" true " +
+                    "to avoid this problem. Or change behavior only for Java SE " +
+                    "tray icon.");
+        }
+        new TrayIconPopupTest().doTest();
     }
 
     TrayIconPopupTest() throws Exception {
@@ -128,15 +155,15 @@ public class TrayIconPopupTest {
 
         robot.mouseMove(iconPosition.x, iconPosition.y);
         robot.waitForIdle();
-        robot.mousePress(InputEvent.BUTTON3_MASK);
+        robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.delay(50);
-        robot.mouseRelease(InputEvent.BUTTON3_MASK);
+        robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
         robot.delay(6000);
 
         robot.mouseMove(window.getLocation().x + 10, window.getLocation().y + 10);
-        robot.mousePress(InputEvent.BUTTON3_MASK);
+        robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.delay(50);
-        robot.mouseRelease(InputEvent.BUTTON3_MASK);
+        robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
 
         int attempts = 0;
         while (!actionPerformed && attempts++ < ATTEMPTS) {

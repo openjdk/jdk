@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,14 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.StackMapTableAttribute;
+import java.lang.classfile.attribute.UnknownAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.instruction.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,15 +39,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import java.lang.classfile.*;
-import java.lang.classfile.attribute.CodeAttribute;
-import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
-import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import java.lang.classfile.attribute.StackMapTableAttribute;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.instruction.*;
-
-import static java.lang.classfile.ClassFile.*;
+import static jdk.internal.classfile.impl.StackMapGenerator.*;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 public final class CodeImpl
         extends BoundAttribute.BoundCodeAttribute
@@ -55,13 +56,13 @@ public final class CodeImpl
                     case ARRAY_STORE -> ArrayStoreInstruction.of(o);
                     case CONSTANT -> ConstantInstruction.ofIntrinsic(o);
                     case CONVERT -> ConvertInstruction.of(o);
-                    case LOAD -> LoadInstruction.of(o, BytecodeHelpers.intrinsicLoadSlot(o));
+                    case LOAD -> new AbstractInstruction.UnboundLoadInstruction(o, BytecodeHelpers.intrinsicLoadSlot(o));
                     case MONITOR -> MonitorInstruction.of(o);
                     case NOP -> NopInstruction.of();
                     case OPERATOR -> OperatorInstruction.of(o);
                     case RETURN -> ReturnInstruction.of(o);
                     case STACK -> StackInstruction.of(o);
-                    case STORE -> StoreInstruction.of(o, BytecodeHelpers.intrinsicStoreSlot(o));
+                    case STORE -> new AbstractInstruction.UnboundStoreInstruction(o, BytecodeHelpers.intrinsicStoreSlot(o));
                     case THROW_EXCEPTION -> ThrowInstruction.of();
                     default -> throw new AssertionError("invalid opcode: " + o);
                 };
@@ -169,6 +170,7 @@ public final class CodeImpl
         generateCatchTargets(consumer);
         if (classReader.context().passDebugElements())
             generateDebugElements(consumer);
+        generateUserAttributes(consumer);
         for (int pos=codeStart; pos<codeEnd; ) {
             if (labels[pos - codeStart] != null)
                 consumer.accept(labels[pos - codeStart]);
@@ -203,6 +205,14 @@ public final class CodeImpl
             exceptionTable = Collections.unmodifiableList(exceptionTable);
         }
         return exceptionTable;
+    }
+
+    private void generateUserAttributes(Consumer<? super CodeElement> consumer) {
+        for (var attr : attributes) {
+            if (attr instanceof CustomAttribute || attr instanceof UnknownAttribute) {
+                consumer.accept((CodeElement) attr);
+            }
+        }
     }
 
     public boolean compareCodeBytes(BufWriterImpl buf, int offset, int len) {
@@ -255,14 +265,16 @@ public final class CodeImpl
                 //fallback to jump targets inflation without StackMapTableAttribute
                 for (int pos=codeStart; pos<codeEnd; ) {
                     var i = bcToInstruction(classReader.readU1(pos), pos);
-                    switch (i) {
-                        case BranchInstruction br -> br.target();
-                        case DiscontinuedInstruction.JsrInstruction jsr -> jsr.target();
-                        case LookupSwitchInstruction ls -> {
+                    switch (i.opcode().kind()) {
+                        case BRANCH -> ((BranchInstruction) i).target();
+                        case DISCONTINUED_JSR -> ((DiscontinuedInstruction.JsrInstruction) i).target();
+                        case LOOKUP_SWITCH -> {
+                            var ls = (LookupSwitchInstruction) i;
                             ls.defaultTarget();
                             ls.cases();
                         }
-                        case TableSwitchInstruction ts -> {
+                        case TABLE_SWITCH -> {
+                            var ts = (TableSwitchInstruction) i;
                             ts.defaultTarget();
                             ts.cases();
                         }
@@ -273,7 +285,6 @@ public final class CodeImpl
             }
             return;
         }
-        @SuppressWarnings("unchecked")
         int stackMapPos = ((BoundAttribute<StackMapTableAttribute>) a.get()).payloadStart;
 
         int bci = -1; //compensate for offsetDelta + 1
@@ -282,33 +293,33 @@ public final class CodeImpl
         for (int i = 0; i < nEntries; ++i) {
             int frameType = classReader.readU1(p);
             int offsetDelta;
-            if (frameType < 64) {
+            if (frameType <= SAME_FRAME_END) {
                 offsetDelta = frameType;
                 ++p;
             }
-            else if (frameType < 128) {
+            else if (frameType <= SAME_LOCALS_1_STACK_ITEM_FRAME_END) {
                 offsetDelta = frameType & 0x3f;
                 p = adjustForObjectOrUninitialized(p + 1);
             }
             else
                 switch (frameType) {
-                    case 247 -> {
+                    case SAME_LOCALS_1_STACK_ITEM_EXTENDED -> {
                         offsetDelta = classReader.readU2(p + 1);
                         p = adjustForObjectOrUninitialized(p + 3);
                     }
-                    case 248, 249, 250, 251 -> {
+                    case CHOP_FRAME_START, CHOP_FRAME_START + 1, CHOP_FRAME_END, SAME_FRAME_EXTENDED -> {
                         offsetDelta = classReader.readU2(p + 1);
                         p += 3;
                     }
-                    case 252, 253, 254 -> {
+                    case APPEND_FRAME_START, APPEND_FRAME_START + 1, APPEND_FRAME_END -> {
                         offsetDelta = classReader.readU2(p + 1);
-                        int k = frameType - 251;
+                        int k = frameType - APPEND_FRAME_START + 1;
                         p += 3;
                         for (int c = 0; c < k; ++c) {
                             p = adjustForObjectOrUninitialized(p);
                         }
                     }
-                    case 255 -> {
+                    case FULL_FRAME -> {
                         offsetDelta = classReader.readU2(p + 1);
                         p += 3;
                         int k = classReader.readU2(p);

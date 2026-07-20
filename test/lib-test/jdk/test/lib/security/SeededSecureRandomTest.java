@@ -20,14 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.test.lib.security;
-
 import jdk.test.lib.Asserts;
+import jdk.test.lib.security.SeededSecureRandom;
 
 /*
  * @test
  * @library /test/lib
- * @run main/othervm jdk.test.lib.security.SeededSecureRandomTest
+ * @run main/othervm SeededSecureRandomTest
  */
 public class SeededSecureRandomTest {
 

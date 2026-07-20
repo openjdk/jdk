@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ package sun.font;
  * entries would be removed much more promptly than we need.
  */
 
-class NativeStrikeDisposer extends FontStrikeDisposer {
+final class NativeStrikeDisposer extends FontStrikeDisposer {
 
     long pNativeScalerContext;
 
@@ -73,6 +73,7 @@ class NativeStrikeDisposer extends FontStrikeDisposer {
         super(font2D, desc);
     }
 
+    @Override
     public synchronized void dispose() {
         if (!disposed) {
             if (pNativeScalerContext != 0L) {

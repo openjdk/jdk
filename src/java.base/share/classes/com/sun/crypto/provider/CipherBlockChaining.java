@@ -59,10 +59,15 @@ class CipherBlockChaining extends FeedbackCipher  {
     // variables for save/restore calls
     private byte[] rSave = null;
 
+    // chunkSize is a multiple of block size and used to divide up
+    // input data to trigger the intrinsic.
+    private final int chunkSize;
+
     CipherBlockChaining(SymmetricCipher embeddedCipher) {
         super(embeddedCipher);
         k = new byte[blockSize];
         r = new byte[blockSize];
+        chunkSize = blockSize * 6400;
     }
 
     /**
@@ -148,8 +153,18 @@ class CipherBlockChaining extends FeedbackCipher  {
         ArrayUtil.blockSizeCheck(plainLen, blockSize);
         ArrayUtil.nullAndBoundsCheck(plain, plainOffset, plainLen);
         ArrayUtil.nullAndBoundsCheck(cipher, cipherOffset, plainLen);
-        return implEncrypt(plain, plainOffset, plainLen,
-                           cipher, cipherOffset);
+        int processed = 0;
+        for (;  plainLen > chunkSize; cipherOffset += chunkSize,
+            plainOffset += chunkSize, plainLen -= chunkSize) {
+            processed +=
+               implEncrypt(plain, plainOffset, chunkSize, cipher, cipherOffset);
+        }
+        // note: above loop always leaves some data to process (more than zero,
+        // less than or equal to chunkSize) so this last call can be
+        // unconditional
+        processed +=
+            implEncrypt(plain, plainOffset, plainLen, cipher, cipherOffset);
+        return processed;
     }
 
     @IntrinsicCandidate
@@ -199,7 +214,18 @@ class CipherBlockChaining extends FeedbackCipher  {
         ArrayUtil.blockSizeCheck(cipherLen, blockSize);
         ArrayUtil.nullAndBoundsCheck(cipher, cipherOffset, cipherLen);
         ArrayUtil.nullAndBoundsCheck(plain, plainOffset, cipherLen);
-        return implDecrypt(cipher, cipherOffset, cipherLen, plain, plainOffset);
+        int processed = 0;
+        for (;  cipherLen > chunkSize; cipherOffset += chunkSize,
+            plainOffset += chunkSize, cipherLen -= chunkSize) {
+            processed +=
+               implDecrypt(cipher, cipherOffset, chunkSize, plain, plainOffset);
+        }
+        // note: above loop always leaves some data to process (more than zero,
+        // less than or equal to chunkSize) so this last call can be
+        // unconditional
+        processed +=
+            implDecrypt(cipher, cipherOffset, cipherLen, plain, plainOffset);
+        return processed;
     }
 
     @IntrinsicCandidate

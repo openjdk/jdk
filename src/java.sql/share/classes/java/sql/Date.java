@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,7 +286,6 @@ public class Date extends java.util.Date {
      * @throws NullPointerException if {@code date} is null
      * @since 1.8
      */
-    @SuppressWarnings("deprecation")
     public static Date valueOf(LocalDate date) {
         return new Date(date.getYear() - 1900, date.getMonthValue() -1,
                         date.getDayOfMonth());

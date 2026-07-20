@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package javax.swing;
 
-import java.applet.Applet;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
@@ -81,13 +80,6 @@ public class PopupFactory {
             }
         });
     }
-    /**
-     * The shared instanceof <code>PopupFactory</code> is per
-     * <code>AppContext</code>. This is the key used in the
-     * <code>AppContext</code> to locate the <code>PopupFactory</code>.
-     */
-    private static final Object SharedInstanceKey =
-        new StringBuffer("PopupFactory.SharedInstanceKey");
 
     /**
      * Max number of items to store in any one particular cache.
@@ -119,6 +111,7 @@ public class PopupFactory {
      */
     public PopupFactory() {}
 
+    static PopupFactory sharedFactory;
     /**
      * Sets the <code>PopupFactory</code> that will be used to obtain
      * <code>Popup</code>s.
@@ -133,7 +126,9 @@ public class PopupFactory {
         if (factory == null) {
             throw new IllegalArgumentException("PopupFactory can not be null");
         }
-        SwingUtilities.appContextPut(SharedInstanceKey, factory);
+        synchronized (PopupFactory.class) {
+            sharedFactory = factory;
+        }
     }
 
     /**
@@ -143,14 +138,12 @@ public class PopupFactory {
      * @return Shared PopupFactory
      */
     public static PopupFactory getSharedInstance() {
-        PopupFactory factory = (PopupFactory)SwingUtilities.appContextGet(
-                         SharedInstanceKey);
-
-        if (factory == null) {
-            factory = new PopupFactory();
-            setSharedInstance(factory);
+        synchronized (PopupFactory.class) {
+            if (sharedFactory == null) {
+                sharedFactory = new PopupFactory();
+            }
+            return sharedFactory;
         }
-        return factory;
     }
 
 
@@ -274,7 +267,6 @@ public class PopupFactory {
      * Obtains the appropriate <code>Popup</code> based on
      * <code>popupType</code>.
      */
-    @SuppressWarnings("removal")
     private Popup getPopup(Component owner, Component contents,
                            int ownerX, int ownerY, int popupType) {
         if (GraphicsEnvironment.isHeadless()) {
@@ -288,10 +280,6 @@ public class PopupFactory {
             return getMediumWeightPopup(owner, contents, ownerX, ownerY);
         case HEAVY_WEIGHT_POPUP:
             Popup popup = getHeavyWeightPopup(owner, contents, ownerX, ownerY);
-            if ((OSInfo.getOSType() == OSInfo.OSType.MACOSX) && (owner != null) &&
-                (EmbeddedFrame.getAppletIfAncestorOf(owner) != null)) {
-                ((HeavyWeightPopup)popup).setCacheEnabled(false);
-            }
             return popup;
         }
         return null;
@@ -357,8 +345,6 @@ public class PopupFactory {
      * Popup implementation that uses a Window as the popup.
      */
     private static class HeavyWeightPopup extends Popup {
-        private static final Object heavyWeightPopupCacheKey =
-                 new StringBuffer("PopupFactory.heavyWeightPopupCache");
 
         private volatile boolean isCacheEnabled = true;
 
@@ -433,30 +419,23 @@ public class PopupFactory {
                 } else {
                     return null;
                 }
-                if (cache.size() > 0) {
-                    HeavyWeightPopup r = cache.get(0);
-                    cache.remove(0);
-                    return r;
+                if (!cache.isEmpty()) {
+                    return cache.removeFirst();
                 }
                 return null;
             }
         }
 
+        private static Map<Window, List<HeavyWeightPopup>> cache;
         /**
          * Returns the cache to use for heavy weight popups. Maps from
          * <code>Window</code> to a <code>List</code> of
          * <code>HeavyWeightPopup</code>s.
          */
-        @SuppressWarnings("unchecked")
         private static Map<Window, List<HeavyWeightPopup>> getHeavyWeightPopupCache() {
             synchronized (HeavyWeightPopup.class) {
-                Map<Window, List<HeavyWeightPopup>> cache = (Map<Window, List<HeavyWeightPopup>>)SwingUtilities.appContextGet(
-                                  heavyWeightPopupCacheKey);
-
                 if (cache == null) {
                     cache = new HashMap<>(2);
-                    SwingUtilities.appContextPut(heavyWeightPopupCacheKey,
-                                                 cache);
                 }
                 return cache;
             }
@@ -628,7 +607,6 @@ public class PopupFactory {
          * Returns true if popup can fit the screen and the owner's top parent.
          * It determines can popup be lightweight or mediumweight.
          */
-        @SuppressWarnings("removal")
         boolean fitsOnScreen() {
             boolean result = false;
             Component component = getComponent();
@@ -658,12 +636,6 @@ public class PopupFactory {
                         result = parentBounds
                                 .contains(x, y, popupWidth, popupHeight);
                     }
-                } else if (parent instanceof JApplet) {
-                    Rectangle parentBounds = parent.getBounds();
-                    Point p = parent.getLocationOnScreen();
-                    parentBounds.x = p.x;
-                    parentBounds.y = p.y;
-                    result = parentBounds.contains(x, y, popupWidth, popupHeight);
                 }
             }
             return result;
@@ -743,18 +715,17 @@ public class PopupFactory {
             return popup;
         }
 
+        private static List<LightWeightPopup> cache;
         /**
          * Returns the cache to use for heavy weight popups.
          */
-        @SuppressWarnings("unchecked")
         private static List<LightWeightPopup> getLightWeightPopupCache() {
-            List<LightWeightPopup> cache = (List<LightWeightPopup>)SwingUtilities.appContextGet(
-                                   lightWeightPopupCacheKey);
-            if (cache == null) {
-                cache = new ArrayList<>();
-                SwingUtilities.appContextPut(lightWeightPopupCacheKey, cache);
+            synchronized (LightWeightPopup.class) {
+                if (cache == null) {
+                    cache = new ArrayList<>();
+                }
+                return cache;
             }
-            return cache;
         }
 
         /**
@@ -776,10 +747,8 @@ public class PopupFactory {
         private static LightWeightPopup getRecycledLightWeightPopup() {
             synchronized (LightWeightPopup.class) {
                 List<LightWeightPopup> lightPopupCache = getLightWeightPopupCache();
-                if (lightPopupCache.size() > 0) {
-                    LightWeightPopup r = lightPopupCache.get(0);
-                    lightPopupCache.remove(0);
-                    return r;
+                if (!lightPopupCache.isEmpty()) {
+                    return lightPopupCache.removeFirst();
                 }
                 return null;
             }
@@ -799,7 +768,6 @@ public class PopupFactory {
             recycleLightWeightPopup(this);
         }
 
-        @SuppressWarnings("removal")
         public void show() {
             Container parent = null;
 
@@ -820,11 +788,6 @@ public class PopupFactory {
                     if (parent == null) {
                         parent = p;
                     }
-                    break;
-                } else if (p instanceof JApplet) {
-                    // Painting code stops at Applets, we don't want
-                    // to add to a Component above an Applet otherwise
-                    // you'll never see it painted.
                     break;
                 }
             }
@@ -872,8 +835,6 @@ public class PopupFactory {
      * Popup implementation that uses a Panel as the popup.
      */
     private static class MediumWeightPopup extends ContainerPopup {
-        private static final Object mediumWeightPopupCacheKey =
-                             new StringBuffer("PopupFactory.mediumPopupCache");
 
         /** Child of the panel. The contents are added to this. */
         private JRootPane rootPane;
@@ -900,19 +861,17 @@ public class PopupFactory {
             return popup;
         }
 
+        private static List<MediumWeightPopup> cache;
         /**
          * Returns the cache to use for medium weight popups.
          */
-        @SuppressWarnings("unchecked")
         private static List<MediumWeightPopup> getMediumWeightPopupCache() {
-            List<MediumWeightPopup> cache = (List<MediumWeightPopup>)SwingUtilities.appContextGet(
-                                    mediumWeightPopupCacheKey);
-
-            if (cache == null) {
-                cache = new ArrayList<>();
-                SwingUtilities.appContextPut(mediumWeightPopupCacheKey, cache);
+            synchronized (MediumWeightPopup.class) {
+                if (cache == null) {
+                    cache = new ArrayList<>();
+                }
+                return cache;
             }
-            return cache;
         }
 
         /**
@@ -934,10 +893,8 @@ public class PopupFactory {
         private static MediumWeightPopup getRecycledMediumWeightPopup() {
             synchronized (MediumWeightPopup.class) {
                 List<MediumWeightPopup> mediumPopupCache = getMediumWeightPopupCache();
-                if (mediumPopupCache.size() > 0) {
-                    MediumWeightPopup r = mediumPopupCache.get(0);
-                    mediumPopupCache.remove(0);
-                    return r;
+                if (!mediumPopupCache.isEmpty()) {
+                    return mediumPopupCache.removeFirst();
                 }
                 return null;
             }
@@ -954,7 +911,6 @@ public class PopupFactory {
             recycleMediumWeightPopup(this);
         }
 
-        @SuppressWarnings("removal")
         public void show() {
             Component component = getComponent();
             Container parent = null;
@@ -967,8 +923,8 @@ public class PopupFactory {
               if it has a layered pane,
               add to that, otherwise
               add to the window. */
-            while (!(parent instanceof Window || parent instanceof Applet) &&
-                   (parent!=null)) {
+            while (!(parent instanceof Window) &&
+                   (parent != null)) {
                 parent = parent.getParent();
             }
 

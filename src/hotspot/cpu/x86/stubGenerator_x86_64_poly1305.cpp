@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Intel Corporation. All rights reserved.
+ * Copyright (c) 2022, 2025, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
 
@@ -910,21 +909,28 @@ void StubGenerator::poly1305_process_blocks_avx512(
 // After execution, input and length will point at remaining (unprocessed) data
 // and accumulator will point to the current accumulator value
 address StubGenerator::generate_poly1305_processBlocks() {
+  StubId stub_id = StubId::stubgen_poly1305_processBlocks_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
-  address start = __ pc();
+  StubCodeMark mark(this, stub_id);
+  start = __ pc();
   __ enter();
 
   // Save all 'SOE' registers
-  __ push(rbx);
+  __ push_ppx(rbx);
   #ifdef _WIN64
-  __ push(rsi);
-  __ push(rdi);
+  __ push_ppx(rsi);
+  __ push_ppx(rdi);
   #endif
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
-  __ push(r15);
+  __ push_ppx(r12);
+  __ push_ppx(r13);
+  __ push_ppx(r14);
+  __ push_ppx(r15);
 
   // Register Map
   const Register input        = rdi; // msg
@@ -1016,18 +1022,22 @@ address StubGenerator::generate_poly1305_processBlocks() {
   // Write output
   poly1305_limbs_out(a0, a1, a2, accumulator, t0, t1);
 
-  __ pop(r15);
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
+  __ pop_ppx(r15);
+  __ pop_ppx(r14);
+  __ pop_ppx(r13);
+  __ pop_ppx(r12);
   #ifdef _WIN64
-  __ pop(rdi);
-  __ pop(rsi);
+  __ pop_ppx(rdi);
+  __ pop_ppx(rsi);
   #endif
-  __ pop(rbx);
+  __ pop_ppx(rbx);
 
   __ leave();
   __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -1169,7 +1179,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
 
   // Setup stack frame
   // Save rbp and rsp
-  __ push(rbp);
+  __ push_ppx(rbp);
   __ movq(rbp, rsp);
   // Align stack and reserve space
   __ andq(rsp, -32);
@@ -1483,7 +1493,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
 
   // Save rbp and rsp; clear stack frame
     __ movq(rsp, rbp);
-    __ pop(rbp);
+    __ pop_ppx(rbp);
 
 }
 
@@ -1695,3 +1705,14 @@ void StubGenerator::poly1305_msg_mul_reduce_vec4_avx2(
   __ vpaddq(A1, A1, YTMP2, Assembler::AVX_256bit); //Add medium 42-bit bits from new blocks to accumulator
   __ vpaddq(A1, A1, YTMP5, Assembler::AVX_256bit);
 }
+#undef __
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_poly1305(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr));
+  ADD(POLY1305_PAD_MSG);
+  ADD(POLY1305_MASK42);
+  ADD(POLY1305_MASK44);
+#undef ADD
+}
+#endif // INCLUDE_CDS

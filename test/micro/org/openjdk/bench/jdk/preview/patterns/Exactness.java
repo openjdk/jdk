@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @Measurement(iterations=5, time=1)
 @Threads(2)
 @Fork(value = 1,
-      jvmArgsPrepend = {"-Djmh.blackhole.mode=COMPILER",
+      jvmArgs = {"-Djmh.blackhole.mode=COMPILER",
                         "--enable-preview"})
 @State(Scope.Thread)
 @SuppressWarnings("preview")

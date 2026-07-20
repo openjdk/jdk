@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <windows.h>
 
+#include "CfgFile.h"
 #include "AppLauncher.h"
 #include "JvmLauncher.h"
 #include "Log.h"
@@ -226,6 +227,45 @@ private:
 };
 
 
+bool needRestartLauncher(AppLauncher& appLauncher, CfgFile& cfgFile) {
+    if (appLauncher.libEnvVariableContainsAppDir()) {
+        return false;
+    }
+
+    std::unique_ptr<CfgFile>(appLauncher.createCfgFile())->swap(cfgFile);
+
+    const CfgFile::Properties& appOptions = cfgFile.getProperties(
+            SectionName::Application);
+
+    const CfgFile::Properties::const_iterator winNorestart = appOptions.find(
+                PropertyName::winNorestart);
+
+    bool result;
+    if (winNorestart != appOptions.end()) {
+        const bool norestart = CfgFile::asBoolean(*winNorestart);
+        LOG_TRACE(tstrings::any() << PropertyName::winNorestart.name() << "="
+                << (norestart ? "true" : "false") << " from config file");
+        result = !norestart;
+    } else {
+        result = true;
+    }
+
+    appLauncher.setCfgFile(&cfgFile);
+
+    return result;
+}
+
+
+void enableConsoleCtrlHandler(bool enable) {
+    if (!SetConsoleCtrlHandler(NULL, enable ? FALSE : TRUE)) {
+        JP_THROW(SysError(tstrings::any() << "SetConsoleCtrlHandler(NULL, "
+                                            << (enable ? "FALSE" : "TRUE")
+                                            << ") failed",
+                                                    SetConsoleCtrlHandler));
+    }
+}
+
+
 void launchApp() {
     // [RT-31061] otherwise UI can be left in back of other windows.
     ::AllowSetForegroundWindow(ASFW_ANY);
@@ -248,7 +288,8 @@ void launchApp() {
         addCfgFileLookupDirForEnvVariable(pkgFile, appLauncher, _T("APPDATA"));
     }
 
-    const bool restart = !appLauncher.libEnvVariableContainsAppDir();
+    CfgFile dummyCfgFile;
+    const bool restart = needRestartLauncher(appLauncher, dummyCfgFile);
 
     std::unique_ptr<Jvm> jvm(appLauncher.createJvmLauncher());
 
@@ -277,6 +318,19 @@ void launchApp() {
         const auto args = SysInfo::getCommandArgs();
         std::for_each(args.begin(), args.end(), [&exec] (const tstring& arg) {
             exec.arg(arg);
+        });
+
+        exec.afterProcessCreated([&](HANDLE pid) {
+            //
+            // Ignore Ctrl+C in the current process.
+            // This will prevent child process termination without allowing
+            // it to handle Ctrl+C events.
+            //
+            // Disable the default Ctrl+C handler *after* the child process
+            // has been created as it is inheritable and we want the child
+            // process to have the default handler.
+            //
+            enableConsoleCtrlHandler(false);
         });
 
         DWORD exitCode = RunExecutorWithMsgLoop::apply(exec);
@@ -308,13 +362,13 @@ void launchApp() {
 
 #ifndef JP_LAUNCHERW
 
-int __cdecl  wmain() {
+int wmain() {
     return app::launch(std::nothrow, launchApp);
 }
 
 #else
 
-int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
+int wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
     return app::wlaunch(std::nothrow, launchApp);
 }
 

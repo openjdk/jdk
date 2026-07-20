@@ -11,6 +11,11 @@ extern "C" {
 
 #include <spa/param/audio/raw.h>
 
+/**
+ * \addtogroup spa_param
+ * \{
+ */
+
 enum spa_audio_wma_profile {
     SPA_AUDIO_WMA_PROFILE_UNKNOWN,
 

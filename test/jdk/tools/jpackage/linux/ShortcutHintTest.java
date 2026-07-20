@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import jdk.jpackage.test.AdditionalLauncher;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.FileAssociations;
-import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.LinuxHelper;
-import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.RunnablePackageTest.Action;
+import jdk.jpackage.test.TKit;
 
 /**
  * Test --linux-shortcut parameter. Output of the test should be
@@ -53,13 +55,12 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary jpackage with --linux-shortcut
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
  * @requires (os.family == "linux")
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile ShortcutHintTest.java
+ * @compile -Xlint:all -Werror ShortcutHintTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ShortcutHintTest
  */
@@ -67,13 +68,12 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary jpackage with --linux-shortcut
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (os.family == "linux")
  * @requires jpackage.test.SQETest != null
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile ShortcutHintTest.java
+ * @compile -Xlint:all -Werror ShortcutHintTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ShortcutHintTest.testBasic
  */
@@ -166,7 +166,7 @@ public class ShortcutHintTest {
                             "Exec=APPLICATION_LAUNCHER",
                             "Terminal=false",
                             "Type=Application",
-                            "Comment=",
+                            "Comment=APPLICATION_DESCRIPTION",
                             "Icon=APPLICATION_ICON",
                             "Categories=DEPLOY_BUNDLE_CATEGORY",
                             expectedVersionString
@@ -178,7 +178,21 @@ public class ShortcutHintTest {
             TKit.assertTextStream(expectedVersionString)
                     .label(String.format("[%s] file", desktopFile))
                     .predicate(String::equals)
-                    .apply(Files.readAllLines(desktopFile).stream());
+                    .apply(Files.readAllLines(desktopFile));
         }).run();
+    }
+
+    /**
+     * Test "--linux-menu-group" option.
+     *
+     * @param menuGroup value of "--linux-menu-group" option
+     */
+    @Test
+    // Values from https://specifications.freedesktop.org/menu/latest/category-registry.html#main-category-registry
+    @Parameter("Development")
+    public static void testMenuGroup(String menuGroup) {
+        createTest().addInitializer(JPackageCommand::setFakeRuntime).addInitializer(cmd -> {
+            cmd.addArgument("--linux-shortcut").setArgumentValue("--linux-menu-group", menuGroup);
+        }).run(Action.CREATE_AND_UNPACK);
     }
 }

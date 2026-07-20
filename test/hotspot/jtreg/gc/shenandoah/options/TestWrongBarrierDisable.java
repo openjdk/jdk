@@ -40,9 +40,11 @@ public class TestWrongBarrierDisable {
         String[] concurrent = {
                 "ShenandoahLoadRefBarrier",
                 "ShenandoahSATBBarrier",
-                "ShenandoahCASBarrier",
-                "ShenandoahCloneBarrier",
-                "ShenandoahStackWatermarkBarrier",
+                "ShenandoahCloneBarrier"
+        };
+
+        String[] generational = {
+                "ShenandoahCardBarrier"
         };
 
         shouldFailAll("-XX:ShenandoahGCHeuristics=adaptive",   concurrent);
@@ -50,6 +52,9 @@ public class TestWrongBarrierDisable {
         shouldFailAll("-XX:ShenandoahGCHeuristics=compact",    concurrent);
         shouldFailAll("-XX:ShenandoahGCHeuristics=aggressive", concurrent);
         shouldPassAll("-XX:ShenandoahGCMode=passive",          concurrent);
+        shouldPassAll("-XX:ShenandoahGCMode=passive",          generational);
+        shouldPassAll("-XX:ShenandoahGCMode=satb",             generational);
+        shouldFailAll("-XX:ShenandoahGCMode=generational",     generational);
     }
 
     private static void shouldFailAll(String h, String[] barriers) throws Exception {

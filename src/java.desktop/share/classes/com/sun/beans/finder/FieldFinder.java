@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ package com.sun.beans.finder;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-
-import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
 
 /**
  * This utility class provides {@code static} methods
@@ -62,7 +60,7 @@ public final class FieldFinder {
             throw new NoSuchFieldException("Field '" + name + "' is not public");
         }
         type = field.getDeclaringClass();
-        if (!Modifier.isPublic(type.getModifiers()) || !isPackageAccessible(type)) {
+        if (!Modifier.isPublic(type.getModifiers())) {
             throw new NoSuchFieldException("Field '" + name + "' is not accessible");
         }
         return field;

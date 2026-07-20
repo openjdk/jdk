@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ import java.awt.Toolkit;
 
 import java.awt.event.KeyEvent;
 
-import java.security.AccessController;
-
 import javax.swing.plaf.ComponentUI;
 import javax.swing.border.Border;
 
@@ -55,13 +53,12 @@ import java.util.Locale;
 
 import sun.awt.SunToolkit;
 import sun.awt.OSInfo;
-import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2;
 import java.util.HashMap;
 import java.util.Objects;
-import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
 
+import sun.swing.SwingAccessor;
 
 /**
  * {@code UIManager} manages the current look and feel, the set of
@@ -161,6 +158,42 @@ import sun.awt.AWTAccessor;
  * expects certain defaults, so that in general
  * a {@code ComponentUI} provided by one look and feel will not
  * work with another look and feel.
+ *
+ * <h2>System Look and Feels</h2>
+ *
+ * [The terms "System", "Native" and "Platform" may be used interchangeably in this context].
+ * <p>
+ * A System Look And Feel is intended to implement the native Look and Feel of the desktop.
+ * <p>
+ * There is no requirement for the standard Java Look And Feel to be the default,
+ * therefore the System Look and Feel may be the default.
+ * <p>
+ * A desktop may not have a consistent Look and Feel, for example if there are
+ * multiple platform-native toolkits provided to create applications for the desktop.
+ * Swing may elect any one of these to be its native Look and Feel.
+ * <p>
+ * Installation of the native Look and Feel may depend on platform resources being available.
+ * In the event that required resources are not available, Swing may be unable to install
+ * the System Look and Feel.
+ * <p>
+ * Swing's emulation of the native Look and Feel takes precedence over any component-specific
+ * indication of rendering.
+ * This means that a native Look and Feel should render in a way that is consistent with the platform,
+ * even if it contradicts component setting-specific documentation.
+ * Examples include
+ * <ul>
+ * <li>specified rendering of painted borders may be ignored
+ * <li>specified rendering of highlighting effects may be ignored
+ * <li>specified rendering of painted backgrounds and foregrounds may be ignored
+ * <li>specified rendering of selected vs unselected components may be ignored
+ * <li>specified rendering of enabled vs disabled components may be ignored
+ * </ul>
+ * These are just examples. Not an exhaustive list.
+ * <p>
+ * These caveats must not be construed as an excuse to arbitrarily ignore these properties.
+ * They are intended to support the requirement that the platform Look and Feel be as
+ * consistent with the native rendering as is practical.
+ *
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with
@@ -181,12 +214,7 @@ public class UIManager implements Serializable
     /**
      * This class defines the state managed by the <code>UIManager</code>.  For
      * Swing applications the fields in this class could just as well
-     * be static members of <code>UIManager</code> however we give them
-     * "AppContext"
-     * scope instead so that applets (and potentially multiple lightweight
-     * applications running in a single VM) have their own state. For example,
-     * an applet can alter its look and feel, see <code>setLookAndFeel</code>.
-     * Doing so has no affect on other applets (or the browser).
+     * be static members of <code>UIManager</code>.
      */
     private static class LAFState
     {
@@ -210,8 +238,8 @@ public class UIManager implements Serializable
         void setSystemDefaults(UIDefaults x) { tables[1] = x; }
 
         /**
-         * Returns the SwingPropertyChangeSupport for the current
-         * AppContext.  If <code>create</code> is a true, a non-null
+         * Returns the SwingPropertyChangeSupport instance.
+         * If <code>create</code> is a true, a non-null
          * <code>SwingPropertyChangeSupport</code> will be returned, if
          * <code>create</code> is false and this has not been invoked
          * with true, null will be returned.
@@ -238,8 +266,9 @@ public class UIManager implements Serializable
      */
     public UIManager() {}
 
+    private static final LAFState LAF_STATE = new LAFState();
     /**
-     * Return the <code>LAFState</code> object, lazily create one if necessary.
+     * Return the <code>LAFState</code> object.
      * All access to the <code>LAFState</code> fields is done via this method,
      * for example:
      * <pre>
@@ -247,22 +276,18 @@ public class UIManager implements Serializable
      * </pre>
      */
     private static LAFState getLAFState() {
-        LAFState rv = (LAFState)SwingUtilities.appContextGet(
-                SwingUtilities2.LAF_STATE_KEY);
-        if (rv == null) {
-            synchronized (classLock) {
-                rv = (LAFState)SwingUtilities.appContextGet(
-                        SwingUtilities2.LAF_STATE_KEY);
-                if (rv == null) {
-                    SwingUtilities.appContextPut(
-                            SwingUtilities2.LAF_STATE_KEY,
-                            (rv = new LAFState()));
-                }
-            }
+        synchronized (classLock) {
+            return LAF_STATE;
         }
-        return rv;
     }
 
+    static {
+        SwingAccessor.setLAFStateAccessor(UIManager::isLafStateInitialized);
+    }
+
+    private static boolean isLafStateInitialized() {
+        return LAF_STATE.initialized;
+    }
 
     /* Keys used in the <code>swing.properties</code> properties file.
      * See loadUserProperties(), initialize().
@@ -292,8 +317,6 @@ public class UIManager implements Serializable
      */
     private static String makeSwingPropertiesFilename() {
         String sep = File.separator;
-        // No need to wrap this in a doPrivileged as it's called from
-        // a doPrivileged.
         String javaHome = System.getProperty("java.home");
         if (javaHome == null) {
             javaHome = "<java.home undefined>";
@@ -446,9 +469,7 @@ public class UIManager implements Serializable
      * @see #getInstalledLookAndFeels
      * @throws NullPointerException if {@code infos} is {@code null}
      */
-    public static void setInstalledLookAndFeels(LookAndFeelInfo[] infos)
-        throws SecurityException
-    {
+    public static void setInstalledLookAndFeels(LookAndFeelInfo[] infos) {
         maybeInitialize();
         LookAndFeelInfo[] newInfos = new LookAndFeelInfo[infos.length];
         System.arraycopy(infos, 0, newInfos, 0, infos.length);
@@ -652,9 +673,7 @@ public class UIManager implements Serializable
      * @see #getCrossPlatformLookAndFeelClassName
      */
     public static String getSystemLookAndFeelClassName() {
-        @SuppressWarnings("removal")
-        String systemLAF = AccessController.doPrivileged(
-                             new GetPropertyAction("swing.systemlaf"));
+        String systemLAF = System.getProperty("swing.systemlaf");
         if (systemLAF != null) {
             return systemLAF;
         }
@@ -693,9 +712,7 @@ public class UIManager implements Serializable
      * @see #getSystemLookAndFeelClassName
      */
     public static String getCrossPlatformLookAndFeelClassName() {
-        @SuppressWarnings("removal")
-        String laf = AccessController.doPrivileged(
-                             new GetPropertyAction("swing.crossplatformlaf"));
+        String laf = System.getProperty("swing.crossplatformlaf");
         if (laf != null) {
             return laf;
         }
@@ -1272,7 +1289,6 @@ public class UIManager implements Serializable
         }
     }
 
-    @SuppressWarnings("removal")
     private static Properties loadSwingProperties()
     {
         /* Don't bother checking for Swing properties if untrusted, as
@@ -1284,46 +1300,38 @@ public class UIManager implements Serializable
         else {
             final Properties props = new Properties();
 
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Object>() {
-                public Object run() {
-                    if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
-                        props.put(defaultLAFKey, getSystemLookAndFeelClassName());
-                    }
+            if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
+                props.put(defaultLAFKey, getSystemLookAndFeelClassName());
+            }
 
-                    try {
-                        File file = new File(makeSwingPropertiesFilename());
+            try {
+                File file = new File(makeSwingPropertiesFilename());
 
-                        if (file.exists()) {
-                            // InputStream has been buffered in Properties
-                            // class
-                            try (FileInputStream ins = new FileInputStream(file)) {
-                                props.load(ins);
-                            }
-                        }
+                if (file.exists()) {
+                    // InputStream has been buffered in Properties
+                    // class
+                    try (FileInputStream ins = new FileInputStream(file)) {
+                        props.load(ins);
                     }
-                    catch (Exception e) {
-                        // No such file, or file is otherwise non-readable.
-                    }
-
-                    // Check whether any properties were overridden at the
-                    // command line.
-                    checkProperty(props, defaultLAFKey);
-                    checkProperty(props, auxiliaryLAFsKey);
-                    checkProperty(props, multiplexingLAFKey);
-                    checkProperty(props, installedLAFsKey);
-                    checkProperty(props, disableMnemonicKey);
-                    // Don't care about return value.
-                    return null;
                 }
-            });
+            }
+            catch (Exception e) {
+                // No such file, or file is otherwise non-readable.
+            }
+
+            // Check whether any properties were overridden at the
+            // command line.
+            checkProperty(props, defaultLAFKey);
+            checkProperty(props, auxiliaryLAFsKey);
+            checkProperty(props, multiplexingLAFKey);
+            checkProperty(props, installedLAFsKey);
+            checkProperty(props, disableMnemonicKey);
+
             return props;
         }
     }
 
     private static void checkProperty(Properties props, String key) {
-        // No need to do catch the SecurityException here, this runs
-        // in a doPrivileged.
         String value = System.getProperty(key);
         if (value != null) {
             props.put(key, value);
@@ -1390,31 +1398,13 @@ public class UIManager implements Serializable
             return;
         }
 
-        // Try to get default LAF from system property, then from AppContext
-        // (6653395), then use cross-platform one by default.
-        String lafName = null;
-        @SuppressWarnings("unchecked")
-        HashMap<Object, String> lafData =
-                (HashMap) AppContext.getAppContext().remove("swing.lafdata");
-        if (lafData != null) {
-            lafName = lafData.remove("defaultlaf");
-        }
-        if (lafName == null) {
-            lafName = getCrossPlatformLookAndFeelClassName();
-        }
+        String lafName = getCrossPlatformLookAndFeelClassName();
         lafName = swingProps.getProperty(defaultLAFKey, lafName);
 
         try {
             setLookAndFeel(lafName);
         } catch (Exception e) {
             throw new Error("Cannot load " + lafName);
-        }
-
-        // Set any properties passed through AppContext (6653395).
-        if (lafData != null) {
-            for (Object key: lafData.keySet()) {
-                UIManager.put(key, lafData.get(key));
-            }
         }
     }
 
@@ -1475,8 +1465,8 @@ public class UIManager implements Serializable
 
     /*
      * This method is called before any code that depends on the
-     * <code>AppContext</code> specific LAFState object runs.  When the AppContext
-     * corresponds to a set of applets it's possible for this method
+     * LAFState object runs.
+     * In some cases, it's possible for this method
      * to be re-entered, which is why we grab a lock before calling
      * initialize().
      */

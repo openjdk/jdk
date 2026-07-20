@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/g1/g1MonotonicArena.inline.hpp"
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
@@ -160,7 +159,7 @@ G1MonotonicArenaFreePool::~G1MonotonicArenaFreePool() {
   for (uint i = 0; i < _num_free_lists; i++) {
     _free_lists[i].~SegmentFreeList();
   }
-  FREE_C_HEAP_ARRAY(mtGC, _free_lists);
+  FREE_C_HEAP_ARRAY(_free_lists);
 }
 
 G1MonotonicArenaMemoryStats G1MonotonicArenaFreePool::memory_sizes() const {

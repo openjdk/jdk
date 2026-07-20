@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,59 @@
  * tools. The rest of the files will be linked in.
  */
 
-#include "defines.h"
+#include "java.h"
 #include "jli_util.h"
 #include "jni.h"
+
+// Unused, but retained for JLI_Launch compatibility
+#define DOT_VERSION "0.0"
+
+// This is reported when requesting a full version
+static char* launcher = LAUNCHER_NAME;
+
+// This is used as the name of the executable in the help message
+static char* progname = PROGNAME;
+
+#ifdef JAVA_ARGS
+static const char* jargs[] = JAVA_ARGS;
+#else
+static const char** jargs = NULL;
+#endif
+static int jargc;
+
+static jboolean cpwildcard = CLASSPATH_WILDCARDS;
+static jboolean disable_argfile = DISABLE_ARGFILE;
+
+#ifdef STATIC_BUILD
+static void check_relauncher_argument(char* arg) {
+    if (strcmp(arg, "-J-DjavaLauncherWildcards=false") == 0) {
+        cpwildcard = JNI_FALSE;
+    }
+    const char *progname_prefix = "-J-DjavaLauncherProgname=";
+    size_t progname_prefix_len = strlen(progname_prefix);
+    if (strncmp(arg, progname_prefix, progname_prefix_len) == 0) {
+        progname = arg + progname_prefix_len;
+    }
+    const char *args_prefix = "-J-DjavaLauncherArgs=";
+    size_t args_prefix_len = strlen(args_prefix);
+    if (strncmp(arg, args_prefix, args_prefix_len) == 0) {
+        char* java_args_ptr = arg + args_prefix_len;
+        size_t java_args_len = strlen(arg) - args_prefix_len;
+
+        JLI_List java_args = JLI_List_new(java_args_len);
+        char* next_space;
+        while ((next_space = strchr(java_args_ptr, ' ')) != NULL) {
+            size_t next_arg_len = next_space - java_args_ptr;
+            JLI_List_addSubstring(java_args, java_args_ptr, next_arg_len);
+            java_args_ptr = next_space + 1;
+        }
+        JLI_List_add(java_args, java_args_ptr);
+
+        jargc = (int) java_args->size;
+        jargs = (const char**) java_args->elements;
+    }
+}
+#endif
 
 /*
  * Entry point.
@@ -44,11 +94,7 @@ char **__initenv;
 int WINAPI
 WinMain(HINSTANCE inst, HINSTANCE previnst, LPSTR cmdline, int cmdshow)
 {
-    int margc;
-    char** margv;
-    int jargc;
-    char** jargv;
-    const jboolean const_javaw = JNI_TRUE;
+    const jboolean javaw = JNI_TRUE;
 
     __initenv = _environ;
 
@@ -56,49 +102,25 @@ WinMain(HINSTANCE inst, HINSTANCE previnst, LPSTR cmdline, int cmdshow)
 JNIEXPORT int
 main(int argc, char **argv)
 {
+    const jboolean javaw = JNI_FALSE;
+#endif /* JAVAW */
+
     int margc;
     char** margv;
-    int jargc;
-    char** jargv;
-    const jboolean const_javaw = JNI_FALSE;
-#endif /* JAVAW */
-    {
-        int i, main_jargc, extra_jargc;
-        JLI_List list;
 
-        main_jargc = (sizeof(const_jargs) / sizeof(char *)) > 1
-            ? sizeof(const_jargs) / sizeof(char *)
-            : 0; // ignore the null terminator index
+    jargc = (sizeof(jargs) / sizeof(char *)) > 1
+        ? sizeof(jargs) / sizeof(char *)
+        : 0; // ignore the null terminator index
 
-        extra_jargc = (sizeof(const_extra_jargs) / sizeof(char *)) > 1
-            ? sizeof(const_extra_jargs) / sizeof(char *)
-            : 0; // ignore the null terminator index
+#ifdef STATIC_BUILD
+        // Relaunchers always give -J-DjavaLauncherArgFiles as the first argument, if present
+        // We must check disable_argfile before calling JLI_InitArgProcessing.
+        if (argc > 1 && strcmp(argv[1], "-J-DjavaLauncherArgFiles=false") == 0) {
+            disable_argfile = JNI_TRUE;
+        }
+#endif
 
-        if (main_jargc > 0 && extra_jargc > 0) { // combine extra java args
-            jargc = main_jargc + extra_jargc;
-            list = JLI_List_new(jargc + 1);
-
-            for (i = 0 ; i < extra_jargc; i++) {
-                JLI_List_add(list, JLI_StringDup(const_extra_jargs[i]));
-            }
-
-            for (i = 0 ; i < main_jargc ; i++) {
-                JLI_List_add(list, JLI_StringDup(const_jargs[i]));
-            }
-
-            // terminate the list
-            JLI_List_add(list, NULL);
-            jargv = list->elements;
-         } else if (extra_jargc > 0) { // should never happen
-            fprintf(stderr, "EXTRA_JAVA_ARGS defined without JAVA_ARGS");
-            abort();
-         } else { // no extra args, business as usual
-            jargc = main_jargc;
-            jargv = (char **) const_jargs;
-         }
-    }
-
-    JLI_InitArgProcessing(jargc > 0, const_disable_argfile);
+    JLI_InitArgProcessing(jargc > 0, disable_argfile);
 
 #ifdef _WIN32
     {
@@ -137,6 +159,9 @@ main(int argc, char **argv)
         StdArg *stdargs = JLI_GetStdArgs();
         for (i = 0 ; i < margc ; i++) {
             margv[i] = stdargs[i].arg;
+#ifdef STATIC_BUILD
+            check_relauncher_argument(margv[i]);
+#endif
         }
         margv[i] = NULL;
     }
@@ -161,6 +186,9 @@ main(int argc, char **argv)
         }
         // Iterate the rest of command line
         for (i = 1; i < argc; i++) {
+#ifdef STATIC_BUILD
+            check_relauncher_argument(argv[i]);
+#endif
             JLI_List argsInFile = JLI_PreprocessArg(argv[i], JNI_TRUE);
             if (NULL == argsInFile) {
                 JLI_List_add(args, JLI_StringDup(argv[i]));
@@ -182,12 +210,12 @@ main(int argc, char **argv)
     }
 #endif /* WIN32 */
     return JLI_Launch(margc, margv,
-                   jargc, (const char**) jargv,
+                   jargc, jargs,
                    0, NULL,
                    VERSION_STRING,
                    DOT_VERSION,
-                   (const_progname != NULL) ? const_progname : *margv,
-                   (const_launcher != NULL) ? const_launcher : *margv,
+                   progname,
+                   launcher,
                    jargc > 0,
-                   const_cpwildcard, const_javaw, 0);
+                   cpwildcard, javaw, 0);
 }

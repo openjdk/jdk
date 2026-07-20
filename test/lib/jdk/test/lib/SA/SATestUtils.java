@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,21 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class SATestUtils {
     /**
@@ -203,23 +208,16 @@ public class SATestUtils {
      * if we are root, so return true.  Then return false for an expected denial
      * if "ptrace_scope" is 1, and true otherwise.
      */
-    @SuppressWarnings("removal")
     private static boolean canPtraceAttachLinux() throws IOException {
         // SELinux deny_ptrace:
         var deny_ptrace = Paths.get("/sys/fs/selinux/booleans/deny_ptrace");
         if (Files.exists(deny_ptrace)) {
-            try {
-                var bb = AccessController.doPrivileged(
-                    (PrivilegedExceptionAction<byte[]>) () -> Files.readAllBytes(deny_ptrace));
-                if (bb.length == 0) {
-                    throw new Error("deny_ptrace is empty");
-                }
-                if (bb[0] != '0') {
-                    return false;
-                }
-            } catch (PrivilegedActionException e) {
-                IOException t = (IOException) e.getException();
-                throw t;
+            var bb = Files.readAllBytes(deny_ptrace);
+            if (bb.length == 0) {
+                throw new Error("deny_ptrace is empty");
+            }
+            if (bb[0] != '0') {
+                return false;
             }
         }
 
@@ -230,23 +228,17 @@ public class SATestUtils {
         // 3 - no attach: no processes may use ptrace with PTRACE_ATTACH
         var ptrace_scope = Paths.get("/proc/sys/kernel/yama/ptrace_scope");
         if (Files.exists(ptrace_scope)) {
-            try {
-                var bb = AccessController.doPrivileged(
-                    (PrivilegedExceptionAction<byte[]>) () -> Files.readAllBytes(ptrace_scope));
-                if (bb.length == 0) {
-                    throw new Error("ptrace_scope is empty");
-                }
-                byte yama_scope = bb[0];
-                if (yama_scope == '3') {
-                    return false;
-                }
+            var bb = Files.readAllBytes(ptrace_scope);
+            if (bb.length == 0) {
+                throw new Error("ptrace_scope is empty");
+            }
+            byte yama_scope = bb[0];
+            if (yama_scope == '3') {
+                return false;
+            }
 
-                if (!Platform.isRoot() && yama_scope != '0') {
-                    return false;
-                }
-            } catch (PrivilegedActionException e) {
-                IOException t = (IOException) e.getException();
-                throw t;
+            if (!Platform.isRoot() && yama_scope != '0') {
+                return false;
             }
         }
         // Otherwise expect to be permitted:
@@ -273,6 +265,114 @@ public class SATestUtils {
     public static void validateSADebugDPrivileges() {
         if (Platform.isOSX() && !Platform.isRoot()) {
             throw new SkippedException("Cannot run this test on OSX if adding privileges is required.");
+        }
+    }
+
+    /**
+     * Find library file that provides strlen(3), then returns it as libc.
+     * This method works on Linux only.
+     * @return path to libc
+     */
+    @SuppressWarnings("restricted")
+    public static String getLibCPath() {
+        var linker = Linker.nativeLinker();
+        var ptrStrlen = linker.defaultLookup()
+                              .findOrThrow("strlen");
+        var strlen = linker.downcallHandle(
+            ptrStrlen,
+            FunctionDescriptor.of(linker.canonicalLayouts().get("size_t"), ValueLayout.ADDRESS)
+        );
+        var dladdr = linker.downcallHandle(
+            linker.defaultLookup().findOrThrow("dladdr"),
+            FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+        );
+
+        var structDLInfo = MemoryLayout.structLayout(
+            ValueLayout.ADDRESS.withName("dli_fname"),
+            ValueLayout.ADDRESS.withName("dli_fbase"),
+            ValueLayout.ADDRESS.withName("dli_sname"),
+            ValueLayout.ADDRESS.withName("dli_saddr")
+        ).withName("Dl_info");
+        var hndDliFname = structDLInfo.varHandle(MemoryLayout.PathElement.groupElement("dli_fname"));
+
+        try(var arena = Arena.ofConfined()){
+            var info = arena.allocate(structDLInfo);
+            int result = (int)dladdr.invoke(ptrStrlen, info);
+            if (result == 0) {
+                throw new RuntimeException("dladdr() returns zero");
+            }
+
+            var ptrDliFname = (MemorySegment)hndDliFname.get(info, 0);
+            var libcPathLen = (long)strlen.invoke(ptrDliFname);
+            return ptrDliFname.reinterpret(libcPathLen + 1) // +1 for NUL
+                              .getString(0);
+        } catch (Throwable t) {
+            throw new RuntimeException("getLibCPath() failed due to Throwable.", t);
+        }
+    }
+
+    /**
+     * Find debuginfo file for the library.
+     * This method will work on Linux only.
+     * "readelf" has to be available.
+     * @return null if debuginfo is not available.
+     */
+    public static String getDebugInfo(String lib) {
+        try {
+            // Attempt to find debuginfo in /usr/lib/debug
+            Path debuginfoPath = Path.of("/usr/lib/debug", lib + ".debug");
+            boolean exists = Files.exists(debuginfoPath);
+            if (!exists) {
+                // Attempt to find debuginfo with build ID
+                var proc = (new ProcessBuilder("readelf", "-n", lib)).start();
+                try (var reader = proc.inputReader()) {
+                    var buildID =  reader.lines()
+                                         .filter(l -> l.contains("Build ID:"))
+                                         .findAny()
+                                         .map(l -> l.replace("Build ID:", "").trim())
+                                         .get();
+                    String dir = buildID.substring(0, 2);
+                    String file = buildID.substring(2);
+                    debuginfoPath = Path.of("/usr/lib/debug/.build-id", dir, file + ".debug");
+                    exists = Files.exists(debuginfoPath);
+                } catch (NoSuchElementException _) {
+                    // return null if vDSO not found.
+                    return null;
+                }
+            }
+            return exists ? debuginfoPath.toString() : null;
+        } catch (IOException e) {
+            throw new RuntimeException("getDebugInfo() failed due to IOException.", e);
+        }
+    }
+
+    private static boolean isSymbolAvailableInternal(String lib, String symbol) throws IOException {
+        var proc = (new ProcessBuilder("nm", lib)).start();
+        try (var reader = proc.inputReader()) {
+            return reader.lines()
+                         .anyMatch(l -> l.endsWith(" " + symbol));
+        }
+    }
+
+    /**
+     * This method will work on Linux only.
+     * Both "readelf" and "nm" have to be available.
+     * @return true if given symbol is available in given lib.
+     */
+    public static boolean isSymbolAvailable(String lib, String symbol) {
+        try {
+            // Attempt to find symbol from lib
+            boolean result = isSymbolAvailableInternal(lib, symbol);
+            if (!result) {
+                // Attempt to find symbol from debuginfo
+                String debuginfoPath = getDebugInfo(lib);
+                if (debuginfoPath != null) {
+                    result = isSymbolAvailableInternal(debuginfoPath, symbol);
+                }
+            }
+            return result;
+        } catch (IOException e) {
+            throw new RuntimeException("isSymbolAvailable() failed due to IOException.", e);
         }
     }
 }

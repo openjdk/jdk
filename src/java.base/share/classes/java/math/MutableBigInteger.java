@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,44 +597,52 @@ class MutableBigInteger {
          */
         if (intLen == 0)
            return;
+
         int nInts = n >>> 5;
-        int nBits = n&0x1F;
-        int bitsInHighWord = BigInteger.bitLengthForInt(value[offset]);
+        int nBits = n & 0x1F;
+        int leadingZeros = Integer.numberOfLeadingZeros(value[offset]);
 
         // If shift can be done without moving words, do so
-        if (n <= (32-bitsInHighWord)) {
+        if (n <= leadingZeros) {
             primitiveLeftShift(nBits);
             return;
         }
 
-        int newLen = intLen + nInts +1;
-        if (nBits <= (32-bitsInHighWord))
-            newLen--;
-        if (value.length < newLen) {
-            // The array must grow
-            int[] result = new int[newLen];
-            for (int i=0; i < intLen; i++)
-                result[i] = value[offset+i];
-            setValue(result, newLen);
-        } else if (value.length - offset >= newLen) {
-            // Use space on right
-            for(int i=0; i < newLen - intLen; i++)
-                value[offset+intLen+i] = 0;
+        int newLen = intLen + nInts;
+        if (nBits > leadingZeros)
+            newLen++;
+
+        int[] result;
+        final int newOffset;
+        if (value.length < newLen) { // The array must grow
+            result = new int[newLen];
+            newOffset = 0;
         } else {
-            // Must use space on left
-            for (int i=0; i < intLen; i++)
-                value[i] = value[offset+i];
-            for (int i=intLen; i < newLen; i++)
-                value[i] = 0;
-            offset = 0;
+            result = value;
+            newOffset = value.length - offset >= newLen ? offset : 0;
         }
+
+        int trailingZerosPos = newOffset + intLen;
+        if (nBits != 0) {
+            // Do primitive shift directly for speed
+            if (nBits <= leadingZeros) {
+                primitiveLeftShift(nBits, result, newOffset); // newOffset <= offset
+            } else {
+                int lastInt = value[offset + intLen - 1];
+                primitiveRightShift(32 - nBits, result, newOffset); // newOffset <= offset
+                result[trailingZerosPos++] = lastInt << nBits;
+            }
+        } else if (result != value || newOffset != offset) {
+            System.arraycopy(value, offset, result, newOffset, intLen);
+        }
+
+        // Add trailing zeros
+        if (result == value)
+            Arrays.fill(result, trailingZerosPos, newOffset + newLen, 0);
+
+        value = result;
         intLen = newLen;
-        if (nBits == 0)
-            return;
-        if (nBits <= (32-bitsInHighWord))
-            primitiveLeftShift(nBits);
-        else
-            primitiveRightShift(32 -nBits);
+        offset = newOffset;
     }
 
     /**
@@ -698,15 +706,30 @@ class MutableBigInteger {
      * less than 32.
      * Assumes that intLen > 0, n > 0 for speed
      */
-    private final void primitiveRightShift(int n) {
+    private void primitiveRightShift(int n) {
+        primitiveRightShift(n, value, offset);
+    }
+
+    /**
+     * Right shift this MutableBigInteger n bits, where n is
+     * less than 32, placing the result in the specified array.
+     * Assumes that intLen > 0, n > 0 for speed.
+     * The result can be the value array of this MutableBigInteger,
+     * but for speed the copy is not performed safely, so, in that case
+     * the caller has to make sure that
+     * {@code (resFrom <= offset || resFrom >= offset + intLen)}.
+     */
+    private void primitiveRightShift(int n, int[] result, int resFrom) {
         int[] val = value;
         int n2 = 32 - n;
-        for (int i=offset+intLen-1, c=val[i]; i > offset; i--) {
-            int b = c;
-            c = val[i-1];
-            val[i] = (c << n2) | (b >>> n);
+
+        int b = val[offset];
+        result[resFrom] = b >>> n;
+        for (int i = 1; i < intLen; i++) {
+            int c = b;
+            b = val[offset + i];
+            result[resFrom + i] = (c << n2) | (b >>> n);
         }
-        val[offset] >>>= n;
     }
 
     /**
@@ -714,15 +737,30 @@ class MutableBigInteger {
      * less than 32.
      * Assumes that intLen > 0, n > 0 for speed
      */
-    private final void primitiveLeftShift(int n) {
+    private void primitiveLeftShift(int n) {
+        primitiveLeftShift(n, value, offset);
+    }
+
+    /**
+     * Left shift this MutableBigInteger n bits, where n is
+     * less than 32, placing the result in the specified array.
+     * Assumes that intLen > 0, n > 0 for speed.
+     * The result can be the value array of this MutableBigInteger,
+     * but for speed the copy is not performed safely, so, in that case
+     * the caller has to make sure that
+     * {@code (resFrom <= offset || resFrom >= offset + intLen)}.
+     */
+    private void primitiveLeftShift(int n, int[] result, int resFrom) {
         int[] val = value;
         int n2 = 32 - n;
-        for (int i=offset, c=val[i], m=i+intLen-1; i < m; i++) {
-            int b = c;
-            c = val[i+1];
-            val[i] = (b << n) | (c >>> n2);
+        final int m = intLen - 1;
+        int b = val[offset];
+        for (int i = 0; i < m; i++) {
+            int c = val[offset + i + 1];
+            result[resFrom + i] = (b << n) | (c >>> n2);
+            b = c;
         }
-        val[offset+intLen-1] <<= n;
+        result[resFrom + m] = b << n;
     }
 
     /**
@@ -1511,17 +1549,6 @@ class MutableBigInteger {
         }
     }
 
-    private static void copyAndShift(int[] src, int srcFrom, int srcLen, int[] dst, int dstFrom, int shift) {
-        int n2 = 32 - shift;
-        int c=src[srcFrom];
-        for (int i=0; i < srcLen-1; i++) {
-            int b = c;
-            c = src[++srcFrom];
-            dst[dstFrom+i] = (b << shift) | (c >>> n2);
-        }
-        dst[dstFrom+srcLen-1] = c << shift;
-    }
-
     /**
      * Divide this MutableBigInteger by the divisor.
      * The quotient will be placed into the provided quotient object &
@@ -1539,13 +1566,13 @@ class MutableBigInteger {
         MutableBigInteger rem; // Remainder starts as dividend with space for a leading zero
         if (shift > 0) {
             divisor = new int[dlen];
-            copyAndShift(div.value,div.offset,dlen,divisor,0,shift);
+            div.primitiveLeftShift(shift, divisor, 0);
             if (Integer.numberOfLeadingZeros(value[offset]) >= shift) {
                 int[] remarr = new int[intLen + 1];
                 rem = new MutableBigInteger(remarr);
                 rem.intLen = intLen;
                 rem.offset = 1;
-                copyAndShift(value,offset,intLen,remarr,1,shift);
+                this.primitiveLeftShift(shift, remarr, 1);
             } else {
                 int[] remarr = new int[intLen + 2];
                 rem = new MutableBigInteger(remarr);
@@ -1863,6 +1890,204 @@ class MutableBigInteger {
      */
     private boolean unsignedLongCompare(long one, long two) {
         return (one+Long.MIN_VALUE) > (two+Long.MIN_VALUE);
+    }
+
+    /**
+     * Calculate the integer {@code n}th root {@code floor(nthRoot(this, n))} and the remainder,
+     * where {@code nthRoot(., n)} denotes the mathematical {@code n}th root.
+     * The contents of {@code this} are <em>not</em> changed. The value of {@code this}
+     * is assumed to be non-negative and the root degree {@code n >= 3}.
+     * Assumes {@code bitLength() <= Integer.MAX_VALUE}.
+     *
+     * @implNote The implementation is based on the material in Richard P. Brent
+     * and Paul Zimmermann, <a href="https://maths-people.anu.edu.au/~brent/pd/mca-cup-0.5.9.pdf">
+     * Modern Computer Arithmetic</a>, p. 27-28.
+     *
+     * @param n the root degree
+     * @return the integer {@code n}th root of {@code this} and the remainder
+     */
+    MutableBigInteger[] rootnRem(int n) {
+        // Special cases.
+        if (this.isZero() || this.isOne())
+            return new MutableBigInteger[] { this, new MutableBigInteger() };
+
+        final int bitLength = (int) this.bitLength();
+        // if this < 2^n, result is unity
+        if (bitLength <= n) {
+            MutableBigInteger rem = new MutableBigInteger(this);
+            rem.subtract(ONE);
+            return new MutableBigInteger[] { new MutableBigInteger(1), rem };
+        }
+
+        MutableBigInteger s;
+        if (bitLength <= Long.SIZE) {
+            // Initial estimate is the root of the unsigned long value.
+            final long x = this.toLong();
+            long sLong = (long) rootnApprox(Math.nextUp(x >= 0 ? x : x + 0x1p64), n) + 1L;
+            /* The integer-valued recurrence formula in the algorithm of Brent&Zimmermann
+             * simply discards the fraction part of the real-valued Newton recurrence
+             * on the function f discussed in the referenced work.
+             * Indeed, for real x and integer n > 0, the equality ⌊x/n⌋ == ⌊⌊x⌋/n⌋ holds,
+             * from which the claim follows.
+             * As a consequence, an initial underestimate (not discussed in BZ)
+             * will immediately lead to a (weak) overestimate during the 1st iteration,
+             * thus meeting BZ requirements for termination and correctness.
+             */
+            if (BigInteger.bitLengthForLong(sLong) * (n - 1) <= Long.SIZE) {
+                // Do the 1st iteration outside the loop to ensure an overestimate
+                long sToN1 = BigInteger.unsignedLongPow(sLong, n - 1);
+                sLong = ((n - 1) * sLong + Long.divideUnsigned(x, sToN1)) / n;
+
+                if (BigInteger.bitLengthForLong(sLong) * (n - 1) <= Long.SIZE) {
+                    // Refine the estimate.
+                    long u = sLong;
+                    do {
+                        sLong = u;
+                        sToN1 = BigInteger.unsignedLongPow(sLong, n - 1);
+                        u = ((n - 1) * sLong + Long.divideUnsigned(x, sToN1)) / n;
+                    } while (u < sLong); // Terminate when non-decreasing.
+
+                    return new MutableBigInteger[] {
+                            new MutableBigInteger(sLong), new MutableBigInteger(x - sToN1 * sLong)
+                    };
+                }
+            }
+            // s^(n - 1) could overflow long range, use MutableBigInteger loop instead
+            s = new MutableBigInteger(sLong);
+        } else {
+            final int rootLen = (bitLength - 1) / n + 1; // ⌈bitLength / n⌉
+            int rootSh;
+            double rad = 0.0, approx = 0.0;
+            if (n < Double.PRECISION) {
+                // Set up the initial estimate of the iteration.
+                /* Since the following equality holds:
+                 * nthRoot(x, n) == nthRoot(x/2^sh, n) * 2^(sh/n),
+                 *
+                 * to get an upper bound of the root of x, it suffices to find an integer sh
+                 * and a real s such that s >= nthRoot(x/2^sh, n) and sh % n == 0.
+                 * The upper bound will be s * 2^(sh/n), indeed:
+                 * s * 2^(sh/n) >= nthRoot(x/2^sh, n) * 2^(sh/n) == nthRoot(x, n).
+                 * To achieve this, we right shift the input of sh bits into finite double range,
+                 * rounding up the result.
+                 *
+                 * The value of the shift sh is chosen in order to have the smallest number of
+                 * trailing zeros in the double value of s after the significand (minimizing
+                 * non-significant bits), to avoid losing bits in the significand.
+                 */
+                // Determine a right shift that is a multiple of n into finite double range.
+                rootSh = (bitLength - Double.PRECISION) / n; // rootSh < rootLen
+                /* Let x = this, P = Double.PRECISION, ME = Double.MAX_EXPONENT,
+                 * bl = bitLength, sh = rootSh * n, ex = (bl - P) % n
+                 *
+                 * We have bl-sh = bl-((bl-P)-ex) = P + ex
+                 * Since ex < n < P, we get P + ex ≤ ME, and so bl-sh ≤ ME.
+                 *
+                 * Recalling x < 2^bl:
+                 * x >> sh < 2^(bl-sh) ≤ 2^ME < Double.MAX_VALUE
+                 * Thus, rad ≤ 2^ME is in the range of finite doubles.
+                 *
+                 * Noting that ex ≥ 0, we get bl-sh = P + ex ≥ P
+                 * which shows that x >> sh has at least P bits of precision,
+                 * since bl-sh is its bit length.
+                 */
+                // Shift the value into finite double range
+                rad = this.toBigInteger().shiftRight(rootSh * n).doubleValue();
+
+                // Use the root of the shifted value as an estimate.
+                // rad ≤ 2^ME, so Math.nextUp(rad) < Double.MAX_VALUE
+                rad = Math.nextUp(rad);
+                approx = rootnApprox(rad, n);
+            } else { // fp arithmetic gives too few correct bits
+                // Set the root shift to the root's bit length minus 1
+                // The initial estimate will be 2^rootLen == 2 << (rootLen - 1)
+                rootSh = rootLen - 1;
+            }
+
+            if (rootSh == 0) {
+                // approx has at most ⌈Double.PRECISION / n⌉ + 1 ≤ 19 integer bits
+                s = new MutableBigInteger((int) approx + 1);
+            } else {
+                // Allocate ⌈intLen / n⌉ ints to store the final root
+                s = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
+
+                if (n >= Double.PRECISION) { // fp arithmetic gives too few correct bits
+                    // Set the initial estimate to 2 << (rootLen - 1)
+                    s.value[0] = 2;
+                    s.intLen = 1;
+                } else {
+                    // Discard wrong integer bits from the initial estimate
+                    // The reduced radicand rad has Math.getExponent(rad)+1 integer bits, but only
+                    // the first Double.PRECISION leftmost bits are correct
+                    // We scale the corresponding wrong bits of approx in the fraction part.
+                    int wrongBits = ((Math.getExponent(rad) + 1) - Double.PRECISION) / n;
+                    // Since rad <= 2^(bitLength - sh), then
+                    // wrongBits <= ((bitLength - sh + 1) - Double.PRECISION) / n,
+                    // so wrongBits is less than ⌈(bitLength - sh) / n⌉,
+                    // the bit length of the exact shifted root,
+                    // hence wrongBits + rootSh < ⌈(bitLength - sh) / n⌉ + rootSh == rootLen
+                    rootSh += wrongBits;
+                    approx = Math.scalb(approx, -wrongBits);
+
+                    // now approx has at most ⌈Double.PRECISION / n⌉ + 1 ≤ 19 integer bits
+                    s.value[0] = (int) approx + 1;
+                    s.intLen = 1;
+                }
+
+                /* The Newton's recurrence roughly doubles the correct bits at each iteration.
+                 * Instead of shifting the approximate root into the original range right now,
+                 * we only double its bit length and then refine it with Newton's recurrence,
+                 * using a suitable shifted radicand, in order to avoid computing and
+                 * carrying trash bits in the approximate root.
+                 * The shifted radicand is determined by the same reasoning used to get the
+                 * initial estimate.
+                 */
+                // Refine the estimate to avoid computing non-significant bits
+                // rootSh is always less than rootLen, so correctBits >= 1
+                for (int correctBits = rootLen - rootSh; correctBits < rootSh; correctBits <<= 1) {
+                    s.leftShift(correctBits);
+                    rootSh -= correctBits;
+                    // Remove useless bits from the radicand
+                    MutableBigInteger x = new MutableBigInteger(this);
+                    x.rightShift(rootSh * n);
+
+                    newtonRecurrenceRootn(x, s, n, s.toBigInteger().pow(n - 1));
+                    s.add(ONE); // round up to ensure s is an upper bound of the root
+                }
+
+                // Shift the approximate root back into the original range.
+                s.leftShift(rootSh); // Here rootSh > 0 always
+            }
+        }
+
+        // Do the 1st iteration outside the loop to ensure an overestimate
+        newtonRecurrenceRootn(this, s, n, s.toBigInteger().pow(n - 1));
+        // Refine the estimate.
+        do {
+            BigInteger sBig = s.toBigInteger();
+            BigInteger sToN1 = sBig.pow(n - 1);
+            MutableBigInteger rem = new MutableBigInteger(sToN1.multiply(sBig).mag);
+            if (rem.subtract(this) <= 0)
+                return new MutableBigInteger[] { s, rem };
+
+            newtonRecurrenceRootn(this, s, n, sToN1);
+        } while (true);
+    }
+
+    private static double rootnApprox(double x, int n) {
+        return Math.nextUp(n == 3 ? Math.cbrt(x) : Math.pow(x, Math.nextUp(1.0 / n)));
+    }
+
+    /**
+     * Computes {@code ((n-1)*s + x/sToN1)/n} and places the result in {@code s}.
+     */
+    private static void newtonRecurrenceRootn(
+            MutableBigInteger x, MutableBigInteger s, int n, BigInteger sToN1) {
+        MutableBigInteger dividend = new MutableBigInteger();
+        s.mul(n - 1, dividend);
+        MutableBigInteger xDivSToN1 = new MutableBigInteger();
+        x.divide(new MutableBigInteger(sToN1.mag), xDivSToN1, false);
+        dividend.add(xDivSToN1);
+        dividend.divideOneWord(n, s);
     }
 
     /**

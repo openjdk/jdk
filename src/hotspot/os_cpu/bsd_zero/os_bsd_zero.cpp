@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,9 +23,7 @@
  *
  */
 
-// no precompiled headers
 #include "asm/assembler.inline.hpp"
-#include "atomic_bsd_zero.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
@@ -37,6 +35,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -53,7 +52,6 @@
 
 #if !defined(__APPLE__) && !defined(__NetBSD__)
 #include <pthread.h>
-# include <pthread_np.h> /* For pthread_attr_get_np */
 #endif
 
 address os::current_stack_pointer() {
@@ -108,6 +106,11 @@ address os::fetch_frame_from_context(const void* ucVoid,
 frame os::fetch_frame_from_context(const void* ucVoid) {
   ShouldNotCallThis();
   return frame();
+}
+
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  ShouldNotCallThis();
+  return nullptr;
 }
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
@@ -175,60 +178,10 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   return s;
 }
 
-void os::current_stack_base_and_size(address* base, size_t* size) {
-  address bottom;
-
-#ifdef __APPLE__
-  pthread_t self = pthread_self();
-  *base = (address) pthread_get_stackaddr_np(self);
-  *size = pthread_get_stacksize_np(self);
-  bottom = *base - *size;
-#elif defined(__OpenBSD__)
-  stack_t ss;
-  int rslt = pthread_stackseg_np(pthread_self(), &ss);
-
-  if (rslt != 0)
-    fatal("pthread_stackseg_np failed with error = %d", rslt);
-
-  *base = (address) ss.ss_sp;
-  *size  = ss.ss_size;
-  bottom = *base - *size;
-#else
-  pthread_attr_t attr;
-
-  int rslt = pthread_attr_init(&attr);
-
-  // JVM needs to know exact stack location, abort if it fails
-  if (rslt != 0)
-    fatal("pthread_attr_init failed with error = %d", rslt);
-
-  rslt = pthread_attr_get_np(pthread_self(), &attr);
-
-  if (rslt != 0)
-    fatal("pthread_attr_get_np failed with error = %d", rslt);
-
-  if (pthread_attr_getstackaddr(&attr, (void **) &bottom) != 0 ||
-      pthread_attr_getstacksize(&attr, size) != 0) {
-    fatal("Can not locate current stack attributes!");
-  }
-
-  *base = bottom + *size;
-
-  pthread_attr_destroy(&attr);
-
-#endif
-  assert(os::current_stack_pointer() >= bottom &&
-         os::current_stack_pointer() < *base, "just checking");
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // helper functions for fatal error handler
 
 void os::print_context(outputStream* st, const void* context) {
-  ShouldNotCallThis();
-}
-
-void os::print_tos_pc(outputStream *st, const void *context) {
   ShouldNotCallThis();
 }
 

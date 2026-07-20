@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,13 @@
  *   <li> {@extLink security_guide_pki Java PKI Programmer's Guide}
  * </ul>
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
+ * @spec https://www.rfc-editor.org/info/rfc2560
+ *      RFC 2560: X.509 Internet Public Key Infrastructure Online Certificate
+ *              Status Protocol - OCSP
+ * @spec https://www.rfc-editor.org/info/rfc5280
+ *      RFC 5280: Internet X.509 Public Key Infrastructure Certificate
+ *              and Certificate Revocation List (CRL) Profile
  * @since 1.2
  */
 package java.security.cert;

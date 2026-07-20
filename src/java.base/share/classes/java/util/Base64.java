@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 import sun.nio.cs.ISO_8859_1;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -81,7 +83,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @since   1.8
  */
 
-public class Base64 {
+public final class Base64 {
 
     private Base64() {}
 
@@ -201,6 +203,7 @@ public class Base64 {
      * @since   1.8
      */
     public static class Encoder {
+        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
         private final byte[] newline;
         private final int linemax;
@@ -344,10 +347,9 @@ public class Base64 {
          *          the byte array to encode
          * @return  A String containing the resulting Base64 encoded characters
          */
-        @SuppressWarnings("deprecation")
         public String encodeToString(byte[] src) {
             byte[] encoded = encode(src);
-            return new String(encoded, 0, 0, encoded.length);
+            return JLA.uncheckedNewStringWithLatin1Bytes(encoded);
         }
 
         /**

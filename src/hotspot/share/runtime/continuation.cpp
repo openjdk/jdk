@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationHelper.inline.hpp"
@@ -33,6 +34,8 @@
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -54,11 +57,101 @@ JVM_ENTRY(void, CONT_unpin(JNIEnv* env, jclass cls)) {
 }
 JVM_END
 
-#ifndef PRODUCT
-static jlong java_tid(JavaThread* thread) {
-  return java_lang_Thread::thread_id(thread->threadObj());
+class UnmountBeginMark : public StackObj {
+  Handle _vthread;
+  JavaThread* _current;
+  freeze_result _result;
+  bool _failed;
+
+ public:
+  UnmountBeginMark(JavaThread* t) :
+    _vthread(t, t->vthread()), _current(t), _result(freeze_pinned_native), _failed(false) {
+    assert(!_current->is_in_vthread_transition(), "must be");
+
+    MountUnmountDisabler::start_transition(_current, _vthread(), false /*is_mount*/, false /*is_thread_start*/);
+
+    // Don't preempt if there is a pending popframe or earlyret operation. This can
+    // be installed in in process_at_transition_start() so we need to check it here.
+    if (JvmtiExport::can_pop_frame() || JvmtiExport::can_force_early_return()) {
+      JvmtiThreadState* state = _current->jvmti_thread_state();
+      if (_current->has_pending_popframe() || (state != nullptr && state->is_earlyret_pending())) {
+        _failed = true;
+      }
+    }
+
+    // Don't preempt in case there is an async exception installed since
+    // we would incorrectly throw it during the unmount logic in the carrier.
+    if (_current->has_async_exception_condition()) {
+      _failed = true;
+    }
+  }
+  ~UnmountBeginMark() {
+    assert(!_current->is_suspended()
+           JVMTI_ONLY(|| (_result != freeze_ok &&
+                          (_current->is_vthread_transition_disabler() || _current->is_disable_suspend()))), "must be");
+    assert(_current->is_in_vthread_transition(), "must be");
+
+    if (_result != freeze_ok) {
+      // Undo transition
+      MountUnmountDisabler::end_transition(_current, _vthread(), true /*is_mount*/, false /*is_thread_start*/);
+    }
+  }
+  void set_result(freeze_result res) { _result = res; }
+  bool failed() { return _failed; }
+};
+
+#if INCLUDE_JVMTI
+static bool is_vthread_safe_to_preempt_for_jvmti(JavaThread* current) {
+  if (current->is_in_vthread_transition()) {
+    // We are at the end of a mount transition.
+    return false;
+  }
+  return true;
 }
-#endif
+#endif // INCLUDE_JVMTI
+
+static bool is_vthread_safe_to_preempt(JavaThread* current, oop vthread) {
+  assert(java_lang_VirtualThread::is_instance(vthread), "");
+  if (java_lang_VirtualThread::state(vthread) != java_lang_VirtualThread::RUNNING) {  // inside transition
+    return false;
+  }
+  return JVMTI_ONLY(is_vthread_safe_to_preempt_for_jvmti(current)) NOT_JVMTI(true);
+}
+
+typedef freeze_result (*FreezeContFnT)(JavaThread*, intptr_t*);
+
+static void verify_preempt_preconditions(JavaThread* current, oop continuation) {
+  assert(current == JavaThread::current(), "no support for external preemption");
+  assert(current->has_last_Java_frame(), "");
+  assert(!current->preempting(), "");
+  assert(current->last_continuation() != nullptr, "");
+  assert(current->last_continuation()->cont_oop(current) == continuation, "");
+  assert(Continuation::continuation_scope(continuation) == java_lang_VirtualThread::vthread_scope(), "");
+  assert(!current->has_pending_exception(), "");
+}
+
+freeze_result Continuation::try_preempt(JavaThread* current, oop continuation) {
+  verify_preempt_preconditions(current, continuation);
+
+  if (!is_vthread_safe_to_preempt(current, current->vthread())) {
+    return freeze_pinned_native;
+  }
+
+  UnmountBeginMark ubm(current);
+  if (ubm.failed()) return freeze_pinned_native;
+  freeze_result res = CAST_TO_FN_PTR(FreezeContFnT, freeze_preempt_entry())(current, current->last_Java_sp());
+  log_trace(continuations, preempt)("try_preempt: %d", res);
+  ubm.set_result(res);
+
+  if (current->has_pending_exception()) {
+    assert(res == freeze_exception, "expecting an exception result from freeze");
+    // We don't want to throw exceptions, especially when returning
+    // from monitorenter since the compiler does not expect one. We
+    // just ignore the exception and pin the vthread to the carrier.
+    current->clear_pending_exception();
+  }
+  return res;
+}
 
 ContinuationEntry* Continuation::get_continuation_entry_for_continuation(JavaThread* thread, oop continuation) {
   if (thread == nullptr || continuation == nullptr) {
@@ -224,7 +317,7 @@ frame Continuation::continuation_parent_frame(RegisterMap* map) {
 
   map->set_stack_chunk(nullptr);
 
-#if (defined(X86) || defined(AARCH64) || defined(RISCV64) || defined(PPC64)) && !defined(ZERO)
+#if (defined(X86) || defined(AARCH64) || defined(RISCV64) || defined(PPC64) || defined(S390)) && !defined(ZERO)
   frame sender(cont.entrySP(), cont.entryFP(), cont.entryPC());
 #else
   frame sender = frame();
@@ -289,9 +382,9 @@ frame Continuation::continuation_bottom_sender(JavaThread* thread, const frame& 
   ContinuationEntry* ce = get_continuation_entry_for_sp(thread, callee.sp());
   assert(ce != nullptr, "callee.sp(): " INTPTR_FORMAT, p2i(callee.sp()));
 
-  log_develop_debug(continuations)("continuation_bottom_sender: [" JLONG_FORMAT "] [%d] callee: " INTPTR_FORMAT
+  log_develop_debug(continuations)("continuation_bottom_sender: [" UINT64_FORMAT "] [%d] callee: " INTPTR_FORMAT
     " sender_sp: " INTPTR_FORMAT,
-    java_tid(thread), thread->osthread()->thread_id(), p2i(callee.sp()), p2i(sender_sp));
+    thread->monitor_owner_id(), thread->osthread()->thread_id(), p2i(callee.sp()), p2i(sender_sp));
 
   frame entry = ce->to_frame();
   if (callee.is_interpreted_frame()) {
@@ -428,5 +521,5 @@ void CONT_RegisterNativeMethods(JNIEnv *env, jclass cls) {
     ThreadToNativeFromVM trans(thread);
     int status = env->RegisterNatives(cls, CONT_methods, sizeof(CONT_methods)/sizeof(JNINativeMethod));
     guarantee(status == JNI_OK, "register jdk.internal.vm.Continuation natives");
-    guarantee(!env->ExceptionOccurred(), "register jdk.internal.vm.Continuation natives");
+    guarantee(!env->ExceptionCheck(), "register jdk.internal.vm.Continuation natives");
 }

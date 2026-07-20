@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test Thread API with virtual threads
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm --enable-native-access=ALL-UNNAMED ThreadAPI
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED ThreadAPI
  */
 
 /*
@@ -35,7 +35,7 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
+ * @run junit/othervm/native -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *     --enable-native-access=ALL-UNNAMED ThreadAPI
  */
 
@@ -253,35 +253,6 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread::stop from current thread.
-     */
-    @Test
-    void testStop1() throws Exception {
-        VThreadRunner.run(() -> {
-            Thread t = Thread.currentThread();
-            assertThrows(UnsupportedOperationException.class, t::stop);
-        });
-    }
-
-    /**
-     * Test Thread::stop from another thread.
-     */
-    @Test
-    void testStop2() throws Exception {
-        var thread = Thread.ofVirtual().start(() -> {
-            try {
-                Thread.sleep(20*1000);
-            } catch (InterruptedException e) { }
-        });
-        try {
-            assertThrows(UnsupportedOperationException.class, thread::stop);
-        } finally {
-            thread.interrupt();
-            thread.join();
-        }
-    }
-
-    /**
      * Test Thread.join before thread starts, platform thread invokes join.
      */
     @Test
@@ -432,7 +403,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test platform thread invoking Thread.join with interrupt status set.
+     * Test platform thread invoking Thread.join with interrupted status set.
      */
     @Test
     void testJoin15() throws Exception {
@@ -448,7 +419,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test virtual thread invoking Thread.join with interrupt status set.
+     * Test virtual thread invoking Thread.join with interrupted status set.
      */
     @Test
     void testJoin16() throws Exception {
@@ -456,7 +427,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test platform thread invoking timed-Thread.join with interrupt status set.
+     * Test platform thread invoking timed-Thread.join with interrupted status set.
      */
     @Test
     void testJoin17() throws Exception {
@@ -472,7 +443,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test virtual thread invoking timed-Thread.join with interrupt status set.
+     * Test virtual thread invoking timed-Thread.join with interrupted status set.
      */
     @Test
     void testJoin18() throws Exception {
@@ -480,7 +451,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test platform thread invoking timed-Thread.join with interrupt status set.
+     * Test platform thread invoking timed-Thread.join with interrupted status set.
      */
     @Test
     void testJoin19() throws Exception {
@@ -497,7 +468,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test virtual thread invoking timed-Thread.join with interrupt status set.
+     * Test virtual thread invoking timed-Thread.join with interrupted status set.
      */
     @Test
     void testJoin20() throws Exception {
@@ -622,7 +593,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test virtual thread with interrupt status set calling Thread.join to wait
+     * Test virtual thread with interrupted status set calling Thread.join to wait
      * for platform thread to terminate.
      */
     @Test
@@ -761,7 +732,7 @@ class ThreadAPI {
             assertFalse(me.isInterrupted());
             me.interrupt();
             assertTrue(me.isInterrupted());
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
             assertFalse(me.isInterrupted());
             me.interrupt();
         });
@@ -789,7 +760,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test termination with interrupt status set.
+     * Test termination with interrupted status set.
      */
     @Test
     void testInterrupt4() throws Exception {
@@ -834,7 +805,7 @@ class ThreadAPI {
                     Thread.sleep(60*1000);
                     fail("sleep not interrupted");
                 } catch (InterruptedException e) {
-                    // interrupt status should be reset
+                    // interrupted status should be reset
                     assertFalse(Thread.interrupted());
                 }
             } catch (Exception e) {
@@ -868,7 +839,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test trying to park with interrupt status set.
+     * Test trying to park with interrupted status set.
      */
     @Test
     void testInterrupt8() throws Exception {
@@ -881,7 +852,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test trying to wait with interrupt status set.
+     * Test trying to wait with interrupted status set.
      */
     @Test
     void testInterrupt9() throws Exception {
@@ -900,7 +871,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test trying to block with interrupt status set.
+     * Test trying to block with interrupted status set.
      */
     @Test
     void testInterrupt10() throws Exception {
@@ -1082,7 +1053,7 @@ class ThreadAPI {
      * Test Thread.yield releases carrier thread.
      */
     @Test
-    void testYield1() throws Exception {
+    void testYieldReleasesCarrier() throws Exception {
         assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         var list = new CopyOnWriteArrayList<String>();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
@@ -1106,10 +1077,40 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread.yield when thread is pinned by native frame.
+     * Test Thread.yield releases carrier thread when virtual thread holds a monitor.
      */
     @Test
-    void testYield2() throws Exception {
+    void testYieldReleasesCarrierWhenHoldingMonitor() throws Exception {
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
+        var list = new CopyOnWriteArrayList<String>();
+        try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+            var lock = new Object();
+            var thread = factory.newThread(() -> {
+                list.add("A");
+                var child = factory.newThread(() -> {
+                    list.add("B");
+                    synchronized (lock) {
+                        Thread.yield();
+                    }
+                    list.add("B");
+                });
+                child.start();
+                Thread.yield();
+                list.add("A");
+                try { child.join(); } catch (InterruptedException e) { }
+            });
+            thread.start();
+            thread.join();
+        }
+        assertEquals(List.of("A", "B", "A", "B"), list);
+    }
+
+    /**
+     * Test Thread.yield when thread is pinned.
+     */
+    @Test
+    void testYieldWhenPinned() throws Exception {
         assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         var list = new CopyOnWriteArrayList<String>();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
@@ -1136,7 +1137,7 @@ class ThreadAPI {
      * Test Thread.yield does not consume the thread's parking permit.
      */
     @Test
-    void testYield3() throws Exception {
+    void testYieldDoesNotConsumParkingPermit() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             LockSupport.unpark(Thread.currentThread());
             Thread.yield();
@@ -1149,7 +1150,7 @@ class ThreadAPI {
      * Test Thread.yield does not make available the thread's parking permit.
      */
     @Test
-    void testYield4() throws Exception {
+    void testYieldDoesNotOfferParkingPermit() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             Thread.yield();
             LockSupport.park();  // should park
@@ -1236,7 +1237,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread.sleep with interrupt status set.
+     * Test Thread.sleep with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("sleepers")
@@ -1255,7 +1256,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread.sleep with interrupt status set and a negative duration.
+     * Test Thread.sleep with interrupted status set and a negative duration.
      */
     @Test
     void testSleep4() throws Exception {
@@ -1291,7 +1292,7 @@ class ThreadAPI {
                 sleeper.run();
                 fail("sleep was not interrupted");
             } catch (InterruptedException e) {
-                // interrupt status should be cleared
+                // interrupted status should be cleared
                 assertFalse(t.isInterrupted());
             }
         });
@@ -1355,7 +1356,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread.sleep when pinned and with interrupt status set.
+     * Test Thread.sleep when pinned and with interrupted status set.
      */
     @Test
     void testSleep9() throws Exception {
@@ -1388,7 +1389,7 @@ class ThreadAPI {
                 });
                 fail("sleep not interrupted");
             } catch (InterruptedException e) {
-                // interrupt status should be cleared
+                // interrupted status should be cleared
                 assertFalse(t.isInterrupted());
             }
         });
@@ -1969,6 +1970,38 @@ class ThreadAPI {
                 assertTrue(Thread.holdsLock(lock));
             }
         });
+    }
+
+    /**
+     * Test Thread.holdsLock when lock held by carrier thread.
+     */
+    @Disabled
+    @Test
+    void testHoldsLock3() throws Exception {
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
+
+        Object lock = new Object();
+
+        // carrier thread runs all tasks while holding the lock
+        ThreadFactory carrierThreadFactory = task -> Thread.ofPlatform().unstarted(() -> {
+            synchronized (lock) {
+                task.run();
+            }
+        });
+        try (ExecutorService pool = Executors.newSingleThreadExecutor(carrierThreadFactory)) {
+            Executor scheduler = task -> pool.submit(task::run);
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+
+            // start virtual that tests if it holds the lock
+            var result = new AtomicReference<Boolean>();
+            Thread vthread = factory.newThread(() -> {
+                result.set(Thread.holdsLock(lock));
+            });
+            vthread.start();
+            vthread.join();
+            boolean holdsLock = result.get();
+            assertFalse(holdsLock, "Thread.holdsLock should return false");
+        }
     }
 
     /**

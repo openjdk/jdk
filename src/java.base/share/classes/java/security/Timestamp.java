@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.security;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.security.cert.CertPath;
 import java.security.cert.Certificate;
@@ -78,7 +79,7 @@ public final class Timestamp implements Serializable {
      * {@code null}.
      */
     public Timestamp(Date timestamp, CertPath signerCertPath) {
-        if (timestamp == null || signerCertPath == null) {
+        if (isNull(timestamp, signerCertPath)) {
             throw new NullPointerException();
         }
         this.timestamp = new Date(timestamp.getTime()); // clone
@@ -166,9 +167,16 @@ public final class Timestamp implements Serializable {
      */
     @java.io.Serial
     private void readObject(ObjectInputStream ois)
-        throws IOException, ClassNotFoundException {
+            throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
+        if (isNull(timestamp, signerCertPath)) {
+            throw new InvalidObjectException("Invalid null field(s)");
+        }
         myhash = -1;
         timestamp = new Date(timestamp.getTime());
+    }
+
+    private static boolean isNull(Date d, CertPath c) {
+        return (d == null || c == null);
     }
 }

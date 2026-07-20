@@ -24,15 +24,14 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributedElement;
 import java.lang.classfile.ClassFileElement;
 import java.lang.classfile.CompoundElement;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 public abstract sealed class AbstractUnboundModel<E extends ClassFileElement>
         extends AbstractElement

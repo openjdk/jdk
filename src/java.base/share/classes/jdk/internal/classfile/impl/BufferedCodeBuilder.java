@@ -27,16 +27,17 @@ package jdk.internal.classfile.impl;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
-import java.lang.classfile.TypeKind;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.Label;
 import java.lang.classfile.MethodModel;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.instruction.ExceptionCatch;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
 
 public final class BufferedCodeBuilder
         implements TerminalCodeBuilder {
@@ -121,7 +122,7 @@ public final class BufferedCodeBuilder
     public CodeBuilder with(CodeElement element) {
         if (finished)
             throw new IllegalStateException("Can't add elements after traversal");
-        elements.add(element);
+        elements.add(requireNonNull(element));
         return this;
     }
 

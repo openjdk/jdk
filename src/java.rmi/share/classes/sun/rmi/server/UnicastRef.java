@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@ import java.rmi.server.Operation;
 import java.rmi.server.RemoteCall;
 import java.rmi.server.RemoteObject;
 import java.rmi.server.RemoteRef;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import jdk.internal.access.SharedSecrets;
 import sun.rmi.runtime.Log;
@@ -64,11 +62,9 @@ public class UnicastRef implements RemoteRef {
     /**
      * Client-side call log.
      */
-    @SuppressWarnings("removal")
     public static final Log clientCallLog =
         Log.getLog("sun.rmi.client.call", "RMI",
-                   AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
-                       Boolean.getBoolean("sun.rmi.client.logCalls")));
+                   Boolean.getBoolean("sun.rmi.client.logCalls"));
     private static final long serialVersionUID = 8258372400816541186L;
 
     @SuppressWarnings("serial") // Type of field is not Serializable

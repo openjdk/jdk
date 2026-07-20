@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 package javax.swing.text.html.parser;
 
-import sun.awt.AppContext;
-
 import javax.swing.text.html.HTMLEditorKit;
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -35,8 +33,6 @@ import java.io.ObjectInputStream;
 import java.io.Reader;
 import java.io.Serial;
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * Responsible for starting up a new DocumentParser
@@ -54,7 +50,8 @@ import java.security.PrivilegedAction;
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class ParserDelegator extends HTMLEditorKit.Parser implements Serializable {
-    private static final Object DTD_KEY = new Object();
+
+    private static DTD dtd = null;
 
     /**
      * Sets the default DTD.
@@ -64,10 +61,6 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
     }
 
     private static synchronized DTD getDefaultDTD() {
-        AppContext appContext = AppContext.getAppContext();
-
-        DTD dtd = (DTD) appContext.get(DTD_KEY);
-
         if (dtd == null) {
             DTD _dtd = null;
             // (PENDING) Hate having to hard code!
@@ -79,10 +72,7 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
                 System.out.println("Throw an exception: could not get default dtd: " + nm);
             }
             dtd = createDTD(_dtd, nm);
-
-            appContext.put(DTD_KEY, dtd);
         }
-
         return dtd;
     }
 
@@ -123,22 +113,13 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
 
     /**
      * Fetch a resource relative to the ParserDelegator classfile.
-     * If this is called on 1.2 the loading will occur under the
-     * protection of a doPrivileged call to allow the ParserDelegator
-     * to function when used in an applet.
      *
      * @param name the name of the resource, relative to the
      *  ParserDelegator class.
      * @return a stream representing the resource
      */
-    @SuppressWarnings("removal")
     static InputStream getResourceAsStream(final String name) {
-        return AccessController.doPrivileged(
-                new PrivilegedAction<InputStream>() {
-                    public InputStream run() {
-                        return ParserDelegator.class.getResourceAsStream(name);
-                    }
-                });
+        return ParserDelegator.class.getResourceAsStream(name);
     }
 
     @Serial

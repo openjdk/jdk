@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public final class JRSUIConstants {
 
     private static native long getPtrForConstant(final int constant);
 
-    static class Key {
+    static final class Key {
         @Native protected static final int _value = 20;
         public static final Key VALUE = new Key(_value);
 
@@ -84,12 +84,13 @@ public final class JRSUIConstants {
             return getClass().getSimpleName();
         }
 
+        @Override
         public String toString() {
             return getConstantName(this) + (ptr == 0 ? "(unlinked)" : "");
         }
     }
 
-    static class DoubleValue {
+    static final class DoubleValue {
         @Native protected static final byte TYPE_CODE = 1;
 
         final double doubleValue;
@@ -106,21 +107,24 @@ public final class JRSUIConstants {
             buffer.putDouble(doubleValue);
         }
 
+        @Override
         public boolean equals(final Object obj) {
             return (obj instanceof DoubleValue) && (((DoubleValue)obj).doubleValue == doubleValue);
         }
 
+        @Override
         public int hashCode() {
             return Double.hashCode(doubleValue);
         }
 
+        @Override
         public String toString() {
             return Double.toString(doubleValue);
         }
     }
 
 
-    static class PropertyEncoding {
+    static final class PropertyEncoding {
         final long mask;
         final byte shift;
 
@@ -150,12 +154,13 @@ public final class JRSUIConstants {
             return (encodedState & ~encoding.mask) | value;
         }
 
+        @Override
         public String toString() {
             return getClass().getSimpleName();
         }
     }
 
-    public static class Size extends Property {
+    public static final class Size extends Property {
         @Native private static final byte SHIFT = 0;
         @Native private static final byte SIZE = 3;
         @Native private static final long MASK = (long)0x7 << SHIFT;
@@ -175,7 +180,7 @@ public final class JRSUIConstants {
         public static final Size LARGE = new Size(_large);
     }
 
-    public static class State extends Property {
+    public static final class State extends Property {
         @Native private static final byte SHIFT = Size.SHIFT + Size.SIZE;
         @Native private static final byte SIZE = 4;
         @Native private static final long MASK = (long)0xF << SHIFT;
@@ -194,6 +199,14 @@ public final class JRSUIConstants {
         @Native private static final byte _pressed = 4;
         public static final State PRESSED = new State(_pressed);
         @Native private static final byte _pulsed = 5;
+        /**
+         * This identifies the default button in a window/dialog.
+         * The name PULSED has become misleading over time.
+         * The default button used to continually pulse up until
+         * Mac OS 10.9, but now there is no pulsing animation.
+         * We still need this State constant to render default
+         * buttons correctly, though.
+         */
         public static final State PULSED = new State(_pulsed);
         @Native private static final byte _rollover = 6;
         public static final State ROLLOVER = new State(_rollover);
@@ -201,7 +214,7 @@ public final class JRSUIConstants {
         public static final State DRAG = new State(_drag);
     }
 
-    public static class Direction extends Property {
+    public static final class Direction extends Property {
         @Native private static final byte SHIFT = State.SHIFT + State.SIZE;
         @Native private static final byte SIZE = 4;
         @Native private static final long MASK = (long)0xF << SHIFT;
@@ -231,7 +244,7 @@ public final class JRSUIConstants {
         public static final Direction WEST = new Direction(_west);
     }
 
-    public static class Orientation extends Property {
+    public static final class Orientation extends Property {
         @Native private static final byte SHIFT = Direction.SHIFT + Direction.SIZE;
         @Native private static final byte SIZE = 2;
         @Native private static final long MASK = (long)0x3 << SHIFT;
@@ -247,7 +260,7 @@ public final class JRSUIConstants {
         public static final Orientation VERTICAL = new Orientation(_vertical);
     }
 
-    public static class AlignmentVertical extends Property {
+    public static final class AlignmentVertical extends Property {
         @Native private static final byte SHIFT = Orientation.SHIFT + Orientation.SIZE;
         @Native private static final byte SIZE = 2;
         @Native private static final long MASK = (long)0x3 << SHIFT;
@@ -265,7 +278,7 @@ public final class JRSUIConstants {
         public static final AlignmentVertical BOTTOM = new AlignmentVertical(_bottom);
     }
 
-    public static class AlignmentHorizontal extends Property {
+    public static final class AlignmentHorizontal extends Property {
         @Native private static final byte SHIFT = AlignmentVertical.SHIFT + AlignmentVertical.SIZE;
         @Native private static final byte SIZE = 2;
         @Native private static final long MASK = (long)0x3 << SHIFT;
@@ -283,7 +296,7 @@ public final class JRSUIConstants {
         public static final AlignmentHorizontal RIGHT = new AlignmentHorizontal(_right);
     }
 
-    public static class SegmentPosition extends Property {
+    public static final class SegmentPosition extends Property {
         @Native private static final byte SHIFT = AlignmentHorizontal.SHIFT + AlignmentHorizontal.SIZE;
         @Native private static final byte SIZE = 3;
         @Native private static final long MASK = (long)0x7 << SHIFT;
@@ -303,7 +316,7 @@ public final class JRSUIConstants {
         public static final SegmentPosition ONLY = new SegmentPosition(_only);
     }
 
-    public static class ScrollBarPart extends Property {
+    public static final class ScrollBarPart extends Property {
         @Native private static final byte SHIFT = SegmentPosition.SHIFT + SegmentPosition.SIZE;
         @Native private static final byte SIZE = 4;
         @Native private static final long MASK = (long)0xF << SHIFT;
@@ -331,7 +344,7 @@ public final class JRSUIConstants {
         public static final ScrollBarPart TRACK_MAX = new ScrollBarPart(_trackMax);
     }
 
-    public static class Variant extends Property {
+    public static final class Variant extends Property {
         @Native private static final byte SHIFT = ScrollBarPart.SHIFT + ScrollBarPart.SIZE;
         @Native private static final byte SIZE = 4;
         @Native private static final long MASK = (long)0xF << SHIFT;
@@ -362,7 +375,7 @@ public final class JRSUIConstants {
         public static final Variant GRADIENT_SIDE_BAR_FOCUSED_SELECTION = new Variant(_gradientSideBarFocusedSelection);
     }
 
-    public static class WindowType extends Property {
+    public static final class WindowType extends Property {
         @Native private static final byte SHIFT = Variant.SHIFT + Variant.SIZE;
         @Native private static final byte SIZE = 2;
         @Native private static final long MASK = (long)0x3 << SHIFT;
@@ -380,7 +393,7 @@ public final class JRSUIConstants {
         public static final WindowType TITLELESS_UTILITY = new WindowType(_titlelessUtility);
     }
 
-    public static class Focused extends Property {
+    public static final class Focused extends Property {
         @Native private static final byte SHIFT = WindowType.SHIFT + WindowType.SIZE;
         @Native private static final byte SIZE = 1;
         @Native private static final long MASK = (long)0x1 << SHIFT;
@@ -396,7 +409,7 @@ public final class JRSUIConstants {
         public static final Focused YES = new Focused(_yes);
     }
 
-    public static class IndicatorOnly extends Property {
+    public static final class IndicatorOnly extends Property {
         @Native private static final byte SHIFT = Focused.SHIFT + Focused.SIZE;
         @Native private static final byte SIZE = 1;
         @Native private static final long MASK = (long)0x1 << SHIFT;
@@ -412,7 +425,7 @@ public final class JRSUIConstants {
         public static final IndicatorOnly YES = new IndicatorOnly(_yes);
     }
 
-    public static class NoIndicator extends Property {
+    public static final class NoIndicator extends Property {
         @Native private static final byte SHIFT = IndicatorOnly.SHIFT + IndicatorOnly.SIZE;
         @Native private static final byte SIZE = 1;
         @Native private static final long MASK = (long)0x1 << SHIFT;
@@ -428,7 +441,7 @@ public final class JRSUIConstants {
         public static final NoIndicator YES = new NoIndicator(_yes);
     }
 
-    public static class ArrowsOnly extends Property {
+    public static final class ArrowsOnly extends Property {
         @Native private static final byte SHIFT = NoIndicator.SHIFT + NoIndicator.SIZE;
         @Native private static final byte SIZE = 1;
         @Native private static final long MASK = (long)0x1 << SHIFT;
@@ -444,7 +457,7 @@ public final class JRSUIConstants {
         public static final ArrowsOnly YES = new ArrowsOnly(_yes);
     }
 
-    public static class FrameOnly extends Property {
+    public static final class FrameOnly extends Property {
         @Native private static final byte SHIFT = ArrowsOnly.SHIFT + ArrowsOnly.SIZE;
         @Native private static final byte SIZE = 1;
         @Native private static final long MASK = (long)0x1 << SHIFT;
@@ -460,7 +473,7 @@ public final class JRSUIConstants {
         public static final FrameOnly YES = new FrameOnly(_yes);
     }
 
-    public static class SegmentTrailingSeparator extends Property {
+    public static final class SegmentTrailingSeparator extends Property {
         @Native private static final byte SHIFT = FrameOnly.SHIFT + FrameOnly.SIZE;
         @Native private static final byte SIZE = 1;
         @Native private static final long MASK = (long)0x1 << SHIFT;
@@ -476,7 +489,7 @@ public final class JRSUIConstants {
         public static final SegmentTrailingSeparator YES = new SegmentTrailingSeparator(_yes);
     }
 
-    public static class SegmentLeadingSeparator extends Property {
+    public static final class SegmentLeadingSeparator extends Property {
         @Native private static final byte SHIFT = SegmentTrailingSeparator.SHIFT + SegmentTrailingSeparator.SIZE;
         @Native private static final byte SIZE = 1;
         @Native private static final long MASK = (long)0x1 << SHIFT;
@@ -492,7 +505,7 @@ public final class JRSUIConstants {
         public static final SegmentLeadingSeparator YES = new SegmentLeadingSeparator(_yes);
     }
 
-    public static class NothingToScroll extends Property {
+    public static final class NothingToScroll extends Property {
         @Native private static final byte SHIFT = SegmentLeadingSeparator.SHIFT + SegmentLeadingSeparator.SIZE;
         @Native private static final byte SIZE = 1;
         @Native private static final long MASK = (long)0x1 << SHIFT;
@@ -508,7 +521,7 @@ public final class JRSUIConstants {
         public static final NothingToScroll YES = new NothingToScroll(_yes);
     }
 
-    public static class WindowTitleBarSeparator extends Property {
+    public static final class WindowTitleBarSeparator extends Property {
         @Native private static final byte SHIFT = NothingToScroll.SHIFT + NothingToScroll.SIZE;
         @Native private static final byte SIZE = 1;
         @Native private static final long MASK = (long)0x1 << SHIFT;
@@ -524,7 +537,7 @@ public final class JRSUIConstants {
         public static final WindowTitleBarSeparator YES = new WindowTitleBarSeparator(_yes);
     }
 
-    public static class WindowClipCorners extends Property {
+    public static final class WindowClipCorners extends Property {
         @Native private static final byte SHIFT = WindowTitleBarSeparator.SHIFT + WindowTitleBarSeparator.SIZE;
         @Native private static final byte SIZE = 1;
         @Native private static final long MASK = (long)0x1 << SHIFT;
@@ -540,7 +553,7 @@ public final class JRSUIConstants {
         public static final WindowClipCorners YES = new WindowClipCorners(_yes);
     }
 
-    public static class ShowArrows extends Property {
+    public static final class ShowArrows extends Property {
         @Native private static final byte SHIFT = WindowClipCorners.SHIFT + WindowClipCorners.SIZE;
         @Native private static final byte SIZE = 1;
         @Native private static final long MASK = (long)0x1 << SHIFT;
@@ -556,7 +569,7 @@ public final class JRSUIConstants {
         public static final ShowArrows YES = new ShowArrows(_yes);
     }
 
-    public static class BooleanValue extends Property {
+    public static final class BooleanValue extends Property {
         @Native private static final byte SHIFT = ShowArrows.SHIFT + ShowArrows.SIZE;
         @Native private static final byte SIZE = 1;
         @Native private static final long MASK = (long)0x1 << SHIFT;
@@ -572,7 +585,7 @@ public final class JRSUIConstants {
         public static final BooleanValue YES = new BooleanValue(_yes);
     }
 
-    public static class Animating extends Property {
+    public static final class Animating extends Property {
         @Native private static final byte SHIFT = BooleanValue.SHIFT + BooleanValue.SIZE;
         @Native private static final byte SIZE = 1;
         @Native private static final long MASK = (long)0x1 << SHIFT;
@@ -588,7 +601,7 @@ public final class JRSUIConstants {
         public static final Animating YES = new Animating(_yes);
     }
 
-    public static class Widget extends Property {
+    public static final class Widget extends Property {
         @Native private static final byte SHIFT = Animating.SHIFT + Animating.SIZE;
         @Native private static final byte SIZE = 7;
         @Native private static final long MASK = (long)0x7F << SHIFT;
@@ -803,12 +816,13 @@ public final class JRSUIConstants {
             return getClass().getSimpleName();
         }
 
+        @Override
         public String toString() {
             return getConstantName(this);
         }
     }
 
-    public static class ScrollBarHit extends Hit {
+    public static final class ScrollBarHit extends Hit {
         @Native private static final int _thumb = 2;
         public static final ScrollBarHit THUMB = new ScrollBarHit(_thumb);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,6 +203,11 @@ Java_sun_nio_ch_Net_isReusePortAvailable0(JNIEnv* env, jclass c1)
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_isExclusiveBindAvailable(JNIEnv *env, jclass clazz) {
     return -1;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_Net_shouldShutdownWriteBeforeClose0(JNIEnv *env, jclass clazz) {
+    return JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -671,6 +676,16 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
         n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
     }
 #endif
+#ifdef _AIX
+    // workaround AIX bug where IP_ADD_MEMBERSHIP fails intermittently
+    if (n < 0 && errno == EAGAIN) {
+        int countdown = 3;
+        while (n < 0 && errno == EAGAIN && countdown > 0) {
+            n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
+            countdown--;
+        }
+    }
+#endif
 
     if (n < 0) {
         if (join && (errno == ENOPROTOOPT || errno == EOPNOTSUPP))
@@ -914,13 +929,13 @@ Java_sun_nio_ch_Net_pollConnect(JNIEnv *env, jobject this, jobject fdo, jlong ti
         errno = 0;
         result = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &n);
         if (result < 0) {
-            handleSocketError(env, errno);
+            handleSocketErrorWithMessage(env, errno, "getsockopt failed");
             return JNI_FALSE;
         } else if (error) {
-            handleSocketError(env, error);
+            handleSocketErrorWithMessage(env, error, "connect failed");
             return JNI_FALSE;
         } else if ((poller.revents & POLLHUP) != 0) {
-            handleSocketError(env, ENOTCONN);
+            handleSocketErrorWithMessage(env, ENOTCONN, "peer closed connection after accepting");
             return JNI_FALSE;
         }
         // connected

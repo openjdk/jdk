@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class WindowsRootPaneUI extends BasicRootPaneUI {
         return windowsRootPaneUI;
     }
 
-    static class AltProcessor implements KeyEventPostProcessor {
+    static final class AltProcessor implements KeyEventPostProcessor {
         static boolean altKeyPressed = false;
         static boolean menuCanceledOnPress = false;
         static JRootPane root = null;
@@ -166,6 +166,7 @@ public class WindowsRootPaneUI extends BasicRootPaneUI {
 
         }
 
+        @Override
         public boolean postProcessKeyEvent(KeyEvent ev) {
             if (ev.isConsumed()) {
                 if (ev.getKeyCode() != KeyEvent.VK_ALT) {

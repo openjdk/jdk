@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,23 +52,6 @@ static LPCTSTR STR_ACCESSBRIDGE =
 
 FILE* origFile;
 FILE* tempFile;
-
-bool isXP()
-{
-    static bool isXPFlag = false;
-    OSVERSIONINFO  osvi;
-
-    // Initialize the OSVERSIONINFO structure.
-    ZeroMemory( &osvi, sizeof( osvi ) );
-    osvi.dwOSVersionInfoSize = sizeof( osvi );
-
-    GetVersionEx( &osvi );
-
-    if ( osvi.dwMajorVersion == 5 ) // For Windows XP and Windows 2000
-        isXPFlag = true;
-
-    return isXPFlag ;
-}
 
 void enableJAB() {
     // Copy lines from orig to temp modifying the line containing
@@ -226,9 +209,9 @@ int modify(bool enable) {
                 printf("Couldn't create file: %s\n", path);
                 perror("Error");
             } else {
-                char str[100] = "assistive_technologies=com.sun.java.accessibility.AccessBridge\n";
-                strcat_s(str, "screen_magnifier_present=true\n");
-                fprintf(origFile, str);
+                fprintf(origFile, "%s",
+                    "assistive_technologies=com.sun.java.accessibility.AccessBridge\n"
+                    "screen_magnifier_present=true\n");
                 fclose(origFile);
             }
         } else {
@@ -314,11 +297,11 @@ void printVersion() {
                pVSInfo->dwProductVersionMS & 0xFFFF,
                pVSInfo->dwProductVersionLS >> 16,
                pVSInfo->dwProductVersionLS & 0xFFFF );
-    char outputString[100];
-    strcpy_s(outputString, "jabswitch ");
-    strcat_s(outputString, versionString);
-    strcat_s(outputString, "\njabswitch enables or disables the Java Access Bridge.\n");
-    printf(outputString);
+    printf(
+        "jabswitch %s\n"
+        "jabswitch enables or disables the Java Access Bridge.\n",
+        versionString
+    );
 }
 
 int regEnable() {
@@ -458,16 +441,14 @@ int main(int argc, char* argv[]) {
                 enableWasRequested = true;
                 error = modify(true);
                 if (error == 0) {
-                   if( !isXP() )
-                      regEnable();
+                    regEnable();
                 }
             } else if (_stricmp(argv[1], "-disable") == 0 || _stricmp(argv[1], "/disable") == 0) {
                 badParams = false;
                 disableWasRequested = true;
                 error = modify(false);
                 if (error == 0) {
-                   if( !isXP() )
-                      regDisable();
+                    regDisable();
                 }
             }
         }

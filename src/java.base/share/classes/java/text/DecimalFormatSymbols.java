@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,12 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * of these symbols, you can get the {@code DecimalFormatSymbols} object from
  * your {@code DecimalFormat} and modify it.
  *
- * <p>If the locale contains "rg" (region override)
- * <a href="../util/Locale.html#def_locale_extension">Unicode extension</a>,
- * the symbols are overridden for the designated region.
+ * <p>The "rg" (region override), "nu" (numbering system), and "cu" (currency)
+ * {@code Locale} {@linkplain Locale##def_locale_extension Unicode
+ * extensions} are supported which may override values within the symbols.
+ * For both "nu" and "cu", if they are specified in addition to "rg" by the
+ * backing {@code Locale}, the respective values from the "nu" and "cu" extension
+ * supersede the implicit ones from the "rg" extension.
  *
  * @see          java.util.Locale
  * @see          DecimalFormat
@@ -88,7 +91,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @see java.util.Locale.Category#FORMAT
      */
     public DecimalFormatSymbols() {
-        initialize( Locale.getDefault(Locale.Category.FORMAT) );
+        initialize(Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -111,8 +114,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @param locale the desired locale
      * @throws    NullPointerException if {@code locale} is null
      */
-    public DecimalFormatSymbols( Locale locale ) {
-        initialize( locale );
+    public DecimalFormatSymbols(Locale locale) {
+        initialize(Objects.requireNonNull(locale,
+            "locale should not be null"));
     }
 
     /**
@@ -177,6 +181,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @since 1.6
      */
     public static final DecimalFormatSymbols getInstance(Locale locale) {
+        Objects.requireNonNull(locale, "locale should not be null");
         LocaleProviderAdapter adapter;
         adapter = LocaleProviderAdapter.getAdapter(DecimalFormatSymbolsProvider.class, locale);
         DecimalFormatSymbolsProvider provider = adapter.getDecimalFormatSymbolsProvider();
@@ -349,10 +354,11 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * unchanged.
      *
      * @param infinity the string representing infinity
+     * @throws NullPointerException if {@code infinity} is {@code null}
      */
     public void setInfinity(String infinity) {
+        this.infinity = Objects.requireNonNull(infinity);
         hashCode = 0;
-        this.infinity = infinity;
     }
 
     /**
@@ -370,10 +376,11 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * unchanged.
      *
      * @param NaN the string representing "not a number"
+     * @throws NullPointerException if {@code NaN} is {@code null}
      */
     public void setNaN(String NaN) {
+        this.NaN = Objects.requireNonNull(NaN);
         hashCode = 0;
-        this.NaN = NaN;
     }
 
     /**
@@ -414,14 +421,18 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Sets the currency symbol for the currency of these
-     * DecimalFormatSymbols in their locale.
+     * Sets the currency symbol for the currency of this
+     * {@code DecimalFormatSymbols} in their locale. Unlike {@link
+     * #setInternationalCurrencySymbol(String)}, this method does not update
+     * the currency attribute nor the international currency symbol attribute.
      *
      * @param currency the currency symbol
+     * @throws NullPointerException if {@code currency} is {@code null}
      * @since 1.2
      */
     public void setCurrencySymbol(String currency)
     {
+        Objects.requireNonNull(currency);
         initializeCurrency(locale);
         hashCode = 0;
         currencySymbol = currency;
@@ -448,35 +459,29 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * this also sets the currency attribute to the corresponding Currency
      * instance and the currency symbol attribute to the currency's symbol
      * in the DecimalFormatSymbols' locale. If the currency code is not valid,
-     * then the currency attribute is set to null and the currency symbol
-     * attribute is not modified.
+     * then the currency attribute and the currency symbol attribute are not modified.
      *
      * @param currencyCode the currency code
+     * @throws NullPointerException if {@code currencyCode} is {@code null}
      * @see #setCurrency
      * @see #setCurrencySymbol
      * @since 1.2
      */
-    public void setInternationalCurrencySymbol(String currencyCode)
-    {
+    public void setInternationalCurrencySymbol(String currencyCode) {
+        Objects.requireNonNull(currencyCode);
+        // init over setting currencyInit flag as true so that currency has
+        // fallback if code is not valid
         initializeCurrency(locale);
         hashCode = 0;
         intlCurrencySymbol = currencyCode;
-        currency = null;
-        if (currencyCode != null) {
-            try {
-                currency = Currency.getInstance(currencyCode);
-                currencySymbol = currency.getSymbol();
-            } catch (IllegalArgumentException e) {
-            }
-        }
+        try {
+            currency = Currency.getInstance(currencyCode);
+            currencySymbol = currency.getSymbol(locale);
+        } catch (IllegalArgumentException _) {} // Simply ignore if not valid
     }
 
     /**
-     * Gets the currency of these DecimalFormatSymbols. May be null if the
-     * currency symbol attribute was previously set to a value that's not
-     * a valid ISO 4217 currency code.
-     *
-     * @return the currency used, or null
+     * {@return the {@code Currency} of this {@code DecimalFormatSymbols}}
      * @since 1.4
      */
     public Currency getCurrency() {
@@ -485,7 +490,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Sets the currency of these DecimalFormatSymbols.
+     * Sets the currency of this {@code DecimalFormatSymbols}.
      * This also sets the currency symbol attribute to the currency's symbol
      * in the DecimalFormatSymbols' locale, and the international currency
      * symbol attribute to the currency's ISO 4217 currency code.
@@ -497,9 +502,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @see #setInternationalCurrencySymbol
      */
     public void setCurrency(Currency currency) {
-        if (currency == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(currency);
         initializeCurrency(locale);
         hashCode = 0;
         this.currency = currency;
@@ -555,9 +558,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setExponentSeparator(String exp)
     {
-        if (exp == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(exp);
         hashCode = 0;
         exponentialSeparator = exp;
     }
@@ -719,6 +720,17 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         this.minusSign = findNonFormatChar(minusSignText, '-');
     }
 
+    /**
+     * {@return the lenient minus signs} Multiple lenient minus signs
+     * are concatenated to form the returned string. Each codepoint
+     * in the string is a valid minus sign pattern. If there are no
+     * lenient minus signs defined in this locale, {@code minusSignText}
+     * is returned.
+     */
+    String getLenientMinusSigns() {
+        return lenientMinusSigns;
+    }
+
     //------------------------------------------------------------
     // END     Package Private methods ... to be made public later
     //------------------------------------------------------------
@@ -767,7 +779,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             patternSeparator == other.patternSeparator &&
             infinity.equals(other.infinity) &&
             NaN.equals(other.NaN) &&
-            getCurrencySymbol().equals(other.getCurrencySymbol()) && // possible currency init occurs here
+            // Currency fields are lazy. Init via get call to ensure non-null
+            getCurrencySymbol().equals(other.getCurrencySymbol()) &&
             intlCurrencySymbol.equals(other.intlCurrencySymbol) &&
             currency == other.currency &&
             monetarySeparator == other.monetarySeparator &&
@@ -800,7 +813,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
                 patternSeparator,
                 infinity,
                 NaN,
-                getCurrencySymbol(), // possible currency init occurs here
+                // Currency fields are lazy. Init via get call to ensure non-null
+                getCurrencySymbol(),
                 intlCurrencySymbol,
                 currency,
                 monetarySeparator,
@@ -814,21 +828,10 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     /**
      * Initializes the symbols from the FormatData resource bundle.
      */
-    private void initialize( Locale locale ) {
+    private void initialize(Locale locale) {
         this.locale = locale;
 
-        // check for region override
-        Locale override = locale.getUnicodeLocaleType("nu") == null ?
-            CalendarDataUtility.findRegionOverride(locale) :
-            locale;
-
-        // get resource bundle data
-        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DecimalFormatSymbolsProvider.class, override);
-        // Avoid potential recursions
-        if (!(adapter instanceof ResourceBundleBasedAdapter)) {
-            adapter = LocaleProviderAdapter.getResourceBundleBased();
-        }
-        Object[] data = adapter.getLocaleResources(override).getDecimalFormatSymbolsData();
+        Object[] data = loadNumberData(locale);
         String[] numberElements = (String[]) data[0];
 
         decimalSeparator = numberElements[0].charAt(0);
@@ -853,9 +856,28 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         monetaryGroupingSeparator = numberElements.length < 13 || numberElements[12].isEmpty() ?
             groupingSeparator : numberElements[12].charAt(0);
 
+        // Lenient minus signs
+        lenientMinusSigns = numberElements.length < 14 ? minusSignText : numberElements[13];
+
         // maybe filled with previously cached values, or null.
         intlCurrencySymbol = (String) data[1];
         currencySymbol = (String) data[2];
+    }
+
+    private Object[] loadNumberData(Locale locale) {
+        // check for region override
+        Locale override = locale.getUnicodeLocaleType("nu") == null ?
+            CalendarDataUtility.findRegionOverride(locale) :
+            locale;
+
+        // get resource bundle data
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DecimalFormatSymbolsProvider.class, override);
+        // Avoid potential recursions
+        if (!(adapter instanceof ResourceBundleBasedAdapter)) {
+            adapter = LocaleProviderAdapter.getResourceBundleBased();
+        }
+
+        return adapter.getLocaleResources(override).getDecimalFormatSymbolsData();
     }
 
     /**
@@ -993,6 +1015,15 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             } catch (IllegalArgumentException e) {
             }
             currencyInitialized = true;
+        }
+
+        // `locale` was once nullable, need to check before loading locale data
+        if (locale != null && loadNumberData(locale) instanceof Object[] d &&
+            d[0] instanceof String[] numberElements &&
+            numberElements.length >= 14) {
+            lenientMinusSigns = numberElements[13];
+        } else {
+            lenientMinusSigns = minusSignText;
         }
     }
 
@@ -1172,6 +1203,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     // currency; only the ISO code is serialized.
     private transient Currency currency;
     private transient volatile boolean currencyInitialized;
+
+    // Lenient minus. No need to be set by applications
+    private transient String lenientMinusSigns;
 
     /**
      * Cached hash code.

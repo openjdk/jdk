@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@
 #include <java_awt_Toolkit.h>
 #include <java_awt_event_InputMethodEvent.h>
 
-extern void initScreens(JNIEnv *env);
+extern BOOL initScreens(JNIEnv *env);
 extern "C" void awt_dnd_initialize();
 extern "C" void awt_dnd_uninitialize();
 extern "C" void awt_clipboard_uninitialize(JNIEnv *env);
@@ -102,15 +102,34 @@ extern void DWMResetCompositionEnabled();
    first loaded */
 JavaVM *jvm = NULL;
 
+/* Return a handle to the module containing this method, either a DLL in case
+ * of a dynamic library build, or the .EXE in case of a static build.
+ */
+static HMODULE GetAwtModuleHandle() {
+    HMODULE hModule = NULL;
+    GetModuleHandleEx(
+        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        (LPCTSTR) &GetAwtModuleHandle,
+        &hModule
+    );
+    return hModule;
+}
+
+extern "C" {
+
 JNIEXPORT jint JNICALL
 DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 {
     TRY;
 
+    AwtToolkit::GetInstance().SetModuleHandle(GetAwtModuleHandle());
+
     jvm = vm;
     return JNI_VERSION_1_2;
 
     CATCH_BAD_ALLOC_RET(0);
+}
+
 }
 
 extern "C" JNIEXPORT jboolean JNICALL AWTIsHeadless() {
@@ -138,6 +157,78 @@ extern "C" JNIEXPORT jboolean JNICALL AWTIsHeadless() {
 }
 
 #define IDT_AWT_MOUSECHECK 0x101
+#define IDT_AWT_DISPLAYCHANGE 0x102
+
+#define AWT_DISPLAYCHANGE_RETRY_DELAY 250
+#define AWT_DISPLAYCHANGE_RETRY_LIMIT 20
+
+class DisplayChangeHandler {
+public:
+    static BOOL Handle(JNIEnv *env, HWND hWnd) {
+        // Reinitialize screens
+        if (!initScreens(env)) {
+            OnDisplayChangeFailed(hWnd);
+            return FALSE;
+        }
+
+        OnDisplayChangeSucceeded(hWnd);
+
+        // Notify Java side - call WToolkit.displayChanged()
+        jclass clazz = env->FindClass("sun/awt/windows/WToolkit");
+        DASSERT(clazz != NULL);
+        if (!clazz) throw std::bad_alloc();
+        env->CallStaticVoidMethod(clazz, AwtToolkit::displayChangeMID);
+
+        return !env->ExceptionCheck();
+    }
+
+    static void Reset(HWND hWnd) {
+        ::KillTimer(hWnd, IDT_AWT_DISPLAYCHANGE);
+        retryCount = 0;
+    }
+
+    static void ScheduleFromSessionChange(HWND hWnd) {
+        if (!recoveryPending) {
+            return;
+        }
+        Reset(hWnd);
+        Schedule(hWnd);
+    }
+
+private:
+    static void OnDisplayChangeFailed(HWND hWnd) {
+        recoveryPending = TRUE;
+        Schedule(hWnd);
+    }
+
+    static void OnDisplayChangeSucceeded(HWND hWnd) {
+        recoveryPending = FALSE;
+        Reset(hWnd);
+    }
+
+    static void Schedule(HWND hWnd) {
+        if (retryCount >= AWT_DISPLAYCHANGE_RETRY_LIMIT) {
+            Reset(hWnd);
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "AwtToolkit: Display change retry limit exceeded.");
+            return;
+        }
+
+        retryCount++;
+        if (::SetTimer(hWnd, IDT_AWT_DISPLAYCHANGE,
+                       AWT_DISPLAYCHANGE_RETRY_DELAY, NULL) == 0) {
+            Reset(hWnd);
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "AwtToolkit: Failed to schedule display change retry.");
+        }
+    }
+
+    static int retryCount;
+    static BOOL recoveryPending;
+};
+
+int DisplayChangeHandler::retryCount = 0;
+BOOL DisplayChangeHandler::recoveryPending = FALSE;
 
 static LPCTSTR szAwtToolkitClassName = TEXT("SunAwtToolkit");
 
@@ -244,32 +335,6 @@ BOOL AwtToolkit::activateKeyboardLayout(HKL hkl) {
     }
 
     return (prev != 0);
-}
-
-/************************************************************************
- * Exported functions
- */
-
-extern "C" BOOL APIENTRY DllMain(HANDLE hInstance, DWORD ul_reason_for_call,
-                                 LPVOID)
-{
-    // Don't use the TRY and CATCH_BAD_ALLOC_RET macros if we're detaching
-    // the library. Doing so causes awt.dll to call back into the VM during
-    // shutdown. This crashes the HotSpot VM.
-    switch (ul_reason_for_call) {
-    case DLL_PROCESS_ATTACH:
-        TRY;
-        AwtToolkit::GetInstance().SetModuleHandle((HMODULE)hInstance);
-        CATCH_BAD_ALLOC_RET(FALSE);
-        break;
-    case DLL_PROCESS_DETACH:
-#ifdef DEBUG
-        DTrace_DisableMutex();
-        DMem_DisableMutex();
-#endif // DEBUG
-        break;
-    }
-    return TRUE;
 }
 
 /************************************************************************
@@ -1011,6 +1076,14 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
       }
 
       case WM_TIMER: {
+          if (wParam == IDT_AWT_DISPLAYCHANGE) {
+              if (DisplayChangeHandler::Handle(env, hWnd)) {
+                  GetInstance().m_displayChanged = TRUE;
+                  ::PostMessage(HWND_BROADCAST, WM_PALETTEISCHANGING, NULL, NULL);
+              }
+              return 0;
+          }
+
           // 6479820. Should check if a window is in manual resizing process: skip
           // sending any MouseExit/Enter events while inside resize-loop.
           // Note that window being in manual moving process could still
@@ -1252,18 +1325,11 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           return tk.m_inputMethodData;
       }
       case WM_DISPLAYCHANGE: {
-          // Reinitialize screens
-          initScreens(env);
-
-          // Notify Java side - call WToolkit.displayChanged()
-          jclass clazz = env->FindClass("sun/awt/windows/WToolkit");
-          DASSERT(clazz != NULL);
-          if (!clazz) throw std::bad_alloc();
-          env->CallStaticVoidMethod(clazz, AwtToolkit::displayChangeMID);
-
-          GetInstance().m_displayChanged = TRUE;
-
-          ::PostMessage(HWND_BROADCAST, WM_PALETTEISCHANGING, NULL, NULL);
+          DisplayChangeHandler::Reset(hWnd);
+          if (DisplayChangeHandler::Handle(env, hWnd)) {
+              GetInstance().m_displayChanged = TRUE;
+              ::PostMessage(HWND_BROADCAST, WM_PALETTEISCHANGING, NULL, NULL);
+          }
           break;
       }
       /* Session management */
@@ -1348,6 +1414,9 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
                                               activate
                                               ? JNI_TRUE
                                               : JNI_FALSE, reason);
+              if (activate) {
+                  DisplayChangeHandler::ScheduleFromSessionChange(hWnd);
+              }
           }
           break;
       }
@@ -1438,24 +1507,6 @@ LRESULT CALLBACK AwtToolkit::MouseLowLevelHook(int code,
             }
 
             tk.m_lastWindowUnderMouse = hwnd;
-
-            if (fw) {
-                fw->UpdateSecurityWarningVisibility();
-            }
-            // ... however, because we use GA_ROOT, we may find the warningIcon
-            // which is not a Java windows.
-            if (AwtWindow::IsWarningWindow(hwnd)) {
-                hwnd = ::GetParent(hwnd);
-                if (hwnd) {
-                    tw = (AwtWindow*)AwtComponent::GetComponent(hwnd);
-                }
-                tk.m_lastWindowUnderMouse = hwnd;
-            }
-            if (tw) {
-                tw->UpdateSecurityWarningVisibility();
-            }
-
-
         }
     }
 
@@ -1909,48 +1960,6 @@ HICON AwtToolkit::GetAwtIconSm()
     return defaultIconSm;
 }
 
-// The icon at index 0 must be gray. See AwtWindow::GetSecurityWarningIcon()
-HICON AwtToolkit::GetSecurityWarningIcon(UINT index, UINT w, UINT h)
-{
-    //Note: should not exceed 10 because of the current implementation.
-    static const int securityWarningIconCounter = 3;
-
-    static HICON securityWarningIcon[securityWarningIconCounter]      = {NULL, NULL, NULL};
-    static UINT securityWarningIconWidth[securityWarningIconCounter]  = {0, 0, 0};
-    static UINT securityWarningIconHeight[securityWarningIconCounter] = {0, 0, 0};
-
-    index = AwtToolkit::CalculateWave(index, securityWarningIconCounter);
-
-    if (securityWarningIcon[index] == NULL ||
-            w != securityWarningIconWidth[index] ||
-            h != securityWarningIconHeight[index])
-    {
-        if (securityWarningIcon[index] != NULL)
-        {
-            ::DestroyIcon(securityWarningIcon[index]);
-        }
-
-        static const wchar_t securityWarningIconName[] = L"SECURITY_WARNING_";
-        wchar_t iconResourceName[sizeof(securityWarningIconName) + 2];
-        ::ZeroMemory(iconResourceName, sizeof(iconResourceName));
-        wcscpy(iconResourceName, securityWarningIconName);
-
-        wchar_t strIndex[2];
-        ::ZeroMemory(strIndex, sizeof(strIndex));
-        strIndex[0] = L'0' + index;
-
-        wcscat(iconResourceName, strIndex);
-
-        securityWarningIcon[index] = (HICON)::LoadImage(GetModuleHandle(),
-                iconResourceName,
-                IMAGE_ICON, w, h, LR_DEFAULTCOLOR);
-        securityWarningIconWidth[index] = w;
-        securityWarningIconHeight[index] = h;
-    }
-
-    return securityWarningIcon[index];
-}
-
 void throw_if_shutdown(void)
 {
     AwtToolkit::GetInstance().VerifyActive();
@@ -1996,28 +2005,13 @@ JNIEnv* AwtToolkit::GetEnv() {
 
 BOOL AwtToolkit::GetScreenInsets(int screenNum, RECT * rect)
 {
-    /* if primary display */
-    if (screenNum == 0) {
-        RECT rRW;
-        if (::SystemParametersInfo(SPI_GETWORKAREA,0,(void *) &rRW,0) == TRUE) {
-            rect->top = rRW.top;
-            rect->left = rRW.left;
-            rect->bottom = ::GetSystemMetrics(SM_CYSCREEN) - rRW.bottom;
-            rect->right = ::GetSystemMetrics(SM_CXSCREEN) - rRW.right;
-            return TRUE;
-        }
-    }
-    /* if additional display */
-    else {
-        MONITORINFO *miInfo;
-        miInfo = AwtWin32GraphicsDevice::GetMonitorInfo(screenNum);
-        if (miInfo) {
-            rect->top = miInfo->rcWork.top    - miInfo->rcMonitor.top;
-            rect->left = miInfo->rcWork.left   - miInfo->rcMonitor.left;
-            rect->bottom = miInfo->rcMonitor.bottom - miInfo->rcWork.bottom;
-            rect->right = miInfo->rcMonitor.right - miInfo->rcWork.right;
-            return TRUE;
-        }
+    MONITORINFO *miInfo = AwtWin32GraphicsDevice::GetMonitorInfo(screenNum);
+    if (miInfo) {
+        rect->top = miInfo->rcWork.top - miInfo->rcMonitor.top;
+        rect->left = miInfo->rcWork.left - miInfo->rcMonitor.left;
+        rect->bottom = miInfo->rcMonitor.bottom - miInfo->rcWork.bottom;
+        rect->right = miInfo->rcMonitor.right - miInfo->rcWork.right;
+        return TRUE;
     }
     return FALSE;
 }
@@ -2195,7 +2189,7 @@ bool AwtToolkit::PreloadThread::Terminate(bool wrongThread)
     return true;
 }
 
-bool AwtToolkit::PreloadThread::InvokeAndTerminate(void(_cdecl *fn)(void *), void *param)
+bool AwtToolkit::PreloadThread::InvokeAndTerminate(void(*fn)(void *), void *param)
 {
     CriticalSection::Lock lock(threadLock);
 
@@ -2225,7 +2219,7 @@ unsigned WINAPI AwtToolkit::PreloadThread::StaticThreadProc(void *param)
 
 unsigned AwtToolkit::PreloadThread::ThreadProc()
 {
-    void(_cdecl *_execFunc)(void *) = NULL;
+    void(*_execFunc)(void *) = NULL;
     void *_execParam = NULL;
     bool _wrongThread = false;
 
@@ -2852,41 +2846,6 @@ Java_sun_awt_windows_WToolkit_isDynamicLayoutSupportedNative(JNIEnv *env,
     return (jboolean) AwtToolkit::GetInstance().IsDynamicLayoutSupported();
 
     CATCH_BAD_ALLOC_RET(FALSE);
-}
-
-/*
- * Class:     sun_awt_windows_WToolkit
- * Method:    printWindowsVersion
- * Signature: ()Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL
-Java_sun_awt_windows_WToolkit_getWindowsVersion(JNIEnv *env, jclass cls)
-{
-    TRY;
-
-    WCHAR szVer[128];
-
-    DWORD version = ::GetVersion();
-    swprintf(szVer, 128, L"0x%x = %ld", version, version);
-    int l = lstrlen(szVer);
-
-    if (IS_WIN2000) {
-        if (IS_WINXP) {
-            if (IS_WINVISTA) {
-                swprintf(szVer + l, 128, L" (Windows Vista)");
-            } else {
-                swprintf(szVer + l, 128, L" (Windows XP)");
-            }
-        } else {
-            swprintf(szVer + l, 128, L" (Windows 2000)");
-        }
-    } else {
-        swprintf(szVer + l, 128, L" (Unknown)");
-    }
-
-    return JNU_NewStringPlatform(env, szVer);
-
-    CATCH_BAD_ALLOC_RET(NULL);
 }
 
 JNIEXPORT void JNICALL

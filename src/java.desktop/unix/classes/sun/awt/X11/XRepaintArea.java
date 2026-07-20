@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ final class XRepaintArea extends RepaintArea {
     /**
      * Calls {@code Component.update(Graphics)} with given Graphics.
      */
+    @Override
     protected void updateComponent(Component comp, Graphics g) {
         if (comp != null) {
             // We don't call peer.paintPeer() here, because we shouldn't paint
@@ -56,6 +57,7 @@ final class XRepaintArea extends RepaintArea {
     /**
      * Calls {@code Component.paint(Graphics)} with given Graphics.
      */
+    @Override
     protected void paintComponent(Component comp, Graphics g) {
         if (comp != null) {
             final XComponentPeer peer = AWTAccessor.getComponentAccessor()

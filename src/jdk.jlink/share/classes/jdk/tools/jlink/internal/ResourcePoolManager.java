@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import jdk.internal.jimage.decompressor.CompressedResourceHeader;
-import jdk.internal.module.Resources;
+import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleInfo.Attributes;
 import jdk.internal.module.ModuleTarget;
@@ -66,15 +66,8 @@ public class ResourcePoolManager {
         }
     }
 
-    /**
-     * Returns true if a resource has an effective package.
-     */
-    public static boolean isNamedPackageResource(String path) {
-        return (path.endsWith(".class") && !path.endsWith("module-info.class")) ||
-                Resources.canEncapsulate(path);
-    }
-
     static class ResourcePoolModuleImpl implements ResourcePoolModule {
+        private static final String PREVIEW_PREFIX = "META-INF/preview/";
 
         final Map<String, ResourcePoolEntry> moduleContent = new LinkedHashMap<>();
         // lazily initialized
@@ -127,16 +120,8 @@ public class ResourcePoolManager {
         public Set<String> packages() {
             Set<String> pkgs = new HashSet<>();
             moduleContent.values().stream()
-                .filter(m -> m.type() == ResourcePoolEntry.Type.CLASS_OR_RESOURCE)
-                .forEach(res -> {
-                    String name = ImageFileCreator.resourceName(res.path());
-                    if (isNamedPackageResource(name)) {
-                        String pkg = ImageFileCreator.toPackage(name);
-                        if (!pkg.isEmpty()) {
-                            pkgs.add(pkg);
-                        }
-                    }
-                });
+                    .filter(m -> m.type() == ResourcePoolEntry.Type.CLASS_OR_RESOURCE)
+                    .forEach(res -> inferPackageName(res).ifPresent(pkgs::add));
             return pkgs;
         }
 
@@ -153,6 +138,39 @@ public class ResourcePoolManager {
         @Override
         public int entryCount() {
             return moduleContent.values().size();
+        }
+
+        /**
+         * Returns a valid non-empty package name, inferred from a resource pool
+         * entry's path.
+         *
+         * <p>If the resource pool entry is for a preview resource (i.e. with
+         * path {@code "/mod-name/META-INF/preview/pkg-path/resource-name"})
+         * the package name is the non-preview name based on {@code "pkg-path"}.
+         *
+         * @return the inferred package name, or {@link Optional#empty() empty}
+         *     if no name could be inferred.
+         */
+        private static Optional<String> inferPackageName(ResourcePoolEntry res) {
+            // Expect entry paths to be "/mod-name/pkg-path/resource-name", but
+            // may also get "/mod-name/META-INF/preview/pkg-path/resource-name"
+            String name = res.path();
+            if (name.charAt(0) == '/') {
+                int pkgStart = name.indexOf('/', 1) + 1;
+                int pkgEnd = name.lastIndexOf('/');
+                if (pkgStart > 0 && pkgEnd > pkgStart) {
+                    String pkgPath = name.substring(pkgStart, pkgEnd);
+                    // Handle preview paths by removing the prefix.
+                    if (pkgPath.startsWith(PREVIEW_PREFIX)) {
+                        pkgPath = pkgPath.substring(PREVIEW_PREFIX.length());
+                    }
+                    String pkgName = pkgPath.replace('/', '.');
+                    if (Checks.isPackageName(pkgName)) {
+                        return Optional.of(pkgName);
+                    }
+                }
+            }
+            return Optional.empty();
         }
     }
 

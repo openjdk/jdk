@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,8 @@ public class invokemethod001a {
 
     //====================================================== test program
 
+    static Thread test_thread = null;
+
     //    String mName =                        //!!!!!!!!!!!!!!!!!!!!!!
     //    "nsk.jdi.ClassType.invokeMethod";
 
@@ -98,8 +100,8 @@ public class invokemethod001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Thread test_thread =
-                                 JDIThreadFactory.newThread(new Threadinvokemethod001a("testedThread"));
+                         test_thread =
+                             JDIThreadFactory.newThread(new Threadinvokemethod001a("testedThread"));
                          log1("       thread2 is created");
 
                          label:

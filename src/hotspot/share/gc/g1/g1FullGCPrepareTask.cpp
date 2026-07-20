@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
@@ -61,13 +60,13 @@ G1FullGCPrepareTask::G1FullGCPrepareTask(G1FullCollector* collector) :
 }
 
 void G1FullGCPrepareTask::set_has_free_compaction_targets() {
-  if (!_has_free_compaction_targets) {
-    _has_free_compaction_targets = true;
+  if (!has_free_compaction_targets()) {
+    _has_free_compaction_targets.store_relaxed(true);
   }
 }
 
 bool G1FullGCPrepareTask::has_free_compaction_targets() {
-  return _has_free_compaction_targets;
+  return _has_free_compaction_targets.load_relaxed();
 }
 
 void G1FullGCPrepareTask::work(uint worker_id) {

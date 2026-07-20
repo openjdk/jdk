@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.awt.peer.RobotPeer;
 
-import sun.awt.AWTPermissions;
 import sun.awt.ComponentFactory;
 import sun.awt.SunToolkit;
 import sun.awt.image.SunWritableRaster;
@@ -58,6 +57,15 @@ import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
  * events are generated in the platform's native input
  * queue. For example, {@code Robot.mouseMove} will actually move
  * the mouse cursor instead of just generating mouse move events.
+ *
+ * @apiNote When {@code autoWaitForIdle()} is enabled, mouse and key related methods
+ * cannot be called on the AWT EDT. This is because when {@code autoWaitForIdle()}
+ * is enabled, the mouse and key methods implicitly call {@code waitForIdle()}
+ * which will throw {@code IllegalThreadStateException} when called on the AWT EDT.
+ * In addition, screen capture operations can be lengthy
+ * and {@code delay(long ms)} clearly inserts a delay, so these also
+ * should not be called on the EDT. Taken together, this means that as much as possible,
+ * methods on this class should not be called on the EDT.
  * <p>
  * Note that some platforms require special privileges or extensions
  * to access low-level input control. If the current platform configuration
@@ -119,15 +127,26 @@ public class Robot {
     private DirectColorModel screenCapCM = null;
 
     /**
+     * Default delay in milliseconds for mouse
+     * {@link #glide(int, int, int, int) glide},
+     * {@link #type(int) type}, and
+     * {@link #click(int) click}.
+     */
+    public static final int DEFAULT_DELAY = 20;
+
+    /**
+     * Default pixel step-length for mouse
+     * {@link #glide(int, int, int, int) glide}.
+     */
+    public static final int DEFAULT_STEP_LENGTH = 2;
+
+    /**
      * Constructs a Robot object in the coordinate system of the primary screen.
      *
      * @throws  AWTException if the platform configuration does not allow
      * low-level input control.  This exception is always thrown when
      * GraphicsEnvironment.isHeadless() returns true
-     * @throws  SecurityException if {@code createRobot} permission is not granted
      * @see     java.awt.GraphicsEnvironment#isHeadless
-     * @see     SecurityManager#checkPermission
-     * @see     AWTPermission
      */
     public Robot() throws AWTException {
         checkHeadless();
@@ -156,11 +175,8 @@ public class Robot {
      * GraphicsEnvironment.isHeadless() returns true.
      * @throws  IllegalArgumentException if {@code screen} is not a screen
      *          GraphicsDevice.
-     * @throws  SecurityException if {@code createRobot} permission is not granted
      * @see     java.awt.GraphicsEnvironment#isHeadless
      * @see     GraphicsDevice
-     * @see     SecurityManager#checkPermission
-     * @see     AWTPermission
      */
     public Robot(GraphicsDevice screen) throws AWTException {
         checkHeadless();
@@ -169,7 +185,6 @@ public class Robot {
     }
 
     private void init(GraphicsDevice screen) throws AWTException {
-        checkRobotAllowed();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         if (toolkit instanceof ComponentFactory) {
             peer = ((ComponentFactory)toolkit).createRobot(screen);
@@ -199,15 +214,6 @@ public class Robot {
         LEGAL_BUTTON_MASK = tmpMask;
     }
 
-    /* determine if the security policy allows Robot's to be created */
-    private static void checkRobotAllowed() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.CREATE_ROBOT_PERMISSION);
-        }
-    }
-
     /**
      * Check for headless state and throw {@code AWTException} if headless.
      */
@@ -233,6 +239,8 @@ public class Robot {
      *
      * @param x         X position
      * @param y         Y position
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
      */
     public synchronized void mouseMove(int x, int y) {
         peer.mouseMove(x, y);
@@ -285,6 +293,7 @@ public class Robot {
      *         and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
      * @throws IllegalArgumentException if the {@code buttons} mask contains the mask for extra mouse button
      *         that does not exist on the mouse and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread and {@code isAutoWaitForIdle} would return true
      * @see #mouseRelease(int)
      * @see InputEvent#getMaskForButton(int)
      * @see Toolkit#areExtraMouseButtonsEnabled()
@@ -342,6 +351,7 @@ public class Robot {
      *         and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
      * @throws IllegalArgumentException if the {@code buttons} mask contains the mask for extra mouse button
      *         that does not exist on the mouse and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread and {@code isAutoWaitForIdle} would return true
      * @see #mousePress(int)
      * @see InputEvent#getMaskForButton(int)
      * @see Toolkit#areExtraMouseButtonsEnabled()
@@ -366,6 +376,8 @@ public class Robot {
      * @param wheelAmt  number of "notches" to move the mouse wheel
      *                  Negative values indicate movement up/away from the user,
      *                  positive values indicate movement down/towards the user.
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
      *
      * @since 1.4
      */
@@ -385,6 +397,8 @@ public class Robot {
      * @param   keycode Key to press (e.g. {@code KeyEvent.VK_A})
      * @throws  IllegalArgumentException if {@code keycode} is not
      *          a valid key
+     * @throws  IllegalThreadStateException if called on the AWT event
+     *          dispatching thread and {@code isAutoWaitForIdle} would return true
      * @see     #keyRelease(int)
      * @see     java.awt.event.KeyEvent
      */
@@ -404,7 +418,9 @@ public class Robot {
      * @param   keycode Key to release (e.g. {@code KeyEvent.VK_A})
      * @throws  IllegalArgumentException if {@code keycode} is not a
      *          valid key
-     * @see  #keyPress(int)
+     * @throws  IllegalThreadStateException if called on the AWT event
+     *          dispatching thread and {@code isAutoWaitForIdle} would return true
+     * @see     #keyPress(int)
      * @see     java.awt.event.KeyEvent
      */
     public synchronized void keyRelease(int keycode) {
@@ -438,13 +454,14 @@ public class Robot {
      *
      * @param   x       X position of pixel
      * @param   y       Y position of pixel
-     * @throws  SecurityException if {@code readDisplayPixels} permission
-     *          is not granted, or access to the screen is denied
+     * @throws  SecurityException if access to the screen is denied
      *          by the desktop environment
      * @return  Color of the pixel
      */
     public synchronized Color getPixelColor(int x, int y) {
-        checkScreenCaptureAllowed();
+        // need to sync the toolkit prior to grabbing the pixels since in some
+        // cases rendering to the screen may be delayed
+        Toolkit.getDefaultToolkit().sync();
         Point point = peer.useAbsoluteCoordinates() ? toDeviceSpaceAbs(x, y)
                                                     : toDeviceSpace(x, y);
         return new Color(peer.getRGBPixel(point.x, point.y));
@@ -467,11 +484,8 @@ public class Robot {
      * @return  The captured image
      * @throws  IllegalArgumentException if {@code screenRect} width and height
      *          are not greater than zero
-     * @throws  SecurityException if {@code readDisplayPixels} permission
-     *          is not granted, or access to the screen is denied
+     * @throws  SecurityException if access to the screen is denied
      *          by the desktop environment
-     * @see     SecurityManager#checkPermission
-     * @see     AWTPermission
      */
     public synchronized BufferedImage createScreenCapture(Rectangle screenRect) {
         return createCompatibleImage(screenRect, false)[0];
@@ -509,15 +523,18 @@ public class Robot {
      *          nativeResImage = resolutionVariants.get(0);
      *      }
      * }</pre>
+     *
+     * @apiNote It is recommended to avoid calling this method on
+     * the AWT Event Dispatch Thread since screen capture may be a lengthy
+     * operation, particularly if acquiring permissions is needed and involves
+     * user interaction.
+     *
      * @param   screenRect     Rect to capture in screen coordinates
      * @return  The captured image
      * @throws  IllegalArgumentException if {@code screenRect} width and height
      *          are not greater than zero
-     * @throws  SecurityException if {@code readDisplayPixels} permission
-     *          is not granted, or access to the screen is denied
+     * @throws  SecurityException if access to the screen is denied
      *          by the desktop environment
-     * @see     SecurityManager#checkPermission
-     * @see     AWTPermission
      *
      * @since 9
      */
@@ -530,8 +547,6 @@ public class Robot {
 
     private synchronized BufferedImage[]
             createCompatibleImage(Rectangle screenRect, boolean isHiDPI) {
-
-        checkScreenCaptureAllowed();
 
         checkValidRect(screenRect);
 
@@ -648,14 +663,6 @@ public class Robot {
         }
     }
 
-    private static void checkScreenCaptureAllowed() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.READ_DISPLAY_PIXELS_PERMISSION);
-        }
-    }
-
     /*
      * Called after an event is generated
      */
@@ -676,6 +683,10 @@ public class Robot {
     /**
      * Sets whether this Robot automatically invokes {@code waitForIdle}
      * after generating an event.
+     *
+     * @apiNote Setting this to true means you cannot call mouse and key-controlling events
+     * on the AWT Event Dispatching Thread
+     *
      * @param   isOn    Whether {@code waitForIdle} is automatically invoked
      */
     public synchronized void setAutoWaitForIdle(boolean isOn) {
@@ -723,9 +734,13 @@ public class Robot {
      * Sleeps for the specified time.
      * <p>
      * If the invoking thread is interrupted while waiting, then it will return
-     * immediately with the interrupt status set. If the interrupted status is
-     * already set, this method returns immediately with the interrupt status
+     * immediately with the interrupted status set. If the interrupted status is
+     * already set, this method returns immediately with the interrupted status
      * set.
+     *
+     * @apiNote It is recommended to avoid calling this method on
+     * the AWT Event Dispatch Thread since delay may be a lengthy
+     * operation.
      *
      * @param  ms time to sleep in milliseconds
      * @throws IllegalArgumentException if {@code ms} is not between {@code 0}
@@ -738,7 +753,7 @@ public class Robot {
             try {
                 Thread.sleep(ms);
             } catch (final InterruptedException ignored) {
-                thread.interrupt(); // Preserve interrupt status
+                thread.interrupt(); // Preserve interrupted status
             }
         }
     }
@@ -774,5 +789,218 @@ public class Robot {
     public synchronized String toString() {
         String params = "autoDelay = "+getAutoDelay()+", "+"autoWaitForIdle = "+isAutoWaitForIdle();
         return getClass().getName() + "[ " + params + " ]";
+    }
+
+    /**
+     * A convenience method that simulates clicking a mouse button by calling {@code mousePress},
+     * {@code mouseRelease} and {@code waitForIdle}. Invokes {@code waitForIdle} with a default
+     * delay of {@value #DEFAULT_DELAY} milliseconds after {@code mousePress} and {@code mouseRelease}
+     * calls. For specifics on valid inputs see {@link java.awt.Robot#mousePress(int)}.
+     *
+     * @param   buttons The button mask; a combination of one or more mouse button masks.
+     * @throws  IllegalArgumentException if the {@code buttons} mask contains the mask for
+     *          extra mouse button and support for extended mouse buttons is
+     *          {@linkplain Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
+     * @throws  IllegalArgumentException if the {@code buttons} mask contains the mask for
+     *          extra mouse button that does not exist on the mouse and support for extended
+     *          mouse buttons is {@linkplain Toolkit#areExtraMouseButtonsEnabled() enabled}
+     *          by Java
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
+     * @see     #DEFAULT_DELAY
+     * @see     #mousePress(int)
+     * @see     #mouseRelease(int)
+     * @see     InputEvent#getMaskForButton(int)
+     * @see     Toolkit#areExtraMouseButtonsEnabled()
+     * @see     java.awt.event.MouseEvent
+     * @since   26
+     */
+    public void click(int buttons) {
+        try {
+            mousePress(buttons);
+            waitForIdle(DEFAULT_DELAY);
+        } finally {
+            mouseRelease(buttons);
+            waitForIdle(DEFAULT_DELAY);
+        }
+    }
+
+    /**
+     * A convenience method that clicks mouse button 1.
+     *
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
+     * @see     #click(int)
+     * @since   26
+     */
+    public void click() {
+        click(InputEvent.BUTTON1_DOWN_MASK);
+    }
+
+    /**
+     * A convenience method that calls {@code waitForIdle} then waits an additional specified
+     * {@code delayValue} time in milliseconds.
+     *
+     * @param   delayValue  Additional delay length in milliseconds to wait until thread
+     *                      sync been completed
+     * @throws  IllegalThreadStateException if called on the AWT event
+     *          dispatching thread
+     * @throws  IllegalArgumentException if {@code delayValue} is not between {@code 0}
+     *          and {@code 60,000} milliseconds inclusive
+     * @since   26
+     */
+    public void waitForIdle(int delayValue) {
+        waitForIdle();
+        delay(delayValue);
+    }
+
+    /**
+     * A convenience method that moves the mouse in multiple
+     * steps from its current location to the destination coordinates.
+     *
+     * @implSpec Invokes {@link #mouseMove(int, int) mouseMove} with a step-length
+     * of {@value #DEFAULT_STEP_LENGTH} and a step-delay of {@value #DEFAULT_DELAY}.
+     *
+     * @param   x   Destination point x coordinate
+     * @param   y   Destination point y coordinate
+     *
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
+     * @see     #DEFAULT_STEP_LENGTH
+     * @see     #DEFAULT_DELAY
+     * @see     #glide(int, int, int, int, int, int)
+     * @since   26
+     */
+    public void glide(int x, int y) {
+        Point p = MouseInfo.getPointerInfo().getLocation();
+        glide(p.x, p.y, x, y);
+    }
+
+    /**
+     * A convenience method that moves the mouse in multiple steps
+     * from source coordinates to the destination coordinates.
+     *
+     * @implSpec Invokes {@link #mouseMove(int, int) mouseMove} with a step-length
+     * of {@value #DEFAULT_STEP_LENGTH} and a step-delay of {@value #DEFAULT_DELAY}.
+     *
+     * @param   srcX   Source point x coordinate
+     * @param   srcY   Source point y coordinate
+     * @param   dstX   Destination point x coordinate
+     * @param   dstY   Destination point y coordinate
+     *
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
+     * @see     #DEFAULT_STEP_LENGTH
+     * @see     #DEFAULT_DELAY
+     * @see     #glide(int, int, int, int, int, int)
+     * @since   26
+     */
+    public void glide(int srcX, int srcY, int dstX, int dstY) {
+        glide(srcX, srcY, dstX, dstY, DEFAULT_STEP_LENGTH, DEFAULT_DELAY);
+    }
+
+    /**
+     * A convenience method that moves the mouse in multiple
+     * steps from source point to the destination point with a
+     * given {@code stepLength} and {@code stepDelay}.
+     *
+     * @param   srcX        Source point x coordinate
+     * @param   srcY        Source point y coordinate
+     * @param   destX       Destination point x coordinate
+     * @param   destY       Destination point y coordinate
+     * @param   stepLength  Preferred length of one step in pixels
+     * @param   stepDelay   Delay between steps in milliseconds
+     *
+     * @throws  IllegalArgumentException if {@code stepLength} is not greater than zero
+     * @throws  IllegalArgumentException if {@code stepDelay} is not between {@code 0}
+     *          and {@code 60,000} milliseconds inclusive
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
+     * @see     #mouseMove(int, int)
+     * @see     #delay(int)
+     * @since   26
+     */
+    public void glide(int srcX, int srcY, int destX, int destY, int stepLength, int stepDelay) {
+        if (stepLength <= 0) {
+            throw new IllegalArgumentException("Step length must be greater than zero");
+        }
+        if (stepDelay <= 0 || stepDelay > 60000) {
+            throw new IllegalArgumentException("Step delay must be between 0 and 60,000 milliseconds");
+        }
+
+        int stepNum;
+        double tDx, tDy;
+        double dx, dy, ds;
+        double x, y;
+
+        dx = (destX - srcX);
+        dy = (destY - srcY);
+        ds = Math.sqrt(dx*dx + dy*dy);
+
+        tDx = dx / ds * stepLength;
+        tDy = dy / ds * stepLength;
+
+        int stepsCount = (int) ds / stepLength;
+
+        // Walk the mouse to the destination one step at a time
+        mouseMove(srcX, srcY);
+
+        for (x = srcX, y = srcY, stepNum = 0;
+             stepNum < stepsCount;
+             stepNum++) {
+            x += tDx;
+            y += tDy;
+            mouseMove((int)x, (int)y);
+            delay(stepDelay);
+        }
+
+        // Ensure the mouse moves to the right destination.
+        // The steps may have led the mouse to a slightly wrong place.
+        if (x != destX || y != destY) {
+            mouseMove(destX, destY);
+        }
+    }
+
+    /**
+     * A convenience method that simulates typing a key by calling {@code keyPress}
+     * and {@code keyRelease}. Invokes {@code waitForIdle} with a delay of {@value #DEFAULT_DELAY}
+     * milliseconds after {@code keyPress} and {@code keyRelease} calls.
+     * <p>
+     * Key codes that have more than one physical key associated with them
+     * (e.g. {@code KeyEvent.VK_SHIFT} could mean either the
+     * left or right shift key) will map to the left key.
+     *
+     * @param   keycode Key to type (e.g. {@code KeyEvent.VK_A})
+     * @throws  IllegalArgumentException if {@code keycode} is not
+     *          a valid key
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
+     * @see     #DEFAULT_DELAY
+     * @see     #keyPress(int)
+     * @see     #keyRelease(int)
+     * @see     java.awt.event.KeyEvent
+     * @since   26
+     */
+    public synchronized void type(int keycode) {
+        keyPress(keycode);
+        waitForIdle(DEFAULT_DELAY);
+        keyRelease(keycode);
+        waitForIdle(DEFAULT_DELAY);
+    }
+
+    /**
+     * A convenience method that simulates typing a char by calling {@code keyPress}
+     * and {@code keyRelease}. Gets the ExtendedKeyCode for the char and calls
+     * {@code type(int keycode)}.
+     *
+     * @param   c   Character to be typed (e.g. {@code 'a'})
+     * @throws  IllegalArgumentException if {@code keycode} is not
+     *          a valid key
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
+     * @see     #type(int)
+     * @see     #keyPress(int)
+     * @see     #keyRelease(int)
+     * @see     java.awt.event.KeyEvent
+     * @since   26
+     */
+    public synchronized void type(char c) {
+        type(KeyEvent.getExtendedKeyCodeForChar(c));
     }
 }

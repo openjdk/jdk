@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -406,7 +406,7 @@ int FormatterPos(cmsUInt32Number frm)
 static
 cmsFormatterAlphaFn _cmsGetFormatterAlpha(cmsContext id, cmsUInt32Number in, cmsUInt32Number out)
 {
-static cmsFormatterAlphaFn FormattersAlpha[6][6] = {
+static const cmsFormatterAlphaFn FormattersAlpha[6][6] = {
 
        /* from 8 */  { copy8,       from8to16,   from8to16SE,   from8toHLF,   from8toFLT,    from8toDBL    },
        /* from 16*/  { from16to8,   copy16,      from16to16,    from16toHLF,  from16toFLT,   from16toDBL   },
@@ -612,8 +612,8 @@ void _cmsHandleExtraChannels(_cmsTRANSFORM* p, const void* in,
         cmsUInt8Number* SourcePtr;
         cmsUInt8Number* DestPtr;
 
-        cmsUInt32Number SourceStrideIncrement = 0;
-        cmsUInt32Number DestStrideIncrement = 0;
+        size_t SourceStrideIncrement = 0;
+        size_t DestStrideIncrement = 0;
 
         // The loop itself
         for (i = 0; i < LineCount; i++) {
@@ -640,8 +640,8 @@ void _cmsHandleExtraChannels(_cmsTRANSFORM* p, const void* in,
         cmsUInt8Number* SourcePtr[cmsMAXCHANNELS];
         cmsUInt8Number* DestPtr[cmsMAXCHANNELS];
 
-        cmsUInt32Number SourceStrideIncrements[cmsMAXCHANNELS];
-        cmsUInt32Number DestStrideIncrements[cmsMAXCHANNELS];
+        size_t SourceStrideIncrements[cmsMAXCHANNELS];
+        size_t DestStrideIncrements[cmsMAXCHANNELS];
 
         memset(SourceStrideIncrements, 0, sizeof(SourceStrideIncrements));
         memset(DestStrideIncrements, 0, sizeof(DestStrideIncrements));

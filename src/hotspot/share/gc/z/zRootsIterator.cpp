@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/z/zNMethod.hpp"
@@ -30,7 +29,7 @@
 #include "gc/z/zStat.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
@@ -92,10 +91,10 @@ public:
 template <typename Iterator>
 template <typename ClosureType>
 void ZParallelApply<Iterator>::apply(ClosureType* cl) {
-  if (!Atomic::load(&_completed)) {
+  if (!AtomicAccess::load(&_completed)) {
     _iter.apply(cl);
-    if (!Atomic::load(&_completed)) {
-      Atomic::store(&_completed, true);
+    if (!AtomicAccess::load(&_completed)) {
+      AtomicAccess::store(&_completed, true);
     }
   }
 }
@@ -121,7 +120,7 @@ void ZCLDsIteratorAll::apply(CLDClosure* cl) {
 }
 
 uint ZJavaThreadsIterator::claim() {
-  return Atomic::fetch_then_add(&_claimed, 1u);
+  return AtomicAccess::fetch_then_add(&_claimed, 1u);
 }
 
 void ZJavaThreadsIterator::apply(ThreadClosure* cl) {

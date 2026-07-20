@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,22 @@
 
 package jdk.internal.classfile.impl;
 
-import java.util.List;
-import java.util.function.Function;
-import java.util.function.Consumer;
-
 import java.lang.classfile.AttributeMapper;
-import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import jdk.internal.classfile.impl.verifier.VerifierImpl;
+
+import static java.util.Objects.requireNonNull;
 
 public final class ClassFileImpl implements ClassFile {
 
@@ -88,7 +90,6 @@ public final class ClassFileImpl implements ClassFile {
             null  // _ -> null
         );
 
-    @SuppressWarnings("unchecked")
     @Override
     public ClassFileImpl withOptions(Option... options) {
         var smo = stackMapsOption;
@@ -123,7 +124,7 @@ public final class ClassFileImpl implements ClassFile {
             } else if (o instanceof AttributeMapperOption oo) {
                 amo = oo;
             } else { // null or unknown Option type
-                throw new IllegalArgumentException("Invalid option: " + o);
+                throw new IllegalArgumentException("Invalid option: " + requireNonNull(o));
             }
         }
         return new ClassFileImpl(smo, deo, lno, apo, cpso, sjo, dco, dlo, chro, amo);

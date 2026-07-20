@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.awt;
 
-import java.applet.Applet;
 import java.awt.dnd.DropTarget;
 import java.awt.event.ActionEvent;
 import java.awt.event.AdjustmentEvent;
@@ -69,8 +68,6 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Serial;
 import java.io.Serializable;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.util.Collections;
 import java.util.EventListener;
 import java.util.HashSet;
@@ -91,7 +88,6 @@ import javax.swing.JComponent;
 import javax.swing.JRootPane;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.ComponentFactory;
 import sun.awt.ConstrainableGraphics;
 import sun.awt.EmbeddedFrame;
@@ -108,7 +104,6 @@ import sun.java2d.SunGraphics2D;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.pipe.Region;
 import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
-import sun.security.action.GetPropertyAction;
 import sun.swing.SwingAccessor;
 import sun.util.logging.PlatformLogger;
 
@@ -240,12 +235,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
     transient Container parent;
 
     /**
-     * The {@code AppContext} of the component. Applets/Plugin may
-     * change the AppContext.
-     */
-    transient AppContext appContext;
-
-    /**
      * The x position of the component in the parent's coordinate system.
      *
      * @serial
@@ -308,7 +297,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     volatile Font font;
 
     /**
-     * The font which the peer is currently using.
+     * @serial The font which the peer is currently using.
      * ({@code null} if no peer exists.)
      */
     Font        peerFont;
@@ -502,13 +491,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
     static final Object LOCK = new AWTTreeLock();
     static class AWTTreeLock {}
 
-    /*
-     * The component's AccessControlContext.
-     */
-    @SuppressWarnings("removal")
-    private transient volatile AccessControlContext acc =
-        AccessController.getContext();
-
     /**
      * Minimum size.
      * (This field perhaps should have been transient).
@@ -518,7 +500,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     Dimension minSize;
 
     /**
-     * Whether or not setMinimumSize has been invoked with a non-null value.
+     * @serial Whether or not setMinimumSize has been invoked with a non-null value.
      */
     boolean minSizeSet;
 
@@ -531,7 +513,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     Dimension prefSize;
 
     /**
-     * Whether or not setPreferredSize has been invoked with a non-null value.
+     * @serial Whether or not setPreferredSize has been invoked with a non-null value.
      */
     boolean prefSizeSet;
 
@@ -543,7 +525,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     Dimension maxSize;
 
     /**
-     * Whether or not setMaximumSize has been invoked with a non-null value.
+     * @serial Whether or not setMaximumSize has been invoked with a non-null value.
      */
     boolean maxSizeSet;
 
@@ -627,14 +609,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
             initIDs();
         }
 
-        @SuppressWarnings("removal")
-        String s = java.security.AccessController.doPrivileged(
-                                                               new GetPropertyAction("awt.image.incrementaldraw"));
+        String s = System.getProperty("awt.image.incrementaldraw");
         isInc = (s == null || s.equals("true"));
 
-        @SuppressWarnings("removal")
-        String s2 = java.security.AccessController.doPrivileged(
-                                                        new GetPropertyAction("awt.image.redrawrate"));
+        String s2 = System.getProperty("awt.image.redrawrate");
         incRate = (s2 != null) ? Integer.parseInt(s2) : 100;
     }
 
@@ -711,24 +689,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return objectLock;
     }
 
-    /*
-     * Returns the acc this component was constructed with.
-     */
-    @SuppressWarnings("removal")
-    final AccessControlContext getAccessControlContext() {
-        if (acc == null) {
-            throw new SecurityException("Component is missing AccessControlContext");
-        }
-        return acc;
-    }
-
     /**
-     * Whether the component is packed or not;
+     * @serial Whether the component is packed or not;
      */
     boolean isPacked = false;
 
     /**
-     * Pseudoparameter for direct Geometry API (setLocation, setBounds setSize
+     * @serial Pseudoparameter for direct Geometry API (setLocation, setBounds setSize
      * to signal setBounds what's changing. Should be used under TreeLock.
      * This is only needed due to the inability to change the cross-calling
      * order of public and deprecated methods.
@@ -904,12 +871,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
             {
                  Component.setRequestFocusController(requestController);
             }
-            public AppContext getAppContext(Component comp) {
-                 return comp.appContext;
-            }
-            public void setAppContext(Component comp, AppContext appContext) {
-                 comp.appContext = appContext;
-            }
             public Container getParent(Component comp) {
                 return comp.getParent_NoClientCode();
             }
@@ -977,11 +938,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 comp.processEvent(e);
             }
 
-            @SuppressWarnings("removal")
-            public AccessControlContext getAccessControlContext(Component comp) {
-                return comp.getAccessControlContext();
-            }
-
             public void revalidateSynchronously(Component comp) {
                 comp.revalidateSynchronously();
             }
@@ -1007,7 +963,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * tree (for example, by a {@code Frame} object).
      */
     protected Component() {
-        appContext = AppContext.getAppContext();
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -1431,15 +1386,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             throw new HeadlessException();
         }
 
-        @SuppressWarnings("removal")
-        PointerInfo pi = java.security.AccessController.doPrivileged(
-                                                                     new java.security.PrivilegedAction<PointerInfo>() {
-                                                                         public PointerInfo run() {
-                                                                             return MouseInfo.getPointerInfo();
-                                                                         }
-                                                                     }
-                                                                     );
-
+        PointerInfo pi = MouseInfo.getPointerInfo();
         synchronized (getTreeLock()) {
             Component inTheSameWindow = findUnderMouseInWindow(pi);
             if (!isSameOrAncestorOf(inTheSameWindow, true)) {
@@ -3492,7 +3439,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 (width > 0) && (height > 0)) {
                 PaintEvent e = new PaintEvent(this, PaintEvent.UPDATE,
                                               new Rectangle(x, y, width, height));
-                SunToolkit.postEvent(SunToolkit.targetToAppContext(this), e);
+                SunToolkit.postEvent(e);
             }
         }
     }
@@ -3975,10 +3922,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     /**
      * Inner class for flipping buffers on a component.  That component must
-     * be a {@code Canvas} or {@code Window} or {@code Applet}.
+     * be a {@code Canvas} or {@code Window}.
      * @see Canvas
      * @see Window
-     * @see Applet
      * @see java.awt.image.BufferStrategy
      * @author Michael Martak
      * @since 1.4
@@ -4026,11 +3972,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
         /**
          * Creates a new flipping buffer strategy for this component.
-         * The component must be a {@code Canvas} or {@code Window} or
-         * {@code Applet}.
+         * The component must be a {@code Canvas} or {@code Window}.
          * @see Canvas
          * @see Window
-         * @see Applet
          * @param numBuffers the number of buffers
          * @param caps the capabilities of the buffers
          * @throws AWTException if the capabilities supplied could not be
@@ -4043,16 +3987,14 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * {@code true}.
          * @see #createBuffers(int, BufferCapabilities)
          */
-        @SuppressWarnings("removal")
         protected FlipBufferStrategy(int numBuffers, BufferCapabilities caps)
             throws AWTException
         {
             if (!(Component.this instanceof Window) &&
-                !(Component.this instanceof Canvas) &&
-                !(Component.this instanceof Applet))
+                !(Component.this instanceof Canvas))
             {
                 throw new ClassCastException(
-                        "Component must be a Canvas or Window or Applet");
+                        "Component must be a Canvas or Window");
             }
             this.numBuffers = numBuffers;
             this.caps = caps;
@@ -4831,14 +4773,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
     @SuppressWarnings("deprecation")
     void dispatchEventImpl(AWTEvent e) {
         int id = e.getID();
-
-        // Check that this component belongs to this app-context
-        AppContext compContext = appContext;
-        if (compContext != null && !compContext.equals(AppContext.getAppContext())) {
-            if (eventLog.isLoggable(PlatformLogger.Level.FINE)) {
-                eventLog.fine("Event " + e + " is being dispatched on the wrong AppContext");
-            }
-        }
 
         if (eventLog.isLoggable(PlatformLogger.Level.FINEST)) {
             eventLog.finest("{0}", e);
@@ -6253,14 +6187,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
              }
 
              // Need to check non-bootstraps.
-             @SuppressWarnings("removal")
-             Boolean enabled = java.security.AccessController.doPrivileged(
-                 new java.security.PrivilegedAction<Boolean>() {
-                     public Boolean run() {
-                         return isCoalesceEventsOverriden(clazz);
-                     }
-                 }
-                 );
+             Boolean enabled = isCoalesceEventsOverriden(clazz);
              coalesceMap.put(clazz, enabled);
              return enabled;
          }
@@ -6338,7 +6265,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * and paint (and update) events.
      * For mouse move events the last event is always returned, causing
      * intermediate moves to be discarded.  For paint events, the new
-     * event is coalesced into a complex {@code RepaintArea} in the peer.
+     * event is coalesced into a complex repaint area in the peer.
      * The new {@code AWTEvent} is always returned.
      *
      * @param  existingEvent  the event already on the {@code EventQueue}
@@ -7434,7 +7361,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
     final Set<AWTKeyStroke> getFocusTraversalKeys_NoIDCheck(int id) {
         // Okay to return Set directly because it is an unmodifiable view
-        @SuppressWarnings("unchecked")
         Set<AWTKeyStroke> keystrokes = (focusTraversalKeys != null)
             ? focusTraversalKeys[id]
             : null;
@@ -7990,7 +7916,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             (this, temporary, focusedWindowChangeAllowed, time, cause);
         if (!success) {
             KeyboardFocusManager.getCurrentKeyboardFocusManager
-                (appContext).dequeueKeyEvents(time, this);
+                ().dequeueKeyEvents(time, this);
             if (focusLog.isLoggable(PlatformLogger.Level.FINEST)) {
                 focusLog.finest("Peer request failed");
             }
@@ -8181,7 +8107,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return res;
     }
 
-    @SuppressWarnings("removal")
     final Component getNextFocusCandidate() {
         Container rootAncestor = getTraversalRoot();
         Component comp = this;
@@ -8205,12 +8130,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 toFocus = policy.getDefaultComponent(rootAncestor);
                 if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
                     focusLog.finer("default component is " + toFocus);
-                }
-            }
-            if (toFocus == null) {
-                Applet applet = EmbeddedFrame.getAppletIfAncestorOf(this);
-                if (applet != null) {
-                    toFocus = applet;
                 }
             }
             candidate = toFocus;
@@ -8336,7 +8255,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * Used to disallow auto-focus-transfer on disposal of the focus owner
+     * @serial Used to disallow auto-focus-transfer on disposal of the focus owner
      * in the process of disposing its parent container.
      */
     private boolean autoFocusTransferOnDisposal = true;
@@ -8381,7 +8300,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see       #add(PopupMenu)
      * @since     1.1
      */
-    @SuppressWarnings("unchecked")
     public void remove(MenuComponent popup) {
         synchronized (getTreeLock()) {
             if (popups == null) {
@@ -8989,18 +8907,14 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @throws IOException if an I/O error occurs
      * @see #writeObject(ObjectOutputStream)
      */
-    @SuppressWarnings("removal")
     @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {
         objectLock = new Object();
 
-        acc = AccessController.getContext();
-
         s.defaultReadObject();
 
-        appContext = AppContext.getAppContext();
         coalescingEnabled = checkCoalescing();
         if (componentSerializedDataVersion < 4) {
             // These fields are non-transient and rely on default
@@ -9284,6 +9198,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     /**
      * The {@code AccessibleContext} associated with this {@code Component}.
+     * @serial
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     protected AccessibleContext accessibleContext = null;
@@ -9340,6 +9255,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         /**
          * A component listener to track show/hide/resize events
          * and convert them to PropertyChange events.
+         * @serial
          */
         @SuppressWarnings("serial") // Not statically typed as Serializable
         protected ComponentListener accessibleAWTComponentHandler = null;
@@ -9347,6 +9263,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         /**
          * A listener to track focus events
          * and convert them to PropertyChange events.
+         * @serial
          */
         @SuppressWarnings("serial") // Not statically typed as Serializable
         protected FocusListener accessibleAWTFocusHandler = null;

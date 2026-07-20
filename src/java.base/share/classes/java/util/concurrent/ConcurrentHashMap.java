@@ -69,6 +69,10 @@ import java.util.function.ToLongBiFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * A hash table supporting full concurrency of retrievals and
@@ -145,7 +149,7 @@ import jdk.internal.misc.Unsafe;
  * <p>Like {@link Hashtable} but unlike {@link HashMap}, this class
  * does <em>not</em> allow {@code null} to be used as a key or value.
  *
- * <p>ConcurrentHashMaps support a set of sequential and parallel bulk
+ * <p id="Bulk">ConcurrentHashMaps support a set of sequential and parallel bulk
  * operations that, unlike most {@link Stream} methods, are designed
  * to be safely, and often sensibly, applied even with maps that are
  * being concurrently updated by other threads; for example, when
@@ -261,6 +265,7 @@ import jdk.internal.misc.Unsafe;
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
+@AOTSafeClassInitializer
 public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     implements ConcurrentMap<K,V>, Serializable {
     private static final long serialVersionUID = 7249069246763182397L;
@@ -517,7 +522,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * The largest possible (non-power of two) array size.
      * Needed by toArray and related methods.
      */
-    static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+    static final int MAX_ARRAY_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
     /**
      * The default concurrency level for this table. Unused but
@@ -594,7 +599,16 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     static final int HASH_BITS = 0x7fffffff; // usable bits of normal node hash
 
     /** Number of CPUS, to place bounds on some sizings */
-    static final int NCPU = Runtime.getRuntime().availableProcessors();
+    static @Stable int NCPU;
+
+    static {
+        runtimeSetup();
+    }
+
+    @AOTRuntimeSetup
+    private static void runtimeSetup() {
+        NCPU = Runtime.getRuntime().availableProcessors();
+    }
 
     /**
      * Serialized pseudo-fields, provided only for jdk7 compatibility.
@@ -733,7 +747,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Returns k.compareTo(x) if x matches kc (k's screened comparable
      * class), else 0.
      */
-    @SuppressWarnings({"rawtypes","unchecked"}) // for cast to Comparable
+    @SuppressWarnings("unchecked") // for cast to Comparable
     static int compareComparables(Class<?> kc, Object k, Object x) {
         return (x == null || x.getClass() != kc ? 0 :
                 ((Comparable)k).compareTo(x));
@@ -1358,12 +1372,20 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             Node<K,V>[] t;
             int f = (t = table) == null ? 0 : t.length;
             Traverser<K,V> it = new Traverser<K,V>(t, f, 0, f);
-            for (Node<K,V> p; (p = it.advance()) != null; ) {
-                V val = p.val;
-                Object v = m.get(p.key);
-                if (v == null || (v != val && !v.equals(val)))
-                    return false;
+
+            try {
+                for (Node<K,V> p; (p = it.advance()) != null; ) {
+                    V val = p.val;
+                    Object v = m.get(p.key);
+                    if (v == null || (v != val && !v.equals(val)))
+                        return false;
+                }
+            } catch (ClassCastException | NullPointerException _) {
+                // m.get(p.key) is contractually allowed to throw CCE or NPE
+                // but CHM doesn't allow null keys, so NPE shouldn't occur in practice
+                return false;
             }
+
             for (Map.Entry<?,?> e : m.entrySet()) {
                 Object mk, mv, v;
                 if ((mk = e.getKey()) == null ||
@@ -3288,7 +3310,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 return false;
             if (tr != null && (tr.parent != t || tr.hash < t.hash))
                 return false;
-            if (t.red && tl != null && tl.red && tr != null && tr.red)
+            if (t.red && (tl != null && tl.red || tr != null && tr.red))
                 return false;
             if (tl != null && !checkInvariants(tl))
                 return false;
@@ -3693,7 +3715,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given action for each (key, value).
+     * Performs the given {@linkplain ##Bulk bulk} action for each (key, value).
      *
      * @param parallelismThreshold the (estimated) number of elements
      * needed for this operation to be executed in parallel
@@ -3709,7 +3731,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given action for each non-null transformation
+     * Performs the given {@linkplain ##Bulk bulk} action for each non-null transformation
      * of each (key, value).
      *
      * @param parallelismThreshold the (estimated) number of elements
@@ -3732,7 +3754,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns a non-null result from applying the given search
+     * Returns a non-null result from applying the given {@linkplain ##Bulk bulk} search
      * function on each (key, value), or null if none.  Upon
      * success, further element processing is suppressed and the
      * results of any other parallel invocations of the search
@@ -3756,7 +3778,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of accumulating the given {@linkplain ##Bulk bulk} transformation
      * of all (key, value) pairs using the given reducer to
      * combine values, or null if none.
      *
@@ -3782,7 +3804,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of accumulating the given {@linkplain ##Bulk bulk} transformation
      * of all (key, value) pairs using the given reducer to
      * combine values, and the given basis as an identity value.
      *
@@ -3808,7 +3830,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of accumulating the given {@linkplain ##Bulk bulk} transformation
      * of all (key, value) pairs using the given reducer to
      * combine values, and the given basis as an identity value.
      *
@@ -3834,7 +3856,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of accumulating the given {@linkplain ##Bulk bulk} transformation
      * of all (key, value) pairs using the given reducer to
      * combine values, and the given basis as an identity value.
      *
@@ -3860,7 +3882,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given action for each key.
+     * Performs the given {@linkplain ##Bulk bulk} action for each key.
      *
      * @param parallelismThreshold the (estimated) number of elements
      * needed for this operation to be executed in parallel
@@ -3876,7 +3898,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given action for each non-null transformation
+     * Performs the given {@linkplain ##Bulk bulk} action for each non-null transformation
      * of each key.
      *
      * @param parallelismThreshold the (estimated) number of elements
@@ -3899,7 +3921,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns a non-null result from applying the given search
+     * Returns a non-null result from applying the given {@linkplain ##Bulk bulk} search
      * function on each key, or null if none. Upon success,
      * further element processing is suppressed and the results of
      * any other parallel invocations of the search function are
@@ -3923,7 +3945,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating all keys using the given
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating all keys using the given
      * reducer to combine values, or null if none.
      *
      * @param parallelismThreshold the (estimated) number of elements
@@ -3942,7 +3964,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all keys using the given reducer to combine values, or
      * null if none.
      *
@@ -3968,7 +3990,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all keys using the given reducer to combine values, and
      * the given basis as an identity value.
      *
@@ -3994,7 +4016,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all keys using the given reducer to combine values, and
      * the given basis as an identity value.
      *
@@ -4020,7 +4042,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all keys using the given reducer to combine values, and
      * the given basis as an identity value.
      *
@@ -4046,7 +4068,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given action for each value.
+     * Performs the given {@linkplain ##Bulk bulk} action for each value.
      *
      * @param parallelismThreshold the (estimated) number of elements
      * needed for this operation to be executed in parallel
@@ -4063,7 +4085,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given action for each non-null transformation
+     * Performs the given {@linkplain ##Bulk bulk} action for each non-null transformation
      * of each value.
      *
      * @param parallelismThreshold the (estimated) number of elements
@@ -4086,7 +4108,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns a non-null result from applying the given search
+     * Returns a non-null result from {@linkplain ##Bulk bulk} applying the given search
      * function on each value, or null if none.  Upon success,
      * further element processing is suppressed and the results of
      * any other parallel invocations of the search function are
@@ -4110,7 +4132,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating all values using the
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating all values using the
      * given reducer to combine values, or null if none.
      *
      * @param parallelismThreshold the (estimated) number of elements
@@ -4128,7 +4150,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all values using the given reducer to combine values, or
      * null if none.
      *
@@ -4154,7 +4176,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all values using the given reducer to combine values,
      * and the given basis as an identity value.
      *
@@ -4180,7 +4202,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all values using the given reducer to combine values,
      * and the given basis as an identity value.
      *
@@ -4206,7 +4228,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all values using the given reducer to combine values,
      * and the given basis as an identity value.
      *
@@ -4232,7 +4254,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given action for each entry.
+     * Performs the given {@linkplain ##Bulk bulk} action for each entry.
      *
      * @param parallelismThreshold the (estimated) number of elements
      * needed for this operation to be executed in parallel
@@ -4247,7 +4269,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given action for each non-null transformation
+     * Performs the given {@linkplain ##Bulk bulk} action for each non-null transformation
      * of each entry.
      *
      * @param parallelismThreshold the (estimated) number of elements
@@ -4270,7 +4292,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns a non-null result from applying the given search
+     * Returns a non-null result from {@linkplain ##Bulk bulk} applying the given search
      * function on each entry, or null if none.  Upon success,
      * further element processing is suppressed and the results of
      * any other parallel invocations of the search function are
@@ -4294,7 +4316,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating all entries using the
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating all entries using the
      * given reducer to combine values, or null if none.
      *
      * @param parallelismThreshold the (estimated) number of elements
@@ -4312,7 +4334,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all entries using the given reducer to combine values,
      * or null if none.
      *
@@ -4338,7 +4360,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all entries using the given reducer to combine values,
      * and the given basis as an identity value.
      *
@@ -4364,7 +4386,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all entries using the given reducer to combine values,
      * and the given basis as an identity value.
      *
@@ -4390,7 +4412,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all entries using the given reducer to combine values,
      * and the given basis as an identity value.
      *
@@ -4600,6 +4622,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public static final class KeySetView<K,V> extends CollectionView<K,V,K>
         implements Set<K>, java.io.Serializable {
         private static final long serialVersionUID = 7249069246763182397L;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final V value;
         KeySetView(ConcurrentHashMap<K,V> map, V value) {  // non-public
@@ -6371,7 +6394,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         = U.objectFieldOffset(ConcurrentHashMap.class, "cellsBusy");
     private static final long CELLVALUE
         = U.objectFieldOffset(CounterCell.class, "value");
-    private static final int ABASE = U.arrayBaseOffset(Node[].class);
+    private static final long ABASE = U.arrayBaseOffset(Node[].class);
     private static final int ASHIFT;
 
     static {

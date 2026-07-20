@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "stubGenerator_x86_64.hpp"
 
 // Constants for libm trigonometric stubs
@@ -234,3 +233,30 @@ ATTRIBUTE_ALIGNED(16) static const juint _Ctable[] = {
 };
 address StubGenerator::Ctable = (address)_Ctable;
 
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_constants(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr))
+  ADD(_ONE);
+  ADD(_ONEHALF);
+  ADD(_SIGN_MASK);
+  ADD(_TWO_POW_55);
+  ADD(_TWO_POW_M55);
+  ADD(_SHIFTER);
+  ADD(_ZERO);
+  ADD(_SC_1);
+  ADD(_SC_2);
+  ADD(_SC_3);
+  ADD(_SC_4);
+  // Use value which was already cast to (address): StubGenerator::PI_4;
+  ADD(PI_4);
+  ADD(PI_4 + 8);
+  ADD(_PI32INV);
+  ADD(_NEG_ZERO);
+  ADD(_P_1);
+  ADD(_P_2);
+  ADD(_P_3);
+  ADD(_PI_INV_TABLE);
+  ADD(_Ctable);
+#undef ADD
+}
+#endif // INCLUDE_CDS

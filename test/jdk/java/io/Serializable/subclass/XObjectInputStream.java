@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,20 +72,6 @@ class XObjectInputStream extends AbstractObjectInputStream {
                 throw new InvalidClassException(currentClassDescriptor.getName(),
                                                 e.getMessage());
             }
-
-            //if currentDescriptor.isAssignable(Externalizable.class) {
-            //    Object[] argList = {this};
-            //    InvokeMethod(currentObject, readExternalMethod, argList);
-            //} else {
-            //    Does currentDescriptor have a readObject method
-            //    if it does
-            //        invokeMethod(this, readObjectMethod, {this});
-            //    else
-            //        defaultReadObject();
-            //}
-            // check for replacement on currentObject.
-            // if toplevel readobject
-            //    doObjectValidations.
 
         } finally {
             readResult = currentObject;
@@ -245,82 +231,9 @@ class XObjectInputStream extends AbstractObjectInputStream {
     private Object currentObject;
     private Class<?> currentClassDescriptor;
 
-
-
-    /****************************************************************/
-
-    /* CODE LIFTED FROM ObjectStreamClass constuctor.
-     * ObjectStreamClass.readObjectMethod is private.
-     *
-     * Look for the readObject method
-     * Set the accessible flag on it here. ObjectOutputStream
-     * will call it as necessary.
-     */
-    public static Method getReadObjectMethod(final Class<?> cl) {
-
-        Method readObjectMethod =
-            java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction<Method>() {
-                public Method run() {
-                    Method m = null;
-                    try {
-                        Class<?>[] args = {ObjectInputStream.class};
-                        m = cl.getDeclaredMethod("readObject", args);
-                        int mods = m.getModifiers();
-                        // Method must be private and non-static
-                        if (!Modifier.isPrivate(mods) ||
-                            Modifier.isStatic(mods)) {
-                            m = null;
-                        } else {
-                            m.setAccessible(true);
-                        }
-                    } catch (NoSuchMethodException e) {
-                        m = null;
-                    }
-                    return m;
-                }
-            });
-        return readObjectMethod;
-    }
-
     /*************************************************************/
 
-    /* taken verbatim from ObjectInputStream. */
-    private static void invokeMethod(final Object obj, final Method m,
-                                        final Object[] argList)
-        throws IOException
-    {
-        try {
-            java.security.AccessController.doPrivileged
-                (new java.security.PrivilegedExceptionAction<Void>() {
-                    public Void run() throws InvocationTargetException,
-                                        java.lang.IllegalAccessException {
-                        m.invoke(obj, argList);
-                        return null;
-                    }
-                });
-        } catch (java.security.PrivilegedActionException e) {
-            Exception ex = e.getException();
-            if (ex instanceof InvocationTargetException) {
-                Throwable t =
-                        ((InvocationTargetException)ex).getTargetException();
-                if (t instanceof IOException)
-                    throw (IOException)t;
-                else if (t instanceof RuntimeException)
-                    throw (RuntimeException) t;
-                else if (t instanceof Error)
-                    throw (Error) t;
-                else
-                    throw new Error("interal error");
-            } else {
-                // IllegalAccessException cannot happen
-            }
-        }
-    }
-
-    protected boolean enableResolveObject(boolean enable)
-        throws SecurityException
-    {
+    protected boolean enableResolveObject(boolean enable) {
         throw new Error("To be implemented");
     }
 

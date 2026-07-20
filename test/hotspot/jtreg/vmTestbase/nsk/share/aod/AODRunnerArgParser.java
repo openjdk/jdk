@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,12 @@ public class AODRunnerArgParser extends ArgumentParser {
             throw new TestBug("Target application isn't specified");
         }
 
-        return options.getProperty(TARGET_APP_PARAM);
+        String target = options.getProperty(TARGET_APP_PARAM);
+        // target may contain class and arguments in surrounding quotes
+        if (target.startsWith("\"") && target.endsWith("\"")) {
+            target = target.substring(1, target.length() - 1);
+        }
+        return target;
     }
 
     public String getTestedJDK() {

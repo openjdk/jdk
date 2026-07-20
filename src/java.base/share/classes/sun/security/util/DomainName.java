@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -62,7 +60,7 @@ import sun.security.ssl.SSLLogger;
  *      co.uk
  *      k12.ak.us
  *      com.tw
- *      \u7db2\u8def.tw
+ *      網路.tw
  *
  * Public suffixes effectively denote registration authorities.
  *
@@ -194,7 +192,7 @@ class DomainName {
                 }
                 return getRules(tld, new ZipInputStream(pubSuffixStream));
             } catch (IOException e) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine(
                         "cannot parse public suffix data for " + tld +
                          ": " + e.getMessage());
@@ -204,24 +202,15 @@ class DomainName {
         }
 
         private static InputStream getPubSuffixStream() {
-            @SuppressWarnings("removal")
-            InputStream is = AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    @Override
-                    public InputStream run() {
-                        File f = new File(System.getProperty("java.home"),
-                            "lib/security/public_suffix_list.dat");
-                        try {
-                            return new FileInputStream(f);
-                        } catch (FileNotFoundException e) {
-                            return null;
-                        }
-                    }
-                }
-            );
+            InputStream is = null;
+            File f = new File(System.getProperty("java.home"),
+                "lib/security/public_suffix_list.dat");
+            try {
+                is = new FileInputStream(f);
+            } catch (FileNotFoundException e) { }
             if (is == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl") &&
-                        SSLLogger.isOn("trustmanager")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.TRUSTMANAGER)) {
                     SSLLogger.fine(
                         "lib/security/public_suffix_list.dat not found");
                 }
@@ -241,7 +230,7 @@ class DomainName {
                 }
             }
             if (!found) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine("Domain " + tld + " not found");
                 }
                 return null;

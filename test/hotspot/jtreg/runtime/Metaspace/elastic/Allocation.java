@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,11 +26,11 @@
 public class Allocation {
 
     public long p;
-    public long word_size;
+    public long size;
 
-    public Allocation(long p, long word_size) {
+    public Allocation(long p, long size) {
         this.p = p;
-        this.word_size = word_size;
+        this.size = size;
     }
 
     public boolean isNull() {
@@ -41,7 +41,7 @@ public class Allocation {
     public String toString() {
         return "Allocation{" +
                 "p=" + p +
-                ", word_size=" + word_size +
+                ", size=" + size +
                 '}';
     }
 }

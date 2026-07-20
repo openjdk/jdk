@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import jdk.test.whitebox.gc.GC;
  * @test
  * @summary Test the 'universe' command of jhsdb clhsdb.
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @bug 8190307
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -79,6 +80,9 @@ public class TestUniverse {
 
         case Z:
             expStrings.add("ZHeap");
+            expStrings.add("used");
+            expStrings.add(" capacity ");
+            expStrings.add("max capacity");
             break;
 
         case Shenandoah:
@@ -105,14 +109,6 @@ public class TestUniverse {
         if (!gc.isSelected()) {
             // Not selected
             return false;
-        }
-
-        if (Compiler.isGraalEnabled()) {
-            if (gc == GC.Epsilon || gc == GC.Z || gc == GC.Shenandoah) {
-                // Not supported
-                System.out.println ("Skipped testing of " + gc + "GC, not supported by Graal");
-                return false;
-            }
         }
 
         // Selected and supported

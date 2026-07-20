@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @library /test/lib /java/security/testlibrary
+ * @library /test/lib
  * @bug 4470717
  * @summary fix default handling and other misc
  * @run main/othervm Default
@@ -34,6 +34,7 @@ import jdk.test.lib.Asserts;
 
 import javax.security.auth.callback.*;
 import java.io.*;
+import jdk.test.lib.security.HumanInputStream;
 
 public class Default {
     public static void main(String args[]) throws Exception {

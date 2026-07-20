@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  * @author Rich Schiavi
  */
 
-public class WindowsBorders {
+public final class WindowsBorders {
 
     /**
      * Returns a  border instance for a Windows Progress Bar
@@ -124,6 +124,7 @@ public class WindowsBorders {
             this.shadow = shadow;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
             g.setColor(shadow);
@@ -134,6 +135,7 @@ public class WindowsBorders {
             g.drawLine(width-1,y, width-1,height-1); // draw right
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             insets.set(1,1,1,1);
             return insets;
@@ -155,6 +157,7 @@ public class WindowsBorders {
             this.shadow = shadow;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
             if (!(c instanceof JToolBar)) {
@@ -224,6 +227,7 @@ public class WindowsBorders {
             g.translate(-x, -y);
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             insets.set(1,1,1,1);
             if (!(c instanceof JToolBar)) {
@@ -259,6 +263,7 @@ public class WindowsBorders {
             super(color, thickness);
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             Color oldColor = g.getColor();
             int i;
@@ -276,7 +281,7 @@ public class WindowsBorders {
      * of the component's background color.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class ComplementDashedBorder extends LineBorder implements UIResource {
+    static final class ComplementDashedBorder extends LineBorder implements UIResource {
         private Color origColor;
         private Color paintColor;
 
@@ -284,6 +289,7 @@ public class WindowsBorders {
             super(null);
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             Color color = c.getBackground();
 
@@ -315,6 +321,7 @@ public class WindowsBorders {
             inactiveColor = inactiveBorderColor;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                 int width, int height) {
 

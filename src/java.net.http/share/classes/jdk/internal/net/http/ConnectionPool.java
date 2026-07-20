@@ -205,32 +205,38 @@ final class ConnectionPool {
 
         // it's possible that cleanup may have been called.
         HttpConnection toClose = null;
+        boolean stopping = false;
         stateLock.lock();
         try {
             if (cleanup.isDone()) {
                 return;
-            } else if (stopped) {
-                conn.close();
-                return;
-            }
-            if (MAX_POOL_SIZE > 0 && expiryList.size() >= MAX_POOL_SIZE) {
-                toClose = expiryList.removeOldest();
-                if (toClose != null) removeFromPool(toClose);
-            }
-            if (conn instanceof PlainHttpConnection) {
-                putConnection(conn, plainPool);
+            } else if (stopping = stopped) {
+                toClose = conn;
             } else {
-                assert conn.isSecure();
-                putConnection(conn, sslPool);
+                if (MAX_POOL_SIZE > 0 && expiryList.size() >= MAX_POOL_SIZE) {
+                    toClose = expiryList.removeOldest();
+                    if (toClose != null) removeFromPool(toClose);
+                }
+                if (conn instanceof PlainHttpConnection) {
+                    putConnection(conn, plainPool);
+                } else {
+                    assert conn.isSecure();
+                    putConnection(conn, sslPool);
+                }
+                expiryList.add(conn, now, keepAlive);
             }
-            expiryList.add(conn, now, keepAlive);
         } finally {
             stateLock.unlock();
         }
         if (toClose != null) {
             if (debug.on()) {
-                debug.log("Maximum pool size reached: removing oldest connection %s",
-                          toClose.dbgString());
+                if (stopping) {
+                    debug.log("Stopping: close connection %s",
+                            toClose.dbgString());
+                } else {
+                    debug.log("Maximum pool size reached: removing oldest connection %s",
+                            toClose.dbgString());
+                }
             }
             close(toClose);
         }

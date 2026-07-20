@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,11 @@
 /*
  * @test
  * @bug 6578538 8027624
+ * @library /test/lib
  * @summary com.sun.crypto.provider.SunJCE instance leak using KRB5 and
  *     LoginContext
  * @author Brad Wetmore
+ * @library /test/lib
  *
  * @run main/othervm -Xmx20m TestProviderLeak
  *
@@ -45,6 +47,8 @@ import javax.crypto.spec.*;
 
 import java.util.*;
 import java.util.concurrent.*;
+import jdk.test.lib.security.SecurityUtils;
+import jdk.test.lib.Utils;
 
 public class TestProviderLeak {
     private static final int MB = 1024 * 1024;
@@ -57,9 +61,7 @@ public class TestProviderLeak {
     static {
         int timeout = 5;
         try {
-            double timeoutFactor = Double.parseDouble(
-                    System.getProperty("test.timeout.factor", "1.0"));
-            timeout = (int) (timeout * timeoutFactor);
+            timeout = (int) (timeout * Utils.TIMEOUT_FACTOR);
         } catch (Exception e) {
             System.out.println("Warning: " + e);
         }
@@ -106,9 +108,10 @@ public class TestProviderLeak {
     public static void main(String [] args) throws Exception {
         // Prepare the test
         final SecretKeyFactory skf =
-            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", "SunJCE");
+            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1",
+                    System.getProperty("test.provider.name", "SunJCE"));
         final PBEKeySpec pbeKS = new PBEKeySpec(
-            "passPhrase".toCharArray(), new byte [] { 0 }, 5, 512);
+            "passPhrase".toCharArray(), new byte [SecurityUtils.getTestSaltSize()], 1000, 512);
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Callable<SecretKey> task = new Callable<SecretKey>() {

@@ -76,7 +76,7 @@ readFieldValue(JNIEnv *env, PacketInputStream *in, jclass clazz,
     if (isReferenceTag(typeKey)) {
         value.l = inStream_readObjectRef(env, in);
         JNI_FUNC_PTR(env,SetObjectField)(env, object, field, value.l);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             return AGENT_ERROR_JNI_EXCEPTION;
         }
         return JVMTI_ERROR_NONE;
@@ -123,7 +123,7 @@ readFieldValue(JNIEnv *env, PacketInputStream *in, jclass clazz,
             break;
     }
 
-    if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+    if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
         return AGENT_ERROR_JNI_EXCEPTION;
     }
     return JVMTI_ERROR_NONE;

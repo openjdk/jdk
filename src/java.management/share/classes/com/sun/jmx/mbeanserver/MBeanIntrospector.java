@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import javax.management.MBeanOperationInfo;
 import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationBroadcaster;
 import javax.management.ReflectionException;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * An introspector for MBeans of a certain type.  There is one instance
@@ -176,7 +175,6 @@ abstract class MBeanIntrospector<M> {
      * Get the methods to be analyzed to build the MBean interface.
      */
     final List<Method> getMethods(final Class<?> mbeanType) {
-        ReflectUtil.checkPackageAccess(mbeanType);
         return Arrays.asList(mbeanType.getMethods());
     }
 

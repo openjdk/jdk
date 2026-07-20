@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,8 +88,8 @@ public class DefaultLoaderRepository {
      * is not found the method will throw a <CODE>ClassNotFoundException</CODE>
      * exception.
      *
-     * @param className The name of the class to be loaded.
      * @param loader The class loader to be excluded.
+     * @param className The name of the class to be loaded.
      *
      * @return the loaded class.
      *

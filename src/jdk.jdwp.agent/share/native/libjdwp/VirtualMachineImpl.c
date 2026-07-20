@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -714,7 +714,7 @@ createString(PacketInputStream *in, PacketOutputStream *out)
         jstring string;
 
         string = JNI_FUNC_PTR(env,NewStringUTF)(env, cstring);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             outStream_setError(out, JDWP_ERROR(OUT_OF_MEMORY));
         } else {
             (void)outStream_writeObjectRef(env, out, string);

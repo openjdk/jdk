@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8078320 8273244 8284908
+ * @bug 8078320 8273244 8284908 8352249 8352389
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -39,19 +39,19 @@ class InPreTest {
      */
     public void after_pre() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, xyz]
+    Text[TEXT, pos:0, xyz]
   body: 6
-    StartElement[START_ELEMENT, pos:4
+    StartElement[START_ELEMENT, pos:3
       name:pre
       attributes: empty
     ]
-    Text[TEXT, pos:9, _pqr_]
-    EndElement[END_ELEMENT, pos:14, pre]
-    Text[TEXT, pos:20, _abc]
-    Literal[CODE, pos:24, _def__]
-    Text[TEXT, pos:38, ghi]
+    Text[TEXT, pos:8, _pqr_]
+    EndElement[END_ELEMENT, pos:13, pre]
+    Text[TEXT, pos:19, _abc]
+    Literal[CODE, pos:23, _def__]
+    Text[TEXT, pos:37, ghi]
   block tags: empty
 ]
 */
@@ -60,11 +60,11 @@ DocComment[DOC_COMMENT, pos:1
      */
     public void no_pre() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc]
-    Literal[CODE, pos:4, def]
-    Text[TEXT, pos:15, ghi]
+    Text[TEXT, pos:0, abc]
+    Literal[CODE, pos:3, def]
+    Text[TEXT, pos:14, ghi]
   body: empty
   block tags: empty
 ]
@@ -74,18 +74,18 @@ DocComment[DOC_COMMENT, pos:1
      */
     public void pre_after_text() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, xyz]
+    Text[TEXT, pos:0, xyz]
   body: 5
-    StartElement[START_ELEMENT, pos:4
+    StartElement[START_ELEMENT, pos:3
       name:pre
       attributes: empty
     ]
-    Text[TEXT, pos:9, _abc]
-    Literal[CODE, pos:13, _def__]
-    Text[TEXT, pos:27, ghi]
-    EndElement[END_ELEMENT, pos:30, pre]
+    Text[TEXT, pos:8, _abc]
+    Literal[CODE, pos:12, _def__]
+    Text[TEXT, pos:26, ghi]
+    EndElement[END_ELEMENT, pos:29, pre]
   block tags: empty
 ]
 */
@@ -95,11 +95,11 @@ DocComment[DOC_COMMENT, pos:1
      */
     public void no_pre_extra_whitespace() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc]
-    Literal[CODE, pos:4, _def__]
-    Text[TEXT, pos:18, ghi]
+    Text[TEXT, pos:0, abc]
+    Literal[CODE, pos:3, _def__]
+    Text[TEXT, pos:17, ghi]
   body: empty
   block tags: empty
 ]
@@ -109,17 +109,17 @@ DocComment[DOC_COMMENT, pos:1
      */
     public void in_pre() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 4
-    StartElement[START_ELEMENT, pos:1
+    StartElement[START_ELEMENT, pos:0
       name:pre
       attributes: empty
     ]
-    Text[TEXT, pos:6, _abc]
-    Literal[CODE, pos:10, _def__]
-    Text[TEXT, pos:24, ghi]
+    Text[TEXT, pos:5, _abc]
+    Literal[CODE, pos:9, _def__]
+    Text[TEXT, pos:23, ghi]
   body: 1
-    EndElement[END_ELEMENT, pos:27, pre]
+    EndElement[END_ELEMENT, pos:26, pre]
   block tags: empty
 ]
 */
@@ -129,17 +129,17 @@ DocComment[DOC_COMMENT, pos:1
      */
     public void in_pre_with_space_nl() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 4
-    StartElement[START_ELEMENT, pos:1
+    StartElement[START_ELEMENT, pos:0
       name:pre
       attributes: empty
     ]
-    Text[TEXT, pos:6, _abc]
-    Literal[CODE, pos:10, |_def__]
-    Text[TEXT, pos:24, ghi]
+    Text[TEXT, pos:5, _abc]
+    Literal[CODE, pos:9, |def__]
+    Text[TEXT, pos:22, ghi]
   body: 1
-    EndElement[END_ELEMENT, pos:27, pre]
+    EndElement[END_ELEMENT, pos:25, pre]
   block tags: empty
 ]
 */
@@ -165,14 +165,58 @@ DocComment[DOC_COMMENT, pos:1
 ]
 */
     /**
+     * <pre> {@code
+     * abc  }
+     * def</pre>
+     */
+    public void in_pre_with_space_at_code_nl() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 3
+    StartElement[START_ELEMENT, pos:0
+      name:pre
+      attributes: empty
+    ]
+    Literal[CODE, pos:6, abc__]
+    Text[TEXT, pos:19, |def]
+  body: 1
+    EndElement[END_ELEMENT, pos:23, pre]
+  block tags: empty
+]
+*/
+    /**
+     * <pre> <code>
+     *   abc
+     * </code></pre>
+     */
+    public void in_pre_with_space_code_nl() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 4
+    StartElement[START_ELEMENT, pos:0
+      name:pre
+      attributes: empty
+    ]
+    StartElement[START_ELEMENT, pos:6
+      name:code
+      attributes: empty
+    ]
+    Text[TEXT, pos:13, __abc|]
+    EndElement[END_ELEMENT, pos:19, code]
+  body: 1
+    EndElement[END_ELEMENT, pos:26, pre]
+  block tags: empty
+]
+*/
+    /**
      * abc {@code
      */
     public void bad_code_no_content() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5, prefPos:10
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:9
       code: compiler.err.dc.unterminated.inline.tag
       body: {@code
     ]
@@ -185,10 +229,10 @@ DocComment[DOC_COMMENT, pos:1
      */
     public void bad_code_content() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5, prefPos:14
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:13
       code: compiler.err.dc.unterminated.inline.tag
       body: {@code_abc
     ]

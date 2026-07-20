@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package java.beans;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-
-import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
 
 final class MethodRef {
     private String signature;
@@ -68,7 +66,7 @@ final class MethodRef {
             }
             this.methodRef = new SoftReference<>(method);
         }
-        return isPackageAccessible(method.getDeclaringClass()) ? method : null;
+        return method;
     }
 
     private static Method find(Class<?> type, String signature) {

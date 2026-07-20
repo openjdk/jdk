@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, Red Hat Inc
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,6 +206,7 @@ public class JMXInterfaceBindingTest {
             // This is needed for testing on loopback
             args.add("-Djava.rmi.server.hostname=" + address);
             if (useSSL) {
+                args.add("-Djdk.rmi.ssl.client.enableEndpointIdentification=false");
                 args.add("-Dcom.sun.management.jmxremote.registry.ssl=true");
                 args.add("-Djavax.net.ssl.keyStore=" + KEYSTORE_LOC);
                 args.add("-Djavax.net.ssl.trustStore=" + TRUSTSTORE_LOC);

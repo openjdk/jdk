@@ -122,11 +122,6 @@ Australia/Lindeman AEST AEDT
 Australia/Melbourne AEST AEDT
 Australia/Perth AWST AWDT
 Australia/Sydney AEST AEDT
-CET CET CEST
-CST6CDT CST CDT
-EET EET EEST
-EST EST
-EST5EDT EST EDT
 Europe/Andorra CET CEST
 Europe/Athens EET EEST
 Europe/Belgrade CET CEST
@@ -159,13 +154,7 @@ Europe/Vilnius EET EEST
 Europe/Volgograd MSK
 Europe/Warsaw CET CEST
 Europe/Zurich CET CEST
-HST HST
-MET MET MEST
-MST MST
-MST7MDT MST MDT
-PST8PDT PST PDT
 Pacific/Auckland NZST NZDT
 Pacific/Guam ChST
 Pacific/Honolulu HST
 Pacific/Pago_Pago SST
-WET WET WEST

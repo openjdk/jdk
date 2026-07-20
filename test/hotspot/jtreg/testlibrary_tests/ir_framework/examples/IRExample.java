@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ public class IRExample {
     @Test
     // In some cases, we can know the exact size, here 4
     @IR(counts = {IRNode.LOAD_VECTOR_F, IRNode.VECTOR_SIZE_4, "> 0"},
-        applyIf = {"MaxVectorSize", ">=16"},
+        applyIfAnd = {"MaxVectorSize", ">=16", "AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     // Hence, we know any other sizes are impossible.
     // We can also specify that explicitly for failOn
@@ -206,7 +206,7 @@ public class IRExample {
     // Here, we can pack at most 8 given the 8-blocks and 8-gaps.
     // But we can also never pack more than max_float
     @IR(counts = {IRNode.LOAD_VECTOR_F, IRNode.VECTOR_SIZE + "min(8, max_float)", "> 0"},
-        applyIf = {"MaxVectorSize", ">=16"},
+        applyIfAnd = {"MaxVectorSize", ">=16", "AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     static float[] testVectorNodeSizeMinClause() {
         float[] a = new float[1024*8];

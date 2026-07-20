@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@
 // Note: the include below is not strictly required, as dependencies will be pulled using linker flags.
 // Adding at least one #include removes unwanted warnings on some platforms.
 #include <stdlib.h>
+
+#include "jni_util.h"
+
+DEF_STATIC_JNI_OnLoad
 
 // Simple dummy function so this library appears as a normal library to tooling.
 char* syslookup() {

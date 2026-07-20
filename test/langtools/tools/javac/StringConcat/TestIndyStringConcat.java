@@ -39,7 +39,6 @@ import java.nio.file.Path;
  * @bug     8148483 8151516 8151223
  * @summary Test that StringConcat is working for JDK >= 9
  * @library /tools/lib /test/lib
- * @enablePreview
  * @run main TestIndyStringConcat
  */
 public class TestIndyStringConcat {

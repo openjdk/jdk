@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8209005 8209078
  * @library /test/lib
  * @build m1/* FindSpecialTest
- * @run testng/othervm FindSpecialTest
+ * @run junit/othervm FindSpecialTest
  * @summary Test findSpecial and unreflectSpecial of the declaring class
  *          of the method and the special caller are not in the same module
  *          as the lookup class.
@@ -39,7 +39,7 @@ import java.nio.file.Paths;
 
 import static jdk.test.lib.process.ProcessTools.*;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 public class FindSpecialTest {
     static final String TEST_CLASSES = System.getProperty("test.classes", ".");
@@ -51,7 +51,7 @@ public class FindSpecialTest {
      * Run test.FindSpecial in unnamed module
      */
     @Test
-    public static void callerInUnnamedModule() throws Throwable {
+    public void callerInUnnamedModule() throws Throwable {
         Path m1 = Paths.get(TEST_CLASSES, "modules", TEST_MODULE);
         if (Files.notExists(m1)) {
             throw new Error(m1 + " not exist");
@@ -66,7 +66,7 @@ public class FindSpecialTest {
      * Run test.FindSpecial in a named module
      */
     @Test
-    public static void callerInNamedModule() throws Throwable {
+    public void callerInNamedModule() throws Throwable {
         Path modules = Paths.get(TEST_CLASSES, "modules");
         if (Files.notExists(modules)) {
             throw new Error(modules + " not exist");

@@ -34,8 +34,6 @@ import java.util.List;
  * @test
  * @bug     8273914
  * @summary Indy string concat changes order of operations
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  *
  * @clean *
  * @compile -XDstringConcat=indy              WellKnownTypeSignatures.java

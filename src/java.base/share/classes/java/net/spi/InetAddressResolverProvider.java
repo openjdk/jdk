@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,39 +99,14 @@ public abstract class InetAddressResolverProvider {
     public abstract String name();
 
     /**
-     * The {@code RuntimePermission("inetAddressResolverProvider")} is
-     * necessary to subclass and instantiate the {@code InetAddressResolverProvider} class,
-     * as well as to obtain resolver from an instance of that class,
-     * and it is also required to obtain the operating system name resolution configurations.
-     */
-    private static final RuntimePermission INET_ADDRESS_RESOLVER_PERMISSION =
-            new RuntimePermission("inetAddressResolverProvider");
-
-    /**
      * Creates a new instance of {@code InetAddressResolverProvider}.
      *
-     * @throws SecurityException if a security manager is present and its
-     *                           {@code checkPermission} method doesn't allow the
-     *                           {@code RuntimePermission("inetAddressResolverProvider")}.
      * @implNote It is recommended that an {@code InetAddressResolverProvider} service
      * implementation initialization should be as simple as possible, in order to avoid
      * possible risks of deadlock or class loading cycles during the instantiation of the
      * service provider.
      */
     protected InetAddressResolverProvider() {
-        this(checkPermission());
-    }
-
-    private InetAddressResolverProvider(Void unused) {
-    }
-
-    @SuppressWarnings("removal")
-    private static Void checkPermission() {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(INET_ADDRESS_RESOLVER_PERMISSION);
-        }
-        return null;
     }
 
     /**

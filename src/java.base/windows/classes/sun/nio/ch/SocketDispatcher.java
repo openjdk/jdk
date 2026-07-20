@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,26 +42,27 @@ class SocketDispatcher extends NativeDispatcher {
 
     SocketDispatcher() { }
 
+    @Override
     int read(FileDescriptor fd, long address, int len) throws IOException {
         return read0(fd, address, len);
     }
 
+    @Override
     long readv(FileDescriptor fd, long address, int len) throws IOException {
         return readv0(fd, address, len);
     }
 
+    @Override
     int write(FileDescriptor fd, long address, int len) throws IOException {
         return write0(fd, address, len);
     }
 
+    @Override
     long writev(FileDescriptor fd, long address, int len) throws IOException {
         return writev0(fd, address, len);
     }
 
-    void preClose(FileDescriptor fd) throws IOException {
-        throw new UnsupportedOperationException();
-    }
-
+    @Override
     void close(FileDescriptor fd) throws IOException {
         invalidateAndClose(fd);
     }

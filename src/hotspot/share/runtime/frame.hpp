@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +127,7 @@ class frame {
   address get_deopt_original_pc() const;
 
   void set_pc(address newpc);
+  void adjust_pc(address newpc);
 
   intptr_t* sp() const           { assert_absolute(); return _sp; }
   void set_sp( intptr_t* newsp ) { _sp = newsp; }
@@ -164,10 +165,9 @@ class frame {
   void   patch_pc(Thread* thread, address pc);
 
   // Every frame needs to return a unique id which distinguishes it from all other frames.
-  // For sparc and ia32 use sp. ia64 can have memory frames that are empty so multiple frames
-  // will have identical sp values. For ia64 the bsp (fp) value will serve. No real frame
-  // should have an id() of null so it is a distinguishing value for an unmatchable frame.
-  // We also have relationals which allow comparing a frame to anoth frame's id() allow
+  // For sparc and ia32 use sp.
+  // No real frame should have an id() of null so it is a distinguishing value for an unmatchable frame.
+  // We also have relationals which allow comparing a frame to another frame's id() allowing
   // us to distinguish younger (more recent activation) from older (less recent activations)
   // A null id is only valid when comparing for equality.
 
@@ -213,6 +213,9 @@ class frame {
 
   // tells whether this frame can be deoptimized
   bool can_be_deoptimized() const;
+
+  // used by virtual thread thaw code to fix deopt state
+  inline void set_deoptimized();
 
   // the frame size in machine words
   inline int frame_size() const;
@@ -279,6 +282,7 @@ class frame {
 
   // Support for deoptimization
   void deoptimize(JavaThread* thread);
+  void deoptimize(JavaThread* thread, stackChunkOop chunk);
 
   // The frame's original SP, before any extension by an interpreted callee;
   // used for packing debug info into vframeArray objects and vframeArray lookup.
@@ -337,8 +341,8 @@ class frame {
   // Return the monitor owner and BasicLock for compiled synchronized
   // native methods. Used by JVMTI's GetLocalInstance method
   // (via VM_GetReceiver) to retrieve the receiver from a native wrapper frame.
-  BasicLock* get_native_monitor();
-  oop        get_native_receiver();
+  BasicLock* get_native_monitor() const;
+  oop        get_native_receiver() const;
 
   // Find receiver for an invoke when arguments are just pushed on stack (i.e., callee stack-frame is
   // not setup)
@@ -426,6 +430,8 @@ class frame {
   oop saved_oop_result(RegisterMap* map) const;
   void set_saved_oop_result(RegisterMap* map, oop obj);
 
+  static JavaThread** saved_thread_address(const frame& f);
+
   // For debugging
  private:
   const char* print_name() const;
@@ -439,10 +445,11 @@ class frame {
   void interpreter_frame_print_on(outputStream* st) const;
   void print_on_error(outputStream* st, char* buf, int buflen, bool verbose = false) const;
   static void print_C_frame(outputStream* st, char* buf, int buflen, address pc);
+  static frame next_frame(frame fr, Thread* t); // For native stack walking
 
 #ifndef PRODUCT
   // Add annotated descriptions of memory locations belonging to this frame to values
-  void describe(FrameValues& values, int frame_no, const RegisterMap* reg_map=nullptr);
+  void describe(FrameValues& values, int frame_no, const RegisterMap* reg_map=nullptr, bool top = false);
 #endif
 
   // Conversion from a VMReg to physical stack location
@@ -453,7 +460,8 @@ class frame {
 
   // Oops-do's
   void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, bool has_appendix, const RegisterMap* reg_map, OopClosure* f) const;
-  void oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache = true) const;
+  template <typename RegisterMapT>
+  void oops_interpreted_do(OopClosure* f, const RegisterMapT* map, bool query_oop_map_cache = true) const;
 
  private:
   void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f) const;
@@ -464,19 +472,20 @@ class frame {
                         const RegisterMap* map, bool use_interpreter_oop_map_cache) const;
 
   void oops_entry_do(OopClosure* f, const RegisterMap* map) const;
+  void oops_upcall_do(OopClosure* f, const RegisterMap* map) const;
   void oops_nmethod_do(OopClosure* f, NMethodClosure* cf,
                        DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
                        const RegisterMap* map) const;
  public:
   // Memory management
   void oops_do(OopClosure* f, NMethodClosure* cf, const RegisterMap* map) {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     DerivedPointerIterationMode dpim = DerivedPointerTable::is_active() ?
                                        DerivedPointerIterationMode::_with_table :
                                        DerivedPointerIterationMode::_ignore;
-#else
+#else // COMPILER2
     DerivedPointerIterationMode dpim = DerivedPointerIterationMode::_ignore;;
-#endif
+#endif // COMPILER2
     oops_do_internal(f, cf, nullptr, dpim, map, true);
   }
 
@@ -500,6 +509,18 @@ class frame {
   static bool verify_return_pc(address x);
   // Usage:
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
+#endif
+
+#if INCLUDE_JFR
+  // Static helper routines
+  static address interpreter_bcp(const intptr_t* fp);
+  static address interpreter_return_address(const intptr_t* fp);
+  static intptr_t* interpreter_sender_sp(const intptr_t* fp);
+  static bool is_interpreter_frame_setup_at(const intptr_t* fp, const void* sp);
+  static intptr_t* sender_sp(intptr_t* fp);
+  static intptr_t* link(const intptr_t* fp);
+  static address return_address(const intptr_t* sp);
+  static intptr_t* fp(const intptr_t* sp);
 #endif
 
 #include CPU_HEADER(frame)

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,12 @@
 # questions.
 #
 
-#
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
 # Rules to create $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/lang/CharacterData*.java
-#
+################################################################################
 
 GENSRC_CHARACTERDATA :=
 
@@ -66,3 +69,25 @@ $(eval $(call SetupCharacterData,CharacterData0E, -string -plane 14, 11 4 1))
 $(GENSRC_CHARACTERDATA): $(BUILD_TOOLS_JDK)
 
 TARGETS += $(GENSRC_CHARACTERDATA)
+
+################################################################################
+
+
+GENSRC_STRINGCASEFOLDING := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/lang/CaseFolding.java
+
+STRINGCASEFOLDING_TEMPLATE := $(MODULE_SRC)/share/classes/jdk/internal/lang/CaseFolding.java.template
+CASEFOLDINGTXT := $(MODULE_SRC)/share/data/unicodedata/CaseFolding.txt
+
+$(GENSRC_STRINGCASEFOLDING): $(BUILD_TOOLS_JDK) $(STRINGCASEFOLDING_TEMPLATE) $(CASEFOLDINGTXT)
+	$(call LogInfo, Generating $@)
+	$(call MakeTargetDir)
+	$(TOOL_GENERATECASEFOLDING) \
+	    $(STRINGCASEFOLDING_TEMPLATE) \
+	    $(CASEFOLDINGTXT) \
+	    $(GENSRC_STRINGCASEFOLDING)
+
+TARGETS += $(GENSRC_STRINGCASEFOLDING)
+
+
+endif # include guard
+include MakeIncludeEnd.gmk

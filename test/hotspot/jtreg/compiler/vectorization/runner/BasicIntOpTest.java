@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,9 @@
  * @test
  * @summary Vectorization test on basic int operations
  * @library /test/lib /
- *
- * @build jdk.test.whitebox.WhiteBox
- *        compiler.vectorization.runner.VectorizationTestRunner
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.BasicIntOpTest
- *
  * @requires vm.compiler2.enabled
+ *
+ * @run driver ${test.main.class}
  */
 
 package compiler.vectorization.runner;
@@ -64,7 +56,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     // ---------------- Arithmetic ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.SUB_VI, ">0"})
     public int[] vectorNeg() {
         int[] res = new int[SIZE];
@@ -75,7 +67,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true", "rvv", "true"},
         counts = {IRNode.ABS_VI, ">0"})
     public int[] vectorAbs() {
         int[] res = new int[SIZE];
@@ -86,7 +78,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.ADD_VI, ">0"})
     public int[] vectorAdd() {
         int[] res = new int[SIZE];
@@ -97,7 +89,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.SUB_VI, ">0"})
     public int[] vectorSub() {
         int[] res = new int[SIZE];
@@ -108,7 +100,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true", "rvv", "true"},
         counts = {IRNode.MUL_VI, ">0"})
     public int[] vectorMul() {
         int[] res = new int[SIZE];
@@ -119,7 +111,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true", "rvv", "true"},
         counts = {IRNode.MUL_VI, ">0", IRNode.ADD_VI, ">0"})
     public int[] vectorMulAdd() {
         int[] res = new int[SIZE];
@@ -130,7 +122,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true", "rvv", "true"},
         counts = {IRNode.MUL_VI, ">0", IRNode.SUB_VI, ">0"})
     public int[] vectorMulSub() {
         int[] res = new int[SIZE];
@@ -141,7 +133,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true", "zvbb", "true"},
         counts = {IRNode.POPCOUNT_VI, ">0"})
     public int[] vectorPopCount() {
         int[] res = new int[SIZE];
@@ -153,7 +145,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     // ---------------- Logic ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.XOR_VI, ">0"})
     public int[] vectorNot() {
         int[] res = new int[SIZE];
@@ -164,7 +156,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.AND_VI, ">0"})
     public int[] vectorAnd() {
         int[] res = new int[SIZE];
@@ -175,7 +167,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.OR_VI, ">0"})
     public int[] vectorOr() {
         int[] res = new int[SIZE];
@@ -186,7 +178,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.XOR_VI, ">0"})
     public int[] vectorXor() {
         int[] res = new int[SIZE];

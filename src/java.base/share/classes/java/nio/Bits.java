@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,14 @@ class Bits {                            // package-private
     // increasing delay before throwing OutOfMemoryError:
     // 1, 2, 4, 8, 16, 32, 64, 128, 256 (total 511 ms ~ 0.5 s)
     // which means that OOME will be thrown after 0.5 s of trying
+    private static final long INITIAL_SLEEP = 1;
     private static final int MAX_SLEEPS = 9;
+
+    private static final Object RESERVE_SLOWPATH_LOCK = new Object();
+
+    // Token for detecting whether some other thread has done a GC since the
+    // last time the checking thread went around the retry-with-GC loop.
+    private static int RESERVE_GC_EPOCH = 0; // Never negative.
 
     // These methods should be called whenever direct memory is allocated or
     // freed.  They allow the user to control the amount of direct memory
@@ -118,29 +125,45 @@ class Bits {                            // package-private
             return;
         }
 
-        final JavaLangRefAccess jlra = SharedSecrets.getJavaLangRefAccess();
+        // Don't completely discard interruptions.  Instead, record them and
+        // reapply when we're done here (whether successfully or OOME).
         boolean interrupted = false;
         try {
-
-            // Retry allocation until success or there are no more
-            // references (including Cleaners that might free direct
-            // buffer memory) to process and allocation still fails.
-            boolean refprocActive;
-            do {
+            // Keep trying to reserve until either succeed or there is no
+            // further cleaning available from prior GCs. If the latter then
+            // GC to hopefully find more cleaning to do. Once a thread GCs it
+            // drops to the later retry with backoff loop.
+            for (int cleanedEpoch = -1; true; ) {
+                synchronized (RESERVE_SLOWPATH_LOCK) {
+                    // Test if cleaning for prior GCs (from here) is complete.
+                    // If so, GC to produce more cleaning work, and change
+                    // the token to inform other threads that there may be
+                    // more cleaning work to do.  This is done under the lock
+                    // to close a race.  We could have multiple threads pass
+                    // the test "simultaneously", resulting in back-to-back
+                    // GCs.  For a STW GC the window is small, but for a
+                    // concurrent GC it's quite large. If a thread were to
+                    // somehow be stuck trying to take the lock while enough
+                    // other threads succeeded for the epoch to wrap, it just
+                    // does an excess GC.
+                    if (RESERVE_GC_EPOCH == cleanedEpoch) {
+                        // Increment with overflow to 0, so the value can
+                        // never equal the initial/reset cleanedEpoch value.
+                        RESERVE_GC_EPOCH = Integer.max(0, RESERVE_GC_EPOCH + 1);
+                        System.gc();
+                        break;
+                    }
+                    cleanedEpoch = RESERVE_GC_EPOCH;
+                }
                 try {
-                    refprocActive = jlra.waitForReferenceProcessing();
+                    if (tryReserveOrClean(size, cap)) {
+                        return;
+                    }
                 } catch (InterruptedException e) {
-                    // Defer interrupts and keep trying.
                     interrupted = true;
-                    refprocActive = true;
+                    cleanedEpoch = -1; // Reset when incomplete.
                 }
-                if (tryReserveMemory(size, cap)) {
-                    return;
-                }
-            } while (refprocActive);
-
-            // trigger VM's Reference processing
-            System.gc();
+            }
 
             // A retry loop with exponential back-off delays.
             // Sometimes it would suffice to give up once reference
@@ -151,36 +174,49 @@ class Bits {                            // package-private
             // DirectBufferAllocTest to (usually) succeed, while
             // without it that test likely fails.  Since failure here
             // ends in OOME, there's no need to hurry.
-            long sleepTime = 1;
-            int sleeps = 0;
-            while (true) {
-                if (tryReserveMemory(size, cap)) {
-                    return;
-                }
-                if (sleeps >= MAX_SLEEPS) {
-                    break;
-                }
+            for (int sleeps = 0; true; ) {
                 try {
-                    if (!jlra.waitForReferenceProcessing()) {
-                        Thread.sleep(sleepTime);
-                        sleepTime <<= 1;
-                        sleeps++;
+                    if (tryReserveOrClean(size, cap)) {
+                        return;
+                    } else if (sleeps < MAX_SLEEPS) {
+                        Thread.sleep(INITIAL_SLEEP << sleeps);
+                        ++sleeps; // Only increment if sleep completed.
+                    } else {
+                        throw new OutOfMemoryError
+                            ("Cannot reserve "
+                             + size + " bytes of direct buffer memory (allocated: "
+                             + RESERVED_MEMORY.get() + ", limit: " + MAX_MEMORY +")");
                     }
                 } catch (InterruptedException e) {
                     interrupted = true;
                 }
             }
 
-            // no luck
-            throw new OutOfMemoryError
-                ("Cannot reserve "
-                 + size + " bytes of direct buffer memory (allocated: "
-                 + RESERVED_MEMORY.get() + ", limit: " + MAX_MEMORY +")");
-
         } finally {
+            // Reapply any deferred interruption.
             if (interrupted) {
-                // don't swallow interrupts
                 Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    // Try to reserve memory, or failing that, try to make progress on
+    // cleaning.  Returns true if successfully reserved memory, false if
+    // failed and ran out of cleaning work.
+    private static boolean tryReserveOrClean(long size, long cap)
+        throws InterruptedException
+    {
+        JavaLangRefAccess jlra = SharedSecrets.getJavaLangRefAccess();
+        boolean progressing = true;
+        while (true) {
+            if (tryReserveMemory(size, cap)) {
+                return true;
+            } else if (BufferCleaner.tryCleaning()) {
+                progressing = true;
+            } else if (!progressing) {
+                return false;
+            } else {
+                progressing = jlra.waitForReferenceProcessing();
             }
         }
     }
@@ -234,4 +270,28 @@ class Bits {                            // package-private
     // of an element by element copy.  These numbers may change over time.
     static final int JNI_COPY_TO_ARRAY_THRESHOLD   = 6;
     static final int JNI_COPY_FROM_ARRAY_THRESHOLD = 6;
+
+    // Maximum number of bytes to set in one call to {@code Unsafe.setMemory}.
+    // This threshold allows safepoint polling during large memory operations.
+    static final long UNSAFE_SET_THRESHOLD = 1024 * 1024;
+
+    /**
+     * Sets a block of memory starting from a given address to a specified byte value.
+     *
+     * @param srcAddr
+     *        the starting memory address
+     * @param count
+     *        the number of bytes to set
+     * @param value
+     *        the byte value to set
+     */
+    static void setMemory(long srcAddr, long count, byte value) {
+        long offset = 0;
+        while (offset < count) {
+            long len = Math.min(UNSAFE_SET_THRESHOLD, count - offset);
+            UNSAFE.setMemory(srcAddr + offset, len, value);
+            offset += len;
+        }
+    }
+
 }

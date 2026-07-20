@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Intel Corporation. All rights reserved.
+ * Copyright (c) 2024, 2026, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,11 +23,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
+#include "oops/arrayOop.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "runtime/stubRoutines.hpp"
 
 /******************************************************************************/
 //                     String handling intrinsics
@@ -98,7 +99,8 @@
     __ blsrl(mask, mask);    \
   }
 
-#define NUMBER_OF_CASES 10
+#define NUMBER_OF_CASES StubRoutines::x86::STRING_INDEXOF_NUMBER_OF_CASES
+#define TABLE_COUNT StubRoutines::x86::STRING_INDEXOF_TABLE_COUNT
 
 #undef STACK_SPACE
 #undef MAX_NEEDLE_LEN_TO_EXPAND
@@ -160,6 +162,9 @@ static void highly_optimized_short_cases(StrIntrinsicNode::ArgEncoding ae, Regis
                                          Register needle_len, XMMRegister XMM0, XMMRegister XMM1,
                                          Register mask, Register tmp, MacroAssembler *_masm);
 
+static void copy_to_stack(Register haystack, Register haystack_len, bool isU, Register tmp,
+                          XMMRegister xtmp, MacroAssembler *_masm);
+
 static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, Label &L_checkRange,
                               Label &L_fixup, address *big_jump_table, address *small_jump_table,
                               MacroAssembler *_masm);
@@ -183,9 +188,9 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
 ////////////////////////////////////////////////////////////////////////////////////////
 
 void StubGenerator::generate_string_indexof(address *fnptrs) {
-  assert((int) StrIntrinsicNode::LL < 4, "Enum out of range");
-  assert((int) StrIntrinsicNode::UL < 4, "Enum out of range");
-  assert((int) StrIntrinsicNode::UU < 4, "Enum out of range");
+  assert((int) StrIntrinsicNode::LL < TABLE_COUNT, "Enum out of range");
+  assert((int) StrIntrinsicNode::UL < TABLE_COUNT, "Enum out of range");
+  assert((int) StrIntrinsicNode::UU < TABLE_COUNT, "Enum out of range");
   generate_string_indexof_stubs(this, fnptrs, StrIntrinsicNode::LL, _masm);
   generate_string_indexof_stubs(this, fnptrs, StrIntrinsicNode::UU, _masm);
   generate_string_indexof_stubs(this, fnptrs, StrIntrinsicNode::UL, _masm);
@@ -196,13 +201,41 @@ void StubGenerator::generate_string_indexof(address *fnptrs) {
 
 static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptrs,
                                           StrIntrinsicNode::ArgEncoding ae, MacroAssembler *_masm) {
-  StubCodeMark mark(stubgen, "StubRoutines", "stringIndexOf");
   bool isLL = (ae == StrIntrinsicNode::LL);
   bool isUL = (ae == StrIntrinsicNode::UL);
   bool isUU = (ae == StrIntrinsicNode::UU);
   bool isU = isUL || isUU;  // At least one is UTF-16
   assert(isLL || isUL || isUU, "Encoding not recognized");
 
+  StubId stub_id = (isLL ?  StubId::stubgen_string_indexof_linear_ll_id : (isUL ? StubId::stubgen_string_indexof_linear_ul_id : StubId::stubgen_string_indexof_linear_uu_id));
+
+  // Addresses of the two jump tables used for small needle processing
+  address *big_jump_table = StubRoutines::x86::big_jump_table_base(ae);
+  address *small_jump_table = StubRoutines::x86::big_jump_table_base(ae);
+
+  // If the stub has been cached we can retrieve the stub entry.  The
+  // target addresses we need to install into the jump tables will
+  // also have been cached, as extra addresses rather than secondary
+  // entries because they are only used internally to this stub.
+
+  assert(StubInfo::entry_count(stub_id) == 1, "sanity check");
+  GrowableArray<address> extras;
+  const int expected_extra_count = 2 * NUMBER_OF_CASES;
+  address start = stubgen->load_archive_data(stub_id, nullptr, &extras);
+  if (start != nullptr) {
+    assert(extras.length() == expected_extra_count,
+           "expecting %d extra addresses but got %d!",
+           expected_extra_count,
+           extras.length());
+    fnptrs[ae] = start;
+    for (int i = 0; i < NUMBER_OF_CASES; i++) {
+      big_jump_table[i]= extras.at(i);
+      small_jump_table[i]= extras.at(NUMBER_OF_CASES + i);
+    }
+    return;
+  }
+
+  StubCodeMark mark(stubgen, stub_id);
   // Keep track of isUL since we need to generate UU code in the main body
   // for the case where we expand the needle from bytes to words on the stack.
   // This is done at L_wcharBegin.  The algorithm used is:
@@ -249,10 +282,6 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   const Register needle_p       = c_rarg2;
   const Register needle_len_p   = c_rarg3;
 
-  // Addresses of the two jump tables used for small needle processing
-  address big_jump_table;
-  address small_jump_table;
-
   Label L_begin;
 
   Label L_returnError, L_bigCaseFixupAndReturn;
@@ -261,7 +290,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   Label L_wcharBegin, L_continue, L_wideNoExpand, L_returnR11;
 
   __ align(CodeEntryAlignment);
-  fnptrs[ae] = __ pc();
+  start = __ pc();
   __ enter();  // required for proper stackwalking of RuntimeStub frame
 
   // Check for trivial cases
@@ -307,8 +336,8 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   }
 
   // Set up jump tables.  Used when needle size <= NUMBER_OF_CASES
-  setup_jump_tables(ae, L_returnError, L_returnR11, L_bigCaseFixupAndReturn, &big_jump_table,
-                    &small_jump_table, _masm);
+  setup_jump_tables(ae, L_returnError, L_returnR11, L_bigCaseFixupAndReturn, big_jump_table,
+                    small_jump_table, _masm);
 
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -348,8 +377,8 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   __ movdq(save_r15, r15);
   __ movdq(save_rbx, rbx);
 #ifdef _WIN64
-  __ push(rsi);
-  __ push(rdi);
+  __ push_ppx(rsi);
+  __ push_ppx(rdi);
 
   // Move to Linux-style ABI
   __ movq(rdi, rcx);
@@ -364,7 +393,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   const Register needle_len   = rcx;
   const Register save_ndl_len = r12;
 
-  __ push(rbp);
+  __ push_ppx(rbp);
   __ subptr(rsp, STACK_SPACE);
 
   if (isReallyUL) {
@@ -395,41 +424,21 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
 
   // Do "big switch" if haystack size > 32
   __ cmpq(haystack_len, 0x20);
-  __ ja_b(L_bigSwitchTop);
+  __ ja(L_bigSwitchTop);
 
   // Copy the small (< 32 byte) haystack to the stack.  Allows for vector reads without page fault
   // Only done for small haystacks
   //
   // NOTE: This code assumes that the haystack points to a java array type AND there are
-  //       at least 16 bytes of header preceeding the haystack pointer.
+  //       at least 8 bytes of header preceeding the haystack pointer.
   //
-  // This means that we're copying up to 15 bytes of the header onto the stack along
+  // This means that we're copying up to 7 bytes of the header onto the stack along
   // with the haystack bytes.  After the copy completes, we adjust the haystack pointer
   // to the valid haystack bytes on the stack.
   {
-    Label L_moreThan16, L_adjustHaystack;
-
-    const Register index = rax;
+    const Register tmp = rax;
     const Register haystack = rbx;
-
-    // Only a single vector load/store of either 16 or 32 bytes
-    __ cmpq(haystack_len, 0x10);
-    __ ja_b(L_moreThan16);
-
-    __ movq(index, COPIED_HAYSTACK_STACK_OFFSET + 0x10);
-    __ movdqu(XMM_TMP1, Address(haystack, haystack_len, Address::times_1, -0x10));
-    __ movdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), XMM_TMP1);
-    __ jmpb(L_adjustHaystack);
-
-    __ bind(L_moreThan16);
-    __ movq(index, COPIED_HAYSTACK_STACK_OFFSET + 0x20);
-    __ vmovdqu(XMM_TMP1, Address(haystack, haystack_len, Address::times_1, -0x20));
-    __ vmovdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), XMM_TMP1);
-
-    // Point the haystack at the correct location of the first byte of the "real" haystack on the stack
-    __ bind(L_adjustHaystack);
-    __ subq(index, haystack_len);
-    __ leaq(haystack, Address(rsp, index, Address::times_1));
+    copy_to_stack(haystack, haystack_len, false, tmp, XMM_TMP1, _masm);
   }
 
   // Dispatch to handlers for small needle and small haystack
@@ -438,7 +447,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   __ leaq(r13, Address(save_ndl_len, -1));
   __ cmpq(r13, NUMBER_OF_CASES - 1);
   __ ja(L_smallCaseDefault);
-  __ lea(r15, InternalAddress(small_jump_table));
+  __ lea(r15, ExternalAddress((address)small_jump_table));
   __ jmp(Address(r15, r13, Address::times_8));
 
   // Dispatch to handlers for small needle and large haystack
@@ -447,7 +456,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   __ leaq(rax, Address(save_ndl_len, -1));
   __ cmpq(rax, NUMBER_OF_CASES - 1);
   __ ja(L_bigCaseDefault);
-  __ lea(r15, InternalAddress(big_jump_table));
+  __ lea(r15, ExternalAddress((address)big_jump_table));
   __ jmp(Address(r15, rax, Address::times_8));
 
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -475,10 +484,10 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   // Restore stack, vzeroupper and return
   __ bind(L_return);
   __ addptr(rsp, STACK_SPACE);
-  __ pop(rbp);
+  __ pop_ppx(rbp);
 #ifdef _WIN64
-  __ pop(rdi);
-  __ pop(rsi);
+  __ pop_ppx(rdi);
+  __ pop_ppx(rsi);
 #endif
   __ movdq(r12, save_r12);
   __ movdq(r13, save_r13);
@@ -760,39 +769,39 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     __ ja(L_wideNoExpand);
 
     //
-    // Reads of existing needle are 16-byte chunks
-    // Writes to copied needle are 32-byte chunks
+    // Reads of existing needle are 8-byte chunks
+    // Writes to copied needle are 16-byte chunks
     // Don't read past the end of the existing needle
     //
-    // Start first read at [((ndlLen % 16) - 16) & 0xf]
-    // outndx += 32
-    // inndx += 16
+    // Start first read at [((ndlLen % 8) - 8) & 0x7]
+    // outndx += 16
+    // inndx += 8
     // cmp nndx, ndlLen
     // jae done
     //
-    // Final index of start of needle at ((16 - (ndlLen %16)) & 0xf) << 1
+    // Final index of start of needle at ((8 - (ndlLen % 8)) & 0x7) << 1
     //
-    // Starting read for needle at -(16 - (nLen % 16))
-    // Offset of needle in stack should be (16 - (nLen % 16)) * 2
+    // Starting read for needle at -(8 - (nLen % 8))
+    // Offset of needle in stack should be (8 - (nLen % 8)) * 2
 
     __ movq(index, needle_len);
-    __ andq(index, 0xf);  // nLen % 16
-    __ movq(offset, 0x10);
-    __ subq(offset, index);  // 16 - (nLen % 16)
+    __ andq(index, 0x7);  // nLen % 8
+    __ movq(offset, 0x8);
+    __ subq(offset, index);  // 8 - (nLen % 8)
     __ movq(index, offset);
     __ shlq(offset, 1);  // * 2
-    __ negq(index);      // -(16 - (nLen % 16))
+    __ negq(index);      // -(8 - (nLen % 8))
     __ xorq(wr_index, wr_index);
 
     __ bind(L_top);
     // load needle and expand
-    __ vpmovzxbw(xmm0, Address(needle, index, Address::times_1), Assembler::AVX_256bit);
+    __ vpmovzxbw(xmm0, Address(needle, index, Address::times_1), Assembler::AVX_128bit);
     // store expanded needle to stack
-    __ vmovdqu(Address(rsp, wr_index, Address::times_1, EXPANDED_NEEDLE_STACK_OFFSET), xmm0);
-    __ addq(index, 0x10);
+    __ movdqu(Address(rsp, wr_index, Address::times_1, EXPANDED_NEEDLE_STACK_OFFSET), xmm0);
+    __ addq(index, 0x8);
     __ cmpq(index, needle_len);
     __ jae(L_finished);
-    __ addq(wr_index, 32);
+    __ addq(wr_index, 16);
     __ jmpb(L_top);
 
     // adjust pointer and length of needle
@@ -957,6 +966,23 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
       __ jmp(L_returnR11);
     }
   }
+
+  // Record and possibly cache the entry address. In the latter case
+  // the target addresses installed into the jump tables also need to
+  // be cached, as extra addresses rather than secondary entries
+  // because they are only used internally to this stub.
+
+  for (int i = 0; i < NUMBER_OF_CASES; i++) {
+    extras.append(big_jump_table[i]);
+  }
+  for (int i = 0; i < NUMBER_OF_CASES; i++) {
+    extras.append(small_jump_table[i]);
+  }
+  stubgen->store_archive_data(stub_id, start, __ pc(), nullptr, &extras);
+
+  // x86 consumes the stub via a shared (i.e. non-cpu specific) static
+  // array
+  fnptrs[ae] = start;
 
   return;
 }
@@ -1346,10 +1372,12 @@ static void big_case_loop_helper(bool sizeKnown, int size, Label &noMatch, Label
   // Clarification:  The BYTE_K compare above compares haystack[(n-32):(n-1)].  We need to
   // compare haystack[(k-1):(k-1+31)].  Subtracting either index gives shift value of
   // (k + 31 - n):  x = (k-1+31)-(n-1) = k-1+31-n+1 = k+31-n.
+  // When isU is set, similarly, shift is from haystack[(n-32):(n-1)] to [(k-2):(k-2+31)]
+
   if (sizeKnown) {
-    __ movl(temp2, 31 + size);
+    __ movl(temp2, (isU ? 30 : 31) + size);
   } else {
-    __ movl(temp2, 31);
+    __ movl(temp2, isU ? 30 : 31);
     __ addl(temp2, needleLen);
   }
   __ subl(temp2, hsLength);
@@ -1582,35 +1610,9 @@ static void highly_optimized_short_cases(StrIntrinsicNode::ArgEncoding ae, Regis
   assert((COPIED_HAYSTACK_STACK_OFFSET == 0), "Must be zero!");
   assert((COPIED_HAYSTACK_STACK_SIZE == 64), "Must be 64!");
 
-  // Copy incoming haystack onto stack
-  {
-    Label L_adjustHaystack, L_moreThan16;
-
-    // Copy haystack to stack (haystack <= 32 bytes)
-    __ subptr(rsp, COPIED_HAYSTACK_STACK_SIZE);
-    __ cmpq(haystack_len, isU ? 0x8 : 0x10);
-    __ ja_b(L_moreThan16);
-
-    __ movq(tmp, COPIED_HAYSTACK_STACK_OFFSET + 0x10);
-    __ movdqu(XMM0, Address(haystack, haystack_len, isU ? Address::times_2 : Address::times_1, -0x10));
-    __ movdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), XMM0);
-    __ jmpb(L_adjustHaystack);
-
-    __ bind(L_moreThan16);
-    __ movq(tmp, COPIED_HAYSTACK_STACK_OFFSET + 0x20);
-    __ vmovdqu(XMM0, Address(haystack, haystack_len, isU ? Address::times_2 : Address::times_1, -0x20));
-    __ vmovdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), XMM0);
-
-    __ bind(L_adjustHaystack);
-    __ subptr(tmp, haystack_len);
-
-    if (isU) {
-      // For UTF-16, lengths are half
-      __ subptr(tmp, haystack_len);
-    }
-    // Point the haystack to the stack
-    __ leaq(haystack, Address(rsp, tmp, Address::times_1));
-  }
+  // Copy incoming haystack onto stack (haystack <= 32 bytes)
+  __ subptr(rsp, COPIED_HAYSTACK_STACK_SIZE);
+  copy_to_stack(haystack, haystack_len, isU, tmp, XMM0, _masm);
 
   // Creates a mask of (n - k + 1) ones.  This prevents recognizing any false-positives
   // past the end of the valid haystack.
@@ -1672,6 +1674,86 @@ static void highly_optimized_short_cases(StrIntrinsicNode::ArgEncoding ae, Regis
   __ jmpb(L_out);
 }
 
+
+
+// Copy the small (<= 32 byte) haystack to the stack.  Allows for vector reads without page fault
+// Only done for small haystacks
+// NOTE: This code assumes that the haystack points to a java array type AND there are
+//       at least 8 bytes of header preceeding the haystack pointer.
+// We're copying up to 7 bytes of the header onto the stack along with the haystack bytes.
+// After the copy completes, we adjust the haystack pointer
+// to the valid haystack bytes on the stack.
+//
+// Copy haystack array elements to stack at region
+// (COPIED_HAYSTACK_STACK_OFFSET - COPIED_HAYSTACK_STACK_OFFSET+63) with the following conditions:
+//   It may copy up to 7 bytes that precede the array
+//   It doesn't read beyond the end of the array
+//   There are atleast 31 bytes of stack region beyond the end of array
+// Inputs:
+//   haystack - Address of haystack
+//   haystack_len - Number of elements in haystack
+//   isU - Boolean indicating if each element is Latin1 or UTF16
+//   tmp, xtmp - Scratch registers
+// Output:
+//   haystack - Address of copied string on stack
+
+static void copy_to_stack(Register haystack, Register haystack_len, bool isU,
+                          Register tmp, XMMRegister xtmp, MacroAssembler *_masm) {
+  Label L_moreThan8, L_moreThan16, L_moreThan24, L_adjustHaystack;
+
+  assert(arrayOopDesc::base_offset_in_bytes(isU ? T_CHAR : T_BYTE) >= 8,
+         "Needs at least 8 bytes preceding the array body");
+
+  // Copy haystack to stack (haystack <= 32 bytes)
+  int scale = isU ? 2 : 1; // bytes per char
+  Address::ScaleFactor addrScale = isU ? Address::times_2 : Address::times_1;
+
+  __ cmpq(haystack_len, 16/scale);
+  __ ja_b(L_moreThan16);
+
+  __ cmpq(haystack_len, 8/scale);
+  __ ja_b(L_moreThan8);
+  // haystack length <= 8 bytes, copy 8 bytes upto haystack end reading at most 7 bytes into the header
+  __ movq(tmp, COPIED_HAYSTACK_STACK_OFFSET + 8);
+  __ movq(xtmp, Address(haystack, haystack_len, addrScale, -8));
+  __ movq(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), xtmp);
+  __ jmpb(L_adjustHaystack);
+
+  __ bind(L_moreThan8);
+  // haystack length > 8 and <=16 bytes, copy 16 bytes upto haystack end reading at most 7 bytes into the header
+  __ movq(tmp, COPIED_HAYSTACK_STACK_OFFSET + 16);
+  __ movdqu(xtmp, Address(haystack, haystack_len, addrScale, -16));
+  __ movdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), xtmp);
+  __ jmpb(L_adjustHaystack);
+
+  __ bind(L_moreThan16);
+  __ cmpq(haystack_len, 24/scale);
+  __ ja_b(L_moreThan24);
+  // haystack length > 16 and <=24 bytes, copy 24 bytes upto haystack end reading at most 7 bytes into the header
+  __ movq(tmp, COPIED_HAYSTACK_STACK_OFFSET + 24);
+  __ movdqu(xtmp, Address(haystack, haystack_len, addrScale, -24));
+  __ movdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), xtmp);
+  __ movq(xtmp, Address(haystack, haystack_len, addrScale, -8));
+  __ movq(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET + 16), xtmp);
+  __ jmpb(L_adjustHaystack);
+
+  __ bind(L_moreThan24);
+  // haystack length > 24 and < 32 bytes, copy 32 bytes upto haystack end reading at most 7 bytes into the header
+  __ movq(tmp, COPIED_HAYSTACK_STACK_OFFSET + 32);
+  __ vmovdqu(xtmp, Address(haystack, haystack_len, addrScale, -32));
+  __ vmovdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), xtmp);
+
+  __ bind(L_adjustHaystack);
+  __ subptr(tmp, haystack_len);
+
+  if (isU) {
+    __ subptr(tmp, haystack_len);
+  }
+
+  // Point the haystack to the stack
+  __ leaq(haystack, Address(rsp, tmp, Address::times_1));
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1682,8 +1764,8 @@ static void highly_optimized_short_cases(StrIntrinsicNode::ArgEncoding ae, Regis
 // L_error - Label to branch to if no match found
 // L_checkRange - label to jump to when match found.  Checks validity of returned index
 // L_fixup - Jump to here for big cases.  Return value is pointer to matching haystack byte
-// *big_jump_table - Address of pointer to the first element of big jump table
-// *small_jump_table - Address of pointer to the first element of small jump table
+// big_jump_table - jump table to be populated with jump addresses
+// small_jump_table - jump table to be populated with jump addresses
 // _masm - Current MacroAssembler instance pointer
 
 static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, Label &L_checkRange,
@@ -1694,8 +1776,6 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
   bool isU = isUL || isUU;  // At least one is UTF-16
   const XMMRegister byte_1 = XMM_BYTE_1;
 
-  address big_hs_jmp_table[NUMBER_OF_CASES];    // Jump table for large haystacks
-  address small_hs_jmp_table[NUMBER_OF_CASES];  // Jump table for small haystacks
   int jmp_ndx = 0;
 
   ////////////////////////////////////////////////
@@ -1746,7 +1826,7 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
     const Register rTmp = rax;
 
     for (int i = 6; i < NUMBER_OF_CASES; i++) {
-      small_hs_jmp_table[i] = __ pc();
+      small_jump_table[i] = __ pc();
       if (isU && ((i + 1) & 1)) {
         continue;
       } else {
@@ -1790,7 +1870,7 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
     const Register rTmp4 = r13;
 
     for (int i = 0; i < NUMBER_OF_CASES; i++) {
-      big_hs_jmp_table[i] = __ pc();
+      big_jump_table[i] = __ pc();
       if (isU && ((i + 1) & 1)) {
         continue;
       } else {
@@ -1802,24 +1882,6 @@ static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, 
                             rTmp4, ae, _masm);
       }
     }
-  }
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  // JUMP TABLES
-  __ align(8);
-
-  *big_jump_table = __ pc();
-
-  for (jmp_ndx = 0; jmp_ndx < NUMBER_OF_CASES; jmp_ndx++) {
-    __ emit_address(big_hs_jmp_table[jmp_ndx]);
-  }
-
-  *small_jump_table = __ pc();
-
-  for (jmp_ndx = 0; jmp_ndx < NUMBER_OF_CASES; jmp_ndx++) {
-    __ emit_address(small_hs_jmp_table[jmp_ndx]);
   }
 }
 

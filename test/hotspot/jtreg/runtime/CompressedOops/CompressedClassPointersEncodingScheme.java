@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Testing that, faced with a given (possibly odd) mapping address of class space, the encoding
  *          scheme fits the address
- * @requires vm.bits == 64 & !vm.graal.enabled & vm.debug == true
+ * @requires vm.bits == 64 & vm.debug == true
  * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -42,16 +42,19 @@ import java.io.IOException;
 
 public class CompressedClassPointersEncodingScheme {
 
-    private static void test(long forceAddress, long classSpaceSize, long expectedEncodingBase, int expectedEncodingShift) throws IOException {
+    private static void test(long forceAddress, boolean COH, long classSpaceSize, long expectedEncodingBase, int expectedEncodingShift) throws IOException {
         String forceAddressString = String.format("0x%016X", forceAddress).toLowerCase();
         String expectedEncodingBaseString = String.format("0x%016X", expectedEncodingBase).toLowerCase();
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Xshare:off", // to make CompressedClassSpaceBaseAddress work
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:-UseCompressedOops", // keep VM from optimizing heap location
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:" + (COH ? "+" : "-") + "UseCompactObjectHeaders",
+                "-XX:" + (COH ? "+" : "-") + "UseObjectMonitorTable",
                 "-XX:CompressedClassSpaceBaseAddress=" + forceAddress,
                 "-XX:CompressedClassSpaceSize=" + classSpaceSize,
-                "-Xmx128m",
+                "-Xmx64m",
                 "-Xlog:metaspace*",
                 "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -60,7 +63,8 @@ public class CompressedClassPointersEncodingScheme {
 
         // We ignore cases where we were not able to map at the force address
         if (output.contains("reserving class space failed")) {
-            throw new SkippedException("Skipping because we cannot force ccs to " + forceAddressString);
+            System.out.println("Skipping because we cannot force ccs to " + forceAddressString);
+            return;
         }
 
         output.shouldHaveExitValue(0);
@@ -73,9 +77,49 @@ public class CompressedClassPointersEncodingScheme {
     public static void main(String[] args) throws Exception {
         // Test ccs nestling right at the end of the 4G range
         // Expecting base=0, shift=0
-        test(4 * G - 128 * M, 128 * M, 0, 0);
+        test(4 * G - 128 * M, false, 128 * M, 0, 0);
 
-        // add more...
+        // aarch64 does not do extended zero based encoding (shift>0)
+        boolean expectExtendedZeroBasedEncoding = !Platform.isAArch64();
+
+        // Test ccs nestling right at the end of the 32G range.
+        // Expect all platforms but aarch64 to do shift-extended zero-based encoding;
+        long forceAddress = 32 * G - 128 * M;
+        test(forceAddress, false, 128 * M,
+                expectExtendedZeroBasedEncoding ? 0 : forceAddress, // expected base
+                expectExtendedZeroBasedEncoding ? 3 : 0             // expected shift
+                );
+
+        // Test ccs starting *below* 4G, but extending upwards beyond 4G.
+        // Expect all platforms but aarch64 to do shift-extended zero-based encoding; aarch64 does not do that but
+        // drops right to non-zero-based with shift = 0
+        forceAddress = 4 * G - 128 * M;
+        test(forceAddress, false, 2 * 128 * M,
+                expectExtendedZeroBasedEncoding ? 0 : forceAddress, // expected base
+                expectExtendedZeroBasedEncoding ? 3 : 0             // expected shift
+        );
+
+        // Compact Object Header Mode:
+        // We expect the VM to chose the smallest possible shift value needed to cover the encoding range.
+        // We expect the encoding Base to start at the class space start - but to enforce that,
+        // we choose unsuited to even shift-extended zero-based mode.
+        forceAddress = 32 * G;
+
+        test(forceAddress, true, 128 * M, forceAddress, 6);
+        test(forceAddress, true, 256 * M, forceAddress, 7);
+        test(forceAddress, true, 512 * M, forceAddress, 8);
+        test(forceAddress, true, G, forceAddress, 9);
+        test(forceAddress, true, 3 * G, forceAddress, 10);
+
+        // Test a "crooked" base address:
+        // - just aligned enough to pass metaspace reserve alignment test of 16MB.
+        // - not encodable on aarch64 as logical immediate
+        // - sufficiently complex enough to need multiple moves on risc platforms to materialize as immediate
+        // - small enough to not cause test errors on small devices (e.g. arm64 39bit address space)
+        // - large enough to not end up with zero-based encoding
+        forceAddress = 0x0000000d55000000L;
+        test(forceAddress, true, 32 * M, forceAddress, 6);
+        test(forceAddress, false, 32 * M, forceAddress, 0);
 
     }
 }

@@ -351,10 +351,16 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  // enable VM_INIT event notification mode
+  // enable VM_INIT/VM_DEATH event notification modes
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr);
   if (err != JVMTI_ERROR_NONE) {
-    LOG1("Agent_OnLoad: Error in JVMTI SetEventNotificationMode: %d\n", err);
+    LOG1("Agent_OnLoad: Error in JVMTI SetEventNotificationMode(JVMTI_EVENT_VM_INIT): %d\n", err);
+    failed = true;
+    return JNI_ERR;
+  }
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr);
+  if (err != JVMTI_ERROR_NONE) {
+    LOG1("Agent_OnLoad: Error in JVMTI SetEventNotificationMode(JVMTI_EVENT_VM_DEATH): %d\n", err);
     failed = true;
     return JNI_ERR;
   }

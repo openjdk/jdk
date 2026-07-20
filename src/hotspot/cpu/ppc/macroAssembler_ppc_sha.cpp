@@ -93,7 +93,7 @@ void MacroAssembler::sha256_load_h_vec(const VectorRegister a,
   lvx    (a,    hptr);
   addi   (tmp,  hptr, 16);
   lvx    (e,    tmp);
-  beq    (CCR0, sha256_aligned);
+  beq    (CR0, sha256_aligned);
 
   // handle unaligned accesses
   load_perm(vRb, hptr);
@@ -121,7 +121,7 @@ void MacroAssembler::sha256_load_w_plus_k_vec(const Register buf_in,
   VectorRegister vRb = VR6;
 
   andi_ (tmp, buf_in, 0xF);
-  beq   (CCR0, w_aligned); // address ends with 0x0, not 0x8
+  beq   (CR0, w_aligned); // address ends with 0x0, not 0x8
 
   // deal with unaligned addresses
   lvx    (ws[0], buf_in);
@@ -318,7 +318,7 @@ void MacroAssembler::sha256_update_sha_state(const VectorRegister a,
   li      (of16, 16);
   lvx     (vt0, hptr);
   lvx     (vt5, of16, hptr);
-  beq     (CCR0, state_load_aligned);
+  beq     (CR0, state_load_aligned);
 
   // handle unaligned accesses
   li      (of32, 32);
@@ -538,8 +538,8 @@ void MacroAssembler::sha256(bool multi_block) {
   if (multi_block) {
     addi(buf_in, buf_in, buf_size);
     addi(ofs, ofs, buf_size);
-    cmplw(CCR0, ofs, limit);
-    ble(CCR0, sha_loop);
+    cmplw(CR0, ofs, limit);
+    ble(CR0, sha_loop);
 
     // return ofs
     mr(R3_RET, ofs);
@@ -567,7 +567,7 @@ void MacroAssembler::sha512_load_w_vec(const Register buf_in,
   Label is_aligned, after_alignment;
 
   andi_  (tmp, buf_in, 0xF);
-  beq    (CCR0, is_aligned); // address ends with 0x0, not 0x8
+  beq    (CR0, is_aligned); // address ends with 0x0, not 0x8
 
   // deal with unaligned addresses
   lvx    (ws[0], buf_in);
@@ -623,7 +623,7 @@ void MacroAssembler::sha512_update_sha_state(const Register state,
   VectorRegister aux = VR9;
 
   andi_(tmp, state, 0xf);
-  beq(CCR0, state_save_aligned);
+  beq(CR0, state_save_aligned);
   // deal with unaligned addresses
 
   {
@@ -860,7 +860,7 @@ void MacroAssembler::sha512_load_h_vec(const Register state,
   Label state_aligned, after_state_aligned;
 
   andi_(tmp, state, 0xf);
-  beq(CCR0, state_aligned);
+  beq(CR0, state_aligned);
 
   // deal with unaligned addresses
   VectorRegister aux = VR9;
@@ -1121,8 +1121,8 @@ void MacroAssembler::sha512(bool multi_block) {
   if (multi_block) {
     addi(buf_in, buf_in, buf_size);
     addi(ofs, ofs, buf_size);
-    cmplw(CCR0, ofs, limit);
-    ble(CCR0, sha_loop);
+    cmplw(CR0, ofs, limit);
+    ble(CR0, sha_loop);
 
     // return ofs
     mr(R3_RET, ofs);

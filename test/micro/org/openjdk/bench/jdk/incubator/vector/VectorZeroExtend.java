@@ -32,7 +32,7 @@ import static jdk.incubator.vector.VectorOperators.*;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
+@Fork(jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class VectorZeroExtend {
     private static final VectorSpecies<Byte> B_SPECIES = ByteVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Short> S_SPECIES = ShortVector.SPECIES_PREFERRED;

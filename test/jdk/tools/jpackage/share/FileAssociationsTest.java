@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,19 @@
  * questions.
  */
 
+import static java.util.Map.entry;
+
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.List;
-import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.FileAssociations;
+import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.FileAssociations;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.TKit;
 
 /**
  * Test --file-associations parameter. Output of the test should be
@@ -57,12 +61,11 @@ import jdk.jpackage.test.Annotations.Parameter;
 /*
  * @test
  * @summary jpackage with --file-associations
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile FileAssociationsTest.java
+ * @compile -Xlint:all -Werror FileAssociationsTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=FileAssociationsTest
  */
@@ -70,12 +73,11 @@ import jdk.jpackage.test.Annotations.Parameter;
 /*
  * @test
  * @summary jpackage with --file-associations
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest != null
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile FileAssociationsTest.java
+ * @compile -Xlint:all -Werror FileAssociationsTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=FileAssociationsTest.test
  */
@@ -84,7 +86,7 @@ public class FileAssociationsTest {
     @Test
     @Parameter("true")
     @Parameter("false")
-    public static void test(boolean includeDescription) {
+    public static void test(boolean includeDescription) throws IOException {
         PackageTest packageTest = new PackageTest();
 
         // Not supported
@@ -96,10 +98,8 @@ public class FileAssociationsTest {
         }
         fa.applyTo(packageTest);
 
-        Path icon = TKit.TEST_SRC_ROOT.resolve(Path.of("resources", "icon"
-                + TKit.ICON_SUFFIX));
-
-        icon = TKit.createRelativePathCopy(icon);
+        var icon = TKit.createTempDirectory("icon-dir").resolve(ICON.getFileName());
+        Files.copy(ICON, icon);
 
         new FileAssociations("jptest2")
                 .setFilename("fa2")
@@ -113,22 +113,16 @@ public class FileAssociationsTest {
     public static void testNoMime() {
         final Path propFile = TKit.workDir().resolve("fa.properties");
 
-        PackageTest packageTest = new PackageTest().excludeTypes(PackageType.MAC);
-
-        packageTest.configureHelloApp().addRunOnceInitializer(() -> {
-            TKit.createPropertiesFile(propFile, Map.of(
-                "extension", "foo",
-                "description", "bar"
+        initPackageTest().addRunOnceInitializer(() -> {
+            TKit.createPropertiesFile(propFile, List.of(
+                    entry("extension", "foo"),
+                    entry("description", "bar")
             ));
         }).addInitializer(cmd -> {
-            cmd.addArguments("--file-associations", propFile).saveConsoleOutput(true);
-        }).setExpectedExitCode(1).addBundleVerifier((cmd, result) -> {
-           TKit.assertTextStream(
-                   "No MIME types were specified for File Association number 1")
-                   .apply(result.getOutput().stream());
-           TKit.assertTextStream(
-                   "Advice to fix: Specify MIME type for File Association number 1")
-                   .apply(result.getOutput().stream());
+            cmd.addArguments("--file-associations", propFile);
+            cmd.validateErr(
+                    JPackageCommand.makeError("error.no-content-types-for-file-association", 1),
+                    JPackageCommand.makeAdvice("error.no-content-types-for-file-association.advice", 1));
         }).run();
     }
 
@@ -136,23 +130,27 @@ public class FileAssociationsTest {
     public static void testTooManyMimes() {
         final Path propFile = TKit.workDir().resolve("fa.properties");
 
-        PackageTest packageTest = new PackageTest().excludeTypes(PackageType.MAC);
-
-        packageTest.configureHelloApp().addRunOnceInitializer(() -> {
-            TKit.createPropertiesFile(propFile, Map.of(
-                "mime-type", "application/x-jpackage-foo, application/x-jpackage-bar",
-                "extension", "foo",
-                "description", "bar"
+        initPackageTest().addRunOnceInitializer(() -> {
+            TKit.createPropertiesFile(propFile, List.of(
+                    entry("mime-type", "application/x-jpackage-foo, application/x-jpackage-bar"),
+                    entry("extension", "foo"),
+                    entry("description", "bar")
             ));
         }).addInitializer(cmd -> {
-            cmd.addArguments("--file-associations", propFile).saveConsoleOutput(true);
-        }).setExpectedExitCode(1).addBundleVerifier((cmd, result) -> {
-           TKit.assertTextStream(
-                   "More than one MIME types was specified for File Association number 1")
-                   .apply(result.getOutput().stream());
-           TKit.assertTextStream(
-                   "Advice to fix: Specify only one MIME type for File Association number 1")
-                   .apply(result.getOutput().stream());
+            cmd.addArguments("--file-associations", propFile);
+            cmd.validateErr(
+                    JPackageCommand.makeError("error.too-many-content-types-for-file-association", 1),
+                    JPackageCommand.makeAdvice("error.too-many-content-types-for-file-association.advice", 1));
         }).run();
     }
+
+    private static PackageTest initPackageTest() {
+        return new PackageTest()
+                .excludeTypes(PackageType.MAC)
+                .configureHelloApp()
+                .addInitializer(JPackageCommand::setFakeRuntime)
+                .setExpectedExitCode(1);
+    }
+
+    private static final Path ICON = TKit.TEST_SRC_ROOT.resolve(Path.of("resources", "icon" + TKit.ICON_SUFFIX));
 }

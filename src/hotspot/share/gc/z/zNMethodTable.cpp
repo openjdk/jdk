@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "code/relocInfo.hpp"
 #include "code/nmethod.hpp"
+#include "code/relocInfo.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/z/zHash.inline.hpp"
@@ -110,9 +109,9 @@ void ZNMethodTable::rebuild(size_t new_size) {
   assert(is_power_of_2(new_size), "Invalid size");
 
   log_debug(gc, nmethod)("Rebuilding NMethod Table: "
-                         SIZE_FORMAT "->" SIZE_FORMAT " entries, "
-                         SIZE_FORMAT "(%.0f%%->%.0f%%) registered, "
-                         SIZE_FORMAT "(%.0f%%->%.0f%%) unregistered",
+                         "%zu->%zu entries, "
+                         "%zu(%.0f%%->%.0f%%) registered, "
+                         "%zu(%.0f%%->%.0f%%) unregistered",
                          _size, new_size,
                          _nregistered, percent_of(_nregistered, _size), percent_of(_nregistered, new_size),
                          _nunregistered, percent_of(_nunregistered, _size), 0.0);
@@ -192,14 +191,6 @@ void ZNMethodTable::register_nmethod(nmethod* nm) {
     // false the nmethod was already in the table so we do not want
     // to increase number of registered entries in that case.
     _nregistered++;
-  }
-}
-
-void ZNMethodTable::wait_until_iteration_done() {
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
-
-  while (_iteration.in_progress() || _iteration_secondary.in_progress()) {
-    CodeCache_lock->wait_without_safepoint_check();
   }
 }
 

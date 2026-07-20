@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.lang.instrument;
 
+import java.io.Serial;
+
 /*
  * Copyright 2003 Wily Technology, Inc.
  */
@@ -40,6 +42,8 @@ package java.lang.instrument;
  * @since   1.5
  */
 public class IllegalClassFormatException extends Exception {
+
+    @Serial
     private static final long serialVersionUID = -3841736710924794009L;
 
     /**

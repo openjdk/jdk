@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,14 +87,32 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1get_1struct_1offsets(JNI
   return ffi_get_struct_offsets((ffi_abi) abi, jlong_to_ptr(type), jlong_to_ptr(offsets));
 }
 
-static void do_capture_state(int32_t* value_ptr, int captured_state_mask) {
-    // keep in synch with jdk.internal.foreign.abi.CapturableState
-  enum PreservableValues {
-    NONE = 0,
-    GET_LAST_ERROR = 1,
-    WSA_GET_LAST_ERROR = 1 << 1,
-    ERRNO = 1 << 2
-  };
+// keep in synch with jdk.internal.foreign.abi.CapturableState
+enum PreservableValues {
+  NONE = 0,
+  GET_LAST_ERROR = 1,
+  WSA_GET_LAST_ERROR = 1 << 1,
+  ERRNO = 1 << 2
+};
+
+static void do_capture_state_pre(int32_t* value_ptr, int captured_state_mask) {
+#ifdef _WIN64
+  if (captured_state_mask & GET_LAST_ERROR) {
+    SetLastError(*value_ptr);
+  }
+  value_ptr++;
+  if (captured_state_mask & WSA_GET_LAST_ERROR) {
+    WSASetLastError(*value_ptr);
+    *value_ptr = WSAGetLastError();
+  }
+  value_ptr++;
+#endif
+  if (captured_state_mask & ERRNO) {
+    errno = *value_ptr;
+  }
+}
+
+static void do_capture_state_post(int32_t* value_ptr, int captured_state_mask) {
 #ifdef _WIN64
   if (captured_state_mask & GET_LAST_ERROR) {
     *value_ptr = GetLastError();
@@ -112,12 +130,16 @@ static void do_capture_state(int32_t* value_ptr, int captured_state_mask) {
 
 JNIEXPORT void JNICALL
 Java_jdk_internal_foreign_abi_fallback_LibFallback_doDowncall(JNIEnv* env, jclass cls, jlong cif, jlong fn, jlong rvalue,
-                                                              jlong avalues, jlong jcaptured_state, jint captured_state_mask,
+                                                              jlong avalues,
+                                                              jarray capture_state_heap_base, jlong captured_state_offset,
+                                                              jint captured_state_mask,
                                                               jarray heapBases, jint numArgs) {
   void** carrays;
+  int capture_state_hb_offset = numArgs;
+  int32_t* captured_state_addr = jlong_to_ptr(captured_state_offset);
   if (heapBases != NULL) {
     void** aptrs = jlong_to_ptr(avalues);
-    carrays = malloc(sizeof(void*) * numArgs);
+    carrays = malloc(sizeof(void*) * (numArgs + 1));
     for (int i = 0; i < numArgs; i++) {
       jarray hb = (jarray) (*env)->GetObjectArrayElement(env, heapBases, i);
       if (hb != NULL) {
@@ -130,9 +152,24 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_doDowncall(JNIEnv* env, jclas
         *((void**)aptrs[i]) = arrayPtr + offset;
       }
     }
+    if (capture_state_heap_base != NULL) {
+        jboolean isCopy;
+        jbyte* arrayPtr = (*env)->GetPrimitiveArrayCritical(env, capture_state_heap_base, &isCopy);
+        carrays[capture_state_hb_offset] = arrayPtr;
+        captured_state_addr = (int32_t*) (arrayPtr + captured_state_offset);
+    }
+  }
+
+  if (captured_state_mask != 0) {
+    // Copy the contents of the capture state buffer into thread local
+    do_capture_state_pre(captured_state_addr, captured_state_mask);
   }
 
   ffi_call(jlong_to_ptr(cif), jlong_to_ptr(fn), jlong_to_ptr(rvalue), jlong_to_ptr(avalues));
+
+  if (captured_state_mask != 0) {
+    do_capture_state_post(captured_state_addr, captured_state_mask);
+  }
 
   if (heapBases != NULL) {
     for (int i = 0; i < numArgs; i++) {
@@ -141,19 +178,17 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_doDowncall(JNIEnv* env, jclas
         (*env)->ReleasePrimitiveArrayCritical(env, hb, carrays[i], JNI_COMMIT);
       }
     }
+    if (capture_state_heap_base != NULL) {
+        (*env)->ReleasePrimitiveArrayCritical(env, capture_state_heap_base, carrays[capture_state_hb_offset], JNI_COMMIT);
+    }
     free(carrays);
-  }
-
-  if (captured_state_mask != 0) {
-    int32_t* captured_state = jlong_to_ptr(jcaptured_state);
-    do_capture_state(captured_state, captured_state_mask);
   }
 }
 
 static void do_upcall(ffi_cif* cif, void* ret, void** args, void* user_data) {
   // attach thread
   JNIEnv* env;
-  jint result = (*VM)->AttachCurrentThreadAsDaemon(VM, (void**) &env, NULL);
+  (*VM)->AttachCurrentThreadAsDaemon(VM, (void**) &env, NULL);
 
   // call into doUpcall in LibFallback
   jobject upcall_data = (jobject) user_data;

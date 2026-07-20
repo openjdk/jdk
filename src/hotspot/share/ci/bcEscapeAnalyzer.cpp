@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,19 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "classfile/vmIntrinsics.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciMethodBlocks.hpp"
 #include "ci/ciStreams.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "interpreter/bytecode.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/integerCast.hpp"
 
 #ifndef PRODUCT
   #define TRACE_BCEA(level, code)                                            \
@@ -1078,17 +1078,32 @@ void BCEscapeAnalyzer::merge_block_states(StateInfo *blockstates, ciBlock *dest,
   }
 }
 
+bool BCEscapeAnalyzer::datasize_overflow(uint numblocks, uint stkSize, uint numLocals, size_t& datasize) {
+  uint64_t datacount64 = (uint64_t)(numblocks + 1) * (stkSize + numLocals);
+  if (datacount64 > SIZE_MAX / sizeof(ArgumentMap)) {
+    return true;
+  }
+  datasize = integer_cast_permit_tautology<size_t>(datacount64 * sizeof(ArgumentMap));
+  return false;
+}
+
 void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
-  int numblocks = _methodBlocks->num_blocks();
-  int stkSize   = _method->max_stack();
-  int numLocals = _method->max_locals();
+  uint numblocks = _methodBlocks->num_blocks();
+  uint stkSize   = _method->max_stack();
+  uint numLocals = _method->max_locals();
   StateInfo state;
 
-  int datacount = (numblocks + 1) * (stkSize + numLocals);
-  int datasize = datacount * sizeof(ArgumentMap);
+  size_t datasize;
+  if (datasize_overflow(numblocks, stkSize, numLocals, datasize)) {
+    _conservative = true;
+    return;
+  }
+  size_t datacount = datasize / sizeof(ArgumentMap);
   StateInfo *blockstates = (StateInfo *) arena->Amalloc(numblocks * sizeof(StateInfo));
   ArgumentMap *statedata  = (ArgumentMap *) arena->Amalloc(datasize);
-  for (int i = 0; i < datacount; i++) ::new ((void*)&statedata[i]) ArgumentMap();
+  for (size_t i = 0; i < datacount; i++) {
+    ::new ((void*)&statedata[i]) ArgumentMap();
+  }
   ArgumentMap *dp = statedata;
   state._vars = dp;
   dp += numLocals;
@@ -1096,7 +1111,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
   dp += stkSize;
   state._initialized = false;
   state._max_stack = stkSize;
-  for (int i = 0; i < numblocks; i++) {
+  for (uint i = 0; i < numblocks; i++) {
     blockstates[i]._vars = dp;
     dp += numLocals;
     blockstates[i]._stack = dp;
@@ -1143,7 +1158,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
     if (blk->is_handler() || blk->is_ret_target()) {
       // for an exception handler or a target of a ret instruction, we assume the worst case,
       // that any variable could contain any argument
-      for (int i = 0; i < numLocals; i++) {
+      for (uint i = 0; i < numLocals; i++) {
         state._vars[i] = allVars;
       }
       if (blk->is_handler()) {
@@ -1156,7 +1171,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
         state._stack[i] = allVars;
       }
     } else {
-      for (int i = 0; i < numLocals; i++) {
+      for (uint i = 0; i < numLocals; i++) {
         state._vars[i] = blkState->_vars[i];
       }
       for (int i = 0; i < blkState->_stack_height; i++) {
@@ -1171,7 +1186,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
       DEBUG_ONLY(int handler_count = 0;)
       int blk_start = blk->start_bci();
       int blk_end = blk->limit_bci();
-      for (int i = 0; i < numblocks; i++) {
+      for (uint i = 0; i < numblocks; i++) {
         ciBlock *b = _methodBlocks->block(i);
         if (b->is_handler()) {
           int ex_start = b->ex_start_bci();

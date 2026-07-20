@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class JSplitPaneKeyboardNavigationTest {
     public static void main(String[] s) throws Exception {
         robot = new Robot();
         robot.setAutoWaitForIdle(true);
-        robot.setAutoDelay(200);
+        robot.setAutoDelay(100);
         List<String> lafs = Arrays.stream(getInstalledLookAndFeels())
                                   .map(LookAndFeelInfo::getClassName)
                                   .collect(Collectors.toList());
@@ -81,10 +81,13 @@ public class JSplitPaneKeyboardNavigationTest {
                     continue;
                 }
                 robot.waitForIdle();
+                robot.delay(1000);
 
                 // Press Right button 1 and move focus to it.
                 pressButton(rightButton1);
                 hitKeys(KeyEvent.VK_F6);
+                robot.waitForIdle();
+                robot.delay(100);
 
                 // Verifier1 - Verifies that, F6 transfers focus to the right/bottom side of the splitpane
                 if (isFocusOwner(rightButton2)) {
@@ -98,9 +101,12 @@ public class JSplitPaneKeyboardNavigationTest {
                 // Press Right button 2 and move focus to it.
                 pressButton(rightButton2);
                 hitKeys(KeyEvent.VK_F6);
+                robot.waitForIdle();
+                robot.delay(100);
 
                 // Verifier2 - Verifies that, F6 transfers focus to the left side of the parent splitpane,
-                // if the right/bottom side of splitpane already has focus, and it is contained within another splitpane
+                // if the right/bottom side of splitpane already has focus,
+                // and it is contained within another splitpane
                 if (isFocusOwner(leftButton)) {
                     System.out.println("Verifier 2 passed");
                 } else {
@@ -112,6 +118,9 @@ public class JSplitPaneKeyboardNavigationTest {
                 // Press Left button and move focus to it.
                 pressButton(leftButton);
                 hitKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_TAB);
+                robot.waitForIdle();
+                robot.delay(100);
+
                 // Verifier3 - Verifies that, CTRL-TAB navigates forward outside the JSplitPane
                 if (isFocusOwner(bottomButton)) {
                     System.out.println("Verifier 3 passed");
@@ -124,6 +133,8 @@ public class JSplitPaneKeyboardNavigationTest {
                 // Press Left button and move focus to it.
                 pressButton(leftButton);
                 hitKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
+                robot.waitForIdle();
+                robot.delay(100);
 
                 // Verifier4 - Verifies that, CTRL-SHIFT-TAB navigates backward outside the JSplitPane
                 if (isFocusOwner(topButton)) {
@@ -137,7 +148,8 @@ public class JSplitPaneKeyboardNavigationTest {
                 if (failedVerifiers.toString().isEmpty()) {
                     System.out.println("Test passed, All verifiers succeeded for " + laf);
                 } else {
-                    throw new RuntimeException("Test failed, verifiers " + failedVerifiers.toString() + " failed for " + laf);
+                    throw new RuntimeException("Test failed, verifiers "
+                                 + failedVerifiers.toString() + " failed for " + laf);
                 }
             } finally {
                 SwingUtilities.invokeAndWait(JSplitPaneKeyboardNavigationTest::disposeFrame);
@@ -159,13 +171,14 @@ public class JSplitPaneKeyboardNavigationTest {
             loc.set(button.getLocationOnScreen());
         });
         final Point buttonLoc = loc.get();
-        robot.mouseMove(buttonLoc.x + 8, buttonLoc.y + 8);
+        robot.mouseMove(buttonLoc.x + button.getWidth() / 2,
+                        buttonLoc.y + button.getHeight() / 2);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
 
     public static void createUI() {
-        frame = new JFrame();
+        frame = new JFrame("JSplitPaneKeyboardNavigationTest");
         panel = new JPanel();
         panel.setLayout(new BorderLayout());
         leftButton = new JButton("Left Button");
@@ -175,13 +188,14 @@ public class JSplitPaneKeyboardNavigationTest {
         bottomButton = new JButton("Bottom Button");
         panel.add(topButton, BorderLayout.NORTH);
         panel.add(bottomButton, BorderLayout.SOUTH);
-        final JSplitPane splitPane2 = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, rightButton1, rightButton2);
-        final JSplitPane splitPane1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, leftButton, splitPane2);
+        final JSplitPane splitPane2 = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
+                                                     true, rightButton1, rightButton2);
+        final JSplitPane splitPane1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+                                                     true, leftButton, splitPane2);
         panel.add(splitPane1, BorderLayout.CENTER);
         frame.setContentPane(panel);
         frame.setSize(200, 200);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.pack();
         frame.setAlwaysOnTop(true);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
@@ -213,7 +227,6 @@ public class JSplitPaneKeyboardNavigationTest {
     private static void disposeFrame() {
         if (frame != null) {
             frame.dispose();
-            frame = null;
         }
     }
 

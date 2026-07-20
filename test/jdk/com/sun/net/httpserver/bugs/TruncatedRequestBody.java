@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8190793
- * @summary Httpserver does not detect truncated request body
- */
 
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
@@ -44,13 +39,25 @@ import java.util.concurrent.Executors;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
+/*
+ * @test
+ * @bug 8190793
+ * @summary Httpserver does not detect truncated request body
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
+ * @run main/othervm ${test.main.class}
+ */
 /*
  * Send two POST requests to the server which are both trucated
  * and socket closed. Server needs to detect this and throw an IOException
  * in getRequestBody().read(). Two variants for fixed length and chunked.
  */
 public class TruncatedRequestBody {
+
+    private static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
+
     static volatile boolean error = false;
 
     static CountDownLatch latch = new CountDownLatch(2);
@@ -75,21 +82,23 @@ public class TruncatedRequestBody {
             latch.countDown();
             System.out.println("Read " + count + " bytes");
             is.close();
-            exch.sendResponseHeaders(200, -1);
+            exch.sendResponseHeaders(200, RSPBODY_EMPTY);
         }
 
+    }
+
+    private static void setupLogging() {
+        final ConsoleHandler h = new ConsoleHandler();
+        h.setLevel(Level.ALL);
+        logger.setLevel(Level.ALL);
+        logger.addHandler(h);
     }
 
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException, InterruptedException {
-        Logger logger = Logger.getLogger("com.sun.net.httpserver");
-        ConsoleHandler h = new ConsoleHandler();
-        h.setLevel(Level.ALL);
-        logger.setLevel(Level.ALL);
-        logger.addHandler(h);
-
+        setupLogging(); // merely for debugging
         InetAddress loopback = InetAddress.getLoopbackAddress();
         InetSocketAddress addr = new InetSocketAddress(loopback, 0);
         HttpServer server = HttpServer.create(addr, 10);

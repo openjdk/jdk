@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,6 +547,10 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                 sb.append(opt);
             }
             throw new BadArgs("err.incompatible.options", sb);
+        }
+
+        if (!options.showDisassembled && !options.verbose && options.showLineAndLocalVariableTables) {
+            reportWarning("err.incompatible.options", "-l without -c, line number and local variable tables will not be printed");
         }
 
         if ((classes == null || classes.size() == 0) &&

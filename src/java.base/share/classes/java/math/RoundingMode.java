@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,15 +109,12 @@ package java.math;
  * this correspondence will be noted in the documentation of the
  * particular constant.
  *
- * @see     BigDecimal
- * @see     MathContext
- * @see <a href="https://standards.ieee.org/ieee/754/6210/">
- *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ * @see BigDecimal
+ * @see MathContext
+ * @spec https://standards.ieee.org/ieee/754/6210/
+ *       IEEE Standard for Floating-Point Arithmetic
  * @jls 15.4 Floating-point Expressions
  *
- * @author  Josh Bloch
- * @author  Mike Cowlishaw
- * @author  Joseph D. Darcy
  * @since 1.5
  */
 @SuppressWarnings("deprecation") // Legacy rounding mode constants in BigDecimal

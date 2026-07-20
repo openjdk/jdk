@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,12 @@ public class Test4513830 {
         byte[] plainText=new byte[125];
         rdm.nextBytes(plainText);
 
-        Cipher ci = Cipher.getInstance(ALGO+"/"+MODE+"/"+PADDING, "SunJCE");
+        Cipher ci = Cipher.getInstance(ALGO+"/"+MODE+"/"+PADDING,
+                System.getProperty("test.provider.name", "SunJCE"));
 
         // TEST FIX 4513830
-        KeyGenerator kg = KeyGenerator.getInstance(ALGO, "SunJCE");
+        KeyGenerator kg = KeyGenerator.getInstance(ALGO,
+                System.getProperty("test.provider.name", "SunJCE"));
         kg.init(KEYSIZE*8);
         SecretKey key = kg.generateKey();
 

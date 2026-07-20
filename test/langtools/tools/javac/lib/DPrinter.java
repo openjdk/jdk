@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1602,7 +1602,9 @@ public class DPrinter {
                 }
             });
 
-            task.call();
+            if (!task.call()) {
+                throw new AssertionError("compilation failed at DPrinter.Main::run");
+            }
         }
 
         TaskEvent.Kind getKind(String s) {

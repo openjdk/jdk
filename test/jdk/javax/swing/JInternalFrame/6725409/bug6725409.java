@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,68 +21,61 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @key headful
  * @bug 6725409
  * @requires (os.family == "windows")
  * @summary Checks that JInternalFrame's system menu
  *          can be localized during run-time
- * @author Mikhail Lapshin
- * @library /lib/client/
  * @modules java.desktop/com.sun.java.swing.plaf.windows
- * @build ExtendedRobot
  * @run main bug6725409
  */
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Robot;
+import javax.swing.JDesktopPane;
+import javax.swing.JFrame;
+import javax.swing.JInternalFrame;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
+import com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel;
+import com.sun.java.swing.plaf.windows.WindowsInternalFrameTitlePane;
 
 public class bug6725409 {
     private JFrame frame;
     private JInternalFrame iFrame;
-    private TestTitlePane testTitlePane;
-    private boolean passed;
-    private static ExtendedRobot robot = createRobot();
+    private static TestTitlePane testTitlePane;
+    private static volatile boolean passed;
+    private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        try {
-            UIManager.setLookAndFeel(
-                    new com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel());
-        } catch(UnsupportedLookAndFeelException e) {
-            System.out.println("The test is for Windows LaF only");
-            return;
-        }
+        UIManager.setLookAndFeel(
+                new WindowsClassicLookAndFeel());
 
+        robot = new Robot();
         final bug6725409 bug6725409 = new bug6725409();
         try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    bug6725409.setupUIStep1();
-                }
-            });
+            SwingUtilities.invokeAndWait(bug6725409::setupUIStep1);
             sync();
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    bug6725409.setupUIStep2();
-                }
-            });
+            SwingUtilities.invokeAndWait(bug6725409::setupUIStep2);
             sync();
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    bug6725409.test();
-                }
-            });
+            SwingUtilities.invokeAndWait(bug6725409::test);
             sync();
             bug6725409.checkResult();
         } finally {
-            if (bug6725409.frame != null) {
-                bug6725409.frame.dispose();
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                if (bug6725409.frame != null) {
+                    bug6725409.frame.dispose();
+                }
+            });
         }
     }
 
     private void setupUIStep1() {
-        frame = new JFrame();
+        frame = new JFrame("bug6725409");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JDesktopPane desktop = new JDesktopPane();
@@ -147,19 +140,9 @@ public class bug6725409 {
     private static void sync() {
         robot.waitForIdle();
     }
-    private static ExtendedRobot createRobot() {
-        try {
-             ExtendedRobot robot = new ExtendedRobot();
-             return robot;
-         }catch(Exception ex) {
-             ex.printStackTrace();
-             throw new Error("Unexpected Failure");
-         }
-    }
 
     // Extend WindowsInternalFrameTitlePane to get access to systemPopupMenu
-    private class TestTitlePane extends
-            com.sun.java.swing.plaf.windows.WindowsInternalFrameTitlePane {
+    private class TestTitlePane extends WindowsInternalFrameTitlePane {
         private JPopupMenu systemPopupMenu;
 
         public TestTitlePane(JInternalFrame f) {

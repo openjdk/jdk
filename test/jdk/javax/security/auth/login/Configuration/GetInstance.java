@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,12 +84,14 @@ public class GetInstance {
 
     private int testStringProvider(int testnum) throws Exception {
         // get an instance of JavaLoginConfig from SUN
-        Configuration c = Configuration.getInstance(JAVA_CONFIG, null, "SUN");
+        Configuration c = Configuration.getInstance(JAVA_CONFIG, null,
+                System.getProperty("test.provider.name", "SUN"));
         doTest(c, testnum++);
 
         // get an instance of JavaLoginConfig from SunRsaSign
         try {
-            c = Configuration.getInstance(JAVA_CONFIG, null, "SunRsaSign");
+            c = Configuration.getInstance(JAVA_CONFIG, null,
+                    System.getProperty("test.provider.name", "SunRsaSign"));
             throw new SecurityException("test " + testnum++ + " failed");
         } catch (NoSuchAlgorithmException nsae) {
             // good
@@ -112,14 +114,16 @@ public class GetInstance {
         // get an instance of JavaLoginConfig from SUN
         Configuration c = Configuration.getInstance(JAVA_CONFIG,
                                 null,
-                                Security.getProvider("SUN"));
+                                Security.getProvider(
+                                        System.getProperty("test.provider.name", "SUN")));
         doTest(c, testnum++);
 
         // get an instance of JavaLoginConfig from SunRsaSign
         try {
             c = Configuration.getInstance(JAVA_CONFIG,
                                 null,
-                                Security.getProvider("SunRsaSign"));
+                                Security.getProvider(
+                                        System.getProperty("test.provider.name","SunRsaSign")));
             throw new SecurityException("test " + testnum++ + " failed");
         } catch (NoSuchAlgorithmException nsae) {
             // good
@@ -186,7 +190,7 @@ public class GetInstance {
         try {
             Configuration c = Configuration.getInstance(JAVA_CONFIG,
                                 new BadParam(),
-                                "SUN");
+                                System.getProperty("test.provider.name","SUN"));
             throw new SecurityException("test " + testnum++ + " failed");
         } catch (IllegalArgumentException iae) {
             // good
@@ -196,7 +200,7 @@ public class GetInstance {
         try {
             Configuration c = Configuration.getInstance(JAVA_CONFIG,
                                 new BadParam(),
-                                Security.getProvider("SUN"));
+                                Security.getProvider(System.getProperty("test.provider.name","SUN")));
             throw new SecurityException("test " + testnum++ + " failed");
         } catch (IllegalArgumentException iae) {
             // good
@@ -285,7 +289,7 @@ public class GetInstance {
         testnum = doCommon(c, testnum);
 
         // test getProvider
-        if ("SUN".equals(c.getProvider().getName())) {
+        if (System.getProperty("test.provider.name","SUN").equals(c.getProvider().getName())) {
             System.out.println("test " + testnum + " (getProvider) passed");
         } else {
             throw new SecurityException("test " + testnum +
@@ -325,7 +329,7 @@ public class GetInstance {
         }
 
         // test getProvider
-        if ("SUN".equals(c.getProvider().getName())) {
+        if (System.getProperty("test.provider.name","SUN").equals(c.getProvider().getName())) {
             System.out.println("test " + testnum + " (getProvider) passed");
         } else {
             throw new SecurityException("test " + testnum +

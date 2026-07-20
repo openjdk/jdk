@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,25 @@
  */
 package jdk.jshell.execution;
 
+import java.io.ByteArrayInputStream;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.Label;
 import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.LabelTarget;
 
 /**
  * An implementation of {@link jdk.jshell.spi.ExecutionControl} which executes
@@ -78,36 +87,75 @@ public class LocalExecutionControl extends DirectExecutionControl {
     @Override
     public void load(ClassBytecodes[] cbcs)
             throws ClassInstallException, NotImplementedException, EngineTerminationException {
-        super.load(Stream.of(cbcs)
-                .map(cbc -> new ClassBytecodes(cbc.name(), instrument(cbc.bytecodes())))
-                .toArray(ClassBytecodes[]::new));
+        super.load(instrument(cbcs));
     }
 
     private static final String CANCEL_CLASS = "REPL.$Cancel$";
     private static final ClassDesc CD_Cancel = ClassDesc.of(CANCEL_CLASS);
+    private static final String STOP_CHECK = "stopCheck";
     private static final ClassDesc CD_ThreadDeath = ClassDesc.of("java.lang.ThreadDeath");
 
-    private static byte[] instrument(byte[] classFile) {
-        var cc = ClassFile.of();
+    private static ClassBytecodes[] instrument(ClassBytecodes[] cbcs) {
+        var cc = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(
+                ClassHierarchyResolver.defaultResolver().orElse(
+                        ClassHierarchyResolver.ofResourceParsing(cd -> {
+                            String cName = cd.descriptorString();
+                            cName = cName.substring(1, cName.length() - 1).replace('/', '.');
+                            for (ClassBytecodes cbc : cbcs) {
+                                if (cName.equals(cbc.name())) {
+                                    return new ByteArrayInputStream(cbc.bytecodes());
+                                }
+                            }
+                            return null;
+                        }))));
+
+        return Stream.of(cbcs)
+                .map(cbc -> new ClassBytecodes(cbc.name(), instrument(cc, cbc.bytecodes())))
+                .toArray(ClassBytecodes[]::new);
+    }
+
+    private static byte[] instrument(ClassFile cc, byte[] classFile) {
         return cc.transformClass(cc.parse(classFile),
-                        ClassTransform.transformingMethodBodies((cob, coe) -> {
-                            if (coe instanceof BranchInstruction)
-                                cob.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);
-                            cob.with(coe);
-                        }));
+                        ClassTransform.transformingMethodBodies(
+                            CodeTransform.ofStateful(StopCheckWeaver::new)));
     }
 
     private static ClassBytecodes genCancelClass() {
         return new ClassBytecodes(CANCEL_CLASS, ClassFile.of().build(CD_Cancel, clb ->
              clb.withFlags(ClassFile.ACC_PUBLIC)
                 .withField("allStop", ConstantDescs.CD_boolean, ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC | ClassFile.ACC_VOLATILE)
-                .withMethodBody("stopCheck", ConstantDescs.MTD_void, ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC, cob ->
+                .withMethodBody(STOP_CHECK, ConstantDescs.MTD_void, ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC, cob ->
                         cob.getstatic(CD_Cancel, "allStop", ConstantDescs.CD_boolean)
                            .ifThenElse(tb -> tb.new_(CD_ThreadDeath)
                                                .dup()
                                                .invokespecial(CD_ThreadDeath, ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
                                                .athrow(),
                                        eb -> eb.return_()))));
+    }
+
+    // This inserts calls to REPL.$Cancel$.stopCheck() at method start and prior to any backward branch
+    private static class StopCheckWeaver implements CodeTransform {
+
+        private final Set<Label> priorLabels = new HashSet<>();
+
+        @Override
+        public void atStart(CodeBuilder builder) {
+            stopCheck(builder);
+        }
+
+        @Override
+        public void accept(CodeBuilder builder, CodeElement element) {
+            switch (element) {
+                case LabelTarget target -> priorLabels.add(target.label());
+                case BranchInstruction branch when priorLabels.contains(branch.target()) -> stopCheck(builder);
+                default -> { }
+            }
+            builder.with(element);
+        };
+
+        private void stopCheck(CodeBuilder builder) {
+            builder.invokestatic(CD_Cancel, STOP_CHECK, ConstantDescs.MTD_void);
+        }
     }
 
     @Override
@@ -119,28 +167,29 @@ public class LocalExecutionControl extends DirectExecutionControl {
         }
         allStop.set(null, false);
 
-        execThreadGroup = new ThreadGroup("JShell process local execution");
-
         AtomicReference<InvocationTargetException> iteEx = new AtomicReference<>();
         AtomicReference<IllegalAccessException> iaeEx = new AtomicReference<>();
         AtomicReference<NoSuchMethodException> nmeEx = new AtomicReference<>();
         AtomicReference<Boolean> stopped = new AtomicReference<>(false);
 
-        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
-            if (e instanceof InvocationTargetException) {
-                if (e.getCause() instanceof ThreadDeath) {
+        execThreadGroup = new ThreadGroup("JShell process local execution") {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                if (e instanceof InvocationTargetException) {
+                    if (e.getCause() instanceof ThreadDeath) {
+                        stopped.set(true);
+                    } else {
+                        iteEx.set((InvocationTargetException) e);
+                    }
+                } else if (e instanceof IllegalAccessException) {
+                    iaeEx.set((IllegalAccessException) e);
+                } else if (e instanceof NoSuchMethodException) {
+                    nmeEx.set((NoSuchMethodException) e);
+                } else if (e instanceof ThreadDeath) {
                     stopped.set(true);
-                } else {
-                    iteEx.set((InvocationTargetException) e);
                 }
-            } else if (e instanceof IllegalAccessException) {
-                iaeEx.set((IllegalAccessException) e);
-            } else if (e instanceof NoSuchMethodException) {
-                nmeEx.set((NoSuchMethodException) e);
-            } else if (e instanceof ThreadDeath) {
-                stopped.set(true);
             }
-        });
+        };
 
         final Object[] res = new Object[1];
         Thread snippetThread = new Thread(execThreadGroup, () -> {

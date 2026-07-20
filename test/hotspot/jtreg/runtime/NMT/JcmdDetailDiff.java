@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,7 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail JcmdDetailDiff
  */
 
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.JDKToolFinder;
 
 import jdk.test.whitebox.WhiteBox;
 
@@ -43,43 +41,30 @@ public class JcmdDetailDiff {
     public static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String args[]) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder();
         OutputAnalyzer output;
-        // Grab my own PID
-        String pid = Long.toString(ProcessTools.getProcessId());
 
         long commitSize = 128 * 1024;
         long reserveSize = 256 * 1024;
         long addr;
 
         // Run 'jcmd <pid> VM.native_memory baseline=true'
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "baseline=true"});
-
-        output = new OutputAnalyzer(pb.start());
+        output = NMTTestUtils.startJcmdVMNativeMemory("baseline=true");
         output.shouldContain("Baseline taken");
 
         addr = wb.NMTReserveMemory(reserveSize);
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "detail.diff", "scale=KB"});
-
-        output = new OutputAnalyzer(pb.start());
+        output = NMTTestUtils.startJcmdVMNativeMemory("detail.diff", "scale=KB");
         output.shouldContain("Test (reserved=256KB +256KB, committed=0KB)");
 
         wb.NMTCommitMemory(addr, commitSize);
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "detail.diff", "scale=KB"});
-
-        output = new OutputAnalyzer(pb.start());
+        output = NMTTestUtils.startJcmdVMNativeMemory("detail.diff", "scale=KB");
         output.shouldContain("Test (reserved=256KB +256KB, committed=128KB +128KB)");
 
         wb.NMTUncommitMemory(addr, commitSize);
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "detail.diff", "scale=KB"});
-
-        output = new OutputAnalyzer(pb.start());
+        output = NMTTestUtils.startJcmdVMNativeMemory("detail.diff", "scale=KB");
         output.shouldContain("Test (reserved=256KB +256KB, committed=0KB)");
 
         wb.NMTReleaseMemory(addr, reserveSize);
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "detail.diff", "scale=KB"});
-
-        output = new OutputAnalyzer(pb.start());
+        output = NMTTestUtils.startJcmdVMNativeMemory("detail.diff", "scale=KB");
         output.shouldNotContain("Test (reserved=");
     }
 }

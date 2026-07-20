@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  *
  * @library /test/lib
@@ -74,13 +74,6 @@ public class TestMultipleStartupRecordings {
         test(pb, "Started recording 1", "Started recording 2", "Started recording 3");
     }
 
-    private static void testDefault() throws Exception {
-        System.out.println("testDefault");
-        launchUnary(null);
-        launchBinary(null, null);
-        launchTernary(null, null, null);
-    }
-
     private static void testColonDelimited() throws Exception {
         launchBinary(":name=myrecording1,filename=myrecording1.jfr", ":filename=myrecording2.jfr,name=myrecording2");
     }
@@ -99,7 +92,6 @@ public class TestMultipleStartupRecordings {
     }
 
     public static void main(String[] args) throws Exception {
-        testDefault();
         testColonDelimited();
         testMixed();
         testWithFlightRecorderOptions();

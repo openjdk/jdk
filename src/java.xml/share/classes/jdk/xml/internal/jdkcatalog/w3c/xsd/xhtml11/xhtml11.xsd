@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="http://www.w3.org/1999/xhtml"
+    xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+    xmlns="http://www.w3.org/1999/xhtml"
+    elementFormDefault="qualified" >
+    <xs:annotation>
+        <xs:documentation>
+      This is the XML Schema driver for XHTML 1.1.
+      Please use this namespace for XHTML elements:
+
+         "http://www.w3.org/1999/xhtml"
+
+      $Id: xhtml11.xsd,v 1.7 2009/02/03 15:14:49 ahby Exp $
+    </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+    </xs:annotation>
+    <xs:annotation>
+        <xs:documentation>
+      This is XHTML, a reformulation of HTML as a modular XML application
+      The Extensible HyperText Markup Language (XHTML)
+      Copyright &#169;1998-2007 World Wide Web Consortium
+      (Massachusetts Institute of Technology, European Research Consortium
+       for Informatics and Mathematics, Keio University).
+      All Rights Reserved.
+
+      Permission to use, copy, modify and distribute the XHTML Schema
+      modules and their accompanying xs:documentation for any purpose
+      and without fee is hereby granted in perpetuity, provided that the above
+      copyright notice and this paragraph appear in all copies.
+      The copyright holders make no representation about the suitability of
+      these XML Schema modules for any purpose.
+
+      They are provided "as is" without expressed or implied warranty.
+    </xs:documentation>
+    </xs:annotation>
+    <xs:annotation>
+        <xs:documentation>
+      This is the Schema Driver file for XHTML1.1
+      Document Type
+
+     This schema
+        + imports external schemas (xml.xsd)
+        + refedines (and include)s schema modules for XHTML1.1 Document Type.
+        + includes Schema for Named content model for the
+          XHTML1.1 Document Type
+
+        XHTML1.1 Document Type includes the following Modules
+           XHTML Core modules (Required for XHTML Family Conformance)
+            +  text
+            +  hypertext
+            +  lists
+            +  structure
+           Other XHTML modules
+            +  Edit
+            +  Bdo
+            +  Presentational
+            +  Link
+            +  Meta
+            +  Base
+            +  Scripting
+            +  Style
+            +  Image
+            +  Applet
+            +  Object
+            +  Param (Applet/Object modules require Param Module)
+            +  Tables
+            +  Forms
+            +  Client side image maps
+            +  Server side image maps
+            +  Ruby
+    </xs:documentation>
+    </xs:annotation>
+    <xs:import
+        namespace="http://www.w3.org/XML/1998/namespace"
+        schemaLocation="http://www.w3.org/2001/xml.xsd">
+        <xs:annotation>
+            <xs:documentation>
+         This import brings in the XML namespace attributes
+         The XML attributes are used by various modules.
+       </xs:documentation>
+        </xs:annotation>
+    </xs:import>
+    <xs:include
+        schemaLocation="xhtml11-model-1.xsd">
+        <xs:annotation>
+            <xs:documentation>
+        Document Model module for the XHTML1.1 Document Type.
+        This schema file defines all named models used by XHTML
+        Modularization Framework for XHTML1.1 Document Type
+      </xs:documentation>
+        </xs:annotation>
+    </xs:include>
+    <xs:include
+        schemaLocation="xhtml11-modules-1.xsd">
+        <xs:annotation>
+            <xs:documentation>
+        Schema that includes all modules (and redefinitions)
+        for XHTML1.1 Document Type.                
+           </xs:documentation>
+        </xs:annotation>
+    </xs:include>
+</xs:schema>

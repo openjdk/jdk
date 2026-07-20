@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestRSACipherWrap
- * @run main/othervm -Djava.security.manager=allow TestRSACipherWrap sm
  */
 
 import java.security.GeneralSecurityException;
@@ -43,6 +42,8 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import jdk.test.lib.security.SecurityUtils;
+import jtreg.SkippedException;
 
 public class TestRSACipherWrap extends PKCS11Test {
 
@@ -54,16 +55,17 @@ public class TestRSACipherWrap extends PKCS11Test {
         try {
             Cipher.getInstance(RSA_ALGOS[0], p);
         } catch (GeneralSecurityException e) {
-            System.out.println(RSA_ALGOS[0] + " unsupported, skipping");
-            return;
+            throw new SkippedException(RSA_ALGOS[0] + " unsupported, skipping");
         }
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
-        kpg.initialize(1024);
+        String kpgAlgorithm = "RSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
 
         for (String rsaAlgo: RSA_ALGOS) {
             Cipher cipherPKCS11 = Cipher.getInstance(rsaAlgo, p);
-            Cipher cipherJce = Cipher.getInstance(rsaAlgo, "SunJCE");
+            Cipher cipherJce = Cipher.getInstance(rsaAlgo,
+                                System.getProperty("test.provider.name", "SunJCE"));
 
             String algos[] = {"AES", "RC2", "Blowfish"};
             int keySizes[] = {128, 256};

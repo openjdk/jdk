@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,45 @@
  * questions.
  */
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.stream.Stream;
 
-import static org.testng.Assert.*;
+import jdk.test.lib.Platform;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
 
 /**
  * @test
  * @bug 8218875
  * @summary ZIP File System tests that leverage Files.newFileSystem
  * @modules jdk.zipfs
+ * @library /test/lib
  * @compile NewFileSystemTests.java
- * @run testng NewFileSystemTests
- * @run testng/othervm/java.security.policy=test.policy  NewFileSystemTests
+ * @run junit NewFileSystemTests
  */
 public class NewFileSystemTests {
 
@@ -60,8 +75,8 @@ public class NewFileSystemTests {
     /**
      * Create the JAR file used by the tests
      */
-    @BeforeClass
-    public void setUp() throws Exception {
+    @BeforeAll
+    public static void setUp() throws Exception {
         jarFile = Utils.createJarFile("basic.jar",
                 "README");
         jarURI = new URI(ZIPFS_SCHEME, jarFile.toUri().toString(), null);
@@ -71,8 +86,8 @@ public class NewFileSystemTests {
     /**
      * Remove JAR file used by test as part of clean-up
      */
-    @AfterClass
-    public void tearDown() throws Exception {
+    @AfterAll
+    public static void tearDown() throws Exception {
         Files.deleteIfExists(jarFile);
     }
 
@@ -109,7 +124,9 @@ public class NewFileSystemTests {
      *
      * @throws IOException
      */
-    @Test(dataProvider = "classLoaders")
+    @ParameterizedTest
+    @MethodSource("classLoaders")
+    @NullSource
     public void testNewFileSystemPathClassLoader(ClassLoader cl) throws Exception {
         try (FileSystem zipfs = FileSystems.newFileSystem(Path.of("basic.jar"),
                 cl)) {
@@ -123,7 +140,9 @@ public class NewFileSystemTests {
      *
      * @throws IOException
      */
-    @Test(dataProvider = "classLoaders")
+    @ParameterizedTest
+    @MethodSource("classLoaders")
+    @NullSource
     public void testNewFileSystemPathMapClassLoader(ClassLoader cl) throws Exception {
         try (FileSystem zipfs = FileSystems.newFileSystem(Path.of("basic.jar"),
                 ZIPFS_OPTIONS, cl)) {
@@ -150,7 +169,9 @@ public class NewFileSystemTests {
      *
      * @throws IOException
      */
-    @Test(dataProvider = "classLoaders")
+    @ParameterizedTest
+    @MethodSource("classLoaders")
+    @NullSource
     public void testNewFileSystemURIMapClassLoader(ClassLoader cl) throws Exception {
         try (FileSystem zipfs = FileSystems.newFileSystem(jarURI, ZIPFS_OPTIONS,
                 cl)) {
@@ -171,16 +192,101 @@ public class NewFileSystemTests {
                 FileSystems.newFileSystem(Path.of("basic.jar"), nullMap));
     }
 
+    /**
+     * Validate that without {@code "create" = true}, a ZIP file system cannot be
+     * opened if the underlying file is missing, but even with this set, a ZIP
+     * file system cannot be opened for conflicting or invalid access modes.
+     */
+    protected static Stream<Arguments> badEnvMap() {
+        return Stream.of(
+                Arguments.of(Map.of(), NoSuchFileException.class),
+                Arguments.of(Map.of("accessMode", "readOnly"), NoSuchFileException.class),
+                Arguments.of(Map.of("accessMode", "readWrite"), NoSuchFileException.class),
+                Arguments.of(Map.of("create", true, "accessMode", "readOnly"), IllegalArgumentException.class),
+                Arguments.of(Map.of("create", true, "accessMode", "badValue"), IllegalArgumentException.class)
+        );
+    }
+    @ParameterizedTest
+    @MethodSource("badEnvMap")
+    public void badArgumentsFailure(Map<String, String> env, Class<? extends Throwable> exception) throws IOException {
+        assertThrows(exception, () -> FileSystems.newFileSystem(Path.of("no_such.zip"), env));
+    }
+
+    /**
+     * Validate that multi-release JARs can be opened read-write if no release
+     * version is specified.
+     */
+    @Test
+    public void multiReleaseJarReadWriteSuccess() throws IOException {
+        // Multi-release JARs, when opened with a specified version are inherently read-only.
+        Path multiReleaseJar = createMultiReleaseJar();
+        try (FileSystem fs = FileSystems.newFileSystem(multiReleaseJar, Map.of("accessMode", "readWrite"))) {
+            assertFalse(fs.isReadOnly());
+            assertEquals("Default version", Files.readString(fs.getPath("file.txt"), UTF_8),
+                    "unexpected file content");
+        }
+    }
+
+    /**
+     * Validate that when the underlying file is read-only, it cannot be opened in
+     * read-write mode.
+     */
+    @Test
+    public void readOnlyZipFileFailure() throws IOException {
+        Assumptions.assumeFalse(Platform.isRoot(), "Test skipped when executed by root user.");
+        // Underlying file is read-only.
+        Path readOnlyZip = Utils.createJarFile("read_only.zip", Map.of("file.txt", "Hello World"));
+        // In theory this can fail, and we should avoid unwanted false-negatives.
+        if (readOnlyZip.toFile().setReadOnly()) {
+            assertThrows(IOException.class,
+                    () -> FileSystems.newFileSystem(readOnlyZip, Map.of("accessMode", "readWrite")));
+        }
+    }
+
+    /**
+     * Validate that multi-release JAR is opened read-only by default if a release
+     * version is specified.
+     */
+    @Test
+    public void multiReleaseJarDefaultReadOnly() throws IOException {
+        Path multiReleaseJar = createMultiReleaseJar();
+        try (FileSystem fs = FileSystems.newFileSystem(multiReleaseJar, Map.of("releaseVersion", "1"))) {
+            assertTrue(fs.isReadOnly());
+            assertEquals("First version", Files.readString(fs.getPath("file.txt"), UTF_8),
+                    "unexpected file content");
+        }
+    }
+
+    /**
+     * Validate that multi-release JARs cannot be opened read-write if a release
+     * version is specified.
+     */
+    @Test
+    public void multiReleaseJarReadWriteFailure() throws IOException {
+        Path multiReleaseJar = createMultiReleaseJar();
+        assertThrows(IOException.class,
+                () -> FileSystems.newFileSystem(
+                        multiReleaseJar,
+                        Map.of("accessMode", "readWrite", "releaseVersion", "1")));
+    }
+
+    private static Path createMultiReleaseJar() throws IOException {
+        return Utils.createJarFile("multi_release.jar", Map.of(
+                // Newline required for attribute to be read from Manifest file.
+                "META-INF/MANIFEST.MF", "Multi-Release: true\n",
+                "META-INF/versions/1/file.txt", "First version",
+                "META-INF/versions/2/file.txt", "Second version",
+                "file.txt", "Default version"));
+    }
+
     /*
-     * DataProvider used to verify that a Zip file system may be returned
+     * MethodSource used to verify that a Zip file system may be returned
      * when specifying a class loader
      */
-    @DataProvider(name = "classLoaders")
-    private Object[][] classLoaders() {
-        return new Object[][]{
-                {null},
-                {ClassLoader.getSystemClassLoader()}
-        };
+    private static Stream<Arguments> classLoaders() {
+        return Stream.of(
+                Arguments.of(ClassLoader.getSystemClassLoader())
+        );
     }
 
     /**
@@ -193,11 +299,11 @@ public class NewFileSystemTests {
         assertNotNull(fs, "Error: FileSystem was not returned");
         assertTrue(fs.provider().getScheme().equalsIgnoreCase(ZIPFS_SCHEME));
         assertTrue(fs.isOpen());
-        assertEquals(fs.getSeparator(), "/");
+        assertEquals("/", fs.getSeparator());
 
         // one root
         Iterator<Path> roots = fs.getRootDirectories().iterator();
-        assertTrue(roots.next().toString().equals("/"));
+        assertEquals("/", roots.next().toString());
         assertFalse(roots.hasNext());
     }
 }

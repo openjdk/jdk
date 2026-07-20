@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
 #ifndef OS_CPU_LINUX_S390_PREFETCH_LINUX_S390_INLINE_HPP
 #define OS_CPU_LINUX_S390_PREFETCH_LINUX_S390_INLINE_HPP
 
-#include "runtime/prefetch.hpp"
+// Included in runtime/prefetch.inline.hpp
 
 inline void Prefetch::read(const void* loc, intx interval) {
   // No prefetch instructions on z/Architecture -> implement trivially.

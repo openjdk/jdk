@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,27 @@
  */
 package test.astro;
 
-import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
-import static test.astro.AstroConstants.ASTROCAT;
-import static test.astro.AstroConstants.JAXP_SCHEMA_LANGUAGE;
-import static test.astro.AstroConstants.JAXP_SCHEMA_SOURCE;
-
-import java.io.File;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import java.io.File;
 
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static test.astro.AstroConstants.ASTROCAT;
+import static test.astro.AstroConstants.JAXP_SCHEMA_LANGUAGE;
+import static test.astro.AstroConstants.JAXP_SCHEMA_SOURCE;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.astro.SchemaValidationTest
- * @run testng/othervm test.astro.SchemaValidationTest
+ * @run junit/othervm test.astro.SchemaValidationTest
  * @summary test parser sets schema related properties to do validation
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class SchemaValidationTest {
     /*
      * Only set the schemaLanguage, without setting schemaSource. It should
@@ -62,11 +59,10 @@ public class SchemaValidationTest {
      * Test SAXException shall be thrown if schemaSource is set but
      * schemaLanguage is not set.
      */
-    @Test(expectedExceptions = SAXException.class)
+    @Test
     public void testSchemaValidationNeg() throws Exception {
         SAXParser sp = getValidatingParser();
-        sp.setProperty(JAXP_SCHEMA_SOURCE, "catalog.xsd");
-        sp.parse(new File(ASTROCAT), new DefaultHandler());
+        assertThrows(SAXException.class, () -> sp.setProperty(JAXP_SCHEMA_SOURCE, "catalog.xsd"));
     }
 
     private SAXParser getValidatingParser() throws ParserConfigurationException, SAXException {

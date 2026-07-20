@@ -5,7 +5,7 @@
   <title>JPEG Metadata Format Specification and Usage Notes</title>
 </head>
 <!--
-Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -509,6 +509,17 @@ in the frame header node of the metadata object, regardless of color space.)
 <h2>
 <a id=thumbs>Thumbnail Images</a>
 </h2>
+<h3>
+Reading Thumbnail Images
+</h3>
+Thumbnail images are read from JFIF, JFIF extension, and Exif marker segments.
+One or more thumbnails may be present in the JFIF segment(s), but at most one
+will be present in the Exif segment. As specified, JFIF and Exif marker segments
+should be mutually exclusive, but if they are both present, then any JFIF
+thumbnail(s) will precede any Exif thumbnail.
+<h3>
+Writing Thumbnail Images
+</h3>
 Thumbnails are supported by the use of JFIF and JFIF extension marker segments.
 Thumbnails provided on the write methods determine the thumbnails that will be
 included.  <code>app0JFIF</code> and <code>app0JFXX</code> nodes present in

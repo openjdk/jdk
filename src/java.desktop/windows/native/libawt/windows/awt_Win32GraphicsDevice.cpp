@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -612,13 +612,52 @@ void AwtWin32GraphicsDevice::Release()
 }
 
 /**
- * Links this native object with its java Win32GraphicsDevice.
- * Need this link because the colorModel of the java device
- * may be updated from native code.
+ * Links this native object with its java Win32GraphicsDevice peer.
+ *
+ * The link is needed for upcalls to the java peer, such as invalidate()
+ * and dynamic color model updates.
+ *
+ * Passing NULL intentionally clears the link.
+ * Clearing it here prevents stale peer links and releases
+ * the old JNI weak global ref.
+ *
+ * During display changes, the native device array is recreated,
+ * changed or removed devices invalidate their java peers.
+ * Unchanged monitors transfer the existing weak ref to
+ * the new native device by TransferJavaDevice().
  */
 void AwtWin32GraphicsDevice::SetJavaDevice(JNIEnv *env, jobject objPtr)
 {
-    javaDevice = env->NewWeakGlobalRef(objPtr);
+    jobject newJavaDevice = NULL;
+    if (objPtr != NULL) {
+        newJavaDevice = env->NewWeakGlobalRef(objPtr);
+        if (newJavaDevice == NULL) {
+            return;
+        }
+    }
+
+    if (javaDevice != NULL) {
+        env->DeleteWeakGlobalRef(javaDevice);
+    }
+    javaDevice = newJavaDevice;
+}
+
+/**
+ * Transfers the java Win32GraphicsDevice's link from a native device that is
+ * being replaced by a new native device for the same monitor.
+ */
+void AwtWin32GraphicsDevice::TransferJavaDevice(JNIEnv *env,
+                                                AwtWin32GraphicsDevice *device)
+{
+    if (device == NULL || device == this || device->javaDevice == NULL) {
+        return;
+    }
+
+    if (javaDevice != NULL) {
+        env->DeleteWeakGlobalRef(javaDevice);
+    }
+    javaDevice = device->javaDevice;
+    device->javaDevice = NULL;
 }
 
 /**
@@ -843,8 +882,8 @@ int AwtWin32GraphicsDevice::GetGrayness(int deviceIndex)
 }
 
 HDC AwtWin32GraphicsDevice::GetDCFromScreen(int screen) {
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "AwtWin32GraphicsDevice::GetDCFromScreen screen=%d", screen);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "AwtWin32GraphicsDevice::GetDCFromScreen screen=%d", screen);
     Devices::InstanceAccess devices;
     AwtWin32GraphicsDevice *dev = devices->GetDevice(screen);
     return MakeDCFromMonitor(dev->GetMonitor());
@@ -854,9 +893,9 @@ HDC AwtWin32GraphicsDevice::GetDCFromScreen(int screen) {
  * If equal, return TRUE
  */
 BOOL AwtWin32GraphicsDevice::AreSameMonitors(HMONITOR mon1, HMONITOR mon2) {
-    J2dTraceLn2(J2D_TRACE_INFO,
-                "AwtWin32GraphicsDevice::AreSameMonitors mhnd1=%x mhnd2=%x",
-                mon1, mon2);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "AwtWin32GraphicsDevice::AreSameMonitors mhnd1=%x mhnd2=%x",
+               mon1, mon2);
     DASSERT(mon1 != NULL);
     DASSERT(mon2 != NULL);
 
@@ -885,8 +924,8 @@ BOOL AwtWin32GraphicsDevice::AreSameMonitors(HMONITOR mon1, HMONITOR mon2) {
 }
 
 int AwtWin32GraphicsDevice::GetScreenFromHMONITOR(HMONITOR mon) {
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "AwtWin32GraphicsDevice::GetScreenFromHMONITOR mhnd=%x", mon);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "AwtWin32GraphicsDevice::GetScreenFromHMONITOR mhnd=%x", mon);
 
     DASSERT(mon != NULL);
     JNIEnv *env = (JNIEnv*) JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -898,14 +937,14 @@ int AwtWin32GraphicsDevice::GetScreenFromHMONITOR(HMONITOR mon) {
     for (int i = 0; i < devices->GetNumDevices(); i++) {
         HMONITOR mhnd = devices->GetDevice(i)->GetMonitor();
         if (AreSameMonitors(mon, mhnd)) {
-            J2dTraceLn1(J2D_TRACE_VERBOSE, "  Found device: %d", i);
+            J2dTraceLn(J2D_TRACE_VERBOSE, "  Found device: %d", i);
             return i;
         }
     }
 
-    J2dTraceLn1(J2D_TRACE_WARNING,
-                "AwtWin32GraphicsDevice::GetScreenFromHMONITOR(): "\
-                "couldn't find screen for HMONITOR %x, returning default", mon);
+    J2dTraceLn(J2D_TRACE_WARNING,
+               "AwtWin32GraphicsDevice::GetScreenFromHMONITOR(): "\
+               "couldn't find screen for HMONITOR %x, returning default", mon);
     return AwtWin32GraphicsDevice::GetDefaultDeviceIndex();
 }
 
@@ -1119,9 +1158,9 @@ Java_sun_awt_Win32GraphicsDevice_enterFullScreenExclusive(
     if (!::SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0,
                         SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOSIZE))
     {
-        J2dTraceLn1(J2D_TRACE_ERROR,
-                    "Error %d setting topmost attribute to fs window",
-                    ::GetLastError());
+        J2dTraceLn(J2D_TRACE_ERROR,
+                   "Error %d setting topmost attribute to fs window",
+                   ::GetLastError());
     }
 
     CATCH_BAD_ALLOC;
@@ -1154,9 +1193,9 @@ Java_sun_awt_Win32GraphicsDevice_exitFullScreenExclusive(
     if (!::SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0,
                         SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOSIZE))
     {
-        J2dTraceLn1(J2D_TRACE_ERROR,
-                    "Error %d unsetting topmost attribute to fs window",
-                    ::GetLastError());
+        J2dTraceLn(J2D_TRACE_ERROR,
+                   "Error %d unsetting topmost attribute to fs window",
+                   ::GetLastError());
     }
 
     // We should restore alwaysOnTop state as it's anyway dropped here
@@ -1398,7 +1437,10 @@ JNIEXPORT void JNICALL
     (JNIEnv *env, jobject thisPtr, jint screen)
 {
     Devices::InstanceAccess devices;
-    devices->GetDevice(screen)->SetJavaDevice(env, thisPtr);
+    AwtWin32GraphicsDevice *device = devices.Device(screen, FALSE);
+    if (device != NULL) {
+        device->SetJavaDevice(env, thisPtr);
+    }
 }
 
 /*
@@ -1411,9 +1453,8 @@ JNIEXPORT void JNICALL
     (JNIEnv *env, jobject thisPtr, jint screen, jfloat scaleX, jfloat scaleY)
 {
     Devices::InstanceAccess devices;
-    AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
-
-    if (device != NULL ) {
+    AwtWin32GraphicsDevice *device = devices.Device(screen, FALSE);
+    if (device != NULL) {
         device->DisableScaleAutoRefresh();
         device->SetScale(scaleX, scaleY);
     }
@@ -1429,8 +1470,8 @@ JNIEXPORT jfloat JNICALL
     (JNIEnv *env, jobject thisPtr, jint screen)
 {
     Devices::InstanceAccess devices;
-    AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
-    return (device == NULL) ? 1 : device->GetScaleX();
+    AwtWin32GraphicsDevice *device = devices.Device(screen, FALSE);
+    return device == NULL ? 1 : device->GetScaleX();
 }
 
 /*
@@ -1443,8 +1484,8 @@ JNIEXPORT jfloat JNICALL
     (JNIEnv *env, jobject thisPtr, jint screen)
 {
     Devices::InstanceAccess devices;
-    AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
-    return (device == NULL) ? 1 : device->GetScaleY();
+    AwtWin32GraphicsDevice *device = devices.Device(screen, FALSE);
+    return device == NULL ? 1 : device->GetScaleY();
 }
 
 /*
@@ -1457,8 +1498,7 @@ Java_sun_awt_Win32GraphicsDevice_initNativeScale
 (JNIEnv *env, jobject thisPtr, jint screen)
 {
     Devices::InstanceAccess devices;
-    AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
-
+    AwtWin32GraphicsDevice *device = devices.Device(screen, FALSE);
     if (device != NULL) {
         device->InitDesktopScales();
     }

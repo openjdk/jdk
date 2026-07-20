@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,21 +37,44 @@
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
 
+#include <cmath>
+#include <limits>
+
 class GCTimer;
+class ShenandoahGeneration;
+
+#define SHENANDOAH_RETURN_EVENT_MESSAGE(generation_type, prefix, postfix) \
+  switch (generation_type) {                                              \
+    case NON_GEN:                                                         \
+      return prefix postfix;                                              \
+    case GLOBAL:                                                          \
+      return prefix " (Global)" postfix;                                  \
+    case YOUNG:                                                           \
+      return prefix " (Young)" postfix;                                   \
+    case OLD:                                                             \
+      return prefix " (Old)" postfix;                                     \
+    default:                                                              \
+      ShouldNotReachHere();                                               \
+      return prefix " (Unknown)" postfix;                                 \
+  }                                                                       \
 
 class ShenandoahGCSession : public StackObj {
 private:
   ShenandoahHeap* const _heap;
+  ShenandoahGeneration* const _generation;
   GCTimer*  const _timer;
   GCTracer* const _tracer;
 
   TraceMemoryManagerStats _trace_cycle;
+
+  static const char* cycle_end_message(ShenandoahGenerationType type);
 public:
-  ShenandoahGCSession(GCCause::Cause cause);
+  ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation,
+                      bool is_degenerated = false, bool is_out_of_cycle = false);
   ~ShenandoahGCSession();
 };
 
@@ -167,7 +191,7 @@ public:
            type == VM_Operation::VMOp_ShenandoahFinalMarkStartEvac ||
            type == VM_Operation::VMOp_ShenandoahInitUpdateRefs ||
            type == VM_Operation::VMOp_ShenandoahFinalUpdateRefs ||
-           type == VM_Operation::VMOp_ShenandoahFinalRoots ||
+           type == VM_Operation::VMOp_ShenandoahFinalVerify ||
            type == VM_Operation::VMOp_ShenandoahFullGC ||
            type == VM_Operation::VMOp_ShenandoahDegeneratedGC;
   }
@@ -200,28 +224,34 @@ public:
   ~ShenandoahParallelWorkerSession();
 };
 
-class ShenandoahSuspendibleThreadSetJoiner {
-private:
-  SuspendibleThreadSetJoiner _joiner;
+// Regions cannot be uncommitted when concurrent reset is zeroing out the bitmaps.
+// This CADR class enforces this by forbidding region uncommits while it is in scope.
+class ShenandoahNoUncommitMark : public StackObj {
+  ShenandoahHeap* const _heap;
 public:
-  ShenandoahSuspendibleThreadSetJoiner(bool active = true) : _joiner(active) {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be joined before evac scope");
+  explicit ShenandoahNoUncommitMark(ShenandoahHeap* heap) : _heap(heap) {
+    _heap->forbid_uncommit();
   }
-  ~ShenandoahSuspendibleThreadSetJoiner() {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be left after evac scope");
+
+  ~ShenandoahNoUncommitMark() {
+    _heap->allow_uncommit();
   }
 };
 
-class ShenandoahSuspendibleThreadSetLeaver {
-private:
-  SuspendibleThreadSetLeaver _leaver;
-public:
-  ShenandoahSuspendibleThreadSetLeaver(bool active = true) : _leaver(active) {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be left after evac scope");
+// Casting a double that cannot be represented as a size_t may result in undefined behavior.
+// This small function checks if the given double is representable in a size_t and returns
+// that representation if it is. Otherwise, if the double cannot be safely cast to a size_t
+// it returns zero.
+inline size_t shenandoah_safe_size_cast(const double d) {
+  static constexpr double size_max_as_double = static_cast<double>(std::numeric_limits<size_t>::max());
+  if (std::isnan(d) || d < 0 || d >= size_max_as_double) {
+    // NaN is unordered, all comparisons will be false.
+    // +Inf is always greater than, -Inf is always less than
+    return 0;
   }
-  ~ShenandoahSuspendibleThreadSetLeaver() {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be joined before evac scope");
-  }
-};
+  return static_cast<size_t>(d);
+}
+
+
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP

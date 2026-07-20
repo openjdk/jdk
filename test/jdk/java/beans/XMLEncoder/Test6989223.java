@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6989223
  * @summary Tests Rectangle2D.Double encoding
- * @run main/othervm -Djava.security.manager=allow Test6989223
+ * @run main/othervm Test6989223
  * @author Sergey Malenkov
  */
 
@@ -33,7 +33,7 @@ import java.awt.geom.Rectangle2D;
 
 public class Test6989223 extends AbstractTest {
     public static void main(String[] args) {
-        new Test6989223().test(true);
+        new Test6989223().test();
     }
 
     protected Object getObject() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,17 @@ package java.net.http;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
+import java.net.URI;
 import java.nio.channels.Selector;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
-import java.net.URLPermission;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
@@ -62,7 +61,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * The {@link #newBuilder() newBuilder} method returns a builder that creates
  * instances of the default {@code HttpClient} implementation.
  * The builder can be used to configure per-client state, like: the preferred
- * protocol version ( HTTP/1.1 or HTTP/2 ), whether to follow redirects, a
+ * protocol version ( HTTP/1.1, HTTP/2 or HTTP/3 ), whether to follow redirects, a
  * proxy, an authenticator, etc. Once built, an {@code HttpClient} is immutable,
  * and can be used to send multiple requests.
  *
@@ -103,13 +102,17 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *        .proxy(ProxySelector.of(new InetSocketAddress("proxy.example.com", 80)))
  *        .authenticator(Authenticator.getDefault())
  *        .build();
+ *
+ *   HttpRequest request = HttpRequest.newBuilder()
+ *       .uri(URI.create("https://foo.com/"))
+ *       .build();
  *   HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
  *   System.out.println(response.statusCode());
  *   System.out.println(response.body());  }
  *
  * <p><b>Asynchronous Example</b>
  * {@snippet :
- *    HttpRequest request = HttpRequest.newBuilder()
+ *   HttpRequest request = HttpRequest.newBuilder()
  *        .uri(URI.create("https://foo.com/"))
  *        .timeout(Duration.ofMinutes(2))
  *        .header("Content-Type", "application/json")
@@ -118,16 +121,6 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *   client.sendAsync(request, BodyHandlers.ofString())
  *        .thenApply(HttpResponse::body)
  *        .thenAccept(System.out::println);  }
- *
- * <p> <a id="securitychecks"><b>Security checks</b></a>
- *
- * <p> If a security manager is present then security checks are performed by
- * the HTTP Client's sending methods. An appropriate {@link URLPermission} is
- * required to access the destination server, and proxy server if one has
- * been configured. The form of the {@code URLPermission} required to access a
- * proxy has a {@code method} parameter of {@code "CONNECT"} (for all kinds of
- * proxying) and a {@code URL} string of the form {@code "socket://host:port"}
- * where host and port specify the proxy's address.
  *
  * @apiNote
  * Resources allocated by the {@code HttpClient} may be
@@ -175,18 +168,58 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * prevent the resources allocated by the associated client from
  * being reclaimed by the garbage collector.
  *
+ * <p id="ProtocolVersionSelection">
+ * The default implementation of the {@code HttpClient} supports HTTP/1.1,
+ * HTTP/2, and HTTP/3. Which version of the protocol is actually used when sending
+ * a request can depend on multiple factors. In the case of HTTP/2, it may depend
+ * on an initial upgrade to succeed (when using a plain connection), or on HTTP/2
+ * being successfully negotiated during the Transport Layer Security (TLS) handshake.
  *
+ * <p> If {@linkplain Version#HTTP_2 HTTP/2} is selected over a clear
+ * connection, and no HTTP/2 connection to the
+ * <a href="https://www.rfc-editor.org/rfc/rfc6454.html#section-4">origin server</a>
+ * already exists, the client will create a new connection and attempt an upgrade
+ * from HTTP/1.1 to HTTP/2.
+ * If the upgrade succeeds, then the response to this request will use HTTP/2.
+ * If the upgrade fails, then the response will be handled using HTTP/1.1.
+ *
+ * <p> Other constraints may also affect the selection of protocol version.
+ * For example, if HTTP/2 is requested through a proxy, and if the implementation
+ * does not support this mode, then HTTP/1.1 may be used.
  * <p>
- * If an explicit {@linkplain HttpClient.Builder#executor(Executor)
- * executor} has not been set for an {@code HttpClient}, and a security manager
- * has been installed, then the default executor will execute asynchronous and
- * dependent tasks in a context that is granted no permissions. Custom
- * {@linkplain HttpRequest.BodyPublisher request body publishers}, {@linkplain
- * HttpResponse.BodyHandler response body handlers}, {@linkplain
- * BodySubscriber response body subscribers}, and {@linkplain
- * WebSocket.Listener WebSocket Listeners}, if executing operations that require
- * privileges, should do so within an appropriate {@linkplain
- * AccessController#doPrivileged(PrivilegedAction) privileged context}.
+ * The HTTP/3 protocol is not selected by default, but can be enabled by setting
+ * the {@linkplain Builder#version(Version) HttpClient preferred version} or the
+ * {@linkplain HttpRequest.Builder#version(Version) HttpRequest preferred version} to
+ * {@linkplain Version#HTTP_3 HTTP/3}. Like for HTTP/2, which protocol version is
+ * actually used when HTTP/3 is enabled may depend on several factors.
+ * {@linkplain HttpOption#H3_DISCOVERY Configuration hints} can
+ * be {@linkplain HttpRequest.Builder#setOption(HttpOption, Object) provided}
+ * to help the {@code HttpClient} implementation decide how to establish
+ * and carry out the HTTP exchange when the HTTP/3 protocol is enabled.
+ * If no configuration hints are provided, the {@code HttpClient} will select
+ * one as explained in the {@link HttpOption#H3_DISCOVERY H3_DISCOVERY}
+ * option API documentation.
+ * <br>Note that a request whose {@linkplain URI#getScheme() URI scheme} is not
+ * {@code "https"} will never be sent over HTTP/3. In this implementation,
+ * HTTP/3 is not used if a proxy is selected.
+ *
+ * <p id="UnsupportedProtocolVersion">
+ * If a concrete instance of {@link HttpClient} doesn't support sending a
+ * request through HTTP/3, an {@link UnsupportedProtocolVersionException} may be
+ * thrown, either when {@linkplain Builder#build() building} the client with
+ * a {@linkplain Builder#version(Version) preferred version} set to HTTP/3,
+ * or when attempting to send a request with {@linkplain HttpRequest.Builder#version(Version)
+ * HTTP/3 enabled} when {@link Http3DiscoveryMode#HTTP_3_URI_ONLY HTTP_3_URI_ONLY}
+ * was {@linkplain HttpRequest.Builder#setOption(HttpOption, Object) specified}.
+ * This may typically happen if the {@link #sslContext() SSLContext}
+ * or {@link #sslParameters() SSLParameters} configured on the client instance cannot
+ * be used with HTTP/3.
+ *
+ * @see UnsupportedProtocolVersionException
+ * @see Builder#version(Version)
+ * @see HttpRequest.Builder#version(Version)
+ * @see HttpRequest.Builder#setOption(HttpOption, Object)
+ * @see HttpOption#H3_DISCOVERY
  *
  * @since 11
  */
@@ -279,10 +312,22 @@ public abstract class HttpClient implements AutoCloseable {
          * need to be established, for example if a connection can be reused
          * from a previous request, then this timeout duration has no effect.
          *
+         * @implSpec
+         * A connection timeout applies to the entire connection phase, from the
+         * moment a connection is requested until it is established.
+         * Implementations are recommended to ensure that the connection timeout
+         * covers any SSL/TLS handshakes.
+         *
+         * @implNote
+         * The built-in JDK implementation of the connection timeout covers any
+         * SSL/TLS handshakes.
+         *
          * @param duration the duration to allow the underlying connection to be
          *                 established
          * @return this builder
          * @throws IllegalArgumentException if the duration is non-positive
+         * @see HttpRequest.Builder#timeout(Duration) Configuring timeout for
+         * request execution
          */
         public Builder connectTimeout(Duration duration);
 
@@ -325,9 +370,7 @@ public abstract class HttpClient implements AutoCloseable {
          * HttpClient}.
          *
          * @implNote The default executor uses a thread pool, with a custom
-         * thread factory. If a security manager has been installed, the thread
-         * factory creates threads that run with an access control context that
-         * has no permissions.
+         * thread factory.
          *
          * @param executor the Executor
          * @return this builder
@@ -348,23 +391,19 @@ public abstract class HttpClient implements AutoCloseable {
         public Builder followRedirects(Redirect policy);
 
         /**
-         * Requests a specific HTTP protocol version where possible.
+         * Sets the default preferred HTTP protocol version for requests
+         * issued by this client.
          *
          * <p> If this method is not invoked prior to {@linkplain #build()
          * building}, then newly built clients will prefer {@linkplain
          * Version#HTTP_2 HTTP/2}.
          *
-         * <p> If set to {@linkplain Version#HTTP_2 HTTP/2}, then each request
-         * will attempt to upgrade to HTTP/2. If the upgrade succeeds, then the
-         * response to this request will use HTTP/2 and all subsequent requests
-         * and responses to the same
-         * <a href="https://tools.ietf.org/html/rfc6454#section-4">origin server</a>
-         * will use HTTP/2. If the upgrade fails, then the response will be
-         * handled using HTTP/1.1
+         * <p>If a request doesn't have a preferred version, then
+         * the effective preferred version for the request is the
+         * client's preferred version.</p>
          *
-         * @implNote Constraints may also affect the selection of protocol version.
-         * For example, if HTTP/2 is requested through a proxy, and if the implementation
-         * does not support this mode, then HTTP/1.1 may be used
+         * @implNote Some constraints may also affect the {@linkplain
+         * HttpClient##ProtocolVersionSelection selection of the actual protocol version}.
          *
          * @param version the requested HTTP protocol version
          * @return this builder
@@ -410,6 +449,16 @@ public abstract class HttpClient implements AutoCloseable {
         /**
          * Sets an authenticator to use for HTTP authentication.
          *
+         * @implNote
+         * In the JDK built-in implementation of the {@code HttpClient},
+         * if a {@link HttpRequest} has an {@code Authorization} or {@code
+         * Proxy-Authorization} header set then its value is used and
+         * the {@link Authenticator} is not invoked for the corresponding
+         * authentication. In this case, any authentication errors are returned
+         * to the user and requests are not automatically retried.
+         * Additionally, the JDK built-in implementation currently only supports HTTP
+         * {@code Basic} authentication.
+         *
          * @param authenticator the Authenticator
          * @return this builder
          */
@@ -454,20 +503,17 @@ public abstract class HttpClient implements AutoCloseable {
          * Returns a new {@link HttpClient} built from the current state of this
          * builder.
          *
-         * @implSpec If the {@link #localAddress(InetAddress) local address} is a non-null
-         * address and a security manager is installed, then
-         * this method calls {@link SecurityManager#checkListen checkListen} to check that
-         * the caller has necessary permission to bind to that local address.
-         *
          * @return a new {@code HttpClient}
          *
          * @throws UncheckedIOException may be thrown if underlying IO resources required
-         * by the implementation cannot be allocated. For instance,
+         * by the implementation cannot be allocated, or if the resulting configuration
+         * does not satisfy the implementation requirements. For instance,
          * if the implementation requires a {@link Selector}, and opening
-         * one fails due to {@linkplain Selector#open() lack of necessary resources}.
-         * @throws SecurityException If a security manager has been installed and the
-         *         security manager's {@link SecurityManager#checkListen checkListen}
-         *         method disallows binding to the given address.
+         * one fails due to {@linkplain Selector#open() lack of necessary resources},
+         * or if the {@linkplain #version(Version) preferred protocol version} is not
+         * {@linkplain HttpClient##UnsupportedProtocolVersion supported by
+         * the implementation or cannot be used in this configuration}.
+         *
          */
         public HttpClient build();
     }
@@ -551,9 +597,11 @@ public abstract class HttpClient implements AutoCloseable {
      * Returns the preferred HTTP protocol version for this client. The default
      * value is {@link HttpClient.Version#HTTP_2}
      *
-     * @implNote Constraints may also affect the selection of protocol version.
-     * For example, if HTTP/2 is requested through a proxy, and if the
-     * implementation does not support this mode, then HTTP/1.1 may be used
+     * @implNote
+     * The protocol version that the {@code HttpClient} eventually
+     * decides to use for a request is affected by various factors noted
+     * in {@linkplain ##ProtocolVersionSelection protocol version selection}
+     * section.
      *
      * @return the HTTP protocol version requested
      */
@@ -588,7 +636,13 @@ public abstract class HttpClient implements AutoCloseable {
         /**
          * HTTP version 2
          */
-        HTTP_2
+        HTTP_2,
+
+        /**
+         * HTTP version 3
+         * @since 26
+         */
+        HTTP_3
     }
 
     /**
@@ -663,11 +717,6 @@ public abstract class HttpClient implements AutoCloseable {
      * @throws IllegalArgumentException if the {@code request} argument is not
      *         a request that could have been validly built as specified by {@link
      *         HttpRequest.Builder HttpRequest.Builder}.
-     * @throws SecurityException If a security manager has been installed
-     *          and it denies {@link java.net.URLPermission access} to the
-     *          URL in the given request, or proxy if one is configured.
-     *          See <a href="#securitychecks">security checks</a> for further
-     *          information.
      */
     public abstract <T> HttpResponse<T>
     send(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler)
@@ -707,11 +756,6 @@ public abstract class HttpClient implements AutoCloseable {
      * <ul>
      * <li>{@link IOException} - if an I/O error occurs when sending or receiving,
      *      or the client has {@linkplain ##closing shut down}.</li>
-     * <li>{@link SecurityException} - If a security manager has been installed
-     *          and it denies {@link java.net.URLPermission access} to the
-     *          URL in the given request, or proxy if one is configured.
-     *          See <a href="#securitychecks">security checks</a> for further
-     *          information.</li>
      * </ul>
      *
      * <p id="cancel"> The default {@code HttpClient} implementation returns
@@ -905,7 +949,7 @@ public abstract class HttpClient implements AutoCloseable {
      * <p> If interrupted while waiting, this method may attempt to stop all
      * operations by calling {@link #shutdownNow()}. It then continues to wait
      * until all actively executing operations have completed.
-     * The interrupt status will be re-asserted before this method returns.
+     * The interrupted status will be re-asserted before this method returns.
      *
      * <p> If already terminated, invoking this method has no effect.
      *

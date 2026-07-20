@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,8 @@ import java.util.List;
  * or deletion without notice.</strong></p>
  */
 record RelevantJavacOptions(List<String> forProgramCompilation,
-                            List<String> forSubsequentCompilations) {
+                            List<String> forSubsequentCompilations,
+                            List<String> enableNativeAccessForModules) {
 
     /**
      * Returns the subset of the runtime arguments that are relevant to {@code javac}.
@@ -55,6 +56,7 @@ record RelevantJavacOptions(List<String> forProgramCompilation,
     static RelevantJavacOptions of(ProgramDescriptor program, String... runtimeArgs) throws Fault {
         var programOptions = new ArrayList<String>();
         var subsequentOptions = new ArrayList<String>();
+        var enableNativeAccessForModules = new ArrayList<String>();
 
         String sourceOpt = System.getProperty("jdk.internal.javac.source");
         if (sourceOpt != null) {
@@ -94,7 +96,7 @@ record RelevantJavacOptions(List<String> forProgramCompilation,
                         value = runtimeArgs[++i];
                     }
                     if (opt.equals("--add-modules")) {
-                        var modules = computeListOfAddModules(program, value);
+                        var modules = computeListOfModules(program, value);
                         if (modules.isEmpty()) {
                             break;
                         }
@@ -115,6 +117,19 @@ record RelevantJavacOptions(List<String> forProgramCompilation,
                         String feature = String.valueOf(Runtime.version().feature());
                         programOptions.addAll(List.of("--release", feature));
                         subsequentOptions.addAll(List.of("--release", feature));
+                    }
+                }
+                case "--enable-native-access" -> {
+                    if (value == null) {
+                        if (i == runtimeArgs.length - 1) {
+                            // should not happen when invoked from launcher
+                            throw new Fault(Errors.NoValueForOption(opt));
+                        }
+                        value = runtimeArgs[++i];
+                    }
+                    var modules = computeListOfModules(program, value);
+                    if (program.isModular()) {
+                        enableNativeAccessForModules.addAll(modules);
                     }
                 }
                 default -> {
@@ -145,10 +160,13 @@ record RelevantJavacOptions(List<String> forProgramCompilation,
                     subsequentOptions.add(option);
                 });
 
-        return new RelevantJavacOptions(List.copyOf(programOptions), List.copyOf(subsequentOptions));
+        return new RelevantJavacOptions(
+                List.copyOf(programOptions),
+                List.copyOf(subsequentOptions),
+                List.copyOf(enableNativeAccessForModules));
     }
 
-    private static List<String> computeListOfAddModules(ProgramDescriptor program, String value) {
+    private static List<String> computeListOfModules(ProgramDescriptor program, String value) {
         var modules = new ArrayList<>(List.of(value.split(",")));
         // these options are only supported at run time;
         // they are not required or supported at compile time

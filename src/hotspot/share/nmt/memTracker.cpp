@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -35,13 +34,14 @@
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtPreInit.hpp"
 #include "nmt/threadStackTracker.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/vmError.hpp"
 
 #ifdef _WINDOWS
@@ -50,7 +50,9 @@
 
 NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
-MemBaseline MemTracker::_baseline;
+DeferredStatic<MemBaseline> MemTracker::_baseline;
+
+bool MemTracker::NmtVirtualMemoryLocker::_safe_to_use;
 
 void MemTracker::initialize() {
   bool rc = true;
@@ -61,14 +63,15 @@ void MemTracker::initialize() {
   assert(level == NMT_off || level == NMT_summary || level == NMT_detail,
          "Invalid setting for NativeMemoryTracking (%s)", NativeMemoryTracking);
 
-  // Memory type is encoded into tracking header as a byte field,
+  // Memory tag is encoded into tracking header as a byte field,
   // make sure that we don't overflow it.
   STATIC_ASSERT(mt_number_of_tags <= max_jubyte);
 
   if (level > NMT_off) {
+    _baseline.initialize();
     if (!MallocTracker::initialize(level) ||
         !MemoryFileTracker::Instance::initialize(level) ||
-        !VirtualMemoryTracker::initialize(level)) {
+        !VirtualMemoryTracker::Instance::initialize(level)) {
       assert(false, "NMT initialization failed");
       level = NMT_off;
       log_warning(nmt)("NMT initialization failed. NMT disabled.");
@@ -113,7 +116,7 @@ void MemTracker::final_report(outputStream* output) {
   // printing the final report during normal VM exit, it should not print
   // the final report again. In addition, it should be guarded from
   // recursive calls in case NMT reporting itself crashes.
-  if (enabled() && Atomic::cmpxchg(&g_final_report_did_run, false, true) == false) {
+  if (enabled() && AtomicAccess::cmpxchg(&g_final_report_did_run, false, true) == false) {
     report(tracking_level() == NMT_summary, output, 1);
   }
 }
@@ -123,7 +126,7 @@ void MemTracker::final_report(outputStream* output) {
 bool MemTracker::print_containing_region(const void* p, outputStream* out) {
   return enabled() &&
       (MallocTracker::print_pointer_information(p, out) ||
-       VirtualMemoryTracker::print_containing_region(p, out));
+       VirtualMemoryTracker::Instance::print_containing_region(p, out));
 }
 
 void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {

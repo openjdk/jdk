@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import jdk.jfr.events.ExceptionThrownEvent;
 import jdk.jfr.events.FileForceEvent;
 import jdk.jfr.events.FileReadEvent;
 import jdk.jfr.events.FileWriteEvent;
+import jdk.jfr.events.FinalFieldMutationEvent;
 import jdk.jfr.events.ProcessStartEvent;
 import jdk.jfr.events.SecurityPropertyModificationEvent;
 import jdk.jfr.events.SecurityProviderServiceEvent;
@@ -43,7 +44,6 @@ import jdk.jfr.events.SocketWriteEvent;
 import jdk.jfr.events.TLSHandshakeEvent;
 import jdk.jfr.events.ThreadSleepEvent;
 import jdk.jfr.events.VirtualThreadEndEvent;
-import jdk.jfr.events.VirtualThreadPinnedEvent;
 import jdk.jfr.events.VirtualThreadStartEvent;
 import jdk.jfr.events.VirtualThreadSubmitFailedEvent;
 import jdk.jfr.events.X509CertificateEvent;
@@ -72,13 +72,13 @@ final class MirrorEvents {
         register("jdk.internal.event.TLSHandshakeEvent", TLSHandshakeEvent.class);
         register("jdk.internal.event.VirtualThreadStartEvent", VirtualThreadStartEvent.class);
         register("jdk.internal.event.VirtualThreadEndEvent", VirtualThreadEndEvent.class);
-        register("jdk.internal.event.VirtualThreadPinnedEvent", VirtualThreadPinnedEvent.class);
         register("jdk.internal.event.VirtualThreadSubmitFailedEvent", VirtualThreadSubmitFailedEvent.class);
         register("jdk.internal.event.X509CertificateEvent", X509CertificateEvent.class);
         register("jdk.internal.event.X509ValidationEvent", X509ValidationEvent.class);
         register("jdk.internal.event.ErrorThrownEvent", ErrorThrownEvent.class);
         register("jdk.internal.event.ExceptionStatisticsEvent", ExceptionStatisticsEvent.class);
         register("jdk.internal.event.ExceptionThrownEvent", ExceptionThrownEvent.class);
+        register("jdk.internal.event.FinalFieldMutationEvent", FinalFieldMutationEvent.class);
     };
 
     private static void register(String eventClassName, Class<? extends MirrorEvent> mirrorClass) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ import static com.sun.java.swing.plaf.windows.TMSchema.TypeEnum;
  * @author Mark Davidson
  * @since 1.4
  */
-public class WindowsGraphicsUtils {
+public final class WindowsGraphicsUtils {
 
     /**
      * Renders a text String in Windows without the mnemonic.

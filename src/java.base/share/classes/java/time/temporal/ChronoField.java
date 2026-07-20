@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -599,7 +599,7 @@ public enum ChronoField implements TemporalField {
      * A {@link ZoneOffset} represents the period of time that local time differs from UTC/Greenwich.
      * This is usually a fixed number of hours and minutes.
      * It is equivalent to the {@link ZoneOffset#getTotalSeconds() total amount} of the offset in seconds.
-     * For example, during the winter Paris has an offset of {@code +01:00}, which is 3600 seconds.
+     * For example, during the winter, Paris has an offset of {@code +01:00}, which is 3,600 seconds.
      * <p>
      * This field is strictly defined to have the same meaning in all calendar systems.
      * This is necessary to ensure interoperation between calendars.

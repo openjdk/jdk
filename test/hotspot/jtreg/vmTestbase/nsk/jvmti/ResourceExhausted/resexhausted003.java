@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@ package nsk.jvmti.ResourceExhausted;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.PrintStream;
+import java.net.URI;
+import java.nio.file.Path;
+import java.security.CodeSource;
 import java.security.ProtectionDomain;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 import nsk.share.Consts;
 import nsk.share.test.Stresser;
@@ -80,24 +81,12 @@ public class resexhausted003 {
 
 
     public static int run(String args[], PrintStream out) {
-        String testclasspath = System.getProperty("test.class.path");
-        String [] testpaths = testclasspath.split(System.getProperty("path.separator"));
-        String classesDir = "";
-
-        Pattern pattern = Pattern.compile("^(.*)classes(.*)vmTestbase(.*)$");
-        for (int i = 0 ; i < testpaths.length; i++) {
-            if (pattern.matcher(testpaths[i]).matches()) {
-                classesDir = testpaths[i];
-            }
-        }
-        if (classesDir.equals("")) {
-            System.err.println("TEST BUG: Classes directory not found in test,class.path.");
-            return Consts.TEST_FAILED;
-        }
         Stresser stress = new Stresser(args);
 
         String className = Helper.class.getName();
-        byte[] bloatBytes = fileBytes(classesDir + File.separator + className.replace('.', '/') + ".class");
+        CodeSource classCodeSource = Helper.class.getProtectionDomain().getCodeSource();
+        Path classFilePath = Path.of(URI.create(classCodeSource.getLocation().toString()));
+        byte[] bloatBytes = fileBytes(classFilePath.resolve(className.replace('.', '/') + ".class").toString());
 
         int count = 0;
         Helper.resetExhaustedEvent();
@@ -115,7 +104,7 @@ public class resexhausted003 {
                 ++count;
             }
 
-            System.out.println("Can't reproduce OOME due to a limit on iterations/execution time. Test was useless.");
+            System.out.println("Test resexhausted003: Can't reproduce OOME due to a limit on iterations/execution time. Test was useless.");
             throw new SkippedException("Test did not get an OutOfMemory error");
 
         } catch (OutOfMemoryError e) {

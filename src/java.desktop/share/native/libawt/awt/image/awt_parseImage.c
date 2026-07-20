@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -984,7 +984,7 @@ int awt_getPixels(JNIEnv *env, RasterS_t *rasterP, void *bufferP) {
                                  0, y, w,
                                  maxLines, jdata, jdatabuffer);
 
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             (*env)->DeleteLocalRef(env, jdata);
             return -1;
         }
@@ -1104,7 +1104,7 @@ int awt_setPixels(JNIEnv *env, RasterS_t *rasterP, void *bufferP) {
                                0, y, w,
                                maxLines, jdata, jdatabuffer);
 
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             (*env)->DeleteLocalRef(env, jdata);
             return -1;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class TestPrintRegionRememberedSetInfo {
             "-XX:+ExplicitGCInvokesConcurrent",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:G1HeapRegionSize=1M",
-            "-XX:InitiatingHeapOccupancyPercent=0",
+            "-XX:G1IHOP=0",
         };
 
         finalargs.addAll(Arrays.asList(defaultArgs));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,17 +58,12 @@ public class IndexTaglet extends BaseTaglet {
         if (tagText.charAt(0) == '"' && tagText.charAt(tagText.length() - 1) == '"') {
             tagText = tagText.substring(1, tagText.length() - 1);
         }
-        tagText = tagText.replaceAll("\\s+", " ");
+        tagText = utils.normalizeWhitespace(tagText);
 
-        Content desc = tagletWriter.htmlWriter.commentTagsToContent(element, indexTree.getDescription(), context.within(indexTree));
-        String descText = extractText(desc);
+        Content desc = tagletWriter.htmlWriter.commentTagsToContent(element, indexTree.getDescription(),
+                context.within(indexTree));
+        String descText = utils.normalizeWhitespace(desc.stripTags().toString());
 
         return tagletWriter.createAnchorAndSearchIndex(element, tagText, descText, tag);
-    }
-
-    // ugly but simple;
-    // alternatives would be to walk the Content's tree structure, or to add new functionality to Content
-    private String extractText(Content c) {
-        return c.toString().replaceAll("<[^>]+>", "");
     }
 }

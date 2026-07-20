@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import javax.swing.plaf.*;
  *
  * @author Tom Santos
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class MetalSliderUI extends BasicSliderUI {
 
     /**
@@ -106,9 +105,6 @@ public class MetalSliderUI extends BasicSliderUI {
     */
     protected static Icon vertThumbIcon;
 
-    private static Icon SAFE_HORIZ_THUMB_ICON;
-    private static Icon SAFE_VERT_THUMB_ICON;
-
     /**
      * Property for {@code JSlider.isFilled}.
      */
@@ -131,31 +127,19 @@ public class MetalSliderUI extends BasicSliderUI {
         super( null );
     }
 
-    @SuppressWarnings("removal")
     private static Icon getHorizThumbIcon() {
-        if (System.getSecurityManager() != null) {
-            return SAFE_HORIZ_THUMB_ICON;
-        } else {
-            return horizThumbIcon;
-        }
+        return horizThumbIcon;
     }
 
-    @SuppressWarnings("removal")
     private static Icon getVertThumbIcon() {
-        if (System.getSecurityManager() != null) {
-            return SAFE_VERT_THUMB_ICON;
-        } else {
-            return vertThumbIcon;
-        }
+        return vertThumbIcon;
     }
 
     public void installUI( JComponent c ) {
         trackWidth = ((Integer)UIManager.get( "Slider.trackWidth" )).intValue();
         tickLength = safeLength = ((Integer)UIManager.get( "Slider.majorTickLength" )).intValue();
-        horizThumbIcon = SAFE_HORIZ_THUMB_ICON =
-                UIManager.getIcon( "Slider.horizontalThumbIcon" );
-        vertThumbIcon = SAFE_VERT_THUMB_ICON =
-                UIManager.getIcon( "Slider.verticalThumbIcon" );
+        horizThumbIcon = UIManager.getIcon( "Slider.horizontalThumbIcon" );
+        vertThumbIcon = UIManager.getIcon( "Slider.verticalThumbIcon" );
 
         super.installUI( c );
 

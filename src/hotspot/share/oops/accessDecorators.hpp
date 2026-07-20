@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,10 @@
 #ifndef SHARE_OOPS_ACCESSDECORATORS_HPP
 #define SHARE_OOPS_ACCESSDECORATORS_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "gc/shared/barrierSetConfig.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <type_traits>
 
 // A decorator is an attribute or property that affects the way a memory access is performed in some way.
 // There are different groups of decorators. Some have to do with memory ordering, others to do with,
@@ -109,7 +108,8 @@ const DecoratorSet INTERNAL_DECORATOR_MASK           = INTERNAL_CONVERT_COMPRESS
 //    - Guarantees from relaxed loads hold.
 //  * MO_SEQ_CST: Sequentially consistent loads.
 //    - These loads observe MO_SEQ_CST stores in the same order on other processors
-//    - Preceding loads and stores in program order are not reordered with subsequent loads and stores in program order.
+//    - Preceding MO_SEQ_CST loads and stores in program order are not reordered with
+//      subsequent MO_SEQ_CST loads and stores in program order.
 //    - Guarantees from acquiring loads hold.
 // === Atomic Cmpxchg ===
 //  * MO_RELAXED: Atomic but relaxed cmpxchg.
@@ -138,10 +138,26 @@ const DecoratorSet MO_DECORATOR_MASK = MO_UNORDERED | MO_RELAXED |
 //  - Accesses on HeapWord* translate to a runtime check choosing one of the above
 //  - Accesses on other types translate to raw memory accesses without runtime checks
 // * AS_NO_KEEPALIVE: The barrier is used only on oop references and will not keep any involved objects
-//   alive, regardless of the type of reference being accessed. It will however perform the memory access
-//   in a consistent way w.r.t. e.g. concurrent compaction, so that the right field is being accessed,
-//   or maintain, e.g. intergenerational or interregional pointers if applicable. This should be used with
-//   extreme caution in isolated scopes.
+//   alive, regardless of the type of reference being accessed. This should be used with extreme caution
+//   in isolated scopes.
+//   AS_NO_KEEPALIVE stores are currently used primarily by the VM implementation of java.lang.ref.Reference
+//   and reference processing. AS_NO_KEEPALIVE loads have broader use, e.g. VM / serviceability introspection,
+//   printing, liveness checks, and weak (hash) table lookups.
+//   AS_NO_KEEPALIVE does not establish liveness for the current GC cycle. The oop returned by such
+//   a load, and any oop reached only by traversing from it, must not be stored as a new oop edge into
+//   GC-visible state (GC roots and the object graph). For SATB marking, violating this rule breaks
+//   the snapshot invariant. This includes, but is not limited to:
+//  - object graph storage (e.g. static and non-static Object fields, Object array elements)
+//  - local root storage (e.g. Handles, OopMap/GC-tracked frame / register slots)
+//  - other root storage (e.g. OopHandles, WeakHandles, nmethod and class metadata)
+//   Before such an oop is stored into GC-visible state, liveness must first be explicitly re-established,
+//   for example by:
+//  - re-resolving without AS_NO_KEEPALIVE
+//  - using CollectedHeap::keep_alive(oop)
+//   Related special case: for CLD-owned OopHandles (notably java mirrors), loading the oop does not
+//   keep the owning CLD / Klass alive. In those cases, a plain resolve() is insufficient; use the corresponding
+//   owner keep-alive helper (e.g. Klass::keep_alive()) or CollectedHeap::keep_alive(oop), or have some
+//   other guarantee of liveness before storing the oop into GC-visible state.
 // * AS_NORMAL: The accesses will be resolved to an accessor on the BarrierSet class, giving the
 //   responsibility of performing the access and what barriers to be performed to the GC. This is the default.
 //   Note that primitive accesses will only be resolved on the barrier set if the appropriate build-time
@@ -173,11 +189,9 @@ const DecoratorSet ON_DECORATOR_MASK  = ON_STRONG_OOP_REF | ON_WEAK_OOP_REF |
 // * IN_HEAP: The access is performed in the heap. Many barriers such as card marking will
 //   be omitted if this decorator is not set.
 // * IN_NATIVE: The access is performed in an off-heap data structure.
-// * IN_NMETHOD: The access is performed inside of an nmethod.
 const DecoratorSet IN_HEAP            = UCONST64(1) << 18;
 const DecoratorSet IN_NATIVE          = UCONST64(1) << 19;
-const DecoratorSet IN_NMETHOD         = UCONST64(1) << 20;
-const DecoratorSet IN_DECORATOR_MASK  = IN_HEAP | IN_NATIVE | IN_NMETHOD;
+const DecoratorSet IN_DECORATOR_MASK  = IN_HEAP | IN_NATIVE;
 
 // == Boolean Flag Decorators ==
 // * IS_ARRAY: The access is performed on a heap allocated array. This is sometimes a special case
@@ -185,9 +199,9 @@ const DecoratorSet IN_DECORATOR_MASK  = IN_HEAP | IN_NATIVE | IN_NMETHOD;
 // * IS_DEST_UNINITIALIZED: This property can be important to e.g. SATB barriers by
 //   marking that the previous value is uninitialized nonsense rather than a real value.
 // * IS_NOT_NULL: This property can make certain barriers faster such as compressing oops.
-const DecoratorSet IS_ARRAY              = UCONST64(1) << 21;
-const DecoratorSet IS_DEST_UNINITIALIZED = UCONST64(1) << 22;
-const DecoratorSet IS_NOT_NULL           = UCONST64(1) << 23;
+const DecoratorSet IS_ARRAY              = UCONST64(1) << 20;
+const DecoratorSet IS_DEST_UNINITIALIZED = UCONST64(1) << 21;
+const DecoratorSet IS_NOT_NULL           = UCONST64(1) << 22;
 
 // == Arraycopy Decorators ==
 // * ARRAYCOPY_CHECKCAST: This property means that the class of the objects in source
@@ -199,11 +213,11 @@ const DecoratorSet IS_NOT_NULL           = UCONST64(1) << 23;
 // * ARRAYCOPY_ARRAYOF: The copy is in the arrayof form.
 // * ARRAYCOPY_ATOMIC: The accesses have to be atomic over the size of its elements.
 // * ARRAYCOPY_ALIGNED: The accesses have to be aligned on a HeapWord.
-const DecoratorSet ARRAYCOPY_CHECKCAST            = UCONST64(1) << 24;
-const DecoratorSet ARRAYCOPY_DISJOINT             = UCONST64(1) << 25;
-const DecoratorSet ARRAYCOPY_ARRAYOF              = UCONST64(1) << 26;
-const DecoratorSet ARRAYCOPY_ATOMIC               = UCONST64(1) << 27;
-const DecoratorSet ARRAYCOPY_ALIGNED              = UCONST64(1) << 28;
+const DecoratorSet ARRAYCOPY_CHECKCAST            = UCONST64(1) << 23;
+const DecoratorSet ARRAYCOPY_DISJOINT             = UCONST64(1) << 24;
+const DecoratorSet ARRAYCOPY_ARRAYOF              = UCONST64(1) << 25;
+const DecoratorSet ARRAYCOPY_ATOMIC               = UCONST64(1) << 26;
+const DecoratorSet ARRAYCOPY_ALIGNED              = UCONST64(1) << 27;
 const DecoratorSet ARRAYCOPY_DECORATOR_MASK       = ARRAYCOPY_CHECKCAST | ARRAYCOPY_DISJOINT |
                                                     ARRAYCOPY_DISJOINT | ARRAYCOPY_ARRAYOF |
                                                     ARRAYCOPY_ATOMIC | ARRAYCOPY_ALIGNED;
@@ -212,11 +226,11 @@ const DecoratorSet ARRAYCOPY_DECORATOR_MASK       = ARRAYCOPY_CHECKCAST | ARRAYC
 // * ACCESS_READ: Indicate that the resolved object is accessed read-only. This allows the GC
 //   backend to use weaker and more efficient barriers.
 // * ACCESS_WRITE: Indicate that the resolved object is used for write access.
-const DecoratorSet ACCESS_READ                    = UCONST64(1) << 29;
-const DecoratorSet ACCESS_WRITE                   = UCONST64(1) << 30;
+const DecoratorSet ACCESS_READ                    = UCONST64(1) << 28;
+const DecoratorSet ACCESS_WRITE                   = UCONST64(1) << 29;
 
 // Keep track of the last decorator.
-const DecoratorSet DECORATOR_LAST = UCONST64(1) << 30;
+const DecoratorSet DECORATOR_LAST = UCONST64(1) << 29;
 
 namespace AccessInternal {
   // This class adds implied decorators that follow according to decorator rules.

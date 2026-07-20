@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @run main/othervm MultiNSTSequence -Djdk.tls.server.newSessionTicketCount=2
  */
 
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -60,18 +59,16 @@ public class MultiNSTSequence {
             StringBuilder sb = new StringBuilder();
             Arrays.stream(args).forEach(a -> sb.append(a).append(" "));
             String params = sb.toString();
-            System.setProperty("test.java.opts",
-                "-Dtest.src=" + System.getProperty("test.src") +
+            System.setProperty("test.java.opts", System.getProperty("test.java.opts") +
+                " -Dtest.src=" + System.getProperty("test.src") +
                     " -Dtest.jdk=" + System.getProperty("test.jdk") +
                     " -Dtest.root=" + System.getProperty("test.root") +
-                    " -Djavax.net.debug=ssl,handshake " + params
-                              );
+                    " -Djavax.net.debug=ssl,handshake " + params);
 
             System.out.println("test.java.opts: " +
                 System.getProperty("test.java.opts"));
 
-            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                Utils.addTestJavaOpts("MultiNSTSequence", "p"));
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("MultiNSTSequence", "p");
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             boolean pass = true;
@@ -115,8 +112,8 @@ public class MultiNSTSequence {
         }
 
         TLSBase.Server server = new TLSBase.Server();
-
-        System.out.println("------  Initial connection");
+        server.serverLatch.await();
+        System.out.println("------  Server ready, starting initial client.");
         TLSBase.Client initial = new TLSBase.Client();
 
         SSLSession initialSession = initial.connect().getSession();

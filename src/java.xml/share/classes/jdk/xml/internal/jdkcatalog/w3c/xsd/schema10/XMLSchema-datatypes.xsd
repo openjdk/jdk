@@ -1,0 +1,154 @@
+<?xml version='1.0'?>
+<!-- XML Schema schema for XML Schemas: Part 2: Datatypes -->
+<!DOCTYPE schema PUBLIC "-//W3C//DTD XMLSCHEMA 200102//EN" "XMLSchema.dtd" [
+<!ENTITY % s ''>
+<!ENTITY % p ''>
+]>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.w3.org/2001/XMLSchema-datatypes"
+	version="$Id: XMLSchema-datatypes.xsd,v 1.5 2001/03/16 20:53:32 ht Exp $">
+  <annotation>
+   <documentation>Note this schema is NOT a normative schema - -
+     It contains types derived from all the builtin simple type definitions
+     with the same local name but in a distinct namespace, for use
+     by applications which do no wish to import the full XMLSchema
+     schema.  Since derivation is not symmetric, unexpected results may
+     follow from mixing references to these definitions with references
+     to the definitions in the XMLSchema namespace.  For example,
+     although dt:positiveInteger is derived from xs:integer, the converse
+     does not hold.</documentation>
+  </annotation>
+
+  <simpleType name="string">
+   <restriction base="string"/>
+  </simpleType>
+  <simpleType name="boolean">
+   <restriction base="boolean"/>
+  </simpleType>
+  <simpleType name="float">
+   <restriction base="float"/>
+  </simpleType>
+  <simpleType name="double">
+   <restriction base="double"/>
+  </simpleType>
+  <simpleType name="decimal">
+   <restriction base="decimal"/>
+  </simpleType>
+  <simpleType name="dateTime">
+   <restriction base="dateTime"/>
+  </simpleType>
+  <simpleType name="duration">
+   <restriction base="duration"/>
+  </simpleType>
+  <simpleType name="hexBinary">
+   <restriction base="hexBinary"/>
+  </simpleType>
+  <simpleType name="base64Binary">
+   <restriction base="base64Binary"/>
+  </simpleType>
+  <simpleType name="anyURI">
+   <restriction base="anyURI"/>
+  </simpleType>
+  <simpleType name="ID">
+   <restriction base="ID"/>
+  </simpleType>
+  <simpleType name="IDREF">
+   <restriction base="IDREF"/>
+  </simpleType>
+  <simpleType name="ENTITY">
+   <restriction base="ENTITY"/>
+  </simpleType>
+  <simpleType name="NOTATION">
+   <restriction base="NOTATION"/>
+  </simpleType>
+  <simpleType name="normalizedString">
+   <restriction base="normalizedString"/>
+  </simpleType>
+  <simpleType name="token">
+   <restriction base="token"/>
+  </simpleType>
+  <simpleType name="language">
+   <restriction base="language"/>
+  </simpleType>
+  <simpleType name="IDREFS">
+   <restriction base="IDREFS"/>
+  </simpleType>
+  <simpleType name="ENTITIES">
+   <restriction base="ENTITIES"/>
+  </simpleType>
+  <simpleType name="NMTOKEN">
+   <restriction base="NMTOKEN"/>
+  </simpleType>
+  <simpleType name="NMTOKENS">
+   <restriction base="NMTOKENS"/>
+  </simpleType>
+  <simpleType name="Name">
+   <restriction base="Name"/>
+  </simpleType>
+  <simpleType name="QName">
+   <restriction base="QName"/>
+  </simpleType>
+  <simpleType name="NCName">
+   <restriction base="NCName"/>
+  </simpleType>
+  <simpleType name="integer">
+   <restriction base="integer"/>
+  </simpleType>
+  <simpleType name="nonNegativeInteger">
+   <restriction base="nonNegativeInteger"/>
+  </simpleType>
+  <simpleType name="positiveInteger">
+   <restriction base="positiveInteger"/>
+  </simpleType>
+  <simpleType name="nonPositiveInteger">
+   <restriction base="nonPositiveInteger"/>
+  </simpleType>
+  <simpleType name="negativeInteger">
+   <restriction base="negativeInteger"/>
+  </simpleType>
+  <simpleType name="byte">
+   <restriction base="byte"/>
+  </simpleType>
+  <simpleType name="int">
+   <restriction base="int"/>
+  </simpleType>
+  <simpleType name="long">
+   <restriction base="long"/>
+  </simpleType>
+  <simpleType name="short">
+   <restriction base="short"/>
+  </simpleType>
+  <simpleType name="unsignedByte">
+   <restriction base="unsignedByte"/>
+  </simpleType>
+  <simpleType name="unsignedInt">
+   <restriction base="unsignedInt"/>
+  </simpleType>
+  <simpleType name="unsignedLong">
+   <restriction base="unsignedLong"/>
+  </simpleType>
+  <simpleType name="unsignedShort">
+   <restriction base="unsignedShort"/>
+  </simpleType>
+  <simpleType name="date">
+   <restriction base="date"/>
+  </simpleType>
+  <simpleType name="time">
+   <restriction base="time"/>
+  </simpleType>
+  <simpleType name="gYearMonth">
+   <restriction base="gYearMonth"/>
+  </simpleType>
+  <simpleType name="gYear">
+   <restriction base="gYear"/>
+  </simpleType>
+  <simpleType name="gMonthDay">
+   <restriction base="gMonthDay"/>
+  </simpleType>
+  <simpleType name="gDay">
+   <restriction base="gDay"/>
+  </simpleType>
+  <simpleType name="gMonth">
+   <restriction base="gMonth"/>
+  </simpleType>
+
+</schema>

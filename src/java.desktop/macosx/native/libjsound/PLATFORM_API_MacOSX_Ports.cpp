@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,9 +124,12 @@ OSStatus ChangeListenerProc(AudioObjectID inObjectID, UInt32 inNumberAddresses,
                 kAudioHardwarePropertyDevices, &size);
             if (err == noErr) {
                 int count = size/sizeof(AudioDeviceID);
-                AudioDeviceID devices[count];
+                AudioDeviceID *devices = (AudioDeviceID *) malloc(size);
+                if (!devices) {
+                    break;
+                }
                 err = GetAudioObjectProperty(kAudioObjectSystemObject, kAudioObjectPropertyScopeGlobal,
-                    kAudioHardwarePropertyDevices, count*sizeof(AudioDeviceID), devices, 1);
+                    kAudioHardwarePropertyDevices, size, devices, 1);
                 if (err == noErr) {
                     bool found = false;
                     for (int j = 0; j < count; j++) {
@@ -139,6 +142,7 @@ OSStatus ChangeListenerProc(AudioObjectID inObjectID, UInt32 inNumberAddresses,
                         invalid = true;
                     }
                 }
+                free(devices);
             }
             break;
         case kAudioObjectPropertyOwnedObjects:
@@ -148,9 +152,12 @@ OSStatus ChangeListenerProc(AudioObjectID inObjectID, UInt32 inNumberAddresses,
                 kAudioObjectPropertyOwnedObjects, &size);
             if (err == noErr) {
                 int count = size / sizeof(AudioObjectID);
-                AudioObjectID controlIDs[count];
+                AudioObjectID *controlIDs = (AudioObjectID *) malloc(size);
+                if (!controlIDs) {
+                    break;
+                }
                 err = GetAudioObjectProperty(mixer->deviceID, kAudioObjectPropertyScopeGlobal,
-                    kAudioObjectPropertyOwnedObjects, count * sizeof(AudioObjectID), &controlIDs, 1);
+                    kAudioObjectPropertyOwnedObjects, size, controlIDs, 1);
                 if (err == noErr) {
                     for (PortControl *ctrl = mixer->portControls; ctrl != NULL; ctrl = ctrl->next) {
                         for (int i = 0; i < ctrl->controlCount; i++) {
@@ -168,6 +175,7 @@ OSStatus ChangeListenerProc(AudioObjectID inObjectID, UInt32 inNumberAddresses,
                         }
                     }
                 }
+                free(controlIDs);
             }
         }
     }
@@ -229,6 +237,9 @@ INT32 PORT_GetPortMixerDescription(INT32 mixerIndex, PortMixerDescription* mixer
 void* PORT_Open(INT32 mixerIndex) {
     TRACE1("\n>>PORT_Open (mixerIndex=%d)\n", (int)mixerIndex);
     PortMixer *mixer = (PortMixer *)calloc(1, sizeof(PortMixer));
+    if (!mixer) {
+        return nullptr;
+    }
 
     mixer->deviceID = deviceCache.GetDeviceID(mixerIndex);
     if (mixer->deviceID != 0) {
@@ -480,16 +491,20 @@ void PORT_GetControls(void* id, INT32 portIndex, PortControlCreator* creator) {
             mixer->deviceControlCount = size / sizeof(AudioObjectID);
             TRACE1("  PORT_GetControls: detected %d owned objects\n", mixer->deviceControlCount);
 
-            AudioObjectID controlIDs[mixer->deviceControlCount];
+            AudioObjectID *controlIDs = (AudioObjectID *) malloc(size);
+            if (!controlIDs) {
+                return;
+            }
 
             err = GetAudioObjectProperty(mixer->deviceID, kAudioObjectPropertyScopeGlobal,
-                kAudioObjectPropertyOwnedObjects, sizeof(controlIDs), controlIDs, 1);
+                kAudioObjectPropertyOwnedObjects, size, controlIDs, 1);
 
             if (err) {
                 OS_ERROR1(err, "PORT_GetControls (portIndex = %d) get OwnedObject values", portIndex);
             } else {
                 mixer->deviceControls = (AudioControl *)calloc(mixer->deviceControlCount, sizeof(AudioControl));
                 if (mixer->deviceControls == NULL) {
+                    free(controlIDs);
                     return;
                 }
 
@@ -513,6 +528,7 @@ void PORT_GetControls(void* id, INT32 portIndex, PortControlCreator* creator) {
                         control->controlID, FourCC2Str(control->classID), FourCC2Str(control->scope), control->channel);
                 }
             }
+            free(controlIDs);
         }
     }
 
@@ -524,10 +540,14 @@ void PORT_GetControls(void* id, INT32 portIndex, PortControlCreator* creator) {
     int totalChannels = GetChannelCount(mixer->deviceID, port->scope == kAudioDevicePropertyScopeOutput ? 1 : 0);
 
     // collect volume and mute controls
-    AudioControl* volumeControls[totalChannels+1];  // 0 - for master channel
-    memset(&volumeControls, 0, sizeof(AudioControl *) * (totalChannels+1));
-    AudioControl* muteControls[totalChannels+1];  // 0 - for master channel
-    memset(&muteControls, 0, sizeof(AudioControl *) * (totalChannels+1));
+    size_t totalAndMaster = totalChannels + 1; // 0 - for master channel
+    AudioControl **volumeControls = (AudioControl **) calloc(totalAndMaster, sizeof(AudioControl *));
+    AudioControl **muteControls = (AudioControl **) calloc(totalAndMaster, sizeof(AudioControl *));
+    if (!volumeControls || !muteControls) {
+        free(muteControls);
+        free(volumeControls);
+        return;
+    }
 
     for (int i=0; i<mixer->deviceControlCount; i++) {
         AudioControl *control = &mixer->deviceControls[i];
@@ -626,6 +646,8 @@ void PORT_GetControls(void* id, INT32 portIndex, PortControlCreator* creator) {
                     CFIndex length = CFStringGetLength(cfname) + 1;
                     channelName = (char *)malloc(length);
                     if (channelName == NULL) {
+                        free(muteControls);
+                        free(volumeControls);
                         return;
                     }
                     CFStringGetCString(cfname, channelName, length, kCFStringEncodingUTF8);
@@ -633,6 +655,8 @@ void PORT_GetControls(void* id, INT32 portIndex, PortControlCreator* creator) {
                 } else {
                     channelName = (char *)malloc(16);
                     if (channelName == NULL) {
+                        free(muteControls);
+                        free(volumeControls);
                         return;
                     }
                     snprintf(channelName, 16, "Ch %d", ch);
@@ -657,7 +681,8 @@ void PORT_GetControls(void* id, INT32 portIndex, PortControlCreator* creator) {
     }
 
     AddChangeListeners(mixer);
-
+    free(muteControls);
+    free(volumeControls);
     TRACE1("<<PORT_GetControls (portIndex = %d)\n", portIndex);
 }
 
@@ -772,28 +797,35 @@ float PORT_GetFloatValue(void* controlIDV) {
     PortControl *control = (PortControl *)controlIDV;
     Float32 result = 0;
 
-    Float32 subVolumes[control->controlCount];
+    Float32 *subVolumes = (Float32 *) malloc(control->controlCount * sizeof(Float32));
+    if (!subVolumes) {
+        return DEFAULT_VOLUME_VALUE;
+    }
     Float32 maxVolume;
 
     switch (control->type) {
     case PortControl::Volume:
         if (!TestPortControlValidity(control)) {
-            return DEFAULT_VOLUME_VALUE;
+            result = DEFAULT_VOLUME_VALUE;
+            break;
         }
 
         if (!GetPortControlVolumes(control, subVolumes, &maxVolume)) {
-            return DEFAULT_VOLUME_VALUE;
+            result = DEFAULT_VOLUME_VALUE;
+            break;
         }
         result = maxVolume;
         break;
     case PortControl::Balance:
         if (!TestPortControlValidity(control)) {
-            return DEFAULT_BALANCE_VALUE;
+            result = DEFAULT_BALANCE_VALUE;
+            break;
         }
 
         // balance control always has 2 volume controls
         if (!GetPortControlVolumes(control, subVolumes, &maxVolume)) {
-            return DEFAULT_VOLUME_VALUE;
+            result = DEFAULT_VOLUME_VALUE;
+            break;
         }
         // calculate balance value
         if (subVolumes[0] > subVolumes[1]) {
@@ -806,9 +838,10 @@ float PORT_GetFloatValue(void* controlIDV) {
         break;
     default:
         ERROR1("GetFloatValue requested for non-Float control (control-type == %d)\n", control->type);
-        return 0;
+        result = 0;
+        break;
     }
-
+    free(subVolumes);
     TRACE1("<<PORT_GetFloatValue = %f\n", result);
     return result;
 }
@@ -821,13 +854,16 @@ void PORT_SetFloatValue(void* controlIDV, float value) {
         return;
     }
 
-    Float32 subVolumes[control->controlCount];
+    Float32 *subVolumes = (Float32 *) malloc(sizeof(Float32) * control->controlCount);
+    if (!subVolumes) {
+        return;
+    }
     Float32 maxVolume;
 
     switch (control->type) {
     case PortControl::Volume:
         if (!GetPortControlVolumes(control, subVolumes, &maxVolume)) {
-            return;
+            break;
         }
         // update the values
         if (maxVolume > 0.001) {
@@ -845,7 +881,7 @@ void PORT_SetFloatValue(void* controlIDV, float value) {
     case PortControl::Balance:
         // balance control always has 2 volume controls
         if (!GetPortControlVolumes(control, subVolumes, &maxVolume)) {
-            return;
+            break;
         }
         // calculate new values
         if (value < 0.0f) {
@@ -861,8 +897,9 @@ void PORT_SetFloatValue(void* controlIDV, float value) {
         break;
     default:
         ERROR1("PORT_SetFloatValue requested for non-Float control (control-type == %d)\n", control->type);
-        return;
+        break;
     }
+    free(subVolumes);
 }
 
 #endif // USE_PORTS

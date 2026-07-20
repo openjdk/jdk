@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021, 2023, Intel Corporation. All rights reserved.
+* Copyright (c) 2021, 2025, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -23,7 +23,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -67,8 +66,15 @@ address StubGenerator::generate_updateBytesAdler32() {
   assert(UseAdler32Intrinsics, "");
 
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
-  address start = __ pc();
+  StubId stub_id = StubId::stubgen_updateBytesAdler32_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  StubCodeMark mark(this, stub_id);
+  start = __ pc();
 
   // Choose an appropriate LIMIT for inner loop based on the granularity
   // of intermediate results. For int, LIMIT of 5552 will ensure intermediate
@@ -144,7 +150,7 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ align32();
   if (VM_Version::supports_avx512vl()) {
     // AVX2 performs better for smaller inputs because of leaner post loop reduction sequence..
-    __ cmpl(s, MAX2(128, VM_Version::avx3_threshold()));
+    __ cmpl(s, MAX2(128, CopyAVX3Threshold));
     __ jcc(Assembler::belowEqual, SLOOP1A_AVX2);
     __ lea(end, Address(s, data, Address::times_1, - (2*CHUNKSIZE -1)));
 
@@ -334,7 +340,19 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ leave();
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
   return start;
 }
 
 #undef __
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_adler(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr))
+  ADD(ADLER32_ASCALE_TABLE);
+  ADD(ADLER32_SHUF0_TABLE);
+  ADD(ADLER32_SHUF1_TABLE);
+#undef ADD
+}
+#endif // INCLUDE_CDS

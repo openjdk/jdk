@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,11 +93,6 @@ import java.io.OutputStream;
  * synchronized. Therefore, it is not advisable to share a
  * <code>GSSContext</code> among several threads unless some application
  * level synchronization is in place.<p>
- *
- * Finally, different mechanism providers might place different security
- * restrictions on using GSS-API contexts. These will be documented by the
- * mechanism provider. The application will need to ensure that it has the
- * appropriate permissions if such checks are made in the mechanism layer.<p>
  *
  * The stream-based methods of {@code GSSContext} have been deprecated in
  * Java SE 11. These methods have also been removed from
@@ -244,12 +239,7 @@ public interface GSSContext {
      * return a token for the peer, and <code>isEstablished</code> return
      * <code>true</code> also. This indicates that the token needs to be sent
      * to the peer, but the local end of the context is now fully
-     * established.<p>
-     *
-     * Some mechanism providers might require that the caller be granted
-     * permission to initiate a security context. A failed permission check
-     * might cause a {@link java.lang.SecurityException SecurityException}
-     * to be thrown from this method.
+     * established.
      *
      * @return a byte[] containing the token to be sent to the
      * peer. <code>null</code> indicates that no token is generated.
@@ -309,11 +299,6 @@ public interface GSSContext {
      * available.  In all other respects this method is equivalent to the
      * byte array based {@link #initSecContext(byte[], int, int)
      * initSecContext}.<p>
-     *
-     * Some mechanism providers might require that the caller be granted
-     * permission to initiate a security context. A failed permission check
-     * might cause a {@link java.lang.SecurityException SecurityException}
-     * to be thrown from this method.<p>
      *
      * The following example code demonstrates how this method might be
      * used:
@@ -382,11 +367,6 @@ public interface GSSContext {
      * <code>true</code> also.  This indicates that the token needs to be
      * sent to the peer, but the local end of the context is now fully
      * established.<p>
-     *
-     * Some mechanism providers might require that the caller be granted
-     * permission to accept a security context. A failed permission check
-     * might cause a {@link java.lang.SecurityException SecurityException}
-     * to be thrown from this method.<p>
      *
      * The following example code demonstrates how this method might be
      * used:
@@ -459,11 +439,6 @@ public interface GSSContext {
      * available. In all other respects this method is equivalent to the byte
      * array based {@link #acceptSecContext(byte[], int, int)
      * acceptSecContext}.<p>
-     *
-     * Some mechanism providers might require that the caller be granted
-     * permission to accept a security context. A failed permission check
-     * might cause a {@link java.lang.SecurityException SecurityException}
-     * to be thrown from this method.<p>
      *
      * The following example code demonstrates how this method might be
      * used:

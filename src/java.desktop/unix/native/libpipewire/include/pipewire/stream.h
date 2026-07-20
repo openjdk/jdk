@@ -11,6 +11,8 @@ extern "C" {
 
 /** \page page_streams Streams
  *
+ * \see \ref pw_stream
+ *
  * \section sec_overview Overview
  *
  * \ref pw_stream "Streams" are used to exchange data with the
@@ -56,11 +58,15 @@ extern "C" {
 
  * \li PW_DIRECTION_INPUT for a stream that *consumes* data. This can be a
  * stream that captures from a Source or a when the stream is used to
- * implement a Sink.
+ * implement a Sink. An application will use a \ref PW_DIRECTION_INPUT
+ * stream to record data. A virtual sound card will use a
+ * \ref PW_DIRECTION_INPUT stream to implement audio playback.
  *
  * \li PW_DIRECTION_OUTPUT for a stream that *produces* data. This can be a
  * stream that plays to a Sink or when the stream is used to implement
- * a Source.
+ * a Source. An application will use a \ref PW_DIRECTION_OUTPUT
+ * stream to produce data. A virtual sound card or camera will use a
+ * \ref PW_DIRECTION_OUTPUT stream to implement audio or video recording.
  *
  * \subsection ssec_stream_target Stream target
  *
@@ -127,7 +133,24 @@ extern "C" {
  * When the buffer has been processed, call \ref pw_stream_queue_buffer()
  * to let PipeWire reuse the buffer.
  *
+ * Although not strictly required, it is recommended to call \ref
+ * pw_stream_dequeue_buffer() and pw_stream_queue_buffer() from the
+ * process() callback to minimize the amount of buffering and
+ * maximize the amount of buffer reuse in the stream.
+ *
+ * It is also possible to dequeue the buffer from the process event,
+ * then process and queue the buffer from a helper thread. It is also
+ * possible to dequeue, process and queue a buffer from a helper thread
+ * after receiving the process event.
+ *
  * \subsection ssec_produce Produce data
+ *
+ * The process event is emitted when a new buffer should be queued.
+ *
+ * When the PW_STREAM_FLAG_RT_PROCESS flag was given, this function will be
+ * called from a realtime thread and it is not safe to call non-reatime
+ * functions such as doing file operations, blocking operations or any of
+ * the PipeWire functions that are not explicitly marked as being RT safe.
  *
  * \ref pw_stream_dequeue_buffer() gives an empty buffer that can be filled.
  *
@@ -136,8 +159,45 @@ extern "C" {
  *
  * Filled buffers should be queued with \ref pw_stream_queue_buffer().
  *
- * The process event is emitted when PipeWire has emptied a buffer that
- * can now be refilled.
+ * Although not strictly required, it is recommended to call \ref
+ * pw_stream_dequeue_buffer() and pw_stream_queue_buffer() from the
+ * process() callback to minimize the amount of buffering and
+ * maximize the amount of buffer reuse in the stream.
+ *
+ * Buffers that are queued after the process event completes will be delayed
+ * to the next processing cycle.
+ *
+ * \section sec_stream_driving Driving the graph
+ *
+ * Starting in 0.3.34, it is possible for a stream to drive the graph.
+ * This allows interrupt-driven scheduling for drivers implemented as
+ * PipeWire streams, without having to reimplement the stream as a SPA
+ * plugin.
+ *
+ * A stream cannot drive the graph unless it is in the
+ * \ref PW_STREAM_STATE_STREAMING state and \ref pw_stream_is_driving() returns
+ * true. It must then use pw_stream_trigger_process() to start the graph
+ * cycle.
+ *
+ * \ref pw_stream_trigger_process() will result in a process event, where a buffer
+ * should be dequeued, and queued again. This is the recommended behaviour that
+ * minimizes buffering and maximized buffer reuse.
+ *
+ * Producers of data that drive the graph can also dequeue a buffer in a helper
+ * thread, fill it with data and then call \ref pw_stream_trigger_process() to
+ * start the graph cycle. In the process event they will then queue the filled
+ * buffer and dequeue a new empty buffer to fill again in the helper thread,
+ *
+ * Consumers of data that drive the graph (pull based scheduling) will use
+ * \ref pw_stream_trigger_process() to start the graph and will dequeue, process
+ * and queue the buffers in the process event.
+ *
+ * \section sec_stream_process_requests Request processing
+ *
+ * A stream that is not driving the graph can request a new graph cycle by doing
+ * \ref pw_stream_trigger_process(). This will result in a RequestProcess command
+ * in the driver stream. If the driver supports this, it can then perform
+ * \ref pw_stream_trigger_process() to start the actual graph cycle.
  *
  * \section sec_stream_disconnect Disconnect
  *
@@ -151,6 +211,9 @@ extern "C" {
  *
  * \section sec_stream_environment Environment Variables
  *
+ * The environment variable PIPEWIRE_AUTOCONNECT can be used to override the
+ * flag and force apps to autoconnect or not.
+ *
  */
 /** \defgroup pw_stream Stream
  *
@@ -159,7 +222,7 @@ extern "C" {
  * The stream object provides a convenient way to send and
  * receive data streams from/to PipeWire.
  *
- * See also \ref page_streams and \ref api_pw_core
+ * \see \ref page_streams, \ref api_pw_core
  */
 
 /**
@@ -171,6 +234,7 @@ struct pw_stream;
 #include <spa/buffer/buffer.h>
 #include <spa/param/param.h>
 #include <spa/pod/command.h>
+#include <spa/pod/event.h>
 
 /** \enum pw_stream_state The state of a stream */
 enum pw_stream_state {
@@ -182,19 +246,29 @@ enum pw_stream_state {
 };
 
 /** a buffer structure obtained from pw_stream_dequeue_buffer(). The size of this
-  * structure can grow as more field are added in the future */
+  * structure can grow as more fields are added in the future */
 struct pw_buffer {
     struct spa_buffer *buffer;    /**< the spa buffer */
-    void *user_data;        /**< user data attached to the buffer */
+    void *user_data;        /**< user data attached to the buffer. The user of
+                      *  the stream can set custom data associated with the
+                      *  buffer, typically in the add_buffer event. Any
+                      *  cleanup should be performed in the remove_buffer
+                      *  event. The user data is returned unmodified each
+                      *  time a buffer is dequeued. */
     uint64_t size;            /**< This field is set by the user and the sum of
-                      *  all queued buffer is returned in the time info.
+                      *  all queued buffers is returned in the time info.
                       *  For audio, it is advised to use the number of
-                      *  samples in the buffer for this field. */
+                      *  frames in the buffer for this field. */
     uint64_t requested;        /**< For playback streams, this field contains the
                       *  suggested amount of data to provide. For audio
-                      *  streams this will be the amount of samples
+                      *  streams this will be the amount of frames
                       *  required by the resampler. This field is 0
                       *  when no suggestion is provided. Since 0.3.49 */
+    uint64_t time;            /**< For capture streams, this field contains the
+                      *  cycle time in nanoseconds when this buffer was
+                      *  queued in the stream. It can be compared against
+                      *  the pw_time values or pw_stream_get_nsec()
+                      *  Since 1.0.5 */
 };
 
 struct pw_stream_control {
@@ -223,25 +297,33 @@ struct pw_stream_control {
  * value, and pw_time.ticks, were captured at pw_time.now and can be extrapolated
  * to the current time like this:
  *
- *    struct timespec ts;
- *    clock_gettime(CLOCK_MONOTONIC, &ts);
- *    int64_t diff = SPA_TIMESPEC_TO_NSEC(&ts) - pw_time.now;
+ *\code{.c}
+ *    uint64_t now = pw_stream_get_nsec(stream);
+ *    int64_t diff = now - pw_time.now;
  *    int64_t elapsed = (pw_time.rate.denom * diff) / (pw_time.rate.num * SPA_NSEC_PER_SEC);
+ *\endcode
  *
  * pw_time.delay contains the total delay that a signal will travel through the
  * graph. This includes the delay caused by filters in the graph as well as delays
  * caused by the hardware. The delay is usually quite stable and should only change when
  * the topology, quantum or samplerate of the graph changes.
  *
+ * The delay requires the application to send the stream early relative to other synchronized
+ * streams in order to arrive at the edge of the graph in time. This is usually done by
+ * delaying the other streams with the given delay.
+ *
+ * Note that the delay can be negative. A negative delay means that this stream should be
+ * delayed with the (positive) delay relative to other streams.
+ *
  * pw_time.queued and pw_time.buffered is expressed in the time domain of the stream,
  * or the format that is used for the buffers of this stream.
  *
  * pw_time.queued is the sum of all the pw_buffer.size fields of the buffers that are
  * currently queued in the stream but not yet processed. The application can choose
- * the units of this value, for example, time, samples or bytes (below expressed
- * as app.rate).
+ * the units of this value, for example, time, samples, frames or bytes (below
+ * expressed as app.rate).
  *
- * pw_time.buffered is format dependent, for audio/raw it contains the number of samples
+ * pw_time.buffered is format dependent, for audio/raw it contains the number of frames
  * that are buffered inside the resampler/converter.
  *
  * The total delay of data in a stream is the sum of the queued and buffered data
@@ -252,15 +334,21 @@ struct pw_stream_control {
  * in milliseconds for the first sample in the newly queued buffer to be played
  * by the hardware can be calculated as:
  *
+ *\code{.unparsed}
  *  (pw_time.buffered * 1000 / stream.samplerate) +
  *    (pw_time.queued * 1000 / app.rate) +
  *     ((pw_time.delay - elapsed) * 1000 * pw_time.rate.num / pw_time.rate.denom)
+ *\endcode
  *
  * The current extrapolated time (in ms) in the source or sink can be calculated as:
  *
+ *\code{.unparsed}
  *  (pw_time.ticks + elapsed) * 1000 * pw_time.rate.num / pw_time.rate.denom
+ *\endcode
  *
+ * Below is an overview of the different timing values:
  *
+ *\code{.unparsed}
  *           stream time domain           graph time domain
  *         /-----------------------\/-----------------------------\
  *
@@ -272,14 +360,15 @@ struct pw_stream_control {
  *                                    latency             latency
  *         \--------/\-------------/\-----------------------------/
  *           queued      buffered            delay
+ *\endcode
  */
 struct pw_time {
-    int64_t now;            /**< the monotonic time in nanoseconds. This is the time
-                      *  when this time report was updated. It is usually
-                      *  updated every graph cycle. You can use the current
-                      *  monotonic time to calculate the elapsed time between
-                      *  this report and the current state and calculate
-                      *  updated ticks and delay values. */
+    int64_t now;            /**< the time in nanoseconds. This is the time when this
+                      *  time report was updated. It is usually updated every
+                      *  graph cycle. You can use pw_stream_get_nsec() to
+                      *  calculate the elapsed time between this report and
+                      *  the current time and calculate updated ticks and delay
+                      *  values. */
     struct spa_fraction rate;    /**< the rate of \a ticks and delay. This is usually
                       *  expressed in 1/<samplerate>. */
     uint64_t ticks;            /**< the ticks at \a now. This is the current time that
@@ -298,10 +387,14 @@ struct pw_time {
                       *  of the size fields in the pw_buffer that are
                       *  currently queued */
     uint64_t buffered;        /**< for audio/raw streams, this contains the extra
-                      *  number of samples buffered in the resampler.
+                      *  number of frames buffered in the resampler.
                       *  Since 0.3.50. */
-    uint32_t queued_buffers;    /**< The number of buffers that are queued. Since 0.3.50 */
-    uint32_t avail_buffers;        /**< The number of buffers that can be dequeued. Since 0.3.50 */
+    uint32_t queued_buffers;    /**< the number of buffers that are queued. Since 0.3.50 */
+    uint32_t avail_buffers;        /**< the number of buffers that can be dequeued. Since 0.3.50 */
+    uint64_t size;            /**< for audio/raw playback streams, this contains the number of
+                      *  samples requested by the resampler for the current
+                      *  quantum. for audio/raw capture streams this will be the number
+                      *  of samples available for the current quantum. Since 1.1.0 */
 };
 
 #include <pipewire/port.h>
@@ -342,7 +435,10 @@ struct pw_stream_events {
     /** A command notify, Since 0.3.39:1 */
     void (*command) (void *data, const struct spa_command *command);
 
-    /** a trigger_process completed. Since version 0.3.40:2 */
+    /** a trigger_process completed. Since version 0.3.40:2.
+     *  This is normally called from the mainloop but since 1.1.0 it
+     *  can also be called directly from the realtime data
+     *  thread if the user is prepared to deal with this. */
     void (*trigger_done) (void *data);
 };
 
@@ -357,7 +453,8 @@ enum pw_stream_flags {
     PW_STREAM_FLAG_INACTIVE        = (1 << 1),    /**< start the stream inactive,
                               *  pw_stream_set_active() needs to be
                               *  called explicitly */
-    PW_STREAM_FLAG_MAP_BUFFERS    = (1 << 2),    /**< mmap the buffers except DmaBuf */
+    PW_STREAM_FLAG_MAP_BUFFERS    = (1 << 2),    /**< mmap the buffers except DmaBuf that is not
+                              *  explicitly marked as mappable. */
     PW_STREAM_FLAG_DRIVER        = (1 << 3),    /**< be a driver */
     PW_STREAM_FLAG_RT_PROCESS    = (1 << 4),    /**< call process from the realtime
                               *  thread. You MUST use RT safe functions
@@ -375,9 +472,24 @@ enum pw_stream_flags {
                               *  needs to be called. This can be used
                               *  when the output of the stream depends
                               *  on input from other streams. */
+    PW_STREAM_FLAG_ASYNC        = (1 << 10),    /**< Buffers will not be dequeued/queued from
+                              *  the realtime process() function. This is
+                              *  assumed when RT_PROCESS is unset but can
+                              *  also be the case when the process() function
+                              *  does a trigger_process() that will then
+                              *  dequeue/queue a buffer from another process()
+                              *  function. since 0.3.73 */
+    PW_STREAM_FLAG_EARLY_PROCESS    = (1 << 11),    /**< Call process as soon as there is a buffer
+                              *  to dequeue. This is only relevant for
+                              *  playback and when not using RT_PROCESS. It
+                              *  can be used to keep the maximum number of
+                              *  buffers queued. Since 0.3.81 */
+    PW_STREAM_FLAG_RT_TRIGGER_DONE    = (1 << 12),    /**< Call trigger_done from the realtime
+                              *  thread. You MUST use RT safe functions
+                              *  in the trigger_done callback. Since 1.1.0 */
 };
 
-/** Create a new unconneced \ref pw_stream
+/** Create a new unconnected \ref pw_stream
  * \return a newly allocated \ref pw_stream */
 struct pw_stream *
 pw_stream_new(struct pw_core *core,        /**< a \ref pw_core */
@@ -385,7 +497,7 @@ pw_stream_new(struct pw_core *core,        /**< a \ref pw_core */
           struct pw_properties *props    /**< stream properties, ownership is taken */);
 
 struct pw_stream *
-pw_stream_new_simple(struct pw_loop *loop,    /**< a \ref pw_loop to use */
+pw_stream_new_simple(struct pw_loop *loop,    /**< a \ref pw_loop to use as the main loop */
              const char *name,        /**< a stream media name */
              struct pw_properties *props,/**< stream properties, ownership is taken */
              const struct pw_stream_events *events,    /**< stream events */
@@ -447,18 +559,19 @@ int pw_stream_set_error(struct pw_stream *stream,    /**< a \ref pw_stream */
             const char *error,        /**< an error message */
             ...) SPA_PRINTF_FUNC(3, 4);
 
-/** Complete the negotiation process with result code \a res
- *
- * This function should be called after notification of the format.
-
- * When \a res indicates success, \a params contain the parameters for the
- * allocation state.  */
+/** Update the param exposed on the stream. */
 int
 pw_stream_update_params(struct pw_stream *stream,    /**< a \ref pw_stream */
-            const struct spa_pod **params,    /**< an array of params. The params should
-                              *  ideally contain parameters for doing
-                              *  buffer allocation. */
+            const struct spa_pod **params,    /**< an array of params. */
             uint32_t n_params        /**< number of elements in \a params */);
+
+/**
+ * Set a parameter on the stream. This is like pw_stream_set_control() but with
+ * a complete spa_pod param. It can also be called from the param_changed event handler
+ * to intercept and modify the param for the adapter. Since 0.3.70 */
+int pw_stream_set_param(struct pw_stream *stream,    /**< a \ref pw_stream */
+            uint32_t id,            /**< the id of the param */
+            const struct spa_pod *param    /**< the params to set */);
 
 /** Get control values */
 const struct pw_stream_control *pw_stream_get_control(struct pw_stream *stream, uint32_t id);
@@ -466,26 +579,42 @@ const struct pw_stream_control *pw_stream_get_control(struct pw_stream *stream, 
 /** Set control values */
 int pw_stream_set_control(struct pw_stream *stream, uint32_t id, uint32_t n_values, float *values, ...);
 
-/** Query the time on the stream */
+/** Query the time on the stream, RT safe */
 int pw_stream_get_time_n(struct pw_stream *stream, struct pw_time *time, size_t size);
 
+/** Get the current time in nanoseconds. This value can be compared with
+ * the \ref pw_time.now value. RT safe. Since 1.1.0 */
+uint64_t pw_stream_get_nsec(struct pw_stream *stream);
+
+/** Get the data loop that is doing the processing of this stream. This loop
+ * is assigned after pw_stream_connect().  * Since 1.1.0 */
+struct pw_loop *pw_stream_get_data_loop(struct pw_stream *stream);
+
 /** Query the time on the stream, deprecated since 0.3.50,
- * use pw_stream_get_time_n() to get the fields added since 0.3.50. */
+ * use pw_stream_get_time_n() to get the fields added since 0.3.50. RT safe. */
 SPA_DEPRECATED
 int pw_stream_get_time(struct pw_stream *stream, struct pw_time *time);
 
 /** Get a buffer that can be filled for playback streams or consumed
- * for capture streams. */
+ * for capture streams. RT safe. */
 struct pw_buffer *pw_stream_dequeue_buffer(struct pw_stream *stream);
 
-/** Submit a buffer for playback or recycle a buffer for capture. */
+/** Submit a buffer for playback or recycle a buffer for capture. RT safe. */
 int pw_stream_queue_buffer(struct pw_stream *stream, struct pw_buffer *buffer);
+
+/** Return a buffer to the queue without using it. This makes the buffer
+ * immediately available to dequeue again. RT safe. */
+int pw_stream_return_buffer(struct pw_stream *stream, struct pw_buffer *buffer);
 
 /** Activate or deactivate the stream */
 int pw_stream_set_active(struct pw_stream *stream, bool active);
 
 /** Flush a stream. When \a drain is true, the drained callback will
- * be called when all data is played or recorded */
+ * be called when all data is played or recorded. The stream can be resumed
+ * after the drain by setting it active again with
+ * \ref pw_stream_set_active(). A flush without a drain is mostly useful afer
+ * a state change to PAUSED, to flush any remaining data from the queues and
+ * the converters. RT safe. */
 int pw_stream_flush(struct pw_stream *stream, bool drain);
 
 /** Check if the stream is driving. The stream needs to have the
@@ -494,9 +623,63 @@ int pw_stream_flush(struct pw_stream *stream, bool drain);
  * available (output) or needed (input). Since 0.3.34 */
 bool pw_stream_is_driving(struct pw_stream *stream);
 
+/** Check if the graph is using lazy scheduling. If the stream is
+ * driving according to \ref pw_stream_is_driving(), then it should
+ * consider taking into account the RequestProcess commands when
+ * driving the graph.
+ *
+ * If the stream is not driving, it should send out RequestProcess
+ * events with \ref pw_stream_emit_event() or indirectly with
+ * \ref pw_stream_trigger_process() to suggest a new graph cycle
+ * to the driver.
+ *
+ * It is not a requirement that all RequestProcess events/commands
+ * need to start a graph cycle.
+ * Since 1.4.0 */
+bool pw_stream_is_lazy(struct pw_stream *stream);
+
 /** Trigger a push/pull on the stream. One iteration of the graph will
- * scheduled and process() will be called. Since 0.3.34 */
+ * be scheduled when the stream is driving according to
+ * \ref pw_stream_is_driving(). If it successfully finishes, process()
+ * will be called and the trigger_done event will be emitted. It is
+ * possible for the graph iteration to not finish, so
+ * pw_stream_trigger_process() needs to be called again even if process()
+ * and trigger_done is not called.
+ *
+ * If there is a deadline after which the stream will have xrun,
+ * pw_stream_trigger_process() should be called then, whether or not
+ * process()/trigger_done has been called. Sound hardware will xrun if
+ * there is any delay in audio processing, so the ALSA plugin triggers the
+ * graph every quantum to ensure audio keeps flowing. Drivers that
+ * do not have a deadline, such as the freewheel driver, should
+ * use a timeout to ensure that forward progress keeps being made.
+ * A reasonable choice of deadline is three times the quantum: if
+ * the graph is taking 3x longer than normal, it is likely that it
+ * is hung and should be retriggered.
+ *
+ * Streams that are not drivers according to \ref pw_stream_is_driving()
+ * can also call this method. The result is that a RequestProcess event
+ * is sent to the driver. If the graph is lazy scheduling according to
+ * \ref pw_stream_is_lazy(), this might result in a graph cycle by the
+ * driver. If the graph is not lazy scheduling and the stream is not a
+ * driver, this method will have no effect.
+ *
+ * RT safe.
+ *
+ * Since 0.3.34 */
 int pw_stream_trigger_process(struct pw_stream *stream);
+
+/** Emit an event from this stream. RT safe.
+ * Since 1.2.6 */
+int pw_stream_emit_event(struct pw_stream *stream, const struct spa_event *event);
+
+/** Adjust the rate of the stream.
+ * When the stream is using an adaptive resampler, adjust the resampler rate.
+ * When there is no resampler, -ENOTSUP is returned. Activating the adaptive
+ * resampler will add a small amount of delay to the samples, you can deactivate
+ * it again by setting a value <= 0.0. RT safe.
+ * Since 1.4.0 */
+int pw_stream_set_rate(struct pw_stream *stream, double rate);
 
 /**
  * \}

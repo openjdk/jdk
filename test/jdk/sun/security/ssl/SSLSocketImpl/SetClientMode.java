@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,13 @@
 /*
  * @test
  * @bug 6223624
- * @ignore this test does not grant to work.  The handshake may have completed
- *        when getSession() return.  Please update or remove this test case.
+ * @library /test/lib /javax/net/ssl/templates
  * @summary SSLSocket.setUseClientMode() fails to throw expected
  *        IllegalArgumentException
- * @run main/othervm SetClientMode
+ * @run main/othervm SetClientMode TLSv1
+ * @run main/othervm SetClientMode TLSv1.1
+ * @run main/othervm SetClientMode TLSv1.2
+ * @run main/othervm SetClientMode TLSv1.3
  */
 
 /*
@@ -47,143 +49,82 @@
  * occasionally on the very first iteration.
  */
 
-import java.io.*;
 import java.lang.*;
 import java.net.*;
+import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.*;
-import java.security.*;
-import java.security.cert.*;
+import jdk.test.lib.security.SecurityUtils;
 
-public class SetClientMode {
-    private static String[] algorithms = {"TLS", "SSL", "SSLv3", "TLS"};
-    volatile int serverPort = 0;
+import static jdk.test.lib.Asserts.assertThrows;
 
-    /*
-     * Where do we find the keystores?
-     */
-    static String pathToStores = "../../../../javax/net/ssl/etc";
-    static String keyStoreFile = "keystore";
-    static String trustStoreFile = "truststore";
-    static String passwd = "passphrase";
-
-
-    public SetClientMode() {
-        // trivial constructor
-    }
+public class SetClientMode extends SSLContextTemplate {
+    private volatile int serverPort = 0;
+    private static final CountDownLatch HANDSHAKE_COMPLETE = new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
-        String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
-        String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
+        String protocol = args[0];
 
-        System.setProperty("javax.net.ssl.keyStore", keyFilename);
-        System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-        System.setProperty("javax.net.ssl.trustStore", trustFilename);
-        System.setProperty("javax.net.ssl.trustStorePassword", passwd);
-
-        new SetClientMode().run();
-    }
-
-    public void run() throws Exception {
-        for (int i = 0; i < algorithms.length; i++) {
-            testCombo( algorithms[i] );
+        if ("TLSv1".equals(protocol) || "TLSv1.1".equals(protocol)) {
+            SecurityUtils.removeFromDisabledTlsAlgs(protocol);
         }
+
+        new SetClientMode().run(protocol);
     }
 
-    public void testCombo(String algorithm) throws Exception {
-        Exception modeException = null ;
-
+    public void run(String protocol) throws Exception {
         // Create a server socket
-        SSLServerSocketFactory ssf =
-            (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
-        SSLServerSocket serverSocket =
-            (SSLServerSocket)ssf.createServerSocket(serverPort);
-        serverPort = serverSocket.getLocalPort();
+        SSLServerSocketFactory ssf = createServerSSLContext().getServerSocketFactory();
 
-        // Create a client socket
-        SSLSocketFactory sf = (SSLSocketFactory)SSLSocketFactory.getDefault();
-        SSLSocket clientSocket = (SSLSocket)sf.createSocket(
-                                InetAddress.getLocalHost(),
-                                serverPort );
+        try (SSLServerSocket serverSocket =
+                (SSLServerSocket) ssf.createServerSocket(serverPort)) {
+            serverSocket.setEnabledProtocols(new String[]{ protocol });
+            serverPort = serverSocket.getLocalPort();
 
-        // Create a client which will use the SSLSocket to talk to the server
-        SocketClient client = new SocketClient(clientSocket);
+            // Create a client socket
+            SSLSocketFactory sf = createClientSSLContext().getSocketFactory();
 
-        // Start the client and then accept any connection
-        client.start();
+            try (SSLSocket clientSocket = (SSLSocket) sf.createSocket(
+                    InetAddress.getLocalHost(),
+                    serverPort)) {
 
-        SSLSocket connectedSocket = (SSLSocket)serverSocket.accept();
+                // Create a client which will use the SSLSocket to talk to the server
+                Client client = new Client(clientSocket);
 
-        // force handshaking to complete
-        connectedSocket.getSession();
+                // Start the client and then accept any connection
+                client.start();
 
-        try {
-            // Now try invoking setClientMode() on one
-            // or the other of our two sockets. We expect
-            // to see an IllegalArgumentException because
-            // handshaking has begun.
-            clientSocket.setUseClientMode(false);
+                SSLSocket connectedSocket = (SSLSocket) serverSocket.accept();
 
-            modeException = new Exception("no IllegalArgumentException");
-        } catch (IllegalArgumentException iae) {
-            System.out.println("succeeded, we can't set the client mode");
-        } catch (Exception e) {
-            modeException = e;
-        } finally {
-            // Shut down.
-            connectedSocket.close();
-            serverSocket.close();
+                // force handshaking to complete
+                connectedSocket.getSession();
 
-            if (modeException != null) {
-                throw modeException;
+                HANDSHAKE_COMPLETE.await();
+
+                // Now try invoking setClientMode() on the client socket.
+                // We expect to see an IllegalArgumentException because
+                // handshaking has begun.
+                assertThrows(IllegalArgumentException.class,
+                        () -> clientSocket.setUseClientMode(false));
             }
         }
-
-        return;
     }
 
     // A thread-based client which does nothing except
     // start handshaking on the socket it's given.
-    class SocketClient extends Thread {
-        SSLSocket clientsideSocket;
-        Exception clientException = null;
-        boolean done = false;
+    static class Client extends Thread {
+        private final SSLSocket socket;
 
-        public SocketClient( SSLSocket s ) {
-            clientsideSocket = s;
+        public Client(SSLSocket s) {
+            socket = s;
         }
 
         public void run() {
             try {
-                clientsideSocket.startHandshake();
-
-                // If we were to invoke setUseClientMode()
-                // here, the expected exception will happen.
-                //clientsideSocket.getSession();
-                //clientsideSocket.setUseClientMode( false );
-            } catch ( Exception e ) {
+                socket.startHandshake();
+                HANDSHAKE_COMPLETE.countDown();
+            } catch (Exception e) {
                 e.printStackTrace();
-                clientException = e;
-            } finally {
-                done = true;
-                try {
-                    clientsideSocket.close();
-                } catch ( IOException e ) {
-                    // eat it
-                }
             }
-            return;
-        }
-
-        boolean isDone() {
-            return done;
-        }
-
-        Exception getException() {
-            return clientException;
         }
     }
 }

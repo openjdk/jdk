@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 6232513
  * @summary RMI interoperability issue with DSAPublicKey obj between
  *              JDK1.4 & JDK1.5
- * @run main/othervm/java.security.policy=SerialDSAPubKey.policy -Dsun.security.key.serial.interop=true -Dsun.security.pkcs11.enable-solaris=false SerialDSAPubKey
+ * @run main/othervm -Dsun.security.key.serial.interop=true -Dsun.security.pkcs11.enable-solaris=false SerialDSAPubKey
  */
 
 import java.io.*;

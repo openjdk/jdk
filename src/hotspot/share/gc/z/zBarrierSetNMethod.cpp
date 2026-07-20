@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/z/zAddress.hpp"
@@ -31,9 +30,9 @@
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zResurrection.inline.hpp"
-#include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "logging/log.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 
 bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
@@ -71,12 +70,15 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return false;
   }
 
-  // Heal barriers
-  ZNMethod::nmethod_patch_barriers(nm);
+  {
+    ICacheInvalidationContext icic;
+    // Heal barriers
+    ZNMethod::nmethod_patch_barriers(nm, &icic);
 
-  // Heal oops
-  ZUncoloredRootProcessWeakOopClosure cl(ZNMethod::color(nm));
-  ZNMethod::nmethod_oops_do_inner(nm, &cl);
+    // Heal oops
+    ZUncoloredRootProcessWeakOopClosure cl(ZNMethod::color(nm));
+    ZNMethod::nmethod_oops_do_inner(nm, &cl, &icic);
+  }
 
   const uintptr_t prev_color = ZNMethod::color(nm);
   const uintptr_t new_color = *ZPointerStoreGoodMaskLowOrderBitsAddr;
@@ -95,6 +97,15 @@ int* ZBarrierSetNMethod::disarmed_guard_value_address() const {
   return (int*)ZPointerStoreGoodMaskLowOrderBitsAddr;
 }
 
-ByteSize ZBarrierSetNMethod::thread_disarmed_guard_value_offset() const {
-  return ZThreadLocalData::nmethod_disarmed_offset();
+oop ZBarrierSetNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {
+  return ZNMethod::oop_load_no_keepalive(nm, index);
+}
+
+oop ZBarrierSetNMethod::oop_load_phantom(const nmethod* nm, int index) {
+  return ZNMethod::oop_load_phantom(nm, index);
+}
+
+uintptr_t ZBarrierSetNMethod::color(nmethod* nm) {
+  // color is stored at low order bits of int; conversion to uintptr_t is fine
+  return uintptr_t(guard_value(nm) & ~not_entrant);
 }

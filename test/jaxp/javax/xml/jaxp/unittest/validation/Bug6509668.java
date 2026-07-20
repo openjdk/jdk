@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import javax.xml.validation.TypeInfoProvider;
 import javax.xml.validation.ValidatorHandler;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.TypeInfo;
 import org.xml.sax.Attributes;
@@ -49,11 +48,9 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6509668
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6509668
  * @run testng/othervm validation.Bug6509668
  * @summary Test TypeInfoProvider.getElementTypeInfo() for union type when startElement and endElement.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6509668 {
 
     public static final String XSD = "<?xml version='1.0'?>\n" + "<schema xmlns='http://www.w3.org/2001/XMLSchema'\n"

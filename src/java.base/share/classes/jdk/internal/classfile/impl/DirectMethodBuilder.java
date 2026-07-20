@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,12 @@
 
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.MethodTypeDesc;
 import java.util.function.Consumer;
 
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CodeTransform;
-import java.lang.classfile.CustomAttribute;
-import java.lang.classfile.MethodBuilder;
-import java.lang.classfile.MethodElement;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.constantpool.Utf8Entry;
+import static java.util.Objects.requireNonNull;
 
 public final class DirectMethodBuilder
         extends AbstractDirectBuilder<MethodModel>
@@ -55,14 +49,14 @@ public final class DirectMethodBuilder
                                MethodModel original) {
         super(constantPool, context);
         setOriginal(original);
-        this.name = nameInfo;
-        this.desc = typeInfo;
-        this.flags = flags;
+        this.name = requireNonNull(nameInfo);
+        this.desc = requireNonNull(typeInfo);
+        this.flags = Util.checkFlags(flags);
     }
 
     @Override
     public MethodBuilder withFlags(int flags) {
-        setFlags(flags);
+        setFlags(Util.checkFlags(flags));
         return this;
     }
 
@@ -114,7 +108,7 @@ public final class DirectMethodBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute<?>) element);
+            writeAttribute((CustomAttribute<?>) requireNonNull(element));
         }
         return this;
     }
@@ -148,9 +142,7 @@ public final class DirectMethodBuilder
 
     @Override
     public void writeTo(BufWriterImpl buf) {
-        buf.writeU2(flags);
-        buf.writeIndex(name);
-        buf.writeIndex(desc);
+        buf.writeU2U2U2(flags, buf.cpIndex(name), buf.cpIndex(desc));
         attributes.writeTo(buf);
     }
 }

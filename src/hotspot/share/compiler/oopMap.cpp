@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
@@ -35,7 +34,7 @@
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
@@ -47,9 +46,6 @@
 #endif
 #ifdef COMPILER2
 #include "opto/optoreg.hpp"
-#endif
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci_globals.hpp"
 #endif
 
 static_assert(sizeof(oop) == sizeof(intptr_t), "Derived pointer sanity check");
@@ -327,7 +323,7 @@ void OopMap::set_xxx(VMReg reg, OopMapValue::oop_types x, VMReg optional) {
 
   assert(reg->value() < _locs_length, "too big reg value for stack size");
   assert( _locs_used[reg->value()] == OopMapValue::unused_value, "cannot insert twice" );
-  debug_only( _locs_used[reg->value()] = x; )
+  DEBUG_ONLY( _locs_used[reg->value()] = x; )
 
   OopMapValue o(reg, x, optional);
   o.write_on(write_stream());
@@ -396,9 +392,9 @@ class AddDerivedOop : public DerivedOopClosure {
   };
 
   virtual void do_derived_oop(derived_base* base, derived_pointer* derived) {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
     DerivedPointerTable::add(derived, base);
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
   }
 };
 
@@ -512,7 +508,7 @@ void ImmutableOopMap::update_register_map(const frame *fr, RegisterMap *reg_map)
   // Any reg might be saved by a safepoint handler (see generate_handler_blob).
   assert( reg_map->_update_for_id == nullptr || fr->is_older(reg_map->_update_for_id),
          "already updated this map; do not 'update' it twice!" );
-  debug_only(reg_map->_update_for_id = fr->id());
+  DEBUG_ONLY(reg_map->_update_for_id = fr->id());
 
   // Check if caller must update oop argument
   assert((reg_map->include_argument_oops() ||
@@ -730,7 +726,6 @@ bool ImmutableOopMap::has_any(OopMapValue::oop_types type) const {
   return false;
 }
 
-#ifdef ASSERT
 int ImmutableOopMap::nr_of_bytes() const {
   OopMapStream oms(this);
 
@@ -739,7 +734,6 @@ int ImmutableOopMap::nr_of_bytes() const {
   }
   return sizeof(ImmutableOopMap) + oms.stream_position();
 }
-#endif
 
 ImmutableOopMapBuilder::ImmutableOopMapBuilder(const OopMapSet* set) : _set(set), _empty(nullptr), _last(nullptr), _empty_offset(-1), _last_offset(-1), _offset(0), _required(-1), _new_set(nullptr) {
   _mapping = NEW_RESOURCE_ARRAY(Mapping, _set->size());
@@ -865,13 +859,19 @@ ImmutableOopMapSet* ImmutableOopMapSet::build_from(const OopMapSet* oopmap_set) 
   return builder.build();
 }
 
+ImmutableOopMapSet* ImmutableOopMapSet::clone() const {
+  address buffer = NEW_C_HEAP_ARRAY(unsigned char, _size, mtCode);
+  memcpy(buffer, (address)this, _size);
+  return (ImmutableOopMapSet*)buffer;
+}
+
 void ImmutableOopMapSet::operator delete(void* p) {
-  FREE_C_HEAP_ARRAY(unsigned char, p);
+  FREE_C_HEAP_ARRAY(p);
 }
 
 //------------------------------DerivedPointerTable---------------------------
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 
 class DerivedPointerTable::Entry : public CHeapObj<mtCompiler> {
   derived_pointer* _location; // Location of derived pointer, also pointing to base
@@ -929,7 +929,7 @@ void DerivedPointerTable::add(derived_pointer* derived_loc, derived_base* base_l
     tty->print_cr(
       "Add derived pointer@" INTPTR_FORMAT
       " - Derived: " INTPTR_FORMAT
-      " Base: " INTPTR_FORMAT " (@" INTPTR_FORMAT ") (Offset: " INTX_FORMAT ")",
+      " Base: " INTPTR_FORMAT " (@" INTPTR_FORMAT ") (Offset: %zd)",
       p2i(derived_loc), derived_pointer_value(*derived_loc), intptr_t(*base_loc), p2i(base_loc), offset
     );
   }
@@ -959,7 +959,7 @@ void DerivedPointerTable::update_pointers() {
 
     if (TraceDerivedPointers) {
       tty->print_cr("Updating derived pointer@" INTPTR_FORMAT
-                    " - Derived: " INTPTR_FORMAT "  Base: " INTPTR_FORMAT " (Offset: " INTX_FORMAT ")",
+                    " - Derived: " INTPTR_FORMAT "  Base: " INTPTR_FORMAT " (Offset: %zd)",
                     p2i(derived_loc), derived_pointer_value(*derived_loc), p2i(base), offset);
     }
 
@@ -970,4 +970,4 @@ void DerivedPointerTable::update_pointers() {
   _active = false;
 }
 
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2

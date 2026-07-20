@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package gc.arguments;
  * @test TestTargetSurvivorRatioFlag
  * @summary Verify that option TargetSurvivorRatio affects survivor space occupancy after minor GC.
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
- * @requires vm.opt.UseJVMCICompiler != true
  * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @library /test/lib
  * @library /
@@ -254,7 +253,7 @@ public class TestTargetSurvivorRatioFlag {
         // Desired size of memory allocated at once
         public static final int CHUNK_SIZE = 1024;
         // Length of byte[] array that will have occupy CHUNK_SIZE bytes in heap
-        public static final int ARRAY_LENGTH = CHUNK_SIZE - Unsafe.ARRAY_BYTE_BASE_OFFSET;
+        public static final int ARRAY_LENGTH = CHUNK_SIZE - (int) Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
         public static void main(String args[]) throws Exception {
             if (args.length != 1) {
@@ -311,8 +310,8 @@ public class TestTargetSurvivorRatioFlag {
          */
         public static long getMaxSurvivorSize() {
             if (GCTypes.YoungGCType.getYoungGCType() == GCTypes.YoungGCType.G1) {
-                int youngLength = (int) Math.max(MAX_NEW_SIZE / wb.g1RegionSize(), 1);
-                return (long) Math.ceil(youngLength / (double) SURVIVOR_RATIO) * wb.g1RegionSize();
+                int numYoungRegions = (int) Math.max(MAX_NEW_SIZE / wb.g1RegionSize(), 1);
+                return (long) Math.ceil(numYoungRegions / (double) SURVIVOR_RATIO) * wb.g1RegionSize();
             } else {
                 return HeapRegionUsageTool.getSurvivorUsage().getMax();
             }

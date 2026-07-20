@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+
+    <xs:annotation>
+        <xs:documentation>
+      Hypertext Module
+      This is the XML Schema Hypertext module for XHTML
+            
+        * a
+            
+      This module declares the anchor ('a') element type, which
+      defines the source of a hypertext link. The destination
+      (or link 'target') is identified via its 'id' attribute 
+      rather than the 'name' attribute as was used in HTML.
+
+      $Id: xhtml-hypertext-1.xsd,v 1.4 2005/09/26 23:37:47 ahby Exp $
+    </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+        <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstract_modules.html#s_hypertextmodule"/>
+    </xs:annotation>
+    <xs:attributeGroup name="xhtml.a.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+        <xs:attribute name="href" type="xh11d:URI"/>
+        <xs:attribute name="charset" type="xh11d:Charset"/>
+        <xs:attribute name="type" type="xh11d:ContentType"/>
+        <xs:attribute name="hreflang" type="xh11d:LanguageCode"/>
+        <xs:attribute name="rel" type="xh11d:LinkTypes"/>
+        <xs:attribute name="rev" type="xh11d:LinkTypes"/>
+        <xs:attribute name="accesskey" type="xh11d:Character"/>
+        <xs:attribute name="tabindex" type="xh11d:Number"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.a.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.InlNoAnchor.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.a.type" mixed="true">
+        <xs:group ref="xhtml.a.content"/>
+        <xs:attributeGroup ref="xhtml.a.attlist"/>
+    </xs:complexType>
+</xs:schema>

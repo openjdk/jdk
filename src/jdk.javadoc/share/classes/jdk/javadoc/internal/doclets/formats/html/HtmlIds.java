@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,9 @@ public class HtmlIds {
     static final HtmlId FIELD_SUMMARY = HtmlId.of("field-summary");
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
     static final HtmlId HELP_NAVIGATION = HtmlId.of("help-navigation");
+    static final HtmlId HELP_KEYBOARD_NAVIGATION = HtmlId.of("help-keyboard-navigation");
     static final HtmlId HELP_PAGES = HtmlId.of("help-pages");
+    static final HtmlId HELP_RELEASES = HtmlId.of("help-releases");
     static final HtmlId METHOD_DETAIL = HtmlId.of("method-detail");
     static final HtmlId METHOD_SUMMARY = HtmlId.of("method-summary");
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
@@ -110,9 +112,20 @@ public class HtmlIds {
     static final HtmlId RELATED_PACKAGE_SUMMARY = HtmlId.of("related-package-summary");
     static final HtmlId RESET_SEARCH = HtmlId.of("reset-search");
     static final HtmlId SEARCH_INPUT = HtmlId.of("search-input");
+    static final HtmlId SEARCH_INPUT_CONTAINER = HtmlId.of("search-input-container");
+    static final HtmlId SEARCH_MODULES = HtmlId.of("search-modules");
+    static final HtmlId SEARCH_PAGE_LINK = HtmlId.of("search-page-link");
+    static final HtmlId SEARCH_RESULT_CONTAINER = HtmlId.of("search-result-container");
+    static final HtmlId SEARCH_RESULT_SECTION = HtmlId.of("search-result-section");
     static final HtmlId SERVICES = HtmlId.of("services-summary");
     static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
+    static final HtmlId THEME_BUTTON = HtmlId.of("theme-button");
+    static final HtmlId THEME_DARK = HtmlId.of("theme-dark");
+    static final HtmlId THEME_LIGHT = HtmlId.of("theme-light");
+    static final HtmlId THEME_OS = HtmlId.of("theme-os");
+    static final HtmlId THEME_PANEL = HtmlId.of("theme-panel");
     static final HtmlId UNNAMED_PACKAGE_ANCHOR = HtmlId.of("unnamed-package");
+    static final HtmlId TOC_ORDER_TOGGLE = HtmlId.of("toc-lexical-order-toggle");
     private static final String FIELDS_INHERITANCE = "fields-inherited-from-class-";
     private static final String METHODS_INHERITANCE = "methods-inherited-from-class-";
     private static final String NESTED_CLASSES_INHERITANCE = "nested-classes-inherited-from-class-";

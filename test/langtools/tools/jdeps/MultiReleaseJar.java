@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 8153654 8176333
  * @summary Tests for jdeps tool with multi-release jar files
- * @modules jdk.jdeps/com.sun.tools.jdeps
  * @library mrjar mrjar/base mrjar/9 mrjar/10 mrjar/v9 mrjar/v10
  * @build test.* p.* q.* foo/* Main
  * @run testng MultiReleaseJar
@@ -38,6 +37,7 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
@@ -60,6 +60,15 @@ public class MultiReleaseJar {
         fileSep = System.getProperty("file.separator");
         cmdPath = Paths.get(testJdk, "bin");
 
+        // fixup classfile versions
+        forceReleaseInClassFile(9, "Main.class");
+        forceReleaseInClassFile(9, "base/test/Version.class", "base/p/Foo.class");
+        forceReleaseInClassFile(9, "9/test/NonPublic.class", "9/test/Version.class");
+        forceReleaseInClassFile(9, "v9/p/Foo.class", "v9/q/Bar.class");
+        forceReleaseInClassFile(9, "v9/p/Foo.class", "v9/q/Bar.class");
+        forceReleaseInClassFile(10, "10/test/Version.class");
+        forceReleaseInClassFile(10, "v10/q/Bar.class", "v10/q/Gee.class");
+
         // build Version.jar, Version_9.jar and main.jar
         Result r = run("jar -cf Version.jar -C base test --release 9 -C 9 test --release 10 -C 10 test");
         checkResult(r);
@@ -74,8 +83,20 @@ public class MultiReleaseJar {
         checkResult(r);
 
         Path foo = Paths.get(System.getProperty("test.classes")).resolve("modules").resolve("foo");
+        forceReleaseInClassFile(9, foo.resolve("module-info.class"));
         r = run("jar -uf Foo.jar --release 9 -C " + foo.toString() + " module-info.class --release 10 -C v10 q");
         checkResult(r);
+    }
+
+    private void forceReleaseInClassFile(int release, Object... paths) {
+        for (var path : paths) {
+            try (var file = new RandomAccessFile(mrjar.resolve(path.toString()).toFile(), "rw")) {
+                file.seek(4 + 2); // skip magic and minor
+                file.writeShort(release + 44); // overwrite major
+            } catch (Exception exception) {
+                throw new RuntimeException(exception);
+            }
+        }
     }
 
     @Test

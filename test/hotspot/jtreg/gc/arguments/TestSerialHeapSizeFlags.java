@@ -29,6 +29,7 @@ package gc.arguments;
  * @summary Tests argument processing for initial and maximum heap size for the Serial collector
  * @key flag-sensitive
  * @requires vm.gc.Serial & vm.opt.MinHeapSize == null & vm.opt.MaxHeapSize == null & vm.opt.InitialHeapSize == null
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc

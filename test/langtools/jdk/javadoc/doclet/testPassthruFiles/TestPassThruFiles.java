@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8323628
+ * @bug      8323628 8351626 8378228
  * @summary  Update license on "pass-through" files
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -60,12 +60,9 @@ public class TestPassThruFiles extends JavadocTester {
         checkExit(Exit.OK);
 
         var files = List.of(
-                "resource-files/copy.svg",
-                "resource-files/link.svg",
                 "resource-files/stylesheet.css",
                 "script-files/script.js",
-                "script-files/search.js",
-                "script-files/search-page.js"
+                "script-files/search.js"
         );
 
         for (var f : files) {
@@ -115,7 +112,6 @@ public class TestPassThruFiles extends JavadocTester {
      */
     private boolean requiresCheck(Path p) {
         var fn = p.getFileName().toString();
-        return !fn.startsWith("jquery")
-                && !fn.endsWith(".png");
+        return !fn.endsWith(".svg");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package sun.awt.X11;
 import java.util.*;
 import jdk.internal.misc.Unsafe;
 
-public class WindowPropertyGetter {
+public final class WindowPropertyGetter {
     private static Unsafe unsafe = XlibWrapper.unsafe;
     private final long actual_type = unsafe.allocateMemory(8);
     private final long actual_format = unsafe.allocateMemory(4);

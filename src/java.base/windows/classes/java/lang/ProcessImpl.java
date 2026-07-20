@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ProcessBuilder.Redirect;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
@@ -48,7 +46,6 @@ import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.misc.Blocker;
-import sun.security.action.GetPropertyAction;
 
 /* This class is for the exclusive use of ProcessBuilder.start() to
  * create new processes.
@@ -71,25 +68,15 @@ final class ProcessImpl extends Process {
      * to append to a file does not open the file in a manner that guarantees
      * that writes by the child process will be atomic.
      */
-    @SuppressWarnings("removal")
     private static FileOutputStream newFileOutputStream(File f, boolean append)
         throws IOException
     {
         if (append) {
             String path = f.getPath();
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null)
-                sm.checkWrite(path);
             long handle = openForAtomicAppend(path);
             final FileDescriptor fd = new FileDescriptor();
             fdAccess.setHandle(fd, handle);
-            return AccessController.doPrivileged(
-                new PrivilegedAction<FileOutputStream>() {
-                    public FileOutputStream run() {
-                        return new FileOutputStream(fd);
-                    }
-                }
-            );
+            return new FileOutputStream(fd);
         } else {
             return new FileOutputStream(f);
         }
@@ -132,6 +119,12 @@ final class ProcessImpl extends Process {
                     stdHandles[1] = -1L;
                 } else if (redirects[1] == Redirect.INHERIT) {
                     stdHandles[1] = fdAccess.getHandle(FileDescriptor.out);
+                    if (stdHandles[1] == -1L) {
+                        // FileDescriptor.out has been closed.
+                        f1 = newFileOutputStream(Redirect.DISCARD.file(),
+                                                 Redirect.DISCARD.append());
+                        stdHandles[1] = fdAccess.getHandle(f1.getFD());
+                    }
                 } else if (redirects[1] instanceof ProcessBuilder.RedirectPipeImpl) {
                     stdHandles[1] = fdAccess.getHandle(((ProcessBuilder.RedirectPipeImpl) redirects[1]).getFd());
                     // Force getInputStream to return a null stream,
@@ -147,6 +140,12 @@ final class ProcessImpl extends Process {
                     stdHandles[2] = -1L;
                 } else if (redirects[2] == Redirect.INHERIT) {
                     stdHandles[2] = fdAccess.getHandle(FileDescriptor.err);
+                    if (stdHandles[2] == -1L) {
+                        // FileDescriptor.err has been closed.
+                        f2 = newFileOutputStream(Redirect.DISCARD.file(),
+                                                 Redirect.DISCARD.append());
+                        stdHandles[2] = fdAccess.getHandle(f2.getFD());
+                    }
                 } else if (redirects[2] instanceof ProcessBuilder.RedirectPipeImpl) {
                     stdHandles[2] = fdAccess.getHandle(((ProcessBuilder.RedirectPipeImpl) redirects[2]).getFd());
                 } else {
@@ -212,18 +211,18 @@ final class ProcessImpl extends Process {
     }
 
     private static final int VERIFICATION_CMD_BAT = 0;
-    private static final int VERIFICATION_WIN32 = 1;
     private static final int VERIFICATION_WIN32_SAFE = 2; // inside quotes not allowed
     private static final int VERIFICATION_LEGACY = 3;
     // See Command shell overview for documentation of special characters.
     // https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-xp/bb490954(v=technet.10)
-    private static final char ESCAPE_VERIFICATION[][] = {
+    private static final String ESCAPE_VERIFICATION[] = {
         // We guarantee the only command file execution for implicit [cmd.exe] run.
         //    http://technet.microsoft.com/en-us/library/bb490954.aspx
-        {' ', '\t', '\"', '<', '>', '&', '|', '^'},
-        {' ', '\t', '\"', '<', '>'},
-        {' ', '\t', '\"', '<', '>'},
-        {' ', '\t'}
+        // All space characters require quoting are checked in needsEscaping().
+        "\"<>&|^",
+        "\"<>",
+        "\"<>",
+        ""
     };
 
     private static String createCommandLine(int verificationType,
@@ -338,9 +337,14 @@ final class ProcessImpl extends Process {
         }
 
         if (!argIsQuoted) {
-            char testEscape[] = ESCAPE_VERIFICATION[verificationType];
-            for (int i = 0; i < testEscape.length; ++i) {
-                if (arg.indexOf(testEscape[i]) >= 0) {
+            for (int i = 0; i < arg.length(); i++) {
+                char ch = arg.charAt(i);
+                if (Character.isLetterOrDigit(ch))
+                    continue;   // skip over common characters
+                // All space chars require quotes and other mode specific characters
+                if (Character.isSpaceChar(ch) ||
+                        Character.isWhitespace(ch) ||
+                        ESCAPE_VERIFICATION[verificationType].indexOf(ch) >= 0) {
                     return true;
                 }
             }
@@ -391,12 +395,6 @@ final class ProcessImpl extends Process {
         return (upName.endsWith(".EXE") || upName.indexOf('.') < 0);
     }
 
-    // Old version that can be bypassed
-    private boolean isShellFile(String executablePath) {
-        String upPath = executablePath.toUpperCase(Locale.ROOT);
-        return (upPath.endsWith(".CMD") || upPath.endsWith(".BAT"));
-    }
-
     private String quoteString(String arg) {
         StringBuilder argbuf = new StringBuilder(arg.length() + 2);
         return argbuf.append('"').append(arg).append('"').toString();
@@ -424,7 +422,6 @@ final class ProcessImpl extends Process {
     private InputStream stdout_stream;
     private InputStream stderr_stream;
 
-    @SuppressWarnings("removal")
     private ProcessImpl(String cmd[],
                         final String envblock,
                         final String path,
@@ -434,13 +431,10 @@ final class ProcessImpl extends Process {
         throws IOException
     {
         String cmdstr;
-        final SecurityManager security = System.getSecurityManager();
-        final String value = GetPropertyAction.
-                privilegedGetProperty("jdk.lang.Process.allowAmbiguousCommands",
-                        (security == null ? "true" : "false"));
+        final String value = System.getProperty("jdk.lang.Process.allowAmbiguousCommands", "true");
         final boolean allowAmbiguousCommands = !"false".equalsIgnoreCase(value);
 
-        if (allowAmbiguousCommands && security == null) {
+        if (allowAmbiguousCommands) {
             // Legacy mode.
 
             // Normalize path if possible.
@@ -478,21 +472,15 @@ final class ProcessImpl extends Process {
                 // Parse the command line again.
                 cmd = getTokensFromCommand(join.toString());
                 executablePath = getExecutablePath(cmd[0]);
-
-                // Check new executable name once more
-                if (security != null)
-                    security.checkExec(executablePath);
             }
 
             // Quotation protects from interpretation of the [path] argument as
             // start of longer path with spaces. Quotation has no influence to
             // [.exe] extension heuristic.
-            boolean isShell = allowAmbiguousCommands ? isShellFile(executablePath)
-                    : !isExe(executablePath);
+            boolean isShell = !isExe(executablePath);
             cmdstr = createCommandLine(
                     // We need the extended verification procedures
-                    isShell ? VERIFICATION_CMD_BAT
-                            : (allowAmbiguousCommands ? VERIFICATION_WIN32 : VERIFICATION_WIN32_SAFE),
+                    isShell ? VERIFICATION_CMD_BAT : VERIFICATION_WIN32_SAFE,
                     quoteString(executablePath),
                     cmd);
         }
@@ -505,39 +493,34 @@ final class ProcessImpl extends Process {
 
         processHandle = ProcessHandleImpl.getInternal(getProcessId0(handle));
 
-        java.security.AccessController.doPrivileged(
-        new java.security.PrivilegedAction<Void>() {
-        public Void run() {
-            if (stdHandles[0] == -1L)
-                stdin_stream = ProcessBuilder.NullOutputStream.INSTANCE;
-            else {
-                FileDescriptor stdin_fd = new FileDescriptor();
-                fdAccess.setHandle(stdin_fd, stdHandles[0]);
-                fdAccess.registerCleanup(stdin_fd);
-                stdin_stream = new BufferedOutputStream(
-                    new PipeOutputStream(stdin_fd));
-            }
+        if (stdHandles[0] == -1L)
+            stdin_stream = ProcessBuilder.NullOutputStream.INSTANCE;
+        else {
+            FileDescriptor stdin_fd = new FileDescriptor();
+            fdAccess.setHandle(stdin_fd, stdHandles[0]);
+            fdAccess.registerCleanup(stdin_fd);
+            stdin_stream = new BufferedOutputStream(
+                new PipeOutputStream(stdin_fd));
+        }
 
-            if (stdHandles[1] == -1L || forceNullOutputStream)
-                stdout_stream = ProcessBuilder.NullInputStream.INSTANCE;
-            else {
-                FileDescriptor stdout_fd = new FileDescriptor();
-                fdAccess.setHandle(stdout_fd, stdHandles[1]);
-                fdAccess.registerCleanup(stdout_fd);
-                stdout_stream = new BufferedInputStream(
-                    new PipeInputStream(stdout_fd));
-            }
+        if (stdHandles[1] == -1L || forceNullOutputStream)
+            stdout_stream = ProcessBuilder.NullInputStream.INSTANCE;
+        else {
+            FileDescriptor stdout_fd = new FileDescriptor();
+            fdAccess.setHandle(stdout_fd, stdHandles[1]);
+            fdAccess.registerCleanup(stdout_fd);
+            stdout_stream = new BufferedInputStream(
+                new PipeInputStream(stdout_fd));
+        }
 
-            if (stdHandles[2] == -1L)
-                stderr_stream = ProcessBuilder.NullInputStream.INSTANCE;
-            else {
-                FileDescriptor stderr_fd = new FileDescriptor();
-                fdAccess.setHandle(stderr_fd, stdHandles[2]);
-                fdAccess.registerCleanup(stderr_fd);
-                stderr_stream = new PipeInputStream(stderr_fd);
-            }
-
-            return null; }});
+        if (stdHandles[2] == -1L)
+            stderr_stream = ProcessBuilder.NullInputStream.INSTANCE;
+        else {
+            FileDescriptor stderr_fd = new FileDescriptor();
+            fdAccess.setHandle(stderr_fd, stdHandles[2]);
+            fdAccess.registerCleanup(stderr_fd);
+            stderr_stream = new PipeInputStream(stderr_fd);
+        }
     }
 
     public OutputStream getOutputStream() {
@@ -632,11 +615,6 @@ final class ProcessImpl extends Process {
 
     @Override
     public ProcessHandle toHandle() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("manageProcess"));
-        }
         return processHandle;
     }
 

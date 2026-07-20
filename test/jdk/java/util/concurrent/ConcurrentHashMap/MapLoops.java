@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @summary Exercise multithreaded maps, by default ConcurrentHashMap.
+ * @summary Exercise multithreaded maps.
  * Multithreaded hash table test.  Each thread does a random walk
  * though elements of "key" array. On each iteration, it checks if
  * table includes key.  If absent, with probability pinsert it
@@ -42,16 +42,8 @@
  * it.  (pinsert and premove are expressed as percentages to simplify
  * parsing from command line.)
  * @library /test/lib
- * @run main/timeout=1600 MapLoops
- */
-
-/*
- * @test
- * @summary Exercise multithreaded maps, using only heavy monitors.
- * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch == "ppc64" | os.arch == "ppc64le" | os.arch == "riscv64" | os.arch == "s390x"
- * @requires vm.debug
- * @library /test/lib
- * @run main/othervm/timeout=1600 -XX:LockingMode=0 -XX:+VerifyHeavyMonitors MapLoops
+ * @run main/timeout=1600 MapLoops java.util.concurrent.ConcurrentHashMap
+ * @run main/timeout=1600 MapLoops java.util.concurrent.ConcurrentSkipListMap
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1CardSetMemory.inline.hpp"
 #include "gc/g1/g1MonotonicArena.inline.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/ostream.hpp"
 
 G1CardSetAllocator::G1CardSetAllocator(const char* name,
@@ -92,7 +90,7 @@ G1CardSetMemoryManager::~G1CardSetMemoryManager() {
   for (uint i = 0; i < num_mem_object_types(); i++) {
     _allocators[i].~G1CardSetAllocator();
   }
-  FREE_C_HEAP_ARRAY(G1CardSetAllocator<G1CardSetContainer>, _allocators);
+  FREE_C_HEAP_ARRAY(_allocators);
 }
 
 void G1CardSetMemoryManager::free(uint type, void* value) {

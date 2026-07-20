@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,11 @@
  * @bug 4408997
  * @summary Should be able to pass a Provider object to getInstance().
  * @compile StubProvider.java StubProviderImpl.java
- * @run main/othervm/policy=provider.policy GetInstance
+ * @run main GetInstance
  * The test passes if it returns.
  * The test fails if an exception is thrown.
  */
-import java.security.cert.CertPathParameters;
-import java.security.cert.CertPathBuilderResult;
-import java.security.cert.CertPathBuilderSpi;
 import java.security.Provider;
-import java.security.AccessController;
 import java.security.cert.CertPathBuilder;
 import java.security.NoSuchAlgorithmException;
 

@@ -31,7 +31,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
@@ -43,7 +42,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -94,7 +92,6 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      */
     protected Content getTypeParameters(ExecutableElement member) {
         HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, LINK_TYPE_PARAMS_AND_BOUNDS, member)
-                .addLineBreaksInTypeParameters(true)
                 .showTypeParameterAnnotations(true);
         return writer.getTypeParameterLinks(linkInfo);
     }
@@ -129,7 +126,35 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
 
     @Override
     protected void addInheritedSummaryLink(TypeElement te, Element member, Content target) {
-        target.add(writer.getDocLink(PLAIN, te, member, name(member)));
+        // Use method name as link label, but add signature as title attribute
+        String name = name(member);
+        ExecutableElement ee = (ExecutableElement) member;
+        String title = name + utils.makeSignature(ee, typeElement, false, true);
+        target.add(writer.getLink(new HtmlLinkInfo(configuration, PLAIN, te)
+                .label(name)
+                .fragment(htmlIds.forMember(ee).getFirst().name())
+                .targetMember(member)
+                .title(title)));
+    }
+
+    /**
+     * Returns a label for the given element to be used the table of contents sidebar.
+     *
+     * @param executableElement method or constructor
+     * @return the link label
+     */
+    protected Content getTOCLabel(ExecutableElement executableElement) {
+        var signature = utils.makeSignature(executableElement, typeElement, false, true);
+        var label = new ContentBuilder(Text.of(utils.getSimpleName(executableElement)));
+        // Insert line break opportunity before first parameter.
+        if (signature.length() > 2) {
+            label.add(Text.of(signature.substring(0, 1)))
+                    .add(HtmlTree.WBR())
+                    .add(Text.of(signature.substring(1)));
+        } else {
+            label.add(signature);
+        }
+        return label;
     }
 
     /**

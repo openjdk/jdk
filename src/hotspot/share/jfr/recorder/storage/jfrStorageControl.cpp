@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/storage/jfrStorageControl.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 const size_t max_lease_factor = 2;
 JfrStorageControl::JfrStorageControl(size_t global_count_total, size_t in_memory_discard_threshold) :
@@ -49,7 +48,7 @@ size_t JfrStorageControl::full_count() const {
 }
 
 bool JfrStorageControl::increment_full() {
-  const size_t result = Atomic::add(&_full_count, (size_t)1);
+  const size_t result = AtomicAccess::add(&_full_count, (size_t)1);
   return to_disk() && result > _to_disk_threshold;
 }
 
@@ -60,12 +59,12 @@ size_t JfrStorageControl::decrement_full() {
   do {
     current = _full_count;
     exchange = current - 1;
-  } while (Atomic::cmpxchg(&_full_count, current, exchange) != current);
+  } while (AtomicAccess::cmpxchg(&_full_count, current, exchange) != current);
   return exchange;
 }
 
 void JfrStorageControl::reset_full() {
-  Atomic::store(&_full_count, (size_t)0);
+  AtomicAccess::store(&_full_count, (size_t)0);
 }
 
 bool JfrStorageControl::should_post_buffer_full_message() const {
@@ -77,11 +76,11 @@ bool JfrStorageControl::should_discard() const {
 }
 
 size_t JfrStorageControl::global_lease_count() const {
-  return Atomic::load(&_global_lease_count);
+  return AtomicAccess::load(&_global_lease_count);
 }
 
 size_t JfrStorageControl::increment_leased() {
-  return Atomic::add(&_global_lease_count, (size_t)1);
+  return AtomicAccess::add(&_global_lease_count, (size_t)1);
 }
 
 size_t JfrStorageControl::decrement_leased() {
@@ -90,7 +89,7 @@ size_t JfrStorageControl::decrement_leased() {
   do {
     current = _global_lease_count;
     exchange = current - 1;
-  } while (Atomic::cmpxchg(&_global_lease_count, current, exchange) != current);
+  } while (AtomicAccess::cmpxchg(&_global_lease_count, current, exchange) != current);
   return exchange;
 }
 

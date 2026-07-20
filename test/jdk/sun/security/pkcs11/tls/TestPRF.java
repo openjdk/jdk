@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @modules java.base/sun.security.internal.spec
  *          jdk.crypto.cryptoki
  * @run main/othervm TestPRF
- * @run main/othervm -Djava.security.manager=allow TestPRF sm policy
  */
 
 import java.io.BufferedReader;
@@ -41,6 +40,8 @@ import java.util.Arrays;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
+import jtreg.SkippedException;
 import sun.security.internal.spec.TlsPrfParameterSpec;
 
 public class TestPRF extends PKCS11Test {
@@ -54,8 +55,7 @@ public class TestPRF extends PKCS11Test {
     @Override
     public void main(Provider provider) throws Exception {
         if (provider.getService("KeyGenerator", "SunTlsPrf") == null) {
-            System.out.println("Provider does not support algorithm, skipping");
-            return;
+            throw new SkippedException("Provider does not support algorithm, skipping");
         }
 
         try (BufferedReader reader = Files.newBufferedReader(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
@@ -102,6 +101,10 @@ public class ClassFileReader implements Closeable {
         return skippedEntries;
     }
 
+    protected void skipEntry(Throwable ex, String entryPath) {
+        skippedEntries.add(String.format("%s: %s", ex.toString(), entryPath));
+    }
+
     /**
      * Returns all entries in this archive.
      */
@@ -135,8 +138,15 @@ public class ClassFileReader implements Closeable {
         return null;
     }
 
-    public Iterable<ClassModel> getClassFiles() throws IOException {
-        return FileIterator::new;
+    public void forEachClassFile(Consumer<ClassModel> handler) throws IOException {
+        if (baseFileName.endsWith(".class")) {
+            // propagate ClassFileError for single file
+            try {
+                handler.accept(readClassFile(path));
+            } catch (ClassFileError ex) {
+                skipEntry(ex, path.toString());
+            }
+        }
     }
 
     protected ClassModel readClassFile(Path p) throws IOException {
@@ -165,33 +175,6 @@ public class ClassFileReader implements Closeable {
 
     @Override
     public void close() throws IOException {
-    }
-
-    class FileIterator implements Iterator<ClassModel> {
-        int count;
-        FileIterator() {
-            this.count = 0;
-        }
-        public boolean hasNext() {
-            return count == 0 && baseFileName.endsWith(".class");
-        }
-
-        public ClassModel next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-            try {
-                ClassModel cf = readClassFile(path);
-                count++;
-                return cf;
-            } catch (IOException e) {
-                throw new ClassFileError(e);
-            }
-        }
-
-        public void remove() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
     }
 
     public String toString() {
@@ -241,42 +224,17 @@ public class ClassFileReader implements Closeable {
             return null;
         }
 
-        public Iterable<ClassModel> getClassFiles() throws IOException {
-            final Iterator<ClassModel> iter = new DirectoryIterator();
-            return () -> iter;
-        }
-
-        class DirectoryIterator implements Iterator<ClassModel> {
-            private final List<Path> entries;
-            private int index = 0;
-            DirectoryIterator() throws IOException {
-                List<Path> paths = null;
-                try (Stream<Path> stream = Files.walk(path, Integer.MAX_VALUE)) {
-                    paths = stream.filter(ClassFileReader::isClass).toList();
-
-                }
-                this.entries = paths;
-                this.index = 0;
-            }
-
-            public boolean hasNext() {
-                return index != entries.size();
-            }
-
-            public ClassModel next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                Path path = entries.get(index++);
-                try {
-                    return readClassFile(path);
-                } catch (IOException e) {
-                    throw new ClassFileError(e);
-                }
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException("Not supported yet.");
+        @Override
+        public void forEachClassFile(Consumer<ClassModel> handler) throws IOException {
+            try (Stream<Path> stream = Files.walk(path, Integer.MAX_VALUE)) {
+                stream.filter(ClassFileReader::isClass)
+                      .forEach(e -> {
+                          try {
+                              handler.accept(readClassFile(e));
+                          } catch (ClassFileError | IOException ex) {
+                              skipEntry(ex, e.toString());
+                          }
+                      });
             }
         }
     }
@@ -314,14 +272,15 @@ public class ClassFileReader implements Closeable {
             return jf;
         }
 
+        private static boolean isJarEntryClass(JarEntry e) {
+            return e.getName().endsWith(".class");
+        }
+
         protected Set<String> scan() {
-            try (JarFile jf = openJarFile(path.toFile(), version)) {
-                return jf.versionedStream().map(JarEntry::getName)
-                         .filter(n -> n.endsWith(".class"))
-                         .collect(Collectors.toSet());
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            return jarfile.versionedStream()
+                          .filter(JarFileReader::isJarEntryClass)
+                          .map(JarEntry::getName)
+                          .collect(Collectors.toSet());
         }
 
         public ClassModel getClassFile(String name) throws IOException {
@@ -358,76 +317,17 @@ public class ClassFileReader implements Closeable {
             }
         }
 
-        public Iterable<ClassModel> getClassFiles() throws IOException {
-            final Iterator<ClassModel> iter = new JarFileIterator(this, jarfile);
-            return () -> iter;
-        }
-    }
-
-    class JarFileIterator implements Iterator<ClassModel> {
-        protected final JarFileReader reader;
-        protected Iterator<JarEntry> entries;
-        protected JarFile jf;
-        protected JarEntry nextEntry;
-        protected ClassModel cf;
-        JarFileIterator(JarFileReader reader) {
-            this(reader, null);
-        }
-        JarFileIterator(JarFileReader reader, JarFile jarfile) {
-            this.reader = reader;
-            setJarFile(jarfile);
-        }
-
-        void setJarFile(JarFile jarfile) {
-            if (jarfile == null) return;
-
-            this.jf = jarfile;
-            this.entries = jarfile.versionedStream().iterator();
-            this.nextEntry = nextEntry();
-        }
-
-        public boolean hasNext() {
-            if (nextEntry != null && cf != null) {
-                return true;
-            }
-            while (nextEntry != null) {
-                try {
-                    cf = reader.readClassFile(jf, nextEntry);
-                    return true;
-                } catch (ClassFileError | IOException ex) {
-                    skippedEntries.add(String.format("%s: %s (%s)",
-                                                     ex.getMessage(),
-                                                     nextEntry.getName(),
-                                                     jf.getName()));
-                }
-                nextEntry = nextEntry();
-            }
-            return false;
-        }
-
-        public ClassModel next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-            ClassModel classFile = cf;
-            cf = null;
-            nextEntry = nextEntry();
-            return classFile;
-        }
-
-        protected JarEntry nextEntry() {
-            while (entries.hasNext()) {
-                JarEntry e = entries.next();
-                String name = e.getName();
-                if (name.endsWith(".class")) {
-                    return e;
-                }
-            }
-            return null;
-        }
-
-        public void remove() {
-            throw new UnsupportedOperationException("Not supported yet.");
+        @Override
+        public void forEachClassFile(Consumer<ClassModel> handler) throws IOException {
+            jarfile.versionedStream()
+                   .filter(JarFileReader::isJarEntryClass)
+                   .forEach(e -> {
+                       try {
+                           handler.accept(readClassFile(jarfile, e));
+                       } catch (ClassFileError | IOException ex) {
+                           skipEntry(ex, e.getName() + " (" + jarfile.getName() + ")");
+                       }
+                   });
         }
     }
 }

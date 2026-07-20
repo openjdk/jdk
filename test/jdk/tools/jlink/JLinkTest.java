@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,38 +27,32 @@ import java.io.StringWriter;
 import java.lang.module.ModuleDescriptor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.PluginRepository;
+import jdk.tools.jlink.plugin.Plugin;
 import tests.Helper;
 import tests.JImageGenerator;
 
 /*
  * @test
  * @summary Test image creation
- * @bug 8189777
- * @bug 8194922
- * @bug 8206962
- * @bug 8240349
+ * @bug 8189777 8194922 8206962 8240349 8163382 8165735 8166810 8173717 8321139
  * @author Jean-Francois Denise
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../lib
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
  * @build tests.*
- * @run main/othervm -Xmx1g JLinkTest
+ * @run main/othervm/timeout=480 -Xmx1g JLinkTest
  */
 public class JLinkTest {
     static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
@@ -136,11 +130,11 @@ public class JLinkTest {
 
         {
             // No --module-path specified. --add-modules ALL-MODULE-PATH specified.
-            String imageDir = "bug8189777-all-module-path";
+            String imageDir = "bug8345259-all-module-path";
             JImageGenerator.getJLinkTask()
                     .output(helper.createNewImageDir(imageDir))
                     .addMods("ALL-MODULE-PATH")
-                    .call().assertSuccess();
+                    .call().assertFailure();
         }
 
         {
@@ -359,6 +353,39 @@ public class JLinkTest {
             String moduleName = "invalidCompressLevel";
             helper.generateDefaultJModule(moduleName, "composite2");
             helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: Invalid compression level invalid");
+        }
+
+        // short command  without argument
+        {
+            String[] userOptions = {"-c"};
+            String moduleName = "invalidCompressLevelEmpty";
+            helper.generateDefaultJModule(moduleName, "composite2");
+            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: no value given for -c");
+        }
+
+        // invalid short command
+        {
+            String[] userOptions = {"-c", "3", "--output", "image"};
+            String moduleName = "invalidCompressLevel3";
+            helper.generateDefaultJModule(moduleName, "composite2");
+            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: Invalid compression level 3");
+        }
+
+
+        // invalid argument value
+        {
+            String[] userOptions = {"--compress", "42", "--output", "image"};
+            String moduleName = "invalidCompressLevel42";
+            helper.generateDefaultJModule(moduleName, "composite2");
+            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: Invalid compression level 42");
+        }
+
+        // invalid argument value
+        {
+            String[] userOptions = {"--compress", "zip-", "--output", "image"};
+            String moduleName = "invalidCompressLevelZip";
+            helper.generateDefaultJModule(moduleName, "composite2");
+            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: Invalid compression level zip-");
         }
 
         // orphan argument - JDK-8166810

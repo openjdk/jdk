@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,10 +70,6 @@ public abstract class UserPrincipalLookupService {
      *          the principal does not exist
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, it checks
-     *          {@link RuntimePermission}{@code ("lookupUserInformation")}
      */
     public abstract UserPrincipal lookupPrincipalByName(String name)
         throws IOException;
@@ -96,10 +92,6 @@ public abstract class UserPrincipalLookupService {
      *          the principal does not exist or is not a group
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, it checks
-     *          {@link RuntimePermission}{@code ("lookupUserInformation")}
      */
     public abstract GroupPrincipal lookupPrincipalByGroupName(String group)
         throws IOException;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,18 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 
 #ifdef _WINDOWS
 
 #include "logging/log.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
+
+#include <psapi.h>
 
 namespace {
   class MemoryReleaser {
@@ -40,7 +42,7 @@ namespace {
     MemoryReleaser(char* ptr, size_t size) : _ptr(ptr), _size(size) { }
     ~MemoryReleaser() {
       if (_ptr != nullptr) {
-        os::release_memory_special(_ptr, _size);
+        os::release_memory(_ptr, _size);
       }
     }
   };
@@ -67,7 +69,7 @@ void TestReserveMemorySpecial_test() {
   FLAG_SET_CMDLINE(UseNUMAInterleaving, false);
 
   const size_t large_allocation_size = os::large_page_size() * 4;
-  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), nullptr, false);
+  char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), os::large_page_size(), nullptr, mtTest, false);
   if (result == nullptr) {
       // failed to allocate memory, skipping the test
       return;
@@ -77,21 +79,21 @@ void TestReserveMemorySpecial_test() {
   // Reserve another page within the recently allocated memory area. This should fail
   const size_t expected_allocation_size = os::large_page_size();
   char* expected_location = result + os::large_page_size();
-  char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
+  char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, mtTest, false);
   EXPECT_TRUE(actual_location == nullptr) << "Should not be allowed to reserve within present reservation";
 
   // Instead try reserving after the first reservation.
   expected_location = result + large_allocation_size;
-  actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
-  EXPECT_TRUE(actual_location != nullptr) << "Unexpected reservation failure, can’t verify correct location";
+  actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, mtTest, false);
+  EXPECT_TRUE(actual_location != nullptr) << "Unexpected reservation failure, can't verify correct location";
   EXPECT_TRUE(actual_location == expected_location) << "Reservation must be at requested location";
   MemoryReleaser m2(actual_location, os::large_page_size());
 
   // Now try to do a reservation with a larger alignment.
   const size_t alignment = os::large_page_size() * 2;
   const size_t new_large_size = alignment * 4;
-  char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), nullptr, false);
-  EXPECT_TRUE(aligned_request != nullptr) << "Unexpected reservation failure, can’t verify correct alignment";
+  char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), nullptr, mtTest, false);
+  EXPECT_TRUE(aligned_request != nullptr) << "Unexpected reservation failure, can't verify correct alignment";
   EXPECT_TRUE(is_aligned(aligned_request, alignment)) << "Returned address must be aligned";
   MemoryReleaser m3(aligned_request, new_large_size);
 }
@@ -377,7 +379,7 @@ static void record_path(char const* name, char const* len_name, wchar_t* path) {
 
   if (convert_to_cstring(buf, JVM_MAXPATHLEN, path)) {
     ::testing::Test::RecordProperty(name, buf);
-    os::snprintf(buf, JVM_MAXPATHLEN, "%d", (int) wcslen(path));
+    os::snprintf_checked(buf, JVM_MAXPATHLEN, "%d", (int) wcslen(path));
     ::testing::Test::RecordProperty(len_name, buf);
   }
 }
@@ -722,6 +724,112 @@ TEST_VM(os_windows, processor_count) {
   }
 }
 
+TEST_VM(os_windows, large_page_init_multiple_sizes) {
+  // Call request_lock_memory_privilege() and check the result
+  if (!os::win32::request_lock_memory_privilege()) {
+    GTEST_SKIP() << "Skipping test because lock memory privilege is not granted.";
+  }
+  // Set globals to make sure we hit the correct code path
+  AutoSaveRestore<bool> guardUseLargePages(UseLargePages);
+  AutoSaveRestore<bool> guardEnableAllLargePageSizesForWindows(EnableAllLargePageSizesForWindows);
+  AutoSaveRestore<size_t> guardLargePageSizeInBytes(LargePageSizeInBytes);
+  FLAG_SET_CMDLINE(UseLargePages, true);
+  FLAG_SET_CMDLINE(EnableAllLargePageSizesForWindows, true);
+
+  // Determine the minimum page size
+  const size_t min_size = GetLargePageMinimum();
+
+  // End the test if GetLargePageMinimum returns 0
+  if (min_size == 0) {
+    GTEST_SKIP() << "Large pages are not supported on this system.";
+    return;
+  }
+
+  // Set LargePageSizeInBytes to 4 times the minimum page size
+  FLAG_SET_CMDLINE(LargePageSizeInBytes, 4 * min_size); // Set a value for multiple page sizes
+
+  // Initialize large page settings
+  os::large_page_init();
+
+  // Verify that large pages are enabled
+  EXPECT_TRUE(UseLargePages) << "UseLargePages should be true after initialization for LargePageSizeInBytes = 4 * min_size";
+
+  // Verify that decided_large_page_size is greater than the default page size
+  const size_t default_page_size = os::vm_page_size();
+  size_t decided_large_page_size = os::win32::large_page_init_decide_size();
+  EXPECT_GT(decided_large_page_size, default_page_size) << "Large page size should be greater than the default page size for LargePageSizeInBytes = 4 * min_size";
+
+  size_t page_size_count = 0;
+  size_t page_size = os::page_sizes().largest();
+
+  do {
+    ++page_size_count;
+    page_size = os::page_sizes().next_smaller(page_size);
+  } while (page_size >= os::page_sizes().smallest());
+
+  EXPECT_GT(page_size_count, 1u) << "There should be multiple large page sizes available.";
+
+  size_t large_page_size = decided_large_page_size;
+
+  for (size_t page_size = os::page_sizes().largest(); page_size >= min_size; page_size = os::page_sizes().next_smaller(page_size)) {
+    EXPECT_TRUE(page_size % min_size == 0) << "Each page size should be a multiple of the minimum large page size.";
+    EXPECT_LE(page_size, large_page_size) << "Page size should not exceed the determined large page size.";
+  }
+}
+
+TEST_VM(os_windows, large_page_init_decide_size) {
+  // Initial setup
+    // Call request_lock_memory_privilege() and check the result
+  if (!os::win32::request_lock_memory_privilege()) {
+    GTEST_SKIP() << "Skipping test because lock memory privilege is not granted.";
+  }
+  AutoSaveRestore<bool> guardUseLargePages(UseLargePages);
+  AutoSaveRestore<size_t> guardLargePageSizeInBytes(LargePageSizeInBytes);
+  FLAG_SET_CMDLINE(UseLargePages, true);
+  FLAG_SET_CMDLINE(LargePageSizeInBytes, 0); // Reset to default
+
+  // Test for large page support
+  size_t decided_size = os::win32::large_page_init_decide_size();
+  size_t min_size = GetLargePageMinimum();
+  if (min_size == 0) {
+    EXPECT_EQ(decided_size, 0) << "Expected decided size to be 0 when large page is not supported by the processor";
+    return;
+  }
+
+  // Scenario 1: Test with 2MB large page size
+  if (min_size == 2 * M) {
+    FLAG_SET_CMDLINE(LargePageSizeInBytes, 2 * M); // Set large page size to 2MB
+    decided_size = os::win32::large_page_init_decide_size(); // Recalculate decided size
+    EXPECT_EQ(decided_size, 2 * M) << "Expected decided size to be 2M when large page and OS reported size are both 2M";
+  }
+
+  // Scenario 2: Test with 1MB large page size
+  if (min_size == 2 * M) {
+    FLAG_SET_CMDLINE(LargePageSizeInBytes, 1 * M); // Set large page size to 1MB
+    decided_size = os::win32::large_page_init_decide_size(); // Recalculate decided size
+    EXPECT_EQ(decided_size, 2 * M) << "Expected decided size to be 2M when large page is 1M and OS reported size is 2M";
+  }
+
+#if defined(AMD64)
+  FLAG_SET_CMDLINE(LargePageSizeInBytes, 5 * M); // Set large page size to 5MB
+  if (!EnableAllLargePageSizesForWindows) {
+    decided_size = os::win32::large_page_init_decide_size(); // Recalculate decided size
+    EXPECT_EQ(decided_size, 0) << "Expected decided size to be 0 for large pages bigger than 4mb on AMD64";
+  }
+#endif
+
+  // Additional check for non-multiple of minimum size
+  // Set an arbitrary large page size which is not a multiple of min_size
+  FLAG_SET_CMDLINE(LargePageSizeInBytes, 5 * min_size + 1);
+
+  // Recalculate decided size
+  decided_size = os::win32::large_page_init_decide_size();
+
+  // Assert that the decided size defaults to minimum page size when LargePageSizeInBytes
+  // is not a multiple of the minimum size, assuming conditions are always met
+  EXPECT_EQ(decided_size, 0) << "Expected decided size to default to 0 when LargePageSizeInBytes is not a multiple of minimum size";
+}
+
 class ReserveMemorySpecialRunnable : public TestRunnable {
 public:
   void runUnitTest() const {
@@ -733,6 +841,276 @@ TEST_VM(os_windows, reserve_memory_special_concurrent) {
   ReserveMemorySpecialRunnable runnable;
   ConcurrentTestRunner testRunner(&runnable, 30, 15000);
   testRunner.run();
+}
+
+TEST_VM(os_windows, SafeFetchN_with_page_guard_protection) {
+  const DWORD page_size = (DWORD)os::vm_page_size();
+
+  void* p = ::VirtualAlloc(nullptr, page_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  ASSERT_NE(p, nullptr) << "VirtualAlloc failed";
+
+  DWORD old_protect;
+  BOOL res = ::VirtualProtect(p, page_size, PAGE_READWRITE | PAGE_GUARD, &old_protect);
+  ASSERT_TRUE(res) << "VirtualProtect failed";
+
+  intptr_t result = SafeFetchN((intptr_t*)p, -1);
+  ASSERT_EQ((intptr_t)-1, result) << "SafeFetchN should return errValue for a page protected with PAGE_GUARD";
+
+  ::VirtualFree(p, 0, MEM_RELEASE);
+}
+
+TEST_VM(os_windows, SafeFetch32_with_page_guard_protection) {
+  const DWORD page_size = (DWORD)os::vm_page_size();
+
+  void* p = ::VirtualAlloc(nullptr, page_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  ASSERT_NE(p, nullptr) << "VirtualAlloc failed";
+
+  DWORD old_protect;
+  BOOL res = ::VirtualProtect(p, page_size, PAGE_READWRITE | PAGE_GUARD, &old_protect);
+  ASSERT_TRUE(res) << "VirtualProtect failed";
+
+  int result = SafeFetch32((int*)p, -1);
+  ASSERT_EQ(-1, result) << "SafeFetch32 should return errValue for a page protected with PAGE_GUARD";
+
+  ::VirtualFree(p, 0, MEM_RELEASE);
+}
+
+#define SKIP_IF_PLACEHOLDER_NOT_SUPPORTED \
+  if (os::win32::VirtualAlloc2 == nullptr)  GTEST_SKIP() << "VirtualAlloc2 not available";
+
+TEST_VM(os, placeholder_reserve_and_convert) {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+
+  const size_t size = 4 * os::vm_allocation_granularity();
+
+  os::win32::PlaceholderRegion region = os::win32::reserve_placeholder_memory(size, nullptr);
+  ASSERT_FALSE(region.is_empty());
+  ASSERT_EQ(region.size(), size);
+  ASSERT_NE(region.base(), (char*)nullptr);
+
+  char* reserved = os::win32::convert_to_reserved(region);
+  ASSERT_EQ(reserved, region.base());
+
+  // Commit, but bypass NMT
+  ASSERT_NE(::VirtualAlloc(reserved, size, MEM_COMMIT, PAGE_READWRITE), nullptr);
+  // Touch the memory to confirm it's usable.
+  memset(reserved, 0xAB, size);
+  EXPECT_EQ((unsigned char)reserved[0], 0xAB);
+  EXPECT_EQ((unsigned char)reserved[size - 1], 0xAB);
+
+  ASSERT_TRUE(::VirtualFree(reserved, 0, MEM_RELEASE));
+}
+
+TEST_VM(os, placeholder_split_two_way) {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+
+  const size_t granularity = os::vm_allocation_granularity();
+  const size_t total = 4 * granularity;
+  const size_t split_offset = 3 * granularity;
+
+  os::win32::PlaceholderRegion region = os::win32::reserve_placeholder_memory(total, nullptr);
+  ASSERT_FALSE(region.is_empty());
+
+  char* original_base = region.base();
+  os::win32::PlaceholderRegionPair split = os::win32::split_memory(region, split_offset);
+
+  // Leading piece: [base, base+split_offset)
+  ASSERT_EQ(split.left.base(), original_base);
+  ASSERT_EQ(split.left.size(), split_offset);
+
+  // Trailing piece: [base+split_offset, base+total)
+  ASSERT_EQ(split.right.base(), original_base + split_offset);
+  ASSERT_EQ(split.right.size(), total - split_offset);
+
+  // Convert both and commit.
+  char* addr1 = os::win32::convert_to_reserved(split.left);
+  char* addr2 = os::win32::convert_to_reserved(split.right);
+  ASSERT_EQ(addr1, original_base);
+  ASSERT_EQ(addr2, original_base + split_offset);
+
+  // Commit, but bypass NMT
+  ASSERT_NE(::VirtualAlloc(addr1, split_offset, MEM_COMMIT, PAGE_READWRITE), nullptr);
+  ASSERT_NE(::VirtualAlloc(addr2, total - split_offset, MEM_COMMIT, PAGE_READWRITE), nullptr);
+
+  // Touch the memory to confirm it's usable.
+  memset(addr1, 0x11, split_offset);
+  memset(addr2, 0x22, total - split_offset);
+  EXPECT_EQ((unsigned char)addr1[0], 0x11);
+  EXPECT_EQ((unsigned char)addr2[0], 0x22);
+
+  // Verify we can release the parts separately.
+  ASSERT_TRUE(::VirtualFree(addr1, 0, MEM_RELEASE));
+  ASSERT_TRUE(::VirtualFree(addr2, 0, MEM_RELEASE));
+}
+
+TEST_VM(os, placeholder_split_consumes_full_range) {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+
+  const size_t region_size = os::vm_allocation_granularity();
+  os::win32::PlaceholderRegion region = os::win32::reserve_placeholder_memory(region_size, nullptr);
+  ASSERT_FALSE(region.is_empty());
+
+  char* original_base = region.base();
+  os::win32::PlaceholderRegionPair split = os::win32::split_memory(region, region_size);
+
+  // Leading piece
+  ASSERT_EQ(split.left.base(), original_base);
+  ASSERT_EQ(split.left.size(), region_size);
+
+  // Trailing piece
+  ASSERT_TRUE(split.right.is_empty());
+
+  // Commit and touch to confirm it's usable.
+  char* addr = os::win32::convert_to_reserved(split.left);
+  ASSERT_NE(::VirtualAlloc(addr, region_size, MEM_COMMIT, PAGE_READWRITE), nullptr);
+  memset(addr, 0x11, region_size);
+  EXPECT_EQ((unsigned char)addr[0], 0x11);
+
+  ASSERT_TRUE(::VirtualFree(addr, 0, MEM_RELEASE));
+}
+
+TEST_VM(os, placeholder_split_consumes_nothing) {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+
+  const size_t region_size = os::vm_allocation_granularity();
+  os::win32::PlaceholderRegion region = os::win32::reserve_placeholder_memory(region_size, nullptr);
+  ASSERT_FALSE(region.is_empty());
+
+  char* original_base = region.base();
+  os::win32::PlaceholderRegionPair split = os::win32::split_memory(region, 0);
+
+  // Leading piece
+  ASSERT_TRUE(split.left.is_empty());
+
+  // Trailing piece
+  ASSERT_EQ(split.right.base(), original_base);
+  ASSERT_EQ(split.right.size(), region_size);
+
+  // Commit and touch to confirm it's usable.
+  char* addr = os::win32::convert_to_reserved(split.right);
+  ASSERT_NE(::VirtualAlloc(addr, region_size, MEM_COMMIT, PAGE_READWRITE), nullptr);
+  memset(addr, 0x11, region_size);
+  EXPECT_EQ((unsigned char)addr[0], 0x11);
+
+  ASSERT_TRUE(::VirtualFree(addr, 0, MEM_RELEASE));
+}
+
+TEST_VM_FATAL_ERROR_MSG(os, placeholder_double_convert, ".*Failed to convert placeholder.*") {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+  const size_t size = 4 * os::vm_allocation_granularity();
+
+  os::win32::PlaceholderRegion region = os::win32::reserve_placeholder_memory(size, nullptr);
+  ASSERT_FALSE(region.is_empty());
+  ASSERT_EQ(region.size(), size);
+  ASSERT_NE(region.base(), (char*)nullptr);
+
+  // Double convert
+  char* reserved = os::win32::convert_to_reserved(region);
+  ASSERT_EQ(reserved, region.base());
+  // This second conversion attempt should crash producing the error "...Failed to convert placeholder..."
+  reserved = os::win32::convert_to_reserved(region);
+}
+
+TEST_VM(os, placeholder_commit_before_convert) {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+  const size_t size = 4 * os::vm_allocation_granularity();
+
+  os::win32::PlaceholderRegion region = os::win32::reserve_placeholder_memory(size, nullptr);
+  ASSERT_FALSE(region.is_empty());
+  ASSERT_EQ(region.size(), size);
+  ASSERT_NE(region.base(), (char*)nullptr);
+
+  // Committing should fail here, but not crash.
+  ASSERT_FALSE(::VirtualAlloc(region.base(), size, MEM_COMMIT, PAGE_READWRITE));
+  ASSERT_TRUE(::VirtualFree(region.base(), 0, MEM_RELEASE));
+}
+
+TEST_VM(os, placeholder_release_before_convert) {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+
+  const size_t size = 4 * os::vm_allocation_granularity();
+
+  os::win32::PlaceholderRegion region = os::win32::reserve_placeholder_memory(size, nullptr);
+  ASSERT_FALSE(region.is_empty());
+  ASSERT_EQ(region.size(), size);
+  ASSERT_NE(region.base(), (char*)nullptr);
+
+  ASSERT_TRUE(::VirtualFree(region.base(), 0, MEM_RELEASE));
+}
+
+// Test that reserve_with_numa_placeholder works correctly.
+// On NUMA systems with a single NUMA node, there is no true interleaving
+// (all chunks are put on node 0) but the placeholder split/replace path
+// is still properly exercised.
+TEST_VM(os_windows, placeholder_numa_reserve_commit) {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+
+  const size_t num_nodes = os::numa_get_groups_num();
+
+  // Enable NUMA interleaving for this test so the correct code path is taken.
+  AutoSaveRestore<bool> FLAG_GUARD(UseNUMAInterleaving);
+  AutoSaveRestore<bool> FLAG_GUARD(UseLargePages);
+  FLAG_SET_CMDLINE(UseNUMAInterleaving, true);
+  FLAG_SET_CMDLINE(UseLargePages, false);
+
+  // Allocate a region large enough to span multiple NUMA interleave chunks.
+  // NUMAInterleaveGranularity defaults to 2MB
+  const size_t chunk_size = NUMAInterleaveGranularity;
+  const size_t num_chunks = 4;
+  const size_t size = num_chunks * chunk_size;
+
+  char* result = os::attempt_reserve_memory_at(nullptr, size, mtTest);
+  ASSERT_TRUE(result != nullptr) << "Failed to reserve memory";
+  ASSERT_TRUE(is_aligned(result, os::vm_allocation_granularity()));
+  ASSERT_TRUE(os::commit_memory(result, size, false));
+
+  // Walk (and touch) the chunks using the same alignment logic as reserve_with_numa_placeholder:
+  // the first chunk may be shorter (up to the next chunk_size boundary),
+  // then full chunk_size pieces, with a possible shorter trailing chunk.
+  PSAPI_WORKING_SET_EX_INFORMATION wsi[num_chunks + 1];
+  memset(wsi, 0, sizeof(wsi));
+  size_t bytes_remaining = size;
+  char* addr = result;
+  size_t actual_chunks = 0;
+
+  while (bytes_remaining > 0) {
+    size_t this_chunk_size = MIN2(bytes_remaining, chunk_size - ((size_t)addr % chunk_size));
+
+    memset(addr, 0xDA, this_chunk_size);
+
+    wsi[actual_chunks] = {0};
+    wsi[actual_chunks].VirtualAddress = addr;
+    actual_chunks++;
+
+    bytes_remaining -= this_chunk_size;
+    addr += this_chunk_size;
+  }
+
+  BOOL query_ok = QueryWorkingSetEx(GetCurrentProcess(), wsi, sizeof(wsi));
+  ASSERT_TRUE(query_ok) << "QueryWorkingSetEx failed: " << GetLastError();
+
+  // Verify all pages are valid (in the working set).
+  for (size_t i = 0; i < actual_chunks; i++) {
+    EXPECT_TRUE(wsi[i].VirtualAttributes.Valid) << "Chunk " << i << " page not valid in working set";
+  }
+
+  if (num_nodes > 1) {
+    // On a multi-NUMA system, verify that not all chunks are assigned to the same node.
+    ULONG first_node = (ULONG)wsi[0].VirtualAttributes.Node;
+    bool found_different_node = false;
+    for (size_t i = 1; i < actual_chunks; i++) {
+      if (wsi[i].VirtualAttributes.Valid &&
+          (ULONG)wsi[i].VirtualAttributes.Node != first_node) {
+        found_different_node = true;
+        break;
+      }
+    }
+    EXPECT_TRUE(found_different_node)
+        << "All " << actual_chunks << " chunks assigned to NUMA node " << first_node
+        << "; expected interleaving across " << num_nodes << " nodes";
+  }
+
+  os::release_memory(result, size);
 }
 
 #endif

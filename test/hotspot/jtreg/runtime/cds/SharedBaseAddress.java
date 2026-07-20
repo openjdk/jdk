@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,23 @@ import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
+import jtreg.SkippedException;
 
 public class SharedBaseAddress {
+    static final boolean skipUncompressedOopsTests;
+    static boolean checkSkipUncompressedOopsTests(String prop) {
+        String opts = System.getProperty(prop);
+        return opts.contains("+AOTClassLinking") &&
+               opts.matches(".*[+]Use[A-Za-z]+GC.*") && !opts.contains("+UseG1GC");
+    }
+    static {
+        // AOTClassLinking requires the ability to load archived heap objects. However,
+        // due to JDK-8341371, only G1GC supports loading archived heap objects
+        // with uncompressed oops.
+        skipUncompressedOopsTests =
+            checkSkipUncompressedOopsTests("test.vm.opts") ||
+            checkSkipUncompressedOopsTests("test.java.opts");
+    }
 
     // shared base address test table for {32, 64}bit VM
     private static final String[] testTableShared = {
@@ -99,6 +114,10 @@ public class SharedBaseAddress {
         int start = args[0].equals("0") ? 0 : mid;
         int end   = args[0].equals("0") ? mid : testTable.length;
         boolean provoke = (args.length > 1 && args[1].equals("provoke"));
+
+        if (provoke && skipUncompressedOopsTests) {
+            throw new SkippedException("Test skipped due to JDK-8341371");
+        }
 
         // provoke == true: we want to increase the chance that mapping the generated archive at the designated base
         // succeeds, to test Klass pointer encoding at that weird location. We do this by sizing heap + class space

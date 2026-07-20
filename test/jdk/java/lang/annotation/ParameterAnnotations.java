@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,8 @@
 /*
  * @test
  * @bug 6761678 8162817
- * @summary Check properties of Annotations returned from
- * getParameterAnnotations, including freedom from security
- * exceptions.
- * @run main/othervm -Djava.security.manager=allow ParameterAnnotations
+ * @summary Check properties of Annotations returned from getParameterAnnotations
+ * @run main ParameterAnnotations
  * @author Martin Buchholz
  */
 
@@ -37,9 +35,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
-import java.security.Permission;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD, ElementType.PARAMETER })
@@ -49,40 +44,11 @@ import java.security.ProtectionDomain;
 
 public class ParameterAnnotations {
 
-    // A security policy that differs from the default only in that it
-    // allows a security manager to be uninstalled.
-    static class MyPolicy extends Policy {
-        final Policy defaultPolicy;
-        MyPolicy(Policy defaultPolicy) {
-            this.defaultPolicy = defaultPolicy;
-        }
-        public boolean implies(ProtectionDomain pd, Permission p) {
-            return p.getName().equals("setSecurityManager") ||
-                defaultPolicy.implies(pd, p);
-        }
-    }
-
     public void nop(@Named("foo") Object foo,
                     @Named("bar") Object bar) {
     }
 
     void test(String[] args) throws Throwable {
-        // Test without a security manager
-        test1();
-
-        // Test with a security manager
-        Policy defaultPolicy = Policy.getPolicy();
-        Policy.setPolicy(new MyPolicy(defaultPolicy));
-        System.setSecurityManager(new SecurityManager());
-        try {
-            test1();
-        } finally {
-            System.setSecurityManager(null);
-            Policy.setPolicy(defaultPolicy);
-        }
-    }
-
-    void test1() throws Throwable {
         for (Method m : thisClass.getMethods()) {
             if (m.getName().equals("nop")) {
                 Annotation[][] ann = m.getParameterAnnotations();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +106,7 @@ final class XWM
         CWM_WM = 14,
         MUTTER_WM = 15,
         UNITY_COMPIZ_WM = 16;
+    @Override
     public String toString() {
         switch  (WMID) {
           case NO_WM:
@@ -1737,9 +1738,7 @@ final class XWM
         correctWM.left = win.scaleUp(correctWM.left);
         correctWM.right = win.scaleUp(correctWM.right);
 
-        if (storedInsets.get(win.getClass()) == null) {
-            storedInsets.put(win.getClass(), correctWM);
-        }
+        storedInsets.putIfAbsent(win.getClass(), correctWM);
         return correctWM;
     }
     boolean isDesktopWindow( long w ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,8 +209,8 @@ public interface XMLStreamWriter {
 
   /**
    * Writes a start tag to the output
-   * @param localName local name of the tag, may not be null
    * @param prefix the prefix of the tag, may not be null
+   * @param localName local name of the tag, may not be null
    * @param namespaceURI the uri to bind the prefix to, may not be null
    * @throws XMLStreamException if an error occurs
    */

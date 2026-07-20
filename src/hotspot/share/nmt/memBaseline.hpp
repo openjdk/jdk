@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@
 
 typedef LinkedListIterator<MallocSite>                   MallocSiteIterator;
 typedef LinkedListIterator<VirtualMemoryAllocationSite>  VirtualMemorySiteIterator;
-typedef LinkedListIterator<ReservedMemoryRegion>         VirtualMemoryAllocationIterator;
 
 /*
  * Baseline a memory snapshot
@@ -53,7 +52,7 @@ class MemBaseline {
     by_address,      // by memory address
     by_size,         // by memory size
     by_site,         // by call site where the memory is allocated from
-    by_site_and_type // by call site and memory tag
+    by_site_and_tag  // by call site and memory tag
   };
 
  private:
@@ -71,7 +70,7 @@ class MemBaseline {
   LinkedListImpl<MallocSite>                  _malloc_sites;
 
   // All virtual memory allocations
-  LinkedListImpl<ReservedMemoryRegion>        _virtual_memory_allocations;
+  RegionsTree* _vma_allocations;
 
   // Virtual memory allocations by allocation sites, always in by_address
   // order
@@ -86,7 +85,12 @@ class MemBaseline {
   // create a memory baseline
   MemBaseline():
     _instance_class_count(0), _array_class_count(0), _thread_count(0),
+    _vma_allocations(nullptr),
     _baseline_type(Not_baselined) {
+  }
+
+  ~MemBaseline() {
+    delete _vma_allocations;
   }
 
   void baseline(bool summaryOnly = true);
@@ -110,9 +114,9 @@ class MemBaseline {
 
   // Virtual memory allocation iterator always returns in virtual memory
   // base address order.
-  VirtualMemoryAllocationIterator virtual_memory_allocations() {
-    assert(!_virtual_memory_allocations.is_empty(), "Not detail baseline");
-    return VirtualMemoryAllocationIterator(_virtual_memory_allocations.head());
+  RegionsTree* virtual_memory_allocations() {
+    assert(_vma_allocations != nullptr, "Not detail baseline");
+    return _vma_allocations;
   }
 
   // Total reserved memory = total malloc'd memory + total reserved virtual
@@ -146,12 +150,12 @@ class MemBaseline {
 
   MallocMemory* malloc_memory(MemTag mem_tag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _malloc_memory_snapshot.by_type(mem_tag);
+    return _malloc_memory_snapshot.by_tag(mem_tag);
   }
 
   VirtualMemory* virtual_memory(MemTag mem_tag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _virtual_memory_snapshot.by_type(mem_tag);
+    return _virtual_memory_snapshot.by_tag(mem_tag);
   }
 
 
@@ -185,7 +189,8 @@ class MemBaseline {
 
     _malloc_sites.clear();
     _virtual_memory_sites.clear();
-    _virtual_memory_allocations.clear();
+    delete _vma_allocations;
+    _vma_allocations = nullptr;
   }
 
  private:
@@ -204,7 +209,7 @@ class MemBaseline {
   // Sort allocation sites in call site address order
   void malloc_sites_to_allocation_site_order();
   // Sort allocation sites in call site address and memory tag order
-  void malloc_sites_to_allocation_site_and_type_order();
+  void malloc_sites_to_allocation_site_and_tag_order();
 
   // Sort allocation sites in reserved size order
   void virtual_memory_sites_to_size_order();

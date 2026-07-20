@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -51,7 +50,7 @@ void RecordComponent::deallocate_contents(ClassLoaderData* loader_data) {
 }
 
 void RecordComponent::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(RecordComponent): %p", this);
+  log_trace(aot)("Iter(RecordComponent): %p", this);
   it->push(&_annotations);
   it->push(&_type_annotations);
 }

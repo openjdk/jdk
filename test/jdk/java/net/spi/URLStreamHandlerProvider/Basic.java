@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,19 +75,10 @@ public class Basic {
         unknownProtocol("bar", UNKNOWN);
         viaProvider("baz", KNOWN);
         viaProvider("bert", KNOWN);
-        viaProvider("ernie", UNKNOWN, "-Djava.security.manager");
-        viaProvider("curly", UNKNOWN, "-Djava.security.manager");
-        viaProvider("larry", KNOWN, "-Djava.security.manager",
-                "-Djava.security.policy=" + TEST_SRC + File.separator + "basic.policy");
-        viaProvider("moe", KNOWN, "-Djava.security.manager",
-                "-Djava.security.policy=" + TEST_SRC + File.separator + "basic.policy");
         viaBadProvider("tom", SCE);
         viaBadProvider("jerry", SCE);
+        viaCircularProvider("circular", CIRCULAR);
     }
-
-    static final String SECURITY_MANAGER_DEPRECATED
-            = "WARNING: The Security Manager is deprecated and will be removed in a future release."
-                    + System.getProperty("line.separator");
 
     private static String withoutWarning(String in) {
         return in.lines().filter(s -> !s.startsWith("WARNING:")).collect(Collectors.joining());
@@ -107,6 +98,12 @@ public class Basic {
         if (r.exitValue == 0 ||
             !r.output.contains("java.util.ServiceConfigurationError")) {
             throw new RuntimeException("exitValue: "+ r.exitValue + ", output:[" +r.output +"]");
+        }
+    };
+    static final Consumer<Result> CIRCULAR = r -> {
+        if (r.exitValue == 0 ||
+            !r.output.contains("Circular loading of URL stream handler providers detected")) {
+            throw new RuntimeException("exitValue: " + r.exitValue + ", output:[" + r.output + "]");
         }
     };
 
@@ -132,6 +129,15 @@ public class Basic {
     {
         viaProviderWithTemplate(protocol, resultChecker,
                                 TEST_SRC.resolve("bad.provider.template"),
+                                sysProps);
+    }
+
+    static void viaCircularProvider(String protocol, Consumer<Result> resultChecker,
+                                    String... sysProps)
+        throws Exception
+    {
+        viaProviderWithTemplate(protocol, resultChecker,
+                                TEST_SRC.resolve("circular.provider.template"),
                                 sysProps);
     }
 

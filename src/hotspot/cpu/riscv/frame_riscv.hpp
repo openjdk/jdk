@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -103,15 +103,14 @@
 
  public:
   enum {
-    pc_return_offset                                 =  0,
-
     // All frames
     link_offset                                      = -2,
     return_addr_offset                               = -1,
     sender_sp_offset                                 =  0,
 
     // Interpreter frames
-    interpreter_frame_oop_temp_offset                =  1, // for native calls only
+    interpreter_frame_result_handler_offset          =  1, // for native calls only
+    interpreter_frame_oop_temp_offset                =  0, // for native calls only
 
     interpreter_frame_sender_sp_offset               = -3,
     // outgoing sp before a call to an invoked method
@@ -178,16 +177,9 @@
     int _offset_unextended_sp; // for use in stack-chunk frames
   };
 
-  void adjust_unextended_sp() NOT_DEBUG_RETURN;
-
   intptr_t* ptr_at_addr(int offset) const {
     return (intptr_t*) addr_at(offset);
   }
-
-#ifdef ASSERT
-  // Used in frame::sender_for_{interpreter,compiled}_frame
-  static void verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp);
-#endif
 
  public:
   // Constructors
@@ -225,8 +217,6 @@
 
   // deoptimization support
   void interpreter_frame_set_last_sp(intptr_t* last_sp);
-
-  static jint interpreter_frame_expression_stack_direction() { return -1; }
 
   // returns the sending frame, without applying any barriers
   inline frame sender_raw(RegisterMap* map) const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ import java.util.ListIterator;
 
 import sun.awt.windows.WToolkit;
 import sun.java2d.SunGraphicsEnvironment;
-import sun.java2d.SurfaceManagerFactory;
-import sun.java2d.WindowsSurfaceManagerFactory;
 import sun.java2d.d3d.D3DGraphicsDevice;
 import sun.java2d.windows.WindowsFlags;
 
@@ -62,9 +60,6 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
         WindowsFlags.initFlags();
 
         initDisplay();
-
-        // Install correct surface manager factory.
-        SurfaceManagerFactory.setInstance(new WindowsSurfaceManagerFactory());
 
         double sx = -1;
         double sy = -1;
@@ -92,9 +87,11 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
     public Win32GraphicsEnvironment() {
     }
 
+    @Override
     protected native int getNumScreens();
     private native int getDefaultScreen();
 
+    @Override
     public GraphicsDevice getDefaultScreenDevice() {
         GraphicsDevice[] screens = getScreenDevices();
         if (screens.length == 0) {
@@ -207,6 +204,7 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
  * ----END DISPLAY CHANGE SUPPORT----
  */
 
+    @Override
     protected GraphicsDevice makeScreenDevice(int screennum) {
         GraphicsDevice device = null;
         if (WindowsFlags.isD3DEnabled()) {
@@ -218,6 +216,7 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
         return device;
     }
 
+    @Override
     public boolean isDisplayLocal() {
         return true;
     }
@@ -256,11 +255,4 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
     private static void dwmCompositionChanged(boolean enabled) {
         isDWMCompositionEnabled = enabled;
     }
-
-    /**
-     * Used to find out if the OS is Windows Vista or later.
-     *
-     * @return {@code true} if the OS is Vista or later, {@code false} otherwise
-     */
-    public static native boolean isVistaOS();
 }

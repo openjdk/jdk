@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,18 +34,17 @@
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.provider.certpath
  *          java.base/sun.security.util
- * @library ../../../../../java/security/testlibrary
- * @build CertificateBuilder SimpleOCSPServer
- * @run main/othervm -Djava.security.debug=certpath OCSPTimeout 1000 true
- * @run main/othervm -Djava.security.debug=certpath
+ * @library /test/lib
+ * @run main/othervm -Dtest.debug=true -Djava.security.debug=certpath OCSPTimeout 1000 true
+ * @run main/othervm -Dtest.debug=true -Djava.security.debug=certpath
  *      -Dcom.sun.security.ocsp.readtimeout=5 OCSPTimeout 1000 true
- * @run main/othervm -Djava.security.debug=certpath
+ * @run main/othervm -Dtest.debug=true -Djava.security.debug=certpath
  *      -Dcom.sun.security.ocsp.readtimeout=1 OCSPTimeout 5000 false
- * @run main/othervm -Djava.security.debug=certpath
+ * @run main/othervm -Dtest.debug=true -Djava.security.debug=certpath
  *      -Dcom.sun.security.ocsp.readtimeout=1s OCSPTimeout 5000 false
- * @run main/othervm -Djava.security.debug=certpath
+ * @run main/othervm -Dtest.debug=true -Djava.security.debug=certpath
  *      -Dcom.sun.security.ocsp.readtimeout=1500ms OCSPTimeout 5000 false
- * @run main/othervm -Djava.security.debug=certpath
+ * @run main/othervm -Dtest.debug=true -Djava.security.debug=certpath
  *      -Dcom.sun.security.ocsp.readtimeout=4500ms OCSPTimeout 1000 true
  */
 
@@ -59,8 +58,8 @@ import java.util.*;
 import java.security.cert.*;
 import java.util.concurrent.TimeUnit;
 
-import sun.security.testlibrary.SimpleOCSPServer;
-import sun.security.testlibrary.CertificateBuilder;
+import jdk.test.lib.security.SimpleOCSPServer;
+import jdk.test.lib.security.CertificateBuilder;
 
 import static java.security.cert.PKIXRevocationChecker.Option.*;
 
@@ -71,7 +70,7 @@ public class OCSPTimeout {
     static String EE_ALIAS = "endentity";
 
     // Enable debugging for additional output
-    static final boolean debug = true;
+    static final boolean debug = Boolean.getBoolean("test.debug");
 
     // PKI components we will need for this test
     static X509Certificate rootCert;        // The root CA certificate
@@ -84,7 +83,7 @@ public class OCSPTimeout {
 
     public static void main(String[] args) throws Exception {
         int ocspTimeout = 15000;
-        boolean expected = false;
+        boolean expected;
 
         createPKI();
 
@@ -195,7 +194,6 @@ public class OCSPTimeout {
         rootOcsp = new SimpleOCSPServer(rootKeystore, passwd, ROOT_ALIAS, null);
         rootOcsp.enableLog(debug);
         rootOcsp.setNextUpdateInterval(3600);
-        rootOcsp.setDisableContentLength(true);
         rootOcsp.start();
 
         // Wait 60 seconds for server ready

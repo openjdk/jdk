@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,6 +235,9 @@ public class DocTreeMaker implements DocTreeFactory {
             public String getText() {
                 throw new UnsupportedOperationException(getClass() + ".getText");
             }
+
+            @Override
+            public Comment stripIndent() { return this; }
 
             @Override
             public CommentStyle getStyle() {
@@ -592,27 +595,33 @@ public class DocTreeMaker implements DocTreeFactory {
                         case TEXT, MARKDOWN -> {
                             var peekedNext = iter.hasNext() ? alist.get(iter.nextIndex()) : null;
                             var content = getContent(dt);
-                            int breakOffset = getSentenceBreak(dt.getKind(), content, peekedNext);
-                            if (breakOffset > 0) {
-                                // the end of sentence is within the current node;
-                                // split it, skipping whitespace in between the two parts
-                                var fsPart = newNode(dt.getKind(), dt.pos, content.substring(0, breakOffset).stripTrailing());
-                                fs.add(fsPart);
-                                int wsOffset = skipWhiteSpace(content, breakOffset);
-                                if (wsOffset > 0) {
-                                    var bodyPart = newNode(dt.getKind(), dt.pos + wsOffset, content.substring(wsOffset));
-                                    body.add(bodyPart);
-                                }
-                                foundFirstSentence = true;
-                            } else if (peekedNext != null && isSentenceBreak(peekedNext, false)) {
-                                // the next node is a sentence break, so this is the end of the first sentence;
-                                // remove trailing spaces
-                                var fsPart = newNode(dt.getKind(), dt.pos, content.stripTrailing());
-                                fs.add(fsPart);
+                            if (isFirst && dt.getKind() == Kind.MARKDOWN && isIndented(content)) {
+                                // begins with an indented code block (unusual), so no first sentence
+                                body.add(dt);
                                 foundFirstSentence = true;
                             } else {
-                                // no sentence break found; keep scanning
-                                fs.add(dt);
+                                int breakOffset = getSentenceBreak(dt.getKind(), content, peekedNext);
+                                if (breakOffset > 0) {
+                                    // the end of sentence is within the current node;
+                                    // split it, skipping whitespace in between the two parts
+                                    var fsPart = newNode(dt.getKind(), dt.pos, content.substring(0, breakOffset).stripTrailing());
+                                    fs.add(fsPart);
+                                    int wsOffset = skipWhiteSpace(content, breakOffset);
+                                    if (wsOffset > 0) {
+                                        var bodyPart = newNode(dt.getKind(), dt.pos + wsOffset, content.substring(wsOffset));
+                                        body.add(bodyPart);
+                                    }
+                                    foundFirstSentence = true;
+                                } else if (peekedNext != null && isSentenceBreak(peekedNext, false)) {
+                                    // the next node is a sentence break, so this is the end of the first sentence;
+                                    // remove trailing spaces
+                                    var fsPart = newNode(dt.getKind(), dt.pos, content.stripTrailing());
+                                    fs.add(fsPart);
+                                    foundFirstSentence = true;
+                                } else {
+                                    // no sentence break found; keep scanning
+                                    fs.add(dt);
+                                }
                             }
                         }
 
@@ -649,6 +658,11 @@ public class DocTreeMaker implements DocTreeFactory {
                 case MARKDOWN -> ((DCRawText) dt).code;
                 default -> throw new IllegalArgumentException(dt.getKind().toString());
             };
+        }
+
+        private static final Pattern INDENT = Pattern.compile(" {4}| {0,3}\t");
+        private boolean isIndented(String s) {
+            return INDENT.matcher(s).lookingAt();
         }
 
         private DCTree newNode(DocTree.Kind kind, int pos, String text) {

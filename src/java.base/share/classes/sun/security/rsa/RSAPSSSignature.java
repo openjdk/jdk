@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.security.spec.MGF1ParameterSpec;
 import java.security.interfaces.*;
 
 import java.util.Arrays;
-import java.util.Hashtable;
+import java.util.Map;
 
 import sun.security.util.*;
 import sun.security.jca.JCAUtil;
@@ -81,21 +81,19 @@ public class RSAPSSSignature extends SignatureSpi {
 
     private static final byte[] EIGHT_BYTES_OF_ZEROS = new byte[8];
 
-    private static final Hashtable<KnownOIDs, Integer> DIGEST_LENGTHS =
-            new Hashtable<>();
-    static {
-        DIGEST_LENGTHS.put(KnownOIDs.SHA_1, 20);
-        DIGEST_LENGTHS.put(KnownOIDs.SHA_224, 28);
-        DIGEST_LENGTHS.put(KnownOIDs.SHA_256, 32);
-        DIGEST_LENGTHS.put(KnownOIDs.SHA_384, 48);
-        DIGEST_LENGTHS.put(KnownOIDs.SHA_512, 64);
-        DIGEST_LENGTHS.put(KnownOIDs.SHA_512$224, 28);
-        DIGEST_LENGTHS.put(KnownOIDs.SHA_512$256, 32);
-        DIGEST_LENGTHS.put(KnownOIDs.SHA3_224, 28);
-        DIGEST_LENGTHS.put(KnownOIDs.SHA3_256, 32);
-        DIGEST_LENGTHS.put(KnownOIDs.SHA3_384, 48);
-        DIGEST_LENGTHS.put(KnownOIDs.SHA3_512, 64);
-    }
+    private static final Map<KnownOIDs, Integer> DIGEST_LENGTHS = Map.ofEntries(
+            Map.entry(KnownOIDs.SHA_1, 20),
+            Map.entry(KnownOIDs.SHA_224, 28),
+            Map.entry(KnownOIDs.SHA_256, 32),
+            Map.entry(KnownOIDs.SHA_384, 48),
+            Map.entry(KnownOIDs.SHA_512, 64),
+            Map.entry(KnownOIDs.SHA_512$224, 28),
+            Map.entry(KnownOIDs.SHA_512$256, 32),
+            Map.entry(KnownOIDs.SHA3_224, 28),
+            Map.entry(KnownOIDs.SHA3_256, 32),
+            Map.entry(KnownOIDs.SHA3_384, 48),
+            Map.entry(KnownOIDs.SHA3_512, 64)
+    );
 
     // message digest implementation we use for hashing the data
     private MessageDigest md;

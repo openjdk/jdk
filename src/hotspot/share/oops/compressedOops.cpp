@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memRegion.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "memory/virtualspace.hpp"
 #include "oops/compressedOops.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 
@@ -55,22 +54,21 @@ void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
   // See needs_explicit_null_check.
   // Only set the heap base for compressed oops because it indicates
   // compressed oops for pstack code.
-  if ((uint64_t)heap_space.end() > UnscaledOopHeapMax) {
+  if ((uint64_t)heap_space.end() > UnscaledOopHeapMax || AOTCompatibleOopCompression) {
     // Didn't reserve heap below 4Gb.  Must shift.
     set_shift(LogMinObjAlignmentInBytes);
   }
-  if ((uint64_t)heap_space.end() <= OopEncodingHeapMax) {
+  if ((uint64_t)heap_space.end() <= OopEncodingHeapMax && !AOTCompatibleOopCompression) {
     // Did reserve heap below 32Gb. Can use base == 0;
-    set_base(0);
+    set_base(nullptr);
   } else {
     set_base((address)heap_space.compressed_oop_base());
   }
 
-  _heap_address_range = heap_space.region();
+  _heap_address_range = MemRegion((HeapWord*)heap_space.base(), (HeapWord*)heap_space.end());
 
   LogTarget(Debug, gc, heap, coops) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     print_mode(&ls);
   }
@@ -115,7 +113,7 @@ CompressedOops::Mode CompressedOops::mode() {
     return DisjointBaseNarrowOop;
   }
 
-  if (base() != 0) {
+  if (base() != nullptr) {
     return HeapBasedNarrowOop;
   }
 
@@ -161,12 +159,12 @@ bool CompressedOops::base_overlaps() {
 }
 
 void CompressedOops::print_mode(outputStream* st) {
-  st->print("Heap address: " PTR_FORMAT ", size: " SIZE_FORMAT " MB",
+  st->print("Heap address: " PTR_FORMAT ", size: %zu MB",
             p2i(_heap_address_range.start()), _heap_address_range.byte_size()/M);
 
   st->print(", Compressed Oops mode: %s", mode_to_string(mode()));
 
-  if (base() != 0) {
+  if (base() != nullptr) {
     st->print(": " PTR_FORMAT, p2i(base()));
   }
 

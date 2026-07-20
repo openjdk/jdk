@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,8 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm AddTrustedCert
- * @run main/othervm -Djava.security.manager=allow AddTrustedCert sm policy
  */
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.KeyStore;
@@ -48,14 +46,7 @@ import java.util.TreeSet;
 public class AddTrustedCert extends SecmodTest {
 
     public static void main(String[] args) throws Exception {
-        if (args.length > 1 && "sm".equals(args[0])) {
-            System.setProperty("java.security.policy",
-                    BASE + File.separator + args[1]);
-        }
-
-        if (initSecmod() == false) {
-            return;
-        }
+        initSecmod();
 
         X509Certificate cert;
         try (InputStream in = new FileInputStream(BASE + SEP + "anchor.cer")) {
@@ -76,12 +67,6 @@ public class AddTrustedCert extends SecmodTest {
 
         System.out.println(p);
         Security.addProvider(p);
-
-        if (args.length > 1 && "sm".equals(args[0])) {
-            System.setProperty("java.security.policy",
-                    BASE + File.separator + args[1]);
-            System.setSecurityManager(new SecurityManager());
-        }
 
         KeyStore ks = KeyStore.getInstance(PKCS11, p);
         ks.load(null, password);
@@ -133,10 +118,10 @@ public class AddTrustedCert extends SecmodTest {
     }
 
     private static boolean improperNSSVersion(Provider p) {
-        double nssVersion = getNSSVersion();
-        if (p.getName().equalsIgnoreCase("SunPKCS11-NSSKeyStore")
-                && nssVersion >= 3.28 && nssVersion < 3.35) {
-            return true;
+        Version nssVersion = getNSSVersion();
+        if (p.getName().equalsIgnoreCase("SunPKCS11-NSSKeyStore")) {
+            return nssVersion.major() == 3 &&
+                    (nssVersion.minor() >= 28 && nssVersion.minor() < 35);
         }
 
         return false;

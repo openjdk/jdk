@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,31 +45,10 @@ public class AllTypes {
         var nr = test("windows-root");
         var nmu = test("windows-my-currentuser");
         var nru = test("windows-root-currentuser");
-        var hasAdminPrivileges = detectIfRunningWithAdminPrivileges();
-        var nmm = adminTest("windows-my-localmachine", hasAdminPrivileges);
-        var nrm = adminTest("windows-root-localmachine", hasAdminPrivileges);
+        var nmm = test("windows-my-localmachine");
+        var nrm = test("windows-root-localmachine");
         Asserts.assertEQ(nm, nmu);
         Asserts.assertEQ(nr, nru);
-    }
-
-    private static boolean detectIfRunningWithAdminPrivileges() {
-        try {
-            Process p = Runtime.getRuntime().exec("reg query \"HKU\\S-1-5-19\"");
-            p.waitFor();
-            return (p.exitValue() == 0);
-        }
-        catch (Exception ex) {
-            System.out.println("Warning: unable to detect admin privileges, assuming none");
-            return false;
-        }
-    }
-
-    private static List<String> adminTest(String type, boolean hasAdminPrivileges) throws Exception {
-        if (hasAdminPrivileges) {
-            return test(type);
-        }
-        System.out.println("Ignoring: " + type + " as it requires admin privileges");
-        return null;
     }
 
     private static List<String> test(String type) throws Exception {

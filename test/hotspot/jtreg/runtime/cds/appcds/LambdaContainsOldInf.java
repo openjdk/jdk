@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,11 @@ public class LambdaContainsOldInf {
             OutputAnalyzer output = CDSTestUtils.createArchiveAndCheck(opts);
             TestCommon.checkExecReturn(output, 0, true,
                                        "Skipping OldProvider: Old class has been linked");
-            output.shouldMatch("Skipping.LambdaContainsOldInfApp[$][$]Lambda.*0x.*:.*Old.class.has.been.linked");
+            if (CDSTestUtils.isAOTClassLinkingEnabled()) {
+                output.shouldMatch("Cannot aot-resolve Lambda proxy because OldProvider is excluded");
+            } else {
+                output.shouldMatch("Skipping.LambdaContainsOldInfApp[$][$]Lambda.*0x.*:.*Old.class.has.been.linked");
+            }
 
             // run with archive
             CDSOptions runOpts = (new CDSOptions())

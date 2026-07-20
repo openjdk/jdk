@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/memRegion.hpp"
 #include "runtime/globals.hpp"
@@ -117,5 +115,5 @@ void MemRegion::destroy_array(MemRegion* array, size_t length) {
   for (size_t i = 0; i < length; i++) {
     array[i].~MemRegion();
   }
-  FREE_C_HEAP_ARRAY(MemRegion, array);
+  FREE_C_HEAP_ARRAY(array);
 }

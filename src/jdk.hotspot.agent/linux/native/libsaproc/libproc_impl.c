@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,14 +182,14 @@ static bool fill_addr_info(lib_info* lib) {
     return false;
   }
 
+  long page_size = sysconf(_SC_PAGE_SIZE);
   lib->end = (uintptr_t)-1L;
   lib->exec_start = (uintptr_t)-1L;
   lib->exec_end = (uintptr_t)-1L;
   for (ph = phbuf, cnt = 0; cnt < ehdr.e_phnum; cnt++, ph++) {
     if (ph->p_type == PT_LOAD) {
-      uintptr_t unaligned_start = lib->base + ph->p_vaddr;
-      uintptr_t aligned_start = align_down(unaligned_start, ph->p_align);
-      uintptr_t aligned_end = align_up(unaligned_start + ph->p_memsz, ph->p_align);
+      uintptr_t aligned_start = lib->base + align_down(ph->p_vaddr, ph->p_align);
+      uintptr_t aligned_end = aligned_start + align_up(ph->p_memsz, page_size);
       if ((lib->end == (uintptr_t)-1L) || (lib->end < aligned_end)) {
         lib->end = aligned_end;
       }
@@ -349,7 +349,7 @@ const char* symbol_for_pc(struct ps_prochandle* ph, uintptr_t addr, uintptr_t* p
 thread_info* add_thread_info(struct ps_prochandle* ph, lwpid_t lwp_id) {
    thread_info* newthr;
    if ( (newthr = (thread_info*) calloc(1, sizeof(thread_info))) == NULL) {
-      print_debug("can't allocate memory for thread_info\n");
+      print_error("can't allocate memory for thread_info\n");
       return NULL;
    }
 
@@ -477,6 +477,12 @@ struct lib_info *find_lib_by_address(struct ps_prochandle* ph, uintptr_t pc) {
   }
   return NULL;
 }
+
+#ifdef __aarch64__
+bool pac_enabled(struct ps_prochandle* ph) {
+  return ph->pac_enabled;
+}
+#endif
 
 //--------------------------------------------------------------------------
 // proc service functions

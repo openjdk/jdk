@@ -1,5 +1,6 @@
 /*
-* Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+* Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +71,11 @@ package gc.stress.gcold;
  *
  * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:ShenandoahPinRegionRate=1000
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ *
+ * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
  *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
  */
 
@@ -102,6 +108,22 @@ package gc.stress.gcold;
  *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
  */
 
+/*
+ * @test id=generational
+ * @key stress randomness
+ * @library / /test/lib
+ * @requires vm.gc.Shenandoah
+ * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
+ *
+ * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahVerify
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ *
+ * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ */
 public class TestGCOldWithShenandoah {
 
     public static void main(String[] args) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import sun.lwawt.LWWindowPeer;
 import sun.java2d.SurfaceData;
 import sun.lwawt.macosx.CFLayer;
 
-public class CGLLayer extends CFLayer {
+public final class CGLLayer extends CFLayer {
 
     private native long nativeCreateLayer();
     private static native void nativeSetScale(long layerPtr, double scale);
@@ -48,6 +48,7 @@ public class CGLLayer extends CFLayer {
         this.peer = peer;
     }
 
+    @Override
     public SurfaceData replaceSurfaceData() {
         if (getBounds().isEmpty()) {
             surfaceData = NullSurfaceData.theInstance;

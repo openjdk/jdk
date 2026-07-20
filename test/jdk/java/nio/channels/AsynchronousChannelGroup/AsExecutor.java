@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,75 +23,75 @@
 
 /*
  * @test
- * @bug 4607272
+ * @bug 4607272 8364761
  * @summary tests tasks can be submitted to a channel group's thread pool.
- * @library /test/lib bootlib
- * @build PrivilegedThreadFactory Attack
- *        jdk.test.lib.util.JarUtils
- * @run driver SetupJar
- * @run main/othervm -Xbootclasspath/a:privileged.jar -Djava.security.manager=allow AsExecutor
+ * @run junit AsExecutor
  */
 
+import java.io.IOException;
 import java.nio.channels.AsynchronousChannelGroup;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AsExecutor {
+    private static ThreadFactory factory;
 
-    public static void main(String[] args) throws Exception {
-        // create channel groups
-        ThreadFactory factory = new PrivilegedThreadFactory();
-        AsynchronousChannelGroup group1 = AsynchronousChannelGroup
-            .withFixedThreadPool(5, factory);
-        AsynchronousChannelGroup group2 = AsynchronousChannelGroup
-            .withCachedThreadPool(Executors.newCachedThreadPool(factory), 0);
-        AsynchronousChannelGroup group3 = AsynchronousChannelGroup
-            .withThreadPool(Executors.newFixedThreadPool(10, factory));
+    @BeforeAll
+    public static void createThreadFactory() {
+         factory = Executors.defaultThreadFactory();
+    }
 
+    private static Stream<Arguments> channelGroups() throws IOException {
+        List<Arguments> list = new ArrayList<Arguments>();
+        list.add(Arguments.of(AsynchronousChannelGroup
+            .withFixedThreadPool(5, factory)));
+        list.add(Arguments.of(AsynchronousChannelGroup
+            .withCachedThreadPool(Executors.newCachedThreadPool(factory), 0)));
+        list.add(Arguments.of(AsynchronousChannelGroup
+            .withThreadPool(Executors.newFixedThreadPool(10, factory))));
+        return list.stream();
+    }
+
+    @ParameterizedTest
+    @MethodSource("channelGroups")
+    public void simpleTask(AsynchronousChannelGroup group)
+        throws InterruptedException
+    {
         try {
-            // execute simple tasks
-            testSimpleTask(group1);
-            testSimpleTask(group2);
-            testSimpleTask(group3);
-
-            // install security manager and test again
-            System.setSecurityManager( new SecurityManager() );
-            testSimpleTask(group1);
-            testSimpleTask(group2);
-            testSimpleTask(group3);
-
-            // attempt to execute tasks that run with only frames from boot
-            // class loader on the stack.
-            testAttackingTask(group1);
-            testAttackingTask(group2);
-            testAttackingTask(group3);
+            Executor executor = (Executor)group;
+            final CountDownLatch latch = new CountDownLatch(1);
+            executor.execute(new Runnable() {
+                    public void run() {
+                        latch.countDown();
+                    }
+                });
+            latch.await();
         } finally {
-            group1.shutdown();
-            group2.shutdown();
-            group3.shutdown();
+            group.shutdown();
         }
     }
 
-    static void testSimpleTask(AsynchronousChannelGroup group) throws Exception {
+    @ParameterizedTest
+    @MethodSource("channelGroups")
+    public void nullTask(AsynchronousChannelGroup group) {
         Executor executor = (Executor)group;
-        final CountDownLatch latch = new CountDownLatch(1);
-        executor.execute(new Runnable() {
-            public void run() {
-                latch.countDown();
-            }
-        });
-        latch.await();
+        try {
+            assertThrows(NullPointerException.class,
+                         () -> executor.execute(null));
+        } finally {
+            group.shutdown();
+        }
     }
-
-    static void testAttackingTask(AsynchronousChannelGroup group) throws Exception {
-        Executor executor = (Executor)group;
-        Attack task = new Attack();
-        executor.execute(task);
-        task.waitUntilDone();
-        if (!task.failedDueToSecurityException())
-            throw new RuntimeException("SecurityException expected");
-    }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/compileTask.hpp"
 #include "runtime/javaThread.inline.hpp"
 
 // Create a CompilerThread
@@ -39,9 +37,9 @@ CompilerThread::CompilerThread(CompileQueue* queue,
   _queue = queue;
   _counters = counters;
   _buffer_blob = nullptr;
-  _can_call_java = false;
   _compiler = nullptr;
-  _arena_stat = CompilationMemoryStatistic::enabled() ? new ArenaStatCounter : nullptr;
+  _arena_stat = nullptr;
+  _timeout = nullptr;
 
 #ifndef PRODUCT
   _ideal_graph_printer = nullptr;
@@ -51,21 +49,16 @@ CompilerThread::CompilerThread(CompileQueue* queue,
 CompilerThread::~CompilerThread() {
   // Delete objects which were allocated on heap.
   delete _counters;
-  delete _arena_stat;
+  delete _timeout;
+  // arenastat should have been deleted at the end of the compilation
+  assert(_arena_stat == nullptr, "Should be null");
 }
 
 void CompilerThread::set_compiler(AbstractCompiler* c) {
-  // Only jvmci compiler threads can call Java
-  _can_call_java = c != nullptr && c->is_jvmci();
   _compiler = c;
 }
 
 void CompilerThread::thread_entry(JavaThread* thread, TRAPS) {
   assert(thread->is_Compiler_thread(), "must be compiler thread");
   CompileBroker::compiler_thread_loop();
-}
-
-// Hide native compiler threads from external view.
-bool CompilerThread::is_hidden_from_external_view() const {
-  return _compiler == nullptr || _compiler->is_hidden_from_external_view();
 }

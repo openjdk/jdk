@@ -24,6 +24,7 @@
  */
 package jdk.jfr.internal.query;
 
+import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.function.Predicate;
 
@@ -63,17 +64,80 @@ final class TableSorter {
         @Override
         public int compare(Row rowA, Row rowB) {
             if (lexical) {
-                return compareObjects(rowA.getText(index), rowB.getText(index));
+                return factor * compareObjects(rowA.getText(index), rowB.getText(index));
             } else {
-                return compareObjects(rowA.getValue(index), rowB.getValue(index));
+                return factor * compareObjects(rowA.getValue(index), rowB.getValue(index));
             }
         }
 
-        private int compareObjects(Object a, Object b) {
-            if (a instanceof Comparable c1 && b instanceof Comparable c2) {
-                return factor * c1.compareTo(c2);
+        private static int compareObjects(Object a, Object b) {
+            if (a == b) {
+                return 0;
             }
-            return factor;
+            if (a == null) {
+                return -1;
+            }
+            if (b == null) {
+                return 1;
+            }
+            if (a instanceof String s1 && b instanceof String s2) {
+                return s1.compareTo(s2);
+            }
+
+            if (a instanceof Number n1 && b instanceof Number n2) {
+                if (isIntegralType(n1)) {
+                    if (isIntegralType(n2)) {
+                        return Long.compare(n1.longValue(), n2.longValue());
+                    }
+                    if (isFractionalType(n2)) {
+                        return compare(n1.longValue(), n2.doubleValue());
+                    }
+                }
+                if (isFractionalType(n1)) {
+                    if (isFractionalType(n2)) {
+                        return Double.compare(n1.doubleValue(), n2.doubleValue());
+                    }
+                    if (isIntegralType(n2)) {
+                        return - compare(n2.longValue(), n1.doubleValue());
+                    }
+                }
+            }
+            if (a instanceof Number) {
+                return 1;
+            }
+            if (b instanceof Number) {
+                return -1;
+            }
+            // Comparison with the same class
+            if (a.getClass() == b.getClass() && a instanceof Comparable c1) {
+                return c1.compareTo((Comparable)b);
+            }
+            if (a instanceof Comparable) {
+                return 1;
+            }
+            if (b instanceof Comparable) {
+                return -1;
+            }
+            // Use something that is stable if it's not null, comparable or numeric
+            return Integer.compare(System.identityHashCode(a), System.identityHashCode(b));
+        }
+
+        private static int compare(long integral, double fractional) {
+            return BigDecimal.valueOf(integral).compareTo(BigDecimal.valueOf(fractional));
+        }
+
+        private static boolean isIntegralType(Number value) {
+            if (value instanceof Long || value instanceof Integer) {
+                return true;
+            }
+            if (value instanceof Short || value instanceof Byte) {
+                return true;
+            }
+            return false;
+        }
+
+        private static boolean isFractionalType(Number number) {
+            return number instanceof Float || number instanceof Double;
         }
     }
 

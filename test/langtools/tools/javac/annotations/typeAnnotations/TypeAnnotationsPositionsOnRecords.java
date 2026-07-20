@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
  * @bug 8246774
  * @summary Verify location of type annotations on records
  * @library /tools/lib
- * @enablePreview
  * @modules
- *      java.base/jdk.internal.classfile.impl
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.code
@@ -80,6 +78,17 @@ public class TypeAnnotationsPositionsOnRecords {
             record Record6(String t1, @Nullable String t2) {
                 public Record6 {}
             }
+
+            class Test2 {
+                @Target(ElementType.TYPE_USE)
+                @Retention(RetentionPolicy.RUNTIME)
+                public @interface Anno {}
+
+                class Foo {}
+                record Record7(Test2.@Anno Foo foo) {
+                    public Record7 {} // compact constructor
+                }
+            }
             """;
 
     public static void main(String... args) throws Exception {
@@ -102,6 +111,8 @@ public class TypeAnnotationsPositionsOnRecords {
                 "Record5.class").toUri()), 1);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Record6.class").toUri()), 1);
+        checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
+                "Test2$Record7.class").toUri()), 0);
     }
 
     void compileTestClass() throws Exception {
@@ -112,6 +123,7 @@ public class TypeAnnotationsPositionsOnRecords {
 
     void checkClassFile(final File cfile, int... taPositions) throws Exception {
         ClassModel classFile = ClassFile.of().parse(cfile.toPath());
+        System.err.println("-----------loading " + cfile.getPath());
         int accessorPos = 0;
         int checkedAccessors = 0;
         for (MethodModel method : classFile.methods()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "nmt/memTracker.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/vmError.hpp"
 
@@ -50,8 +49,8 @@ void ResourceArea::verify_has_resource_mark() {
     // is missing a ResourceMark, to avoid possible recursive errors
     // in error handling.
     static volatile bool reported = false;
-    if (!Atomic::load(&reported)) {
-      if (!Atomic::cmpxchg(&reported, false, true)) {
+    if (!AtomicAccess::load(&reported)) {
+      if (!AtomicAccess::cmpxchg(&reported, false, true)) {
         fatal("memory leak: allocating without ResourceMark");
       }
     }
@@ -71,10 +70,10 @@ extern char* resource_allocate_bytes(Thread* thread, size_t size, AllocFailType 
   return thread->resource_area()->allocate_bytes(size, alloc_failmode);
 }
 
-extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_size, AllocFailType alloc_failmode){
+extern char* resource_reallocate_bytes(char* old, size_t old_size, size_t new_size, AllocFailType alloc_failmode){
   return (char*)Thread::current()->resource_area()->Arealloc(old, old_size, new_size, alloc_failmode);
 }
 
-extern void resource_free_bytes( Thread* thread, char *old, size_t size ) {
-  thread->resource_area()->Afree(old, size);
+extern void resource_free_bytes(Thread* thread, char* obj, size_t size) {
+  thread->resource_area()->Afree(obj, size);
 }

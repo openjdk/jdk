@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,42 +33,40 @@ import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.testng.Assert.expectThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8236105
  * @summary Check that DatagramSocket, MulticastSocket,
  *          DatagramSocketAdaptor and DatagramChannel all
- *          throw expected Execption when passed a DatagramPacket
+ *          throw expected Exception when passed a DatagramPacket
  *          with invalid details
- * @run testng SendCheck
+ * @run junit ${test.main.class}
  */
 
 public class SendCheck {
-    private InetAddress loopbackAddr, wildcardAddr;
+    private static InetAddress loopbackAddr, wildcardAddr;
     static final Class<IOException> IOE = IOException.class;
     static final Class<SocketException> SE = SocketException.class;
 
     static final byte[] buf = {0, 1, 2};
     static DatagramSocket socket;
 
-    @BeforeTest
-    public void setUp() {
-        try {
-            socket = new DatagramSocket();
-        } catch (Exception e) {
-            throw new ExceptionInInitializerError(e);
-        }
+    @BeforeAll
+    public static void setUp() throws Exception {
+        socket = new DatagramSocket();
     }
 
-    @AfterTest
-    public void closeDown() {
+    @AfterAll
+    public static void closeDown() {
         socket.close();
     }
 
@@ -92,7 +90,7 @@ public class SendCheck {
             if (address == null) {
                 description = "<null>:" + port;
             } else if (port < 0) {
-                description = packet.getAddress().toString() + ":" + port;
+                description = packet.getAddress() + ":" + port;
             } else {
                 description = packet.getSocketAddress().toString();
             }
@@ -100,8 +98,7 @@ public class SendCheck {
         }
     }
 
-    @DataProvider(name = "packets")
-    Object[][] providerIO() throws IOException {
+    static List<Arguments> providerIO() throws IOException {
         loopbackAddr = InetAddress.getLoopbackAddress();
         wildcardAddr = new InetSocketAddress(0).getAddress();
 
@@ -124,46 +121,46 @@ public class SendCheck {
 
         List<Packet> Packets = List.of(Packet.of(pkt1), Packet.of(pkt2));
 
-        List<Sender> senders = List.of(
-                Sender.of(new DatagramSocket(null)),
-                Sender.of(new MulticastSocket(null), (byte) 0),
-                Sender.of(DatagramChannel.open()),
-                Sender.of(DatagramChannel.open().socket()),
-                Sender.of((MulticastSocket)
-                        DatagramChannel.open().socket(), (byte) 0)
-        );
-
-        List<Object[]> testcases = new ArrayList<>();
+        List<Arguments> testcases = new ArrayList<>();
         for (var packet : Packets) {
+            // Note that Closeable arguments passed to a ParameterizedTest are automatically
+            // closed by JUnit. We do not want to rely on this, but we do need to
+            // create a new set of sockets for each invocation of this method, so that
+            // the next test method invoked doesn't get a closed socket.
+            List<Sender> senders = List.of(
+                    Sender.of(new DatagramSocket(null)),
+                    Sender.of(new MulticastSocket(null)),
+                    Sender.of(DatagramChannel.open()),
+                    Sender.of(DatagramChannel.open().socket())
+            );
             addTestCaseFor(testcases, senders, packet);
         }
 
-        return testcases.toArray(new Object[0][0]);
+        return testcases;
     }
 
-    static void addTestCaseFor(List<Object[]> testcases,
+    static void addTestCaseFor(List<Arguments> testcases,
                                List<Sender> senders, Packet p) {
         for (var s : senders) {
-            Object[] testcase = new Object[]{s, p, s.expectedException()};
-            testcases.add(testcase);
+            testcases.add(Arguments.of(s, p, s.expectedException()));
         }
     }
 
-    @Test(dataProvider = "packets")
-    public static void sendCheck(Sender<IOException> sender,
-                                        Packet packet,
-                                        Class<? extends Throwable> exception) {
-        DatagramPacket pkt = packet.packet;
-        if (exception != null) {
-            Throwable t = expectThrows(exception, () -> sender.send(pkt));
-            System.out.printf("%s got expected exception %s%n",
-                    packet.toString(), t);
-        } else {
-            try {
-                sender.send(pkt);
-            } catch (IOException e) {
-                throw new AssertionError("Unexpected exception for "
-                        + sender + " / " + packet, e);
+    @ParameterizedTest
+    @MethodSource("providerIO")
+    public void sendCheck(Sender<IOException> socket,
+                          Packet packet,
+                          Class<? extends Throwable> exception)
+            throws IOException
+    {
+        try (var sender = socket) {
+            DatagramPacket pkt = packet.packet;
+            if (exception != null) {
+                Throwable t = assertThrows(exception, () -> sender.send(pkt));
+                System.out.printf("%s got expected exception %s%n", packet, t);
+            } else {
+                assertDoesNotThrow(() -> sender.send(pkt),
+                        "Unexpected exception for " + sender + " / " + packet);
             }
         }
     }
@@ -177,12 +174,6 @@ public class SendCheck {
 
         static Sender<IOException> of(DatagramSocket socket) {
             return new SenderImpl<>(socket, socket::send, socket::close, SE);
-        }
-
-        static Sender<IOException> of(MulticastSocket socket, byte ttl) {
-            SenderImpl.Send<IOException> send =
-                    (pkt) -> socket.send(pkt, ttl);
-            return new SenderImpl<>(socket, send, socket::close, SE);
         }
 
         static Sender<IOException> of(DatagramChannel socket) {

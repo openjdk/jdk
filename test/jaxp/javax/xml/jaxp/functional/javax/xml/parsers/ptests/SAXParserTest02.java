@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,23 @@
 
 package javax.xml.parsers.ptests;
 
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
-
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.ext.DeclHandler;
 import org.xml.sax.ext.LexicalHandler;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Class contains the test cases for SAXParser API
@@ -45,10 +47,8 @@ import org.xml.sax.ext.LexicalHandler;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.parsers.ptests.SAXParserTest02
- * @run testng/othervm javax.xml.parsers.ptests.SAXParserTest02
+ * @run junit/othervm javax.xml.parsers.ptests.SAXParserTest02
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class SAXParserTest02 {
     private static final String DOM_NODE = "http://xml.org/sax/properties/dom-node";
     private static final String XML_STRING = "http://xml.org/sax/properties/xml-string";
@@ -61,8 +61,7 @@ public class SAXParserTest02 {
      * @return a data provider contains a SAXParser instance.
      * @throws Exception If any errors occur.
      */
-    @DataProvider(name = "parser-provider")
-    public Object[][] getParser() throws Exception {
+    public static Object[][] getParser() throws Exception {
         SAXParserFactory spf = SAXParserFactory.newInstance();
         SAXParser saxparser = spf.newSAXParser();
         return new Object[][] { { saxparser } };
@@ -73,7 +72,8 @@ public class SAXParserTest02 {
      *
      * @param saxparser a SAXParser instance.
      */
-    @Test(dataProvider = "parser-provider")
+    @ParameterizedTest
+    @MethodSource("getParser")
     public void testValidate01(SAXParser saxparser) {
         assertFalse(saxparser.isValidating());
     }
@@ -81,8 +81,6 @@ public class SAXParserTest02 {
     /**
      * Test to test the functionality of setValidating and isValidating
      * methods.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void testValidate02() throws Exception {
@@ -98,7 +96,8 @@ public class SAXParserTest02 {
      *
      * @param saxparser a SAXParser instance.
      */
-    @Test(dataProvider = "parser-provider")
+    @ParameterizedTest
+    @MethodSource("getParser")
     public void testNamespace01(SAXParser saxparser) {
         assertFalse(saxparser.isNamespaceAware());
     }
@@ -122,7 +121,8 @@ public class SAXParserTest02 {
      * @param saxparser a SAXParser instance.
      * @throws SAXException If any parse errors occur.
      */
-    @Test(dataProvider = "parser-provider")
+    @ParameterizedTest
+    @MethodSource("getParser")
     public void testParser01(SAXParser saxparser) throws SAXException {
         assertNotNull(saxparser.getParser());
     }
@@ -134,7 +134,8 @@ public class SAXParserTest02 {
      * @param saxparser a SAXParser instance.
      * @throws SAXException If any parse errors occur.
      */
-    @Test(dataProvider = "parser-provider")
+    @ParameterizedTest
+    @MethodSource("getParser")
     public void testXmlReader01(SAXParser saxparser) throws SAXException {
         assertNotNull(saxparser.getXMLReader());
     }
@@ -145,10 +146,10 @@ public class SAXParserTest02 {
      * @param saxparser a SAXParser instance.
      * @throws SAXException If any parse errors occur.
      */
-    @Test(expectedExceptions = SAXNotSupportedException.class,
-            dataProvider = "parser-provider")
-    public void testProperty01(SAXParser saxparser) throws SAXException {
-        saxparser.getProperty(XML_STRING);
+    @ParameterizedTest
+    @MethodSource("getParser")
+    public void testProperty01(SAXParser saxparser) {
+        assertThrows(SAXNotSupportedException.class, () -> saxparser.getProperty(XML_STRING));
     }
 
     /**
@@ -157,10 +158,10 @@ public class SAXParserTest02 {
      * @param saxparser a SAXParser instance.
      * @throws SAXException If any parse errors occur.
      */
-    @Test(expectedExceptions = SAXNotSupportedException.class,
-            dataProvider = "parser-provider")
-    public void testProperty02(SAXParser saxparser) throws SAXException {
-        saxparser.getProperty(DOM_NODE);
+    @ParameterizedTest
+    @MethodSource("getParser")
+    public void testProperty02(SAXParser saxparser) {
+        assertThrows(SAXNotSupportedException.class, () -> saxparser.getProperty(DOM_NODE));
     }
 
     /**
@@ -169,7 +170,8 @@ public class SAXParserTest02 {
      * @param saxparser a SAXParser instance.
      * @throws SAXException If any parse errors occur.
      */
-    @Test(dataProvider = "parser-provider")
+    @ParameterizedTest
+    @MethodSource("getParser")
     public void testProperty03(SAXParser saxparser) throws SAXException {
         assertNull(saxparser.getProperty(LEXICAL_HANDLER));
     }
@@ -180,7 +182,8 @@ public class SAXParserTest02 {
      * @param saxparser a SAXParser instance.
      * @throws SAXException If any parse errors occur.
      */
-    @Test(dataProvider = "parser-provider")
+    @ParameterizedTest
+    @MethodSource("getParser")
     public void testProperty04(SAXParser saxparser) throws SAXException {
         assertNull(saxparser.getProperty(DECL_HANDLER));
     }
@@ -191,11 +194,12 @@ public class SAXParserTest02 {
      * @param saxparser a SAXParser instance.
      * @throws SAXException If any parse errors occur.
      */
-    @Test(dataProvider = "parser-provider")
+    @ParameterizedTest
+    @MethodSource("getParser")
     public void testProperty05(SAXParser saxparser) throws SAXException {
         MyLexicalHandler myLexicalHandler = new MyLexicalHandler();
         saxparser.setProperty(LEXICAL_HANDLER, myLexicalHandler);
-        assertTrue(saxparser.getProperty(LEXICAL_HANDLER) instanceof LexicalHandler);
+        assertInstanceOf(LexicalHandler.class, saxparser.getProperty(LEXICAL_HANDLER));
     }
 
     /**
@@ -204,11 +208,12 @@ public class SAXParserTest02 {
      * @param saxparser a SAXParser instance.
      * @throws SAXException If any parse errors occur.
      */
-    @Test(dataProvider = "parser-provider")
+    @ParameterizedTest
+    @MethodSource("getParser")
     public void testProperty06(SAXParser saxparser) throws SAXException {
         MyDeclHandler myDeclHandler = new MyDeclHandler();
         saxparser.setProperty(DECL_HANDLER, myDeclHandler);
-        assertTrue(saxparser.getProperty(DECL_HANDLER) instanceof DeclHandler);
+        assertInstanceOf(DeclHandler.class, saxparser.getProperty(DECL_HANDLER));
     }
 
     /**

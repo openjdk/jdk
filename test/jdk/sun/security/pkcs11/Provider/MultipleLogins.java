@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,17 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8240256 8269034
+ * @summary
+ * @library /test/lib/ /sun/security/pkcs11/
+ * @modules jdk.crypto.cryptoki/sun.security.pkcs11
+ * @run main/othervm
+ *        -DCUSTOM_P11_CONFIG=${test.src}/MultipleLogins-nss.txt
+ *        -DCUSTOM_DB_DIR=./nss/db
+ *        MultipleLogins
+ */
 
 import sun.security.pkcs11.SunPKCS11;
 
@@ -30,42 +41,38 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
+
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.security.*;
-import java.util.PropertyPermission;
 
 import jdk.test.lib.util.ForceGC;
 import jtreg.SkippedException;
 
-public class MultipleLogins {
-    private static final String KS_TYPE = "PKCS11";
+public class MultipleLogins extends PKCS11Test {
     private static final int NUM_PROVIDERS = 20;
     private static final SunPKCS11[] providers = new SunPKCS11[NUM_PROVIDERS];
-    static final Policy DEFAULT_POLICY = Policy.getPolicy();
 
     public static void main(String[] args) throws Exception {
-        String nssConfig = null;
-        try {
-            nssConfig = PKCS11Test.getNssConfig();
-        } catch (SkippedException exc) {
-            System.out.println("Skipping test: " + exc.getMessage());
-        }
+        // This bypasses the PKCS11Test settings and run the mandatory
+        // main method directly. This is needed to keep the custom logic of the test
+        new MultipleLogins().main((Provider)null);
+    }
+
+    @Override
+    public void main(Provider p) throws Exception {
+        copyNssCertKeyToClassesDir();
+
+        String nssConfig = getNssConfig();
 
         if (nssConfig == null) {
             // No test framework support yet. Ignore
-            System.out.println("No NSS config found. Skipping.");
-            return;
+            throw new SkippedException("No NSS config found. Skipping.");
         }
 
-        for (int i =0; i < NUM_PROVIDERS; i++) {
+        for (int i = 0; i < NUM_PROVIDERS; i++) {
             // loop to set up test without security manger
-            providers[i] = (SunPKCS11)PKCS11Test.newPKCS11Provider();
-        }
-
-        if (args.length > 0) {
-            Policy.setPolicy(new SimplePolicy());
-            System.setSecurityManager(new SecurityManager());
+            providers[i] = (SunPKCS11)newPKCS11Provider();
         }
 
         for (int i =0; i < NUM_PROVIDERS; i++) {
@@ -75,7 +82,7 @@ public class MultipleLogins {
         }
 
         WeakReference<SunPKCS11>[] weakRef = new WeakReference[NUM_PROVIDERS];
-        for (int i =0; i < NUM_PROVIDERS; i++) {
+        for (int i = 0; i < NUM_PROVIDERS; i++) {
             weakRef[i] = new WeakReference<>(providers[i]);
             providers[i].logout();
 
@@ -102,7 +109,7 @@ public class MultipleLogins {
     }
 
     private static void test(SunPKCS11 p) throws Exception {
-        KeyStore ks = KeyStore.getInstance(KS_TYPE, p);
+        KeyStore ks = KeyStore.getInstance(PKCS11, p);
         p.setCallbackHandler(new PasswordCallbackHandler());
         try {
             ks.load(null, (char[]) null);
@@ -118,40 +125,23 @@ public class MultipleLogins {
         try {
             ks.load(null, (char[]) null);
         } catch (IOException e) {
-            if (e.getCause() instanceof LoginException &&
-                    e.getCause().getMessage().contains("No token present")) {
-                // expected
-            } else {
+            if (!(e.getCause() instanceof LoginException) ||
+                !(e.getCause().getMessage().contains("No token present"))) {
+
                 throw new RuntimeException("Token was present", e);
-            }
-        }
-    }
-
-    static final class SimplePolicy extends Policy {
-
-        final Permissions perms = new Permissions();
-        SimplePolicy() {
-            perms.add(new PropertyPermission("*", "read, write"));
-            perms.add(new SecurityPermission("authProvider.*"));
-            perms.add(new SecurityPermission("insertProvider.*"));
-            perms.add(new SecurityPermission("removeProvider.*"));
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain domain, Permission permission) {
-            return perms.implies(permission) ||
-                    DEFAULT_POLICY.implies(domain, permission);
+            } // else expected
         }
     }
 
     public static class PasswordCallbackHandler implements CallbackHandler {
         public void handle(Callback[] callbacks)
                 throws IOException, UnsupportedCallbackException {
-            if (!(callbacks[0] instanceof PasswordCallback)) {
+            if (callbacks[0] instanceof PasswordCallback pc) {
+                pc.setPassword(null);
+            } else {
                 throw new UnsupportedCallbackException(callbacks[0]);
             }
-            PasswordCallback pc = (PasswordCallback)callbacks[0];
-            pc.setPassword(null);
+
         }
     }
 }

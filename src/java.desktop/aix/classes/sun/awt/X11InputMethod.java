@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
      * Constructs an X11InputMethod instance. It initializes the XIM
      * environment if it's not done yet.
      *
-     * @exception AWTException if XOpenIM() failed.
+     * @throws AWTException if XOpenIM() failed.
      */
     public X11InputMethod() throws AWTException {
         super();
