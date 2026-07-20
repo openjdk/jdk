@@ -244,7 +244,8 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
 
       __ z_llgh(rnew_zpointer, Address(ref_addr.base(), ref_addr.index(), ref_addr.disp() + 0x6));
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
-      __ z_cghi(rnew_zpointer, barrier_Relocation::unpatched);
+      __ z_llill(Z_R0_scratch, barrier_Relocation::unpatched);
+      __ z_clgr(rnew_zpointer, Z_R0_scratch);
       __ branch_optimized(Assembler::bcondNotEqual, medium_path);
     } else {
       // Stores on relocatable objects never need to deal with raw null pointers in fields.
@@ -282,9 +283,9 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       __ z_xgr(rnew_zpointer, rnew_zpointer);
     } else {
       __ z_lgr(rnew_zpointer, rnew_zaddress);
+      __ z_sllg(rnew_zpointer, rnew_zpointer, ZPointerLoadShift);
     }
 
-    __ z_sllg(rnew_zpointer, rnew_zpointer, ZPointerLoadShift);
     __ z_og(rnew_zpointer,  Address(Z_thread, ZThreadLocalData::store_good_mask_offset()));
   }
 }
