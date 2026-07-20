@@ -3345,7 +3345,6 @@ void C2_MacroAssembler::round_double_mode_v(VectorRegister dst, BasicType dst_bt
       csrwi(CSR_FRM, C2_MacroAssembler::rdn);
       break;
     case RoundDoubleModeNode::rmode_rint:
-      csrwi(CSR_FRM, C2_MacroAssembler::rne);
       break;
     default:
       ShouldNotReachHere();
@@ -3374,4 +3373,8 @@ void C2_MacroAssembler::round_double_mode_v(VectorRegister dst, BasicType dst_bt
 
   // If got conversion overflow return src
   vmerge_vvm(dst, src, dst);
+
+  if (round_mode != RoundDoubleModeNode::rmode_rint) {
+    csrwi(CSR_FRM, C2_MacroAssembler::rne);
+  }
 }

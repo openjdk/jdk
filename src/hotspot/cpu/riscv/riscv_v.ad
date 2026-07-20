@@ -137,7 +137,11 @@ source %{
       case Op_RoundVF:
       case Op_RoundVD:
         return vlen >= 8;
-
+      // Current test shows that, it brings performance regression when vlen == 2 and 4,
+      // but brings performance gain when vlen == 16. There is no vlen == 8 hardware to verify it, so
+      // only enable this intrinsic when vlen >= 16 for now.
+      case Op_RoundDoubleModeV:
+        return vlen >= 16;
       default:
         break;
     }
@@ -5143,13 +5147,11 @@ instruct vround_d(vReg dst, vReg src, fRegD tmp, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-
 // ------------------------------ RoundDouble ----------------------------------
 
 instruct vroundD(vReg dst, vReg src, immI rmode, vRegMask_V0 v0, vReg tmp1, vReg tmp2) %{
   predicate(n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
   match(Set dst (RoundDoubleModeV src rmode));
-  ins_cost(VEC_COST);
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP v0);
   format %{ "vroundD $dst, $src, $rmode" %}
   ins_encode %{
@@ -5160,7 +5162,6 @@ instruct vroundD(vReg dst, vReg src, immI rmode, vRegMask_V0 v0, vReg tmp1, vReg
   %}
   ins_pipe(pipe_slow);
 %}
-
 
 // -------------------------------- Reverse Bits Vector Operations ------------------------
 
