@@ -389,7 +389,7 @@ abstract class UnixFileSystem
         boolean copyPosixAttributes;
         boolean copyNonPosixAttributes;
 
-        // flags that indicate if we should fail if attributes cannot be copied
+        // flag that indicates if we should fail if basic attributes cannot be copied
         boolean failIfUnableToCopyBasic;
 
         static Flags fromCopyOptions(CopyOption... options) {
