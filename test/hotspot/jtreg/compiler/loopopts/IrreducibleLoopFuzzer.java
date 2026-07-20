@@ -112,7 +112,11 @@ public class IrreducibleLoopFuzzer {
         public List<Operation> ifGotoOperations(String label) {
             return List.of(
                 new Operation(List.of(INTS, INTS),  List.of(),  "if_icmple " + label + ";\n"),
-                new Operation(List.of(INTS, INTS),  List.of(),  "if_icmplt " + label + ";\n")
+                new Operation(List.of(INTS, INTS),  List.of(),  "if_icmplt " + label + ";\n"),
+                new Operation(List.of(INTS, INTS),  List.of(),  "if_icmpge " + label + ";\n"),
+                new Operation(List.of(INTS, INTS),  List.of(),  "if_icmpgt " + label + ";\n"),
+                new Operation(List.of(INTS, INTS),  List.of(),  "if_icmpne " + label + ";\n"),
+                new Operation(List.of(INTS, INTS),  List.of(),  "if_icmpeq " + label + ";\n")
             );
         }
     }
@@ -126,7 +130,11 @@ public class IrreducibleLoopFuzzer {
         public List<Operation> ifGotoOperations(String label) {
             return List.of(
                 new Operation(List.of(LONGS, LONGS),  List.of(),  "lcmp; ifle " + label + ";\n"),
-                new Operation(List.of(LONGS, LONGS),  List.of(),  "lcmp; iflt " + label + ";\n")
+                new Operation(List.of(LONGS, LONGS),  List.of(),  "lcmp; iflt " + label + ";\n"),
+                new Operation(List.of(LONGS, LONGS),  List.of(),  "lcmp; ifge " + label + ";\n"),
+                new Operation(List.of(LONGS, LONGS),  List.of(),  "lcmp; ifgt " + label + ";\n"),
+                new Operation(List.of(LONGS, LONGS),  List.of(),  "lcmp; ifne " + label + ";\n"),
+                new Operation(List.of(LONGS, LONGS),  List.of(),  "lcmp; ifeq " + label + ";\n")
             );
         }
     }
