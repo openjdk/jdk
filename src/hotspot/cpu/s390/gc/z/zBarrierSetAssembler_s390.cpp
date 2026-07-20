@@ -457,7 +457,6 @@ void ZBarrierSetAssembler::copy_load_at_slow(MacroAssembler* masm,
                                              Label& slow_path,
                                              Label& continuation) const {
 
-  __ align(32);
   __ bind(slow_path);
 
   {
@@ -497,7 +496,6 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
                                               bool dest_unintialized) const {
   if (!dest_unintialized) {
     Label slow_path, slow_path_continuation;
-    __ align(32);
     __ bind(medium_path);
     store_barrier_medium(masm, Address(addr, 0), Z_tmp_1, Z_tmp_2, false, false, continuation, slow_path, slow_path_continuation);
     __ bind(slow_path);
@@ -519,7 +517,6 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
   Label done, loop, load_bad, load_good, store_bad, store_good;
   __ z_chi(Z_ARG3, 0);
   __ z_bre(done);
-  __ align(32);
 
   __ bind(loop);
   copy_load_at_fast(masm, zpointer, Z_ARG1, _load_bad_mask, load_bad, load_good);
@@ -550,7 +547,6 @@ void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool
   __ z_agr(Z_ARG1, Z_R0);
   __ z_agr(Z_ARG2, Z_R0);
 
-  __ align(32);
   __ bind(loop);
   __ add2reg(Z_ARG1, -8);
   __ add2reg(Z_ARG2, -8);
