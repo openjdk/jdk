@@ -213,8 +213,8 @@ private:
   Atomic<TaskQueueEntryChunk*> _free_list;  // Linked list of free chunks that can be allocated by users.
   char _pad1[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*)];
   Atomic<TaskQueueEntryChunk*> _chunk_list; // List of chunks currently containing data.
-  volatile size_t _chunks_in_chunk_list;
-  char _pad2[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
+  Atomic<size_t> _chunks_in_chunk_list;
+  char _pad2[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(_chunks_in_chunk_list)];
 
   // Atomically add the given chunk to the list.
   void add_chunk_to_list(Atomic<TaskQueueEntryChunk*>* list, TaskQueueEntryChunk* elem);
@@ -265,7 +265,7 @@ private:
 
   // Return the approximate number of oops on this mark stack. Racy due to
   // unsynchronized access to _chunks_in_chunk_list.
-  size_t size() const { return _chunks_in_chunk_list * EntriesPerChunk; }
+  size_t size() const { return _chunks_in_chunk_list.load_relaxed() * EntriesPerChunk; }
 
   void set_empty();
 
@@ -323,6 +323,7 @@ public:
 // This class manages data structures and methods for doing liveness analysis in
 // G1's concurrent cycle.
 class G1ConcurrentMark : public CHeapObj<mtGC> {
+  friend class G1ClearBitMapTask;
   friend class G1CMBitMapClosure;
   friend class G1CMConcurrentMarkingTask;
   friend class G1CMDrainMarkingStackClosure;
@@ -331,7 +332,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   friend class G1CMRemarkTask;
   friend class G1CMRootRegionScanTask;
   friend class G1CMTask;
-  friend class G1ClearBitMapTask;
   friend class G1CollectorState;
   friend class G1ConcurrentMarkThread;
 
@@ -494,15 +494,18 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // true, periodically insert checks to see if this method should exit prematurely.
   void clear_bitmap(WorkerThreads* workers, bool may_yield);
 
+  // Records whether the region mark stats cache may contain entries due to marking activity,
+  // and the cache for freed regions needs to be cleared for those.
+  bool _is_region_mark_stats_cache_in_use;
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;
-  // Top pointer for each region at the start of marking. Must be valid for all committed
-  // regions.
+  // Top pointer for each region at the start of marking. Must be valid, i.e. be within
+  // [bottom, end] of a region for all committed regions.
   Atomic<HeapWord*>* _top_at_mark_starts;
   // Top pointer for each region at the start of the rebuild remembered set process
   // for regions which remembered sets need to be rebuilt. A null for a given region
-  // means that this region does not be scanned during the rebuilding remembered
-  // set phase at all.
+  // means that this region does not need to be scanned during the remembered set rebuild
+  // phase at all.
   Atomic<HeapWord*>* _top_at_rebuild_starts;
   // True when Remark pause selected regions for rebuilding.
   bool _needs_remembered_set_rebuild;
@@ -512,27 +515,47 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // Concurrent cycle state queries.
   bool is_in_concurrent_cycle() const;
   bool is_in_marking() const;
-  bool is_in_rebuild_or_scrub() const;
+  bool is_in_marking_or_rebuild() const;
   bool is_in_reset_for_next_cycle() const;
+
+  void assert_fully_initialized() const { assert(is_fully_initialized(), "must be"); }
+  // The TAMS may be read and returns useful values related to the current concurrent marking.
+  // This is the case only during the concurrent cycle or the Concurrent Start pause.
+  inline bool tams_may_be_read() const;
+  // Update the TAMS for the given region to the current top.
+  inline void update_top_at_mark_start(G1HeapRegion* r);
+  // Reset the TAMS for the given region to bottom.
+  inline void set_top_at_mark_start_to_bottom(G1HeapRegion* r);
 
 public:
   // To be called when an object is marked the first time, e.g. after a successful
   // mark_in_bitmap call. Updates various statistics data.
   void add_to_liveness(uint worker_id, oop const obj, size_t size);
   // Did the last marking find a live object between bottom and TAMS?
-  bool contains_live_object(uint region) const { return _region_mark_stats[region].live_words() != 0; }
+  bool contains_live_object(uint region) const;
   // Live bytes in the given region as determined by concurrent marking, i.e. the amount of
   // live bytes between bottom and TAMS.
-  size_t live_bytes(uint region) const { return _region_mark_stats[region].live_words() * HeapWordSize; }
+  size_t live_bytes(uint region) const;
   // Set live bytes for concurrent marking.
-  void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words.store_relaxed(live_bytes / HeapWordSize); }
+  void set_live_bytes(uint region, size_t live_bytes);
   // Approximate number of incoming references found during marking.
-  size_t incoming_refs(uint region) const { return _region_mark_stats[region].incoming_refs(); }
+  size_t incoming_refs(uint region) const;
 
-  // Update the TAMS for the given region to the current top.
-  inline void update_top_at_mark_start(G1HeapRegion* r);
-  // Reset the TAMS for the given region to bottom of that region.
-  inline void reset_top_at_mark_start(G1HeapRegion* r);
+  void note_start_of_mark_for_region(G1HeapRegion* r);
+  inline void assert_top_at_mark_start_is_bottom(G1HeapRegion* r);
+
+  // Returns the TAMS for the given region; outside of the concurrent cycle or Concurrent Start
+  // pause, always returns r->bottom().
+  // Intended to be used for queries that are not allowed to fail at any time, but give a
+  // reasonable value, e.g. for logging to avoid having to do lots of check at every call site.
+  // Do not use for logic.
+  inline HeapWord* top_at_mark_start_or_bottom(const G1HeapRegion* r) const;
+  // Special method to return TAMS for verification purposes. During verification, if Full GC
+  // aborted a concurrent cycle, we need to use the TAMS data because the bitmap < TAMS may
+  // legitimately contain marks, however since we are in a Full GC tams_may_be_read() returns
+  // false. The other methods would return bottom(), which is wrong for verification.
+  inline HeapWord* top_at_mark_start_for_verification(const G1HeapRegion* r,
+                                                      bool concurrent_cycle_aborted) const;
 
   inline HeapWord* top_at_mark_start(const G1HeapRegion* r) const;
   inline HeapWord* top_at_mark_start(uint region) const;
@@ -546,15 +569,26 @@ public:
 
   uint worker_id_offset() const { return _worker_id_offset; }
 
+  // Fully allocates and initializes data structures for the concurrent cycle.
+  // Methods that use concurrent cycle state such as the concurrent mark threads,
+  // tasks, marking stack, statistics, TAMS or TARS require this initialization.
+  // Callers that run before the first concurrent start pause, which calls this,
+  // should guard calls with is_fully_initialized().
   void fully_initialize();
   bool is_fully_initialized() const { return _cm_thread != nullptr; }
 
   uint max_num_tasks() const {return _max_num_tasks; }
 
-  // Clear statistics gathered during the concurrent cycle for the given region after
-  // it has been reclaimed.
-  void clear_statistics(G1HeapRegion* r);
-  // Notification for eagerly reclaimed regions to clean up.
+  void assert_statistics_clear(G1HeapRegion* r);
+
+  // Notification for marking that a new region has been added to the heap. Updates the TAMS and
+  // live bytes for this region during a Concurrent Start pause.
+  void notify_new_region(G1HeapRegion* r, size_t marked_live_bytes_below_tams = 0);
+
+  // Resets region marking state for the given region, i.e. TAMS, statistics, task metadata,
+  // etc. to initial state.
+  void reset_region_marking_state(G1HeapRegion* r);
+  // Notification for eagerly reclaimed regions to do extra clean up.
   void humongous_object_eagerly_reclaimed(G1HeapRegion* r);
   // Manipulation of the global mark stack.
   // The push and pop operations are used by tasks for transfers
@@ -574,6 +608,8 @@ public:
   bool mark_stack_empty() const                 { return _global_mark_stack.is_empty(); }
 
   void concurrent_cycle_start();
+  bool shutdown_cleanup_needed() const;
+  void shutdown_concurrent_cycle();
   // Abandon current marking iteration due to a Full GC.
   bool concurrent_cycle_abort();
   void concurrent_cycle_end(bool mark_cycle_completed);
@@ -605,7 +641,7 @@ public:
   void reset();
 
   // Moves all per-task cached data into global state.
-  void flush_all_task_caches();
+  void flush_all_task_caches(bool ends_use_of_mark_cache = true);
   // Prepare internal data structures for the next mark cycle. This includes clearing
   // the next mark bitmap and some internal data structures. This method is intended
   // to be called concurrently to the mutator. It will yield to safepoint requests.
@@ -632,6 +668,7 @@ public:
   void stop();
 
   void add_root_region(G1HeapRegion* r);
+  void add_root_region_set_bottom(G1HeapRegion* r);
   bool is_root_region(G1HeapRegion* r);
 
   // Scan all the root regions concurrently and mark everything reachable from
@@ -958,6 +995,7 @@ public:
 
   inline void inc_incoming_refs(oop const obj);
 
+  void verify_no_mark_stats_for(uint region_idx) PRODUCT_RETURN;
   // Clear (without flushing) the mark cache entry for the given region.
   void clear_mark_stats_cache(uint region_idx);
   // Evict the whole statistics cache into the global statistics. Returns the

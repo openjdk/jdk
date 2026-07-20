@@ -27,33 +27,12 @@
  * @bug 8183390 8340010 8342095
  * @summary Vectorization test on array type conversions
  * @library /test/lib /
- *
- * @build jdk.test.whitebox.WhiteBox
- *        compiler.vectorization.runner.VectorizationTestRunner
- *
  * @requires vm.compiler2.enabled
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.ArrayTypeConvertTest nCOH_nAV
- *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.ArrayTypeConvertTest nCOH_yAV
- *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.ArrayTypeConvertTest yCOH_nAV
- *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.ArrayTypeConvertTest yCOH_yAV
+ * @run driver ${test.main.class} nCOH_nAV
+ * @run driver ${test.main.class} nCOH_yAV
+ * @run driver ${test.main.class} yCOH_nAV
+ * @run driver ${test.main.class} yCOH_yAV
  */
 
 package compiler.vectorization.runner;

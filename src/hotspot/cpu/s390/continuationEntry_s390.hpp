@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +26,11 @@
 #ifndef CPU_S390_CONTINUATIONENTRY_S390_HPP
 #define CPU_S390_CONTINUATIONENTRY_S390_HPP
 
+#include "runtime/frame.hpp"
+
 class ContinuationEntryPD {
-  // empty
+  // This is needed to position the ContinuationEntry at the unextended sp of the entry frame
+  frame::z_abi_160_base _abi;
 };
 
 #endif // CPU_S390_CONTINUATIONENTRY_S390_HPP

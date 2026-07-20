@@ -32,6 +32,7 @@
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/compressedKlass.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -923,6 +924,7 @@ public:
 
   // oop manipulations
   void load_narrow_klass_compact(Register dst, Register src);
+  void load_narrow_klass(Register dst, Register src);
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
   void cmp_klass(Register obj, Register klass, Register tmp);
@@ -1239,12 +1241,25 @@ public:
     str(rscratch1, adr);
   }
 
+private:
   // A generic CAS; success or failure is in the EQ flag.
   // Clobbers rscratch1
   void cmpxchg(Register addr, Register expected, Register new_val,
-               enum operand_size size,
-               bool acquire, bool release, bool weak,
-               Register result);
+               enum operand_size size, enum atomic_memory_order order,
+               bool weak, Register result);
+
+public:
+  void cmpxchg(Register addr, Register expected, Register new_val,
+               enum operand_size size, enum atomic_memory_order order,
+               Register result = noreg) {
+    cmpxchg(addr, expected, new_val, size, order, /* weak */ false, result);
+  }
+
+  void cmpxchg_weak(Register addr, Register expected, Register new_val,
+                    enum operand_size size, enum atomic_memory_order order,
+                    Register result = noreg) {
+    cmpxchg(addr, expected, new_val, size, order, /* weak */ true, result);
+  }
 
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline
@@ -1339,15 +1354,16 @@ public:
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
   }
-
-  // Check if branches to the non nmethod section require a far jump
+  // Check if the static call stub branch needs a far jump.
   static bool codestub_branch_needs_far_jump() {
     if (AOTCodeCache::is_on_for_dump()) {
-      // To calculate far_codestub_branch_size correctly.
+      // To calculate static_call_stub_size correctly.
       return true;
     }
-    return CodeCache::max_distance_to_non_nmethod() > branch_range;
+    return far_branches();
   }
+  // Check if a branch to the given address needs a far jump.
+  static bool target_needs_far_branch(address addr);
 
   // Emit a direct call/jump if the entry address will always be in range,
   // otherwise a far call/jump.
@@ -1359,17 +1375,9 @@ public:
   // In the case of a far call/jump, the entry address is put in the tmp register.
   // The tmp register is invalidated.
   //
-  // Far_jump returns the amount of the emitted code.
   void far_call(Address entry, Register tmp = rscratch1);
+  // Far_jump returns the amount of the emitted code.
   int far_jump(Address entry, Register tmp = rscratch1);
-
-  static int far_codestub_branch_size() {
-    if (codestub_branch_needs_far_jump()) {
-      return 3 * 4;  // adrp, add, br
-    } else {
-      return 4;
-    }
-  }
 
   // Emit the CompiledIC call idiom
   address ic_call(address entry, jint method_index = 0);
@@ -1843,13 +1851,19 @@ public:
 
 #undef SVE_DESTRUCTIVE_TERNARY_INS
 
-  using Assembler::sve_eor3;
-  void sve_eor3(FloatRegister Zd, FloatRegister Zm, FloatRegister Zk) {
-    if (Zd != Zm && Zd != Zk) {
-      try_to_replace_prev_vector_copy_with_movprfx(Zd);
-    }
-    Assembler::sve_eor3(Zd, Zm, Zk);
+#define SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(NAME)                               \
+  using Assembler::NAME;                                                       \
+  void NAME(FloatRegister Zd, FloatRegister Zm, FloatRegister Zk) {            \
+    if (Zd != Zm && Zd != Zk) {                                                \
+      try_to_replace_prev_vector_copy_with_movprfx(Zd);                        \
+    }                                                                          \
+    Assembler::NAME(Zd, Zm, Zk);                                               \
   }
+
+  SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(sve_bsl);
+  SVE_DESTRUCTIVE_TERNARY_UNPRED_INS(sve_eor3);
+
+#undef SVE_DESTRUCTIVE_TERNARY_UNPRED_INS
 };
 
 #ifdef ASSERT

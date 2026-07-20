@@ -578,18 +578,13 @@ inline bool can_handle_logic_op_as_uimm(ValueType *type, Bytecodes::Code bc) {
       Assembler::is_uimm((jlong)((julong)int_or_long_const >> 16), 16)) return true;
 
   // see Assembler::andi
-  if (bc == Bytecodes::_iand &&
-      (is_power_of_2(int_or_long_const+1) ||
-       is_power_of_2(int_or_long_const) ||
-       is_power_of_2(-int_or_long_const))) return true;
-  if (bc == Bytecodes::_land &&
-      (is_power_of_2((unsigned long)int_or_long_const+1) ||
-       (Assembler::is_uimm(int_or_long_const, 32) && is_power_of_2(int_or_long_const)) ||
-       (int_or_long_const != min_jlong && is_power_of_2(-int_or_long_const)))) return true;
+  if ((bc == Bytecodes::_iand || bc == Bytecodes::_land))
+    return Assembler::andi_supports(int_or_long_const);
 
   // special case: xor -1
-  if ((bc == Bytecodes::_ixor || bc == Bytecodes::_lxor) &&
-      int_or_long_const == -1) return true;
+  if ((bc == Bytecodes::_ixor || bc == Bytecodes::_lxor))
+    return (int_or_long_const == -1);
+
   return false;
 }
 
