@@ -220,7 +220,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   __ restore_return_pc();
   __ pop_frame();
 
-  BLOCK_COMMENT("ZBarrierSetAssembler::load_at {");
+  BLOCK_COMMENT("} ZBarrierSetAssembler::load_at");
 }
 
 void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
@@ -715,7 +715,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
   } else {
     Label good;
     __ z_lgr(Z_R0_scratch, ref->as_register());
-    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTestBit);
+    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadBadBeforeTest);
     __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
     __ branch_optimized(Assembler::bcondZero, good);
     __ branch_optimized(Assembler::bcondAlways, *stub->entry());
@@ -1053,7 +1053,7 @@ static uint16_t patch_barrier_relocation_value(int format) {
       return (uint16_t)ZPointerStoreBadMask;
     case ZBarrierRelocationFormatMarkBadBeforeTest:
       return (uint16_t)ZPointerMarkBadMask;
-    case ZBarrierRelocationFormatLoadGoodBeforeTestBit:
+    case ZBarrierRelocationFormatLoadBadBeforeTest:
       return (uint16_t)ZPointerLoadBadMask;
     default:
       ShouldNotReachHere();

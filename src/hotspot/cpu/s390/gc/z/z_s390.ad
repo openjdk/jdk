@@ -48,6 +48,7 @@ static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) 
 }
 
 static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
+  assert(ref != Z_R0_scratch, "ref must not be R0");
   __ z_lgr(Z_R0_scratch, ref);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
   __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
@@ -65,25 +66,25 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
   if (node->barrier_data() == ZBarrierElided) {
     z_uncolor(masm, node, ref);
     return;
-  } else {
-    const bool on_non_strong =
-        ((node->barrier_data() & ZBarrierWeak) != 0) ||
-        ((node->barrier_data() & ZBarrierPhantom) != 0);
-
-    if (on_non_strong) {
-      z_keep_alive_load_barrier(masm, node, ref_addr, ref);
-      return;
-    }
-
-    ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
-    __ z_lgr(Z_R0_scratch, ref);
-    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTestBit);
-    __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
-    __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
-
-    z_uncolor(masm, node, ref);
-    __ bind(*stub->continuation());
   }
+
+  const bool on_non_strong =
+      ((node->barrier_data() & ZBarrierWeak) != 0) ||
+      ((node->barrier_data() & ZBarrierPhantom) != 0);
+
+  if (on_non_strong) {
+    z_keep_alive_load_barrier(masm, node, ref_addr, ref);
+    return;
+  }
+
+  ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
+  __ z_lgr(Z_R0_scratch, ref);
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadBadBeforeTest);
+  __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
+  __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
+
+  z_uncolor(masm, node, ref);
+  __ bind(*stub->continuation());
 }
 
 static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register rnew_zaddress, Register rnew_zpointer, bool is_atomic) {
@@ -103,9 +104,10 @@ static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address 
 
 // Load Pointer
 instruct zLoadP(iRegP dst, memory mem, flagsReg cr) %{
-  predicate(UseZGC && n->as_Load()->barrier_data() != 0);
   match(Set dst (LoadP mem));
+  predicate(UseZGC && n->as_Load()->barrier_data() != 0);
   effect(TEMP dst, KILL cr);
+  ins_cost(MEMORY_REF_COST);
   ins_is_late_expanded_null_check_candidate(true);
 
   format %{ "LG      $dst,$mem\t # ptr" %}
@@ -123,8 +125,9 @@ instruct zStoreP(memory mem, iRegP src, iRegP temp, flagsReg cr) %{
   predicate(UseZGC && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem src));
   effect(TEMP temp, KILL cr);
+  ins_cost(2 * MEMORY_REF_COST);
 
-  format %{ "STG     $mem,$src\t # ptr" %}
+  format %{ "STG     $src,$mem\t # ptr" %}
   ins_encode %{
     z_store_barrier(masm, this, $mem$$Address, $src$$Register, $temp$$Register, false /* is_atomic */);
     __ z_stg($temp$$Register, $mem$$Address);
@@ -137,6 +140,7 @@ instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
   predicate(UseZGC && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem zero));
   effect(TEMP temp, KILL cr);
+  ins_cost(2 * MEMORY_REF_COST);
 
   format %{ "STG     $mem,null\t # ptr" %}
   ins_encode %{
@@ -146,10 +150,10 @@ instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP oldval, iRegP newval, iRegP oldval_temp, iRegP newval_temp, flagsReg cr) %{
+instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP oldval, iRegP newval, iRegP newval_temp, flagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF res, USE mem, TEMP oldval_temp, TEMP newval_temp, KILL cr);
+  effect(TEMP_DEF res, USE mem,  TEMP newval_temp, KILL cr);
 
   format %{ "CompareAndExchangeP $oldval, $newval, $mem" %}
   ins_encode %{
