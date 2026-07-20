@@ -39,9 +39,7 @@ static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Re
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
   __ z_llill(dst, barrier_Relocation::unpatched);
   if (src != noreg) {
-    __ z_sllg(src, src, ZPointerLoadShift);
-    __ z_ogr(dst, src);
-    __ z_srlg(src, src, ZPointerLoadShift);
+    __ z_rosbg(dst, src, 0, 63 - ZPointerLoadShift, ZPointerLoadShift);
   }
 }
 
@@ -110,7 +108,6 @@ instruct zLoadP(iRegP dst, memory mem, flagsReg cr) %{
   effect(TEMP dst, KILL cr);
   ins_is_late_expanded_null_check_candidate(true);
   ins_cost(MEMORY_REF_COST);
-  size(100);
 
   format %{ "LG      $dst,$mem\t # ptr" %}
 
@@ -128,7 +125,6 @@ instruct zStoreP(memory mem, iRegP src, iRegP temp, flagsReg cr) %{
   match(Set mem (StoreP mem src));
   effect(TEMP temp, KILL cr);
   // TODO: update the sizes of these instructions
-  size(100);
 
   //TODO: double check the instruction cost
   ins_cost(2 * MEMORY_REF_COST);
@@ -145,7 +141,6 @@ instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
   predicate(UseZGC && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem zero));
   effect(TEMP temp, KILL cr);
-  size(100);
 
   ins_cost(MEMORY_REF_COST);
   format %{ "STG     $mem,null\t # ptr" %}
@@ -160,7 +155,6 @@ instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP oldval, iRegP newval, 
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP_DEF res, USE mem, TEMP oldval_temp, TEMP newval_temp, KILL cr);
-  size(200);
 
   format %{ "CompareAndExchangeP $oldval, $newval, $mem" %}
   ins_encode %{
@@ -180,7 +174,6 @@ instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP oldval, iRegP newval, iRegP
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP_DEF res, USE mem, USE oldval, TEMP oldval_temp, TEMP newval_temp, KILL cr);
-  size(100);
 
   format %{ "CompareAndSwapP $oldval,$newval,$mem" %}
 
@@ -210,7 +203,6 @@ instruct zGetAndSetP(iRegP newval, iRegP mem, iRegP temp1, iRegP temp2, flagsReg
   match(Set newval (GetAndSetP mem newval));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP temp1, TEMP temp2, KILL cr);
-  size(100);
 
   format %{ "GetAndSetP   $newval,[$mem]\t # EXCHANGE (oop, atomic), temp $temp1" %}
 
