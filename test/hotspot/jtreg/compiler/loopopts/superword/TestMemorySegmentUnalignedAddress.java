@@ -227,6 +227,7 @@ class TestMemorySegmentUnalignedAddressImpl {
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0",
                   "multiversion",       "= 0"},
+        applyIf = {"UseUnalignedAccesses", "true"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         phase = CompilePhase.PRINT_IDEAL)
@@ -246,7 +247,7 @@ class TestMemorySegmentUnalignedAddressImpl {
                   IRNode.STORE_VECTOR,  "> 0",
                   "multiversion_fast",  "= 4",  // pre, main, drain, post
                   "multiversion_slow",  "= 2"}, // main, post
-        applyIf = {"AlignVector", "true"},
+        applyIfAnd = {"AlignVector", "true", "UseUnalignedAccesses", "true"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         phase = CompilePhase.PRINT_IDEAL)
@@ -277,7 +278,7 @@ class TestMemorySegmentUnalignedAddressImpl {
                   IRNode.STORE_VECTOR,  "> 0",
                   "multiversion_fast",  "= 4",  // pre, main, drain, post
                   "multiversion_slow",  "= 2"}, // main, post
-        applyIf = {"AlignVector", "true"},
+        applyIfAnd = {"AlignVector", "true", "UseUnalignedAccesses", "true"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         phase = CompilePhase.PRINT_IDEAL)
