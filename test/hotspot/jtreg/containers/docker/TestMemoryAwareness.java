@@ -213,6 +213,7 @@ public class TestMemoryAwareness {
         System.out.println("sizeToAllocInMb is:" + sizeToAllocInMb + " sizeToAllocInMb/2 is:" + sizeToAllocInMb/2);
         String javaHeapSize = sizeToAllocInMb/2 + "m";
         opts.addJavaOptsAppended("-Xmx" + javaHeapSize);
+        opts.addJavaOptsAppended("-XX:ActiveProcessorCount=2");
 
         OutputAnalyzer out = DockerTestUtils.dockerRunJava(opts);
 
