@@ -68,7 +68,6 @@ public class TestMaskedStoreIdealization {
         vmArgs.add("-XX:-StressReflectiveCode"); // Temporarily disable stress flag that causes unrelated failures.
         String[] vmArgsArray = vmArgs.toArray(new String[0]);
 
-
         comp.invoke(PACKAGE + "." + CLASS_NAME, "main", new Object[] { vmArgsArray });
     }
 
