@@ -117,6 +117,16 @@ public class StrictParseTest {
         // Special case: NaN
         failParse(nonLocalizedDFmt, "NaNFoo", 3);
         successParse(nonLocalizedDFmt, "NaN");
+
+        // Grouping size == 0 cases
+        var fmt = new DecimalFormat();
+        fmt.setStrict(true);
+        fmt.setGroupingSize(0);
+        fmt.setGroupingUsed(true);
+        var pp = new ParsePosition(0);
+        assertThrows(ParseException.class, () -> fmt.parse("555,000.0", pp));
+        assertEquals(3, pp.getErrorIndex());
+        assertDoesNotThrow(() -> fmt.parse("555.0"));
     }
 
     // 8333755: Check that parsing with integer only against a suffix value works

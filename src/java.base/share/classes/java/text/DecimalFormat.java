@@ -2059,8 +2059,7 @@ public class DecimalFormat extends NumberFormat {
                 // Output grouping separator if necessary.  Don't output a
                 // grouping separator if i==0 though; that's at the end of
                 // the integer part.
-                if (isGroupingUsed() && i>0 && (groupingSize != 0) &&
-                        (i % groupingSize == 0)) {
+                if (isGroupingRelevant() && i > 0 && i % groupingSize == 0) {
                     int gStart = result.length();
                     result.append(grouping);
                     delegate.formatted(Field.GROUPING_SEPARATOR,
@@ -2574,7 +2573,8 @@ public class DecimalFormat extends NumberFormat {
                 }
 
                 // Enforce the grouping size on the first group
-                if (parseStrict && isGroupingUsed() && position == startPos + groupingSize
+                if (parseStrict && isGroupingRelevant()
+                        && position == startPos + groupingSize
                         && prevSeparatorIndex == -groupingSize && !sawDecimal
                         && digit >= 0 && digit <= 9) {
                     return new NumericPosition(position, intIndex);
@@ -2618,7 +2618,8 @@ public class DecimalFormat extends NumberFormat {
                         return new NumericPosition(-1, intIndex);
                     }
                     // Check grouping size on decimal separator
-                    if (parseStrict && isGroupingViolation(position, prevSeparatorIndex)) {
+                    if (parseStrict && isGroupingRelevant()
+                            && isGroupingViolation(position, prevSeparatorIndex)) {
                         return new NumericPosition(
                                 groupingViolationIndex(position, prevSeparatorIndex), intIndex);
                     }
@@ -2630,7 +2631,8 @@ public class DecimalFormat extends NumberFormat {
                     intIndex = position;
                     digits.decimalAt = digitCount; // Not digits.count!
                     sawDecimal = true;
-                } else if (!isExponent && ch == grouping && isGroupingUsed()) {
+                } else if (!isExponent && ch == grouping &&
+                        (parseStrict ? isGroupingRelevant() : isGroupingUsed())) {
                     if (parseStrict) {
                         // text should not start with grouping when strict
                         if (position == startPos) {
@@ -2685,10 +2687,11 @@ public class DecimalFormat extends NumberFormat {
             // (When strict), within the loop we enforce grouping when encountering
             // decimal/grouping symbols. Once outside loop, we need to check
             // the final grouping, ex: "1,234". Only check the final grouping
-            // if we have not seen a decimal separator, to prevent a non needed check,
-            // for ex: "1,234.", "1,234.12"
+            // if we have not seen a decimal separator, to prevent a grouping check in the
+            // fraction portion for ex: "1,234.", "1,234.12"
             if (parseStrict) {
-                if (!sawDecimal && isGroupingViolation(position, prevSeparatorIndex)) {
+                if (!sawDecimal && isGroupingRelevant()
+                        && isGroupingViolation(position, prevSeparatorIndex)) {
                     // -1, since position is incremented by one too many when loop is finished
                     // "1,234%" and "1,234" both end with pos = 5, since '%' breaks
                     // the loop before incrementing position. In both cases, check
@@ -2749,12 +2752,22 @@ public class DecimalFormat extends NumberFormat {
         return decimalAt;
     }
 
+    /*
+     * DecimalFormat defines both setGroupingUsed(boolean) and setGroupingSize(int)
+     * These operate independent of each other, and setting a grouping size of 0 does not mean that
+     * isGroupingUsed() returns false. As a result, to effectively check if grouping is used,
+     * both values need to be verified. Lenient parsing does not require this exhaustive check
+     * because the legacy parsing does not validate grouping size positioning.
+     */
+    private boolean isGroupingRelevant() {
+        return isGroupingUsed() && groupingSize > 0;
+    }
+
     // Checks to make sure grouping size is not violated. Used when strict.
     private boolean isGroupingViolation(int pos, int prevGroupingPos) {
         assert parseStrict : "Grouping violations should only occur when strict";
-        return isGroupingUsed() && // Only violates if using grouping
-                // Checks if a previous grouping symbol was seen.
-                prevGroupingPos != -groupingSize &&
+        // Checks if a previous grouping symbol was seen.
+        return prevGroupingPos != -groupingSize &&
                 // The check itself, - 1 to account for grouping/decimal symbol
                 pos - 1 != prevGroupingPos + groupingSize;
     }
@@ -3592,7 +3605,7 @@ public class DecimalFormat extends NumberFormat {
             int digitCount = useExponentialNotation ? getMaximumIntegerDigits() :
                     Math.max(groupingSize, getMinimumIntegerDigits()) + 1;
             for (int i = digitCount; i > 0; --i) {
-                if (i != digitCount && isGroupingUsed() && groupingSize != 0 &&
+                if (i != digitCount && isGroupingRelevant() &&
                         i % groupingSize == 0) {
                     result.append(groupingSymbol);
                 }
