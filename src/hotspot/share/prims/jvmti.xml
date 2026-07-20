@@ -925,6 +925,23 @@ Agent_OnUnload_L(JavaVM *vm)</example>
     and/or its affiliates, in the U.S. and other countries.
   </intro>
 
+  <intro id="identityAndValueObjects" label="Identity and Value Objects">
+    If preview features are enabled then some Java objects will have identity and others
+    (instances of value classes) will not. <jvmti/> makes no distinction between these cases
+    in general, but some specific functions will behave differently if invoked upon
+    a Java object that does not have identity. Such differences in behavior are described
+    by the individual functions and events where they apply.
+    <p/>
+    In summary, tags for value objects use value equality semantics, and
+    the <eventlink id="ObjectFree"/> event is not sent for tagged value objects.
+    The <eventlink id="VMObjectAlloc"/> and <eventlink id="SampledObjectAlloc"/> events
+    are only sent for value objects if the
+    <fieldlink id="can_support_value_objects" struct="jvmtiCapabilities"/>
+    capability is possessed.
+    <p/>
+    Value objects can also affect class and interface property queries, monitor information,
+    and <jvmti/> functions that operate on value class constructor frames.
+  </intro>
 
 <functionsection label="Functions">
   <intro id="jvmtiEnvAccess" label="Accessing Functions">
@@ -3444,7 +3461,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       event is sent for tagged objects when the garbage collector frees the object.
       When preview features are enabled, the Object Free event is only sent for tagged
       <externallink id="jni/functions.html#hasidentity">identity objects</externallink>.
-      <b>The event is not sent for tagged values objects.</b>
+      <b>The event is not sent for tagged value objects.</b>
     </intro>
 
     <intro id="heapCallbacks" label="Heap Callback Functions">
@@ -14211,7 +14228,7 @@ myInit() {
       <p/>
       When preview features are enabled, the Object Free event is only sent for tagged
       <externallink id="jni/functions.html#hasidentity">identity objects</externallink>.
-      <b>The event is not sent for tagged values objects.</b>
+      <b>The event is not sent for tagged value objects.</b>
       <p/>
       The event handler must not use JNI functions and
       must not use <jvmti/> functions except those which
