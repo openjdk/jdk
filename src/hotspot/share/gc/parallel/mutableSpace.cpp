@@ -49,7 +49,7 @@ void MutableSpace::numa_setup_pages(MemRegion mr, bool clear_space) {
   }
 
   if (clear_space) {
-    // Prefer page reallocation to migration.
+    // Prefer page discard and refault under the requested NUMA policy to migration.
     os::disclaim_memory((char*) mr.start(), mr.byte_size());
   }
   os::numa_make_global((char*) mr.start(), mr.byte_size());

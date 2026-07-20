@@ -243,7 +243,7 @@ private:
 
   // Outside of GC pauses, the number of bytes used in all regions other
   // than the current allocation region(s).
-  volatile size_t _summary_bytes_used;
+  Atomic<size_t> _summary_bytes_used;
 
   void increase_used(size_t bytes);
   void decrease_used(size_t bytes);
@@ -953,7 +953,6 @@ public:
   void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) override;
 
   static void start_codecache_marking_cycle_if_inactive(bool concurrent_mark_start);
-  static void finish_codecache_marking_cycle();
 
   // The shared block offset table array.
   G1BlockOffsetTable* bot() const { return _bot; }

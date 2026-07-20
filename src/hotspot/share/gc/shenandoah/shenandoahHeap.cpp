@@ -595,7 +595,8 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _aux_bitmap_region_special(false),
   _liveness_cache(nullptr),
   _collection_set(nullptr),
-  _evac_tracker(new ShenandoahEvacuationTracker())
+  _evac_tracker(new ShenandoahEvacuationTracker()),
+  _injected_pin_count(0)
 {
   // Initialize GC mode early, many subsequent initialization procedures depend on it
   initialize_mode();
@@ -2750,6 +2751,39 @@ void ShenandoahHeap::try_inject_alloc_failure() {
 
 bool ShenandoahHeap::should_inject_alloc_failure() {
   return _inject_alloc_failure.is_set() && _inject_alloc_failure.try_unset();
+}
+
+void ShenandoahHeap::try_inject_pin() {
+  assert(!ShenandoahSafepoint::is_at_shenandoah_safepoint(), "try_inject_pin() must be called outside a safepoint.");
+  assert(active_generation() != nullptr, "Active generation must be set before we inject pins.");
+  assert(is_concurrent_mark_in_progress() || active_generation()->is_mark_complete(),
+         "try_inject_pin() requires marking is in progress or has completed.");
+  if (ShenandoahPinRegionRate && !cancelled_gc() && ((uintx)(os::random() % 1000) < ShenandoahPinRegionRate) &&
+      _injected_pin_count < MAX_INJECTED_PINS) {
+    const size_t idx = os::random() % num_regions();
+    ShenandoahHeapRegion* r = get_region(idx);
+    if ((r->is_regular() || r->is_humongous_start()) && r->has_live()) {
+      r->record_pin();
+      _injected_pin_indices[_injected_pin_count] = idx;
+      _injected_pin_count++;
+    }
+  }
+}
+
+void ShenandoahHeap::release_injected_pins() {
+  if (_injected_pin_count == 0) {
+    return;
+  }
+
+  assert(_injected_pin_count <= MAX_INJECTED_PINS,
+         "Injected pin count: %u exceeds max: %u.", _injected_pin_count, MAX_INJECTED_PINS);
+  for (uint i = 0; i < _injected_pin_count; i++) {
+    const size_t idx = _injected_pin_indices[i];
+    ShenandoahHeapRegion* r = get_region(idx);
+    assert(r->pin_count() > 0, "Region %zu in tracker must contain a pin.", idx);
+    r->record_unpin();
+  }
+  _injected_pin_count = 0;
 }
 
 void ShenandoahHeap::initialize_serviceability() {
