@@ -151,9 +151,9 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   assert_different_registers(Z_R2, scratch);
 
   int nbytes_save = 3 * BytesPerWord; // SP, PC, scratch
-  int offset = frame::z_abi_160_size;
+  int offset = 0;
 
-  __ push_frame_abi160(nbytes_save);        offset += 8;
+  __ push_frame(nbytes_save);               offset += 8;
   __ save_return_pc();                      offset += 8;
   __ z_stg(scratch, offset, Z_SP);
 
@@ -216,7 +216,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   __ bind(done);
 
-  __ z_lg(scratch, 176, Z_SP);
+  __ z_lg(scratch, 16, Z_SP);
   __ restore_return_pc();
   __ pop_frame();
 
