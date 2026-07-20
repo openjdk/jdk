@@ -2679,12 +2679,27 @@ static bool is_vector_mask_not_operand_in_andnot_pattern(Node* n, Node* m) {
   return false;
 }
 
+static bool are_users_clone_compatible(Node* n, Node* m) {
+  for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
+    Node* use = m->fast_out(i);
+    if (use == n) {
+      continue;
+    }
+    if (!is_vector_bitwise_not_pattern(use, m) &&
+        !is_valid_sve_arith_imm_pattern(use, m)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   if (is_vshift_con_pattern(n, m) ||
-      is_vector_bitwise_not_pattern(n, m) ||
+      ((is_vector_bitwise_not_pattern(n, m) ||
+      is_valid_sve_arith_imm_pattern(n, m)) &&
+      are_users_clone_compatible(n, m)) ||
       is_vector_mask_not_operand_in_andnot_pattern(n, m) ||
-      is_valid_sve_arith_imm_pattern(n, m) ||
       is_encode_and_store_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
