@@ -107,7 +107,6 @@ instruct zLoadP(iRegP dst, memory mem, flagsReg cr) %{
   match(Set dst (LoadP mem));
   effect(TEMP dst, KILL cr);
   ins_is_late_expanded_null_check_candidate(true);
-  ins_cost(MEMORY_REF_COST);
 
   format %{ "LG      $dst,$mem\t # ptr" %}
 
@@ -124,10 +123,7 @@ instruct zStoreP(memory mem, iRegP src, iRegP temp, flagsReg cr) %{
   predicate(UseZGC && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem src));
   effect(TEMP temp, KILL cr);
-  // TODO: update the sizes of these instructions
 
-  //TODO: double check the instruction cost
-  ins_cost(2 * MEMORY_REF_COST);
   format %{ "STG     $mem,$src\t # ptr" %}
   ins_encode %{
     z_store_barrier(masm, this, $mem$$Address, $src$$Register, $temp$$Register, false /* is_atomic */);
@@ -142,7 +138,6 @@ instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
   match(Set mem (StoreP mem zero));
   effect(TEMP temp, KILL cr);
 
-  ins_cost(MEMORY_REF_COST);
   format %{ "STG     $mem,null\t # ptr" %}
   ins_encode %{
     z_store_barrier(masm, this, $mem$$Address, noreg, $temp$$Register, false /* is_atomic */);
