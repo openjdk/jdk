@@ -145,14 +145,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   BLOCK_COMMENT("ZBarrierSetAssembler::load_at {");
 
   //TODO: temp1 can be noreg and Z_R0(both can't be used here), temp2 can be noreg and same as dst(can't be used here) put a assert_different_registers for this and change the calls.
-  Register scratch = noreg;
-  if (dst != src.base() && src.base() != Z_R2) {
-    scratch = src.base();
-  } else if (dst != Z_R4) {
-    scratch = Z_R4;
-  } else {
-    scratch = Z_R5;
-  }
+  Register scratch = Z_R5;
 
   assert_different_registers(dst, scratch);
   assert_different_registers(Z_R2, scratch);
@@ -177,6 +170,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   // Load oop at address
   __ z_lg(dst, 0, scratch);
+  __ z_lgr(Z_R0, dst);
 
   const bool on_non_strong =
       (decorators & ON_WEAK_OOP_REF) != 0 ||
@@ -184,12 +178,11 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   // Test Address bad mask
   if (on_non_strong) {
-    __ z_ng(dst, mark_bad_mask_from_thread(Z_thread));
+    __ z_ng(Z_R0, mark_bad_mask_from_thread(Z_thread));
   } else {
-    __ z_ng(dst, load_bad_mask_from_thread(Z_thread));
+    __ z_ng(Z_R0, load_bad_mask_from_thread(Z_thread));
   }
 
-  __ z_lg(dst, 0, scratch);
   __ branch_optimized(Assembler::bcondZero, uncolor);
 
   //
