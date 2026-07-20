@@ -89,7 +89,6 @@ struct ColShaderInOut_XOR {
 
 struct TxtShaderInOut_XOR {
     float4 position [[position]];
-    float2 orig_pos;
     float2 texCoords;
     float2 tpCoords;
 };
@@ -705,7 +704,6 @@ vertex TxtShaderInOut_XOR vert_txt_xorMode(
     TxtShaderInOut_XOR out;
     float4 pos4 = float4(in.position, 0.0, 1.0);
     out.position = transform.transformMatrix*pos4;
-    out.orig_pos = in.position;
     out.texCoords = in.texCoords;
     return out;
 }
@@ -717,7 +715,7 @@ fragment half4 frag_txt_xorMode(
         constant TxtFrameUniforms& uniforms [[buffer(1)]],
         sampler textureSampler [[sampler(0)]])
 {
-    uint2 texCoord = {(unsigned int)(vert.orig_pos.x), (unsigned int)(vert.orig_pos.y)};
+    uint2 texCoord = {(unsigned int)(vert.position.x), (unsigned int)(vert.position.y)};
     float4 bgColor = backgroundTexture.read(texCoord);
 
     float4 pixelColor = renderTexture.sample(textureSampler, vert.texCoords);
