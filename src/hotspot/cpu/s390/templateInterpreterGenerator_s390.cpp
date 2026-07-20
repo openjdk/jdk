@@ -1902,8 +1902,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   Label    slow_path;
 
   // If we need a safepoint check, generate full interpreter entry.
-  // TODO:on x86 they are passing at_return true
-  __ safepoint_poll(slow_path, Z_R1, false /* at_return */, false /* in_nemthod */);
+  __ safepoint_poll(slow_path, Z_R1, false /* at_return */, false /* in_nmethod */);
 
   BLOCK_COMMENT("CRC32_update {");
 

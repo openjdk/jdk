@@ -527,8 +527,6 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
 
   __ bind(done);
 
-  // TODO: Come up with a better solution, i.e. try putting it in the arraycopy_prologue, currently even after calling it, it's not getting executed, currently we are poping them in the *_oop_copy
-
   Label epilogue_start;
   __ branch_optimized(Assembler::bcondAlways, epilogue_start);
   copy_load_at_slow(masm, zpointer, Z_ARG1, load_bad, load_good);
@@ -555,8 +553,6 @@ void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool
   __ z_brct(Z_ARG3, loop);
 
   __ bind(done);
-
-  // TODO: Come up with a better solution, i.e. try putting it in the arraycopy_prologue
 
   Label epilogue_start;
   __ branch_optimized(Assembler::bcondAlways, epilogue_start);

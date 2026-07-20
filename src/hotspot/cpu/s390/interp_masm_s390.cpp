@@ -1090,7 +1090,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   branch_optimized(Assembler::bcondAlways, fast_path);
   bind (slow_path);
   push(state);
-  // TODO: I have followed ppc, but double check this
   set_last_Java_frame(Z_SP, noreg);
   call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), Z_thread);
   reset_last_Java_frame();

@@ -29,7 +29,6 @@
 #define __ masm.
 
 int C2SafepointPollStub::max_size() const {
-  // TODO: recheck this number during runtime
   return 30;
 }
 
