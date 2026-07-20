@@ -2493,12 +2493,15 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     });
   }
   // If changed AddI/AddL inputs, check for add users:
-  // e.g. x + (y + n)      ->  x + (y + C)     ->  (x + y) + C
+  // e.g. x + (y + n)      ->  x + (y + C)     ->  (x + y) +   C
+  // e.g. x - (y + n)      ->  x - (y + C)     ->  (x - y) + (-C)
   //      before mutation      after mutation      optimized by
   //                                               AddNode::Ideal
   if (use_op == Op_AddI || use_op == Op_AddL) {
+    int add_op = use_op;
+    int sub_op = (use_op == Op_AddI) ? Op_SubI : Op_SubL;
     add_users_to_worklist_if(worklist, use, [&](Node* u) {
-      return u->Opcode() == use_op;
+      return u->Opcode() == add_op || u->Opcode() == sub_op;
     });
   }
   // If changed LShiftI/LShiftL inputs, check AddI/AddL users for their
