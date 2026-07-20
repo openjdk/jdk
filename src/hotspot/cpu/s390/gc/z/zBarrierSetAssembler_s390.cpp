@@ -530,20 +530,13 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
   __ bind(done);
 
   // TODO: Come up with a better solution, i.e. try putting it in the arraycopy_prologue, currently even after calling it, it's not getting executed, currently we are poping them in the *_oop_copy
-  int offset = 8;
-  __ restore_return_pc();           offset += 8;
-  __ z_lg(Z_R5, offset, Z_SP);      offset += 8;
-  __ z_lg(Z_R6, offset, Z_SP);      offset += 8;
-  __ z_lg(Z_R7, offset, Z_SP);      offset += 8;
-  __ z_lg(Z_R10, offset, Z_SP);     offset += 8;
-  __ z_lg(Z_R11, offset, Z_SP);
-  __ pop_frame();
 
-  __ z_xgr(Z_RET, Z_RET);
-  __ z_br(Z_R14);
-
+  Label epilogue_start;
+  __ branch_optimized(Assembler::bcondAlways, epilogue_start);
   copy_load_at_slow(masm, zpointer, Z_ARG1, load_bad, load_good);
   copy_store_at_slow(masm, Z_ARG2, store_bad, store_good, dest_uninitialized);
+  __ bind(epilogue_start);
+
 }
 
 void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
@@ -568,21 +561,11 @@ void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool
 
   // TODO: Come up with a better solution, i.e. try putting it in the arraycopy_prologue
 
-  int offset = 8;
-  __ restore_return_pc();           offset += 8;
-  __ z_lg(Z_R5, offset, Z_SP);      offset += 8;
-  __ z_lg(Z_R6, offset, Z_SP);      offset += 8;
-  __ z_lg(Z_R7, offset, Z_SP);      offset += 8;
-  __ z_lg(Z_R10, offset, Z_SP);     offset += 8;
-  __ z_lg(Z_R11, offset, Z_SP);
-  __ pop_frame();
-
-
-  __ z_xgr(Z_RET, Z_RET);
-  __ z_br(Z_R14);
-
+  Label epilogue_start;
+  __ branch_optimized(Assembler::bcondAlways, epilogue_start);
   copy_load_at_slow(masm, zpointer, Z_ARG1, load_bad, load_good);
   copy_store_at_slow(masm, Z_ARG2, store_bad, store_good, dest_uninitialized);
+  __ bind(epilogue_start);
 }
 
 void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
@@ -621,6 +604,18 @@ void ZBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm,
                                               Register src,
                                               Register dst,
                                               bool do_return) {
+  int offset = 8;
+  __ restore_return_pc();           offset += 8;
+  __ z_lg(Z_R5, offset, Z_SP);      offset += 8;
+  __ z_lg(Z_R6, offset, Z_SP);      offset += 8;
+  __ z_lg(Z_R7, offset, Z_SP);      offset += 8;
+  __ z_lg(Z_R10, offset, Z_SP);     offset += 8;
+  __ z_lg(Z_R11, offset, Z_SP);
+  __ pop_frame();
+
+
+  __ z_xgr(Z_RET, Z_RET);
+  __ z_br(Z_R14);
 
 }
 
