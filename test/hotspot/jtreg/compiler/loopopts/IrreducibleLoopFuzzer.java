@@ -156,6 +156,7 @@ public class IrreducibleLoopFuzzer {
     static record Operation(List<JasmType> in, List<JasmType> out, String op) {}
 
     // TODO: expand list of ops.
+    // TODO: maybe also variable loads/stores?
     static final List<Operation> OPERATIONS = List.of(
         // Copy
         new Operation(List.of(INTS),  List.of(INTS),  null),
@@ -238,9 +239,26 @@ public class IrreducibleLoopFuzzer {
 
         public void mutate() {
             Block b = blocks.get(RANDOM.nextInt(blocks.size()));
+            int r = RANDOM.nextInt(100);
+            if (r < 20) {
+                insertExtension(b);
+            } else if (r < 40) {
+                insertLoopReducible(b);
+            } else {
+                insertIfElse(b);
+            }
+        }
 
-            // TODO: other cfg
-            // if/else
+        private void insertExtension(Block b) {
+            Block b2 = new Block();
+            b2.out0 = b.out0;
+            b2.out1 = b.out1;
+            b.out0 = b2;
+            b.out1 = null;
+            blocks.add(b2);
+        }
+
+        private void insertIfElse(Block b) {
             Block b0 = new Block();
             Block b1 = new Block();
             Block b2 = new Block();
@@ -253,6 +271,18 @@ public class IrreducibleLoopFuzzer {
             blocks.add(b0);
             blocks.add(b1);
             blocks.add(b2);
+        }
+
+        private void insertLoopReducible(Block b) {
+            Block exit = new Block();
+            Block backedge = new Block();
+            exit.out0 = b.out0;
+            exit.out1 = b.out1;
+            b.out0 = backedge;
+            b.out1 = exit;
+            backedge.out0 = b;
+            blocks.add(exit);
+            blocks.add(backedge);
         }
 
         public Object pushType(JasmType type) {
