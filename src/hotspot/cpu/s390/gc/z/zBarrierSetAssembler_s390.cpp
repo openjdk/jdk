@@ -757,10 +757,10 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
 
   // Setup arguments and call runtime stub
   int nbytes_save = 4 * BytesPerWord; /* SP, PC, 2 args */
-  int offset = frame::z_abi_160_size;
+  int offset = 0;
 
   //TODO: I do not think so that we need abi160 here.
-  __ push_frame_abi160(nbytes_save);     offset += 8;
+  __ push_frame(nbytes_save);     offset += 8;
   __ save_return_pc();                   offset += 8;
   __ z_stg(ref, offset, Z_SP);           offset += 8;
   __ z_stg(ref_addr, offset, Z_SP);
@@ -843,7 +843,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *
   __ save_return_pc();                       offset += 8;
   __ save_volatile_regs(Z_SP, offset, true, false);
 
-  offset = 16 + frame::z_abi_160_size + nbytes_save + frame::z_abi_160_size;
+  offset = 16 + nbytes_save + frame::z_abi_160_size;
 
   __ z_lg(Z_ARG1, offset, Z_SP);             offset += 8;            // ref
   __ z_lg(Z_ARG2, offset, Z_SP);                                     // ref_addr
