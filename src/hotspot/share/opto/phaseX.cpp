@@ -444,22 +444,34 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
 
   assert(worklist.is_subset_of(_useful), "only useful nodes should still be in the worklist");
 
+  // While we don't need to rehash, some optimizations are sensitive to the
+  // relative ordering of node IDs, for example AddNode::commute wants to keep
+  // in1 < in2. Therefore, we keep the relative ordering stable.
+  uint next_idx = 0;
+  for (int old_idx = 0; old_idx <  _old2new_map.length(); old_idx++) {
+    if (_useful.member_set().test(old_idx)) {
+      _old2new_map.at_put(old_idx, next_idx++);
+    }
+  }
+  assert(next_idx == _useful.size(), "must map all useful nodes");
+
   // Iterate over the set of live nodes.
   for (uint current_idx = 0; current_idx < _useful.size(); current_idx++) {
     Node* n = _useful.at(current_idx);
 
-    const Type* type = gvn->type_or_null(n);
-    _new_type_array.map(current_idx, type);
+    int old_idx = n->_idx;
+    int new_idx = _old2new_map.at(old_idx);
+    assert(new_idx >= 0, "every useful node must have new idx");
 
-    assert(_old2new_map.at(n->_idx) == -1, "already seen");
-    _old2new_map.at_put(n->_idx, current_idx);
+    const Type* type = gvn->type_or_null(n);
+    _new_type_array.map(new_idx, type);
 
     if (old_node_note_array != nullptr) {
-      Node_Notes* nn = C->locate_node_notes(old_node_note_array, n->_idx);
-      C->set_node_notes_at(current_idx, nn);
+      Node_Notes* nn = C->locate_node_notes(old_node_note_array, old_idx);
+      C->set_node_notes_at(new_idx, nn);
     }
 
-    n->set_idx(current_idx); // Update node ID.
+    n->set_idx(new_idx); // Update node ID.
 
     if (update_embedded_ids(n) < 0) {
       _delayed.push(n); // has embedded IDs; handle later
