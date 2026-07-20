@@ -96,7 +96,7 @@ public class TestVM {
     public static final boolean USE_COMPILER = WHITE_BOX.getBooleanVMFlag("UseCompiler");
     static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
     private static final String TESTLIST = SystemProperty.getTestList();
-    private static final String EXCLUDELIST = System.getProperty("Exclude", "");
+    private static final String EXCLUDELIST = SystemProperty.getExcludeList();
     private static final boolean DUMP_REPLAY = Boolean.getBoolean("DumpReplay");
     private static final boolean GC_AFTER = Boolean.getBoolean("GCAfter");
     private static final boolean SHUFFLE_TESTS = Boolean.parseBoolean(System.getProperty("ShuffleTests", "true"));

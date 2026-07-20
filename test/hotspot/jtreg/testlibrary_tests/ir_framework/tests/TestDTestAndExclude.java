@@ -98,10 +98,12 @@ public class TestDTestAndExclude {
         boolean plural = dTest.contains(",");
         boolean capital = dTest.length() % 2 == 0;
         String dTestFlag = capital ? "-DTest" : "-Dtest";
+        String dExcludeFlag = capital ? "-DExclude" : "-Dexclude";
         if (plural) {
             dTestFlag = dTestFlag + "s";
+            dExcludeFlag = dExcludeFlag + "s";
         }
-        System.out.println("Run " + dTestFlag + "=" + dTest + " -DExclude=" + dExclude + " arg=" + arg);
+        System.out.println("Run " + dTestFlag + "=" + dTest + " " + dExcludeFlag + "=" + dExclude + " arg=" + arg);
         OutputAnalyzer oa;
         ProcessBuilder process = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Dtest.class.path=" + Utils.TEST_CLASS_PATH, "-Dtest.jdk=" + Utils.TEST_JDK,

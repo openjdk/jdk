@@ -43,4 +43,8 @@ public class SystemProperty {
     static public String getTestList() {
         return getCaseInsensitive(Mode.CASE_INSENSITIVE_EMPTY_DEFAULT, "test", "tests");
     }
+
+    static public String getExcludeList() {
+        return getCaseInsensitive(Mode.CASE_INSENSITIVE_EMPTY_DEFAULT, "exclude", "excludes");
+    }
 }

@@ -170,9 +170,9 @@ testFramework
 The framework provides various stress and debug flags. They should mainly be used as JTreg VM and/or Javaoptions (apart from `VerifyIR`). The following (property) flags are supported:
 
 - `-DVerifyIR=false`: Explicitly disable IR verification. This is useful, for example, if some scenarios use VM flags that let `@IR` annotation rules fail and the user does not want to provide separate IR rules or add flag preconditions to the already existing IR rules.
-- `-DTest=test1,test2`: Provide a list of `@Test` method names which should be executed.
-- `-DExclude=test3`: Provide a list of `@Test` method names which should be excluded from execution.
-- `-DScenarios=1,2`: Provide a list of scenario indexes to specify which scenarios should be executed.
+- `-DTest=test1,test2`: Provide a list of `@Test` method names which should be executed. Case-insensitive, plural is allowed (`-DTests`, `-Dtest`, `Dtests` are all fine).
+- `-DExclude=test3`: Provide a list of `@Test` method names which should be excluded from execution. Case-insensitive, plural is allowed.
+- `-DScenario=1,2`: Provide a list of scenario indexes to specify which scenarios should be executed. Case-insensitive, plural is allowed.
 - `-DWarmup=200`: Provide a new default value of the number of warm-up iterations (framework default is 2000). This might have an influence on the resulting IR and could lead to matching failures (the user can also set a fixed default warm-up value in a test with `testFrameworkObject.setDefaultWarmup(200)`).
 - `-DReportStdout=true`: Print the standard output of the Test VM.
 - `-DVerbose=true`: Enable more fine-grained logging (slows the execution down).
@@ -181,7 +181,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DPrintRuleMatchingTime=true`: Print the time of matching IR rules per method. Slows down the execution as the rules are warmed up before measurement.
 - `-DVerifyVM=true`: The framework runs the Test VM with additional verification flags (slows the execution down).
 - `-DExcludeRandom=true`: The framework randomly excludes some methods from compilation. IR verification is disabled completely with this flag.
-- `-DFlipC1C2=true`: The framework compiles all `@Test` annotated method with C1 if a C2 compilation would have been applied and vice versa. IR verification is disabled completely with this flag.
+- `-DFlipC1C2=true`: The framework compiles all `@Test` annotated methods with C1 if a C2 compilation would have been applied and vice versa. IR verification is disabled completely with this flag.
 - `-DShuffleTests=false`: Disables the random execution order of all tests (such a shuffling is always done by default).
 - `-DDumpReplay=true`: Add the `DumpReplay` directive to the Test VM.
 - `-DGCAfter=true`: Perform `System.gc()` after each test (slows the execution down).
