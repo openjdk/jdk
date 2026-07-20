@@ -65,7 +65,9 @@ public class TestMaskedStoreIdealization {
             "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED"
         ));
         vmArgs.addAll(Arrays.asList(args)); // Forward args
+        vmArgs.add("-XX:-StressReflectiveCode"); // Temporarily disable stress flag that causes unrelated failures.
         String[] vmArgsArray = vmArgs.toArray(new String[0]);
+
 
         comp.invoke(PACKAGE + "." + CLASS_NAME, "main", new Object[] { vmArgsArray });
     }
