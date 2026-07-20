@@ -158,7 +158,6 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   __ z_stg(scratch, offset, Z_SP);
 
   Label done;
-  Label stop;
   Label uncolor;
 
   //
@@ -303,7 +302,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
 
   // Combined pointer bump and check if the buffer is disabled or full
   __ z_lg(temp2, Address(temp1, ZStoreBarrierBuffer::current_offset()));
-  __ z_chi(temp2, (uint8_t)0);
+  __ z_cghi(temp2, (uint8_t)0);
   __ branch_optimized(Assembler::bcondEqual, slow_path);
   
   // Bump the pointer
@@ -321,7 +320,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   // Load and log the prev value
   __ z_lg(temp1, Address(temp1, 0));
   __ z_stg(temp1, Address(temp2, in_bytes(ZStoreBarrierEntry::prev_offset())));
-}  
+}
 
 void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                                                 Address ref_addr,
@@ -342,14 +341,12 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
   } else if (is_atomic) {
     // Atomic accesses can get to the medium fast path because the value was a
     // raw null value. If it was not null, then there is no doubt we need to take a slow path.
-    __ z_lg(temp2, ref_addr);
-    __ z_ltgr(temp2, temp2);
+    __ z_ltg(temp2, ref_addr);
     __ branch_optimized(Assembler::bcondNotZero, slow_path);
 
     // If we get this far, we know there is a young raw null value in the field.
     // Try to self-heal null values for atomic accesses
 
-    __ z_xgr(temp2, temp2);
     __ z_lg(temp1, Address(Z_thread , ZThreadLocalData::store_good_mask_offset()));
 
     __ z_csg(temp2, temp1, ref_addr);
@@ -389,7 +386,6 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
     assert_different_registers(src, temp1, dst.base(), dst.index());
 
     if (dest_uninitialized) {
-      __ stop("dest_uinitialized store_at");
       if (src == noreg) {
         __ z_xgr(temp1, temp1);
       } else {
@@ -516,7 +512,7 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
 void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
   const Register zpointer = Z_R1;
   Label done, loop, load_bad, load_good, store_bad, store_good;
-  __ z_chi(Z_ARG3, 0);
+  __ z_cghi(Z_ARG3, 0);
   __ z_bre(done);
 
   __ bind(loop);
@@ -650,7 +646,7 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
 
   // Test for weak tag
   __ z_tmll(robj, JNIHandles::TypeTag::weak_global);
-  __ branch_optimized(Assembler::bcondNotZero, weak_tagged);
+  __ branch_optimized(Assembler::bcondNotAllZero, weak_tagged);
 
   // Resolve global handle
   __ z_lg(robj, Address(robj, -JNIHandles::TypeTag::global));
@@ -714,13 +710,10 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
     __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
     z_uncolor(ce, ref);
   } else {
-    Label good;
     __ z_lgr(Z_R0_scratch, ref->as_register());
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadBadBeforeTest);
     __ z_nill(Z_R0_scratch, barrier_Relocation::unpatched);
-    __ branch_optimized(Assembler::bcondZero, good);
-    __ branch_optimized(Assembler::bcondAlways, *stub->entry());
-    __ bind(good);
+    __ branch_optimized(Assembler::bcondNotZero, *stub->entry());
     z_uncolor(ce, ref);
   }
 
