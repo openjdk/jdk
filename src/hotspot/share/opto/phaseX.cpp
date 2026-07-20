@@ -2661,6 +2661,13 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     const int add_op = (use_op == Op_SubI) ? Op_AddI : Op_AddL;
     add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == add_op; });
   }
+
+  // If changed Mul inputs, check Add for common-factor reassociation.
+  // e.g., (a * b) + (a * c) -> a * (b + c).
+  if (use_op == Op_MulI || use_op == Op_MulL) {
+    const int add_op = (use_op == Op_MulI) ? Op_AddI : Op_AddL;
+    add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == add_op; });
+  }
 }
 
 /**
