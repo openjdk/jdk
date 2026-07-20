@@ -1960,7 +1960,7 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
   Node* address = in(MemNode::Address);
 
   bool addr_mark = ((phase->type(address)->isa_oopptr() || phase->type(address)->isa_narrowoop()) &&
-                    phase->type(address)->is_ptr()->offset() == oopDesc::mark_offset_in_bytes());
+         phase->type(address)->is_ptr()->offset() == oopDesc::mark_offset_in_bytes());
 
   // Skip up past a SafePoint control.  Cannot do this for Stores because
   // pointer stores & cardmarks must stay on the same side of a SafePoint.
@@ -1978,10 +1978,10 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
   if (base != nullptr &&
       phase->C->get_alias_index(phase->type(address)->is_ptr()) != Compile::AliasIdxRaw) {
     // Check for useless control edge in some common special cases
-    if (in(MemNode::Control) != nullptr &&
-        can_remove_control() &&
-        phase->type(base)->higher_equal(TypePtr::NOTNULL) &&
-        all_controls_dominate(base, phase->C->start(), phase)) {
+    if (in(MemNode::Control) != nullptr
+        && can_remove_control()
+        && phase->type(base)->higher_equal(TypePtr::NOTNULL)
+        && all_controls_dominate(base, phase->C->start(), phase)) {
       // A method-invariant, non-null address (constant or 'this' argument).
       set_req(MemNode::Control, nullptr);
       return this;
