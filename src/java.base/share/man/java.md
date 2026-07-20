@@ -911,13 +911,11 @@ the Java HotSpot Virtual Machine.
     :   Do not attempt to use shared class data.
 
 [`-XshowSettings`]{#-XshowSettings}
-:   Shows all settings and continues if further action is specified;
-    otherwise, exits normally.
+:   Shows all settings and then continues.
 
 [`-XshowSettings:`]{#-XshowSettings_}*category*
-:   Shows settings and continues if further action is specified; otherwise,
-    exits normally. Possible *category* arguments for this option include
-    the following:
+:   Shows settings and continues. Possible *category* arguments for this option
+    include the following:
 
     `all`
     :   Shows all categories of settings in **verbose** detail.
@@ -942,7 +940,7 @@ the Java HotSpot Virtual Machine.
     :   Shows the settings of the JVM.
 
     `system`
-    :   **Linux only:** Shows host system or container configuration.
+    :   **Linux only:** Shows host system or container configuration and continues.
 
 [`-Xss`]{#-Xss} *size*
 :   Sets the thread stack size (in bytes). Append the letter `k` or `K` to
