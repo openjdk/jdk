@@ -241,7 +241,8 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // an atomic operation can execute.
       // A not relocatable object could have spurious raw null pointers in its fields after
       // getting promoted to the old generation.
-      __ z_llgh(rnew_zpointer, Address(ref_addr.base(), ref_addr.disp() + 0x6));
+
+      __ z_llgh(rnew_zpointer, Address(ref_addr.base(), ref_addr.index(), ref_addr.disp() + 0x6));
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
       __ z_cghi(rnew_zpointer, barrier_Relocation::unpatched);
       __ branch_optimized(Assembler::bcondNotEqual, medium_path);
@@ -255,7 +256,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // otherwise ImplicitNullCheck will not work and the JVM will crash instead of throwing
       // a null pointer exception. Run C1NullCheckOfNullStore.java test case after doing any
       // changes here.
-      __ z_llgh(rnew_zpointer, Address(ref_addr.base(), ref_addr.disp() + 0x6));
+      __ z_llgh(rnew_zpointer, Address(ref_addr.base(), ref_addr.index(), ref_addr.disp() + 0x6));
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadBeforeLoad);
       __ z_nill(rnew_zpointer, barrier_Relocation::unpatched);
       __ branch_optimized(Assembler::bcondNotZero, medium_path);
@@ -273,8 +274,8 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     }
   } else {
     assert(!is_atomic, "atomics outside of nmethods not supported");
-    __ z_llgh(rnew_zpointer, Address(ref_addr.base(), ref_addr.disp() + 0x6));
-    __ z_cg(rnew_zpointer, Address(Z_thread, ZThreadLocalData::store_bad_mask_offset()));
+    __ z_llgh(rnew_zpointer, Address(ref_addr.base(), ref_addr.index(), ref_addr.disp() + 0x6));
+    __ z_ng(rnew_zpointer, Address(Z_thread, ZThreadLocalData::store_bad_mask_offset()));
     __ branch_optimized(Assembler::bcondNotEqual, medium_path);
     __ bind(medium_path_continuation);
     if (rnew_zaddress == noreg) {
