@@ -90,6 +90,8 @@ public class IrreducibleLoopFuzzer {
         // Compile the source file.
         comp.compile();
 
+        // TODO: invoke strategy: timeout, oom, ... multiple methods?
+        // TODO: maybe result verification?
         comp.invoke("compiler.loopopts.templated.Templated", "test", new Object[] {} );
     }
 
@@ -126,6 +128,7 @@ public class IrreducibleLoopFuzzer {
 
     static record Operation(List<JasmType> in, List<JasmType> out, String op) {}
 
+    // TODO: expand list of ops.
     static final List<Operation> OPERATIONS = List.of(
         // Copy
         new Operation(List.of(INTS),  List.of(INTS),  null),
@@ -168,6 +171,7 @@ public class IrreducibleLoopFuzzer {
                 """,
                 (goto0 != null) ? scope(
                     let("goto0", goto0.name),
+                    // TODO: non-int checks
                     method.pushType(INTS),
                     method.pushType(INTS),
                     """
@@ -214,6 +218,7 @@ public class IrreducibleLoopFuzzer {
         public void mutate() {
             Block b = blocks.get(RANDOM.nextInt(blocks.size()));
 
+            // TODO: other cfg
             // if/else
             Block b0 = new Block();
             Block b1 = new Block();
@@ -268,6 +273,7 @@ public class IrreducibleLoopFuzzer {
             return template.asToken();
         }
 
+        // TODO: non-ballanced, have stack depth at block boundary.
         public Object blockBody() {
             int n = RANDOM.nextInt(3);
             return Collections.nCopies(n, ballancedOp());
