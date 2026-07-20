@@ -572,8 +572,6 @@
     align_wiggle             =  0
   };
 
-  static jint interpreter_frame_expression_stack_direction() { return -1; }
-
   // returns the sending frame, without applying any barriers
   inline frame sender_raw(RegisterMap* map) const;
 

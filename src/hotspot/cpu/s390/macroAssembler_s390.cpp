@@ -6178,7 +6178,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp1, obj);
     z_tm(Address(temp1, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-    z_brne(slow);
+    z_brnaz(slow);
   }
 
   // First we need to check if the lock-stack has room for pushing the object reference.

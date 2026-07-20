@@ -748,7 +748,8 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
       StressIncrementalInlining || StressMacroExpansion ||
       StressMacroElimination || StressUnstableIfTraps ||
-      StressBailout || StressLoopPeeling || StressCountedLoop) {
+      StressBailout || StressLoopPeeling || StressCountedLoop ||
+      StressEliminateAllocations) {
     initialize_stress_seed(directive);
   }
 
@@ -2051,10 +2052,13 @@ void Compile::inline_string_calls(bool parse_time) {
     _late_inlines_pos = _late_inlines.length();
   }
 
+  assert(!do_cleanup(), "already set");
+
   while (_string_late_inlines.length() > 0) {
     CallGenerator* cg = _string_late_inlines.pop();
     cg->do_late_inline();
     if (failing())  return;
+    set_do_cleanup(false); // ignore and reset
   }
   _string_late_inlines.trunc_to(0);
 }
@@ -2070,10 +2074,13 @@ void Compile::inline_boxing_calls(PhaseIterGVN& igvn) {
 
     _late_inlines_pos = _late_inlines.length();
 
+    assert(!do_cleanup(), "already set");
+
     while (_boxing_late_inlines.length() > 0) {
       CallGenerator* cg = _boxing_late_inlines.pop();
       cg->do_late_inline();
       if (failing())  return;
+      set_do_cleanup(false); // ignore and reset
     }
     _boxing_late_inlines.trunc_to(0);
 
@@ -2647,12 +2654,14 @@ void Compile::check_no_dead_use() const {
 #endif
 
 void Compile::inline_vector_reboxing_calls() {
+  assert(!do_cleanup(), "already set");
   if (C->_vector_reboxing_late_inlines.length() > 0) {
     _late_inlines_pos = C->_late_inlines.length();
     while (_vector_reboxing_late_inlines.length() > 0) {
       CallGenerator* cg = _vector_reboxing_late_inlines.pop();
       cg->do_late_inline();
       if (failing())  return;
+      assert(!do_cleanup(), "should not be set");
       print_method(PHASE_INLINE_VECTOR_REBOX, 3, cg->call_node());
     }
     _vector_reboxing_late_inlines.trunc_to(0);

@@ -6612,36 +6612,6 @@ instruct decodeN2I_unscaled(iRegIdst dst, iRegNsrc src) %{
 
 // Convert klass pointer into compressed form.
 
-// Nodes for postalloc expand.
-
-// Shift node for expand.
-instruct encodePKlass_shift(iRegNdst dst, iRegNsrc src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (EncodePKlass src));
-  predicate(false);
-
-  format %{ "SRDI    $dst, $src, 3 \t// encode" %}
-  size(4);
-  ins_encode %{
-    __ srdi($dst$$Register, $src$$Register, CompressedKlassPointers::shift());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Add node for expand.
-instruct encodePKlass_sub_base(iRegPdst dst, iRegLsrc base, iRegPdst src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (EncodePKlass (Binary base src)));
-  predicate(false);
-
-  format %{ "SUB     $dst, $base, $src \t// encode" %}
-  size(4);
-  ins_encode %{
-    __ subf($dst$$Register, $base$$Register, $src$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 // Disjoint narrow oop base.
 instruct encodePKlass_Disjoint(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodePKlass src));
@@ -6656,115 +6626,55 @@ instruct encodePKlass_Disjoint(iRegNdst dst, iRegPsrc src) %{
 %}
 
 // shift != 0, base != 0
-instruct encodePKlass_not_null_Ex(iRegNdst dst, iRegLsrc base, iRegPsrc src) %{
+instruct encodePKlass_not_null(iRegNdst dst, iRegLsrc base, iRegPsrc src) %{
   match(Set dst (EncodePKlass (Binary base src)));
   predicate(false);
 
-  format %{ "EncodePKlass $dst, $src\t// $src != Null, postalloc expanded" %}
-  postalloc_expand %{
-    encodePKlass_sub_baseNode *n1 = new encodePKlass_sub_baseNode();
-    n1->add_req(n_region, n_base, n_src);
-    n1->_opnds[0] = op_dst;
-    n1->_opnds[1] = op_base;
-    n1->_opnds[2] = op_src;
-    n1->_bottom_type = _bottom_type;
-
-    encodePKlass_shiftNode *n2 = new encodePKlass_shiftNode();
-    n2->add_req(n_region, n1);
-    n2->_opnds[0] = op_dst;
-    n2->_opnds[1] = op_dst;
-    n2->_bottom_type = _bottom_type;
-    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n1);
-    nodes->push(n2);
+  format %{ "EncodePKlass $dst = ($src - $base) >> 3\t// $src != nullptr" %}
+  size(8);
+  ins_encode %{
+    __ subf($dst$$Register, $base$$Register, $src$$Register);
+    __ srdi($dst$$Register, $dst$$Register, CompressedKlassPointers::shift());
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 // shift != 0, base != 0
-instruct encodePKlass_not_null_ExEx(iRegNdst dst, iRegPsrc src) %{
+instruct encodePKlass_not_null_Ex(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodePKlass src));
   //predicate(CompressedKlassPointers::shift() != 0 &&
   //          true /* TODO: PPC port CompressedKlassPointers::base_overlaps()*/);
 
-  //format %{ "EncodePKlass $dst, $src\t// $src != Null, postalloc expanded" %}
   ins_cost(DEFAULT_COST*2);  // Don't count constant.
   expand %{
     immL baseImm %{ (jlong)(intptr_t)CompressedKlassPointers::base() %}
     iRegLdst base;
     loadConL_Ex(base, baseImm);
-    encodePKlass_not_null_Ex(dst, base, src);
+    encodePKlass_not_null(dst, base, src);
   %}
 %}
 
 // Decode nodes.
 
-// Shift node for expand.
-instruct decodeNKlass_shift(iRegPdst dst, iRegPsrc src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (DecodeNKlass src));
-  predicate(false);
-
-  format %{ "SLDI    $dst, $src, #3 \t// DecodeNKlass" %}
-  size(4);
-  ins_encode %{
-    __ sldi($dst$$Register, $src$$Register, CompressedKlassPointers::shift());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Add node for expand.
-
-instruct decodeNKlass_add_base(iRegPdst dst, iRegLsrc base, iRegPdst src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
+// src != 0, shift != 0, base != 0
+instruct decodeNKlass_notNull(iRegPdst dst, iRegLsrc base, iRegNsrc src) %{
   match(Set dst (DecodeNKlass (Binary base src)));
   predicate(false);
 
-  format %{ "ADD     $dst, $base, $src \t// DecodeNKlass, add klass base" %}
-  size(4);
+  format %{ "DecodeNKlass $dst = ($base + $src) << 3\t// $src != nullptr, base pre-shifted" %}
+  size(8);
   ins_encode %{
     __ add($dst$$Register, $base$$Register, $src$$Register);
+    __ sldi($dst$$Register, $dst$$Register, CompressedKlassPointers::shift());
   %}
   ins_pipe(pipe_class_default);
 %}
 
 // src != 0, shift != 0, base != 0
-instruct decodeNKlass_notNull_addBase_Ex(iRegPdst dst, iRegLsrc base, iRegNsrc src) %{
-  match(Set dst (DecodeNKlass (Binary base src)));
-  //effect(kill src); // We need a register for the immediate result after shifting.
-  predicate(false);
-
-  format %{ "DecodeNKlass $dst =  $base + ($src << 3) \t// $src != nullptr, postalloc expanded" %}
-  postalloc_expand %{
-    decodeNKlass_add_baseNode *n1 = new decodeNKlass_add_baseNode();
-    n1->add_req(n_region, n_base, n_src);
-    n1->_opnds[0] = op_dst;
-    n1->_opnds[1] = op_base;
-    n1->_opnds[2] = op_src;
-    n1->_bottom_type = _bottom_type;
-
-    decodeNKlass_shiftNode *n2 = new decodeNKlass_shiftNode();
-    n2->add_req(n_region, n1);
-    n2->_opnds[0] = op_dst;
-    n2->_opnds[1] = op_dst;
-    n2->_bottom_type = _bottom_type;
-
-    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n1);
-    nodes->push(n2);
-  %}
-%}
-
-// src != 0, shift != 0, base != 0
-instruct decodeNKlass_notNull_addBase_ExEx(iRegPdst dst, iRegNsrc src) %{
+instruct decodeNKlass_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeNKlass src));
   // predicate(CompressedKlassPointers::shift() != 0 &&
   //           CompressedKlassPointers::base() != 0);
-
-  //format %{ "DecodeNKlass $dst, $src \t// $src != nullptr, expanded" %}
 
   ins_cost(DEFAULT_COST*2);  // Don't count constant.
   expand %{
@@ -6773,7 +6683,7 @@ instruct decodeNKlass_notNull_addBase_ExEx(iRegPdst dst, iRegNsrc src) %{
     immL baseImm %{ (jlong)((intptr_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift()) %}
     iRegLdst base;
     loadConL_Ex(base, baseImm);
-    decodeNKlass_notNull_addBase_Ex(dst, base, src);
+    decodeNKlass_notNull(dst, base, src);
   %}
 %}
 

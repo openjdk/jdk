@@ -8228,7 +8228,7 @@ instruct encodeKlass_not_null(iRegNNoSp dst, iRegP src) %{
   ins_encode %{
     Register src_reg = as_Register($src$$reg);
     Register dst_reg = as_Register($dst$$reg);
-    __ encode_klass_not_null(dst_reg, src_reg);
+    __ encode_klass_not_null(dst_reg, src_reg, rscratch1);
   %}
 
    ins_pipe(ialu_reg);
@@ -8243,11 +8243,7 @@ instruct decodeKlass_not_null(iRegPNoSp dst, iRegN src) %{
   ins_encode %{
     Register src_reg = as_Register($src$$reg);
     Register dst_reg = as_Register($dst$$reg);
-    if (dst_reg != src_reg) {
-      __ decode_klass_not_null(dst_reg, src_reg);
-    } else {
-      __ decode_klass_not_null(dst_reg);
-    }
+    __ decode_klass_not_null(dst_reg, src_reg, rscratch1);
   %}
 
    ins_pipe(ialu_reg);

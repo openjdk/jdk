@@ -122,6 +122,4 @@
   // helper to update a map with callee-saved FP
   static void update_map_with_saved_link(RegisterMap* map, intptr_t** link_addr);
 
-  static jint interpreter_frame_expression_stack_direction() { return -1; }
-
 #endif // CPU_ARM_FRAME_ARM_HPP
