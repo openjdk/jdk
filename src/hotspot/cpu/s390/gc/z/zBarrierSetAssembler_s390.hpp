@@ -50,7 +50,7 @@ class ZStoreBarrierStubC2;
 
 const int ZBarrierRelocationFormatStoreGoodBeforeLoad = 0;
 const int ZBarrierRelocationFormatStoreBadBeforeLoad = 1;
-const int ZBarrierRelocationFormatLoadGoodBeforeTestBit = 2;
+const int ZBarrierRelocationFormatLoadBadBeforeTest = 2;
 const int ZBarrierRelocationFormatMarkBadBeforeTest = 3;
 
 class ZBarrierSetAssembler : public ZBarrierSetAssemblerBase {
