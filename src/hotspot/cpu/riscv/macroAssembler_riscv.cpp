@@ -1252,7 +1252,7 @@ void MacroAssembler::cmov_zicond_eqz(Register dst, Register src, Register cond) 
   czero_eqz(dst, dst, cond);
   if (src != zr) {
     czero_nez(cond, src, cond);
-    orr(dst, dst, cond);
+    add(dst, dst, cond);
   }
 }
 
@@ -1262,7 +1262,7 @@ void MacroAssembler::cmov_zicond_nez(Register dst, Register src, Register cond) 
   czero_nez(dst, dst, cond);
   if (src != zr) {
     czero_eqz(cond, src, cond);
-    orr(dst, dst, cond);
+    add(dst, dst, cond);
   }
 }
 
