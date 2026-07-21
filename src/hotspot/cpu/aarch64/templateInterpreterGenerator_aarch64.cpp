@@ -911,7 +911,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ andr(rscratch2, rscratch1, rscratch2);
 
     // use r10 as a scratch register before it is loaded with its
-    // final value after this block is done touching the stack pages. 
+    // final value after this block is done touching the stack pages.
     __ mov(r10, sp);
     __ andr(rscratch1, rscratch1, r10);
 
