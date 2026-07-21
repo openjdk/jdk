@@ -232,7 +232,10 @@ abstract public class CDSAppTester {
         String[] cmdLine = new String[0];
         cmdLine = addClassOrModulePath(runMode, cmdLine);
         cmdLine = addWhiteBox(cmdLine);
-        if (runMode == RunMode.ASSEMBLY || runMode == RunMode.TRAINING) {
+        // In one-step workflow ASSEMBLY phase is not executed separately.
+        // Therefore AOTCompatibleOopCompression needs to be passed to the TRAINING phase,
+        // so that it can be propagated to the ASSEMBLY phase.
+        if (runMode == RunMode.TRAINING || runMode == RunMode.ASSEMBLY) {
           cmdLine = StringArrayUtils.concat(cmdLine, "-XX:+UnlockDiagnosticVMOptions", "-XX:+AOTCompatibleOopCompression");
         }
         return cmdLine;
