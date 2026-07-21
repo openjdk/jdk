@@ -60,7 +60,6 @@ private:
   void save() {
     MacroAssembler* masm = _masm;
 
-    //TODO: Optimize this function to only save the required registers
     bool preserve_R2 = _result != Z_R2;
     _nbytes_save = (15 - (preserve_R2 ? 0 : 1)) * BytesPerWord;
     int offset = frame::z_abi_160_size;
@@ -140,22 +139,20 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
     return;
   }
 
-  // TODO: Implement a better solution
-
   BLOCK_COMMENT("ZBarrierSetAssembler::load_at {");
 
-  //TODO: temp1 can be noreg and Z_R0(both can't be used here), temp2 can be noreg and same as dst(can't be used here) put a assert_different_registers for this and change the calls.
-  Register scratch = Z_R5;
+  Register scratch = temp1;
+  if (temp1 == dst) {
+    scratch = Z_tmp_1;
+    int nbytes_save = 3 * BytesPerWord;       // SP, PC, scratch
+    int offset = 0;
 
-  assert_different_registers(dst, scratch);
-  assert_different_registers(Z_R2, scratch);
+    __ push_frame(nbytes_save);               offset += 8;
+    __ save_return_pc();                      offset += 8;
+    __ z_stg(scratch, offset, Z_SP);
+  }
 
-  int nbytes_save = 3 * BytesPerWord; // SP, PC, scratch
-  int offset = 0;
-
-  __ push_frame(nbytes_save);               offset += 8;
-  __ save_return_pc();                      offset += 8;
-  __ z_stg(scratch, offset, Z_SP);
+  assert_different_registers(scratch, dst);
 
   Label done;
   Label uncolor;
@@ -169,7 +166,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   // Load oop at address
   __ z_lg(dst, 0, scratch);
-  __ z_lgr(Z_R0, dst);
+  __ z_lgr(Z_R0_scratch, dst);
 
   const bool on_non_strong =
       (decorators & ON_WEAK_OOP_REF) != 0 ||
@@ -177,9 +174,9 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   // Test Address bad mask
   if (on_non_strong) {
-    __ z_ng(Z_R0, mark_bad_mask_from_thread(Z_thread));
+    __ z_ng(Z_R0_scratch, mark_bad_mask_from_thread(Z_thread));
   } else {
-    __ z_ng(Z_R0, load_bad_mask_from_thread(Z_thread));
+    __ z_ng(Z_R0_scratch, load_bad_mask_from_thread(Z_thread));
   }
 
   __ branch_optimized(Assembler::bcondZero, uncolor);
@@ -215,9 +212,11 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   __ bind(done);
 
-  __ z_lg(scratch, 16, Z_SP);
-  __ restore_return_pc();
-  __ pop_frame();
+  if (temp1 == dst) {
+    __ z_lg(scratch, 16, Z_SP);
+    __ restore_return_pc();
+    __ pop_frame();
+  }
 
   BLOCK_COMMENT("} ZBarrierSetAssembler::load_at");
 }

@@ -3446,11 +3446,11 @@ class StubGenerator: public StubCodeGenerator {
     __ resolve_global_jobject(Z_ARG1, Z_tmp_1, Z_tmp_2);
       // Load target method from receiver
     __ load_heap_oop(Z_method, Address(Z_ARG1, java_lang_invoke_MethodHandle::form_offset()),
-                    noreg, noreg, IS_NOT_NULL);
+                    Z_tmp_1, Z_tmp_2, IS_NOT_NULL);
     __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_LambdaForm::vmentry_offset()),
-                    noreg, noreg, IS_NOT_NULL);
+                    Z_tmp_1, Z_tmp_2, IS_NOT_NULL);
     __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_MemberName::method_offset()),
-                    noreg, noreg, IS_NOT_NULL);
+                    Z_tmp_1, Z_tmp_2, IS_NOT_NULL);
     __ z_lg(Z_method, Address(Z_method, java_lang_invoke_ResolvedMethodName::vmtarget_offset()));
     __ z_stg(Z_method, Address(Z_thread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
 
