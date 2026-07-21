@@ -1360,7 +1360,7 @@ ParseArguments(int *pargc, char ***pargv,
             !describeModule &&
             !validateModules &&
             !dumpSharedSpaces &&
-            showSettings == NULL) {
+            !showSettings) {
             *pret = 1;
             printUsageKind = HELP_CONCISE;
         }
