@@ -783,17 +783,13 @@ AccessAnalyzer::AccessAnalyzer(PhaseGVN* phase, MemNode* n) :
   _memory_size(n->memory_size()),
   _alias_idx(-1),
   _adr(n->in(MemNode::Address)),
-  _store(n->isa_Store()),
-  _opcode(n->Opcode()),
-  _is_StoreVector(_store != nullptr && _store->is_StoreVector()),
-  _store_write_is_contiguous(false),
   _can_compare_offsets(false) {
 
   _offset    = 0;
   _base      = AddPNode::Ideal_base_and_offset(_adr, _phase, _offset);
   _maybe_raw = MemNode::check_if_adr_maybe_raw(_adr);
   _alloc     = AllocateNode::Ideal_allocation(_base);
-  _adr_type = _n->adr_type();
+  _adr_type  = _n->adr_type();
 
   if (_adr_type != nullptr && _adr_type->base() != TypePtr::AnyPtr) {
     // Avoid the cases that will upset Compile::get_alias_index
@@ -805,14 +801,8 @@ AccessAnalyzer::AccessAnalyzer(PhaseGVN* phase, MemNode* n) :
   _can_compare_offsets = _adr_type != nullptr &&
                          _adr_type->base() != TypePtr::AnyPtr &&
                          _base != nullptr &&
-                         _offset != Type::OffsetBot;
-
-  if (_store != nullptr) {
-    _store_write_is_contiguous = !_is_StoreVector ||
-                                 _opcode == Op_StoreVector ||
-                                 (_opcode == Op_StoreVectorMasked &&
-                                  VectorNode::is_all_ones_vector(_store->as_StoreVectorMasked()->mask()));
-  }
+                         _offset != Type::OffsetBot &&
+                         _offset >= 0;
 }
 
 // Decide whether the memory accessed by '_n' and 'other' may overlap. This function may be used
@@ -968,36 +958,47 @@ AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(No
 
 // Return true if the current store fully covers all bytes written by 'other'.
 bool AccessAnalyzer::store_fully_covers(const StoreNode* other) const {
-  assert(_store != nullptr, "current access must be a store");
+  assert(_n->is_Store(), "current access must be a store");
 
   int other_size = other->memory_size();
   if (_memory_size < other_size) {
     return false;
   }
 
+  StoreNode* cur = _n->as_Store();
+  int cur_opcode = cur->Opcode();
+  bool cur_writes_full_contiguous_range = !cur->is_StoreVector() ||
+                                          (!cur->is_predicated_vector() &&
+                                           (cur_opcode == Op_StoreVector ||
+                                            (cur_opcode == Op_StoreVectorMasked &&
+                                             VectorNode::is_all_ones_vector(cur->as_StoreVectorMasked()->mask()))));
+
+
   Node* other_adr = other->in(MemNode::Address);
   int other_opcode = other->Opcode();
   // True if 'other' can be described by a contiguous address range:
   // [other_adr, other_adr + other_size).
-  bool other_adr_range_is_contiguous = !other->is_StoreVector() ||
-                                       other_opcode == Op_StoreVector ||
-                                       other_opcode == Op_StoreVectorMasked;
+  bool other_writes_within_contiguous_range = !other->is_StoreVector() ||
+                                              other_opcode == Op_StoreVector ||
+                                              other_opcode == Op_StoreVectorMasked;
 
   // For same address.
   if (other_adr->eqv_uncast(_adr)) {
     // A full contiguous store can cover other store with a contiguous address range.
-    if (_store_write_is_contiguous &&
-        other_adr_range_is_contiguous) {
+    if (cur_writes_full_contiguous_range &&
+        other_writes_within_contiguous_range) {
       return true;
     }
 
-    // Handle masked/scatter vector stores.
-    if (_opcode != other_opcode ||
-        !_is_StoreVector) {
+    // Check whether both stores are non-predicated masked/scatter vector stores.
+    if (cur_opcode != other_opcode ||
+        !cur->is_StoreVector() ||
+        cur->is_predicated_vector() ||
+        other->is_predicated_vector()) {
       return false;
     }
 
-    StoreVectorNode* n = _store->as_StoreVector();
+    StoreVectorNode* n = cur->as_StoreVector();
     StoreVectorNode* o = other->as_StoreVector();
 
     // Same write pattern.
@@ -1007,34 +1008,33 @@ bool AccessAnalyzer::store_fully_covers(const StoreNode* other) const {
       return false;
     }
 
-    switch (_opcode) {
+    switch (cur_opcode) {
       case Op_StoreVectorMasked: {
-        StoreVectorMaskedNode* n_m = _store->as_StoreVectorMasked();
+        StoreVectorMaskedNode* n_m = cur->as_StoreVectorMasked();
         StoreVectorMaskedNode* o_m = other->as_StoreVectorMasked();
-        return n_m->mask()->eqv_uncast(o_m->mask());
+        return n_m->mask() == o_m->mask();
       }
       case Op_StoreVectorScatter: {
-        StoreVectorScatterNode* n_s = _store->as_StoreVectorScatter();
+        StoreVectorScatterNode* n_s = cur->as_StoreVectorScatter();
         StoreVectorScatterNode* o_s = other->as_StoreVectorScatter();
-        return n_s->indices()->eqv_uncast(o_s->indices());
+        return n_s->indices() == o_s->indices();
       }
       case Op_StoreVectorScatterMasked: {
-        StoreVectorScatterMaskedNode* n_sm = _store->as_StoreVectorScatterMasked();
+        StoreVectorScatterMaskedNode* n_sm = cur->as_StoreVectorScatterMasked();
         StoreVectorScatterMaskedNode* o_sm = other->as_StoreVectorScatterMasked();
-        return n_sm->indices()->eqv_uncast(o_sm->indices()) &&
-               n_sm->mask()->eqv_uncast(o_sm->mask());
+        return n_sm->indices() == o_sm->indices() &&
+               n_sm->mask() == o_sm->mask();
       }
       default:
         return false;
     }
   }
 
-  // For different address.
   // This is only valid when the current store writes a contiguous range,
   // the other store has a contiguous address range, and both offsets can be
   // compared against the same base.
-  if (!_store_write_is_contiguous ||
-      !other_adr_range_is_contiguous ||
+  if (!cur_writes_full_contiguous_range ||
+      !other_writes_within_contiguous_range ||
       !_can_compare_offsets) {
     return false;
   }
@@ -1042,13 +1042,10 @@ bool AccessAnalyzer::store_fully_covers(const StoreNode* other) const {
   // Use offsets and sizes to decide whether the current store covers the other store.
   intptr_t other_offset = 0;
   Node* other_base = AddPNode::Ideal_base_and_offset(other_adr, _phase, other_offset);
-  if (other_base == nullptr || other_offset == Type::OffsetBot) {
-    return false;
-  }
-
-  if (!other_base->eqv_uncast(_base) ||
-      other_offset < _offset ||
-      _offset < 0) {
+  if (other_base == nullptr ||
+      other_offset == Type::OffsetBot ||
+      !other_base->eqv_uncast(_base) ||
+      other_offset < _offset) {
     return false;
   }
 
@@ -1403,9 +1400,12 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
         return res;
       }
 
-      // Type-unsafe stores must be due to array polymorphism
-      const TypePtr* adr_type = this->adr_type();
-      assert(adr_type == nullptr || adr_type->isa_aryptr() != nullptr, "unexpected type-unsafe store");
+      // There are some cases in which the Type of the load is narrower than the Type of the value
+      // that is stored into that location. The most common case is array polymorphism, when the
+      // type of an array element depends on the type of the array. In addition, there are some
+      // corner cases, the first one is concurrent class loading, when CHA can result in a narrower
+      // Type than what is declared only after the child class is loaded, and the second case is
+      // unsafe accesses when we do not check for type safety. See JDK-8388184.
       return nullptr;
     }
 

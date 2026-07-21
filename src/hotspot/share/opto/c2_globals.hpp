@@ -601,6 +601,14 @@
           "Number of fields in instance limit for scalar replacement")      \
           range(0, max_jint)                                                \
                                                                             \
+  product(bool, StressEliminateAllocations, false, DIAGNOSTIC,              \
+          "Randomly fail allocation elimination attempts")                  \
+                                                                            \
+  product(uint, StressEliminateAllocationsMean, 20, DIAGNOSTIC,             \
+          "The expected number of elimination checks made until "           \
+          "a random failure.")                                              \
+          range(1, max_juint)                                               \
+                                                                            \
   product(bool, OptimizePtrCompare, true,                                   \
           "Use escape analysis to optimize pointers compare")               \
                                                                             \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ private:
   uintptr_t              _mark_bad_mask;
   uintptr_t              _store_good_mask;
   uintptr_t              _store_bad_mask;
-  uintptr_t              _nmethod_disarmed;
   ZStoreBarrierBuffer*   _store_barrier_buffer;
   ZMarkThreadLocalStacks _mark_stacks[2];
   zaddress_unsafe*       _invisible_root;
@@ -50,7 +49,6 @@ private:
       _mark_bad_mask(0),
       _store_good_mask(0),
       _store_bad_mask(0),
-      _nmethod_disarmed(0),
       _store_barrier_buffer(new ZStoreBarrierBuffer()),
       _mark_stacks(),
       _invisible_root(nullptr) {}
@@ -92,10 +90,6 @@ public:
     data(thread)->_store_good_mask = mask;
   }
 
-  static void set_nmethod_disarmed(Thread* thread, uintptr_t value) {
-    data(thread)->_nmethod_disarmed = value;
-  }
-
   static ZMarkThreadLocalStacks* mark_stacks(Thread* thread, ZGenerationId id) {
     return &data(thread)->_mark_stacks[(int)id];
   }
@@ -132,10 +126,6 @@ public:
 
   static ByteSize store_good_mask_offset() {
     return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _store_good_mask);
-  }
-
-  static ByteSize nmethod_disarmed_offset() {
-    return Thread::gc_data_offset() + byte_offset_of(ZThreadLocalData, _nmethod_disarmed);
   }
 
   static ByteSize store_barrier_buffer_offset() {
