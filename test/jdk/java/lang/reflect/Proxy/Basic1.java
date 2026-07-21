@@ -22,12 +22,13 @@
  */
 
 /* @test
- * @bug 4227192 4487672
- * @summary This is a basic functional test of the dynamic proxy API (part 1).
- * @author Peter Jones
+ * @bug 4227192 4487672 8388553
+ * @summary This is a basic functional test of the java.lang.reflect.Proxy API
  *
- * @build Basic1
  * @run main Basic1
+ * @comment Verify that the APIs behave as expected even when the JDK internal
+ *          debug system property "jdk.proxy.ProxyGenerator.saveGeneratedFiles" is set
+ * @run main/othervm -Djdk.proxy.ProxyGenerator.saveGeneratedFiles=true Basic1
  */
 
 import java.lang.reflect.*;
@@ -37,9 +38,6 @@ import java.util.*;
 public class Basic1 {
 
     public static void main(String[] args) {
-
-        System.err.println(
-            "\nBasic functional test of dynamic proxy API, part 1\n");
 
         try {
             Class<?>[] interfaces =
