@@ -245,7 +245,8 @@ public final class ModelByteBufferWavetable implements ModelWavetable {
 
     @Override
     public int getChannels() {
-        return getFormat().getChannels();
+        AudioFormat format = getFormat();
+        return (format != null) ? format.getChannels() : 1;
     }
 
     @Override
