@@ -185,6 +185,17 @@ source %{
           return false;
         }
         break;
+      case Op_DotV:
+      case Op_UDotV:
+        if (length_in_bytes < 8) {
+          return false;
+        }
+
+        if ((length_in_bytes == 8 || length_in_bytes == 16) && !VM_Version::supports_asimddp()) {
+          return false;
+        }
+
+        break;
       case Op_AddReductionVI:
       case Op_AndReductionV:
       case Op_OrReductionV:
@@ -5628,3 +5639,39 @@ SELECT_FROM_TWO_VECTORS(10, 11)
 SELECT_FROM_TWO_VECTORS(12, 13)
 SELECT_FROM_TWO_VECTORS(17, 18)
 SELECT_FROM_TWO_VECTORS(23, 24)
+
+// ---------------------------------- DotV --------------------------------
+instruct sdot(vReg dst_src1, vReg src2, vReg src3) %{
+  match(Set dst_src1 (DotV dst_src1 (Binary src2 src3)));
+  format %{ "sdot $dst_src1, $src2, $src3" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (length_in_bytes == 8) {
+      __ sdot($dst_src1$$FloatRegister, __ T2S, $src2$$FloatRegister, $src3$$FloatRegister, __ T8B);
+    } else if (length_in_bytes == 16) {
+      __ sdot($dst_src1$$FloatRegister, __ T4S, $src2$$FloatRegister, $src3$$FloatRegister, __ T16B);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_sdot($dst_src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ---------------------------------- UDotV --------------------------------
+instruct udot(vReg dst_src1, vReg src2, vReg src3) %{
+  match(Set dst_src1 (UDotV dst_src1 (Binary src2 src3)));
+  format %{ "udot $dst_src1, $src2, $src3" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (length_in_bytes == 8) {
+      __ udot($dst_src1$$FloatRegister, __ T2S, $src2$$FloatRegister, $src3$$FloatRegister, __ T8B);
+    } else if (length_in_bytes == 16) {
+      __ udot($dst_src1$$FloatRegister, __ T4S, $src2$$FloatRegister, $src3$$FloatRegister, __ T16B);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_udot($dst_src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
