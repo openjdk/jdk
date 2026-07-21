@@ -128,6 +128,9 @@
                  Register op1, Register op2,
                  Register dst, Register src);
 
+  void enc_cmove_zero_one(int cmpFlag,
+                          Register op1, Register op2, Register dst);
+
   void enc_cmove_cmp_fp(int cmpFlag,
                         FloatRegister op1, FloatRegister op2,
                         Register dst, Register src, bool is_single);
@@ -138,6 +141,10 @@
   void enc_cmove_fp_cmp_fp(int cmpFlag, FloatRegister op1, FloatRegister op2,
                            FloatRegister dst, FloatRegister src,
                            bool cmp_single, bool cmov_single);
+
+  void enc_cmove_cmp_fp_zero_one(int cmpFlag,
+                                 FloatRegister op1, FloatRegister op2,
+                                 Register dst, bool is_single);
 
   void spill(Register r, bool is64, int offset) {
     is64 ? sd(r, Address(sp, offset))

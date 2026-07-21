@@ -2057,6 +2057,38 @@ void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Regis
   }
 }
 
+void C2_MacroAssembler::enc_cmove_zero_one(int cmpFlag, Register op1, Register op2, Register dst) {
+  bool is_unsigned = (cmpFlag & unsigned_branch_mask) == unsigned_branch_mask;
+  int op_select = cmpFlag & (~unsigned_branch_mask);
+
+  switch (op_select) {
+    case BoolTest::eq:
+      xorr(dst, op1, op2);
+      snez(dst, dst);
+      break;
+    case BoolTest::ne:
+      xorr(dst, op1, op2);
+      seqz(dst, dst);
+      break;
+    case BoolTest::lt:
+      is_unsigned ? sltu(dst, op1, op2) : slt(dst, op1, op2);
+      seqz(dst, dst);
+      break;
+    case BoolTest::gt:
+      is_unsigned ? sltu(dst, op2, op1) : slt(dst, op2, op1);
+      seqz(dst, dst);
+      break;
+    case BoolTest::le:
+      is_unsigned ? sltu(dst, op2, op1) : slt(dst, op2, op1);
+      break;
+    case BoolTest::ge:
+      is_unsigned ? sltu(dst, op1, op2) : slt(dst, op1, op2);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 void C2_MacroAssembler::enc_cmove_cmp_fp(int cmpFlag, FloatRegister op1, FloatRegister op2, Register dst, Register src, bool is_single) {
   int op_select = cmpFlag & (~unsigned_branch_mask);
 
@@ -2158,6 +2190,34 @@ void C2_MacroAssembler::enc_cmove_fp_cmp_fp(int cmpFlag,
       break;
     default:
       assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::enc_cmove_cmp_fp_zero_one(int cmpFlag, FloatRegister op1, FloatRegister op2, Register dst, bool is_single) {
+  switch (cmpFlag) {
+    case BoolTest::eq: // NaN ordered: eq false -> dst = 1
+      is_single ? feq_s(dst, op1, op2) : feq_d(dst, op1, op2);
+      seqz(dst, dst);
+      break;
+    case BoolTest::ne: // NaN unordered: ne true -> dst = 0
+      is_single ? feq_s(dst, op1, op2) : feq_d(dst, op1, op2);
+      break;
+    case BoolTest::lt: // NaN unordered: lt true -> dst = 0
+      is_single ? fle_s(dst, op2, op1) : fle_d(dst, op2, op1);
+      break;
+    case BoolTest::le: // NaN unordered: le true -> dst = 0
+      is_single ? flt_s(dst, op2, op1) : flt_d(dst, op2, op1);
+      break;
+    case BoolTest::gt: // NaN ordered: gt false -> dst = 1
+      is_single ? flt_s(dst, op2, op1) : flt_d(dst, op2, op1);
+      seqz(dst, dst);
+      break;
+    case BoolTest::ge: // NaN ordered: ge false -> dst = 1
+      is_single ? fle_s(dst, op2, op1) : fle_d(dst, op2, op1);
+      seqz(dst, dst);
+      break;
+    default:
       ShouldNotReachHere();
   }
 }
