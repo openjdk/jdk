@@ -894,6 +894,8 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, Node* n3, const TypeV
   case Op_SignumVF: return new SignumVFNode(n1, n2, n3, vt);
   case Op_VectorBlend: return new VectorBlendNode(n1, n2, n3);
   case Op_VectorBitwiseBlend: return new VectorBitwiseBlendNode(n1, n2, n3, vt);
+  case Op_DotV: return new DotVNode(n1, n2, n3, vt);
+  case Op_UDotV: return new UDotVNode(n1, n2, n3, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return nullptr;

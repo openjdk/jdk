@@ -438,6 +438,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_index_vector();
   bool inline_index_partially_in_upper_range();
   bool inline_vector_select_from_two_vectors();
+  bool inline_vector_dot();
 
   Node* gen_call_to_vector_math(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
 

@@ -804,6 +804,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_compress_expand();
   case vmIntrinsics::_VectorSelectFromTwoVectorOp:
     return inline_vector_select_from_two_vectors();
+  case vmIntrinsics::_VectorDotOp:
+    return inline_vector_dot();
   case vmIntrinsics::_IndexVector:
     return inline_index_vector();
   case vmIntrinsics::_IndexPartiallyInUpperRange:
