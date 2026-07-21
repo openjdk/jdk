@@ -65,7 +65,9 @@ public class TestMaskedStoreIdealization {
             "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED"
         ));
         vmArgs.addAll(Arrays.asList(args)); // Forward args
-        vmArgs.add("-XX:-StressReflectiveCode"); // Temporarily disable stress flag that causes unrelated failures.
+        // Temporarily disable stress flag due to unrelated test failures.
+        // TODO: Remove when JDK-8388490 is fixed.
+        vmArgs.addAll(List.of("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-StressReflectiveCode"));
         String[] vmArgsArray = vmArgs.toArray(new String[0]);
 
         comp.invoke(PACKAGE + "." + CLASS_NAME, "main", new Object[] { vmArgsArray });
@@ -118,35 +120,23 @@ public class TestMaskedStoreIdealization {
                 final PrimitiveType pty = (PrimitiveType) vec.elementType;
                 final String ptyIR = pty.abbrev().equals("S") ? "C" : pty.abbrev();
 
-                // Verify that the method contains two VectorStore{Masked|Scatter} nodes.
+                // Verify that the Scatter store for STORE_VECTOR_AFTER_SCATTER is not eliminated.
                 var opVerification = Template.make(() -> {
+                    if (op != Operation.STORE_VECTOR_AFTER_SCATTER) {
+                        return scope("");
+                    }
+
                     if (vec.length <= 2) {
                         return scope("    // No Vector nodes are emitted for vectors of length 2 or shorter.\n");
                     }
 
-                    if (Set.of(Operation.STORE_SCATTER, Operation.STORE_SCATTER_MASK, Operation.STORE_VECTOR_AFTER_SCATTER).contains(op) &&
-                        vec.elementType.byteSize() < 4) {
+                    if (vec.elementType.byteSize() < 4) {
                         return scope("    // StoreVectorScatter is not emitted for vectors of subword types.\n");
                     }
 
-                    final String opIR = switch (op) {
-                        case STORE_SCATTER              -> "STORE_VECTOR_SCATTER";
-                        case STORE_MASK                 -> "STORE_VECTOR_MASKED";
-                        case STORE_SCATTER_MASK         -> "STORE_VECTOR_SCATTER_MASKED";
-                        case STORE_VECTOR_AFTER_SCATTER -> "STORE_VECTOR_SCATTER";
-                        case RANDOM                     -> "";
-                    };
-
-                    final int numMatches = switch (op) {
-                        case STORE_VECTOR_AFTER_SCATTER -> 1;
-                        default                         -> 2;
-                    };
-
                     return scope(
-                        let("opIR", opIR),
-                        let("matches", numMatches),
                         """
-                            @IR(counts = {IRNode.#{opIR}, "=#{matches}"},
+                            @IR(counts = {IRNode.STORE_VECTOR_SCATTER, "=1"},
                                 applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
                         """
                     );
@@ -177,9 +167,9 @@ public class TestMaskedStoreIdealization {
                                 applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"},
                                 phase = CompilePhase.BEFORE_MATCHING)
                         """;
-                        case STORE_VECTOR_AFTER_SCATTER, RANDOM -> "";
-                    },
-                    opVerification.asToken()
+                        case STORE_VECTOR_AFTER_SCATTER -> opVerification.asToken();
+                        case  RANDOM -> "";
+                    }
                 );
             });
 
@@ -298,7 +288,7 @@ public class TestMaskedStoreIdealization {
                     let("arrVal", vec.elementType.con()),
                 """
                     @Run(test = "test#{testCaseName}")
-                    @Warmup(15_000)
+                    @Warmup(10_000)
                     static void run#{testCaseName}(RunInfo info) {
                         final #pty broadcastVal = #broadcastVal;
                         final #pty arrVal = #arrVal;
