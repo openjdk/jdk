@@ -1356,7 +1356,10 @@ ParseArguments(int *pargc, char ***pargv,
 
     if (*pwhat == NULL) {
         /* LM_UNKNOWN okay for options that exit */
-        if (!listModules && !describeModule && !validateModules && !dumpSharedSpaces &&
+        if (!listModules &&
+            !describeModule &&
+            !validateModules &&
+            !dumpSharedSpaces &&
             showSettings == NULL) {
             *pret = 1;
             printUsageKind = HELP_CONCISE;
