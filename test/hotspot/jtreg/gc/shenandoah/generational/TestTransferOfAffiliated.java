@@ -23,13 +23,12 @@
  */
 
 package gc.shenandoah.generational;
-
 /*
  * @test id=generational
  * @summary Test that we do not attempt to transfer to the old
  * generation regions that are affiliated with young
  * @bug 8382085
- * @key stress randomness
+ * @key stress
  * @requires vm.gc.Shenandoah
  * @requires vm.flagless
  * @requires os.maxMemory >= 2g
@@ -61,14 +60,14 @@ public class TestTransferOfAffiliated {
     // except to acknowledge that array header causes that only 1
     // inner array fits per heap region.  Size calculations also
     // assume the rootArray is negligible.
-    static Integer[][] rootArray;
+    private static Integer[][] rootArray;
 
     // Each inner array spans 256K of memory plus a small number of
     // bytes for the array header. Only 1 inner array fits within each
     // HeapRegion, causing a large amount of fragmentation. The number
     // of elements in an array is 256K divided by 4 bytes per
     // (compressed) oop
-    static final int INNER_ARRAY_SLOTS = (256 * 1024) / 4;
+    private static final int INNER_ARRAY_SLOTS = (256 * 1024) / 4;
 
     // Integer objects are referenced from the inner array. We want
     // each InnerArray to consume a full HeapRegion after we account
@@ -90,28 +89,17 @@ public class TestTransferOfAffiliated {
     //
     //  The number of InnerIntegers for each InnerArray is 256K (half
     // the region size) / 16 bytes / Integer
-    static final int INNER_INTEGERS = (256 * 1024) / 16;
+    private static final int INNER_INTEGERS = (256 * 1024) / 16;
 
     // Assume heap size is 1 GB. We want to consume approximately
     // 384MB of live data.  Each InnerArray, including its referenced
     // Integer objects, consumes approximately 512KB.  768 array
     // elements * 512KB/array element = 384MB.
-    static final int OUTER_ARRAY_SLOTS = 768;
+    private static final int OUTER_ARRAY_SLOTS = 768;
 
-    static final Random r = new Random(42);
+    private static final Random r = new Random(42);
 
-    static int truncateAbsolute(int i) {
-        if (i < 0) {
-            i = -i;
-        }
-        if (i < 0) {
-            // negative of Integer.min_value EQUALS Integer.MIN_VALUE
-            i = 0;
-        }
-        return i % INNER_ARRAY_SLOTS;
-    }
-
-    static int absolute(int arg) {
+    private static int absolute(int arg) {
         if (arg < 0) {
             arg = -arg;
         }
@@ -122,7 +110,11 @@ public class TestTransferOfAffiliated {
         return arg;
     }
 
-    static long cpuIntensive(int n) {
+    private static int truncateAbsolute(int i) {
+        return absolute(i) % INNER_ARRAY_SLOTS;
+    }
+
+    private static long cpuIntensive(int n) {
         long result = 1;
         while (n >= 4) {
             // arithmetic may overflow
@@ -135,12 +127,12 @@ public class TestTransferOfAffiliated {
         return result;
     }
 
-    static Integer[] allocateEmptyInnerArray() {
+    private static Integer[] allocateEmptyInnerArray() {
         Integer[] result = new Integer[INNER_ARRAY_SLOTS];
         return result;
     }
 
-    public static void fillArrayIntegersWithProbe(Integer[] array,
+    private static void fillArrayIntegersWithProbe(Integer[] array,
                                                   int spotCheckCount) {
         for (int i = 0; i < INNER_INTEGERS; i++) {
             int index = truncateAbsolute(r.nextInt());
@@ -169,7 +161,7 @@ public class TestTransferOfAffiliated {
     }
 
     // How much memory is represented by this array?
-    public static long doInventory(Integer[] array) {
+    private static long doInventory(Integer[] array) {
         int integerCount = 0;
         if (array != null) {
             for (int i = 0; i < INNER_ARRAY_SLOTS; i++) {
@@ -178,8 +170,11 @@ public class TestTransferOfAffiliated {
                 }
             }
         }
-        return ((array == null)?
-                0: (INNER_ARRAY_SLOTS * 4L) + 16 + integerCount * 16L);
+        if (array == null) {
+            return 0;
+        } else {
+            return (INNER_ARRAY_SLOTS * 4L) + 16 + integerCount * 16L;
+        }
     }
 
     public static void main(String[] args) {
@@ -214,16 +209,16 @@ public class TestTransferOfAffiliated {
         for (int j = 0; j < OUTER_ARRAY_SLOTS; j++) {
             if (rootArray[j] != null) {
                 fillArrayIntegersWithProbe(rootArray[j], 2048);
+                accumulator += doInventory(rootArray[j]);
             }
         }
         // The following assert simply confirms that the program ran
         // correctly and prevents optimizers from removing what might
-        // appear to be dead code in the various loops above. The
+        // appear to be dead code in the loops above. The
         // expected regression failure consists of an assert failure
-        // observed with fast-debug builds of the JVM before integration of
-        // https://github.com/openjdk/jdk/pull/31563.
-
-        Asserts.assertEQ(775993600L, accumulator,
+        // observed with fast-debug builds of the JVM before resolution
+        // of JDK-8382085.
+        Asserts.assertEQ(1155473232L, accumulator,
                            "Proper execution is demonstrated by matching " +
                            "expected accumulator value with no JVM " +
                            "assert failures");
