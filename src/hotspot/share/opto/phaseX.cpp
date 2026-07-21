@@ -2531,15 +2531,20 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // ConvI2F->ConvF2I->ConvI2F
   // Note: there may be other 3-nodes conversion chains that would require to be added here, but these
   // are the only ones that are known to trigger missed optimizations otherwise
+  //
+  // ConvI2LNode::Identity optimizes the following 2-hop optimization, once x is proven to be in int range:
+  //   ConvI2L(ConvL2I(x)) -> x
   if (use_op == Op_ConvL2D ||
       use_op == Op_ConvI2F ||
       use_op == Op_ConvL2F ||
-      use_op == Op_ConvF2I) {
+      use_op == Op_ConvF2I ||
+      use_op == Op_ConvL2I) {
     add_users_to_worklist_if(worklist, use, [=](Node* u) {
       return (use_op == Op_ConvL2D && u->Opcode() == Op_ConvD2L) ||
              (use_op == Op_ConvI2F && u->Opcode() == Op_ConvF2I) ||
              (use_op == Op_ConvL2F && u->Opcode() == Op_ConvF2L) ||
-             (use_op == Op_ConvF2I && u->Opcode() == Op_ConvI2F);
+             (use_op == Op_ConvF2I && u->Opcode() == Op_ConvI2F) ||
+             (use_op == Op_ConvL2I && u->Opcode() == Op_ConvI2L);
     });
   }
   // ConvD2F::Ideal matches ConvD2F(SqrtD(ConvF2D(x))) => SqrtF(x).
