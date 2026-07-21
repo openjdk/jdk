@@ -1234,6 +1234,10 @@ bool Node::has_special_unique_user() const {
   } else if (this->is_Load() && n->is_Move()) {
     // Condition for MoveX2Y (LoadX mem) => LoadY mem
     return true;
+  } else if ((op == Op_LoadB || op == Op_LoadS) && n->Opcode() == Op_AndI) {
+    // AndINode::Ideal turns AndI(LoadB) into AndI(LoadUB), if the LoadB
+    // only has a single use.
+    return true;
   } else if (op == Op_AddL) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
     return n->Opcode() == Op_ConvL2I && n->in(1) == this;
