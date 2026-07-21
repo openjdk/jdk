@@ -124,7 +124,7 @@ public class StrictParseTest {
         fmt.setGroupingSize(0);
         fmt.setGroupingUsed(true);
         var pp = new ParsePosition(0);
-        assertThrows(ParseException.class, () -> fmt.parse("555,000.0", pp));
+        assertNull(fmt.parse("555,000.0", pp));
         assertEquals(3, pp.getErrorIndex());
         assertDoesNotThrow(() -> fmt.parse("555.0"));
     }
