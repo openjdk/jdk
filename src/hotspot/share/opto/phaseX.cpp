@@ -2479,6 +2479,18 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->Opcode() == Op_AndI || u->Opcode() == Op_AndL;
     });
   }
+  // OrI/LNode::Ideal converts shift/or patterns into rotates, which
+  // needs to trigger when x and y common.
+  // e.g. (x << 14) | (y >>> 18)
+  if (use_op == Op_LShiftI || use_op == Op_URShiftI) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_OrI;
+    });
+  } else if (use_op == Op_LShiftL || use_op == Op_URShiftL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_OrL;
+    });
+  }
   // If changed AddI/SubI inputs, check CmpU for range check optimization.
   if (use_op == Op_AddI || use_op == Op_SubI) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
