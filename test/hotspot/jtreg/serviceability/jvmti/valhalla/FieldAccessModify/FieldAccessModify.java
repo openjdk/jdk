@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,16 +92,16 @@ public class FieldAccessModify {
         TestHolder testHolder = new TestHolder();
 
         if (!initWatchers(ValueClass.class, ValueClass.class.getDeclaredField("valueClass_fld1"))) {
-            throw new RuntimeException("Watchers initializations error (valueClass_fld1)");
+            throw new RuntimeException("Watcher initialization error (valueClass_fld1)");
         }
         if (!initWatchers(ValueClass.class, ValueClass.class.getDeclaredField("valueClass_fld2"))) {
-            throw new RuntimeException("Watchers initializations error (valueClass_fld2)");
+            throw new RuntimeException("Watcher initialization error (valueClass_fld2)");
         }
         if (!initWatchers(InstanceHolder.class, InstanceHolder.class.getDeclaredField("instanceHolder_fld1"))) {
-            throw new RuntimeException("Watchers initializations error (instanceHolder_fld1)");
+            throw new RuntimeException("Watcher initialization error (instanceHolder_fld1)");
         }
         if (!initWatchers(ValueHolder.class, ValueHolder.class.getDeclaredField("valueHolder_fld1"))) {
-            throw new RuntimeException("Watchers initializations error (valueHolder_fld1)");
+            throw new RuntimeException("Watcher initialization error (valueHolder_fld1)");
         }
 
         test("ValueClass (access)", () -> {

@@ -3397,7 +3397,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         of <code>void</code>.
         A constructor is a special method named <code>&lt;init&gt;</code> with
         a return type of <code>void</code>. A class initializer is a special
-        method named named <code>&lt;clinit&gt;</code> with a return type of
+        method named <code>&lt;clinit&gt;</code> with a return type of
         <code>void</code>.
         <p/>
         When preview features are enabled, this function can not be used to return
@@ -10766,7 +10766,7 @@ myInit() {
           <eventlink id="SampledObjectAlloc"></eventlink>.
           <b> can_support_value_objects is a preview API of the Java platform. </b>
           <i>Preview features may be removed in a future release, or upgraded to
-          permanent features of the Java platform.</i> 
+          permanent features of the Java platform.</i>
         </description>
       </capabilityfield>
     </capabilitiestypedef>

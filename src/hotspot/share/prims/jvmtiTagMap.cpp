@@ -440,7 +440,7 @@ class CallbackWrapper : public StackObj {
     } else {
       // flat value object, we know its InstanceKlass
       assert(_o.inline_klass() != nullptr, "must be");
-      _obj_size = _o.inline_klass()->size() * wordSize;;
+      _obj_size = _o.inline_klass()->size() * wordSize;
     }
 
     // get object tag
@@ -2846,9 +2846,9 @@ VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
   _tag_map = tag_map;
   _initial_object = initial_object;
   _following_object_refs = true;
-  _reporting_primitive_fields = (callbacks.primitive_field_callback() != nullptr);;
-  _reporting_primitive_array_values = (callbacks.array_primitive_value_callback() != nullptr);;
-  _reporting_string_values = (callbacks.string_primitive_value_callback() != nullptr);;
+  _reporting_primitive_fields = (callbacks.primitive_field_callback() != nullptr);
+  _reporting_primitive_array_values = (callbacks.array_primitive_value_callback() != nullptr);
+  _reporting_string_values = (callbacks.string_primitive_value_callback() != nullptr);
   _dead_objects = objects;
   CallbackInvoker::initialize_for_advanced_heap_walk(tag_map, user_data, callbacks, &_visit_stack);
 }
@@ -2884,7 +2884,7 @@ inline bool VM_HeapWalkOperation::iterate_over_array(const JvmtiHeapwalkObject& 
   return true;
 }
 
-// similar to iterate_over_array(), but itrates over flat array
+// similar to iterate_over_array(), but iterates over flat array
 inline bool VM_HeapWalkOperation::iterate_over_flat_array(const JvmtiHeapwalkObject& o) {
   assert(!o.is_flat(), "Array object cannot be flattened");
   flatArrayOop array = flatArrayOop(o.obj());
