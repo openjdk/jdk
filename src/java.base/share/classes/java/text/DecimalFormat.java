@@ -2753,11 +2753,12 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /*
-     * DecimalFormat defines both setGroupingUsed(boolean) and setGroupingSize(int)
-     * These operate independent of each other, and setting a grouping size of 0 does not mean that
-     * isGroupingUsed() returns false. As a result, to effectively check if grouping is used,
-     * both values need to be verified. Lenient parsing does not require this exhaustive check
-     * because the legacy behavior does not validate grouping size positioning.
+     * DecimalFormat defines both setGroupingUsed(boolean) and setGroupingSize(int).
+     * These operate independently, and setting a grouping size of 0 does not mean that
+     * isGroupingUsed() returns false. As a result, to effectively check whether grouping is used
+     * for strict parsing, both values need to be verified. Lenient parsing, which preserves the
+     * legacy parsing behavior, does not require this exhaustive check because grouping size positioning
+     * is not checked.
      */
     private boolean isGroupingEnabled() {
         return isGroupingUsed() && groupingSize > 0;
