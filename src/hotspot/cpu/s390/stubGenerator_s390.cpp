@@ -3306,10 +3306,12 @@ class StubGenerator: public StubCodeGenerator {
     // Make room for the thawed frames and align the stack.
     __ add64(Z_RET, frame::z_abi_160_size);
 
-    { // stack alignment
-      __ z_lcgr(Z_RET, Z_RET); // negate Z_RET value
-      __ z_nill(Z_RET, -frame::alignment_in_bytes);
-    }
+#ifdef ASSERT
+    __ z_tmll(Z_RET, frame::alignment_in_bytes - 1);
+    __ asm_assert(Assembler::bcondAllZero, FILE_AND_LINE ": size is not aligned properly", 71);
+#endif // ASSERT
+
+    __ z_lcgr(Z_RET, Z_RET); // negate Z_RET value
     __ resize_frame( /* offset = */ Z_RET,/* fp = */ Z_R1, /* load_fp = */ true);
 
     __ z_lghi(Z_ARG2, kind);

@@ -63,6 +63,11 @@ Debugging Tools for Windows must be installed so that these tools work. The
 is used by the target process, or the location from which the core dump file
 was produced.
 
+If the target JVM is started with an alternate temporary file location, `jstack` must
+use the same temporary file location for communication; this is true by default
+but see the [`-XX:AltTempDir`](./java.html#-XX_AltTempDir) option.
+
+
 ## Options for the jstack Command
 
 `-l`

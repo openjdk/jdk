@@ -4816,17 +4816,15 @@ instruct loadNKlass(iRegN dst, memory mem) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct loadNKlassCompactHeaders(iRegN dst, memory mem, flagsReg cr) %{
+instruct loadNKlassCompactHeaders(iRegN dst, memory mem) %{
   match(Set dst (LoadNKlass mem));
   predicate(UseCompactObjectHeaders);
-  effect(KILL cr);
   ins_cost(MEMORY_REF_COST);
   format %{ "load_narrow_klass_compact $dst,$mem \t# compressed class ptr" %}
-  // TODO: size()
+  // z_lg (6 bytes) + z_srlg (6 bytes); neither instruction modifies the CC.
+  size(12);
   ins_encode %{
-    __ block_comment("load_narrow_klass_compact_c2 {");
     __ load_narrow_klass_compact_c2($dst$$Register, $mem$$Address);
-    __ block_comment("} load_narrow_klass_compact");
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -8786,6 +8784,7 @@ instruct compP_decode_reg_imm0(flagsReg cr, iRegN op1, immP0 op2) %{
 
 instruct compP_reg_mem(iRegP dst, memory src, flagsReg cr)%{
   match(Set cr (CmpP dst (LoadP src)));
+  predicate(n->in(2)->as_Load()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
   format %{ "CLG     $dst, $src\t # ptr" %}
