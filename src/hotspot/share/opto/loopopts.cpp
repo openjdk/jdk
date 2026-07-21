@@ -605,7 +605,7 @@ Node* PhaseIdealLoop::remix_address_expressions(Node* n) {
       n_op == Op_MulD) {
     if (n2_loop == n_loop) {
       assert(n1_loop != n_loop, "");
-      // IGVN may want swap the edges back later, to commute (canonicalize) the operation.
+      // IGVN may want to swap the edges back later, to commute (canonicalize) the operation.
       _igvn.rehash_node_delayed(n);
       n->swap_edges(1, 2);
     }

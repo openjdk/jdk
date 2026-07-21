@@ -2694,7 +2694,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   //      before mutation          before commute          canonical loop incr
   //
   // Alternatively, we may have a region-phi, that is about to turn
-  // into a loop-phi, and where the AddI reccurrence is already closed,
+  // into a loop-phi, and where the AddI recurrence is already closed,
   // and the AddI has its inputs sorted by idx. In this case, we also
   // need AddNode::commute to canonicalize the AddI, so that the phi
   // input is on the left now.
