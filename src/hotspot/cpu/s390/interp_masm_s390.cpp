@@ -514,7 +514,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   // Load pointer for resolved_references[] objArray.
   z_lg(result, in_bytes(ConstantPool::cache_offset()), result);
   z_lg(result, in_bytes(ConstantPoolCache::resolved_references_offset()), result);
-  resolve_oop_handle(result, Z_R0_scratch, Z_R1_scratch); // Load resolved references array itself.
+  resolve_oop_handle(result, Z_R1_scratch, Z_R0_scratch); // Load resolved references array itself.
 #ifdef ASSERT
   NearLabel index_ok;
   z_lgf(Z_R0, Address(result, arrayOopDesc::length_offset_in_bytes()));
@@ -524,7 +524,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   bind(index_ok);
 #endif
   z_agr(result, index);    // Address of indexed array element.
-  load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), tmp, noreg);
+  load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), tmp, Z_R0_scratch);
 }
 
 // load cpool->resolved_klass_at(index)
@@ -1054,6 +1054,7 @@ void InterpreterMacroAssembler::narrow(Register result, Register ret_type) {
 
 // remove activation
 //
+// Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
 // Unlock any Java monitors from synchronized blocks.
 // Remove the activation from the stack.
@@ -1080,6 +1081,21 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 #endif // ASSERT
 
   unlock_if_synchronized_method(state, throw_monitor_exception, install_monitor_exception);
+
+  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
+  // that would normally not be safe to use. Such bad returns into unsafe territory of
+  // the stack, will call InterpreterRuntime::at_unwind.
+  Label slow_path, fast_path;
+  safepoint_poll(slow_path, Z_R0_scratch, true /* at_return */, false /* in_nmethod */);
+  branch_optimized(Assembler::bcondAlways, fast_path);
+  bind (slow_path);
+  push(state);
+  set_last_Java_frame(Z_SP, noreg);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), Z_thread);
+  reset_last_Java_frame();
+  pop(state);
+  align(32);
+  bind(fast_path);
 
   // Save result (push state before jvmti call and pop it afterwards) and notify jvmti.
   notify_method_exit(false, state, notify_jvmti ? NotifyJVMTI : SkipNotifyJVMTI);

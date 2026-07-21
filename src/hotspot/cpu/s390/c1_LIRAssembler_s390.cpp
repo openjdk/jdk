@@ -31,6 +31,8 @@
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_s390.hpp"
@@ -972,7 +974,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type, LIR_P
       } else {
         __ z_lg(dest->as_register(), disp_value, disp_reg, src);
       }
-      __ verify_oop(dest->as_register(), FILE_AND_LINE);
       break;
     }
     case T_FLOAT:
@@ -1006,7 +1007,6 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
   if (dest->is_single_cpu()) {
     if (is_reference_type(type)) {
       __ mem2reg_opt(dest->as_register(), frame_map()->address_for_slot(src->single_stack_ix()), true);
-      __ verify_oop(dest->as_register(), FILE_AND_LINE);
     } else if (type == T_METADATA || type == T_ADDRESS) {
       __ mem2reg_opt(dest->as_register(), frame_map()->address_for_slot(src->single_stack_ix()), true);
     } else {
@@ -1033,7 +1033,10 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   if (src->is_single_cpu()) {
     const Address dst = frame_map()->address_for_slot(dest->single_stack_ix());
     if (is_reference_type(type)) {
-      __ verify_oop(src->as_register(), FILE_AND_LINE);
+      if (VerifyOops) {
+        BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+        bs->check_oop(_masm, src->as_register(), FILE_AND_LINE);
+      }
       __ reg2mem_opt(src->as_register(), dst, true);
     } else if (type == T_METADATA || type == T_ADDRESS) {
       __ reg2mem_opt(src->as_register(), dst, true);
@@ -1129,8 +1132,9 @@ void LIR_Assembler::reg2mem(LIR_Opr from, LIR_Opr dest_opr, BasicType type,
 
   assert(disp_reg != Z_R0 || Immediate::is_simm20(disp_value), "should have set this up");
 
-  if (is_reference_type(type)) {
-    __ verify_oop(from->as_register(), FILE_AND_LINE);
+  if (is_reference_type(type) && VerifyOops) {
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->check_oop(_masm, from->as_register(), FILE_AND_LINE);
   }
 
   bool short_disp = Immediate::is_uimm12(disp_value);
@@ -1215,8 +1219,6 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
          (result->is_single_fpu() && result->as_float_reg() == Z_F0) ||
          (result->is_double_fpu() && result->as_double_reg() == Z_F0), "convention");
 
-  __ z_lg(Z_R1_scratch, Address(Z_thread, JavaThread::polling_page_offset()));
-
   // Pop the frame before the safepoint code.
   __ pop_frame_restore_retPC(initial_frame_size_in_bytes());
 
@@ -1226,8 +1228,9 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
 
   // We need to mark the code position where the load from the safepoint
   // polling page was emitted as relocInfo::poll_return_type here.
+  code_stub->set_safepoint_offset(__ offset());
   __ relocate(relocInfo::poll_return_type);
-  __ load_from_polling_page(Z_R1_scratch);
+  __ safepoint_poll(*code_stub->entry(), Z_R0_scratch, true /* at_return */, true /* in_nmethod */);
 
   __ z_br(Z_R14); // Return to caller.
 }

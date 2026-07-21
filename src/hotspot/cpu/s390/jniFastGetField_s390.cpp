@@ -37,7 +37,7 @@
 
 #define __ masm->
 
-#define BUFFER_SIZE 30*sizeof(jint)
+#define BUFFER_SIZE 100*sizeof(jint)
 
 // Common register usage:
 // Z_RET/Z_FRET: result
