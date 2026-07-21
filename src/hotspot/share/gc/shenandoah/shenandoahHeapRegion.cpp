@@ -900,7 +900,9 @@ class ShenandoahReclaimSelfForwarded : ObjectClosure {
 
 public:
   explicit ShenandoahReclaimSelfForwarded(ShenandoahScanRemembered* cards, ShenandoahHeapRegion* region)
-    : _cards(cards), _previous(region->bottom()) {}
+    : _cards(cards), _previous(region->bottom()) {
+    assert(!region->is_old() || cards != nullptr, "Must have card table reference for old region: %zu", region->index());
+  }
 
   void do_object(oop obj) override {
     assert(obj->is_forwarded(), "Marked object " PTR_FORMAT " in cset region should be forwarded", p2i(obj));
@@ -909,12 +911,13 @@ public:
       HeapWord* current = cast_from_oop<HeapWord*>(obj);
       const size_t object_size = ShenandoahForwarding::size(obj);
 
-      // clear the self forwarded bit, this is just a regular object in a regular region now
+      // Clear the self forwarded bit, this is just a regular object in a regular region now.
       obj->unset_self_forwarded();
 
       if (_cards != nullptr) {
-        // we will have reset registrations and cards before iterating here, so we need to (conservatively)
-        // update the card table and object registrations
+        // We will have reset registrations and cards before iterating here, so we need to (conservatively)
+        // update the card table and object registrations. We don't need a lock because each region will only
+        // be visited by one thread.
         _cards->register_object_without_lock(current);
         _cards->mark_range_as_dirty(current, object_size);
       }
