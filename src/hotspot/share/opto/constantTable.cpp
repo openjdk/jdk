@@ -98,7 +98,7 @@ int ConstantTable::qsort_comparator(Constant* a, Constant* b) {
   }
 }
 
-static int constant_size(ConstantTable::Constant* con) {
+int ConstantTable::constant_size(Constant* con) {
   if (con->is_array()) {
     return con->get_array()->length();
   }
@@ -109,9 +109,8 @@ static int constant_size(ConstantTable::Constant* con) {
   case T_FLOAT:   return sizeof(jfloat );
   case T_DOUBLE:  return sizeof(jdouble);
   case T_METADATA: return sizeof(Metadata*);
-    // We use T_VOID as marker for jump-table entries (labels) which
-    // need an internal word relocation.
-  case T_VOID:
+  // We use T_VOID as marker for jump-table entries (labels).
+  case T_VOID:    return jump_table_slot_size();
   case T_ADDRESS:
   case T_OBJECT:  return sizeof(jobject);
   default:
@@ -185,31 +184,42 @@ bool ConstantTable::emit(C2_MacroAssembler* masm) const {
         constant_addr = masm->address_constant(addr);
         break;
       }
-      // We use T_VOID as marker for jump-table entries (labels) which
-      // need an internal word relocation.
+      // We use T_VOID as marker for jump-table entries (labels).
       case T_VOID: {
         MachConstantNode* n = (MachConstantNode*) con.get_jobject();
         // Fill the jump-table with a dummy word.  The real value is
         // filled in later in fill_jump_table.
-        address dummy = (address) n;
-        constant_addr = masm->address_constant(dummy);
+        auto reserve_constant = [&](uint jump_table_slot_size, uint index) {
+          address dummy = (address)n;
+          switch (jump_table_slot_size) {
+            case 1: return masm->byte_constant(0);
+            case 2: return masm->short_constant(0);
+            case 4: return masm->int_constant(0);
+            case 8: return masm->address_constant(dummy + index);
+            default: ShouldNotReachHere();
+          }
+        };
+
+        constant_addr = reserve_constant(jump_table_slot_size(), 0);
         if (constant_addr == nullptr) {
           return false;
         }
+
         assert((constant_addr - masm->code()->consts()->start()) == con.offset(),
-              "must be: %d == %d", (int)(constant_addr - masm->code()->consts()->start()), (int)(con.offset()));
+               "must be: %d == %d", (int)(constant_addr - masm->code()->consts()->start()), (int)(con.offset()));
 
         // Expand jump-table
         address last_addr = nullptr;
         for (uint j = 1; j < n->outcnt(); j++) {
-          last_addr = masm->address_constant(dummy + j);
+          last_addr = reserve_constant(jump_table_slot_size(), j);
           if (last_addr == nullptr) {
             return false;
           }
         }
+
 #ifdef ASSERT
         address start = masm->code()->consts()->start();
-        address new_constant_addr = last_addr - ((n->outcnt() - 1) * sizeof(address));
+        address new_constant_addr = last_addr - ((n->outcnt() - 1) * jump_table_slot_size());
         // Expanding the jump-table could result in an expansion of the const code section.
         // In that case, we need to check if the new constant address matches the offset.
         assert((constant_addr - start == con.offset()) || (new_constant_addr - start == con.offset()),
@@ -303,7 +313,7 @@ ConstantTable::Constant ConstantTable::add_jump_table(MachConstantNode* n) {
   // the MachNodes are emitted and the jump-table is filled (means the
   // MachNode pointers do not change anymore).
   value.l = (jobject) n;
-  Constant con(T_VOID, value, next_jump_table_freq(), false);  // Labels of a jump-table cannot be reused.
+  Constant con(T_VOID, value, next_jump_table_freq(), false, jump_table_slot_size());  // Labels of a jump-table cannot be reused.
   add(con);
   return con;
 }
@@ -319,13 +329,22 @@ void ConstantTable::fill_jump_table(C2_MacroAssembler* masm, MachConstantNode* n
   // table_base_offset() we need to subtract the table_base_offset()
   // to get the plain offset into the constant table.
   int offset = n->constant_offset() - table_base_offset();
-
-  address* jump_table_base = (address*) (masm->code()->consts()->start() + offset);
+  address jump_table_base = (address) masm->code()->consts()->start() + offset;
 
   for (uint i = 0; i < n->outcnt(); i++) {
-    address* constant_addr = &jump_table_base[i];
-    assert(*constant_addr == (((address) n) + i), "all jump-table entries must contain adjusted node pointer: " INTPTR_FORMAT " == " INTPTR_FORMAT, p2i(*constant_addr), p2i(((address) n) + i));
-    *constant_addr = masm->code()->consts()->target(*labels.at(i), (address) constant_addr);
-    masm->code()->consts()->relocate((address) constant_addr, relocInfo::internal_word_type);
+    if (Matcher::use_compressed_jump_table) {
+      address insts_code_base = masm->code()->insts_begin();
+      address slot_addr = jump_table_base + i * jump_table_slot_size();
+      address target_addr = masm->code()->consts()->target(*labels.at(i), slot_addr, LabelPatchKind(exact_log2(jump_table_slot_size())));
+      CodeBuffer::set_jump_table_entry(jump_table_slot_size(), slot_addr, (target_addr - insts_code_base), target_addr != slot_addr);
+    } else {
+      address* constant_addr = (address*)jump_table_base + i;
+      assert(*constant_addr == (((address)n) + i),
+             "all jump-table entries must contain adjusted node pointer: "
+             INTPTR_FORMAT " == " INTPTR_FORMAT,
+             p2i(*constant_addr), p2i(((address)n) + i));
+      *constant_addr = masm->code()->consts()->target(*labels.at(i), (address) constant_addr);
+      masm->code()->consts()->relocate((address) constant_addr, relocInfo::internal_word_type);
+    }
   }
 }

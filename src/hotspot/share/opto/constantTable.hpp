@@ -51,7 +51,7 @@ public:
 
   public:
     Constant() : _type(T_ILLEGAL), _is_array(false), _alignment(-1), _offset(-1), _freq(0.0f), _can_be_reused(true) { _v._value.l = nullptr; }
-    Constant(BasicType type, jvalue value, float freq = 0.0f, bool can_be_reused = true) :
+    Constant(BasicType type, jvalue value, float freq = 0.0f, bool can_be_reused = true, int alignment = -1) :
       _type(type),
       _is_array(false),
       _offset(-1),
@@ -60,7 +60,7 @@ public:
     {
       assert(type != T_METADATA, "wrong constructor");
       _v._value = value;
-      _alignment = type == T_VOID ? sizeof(jobject) : type2aelembytes(type);
+      _alignment = type == T_VOID ? alignment : type2aelembytes(type);
     }
     Constant(Metadata* metadata, bool can_be_reused = true) :
       _type(T_METADATA),
@@ -117,6 +117,7 @@ private:
   int                     _size;               // Size in bytes the emitted constant table takes (including padding).
   int                     _table_base_offset;  // Offset of the table base that gets added to the constant offsets.
   int                     _nof_jump_tables;    // Number of jump-tables in this constant table.
+  uint                    _jump_table_slot_size;
 
   static int qsort_comparator(Constant* a, Constant* b);
 
@@ -129,15 +130,24 @@ public:
   ConstantTable() :
     _size(-1),
     _table_base_offset(-1),  // We can use -1 here since the constant table is always bigger than 2 bytes (-(size / 2), see MachConstantBaseNode::emit).
-    _nof_jump_tables(0)
+    _nof_jump_tables(0),
+    _jump_table_slot_size(sizeof(address))
   {}
+
+  void reset(uint jump_table_slot_size = sizeof(address)) {
+    _constants.clear();
+    _size = -1;
+    _table_base_offset = -1;
+    _nof_jump_tables = 0;
+    set_jump_table_slot_size(jump_table_slot_size);
+  }
 
   int size() const { assert(_size != -1, "not calculated yet"); return _size; }
 
   // The minimum alignment requirement of the constant table, must be a power of 2. The constant
   // section of the nmethod must satisfy this value.
   int alignment() const;
-
+  int constant_size(Constant* con);
   int calculate_table_base_offset() const;  // AD specific
   void set_table_base_offset(int x)  { assert(_table_base_offset == -1 || x == _table_base_offset, "can't change"); _table_base_offset = x; }
   int      table_base_offset() const { assert(_table_base_offset != -1, "not set yet");                      return _table_base_offset; }
@@ -171,6 +181,15 @@ public:
   Constant add(MachConstantNode* n, jdouble d) {
     jvalue value; value.d = d;
     return add(n, T_DOUBLE, value);
+  }
+
+  uint jump_table_slot_size() const {
+    return _jump_table_slot_size;
+  }
+
+  void set_jump_table_slot_size(uint size) {
+    assert(size == 1 || size == 2 || size == 4 || size == 8, "bad jt entry size");
+    _jump_table_slot_size = size;
   }
 
   // Jump-table

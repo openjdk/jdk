@@ -149,12 +149,13 @@ void AbstractAssembler::generate_stack_overflow_check(int frame_size_in_bytes) {
   }
 }
 
-void Label::add_patch_at(CodeBuffer* cb, int branch_loc, const char* file, int line) {
+void Label::add_patch_at(CodeBuffer* cb, int branch_loc, const char* file,
+                         int line, LabelPatchKind pk) {
   assert(_loc == -1, "Label is unbound");
   // Don't add patch locations during scratch emit.
   if (cb->insts()->scratch_emit()) { return; }
   if (_patch_index < PatchCacheSize) {
-    _patches[_patch_index] = branch_loc;
+    _patches[_patch_index].set(branch_loc, pk);
 #ifdef ASSERT
     _lines[_patch_index] = line;
     _files[_patch_index] = file;
@@ -163,7 +164,7 @@ void Label::add_patch_at(CodeBuffer* cb, int branch_loc, const char* file, int l
     if (_patch_overflow == nullptr) {
       _patch_overflow = cb->create_patch_overflow();
     }
-    _patch_overflow->push(branch_loc);
+    _patch_overflow->push(PatchInfo(branch_loc, pk));
   }
   ++_patch_index;
 }
@@ -175,21 +176,30 @@ void Label::patch_instructions(MacroAssembler* masm) {
   address target = cb->locator_address(loc());
   while (_patch_index > 0) {
     --_patch_index;
-    int branch_loc;
+    PatchInfo pchi;
     int line = 0;
     const char* file = nullptr;
     if (_patch_index >= PatchCacheSize) {
-      branch_loc = _patch_overflow->pop();
+      pchi = _patch_overflow->pop();
     } else {
-      branch_loc = _patches[_patch_index];
+      pchi = _patches[_patch_index];
 #ifdef ASSERT
       line = _lines[_patch_index];
       file = _files[_patch_index];
 #endif
     }
+    int branch_loc = pchi.branch_loc();
+    LabelPatchKind pk = pchi.patch_kind();
     int branch_sect = CodeBuffer::locator_sect(branch_loc);
     address branch = cb->locator_address(branch_loc);
     if (branch_sect == CodeBuffer::SECT_CONSTS) {
+      if (pk != LPK_FULL_ADDRESS) {
+        assert(pk == LPK_COMPRESSED_OFFSET_8 ||
+               pk == LPK_COMPRESSED_OFFSET_16 ||
+               pk == LPK_COMPRESSED_OFFSET_32, "Must use compressed jump table");
+        CodeBuffer::set_jump_table_entry(1 << pk, branch, target - cb->insts_begin(), true);
+        continue;
+      }
       // The thing to patch is a constant word.
       *(address*)branch = target;
       continue;

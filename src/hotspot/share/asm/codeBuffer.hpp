@@ -49,6 +49,53 @@ class Label;
 class ciMethod;
 class SharedStubToInterpRequest;
 
+enum LabelPatchKind {
+  LPK_COMPRESSED_OFFSET_8 = 0,
+  LPK_COMPRESSED_OFFSET_16 = 1,
+  LPK_COMPRESSED_OFFSET_32 = 2,
+  LPK_FULL_ADDRESS = 3
+};
+
+template <typename T>
+static inline T jt_cast(uintptr_t value, bool checked) {
+  return checked ? checked_cast<T>(value) : (T)value;
+}
+
+class PatchInfo {
+ private:
+  uint64_t _branch_loc : 32;
+  uint64_t _patch_kind : 2;
+
+ public:
+  PatchInfo() : _branch_loc(0), _patch_kind(0) {}
+
+  PatchInfo(int branch_loc, LabelPatchKind patch_kind) {
+    set(branch_loc, patch_kind);
+  }
+
+  int branch_loc() const {
+    return checked_cast<int>(_branch_loc);
+  }
+
+  LabelPatchKind patch_kind() const {
+    return (LabelPatchKind)_patch_kind;
+  }
+
+  void set_branch_loc(int branch_loc) {
+    _branch_loc = checked_cast<uint32_t>(branch_loc);
+  }
+
+  void set_patch_kind(LabelPatchKind patch_kind) {
+    assert((uint)patch_kind < 4, "patch kind does not fit in 2 bits");
+    _patch_kind = checked_cast<uint32_t>(patch_kind);
+  }
+
+  void set(int branch_loc, LabelPatchKind patch_kind) {
+    set_branch_loc(branch_loc);
+    set_patch_kind(patch_kind);
+  }
+};
+
 class CodeOffsets: public StackObj {
 public:
   enum Entries { Entry,
@@ -262,7 +309,7 @@ class CodeSection {
   void initialize_shared_locs(relocInfo* buf, int length);
 
   // Manage labels and their addresses.
-  address target(Label& L, address branch_pc);
+  address target(Label& L, address branch_pc, LabelPatchKind pk = LPK_FULL_ADDRESS);
 
   // Emit a relocation.
   void relocate(address at, RelocationHolder const& rspec, int format = 0);
@@ -700,6 +747,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // calling this method.  It's been factored out for convenience of
   // construction.
   void initialize(csize_t code_size, csize_t locs_size);
+  static void set_jump_table_entry(int slot_size, address slot_addr, uintptr_t value, bool checked);
 
   CodeSection* consts() { return &_consts; }
   CodeSection* insts() { return &_insts; }
@@ -838,7 +886,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   }
 
   // Management of overflow storage for binding of Labels.
-  GrowableArray<int>* create_patch_overflow();
+  GrowableArray<PatchInfo>* create_patch_overflow();
 
   // NMethod generation
   void copy_code_and_locs_to(CodeBlob* blob) {

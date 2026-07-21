@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2024, Red Hat, Inc. All rights reserved.
-// Copyright 2025 Arm Limited and/or its affiliates.
+// Copyright 2025, 2026 Arm Limited and/or its affiliates.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -8522,6 +8522,36 @@ instruct cmpL3_reg_imm(iRegINoSp dst, iRegL src1, immLAddSub src2, rFlagsReg fla
     __ subs(zr, $src1$$Register, (int32_t)$src2$$constant);
     __ csetw($dst$$Register, Assembler::NE);
     __ cnegw($dst$$Register, $dst$$Register, Assembler::LT);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct jumptable_switch_offset(iRegIorL2I switch_val) %{
+  match(Jump (ConvI2L switch_val));
+
+  format %{
+    "jump_table_switch $switch_val\n\t"
+  %}
+
+  ins_encode %{
+    __ jump_table_switch($switch_val$$Register, $constantoffset,
+                         ra_->C->output()->constant_table().jump_table_slot_size());
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct jumptable_switch(iRegL switch_val) %{
+  match(Jump switch_val);
+
+  format %{
+    "jump_table_switch $switch_val\n\t"
+  %}
+
+  ins_encode %{
+    __ jump_table_switch($switch_val$$Register, $constantoffset,
+                         ra_->C->output()->constant_table().jump_table_slot_size());
   %}
 
   ins_pipe(pipe_class_default);

@@ -33,6 +33,9 @@
   // Whether this platform implements the scalable vector feature
   static const bool implements_scalable_vector = true;
 
+  // Whether this platform supports compressed jump tables.
+  static const bool use_compressed_jump_table = true;
+
   static bool supports_scalable_vector() {
     return UseSVE > 0;
   }

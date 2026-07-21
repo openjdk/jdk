@@ -253,4 +253,5 @@
   void sve_cpy(FloatRegister dst, SIMD_RegVariant T, PRegister pg, int imm8,
                bool isMerge);
   int vector_iota_entry_index(BasicType bt);
+  void jump_table_switch(Register switch_val, int jump_table_offset, uint jump_table_slot_size);
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

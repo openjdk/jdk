@@ -279,6 +279,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(AlwaysMergeDMB)) {
       FLAG_SET_DEFAULT(AlwaysMergeDMB, false);
     }
+    if (model_is(CPU_MODEL_ARM_NEOVERSE_V1) && FLAG_IS_DEFAULT(MinJumpTableSize)) {
+      FLAG_SET_DEFAULT(MinJumpTableSize, 72);
+    }
   }
 
   if (supports_feature(CPU_FP) || supports_feature(CPU_ASIMD)) {

@@ -231,6 +231,7 @@ PhaseOutput::PhaseOutput()
   if (C->stub_name() == nullptr) {
     _orig_pc_slot = C->fixed_slots() - (sizeof(address) / VMRegImpl::stack_slot_size);
   }
+  _constant_table.set_jump_table_slot_size(sizeof(address));
 }
 
 PhaseOutput::~PhaseOutput() {
@@ -326,6 +327,28 @@ void PhaseOutput::Output() {
   uint* blk_starts = NEW_RESOURCE_ARRAY(uint, C->cfg()->number_of_blocks() + 1);
   blk_starts[0] = 0;
   shorten_branches(blk_starts);
+
+  // If use_compressed_jump_table is enabled, refine the jump-table entry size
+  // after shorten_branches(), when an upper bound for the final code size is
+  // available.
+  //
+  // The initial estimate uses a conservative jump-table layout. Once the code
+  // size estimate is known, rebuild the jump table using the smallest entry
+  // size that can represent a non-negative offset from the start of the
+  // instruction section.
+  if (Matcher::use_compressed_jump_table) {
+    uint entry_size;
+    if (_buf_sizes._code <= max_jubyte) {
+      entry_size = 1;
+    } else if (_buf_sizes._code <= max_jushort) {
+      entry_size = 2;
+    } else {
+      entry_size = 4;
+    }
+    constant_table().reset(entry_size);
+    estimate_buffer_size(_buf_sizes._const);
+    if (C->failing()) return;
+  }
 
   ScheduleAndBundle();
   if (C->failing()) {

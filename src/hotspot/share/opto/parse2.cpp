@@ -801,6 +801,11 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   // Don't create table if: too large, too small, or too sparse.
   if (num_cases > MaxJumpTableSize)
     return false;
+
+  if (Matcher::use_compressed_jump_table && num_cases < MinJumpTableSize) {
+    return false;
+  }
+
   if (UseSwitchProfiling) {
     // MinJumpTableSize is set so with a well balanced binary tree,
     // when the number of ranges is MinJumpTableSize, it's cheaper to
@@ -853,10 +858,12 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   key_val = C->constrained_convI2L(&_gvn, key_val, TypeInt::INT, control(), true /* carry_dependency */);
 #endif
 
-  // Shift the value by wordsize so we have an index into the table, rather
-  // than a switch value
-  Node *shiftWord = _gvn.MakeConX(wordSize);
-  key_val = _gvn.transform( new MulXNode( key_val, shiftWord));
+  if (!Matcher::use_compressed_jump_table) {
+    // Shift the value by wordsize so we have an index into the table, rather
+    // than a switch value
+    Node *shiftWord = _gvn.MakeConX(wordSize);
+    key_val = _gvn.transform( new MulXNode( key_val, shiftWord));
+  }
 
   // Create the JumpNode
   Arena* arena = C->comp_arena();

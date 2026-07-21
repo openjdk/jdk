@@ -88,9 +88,9 @@ class Label {
   //
   // To avoid having to allocate from the C-heap each time, we provide
   // a local cache and use the overflow only if we exceed the local cache
-  int _patches[PatchCacheSize];
+  PatchInfo _patches[PatchCacheSize];
   int _patch_index;
-  GrowableArray<int>* _patch_overflow;
+  GrowableArray<PatchInfo>* _patch_overflow;
 
   NONCOPYABLE(Label);
  protected:
@@ -146,7 +146,8 @@ class Label {
    * @param cb         the code buffer being patched
    * @param branch_loc the locator of the branch instruction in the code buffer
    */
-  void add_patch_at(CodeBuffer* cb, int branch_loc, const char* file = nullptr, int line = 0);
+  void add_patch_at(CodeBuffer* cb, int branch_loc, const char* file = nullptr,
+                    int line = 0, LabelPatchKind pk = LPK_FULL_ADDRESS);
 
   /**
    * Iterate over the list of patches, resolving the instructions
@@ -425,41 +426,36 @@ class AbstractAssembler : public ResourceObj  {
   //
   // We must remember the code section (insts or stubs) in c1
   // so we can reset to the proper section in end_a_const().
-  address int_constant(jint c) {
+  template <typename T>
+  address numeric_constant(T c) {
     CodeSection* c1 = _code_section;
-    address ptr = start_a_const(sizeof(c), sizeof(c));
+    address ptr = start_a_const(sizeof(T), sizeof(T));
     if (ptr != nullptr) {
-      emit_int32(c);
+      code_section()->emit_native(c);
       end_a_const(c1);
     }
     return ptr;
+  }
+
+  address byte_constant(jubyte c) {
+    return numeric_constant(c);
+  }
+
+  address short_constant(jushort c) {
+    return numeric_constant(c);
+  }
+
+  address int_constant(jint c) {
+    return numeric_constant(c);
   }
   address long_constant(jlong c) {
-    CodeSection* c1 = _code_section;
-    address ptr = start_a_const(sizeof(c), sizeof(c));
-    if (ptr != nullptr) {
-      emit_int64(c);
-      end_a_const(c1);
-    }
-    return ptr;
+    return numeric_constant(c);
   }
   address double_constant(jdouble c) {
-    CodeSection* c1 = _code_section;
-    address ptr = start_a_const(sizeof(c), sizeof(c));
-    if (ptr != nullptr) {
-      emit_double(c);
-      end_a_const(c1);
-    }
-    return ptr;
+    return numeric_constant(c);
   }
   address float_constant(jfloat c) {
-    CodeSection* c1 = _code_section;
-    address ptr = start_a_const(sizeof(c), sizeof(c));
-    if (ptr != nullptr) {
-      emit_float(c);
-      end_a_const(c1);
-    }
-    return ptr;
+    return numeric_constant(c);
   }
   address address_constant(address c) {
     CodeSection* c1 = _code_section;
