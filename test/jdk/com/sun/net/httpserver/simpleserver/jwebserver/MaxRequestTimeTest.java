@@ -144,6 +144,7 @@ public class MaxRequestTimeTest {
         try (SocketChannel sc = SocketChannel.open(
                 new InetSocketAddress(LOOPBACK_ADDR, PORT.get()))) {
             requestBuffer.clear();
+            // only send a part of the HTTP request
             int numBytes = RND.nextInt(1, requestBuffer.limit());
             System.out.println("Sending " + numBytes + " bytes");
             requestBuffer.limit(numBytes);
