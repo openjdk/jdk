@@ -10364,36 +10364,6 @@ instruct cmovI_cmpP(iRegINoSp dst, iRegI src, iRegP op1, iRegP op2, cmpOpU cop) 
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmovI_cmpN_zero(iRegINoSp dst, immI0 src, iRegN op1, iRegN op2, cmpOpU cop) %{
-  match(Set dst (CMoveI (Binary cop (CmpN op1 op2)) (Binary dst src)));
-  ins_cost(ALU_COST * 2);
-
-  format %{ "CMoveI $dst, ($op1 $cop $op2), $dst, zr #@cmovI_cmpN_zero" %}
-
-  ins_encode %{
-    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
-                 as_Register($op1$$reg), as_Register($op2$$reg),
-                 as_Register($dst$$reg), zr);
-  %}
-
-  ins_pipe(pipe_class_compare);
-%}
-
-instruct cmovI_cmpP_zero(iRegINoSp dst, immI0 src, iRegP op1, iRegP op2, cmpOpU cop) %{
-  match(Set dst (CMoveI (Binary cop (CmpP op1 op2)) (Binary dst src)));
-  ins_cost(ALU_COST * 2);
-
-  format %{ "CMoveI $dst, ($op1 $cop $op2), $dst, zr #@cmovI_cmpP_zero" %}
-
-  ins_encode %{
-    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
-                 as_Register($op1$$reg), as_Register($op2$$reg),
-                 as_Register($dst$$reg), zr);
-  %}
-
-  ins_pipe(pipe_class_compare);
-%}
-
 // --------- CMoveL ---------
 
 instruct cmovL_cmpL(iRegLNoSp dst, iRegL src, iRegL op1, iRegL op2, cmpOp cop) %{
