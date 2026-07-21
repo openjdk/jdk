@@ -1081,10 +1081,12 @@ SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Nod
   if (is_marked_reduction(use1) && is_marked_reduction(use2)) {
     Node* use1_in2 = use1->in(2);
     if (use1_in2->is_Phi() || is_marked_reduction(use1_in2)) {
+      igvn().rehash_node_delayed(use2);
       use1->swap_edges(1, 2);
     }
     Node* use2_in2 = use2->in(2);
     if (use2_in2->is_Phi() || is_marked_reduction(use2_in2)) {
+      igvn().rehash_node_delayed(use2);
       use2->swap_edges(1, 2);
     }
     return PairOrderStatus::Ordered;
@@ -1100,14 +1102,17 @@ SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Nod
     if (i1 != i2) {
       if ((i1 == (3-i2)) && (use2->is_Add() || use2->is_Mul())) {
         // 2. Commutative: swap edges, and hope the other position matches too.
+        igvn().rehash_node_delayed(use2);
         use2->swap_edges(i1, i2);
       } else if (VectorNode::is_muladds2i(use2) && use1 != use2) {
         // 3.a/b: MulAddS2I.
         if (i1 == 5 - i2) { // ((i1 == 3 && i2 == 2) || (i1 == 2 && i2 == 3) || (i1 == 1 && i2 == 4) || (i1 == 4 && i2 == 1))
+          igvn().rehash_node_delayed(use2);
           use2->swap_edges(1, 2);
           use2->swap_edges(3, 4);
         }
         if (i1 == 3 - i2 || i1 == 7 - i2) { // ((i1 == 1 && i2 == 2) || (i1 == 2 && i2 == 1) || (i1 == 3 && i2 == 4) || (i1 == 4 && i2 == 3))
+          igvn().rehash_node_delayed(use2);
           use2->swap_edges(2, 3);
           use2->swap_edges(1, 4);
         }
@@ -1118,6 +1123,7 @@ SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Nod
       }
     } else if (i1 == i2 && VectorNode::is_muladds2i(use2) && use1 != use2) {
       // 3.c: MulAddS2I.
+      igvn().rehash_node_delayed(use2);
       use2->swap_edges(1, 3);
       use2->swap_edges(2, 4);
       return PairOrderStatus::Unknown;
