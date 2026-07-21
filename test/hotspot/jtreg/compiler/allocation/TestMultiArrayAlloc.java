@@ -22,16 +22,41 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @bug 8308105
  * @summary Test correctness of inlined 2D array allocation
- *
  * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation compiler.allocation.TestMultiArrayAlloc
+ */
+
+/*
+ * @test id=serial
+ * @bug 8308105
+ * @summary Test correctness of inlined 2D array allocation
+ * @requires vm.gc.Serial
  * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation -XX:+UseSerialGC compiler.allocation.TestMultiArrayAlloc
+ */
+
+/*
+ * @test id=g1
+ * @bug 8308105
+ * @summary Test correctness of inlined 2D array allocation
+ * @requires vm.gc.G1
  * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation -XX:+UseG1GC compiler.allocation.TestMultiArrayAlloc
- *
- * @requires vm.gc.Shenandoah & vm.gc.Z
+ */
+
+/*
+ * @test id=shenandoah
+ * @bug 8308105
+ * @summary Test correctness of inlined 2D array allocation
+ * @requires vm.gc.Shenandoah
  * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation -XX:+UseShenandoahGC compiler.allocation.TestMultiArrayAlloc
+ */
+
+/*
+ * @test id=zgc
+ * @bug 8308105
+ * @summary Test correctness of inlined 2D array allocation
+ * @requires vm.gc.Z
  * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation -XX:+UseZGC compiler.allocation.TestMultiArrayAlloc
  */
 
@@ -73,19 +98,29 @@ public class TestMultiArrayAlloc {
         }
     }
 
+    // new int[0][-1] must throw NegativeArraySizeException
+    static final int[] DIMS = {-10, -1, 0, 1, 10};
+
     static void testExceptions() {
+        for (int n1 : DIMS) {
+            for (int n2 : DIMS) {
+                boolean expectThrow = (n1 < 0) || (n2 < 0);
+                checkThrows(() -> allocInt(n1, n2), expectThrow, "allocInt(" + n1 + ", " + n2 + ")");
+                checkThrows(() -> allocObj(n1, n2), expectThrow, "allocObj(" + n1 + ", " + n2 + ")");
+                checkThrows(() -> allocStr(n1, n2), expectThrow, "allocStr(" + n1 + ", " + n2 + ")");
+            }
+        }
+    }
+
+    static void checkThrows(Runnable action, boolean expectThrow, String msg) {
+        boolean threw = false;
         try {
-            allocInt(-1, 5);
-            throw new RuntimeException("expected NegativeArraySizeException for length1 < 0");
-        } catch (NegativeArraySizeException e) { /* expected */ }
-        try {
-            allocInt(5, -1);
-            throw new RuntimeException("expected NegativeArraySizeException for length2 < 0");
-        } catch (NegativeArraySizeException e) { /* expected */ }
-        try {
-            allocInt(-1, -1);
-            throw new RuntimeException("expected NegativeArraySizeException for both < 0");
-        } catch (NegativeArraySizeException e) { /* expected */ }
+            action.run();
+        } catch (NegativeArraySizeException e) {
+            threw = true;
+        }
+        check(threw == expectThrow,
+              msg + ": expected NegativeArraySizeException=" + expectThrow + " but threw=" + threw);
     }
 
     static void testLargeOuterDimension() {

@@ -443,6 +443,9 @@ Node* Parse::multianewarray2(ciArrayKlass* array_klass, Node* length1, Node* len
 
   C->set_has_loops(true);
 
+  ciArrayKlass* array_element_klass = array_klass->as_obj_array_klass()->element_klass()->as_array_klass();
+  Node* klass_node = makecon(TypeKlassPtr::make(array_element_klass, Type::trust_interfaces));
+
   // The actual loop structure:
   //
   // if (length1 > 0) {
@@ -451,12 +454,17 @@ Node* Parse::multianewarray2(ciArrayKlass* array_klass, Node* length1, Node* len
   //     multi_array[index] = new T[length2];
   //     index++;
   //   } while (index < length1);
+  // } else if (length2 < 0) {
+  //   new T[length2]; // throws NegativeArraySizeException
   // }
   //
   // The corresponding C2 IR graph:
   //
   // CmpI(length1, 0) -> Bool(gt) -> If
-  //   IfFalse => skip_ctrl
+  //   IfFalse =>
+  //     CmpI(length2, 0) -> Bool(lt) -> If
+  //       IfTrue  => AllocateArray(klass_1, length2) -> halt (never returns)
+  //       IfFalse => skip_ctrl
   //   IfTrue =>
   //     CastII(length2, POS) -> length2
   //     LoopNode(IfTrue, back_edge)
@@ -479,6 +487,21 @@ Node* Parse::multianewarray2(ciArrayKlass* array_klass, Node* length1, Node* len
   IfNode* iff_init = create_and_map_if(control(), bool_init, PROB_FAIR, COUNT_UNKNOWN);
 
   Node* skip_ctrl = IfFalse(iff_init); // skip if length1 <= 0
+
+  // check (length2 < 0) case if length2 is not proved to be positive
+  if (!_gvn.type(length2)->higher_equal(TypeInt::POS)) {
+    Node* cmp_len2  = _gvn.transform(new CmpINode(length2, intcon(0)));
+    Node* bool_len2 = _gvn.transform(new BoolNode(cmp_len2, BoolTest::lt));
+    IfNode* iff_len2 = create_and_map_if(skip_ctrl, bool_len2, PROB_MIN, COUNT_UNKNOWN);
+    {
+      PreserveJVMState pjvms(this);
+      set_control(IfTrue(iff_len2));
+      new_array(klass_node, length2, false); // throws NegativeArraySizeException
+      halt(control(), frameptr(), "Unreachable");
+    }
+    skip_ctrl = IfFalse(iff_len2);
+  }
+
   set_control(IfTrue(iff_init));
 
   // Narrow length2 to POS so new_array() in the loop body skips its own CastII.
@@ -508,10 +531,6 @@ Node* Parse::multianewarray2(ciArrayKlass* array_klass, Node* length1, Node* len
   set_control(head);
   set_all_memory(mem_phi);
   set_i_o(io_phi);
-
-  ciArrayKlass* array_klass_1 =
-      array_klass->as_obj_array_klass()->element_klass()->as_array_klass();
-  Node* klass_node = makecon(TypeKlassPtr::make(array_klass_1, Type::trust_interfaces));
 
   Node* array = _gvn.transform(new_array(klass_node, length2, false));
 
