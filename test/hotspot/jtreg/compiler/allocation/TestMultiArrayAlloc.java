@@ -22,34 +22,11 @@
  */
 
 /*
- * @test id=default
- * @bug 8308105
- * @summary Test correctness of inlined 2D array allocation
- * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation compiler.allocation.TestMultiArrayAlloc
- */
-
-/*
- * @test id=serial
- * @bug 8308105
- * @summary Test correctness of inlined 2D array allocation
- * @requires vm.gc.Serial
- * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation -XX:+UseSerialGC compiler.allocation.TestMultiArrayAlloc
- */
-
-/*
- * @test id=g1
- * @bug 8308105
- * @summary Test correctness of inlined 2D array allocation
- * @requires vm.gc.G1
- * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation -XX:+UseG1GC compiler.allocation.TestMultiArrayAlloc
- */
-
-/*
  * @test id=shenandoah
  * @bug 8308105
  * @summary Test correctness of inlined 2D array allocation
  * @requires vm.gc.Shenandoah
- * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation -XX:+UseShenandoahGC compiler.allocation.TestMultiArrayAlloc
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UseShenandoahGC compiler.allocation.TestMultiArrayAlloc
  */
 
 /*
@@ -57,7 +34,7 @@
  * @bug 8308105
  * @summary Test correctness of inlined 2D array allocation
  * @requires vm.gc.Z
- * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation -XX:+UseZGC compiler.allocation.TestMultiArrayAlloc
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UseZGC compiler.allocation.TestMultiArrayAlloc
  */
 
 package compiler.allocation;
