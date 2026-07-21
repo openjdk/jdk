@@ -671,14 +671,6 @@ public final class String
     }
 
     private static String decode(Charset charset, byte[] bytes, int offset, int length) {
-        // (1)We never cache the "external" cs, the only benefit of creating
-        // an additional StringDe/Encoder object to wrap it is to share the
-        // de/encode() method. These SD/E objects are short-lived, the young-gen
-        // gc should be able to take care of them well. But the best approach
-        // is still not to generate them if not really necessary.
-        // (2)The defensive copy of the input byte/char[] has a big performance
-        // impact, as well as the outgoing result byte/char[]. Need to do the
-        // optimization check of (sm==null && classLoader0==null) for both.
         CharsetDecoder cd = charset.newDecoder();
         // ArrayDecoder fastpaths
         if (cd instanceof ArrayDecoder ad) {
@@ -4062,7 +4054,7 @@ public final class String
      *   <td>(all)</td>
      *   <th scope="row" style="font-weight:normal; text-align:left">
      *       &Iota;&Chi;&Theta;&Upsilon;&Sigma;</th>
-     *   <td>&iota;&chi;&theta;&upsilon;&sigma;</td>
+     *   <td>&iota;&chi;&theta;&upsilon;&sigmaf;</td>
      *   <td>lowercased all chars in String</td>
      * </tr>
      * </tbody>

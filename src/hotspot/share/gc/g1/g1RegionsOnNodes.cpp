@@ -27,7 +27,7 @@
 #include "gc/g1/g1RegionsOnNodes.hpp"
 
 G1RegionsOnNodes::G1RegionsOnNodes() : _num_regions_per_node(nullptr), _numa(G1NUMA::numa()) {
-  _num_regions_per_node = NEW_C_HEAP_ARRAY(uint, _numa->num_active_nodes(), mtGC);
+  _num_regions_per_node = NEW_C_HEAP_ARRAY(Atomic<uint>, _numa->num_active_nodes(), mtGC);
   clear();
 }
 
@@ -40,16 +40,14 @@ void G1RegionsOnNodes::add(G1HeapRegion* hr) {
 
   // Update only if the node index is valid.
   if (node_index < _numa->num_active_nodes()) {
-    *(_num_regions_per_node + node_index) += 1;
+    _num_regions_per_node[node_index].add_then_fetch(1u, memory_order_relaxed);
   }
 }
 
 void G1RegionsOnNodes::clear() {
-  for (uint i = 0; i < _numa->num_active_nodes(); i++) {
-    _num_regions_per_node[i] = 0;
-  }
+  ::new (_num_regions_per_node) Atomic<uint>[_numa->num_active_nodes()]{};
 }
 
-uint G1RegionsOnNodes::num_regions_per_node(uint node_index) const {
-  return _num_regions_per_node[node_index];
+uint G1RegionsOnNodes::count(uint node_index) const {
+  return _num_regions_per_node[node_index].load_relaxed();
 }

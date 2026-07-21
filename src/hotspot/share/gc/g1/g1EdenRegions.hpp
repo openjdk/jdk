@@ -27,15 +27,15 @@
 
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1RegionsOnNodes.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 
 class G1EdenRegions {
-private:
   uint _num_regions;
   // Sum of used bytes from all retired eden regions.
   // I.e. updated when mutator regions are retired.
-  volatile size_t _used_bytes;
+  Atomic<size_t> _used_bytes;
   G1RegionsOnNodes  _regions_on_node;
 
 public:
@@ -56,10 +56,10 @@ public:
   uint num_regions() const { return _num_regions; }
   uint regions_on_node(uint node_index) const { return _regions_on_node.num_regions_per_node(node_index); }
 
-  size_t used_bytes() const { return _used_bytes; }
+  size_t used_bytes() const { return _used_bytes.load_relaxed(); }
 
   void add_used_bytes(size_t used_bytes) {
-    _used_bytes += used_bytes;
+    _used_bytes.add_then_fetch(used_bytes, memory_order_relaxed);
   }
 };
 
