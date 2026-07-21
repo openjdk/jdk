@@ -480,7 +480,7 @@ static char** get_attach_addresses_for_disjoint_mode() {
     }
 #ifdef S390
     // On s390x, do not probe beyond 2^42 to prevent accidental page table expansion
-    if (addresses[start+i] >= nth_bit(42)) {
+    if (addresses[start+i] >= nth_bit<uintptr_t>(42)) {
       addresses[start+i] = 0;
       break;
     }
