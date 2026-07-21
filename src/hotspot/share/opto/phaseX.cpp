@@ -2686,17 +2686,26 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == add_op; });
   }
 
-  // We may have a loop-phi that is about to close the AddI recursion,
+  // We may have a loop-phi that is about to close the AddI recurrence,
   // and we would have to ensure AddNode::commute is called for the AddI.
-  // E.g. use = Phi(x, n)      ->  use = Phi(x, u)     ->  use = Phi(x, u)
+  // e.g. use = Phi(x, n)      ->  use = Phi(x, u)     ->  use = Phi(x, u)
   //      u   = AddI(y, use)       u   = AddI(y, use)  ->  u   = AddI(use, y)
   //      current state,           After mutation,         After commute,
   //      before mutation          before commute          canonical loop incr
+  //
+  // Alternatively, we may have a region-phi, that is about to turn
+  // into a loop-phi, and where the AddI reccurrence is already closed,
+  // and the AddI has its inputs sorted by idx. In this case, we also
+  // need AddNode::commute to canonicalize the AddI, so that the phi
+  // input is on the left now.
+  // e.g. use = Phi(region, u) ->  use = Phi(loop, u)  ->  use = Phi(loop, u)
+  //      u   = AddI(y, use)       u   = AddI(y, use)  ->  u   = AddI(use, y)
+  //      current state,           loop-phi,               After commute,
+  //      region-phi               before commute          canonical loop incr
   if (use->is_Phi() &&
-      use->in(0) != nullptr &&
-      use->in(0)->is_Loop() &&
       use->req() == 3 &&
-      n == use->in(LoopNode::LoopBackControl)) {
+      (n == use->in(0) ||                          // possibly: region-phi -> loop-phi
+       n == use->in(LoopNode::LoopBackControl))) { // possibly: closing AddI recurrence
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->is_Add();
     });
