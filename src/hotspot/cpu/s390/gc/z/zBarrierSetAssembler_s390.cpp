@@ -90,7 +90,7 @@ private:
       __ z_lgr(Z_R0, result);
       result = Z_R0;
     }
-    int offset = 168;
+    int offset = frame::z_abi_160_size + 8;
 
     __ restore_return_pc();               offset += 8;
     __ z_lg(Z_R1, offset, Z_SP);          offset += 8;
@@ -239,7 +239,6 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // an atomic operation can execute.
       // A not relocatable object could have spurious raw null pointers in its fields after
       // getting promoted to the old generation.
-
       __ z_llgh(rnew_zpointer, Address(ref_addr.base(), ref_addr.index(), ref_addr.disp() + 0x6));
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
       __ z_llill(Z_R0_scratch, barrier_Relocation::unpatched);
@@ -250,11 +249,6 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // Raw null pointers may only exist in the young generation, as they get pruned when
       // the object is relocated to old. And no pre-write barrier needs to perform any action
       // in the young generation.
-
-      // Careful: The first instruction emmited here should do a memory access on ref_addr
-      // otherwise ImplicitNullCheck will not work and the JVM will crash instead of throwing
-      // a null pointer exception. Run C1NullCheckOfNullStore.java test case after doing any
-      // changes here.
       __ z_llgh(rnew_zpointer, Address(ref_addr.base(), ref_addr.index(), ref_addr.disp() + 0x6));
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadBeforeLoad);
       __ z_nill(rnew_zpointer, barrier_Relocation::unpatched);
@@ -523,12 +517,20 @@ void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool
 
   __ bind(done);
 
-  Label epilogue_start;
-  __ branch_optimized(Assembler::bcondAlways, epilogue_start);
+  int offset = 8;
+  __ restore_return_pc();                             offset += 8;
+  __ z_lg(Z_R5, offset, Z_SP);                        offset += 8;
+  __ z_lg(Z_R6, offset, Z_SP);                        offset += 8;
+  __ z_lg(Z_R7, offset, Z_SP);                        offset += 8;
+  __ z_lg(Z_R10, offset, Z_SP);                       offset += 8;
+  __ z_lg(Z_R11, offset, Z_SP);
+  __ pop_frame();
+
+  __ z_xgr(Z_RET, Z_RET);
+  __ z_br(Z_R14);
+
   copy_load_at_slow(masm, zpointer, Z_ARG1, load_bad, load_good);
   copy_store_at_slow(masm, Z_ARG2, store_bad, store_good, dest_uninitialized);
-  __ bind(epilogue_start);
-
 }
 
 void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
@@ -550,11 +552,20 @@ void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool
 
   __ bind(done);
 
-  Label epilogue_start;
-  __ branch_optimized(Assembler::bcondAlways, epilogue_start);
+  int offset = 8;
+  __ restore_return_pc();                             offset += 8;
+  __ z_lg(Z_R5, offset, Z_SP);                        offset += 8;
+  __ z_lg(Z_R6, offset, Z_SP);                        offset += 8;
+  __ z_lg(Z_R7, offset, Z_SP);                        offset += 8;
+  __ z_lg(Z_R10, offset, Z_SP);                       offset += 8;
+  __ z_lg(Z_R11, offset, Z_SP);
+  __ pop_frame();
+
+  __ z_xgr(Z_RET, Z_RET);
+  __ z_br(Z_R14);
+
   copy_load_at_slow(masm, zpointer, Z_ARG1, load_bad, load_good);
   copy_store_at_slow(masm, Z_ARG2, store_bad, store_good, dest_uninitialized);
-  __ bind(epilogue_start);
 }
 
 void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
@@ -585,27 +596,6 @@ void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
   load_copy_masks(masm, _load_bad_mask, _store_bad_mask, _store_good_mask, dest_uninitialized);
 
   __ block_comment("} arraycopy_prologue (zgc)");
-}
-
-void ZBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm,
-                                              DecoratorSet decorators,
-                                              BasicType type,
-                                              Register src,
-                                              Register dst,
-                                              bool do_return) {
-  int offset = 8;
-  __ restore_return_pc();           offset += 8;
-  __ z_lg(Z_R5, offset, Z_SP);      offset += 8;
-  __ z_lg(Z_R6, offset, Z_SP);      offset += 8;
-  __ z_lg(Z_R7, offset, Z_SP);      offset += 8;
-  __ z_lg(Z_R10, offset, Z_SP);     offset += 8;
-  __ z_lg(Z_R11, offset, Z_SP);
-  __ pop_frame();
-
-
-  __ z_xgr(Z_RET, Z_RET);
-  __ z_br(Z_R14);
-
 }
 
 void ZBarrierSetAssembler::load_copy_masks(MacroAssembler* masm,
@@ -1009,7 +999,6 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const c
   __ push_frame(nbytes_save);               offset += 8;
   __ save_return_pc();                      offset += 8;
 
-  // TODO: Try to see if any register is free here, maybe float registers?
   __ z_stg(Z_R1, offset, Z_SP);
 
   Label done, skip_uncolor;
