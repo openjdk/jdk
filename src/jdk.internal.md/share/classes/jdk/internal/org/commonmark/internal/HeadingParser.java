@@ -166,7 +166,7 @@ public class HeadingParser extends AbstractBlockParser {
 
     // spec: A setext heading underline is a sequence of = characters or a sequence of - characters, with no more than
     // 3 spaces indentation and any number of trailing spaces.
-    private static int getSetextHeadingLevel(CharSequence line, int index) {
+    @SuppressWarnings("fallthrough") private static int getSetextHeadingLevel(CharSequence line, int index) {
         switch (line.charAt(index)) {
             case '=':
                 if (isSetextHeadingRest(line, index + 1, '=')) {

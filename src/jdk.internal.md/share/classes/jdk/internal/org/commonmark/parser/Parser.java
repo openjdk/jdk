@@ -69,6 +69,7 @@ public class Parser {
     private final InlineParserFactory inlineParserFactory;
     private final List<PostProcessor> postProcessors;
     private final IncludeSourceSpans includeSourceSpans;
+    private final int maxOpenBlockParsers;
 
     private Parser(Builder builder) {
         this.blockParserFactories = DocumentParser.calculateBlockParserFactories(builder.blockParserFactories, builder.enabledBlockTypes);
@@ -79,6 +80,7 @@ public class Parser {
         this.linkProcessors = builder.linkProcessors;
         this.linkMarkers = builder.linkMarkers;
         this.includeSourceSpans = builder.includeSourceSpans;
+        this.maxOpenBlockParsers = builder.maxOpenBlockParsers;
 
         // Try to construct an inline parser. Invalid configuration might result in an exception, which we want to
         // detect as soon as possible.
@@ -138,7 +140,7 @@ public class Parser {
 
     private DocumentParser createDocumentParser() {
         return new DocumentParser(blockParserFactories, inlineParserFactory, inlineContentParserFactories,
-                delimiterProcessors, linkProcessors, linkMarkers, includeSourceSpans);
+                delimiterProcessors, linkProcessors, linkMarkers, includeSourceSpans, maxOpenBlockParsers);
     }
 
     private Node postProcess(Node document) {
@@ -161,6 +163,7 @@ public class Parser {
         private Set<Class<? extends Block>> enabledBlockTypes = DocumentParser.getDefaultBlockParserTypes();
         private InlineParserFactory inlineParserFactory;
         private IncludeSourceSpans includeSourceSpans = IncludeSourceSpans.NONE;
+        private int maxOpenBlockParsers = Integer.MAX_VALUE;
 
         /**
          * @return the configured {@link Parser}
@@ -229,6 +232,27 @@ public class Parser {
          */
         public Builder includeSourceSpans(IncludeSourceSpans includeSourceSpans) {
             this.includeSourceSpans = includeSourceSpans;
+            return this;
+        }
+
+        /**
+         * Limit how many block parsers may be open at once while parsing.
+         * <p>
+         * Once the limit is reached, additional block starts are treated as plain text instead of
+         * creating deeper nested block structure.
+         * <p>
+         * The document root parser is not counted. The default is unlimited, so callers that keep
+         * using {@code Parser.builder().build()} preserve behavior.
+         *
+         * @param maxOpenBlockParsers maximum number of open non-document block parsers, must be
+         *     zero or greater
+         * @return {@code this}
+         */
+        public Builder maxOpenBlockParsers(int maxOpenBlockParsers) {
+            if (maxOpenBlockParsers < 0) {
+                throw new IllegalArgumentException("maxOpenBlockParsers must be >= 0");
+            }
+            this.maxOpenBlockParsers = maxOpenBlockParsers;
             return this;
         }
 

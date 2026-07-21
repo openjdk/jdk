@@ -39,7 +39,7 @@ import java.util.regex.Pattern;
 
 public class Escaping {
 
-    public static final String ESCAPABLE = "[!\"#$%&\'()*+,./:;<=>?@\\[\\\\\\]^_`{|}~-]";
+    public static final String ESCAPABLE = "[!\"#$%&'()*+,./:;<=>?@\\[\\\\\\]^_`{|}~-]";
 
     public static final String ENTITY = "&(?:#x[a-f0-9]{1,6}|#[0-9]{1,7}|[a-z][a-z0-9]{1,31});";
 
@@ -57,36 +57,30 @@ public class Escaping {
 
     private static final Pattern WHITESPACE = Pattern.compile("[ \t\r\n]+");
 
-    private static final Replacer UNESCAPE_REPLACER = new Replacer() {
-        @Override
-        public void replace(String input, StringBuilder sb) {
-            if (input.charAt(0) == '\\') {
-                sb.append(input, 1, input.length());
-            } else {
-                sb.append(Html5Entities.entityToString(input));
-            }
+    private static final Replacer UNESCAPE_REPLACER = (input, sb) -> {
+        if (input.charAt(0) == '\\') {
+            sb.append(input, 1, input.length());
+        } else {
+            sb.append(Html5Entities.entityToString(input));
         }
     };
 
-    private static final Replacer URI_REPLACER = new Replacer() {
-        @Override
-        public void replace(String input, StringBuilder sb) {
-            if (input.startsWith("%")) {
-                if (input.length() == 3) {
-                    // Already percent-encoded, preserve
-                    sb.append(input);
-                } else {
-                    // %25 is the percent-encoding for %
-                    sb.append("%25");
-                    sb.append(input, 1, input.length());
-                }
+    private static final Replacer URI_REPLACER = (input, sb) -> {
+        if (input.startsWith("%")) {
+            if (input.length() == 3) {
+                // Already percent-encoded, preserve
+                sb.append(input);
             } else {
-                byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
-                for (byte b : bytes) {
-                    sb.append('%');
-                    sb.append(HEX_DIGITS[(b >> 4) & 0xF]);
-                    sb.append(HEX_DIGITS[b & 0xF]);
-                }
+                // %25 is the percent-encoding for %
+                sb.append("%25");
+                sb.append(input, 1, input.length());
+            }
+        } else {
+            byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
+            for (byte b : bytes) {
+                sb.append('%');
+                sb.append(HEX_DIGITS[(b >> 4) & 0xF]);
+                sb.append(HEX_DIGITS[b & 0xF]);
             }
         }
     };
@@ -95,7 +89,6 @@ public class Escaping {
         // Avoid building a new string in the majority of cases (nothing to escape)
         StringBuilder sb = null;
 
-        loop:
         for (int i = 0; i < input.length(); i++) {
             char c = input.charAt(i);
             String replacement;
@@ -116,7 +109,7 @@ public class Escaping {
                     if (sb != null) {
                         sb.append(c);
                     }
-                    continue loop;
+                    continue;
             }
             if (sb == null) {
                 sb = new StringBuilder();

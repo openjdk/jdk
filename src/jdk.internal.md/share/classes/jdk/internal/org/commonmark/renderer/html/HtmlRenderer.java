@@ -36,7 +36,6 @@ import jdk.internal.org.commonmark.Extension;
 import jdk.internal.org.commonmark.internal.renderer.NodeRendererMap;
 import jdk.internal.org.commonmark.internal.util.Escaping;
 import jdk.internal.org.commonmark.node.*;
-import jdk.internal.org.commonmark.renderer.NodeRenderer;
 import jdk.internal.org.commonmark.renderer.Renderer;
 
 import java.util.*;
@@ -73,12 +72,7 @@ public class HtmlRenderer implements Renderer {
         this.nodeRendererFactories = new ArrayList<>(builder.nodeRendererFactories.size() + 1);
         this.nodeRendererFactories.addAll(builder.nodeRendererFactories);
         // Add as last. This means clients can override the rendering of core nodes if they want.
-        this.nodeRendererFactories.add(new HtmlNodeRendererFactory() {
-            @Override
-            public NodeRenderer create(HtmlNodeRendererContext context) {
-                return new CoreHtmlNodeRenderer(context);
-            }
-        });
+        this.nodeRendererFactories.add(CoreHtmlNodeRenderer::new);
     }
 
     /**
