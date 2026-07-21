@@ -290,6 +290,12 @@ public:
   static Array<T>* archive_array(GrowableArray<T>* tmp_array) {
     return archive_ptr_array(tmp_array);
   }
+
+  template <typename T>
+  static address offset_to_requested_addr(T requested_base, size_t offset) {
+    // As zero is allowed for requested_base, use integer arithmetic to avoid UB pointer arithmetic.
+    return (address)((uintptr_t)requested_base + offset);
+  }
 };
 
 class HeapRootSegments {
