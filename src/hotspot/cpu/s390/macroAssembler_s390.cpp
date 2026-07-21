@@ -2780,14 +2780,13 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register tmp_reg, bool at_
       z_clg(Z_SP, poll_byte_addr);
       branch_optimized(Assembler::bcondHigh, slow_path);
     } else {
-      // Frame still on stack, need to get fp.
       Register fp = tmp_reg;
       z_lg(fp, _z_abi(callers_sp), Z_SP);
       z_clg(fp, poll_byte_addr);
       branch_optimized(Assembler::bcondHigh, slow_path);
     }
   } else {
-    // Armed page has poll_bit set.
+    assert(!in_nmethod, "should use load_from_polling_page");
     z_lg(tmp_reg, poll_byte_addr);
     z_tmll(tmp_reg, SafepointMechanism::poll_bit());
     branch_optimized(Assembler::bcondNotAllZero, slow_path);

@@ -770,7 +770,6 @@ void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
   Register rnew_zaddress = new_zaddress->as_register();
   Register rnew_zpointer = new_zpointer->as_register();
 
-  Register rbase = addr->base()->as_pointer_register();
   store_barrier_fast(ce->masm(),
                      ce->as_Address(addr),
                      rnew_zaddress,

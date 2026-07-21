@@ -42,6 +42,8 @@
 
 void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
+         "polling page return stub not created yet");
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
 
   // Determine saved exception pc using pc relative address computation.

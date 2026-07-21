@@ -29,13 +29,13 @@
 #define __ masm.
 
 int C2SafepointPollStub::max_size() const {
-  return 30;
+  return 32;
 }
 
 void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
-  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
-         "polling page return stub not created yet");
   __ bind(entry());
+  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
+        "polling page return stub not created yet");
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
 
   // Determine saved exception pc using pc relative address computation.
