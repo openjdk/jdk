@@ -730,7 +730,7 @@ void javaVFrame::print_activation(outputStream* output, int index) const {
   // frame number and method
   output->print("%2d - ", index);
   ((vframe*)this)->print_value(output);
-  //output->cr();
+  output->cr();
 
   if (WizardMode) {
     ((vframe*)this)->print(output);

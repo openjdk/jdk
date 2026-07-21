@@ -1141,6 +1141,10 @@ void JavaThread::deoptimize() {
   StackFrameStream fst(this, false /* update */, true /* process_frames */);
   bool deopt = false;           // Dump stack only if a deopt actually happens.
   bool only_at = strlen(DeoptimizeOnlyAt) > 0;
+
+  LogMessage(deoptimization) msg;
+  NonInterleavingLogStream ls(LogLevel::Trace, msg);
+
   // Iterate over all frames in the thread and deoptimize
   for (; !fst.is_done(); fst.next()) {
     if (fst.current()->can_be_deoptimized()) {
@@ -1169,20 +1173,18 @@ void JavaThread::deoptimize() {
         }
       }
 
-      if (const LogTarget(Trace, deoptimization) lt; lt.is_enabled() && !deopt) {
-
-        LogStream ls(lt);
+      if (!deopt && ls.is_enabled()) {
         deopt = true; // One-time only print before deopt
         ls.print_cr("[BEFORE Deoptimization]");
         trace_frames_on(&ls);
-        // trace_stack_on(&ls);
+        trace_stack_on(&ls);
       }
       Deoptimization::deoptimize(this, *fst.current());
     }
   }
 
-  if (const LogTarget(Trace, deoptimization) lt; lt.is_enabled() && deopt) {
-    LogStream ls(lt);
+
+  if (deopt && ls.is_enabled()) {
     ls.print_cr("[AFTER Deoptimization]");
     trace_frames_on(&ls);
   }

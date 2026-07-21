@@ -263,7 +263,7 @@ int Deoptimization::UnrollBlock::size_of_frames() const {
   return checked_cast<int>(result);
 }
 
-void Deoptimization::UnrollBlock::print() {
+void Deoptimization::UnrollBlock::print_on(outputStream* out) {
   ResourceMark rm;
   stringStream st;
   st.print_cr("UnrollBlock");
@@ -273,7 +273,7 @@ void Deoptimization::UnrollBlock::print() {
     st.print("%zd ", frame_sizes()[index]);
   }
   st.cr();
-  tty->print_raw(st.freeze());
+  out->print_raw(st.freeze());
 }
 
 // In order to make fetch_unroll_info work properly with escape
@@ -301,9 +301,11 @@ JRT_END
 // print information about reallocated objects
 static void log_objects(JavaThread* deoptee_thread,
                         GrowableArray<ScopeValue*>* objects, bool realloc_failures) {
-  if (const LogTarget(Debug, deoptimization) lt; lt.is_enabled()) {
-    LogStream ls(lt);
+  LogMessage(deoptimization) msg;
+  NonInterleavingLogStream ls(LogLevel::Debug, msg);
+  NonInterleavingLogStream trace_ls(LogLevel::Trace, msg);
 
+  if (ls.is_enabled()) {
     ResourceMark rm;
     ls.print_cr("REALLOC OBJECTS in thread " INTPTR_FORMAT, p2i(deoptee_thread));
     fieldDescriptor fd;
@@ -323,8 +325,8 @@ static void log_objects(JavaThread* deoptee_thread,
       k->print_value_on(&ls);
       ls.print_cr(" allocated (%zu bytes)", obj->size() * HeapWordSize);
 
-      if (Verbose && k != nullptr) {
-        k->oop_print_on(obj(), &ls);
+      if (trace_ls.is_enabled() && k != nullptr) {
+        k->oop_print_on(obj(), &trace_ls);
       }
     }
   }
@@ -391,33 +393,33 @@ static void log_eliminated_monitors(JavaThread* thread, JavaThread* deoptee_thre
                                     int exec_mode,
                                     bool& first) {
 #ifndef PRODUCT
-  if (const LogTarget(Debug, deoptimization) lt; lt.is_enabled()) {
-    LogStream ls(lt);
+  LogMessage(deoptimization) msg;
+  NonInterleavingLogStream ls(LogLevel::Debug, msg);
+  if (ls.is_enabled()) {
     ResourceMark rm(thread);
-    stringStream st;
+
     for (int j = 0; j < monitors->length(); j++) {
       MonitorInfo* mi = monitors->at(j);
       if (mi->eliminated()) {
         if (first) {
           first = false;
-          st.print_cr("RELOCK OBJECTS in thread " INTPTR_FORMAT, p2i(thread));
+          ls.print_cr("RELOCK OBJECTS in thread " INTPTR_FORMAT, p2i(thread));
         }
         if (exec_mode == Deoptimization::Unpack_none) {
           ObjectMonitor* monitor = deoptee_thread->current_waiting_monitor();
           if (monitor != nullptr && monitor->object() == mi->owner()) {
-            st.print_cr("     object <" INTPTR_FORMAT "> DEFERRED relocking after wait", p2i(mi->owner()));
+            ls.print_cr("     object <" INTPTR_FORMAT "> DEFERRED relocking after wait", p2i(mi->owner()));
             continue;
           }
         }
         if (mi->owner_is_scalar_replaced()) {
           Klass* k = java_lang_Class::as_Klass(mi->owner_klass());
-          st.print_cr("     failed reallocation for klass %s", k->external_name());
+          ls.print_cr("     failed reallocation for klass %s", k->external_name());
         } else {
-          st.print_cr("     object <" INTPTR_FORMAT "> locked", p2i(mi->owner()));
+          ls.print_cr("     object <" INTPTR_FORMAT "> locked", p2i(mi->owner()));
         }
       }
     }
-    ls.print_raw(st.freeze());
   }
 #endif // !PRODUCT
 }
@@ -1390,8 +1392,10 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
 #endif // COMPILER2
 
 static void log_deopt_packing(JavaThread* thread, frame fr, vframeArray* array, GrowableArray<compiledVFrame*>* chunk) {
-  if (const LogTarget(Debug, deoptimization) lt; lt.is_enabled()) {
-    LogStream ls(lt);
+
+  LogMessage(deoptimization) msg;
+  NonInterleavingLogStream ls(LogLevel::Debug, msg);
+  if (ls.is_enabled()) {
 
     ResourceMark rm(thread);
     ls.print_cr("DEOPT PACKING thread=" INTPTR_FORMAT " vframeArray=" INTPTR_FORMAT, p2i(thread), p2i(array));
@@ -1691,8 +1695,10 @@ static void post_deoptimization_event(nmethod* nm,
 static void log_uncommon_trap(nmethod* nm, Method* tm, intptr_t pc, frame& fr, int trap_bci,
                               const char* reason_name, const char* reason_action, const char* class_name,
                               bool unresolved) {
-  if (const LogTarget(Debug, deoptimization) lt; lt.is_enabled()) {
-    LogStream ls(lt);
+  LogMessage(deoptimization) msg;
+  NonInterleavingLogStream ls(LogLevel::Debug, msg);
+
+  if (ls.is_enabled()) {
     bool is_osr = nm->is_osr_method();
     ls.print("UNCOMMON TRAP method=%s", tm->name_and_sig_as_C_string());
     ls.print(" trap_bci=%d ", trap_bci);

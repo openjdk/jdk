@@ -100,6 +100,13 @@ public class DeoptLoggingTest {
                o.shouldContain(pattern);
             }
             o.shouldHaveExitValue(0);
+
+            // Test that nothing goes to stdout
+            pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:deoptimization=trace:rt.log",
+                                                                  "-Xcomp",
+                                                                  "-XX:+DeoptimizeALot", "DeoptLoggingTest", "test");
+            o = new OutputAnalyzer(pb.start());
+            o.stdoutShouldBeEmpty().shouldHaveExitValue(0);
         }
     };
 

@@ -219,9 +219,10 @@ static void log_reconstructed(intptr_t* addr, const char* loc, int index) {
 
 static void log_reconstructed_frame(JavaThread* thread, Method* method, frame* iframe) {
 #ifndef PRODUCT
-  if (const LogTarget(Debug, deoptimization) lt; lt.is_enabled()) {
-    LogStream ls(lt);
+  LogMessage(deoptimization) msg;
+  NonInterleavingLogStream ls(LogLevel::Debug, msg);
 
+  if (ls.is_enabled()) {
     const bool print_codes = WizardMode && Verbose;
     ResourceMark rm(thread);
     stringStream codes_ss;
@@ -616,9 +617,15 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
   Events::log_deopt_message(current, "DEOPT UNPACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT " mode %d",
                             p2i(unpack_frame.pc()), p2i(unpack_frame.sp()), exec_mode);
 
-  log_debug(deoptimization)("DEOPT UNPACKING thread=" INTPTR_FORMAT " vframeArray=" INTPTR_FORMAT " mode=%d",
-                            p2i(current), p2i(this), exec_mode);
-  log_debug(deoptimization)("   Virtual frames (outermost/oldest first):");
+
+  LogMessage(deoptimization) msg;
+  NonInterleavingLogStream ls(LogLevel::Debug, msg);
+
+  if (ls.is_enabled()) {
+    ls.print_cr("DEOPT UNPACKING thread=" INTPTR_FORMAT " vframeArray=" INTPTR_FORMAT " mode=%d",
+                p2i(current), p2i(this), exec_mode);
+    ls.print_cr("   Virtual frames (outermost/oldest first):");
+  }
 
 
   // Do the unpacking of interpreter frames; the frame at index 0 represents the top activation, so it has no callee
@@ -638,10 +645,8 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
       callee_locals     = callee->max_locals();
     }
 
-    LogTarget(Debug, deoptimization) lt;
-    if (lt.is_enabled()) {
+    if (ls.is_enabled()) {
       ResourceMark rm;
-      LogStream ls(lt);
       ls.print("      VFrame %d (" INTPTR_FORMAT ")", index, p2i(elem));
       ls.print(" - %s", elem->method()->name_and_sig_as_C_string());
       int bci = elem->raw_bci();
