@@ -23,6 +23,7 @@
  *
  */
 
+#include "memory/metaspace.hpp"
 #include "oops/compressedKlass.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -44,7 +45,10 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
 
   // Failing that, aim for a base that is 4G-aligned; such a base can be set with aih.
   if (result == nullptr) {
-    result = reserve_address_space_for_16bit_move(size, aslr);
+    // Never probe beyond 2^42 to prevent accidentally expanding the page table
+    constexpr uintptr_t from = nth_bit(32);
+    constexpr uintptr_t to = nth_bit(42);
+    result = reserve_address_space_X(from, to, size, Metaspace::reserve_alignment(), aslr);
   }
 
   return result;
