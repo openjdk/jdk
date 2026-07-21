@@ -288,7 +288,7 @@ public class TestMaskedStoreIdealization {
                     let("arrVal", vec.elementType.con()),
                 """
                     @Run(test = "test#{testCaseName}")
-                    @Warmup(15_000)
+                    @Warmup(10_000)
                     static void run#{testCaseName}(RunInfo info) {
                         final #pty broadcastVal = #broadcastVal;
                         final #pty arrVal = #arrVal;
