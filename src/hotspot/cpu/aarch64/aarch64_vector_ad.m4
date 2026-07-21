@@ -4513,14 +4513,14 @@ instruct vmask_lasttrue_neon(iRegINoSp dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmask_lasttrue_sve(iRegINoSp dst, pReg src, pReg ptmp) %{
+instruct vmask_lasttrue_sve(iRegINoSp dst, pRegGov src, vReg vtmp, rFlagsReg cr) %{
   predicate(UseSVE > 0);
   match(Set dst (VectorMaskLastTrue src));
-  effect(TEMP ptmp);
-  format %{ "vmask_lasttrue_sve $dst, $src\t# KILL $ptmp" %}
+  effect(TEMP vtmp, KILL cr);
+  format %{ "vmask_lasttrue_sve $dst, $src\t# KILL $vtmp, cr" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    __ sve_vmask_lasttrue($dst$$Register, bt, $src$$PRegister, $ptmp$$PRegister);
+    __ sve_vmask_lasttrue($dst$$Register, bt, $src$$PRegister, $vtmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
