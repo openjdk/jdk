@@ -118,8 +118,7 @@ public class TestReductions {
         switch (args[0]) {
             case "P0" -> { framework.addFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:AutoVectorizationOverrideProfitability=0"); }
             case "P1" -> { framework.addFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:AutoVectorizationOverrideProfitability=1"); }
-            // Note: increasing the node count limit also helps in some cases.
-            case "P2" -> { framework.addFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:AutoVectorizationOverrideProfitability=2", "-XX:LoopUnrollLimit=1000"); }
+            case "P2" -> { framework.addFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:AutoVectorizationOverrideProfitability=2"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         };
         framework.start();
@@ -2116,15 +2115,7 @@ public class TestReductions {
                   IRNode.MUL_REDUCTION_VL, "> 0",
                   IRNode.MUL_VL,           "> 0"},
         applyIfCPUFeatureOr = {"avx512dq", "true", "sve", "true"},
-        applyIfAnd = {"AutoVectorizationOverrideProfitability", "> 0",
-                      "LoopUnrollLimit", ">= 1000"})
-    @IR(failOn = IRNode.LOAD_VECTOR_L,
-        applyIfCPUFeature = {"avx512dq", "true"},
-        applyIfAnd = {"AutoVectorizationOverrideProfitability", "> 0",
-                      "LoopUnrollLimit", "< 1000"})
-    // Increasing the body limit seems to help. Filed for investigation: JDK-8370685
-    // If you can eliminate this exception for LoopUnrollLimit, please remove
-    // the flag completely from the test, also the "addFlags" at the top.
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     // MulVL is not implemented on NEON, so we also not have the reduction.
