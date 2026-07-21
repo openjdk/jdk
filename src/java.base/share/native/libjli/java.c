@@ -1865,7 +1865,7 @@ ShowSettings(JNIEnv *env, char *optString)
 {
     jmethodID showSettingsID;
     jstring joptString;
-    jclass cls = GetLauncherHelperClass(env);
+    jclass cls = FindBootStrapClass(env, "jdk/internal/util/ShowSettings");
     NULL_CHECK(cls);
     NULL_CHECK(showSettingsID = (*env)->GetStaticMethodID(env, cls,
             "showSettings", "(ZLjava/lang/String;JJJ)V"));

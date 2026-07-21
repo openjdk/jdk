@@ -478,11 +478,11 @@ void ShowSettingsDCmd::execute(DCmdSource source, TRAPS) {
   char flag_buf[64];
   jio_snprintf(flag_buf, sizeof(flag_buf), "-XshowSettings:%s", sec);
 
-  // resolve sun.launcher.LauncherHelper
-  Symbol* klass_sym = vmSymbols::sun_launcher_LauncherHelper();
+  // resolve jdk.internal.util.ShowSettings
+  Symbol* klass_sym = vmSymbols::jdk_internal_util_ShowSettings();
   Klass* k = SystemDictionary::resolve_or_fail(klass_sym, true, CHECK);
 
-  // call LauncherHelper.showSettingsBytes(String, long, long, long)
+  // call ShowSettings.showSettingsBytes(String, long, long, long)
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
 
