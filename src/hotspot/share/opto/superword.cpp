@@ -1081,7 +1081,7 @@ SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Nod
   if (is_marked_reduction(use1) && is_marked_reduction(use2)) {
     Node* use1_in2 = use1->in(2);
     if (use1_in2->is_Phi() || is_marked_reduction(use1_in2)) {
-      igvn().rehash_node_delayed(use2);
+      igvn().rehash_node_delayed(use1);
       use1->swap_edges(1, 2);
     }
     Node* use2_in2 = use2->in(2);
