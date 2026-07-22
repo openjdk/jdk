@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,13 +81,6 @@ void JavaAssertions::addOption(const char* name, bool enable) {
   // JavaAssertion::enabled(), but that is done once per loaded class.
   for (int i = 0; i < len; ++i) {
     if (name_copy[i] == JVM_SIGNATURE_DOT) name_copy[i] = JVM_SIGNATURE_SLASH;
-  }
-
-  if (TraceJavaAssertions) {
-    tty->print_cr("JavaAssertions: adding %s %s=%d",
-      head == &_classes ? "class" : "package",
-      name_copy[0] != '\0' ? name_copy : "'default'",
-      enable);
   }
 
   // Prepend a new item to the list.  Items added later take precedence, so
@@ -183,14 +176,6 @@ JavaAssertions::match_package(const char* classname) {
   return nullptr;
 }
 
-inline void JavaAssertions::trace(const char* name,
-const char* typefound, const char* namefound, bool enabled) {
-  if (TraceJavaAssertions) {
-    tty->print_cr("JavaAssertions:  search for %s found %s %s=%d",
-      name, typefound, namefound[0] != '\0' ? namefound : "'default'", enabled);
-  }
-}
-
 bool JavaAssertions::enabled(const char* classname, bool systemClass) {
   assert(classname != nullptr, "must have a classname");
 
@@ -201,18 +186,15 @@ bool JavaAssertions::enabled(const char* classname, bool systemClass) {
   // First check options that apply to classes.  If we find a match we're done.
   OptionList* p;
   if ((p = match_class(classname))) {
-    trace(classname, "class", p->name(), p->enabled());
     return p->enabled();
   }
 
   // Now check packages, from most specific to least.
   if ((p = match_package(classname))) {
-    trace(classname, "package", p->name(), p->enabled());
     return p->enabled();
   }
 
   // No match.  Return the default status.
   bool result = systemClass ? systemClassDefault() : userClassDefault();
-  trace(classname, systemClass ? "system" : "user", "default", result);
   return result;
 }
