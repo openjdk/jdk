@@ -135,6 +135,7 @@ public class ModuleMainClassTest {
         assertTrue(JLINK_TOOL.run(System.out, System.out,
                 "--output", outputDir.toString(),
                 "--add-modules", Arrays.stream(modules).collect(Collectors.joining(",")),
+                "--strip-debug",
                 "--module-path", JMODS_DIR.toString()) == 0);
     }
 

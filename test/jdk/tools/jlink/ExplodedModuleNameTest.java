@@ -73,6 +73,7 @@ public class ExplodedModuleNameTest {
                 .output(outputDir)
                 .addMods(modName)
                 .launcher(modName + "=" + modName + "/" + modName +".Main")
+                .option("--strip-debug")
                 .call().assertSuccess();
     }
 

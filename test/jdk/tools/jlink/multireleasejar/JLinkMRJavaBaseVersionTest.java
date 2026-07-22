@@ -154,6 +154,7 @@ public class JLinkMRJavaBaseVersionTest {
     private boolean jlink(String jar, String image) {
         List<String> args = List.of("--output", image,
                                     "--add-modules", "m1",
+                                    "--strip-debug",
                                     "--module-path",
                                     getJmods().toString() + File.pathSeparator + jar);
         System.out.println("jlink " + args.stream().collect(Collectors.joining(" ")));

@@ -101,6 +101,7 @@ public class JLink20000Packages {
                 .output(imageDir)
                 .addJars(jarPath)
                 .addMods(moduleName)
+                .option("--strip-debug")
                 .call()
                 .assertSuccess();
 

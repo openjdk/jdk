@@ -78,7 +78,7 @@ public class JLink2Test {
         helper.generateDefaultJModule("amodule", Arrays.asList(jmodsClasses));
         List<String> okLocations = new ArrayList<>();
         okLocations.addAll(Helper.toLocation("amodule", Arrays.asList(jmodsClasses)));
-        Path image = helper.generateDefaultImage(new String[0], "amodule").assertSuccess();
+        Path image = helper.generateDefaultImage(new String[] {"--strip-debug"}, "amodule").assertSuccess();
         JImageValidator validator = new JImageValidator("amodule", okLocations,
                 image.toFile(), Collections.emptyList(), Collections.emptyList());
         validator.validate();

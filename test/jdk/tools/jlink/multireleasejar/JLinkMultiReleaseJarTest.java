@@ -223,7 +223,7 @@ public class JLinkMultiReleaseJarTest {
 
 
     private void jlink(String jar, String image) {
-        String args = "--output " + image + " --add-modules m1 --module-path " +
+        String args = "--output " + image + " --add-modules m1 --strip-debug --module-path " +
                 jar + pathsep + jmodsdir.toString();
         int exitCode = JLINK_TOOL.run(System.out, System.err, args.split(" +"));
         Assert.assertEquals(exitCode, 0);
