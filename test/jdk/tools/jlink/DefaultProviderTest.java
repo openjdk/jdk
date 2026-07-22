@@ -135,7 +135,7 @@ public class DefaultProviderTest {
         PluginRepository.registerPlugin(plugin);
 
         {
-            String[] userOptions = {};
+            String[] userOptions = {"--strip-debug"};
             Path imageDir = helper.generateDefaultImage(userOptions, "composite2").assertSuccess();
             helper.checkImage(imageDir, "composite2", null, null);
             if (!isNewPluginsCalled) {
@@ -145,7 +145,7 @@ public class DefaultProviderTest {
         }
 
         {
-            String[] userOptions = {"--disable-toto=false:option1=value1:option2=value2"};
+            String[] userOptions = {"--disable-toto=false:option1=value1:option2=value2", "--strip-debug"};
             Path imageDir = helper.generateDefaultImage(userOptions, "composite2").assertSuccess();
             helper.checkImage(imageDir, "composite2", null, null);
             if (!isNewPluginsCalled) {
@@ -160,7 +160,7 @@ public class DefaultProviderTest {
         }
 
         {
-            String[] userOptions = {"--disable-toto=true:option1=value1"};
+            String[] userOptions = {"--disable-toto=true:option1=value1", "--strip-debug"};
             Path imageDir = helper.generateDefaultImage(userOptions, "composite2").assertSuccess();
             helper.checkImage(imageDir, "composite2", null, null);
             if (isNewPluginsCalled) {

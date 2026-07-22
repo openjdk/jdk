@@ -73,6 +73,7 @@ public class ModuleNamesOrderTest {
     {
         JLinkTask jlinkTask = JImageGenerator.getJLinkTask()
                                              .modulePath(modulePath)
+                                             .option("--strip-debug")
                                              .output(outputDir);
         Stream.of(roots).forEach(jlinkTask::addMods);
         jlinkTask.call().assertSuccess();
