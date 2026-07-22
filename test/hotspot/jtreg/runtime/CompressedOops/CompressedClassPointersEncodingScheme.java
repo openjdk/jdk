@@ -122,8 +122,8 @@ public class CompressedClassPointersEncodingScheme {
         // - small enough to not cause test errors on small devices (e.g. arm64 39bit address space)
         // - large enough to not end up with zero-based encoding
         forceAddress = 0x0000000d55000000L;
-        test(forceAddress, true, 32 * M, forceAddress, 6);
-        test(forceAddress, false, 32 * M, forceAddress, 0);
+        test(forceAddress, true, 4 * G, forceAddress, 10);
+        test(forceAddress, false, 4 * G, forceAddress, 0);
 
     }
 }
