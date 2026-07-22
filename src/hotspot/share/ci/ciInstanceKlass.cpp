@@ -863,21 +863,8 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
       break;
     }
     case T_ARRAY:  // fall-through
-    case T_OBJECT: {
-      InstanceKlass* k = nullptr;
-      ResetNoHandleMark rnhm;
-      Thread* THREAD = Thread::current();
-      SignatureStream ss(fd->signature(), false);
-      Symbol* name = ss.as_symbol();
-      assert(!HAS_PENDING_EXCEPTION, "can resolve klass?");
-      InstanceKlass* holder = fd->field_holder();
-      if (field_type == T_OBJECT) {
-        k = SystemDictionary::find_instance_klass(THREAD, name, Handle(THREAD, holder->class_loader()));
-        // handling of null free inline type
-        guarantee(k != nullptr && !HAS_PENDING_EXCEPTION, "can resolve klass?");
-      }
-
-      if (k == nullptr || !k->is_inline_klass()) {
+    case T_OBJECT:
+      if (!fd->is_null_free_inline_type()) {
         _out->print("%s ", fd->signature()->as_quoted_ascii());
         oop value =  mirror->obj_field_acquire(fd->offset());
         if (value == nullptr) {
@@ -899,28 +886,6 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
           _out->print("%d", a->length());
           if (value->is_objArray()) {
             objArrayOop oa = (objArrayOop)value;
-            if (value->is_flatArray()) {
-              FlatArrayKlass* klass = ((flatArrayOop)oa)->klass();
-              LayoutKind lk = klass->layout_kind();
-              _out->print(" flat");
-              if (LayoutKindHelper::is_nullable_flat(lk)) {
-                _out->print(" nullable");
-              } else {
-                _out->print(" null-free");
-              }
-              if (LayoutKindHelper::is_atomic_flat(lk)) {
-                _out->print(" atomic");
-              } else {
-                _out->print(" non-atomic");
-              }
-            } else {
-              _out->print(" ref");
-              if (oa->klass()->is_null_free_array_klass()) {
-                _out->print(" null-free");
-              } else {
-                _out->print(" nullable");
-              }
-            }
             const char* klass_name  = value->klass()->name()->as_quoted_ascii();
             _out->print(" %s", klass_name);
           }
@@ -929,6 +894,16 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
         }
         break;
       } else {
+        // handling of null free inline type
+        ResetNoHandleMark rnhm;
+        Thread* THREAD = Thread::current();
+        SignatureStream ss(fd->signature(), false);
+        Symbol* name = ss.as_symbol();
+        assert(!HAS_PENDING_EXCEPTION, "can resolve klass?");
+        InstanceKlass* holder = fd->field_holder();
+        InstanceKlass* k = SystemDictionary::find_instance_klass(THREAD, name,
+                                                                 Handle(THREAD, holder->class_loader()));
+        guarantee(k != nullptr && !HAS_PENDING_EXCEPTION, "can resolve klass?");
         InlineKlass* vk = InlineKlass::cast(k);
         oop obj;
         if (is_flat) {
@@ -941,7 +916,6 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
         vk->do_nonstatic_fields(&print_field);
         break;
       }
-    }
     default:
       ShouldNotReachHere();
   }
