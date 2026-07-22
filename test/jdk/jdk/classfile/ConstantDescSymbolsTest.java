@@ -65,6 +65,15 @@ final class ConstantDescSymbolsTest {
         assertThrows(NullPointerException.class, () -> cpb.constantValueEntry(null));
     }
 
+    @Test
+    void testUnnamed() {
+        var cpb = ConstantPoolBuilder.of();
+        var pkg = PackageDesc.of("");
+        var mdl = ModuleDesc.of("");
+        assertThrows(IllegalArgumentException.class, () -> cpb.packageEntry(pkg));
+        assertThrows(IllegalArgumentException.class, () -> cpb.moduleEntry(mdl));
+    }
+
     // Testing that primitive class descs are encoded properly as loadable constants.
     @Test
     void testPrimitiveClassDesc() throws Throwable {

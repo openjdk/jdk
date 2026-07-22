@@ -737,7 +737,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public ModuleDesc asSymbol() {
-            return ModuleDesc.of(asInternalName());
+            return ConstantUtils.validateNamedModule(ModuleDesc.of(asInternalName()));
         }
 
         @Override
