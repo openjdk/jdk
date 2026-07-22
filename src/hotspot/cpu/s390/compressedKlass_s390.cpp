@@ -47,7 +47,7 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   // Failing that, aim for a base that is 4G-aligned; such a base can be set with aih.
   if (result == nullptr) {
     constexpr uintptr_t from = nth_bit<uintptr_t>(32);
-    constexpr uintptr_t to = os::vm_max_mmap_hint_address(); // prevent accidentally expanding the page table
+    const uintptr_t to = os::vm_page_table_expansion_point(); // prevent accidentally expanding the page table
     result = reserve_address_space_X(from, to, size, Metaspace::reserve_alignment(), aslr);
   }
 

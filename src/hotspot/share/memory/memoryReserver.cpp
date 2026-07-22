@@ -471,11 +471,12 @@ static char** get_attach_addresses_for_disjoint_mode() {
   }
   uint start = i;
 
-  // Avoid more steps than requested, and avoid probing beyond the safe mmap probing limit.
+  // Avoid more steps than requested, and avoid expanding the page table
+  // by over-eager probing.
   i = 0;
   while (addresses[start+i] != 0) {
     if (i == HeapSearchSteps ||
-       (addresses[start+i] >= os::vm_max_mmap_hint_address()))
+       (addresses[start+i] >= os::vm_page_table_expansion_point()))
     {
       addresses[start+i] = 0;
       break;

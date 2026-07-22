@@ -503,11 +503,10 @@ class os: AllStatic {
   // Returns the lowest address the process is allowed to map against.
   static size_t vm_min_address();
 
-  // On some kernels (e.g. s390x), mmap probing with high addresses can have lasting effects on
-  // the process by expanding the page table. This function returns the lowest address value
-  // that will have such an effect; callers should avoid probing beyond this address unless
-  // it is deliberate.
-  static uintptr_t vm_max_mmap_hint_address();
+  // Some kernels (e.g. s390x) can dynamically expand the page table. This function returns
+  // the lowest user space address that will expand the page table for the first time.
+  // We typically want to avoid expanding the page table unless it is really necessary.
+  static uintptr_t vm_page_table_expansion_point();
 
   // Returns an upper limit beyond which reserve_memory() calls are guaranteed
   // to fail. It is not guaranteed that reserving less memory than this will
