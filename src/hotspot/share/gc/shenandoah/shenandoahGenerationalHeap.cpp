@@ -189,7 +189,16 @@ void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* g
   workers()->run_task(&task);
 
   if (has_self_forwarded_objects()) {
-    log_info(gc)("Cleaning up failed evacuations");
+    // When an object cannot be evacuated, it will be self-forwarded. Regions with self-forwarded objects
+    // can only be "partially" recycled. We have made a policy/design decision to stop trying to evacuate
+    // such regions. Instead, the workers will focus on evacuating regions that still have a chance of being
+    // completely evacuated. However, once a worker itself cannot refill its LABs, it will do nothing more
+    // beside create more partially evacuated regions. For this reason, such a worker exits the evacuation
+    // task. This leaves the remaining regions to the remaining workers who, we hope, may yet complete more
+    // successful evacuations. For the case that all workers exit before all the collection set regions are
+    // evacuated, we have this step below which simply self forwards all the objects in all the regions that
+    // were not evacuated out of the collection set.
+    log_debug(gc)("Cleaning up failed evacuations");
     ShenandoahSelfForwardTask self_forward_task(this, collection_set());
     workers()->run_task(&self_forward_task);
   }

@@ -32,6 +32,8 @@
 #include "gc/shenandoah/shenandoahTrace.hpp"
 #include "memory/allocation.hpp"
 
+class ShenandoahHeapRegion;
+
 class ShenandoahCollectorPolicy : public CHeapObj<mtGC> {
 private:
   size_t _success_concurrent_gcs;
@@ -91,6 +93,9 @@ public:
   static bool is_higher_priority(GCCause::Cause lhs, GCCause::Cause rhs) {
     return cause_priority(lhs) > cause_priority(rhs);
   }
+
+  // True if the region has self-forwarded objects and the calling thread has exhausted its LABs.
+  static bool should_abandon_evacuations(ShenandoahHeapRegion* region);
 
   size_t consecutive_young_gc_count() const {
     return _consecutive_young_gcs;

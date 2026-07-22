@@ -1145,10 +1145,7 @@ private:
       assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
       _sh->marked_object_iterate(r, &cl);
 
-      if (r->has_self_forwards()) {
-        // This region and this thread are lost. This thread has evacuated all it can. If
-        // we let it continue on to other regions, it will only fail those as well. We want
-        // to let other threads try the regions that this thread could not.
+      if (ShenandoahCollectorPolicy::should_abandon_evacuations(r)) {
         break;
       }
 
