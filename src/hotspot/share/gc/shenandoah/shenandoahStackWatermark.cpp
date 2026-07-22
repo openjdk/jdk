@@ -33,7 +33,7 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/safepointVerifiers.hpp"
 
-uint32_t ShenandoahStackWatermark::_epoch_id = 1;
+uint32_t ShenandoahStackWatermark::_epoch_id = MIN_EPOCH_ID;
 
 ShenandoahOnStackNMethodClosure::ShenandoahOnStackNMethodClosure() :
     _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
@@ -55,6 +55,9 @@ uint32_t ShenandoahStackWatermark::epoch_id() const {
 void ShenandoahStackWatermark::change_epoch_id() {
   shenandoah_assert_safepoint();
   _epoch_id++;
+  if (_epoch_id > MAX_EPOCH_ID) {
+    _epoch_id = MIN_EPOCH_ID;
+  }
 }
 
 ShenandoahStackWatermark::ShenandoahStackWatermark(JavaThread* jt) :
@@ -63,7 +66,10 @@ ShenandoahStackWatermark::ShenandoahStackWatermark(JavaThread* jt) :
   _stats(),
   _keep_alive_cl(),
   _evac_update_oop_cl(),
-  _nm_cl() {}
+  _nm_cl() {
+  assert(StackWatermarkState::epoch(_state) == _epoch_id,
+    "Should be the same: %u != %u", StackWatermarkState::epoch(_state), _epoch_id);
+}
 
 OopClosure* ShenandoahStackWatermark::closure_from_context(void* context) {
   if (context != nullptr) {

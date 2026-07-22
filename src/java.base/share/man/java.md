@@ -920,10 +920,12 @@ the Java HotSpot Virtual Machine.
     :   Do not attempt to use shared class data.
 
 [`-XshowSettings`]{#-XshowSettings}
-:   Shows all settings and then continues.
+:   Shows all settings and continues. It exits normally if there is no Java
+    application to launch.
 
 [`-XshowSettings:`]{#-XshowSettings_}*category*
-:   Shows settings and continues. Possible *category* arguments for this option
+:   Shows settings and continues. It exits normally if there is no Java
+    application to launch. Possible *category* arguments for this option
     include the following:
 
     `all`
