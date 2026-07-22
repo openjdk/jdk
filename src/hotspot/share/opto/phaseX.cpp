@@ -1379,6 +1379,32 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
   // because there are known cases where Ideal can optimize after IGVN.
   // Some may be expected and cannot be fixed, and others should be fixed.
   switch (n->Opcode()) {
+    // BoolNode::Ideal canonicalizes integer comparisons, but only if "!is_counted_loop_exit_test".
+    // We only optimize if:
+    //   Cmp -> Bool -> If
+    // And not if:
+    //   Cmp -> Bool -> CountedLoopEnd
+    // In loop unswitching, we turn a CountedLoopEnd into an If.
+    // We would now have to notify the input of the modified node,
+    // which we don't do so far.
+    // One simple hack would be to just push the Bool node on
+    // the worklist in that optimization, in an ad-hoc fashon.
+    // But more principled would probably be to do this as part
+    // of replace_input_of, which calls set_req_X, which already
+    // has some notification logic, for example using
+    // Node::has_special_unique_user. There are also other places
+    // the graph could be updated and lose the CountedLoopEnd node,
+    // and in those places we also use Node::has_special_unique_user,
+    // and other related code.
+    // I would suggest we refactor and extend that notification
+    // code in a future RFE.
+    //
+    // Found with:
+    //   -XX:VerifyIterativeGVN=1110
+    //   compiler/loopopts/TestBaseCountedEndLoopUnswitchCandidate.java
+    case Op_Bool:
+      return;
+
     // RegionNode::Ideal does "Skip around the useless IF diamond".
     //   245  IfTrue  === 244
     //   258  If  === 245 257
