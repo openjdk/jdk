@@ -9429,6 +9429,9 @@ public final /*value*/ class Character
         this.value = value;
     }
 
+    // When preview features are enabled, the cache does not affect object
+    // equality == semantics, but exists for performance.
+    // See doc/value-class-preview.md "Wrapper Class Caches" section.
     @AOTSafeClassInitializer
     private static final class CharacterCache {
         private CharacterCache(){}

@@ -61,7 +61,7 @@ outcome images.
 5. At run-time, jimage will pick up the preview-specific overrides from
    `META-INF/preview` only when preview features are enabled.
 
-6. The interim `javac` used by the build system cannot pick up the
+6. The interim javac used by the build system cannot pick up the
    preview-specific overrides; they must be supplied explicitly with the
    following javac flag for every single module where overrides are significant:
 
@@ -105,12 +105,38 @@ ensure compatibility:
 ## Wrapper Class Caches
 
 Currently, wrapper class caches are retained even when preview features are
-enabled. They are created with `ValueClass.newReferenceArray`, which creates
-a non-flat array storing object references, allowing a value object wrapping
-a primitive value to be available quickly without redundant allocations and
-associated performance regressions. Their existence has no semantic meaning,
-and they may be removed when the performance regressions are eliminated or
-reduced.
+enabled to address performance losses. They have no semantic impact to value
+objects.
+
+In interpreter or C1 execution in Hotspot, allocations of a value object to the
+heap as a full object with header happen when a value object is:
+
+1. Loaded from a flat storage (field or array)
+2. Created by a constructor
+3. If C2 uses scalarized calling convention, at C2 to C1/interpreter calls and returns
+
+Ideally, C2 can eliminate such allocations, but this does not work if the
+resulting object is stored into references. Unfortunately, many uses of boxing
+conversions store the resulting wrapper objects as references.
+
+For the uses that store wrapper objects to references, if the boxing
+conversion is:
+
+1. Returning a value object from a flat cache array
+2. Calling the value class constructor
+
+Then we would have heap allocation on every single use.
+
+To avoid the allocations, we fall back to returning a value object from a
+reference cache array, from which the loaded reference is directly storable
+into a destination that wants a reference without any allocation.
+
+Since Hotspot may create flat arrays if an array of value objects is requested
+by regular Java array creation mechanisms, we use `ValueClass.newReferenceArray`
+to ensure we always create a reference cache array.
+
+The cache array for value objects may be removed without notice if the
+performance losses from allocations are no longer significant.
 
 ## Editing This Document
 

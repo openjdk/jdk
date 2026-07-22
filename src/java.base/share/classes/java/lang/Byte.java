@@ -116,6 +116,9 @@ public final /*value*/ class Byte extends Number
         return Optional.of(DynamicConstantDesc.ofNamed(BSM_EXPLICIT_CAST, DEFAULT_NAME, CD_byte, intValue()));
     }
 
+    // When preview features are enabled, the cache does not affect object
+    // equality == semantics, but exists for performance.
+    // See doc/value-class-preview.md "Wrapper Class Caches" section.
     @AOTSafeClassInitializer
     private static final class ByteCache {
         private ByteCache() {}

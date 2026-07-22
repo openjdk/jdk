@@ -105,11 +105,11 @@ created to compile these source files into class files.</p></li>
 to the <code>META-INF/preview</code> directory of the regular output
 directory.</p></li>
 <li><p>At run-time, jimage will pick up the preview-specific overrides
-from <code>META-INF/preview</code> when preview features are
+from <code>META-INF/preview</code> only when preview features are
 enabled.</p></li>
-<li><p>The interim <code>javac</code> used by the build system cannot
-pickup the preview-specific overrides; they must be supplied explicitly
-with this javac flag for every single module where overrides are
+<li><p>The interim javac used by the build system cannot pick up the
+preview-specific overrides; they must be supplied explicitly with the
+following javac flag for every single module where overrides are
 significant:</p>
 <pre><code>--patch-module &lt;module&gt;=$(SUPPORT_OUTPUTDIR)/preview/&lt;module&gt;</code></pre>
 <p>See <a
@@ -127,8 +127,8 @@ are:</p>
 are disabled. There's no plan to introduce completely new value
 classes.</p></li>
 </ol>
-<p>Support for other value classes require significant changes to the
-build system.</p>
+<p>Support for other value classes would require significant changes to
+the build system.</p>
 <h2 id="testing">Testing</h2>
 <p>In addition to tests that require preview features to be enabled,
 tests that do not depend on preview features wish to run with preview
@@ -147,13 +147,38 @@ the plugin.</p></li>
 </ol>
 <h2 id="wrapper-class-caches">Wrapper Class Caches</h2>
 <p>Currently, wrapper class caches are retained even when preview
-features are enabled. They are created with
-<code>ValueClass.newReferenceArray</code>, which creates a non-flat
-array storing object references, allowing a value object wrapping a
-primitive value to be available quickly without redundant allocations
-and associated performance regressions. Their existence have no semantic
-meaning, and they may be removed when the performance regressions are
-eliminated or reduced.</p>
+features are enabled to address performance losses. They have no
+semantic impact to value objects.</p>
+<p>In interpreter or C1 execution in Hotspot, allocations of a value
+object to the heap as a full object with header happen when a value
+object is:</p>
+<ol type="1">
+<li>Loaded from a flat storage (field or array)</li>
+<li>Created by a constructor</li>
+<li>If C2 uses scalarized calling convention, at C2 to C1/interpreter
+calls and returns</li>
+</ol>
+<p>Ideally, C2 can eliminate such allocations, but this does not work if
+the resulting object is stored into references. Unfortunately, many uses
+of boxing conversions store the resulting wrapper objects as
+references.</p>
+<p>For the uses that store wrapper objects to references, if the boxing
+conversion is:</p>
+<ol type="1">
+<li>Returning a value object from a flat cache array</li>
+<li>Calling the value class constructor</li>
+</ol>
+<p>Then we would have heap allocation on every single use.</p>
+<p>To avoid the allocations, we fall back to returning a value object
+from a reference cache array, from which the loaded reference is
+directly storable into a destination that wants a reference without any
+allocation.</p>
+<p>Since Hotspot may create flat arrays if an array of value objects is
+requested by regular Java array creation mechanisms, we use
+<code>ValueClass.newReferenceArray</code> to ensure we always create a
+reference cache array.</p>
+<p>The cache array for value objects may be removed without notice if
+the performance losses from allocations are no longer significant.</p>
 <h2 id="editing-this-document">Editing This Document</h2>
 <p>If you want to contribute changes to this document, edit
 <code>doc/value-class-preview.md</code> and then run

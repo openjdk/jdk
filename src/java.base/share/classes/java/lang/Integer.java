@@ -892,6 +892,10 @@ public final /*value*/ class Integer extends Number
      * Cache to support the object identity semantics of autoboxing for values between
      * -128 and 127 (inclusive) as required by JLS.
      *
+     * When preview features are enabled, the cache does not affect object
+     * equality {@code ==} semantics, but exists for performance.
+     * See doc/value-class-preview.md "Wrapper Class Caches" section.
+     *
      * The cache is initialized on first usage.  The size of the cache
      * may be controlled by the {@code -XX:AutoBoxCacheMax=<size>} option.
      * During VM initialization, java.lang.Integer.IntegerCache.high property
