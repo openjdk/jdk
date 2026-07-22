@@ -1,8 +1,7 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- */
-
-/* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
+ * Copyright (c) 2026, IBM Corporation. All rights reserved.
+ * Copyright (c) 2002 Graz University of Technology. All rights reserved.
  *
  * Redistribution and use in  source and binary forms, with or without
  * modification, are permitted  provided that the following conditions are met:
@@ -306,6 +305,7 @@ void printDebug(const char *format, ...);
 // CLASS_SSL3_KEY_MAT_OUT is used by CLASS_SSL3_KEY_MAT_PARAMS and CK_TLS12_KEY_MAT_PARAMS
 #define CLASS_SSL3_MASTER_KEY_DERIVE_PARAMS "sun/security/pkcs11/wrapper/CK_SSL3_MASTER_KEY_DERIVE_PARAMS"
 #define CLASS_TLS12_MASTER_KEY_DERIVE_PARAMS "sun/security/pkcs11/wrapper/CK_TLS12_MASTER_KEY_DERIVE_PARAMS"
+#define CLASS_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS "sun/security/pkcs11/wrapper/CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS"
 #define CLASS_SSL3_KEY_MAT_PARAMS "sun/security/pkcs11/wrapper/CK_SSL3_KEY_MAT_PARAMS"
 #define CLASS_TLS12_KEY_MAT_PARAMS "sun/security/pkcs11/wrapper/CK_TLS12_KEY_MAT_PARAMS"
 #define CLASS_TLS_PRF_PARAMS "sun/security/pkcs11/wrapper/CK_TLS_PRF_PARAMS"
@@ -443,7 +443,8 @@ typedef struct {
 void copyBackPBEInitializationVector(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
 void copyBackSetUnwrappedKey(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
 void ssl3CopyBackClientVersion(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
-void tls12CopyBackClientVersion(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
+void tls12CopyBackClientVersion(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism, jobject jMechanism,
+        CK_VERSION_PTR pVersion, const char *mechanismClass);
 void ssl3CopyBackKeyMatParams(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
 void tls12CopyBackKeyMatParams(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
 
