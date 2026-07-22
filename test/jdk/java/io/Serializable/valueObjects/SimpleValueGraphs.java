@@ -28,7 +28,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal
  * @modules java.base/jdk.internal.value
- * @run junit/othervm SimpleValueGraphs
+ * @run junit/bootclasspath/othervm SimpleValueGraphs
  */
 
 import java.io.ByteArrayInputStream;

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8388318
  * @summary Test serialization of value classes
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -33,7 +34,8 @@
  *          generate classfiles with STRICT_INIT access flags for its annotated fields
  * @run driver jdk.test.lib.helpers.StrictProcessor
  *             ValueSerializationTest$IdentityStrictPoint
- * @run junit ${test.main.class}
+ * @run junit/othervm -DdeserializerOnBootclasspath=false ${test.main.class}
+ * @run junit/bootclasspath/othervm -DdeserializerOnBootclasspath=true ${test.main.class}
  */
 
 import java.io.ByteArrayInputStream;
@@ -56,6 +58,7 @@ import java.util.stream.Stream;
 
 import jdk.internal.value.Deserializer;
 import jdk.test.lib.helpers.StrictInit;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -74,10 +77,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ValueSerializationTest {
 
+    private static final boolean DESERIALIZER_ON_BOOTCLASSPATH = Boolean.getBoolean("deserializerOnBootclasspath");
     private static final Class<NotSerializableException> NSE = NotSerializableException.class;
     private static final Class<InvalidClassException> ICE = InvalidClassException.class;
 
+    @BeforeAll
+    static void setup() {
+        System.out.println("deserializerOnBootclasspath: " + DESERIALIZER_ON_BOOTCLASSPATH);
+    }
+
     static Stream<Arguments> serializationFailingInstances() {
+        return DESERIALIZER_ON_BOOTCLASSPATH ? serializationAlwaysFailingInstances()
+                : Stream.concat(serializationAlwaysFailingInstances(),
+                                // Unrecognized deserializer leads to ICE
+                                deserializerInstances().map(a -> Arguments.of(a, ICE)));
+    }
+
+    static Stream<Arguments> serializationAlwaysFailingInstances() {
         return Stream.of(
                 Arguments.of(
                         new NonSerializableValue(10, 100),
@@ -161,7 +177,7 @@ public class ValueSerializationTest {
         }
     }
 
-    static Stream<Object> serializingInstances() {
+    static Stream<Object> deserializerInstances() {
         return Stream.of(
                 new ValueWithDeserializer(11, 101),
 
@@ -173,8 +189,17 @@ public class ValueSerializationTest {
                 new Object[]{
                         new ValueWithDeserializer(3, 7),
                         new ValueWithDeserializer(4, 8)
-                },
+                }
+        );
+    }
 
+    static Stream<Object> serializingInstances() {
+        return DESERIALIZER_ON_BOOTCLASSPATH ? Stream.concat(deserializerInstances(), alwaysSerializingInstances())
+                : alwaysSerializingInstances();
+    }
+
+    static Stream<Object> alwaysSerializingInstances() {
+        return Stream.of(
                 new ValueWriteReplaceWithIdentity(45),
 
                 new ValueWriteReplaceWithIdentity[]{
@@ -271,7 +296,7 @@ public class ValueSerializationTest {
                 Arguments.of(
                         ValueWithDeserializer.class,
                         SC_SERIALIZABLE,
-                        null
+                        DESERIALIZER_ON_BOOTCLASSPATH ? null : ICE
                 ),
 
                 Arguments.of(
@@ -431,6 +456,7 @@ public class ValueSerializationTest {
     /**
      * A concrete value class which implements java.io.Serializable and has a
      * jdk.internal.value.Deserializer associated with its constructor.
+     * It may be serialized only if it is on the boot class path.
      */
     static value class ValueWithDeserializer implements Serializable {
         public int x;

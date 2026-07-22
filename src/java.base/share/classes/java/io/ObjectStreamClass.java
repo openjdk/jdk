@@ -1362,6 +1362,10 @@ public final class ObjectStreamClass implements Serializable {
      */
     private static Executable findDeserializer(Class<?> clazz,
                                                ObjectStreamField[] fields) {
+        if (clazz.getClassLoader() != null) {
+            // Only for boot loader classes
+            return null;
+        }
         return Stream.concat(
                 Arrays.stream(clazz.getDeclaredMethods()).filter(m -> Modifier.isStatic(m.getModifiers())),
                 Arrays.stream(clazz.getDeclaredConstructors()))
