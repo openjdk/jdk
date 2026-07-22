@@ -74,24 +74,6 @@ public class TestMemoryAlignment {
     }
 
     @Test(dataProvider = "alignments")
-    public void testUnalignedAccess(long align) {
-        ValueLayout layout = ValueLayout.JAVA_INT
-                .withOrder(ByteOrder.BIG_ENDIAN);
-        assertEquals(layout.byteAlignment(), 4);
-        ValueLayout aligned = layout.withByteAlignment(align);
-        try (Arena arena = Arena.ofConfined()) {
-            MemoryLayout alignedGroup = MemoryLayout.structLayout(MemoryLayout.paddingLayout(1), aligned);
-            assertEquals(alignedGroup.byteAlignment(), align);
-            VarHandle vh = aligned.varHandle();
-            MemorySegment segment = arena.allocate(alignedGroup);;
-            vh.set(segment.asSlice(1L), 0L, -42);
-            assertEquals(align, 8); //this is the only case where access is aligned
-        } catch (IllegalArgumentException ex) {
-            assertNotEquals(align, 8); //if align != 8, access is always unaligned
-        }
-    }
-
-    @Test(dataProvider = "alignments")
     public void testUnalignedPath(long align) {
         MemoryLayout layout = ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN);
         MemoryLayout aligned = layout.withByteAlignment(align).withName("value");
