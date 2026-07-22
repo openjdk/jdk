@@ -26,6 +26,7 @@
  * @bug 8387073
  * @key randomness
  * @summary Narrower stores preceding masked vector stores must not be eliminated.
+ * @requires vm.flagless
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @run driver ${test.main.class}
@@ -65,9 +66,6 @@ public class TestMaskedStoreIdealization {
             "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED"
         ));
         vmArgs.addAll(Arrays.asList(args)); // Forward args
-        // Temporarily disable stress flag due to unrelated test failures.
-        // TODO: Remove when JDK-8388490 is fixed.
-        vmArgs.addAll(List.of("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-StressReflectiveCode"));
         String[] vmArgsArray = vmArgs.toArray(new String[0]);
 
         comp.invoke(PACKAGE + "." + CLASS_NAME, "main", new Object[] { vmArgsArray });
