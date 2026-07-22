@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.FileUtils;
 import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import tests.Helper;
 import tests.JImageGenerator;
@@ -141,7 +142,11 @@ public abstract class AbstractLinkableRuntimeTest {
         for (String extra: baseSpec.getExtraOptions()) {
             builder.extraJlinkOpt(extra);
         }
-        return jlinkUsingImage(builder.build());
+        Path finalImage = jlinkUsingImage(builder.build());
+        // The intermediate run-time link image was only needed as the jlink
+        // source for producing the final image; free the disk space now.
+        FileUtils.deleteFileTreeWithRetry(runtimeJlinkImage);
+        return finalImage;
     }
 
     protected Path jlinkUsingImage(JlinkSpec spec) throws Exception {
@@ -280,6 +285,12 @@ public abstract class AbstractLinkableRuntimeTest {
 
         // Remove JMODs as needed for the test
         copyJDKTreeWithoutSpecificJmods(from, runtimeJlinkImage, excludedJmodFiles);
+        // In the non-linkable-runtime case 'from' is a temporary
+        // --generate-linkable-runtime image that has now been copied into
+        // 'runtimeJlinkImage'; delete it to free the disk space.
+        if (!baseSpec.isLinkableRuntime()) {
+            FileUtils.deleteFileTreeWithRetry(from);
+        }
         // Verify the base image is actually without desired packaged modules
         if (excludedJmodFiles.isEmpty()) {
             if (Files.exists(runtimeJlinkImage.resolve("jmods"))) {
