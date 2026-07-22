@@ -217,7 +217,10 @@ public class TestTransferOfAffiliated {
         // appear to be dead code in the loops above. The
         // expected regression failure consists of an assert failure
         // observed with fast-debug builds of the JVM before resolution
-        // of JDK-8382085.
+        // of JDK-8382085. The expected value of accumulator is
+        // determined empirically. The value may depend on the initial
+        // seed for random number generator and on various constants
+        // defined above which determine loop iterations.
         Asserts.assertEQ(1155473232L, accumulator,
                            "Proper execution is demonstrated by matching " +
                            "expected accumulator value with no JVM " +
