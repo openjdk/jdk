@@ -30,6 +30,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
@@ -76,7 +77,8 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
         _weak(false) {}
 
 template<class T, ShenandoahGenerationType GENERATION>
-inline void ShenandoahMarkRefsSuperClosure::work(T* p) {
+ALWAYSINLINE
+void ShenandoahMarkRefsSuperClosure::work(T* p) {
   ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, _old_queue, _mark_context, _weak);
 }
 
@@ -87,7 +89,7 @@ bool ShenandoahForwardedIsAliveClosure::do_object_b(oop obj) {
   if (CompressedOops::is_null(obj)) {
     return false;
   }
-  obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+  obj = ShenandoahForwarding::get_forwardee(obj);
   shenandoah_assert_not_forwarded_if(nullptr, obj, ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
   return _mark_context->is_marked_or_old(obj);
 }
@@ -142,7 +144,7 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop(
 template <bool CONCURRENT, bool STABLE_THREAD>
 template <class T>
 void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_work(T* p) {
-  assert(_heap->is_concurrent_weak_root_in_progress() ||
+  assert((_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) ||
          _heap->is_concurrent_strong_root_in_progress(),
          "Only do this in root processing phase");
 
@@ -152,7 +154,7 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_
     if (_heap->in_collection_set(obj)) {
       assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
-      oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop resolved = ShenandoahForwarding::get_forwardee(obj);
       if (resolved == obj) {
         Thread* thr = STABLE_THREAD ? _thread : Thread::current();
         assert(thr == Thread::current(), "Wrong thread");

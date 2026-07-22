@@ -59,6 +59,7 @@
   template(G1PauseCleanup)                        \
   template(G1TryInitiateConcMark)                 \
   template(G1RendezvousGCThreads)                 \
+  template(G1StopMarking)                         \
   template(ZMarkEndOld)                           \
   template(ZMarkEndYoung)                         \
   template(ZMarkFlushOperation)                   \

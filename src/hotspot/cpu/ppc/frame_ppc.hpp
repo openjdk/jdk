@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -391,8 +391,6 @@
   }
 
   enum {
-    // normal return address is 1 bundle past PC
-    pc_return_offset                       = 0,
     // size, in words, of frame metadata (e.g. pc and link)
     metadata_words                         = sizeof(java_abi) >> LogBytesPerWord,
     // size, in words, of metadata at frame bottom, i.e. it is not part of the
@@ -408,8 +406,6 @@
     // size, in words, of maximum shift in frame position due to alignment
     align_wiggle                           =  1
   };
-
-  static jint interpreter_frame_expression_stack_direction() { return -1; }
 
   // returns the sending frame, without applying any barriers
   inline frame sender_raw(RegisterMap* map) const;

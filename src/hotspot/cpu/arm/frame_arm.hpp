@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
  public:
   enum {
-    pc_return_offset                                 =  0,
     // All frames
     link_offset                                      =  0,
     return_addr_offset                               =  1,
@@ -122,7 +121,5 @@
 
   // helper to update a map with callee-saved FP
   static void update_map_with_saved_link(RegisterMap* map, intptr_t** link_addr);
-
-  static jint interpreter_frame_expression_stack_direction() { return -1; }
 
 #endif // CPU_ARM_FRAME_ARM_HPP
