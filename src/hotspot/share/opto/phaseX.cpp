@@ -2504,6 +2504,13 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
     });
   }
+  // LShiftNode::IdealIL:
+  // (x + c1) << c2  ->  (x << c2) + c3
+  if (use_op == Op_AddI || use_op == Op_AddL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_LShiftI || u->Opcode() == Op_LShiftL;
+    });
+  }
   // If changed AddI/AddL inputs, check for add users:
   // e.g. x + (y + n)      ->  x + (y + C)     ->  (x + y) +   C
   // e.g. x - (y + n)      ->  x - (y + C)     ->  (x - y) + (-C)
