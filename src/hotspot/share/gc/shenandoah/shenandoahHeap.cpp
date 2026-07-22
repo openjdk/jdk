@@ -983,7 +983,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
           if (current_count - original_count > ShenandoahFullGCThreshold) {
             // We are not getting what we need from concurrent allocations, so request a full gc.
             // Whether this satisfies the allocation or not, we are done trying.
-            control_thread()->request_gc(GCCause::_shenandoah_upgrade_to_full_gc);
+            control_thread()->handle_alloc_failure_full();
             result = allocate_memory_work(req, in_new_region);
             break;
           }

@@ -25,6 +25,7 @@
 
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -33,6 +34,7 @@ ShenandoahController::ShenandoahController():
   _gc_id(0),
   _phase(UNSET),
   _gc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahGCWaiters_lock", true),
+  _alloc_waiters_lock(WAITERS_LOCK_RANK, "ShenandoahAllocWaiters_lock", true),
   _alloc_stall_count(0),
   _concurrent_worker_count(ConcGCThreads) { }
 
@@ -54,7 +56,73 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
   log_debug(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req_byte));
   AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(get_gc_id()));
 
-  request_gc(cause);
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  alloc_failure_generation()->heuristics()->record_allocation_stall();
+  heap->shenandoah_policy()->record_allocation_stall(get_phase());
+
+  // This is the inner part of a larger retry loop, so just wait here
+  MonitorLocker ml(&_alloc_waiters_lock);
+  _alloc_stall_count.add_then_fetch(1UL);
+  increase_concurrent_worker_count();
+  notify_control_thread(cause, alloc_failure_generation());
+  ml.wait();
+}
+
+void ShenandoahController::handle_alloc_failure_full() {
+  if (should_terminate()) {
+    log_info(gc)("Control thread is terminating, no more GCs");
+    return;
+  }
+
+  // Make sure we have at least one full GC cycle before unblocking from the explicit GC request.
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  const ShenandoahCollectorPolicy* policy = heap->shenandoah_policy();
+  MonitorLocker ml(&_gc_waiters_lock);
+  size_t full_gc_count = policy->full_gc_count();
+  const size_t required_count = full_gc_count + 1;
+  while (full_gc_count < required_count && !should_terminate()) {
+    notify_control_thread(GCCause::_shenandoah_upgrade_to_full_gc, heap->global_generation());
+    ml.wait();
+    full_gc_count = policy->full_gc_count();
+  }
+}
+
+void ShenandoahController::request_gc(GCCause::Cause cause) {
+  if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
+    handle_requested_gc(cause);
+  }
+}
+
+void ShenandoahController::handle_requested_gc(GCCause::Cause cause) {
+
+  // Requested gc's always operate on the entire heap
+  ShenandoahGeneration* global = ShenandoahHeap::heap()->global_generation();
+
+  // For normal requested GCs (System.gc) we want to block the caller. However,
+  // for whitebox requested GC, we want to initiate the GC and return immediately.
+  // The whitebox caller thread will arrange for itself to wait until the GC notifies
+  // it that has reached the requested breakpoint (phase in the GC).
+  if (cause == GCCause::_wb_breakpoint) {
+    notify_control_thread(cause, global);
+    return;
+  }
+
+  // Make sure we have at least one complete GC cycle before unblocking
+  // from the explicit GC request.
+  //
+  // This is especially important for weak references cleanup and/or native
+  // resources (e.g. DirectByteBuffers) machinery: when explicit GC request
+  // comes very late in the already running cycle, it would miss lots of new
+  // opportunities for cleanup that were made available before the caller
+  // requested the GC.
+  MonitorLocker ml(&_gc_waiters_lock);
+  size_t current_gc_id = get_gc_id();
+  size_t required_gc_id = current_gc_id + 1;
+  while (current_gc_id < required_gc_id && !should_terminate()) {
+    notify_control_thread(cause, global);
+    ml.wait();
+    current_gc_id = get_gc_id();
+  }
 }
 
 void ShenandoahController::increase_concurrent_worker_count() {
@@ -90,6 +158,11 @@ void ShenandoahController::decrease_concurrent_worker_count() {
 
 void ShenandoahController::notify_gc_waiters() {
   MonitorLocker ml(&_gc_waiters_lock);
+  ml.notify_all();
+}
+
+void ShenandoahController::notify_alloc_waiters() {
+  MonitorLocker ml(&_alloc_waiters_lock);
   ml.notify_all();
 }
 

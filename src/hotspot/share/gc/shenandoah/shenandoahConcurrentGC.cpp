@@ -219,6 +219,11 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // This may be skipped if there is nothing to evacuate.
   // If so, evac_in_progress would be unset by collection set preparation code.
   if (heap->is_evacuation_in_progress()) {
+    // Final mark may have reclaimed some immediate garbage that could satisfy allocation requests.
+    // We are proceeding with evacuation, so notify alloc waiters (if we are not evacuating, completion
+    // of the abbreviated cycle would also notify them).
+    _controller->notify_alloc_waiters();
+
     // Concurrently evacuate
     entry_evacuate();
     if (check_cancellation_and_abort()) {

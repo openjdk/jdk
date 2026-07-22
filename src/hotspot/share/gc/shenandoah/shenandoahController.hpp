@@ -31,6 +31,8 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "runtime/atomic.hpp"
 
+class ShenandoahGeneration;
+
 /**
  * This interface exposes methods necessary for the heap to interact
  * with the threads responsible for driving the collection cycle.
@@ -60,7 +62,13 @@ protected:
   const Mutex::Rank WAITERS_LOCK_RANK = Mutex::safepoint - 5;
   const Mutex::Rank CONTROL_LOCK_RANK = Mutex::nosafepoint - 2;
 
+  // Threads waiting for a complete gc cycle (full gc or concurrent global) will wait here.
   Monitor _gc_waiters_lock;
+
+  // Threads waiting for the gc to free memory will wait here. Note that immediate garabge may be reclaimed
+  // midcycle during final mark, so we want to notify alloc waiters independently of cycle waiters. Similarly,
+  // no threads should be notified when a concurrent old mark increment is interrupted.
+  Monitor _alloc_waiters_lock;
 
   // The number of stalls experienced during the cycle. Incremented by mutators, reset by control thread.
   shenandoah_padding(2);
@@ -84,19 +92,26 @@ protected:
     return _alloc_stall_count.load_relaxed();
   }
 
+  virtual ShenandoahGeneration* alloc_failure_generation() = 0;
+  virtual void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) = 0;
+
 public:
   ShenandoahController();
 
   // Request a collection cycle. This handles "explicit" gc requests
   // like System.gc and "implicit" gc requests, like metaspace oom.
-  virtual void request_gc(GCCause::Cause cause) = 0;
+  virtual void request_gc(GCCause::Cause cause);
 
-  // Notify threads that the gc has reclaimed memory (or that it completed a cycle, or it's exiting).
+  // Notify threads that the gc has completed a cycle, or it's exiting.
   void notify_gc_waiters();
+
+  // Notify threads that the gc has recovered memory, or it's exiting.
+  void notify_alloc_waiters();
 
   // This cancels the collection cycle and has an option to block
   // until another cycle completes successfully.
   void handle_alloc_failure(const ShenandoahAllocRequest &req);
+  void handle_alloc_failure_full();
 
   // Return suggested number of concurrent worker threads
   size_t concurrent_worker_count() const {
@@ -117,5 +132,8 @@ public:
   }
 
   static const char* collector_phase_to_string(ShenandoahCollectorPhase phase);
+
+protected:
+  void handle_requested_gc(GCCause::Cause cause);
 };
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLLER_HPP
