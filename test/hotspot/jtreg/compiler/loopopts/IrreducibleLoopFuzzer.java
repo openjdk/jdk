@@ -61,6 +61,11 @@ import compiler.lib.template_framework.library.ShortCarriesFloat16Type;
 import compiler.lib.template_framework.library.VectorElementType;
 import compiler.lib.template_framework.library.VectorType;
 
+// TODO: needed for child VM
+import java.util.concurrent.TimeUnit;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
 /**
  * Fuzzer for irreducible loops.
  * Regular method compilations of Java code is structured, so no irreducible loops.
@@ -80,19 +85,65 @@ import compiler.lib.template_framework.library.VectorType;
 public class IrreducibleLoopFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
 
-    public static void main(String[] args) {
+    private static final long METHOD_TIMEOUT_SECONDS = 5;
+
+    private static final String RUNNER_SOURCE =
+        """
+        package compiler.loopopts.templated;
+
+        import java.lang.reflect.InvocationTargetException;
+
+        public class Runner {
+            public static void main(String[] args) throws Throwable {
+                if (args.length != 1) {
+                    throw new IllegalArgumentException("expected generated method name");
+                }
+
+                try {
+                    Templated.class.getMethod(args[0]).invoke(null);
+                } catch (InvocationTargetException e) {
+                    throw e.getCause();
+                }
+            }
+        }
+        """;
+
+    public static void main(String[] args) throws Exception {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
         comp.addJasmSourceCode("compiler.loopopts.templated.Templated", generate());
+        comp.addJavaSourceCode("compiler.loopopts.templated.Runner", RUNNER_SOURCE);
 
         // Compile the source file.
         comp.compile();
 
-        // TODO: invoke strategy: timeout, oom, ... multiple methods?
-        // TODO: maybe result verification?
-        comp.invoke("compiler.loopopts.templated.Templated", "test", new Object[] {} );
+        runMethod(comp, "test");
+    }
+
+    private static boolean runMethod(CompileFramework comp, String methodName) throws Exception {
+        ProcessBuilder builder = ProcessTools.createTestJavaProcessBuilder(
+            "-cp",
+            comp.getEscapedClassPathOfCompiledClasses(),
+            "compiler.loopopts.templated.Runner",
+            methodName);
+
+        System.out.println("Running method: " + methodName);
+        Process process = builder.start();
+        OutputAnalyzer output = new OutputAnalyzer(process);
+
+        long timeout = Utils.adjustTimeout(METHOD_TIMEOUT_SECONDS);
+        if (!process.waitFor(timeout, TimeUnit.SECONDS)) {
+            process.destroyForcibly().waitFor();
+            System.out.println("Method timed out: " + methodName);
+            output.reportDiagnosticSummary();
+            return false;
+        }
+
+        System.out.println("Method completed: " + methodName);
+        output.shouldHaveExitValue(0);
+        return true;
     }
 
     static interface JasmType {
@@ -244,6 +295,7 @@ public class IrreducibleLoopFuzzer {
                 insertExtension(b);
             } else if (r < 40) {
                 insertLoopReducible(b);
+                // TODO: irreducible loop!
             } else {
                 insertIfElse(b);
             }
