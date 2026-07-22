@@ -178,15 +178,14 @@ public class TestDereferencePath {
 
     @Test
     void badDerefMisAligned() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            MemoryLayout struct = MemoryLayout.structLayout(
-                    ValueLayout.ADDRESS.withTargetLayout(ValueLayout.JAVA_INT).withName("x"));
-
-            try (Arena arena = Arena.ofConfined()) {
-                MemorySegment segment = arena.allocate(struct.byteSize() + 1, struct.byteAlignment()).asSlice(1);
-                VarHandle vhX = struct.varHandle(PathElement.groupElement("x"), PathElement.dereferenceElement());
-                vhX.set(segment, 0L, 42); // should throw
-            }
-        });
+        MemoryLayout struct = MemoryLayout.structLayout(
+                ValueLayout.ADDRESS.withTargetLayout(ValueLayout.JAVA_INT).withName("x"));
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(struct.byteSize() + 1, struct.byteAlignment()).asSlice(1);
+            VarHandle vhX = struct.varHandle(PathElement.groupElement("x"), PathElement.dereferenceElement());
+            assertThrows(IllegalArgumentException.class, () -> {
+                vhX.set(segment, 0L, 42);
+            });
+        }
     }
 }

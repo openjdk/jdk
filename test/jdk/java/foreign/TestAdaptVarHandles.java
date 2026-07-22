@@ -161,24 +161,24 @@ public class TestAdaptVarHandles {
 
     @Test
     public void testBadFilterUnboxArity() {
+        VarHandle floatHandle = ValueLayout.JAVA_INT.varHandle();
         assertThrows(IllegalArgumentException.class, () -> {
-            VarHandle floatHandle = ValueLayout.JAVA_INT.varHandle();
             MethodHandles.filterValue(floatHandle, S2I.bindTo(""), I2S);
         });
     }
 
     @Test
     public void testBadFilterBoxArity() {
+        VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
         assertThrows(IllegalArgumentException.class, () -> {
-            VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
             MethodHandles.filterValue(intHandle, S2I, I2S.bindTo(42));
         });
     }
 
     @Test
     public void testBadFilterBoxPrefixCoordinates() {
+        VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
         assertThrows(IllegalArgumentException.class, () -> {
-            VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
             MethodHandles.filterValue(intHandle,
                     MethodHandles.dropArguments(S2I, 1, int.class),
                     MethodHandles.dropArguments(I2S, 1, long.class));
@@ -187,43 +187,43 @@ public class TestAdaptVarHandles {
 
     @Test
     public void testBadFilterBoxException() {
+        VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
         assertThrows(IllegalArgumentException.class, () -> {
-            VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
             MethodHandles.filterValue(intHandle, I2S, S2L_EX);
         });
     }
 
     @Test
     public void testBadFilterUnboxException() {
+        VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
         assertThrows(IllegalArgumentException.class, () -> {
-            VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
             MethodHandles.filterValue(intHandle, S2L_EX, I2S);
         });
     }
 
     @Test
     public void testBadFilterBoxHandleException() {
-        assertThrows(IllegalStateException.class, () -> {
-            VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
-            VarHandle vh = MethodHandles.filterValue(intHandle, S2I, I2S_EX);
-            try (Arena arena = Arena.ofConfined()) {
-                MemorySegment seg = arena.allocate(ValueLayout.JAVA_INT);
-                vh.set(seg, 0L, "42");
-                String x = (String) vh.get(seg, 0L); // should throw
-            }
-        });
+        VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
+        VarHandle vh = MethodHandles.filterValue(intHandle, S2I, I2S_EX);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment seg = arena.allocate(ValueLayout.JAVA_INT);
+            vh.set(seg, 0L, "42");
+            assertThrows(IllegalStateException.class, () -> {
+                String x = (String) vh.get(seg, 0L);
+            });
+        }
     }
 
     @Test
     public void testBadFilterUnboxHandleException() {
-        assertThrows(IllegalStateException.class, () -> {
-            VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
-            VarHandle vh = MethodHandles.filterValue(intHandle, S2I_EX, I2S);
-            try (Arena arena = Arena.ofConfined()) {
-                MemorySegment seg = arena.allocate(ValueLayout.JAVA_INT);
+        VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
+        VarHandle vh = MethodHandles.filterValue(intHandle, S2I_EX, I2S);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment seg = arena.allocate(ValueLayout.JAVA_INT);
+            assertThrows(IllegalStateException.class, () -> {
                 vh.set(seg, 0L, "42"); // should throw
-            }
-        });
+            });
+        }
     }
 
     @Test

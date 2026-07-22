@@ -49,25 +49,25 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
 
     @Test
     public void testNoHeapArgs() throws Throwable {
+        MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(ADDRESS));
+        MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
         assertThrows(IllegalArgumentException.class, () -> {
-            MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(ADDRESS));
-            MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
-            handle.invoke(segment); // should throw
+            handle.invoke(segment);
         });
     }
 
     @Test
     public void testNoHeapCaptureCallState() throws Throwable {
-        assertThrows(IllegalArgumentException.class, () -> {
-            MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(ADDRESS),
-                    Linker.Option.captureCallState("errno"));
-            try (Arena arena = Arena.ofConfined()) {
-                assert Linker.Option.captureStateLayout().byteAlignment() % 4 == 0;
-                MemorySegment captureHeap = MemorySegment.ofArray(new int[(int) Linker.Option.captureStateLayout().byteSize() / 4]);
-                MemorySegment segment = arena.allocateFrom(C_CHAR, new byte[]{ 0, 1, 2 });
-                handle.invoke(captureHeap, segment); // should throw for captureHeap
-            }
-        });
+        MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(ADDRESS),
+                Linker.Option.captureCallState("errno"));
+        try (Arena arena = Arena.ofConfined()) {
+            assert Linker.Option.captureStateLayout().byteAlignment() % 4 == 0;
+            MemorySegment captureHeap = MemorySegment.ofArray(new int[(int) Linker.Option.captureStateLayout().byteSize() / 4]);
+            MemorySegment segment = arena.allocateFrom(C_CHAR, new byte[]{ 0, 1, 2 });
+            assertThrows(IllegalArgumentException.class, () -> {
+                handle.invoke(captureHeap, segment);
+            });
+        }
     }
 
     @ParameterizedTest

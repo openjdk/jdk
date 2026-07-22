@@ -63,14 +63,14 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
 
     @Test
     public void testClosedStruct() throws Throwable {
+        MemorySegment segment;
+        try (Arena arena = Arena.ofConfined()) {
+            segment = arena.allocate(POINT);
+        }   assertFalse(segment.scope().isAlive());
+        MethodHandle handle = Linker.nativeLinker().downcallHandle(
+                findNativeOrThrow("struct_func"),
+                FunctionDescriptor.ofVoid(POINT));
         assertThrows(IllegalStateException.class, () -> {
-            MemorySegment segment;
-            try (Arena arena = Arena.ofConfined()) {
-                segment = arena.allocate(POINT);
-            }   assertFalse(segment.scope().isAlive());
-            MethodHandle handle = Linker.nativeLinker().downcallHandle(
-                    findNativeOrThrow("struct_func"),
-                    FunctionDescriptor.ofVoid(POINT));
             handle.invokeExact(segment);
         });
     }
@@ -120,15 +120,15 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
 
     @Test
     public void testClosedUpcall() throws Throwable {
+        MemorySegment upcall;
+        try (Arena arena = Arena.ofConfined()) {
+            MethodHandle dummy = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "dummy", MethodType.methodType(void.class));
+            upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), arena);
+        }   assertFalse(upcall.scope().isAlive());
+        MethodHandle handle = Linker.nativeLinker().downcallHandle(
+                findNativeOrThrow("addr_func"),
+                FunctionDescriptor.ofVoid(C_POINTER));
         assertThrows(IllegalStateException.class, () -> {
-            MemorySegment upcall;
-            try (Arena arena = Arena.ofConfined()) {
-                MethodHandle dummy = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "dummy", MethodType.methodType(void.class));
-                upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), arena);
-            }   assertFalse(upcall.scope().isAlive());
-            MethodHandle handle = Linker.nativeLinker().downcallHandle(
-                    findNativeOrThrow("addr_func"),
-                    FunctionDescriptor.ofVoid(C_POINTER));
             handle.invokeExact(upcall);
         });
     }

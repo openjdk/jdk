@@ -194,32 +194,32 @@ public class TestSegmentAllocators {
 
     @Test
     public void testBadArenaNullReturn() {
-        assertThrows(OutOfMemoryError.class, () -> {
-            try (Arena arena = Arena.ofConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
+            assertThrows(OutOfMemoryError.class, () -> {
                 arena.allocate(Long.MAX_VALUE, 2);
-            }
-        });
+            });
+        }
     }
 
     @Test
     public void testArenaAllocateFromHeapSegment() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            try (Arena arena = Arena.ofConfined()) {
-                var heapSegment = MemorySegment.ofArray(new int[]{1});
+        try (Arena arena = Arena.ofConfined()) {
+            var heapSegment = MemorySegment.ofArray(new int[]{1});
+            assertThrows(IllegalArgumentException.class, () -> {
                 arena.allocateFrom(ValueLayout.ADDRESS, heapSegment);
-            }
-        });
+            });
+        }
     }
 
     @Test
     public void testAllocatorAllocateFromHeapSegment() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            try (Arena arena = Arena.ofConfined()) {
-                SegmentAllocator allocator = SegmentAllocator.prefixAllocator(arena.allocate(16));
-                var heapSegment = MemorySegment.ofArray(new int[]{1});
+        try (Arena arena = Arena.ofConfined()) {
+            SegmentAllocator allocator = SegmentAllocator.prefixAllocator(arena.allocate(16));
+            var heapSegment = MemorySegment.ofArray(new int[]{1});
+            assertThrows(IllegalArgumentException.class, () -> {
                 allocator.allocateFrom(ValueLayout.ADDRESS, heapSegment);
-            }
-        });
+            });
+        }
     }
 
     // Invariant checking tests for the SegmentAllocator method:

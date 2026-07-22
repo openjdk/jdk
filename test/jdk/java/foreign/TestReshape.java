@@ -58,32 +58,32 @@ public class TestReshape {
 
     @Test
     public void testInvalidReshape() {
+        SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
         assertThrows(IllegalArgumentException.class, () -> {
-            SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
             seq.reshape(3, 2);
         });
     }
 
     @Test
     public void testBadReshapeInference() {
+        SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
         assertThrows(IllegalArgumentException.class, () -> {
-            SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
             seq.reshape(-1, -1);
         });
     }
 
     @Test
     public void testBadReshapeParameterZero() {
+        SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
         assertThrows(IllegalArgumentException.class, () -> {
-            SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
             seq.reshape(0, 4);
         });
     }
 
     @Test
     public void testBadReshapeParameterNegative() {
+        SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
         assertThrows(IllegalArgumentException.class, () -> {
-            SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
             seq.reshape(-2, 2);
         });
     }

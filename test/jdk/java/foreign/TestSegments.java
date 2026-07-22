@@ -204,20 +204,20 @@ public class TestSegments {
 
     @Test
     public void testSmallSegmentMax() {
+        long offset = (long)Integer.MAX_VALUE + (long)Integer.MAX_VALUE + 2L + 6L; // overflows to 6 when cast to int
+        Arena scope = Arena.ofAuto();
+        MemorySegment memorySegment = scope.allocate(10, 1);
         assertThrows(IndexOutOfBoundsException.class, () -> {
-            long offset = (long)Integer.MAX_VALUE + (long)Integer.MAX_VALUE + 2L + 6L; // overflows to 6 when cast to int
-            Arena scope = Arena.ofAuto();
-            MemorySegment memorySegment = scope.allocate(10, 1);
             memorySegment.get(JAVA_INT, offset);
         });
     }
 
     @Test
     public void testSmallSegmentMin() {
+        long offset = ((long)Integer.MIN_VALUE * 2L) + 6L; // underflows to 6 when cast to int
+        Arena scope = Arena.ofAuto();
+        MemorySegment memorySegment = scope.allocate(10L, 1);
         assertThrows(IndexOutOfBoundsException.class, () -> {
-            long offset = ((long)Integer.MIN_VALUE * 2L) + 6L; // underflows to 6 when cast to int
-            Arena scope = Arena.ofAuto();
-            MemorySegment memorySegment = scope.allocate(10L, 1);
             memorySegment.get(JAVA_INT, offset);
         });
     }
@@ -382,8 +382,8 @@ public class TestSegments {
     @ParameterizedTest
     @MethodSource("segmentFactories")
     public void testFillIllegalAccessMode(Supplier<MemorySegment> segmentSupplier) {
+        MemorySegment segment = segmentSupplier.get();
         assertThrows(IllegalArgumentException.class, () -> {
-            MemorySegment segment = segmentSupplier.get();
             segment.asReadOnly().fill((byte) 0xFF);
         });
     }
@@ -391,8 +391,8 @@ public class TestSegments {
     @ParameterizedTest
     @MethodSource("segmentFactories")
     public void testFromStringIllegalAccessMode(Supplier<MemorySegment> segmentSupplier) {
+        MemorySegment segment = segmentSupplier.get();
         assertThrows(IllegalArgumentException.class, () -> {
-            MemorySegment segment = segmentSupplier.get();
             segment.asReadOnly().setString(0, "a");
         });
     }

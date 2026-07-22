@@ -75,22 +75,22 @@ public class LibraryLookupTest {
 
     @Test
     void testLoadLibraryConfinedClosed() {
+        MemorySegment addr;
+        try (Arena arena = Arena.ofConfined()) {
+            addr = loadLibrary(arena);
+        }
         assertThrows(IllegalStateException.class, () -> {
-            MemorySegment addr;
-            try (Arena arena = Arena.ofConfined()) {
-                addr = loadLibrary(arena);
-            }
             callFunc(addr);
         });
     }
 
     @Test
     void testLoadLibraryBadName() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            try (Arena arena = Arena.ofConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
+            assertThrows(IllegalArgumentException.class, () -> {
                 SymbolLookup.libraryLookup(LIB_PATH.toString() + "\u0000", arena);
-            }
-        });
+            });
+        }
     }
 
     @Test

@@ -58,9 +58,9 @@ public class TestNULLAddress {
 
     @Test
     public void testNULLVirtual() throws Throwable {
+        MethodHandle mh = LINKER.downcallHandle(
+                FunctionDescriptor.ofVoid());
         assertThrows(IllegalArgumentException.class, () -> {
-            MethodHandle mh = LINKER.downcallHandle(
-                    FunctionDescriptor.ofVoid());
             mh.invokeExact(MemorySegment.NULL);
         });
     }

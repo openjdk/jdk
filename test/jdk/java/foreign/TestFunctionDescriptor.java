@@ -115,16 +115,16 @@ public class TestFunctionDescriptor extends NativeTestHelper {
 
     @Test
     public void testIllegalInsertArgNegIndex() {
+        FunctionDescriptor fd = FunctionDescriptor.of(C_INT);
         assertThrows(IllegalArgumentException.class, () -> {
-            FunctionDescriptor fd = FunctionDescriptor.of(C_INT);
             fd.insertArgumentLayouts(-1, C_INT);
         });
     }
 
     @Test
     public void testIllegalInsertArgOutOfBounds() {
+        FunctionDescriptor fd = FunctionDescriptor.of(C_INT);
         assertThrows(IllegalArgumentException.class, () -> {
-            FunctionDescriptor fd = FunctionDescriptor.of(C_INT);
             fd.insertArgumentLayouts(2, C_INT);
         });
     }

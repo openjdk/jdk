@@ -255,48 +255,48 @@ public class TestArrayCopy {
 
     @Test
     public void testNotAnArraySrc() {
+        MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
         assertThrows(IllegalArgumentException.class, () -> {
-            MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
             MemorySegment.copy(segment, JAVA_BYTE, 0, new String[] { "hello" }, 0, 4);
         });
     }
 
     @Test
     public void testNotAnArrayDst() {
+        MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
         assertThrows(IllegalArgumentException.class, () -> {
-            MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
             MemorySegment.copy(new String[] { "hello" }, 0, segment, JAVA_BYTE, 0, 4);
         });
     }
 
     @Test
     public void testCarrierMismatchSrc() {
+        MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
         assertThrows(IllegalArgumentException.class, () -> {
-            MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
             MemorySegment.copy(segment, JAVA_INT, 0, new byte[] { 1, 2, 3, 4 }, 0, 4);
         });
     }
 
     @Test
     public void testCarrierMismatchDst() {
+        MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
         assertThrows(IllegalArgumentException.class, () -> {
-            MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
             MemorySegment.copy(new byte[] { 1, 2, 3, 4 }, 0, segment, JAVA_INT, 0, 4);
         });
     }
 
     @Test
     public void testHyperAlignedSrc() {
+        MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
         assertThrows(IllegalArgumentException.class, () -> {
-            MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
             MemorySegment.copy(new byte[] { 1, 2, 3, 4 }, 0, segment, JAVA_BYTE.withByteAlignment(2), 0, 4);
         });
     }
 
     @Test
     public void testHyperAlignedDst() {
+        MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
         assertThrows(IllegalArgumentException.class, () -> {
-            MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
             MemorySegment.copy(segment, JAVA_BYTE.withByteAlignment(2), 0, new byte[] { 1, 2, 3, 4 }, 0, 4);
         });
     }

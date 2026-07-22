@@ -177,30 +177,30 @@ public class TestSegmentCopy {
     @ParameterizedTest
     @MethodSource("segmentKinds")
     public void testReadOnlyCopy(SegmentKind kind1, SegmentKind kind2) {
+        MemorySegment s1 = kind1.makeSegment(TEST_BYTE_SIZE);
+        MemorySegment s2 = kind2.makeSegment(TEST_BYTE_SIZE);
+        // check failure with read-only dest
         assertThrows(IllegalArgumentException.class, () -> {
-            MemorySegment s1 = kind1.makeSegment(TEST_BYTE_SIZE);
-            MemorySegment s2 = kind2.makeSegment(TEST_BYTE_SIZE);
-            // check failure with read-only dest
             MemorySegment.copy(s1, Type.BYTE.layout, 0, s2.asReadOnly(), Type.BYTE.layout, 0, 0);
         });
     }
 
     @Test
     public void badCopy6Arg() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            try (Arena scope = Arena.ofConfined()) {
-                MemorySegment dest = scope.allocate(ValueLayout.JAVA_INT).asReadOnly();
-                MemorySegment.copy(new int[1],0, dest, ValueLayout.JAVA_INT, 0 ,1); // should throw
-            }
-        });
+        try (Arena scope = Arena.ofConfined()) {
+            MemorySegment dest = scope.allocate(ValueLayout.JAVA_INT).asReadOnly();
+            assertThrows(IllegalArgumentException.class, () -> {
+                MemorySegment.copy(new int[1],0, dest, ValueLayout.JAVA_INT, 0 ,1);
+            });
+        }
     }
 
     @ParameterizedTest
     @MethodSource("types")
     public void testBadOverflow(Type type) {
         Assumptions.assumeTrue(type.layout.byteSize() > 1, "Byte layouts do not overflow");
+        MemorySegment segment = MemorySegment.ofArray(new byte[100]);
         assertThrows(IndexOutOfBoundsException.class, () -> {
-            MemorySegment segment = MemorySegment.ofArray(new byte[100]);
             MemorySegment.copy(segment, type.layout, 0, segment, type.layout, 0, Long.MAX_VALUE);
         });
     }
@@ -238,16 +238,16 @@ public class TestSegmentCopy {
 
     @Test
     public void testHyperAlignedSrc() {
+        MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
         assertThrows(IllegalArgumentException.class, () -> {
-            MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
             MemorySegment.copy(segment, 0, segment, JAVA_BYTE.withByteAlignment(2), 0, 4);
         });
     }
 
     @Test
     public void testHyperAlignedDst() {
+        MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
         assertThrows(IllegalArgumentException.class, () -> {
-            MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
             MemorySegment.copy(segment, JAVA_BYTE.withByteAlignment(2), 0, segment, 0, 4);
         });
     }

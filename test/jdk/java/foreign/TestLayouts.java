@@ -121,16 +121,16 @@ public class TestLayouts {
 
     @Test
     public void testBadBoundSequenceLayoutResize() {
+        SequenceLayout seq = MemoryLayout.sequenceLayout(10, ValueLayout.JAVA_INT);
         assertThrows(IllegalArgumentException.class, () -> {
-            SequenceLayout seq = MemoryLayout.sequenceLayout(10, ValueLayout.JAVA_INT);
             seq.withElementCount(-1);
         });
     }
 
     @Test
     public void testReshape() {
+        SequenceLayout layout = MemoryLayout.sequenceLayout(10, JAVA_INT);
         assertThrows(IllegalArgumentException.class, () -> {
-            SequenceLayout layout = MemoryLayout.sequenceLayout(10, JAVA_INT);
             layout.reshape();
         });
     }

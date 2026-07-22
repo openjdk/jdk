@@ -257,19 +257,19 @@ public class TestByteBuffer {
     @ParameterizedTest
     @MethodSource("mappedOps")
     public void testMappedSegmentOperations(MappedSegmentOp mappedBufferOp) throws Throwable {
-        assertThrows(IllegalStateException.class, () -> {
-            File f = new File("test3.out");
-            f.createNewFile();
-            f.deleteOnExit();
-            Arena arena = Arena.ofConfined();
-            try (FileChannel fileChannel = FileChannel.open(f.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
-                MemorySegment segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 8L, arena);
-                assertTrue(segment.isMapped());
-                assertTrue(segment.toString().contains("mapped"));
-                arena.close();
+        File f = new File("test3.out");
+        f.createNewFile();
+        f.deleteOnExit();
+        Arena arena = Arena.ofConfined();
+        try (FileChannel fileChannel = FileChannel.open(f.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+            MemorySegment segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 8L, arena);
+            assertTrue(segment.isMapped());
+            assertTrue(segment.toString().contains("mapped"));
+            arena.close();
+            assertThrows(IllegalStateException.class, () -> {
                 mappedBufferOp.apply(segment);
-            }
-        });
+            });
+        }
     }
 
     @Test
@@ -517,46 +517,46 @@ public class TestByteBuffer {
 
     @Test
     public void testBufferOnClosedSession() {
+        MemorySegment leaked;
+        try (Arena arena = Arena.ofConfined()) {
+            leaked = arena.allocate(bytes);
+        }
+        ByteBuffer byteBuffer = leaked.asByteBuffer(); // ok
         assertThrows(IllegalStateException.class, () -> {
-            MemorySegment leaked;
-            try (Arena arena = Arena.ofConfined()) {
-                leaked = arena.allocate(bytes);
-            }
-            ByteBuffer byteBuffer = leaked.asByteBuffer(); // ok
-            byteBuffer.get(); // should throw
+            byteBuffer.get();
         });
     }
 
     @Test
     public void testTooBigForByteBuffer() {
+        MemorySegment segment = MemorySegment.NULL.reinterpret(Integer.MAX_VALUE + 10L);
         assertThrows(IllegalStateException.class, () -> {
-            MemorySegment segment = MemorySegment.NULL.reinterpret(Integer.MAX_VALUE + 10L);
             segment.asByteBuffer();
         });
     }
 
     @Test
     public void testBadMapNegativeSize() throws IOException {
-        assertThrows(IllegalArgumentException.class, () -> {
-            File f = new File("testNeg1.out");
-            f.createNewFile();
-            f.deleteOnExit();
-            try (FileChannel fileChannel = FileChannel.open(f.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+        File f = new File("testNeg1.out");
+        f.createNewFile();
+        f.deleteOnExit();
+        try (FileChannel fileChannel = FileChannel.open(f.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+            assertThrows(IllegalArgumentException.class, () -> {
                 fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, -1L, Arena.ofAuto());
-            }
-        });
+            });
+        }
     }
 
     @Test
     public void testBadMapNegativeOffset() throws IOException {
-        assertThrows(IllegalArgumentException.class, () -> {
-            File f = new File("testNeg2.out");
-            f.createNewFile();
-            f.deleteOnExit();
-            try (FileChannel fileChannel = FileChannel.open(f.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+        File f = new File("testNeg2.out");
+        f.createNewFile();
+        f.deleteOnExit();
+        try (FileChannel fileChannel = FileChannel.open(f.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+            assertThrows(IllegalArgumentException.class, () -> {
                 fileChannel.map(FileChannel.MapMode.READ_WRITE, -1L, 1L, Arena.ofAuto());
-            }
-        });
+            });
+        }
     }
 
     @Test
@@ -763,14 +763,13 @@ public class TestByteBuffer {
 
     @Test
     public void testDeadAccessOnClosedBufferSegment() {
+        Arena arena = Arena.ofConfined();
+        MemorySegment s1 = arena.allocate(JAVA_INT);
+        MemorySegment s2 = MemorySegment.ofBuffer(s1.asByteBuffer());
+
+        // memory freed
+        arena.close();
         assertThrows(IllegalStateException.class, () -> {
-            Arena arena = Arena.ofConfined();
-            MemorySegment s1 = arena.allocate(JAVA_INT);
-            MemorySegment s2 = MemorySegment.ofBuffer(s1.asByteBuffer());
-
-            // memory freed
-            arena.close();
-
             s2.set(JAVA_INT, 0, 10); // Dead access!
         });
     }

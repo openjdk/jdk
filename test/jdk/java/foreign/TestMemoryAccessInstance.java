@@ -140,23 +140,23 @@ public class TestMemoryAccessInstance {
 
     @Test
     public void badHeapSegmentSet() {
+        long byteSize = ValueLayout.ADDRESS.byteSize();
+        Arena scope = Arena.ofAuto();
+        MemorySegment targetSegment = scope.allocate(byteSize, 1);
+        MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
         assertThrows(IllegalArgumentException.class, () -> {
-            long byteSize = ValueLayout.ADDRESS.byteSize();
-            Arena scope = Arena.ofAuto();
-            MemorySegment targetSegment = scope.allocate(byteSize, 1);
-            MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
-            targetSegment.set(ValueLayout.ADDRESS, 0, segment); // should throw
+            targetSegment.set(ValueLayout.ADDRESS, 0, segment);
         });
     }
 
     @Test
     public void badHeapSegmentSetAtIndex() {
+        long byteSize = ValueLayout.ADDRESS.byteSize();
+        Arena scope = Arena.ofAuto();
+        MemorySegment targetSegment = scope.allocate(byteSize, 1);
+        MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
         assertThrows(IllegalArgumentException.class, () -> {
-            long byteSize = ValueLayout.ADDRESS.byteSize();
-            Arena scope = Arena.ofAuto();
-            MemorySegment targetSegment = scope.allocate(byteSize, 1);
-            MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
-            targetSegment.setAtIndex(ValueLayout.ADDRESS, 0, segment); // should throw
+            targetSegment.setAtIndex(ValueLayout.ADDRESS, 0, segment);
         });
     }
 

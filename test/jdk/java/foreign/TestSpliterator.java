@@ -95,37 +95,33 @@ public class TestSpliterator {
 
     @Test
     public void testBadSpliteratorElementSizeTooBig() {
+        MemorySegment segment = Arena.ofAuto().allocate(2, 1);
         assertThrows(IllegalArgumentException.class, () -> {
-                Arena scope = Arena.ofAuto();
-                scope.allocate(2, 1)
-                        .spliterator(ValueLayout.JAVA_INT);
+            segment.spliterator(ValueLayout.JAVA_INT);
         });
     }
 
     @Test
     public void testBadStreamElementSizeTooBig() {
+        MemorySegment segment = Arena.ofAuto().allocate(2, 1);
         assertThrows(IllegalArgumentException.class, () -> {
-                Arena scope = Arena.ofAuto();
-                scope.allocate(2, 1)
-                        .elements(ValueLayout.JAVA_INT);
+            segment.elements(ValueLayout.JAVA_INT);
         });
     }
 
     @Test
     public void testBadSpliteratorElementSizeNotMultiple() {
+        MemorySegment segment = Arena.ofAuto().allocate(7, 1);
         assertThrows(IllegalArgumentException.class, () -> {
-                Arena scope = Arena.ofAuto();
-                scope.allocate(7, 1)
-                        .spliterator(ValueLayout.JAVA_INT);
+            segment.spliterator(ValueLayout.JAVA_INT);
         });
     }
 
     @Test
     public void testBadStreamElementSizeNotMultiple() {
+        MemorySegment segment = Arena.ofAuto().allocate(7, 1);
         assertThrows(IllegalArgumentException.class, () -> {
-                Arena scope = Arena.ofAuto();
-                scope.allocate(7, 1)
-                        .elements(ValueLayout.JAVA_INT);
+            segment.elements(ValueLayout.JAVA_INT);
         });
     }
 
@@ -145,19 +141,17 @@ public class TestSpliterator {
 
     @Test
     public void testBadSpliteratorElementSizeZero() {
+        MemorySegment segment = Arena.ofAuto().allocate(7, 1);
         assertThrows(IllegalArgumentException.class, () -> {
-                Arena scope = Arena.ofAuto();
-                scope.allocate(7, 1)
-                        .spliterator(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
+            segment.spliterator(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
         });
     }
 
     @Test
     public void testBadStreamElementSizeZero() {
+        MemorySegment segment = Arena.ofAuto().allocate(7, 1);
         assertThrows(IllegalArgumentException.class, () -> {
-                Arena scope = Arena.ofAuto();
-                scope.allocate(7, 1)
-                        .elements(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
+            segment.elements(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
         });
     }
 

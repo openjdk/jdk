@@ -53,14 +53,15 @@ public class TestVarHandleCombinators {
 
     @Test
     public void testUnalignedElement() {
+        VarHandle vh = ValueLayout.JAVA_BYTE.withByteAlignment(4).varHandle();
+        MemorySegment segment = MemorySegment.ofArray(new byte[4]);
         assertThrows(IllegalArgumentException.class, () -> {
-            VarHandle vh = ValueLayout.JAVA_BYTE.withByteAlignment(4).varHandle();
-            MemorySegment segment = MemorySegment.ofArray(new byte[4]);
-            vh.get(segment, 2L); //should throw
-            //FIXME: the VH only checks the alignment of the segment, which is fine if the VH is derived from layouts,
-            //FIXME: but not if the VH is just created from scratch - we need a VH variable to govern this property,
-            //FIXME: at least until the VM is fixed
+            vh.get(segment, 2L);
         });
+        //FIXME: the VH only checks the alignment of the segment, which is fine if the VH is derived from layouts,
+        //FIXME: but not if the VH is just created from scratch - we need a VH variable to govern this property,
+        //FIXME: at least until the VM is fixed
+
     }
 
     @Test

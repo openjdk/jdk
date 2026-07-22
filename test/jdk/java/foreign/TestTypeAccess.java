@@ -58,42 +58,42 @@ public class TestTypeAccess {
 
     @Test
     public void testMemoryAddressValueGetAsString() {
-        assertThrows(ClassCastException.class, () -> {
-            try (Arena arena = Arena.ofConfined()) {
-                MemorySegment s = arena.allocate(8, 8);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment s = arena.allocate(8, 8);
+            assertThrows(ClassCastException.class, () -> {
                 String address = (String)ADDR_HANDLE.get(s, 0L);
-            }
-        });
+            });
+        }
     }
 
     @Test
     public void testMemoryAddressValueSetAsString() {
-        assertThrows(ClassCastException.class, () -> {
-            try (Arena arena = Arena.ofConfined()) {
-                MemorySegment s = arena.allocate(8, 8);;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment s = arena.allocate(8, 8);
+            assertThrows(ClassCastException.class, () -> {
                 ADDR_HANDLE.set(s, 0L, "string");
-            }
-        });
+            });
+        }
     }
 
     @Test
     public void testMemoryAddressValueGetAsPrimitive() {
-        assertThrows(WrongMethodTypeException.class, () -> {
-            try (Arena arena = Arena.ofConfined()) {
-                MemorySegment s = arena.allocate(8, 8);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment s = arena.allocate(8, 8);
+            assertThrows(WrongMethodTypeException.class, () -> {
                 int address = (int)ADDR_HANDLE.get(s, 0L);
-            }
-        });
+            });
+        }
     }
 
     @Test
     public void testMemoryAddressValueSetAsPrimitive() {
-        assertThrows(WrongMethodTypeException.class, () -> {
-            try (Arena arena = Arena.ofConfined()) {
-                MemorySegment s = arena.allocate(8, 8);;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment s = arena.allocate(8, 8);
+            assertThrows(WrongMethodTypeException.class, () -> {
                 ADDR_HANDLE.set(s, 1);
-            }
-        });
+            });
+        }
     }
 
 }

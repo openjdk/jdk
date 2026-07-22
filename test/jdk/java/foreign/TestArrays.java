@@ -121,10 +121,10 @@ public class TestArrays {
     @ParameterizedTest
     @MethodSource("elemLayouts")
     public void testTooBigForArray(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
+        MemoryLayout seq = MemoryLayout.sequenceLayout((Integer.MAX_VALUE * layout.byteSize()) + 1, layout);
+        //do not really allocate here, as it's way too much memory
+        MemorySegment segment = MemorySegment.NULL.reinterpret(seq.byteSize());
         assertThrows(IllegalStateException.class, () -> {
-            MemoryLayout seq = MemoryLayout.sequenceLayout((Integer.MAX_VALUE * layout.byteSize()) + 1, layout);
-            //do not really allocate here, as it's way too much memory
-            MemorySegment segment = MemorySegment.NULL.reinterpret(seq.byteSize());
             arrayFactory.apply(segment);
         });
     }
@@ -132,24 +132,24 @@ public class TestArrays {
     @ParameterizedTest
     @MethodSource("elemLayouts")
     public void testBadSize(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
-        assertThrows(IllegalStateException.class, () -> {
-            if (layout.byteSize() == 1) throw new IllegalStateException(); //make it fail
-            try (Arena arena = Arena.ofConfined()) {
-                long byteSize = layout.byteSize() + 1;
-                long byteAlignment = layout.byteSize();
-                MemorySegment segment = arena.allocate(byteSize, byteAlignment);
+        if (layout.byteSize() == 1) return; // skip
+        try (Arena arena = Arena.ofConfined()) {
+            long byteSize = layout.byteSize() + 1;
+            long byteAlignment = layout.byteSize();
+            MemorySegment segment = arena.allocate(byteSize, byteAlignment);
+            assertThrows(IllegalStateException.class, () -> {
                 arrayFactory.apply(segment);
-            }
-        });
+            });
+        }
     }
 
     @ParameterizedTest
     @MethodSource("elemLayouts")
     public void testArrayFromClosedSegment(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
+        Arena arena = Arena.ofConfined();
+        MemorySegment segment = arena.allocate(layout);
+        arena.close();
         assertThrows(IllegalStateException.class, () -> {
-            Arena arena = Arena.ofConfined();
-            MemorySegment segment = arena.allocate(layout);
-            arena.close();
             arrayFactory.apply(segment);
         });
     }
