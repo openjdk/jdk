@@ -68,7 +68,11 @@ public class CompressedCPUSpecificClassSpaceReservation {
         final String tryReserveForUnscaled = "reserve_between (range [0x0000000000000000-0x0000000100000000)";
         final String tryReserveBelow4G = "reserve_between (range [0x0000000000000000-0x0000000100000000)";
         final String tryReserveForZeroBased = "reserve_between (range [0x0000000100000000-0x0000000800000000)";
-        final String tryReserveFor16bitMoveIntoQ3 = "reserve_between (range [0x0000000100000000-0x0001000000000000)";
+        // Failing zero-based allocation, platforms will often attempt allocation suitable for a disjointed move:
+        // an insert of the base address bits into the register holding the nK. That requires the base to not
+        // intersect with nK bits (for simplicity, we always assume nK range of 32bits).
+        // The upper limit of this reservation attempt is platform-dependent, though.
+        final String tryReserveFor16bitMoveIntoQ3Regex = "reserve_between.*0x0000000100000000-0x\\d{8}00000000";
         if (Platform.isAArch64()) {
             if (CDS) {
                 output.shouldNotContain(tryReserveForUnscaled);
@@ -77,7 +81,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
             }
             output.shouldContain("Trying to reserve at an EOR-compatible address");
             output.shouldNotContain(tryReserveForZeroBased);
-            output.shouldContain(tryReserveFor16bitMoveIntoQ3);
+            output.shouldMatch(tryReserveFor16bitMoveIntoQ3Regex);
         } else if (Platform.isPPC()) {
             if (CDS) {
                 output.shouldNotContain(tryReserveForUnscaled);
@@ -86,7 +90,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
                 output.shouldContain(tryReserveForUnscaled);
                 output.shouldContain(tryReserveForZeroBased);
             }
-            output.shouldContain(tryReserveFor16bitMoveIntoQ3);
+            output.shouldMatch(tryReserveFor16bitMoveIntoQ3Regex);
         } else if (Platform.isRISCV64()) {
             output.shouldContain(tryReserveForUnscaled); // unconditionally
             // bits 32..44
@@ -100,7 +104,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
             } else {
                 output.shouldContain(tryReserveForZeroBased);
             }
-            output.shouldContain(tryReserveFor16bitMoveIntoQ3);
+            output.shouldMatch(tryReserveFor16bitMoveIntoQ3Regex);
         } else if (Platform.isX64()) {
             output.shouldContain(tryReserveBelow4G);
             if (CDS) {
