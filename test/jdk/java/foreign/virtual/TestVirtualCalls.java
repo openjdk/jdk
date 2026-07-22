@@ -35,8 +35,8 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
 public class TestVirtualCalls extends NativeTestHelper {
@@ -67,7 +67,7 @@ public class TestVirtualCalls extends NativeTestHelper {
 
     @Test
     public void testNullTarget() throws Throwable {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertThrows(NullPointerException.class, () -> {
             int x = (int) func.invokeExact((MemorySegment)null);
         });
     }

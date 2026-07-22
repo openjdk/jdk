@@ -46,7 +46,6 @@ import java.util.List;
 import static java.lang.foreign.MemoryLayout.*;
 import static java.lang.foreign.ValueLayout.*;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -135,18 +134,18 @@ public class TestLinker extends NativeTestHelper {
     @ParameterizedTest
     @MethodSource("invalidIndexCases")
     public void testInvalidOption(int invalidIndex) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Linker.Option option = Linker.Option.firstVariadicArg(invalidIndex);
             FunctionDescriptor desc = FunctionDescriptor.ofVoid();
             Linker.nativeLinker().downcallHandle(desc, option); // throws
-        }); 
+        });
     }
 
     @Test
     public void testInvalidPreservedValueName() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Linker.Option.captureCallState("foo"); // throws
-        }); 
+        });
     }
 
     @ParameterizedTest
@@ -283,7 +282,7 @@ public class TestLinker extends NativeTestHelper {
 
     @Test
     public void testCanonicalLayoutsUnmodifiable() {
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
+        assertThrows(UnsupportedOperationException.class, () -> {
             LINKER.canonicalLayouts().put("asdf", C_INT);
         });
     }

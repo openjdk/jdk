@@ -71,7 +71,6 @@ import sun.nio.ch.DirectBuffer;
 
 import static java.lang.foreign.ValueLayout.*;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
@@ -257,7 +256,7 @@ public class TestByteBuffer {
     @ParameterizedTest
     @MethodSource("mappedOps")
     public void testMappedSegmentOperations(MappedSegmentOp mappedBufferOp) throws Throwable {
-        Assertions.assertThrows(IllegalStateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             File f = new File("test3.out");
             f.createNewFile();
             f.deleteOnExit();
@@ -517,19 +516,19 @@ public class TestByteBuffer {
 
     @Test
     public void testBufferOnClosedSession() {
-        Assertions.assertThrows(IllegalStateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             MemorySegment leaked;
             try (Arena arena = Arena.ofConfined()) {
                 leaked = arena.allocate(bytes);
             }
             ByteBuffer byteBuffer = leaked.asByteBuffer(); // ok
             byteBuffer.get(); // should throw
-        }); 
+        });
     }
 
     @Test
     public void testTooBigForByteBuffer() {
-        Assertions.assertThrows(IllegalStateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             MemorySegment segment = MemorySegment.NULL.reinterpret(Integer.MAX_VALUE + 10L);
             segment.asByteBuffer();
         });
@@ -537,7 +536,7 @@ public class TestByteBuffer {
 
     @Test
     public void testBadMapNegativeSize() throws IOException {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             File f = new File("testNeg1.out");
             f.createNewFile();
             f.deleteOnExit();
@@ -549,7 +548,7 @@ public class TestByteBuffer {
 
     @Test
     public void testBadMapNegativeOffset() throws IOException {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             File f = new File("testNeg2.out");
             f.createNewFile();
             f.deleteOnExit();
@@ -763,14 +762,14 @@ public class TestByteBuffer {
 
     @Test
     public void testDeadAccessOnClosedBufferSegment() {
-        Assertions.assertThrows(IllegalStateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             Arena arena = Arena.ofConfined();
             MemorySegment s1 = arena.allocate(JAVA_INT);
             MemorySegment s2 = MemorySegment.ofBuffer(s1.asByteBuffer());
-            
+
             // memory freed
             arena.close();
-            
+
             s2.set(JAVA_INT, 0, 10); // Dead access!
         });
     }

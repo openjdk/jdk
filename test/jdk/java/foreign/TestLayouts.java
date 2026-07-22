@@ -39,7 +39,6 @@ import java.util.stream.Stream;
 
 import static java.lang.foreign.ValueLayout.*;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -52,7 +51,7 @@ public class TestLayouts {
     @ParameterizedTest
     @MethodSource("layoutsAndBadAlignments")
     public void testBadLayoutAlignment(MemoryLayout layout, long alignment) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             layout.withByteAlignment(alignment);
         });
     }
@@ -122,7 +121,7 @@ public class TestLayouts {
 
     @Test
     public void testBadBoundSequenceLayoutResize() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SequenceLayout seq = MemoryLayout.sequenceLayout(10, ValueLayout.JAVA_INT);
             seq.withElementCount(-1);
         });
@@ -130,7 +129,7 @@ public class TestLayouts {
 
     @Test
     public void testReshape() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SequenceLayout layout = MemoryLayout.sequenceLayout(10, JAVA_INT);
             layout.reshape();
         });
@@ -139,7 +138,7 @@ public class TestLayouts {
     @ParameterizedTest
     @MethodSource("basicLayoutsAndAddressAndGroups")
     public void testGroupIllegalAlignmentNotPowerOfTwo(MemoryLayout layout) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             layout.withByteAlignment(9);
         });
     }
@@ -147,7 +146,7 @@ public class TestLayouts {
     @ParameterizedTest
     @MethodSource("basicLayoutsAndAddressAndGroups")
     public void testGroupIllegalAlignmentNotGreaterOrEqualTo1(MemoryLayout layout) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             layout.withByteAlignment(0);
         });
     }
@@ -391,7 +390,7 @@ public class TestLayouts {
 
     @Test
     public void testSequenceElement() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             // Step must be != 0
             PathElement.sequenceElement(3, 0);
         });
@@ -408,28 +407,28 @@ public class TestLayouts {
 
     @Test
     public void testScaleNegativeOffset() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             JAVA_INT.scale(-1, 0);
         });
     }
 
     @Test
     public void testScaleNegativeIndex() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             JAVA_INT.scale(0, -1);
         });
     }
 
     @Test
     public void testScaleAddOverflow() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
+        assertThrows(ArithmeticException.class, () -> {
             JAVA_INT.scale(Long.MAX_VALUE, 1);
         });
     }
 
     @Test
     public void testScaleMultiplyOverflow() {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
+        assertThrows(ArithmeticException.class, () -> {
             JAVA_INT.scale(0, Long.MAX_VALUE);
         });
     }

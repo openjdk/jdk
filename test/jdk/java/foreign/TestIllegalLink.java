@@ -45,9 +45,7 @@ import jdk.internal.foreign.CABI;
 
 import static java.lang.foreign.ValueLayout.*;
 
-import org.junit.jupiter.api.Assertions;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -77,7 +75,7 @@ public class TestIllegalLink extends NativeTestHelper {
     @ParameterizedTest
     @MethodSource("downcallOnlyOptions")
     public void testIllegalUpcallOptions(Linker.Option downcallOnlyOption) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             ABI.upcallStub(DUMMY_TARGET_MH, FunctionDescriptor.ofVoid(), Arena.ofAuto(), downcallOnlyOption);
         });
     }
@@ -85,7 +83,7 @@ public class TestIllegalLink extends NativeTestHelper {
     @ParameterizedTest
     @MethodSource("illegalCaptureState")
     public void testIllegalCaptureState(String name) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Linker.Option.captureCallState(name);
         });
     }

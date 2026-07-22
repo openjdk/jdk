@@ -37,9 +37,7 @@ import java.util.List;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
-import org.junit.jupiter.api.Assertions;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -257,7 +255,7 @@ public class TestArrayCopy {
 
     @Test
     public void testNotAnArraySrc() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
             MemorySegment.copy(segment, JAVA_BYTE, 0, new String[] { "hello" }, 0, 4);
         });
@@ -265,7 +263,7 @@ public class TestArrayCopy {
 
     @Test
     public void testNotAnArrayDst() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
             MemorySegment.copy(new String[] { "hello" }, 0, segment, JAVA_BYTE, 0, 4);
         });
@@ -273,7 +271,7 @@ public class TestArrayCopy {
 
     @Test
     public void testCarrierMismatchSrc() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
             MemorySegment.copy(segment, JAVA_INT, 0, new byte[] { 1, 2, 3, 4 }, 0, 4);
         });
@@ -281,7 +279,7 @@ public class TestArrayCopy {
 
     @Test
     public void testCarrierMismatchDst() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
             MemorySegment.copy(new byte[] { 1, 2, 3, 4 }, 0, segment, JAVA_INT, 0, 4);
         });
@@ -289,7 +287,7 @@ public class TestArrayCopy {
 
     @Test
     public void testHyperAlignedSrc() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
             MemorySegment.copy(new byte[] { 1, 2, 3, 4 }, 0, segment, JAVA_BYTE.withByteAlignment(2), 0, 4);
         });
@@ -297,7 +295,7 @@ public class TestArrayCopy {
 
     @Test
     public void testHyperAlignedDst() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
             MemorySegment.copy(segment, JAVA_BYTE.withByteAlignment(2), 0, new byte[] { 1, 2, 3, 4 }, 0, 4);
         });

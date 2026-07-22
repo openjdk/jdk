@@ -36,7 +36,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -76,7 +75,7 @@ public class LibraryLookupTest {
 
     @Test
     void testLoadLibraryConfinedClosed() {
-        Assertions.assertThrows(IllegalStateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             MemorySegment addr;
             try (Arena arena = Arena.ofConfined()) {
                 addr = loadLibrary(arena);
@@ -87,7 +86,7 @@ public class LibraryLookupTest {
 
     @Test
     void testLoadLibraryBadName() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             try (Arena arena = Arena.ofConfined()) {
                 SymbolLookup.libraryLookup(LIB_PATH.toString() + "\u0000", arena);
             }
@@ -156,14 +155,14 @@ public class LibraryLookupTest {
 
     @Test
     void testBadLibraryLookupName() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SymbolLookup.libraryLookup("nonExistent", Arena.global());
         });
     }
 
     @Test
     void testBadLibraryLookupPath() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SymbolLookup.libraryLookup(Path.of("nonExistent"), Arena.global());
         });
     }

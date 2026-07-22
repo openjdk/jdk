@@ -40,7 +40,6 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.List;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class TestAdaptVarHandles {
@@ -155,14 +154,14 @@ public class TestAdaptVarHandles {
 
     @Test
     public void testBadFilterCarrier() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.filterValue(floatHandle, S2I, I2S);
         });
     }
 
     @Test
     public void testBadFilterUnboxArity() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             VarHandle floatHandle = ValueLayout.JAVA_INT.varHandle();
             MethodHandles.filterValue(floatHandle, S2I.bindTo(""), I2S);
         });
@@ -170,7 +169,7 @@ public class TestAdaptVarHandles {
 
     @Test
     public void testBadFilterBoxArity() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
             MethodHandles.filterValue(intHandle, S2I, I2S.bindTo(42));
         });
@@ -178,7 +177,7 @@ public class TestAdaptVarHandles {
 
     @Test
     public void testBadFilterBoxPrefixCoordinates() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
             MethodHandles.filterValue(intHandle,
                     MethodHandles.dropArguments(S2I, 1, int.class),
@@ -188,7 +187,7 @@ public class TestAdaptVarHandles {
 
     @Test
     public void testBadFilterBoxException() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
             MethodHandles.filterValue(intHandle, I2S, S2L_EX);
         });
@@ -196,7 +195,7 @@ public class TestAdaptVarHandles {
 
     @Test
     public void testBadFilterUnboxException() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
             MethodHandles.filterValue(intHandle, S2L_EX, I2S);
         });
@@ -204,7 +203,7 @@ public class TestAdaptVarHandles {
 
     @Test
     public void testBadFilterBoxHandleException() {
-        Assertions.assertThrows(IllegalStateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
             VarHandle vh = MethodHandles.filterValue(intHandle, S2I, I2S_EX);
             try (Arena arena = Arena.ofConfined()) {
@@ -217,7 +216,7 @@ public class TestAdaptVarHandles {
 
     @Test
     public void testBadFilterUnboxHandleException() {
-        Assertions.assertThrows(IllegalStateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
             VarHandle vh = MethodHandles.filterValue(intHandle, S2I_EX, I2S);
             try (Arena arena = Arena.ofConfined()) {
@@ -248,35 +247,35 @@ public class TestAdaptVarHandles {
 
     @Test
     public void testBadFilterCoordinatesNegativePos() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.filterCoordinates(intHandle, -1, SUM_OFFSETS);
         });
     }
 
     @Test
     public void testBadFilterCoordinatesPosTooBig() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.filterCoordinates(intHandle, 1, SUM_OFFSETS);
         });
     }
 
     @Test
     public void testBadFilterCoordinatesWrongFilterType() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.filterCoordinates(intHandleIndexed, 1, S2I);
         });
     }
 
     @Test
     public void testBadFilterCoordinatesWrongFilterException() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.filterCoordinates(intHandleIndexed, 1, S2L_EX);
         });
     }
 
     @Test
     public void testBadFilterCoordinatesTooManyFilters() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.filterCoordinates(intHandleIndexed, 1, S2L, S2L);
         });
     }
@@ -302,28 +301,28 @@ public class TestAdaptVarHandles {
 
     @Test
     public void testBadInsertCoordinatesNegativePos() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.insertCoordinates(intHandle, -1, 42);
         });
     }
 
     @Test
     public void testBadInsertCoordinatesPosTooBig() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.insertCoordinates(intHandle, 1, 42);
         });
     }
 
     @Test
     public void testBadInsertCoordinatesWrongCoordinateType() {
-        Assertions.assertThrows(ClassCastException.class, () -> {
+        assertThrows(ClassCastException.class, () -> {
             MethodHandles.insertCoordinates(intHandleIndexed, 1, "Hello");
         });
     }
 
     @Test
     public void testBadInsertCoordinatesTooManyValues() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.insertCoordinates(intHandleIndexed, 1, 0L, 0L);
         });
     }
@@ -350,28 +349,28 @@ public class TestAdaptVarHandles {
 
     @Test
     public void testBadPermuteCoordinatesTooManyCoordinates() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.permuteCoordinates(intHandle, List.of(int.class, int.class), new int[2]);
         });
     }
 
     @Test
     public void testBadPermuteCoordinatesTooFewCoordinates() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.permuteCoordinates(intHandle, List.of());
         });
     }
 
     @Test
     public void testBadPermuteCoordinatesIndexTooBig() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.permuteCoordinates(intHandle, List.of(int.class, int.class), 3);
         });
     }
 
     @Test
     public void testBadPermuteCoordinatesIndexTooSmall() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.permuteCoordinates(intHandle, List.of(int.class, int.class), -1);
         });
     }
@@ -403,28 +402,28 @@ public class TestAdaptVarHandles {
 
     @Test
     public void testBadCollectCoordinatesNegativePos() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.collectCoordinates(intHandle, -1, SUM_OFFSETS);
         });
     }
 
     @Test
     public void testBadCollectCoordinatesPosTooBig() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.collectCoordinates(intHandle, 1, SUM_OFFSETS);
         });
     }
 
     @Test
     public void testBadCollectCoordinatesWrongFilterType() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.collectCoordinates(intHandle, 0, SUM_OFFSETS);
         });
     }
 
     @Test
     public void testBadCollectCoordinatesWrongFilterException() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.collectCoordinates(intHandle, 0, S2L_EX);
         });
     }
@@ -450,14 +449,14 @@ public class TestAdaptVarHandles {
 
     @Test
     public void testBadDropCoordinatesNegativePos() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.dropCoordinates(intHandle, -1);
         });
     }
 
     @Test
     public void testBadDropCoordinatesPosTooBig() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandles.dropCoordinates(intHandle, 2);
         });
     }

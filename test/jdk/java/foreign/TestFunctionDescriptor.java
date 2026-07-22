@@ -33,7 +33,6 @@ import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -116,7 +115,7 @@ public class TestFunctionDescriptor extends NativeTestHelper {
 
     @Test
     public void testIllegalInsertArgNegIndex() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             FunctionDescriptor fd = FunctionDescriptor.of(C_INT);
             fd.insertArgumentLayouts(-1, C_INT);
         });
@@ -124,7 +123,7 @@ public class TestFunctionDescriptor extends NativeTestHelper {
 
     @Test
     public void testIllegalInsertArgOutOfBounds() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             FunctionDescriptor fd = FunctionDescriptor.of(C_INT);
             fd.insertArgumentLayouts(2, C_INT);
         });
@@ -132,35 +131,35 @@ public class TestFunctionDescriptor extends NativeTestHelper {
 
     @Test
     public void testBadPaddingInVoidFunction() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             FunctionDescriptor.ofVoid(MemoryLayout.paddingLayout(1));
         });
     }
 
     @Test
     public void testBadPaddingInNonVoidFunction() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             FunctionDescriptor.of(MemoryLayout.paddingLayout(1));
         });
     }
 
     @Test
     public void testBadPaddingInAppendArgLayouts() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             FunctionDescriptor.ofVoid().appendArgumentLayouts(MemoryLayout.paddingLayout(1));
         });
     }
 
     @Test
     public void testBadPaddingInInsertArgLayouts() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             FunctionDescriptor.ofVoid().insertArgumentLayouts(0, MemoryLayout.paddingLayout(1));
         });
     }
 
     @Test
     public void testBadPaddingInChangeRetLayout() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             FunctionDescriptor.ofVoid().changeReturnLayout(MemoryLayout.paddingLayout(1));
         });
     }

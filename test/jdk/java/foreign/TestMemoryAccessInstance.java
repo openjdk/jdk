@@ -33,7 +33,6 @@ import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
@@ -141,24 +140,24 @@ public class TestMemoryAccessInstance {
 
     @Test
     public void badHeapSegmentSet() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             long byteSize = ValueLayout.ADDRESS.byteSize();
             Arena scope = Arena.ofAuto();
             MemorySegment targetSegment = scope.allocate(byteSize, 1);
             MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
             targetSegment.set(ValueLayout.ADDRESS, 0, segment); // should throw
-        }); 
+        });
     }
 
     @Test
     public void badHeapSegmentSetAtIndex() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             long byteSize = ValueLayout.ADDRESS.byteSize();
             Arena scope = Arena.ofAuto();
             MemorySegment targetSegment = scope.allocate(byteSize, 1);
             MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
             targetSegment.setAtIndex(ValueLayout.ADDRESS, 0, segment); // should throw
-        }); 
+        });
     }
 
     @ParameterizedTest

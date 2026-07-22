@@ -49,7 +49,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -110,14 +109,14 @@ public class TestSegmentAllocators {
 
     @Test
     public void testReadOnlySlicingAllocator() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SegmentAllocator.slicingAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
         });
     }
 
     @Test
     public void testReadOnlyPrefixAllocator() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
         });
     }
@@ -148,7 +147,7 @@ public class TestSegmentAllocators {
     @ParameterizedTest
     @MethodSource("allocators")
     public void testBadAllocationSize(SegmentAllocator allocator) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             allocator.allocate(-1);
         });
     }
@@ -156,7 +155,7 @@ public class TestSegmentAllocators {
     @ParameterizedTest
     @MethodSource("allocators")
     public void testBadAllocationAlignZero(SegmentAllocator allocator) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             allocator.allocate(1, 0);
         });
     }
@@ -164,7 +163,7 @@ public class TestSegmentAllocators {
     @ParameterizedTest
     @MethodSource("allocators")
     public void testBadAllocationAlignNeg(SegmentAllocator allocator) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             allocator.allocate(1, -1);
         });
     }
@@ -172,7 +171,7 @@ public class TestSegmentAllocators {
     @ParameterizedTest
     @MethodSource("allocators")
     public void testBadAllocationAlignNotPowerTwo(SegmentAllocator allocator) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             allocator.allocate(1, 3);
         });
     }
@@ -180,7 +179,7 @@ public class TestSegmentAllocators {
     @ParameterizedTest
     @MethodSource("allocators")
     public void testBadAllocationArrayNegSize(SegmentAllocator allocator) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             allocator.allocate(ValueLayout.JAVA_BYTE, -1);
         });
     }
@@ -188,14 +187,14 @@ public class TestSegmentAllocators {
     @ParameterizedTest
     @MethodSource("allocators")
     public void testBadAllocationArrayOverflow(SegmentAllocator allocator) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             allocator.allocate(ValueLayout.JAVA_LONG,  Long.MAX_VALUE);
         });
     }
 
     @Test
     public void testBadArenaNullReturn() {
-        Assertions.assertThrows(OutOfMemoryError.class, () -> {
+        assertThrows(OutOfMemoryError.class, () -> {
             try (Arena arena = Arena.ofConfined()) {
                 arena.allocate(Long.MAX_VALUE, 2);
             }
@@ -204,7 +203,7 @@ public class TestSegmentAllocators {
 
     @Test
     public void testArenaAllocateFromHeapSegment() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             try (Arena arena = Arena.ofConfined()) {
                 var heapSegment = MemorySegment.ofArray(new int[]{1});
                 arena.allocateFrom(ValueLayout.ADDRESS, heapSegment);
@@ -214,7 +213,7 @@ public class TestSegmentAllocators {
 
     @Test
     public void testAllocatorAllocateFromHeapSegment() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             try (Arena arena = Arena.ofConfined()) {
                 SegmentAllocator allocator = SegmentAllocator.prefixAllocator(arena.allocate(16));
                 var heapSegment = MemorySegment.ofArray(new int[]{1});

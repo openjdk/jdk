@@ -49,7 +49,6 @@ import java.lang.invoke.MethodType;
 
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -64,7 +63,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
 
     @Test
     public void testClosedStruct() throws Throwable {
-        Assertions.assertThrows(IllegalStateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             MemorySegment segment;
             try (Arena arena = Arena.ofConfined()) {
                 segment = arena.allocate(POINT);
@@ -121,7 +120,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
 
     @Test
     public void testClosedUpcall() throws Throwable {
-        Assertions.assertThrows(IllegalStateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             MemorySegment upcall;
             try (Arena arena = Arena.ofConfined()) {
                 MethodHandle dummy = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "dummy", MethodType.methodType(void.class));

@@ -34,7 +34,7 @@ import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
 
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,16 +49,16 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
 
     @Test
     public void testNoHeapArgs() throws Throwable {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(ADDRESS));
             MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
             handle.invoke(segment); // should throw
-        }); 
+        });
     }
 
     @Test
     public void testNoHeapCaptureCallState() throws Throwable {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(ADDRESS),
                     Linker.Option.captureCallState("errno"));
             try (Arena arena = Arena.ofConfined()) {

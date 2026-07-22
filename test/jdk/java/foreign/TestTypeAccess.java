@@ -34,7 +34,7 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.lang.invoke.WrongMethodTypeException;
 
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
 public class TestTypeAccess {
@@ -44,21 +44,21 @@ public class TestTypeAccess {
 
     @Test
     public void testMemoryAddressCoordinateAsString() {
-        Assertions.assertThrows(ClassCastException.class, () -> {
+        assertThrows(ClassCastException.class, () -> {
             int v = (int)INT_HANDLE.get("string", 0L);
         });
     }
 
     @Test
     public void testMemoryCoordinatePrimitive() {
-        Assertions.assertThrows(WrongMethodTypeException.class, () -> {
+        assertThrows(WrongMethodTypeException.class, () -> {
             int v = (int)INT_HANDLE.get(1);
         });
     }
 
     @Test
     public void testMemoryAddressValueGetAsString() {
-        Assertions.assertThrows(ClassCastException.class, () -> {
+        assertThrows(ClassCastException.class, () -> {
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment s = arena.allocate(8, 8);
                 String address = (String)ADDR_HANDLE.get(s, 0L);
@@ -68,7 +68,7 @@ public class TestTypeAccess {
 
     @Test
     public void testMemoryAddressValueSetAsString() {
-        Assertions.assertThrows(ClassCastException.class, () -> {
+        assertThrows(ClassCastException.class, () -> {
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment s = arena.allocate(8, 8);;
                 ADDR_HANDLE.set(s, 0L, "string");
@@ -78,7 +78,7 @@ public class TestTypeAccess {
 
     @Test
     public void testMemoryAddressValueGetAsPrimitive() {
-        Assertions.assertThrows(WrongMethodTypeException.class, () -> {
+        assertThrows(WrongMethodTypeException.class, () -> {
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment s = arena.allocate(8, 8);
                 int address = (int)ADDR_HANDLE.get(s, 0L);
@@ -88,7 +88,7 @@ public class TestTypeAccess {
 
     @Test
     public void testMemoryAddressValueSetAsPrimitive() {
-        Assertions.assertThrows(WrongMethodTypeException.class, () -> {
+        assertThrows(WrongMethodTypeException.class, () -> {
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment s = arena.allocate(8, 8);;
                 ADDR_HANDLE.set(s, 1);

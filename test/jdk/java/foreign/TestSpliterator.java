@@ -35,7 +35,6 @@ import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.LongStream;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -96,41 +95,37 @@ public class TestSpliterator {
 
     @Test
     public void testBadSpliteratorElementSizeTooBig() {
-        Assertions
-                .assertThrows(IllegalArgumentException.class, () -> {
-                    Arena scope = Arena.ofAuto();
-                    scope.allocate(2, 1)
-                            .spliterator(ValueLayout.JAVA_INT);
+        assertThrows(IllegalArgumentException.class, () -> {
+                Arena scope = Arena.ofAuto();
+                scope.allocate(2, 1)
+                        .spliterator(ValueLayout.JAVA_INT);
         });
     }
 
     @Test
     public void testBadStreamElementSizeTooBig() {
-        Assertions
-                .assertThrows(IllegalArgumentException.class, () -> {
-                    Arena scope = Arena.ofAuto();
-                    scope.allocate(2, 1)
-                            .elements(ValueLayout.JAVA_INT);
+        assertThrows(IllegalArgumentException.class, () -> {
+                Arena scope = Arena.ofAuto();
+                scope.allocate(2, 1)
+                        .elements(ValueLayout.JAVA_INT);
         });
     }
 
     @Test
     public void testBadSpliteratorElementSizeNotMultiple() {
-        Assertions
-                .assertThrows(IllegalArgumentException.class, () -> {
-                    Arena scope = Arena.ofAuto();
-                    scope.allocate(7, 1)
-                            .spliterator(ValueLayout.JAVA_INT);
+        assertThrows(IllegalArgumentException.class, () -> {
+                Arena scope = Arena.ofAuto();
+                scope.allocate(7, 1)
+                        .spliterator(ValueLayout.JAVA_INT);
         });
     }
 
     @Test
     public void testBadStreamElementSizeNotMultiple() {
-        Assertions
-                .assertThrows(IllegalArgumentException.class, () -> {
-                    Arena scope = Arena.ofAuto();
-                    scope.allocate(7, 1)
-                            .elements(ValueLayout.JAVA_INT);
+        assertThrows(IllegalArgumentException.class, () -> {
+                Arena scope = Arena.ofAuto();
+                scope.allocate(7, 1)
+                        .elements(ValueLayout.JAVA_INT);
         });
     }
 
@@ -150,21 +145,19 @@ public class TestSpliterator {
 
     @Test
     public void testBadSpliteratorElementSizeZero() {
-        Assertions
-                .assertThrows(IllegalArgumentException.class, () -> {
-                    Arena scope = Arena.ofAuto();
-                    scope.allocate(7, 1)
-                            .spliterator(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
+        assertThrows(IllegalArgumentException.class, () -> {
+                Arena scope = Arena.ofAuto();
+                scope.allocate(7, 1)
+                        .spliterator(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
         });
     }
 
     @Test
     public void testBadStreamElementSizeZero() {
-        Assertions
-                .assertThrows(IllegalArgumentException.class, () -> {
-                    Arena scope = Arena.ofAuto();
-                    scope.allocate(7, 1)
-                            .elements(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
+        assertThrows(IllegalArgumentException.class, () -> {
+                Arena scope = Arena.ofAuto();
+                scope.allocate(7, 1)
+                        .elements(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
         });
     }
 

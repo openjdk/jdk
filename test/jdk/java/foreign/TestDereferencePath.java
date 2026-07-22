@@ -37,7 +37,6 @@ import java.lang.foreign.ValueLayout;
 
 import java.lang.invoke.VarHandle;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -147,21 +146,21 @@ public class TestDereferencePath {
 
     @Test
     void testBadDerefInSelect() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             A.select(PathElement.groupElement("b"), PathElement.dereferenceElement());
         });
     }
 
     @Test
     void testBadDerefInOffset() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             A.byteOffset(PathElement.groupElement("b"), PathElement.dereferenceElement());
         });
     }
 
     @Test
     void testBadDerefInSlice() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             A.sliceHandle(PathElement.groupElement("b"), PathElement.dereferenceElement());
         });
     }
@@ -172,17 +171,17 @@ public class TestDereferencePath {
 
     @Test
     void badDerefAddressNoTarget() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             A_MULTI_NO_TARGET.varHandle(PathElement.groupElement("bs"), PathElement.dereferenceElement());
         });
     }
 
     @Test
     void badDerefMisAligned() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MemoryLayout struct = MemoryLayout.structLayout(
                     ValueLayout.ADDRESS.withTargetLayout(ValueLayout.JAVA_INT).withName("x"));
-            
+
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment segment = arena.allocate(struct.byteSize() + 1, struct.byteAlignment()).asSlice(1);
                 VarHandle vhX = struct.varHandle(PathElement.groupElement("x"), PathElement.dereferenceElement());

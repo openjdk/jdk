@@ -44,7 +44,6 @@ import java.util.function.Supplier;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -57,7 +56,7 @@ public class TestSegments {
     @ParameterizedTest
     @MethodSource("sizesAndAlignments")
     public void testBadAllocateAlign(long size, long align) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Arena.ofAuto().allocate(size, align);
         });
     }
@@ -101,14 +100,14 @@ public class TestSegments {
 
 
     @Test(expectedExceptions = { OutOfMemoryError.class,
-                                 IllegalArgumentException.class })
+            IllegalArgumentException.class })
     public void testAllocateTooBig() {
         Arena.ofAuto().allocate(Long.MAX_VALUE, 1);
     }
 
     @Test
     public void testNativeAllocationTooBig() {
-        Assertions.assertThrows(OutOfMemoryError.class, () -> {
+        assertThrows(OutOfMemoryError.class, () -> {
             Arena scope = Arena.ofAuto();
             MemorySegment segment = scope.allocate(1024L * 1024 * 8 * 2, 1); // 2M
         });
@@ -206,7 +205,7 @@ public class TestSegments {
 
     @Test
     public void testSmallSegmentMax() {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             long offset = (long)Integer.MAX_VALUE + (long)Integer.MAX_VALUE + 2L + 6L; // overflows to 6 when cast to int
             Arena scope = Arena.ofAuto();
             MemorySegment memorySegment = scope.allocate(10, 1);
@@ -216,7 +215,7 @@ public class TestSegments {
 
     @Test
     public void testSmallSegmentMin() {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             long offset = ((long)Integer.MIN_VALUE * 2L) + 6L; // underflows to 6 when cast to int
             Arena scope = Arena.ofAuto();
             MemorySegment memorySegment = scope.allocate(10L, 1);
@@ -384,7 +383,7 @@ public class TestSegments {
     @ParameterizedTest
     @MethodSource("segmentFactories")
     public void testFillIllegalAccessMode(Supplier<MemorySegment> segmentSupplier) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MemorySegment segment = segmentSupplier.get();
             segment.asReadOnly().fill((byte) 0xFF);
         });
@@ -393,7 +392,7 @@ public class TestSegments {
     @ParameterizedTest
     @MethodSource("segmentFactories")
     public void testFromStringIllegalAccessMode(Supplier<MemorySegment> segmentSupplier) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MemorySegment segment = segmentSupplier.get();
             segment.asReadOnly().setString(0, "a");
         });

@@ -30,7 +30,6 @@ import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -89,57 +88,56 @@ public class TestSlices {
 
     @Test
     public void testSliceNegativeOffset() {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             MemorySegment.ofArray(new byte[100]).asSlice(-1);
         });
     }
 
     @Test
     public void testSliceNegativeOffsetGoodSize() {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             MemorySegment.ofArray(new byte[100]).asSlice(-1, 10);
         });
     }
 
     @Test
     public void testSliceGoodOffsetNegativeSize() {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             MemorySegment.ofArray(new byte[100]).asSlice(10, -1);
         });
     }
 
     @Test
     public void testSliceNegativeOffsetGoodLayout() {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             MemorySegment.ofArray(new byte[100]).asSlice(-1, ValueLayout.JAVA_INT);
         });
     }
 
     @Test
     public void testSliceOffsetTooBig() {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             MemorySegment.ofArray(new byte[100]).asSlice(120);
         });
     }
 
     @Test
     public void testSliceOffsetTooBigSizeGood() {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             MemorySegment.ofArray(new byte[100]).asSlice(120, 0);
         });
     }
 
     @Test
     public void testSliceOffsetOkSizeTooBig() {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             MemorySegment.ofArray(new byte[100]).asSlice(0, 120);
         });
     }
 
     @Test
     public void testSliceLayoutTooBig() {
-        Assertions
-                .assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
                     MemorySegment.ofArray(new byte[100])
                             .asSlice(0, MemoryLayout.sequenceLayout(120, ValueLayout.JAVA_BYTE));
         });

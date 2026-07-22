@@ -46,7 +46,6 @@ import static java.lang.foreign.MemoryLayout.PathElement.sequenceElement;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -58,7 +57,7 @@ public class TestLayoutPaths {
 
     @Test
     public void testBadByteSelectFromSeq() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SequenceLayout seq = MemoryLayout.sequenceLayout(5, JAVA_INT);
             seq.byteOffset(groupElement("foo"));
         });
@@ -66,7 +65,7 @@ public class TestLayoutPaths {
 
     @Test
     public void testBadByteSelectFromStruct() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             GroupLayout g = MemoryLayout.structLayout(JAVA_INT);
             g.byteOffset(sequenceElement());
         });
@@ -74,7 +73,7 @@ public class TestLayoutPaths {
 
     @Test
     public void testBadByteSelectFromValue() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SequenceLayout seq = MemoryLayout.sequenceLayout(5, JAVA_INT);
             seq.byteOffset(sequenceElement(), sequenceElement());
         });
@@ -82,7 +81,7 @@ public class TestLayoutPaths {
 
     @Test
     public void testUnknownByteStructField() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             GroupLayout g = MemoryLayout.structLayout(JAVA_INT);
             g.byteOffset(groupElement("foo"));
         });
@@ -90,7 +89,7 @@ public class TestLayoutPaths {
 
     @Test
     public void testTooBigGroupElementIndex() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             GroupLayout g = MemoryLayout.structLayout(JAVA_INT);
             g.byteOffset(groupElement(1));
         });
@@ -98,7 +97,7 @@ public class TestLayoutPaths {
 
     @Test
     public void testNegativeGroupElementIndex() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             GroupLayout g = MemoryLayout.structLayout(JAVA_INT);
             g.byteOffset(groupElement(-1));
         });
@@ -106,7 +105,7 @@ public class TestLayoutPaths {
 
     @Test
     public void testByteOutOfBoundsSeqIndex() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SequenceLayout seq = MemoryLayout.sequenceLayout(5, JAVA_INT);
             seq.byteOffset(sequenceElement(6));
         });
@@ -114,14 +113,14 @@ public class TestLayoutPaths {
 
     @Test
     public void testNegativeSeqIndex() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             sequenceElement(-2);
         });
     }
 
     @Test
     public void testByteNegativeSeqIndex() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SequenceLayout seq = MemoryLayout.sequenceLayout(5, JAVA_INT);
             seq.byteOffset(sequenceElement(-2));
         });
@@ -129,7 +128,7 @@ public class TestLayoutPaths {
 
     @Test
     public void testOutOfBoundsSeqRange() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SequenceLayout seq = MemoryLayout.sequenceLayout(5, JAVA_INT);
             seq.byteOffset(sequenceElement(6, 2));
         });
@@ -137,14 +136,14 @@ public class TestLayoutPaths {
 
     @Test
     public void testNegativeSeqRange() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             sequenceElement(-2, 2);
         });
     }
 
     @Test
     public void testByteNegativeSeqRange() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SequenceLayout seq = MemoryLayout.sequenceLayout(5, JAVA_INT);
             seq.byteOffset(sequenceElement(-2, 2));
         });
@@ -152,7 +151,7 @@ public class TestLayoutPaths {
 
     @Test
     public void testIncompleteAccess() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SequenceLayout seq = MemoryLayout.sequenceLayout(5, MemoryLayout.structLayout(JAVA_INT));
             seq.varHandle(sequenceElement());
         });
@@ -166,10 +165,10 @@ public class TestLayoutPaths {
 
     @Test
     public void testByteOffsetHandleBadRange() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SequenceLayout seq = MemoryLayout.sequenceLayout(5, MemoryLayout.structLayout(JAVA_INT));
             seq.byteOffsetHandle(sequenceElement(5, 1)); // invalid range (starting position is outside the sequence)
-        }); 
+        });
     }
 
     @Test
@@ -373,7 +372,7 @@ public class TestLayoutPaths {
     @MethodSource("testLayouts")
     public void testOffsetHandleOverflow(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
                                          long expectedByteOffset) throws Throwable {
-        Assertions.assertThrows(ArithmeticException.class, () -> {
+        assertThrows(ArithmeticException.class, () -> {
             MethodHandle byteOffsetHandle = layout.byteOffsetHandle(pathElements);
             byteOffsetHandle = byteOffsetHandle.asSpreader(long[].class, indexes.length);
             byteOffsetHandle.invoke(Long.MAX_VALUE, indexes);

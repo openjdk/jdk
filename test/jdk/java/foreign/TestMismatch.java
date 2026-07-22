@@ -41,7 +41,6 @@ import java.util.stream.Stream;
 
 import static java.lang.System.out;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
@@ -63,7 +62,7 @@ public class TestMismatch {
     @ParameterizedTest
     @MethodSource("slices")
     public void testNegativeSrcFromOffset(MemorySegment s1, MemorySegment s2) {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             MemorySegment.mismatch(s1, -1, 0, s2, 0, 0);
         });
     }
@@ -71,7 +70,7 @@ public class TestMismatch {
     @ParameterizedTest
     @MethodSource("slices")
     public void testNegativeDstFromOffset(MemorySegment s1, MemorySegment s2) {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             MemorySegment.mismatch(s1, 0, 0, s2, -1, 0);
         });
     }
@@ -79,7 +78,7 @@ public class TestMismatch {
     @ParameterizedTest
     @MethodSource("slices")
     public void testNegativeSrcToOffset(MemorySegment s1, MemorySegment s2) {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             MemorySegment.mismatch(s1, 0, -1, s2, 0, 0);
         });
     }
@@ -87,7 +86,7 @@ public class TestMismatch {
     @ParameterizedTest
     @MethodSource("slices")
     public void testNegativeDstToOffset(MemorySegment s1, MemorySegment s2) {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             MemorySegment.mismatch(s1, 0, 0, s2, 0, -1);
         });
     }
@@ -95,7 +94,7 @@ public class TestMismatch {
     @ParameterizedTest
     @MethodSource("slices")
     public void testNegativeSrcLength(MemorySegment s1, MemorySegment s2) {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             MemorySegment.mismatch(s1, 3, 2, s2, 0, 0);
         });
     }
@@ -103,7 +102,7 @@ public class TestMismatch {
     @ParameterizedTest
     @MethodSource("slices")
     public void testNegativeDstLength(MemorySegment s1, MemorySegment s2) {
-        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
             MemorySegment.mismatch(s1, 0, 0, s2, 3, 2);
         });
     }

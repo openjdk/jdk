@@ -34,7 +34,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.LongStream;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -59,7 +58,7 @@ public class TestReshape {
 
     @Test
     public void testInvalidReshape() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
             seq.reshape(3, 2);
         });
@@ -67,7 +66,7 @@ public class TestReshape {
 
     @Test
     public void testBadReshapeInference() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
             seq.reshape(-1, -1);
         });
@@ -75,7 +74,7 @@ public class TestReshape {
 
     @Test
     public void testBadReshapeParameterZero() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
             seq.reshape(0, 4);
         });
@@ -83,7 +82,7 @@ public class TestReshape {
 
     @Test
     public void testBadReshapeParameterNegative() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
             seq.reshape(-2, 2);
         });

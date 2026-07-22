@@ -36,7 +36,6 @@ import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -50,7 +49,7 @@ public class TestNULLAddress {
 
     @Test
     public void testNULLLinking() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             LINKER.downcallHandle(
                     MemorySegment.NULL,
                     FunctionDescriptor.ofVoid());
@@ -59,7 +58,7 @@ public class TestNULLAddress {
 
     @Test
     public void testNULLVirtual() throws Throwable {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             MethodHandle mh = LINKER.downcallHandle(
                     FunctionDescriptor.ofVoid());
             mh.invokeExact(MemorySegment.NULL);

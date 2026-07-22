@@ -48,7 +48,6 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -122,7 +121,7 @@ public class TestArrays {
     @ParameterizedTest
     @MethodSource("elemLayouts")
     public void testTooBigForArray(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
-        Assertions.assertThrows(IllegalStateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             MemoryLayout seq = MemoryLayout.sequenceLayout((Integer.MAX_VALUE * layout.byteSize()) + 1, layout);
             //do not really allocate here, as it's way too much memory
             MemorySegment segment = MemorySegment.NULL.reinterpret(seq.byteSize());
@@ -133,7 +132,7 @@ public class TestArrays {
     @ParameterizedTest
     @MethodSource("elemLayouts")
     public void testBadSize(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
-        Assertions.assertThrows(IllegalStateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             if (layout.byteSize() == 1) throw new IllegalStateException(); //make it fail
             try (Arena arena = Arena.ofConfined()) {
                 long byteSize = layout.byteSize() + 1;
@@ -147,7 +146,7 @@ public class TestArrays {
     @ParameterizedTest
     @MethodSource("elemLayouts")
     public void testArrayFromClosedSegment(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
-        Assertions.assertThrows(IllegalStateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             Arena arena = Arena.ofConfined();
             MemorySegment segment = arena.allocate(layout);
             arena.close();
