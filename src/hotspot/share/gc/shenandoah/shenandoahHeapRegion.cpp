@@ -920,14 +920,11 @@ public:
         // be visited by one thread.
         _cards->register_object_without_lock(current);
         _cards->mark_range_as_dirty(current, object_size);
-      }
 
-      if (_previous != current) {
-        CollectedHeap::fill_with_object(_previous, pointer_delta(current, _previous));
-        if (_cards != nullptr) {
-          // We created a filler object that could span multiple original objects, we know there are
-          // no pointers in these filler objects, so we don't need to dirty cards, but we still need
-          // to register the object.
+        if (_previous != current) {
+          // We create a filler object to keep the old region parsable. We know there are no pointers in
+          // these filler objects, so we don't need to dirty cards, but we still need to register the object.
+          CollectedHeap::fill_with_object(_previous, pointer_delta(current, _previous));
           _cards->register_object_without_lock(_previous);
         }
       }
