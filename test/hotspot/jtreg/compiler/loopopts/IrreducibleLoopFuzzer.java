@@ -100,7 +100,9 @@ public class IrreducibleLoopFuzzer {
                 }
 
                 try {
-                    Templated.class.getMethod(args[0]).invoke(null);
+                    for (int i = 0; i < 10_000; i++) {
+                        Templated.class.getMethod(args[0]).invoke(null);
+                    }
                 } catch (InvocationTargetException e) {
                     throw e.getCause();
                 }
@@ -112,14 +114,24 @@ public class IrreducibleLoopFuzzer {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
+        List<String> methodNames = IntStream.range(0, 10)
+            .mapToObj(i -> "test" + i)
+            .toList();
+
         // Add a java source file.
-        comp.addJasmSourceCode("compiler.loopopts.templated.Templated", generate());
+        comp.addJasmSourceCode("compiler.loopopts.templated.Templated", generate(methodNames));
         comp.addJavaSourceCode("compiler.loopopts.templated.Runner", RUNNER_SOURCE);
 
         // Compile the source file.
         comp.compile();
 
-        runMethod(comp, "test");
+        int timeoutCount = 0;
+        for (String methodName : methodNames) {
+            if (!runMethod(comp, methodName)) {
+                timeoutCount++;
+            }
+        }
+        System.out.println("Completed. Timeouts " + timeoutCount + " / " + methodNames.size());
     }
 
     private static boolean runMethod(CompileFramework comp, String methodName) throws Exception {
@@ -268,13 +280,15 @@ public class IrreducibleLoopFuzzer {
     }
 
     static class Method {
+        private final String methodName;
         private final Block entry;
         private final List<Block> blocks = new ArrayList<Block>();
 
         private final List<Local> locals = new ArrayList<Local>();
         private final int localsSize;
 
-        public Method() {
+        public Method(String methodName, int mutations) {
+            this.methodName = methodName;
             this.entry = new Block();
             blocks.add(this.entry);
 
@@ -286,6 +300,10 @@ public class IrreducibleLoopFuzzer {
                 j += t.slots();
             }
             this.localsSize = j;
+
+            for (int i = 0; i < mutations; i++) {
+                mutate();
+            }
         }
 
         public void mutate() {
@@ -399,9 +417,10 @@ public class IrreducibleLoopFuzzer {
         public Object token() {
 
             var template = Template.make(() -> scope(
+                let("methodName", methodName),
                 let("localsSize", localsSize),
                 """
-                public static Method test:"()V"
+                public static Method #methodName:"()V"
                 stack 20 locals #localsSize
                 {
                 // Init locals:
@@ -423,19 +442,16 @@ public class IrreducibleLoopFuzzer {
         }
     }
 
-    public static String generate() {
-        Method method = new Method();
-        for (int i = 0; i < 10; i++) {
-            method.mutate();
-        }
-
+    public static String generate(List<String> methodNames) {
         var template = Template.make(() -> scope(
             """
             package compiler/loopopts/templated;
 
             super public class Templated {
             """,
-            method.token(),
+            methodNames.stream().map(methodName ->
+                new Method(methodName, 10).token()
+            ).toList(),
             """
             }
             """
