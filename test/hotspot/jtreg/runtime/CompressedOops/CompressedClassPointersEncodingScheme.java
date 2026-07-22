@@ -102,14 +102,18 @@ public class CompressedClassPointersEncodingScheme {
         // Compact Object Header Mode:
         // We expect the VM to chose the smallest possible shift value needed to cover the encoding range.
         // We expect the encoding Base to start at the class space start - but to enforce that,
-        // we choose unsuited to even shift-extended zero-based mode.
+        // we choose a base unsuited to even shift-extended zero-based mode.
         forceAddress = 32 * G;
+        int minShift = 6;
+        if (Platform.isPPC()) minShift = 7;
+        if (Platform.isS390x()) minShift = 8;
 
-        test(forceAddress, true, 128 * M, forceAddress, 6);
-        test(forceAddress, true, 256 * M, forceAddress, 7);
-        test(forceAddress, true, 512 * M, forceAddress, 8);
-        test(forceAddress, true, G, forceAddress, 9);
-        test(forceAddress, true, 3 * G, forceAddress, 10);
+        test(forceAddress, true, 128 * M, forceAddress, Math.max(minShift, 5));
+        test(forceAddress, true, 256 * M, forceAddress, Math.max(minShift, 6));
+        test(forceAddress, true, 512 * M, forceAddress, Math.max(minShift, 7));
+        test(forceAddress, true, G, forceAddress, Math.max(minShift, 8));
+        test(forceAddress, true, 2 * G, forceAddress, Math.max(minShift, 9));
+        test(forceAddress, true, 4 * G, forceAddress, 10);
 
         // Test a "crooked" base address:
         // - just aligned enough to pass metaspace reserve alignment test of 16MB.
