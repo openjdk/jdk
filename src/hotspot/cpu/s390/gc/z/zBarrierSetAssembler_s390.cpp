@@ -141,18 +141,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   BLOCK_COMMENT("ZBarrierSetAssembler::load_at {");
 
-  Register scratch = temp1;
-  if (temp1 == dst) {
-    scratch = Z_tmp_1;
-    int nbytes_save = 3 * BytesPerWord;       // SP, PC, scratch
-    int offset = 0;
-
-    __ push_frame(nbytes_save);               offset += 8;
-    __ save_return_pc();                      offset += 8;
-    __ z_stg(scratch, offset, Z_SP);
-  }
-
-  assert_different_registers(scratch, dst);
+  assert_different_registers(temp1, dst);
 
   Label done;
   Label uncolor;
@@ -162,10 +151,10 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   //
 
   // Load adress
-  __ z_lay(scratch, src);
+  __ z_lay(temp1, src);
 
   // Load oop at address
-  __ z_lg(dst, 0, scratch);
+  __ z_lg(dst, 0, temp1);
   __ z_lgr(Z_R0_scratch, dst);
 
   const bool on_non_strong =
@@ -189,7 +178,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
     // Call VM
     ZRuntimeCallSpill rcs(masm, dst);
     __ lgr_if_needed(Z_ARG1, dst);
-    __ z_lgr(Z_ARG2, scratch);
+    __ z_lgr(Z_ARG2, temp1);
     __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
 
   }
@@ -211,12 +200,6 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   }
 
   __ bind(done);
-
-  if (temp1 == dst) {
-    __ z_lg(scratch, 16, Z_SP);
-    __ restore_return_pc();
-    __ pop_frame();
-  }
 
   BLOCK_COMMENT("} ZBarrierSetAssembler::load_at");
 }

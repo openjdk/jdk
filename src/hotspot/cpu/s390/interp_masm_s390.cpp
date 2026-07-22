@@ -501,7 +501,7 @@ void InterpreterMacroAssembler::load_method_entry(Register cache, Register index
 }
 
 // Load object from cpool->resolved_references(index).
-void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index) {
+void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index, Register tmp) {
   assert_different_registers(result, index);
   get_constant_pool(result);
 
@@ -509,17 +509,16 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   //  - from field index to resolved_references() index and
   //  - from word index to byte offset.
   // Since this is a java object, it is potentially compressed.
-  Register tmp = index;  // reuse
   z_sllg(index, index, LogBytesPerHeapOop); // Offset into resolved references array.
   // Load pointer for resolved_references[] objArray.
   z_lg(result, in_bytes(ConstantPool::cache_offset()), result);
   z_lg(result, in_bytes(ConstantPoolCache::resolved_references_offset()), result);
-  resolve_oop_handle(result, Z_R1_scratch, Z_R0_scratch); // Load resolved references array itself.
+  resolve_oop_handle(result, tmp, Z_R0_scratch); // Load resolved references array itself.
 #ifdef ASSERT
   NearLabel index_ok;
   z_lgf(Z_R0, Address(result, arrayOopDesc::length_offset_in_bytes()));
   z_sllg(Z_R0, Z_R0, LogBytesPerHeapOop);
-  compare64_and_branch(tmp, Z_R0, Assembler::bcondLow, index_ok);
+  compare64_and_branch(index, Z_R0, Assembler::bcondLow, index_ok);
   stop("resolved reference index out of bounds", 0x09256);
   bind(index_ok);
 #endif
