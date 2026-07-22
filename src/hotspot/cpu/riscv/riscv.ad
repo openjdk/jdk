@@ -10403,7 +10403,7 @@ instruct cmovI_cmpU_zero(iRegINoSp dst, immI0 src, iRegI op1, iRegI op2, cmpOpU 
 
 instruct cmovI_cmpN_zero(iRegINoSp dst, immI0 src, iRegN op1, iRegN op2, cmpOpU cop) %{
   match(Set dst (CMoveI (Binary cop (CmpN op1 op2)) (Binary dst src)));
-  ins_cost(ALU_COST * 2);
+  ins_cost(ALU_COST + BRANCH_COST);
 
   format %{ "CMoveI $dst, ($op1 $cop $op2), $dst, zr #@cmovI_cmpN_zero" %}
 
@@ -10418,7 +10418,7 @@ instruct cmovI_cmpN_zero(iRegINoSp dst, immI0 src, iRegN op1, iRegN op2, cmpOpU 
 
 instruct cmovI_cmpP_zero(iRegINoSp dst, immI0 src, iRegP op1, iRegP op2, cmpOpU cop) %{
   match(Set dst (CMoveI (Binary cop (CmpP op1 op2)) (Binary dst src)));
-  ins_cost(ALU_COST * 2);
+  ins_cost(ALU_COST + BRANCH_COST);
 
   format %{ "CMoveI $dst, ($op1 $cop $op2), $dst, zr #@cmovI_cmpP_zero" %}
 
