@@ -355,8 +355,30 @@ public class TestSegmentAllocators {
                 SegmentAllocator allocator = allocationFactory.allocator(100, arena);
                 MemorySegment address = allocationFunction.allocate(allocator, layout, arr);
                 Z found = arrayHelper.toArray(address, layout);
-                assertEquals(arr, found);
+                assertArraysEqual(arr, found);
             }
+        }
+    }
+
+    private static void assertArraysEqual(Object arr, Object found) {
+        //in JUnit, assertEquals will really only call .equals, and that does not work well for arrays
+        //there's a set of explicit assertArrayEquals method, but we need "sharp" types for that to work(??):
+        if (arr instanceof byte[]) {
+            assertArrayEquals((byte[]) arr, (byte[]) found);
+        } else if (arr instanceof char[]) {
+            assertArrayEquals((char[]) arr, (char[]) found);
+        } else if (arr instanceof short[]) {
+            assertArrayEquals((short[]) arr, (short[]) found);
+        } else if (arr instanceof int[]) {
+            assertArrayEquals((int[]) arr, (int[]) found);
+        } else if (arr instanceof long[]) {
+            assertArrayEquals((long[]) arr, (long[]) found);
+        } else if (arr instanceof float[]) {
+            assertArrayEquals((float[]) arr, (float[]) found);
+        } else if (arr instanceof double[]) {
+            assertArrayEquals((double[]) arr, (double[]) found);
+        } else {
+            assertArrayEquals((Object[]) arr, (Object[]) found);
         }
     }
 

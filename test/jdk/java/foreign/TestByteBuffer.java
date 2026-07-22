@@ -72,7 +72,8 @@ import sun.nio.ch.DirectBuffer;
 import static java.lang.foreign.ValueLayout.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Assumptions;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -330,8 +331,8 @@ public class TestByteBuffer {
                     assertEquals(segment.isReadOnly(), byteBuffer.isReadOnly());
                     assertTrue(byteBuffer.isDirect());
                 } catch (IOException e) {
-                    if (e.getMessage().equals("Function not implemented"))
-                        throw new SkipException(e.getMessage(), e);
+                    assumeFalse(e.getMessage().equals("Function not implemented"),
+                            e.getMessage());
                 } finally {
                     if (arena.scope() != Arena.global().scope()) {
                         arena.close();
@@ -345,7 +346,7 @@ public class TestByteBuffer {
 
     @Test
     public void testLargeMappedSegment() throws Throwable {
-        Assumptions.assumeFalse(System.getProperty("sun.arch.data.model").equals("32"), "large mapped files not supported on 32-bit systems");
+        assumeFalse(System.getProperty("sun.arch.data.model").equals("32"), "large mapped files not supported on 32-bit systems");
 
         File f = new File("testLargeMappedSegment.out");
         f.createNewFile();
@@ -362,8 +363,8 @@ public class TestByteBuffer {
             segment.unload();
             segment.isLoaded();
         } catch(IOException e) {
-            if (e.getMessage().equals("Function not implemented"))
-                throw new SkipException(e.getMessage(), e);
+            assumeFalse(e.getMessage().equals("Function not implemented"),
+                    e.getMessage());
         }
     }
 
@@ -380,7 +381,7 @@ public class TestByteBuffer {
     }
 
     static void checkByteArrayAlignment(MemoryLayout layout) {
-        Assumptions.assumeFalse(layout.byteSize() > 4
+        assumeFalse(layout.byteSize() > 4
                 && System.getProperty("sun.arch.data.model").equals("32"), "avoid unaligned access on 32-bit system");
     }
 

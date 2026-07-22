@@ -49,6 +49,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -154,7 +155,7 @@ public class TestSocketChannels extends AbstractChannelsTest {
             Arena scope = drop;
             var segment = scope.allocate(10, 1);
             ByteBuffer bb = segment.asByteBuffer();
-            List<ThrowingRunnable> ioOps = List.of(
+            List<Executable> ioOps = List.of(
                     () -> channel.write(bb),
                     () -> channel.read(bb),
                     () -> channel.write(new ByteBuffer[] {bb}),

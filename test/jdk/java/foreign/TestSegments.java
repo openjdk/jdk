@@ -98,11 +98,10 @@ public class TestSegments {
         }
     }
 
-
-    @Test(expectedExceptions = { OutOfMemoryError.class,
-            IllegalArgumentException.class })
+    @Test
     public void testAllocateTooBig() {
-        Arena.ofAuto().allocate(Long.MAX_VALUE, 1);
+        assertThrows(OutOfMemoryError.class,
+                () -> Arena.ofAuto().allocate(Long.MAX_VALUE, 1));
     }
 
     @Test
@@ -269,7 +268,7 @@ public class TestSegments {
         };
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("scopes")
     public void testIsAccessibleBy(Arena arena, boolean isConfined) {
         MemorySegment segment = MemorySegment.NULL.reinterpret(arena, null);

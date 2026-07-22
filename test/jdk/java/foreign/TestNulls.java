@@ -191,7 +191,7 @@ public class TestNulls {
         addReplacements(Set.class, null, Stream.of(new Object[] { null }).collect(Collectors.toSet()));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(autoCloseArguments = false)
     @MethodSource("cases")
     public void testNulls(String testName, Method meth, Object receiver, Object[] args) {
         try {
