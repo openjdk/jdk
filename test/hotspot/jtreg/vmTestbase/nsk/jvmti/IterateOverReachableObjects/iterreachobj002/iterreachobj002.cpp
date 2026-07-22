@@ -364,6 +364,16 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
                 }
             }
 
+            if (callbackAborted) break;
+
+            if (objectCountMax != objectTagCount) {
+                NSK_COMPLAIN2("objectCountMax: " JLONG_FORMAT " must match objectTagCount: " JLONG_FORMAT
+                              " after second call to IterateOverReachableObjects\n",
+                              objectCountMax, objectTagCount);
+                nsk_jvmti_setFailStatus();
+                break;
+            }
+
             if (numberOfDeallocatedFromCallbacksDescriptors == 0) {
                 NSK_COMPLAIN1("Deallocate func. hasn't been called from IterateOverReachableObjects'callbacks. "
                         "numberOfDeallocatedFromCallbacksDescriptors = %d\n", numberOfDeallocatedFromCallbacksDescriptors);
