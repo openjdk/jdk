@@ -48,7 +48,7 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   if (result == nullptr) {
     constexpr uintptr_t from = nth_bit<uintptr_t>(32);
     const uintptr_t to = os::vm_page_table_expansion_point(); // prevent accidentally expanding the page table
-    result = reserve_address_space_X(from, to, size, Metaspace::reserve_alignment(), aslr);
+    result = reserve_address_space_X(from, to, size, nth_bit<uintptr_t>(32), aslr);
   }
 
   return result;
