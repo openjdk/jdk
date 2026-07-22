@@ -915,7 +915,7 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
         }
         break;
       } else {
-        // handling of null-free fields
+        // handling of null free inline type
         _out->print("%s", fd->signature()->as_quoted_ascii());
         ResetNoHandleMark rnhm;
         Thread* THREAD = Thread::current();

@@ -96,20 +96,18 @@ public class TestReplayV4 extends DumpReplayBase {
             reDumpingFlags[defaultReplayRunFlags.length] = "-XX:CompileCommand=option," + "*::*" + ",bool,DumpReplay,true";
             reDumpingFlags[defaultReplayRunFlags.length+1] = "-XX:CompileCommand=PrintCompilation,*::*";
             Asserts.assertEQ(getReplayFiles().size(), 1);
-            getReplayFiles().forEach(System.out::println);
             File firstReplay = getReplayFiles().getFirst();
             positiveTest(reDumpingFlags);
-            List<File> replayFiles2;
+            List<File> replayFilesPostRun;
             try (Stream<Path> files = Files.list(Paths.get("."))) {
-                replayFiles2 = files.map(Path::toFile).filter(f -> f.getName().startsWith(DUMP_REPLAY_PATTERN)).toList();
+                replayFilesPostRun = files.map(Path::toFile).filter(f -> f.getName().startsWith(DUMP_REPLAY_PATTERN)).toList();
             }
-            replayFiles2.forEach(System.out::println);
-            Asserts.assertEQ(replayFiles2.size(), 2);
-            Asserts.assertTrue(replayFiles2.contains(firstReplay));
-            var secondReplayOpt = replayFiles2.stream().filter(file -> !file.equals(firstReplay)).findAny();
+            Asserts.assertEQ(replayFilesPostRun.size(), 2);
+            Asserts.assertTrue(replayFilesPostRun.contains(firstReplay));
+            var secondReplayOpt = replayFilesPostRun.stream().filter(file -> !file.equals(firstReplay)).findAny();
             Asserts.assertTrue(secondReplayOpt.isPresent());
             var secondReplay = secondReplayOpt.get();
-            System.out.println("first="+firstReplay+"; second="+secondReplay);
+            System.out.println("Replay read by the second run: "+firstReplay+"; replay produced: "+secondReplay);
 
             firstParsedReplay = ReplayFile.ParsedReplayFile.parse(firstReplay);
             secondParsedReplay = ReplayFile.ParsedReplayFile.parse(secondReplay);
