@@ -439,9 +439,9 @@ void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
 }
 
 // Normal cycle goes via all concurrent phases.
-// There are also a shortcut through the normal cycle: immediate garbage shortcut, when
-// heuristics says there are no regions to compact, and all the collection comes from immediately
-// reclaimable regions.
+// There is also a shortcut through the normal cycle: immediate garbage shortcut. When
+// heuristics say there are no regions to compact, and all the collection comes from immediately
+// reclaimable regions, Shenandoah can skip the evacuation phase.
 //
 // ................................................................................................
 //

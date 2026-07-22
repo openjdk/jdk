@@ -222,10 +222,9 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // any of the concurrent phases, the allocating thread will block until the concurrent
   // cycle completes.
   //
-  // There are also a shortcut through the normal cycle: immediate garbage shortcut, when
-  // heuristics says there are no regions to compact, and all the collection comes from immediately
-  // reclaimable regions.
-
+  // There is also a shortcut through the normal cycle: immediate garbage shortcut. When
+  // heuristics say there are no regions to compact, and all the collection comes from immediately
+  // reclaimable regions, Shenandoah can skip the evacuation phase.
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (check_cancellation()) {
     log_info(gc)("Cancelled");
