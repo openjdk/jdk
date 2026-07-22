@@ -588,6 +588,12 @@ public:
   void vminmax_fp16_avx10_2(int opcode, XMMRegister dst, XMMRegister src1, Address src2,
                             KRegister ktmp, int vlen_enc);
 
+  void vminmax_fp16_avx10_2_masked(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                   KRegister mask, int vlen_enc);
+
+  void vminmax_fp16_avx10_2_masked(int opcode, XMMRegister dst, XMMRegister src1, Address src2,
+                                   KRegister mask, int vlen_enc);
+
   void sminmax_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
                     KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2);
 

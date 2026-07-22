@@ -4789,6 +4789,18 @@ void C2_MacroAssembler::evmasked_op(int ideal_opc, BasicType eType, KRegister ma
       evpfma213ps(dst, mask, src1, src2, merge, vlen_enc); break;
     case Op_FmaVD:
       evpfma213pd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AddVHF:
+      evaddph(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SubVHF:
+      evsubph(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MulVHF:
+      evmulph(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_DivVHF:
+      evdivph(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SqrtVHF:
+      evsqrtph(dst, mask, src2, merge, vlen_enc); break;
+    case Op_FmaVHF:
+      evfmadd213ph(dst, mask, src1, src2, merge, vlen_enc); break;
     case Op_VectorRearrange:
       evperm(eType, dst, mask, src2, src1, merge, vlen_enc); break;
     case Op_LShiftVS:
@@ -4878,6 +4890,16 @@ void C2_MacroAssembler::evmasked_op(int ideal_opc, BasicType eType, KRegister ma
       evpfma213ps(dst, mask, src1, src2, merge, vlen_enc); break;
     case Op_FmaVD:
       evpfma213pd(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_AddVHF:
+      evaddph(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_SubVHF:
+      evsubph(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_MulVHF:
+      evmulph(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_DivVHF:
+      evdivph(dst, mask, src1, src2, merge, vlen_enc); break;
+    case Op_FmaVHF:
+      evfmadd213ph(dst, mask, src1, src2, merge, vlen_enc); break;
     case Op_MaxV:
       evpmaxs(eType, dst, mask, src1, src2, merge, vlen_enc); break;
     case Op_MinV:
@@ -7158,6 +7180,26 @@ void C2_MacroAssembler::vminmax_fp16_avx10_2(int opcode, XMMRegister dst, XMMReg
     assert(opcode == Op_MinVHF, "");
     // dst = min(src1, src2)
     evminmaxph(dst, ktmp, src1, src2, true, AVX10_2_MINMAX_MIN_COMPARE_SIGN, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::vminmax_fp16_avx10_2_masked(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                                    KRegister mask, int vlen_enc) {
+  if (opcode == Op_MaxVHF) {
+    evminmaxph(dst, mask, src1, src2, /*merge*/ true, AVX10_2_MINMAX_MAX_COMPARE_SIGN, vlen_enc);
+  } else {
+    assert(opcode == Op_MinVHF, "");
+    evminmaxph(dst, mask, src1, src2, /*merge*/ true, AVX10_2_MINMAX_MIN_COMPARE_SIGN, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::vminmax_fp16_avx10_2_masked(int opcode, XMMRegister dst, XMMRegister src1, Address src2,
+                                                    KRegister mask, int vlen_enc) {
+  if (opcode == Op_MaxVHF) {
+    evminmaxph(dst, mask, src1, src2, /*merge*/ true, AVX10_2_MINMAX_MAX_COMPARE_SIGN, vlen_enc);
+  } else {
+    assert(opcode == Op_MinVHF, "");
+    evminmaxph(dst, mask, src1, src2, /*merge*/ true, AVX10_2_MINMAX_MIN_COMPARE_SIGN, vlen_enc);
   }
 }
 

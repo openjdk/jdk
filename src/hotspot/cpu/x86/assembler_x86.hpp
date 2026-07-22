@@ -2753,6 +2753,18 @@ private:
   void evsqrtph(XMMRegister dst, XMMRegister src1, int vector_len);
   void evsqrtph(XMMRegister dst, Address src1, int vector_len);
 
+  void evaddph(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evaddph(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+  void evsubph(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evsubph(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+  void evmulph(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evmulph(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+  void evdivph(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evdivph(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+  void evsqrtph(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evfmadd213ph(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evfmadd213ph(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+
   // Sub packed integers
   void psubb(XMMRegister dst, XMMRegister src);
   void psubw(XMMRegister dst, XMMRegister src);

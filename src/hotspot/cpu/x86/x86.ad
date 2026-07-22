@@ -3700,6 +3700,19 @@ bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType
     case Op_StoreVectorScatterMasked:
       return true;
 
+    case Op_AddVHF:
+    case Op_SubVHF:
+    case Op_MulVHF:
+    case Op_DivVHF:
+    case Op_SqrtVHF:
+    case Op_FmaVHF:
+      return true;
+
+    case Op_MinVHF:
+    case Op_MaxVHF:
+      // Only AVX10.2 provides a native predicated FP16 min/max.
+      return VM_Version::supports_avx10_2();
+
     case Op_UMinV:
     case Op_UMaxV:
       if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
@@ -24997,6 +25010,112 @@ instruct vector_minmax_HF_reg(vec dst, vec src1, vec src2, kReg ktmp, vec xtmp1,
     int opcode = this->ideal_Opcode();
     __ vminmax_fp16(opcode, $dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, $ktmp$$KRegister,
                     $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_binOps_HF_reg_masked(vec dst, vec src2, kReg mask)
+%{
+  match(Set dst (AddVHF (Binary dst src2) mask));
+  match(Set dst (SubVHF (Binary dst src2) mask));
+  match(Set dst (MulVHF (Binary dst src2) mask));
+  match(Set dst (DivVHF (Binary dst src2) mask));
+  format %{ "vector_binop_fp16_masked $dst, $dst, $src2, $mask" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int opc = this->ideal_Opcode();
+    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
+                   $dst$$XMMRegister, $src2$$XMMRegister, true, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_binOps_HF_mem_masked(vec dst, memory src2, kReg mask)
+%{
+  match(Set dst (AddVHF (Binary dst (VectorReinterpret (LoadVector src2))) mask));
+  match(Set dst (SubVHF (Binary dst (VectorReinterpret (LoadVector src2))) mask));
+  match(Set dst (MulVHF (Binary dst (VectorReinterpret (LoadVector src2))) mask));
+  match(Set dst (DivVHF (Binary dst (VectorReinterpret (LoadVector src2))) mask));
+  format %{ "vector_binop_fp16_mem_masked $dst, $dst, $src2, $mask" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int opc = this->ideal_Opcode();
+    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
+                   $dst$$XMMRegister, $src2$$Address, true, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_sqrt_HF_masked(vec dst, kReg mask)
+%{
+  match(Set dst (SqrtVHF dst mask));
+  format %{ "vector_sqrt_fp16_masked $dst, $mask" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int opc = this->ideal_Opcode();
+    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
+                   $dst$$XMMRegister, $dst$$XMMRegister, true, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_fma_HF_reg_masked(vec dst, vec src2, vec src3, kReg mask)
+%{
+  match(Set dst (FmaVHF (Binary dst src2) (Binary src3 mask)));
+  format %{ "vector_fma_fp16_masked $dst, $src2, $src3, $mask\t# $dst = $dst * $src2 + $src3 fma packedH masked" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int opc = this->ideal_Opcode();
+    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
+                   $src2$$XMMRegister, $src3$$XMMRegister, true, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_fma_HF_mem_masked(vec dst, vec src2, memory src3, kReg mask)
+%{
+  match(Set dst (FmaVHF (Binary dst src2) (Binary (VectorReinterpret (LoadVector src3)) mask)));
+  format %{ "vector_fma_fp16_mem_masked $dst, $src2, $src3, $mask\t# $dst = $dst * $src2 + $src3 fma packedH masked" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int opc = this->ideal_Opcode();
+    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
+                   $src2$$XMMRegister, $src3$$Address, true, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_minmax_HF_reg_masked_avx10_2(vec dst, vec src2, kReg mask)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MinVHF (Binary dst src2) mask));
+  match(Set dst (MaxVHF (Binary dst src2) mask));
+  format %{ "vector_min_max_fp16_masked $dst, $dst, $src2, $mask" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int opcode = this->ideal_Opcode();
+    __ vminmax_fp16_avx10_2_masked(opcode, $dst$$XMMRegister, $dst$$XMMRegister, $src2$$XMMRegister,
+                                   $mask$$KRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_minmax_HF_mem_masked_avx10_2(vec dst, memory src2, kReg mask)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MinVHF (Binary dst (VectorReinterpret (LoadVector src2))) mask));
+  match(Set dst (MaxVHF (Binary dst (VectorReinterpret (LoadVector src2))) mask));
+  format %{ "vector_min_max_fp16_mem_masked $dst, $dst, $src2, $mask" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int opcode = this->ideal_Opcode();
+    __ vminmax_fp16_avx10_2_masked(opcode, $dst$$XMMRegister, $dst$$XMMRegister, $src2$$Address,
+                                   $mask$$KRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
