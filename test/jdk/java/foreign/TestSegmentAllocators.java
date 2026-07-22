@@ -25,12 +25,11 @@
 /*
  * @test
  * @modules java.base/jdk.internal.foreign
- * @run testng/othervm TestSegmentAllocators
+ * @run junit/othervm TestSegmentAllocators
  */
 
 import java.lang.foreign.*;
 
-import org.testng.annotations.*;
 
 import java.lang.foreign.Arena;
 import java.lang.invoke.VarHandle;
@@ -50,14 +49,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestSegmentAllocators {
 
     final static int ELEMS = 128;
 
-    @Test(dataProvider = "scalarAllocations")
     @SuppressWarnings("unchecked")
+    @ParameterizedTest
+    @MethodSource("scalarAllocations")
     public <Z, L extends ValueLayout> void testAllocation(Z value, AllocationFactory allocationFactory, L layout, AllocationFunction<Z, L> allocationFunction, Function<MemoryLayout, VarHandle> handleFactory) {
         layout = (L)layout.withByteAlignment(layout.byteSize());
         L[] layouts = (L[])new ValueLayout[] {
@@ -78,10 +84,10 @@ public class TestSegmentAllocators {
                     SegmentAllocator allocator = allocationFactory.allocator(alignedLayout.byteSize() * ELEMS, arena);
                     for (int i = 0; i < elems; i++) {
                         MemorySegment address = allocationFunction.allocate(allocator, alignedLayout, value);
-                        assertEquals(address.byteSize(), alignedLayout.byteSize());
+                        assertEquals(alignedLayout.byteSize(), address.byteSize());
                         addressList.add(address);
                         VarHandle handle = handleFactory.apply(alignedLayout);
-                        assertEquals(value, handle.get(address, 0L));
+                        assertEquals(handle.get(address, 0L), value);
                     }
                     boolean isBound = allocationFactory.isBound();
                     try {
@@ -102,14 +108,18 @@ public class TestSegmentAllocators {
 
     static final int SIZE_256M = 1024 * 1024 * 256;
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testReadOnlySlicingAllocator() {
-        SegmentAllocator.slicingAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            SegmentAllocator.slicingAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testReadOnlyPrefixAllocator() {
-        SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+        });
     }
 
     @Test
@@ -119,9 +129,9 @@ public class TestSegmentAllocators {
                 SegmentAllocator allocator = SegmentAllocator.slicingAllocator(arena.allocate(i * 2 + 1));
                 MemorySegment address = allocator.allocate(i, i);
                 //check size
-                assertEquals(address.byteSize(), i);
+                assertEquals(i, address.byteSize());
                 //check alignment
-                assertEquals(address.address() % i, 0);
+                assertEquals(0, address.address() % i);
             }
         }
     }
@@ -135,60 +145,82 @@ public class TestSegmentAllocators {
         }
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationSize(SegmentAllocator allocator) {
-        allocator.allocate(-1);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(-1);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationAlignZero(SegmentAllocator allocator) {
-        allocator.allocate(1, 0);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(1, 0);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationAlignNeg(SegmentAllocator allocator) {
-        allocator.allocate(1, -1);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(1, -1);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationAlignNotPowerTwo(SegmentAllocator allocator) {
-        allocator.allocate(1, 3);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(1, 3);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationArrayNegSize(SegmentAllocator allocator) {
-        allocator.allocate(ValueLayout.JAVA_BYTE, -1);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(ValueLayout.JAVA_BYTE, -1);
+        });
     }
 
-    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("allocators")
     public void testBadAllocationArrayOverflow(SegmentAllocator allocator) {
-        allocator.allocate(ValueLayout.JAVA_LONG,  Long.MAX_VALUE);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            allocator.allocate(ValueLayout.JAVA_LONG,  Long.MAX_VALUE);
+        });
     }
 
-    @Test(expectedExceptions = OutOfMemoryError.class)
+    @Test
     public void testBadArenaNullReturn() {
-        try (Arena arena = Arena.ofConfined()) {
-            arena.allocate(Long.MAX_VALUE, 2);
-        }
+        Assertions.assertThrows(OutOfMemoryError.class, () -> {
+            try (Arena arena = Arena.ofConfined()) {
+                arena.allocate(Long.MAX_VALUE, 2);
+            }
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    @Test
     public void testArenaAllocateFromHeapSegment() {
-        try (Arena arena = Arena.ofConfined()) {
-            var heapSegment = MemorySegment.ofArray(new int[]{1});
-            arena.allocateFrom(ValueLayout.ADDRESS, heapSegment);
-        }
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            try (Arena arena = Arena.ofConfined()) {
+                var heapSegment = MemorySegment.ofArray(new int[]{1});
+                arena.allocateFrom(ValueLayout.ADDRESS, heapSegment);
+            }
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    @Test
     public void testAllocatorAllocateFromHeapSegment() {
-        try (Arena arena = Arena.ofConfined()) {
-            SegmentAllocator allocator = SegmentAllocator.prefixAllocator(arena.allocate(16));
-            var heapSegment = MemorySegment.ofArray(new int[]{1});
-            allocator.allocateFrom(ValueLayout.ADDRESS, heapSegment);
-        }
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            try (Arena arena = Arena.ofConfined()) {
+                SegmentAllocator allocator = SegmentAllocator.prefixAllocator(arena.allocate(16));
+                var heapSegment = MemorySegment.ofArray(new int[]{1});
+                allocator.allocateFrom(ValueLayout.ADDRESS, heapSegment);
+            }
+        });
     }
 
     // Invariant checking tests for the SegmentAllocator method:
@@ -288,7 +320,7 @@ public class TestSegmentAllocators {
         allocator.allocateFrom(ValueLayout.JAVA_FLOAT);
         allocator.allocateFrom(ValueLayout.JAVA_LONG);
         allocator.allocateFrom(ValueLayout.JAVA_DOUBLE);
-        assertEquals(calls.get(), 7);
+        assertEquals(7, calls.get());
     }
 
     @Test
@@ -307,11 +339,12 @@ public class TestSegmentAllocators {
             };
         };
         allocator.allocateFrom("Hello");
-        assertEquals(calls.get(), 1);
+        assertEquals(1, calls.get());
     }
 
 
-    @Test(dataProvider = "arrayAllocations")
+    @ParameterizedTest
+    @MethodSource("arrayAllocations")
     public <Z> void testArray(AllocationFactory allocationFactory, ValueLayout layout, AllocationFunction<Object, ValueLayout> allocationFunction, ToArrayHelper<Z> arrayHelper) {
         Z arr = arrayHelper.array();
         Arena[] arenas = {
@@ -323,12 +356,13 @@ public class TestSegmentAllocators {
                 SegmentAllocator allocator = allocationFactory.allocator(100, arena);
                 MemorySegment address = allocationFunction.allocate(allocator, layout, arr);
                 Z found = arrayHelper.toArray(address, layout);
-                assertEquals(found, arr);
+                assertEquals(arr, found);
             }
         }
     }
 
-    @Test(dataProvider = "arrayAllocations")
+    @ParameterizedTest
+    @MethodSource("arrayAllocations")
     public <Z> void testPredicatesAndCommands(AllocationFactory allocationFactory, ValueLayout layout, AllocationFunction<Object, ValueLayout> allocationFunction, ToArrayHelper<Z> arrayHelper) {
         Z arr = arrayHelper.array();
         Arena[] arenas = {
@@ -349,7 +383,6 @@ public class TestSegmentAllocators {
         }
     }
 
-    @DataProvider(name = "scalarAllocations")
     static Object[][] scalarAllocations() {
         List<Object[]> scalarAllocations = new ArrayList<>();
         for (AllocationFactory factory : AllocationFactory.values()) {
@@ -405,7 +438,6 @@ public class TestSegmentAllocators {
         return scalarAllocations.toArray(Object[][]::new);
     }
 
-    @DataProvider(name = "arrayAllocations")
     static Object[][] arrayAllocations() {
         List<Object[]> arrayAllocations = new ArrayList<>();
         for (AllocationFactory factory : AllocationFactory.values()) {
@@ -609,7 +641,6 @@ public class TestSegmentAllocators {
         };
     }
 
-    @DataProvider(name = "allocators")
     static Object[][] allocators() {
         return new Object[][] {
                 { SegmentAllocator.prefixAllocator(Arena.global().allocate(10, 1)) },

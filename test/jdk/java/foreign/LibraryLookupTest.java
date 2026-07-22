@@ -21,7 +21,6 @@
  * questions.
  */
 
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.lang.foreign.*;
@@ -37,11 +36,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test id=specialized
- * @run testng/othervm/native
+ * @run junit/othervm/native
  *  -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *  --enable-native-access=ALL-UNNAMED
  *  LibraryLookupTest
@@ -49,7 +50,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test id=interpreted
- * @run testng/othervm/native
+ * @run junit/othervm/native
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   --enable-native-access=ALL-UNNAMED
  *   LibraryLookupTest
@@ -73,20 +74,24 @@ public class LibraryLookupTest {
         }
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     void testLoadLibraryConfinedClosed() {
-        MemorySegment addr;
-        try (Arena arena = Arena.ofConfined()) {
-            addr = loadLibrary(arena);
-        }
-        callFunc(addr);
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            MemorySegment addr;
+            try (Arena arena = Arena.ofConfined()) {
+                addr = loadLibrary(arena);
+            }
+            callFunc(addr);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     void testLoadLibraryBadName() {
-        try (Arena arena = Arena.ofConfined()) {
-            SymbolLookup.libraryLookup(LIB_PATH.toString() + "\u0000", arena);
-        }
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            try (Arena arena = Arena.ofConfined()) {
+                SymbolLookup.libraryLookup(LIB_PATH.toString() + "\u0000", arena);
+            }
+        });
     }
 
     @Test
@@ -99,7 +104,7 @@ public class LibraryLookupTest {
 
     @Test
     void testLoadLibraryNonDefaultFileSystem() throws URISyntaxException, IOException {
-        try (FileSystem customFs = fsFromJarOfClass(org.testng.annotations.Test.class)) {
+        try (FileSystem customFs = fsFromJarOfClass(Test.class)) {
             try (Arena arena = Arena.ofConfined()) {
                 Path p = customFs.getPath(".");
                 try {
@@ -131,7 +136,7 @@ public class LibraryLookupTest {
     private static MemorySegment loadLibrary(Arena session) {
         SymbolLookup lib = SymbolLookup.libraryLookup(LIB_PATH, session);
         MemorySegment addr = lib.find("inc").get();
-        assertEquals(addr.scope(), session.scope());
+        assertEquals(session.scope(), addr.scope());
         return addr;
     }
 
@@ -149,14 +154,18 @@ public class LibraryLookupTest {
     static final int MAX_EXECUTOR_WAIT_SECONDS = 20;
     static final int NUM_ACCESSORS = Math.min(10, Runtime.getRuntime().availableProcessors());
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     void testBadLibraryLookupName() {
-        SymbolLookup.libraryLookup("nonExistent", Arena.global());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            SymbolLookup.libraryLookup("nonExistent", Arena.global());
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     void testBadLibraryLookupPath() {
-        SymbolLookup.libraryLookup(Path.of("nonExistent"), Arena.global());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            SymbolLookup.libraryLookup(Path.of("nonExistent"), Arena.global());
+        });
     }
 
     @Test

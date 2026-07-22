@@ -30,13 +30,18 @@ import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.testng.annotations.*;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
- * @run testng/othervm -Xverify:all TestSlices
+ * @run junit/othervm -Xverify:all TestSlices
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestSlices {
 
     static MemoryLayout LAYOUT = MemoryLayout.sequenceLayout(2,
@@ -45,7 +50,8 @@ public class TestSlices {
     static VarHandle VH_ALL = LAYOUT.varHandle(
             MemoryLayout.PathElement.sequenceElement(), MemoryLayout.PathElement.sequenceElement());
 
-    @Test(dataProvider = "slices")
+    @ParameterizedTest
+    @MethodSource("slices")
     public void testSlices(VarHandle handle, int lo, int hi, int[] values) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(LAYOUT);;
@@ -60,12 +66,13 @@ public class TestSlices {
         }
     }
 
-    @Test(dataProvider = "slices")
+    @ParameterizedTest
+    @MethodSource("slices")
     public void testSliceBadIndex(VarHandle handle, int lo, int hi, int[] values) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(LAYOUT);;
-            assertThrows(() -> handle.get(segment, 0L, lo, 0));
-            assertThrows(() -> handle.get(segment, 0L, 0, hi));
+            assertThrows(Throwable.class, () -> handle.get(segment, 0L, lo, 0));
+            assertThrows(Throwable.class, () -> handle.get(segment, 0L, 0, hi));
         }
     }
 
@@ -74,54 +81,72 @@ public class TestSlices {
         for (long i = 0 ; i < i_max ; i++) {
             for (long j = 0 ; j < j_max ; j++) {
                 int x = (int) handle.get(segment, 0L, i, j);
-                assertEquals(x, values[index++]);
+                assertEquals(values[index++], x);
             }
         }
-        assertEquals(index, values.length);
+        assertEquals(values.length, index);
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    @Test
     public void testSliceNegativeOffset() {
-        MemorySegment.ofArray(new byte[100]).asSlice(-1);
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+            MemorySegment.ofArray(new byte[100]).asSlice(-1);
+        });
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    @Test
     public void testSliceNegativeOffsetGoodSize() {
-        MemorySegment.ofArray(new byte[100]).asSlice(-1, 10);
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+            MemorySegment.ofArray(new byte[100]).asSlice(-1, 10);
+        });
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    @Test
     public void testSliceGoodOffsetNegativeSize() {
-        MemorySegment.ofArray(new byte[100]).asSlice(10, -1);
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+            MemorySegment.ofArray(new byte[100]).asSlice(10, -1);
+        });
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    @Test
     public void testSliceNegativeOffsetGoodLayout() {
-        MemorySegment.ofArray(new byte[100]).asSlice(-1, ValueLayout.JAVA_INT);
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+            MemorySegment.ofArray(new byte[100]).asSlice(-1, ValueLayout.JAVA_INT);
+        });
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    @Test
     public void testSliceOffsetTooBig() {
-        MemorySegment.ofArray(new byte[100]).asSlice(120);
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+            MemorySegment.ofArray(new byte[100]).asSlice(120);
+        });
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    @Test
     public void testSliceOffsetTooBigSizeGood() {
-        MemorySegment.ofArray(new byte[100]).asSlice(120, 0);
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+            MemorySegment.ofArray(new byte[100]).asSlice(120, 0);
+        });
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    @Test
     public void testSliceOffsetOkSizeTooBig() {
-        MemorySegment.ofArray(new byte[100]).asSlice(0, 120);
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+            MemorySegment.ofArray(new byte[100]).asSlice(0, 120);
+        });
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    @Test
     public void testSliceLayoutTooBig() {
-        MemorySegment.ofArray(new byte[100])
-                .asSlice(0, MemoryLayout.sequenceLayout(120, ValueLayout.JAVA_BYTE));
+        Assertions
+                .assertThrows(IndexOutOfBoundsException.class, () -> {
+                    MemorySegment.ofArray(new byte[100])
+                            .asSlice(0, MemoryLayout.sequenceLayout(120, ValueLayout.JAVA_BYTE));
+        });
     }
 
-    @Test(dataProvider = "segmentsAndLayouts")
+    @ParameterizedTest
+    @MethodSource("segmentsAndLayouts")
     public void testSliceAlignment(MemorySegment segment, long alignment, ValueLayout layout) {
         boolean badAlign = layout.byteAlignment() > alignment;
         try {
@@ -149,7 +174,6 @@ public class TestSlices {
         }
     }
 
-    @DataProvider(name = "slices")
     static Object[][] slices() {
         return new Object[][] {
                 // x
@@ -169,7 +193,6 @@ public class TestSlices {
         };
     }
 
-    @DataProvider(name = "segmentsAndLayouts")
     static Object[][] segmentsAndLayouts() {
         List<Object[]> segmentsAndLayouts = new ArrayList<>();
         for (SegmentKind sk : SegmentKind.values()) {

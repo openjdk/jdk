@@ -24,20 +24,21 @@
 
 /*
  * @test
- * @run testng TestVarHandleCombinators
+ * @run junit TestVarHandleCombinators
  */
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
 
-import org.testng.annotations.Test;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 public class TestVarHandleCombinators {
 
@@ -47,17 +48,19 @@ public class TestVarHandleCombinators {
 
         byte[] arr = { 0, 0, -1, 0 };
         MemorySegment segment = MemorySegment.ofArray(arr);
-        assertEquals((byte) vh.get(segment, 2), (byte) -1);
+        assertEquals((byte) -1, (byte) vh.get(segment, 2));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testUnalignedElement() {
-        VarHandle vh = ValueLayout.JAVA_BYTE.withByteAlignment(4).varHandle();
-        MemorySegment segment = MemorySegment.ofArray(new byte[4]);
-        vh.get(segment, 2L); //should throw
-        //FIXME: the VH only checks the alignment of the segment, which is fine if the VH is derived from layouts,
-        //FIXME: but not if the VH is just created from scratch - we need a VH variable to govern this property,
-        //FIXME: at least until the VM is fixed
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            VarHandle vh = ValueLayout.JAVA_BYTE.withByteAlignment(4).varHandle();
+            MemorySegment segment = MemorySegment.ofArray(new byte[4]);
+            vh.get(segment, 2L); //should throw
+            //FIXME: the VH only checks the alignment of the segment, which is fine if the VH is derived from layouts,
+            //FIXME: but not if the VH is just created from scratch - we need a VH variable to govern this property,
+            //FIXME: at least until the VM is fixed
+        }); 
     }
 
     @Test
@@ -67,7 +70,7 @@ public class TestVarHandleCombinators {
         Arena scope = Arena.ofAuto();
         MemorySegment segment = scope.allocate(1L, 2);
         vh.set(segment, 0L, (byte) 10); // fine, memory region is aligned
-        assertEquals((byte) vh.get(segment, 0L), (byte) 10);
+        assertEquals((byte) 10, (byte) vh.get(segment, 0L));
     }
 
     @Test
@@ -76,8 +79,8 @@ public class TestVarHandleCombinators {
         byte[] arr = new byte[2];
         MemorySegment segment = MemorySegment.ofArray(arr);
         vh.set(segment, 0L, (short) 0xFF);
-        assertEquals(arr[0], (byte) 0xFF);
-        assertEquals(arr[1], (byte) 0);
+        assertEquals((byte) 0xFF, arr[0]);
+        assertEquals((byte) 0, arr[1]);
     }
 
     @Test
@@ -86,8 +89,8 @@ public class TestVarHandleCombinators {
         byte[] arr = new byte[2];
         MemorySegment segment = MemorySegment.ofArray(arr);
         vh.set(segment, 0L, (short) 0xFF);
-        assertEquals(arr[0], (byte) 0);
-        assertEquals(arr[1], (byte) 0xFF);
+        assertEquals((byte) 0, arr[0]);
+        assertEquals((byte) 0xFF, arr[1]);
     }
 
     @Test
@@ -104,9 +107,7 @@ public class TestVarHandleCombinators {
             for (long i = 0; i < outer_size; i++) {
                 for (long j = 0; j < inner_size; j++) {
                     vh.set(segment, i * 40 + j * 8, count);
-                    assertEquals(
-                            (int)vh.get(segment.asSlice(i * inner_size * 8), j * 8),
-                            count);
+                    assertEquals(                            count, (int)vh.get(segment.asSlice(i * inner_size * 8), j * 8));
                     count++;
                 }
             }

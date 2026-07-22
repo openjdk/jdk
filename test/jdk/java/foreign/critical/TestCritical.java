@@ -25,11 +25,9 @@
  * @test
  * @library ../ /test/lib
  *
- * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestCritical
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED TestCritical
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
@@ -48,8 +46,13 @@ import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestCritical extends NativeTestHelper {
 
     static final MemoryLayout CAPTURE_STATE_LAYOUT = Linker.Option.captureStateLayout();
@@ -69,7 +72,7 @@ public class TestCritical extends NativeTestHelper {
     public void testIdentity() throws Throwable {
         MethodHandle handle = downcallHandle("identity", FunctionDescriptor.of(C_INT, C_INT), Linker.Option.critical(false));
         int result = (int) handle.invokeExact(42);
-        assertEquals(result, 42);
+        assertEquals(42, result);
     }
 
     @Test
@@ -84,16 +87,17 @@ public class TestCritical extends NativeTestHelper {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment result = (MemorySegment) handle.invokeExact((SegmentAllocator) arena);
             long x = (long) vhX.get(result, 0L);
-            assertEquals(x, 10);
+            assertEquals(10, x);
             long y = (long) vhY.get(result, 0L);
-            assertEquals(y, 11);
+            assertEquals(11, y);
         }
     }
 
     public record AllowHeapCase(IntFunction<MemorySegment> newArraySegment, ValueLayout elementLayout,
                                 String fName, FunctionDescriptor fDesc, boolean readOnly, boolean captureErrno) {}
 
-    @Test(dataProvider = "allowHeapCases")
+    @ParameterizedTest
+    @MethodSource("allowHeapCases")
     public void testAllowHeap(AllowHeapCase testCase) throws Throwable {
         List<Linker.Option> options = new ArrayList<>();
         options.add(Linker.Option.critical(true));
@@ -138,12 +142,11 @@ public class TestCritical extends NativeTestHelper {
 
             if (testCase.captureErrno()) {
                 int errno = (int) ERRNO_HANDLE.get(captureSegment, 0L);
-                assertEquals(errno, 42);
+                assertEquals(42, errno);
             }
         }
     }
 
-    @DataProvider
     public Object[][] allowHeapCases() {
         FunctionDescriptor voidDesc = FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_INT);
         FunctionDescriptor intDesc = voidDesc.changeReturnLayout(C_INT).insertArgumentLayouts(0, C_INT);

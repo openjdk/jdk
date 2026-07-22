@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 
 import jdk.test.lib.process.OutputAnalyzer;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestEnableNativeAccessBase {
     static final String MODULE_PATH = System.getProperty("jdk.module.path");

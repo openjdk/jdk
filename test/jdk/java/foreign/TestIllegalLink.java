@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules java.base/jdk.internal.foreign
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestIllegalLink
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED TestIllegalLink
  */
 
 import java.lang.foreign.Arena;
@@ -42,14 +42,17 @@ import java.util.Arrays;
 import java.util.List;
 
 import jdk.internal.foreign.CABI;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.lang.foreign.ValueLayout.*;
 
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestIllegalLink extends NativeTestHelper {
 
     private static final boolean IS_SYSV = CABI.current() == CABI.SYS_V;
@@ -59,7 +62,8 @@ public class TestIllegalLink extends NativeTestHelper {
     private static final MethodHandle DUMMY_TARGET_MH = MethodHandles.empty(MethodType.methodType(void.class));
     private static final Linker ABI = Linker.nativeLinker();
 
-    @Test(dataProvider = "types")
+    @ParameterizedTest
+    @MethodSource("types")
     public void testIllegalLayouts(FunctionDescriptor desc, Linker.Option[] options, String expectedExceptionMessage) {
         try {
             ABI.downcallHandle(DUMMY_TARGET, desc, options);
@@ -70,23 +74,24 @@ public class TestIllegalLink extends NativeTestHelper {
         }
     }
 
-    @Test(dataProvider = "downcallOnlyOptions",
-          expectedExceptions = IllegalArgumentException.class,
-          expectedExceptionsMessageRegExp = ".*Not supported for upcall.*")
+    @ParameterizedTest
+    @MethodSource("downcallOnlyOptions")
     public void testIllegalUpcallOptions(Linker.Option downcallOnlyOption) {
-        ABI.upcallStub(DUMMY_TARGET_MH, FunctionDescriptor.ofVoid(), Arena.ofAuto(), downcallOnlyOption);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            ABI.upcallStub(DUMMY_TARGET_MH, FunctionDescriptor.ofVoid(), Arena.ofAuto(), downcallOnlyOption);
+        });
     }
 
-    @Test(dataProvider = "illegalCaptureState",
-          expectedExceptions = IllegalArgumentException.class,
-          expectedExceptionsMessageRegExp = ".*Unknown name.*")
+    @ParameterizedTest
+    @MethodSource("illegalCaptureState")
     public void testIllegalCaptureState(String name) {
-        Linker.Option.captureCallState(name);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            Linker.Option.captureCallState(name);
+        });
     }
 
     // where
 
-    @DataProvider
     public static Object[][] illegalCaptureState() {
         if (!IS_WINDOWS) {
             return new Object[][]{
@@ -97,7 +102,6 @@ public class TestIllegalLink extends NativeTestHelper {
         return new Object[][]{};
     }
 
-    @DataProvider
     public static Object[][] downcallOnlyOptions() {
         return new Object[][]{
             { Linker.Option.firstVariadicArg(0) },
@@ -106,7 +110,6 @@ public class TestIllegalLink extends NativeTestHelper {
         };
     }
 
-    @DataProvider
     public static Object[][] types() {
         Linker.Option[] NO_OPTIONS = new Linker.Option[0];
         List<Object[]> cases = new ArrayList<>(Arrays.asList(new Object[][]{

@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestMemoryAccessInstance
- * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_SEGMENT_FORCE_EXACT=true --enable-native-access=ALL-UNNAMED TestMemoryAccessInstance
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED TestMemoryAccessInstance
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_SEGMENT_FORCE_EXACT=true --enable-native-access=ALL-UNNAMED TestMemoryAccessInstance
  */
 
 import java.lang.foreign.MemorySegment;
@@ -33,10 +33,15 @@ import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.testng.annotations.*;
-import org.testng.SkipException;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestMemoryAccessInstance {
 
     static class Accessor<X, L extends ValueLayout> {
@@ -80,9 +85,9 @@ public class TestMemoryAccessInstance {
                 MemorySegment segment = arena.allocate(128, 1);
                 ByteBuffer buffer = segment.asByteBuffer();
                 segmentSetter.set(segment, layout, 8, value);
-                assertEquals(bufferGetter.get(buffer, 8), value);
+                assertEquals(value, bufferGetter.get(buffer, 8));
                 bufferSetter.set(buffer, 8, value);
-                assertEquals(value, segmentGetter.get(segment, layout, 8));
+                assertEquals(segmentGetter.get(segment, layout, 8), value);
             }
         }
 
@@ -121,41 +126,43 @@ public class TestMemoryAccessInstance {
         }
     }
 
-    @Test(dataProvider = "segmentAccessors")
+    @ParameterizedTest
+    @MethodSource("segmentAccessors")
     public void testSegmentAccess(String testName, Accessor<?, ?> accessor) {
         accessor.test();
     }
 
-    @Test(dataProvider = "segmentAccessors")
+    @ParameterizedTest
+    @MethodSource("segmentAccessors")
     public void testSegmentAccessHyper(String testName, Accessor<?, ?> accessor) {
-        if (testName.contains("index")) {
-            accessor.testHyperAligned();
-        } else {
-            throw new SkipException("Skipping");
-        }
+        Assumptions.assumeTrue(testName.contains("index"), "Skipping");
+        accessor.testHyperAligned();
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    @Test
     public void badHeapSegmentSet() {
-        long byteSize = ValueLayout.ADDRESS.byteSize();
-        Arena scope = Arena.ofAuto();
-        MemorySegment targetSegment = scope.allocate(byteSize, 1);
-        MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
-        targetSegment.set(ValueLayout.ADDRESS, 0, segment); // should throw
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            long byteSize = ValueLayout.ADDRESS.byteSize();
+            Arena scope = Arena.ofAuto();
+            MemorySegment targetSegment = scope.allocate(byteSize, 1);
+            MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
+            targetSegment.set(ValueLayout.ADDRESS, 0, segment); // should throw
+        }); 
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    @Test
     public void badHeapSegmentSetAtIndex() {
-        long byteSize = ValueLayout.ADDRESS.byteSize();
-        Arena scope = Arena.ofAuto();
-        MemorySegment targetSegment = scope.allocate(byteSize, 1);
-        MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
-        targetSegment.setAtIndex(ValueLayout.ADDRESS, 0, segment); // should throw
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            long byteSize = ValueLayout.ADDRESS.byteSize();
+            Arena scope = Arena.ofAuto();
+            MemorySegment targetSegment = scope.allocate(byteSize, 1);
+            MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
+            targetSegment.setAtIndex(ValueLayout.ADDRESS, 0, segment); // should throw
+        }); 
     }
 
-    @Test(dataProvider = "segmentAccessors")
+    @ParameterizedTest
+    @MethodSource("segmentAccessors")
     public <X, L extends ValueLayout> void badAccessOverflowInIndexedAccess(String testName, Accessor<X, L> accessor) {
         MemorySegment segment = MemorySegment.ofArray(new byte[100]);
         if (testName.contains("/index") && accessor.layout.byteSize() > 1) {
@@ -164,7 +171,8 @@ public class TestMemoryAccessInstance {
         }
     }
 
-    @Test(dataProvider = "segmentAccessors")
+    @ParameterizedTest
+    @MethodSource("segmentAccessors")
     public <X, L extends ValueLayout> void negativeOffset(String testName, Accessor<X, L> accessor) {
         MemorySegment segment = MemorySegment.ofArray(new byte[100]);
         assertThrows(IndexOutOfBoundsException.class, () -> accessor.get(segment, -ValueLayout.JAVA_LONG.byteSize()));
@@ -173,7 +181,6 @@ public class TestMemoryAccessInstance {
 
     static final ByteOrder NE = ByteOrder.nativeOrder();
 
-    @DataProvider(name = "segmentAccessors")
     static Object[][] segmentAccessors() {
         return new Object[][]{
 

@@ -23,12 +23,11 @@
 
 /*
  * @test
- * @run testng/othervm/native
+ * @run junit/othervm/native
  *     --enable-native-access=ALL-UNNAMED
  *     TestNULLAddress
  */
 
-import org.testng.annotations.Test;
 
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
@@ -37,7 +36,9 @@ import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class TestNULLAddress {
 
@@ -47,18 +48,22 @@ public class TestNULLAddress {
 
     static final Linker LINKER = Linker.nativeLinker();
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testNULLLinking() {
-        LINKER.downcallHandle(
-                MemorySegment.NULL,
-                FunctionDescriptor.ofVoid());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            LINKER.downcallHandle(
+                    MemorySegment.NULL,
+                    FunctionDescriptor.ofVoid());
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testNULLVirtual() throws Throwable {
-        MethodHandle mh = LINKER.downcallHandle(
-                FunctionDescriptor.ofVoid());
-        mh.invokeExact(MemorySegment.NULL);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            MethodHandle mh = LINKER.downcallHandle(
+                    FunctionDescriptor.ofVoid());
+            mh.invokeExact(MemorySegment.NULL);
+        });
     }
 
     @Test

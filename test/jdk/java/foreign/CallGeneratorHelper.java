@@ -37,8 +37,10 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.Utils;
-import org.testng.annotations.*;
 
+import org.junit.jupiter.api.TestInstance;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CallGeneratorHelper extends NativeTestHelper {
 
     static final List<MemoryLayout> STACK_PREFIX_LAYOUTS = Stream.concat(
@@ -151,7 +153,6 @@ public class CallGeneratorHelper extends NativeTestHelper {
         }
     }
 
-    @DataProvider(name = "functions")
     public static Object[][] functions() {
         int functions = 0;
         List<Object[]> downcalls = new ArrayList<>();

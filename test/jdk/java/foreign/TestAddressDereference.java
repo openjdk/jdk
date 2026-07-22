@@ -24,7 +24,7 @@
 /*
  * @test
  * @library ../ /test/lib
- * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestAddressDereference
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED TestAddressDereference
  */
 
 import java.lang.foreign.Arena;
@@ -41,10 +41,12 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.testng.annotations.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.testng.Assert.*;
-
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestAddressDereference extends UpcallTestHelper {
 
     static final Linker LINKER = Linker.nativeLinker();
@@ -65,7 +67,8 @@ public class TestAddressDereference extends UpcallTestHelper {
         }
     }
 
-    @Test(dataProvider = "layoutsAndAlignments")
+    @ParameterizedTest
+    @MethodSource("layoutsAndAlignments")
     public void testGetAddress(long alignment, ValueLayout layout) {
         boolean badAlign = layout.byteAlignment() > alignment;
         try (Arena arena = Arena.ofConfined()) {
@@ -73,14 +76,15 @@ public class TestAddressDereference extends UpcallTestHelper {
             segment.set(ValueLayout.ADDRESS, 0, MemorySegment.ofAddress(alignment));
             MemorySegment deref = segment.get(ValueLayout.ADDRESS.withTargetLayout(layout), 0);
             assertFalse(badAlign);
-            assertEquals(deref.byteSize(), layout.byteSize());
+            assertEquals(layout.byteSize(), deref.byteSize());
         } catch (IllegalArgumentException ex) {
             assertTrue(badAlign);
             assertTrue(ex.getMessage().contains("alignment constraint for address"));
         }
     }
 
-    @Test(dataProvider = "layoutsAndAlignments")
+    @ParameterizedTest
+    @MethodSource("layoutsAndAlignments")
     public void testGetAddressIndex(long alignment, ValueLayout layout) {
         boolean badAlign = layout.byteAlignment() > alignment;
         try (Arena arena = Arena.ofConfined()) {
@@ -88,14 +92,15 @@ public class TestAddressDereference extends UpcallTestHelper {
             segment.set(ValueLayout.ADDRESS, 0, MemorySegment.ofAddress(alignment));
             MemorySegment deref = segment.getAtIndex(ValueLayout.ADDRESS.withTargetLayout(layout), 0);
             assertFalse(badAlign);
-            assertEquals(deref.byteSize(), layout.byteSize());
+            assertEquals(layout.byteSize(), deref.byteSize());
         } catch (IllegalArgumentException ex) {
             assertTrue(badAlign);
             assertTrue(ex.getMessage().contains("alignment constraint for address"));
         }
     }
 
-    @Test(dataProvider = "layoutsAndAlignments")
+    @ParameterizedTest
+    @MethodSource("layoutsAndAlignments")
     public void testNativeReturn(long alignment, ValueLayout layout) throws Throwable {
         boolean badAlign = layout.byteAlignment() > alignment;
         try {
@@ -103,14 +108,15 @@ public class TestAddressDereference extends UpcallTestHelper {
                     FunctionDescriptor.of(ValueLayout.ADDRESS.withTargetLayout(layout), ValueLayout.ADDRESS));
             MemorySegment deref = (MemorySegment)get_addr_handle.invokeExact(MemorySegment.ofAddress(alignment));
             assertFalse(badAlign);
-            assertEquals(deref.byteSize(), layout.byteSize());
+            assertEquals(layout.byteSize(), deref.byteSize());
         } catch (IllegalArgumentException ex) {
             assertTrue(badAlign);
             assertTrue(ex.getMessage().contains("alignment constraint for address"));
         }
     }
 
-    @Test(dataProvider = "layoutsAndAlignments")
+    @ParameterizedTest
+    @MethodSource("layoutsAndAlignments")
     public void testNativeUpcallArgPos(long alignment, ValueLayout layout) throws Throwable {
         boolean badAlign = layout.byteAlignment() > alignment;
         if (badAlign) return; // this will crash the JVM (exception occurs when going into the upcall stub)
@@ -122,7 +128,8 @@ public class TestAddressDereference extends UpcallTestHelper {
         }
     }
 
-    @Test(dataProvider = "layoutsAndAlignments")
+    @ParameterizedTest
+    @MethodSource("layoutsAndAlignments")
     public void testNativeUpcallArgNeg(long alignment, ValueLayout layout) throws Throwable {
         boolean badAlign = layout.byteAlignment() > alignment;
         if (!badAlign) return;
@@ -154,10 +161,9 @@ public class TestAddressDereference extends UpcallTestHelper {
     }
 
     static void testArg(MemorySegment deref, long expectedSize) {
-        assertEquals(deref.byteSize(), expectedSize);
+        assertEquals(expectedSize, deref.byteSize());
     }
 
-    @DataProvider(name = "layoutsAndAlignments")
     static Object[][] layoutsAndAlignments() {
         List<Object[]> layoutsAndAlignments = new ArrayList<>();
         for (LayoutKind lk : LayoutKind.values()) {

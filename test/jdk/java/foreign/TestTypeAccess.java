@@ -24,62 +24,76 @@
 
 /*
  * @test
- * @run testng TestTypeAccess
+ * @run junit TestTypeAccess
  */
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
-import org.testng.annotations.*;
 
 import java.lang.invoke.VarHandle;
 import java.lang.invoke.WrongMethodTypeException;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class TestTypeAccess {
 
     static final VarHandle INT_HANDLE = ValueLayout.JAVA_INT.varHandle();
     static final VarHandle ADDR_HANDLE = ValueLayout.ADDRESS.varHandle();
 
-    @Test(expectedExceptions=ClassCastException.class)
+    @Test
     public void testMemoryAddressCoordinateAsString() {
-        int v = (int)INT_HANDLE.get("string", 0L);
+        Assertions.assertThrows(ClassCastException.class, () -> {
+            int v = (int)INT_HANDLE.get("string", 0L);
+        });
     }
 
-    @Test(expectedExceptions=WrongMethodTypeException.class)
+    @Test
     public void testMemoryCoordinatePrimitive() {
-        int v = (int)INT_HANDLE.get(1);
+        Assertions.assertThrows(WrongMethodTypeException.class, () -> {
+            int v = (int)INT_HANDLE.get(1);
+        });
     }
 
-    @Test(expectedExceptions=ClassCastException.class)
+    @Test
     public void testMemoryAddressValueGetAsString() {
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment s = arena.allocate(8, 8);
-            String address = (String)ADDR_HANDLE.get(s, 0L);
-        }
+        Assertions.assertThrows(ClassCastException.class, () -> {
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment s = arena.allocate(8, 8);
+                String address = (String)ADDR_HANDLE.get(s, 0L);
+            }
+        });
     }
 
-    @Test(expectedExceptions=ClassCastException.class)
+    @Test
     public void testMemoryAddressValueSetAsString() {
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment s = arena.allocate(8, 8);;
-            ADDR_HANDLE.set(s, 0L, "string");
-        }
+        Assertions.assertThrows(ClassCastException.class, () -> {
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment s = arena.allocate(8, 8);;
+                ADDR_HANDLE.set(s, 0L, "string");
+            }
+        });
     }
 
-    @Test(expectedExceptions=WrongMethodTypeException.class)
+    @Test
     public void testMemoryAddressValueGetAsPrimitive() {
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment s = arena.allocate(8, 8);
-            int address = (int)ADDR_HANDLE.get(s, 0L);
-        }
+        Assertions.assertThrows(WrongMethodTypeException.class, () -> {
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment s = arena.allocate(8, 8);
+                int address = (int)ADDR_HANDLE.get(s, 0L);
+            }
+        });
     }
 
-    @Test(expectedExceptions=WrongMethodTypeException.class)
+    @Test
     public void testMemoryAddressValueSetAsPrimitive() {
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment s = arena.allocate(8, 8);;
-            ADDR_HANDLE.set(s, 1);
-        }
+        Assertions.assertThrows(WrongMethodTypeException.class, () -> {
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment s = arena.allocate(8, 8);;
+                ADDR_HANDLE.set(s, 1);
+            }
+        });
     }
 
 }

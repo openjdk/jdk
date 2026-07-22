@@ -26,7 +26,7 @@
  * @library /test/lib
  * @modules java.base/sun.nio.ch
  * @key randomness
- * @run testng/othervm TestSocketChannels
+ * @run junit/othervm TestSocketChannels
  */
 
 import java.lang.foreign.Arena;
@@ -43,20 +43,26 @@ import java.util.stream.Stream;
 
 import java.lang.foreign.MemorySegment;
 
-import org.testng.annotations.*;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Tests consisting of buffer views with synchronous NIO network channels.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestSocketChannels extends AbstractChannelsTest {
 
     static final Class<IllegalStateException> ISE = IllegalStateException.class;
     static final Class<WrongThreadException> WTE = WrongThreadException.class;
 
-    @Test(dataProvider = "closeableArenas")
+    @ParameterizedTest
+    @MethodSource("closeableArenas")
     public void testBasicIOWithClosedSegment(Supplier<Arena> arenaSupplier)
         throws Exception
     {
@@ -66,16 +72,17 @@ public class TestSocketChannels extends AbstractChannelsTest {
             Arena drop = arenaSupplier.get();
             ByteBuffer bb = segmentBufferOfSize(drop, 16);
             drop.close();
-            assertMessage(expectThrows(ISE, () -> channel.read(bb)),                           "Already closed");
-            assertMessage(expectThrows(ISE, () -> channel.read(new ByteBuffer[] {bb})),        "Already closed");
-            assertMessage(expectThrows(ISE, () -> channel.read(new ByteBuffer[] {bb}, 0, 1)),  "Already closed");
-            assertMessage(expectThrows(ISE, () -> channel.write(bb)),                          "Already closed");
-            assertMessage(expectThrows(ISE, () -> channel.write(new ByteBuffer[] {bb})),       "Already closed");
-            assertMessage(expectThrows(ISE, () -> channel.write(new ByteBuffer[] {bb}, 0 ,1)), "Already closed");
+            assertMessage(assertThrows(ISE, () -> channel.read(bb)),                           "Already closed");
+            assertMessage(assertThrows(ISE, () -> channel.read(new ByteBuffer[] {bb})),        "Already closed");
+            assertMessage(assertThrows(ISE, () -> channel.read(new ByteBuffer[] {bb}, 0, 1)),  "Already closed");
+            assertMessage(assertThrows(ISE, () -> channel.write(bb)),                          "Already closed");
+            assertMessage(assertThrows(ISE, () -> channel.write(new ByteBuffer[] {bb})),       "Already closed");
+            assertMessage(assertThrows(ISE, () -> channel.write(new ByteBuffer[] {bb}, 0 ,1)), "Already closed");
         }
     }
 
-    @Test(dataProvider = "closeableArenas")
+    @ParameterizedTest
+    @MethodSource("closeableArenas")
     public void testScatterGatherWithClosedSegment(Supplier<Arena> arenaSupplier)
         throws Exception
     {
@@ -85,14 +92,15 @@ public class TestSocketChannels extends AbstractChannelsTest {
             Arena drop = arenaSupplier.get();
             ByteBuffer[] buffers = segmentBuffersOfSize(8, drop, 16);
             drop.close();
-            assertMessage(expectThrows(ISE, () -> channel.write(buffers)),       "Already closed");
-            assertMessage(expectThrows(ISE, () -> channel.read(buffers)),        "Already closed");
-            assertMessage(expectThrows(ISE, () -> channel.write(buffers, 0 ,8)), "Already closed");
-            assertMessage(expectThrows(ISE, () -> channel.read(buffers, 0, 8)),  "Already closed");
+            assertMessage(assertThrows(ISE, () -> channel.write(buffers)),       "Already closed");
+            assertMessage(assertThrows(ISE, () -> channel.read(buffers)),        "Already closed");
+            assertMessage(assertThrows(ISE, () -> channel.write(buffers, 0 ,8)), "Already closed");
+            assertMessage(assertThrows(ISE, () -> channel.read(buffers, 0, 8)),  "Already closed");
         }
     }
 
-    @Test(dataProvider = "closeableArenas")
+    @ParameterizedTest
+    @MethodSource("closeableArenas")
     public void testBasicIO(Supplier<Arena> arenaSupplier)
         throws Exception
     {
@@ -110,9 +118,9 @@ public class TestSocketChannels extends AbstractChannelsTest {
             }
             ByteBuffer bb1 = segment1.asByteBuffer();
             ByteBuffer bb2 = segment2.asByteBuffer();
-            assertEquals(sc1.write(bb1), 10);
-            assertEquals(sc2.read(bb2), 10);
-            assertEquals(bb2.flip(), ByteBuffer.wrap(new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+            assertEquals(10, sc1.write(bb1));
+            assertEquals(10, sc2.read(bb2));
+            assertEquals(ByteBuffer.wrap(new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}), bb2.flip());
         }
     }
 
@@ -128,13 +136,14 @@ public class TestSocketChannels extends AbstractChannelsTest {
             }
             ByteBuffer bb1 = segment1.asByteBuffer();
             ByteBuffer bb2 = segment2.asByteBuffer();
-            assertEquals(sc1.write(bb1), 10);
-            assertEquals(sc2.read(bb2), 10);
-            assertEquals(bb2.flip(), ByteBuffer.wrap(new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+            assertEquals(10, sc1.write(bb1));
+            assertEquals(10, sc2.read(bb2));
+            assertEquals(ByteBuffer.wrap(new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}), bb2.flip());
         }
     }
 
-    @Test(dataProvider = "confinedArenas")
+    @ParameterizedTest
+    @MethodSource("confinedArenas")
     public void testIOOnConfinedFromAnotherThread(Supplier<Arena> arenaSupplier)
         throws Exception
     {
@@ -155,7 +164,7 @@ public class TestSocketChannels extends AbstractChannelsTest {
             );
             for (var ioOp : ioOps) {
                 AtomicReference<Exception> exception = new AtomicReference<>();
-                Runnable task = () -> exception.set(expectThrows(WTE, ioOp));
+                Runnable task = () -> exception.set(assertThrows(WTE, ioOp));
                 var t = new Thread(task);
                 t.start();
                 t.join();
@@ -164,7 +173,8 @@ public class TestSocketChannels extends AbstractChannelsTest {
         }
     }
 
-    @Test(dataProvider = "closeableArenas")
+    @ParameterizedTest
+    @MethodSource("closeableArenas")
     public void testScatterGatherIO(Supplier<Arena> arenaSupplier)
         throws Exception
     {
@@ -176,13 +186,14 @@ public class TestSocketChannels extends AbstractChannelsTest {
             var writeBuffers = mixedBuffersOfSize(32, drop, 64);
             var readBuffers = mixedBuffersOfSize(32, drop, 64);
             long expectedCount = remaining(writeBuffers);
-            assertEquals(writeNBytes(sc1, writeBuffers, 0, 32, expectedCount), expectedCount);
-            assertEquals(readNBytes(sc2, readBuffers, 0, 32, expectedCount), expectedCount);
-            assertEquals(flip(readBuffers), clear(writeBuffers));
+            assertEquals(expectedCount, writeNBytes(sc1, writeBuffers, 0, 32, expectedCount));
+            assertEquals(expectedCount, readNBytes(sc2, readBuffers, 0, 32, expectedCount));
+            assertArrayEquals(clear(writeBuffers), flip(readBuffers));
         }
     }
 
-    @Test(dataProvider = "closeableArenas")
+    @ParameterizedTest
+    @MethodSource("closeableArenas")
     public void testBasicIOWithDifferentSessions(Supplier<Arena> arenaSupplier)
          throws Exception
     {
@@ -199,9 +210,9 @@ public class TestSocketChannels extends AbstractChannelsTest {
                                     .toArray(ByteBuffer[]::new);
 
             long expectedCount = remaining(writeBuffers);
-            assertEquals(writeNBytes(sc1, writeBuffers, 0, 32, expectedCount), expectedCount);
-            assertEquals(readNBytes(sc2, readBuffers, 0, 32, expectedCount), expectedCount);
-            assertEquals(flip(readBuffers), clear(writeBuffers));
+            assertEquals(expectedCount, writeNBytes(sc1, writeBuffers, 0, 32, expectedCount));
+            assertEquals(expectedCount, readNBytes(sc2, readBuffers, 0, 32, expectedCount));
+            assertArrayEquals(clear(writeBuffers), flip(readBuffers));
         }
     }
 
