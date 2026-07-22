@@ -10405,7 +10405,7 @@ instruct cmovI_cmpN_zero(iRegINoSp dst, immI0 src, iRegN op1, iRegN op2, cmpOpU 
   match(Set dst (CMoveI (Binary cop (CmpN op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
 
-  format %{ "CMoveI $dst, ($op1 $cop $op2), $dst, zr #@cmovI_cmpN_zero" %}
+  format %{ "CMoveI $dst, ($op1 $cop $op2), $dst, zr\t#@cmovI_cmpN_zero" %}
 
   ins_encode %{
     __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
@@ -10420,7 +10420,7 @@ instruct cmovI_cmpP_zero(iRegINoSp dst, immI0 src, iRegP op1, iRegP op2, cmpOpU 
   match(Set dst (CMoveI (Binary cop (CmpP op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
 
-  format %{ "CMoveI $dst, ($op1 $cop $op2), $dst, zr #@cmovI_cmpP_zero" %}
+  format %{ "CMoveI $dst, ($op1 $cop $op2), $dst, zr\t#@cmovI_cmpP_zero" %}
 
   ins_encode %{
     __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
