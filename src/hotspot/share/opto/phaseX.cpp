@@ -2497,13 +2497,6 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->Opcode() == Op_CmpU;
     });
   }
-  // If changed AddI/AddL inputs, check URShift users for
-  // "((X << z) + Y) >>> z" optimization in URShift{I,L}Node::Ideal.
-  if (use_op == Op_AddI || use_op == Op_AddL) {
-    add_users_to_worklist_if(worklist, use, [](Node* u) {
-      return u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
-    });
-  }
   // LShiftNode::IdealIL:
   // (x + c1) << c2  ->  (x << c2) + c3
   if (use_op == Op_AddI || use_op == Op_AddL) {
@@ -2521,6 +2514,13 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     int sub_op = (use_op == Op_AddI) ? Op_SubI : Op_SubL;
     add_users_to_worklist_if(worklist, use, [&](Node* u) {
       return u->Opcode() == add_op || u->Opcode() == sub_op;
+    });
+  }
+  // If changed AddI/AddL inputs, check URShift users for
+  // "((X << z) + Y) >>> z" optimization in URShift{I,L}Node::Ideal.
+  if (use_op == Op_AddI || use_op == Op_AddL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
     });
   }
   // If changed LShiftI/LShiftL inputs, check AddI/AddL users for their
