@@ -3705,6 +3705,19 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
         return a;
     }
 
+#if[FP16]
+    // Returns the lane values boxed as Float16 elements.
+    @ForceInline
+    final Float16[] toFloat16Array() {
+        short[] bits = vec();
+        Float16[] a = new Float16[bits.length];
+        for (int i = 0; i < bits.length; i++) {
+            a[i] = Float16.shortBitsToFloat16(bits[i]);
+        }
+        return a;
+    }
+
+#end[FP16]
 #if[int]
     /**
      * {@inheritDoc} <!--workaround-->
@@ -5710,10 +5723,19 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
      * {@code "[0,1,2...]"}, reporting the lane values of this vector,
      * in lane order.
      *
+#if[FP16]
+     * The string is produced as if by a call to {@link
+     * java.util.Arrays#toString(Object[]) Arrays.toString()},
+     * as appropriate to a {@code Float16} array whose elements
+     * are obtained by applying {@link Float16#shortBitsToFloat16(short)}
+     * to each element of the {@code short[]} array returned by
+     * {@link #toArray this.toArray()}.
+#else[FP16]
      * The string is produced as if by a call to {@link
      * java.util.Arrays#toString($type$[]) Arrays.toString()},
      * as appropriate to the {@code $type$} array returned by
      * {@link #toArray this.toArray()}.
+#end[FP16]
      *
      * @return a string of the form {@code "[0,1,2...]"}
      * reporting the lane values of this vector
@@ -5722,8 +5744,15 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     @ForceInline
     public final
     String toString() {
+#if[FP16]
+        // Render the lanes as Float16 values; Float16.toString produces
+        // human-readable text and canonicalizes NaN, Infinity and -0.0
+        // independent of the underlying bit encoding.
+        return Arrays.toString(toFloat16Array());
+#else[FP16]
         // now that toArray is strongly typed, we can define this
         return Arrays.toString(toArray());
+#end[FP16]
     }
 
     /**
@@ -5749,8 +5778,14 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     @ForceInline
     public final
     int hashCode() {
+#if[FP16]
+        // Hash the lanes as Float16 values; Float16.hashCode canonicalizes NaN
+        // so that all NaN representations contribute the same hash code.
+        return Objects.hash(species(), Arrays.hashCode(toFloat16Array()));
+#else[FP16]
         // now that toArray is strongly typed, we can define this
         return Objects.hash(species(), Arrays.hashCode(toArray()));
+#end[FP16]
     }
 
     // ================================================

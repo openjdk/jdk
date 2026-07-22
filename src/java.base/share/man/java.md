@@ -90,30 +90,39 @@ To launch a source-file program:
 
 ## Description
 
-The `java` command starts a Java application. It does this by starting the Java
-Virtual Machine (JVM), loading the specified class, and calling that
-class's `main()` method. The method must be declared `public` and `static`, it
-must not return any value, and it must accept a `String` array as a parameter.
-The method declaration has the following form:
+The `java` command launches a Java application. It does this by starting the Java
+Virtual Machine (JVM), loading the main class of the application, and calling
+that class's `main()` method.
 
->   `public static void main(String[] args)`
+By default, the first argument that isn't an option of the `java` command indicates
+the fully qualified name of the main class. If `-jar` is specified, then its
+argument is the name of the JAR file containing class and resource files for the
+application, and the main class is indicated by the `Main-Class` attribute in
+the manifest of the JAR file.
 
-In source-file mode, the `java` command can launch a class declared in a source
-file. See [Using Source-File Mode to Launch Source-Code Programs]
-for a description of using the source-file mode.
+The `main()` method may be a static method or an instance method. It may
+declare a `String` array parameter for arguments passed to the `java`
+command after the main class name or the JAR file name; alternatively,
+it may declare no parameters. It must not return any value, and must
+have `public`, `protected`, or package access. The method declaration
+typically has one of the following forms:
 
-> **Note:** You can use the `JDK_JAVA_OPTIONS` launcher environment variable to prepend its
-content to the actual command line of the `java` launcher. See [Using the
-JDK\_JAVA\_OPTIONS Launcher Environment Variable].
+>    `public static void main(String[] args)`
+>
+>    `public static void main()`
+>
+>    `void main(String[] args)`
+>
+>    `void main()`
 
-By default, the first argument that isn't an option of the `java` command is
-the fully qualified name of the class to be called. If `-jar` is specified,
-then its argument is the name of the JAR file containing class and resource
-files for the application. The startup class must be indicated by the
-`Main-Class` manifest header in its manifest file.
+In source-file mode, the `java` command can launch an application whose main class
+is provided as source code instead of a class file.
+See [Using Source-File Mode to Launch Source-Code Programs] for a description of
+using the source-file mode.
 
-Arguments after the class file name or the JAR file name are passed to the
-`main()` method.
+> **Note:** You can use the `JDK_JAVA_OPTIONS` launcher environment variable to
+prepend its content to the actual command line of the java launcher.
+See [Using the JDK\_JAVA\_OPTIONS Launcher Environment Variable].
 
 ### `javaw`
 
@@ -483,7 +492,7 @@ the JVM.
         without any warnings.
 
     -   `warn`: This mode is identical to `allow` except that a warning message is
-        issued for the first illegal final field mutation performaed in a module.
+        issued for the first illegal final field mutation performed in a module.
         This mode is the default for the current JDK but will change in a future
         release.
 
@@ -1215,9 +1224,11 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         be replaced with `[REDACTED]`. The option `redact-argument` is best-effort
         and applies only to command-line arguments in the `jdk.JVMInformation`
         event and to the `java.command` system property in the
-        `jdk.InitialSystemProperty` event. Other events, such as `jdk.ProcessStart`
-        (child processes), are not redacted. Use `-XX:FlightRecorderOptions:help`
-        to see the default filters used by the `redact-argument` option.
+        `jdk.InitialSystemProperty` event, and to matching command-line argument
+        text in the values of `jdk.InitialEnvironmentVariable` events. Other
+        events, such as `jdk.ProcessStart` (child processes), are not redacted.
+        Use `-XX:FlightRecorderOptions:help` to see the default filters used by
+        the `redact-argument` option.
 
     `redact-key=`key-filter
     :   Replace the value of environment variables and system properties
@@ -1568,14 +1579,14 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     This option is similar to `-Xss`.
 
-[`-XX:+UseCompactObjectHeaders`]{#-XX__UseCompactObjectHeaders}
-:   Enables compact object headers. By default, this option is disabled.
-    Enabling this option reduces memory footprint in the Java heap by
-    4 bytes per object (on average) and often improves performance.
+[`-XX:-UseCompactObjectHeaders`]{#-XX__UseCompactObjectHeaders}
+:   Disables compact object headers. By default, this option is enabled and
+    compact object headers are used.  Using compact object headers reduces
+    memory footprint in the Java heap by 4 bytes per object (on average) and
+    often improves performance.
 
-    The feature remains disabled by default while it continues to be evaluated.
-    In a future release it is expected to be enabled by default, and
-    eventually will be the only mode of operation.
+    This option can be used if performance regressions are suspected. In a future
+    release compact object headers is expected to become the only mode of operation.
 
 [`-XX:-UseCompressedOops`]{#-XX__UseCompressedOops}
 :   Disables the use of compressed pointers. By default, this option is
@@ -2267,6 +2278,23 @@ performed by the Java HotSpot VM.
 
 These `java` options provide the ability to gather system information and
 perform extensive debugging.
+
+[`-XX:AltTempDir=`]{#-XX_AltTempDir}*/path*
+:   **Linux-only:** On Linux, the usual directory to use for temporary files is `/tmp`. In some secure container
+    environments however, `/tmp` is made read-only and so is unusable by the VM for its temporary files. To accommodate
+    this uncommon circumstance the `-XX:AltTempDir` flag can be used to tell the VM to use a different temporary directory.
+
+    It is important to note that this setting controls not only where the VM places its own temporary files, but also the location
+    it will look for the special files used by other VMs as part of the attach protocol for tools like `jcmd` and `jstack`. That
+    means that both VMs must use the same setting of this flag. For example, if you start a target VM with
+    `java -XX:AltTempDir=/scratch/vmTmp` then you must run e.g. `jcmd -J-XX:AltTempDir=/scratch/vmTmp` to interact with that target VM.
+
+    The directory path must of course be writable and accessible to both the target and tool VM, so the simplest arrangement
+    is to always run both in the same container.
+
+    The value for `AltTempDir` must be an absolute directory path starting with `/`. The length of the `AltTempDir` path should be
+    fairly small (less than approximately 80 characters) if it is to be used with the attach protocol due to path length limits
+    for socket files.
 
 [`-XX:+DisableAttachMechanism`]{#-XX__DisableAttachMechanism}
 :   Disables the mechanism that lets tools attach to the JVM. By default, this

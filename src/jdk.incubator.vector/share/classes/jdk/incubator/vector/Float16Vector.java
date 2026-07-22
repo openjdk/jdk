@@ -2861,6 +2861,17 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
         return a;
     }
 
+    // Returns the lane values boxed as Float16 elements.
+    @ForceInline
+    final Float16[] toFloat16Array() {
+        short[] bits = vec();
+        Float16[] a = new Float16[bits.length];
+        for (int i = 0; i < bits.length; i++) {
+            a[i] = Float16.shortBitsToFloat16(bits[i]);
+        }
+        return a;
+    }
+
     /** {@inheritDoc} <!--workaround-->
      */
     @ForceInline
@@ -3696,8 +3707,10 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
      * in lane order.
      *
      * The string is produced as if by a call to {@link
-     * java.util.Arrays#toString(short[]) Arrays.toString()},
-     * as appropriate to the {@code short} array returned by
+     * java.util.Arrays#toString(Object[]) Arrays.toString()},
+     * as appropriate to a {@code Float16} array whose elements
+     * are obtained by applying {@link Float16#shortBitsToFloat16(short)}
+     * to each element of the {@code short[]} array returned by
      * {@link #toArray this.toArray()}.
      *
      * @return a string of the form {@code "[0,1,2...]"}
@@ -3707,8 +3720,10 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     @ForceInline
     public final
     String toString() {
-        // now that toArray is strongly typed, we can define this
-        return Arrays.toString(toArray());
+        // Render the lanes as Float16 values; Float16.toString produces
+        // human-readable text and canonicalizes NaN, Infinity and -0.0
+        // independent of the underlying bit encoding.
+        return Arrays.toString(toFloat16Array());
     }
 
     /**
@@ -3734,8 +3749,9 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     @ForceInline
     public final
     int hashCode() {
-        // now that toArray is strongly typed, we can define this
-        return Objects.hash(species(), Arrays.hashCode(toArray()));
+        // Hash the lanes as Float16 values; Float16.hashCode canonicalizes NaN
+        // so that all NaN representations contribute the same hash code.
+        return Objects.hash(species(), Arrays.hashCode(toFloat16Array()));
     }
 
     // ================================================

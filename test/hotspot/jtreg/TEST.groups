@@ -184,7 +184,8 @@ tier1_compiler_2 = \
   -compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
   -compiler/codecache/stress \
   -compiler/codegen/aes \
-  -compiler/gcbarriers/PreserveFPRegistersTest.java
+  -compiler/gcbarriers/PreserveFPRegistersTest.java \
+  -compiler/igvn/TestMaskedStoreIdealization.java
 
 tier1_compiler_3 = \
   compiler/intrinsics/ \
@@ -314,7 +315,8 @@ tier1_gc_shenandoah = \
   gc/shenandoah/compiler/ \
   gc/shenandoah/mxbeans/ \
   gc/shenandoah/TestSmallHeap.java \
-  gc/shenandoah/oom/
+  gc/shenandoah/oom/ \
+  gtest/ShenandoahGtests.java
 
 tier2_gc_shenandoah = \
   runtime/MemberName/MemberNameLeak.java \

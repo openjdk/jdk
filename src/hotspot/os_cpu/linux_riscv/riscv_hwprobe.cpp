@@ -215,11 +215,9 @@ void RiscvHwprobe::add_features_from_query_result() {
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBS)) {
     VM_Version::ext_Zbs.enable_feature();
   }
-#ifndef PRODUCT
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFA)) {
     VM_Version::ext_Zfa.enable_feature();
   }
-#endif
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFH)) {
     VM_Version::ext_Zfh.enable_feature();
   }
@@ -239,15 +237,18 @@ void RiscvHwprobe::add_features_from_query_result() {
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZTSO)) {
     VM_Version::ext_Ztso.enable_feature();
   }
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBB)) {
-    VM_Version::ext_Zvbb.enable_feature();
-  }
+#endif
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBC)) {
     VM_Version::ext_Zvbc.enable_feature();
   }
-#endif
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBB)) {
+    VM_Version::ext_Zvbb.enable_feature();
+  }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVFH)) {
     VM_Version::ext_Zvfh.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVFHMIN)) {
+    VM_Version::ext_Zvfhmin.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKNED) &&
       is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKNHB) &&
@@ -261,13 +262,16 @@ void RiscvHwprobe::add_features_from_query_result() {
 
   // ====== non-extensions ======
   //
-  if (is_valid(RISCV_HWPROBE_KEY_MARCHID)) {
+  // For value-type keys, the kernel returns (uint64_t)-1 when CPUs in the
+  // query set disagree (different core types). Skip these as the value is
+  // not meaningful for the system as a whole.
+  if (is_valid(RISCV_HWPROBE_KEY_MARCHID) && query[RISCV_HWPROBE_KEY_MARCHID].value != (uint64_t)-1) {
     VM_Version::marchid.enable_feature(query[RISCV_HWPROBE_KEY_MARCHID].value);
   }
-  if (is_valid(RISCV_HWPROBE_KEY_MIMPID)) {
+  if (is_valid(RISCV_HWPROBE_KEY_MIMPID) && query[RISCV_HWPROBE_KEY_MIMPID].value != (uint64_t)-1) {
     VM_Version::mimpid.enable_feature(query[RISCV_HWPROBE_KEY_MIMPID].value);
   }
-  if (is_valid(RISCV_HWPROBE_KEY_MVENDORID)) {
+  if (is_valid(RISCV_HWPROBE_KEY_MVENDORID) && query[RISCV_HWPROBE_KEY_MVENDORID].value != (uint64_t)-1) {
     VM_Version::mvendorid.enable_feature(query[RISCV_HWPROBE_KEY_MVENDORID].value);
   }
   // RISCV_HWPROBE_KEY_CPUPERF_0 is deprecated and returns similar values

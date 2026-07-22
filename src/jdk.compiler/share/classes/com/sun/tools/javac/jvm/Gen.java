@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -741,6 +741,11 @@ public class Gen extends JCTree.Visitor {
             code.resolvePending();
 
             LetExpr tree = (LetExpr) inner_tree;
+
+            if (tree.needsLineNumberTableEntry) {
+                code.statBegin(tree.pos);
+            }
+
             int limit = code.nextreg;
             int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);
             try {
@@ -2434,6 +2439,10 @@ public class Gen extends JCTree.Visitor {
 
     public void visitLetExpr(LetExpr tree) {
         code.resolvePending();
+
+        if (tree.needsLineNumberTableEntry) {
+            code.statBegin(tree.pos);
+        }
 
         int limit = code.nextreg;
         int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);

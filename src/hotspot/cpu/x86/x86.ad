@@ -2764,23 +2764,23 @@ uint Matcher::float_pressure_limit()
   return (FLOATPRESSURE == -1) ? default_float_pressure_threshold : FLOATPRESSURE;
 }
 
-// Register for DIVI projection of divmodI
-const RegMask& Matcher::divI_proj_mask() {
+// Register for the first projection of an int pair
+const RegMask& Matcher::firstI_proj_mask() {
   return INT_RAX_REG_mask();
 }
 
-// Register for MODI projection of divmodI
-const RegMask& Matcher::modI_proj_mask() {
+// Register for the second projection of an int pair
+const RegMask& Matcher::secondI_proj_mask() {
   return INT_RDX_REG_mask();
 }
 
-// Register for DIVL projection of divmodL
-const RegMask& Matcher::divL_proj_mask() {
+// Register for the first projection of a long pair
+const RegMask& Matcher::firstL_proj_mask() {
   return LONG_RAX_REG_mask();
 }
 
-// Register for MODL projection of divmodL
-const RegMask& Matcher::modL_proj_mask() {
+// Register for the second projection of a long pair
+const RegMask& Matcher::secondL_proj_mask() {
   return LONG_RDX_REG_mask();
 }
 
@@ -3179,6 +3179,13 @@ bool Matcher::match_rule_supported(int opcode) {
       break;
 
     case Op_VectorCmpMasked:
+      if (!UseCountTrailingZerosInstruction) {
+        return false;
+      }
+      if (UseAVX < 3 || !VM_Version::supports_bmi2()) {
+        return false;
+      }
+      break;
     case Op_VectorMaskGen:
       if (UseAVX < 3 || !VM_Version::supports_bmi2()) {
         return false;
@@ -11370,6 +11377,34 @@ instruct mulL_mem_imm(rRegL dst, memory src, immL32 imm, rFlagsReg cr)
     __ imulq($dst$$Register, $src$$Address, $imm$$constant);
   %}
   ins_pipe(ialu_reg_mem_alu0);
+%}
+
+instruct mulHiLoL_rReg(rax_RegL rax, rdx_RegL rdx, rRegL src, rFlagsReg cr)
+%{
+  match(MulHiLoL src rax);
+  match(MulHiLoL rax src);
+  effect(KILL cr);
+
+  ins_cost(300);
+  format %{ "imulq   RDX:RAX, RAX, $src\t# mulhilo" %}
+  ins_encode %{
+    __ imulq($src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
+instruct umulHiLoL_rReg(rax_RegL rax, rdx_RegL rdx, rRegL src, rFlagsReg cr)
+%{
+  match(UMulHiLoL src rax);
+  match(UMulHiLoL rax src);
+  effect(KILL cr);
+
+  ins_cost(300);
+  format %{ "mulq    RDX:RAX, RAX, $src\t# umulhilo" %}
+  ins_encode %{
+    __ mulq($src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
 %}
 
 instruct mulHiL_rReg(rdx_RegL dst, rRegL src, rax_RegL rax, rFlagsReg cr)

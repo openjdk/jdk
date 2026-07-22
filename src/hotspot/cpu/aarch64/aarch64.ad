@@ -1198,8 +1198,12 @@ class HandlerImpl {
   static int emit_deopt_handler(C2_MacroAssembler* masm);
 
   static uint size_deopt_handler() {
-    // count one branch instruction and one far call instruction sequence
-    return NativeInstruction::instruction_size + MacroAssembler::far_codestub_branch_size();
+    bool use_far_branch = MacroAssembler::target_needs_far_branch(SharedRuntime::deopt_blob()->unpack());
+    // far: adrp, add, blr; near: bl
+    uint target_branch_instructions = use_far_branch ? 3 : 1;
+    // target branch + one branch instruction
+    uint deopt_handler_instructions = target_branch_instructions + 1;
+    return deopt_handler_instructions * NativeInstruction::instruction_size;
   }
 };
 
@@ -2512,25 +2516,25 @@ uint Matcher::float_pressure_limit()
   return (FLOATPRESSURE == -1) ? _FLOAT_REG_mask.size() : FLOATPRESSURE;
 }
 
-const RegMask& Matcher::divI_proj_mask() {
+const RegMask& Matcher::firstI_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
 
-// Register for MODI projection of divmodI.
-const RegMask& Matcher::modI_proj_mask() {
+// Register for the second projection of an int pair
+const RegMask& Matcher::secondI_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
 
-// Register for DIVL projection of divmodL.
-const RegMask& Matcher::divL_proj_mask() {
+// Register for the first projection of a long pair
+const RegMask& Matcher::firstL_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
 
-// Register for MODL projection of divmodL.
-const RegMask& Matcher::modL_proj_mask() {
+// Register for the second projection of a long pair
+const RegMask& Matcher::secondL_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
@@ -8224,7 +8228,7 @@ instruct encodeKlass_not_null(iRegNNoSp dst, iRegP src) %{
   ins_encode %{
     Register src_reg = as_Register($src$$reg);
     Register dst_reg = as_Register($dst$$reg);
-    __ encode_klass_not_null(dst_reg, src_reg);
+    __ encode_klass_not_null(dst_reg, src_reg, rscratch1);
   %}
 
    ins_pipe(ialu_reg);
@@ -8239,11 +8243,7 @@ instruct decodeKlass_not_null(iRegPNoSp dst, iRegN src) %{
   ins_encode %{
     Register src_reg = as_Register($src$$reg);
     Register dst_reg = as_Register($dst$$reg);
-    if (dst_reg != src_reg) {
-      __ decode_klass_not_null(dst_reg, src_reg);
-    } else {
-      __ decode_klass_not_null(dst_reg);
-    }
+    __ decode_klass_not_null(dst_reg, src_reg, rscratch1);
   %}
 
    ins_pipe(ialu_reg);
