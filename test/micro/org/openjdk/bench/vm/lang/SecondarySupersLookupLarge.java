@@ -232,15 +232,20 @@ public class SecondarySupersLookupLarge {
     @OperationsPerInvocation(TESTINSTANCES)
     public void instanceOfPositive(Blackhole bh) {
         for (var obj : testInstances) {
+            var found = testInstance.instanceOfPositive(obj);
+            if (!found)  throw new RuntimeException();
             bh.consume(testInstance.instanceOfPositive(obj));
         }
     }
     @Benchmark
     @OperationsPerInvocation(TESTINSTANCES)
     public void instanceOfNegative(Blackhole bh) {
+        var found = false;
         for (Object obj : testInstances) {
-            bh.consume(testInstance.instanceOfNegative(obj));
+            found |= testInstance.instanceOfNegative(obj);
+            bh.consume(found);
         }
+        if (found)  throw new RuntimeException();
     }
 
 }
