@@ -313,7 +313,8 @@ public class IrreducibleLoopFuzzer {
                 insertExtension(b);
             } else if (r < 40) {
                 insertLoopReducible(b);
-                // TODO: irreducible loop!
+            } else if (r < 60) {
+                insertLoopIrreducible(b);
             } else {
                 insertIfElse(b);
             }
@@ -353,6 +354,34 @@ public class IrreducibleLoopFuzzer {
             backedge.out0 = b;
             blocks.add(exit);
             blocks.add(backedge);
+        }
+
+        private void insertLoopIrreducible(Block b) {
+            Block exit = new Block();
+            exit.out0 = b.out0;
+            exit.out1 = b.out1;
+            blocks.add(exit);
+
+            int n = RANDOM.nextInt(8) + 2;
+            Block[] loop = new Block[n];
+            Arrays.setAll(loop, i -> new Block());
+
+            for (int i = 0; i < loop.length; i++) {
+                Block current = loop[i];
+                Block next = loop[(i + 1) % loop.length];
+                current.out0 = next;
+
+                if (RANDOM.nextBoolean()) {
+                    current.out1 = exit;
+                }
+                blocks.add(current);
+            }
+
+            // For now, just two random entries:
+            b.out0 = loop[RANDOM.nextInt(loop.length)];;
+            b.out1 = loop[RANDOM.nextInt(loop.length)];;
+            // TODO: maybe more entries?
+            // TODO: or just complete random edges?
         }
 
         public Object pushType(JasmType type) {
