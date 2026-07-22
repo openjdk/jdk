@@ -471,20 +471,15 @@ static char** get_attach_addresses_for_disjoint_mode() {
   }
   uint start = i;
 
-  // Avoid more steps than requested.
+  // Avoid more steps than requested, and avoid probing beyond the safe mmap probing limit.
   i = 0;
   while (addresses[start+i] != 0) {
-    if (i == HeapSearchSteps) {
+    if (i == HeapSearchSteps ||
+       (addresses[start+i] >= os::vm_max_mmap_hint_address()))
+    {
       addresses[start+i] = 0;
       break;
     }
-#ifdef S390
-    // On s390x, do not probe beyond 2^42 to prevent accidental page table expansion
-    if (addresses[start+i] >= nth_bit<uintptr_t>(42)) {
-      addresses[start+i] = 0;
-      break;
-    }
-#endif
     i++;
   }
 

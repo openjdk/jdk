@@ -503,6 +503,12 @@ class os: AllStatic {
   // Returns the lowest address the process is allowed to map against.
   static size_t vm_min_address();
 
+  // On some kernels (e.g. s390x), mmap probing with high addresses can have lasting effects on
+  // the process by expanding the page table. This function returns the lowest address value
+  // that will have such an effect; callers should avoid probing beyond this address unless
+  // it is deliberate.
+  static uintptr_t vm_max_mmap_hint_address();
+
   // Returns an upper limit beyond which reserve_memory() calls are guaranteed
   // to fail. It is not guaranteed that reserving less memory than this will
   // succeed, however.

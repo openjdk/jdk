@@ -1994,6 +1994,14 @@ static void shuffle_fisher_yates(T* arr, unsigned num, FastRandom& frand) {
   }
 }
 
+#ifndef S390
+// Default implementation: assume that mmap probing with high addresses is safe:
+// no lasting effects on the process
+uintptr_t os::vm_max_mmap_hint_address() {
+  return align_down(right_n_bits<uintptr_t>(64), os::vm_allocation_granularity());
+}
+#endif
+
 // Helper for os::attempt_reserve_memory_between
 // Given an array of things, do a hemisphere split such that the resulting
 // order is: [first, last, first + 1, last - 1, ...]
@@ -2035,6 +2043,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   assert(alignment < SIZE_MAX / 2, "alignment too large (" ARGSFMT ")", ARGSFMTARGS);
   assert(is_aligned(bytes, os::vm_page_size()), "size not page aligned (" ARGSFMT ")", ARGSFMTARGS);
   assert(max >= min, "invalid range (" ARGSFMT ")", ARGSFMTARGS);
+  assert((uintptr_t)max <= os::vm_max_mmap_hint_address(), "Do not probe beyond probe limit");
 
   char* const absolute_max = (char*)(NOT_LP64(G * 3) LP64_ONLY(G * 128 * 1024));
   char* const absolute_min = (char*) os::vm_min_address();

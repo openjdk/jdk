@@ -477,3 +477,9 @@ int os::extra_bang_size_in_bytes() {
 }
 
 void os::setup_fpu() {}
+
+uintptr_t os::vm_max_mmap_hint_address() {
+  // On s390x, page table will dynamically expand based on user demand
+  // (eg mmap probing with high addresses). We usually don't want that.
+  return nth_bit(42);
+}
