@@ -838,8 +838,8 @@ public:
     StaticFieldPrinter(out), _obj(obj) {
   }
   void do_field(fieldDescriptor* fd) {
-    do_field_helper(fd, _obj, true);
     _out->print(" ");
+    do_field_helper(fd, _obj, true);
   }
 };
 
@@ -916,6 +916,7 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
         break;
       } else {
         // handling of null-free fields
+        _out->print("%s", fd->signature()->as_quoted_ascii());
         ResetNoHandleMark rnhm;
         Thread* THREAD = Thread::current();
         SignatureStream ss(fd->signature(), false);

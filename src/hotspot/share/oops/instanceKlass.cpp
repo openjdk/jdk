@@ -1583,7 +1583,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
       call_class_initializer(THREAD);
     }
 
-    if (has_strict_static_fields() && !HAS_PENDING_EXCEPTION) {
+    if (has_strict_static_fields() && !HAS_PENDING_EXCEPTION && !ReplayCompiles) {
       // Step 9 also verifies that strict static fields have been initialized.
       // Status bits were set in ClassFileParser::post_process_parsed_stream.
       // After <clinit>, bits must all be clear, or else we must throw an error.

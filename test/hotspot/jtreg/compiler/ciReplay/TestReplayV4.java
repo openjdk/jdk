@@ -89,6 +89,8 @@ public class TestReplayV4 extends DumpReplayBase {
     }
 
     private void reDumpAndCompare() {
+        ReplayFile.ParsedReplayFile firstParsedReplay;
+        ReplayFile.ParsedReplayFile secondParsedReplay;
         try {
             String[] reDumpingFlags = Arrays.copyOf(defaultReplayRunFlags, defaultReplayRunFlags.length + 2);
             reDumpingFlags[defaultReplayRunFlags.length] = "-XX:CompileCommand=option," + "*::*" + ",bool,DumpReplay,true";
@@ -109,10 +111,20 @@ public class TestReplayV4 extends DumpReplayBase {
             var secondReplay = secondReplayOpt.get();
             System.out.println("first="+firstReplay+"; second="+secondReplay);
 
-            var firstParsedReplay = ReplayFile.ParsedReplayFile.parse(firstReplay);
+            firstParsedReplay = ReplayFile.ParsedReplayFile.parse(firstReplay);
+            secondParsedReplay = ReplayFile.ParsedReplayFile.parse(secondReplay);
         } catch (Throwable t) {
+            System.out.println(t);
+            System.out.println(t.getMessage());
             throw new Error("Can't find replay: " + t, t);
         }
+
+        var differences = ReplayFile.ParsedReplayFile.findDifferences(firstParsedReplay, secondParsedReplay);
+        var message = new StringBuilder("Differences:\n");
+        for (String diff : differences) {
+            message.append("  - ").append(diff).append("\n");
+        }
+        Asserts.assertTrue(differences.isEmpty(), message.toString());
         System.exit(1);
     }
 
@@ -135,9 +147,9 @@ public class TestReplayV4 extends DumpReplayBase {
         static final Base a_base_null = null;
         static final Derived a_derived_null = null;
         @NullRestricted
-        static final Base a_base_null_free = new Derived(10, 15);;
+        static final Base a_base_null_free = new Derived(10, 15);
         @NullRestricted
-        static final Derived a_derived_null_free = new Derived(10, 15);;
+        static final Derived a_derived_null_free = new Derived(10, 15);
 
         public static void main(String[] args) {
             oArrDefault[0] = new Derived(3, 5);
