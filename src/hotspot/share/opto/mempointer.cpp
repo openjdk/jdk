@@ -103,6 +103,10 @@ void MemPointerParser::canonicalize_raw_summands() {
            _raw_summands.at(pos_get).int_group() == int_group &&
            _raw_summands.at(pos_get).variable() == variable) {
       MemPointerRawSummand s = _raw_summands.at(pos_get++);
+#ifndef _LP64
+      assert(scaleL.value() == 1 && s.scaleL().value() == 1, "scaleL must be 1");
+      scaleI = scaleI + s.scaleI();
+#else
       if (int_group == 0) {
         assert(scaleI.is_one() && s.scaleI().is_one(), "no ConvI2L");
         scaleL = scaleL + s.scaleL();
@@ -110,6 +114,7 @@ void MemPointerParser::canonicalize_raw_summands() {
         assert(scaleL.value() == s.scaleL().value(), "same ConvI2L, same scaleL");
         scaleI = scaleI + s.scaleI();
       }
+#endif
     }
     // Keep summands with non-zero scale.
     if (!scaleI.is_zero() && !scaleL.is_zero()) {
@@ -170,6 +175,7 @@ void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand,
 
   int opc = n->Opcode();
   if (is_safe_to_decompose_op(opc, scaleI * scaleL)) {
+    const bool is_long = (int_group == 0) && (MemPointer::TYPE == T_LONG);
     switch (opc) {
       case Op_ConI:
       case Op_ConL:
@@ -177,8 +183,8 @@ void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand,
         // Terminal summand.
         NoOverflowInt con = (opc == Op_ConI) ? NoOverflowInt(n->get_int())
                                              : NoOverflowInt(n->get_long());
-        NoOverflowInt conI = (int_group == 0) ? scaleI : scaleI * con;
-        NoOverflowInt conL = (int_group == 0) ? scaleL * con : scaleL;
+        NoOverflowInt conI = (is_long) ? scaleI : scaleI * con;
+        NoOverflowInt conL = (is_long) ? scaleL * con : scaleL;
         _raw_summands.push(MemPointerRawSummand::make_con(conI, conL, int_group));
         return;
       }
@@ -205,8 +211,8 @@ void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand,
         // 2L * (x - y)      0          1         2         1         -2
         // ConvI2L(x - y)    1          1         1         -1        1
 
-        NoOverflowInt sub_scaleI = (int_group == 0) ? scaleI : scaleI * NoOverflowInt(-1);
-        NoOverflowInt sub_scaleL = (int_group == 0) ? scaleL * NoOverflowInt(-1) : scaleL;
+        NoOverflowInt sub_scaleI = (is_long) ? scaleI : scaleI * NoOverflowInt(-1);
+        NoOverflowInt sub_scaleL = (is_long) ? scaleL * NoOverflowInt(-1) : scaleL;
 
         _worklist.push(MemPointerRawSummand(a,     scaleI,     scaleL, int_group));
         _worklist.push(MemPointerRawSummand(b, sub_scaleI, sub_scaleL, int_group));
@@ -245,8 +251,8 @@ void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand,
         // 2L * (4L * x)           0          1         8
         // 2L * ConvI2L(4 * x)     1          4         2
 
-        NoOverflowInt mul_scaleI = (int_group == 0) ? scaleI : scaleI * factor;
-        NoOverflowInt mul_scaleL = (int_group == 0) ? scaleL * factor : scaleL;
+        NoOverflowInt mul_scaleI = (is_long) ? scaleI : scaleI * factor;
+        NoOverflowInt mul_scaleL = (is_long) ? scaleL * factor : scaleL;
 
         _worklist.push(MemPointerRawSummand(variable, mul_scaleI, mul_scaleL, int_group));
         callback.callback(n);
@@ -263,8 +269,10 @@ void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand,
         // Fall-through: we can find a more precise native-memory "base". We further decompose
         // the CastX2P to find this "base" and any other offsets from it.
       case Op_CastII:
+#ifdef _LP64
       case Op_CastLL:
       case Op_ConvI2L:
+#endif
         // On 32bit systems we can also look through ConvL2I, since the final result will always
         // be truncated back with ConvL2I. On 64bit systems we cannot decompose ConvL2I because
         // such int values will eventually be expanded to long with a ConvI2L:
@@ -276,7 +284,6 @@ void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand,
         {
           // Decompose: look through.
           Node* a = n->in(1);
-
           int cast_int_group = int_group;
 #ifdef _LP64
           if (opc == Op_ConvI2L) {
