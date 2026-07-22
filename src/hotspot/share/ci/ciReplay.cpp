@@ -824,7 +824,7 @@ class CompileReplay : public StackObj {
     rec->_instructions_size = parse_int("instructions_size");
   }
 
-  // ciMethodData <klass> <name> <signature> <state> <invocation_counter> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass>)* methods <length> (<offset> <klass> <name> <signature>)*
+  // ciMethodData <klass> <name> <signature> <state> <invocation_counter> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass> <array properties>?)* methods <length> (<offset> <klass> <name> <signature>)*
   void process_ciMethodData(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -1203,7 +1203,7 @@ class CompileReplay : public StackObj {
     fieldDescriptor fd;
     Symbol* name = SymbolTable::new_symbol(field_name);
     Symbol* sig = SymbolTable::new_symbol(field_signature);
-    if (!k->find_local_field(name, sig, &fd) ||
+    if (!k->find_local_field(name, sig, &fd, _version >= 4) ||
         !fd.is_static() ||
         fd.has_initial_value()) {
       report_error(field_name);
@@ -1247,22 +1247,17 @@ class CompileReplay : public StackObj {
       const char* string_value = parse_escaped_string();
       double value = atof(string_value);
       java_mirror->double_field_put(fd.offset(), value);
+    } else if (fd.is_null_free_inline_type()) {
+      Klass* kelem = resolve_klass(field_signature, CHECK);
+      InlineKlass* vk = InlineKlass::cast(kelem);
+      oop value = vk->allocate_instance(CHECK);
+      InlineTypeFieldInitializer init_fields(value, this);
+      vk->do_nonstatic_fields(&init_fields);
+      java_mirror->obj_field_put(fd.offset(), value);
     } else {
-      Klass* kelem = nullptr;
-      if (fd.field_type() == T_OBJECT) {
-        kelem = resolve_klass(field_signature, CHECK);
-      }
-      if (kelem != nullptr && kelem->is_inline_klass()) {
-        InlineKlass* vk = InlineKlass::cast(kelem);
-        oop value = vk->allocate_instance(CHECK);
-        InlineTypeFieldInitializer init_fields(value, this);
-        vk->do_nonstatic_fields(&init_fields);
-        java_mirror->obj_field_put(fd.offset(), value);
-      } else {
-        bool res = process_staticfield_reference(field_signature, java_mirror, &fd, CHECK);
-        if (!res)  {
-          report_error("unhandled staticfield");
-        }
+      bool res = process_staticfield_reference(field_signature, java_mirror, &fd, CHECK);
+      if (!res)  {
+        report_error("unhandled staticfield");
       }
     }
   }

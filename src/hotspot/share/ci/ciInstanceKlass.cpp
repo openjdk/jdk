@@ -863,40 +863,26 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
       break;
     }
     case T_ARRAY:  // fall-through
-    case T_OBJECT: {
-      InstanceKlass* k = nullptr;
-      ResetNoHandleMark rnhm;
-      Thread* THREAD = Thread::current();
-      SignatureStream ss(fd->signature(), false);
-      Symbol* name = ss.as_symbol();
-      assert(!HAS_PENDING_EXCEPTION, "can resolve klass?");
-      InstanceKlass* holder = fd->field_holder();
-      if (field_type == T_OBJECT) {
-        k = SystemDictionary::find_instance_klass(THREAD, name, Handle(THREAD, holder->class_loader()));
-        // handling of null free inline type
-        guarantee(k != nullptr && !HAS_PENDING_EXCEPTION, "can resolve klass?");
-      }
-
-      if (k == nullptr || !k->is_inline_klass()) {
-        _out->print("%s ", fd->signature()->as_quoted_ascii());
+    case T_OBJECT:
+      if (!fd->is_null_free_inline_type()) {
+        _out->print("%s", fd->signature()->as_quoted_ascii());
         oop value =  mirror->obj_field_acquire(fd->offset());
         if (value == nullptr) {
           if (field_type == T_ARRAY) {
-            _out->print("%d", -1);
+            _out->print(" %d", -1);
           }
-          _out->cr();
         } else if (value->is_instance()) {
           assert(field_type == T_OBJECT, "");
           if (value->is_a(vmClasses::String_klass())) {
             const char* ascii_value = java_lang_String::as_quoted_ascii(value);
-            _out->print("\"%s\"", (ascii_value != nullptr) ? ascii_value : "");
+            _out->print(" \"%s\"", (ascii_value != nullptr) ? ascii_value : "");
           } else {
             const char* klass_name  = value->klass()->name()->as_quoted_ascii();
-            _out->print("%s", klass_name);
+            _out->print(" %s", klass_name);
           }
         } else if (value->is_array()) {
           arrayOop a = (arrayOop)value;
-          _out->print("%d", a->length());
+          _out->print(" %d", a->length());
           if (value->is_objArray()) {
             objArrayOop oa = (objArrayOop)value;
             if (value->is_flatArray()) {
@@ -929,6 +915,16 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
         }
         break;
       } else {
+        // handling of null-free fields
+        ResetNoHandleMark rnhm;
+        Thread* THREAD = Thread::current();
+        SignatureStream ss(fd->signature(), false);
+        Symbol* name = ss.as_symbol();
+        assert(!HAS_PENDING_EXCEPTION, "can resolve klass?");
+        InstanceKlass* holder = fd->field_holder();
+        InstanceKlass* k = SystemDictionary::find_instance_klass(THREAD, name,
+                                                                 Handle(THREAD, holder->class_loader()));
+        guarantee(k != nullptr && !HAS_PENDING_EXCEPTION, "can resolve klass?");
         InlineKlass* vk = InlineKlass::cast(k);
         oop obj;
         if (is_flat) {
@@ -941,7 +937,6 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
         vk->do_nonstatic_fields(&print_field);
         break;
       }
-    }
     default:
       ShouldNotReachHere();
   }
