@@ -213,7 +213,7 @@ public sealed interface ConstantPoolBuilder
      *
      * @param packageDesc the symbolic descriptor for the package
      * @throws IllegalArgumentException if the symbolic descriptor represents
-     *         the unnamed package
+     *         an unnamed package
      * @see PackageEntry#asSymbol() PackageEntry::asSymbol
      */
     default PackageEntry packageEntry(PackageDesc packageDesc) {
@@ -234,10 +234,12 @@ public sealed interface ConstantPoolBuilder
      * {@link ModuleDesc}}
      *
      * @param moduleDesc the symbolic descriptor for the module
+     * @throws IllegalArgumentException if {@code moduleDesc} represents an
+     *         unnamed module
      * @see ModuleEntry#asSymbol() ModuleEntry::asSymbol
      */
     default ModuleEntry moduleEntry(ModuleDesc moduleDesc) {
-        return moduleEntry(utf8Entry(moduleDesc.name()));
+        return moduleEntry(utf8Entry(ConstantUtils.validateNamedModule(moduleDesc).name()));
     }
 
     /**

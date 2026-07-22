@@ -370,7 +370,8 @@ final class ConstantDescSymbolsTest {
                 new InvalidSymbolCase<>(UTF8_METHOD_TYPE_TRANSLATOR, badFactory(b -> b.utf8Entry("()Ljava/lang/String")), MethodTypeDesc.of(CD_String)),
                 new InvalidSymbolCase<>(PACKAGE_ENTRY_TRANSLATOR, badFactory(b -> b.packageEntry(b.utf8Entry("java.lang"))), PackageDesc.of("java.lang")),
                 new InvalidSymbolCase<>(PACKAGE_ENTRY_TRANSLATOR, badFactory(b -> b.packageEntry(b.utf8Entry(""))), PackageDesc.of("")),
-                new InvalidSymbolCase<>(MODULE_ENTRY_TRANSLATOR, badFactory(b -> b.moduleEntry(b.utf8Entry("java@base"))), ModuleDesc.of("java.base"))
+                new InvalidSymbolCase<>(MODULE_ENTRY_TRANSLATOR, badFactory(b -> b.moduleEntry(b.utf8Entry("java@base"))), ModuleDesc.of("java.base")),
+                new InvalidSymbolCase<>(MODULE_ENTRY_TRANSLATOR, badFactory(b -> b.moduleEntry(b.utf8Entry(""))), ModuleDesc.of(""))
         ).mapMulti(ConstantDescSymbolsTest::specializeInflation);
     }
 }

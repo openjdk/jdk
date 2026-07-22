@@ -32,6 +32,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 import java.lang.invoke.MethodType;
 import java.util.Set;
@@ -250,7 +251,7 @@ public final class ConstantUtils {
     /**
      * Validates the correctness of a binary package name.
      * In particular checks for the presence of invalid characters, consecutive,
-     * leading, or trailing {@code .}.  Allows empty strings for the unnamed package.
+     * leading, or trailing {@code .}.  Allows empty strings for an unnamed package.
      *
      * @param name the package name
      * @return the package name passed if valid
@@ -264,7 +265,7 @@ public final class ConstantUtils {
     /**
      * Validates the correctness of an internal package name.
      * In particular checks for the presence of invalid characters, consecutive,
-     * leading, or trailing {@code /}.  Allows empty strings for the unnamed package.
+     * leading, or trailing {@code /}.  Allows empty strings for an unnamed package.
      *
      * @param name the package name
      * @return the package name passed if valid
@@ -277,7 +278,7 @@ public final class ConstantUtils {
 
     /**
      * Validates the correctness of a package descriptor for a PackageEntry,
-     * where the unnamed package is not allowed.
+     * where an unnamed package is not allowed.
      *
      * @param desc the package descriptor
      * @throws IllegalArgumentException if the package descriptor is empty
@@ -286,6 +287,21 @@ public final class ConstantUtils {
     public static PackageDesc validateNamedPackage(PackageDesc desc) {
         if (desc.internalName().isEmpty()) {
             throw new IllegalArgumentException("Unnamed package not allowed");
+        }
+        return desc;
+    }
+
+    /**
+     * Validates the correctness of a module descriptor for a ModuleEntry,
+     * where an unnamed module is not allowed.
+     *
+     * @param desc the module descriptor
+     * @throws IllegalArgumentException if the module descriptor is empty
+     * @throws NullPointerException if the module descriptor is {@code null}
+     */
+    public static ModuleDesc validateNamedModule(ModuleDesc desc) {
+        if (desc.name().isEmpty()) {
+            throw new IllegalArgumentException("Unnamed module not allowed");
         }
         return desc;
     }

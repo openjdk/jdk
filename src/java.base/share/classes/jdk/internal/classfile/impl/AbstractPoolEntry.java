@@ -742,6 +742,9 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public boolean matches(ModuleDesc desc) {
+            if (desc.name().isEmpty()) {
+                return false;
+            }
             return ref1.equalsString(desc.name());
         }
 
