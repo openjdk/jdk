@@ -66,7 +66,7 @@ import java.util.function.Consumer;
  *   </li>
  *   <li>
  *     {@link #visitLeaf} on {@link LeafMatchResult}s that do not have any sub results. This interface provides
- *     an empty default implementation. Override {link #visitLeaf} to specify a different behavior.
+ *     an empty default implementation. Override {@link #visitLeaf} to specify a different behavior.
  *   </li>
  * </ol>
  */
