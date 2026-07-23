@@ -27,7 +27,9 @@ import compiler.lib.ir_framework.*;
 import jdk.incubator.vector.*;
 import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import java.util.Arrays;
+import java.util.Random;
 
 /*
  * @test
@@ -41,6 +43,7 @@ import java.util.Arrays;
 
 public class TestRemoveFullyCoveredStores {
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    static final Random RANDOM = Utils.getRandomInstance();
 
     static final byte[] BYTES = new byte[16];
     static final long BYTE_BASE = UNSAFE.arrayBaseOffset(byte[].class);
@@ -121,15 +124,18 @@ public class TestRemoveFullyCoveredStores {
         phase = CompilePhase.BEFORE_MATCHING,
         applyIf = {"MaxVectorSize", ">= 64"},
         applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
-    public static int[] testStoreVectorCoversMaskedStoreVector() {
-        int[] res = new int[I512.length()];
-        if (intVectorMask256.allTrue()){
+    public static int[] testStoreVectorCoversMaskedStoreVector(int index) {
+        int[] res = new int[I512.length() + 8];
+        int i = index & 7;
+
+        if (intVectorMask256.allTrue()) {
             return res;
         }
+
         IntVector intVector256 = IntVector.fromArray(I256, intArray256Early, 0);
         IntVector intVector512 = IntVector.fromArray(I512, intArray512, 0);
-        intVector256.intoArray(res, 1, intVectorMask256);
-        intVector512.intoArray(res, 0);
+        intVector256.intoArray(res, i + 1, intVectorMask256);
+        intVector512.intoArray(res, i);
         return res;
     }
 
@@ -206,8 +212,11 @@ public class TestRemoveFullyCoveredStores {
         Asserts.assertEQ(UNSAFE.getLong(BYTES, BYTE_BASE),
                          0x1122334455667788L);
 
-        int[] res = testStoreVectorCoversMaskedStoreVector();
-        Asserts.assertTrue(Arrays.equals(res, intArray512));
+        int index = RANDOM.nextInt(8);
+        int[] res = testStoreVectorCoversMaskedStoreVector(index);
+        int[] expectedArr = new int[I512.length() + 8];
+        System.arraycopy(intArray512, 0, expectedArr, index, I512.length());
+        Asserts.assertTrue(Arrays.equals(res, expectedArr));
 
         res = testMaskedStoreVectorSameMask();
         for (int i = 0; i < I256.length(); i++) {
@@ -217,13 +226,13 @@ public class TestRemoveFullyCoveredStores {
 
         long[] res1 = testScatterStoreVectorSameIndices();
         for (int i = 0; i < L256.length(); i++) {
-            int index = longIndices256[i];
+            index = longIndices256[i];
             Asserts.assertEquals(res1[index], longArray256Late[i]);
         }
 
         res1 = testScatterMaskedStoreVectorSameIndicesAndMask();
         for (int i = 0; i < L256.length(); i++) {
-            int index = longIndices256[i];
+            index = longIndices256[i];
             long expected = longVectorMask256.laneIsSet(i) ? longArray256Late[i] : 0L;
             Asserts.assertEQ(res1[index], expected);
         }

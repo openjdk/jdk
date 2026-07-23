@@ -1031,28 +1031,20 @@ bool AccessAnalyzer::store_fully_covers(const StoreNode* other) const {
   }
 
   // This is only valid when the current store writes a contiguous range,
-  // the other store has a contiguous address range, and both offsets can be
-  // compared against the same base.
+  // the other store has a contiguous address range.
   if (!cur_writes_full_contiguous_range ||
-      !other_writes_within_contiguous_range ||
-      !_can_compare_offsets) {
+      !other_writes_within_contiguous_range) {
     return false;
   }
 
-  // Use offsets and sizes to decide whether the current store covers the other store.
-  intptr_t other_offset = 0;
-  Node* other_base = AddPNode::Ideal_base_and_offset(other_adr, _phase, other_offset);
-  if (other_base == nullptr ||
-      other_offset == Type::OffsetBot ||
-      !other_base->eqv_uncast(_base) ||
-      other_offset < _offset) {
-    return false;
-  }
+#ifndef PRODUCT
+  const TraceMemPointer trace(false, false, false, false);
+#endif
 
-  intptr_t offset_delta = other_offset - _offset;
-  intptr_t size_delta = (intptr_t)_memory_size - (intptr_t)other_size;
+  const MemPointer cur_pointer(_n NOT_PRODUCT(COMMA trace));
+  const MemPointer other_pointer(other NOT_PRODUCT(COMMA trace));
 
-  return offset_delta <= size_delta;
+  return cur_pointer.always_contains(other_pointer);
 }
 
 //=============================================================================
