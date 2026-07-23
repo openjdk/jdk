@@ -24,7 +24,6 @@
  *
  */
 
-#include "memory/metaspace.hpp"
 #include "oops/compressedKlass.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
