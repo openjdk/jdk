@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -57,6 +58,10 @@ public class Atomic {
     public Object testObject1;
     public Object testObject2;
     public AtomicReference<Object> aReference;
+    public volatile Object referenceField;
+
+    public static final AtomicReferenceFieldUpdater<Atomic, Object> REFERENCE_FIELD_UPDATER
+            = AtomicReferenceFieldUpdater.newUpdater(Atomic.class, Object.class, "referenceField");
 
     /**
      * The test variables are allocated every iteration so you can assume they are initialized to get similar behaviour
@@ -70,6 +75,7 @@ public class Atomic {
         aBool = new AtomicBoolean(false);
         aReference = new AtomicReference<>(testObject1);
         aLong = new AtomicLong(0);
+        referenceField = testObject1;
     }
 
 
@@ -119,5 +125,13 @@ public class Atomic {
     public void testAtomicReference(Blackhole bh) {
         bh.consume(aReference.compareAndSet(testObject1, testObject2));
         bh.consume(aReference.compareAndSet(testObject2, testObject1));
+    }
+
+    /** Swap a few references */
+    @Benchmark
+    @OperationsPerInvocation(2)
+    public void testAtomicReferenceFieldUpdater(Blackhole bh) {
+        bh.consume(REFERENCE_FIELD_UPDATER.compareAndSet(this, testObject1, testObject2));
+        bh.consume(REFERENCE_FIELD_UPDATER.compareAndSet(this, testObject2, testObject1));
     }
 }
