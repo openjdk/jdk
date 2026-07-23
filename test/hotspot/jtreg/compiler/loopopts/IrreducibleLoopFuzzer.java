@@ -170,7 +170,7 @@ public class IrreducibleLoopFuzzer {
         public String name() { return "int"; }
         public String prefix() { return "i"; }
         public int slots() { return 1; }
-        public Object pushCon() { return "ldc " + RANDOM.nextInt() + ";\n"; }
+        public Object pushCon() { return "ldc_w " + RANDOM.nextInt() + ";\n"; }
 
         public List<Operation> ifGotoOperations(String label) {
             return List.of(
