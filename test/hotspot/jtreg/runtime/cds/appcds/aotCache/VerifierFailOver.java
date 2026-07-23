@@ -45,61 +45,34 @@ public class VerifierFailOver {
     static final String appJar = ClassFileInstaller.getJarPath("app.jar");
 
     public static void main(String... args) throws Exception {
+        test(true);
+        test(false);
+    }
+
+    static void test(boolean aotClassLinking) throws Exception {
         SimpleCDSAppTester.of("VerifierFailOver")
             .addVmArgs("-Xlog:aot,aot+class=debug")
+            .addVmArgs("-XX:" + (aotClassLinking ? "+" : "-") + "AOTClassLinking")
             .classpath("app.jar")
             .appCommandLine("VerifierFailOverApp")
             .setTrainingChecker((OutputAnalyzer out) -> {
-                    out.shouldMatch("class.* klasses.* VerifierFailOver_Helper");
+                    if (aotClassLinking) {
+                        out.shouldMatch("class.* klasses.* VerifierFailOver_Helper");
+                    } else {
+                        out.shouldMatch("Skipping VerifierFailOver_Helper: Verified with old verifier");
+                    }
                 })
             .setAssemblyChecker((OutputAnalyzer out) -> {
-                    // Classes verified with fail-over can be cached if AOTClassLinking is on
-                    out.shouldMatch("class.* klasses.* VerifierFailOverApp aot-linked");
-                    out.shouldMatch("class.* klasses.* VerifierFailOver_Helper aot-linked");
+                    if (aotClassLinking) {
+                        // Classes verified with fail-over can be cached if AOTClassLinking is on
+                        out.shouldMatch("class.* klasses.* VerifierFailOverApp aot-linked");
+                        out.shouldMatch("class.* klasses.* VerifierFailOver_Helper aot-linked");
+                    } else {
+                        out.shouldMatch("class.* klasses.* VerifierFailOverApp");
+                        out.shouldNotMatch("class.* klasses.* VerifierFailOverApp_Helper");
+                    }
                 })
             .runAOTWorkflow();
-
-
-        // When running an assembly run without AOTClassLinking, any classes verified with
-        // fail-over need to be excluded.
-        Tester t = new Tester();
-        t.runAOTWorkflow();
-    }
-
-    static class Tester extends CDSAppTester {
-        public Tester() {
-            super(mainClass);
-        }
-
-        @Override
-        public String classpath(RunMode runMode) {
-            return appJar;
-        }
-
-        @Override
-        public String[] vmArgs(RunMode runMode) {
-            if (runMode == RunMode.ASSEMBLY) {
-                return new String[] {"-XX:-AOTClassLinking", "-Xlog:aot,aot+class=debug"};
-            } else {
-                return new String[] { "-Xlog:aot,aot+class=debug" };
-            }
-        }
-
-        @Override
-        public String[] appCommandLine(RunMode runMode) {
-            return new String[] { mainClass };
-        }
-
-        @Override
-        public void checkExecution(OutputAnalyzer out, RunMode runMode)  throws Exception {
-            if (runMode == RunMode.TRAINING) {
-                out.shouldMatch("class.* klasses.* VerifierFailOver_Helper");
-            } else if (runMode == RunMode.ASSEMBLY) {
-                out.shouldContain("Skipping VerifierFailOver_Helper: Old class has been linked");
-                out.shouldMatch("class.* klasses.* VerifierFailOverApp");
-                out.shouldNotMatch("class.* klasses.* VerifierFailOver_Helper");
-            }
-        }
     }
 }
 
