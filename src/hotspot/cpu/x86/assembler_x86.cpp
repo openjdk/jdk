@@ -8523,6 +8523,14 @@ void Assembler::vfmadd132sh(XMMRegister dst, XMMRegister src1, XMMRegister src2)
   emit_int16((unsigned char)0x99, (0xC0 | encode));
 }
 
+void Assembler::vfmadd231sh(XMMRegister dst, XMMRegister src1, XMMRegister src2) {
+  assert(VM_Version::supports_avx512_fp16(), "");
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_MAP6, &attributes);
+  emit_int16((unsigned char)0xB9, (0xC0 | encode));
+}
+
 void Assembler::vpaddsb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(UseAVX > 0 && (vector_len == Assembler::AVX_512bit || (!needs_evex(dst, nds, src) || VM_Version::supports_avx512vl())), "");
   assert(!needs_evex(dst, nds, src) || VM_Version::supports_avx512bw(), "");

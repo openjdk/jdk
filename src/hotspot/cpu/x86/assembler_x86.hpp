@@ -2561,6 +2561,7 @@ private:
   void vdivsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vsqrtsh(XMMRegister dst, XMMRegister src);
   void vfmadd132sh(XMMRegister dst, XMMRegister src1, XMMRegister src2);
+  void vfmadd231sh(XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
   // Saturating packed insturctions.
   void vpaddsb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
