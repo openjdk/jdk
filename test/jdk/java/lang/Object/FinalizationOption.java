@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,17 @@
 
 /*
  * @test
- * @bug 8276422
+ * @bug 8276422 8387729
  * @summary add command-line option to disable finalization
+ * @library /test/lib
  * @run main/othervm                         FinalizationOption yes
  * @run main/othervm --finalization=enabled  FinalizationOption yes
  * @run main/othervm --finalization=disabled FinalizationOption no
+ * @run main FinalizationOption whitespace
  */
+
+import jdk.test.lib.process.ProcessTools;
+
 public class FinalizationOption {
     static volatile boolean finalizerWasCalled = false;
 
@@ -104,7 +109,18 @@ public class FinalizationOption {
         return passed;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception{
+        if ("whitespace".equals(args[0])) {
+            ProcessTools.executeTestJava("--finalization", "enabled",
+                                         "FinalizationOption", "yes")
+                        .shouldHaveExitValue(0);
+
+            ProcessTools.executeTestJava("--finalization", "disabled",
+                                         "FinalizationOption", "no")
+                        .shouldHaveExitValue(0);
+            return;
+        }
+
         boolean finalizationEnabled = switch (args[0]) {
             case "yes" -> true;
             case "no"  -> false;
