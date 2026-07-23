@@ -228,6 +228,8 @@ abstract public class CDSAppTester {
         return output;
     }
 
+    // This method should be called before `vmArgs()`, so that subclasses of CDSAppTester
+    // can have a chance to override the flags set here.
     private String[] addCommonVMArgs(RunMode runMode) {
         String[] cmdLine = new String[0];
         cmdLine = addClassOrModulePath(runMode, cmdLine);
