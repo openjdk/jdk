@@ -221,10 +221,8 @@ void java_lang_Throwable::print(oop throwable, outputStream* st) {
 }
 
 // After this many redefines, the stack trace is unreliable.
-const int MAX_VERSION = USHRT_MAX;
-
 static inline bool version_matches(Method* method, int version) {
-  assert(version < MAX_VERSION, "version is too big");
+  assert(version < USHRT_MAX, "version is too big");
   return method != nullptr && (method->constants()->version() == version);
 }
 

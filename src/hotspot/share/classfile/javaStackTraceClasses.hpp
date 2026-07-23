@@ -28,6 +28,10 @@
 #include "runtime/handles.hpp"
 #include "utilities/macros.hpp"
 
+class InstanceKlass;
+class JavaThread;
+class Method;
+class outputStream;
 class SerializeClosure;
 class Symbol;
 
@@ -105,6 +109,9 @@ class java_lang_Throwable: AllStatic {
   static void java_printStackTrace(Handle throwable, TRAPS);
   // Gets the method and bci of the top frame (TOS). Returns false if this failed.
   static bool get_top_method_and_bci(oop throwable, Method** method, int* bci);
+
+  // Debugging
+  friend class JavaClasses;
 };
 
 // Interface to java.lang.StackTraceElement objects
