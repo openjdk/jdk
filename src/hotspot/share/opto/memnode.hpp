@@ -195,7 +195,6 @@ private:
   const TypePtr* _adr_type;
   int _alias_idx;
   Node* const _adr;
-  bool _can_compare_offsets;
 
 public:
   AccessAnalyzer(PhaseGVN* phase, MemNode* n);

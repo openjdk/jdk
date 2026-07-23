@@ -782,8 +782,7 @@ AccessAnalyzer::AccessAnalyzer(PhaseGVN* phase, MemNode* n) :
   _n(n),
   _memory_size(n->memory_size()),
   _alias_idx(-1),
-  _adr(n->in(MemNode::Address)),
-  _can_compare_offsets(false) {
+  _adr(n->in(MemNode::Address)) {
 
   _offset    = 0;
   _base      = AddPNode::Ideal_base_and_offset(_adr, _phase, _offset);
@@ -797,12 +796,6 @@ AccessAnalyzer::AccessAnalyzer(PhaseGVN* phase, MemNode* n) :
     assert(_alias_idx != Compile::AliasIdxTop, "must not be a dead node");
     assert(_alias_idx != Compile::AliasIdxBot || !phase->C->do_aliasing(), "must not be a very wide access");
   }
-
-  _can_compare_offsets = _adr_type != nullptr &&
-                         _adr_type->base() != TypePtr::AnyPtr &&
-                         _base != nullptr &&
-                         _offset != Type::OffsetBot &&
-                         _offset >= 0;
 }
 
 // Decide whether the memory accessed by '_n' and 'other' may overlap. This function may be used
