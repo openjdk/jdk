@@ -73,13 +73,11 @@ public class PanelRepaint extends Panel implements FocusListener {
         f.setSize(620, 288);
         f.setResizable(false);
         PanelRepaint pr = new PanelRepaint();
-        pr.setLayout(null);
 
         panel = new Panel();
         panel.setLayout(null);
         panel.setSize(500, 500);
         sPanel = new ScrollPanel(panel);
-        Dimension size = panel.getSize();
 
         Button btn = new Button("Open");
         pr.addComp(btn);
@@ -176,10 +174,10 @@ public class PanelRepaint extends Panel implements FocusListener {
         pr.addComp(t29);
         t29.setBounds(240, 330, 100, 20);
 
-        sPanel.setBounds(0, 0, size.width, size.height / 2);
-        pr.setPreferredSize(new Dimension(size.width, size.height / 2));
         pr.add(sPanel);
         f.add(pr);
+        sPanel.setBounds(100, 100, 500, 250);
+        sPanel.doLayout();
         return f;
     }
 
