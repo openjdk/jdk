@@ -115,9 +115,10 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   __ add(start, start, tmp);                              // start := first card address
   __ add(count, count, tmp);                              // count := last card address
 
+  // Iterate from start card to end card (inclusive).
   __ bind(loop);
   if (UseCondCardMark) {
-    __ lbu(tmp, Address(count, 0));
+    __ lbu(tmp, Address(start, 0));
     static_assert((uint)G1CardTable::clean_card_val() == 0xff, "must be");
     __ subi(tmp, tmp, G1CardTable::clean_card_val()); // Convert to clean_card_value() to a comparison
                                                       // against zero to avoid use of an extra temp.
@@ -125,10 +126,10 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   }
 
   static_assert(G1CardTable::dirty_card_val() == 0, "must be to use zr");
-  __ sb(zr, Address(count, 0));
+  __ sb(zr, Address(start, 0));
 
   __ bind(next);
-  __ subi(count, count, 1);
+  __ addi(start, start, 1);
   __ bge(count, start, loop);
 
   __ bind(done);
