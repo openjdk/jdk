@@ -273,14 +273,6 @@ void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand,
       case Op_CastLL:
       case Op_ConvI2L:
 #endif
-        // On 32bit systems we can also look through ConvL2I, since the final result will always
-        // be truncated back with ConvL2I. On 64bit systems we cannot decompose ConvL2I because
-        // such int values will eventually be expanded to long with a ConvI2L:
-        //
-        //   valL = max_jint + 1
-        //   ConvI2L(ConvL2I(valL)) = ConvI2L(min_jint) = min_jint != max_jint + 1 = valL
-        //
-        NOT_LP64( case Op_ConvL2I: )
         {
           // Decompose: look through.
           Node* a = n->in(1);
