@@ -1274,15 +1274,15 @@ public class ForkJoinPool extends AbstractExecutorService
          * @throws RejectedExecutionException if array could not be resized
          */
         final void push(ForkJoinTask<?> task, ForkJoinPool pool, boolean internal) {
-            int s = top, b = base, m, cap, room; ForkJoinTask<?>[] a;
+            int s = top, b = base, m, size, cap, room; ForkJoinTask<?>[] a;
             if ((a = array) != null && (cap = a.length) > 0) { // else disabled
-                if ((room = (m = cap - 1) - (s - b)) >= 0) {
+                if ((room = (m = cap - 1) - (size = s - b)) >= 0) {
+                    long k = slotOffset(m & s), pk = slotOffset(m & (s - 2));
                     top = s + 1;
-                    U.getAndSetReference(a, slotOffset(m & s), task);
+                    U.getAndSetReference(a, k, task);
                     if (room == 0)                          // resize
                         growArray(a, cap, s);
-                    else if (room != m &&
-                             U.getReferenceAcquire(a, slotOffset(m & (s - 1))) != null)
+                    else if (size > 1 && U.getReferenceAcquire(a, pk) != null)
                         pool = null;
                 }
                 if (!internal)
@@ -2024,13 +2024,13 @@ public class ForkJoinPool extends AbstractExecutorService
         if ((qs = queues) == null || w == null || (n = qs.length) <= 0)
             src = EMPTY_SCAN;
         else {
-            int polls = (src < 0) ? n : n << 2;
+            int polls = (src < 0) ? n : n << 3;
             int idle = phase & IDLE;
             outer: for (int i = r, stride = (r >>> 16) | 1; ; i += stride) {
                 WorkQueue q; int qid;
                 if ((q = qs[qid = i & (n - 1)]) != null) {
-                    boolean taken = false;
-                    for (int b = q.base, pb = b - 1, propagated = pb; ; b = q.base) {
+                    boolean taken = false, propagated = false;;
+                    for (int b = q.base, pb = b - 1; ; b = q.base) {
                         ForkJoinTask<?> t; ForkJoinTask<?>[] a; int m, nb;
                         if ((a = q.array) == null || (m = a.length - 1) <= 0)
                             break;
@@ -2060,9 +2060,8 @@ public class ForkJoinPool extends AbstractExecutorService
                                 Object nt = U.getReferenceAcquire(a, np);
                                 q.base = nb;
                                 w.source = qid;   // volatile
-                                if (nt != null && propagated != b &&
-                                    signalWork(a, np))
-                                    propagated = nb;
+                                if (nt != null && !propagated)
+                                    propagated = signalWork(a, np);
                                 src = qid;
                                 taken = true;
                                 w.topLevelExec(t);
