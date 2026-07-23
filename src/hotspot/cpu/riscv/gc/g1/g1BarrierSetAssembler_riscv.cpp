@@ -115,18 +115,17 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   __ ld(tmp, card_table_address);
   __ add(start, start, tmp);
 
+  static_assert((uint)G1CardTable::clean_card_val() == 0xff, "must be");
+  static_assert((uint)G1CardTable::dirty_card_val() == 0, "must be to use zr");
   __ bind(loop);
   if (UseCondCardMark) {
     __ add(tmp, start, count);
     __ lbu(tmp, Address(tmp, 0));
-    static_assert((uint)G1CardTable::clean_card_val() == 0xff, "must be");
-    __ subi(tmp, tmp, G1CardTable::clean_card_val()); // Convert to clean_card_value() to a comparison
-                                                      // against zero to avoid use of an extra temp.
-    __ bnez(tmp, next);
+    __ andi(tmp, tmp, 1);                             // test bit0: dirty cards have bit0=0
+    __ beqz(tmp, next);                               // skip if already dirty (bit0=0)
   }
 
   __ add(tmp, start, count);
-  static_assert(G1CardTable::dirty_card_val() == 0, "must be to use zr");
   __ sb(zr, Address(tmp, 0));
 
   __ bind(next);
@@ -252,14 +251,14 @@ static void generate_post_barrier(MacroAssembler* masm,
   Address card_table_address(xthread, G1ThreadLocalData::card_table_base_offset());
   __ ld(tmp2, card_table_address);                       // tmp2 := card table base address
   __ add(tmp1, tmp1, tmp2);                              // tmp1 := card address
-  if (UseCondCardMark) {
-    static_assert((uint)G1CardTable::clean_card_val() == 0xff, "must be");
-    __ lbu(tmp2, Address(tmp1, 0));                      // tmp2 := card
-    __ subi(tmp2, tmp2, G1CardTable::clean_card_val());  // Convert to clean_card_value() to a comparison
-                                                         // against zero to avoid use of an extra temp.
-    __ bnez(tmp2, done);
-  }
+
+  static_assert((uint)G1CardTable::clean_card_val() == 0xff, "must be");
   static_assert((uint)G1CardTable::dirty_card_val() == 0, "must be to use zr");
+  if (UseCondCardMark) {
+    __ lbu(tmp2, Address(tmp1, 0));                      // tmp2 := card
+    __ andi(tmp2, tmp2, 1);                              // test bit0: dirty cards have bit0=0
+    __ beqz(tmp2, done);                                 // skip if already dirty (bit0=0)
+  }
   __ sb(zr, Address(tmp1, 0));
 }
 
