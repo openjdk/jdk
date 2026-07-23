@@ -3,7 +3,7 @@
 ### OASIS PKCS #11 Cryptographic Token Interface License
 <pre>
 
-Copyright © OASIS Open 2023. All Rights Reserved.
+Copyright © OASIS Open 2026. All Rights Reserved.
 
 All capitalized terms in the following text have the meanings assigned to them
 in the OASIS Intellectual Property Rights Policy (the "OASIS IPR Policy"). The
