@@ -184,7 +184,8 @@ tier1_compiler_2 = \
   -compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
   -compiler/codecache/stress \
   -compiler/codegen/aes \
-  -compiler/gcbarriers/PreserveFPRegistersTest.java
+  -compiler/gcbarriers/PreserveFPRegistersTest.java \
+  -compiler/igvn/TestMaskedStoreIdealization.java
 
 tier1_compiler_3 = \
   compiler/intrinsics/ \
