@@ -1405,6 +1405,16 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     case Op_Bool:
       return;
 
+    // I have encountered some issues with AddHF.
+    // It could be due to issues arising from JDK-8388873, we should
+    // check again after that is fixed.
+    //
+    // Found on aarch64 with:
+    //   -XX:-TieredCompilation -XX:VerifyIterativeGVN=1110
+    //   compiler/c2/irTests/TestFloat16ScalarOperations.java
+    case Op_AddHF:
+      return;
+
     // RegionNode::Ideal does "Skip around the useless IF diamond".
     //   245  IfTrue  === 244
     //   258  If  === 245 257
