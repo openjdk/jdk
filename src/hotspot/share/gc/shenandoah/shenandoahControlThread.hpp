@@ -53,7 +53,7 @@ protected:
 
   // Sets the requested cause, flag and notifies the control thread
   void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
-  ShenandoahGeneration* alloc_failure_generation() override;
+  void notify_alloc_stall(GCCause::Cause cause) override;
 
 private:
   bool check_cancellation();

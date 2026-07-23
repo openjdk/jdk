@@ -57,20 +57,18 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   create_and_start();
 }
 
+void ShenandoahGenerationalControlThread::maybe_cancel_old_cycle(GCCause::Cause cause) {
+  if (gc_mode() == servicing_old) {
+    MonitorLocker control_locker(&_control_lock, Mutex::_no_safepoint_check_flag);
+    if (gc_mode() == servicing_old) {
+      _heap->cancel_gc(cause);
+    }
+  }
+}
+
 void ShenandoahGenerationalControlThread::request_gc(GCCause::Cause cause) {
   if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
-
-    if (gc_mode() == servicing_old) {
-      MonitorLocker control_locker(&_control_lock, Mutex::_no_safepoint_check_flag);
-      if (gc_mode() == servicing_old) {
-        _heap->cancel_gc(cause);
-
-        // TODO: Do we really even need to notify control thread here?
-        // We just need the workers to observe the cancellation.
-        notify_control_thread(control_locker, cause, _heap->global_generation());
-      }
-    }
-
+    maybe_cancel_old_cycle(cause);
     handle_requested_gc(cause);
   }
 }
@@ -117,8 +115,17 @@ void ShenandoahGenerationalControlThread::stop_service() {
   // to reach a safepoint (this runs on a java thread).
 }
 
-ShenandoahGeneration* ShenandoahGenerationalControlThread::alloc_failure_generation() {
-  return _heap->young_generation();
+void ShenandoahGenerationalControlThread::notify_alloc_stall(GCCause::Cause cause) {
+  ShenandoahGeneration* generation = _heap->young_generation();
+
+  // Tell the young generation heuristics about the stall.
+  generation->heuristics()->record_allocation_stall();
+
+  // If an old mark increment is running, set cancellation flag for workers to observe.
+  maybe_cancel_old_cycle(cause);
+
+  // Finally, notify the control thread to wake up and run
+  notify_control_thread(cause, generation);
 }
 
 bool ShenandoahGenerationalControlThread::should_run_full_gc(GCCause::Cause cause) const {
@@ -285,13 +292,11 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
           service_concurrent_old_cycle(request);
         } else {
           service_concurrent_normal_cycle(request);
-          clear_allocation_failure_and_notify_waiters();
         }
         break;
       }
       case stw_full: {
         service_stw_full_cycle(request.cause);
-        clear_allocation_failure_and_notify_waiters();
         break;
       }
       default:
@@ -462,7 +467,7 @@ void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
     // Notify alloc waiters. We don't notify cycle waiters because no threads should be waiting
     // for an old cycle and because cycle waiters would have requested a global cycle that would
     // have cancelled the old mark anyway.
-    notify_alloc_waiters();
+    clear_allocation_failure_and_notify_waiters();
   }
 
   if (_heap->cancelled_gc() && cause == GCCause::_shenandoah_concurrent_gc) {
@@ -508,7 +513,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
 
     // Notify threads waiting for GC and/or memory when a young or global cycle completes
     notify_gc_waiters();
-    notify_alloc_waiters();
+    clear_allocation_failure_and_notify_waiters();
   } else {
     assert(_heap->cancelled_gc(), "Must have been cancelled");
   }
@@ -553,7 +558,7 @@ void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause 
 
   // Notify threads waiting for GC and/or memory that a full cycle has completed
   notify_gc_waiters();
-  notify_alloc_waiters();
+  clear_allocation_failure_and_notify_waiters();
 }
 
 bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGeneration* generation) {

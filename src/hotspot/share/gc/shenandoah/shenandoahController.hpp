@@ -92,8 +92,12 @@ protected:
     return _alloc_stall_count.load_relaxed();
   }
 
-  virtual ShenandoahGeneration* alloc_failure_generation() = 0;
+  // Notify the control thread to run a cycle for the given generation
   virtual void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) = 0;
+
+  // Notify the control thread about an allocation stall specifically. Implementation
+  // will decide which generation to use and any other mode specific work that must be done.
+  virtual void notify_alloc_stall(GCCause::Cause cause) = 0;
 
 public:
   ShenandoahController();
@@ -108,9 +112,10 @@ public:
   // Notify threads that the gc has recovered memory, or it's exiting.
   void notify_alloc_waiters();
 
-  // This cancels the collection cycle and has an option to block
-  // until another cycle completes successfully.
+  // Inform the control thread that this allocation request failed. Caller will block until memory is reclaimed.
   void handle_alloc_failure(const ShenandoahAllocRequest &req);
+
+  // Run a full GC, callers will block until at least one full GC cycle is completed.
   void handle_alloc_failure_full();
 
   // Return suggested number of concurrent worker threads
@@ -125,6 +130,7 @@ public:
     return _phase.load_relaxed();
   }
 
+  // Record the current phase for the cycle. Used to track where allocation stalls occur.
   void set_phase(ShenandoahCollectorPhase phase) {
     assert(ShenandoahCollectorPhase::UNSET <= phase, "Phase out of bounds: %d", phase);
     assert(phase < ShenandoahCollectorPhase::PHASE_LIMIT, "Phase out of bounds %d", phase);

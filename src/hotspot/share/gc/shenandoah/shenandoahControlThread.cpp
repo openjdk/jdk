@@ -287,6 +287,13 @@ void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause, Shenan
   controller.notify();
 }
 
-ShenandoahGeneration* ShenandoahControlThread::alloc_failure_generation() {
-  return ShenandoahHeap::heap()->global_generation();
+void ShenandoahControlThread::notify_alloc_stall(GCCause::Cause cause) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahGeneration* generation = heap->global_generation();
+
+  // Inform global heuristics of allocation stall
+  generation->heuristics()->record_allocation_stall();
+
+  // Run a global cycle (no other kind for this control thread).
+  notify_control_thread(cause, generation);
 }

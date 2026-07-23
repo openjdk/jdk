@@ -56,15 +56,12 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
   log_debug(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req_byte));
   AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(get_gc_id()));
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  alloc_failure_generation()->heuristics()->record_allocation_stall();
-  heap->shenandoah_policy()->record_allocation_stall(get_phase());
-
   // This is the inner part of a larger retry loop, so just wait here
   MonitorLocker ml(&_alloc_waiters_lock);
   _alloc_stall_count.add_then_fetch(1UL);
   increase_concurrent_worker_count();
-  notify_control_thread(cause, alloc_failure_generation());
+  ShenandoahHeap::heap()->shenandoah_policy()->record_allocation_stall(get_phase());
+  notify_alloc_stall(cause);
   if (!should_terminate()) {
     ml.wait();
   }

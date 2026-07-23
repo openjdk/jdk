@@ -81,6 +81,9 @@ private:
 public:
   ShenandoahGenerationalControlThread();
 
+  // Cancels gc if old mark is in progress
+  void maybe_cancel_old_cycle(GCCause::Cause cause);
+
   // Handles explict requests. Overridden to deal with cancelling old if necessary.
   void request_gc(GCCause::Cause cause) override;
 
@@ -96,7 +99,7 @@ protected:
   void run_service() override;
   void stop_service() override;
 
-  ShenandoahGeneration* alloc_failure_generation() override;
+  void notify_alloc_stall(GCCause::Cause cause) override;
   void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
 
 private:
