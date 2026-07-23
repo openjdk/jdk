@@ -551,7 +551,7 @@ public class setvalues001 {
         for (int i = 0; i < count; i++) {
             log.display("    field #" + i +":");
             log.display("      fieldID: " + testedFieldIDs[i]);
-            
+
             JDWP.Value actuallValue = actualValues[i];
             JDWP.Value targetValue = targetValues[i];
             JDWP.UntaggedValue untaggedActualValue =

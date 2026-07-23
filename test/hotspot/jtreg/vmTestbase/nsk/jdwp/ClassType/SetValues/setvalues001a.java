@@ -331,7 +331,7 @@ public class setvalues001a {
                   static String   stringValue  = OriginalValuesClass.stringValue;
                   static Object   objectValue  = OriginalValuesClass.objectValue;
     }
-   
+
     // tested class with own static final fields values
     public static class TestedFinalClass {
         private   static final boolean  booleanValue = OriginalValuesClass.booleanValue;

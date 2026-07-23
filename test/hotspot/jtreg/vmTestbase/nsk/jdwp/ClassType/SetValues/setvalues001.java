@@ -189,13 +189,13 @@ public class setvalues001 {
 
                 log.display("\n>>> Testing JDWP ClassType.SetValues command on tested class\n");
                 testCommand(testedClassID, testedFieldIDs, targetValues);
- 
+
                 log.display("\n>>> Checking with the debuggee that the values have been set properly\n");
                 checkValuesChanged();
 
                 log.display("\n>>> Testing JDWP ClassType.SetValues command on tested final class\n");
                 testCommand(testedFinalClassID, testedFinalFieldIDs, targetValues);
- 
+
                 log.display("\n>>> Checking with JDWP ClassType.GetValues that the values have been set properly \n");
                 checkJDWPValuesChanged(testedFinalClassID, testedFinalFieldIDs, targetValues);
             } finally {
@@ -465,7 +465,7 @@ public class setvalues001 {
         for (int i = 0; i < count; i++) {
             log.display("    field #" + i +":");
             log.display("      fieldID: " + testedFieldIDs[i]);
-            
+
             JDWP.Value actuallValue = actualValues[i];
             JDWP.Value targetValue = targetValues[i];
             JDWP.UntaggedValue untaggedActualValue =
