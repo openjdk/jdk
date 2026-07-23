@@ -35,8 +35,7 @@ class CMoveNode : public TypeNode {
     Condition,             // Condition controlling the cmove
     IfFalse,               // Value if condition is false
     IfTrue };              // Value if condition is true
-  CMoveNode(Node* bol, Node* false_value, Node* true_value, const Type* t) : TypeNode(t, 4)
-  {
+  CMoveNode(Node* bol, Node* false_value, Node* true_value, const Type* t) : TypeNode(t, 4) {
     init_class_id(Class_CMove);
     // all inputs are nullified in Node::Node(int)
     // init_req(Control,nullptr);

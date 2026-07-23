@@ -73,7 +73,7 @@
 
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.
-// Move constants to the right.
+// Move constants to the true-case input.
 Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
     return this;
@@ -95,14 +95,14 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return progress;
   }
 
-  // Check for Min/Max patterns. This is called before constants are pushed to the right input, as that transform can
+  // Check for Min/Max patterns. This is called before constants are pushed to the true-case input, as that transform can
   // make BoolTests non-canonical.
   Node* minmax = Ideal_minmax(phase, this);
   if (minmax != nullptr) {
     return minmax;
   }
 
-  // Canonicalize the node by moving constants to the right input.
+  // Canonicalize the node by moving constants to the true-case input.
   if (in(Condition)->is_Bool() && phase->type(in(IfFalse))->singleton() && !phase->type(in(IfTrue))->singleton()) {
     BoolNode* b = in(Condition)->as_Bool()->negate(phase);
     return make(phase->transform(b), in(IfTrue), in(IfFalse), _type);
@@ -286,9 +286,9 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *x = CMoveNode::Ideal(phase, can_reshape);
   if( x ) return x;
 
-  // If zero is the false value (no-move-case) it must mean another
-  // constant is on the right (otherwise the shared CMove::Ideal code would
-  // have moved the constant to the right). This situation is bad for x86 because
+  // If zero is the false-case (no-move-case) it must mean another
+  // constant is on the true-case input (otherwise the shared CMove::Ideal code would
+  // have moved the constant to the true-case input). This situation is bad for x86 because
   // the zero has to be manifested in a register with a XOR which kills flags,
   // which are live on input to the CMoveI, leading to a situation which causes
   // excessive spilling. See bug 4677505.
