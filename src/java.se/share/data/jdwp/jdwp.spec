@@ -1096,8 +1096,6 @@ JDWP "Java(tm) Debug Wire Protocol"
         "field's type exactly. For object values, there must exist a "
         "widening reference conversion from the value's type to the
         "field's type and the field's type must be loaded. "
-        "<p>"
-        
         (Out
             (classType clazz "The class type ID.")
             (Repeat values "The number of fields to set."
