@@ -3662,8 +3662,8 @@ class StubGenerator: public StubCodeGenerator {
   *  Input:
   *    c_rarg0   - obja     address
   *    c_rarg1   - objb     address
-  *    c_rarg3   - length   length               (number of elements)
-  *    c_rarg4   - scale    log2_array_indxscale (element size)
+  *    c_rarg2   - length   length               (number of elements)
+  *    c_rarg3   - scale    log2_array_indxscale (element size)
   *
   *  Output:
   *        x10   - int >= 0 mismatched index, < 0 bitwise complement of tail
