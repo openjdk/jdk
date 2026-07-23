@@ -137,8 +137,9 @@ public class CompressedCPUSpecificClassSpaceReservation {
                 throw new RuntimeException("Expected matches");
             }
             for (Matcher mat : matches) {
-                long address_from = Long.parseLong(mat.group(1), 16);
-                if (address_from >= Math.powExact(2L, 42)) {
+                long address_to = Long.parseLong(mat.group(1), 16);
+                if (address_to > Math.powExact(2L, 42)) {
+                    System.out.println(mat.group(0));
                     throw new RuntimeException("Address space probing beyond 2^42?");
                 }
             }
