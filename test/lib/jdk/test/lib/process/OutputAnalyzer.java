@@ -563,6 +563,32 @@ public final class OutputAnalyzer {
         return firstMatch(pattern, 0);
     }
 
+    private List<Matcher> matchersForAllMatchingLinesInternal(Pattern needleRegex, List<String> haystack) {
+        List<Matcher> matchingMatchers = haystack.stream().
+                map(needleRegex::matcher).filter(Matcher::matches).collect(Collectors.toList());
+        return matchingMatchers;
+    }
+
+    /**
+     * Given a regular expression, matches the expression against every *line* of stderr output
+     * and returns a list of all matching matchers.
+     * @param needleRegex
+     * @return List of matchers
+     */
+    public  List<Matcher> matchersForAllMatchingLinesStderr(Pattern needleRegex) {
+        return matchersForAllMatchingLinesInternal(needleRegex, stderrAsLines());
+    }
+
+    /**
+     * Given a regular expression, matches the expression against every *line* of stdout output
+     * and returns a list of all matching matchers.
+     * @param needleRegex
+     * @return List of matchers
+     */
+    public  List<Matcher> matchersForAllMatchingLinesStdout(Pattern needleRegex) {
+        return matchersForAllMatchingLinesInternal(needleRegex, stdoutAsLines());
+    }
+
     /**
      * Verify the exit value of the process
      *
