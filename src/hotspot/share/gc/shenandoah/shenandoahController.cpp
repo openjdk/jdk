@@ -65,7 +65,9 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
   _alloc_stall_count.add_then_fetch(1UL);
   increase_concurrent_worker_count();
   notify_control_thread(cause, alloc_failure_generation());
-  ml.wait();
+  if (!should_terminate()) {
+    ml.wait();
+  }
 }
 
 void ShenandoahController::handle_alloc_failure_full() {

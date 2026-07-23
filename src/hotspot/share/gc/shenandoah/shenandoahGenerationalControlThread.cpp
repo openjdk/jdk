@@ -226,6 +226,22 @@ void ShenandoahGenerationalControlThread::maybe_print_young_region_ages() const 
   }
 }
 
+void ShenandoahGenerationalControlThread::clear_allocation_failure_and_notify_waiters() {
+  MonitorLocker waiters(&_alloc_waiters_lock, Mutex::_no_safepoint_check_flag);
+  {
+    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+    if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
+      // If an allocation failure occurred during this cycle, we'll have threads waiting
+      // for reclaimed memory. We'll wake them up, and they'll retry their allocation.
+      // If our waiters cannot allocate, they will signal the control thread again
+      // to start another cycle.
+      _heap->clear_cancellation(_requested_gc_cause);
+      _requested_gc_cause = GCCause::_no_gc;
+    }
+  }
+  waiters.notify_all();
+}
+
 void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest& request) {
 
   log_debug(gc, thread)("Starting GC (%s): %s, %s", gc_mode_name(gc_mode()), GCCause::to_string(request.cause), request.generation->name());
@@ -269,29 +285,19 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
           service_concurrent_old_cycle(request);
         } else {
           service_concurrent_normal_cycle(request);
+          clear_allocation_failure_and_notify_waiters();
         }
         break;
       }
       case stw_full: {
         service_stw_full_cycle(request.cause);
+        clear_allocation_failure_and_notify_waiters();
         break;
       }
       default:
         ShouldNotReachHere();
     }
     _heap->print_after_gc();
-  }
-
-  {
-    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-    if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
-      // If an allocation failure occurred during this cycle, we'll have threads waiting
-      // to reclaim memory. We'll wake them up, and they'll retry their allocation.
-      // If our waiters cannot allocate, they will signal the control thread again
-      // to start another cycle.
-      _heap->clear_cancellation(_requested_gc_cause);
-      _requested_gc_cause = GCCause::_no_gc;
-    }
   }
 
   // Try to reduce concurrent workers
