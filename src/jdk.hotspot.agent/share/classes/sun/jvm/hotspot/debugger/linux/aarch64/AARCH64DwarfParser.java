@@ -1,6 +1,6 @@
-
 /*
  * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,45 +20,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/**
- * @test
- * @bug 8383815
- * @summary C2: assert(false) failed: malformed IfNode with 1 outputs
- * @run main/othervm -XX:CompileCommand=compileonly,${test.main.class}*::* -XX:-TieredCompilation -Xbatch -XX:PerMethodTrapLimit=0 ${test.main.class}
- * @run main ${test.main.class}
- */
+package sun.jvm.hotspot.debugger.linux.aarch64;
 
-package compiler.integerArithmetic;
+import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.debugger.linux.DwarfParser;
 
-public class TestDivByZeroInLiveCFGPath {
-    static long lFld;
-    static int iArr[] = new int[400];
 
-    public static void main(String[] strArr) {
-        for (int i = 0; i < 10; i++) {
-            test();
-        }
+public class AARCH64DwarfParser extends DwarfParser {
+
+    private static native long createDwarfContext(long lib);
+
+    public AARCH64DwarfParser(Address lib) {
+        super(createDwarfContext(lib.asLongValue()));
     }
 
-    static void test() {
-        int x;
-        for (int i = 9; i < 100; ++i) {
-            int j = 100;
-            while (--j > 0) {
-                iArr[1] = (int) lFld;
-            }
-            try {
-                iArr[1] = (5 / j);
-                x = (i / iArr[8]);
-            } catch (ArithmeticException a_e) {
-            }
-        }
-
-        for (int i = 18; i < 50; i++) {
-            iArr[2] += lFld;
-        }
+    /**
+     * @return true if return address (RA) is signed by PAC.
+     */
+    public boolean isRASigned() {
+        return isRASigned0(p_dwarf_context);
     }
+
+    public native boolean isRASigned0(long inst);
+
 }
-
