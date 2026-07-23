@@ -2006,7 +2006,8 @@ bool CountedLoopConverter::should_stress_long_counted_loop() {
   return StressLongCountedLoop > 0 &&
       _iv_bt == T_INT &&
       !_head->as_Loop()->is_loop_nest_inner_loop() &&
-      _structure.truncated_increment().trunc_type() == TypeInt::INT; // Only stress an int loop (i.e., not char, byte or short)
+      _structure.truncated_increment().trunc_type() == TypeInt::INT && // Only stress an int loop (i.e., not char, byte or short)
+      !_structure.exit_test().should_speculatively_narrow_limit(); // Already has a long exit test; stressing int -> long doesn't apply
 }
 
 // Convert an int counted loop to a long counted to stress handling of long counted loops. Returns true upon success.
