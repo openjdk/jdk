@@ -1703,6 +1703,7 @@ jint Arguments::parse_vm_init_args(GrowableArrayCHeap<VMInitArgsGroup, mtArgumen
   // needs to know about processor and memory resources must occur after
   // this point.
 
+  os::check_temp_directory();
   os::init_container_support();
 
   SystemMemoryBarrier::initialize();

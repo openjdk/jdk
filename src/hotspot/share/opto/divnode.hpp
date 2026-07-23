@@ -40,9 +40,7 @@ private:
   bool _pinned;
 
 protected:
-  DivModIntegerNode(Node* c, Node* dividend, Node* divisor) : Node(c, dividend, divisor), _pinned(false) {
-    init_class_id(Class_DivModInteger);
-  }
+  DivModIntegerNode(Node* c, Node* dividend, Node* divisor) : Node(c, dividend, divisor), _pinned(false) {}
 
 private:
   virtual uint size_of() const override { return sizeof(DivModIntegerNode); }
@@ -53,15 +51,6 @@ private:
     DivModIntegerNode* res = static_cast<DivModIntegerNode*>(clone());
     res->_pinned = true;
     return res;
-  }
-
-public:
-  const TypeInteger* zero() const {
-    if (bottom_type() == TypeInt::INT) {
-      return TypeInt::ZERO;
-    }
-    assert(bottom_type() == TypeLong::LONG, "should be int or long");
-    return TypeLong::ZERO;
   }
 };
 
