@@ -26,11 +26,9 @@
  * @key     headful
  * @bug     8387593
  * @summary Tests that clearing a polyline using XOR mode does not
- *          leave any traces in Metal pipeline. Using uiScale 1
- *          helps us to reproduce the issue even in retina display.
- * @requires (os.family == "mac")
- * @run     main/othervm -Dsun.java2d.metal=true -Dsun.java2d.uiScale=1
- *                       ClearPolyLineUsingXORTest
+ *          leave any traces. Using uiScale 1 helps us to
+ *          reproduce the issue.
+ * @run     main/othervm -Dsun.java2d.uiScale=1 ClearPolyLineUsingXORTest
  */
 
 import java.awt.Color;
