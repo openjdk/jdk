@@ -32,8 +32,6 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
 
   char* result = nullptr;
 
-  uintptr_t tried_below = 0;
-
   // First, attempt to allocate < 4GB. We do this unconditionally:
   // - if optimize_for_zero_base, a <4GB mapping start allows us to use base=0 shift=0
   // - if !optimize_for_zero_base, a <4GB mapping start allows us to use algfi
