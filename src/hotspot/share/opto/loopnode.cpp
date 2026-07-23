@@ -706,9 +706,14 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, const Node* he
 }
 
 void PhaseIdealLoop::add_parse_predicates(IdealLoopTree* outer_ilt, LoopNode* inner_head, SafePointNode* cloned_sfpt) {
+  if (!UseParsePredicates) {
+    return;
+  }
+
   if (ShortRunningLongLoop) {
     add_parse_predicate(Deoptimization::Reason_short_running_long_loop, inner_head, outer_ilt, cloned_sfpt);
   }
+
   if (UseLoopPredicate) {
     add_parse_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
     if (UseProfiledLoopPredicate) {
@@ -720,7 +725,9 @@ void PhaseIdealLoop::add_parse_predicates(IdealLoopTree* outer_ilt, LoopNode* in
     add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, inner_head, outer_ilt, cloned_sfpt);
   }
 
-  add_parse_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
+  if (UseLoopLimitCheckPredicate) {
+    add_parse_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
+  }
 }
 
 // If the loop has the shape of a counted loop but with a long
