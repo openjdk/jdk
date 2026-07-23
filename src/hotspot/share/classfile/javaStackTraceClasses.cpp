@@ -64,9 +64,6 @@ class Backtrace: AllStatic {
   static int cpref_at(unsigned int merged);
   static int get_line_number(Method* method, int bci);
   static Symbol* get_source_file_name(InstanceKlass* holder, int version);
-
-  // Debugging
-  friend class JavaClasses;
 };
 
 
