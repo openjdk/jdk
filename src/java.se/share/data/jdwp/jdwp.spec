@@ -1090,11 +1090,14 @@ JDWP "Java(tm) Debug Wire Protocol"
         "Each field must be member of the class type "
         "or one of its superclasses, superinterfaces, or implemented interfaces. "
         "Access control is not enforced; for example, the values of private "
-        "fields can be set. Final fields cannot be set."
+        "fields can be set. Setting a final static field is permitted but may "
+        "result in an unexpected exception or a fatal crash. "
         "For primitive values, the value's type must match the "
         "field's type exactly. For object values, there must exist a "
         "widening reference conversion from the value's type to the
         "field's type and the field's type must be loaded. "
+        "<p>"
+        
         (Out
             (classType clazz "The class type ID.")
             (Repeat values "The number of fields to set."
@@ -1586,7 +1589,8 @@ JDWP "Java(tm) Debug Wire Protocol"
         "Each field must be member of the object's type "
         "or one of its superclasses, superinterfaces, or implemented interfaces. "
         "Access control is not enforced; for example, the values of private "
-        "fields can be set. "
+        "fields can be set. Setting a final instance field is permitted but may "
+        "result in an unexpected exception or a fatal crash. "
         "For primitive values, the value's type must match the "
         "field's type exactly. For object values, there must be a "
         "widening reference conversion from the value's type to the
