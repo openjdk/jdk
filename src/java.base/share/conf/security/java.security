@@ -1731,6 +1731,22 @@ jdk.epkcs8.defaultAlgorithm=PBEWithHmacSHA256AndAES_128
 com.sun.security.allowedAIALocations=
 
 #
+# Certificate Revocation List (CRL) Download Size Limitation
+#
+# This property sets a size limit for CRLs downloaded via URIs provided
+# in the CRL Distribution Points certificate extension.  This property
+# must be a numeric value that is the size in bytes of the DER-encoded CRL.
+# For protocols that can return multi-value responses, such as LDAP, the
+# size threshold is the sum of all CRLs downloaded from a single search
+# query. CRLs that exceed this length will not be processed during certificate
+# path validation. This size limit does not apply to CRLs that are imported
+# through non-network-based means. A negative value will disable this size
+# limitation. A non-numeric value will be ignored and the default size will
+# be used instead. The default size limit is 20MiB.
+# This property may be overridden by a System property of the same name.
+com.sun.security.crl.maxSize = 20971520
+
+#
 # PKCS #8 encoding format for newly created ML-KEM and ML-DSA private keys
 #
 # RFC 9935 and RFC 9881 define three possible formats for a private key:

@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,9 @@ void ShenandoahGenerationalFullGC::compute_balances() {
   // Invoke this in case we are able to transfer memory from OLD to YOUNG
   size_t allocation_runway =
     heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(0L);
-  heap->compute_old_generation_balance(allocation_runway, 0, 0);
+  size_t max_transfer = MIN2(allocation_runway,
+                             heap->young_generation()->free_unaffiliated_regions() * ShenandoahHeapRegion::region_size_bytes());
+  heap->compute_old_generation_balance(max_transfer, 0, 0);
 }
 
 ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGenerationalCompactionObjectClosure(PreservedMarks* preserved_marks,

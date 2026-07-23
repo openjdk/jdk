@@ -2970,3 +2970,42 @@ int C2_MacroAssembler::vector_iota_entry_index(BasicType bt) {
     ShouldNotReachHere();
   }
 }
+
+// Vector integer division for BYTE elements. Each BYTE is widened to SHORT for
+// the low and high halves of the register, divided using the SHORT helper
+// (which widens further to INT), and the two SHORT result halves are narrowed
+// back to BYTE.
+void C2_MacroAssembler::sve_sdiv_byte(FloatRegister dst_src1, FloatRegister src2,
+                                      FloatRegister vtmp1, FloatRegister vtmp2,
+                                      FloatRegister vtmp3, FloatRegister vtmp4) {
+  assert_different_registers(dst_src1, src2, vtmp1, vtmp2, vtmp3, vtmp4);
+  FloatRegister src1 = dst_src1;
+  // Low half of the bytes -> SHORT, then divide (result SHORT in vtmp1).
+  sve_sunpklo(vtmp1, H, src1);
+  sve_sunpklo(vtmp2, H, src2);
+  sve_sdiv_short(vtmp1, vtmp2, vtmp3, vtmp4);
+  // High half of the bytes -> SHORT, then divide (result SHORT in src1).
+  sve_sunpkhi(src1, H, src1);
+  sve_sunpkhi(vtmp2, H, src2);
+  sve_sdiv_short(src1, vtmp2, vtmp3, vtmp4);
+  // Narrow the two SHORT result halves back to BYTE.
+  sve_uzp1(dst_src1, B, vtmp1, src1);
+}
+
+// Vector integer division for SHORT elements, implemented by widening each
+// element to 32 bits, performing SDIV, and narrowing back.
+void C2_MacroAssembler::sve_sdiv_short(FloatRegister dst_src1, FloatRegister src2,
+                                       FloatRegister vtmp1, FloatRegister vtmp2) {
+  assert_different_registers(dst_src1, src2, vtmp1, vtmp2);
+  FloatRegister src1 = dst_src1;
+  // Low half: SHORT -> INT, then divide.
+  sve_sunpklo(vtmp1, S, src1);
+  sve_sunpklo(vtmp2, S, src2);
+  sve_sdiv(vtmp1, S, ptrue, vtmp2);
+  // High half: SHORT -> INT, then divide.
+  sve_sunpkhi(src1, S, src1);
+  sve_sunpkhi(vtmp2, S, src2);
+  sve_sdiv(src1, S, ptrue, vtmp2);
+  // Narrow the two INT result halves back to SHORT.
+  sve_uzp1(dst_src1, H, vtmp1, src1);
+}
