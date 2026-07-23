@@ -150,9 +150,6 @@ class java_lang_StackTraceElement: AllStatic {
 
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-
-  // Debugging
-  friend class JavaClasses;
 };
 
 class java_lang_ClassFrameInfo: AllStatic {
@@ -170,9 +167,6 @@ public:
 
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-
-  // Debugging
-  friend class JavaClasses;
 };
 
 // Interface to java.lang.StackFrameInfo objects
@@ -207,9 +201,6 @@ public:
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   static void to_stack_trace_element(Handle stackFrame, Handle stack_trace_element, TRAPS);
-
-  // Debugging
-  friend class JavaClasses;
 };
 
 class java_lang_LiveStackFrameInfo: AllStatic {
@@ -227,9 +218,6 @@ class java_lang_LiveStackFrameInfo: AllStatic {
 
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-
-  // Debugging
-  friend class JavaClasses;
 };
 
 #undef CHECK_INIT
