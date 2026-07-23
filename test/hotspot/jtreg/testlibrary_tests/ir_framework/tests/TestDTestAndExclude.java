@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,8 +95,9 @@ public class TestDTestAndExclude {
      * Create a VM and simulate as if it was a driver VM spawned by JTreg that has -DTest/DExclude set as VM or Javaopts
      */
     protected static void run(String dTest, String dExclude, String arg) throws Exception {
+        // Let's randomize a bit which version of -Dtest and -Dexclude we use (caps and plural).
         boolean plural = dTest.contains(",");
-        boolean capital = dTest.length() % 2 == 0;
+        boolean capital = dTest.length() % 2 == 0;  // Any criterion that is not constant or correlated with `plural` would do as well.
         String dTestFlag = capital ? "-DTest" : "-Dtest";
         String dExcludeFlag = capital ? "-DExclude" : "-Dexclude";
         if (plural) {
@@ -107,7 +108,7 @@ public class TestDTestAndExclude {
         OutputAnalyzer oa;
         ProcessBuilder process = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Dtest.class.path=" + Utils.TEST_CLASS_PATH, "-Dtest.jdk=" + Utils.TEST_JDK,
-                "-Dtest.vm.opts=" + dTestFlag + "=" + dTest + " -DExclude=" + dExclude,
+                "-Dtest.vm.opts=" + dTestFlag + "=" + dTest + " " + dExcludeFlag + "=" + dExclude,
                 "ir_framework.tests.TestDTestAndExclude", arg);
         oa = ProcessTools.executeProcess(process);
         oa.shouldHaveExitValue(0);
