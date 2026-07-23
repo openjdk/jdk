@@ -1794,7 +1794,7 @@ void VM_Version::get_processor_features() {
     }
 #ifdef COMPILER2
     if (FLAG_IS_DEFAULT(UseFPUForSpilling) && supports_sse4_2()) {
-      FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+      FLAG_SET_DEFAULT(UseFPUForSpilling, false);
     }
 #endif
   }
