@@ -381,7 +381,7 @@ void G1ConcurrentRefineSweepState::complete_refinement(jlong total_yield_during_
   policy->record_refinement_stats(stats());
 
   {
-    MutexLocker x(G1ReviseYoungLength_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(G1ReviseNumYoungRegions_lock, Mutex::_no_safepoint_check_flag);
     policy->record_dirtying_stats(TimeHelper::counter_to_millis(g1h->last_refinement_epoch_start()),
                                   TimeHelper::counter_to_millis(next_epoch_start),
                                   _stats.cards_pending(),
@@ -575,7 +575,7 @@ bool G1ConcurrentRefine::adjust_num_threads_periodically() {
   if (!_needs_adjust) {
     Tickspan since_adjust = Ticks::now() - _last_adjust;
     if (since_adjust.milliseconds() < adjust_threads_period_ms()) {
-      _num_threads_wanted = 0;
+      _num_threads_wanted.store_relaxed(0);
       return false;
     }
   }
@@ -592,7 +592,7 @@ bool G1ConcurrentRefine::adjust_num_threads_periodically() {
     _needs_adjust = true;
   }
 
-  return (_num_threads_wanted > 0) && !heap_was_locked();
+  return (num_threads_wanted() > 0) && !heap_was_locked();
 }
 
 void G1ConcurrentRefine::adjust_threads_wanted(size_t available_bytes) {
@@ -603,7 +603,7 @@ void G1ConcurrentRefine::adjust_threads_wanted(size_t available_bytes) {
 
   size_t num_cards = policy->current_pending_cards();
 
-  _threads_needed.update(_num_threads_wanted,
+  _threads_needed.update(num_threads_wanted(),
                          available_bytes,
                          num_cards,
                          _pending_cards_target);
@@ -613,7 +613,7 @@ void G1ConcurrentRefine::adjust_threads_wanted(size_t available_bytes) {
     new_wanted = _thread_control.max_num_threads();
   }
 
-  _num_threads_wanted = new_wanted;
+  _num_threads_wanted.store_relaxed(new_wanted);
 
   log_debug(gc, refine)("Concurrent refinement: wanted %u, pending cards: %zu (pending-from-gc %zu), "
                         "predicted: %zu, goal %zu, time-until-next-gc: %1.2fms pred-refine-rate %1.2fc/ms log-rate %1.2fc/ms",

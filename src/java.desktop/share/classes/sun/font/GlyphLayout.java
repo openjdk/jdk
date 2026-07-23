@@ -95,7 +95,6 @@ public final class GlyphLayout {
     private Point2D.Float _pt;
     private FontStrikeDesc _sd;
     private float[] _mat;
-    private float ptSize;
     private int _typo_flags;
     private int _offset;
 
@@ -125,35 +124,27 @@ public final class GlyphLayout {
     }
 
     private static final class SDCache {
-        private final AffineTransform dtx;
-        private final AffineTransform gtx;
-        private final Point2D.Float delta;
+        private final AffineTransform ftx;
         private final FontStrikeDesc sd;
 
         private SDCache(Font font, FontRenderContext frc) {
             // !!! add getVectorTransform and hasVectorTransform to frc?  then
             // we could just skip this work...
 
-            dtx = frc.getTransform();
+            AffineTransform dtx = frc.getTransform();
             dtx.setTransform(dtx.getScaleX(), dtx.getShearY(),
                              dtx.getShearX(), dtx.getScaleY(),
                              0, 0);
 
             float ptSize = font.getSize2D();
-            if (font.isTransformed()) {
-                gtx = font.getTransform();
-                gtx.scale(ptSize, ptSize);
-                delta = new Point2D.Float((float)gtx.getTranslateX(),
-                                          (float)gtx.getTranslateY());
-                gtx.setTransform(gtx.getScaleX(), gtx.getShearY(),
-                                 gtx.getShearX(), gtx.getScaleY(),
-                                 0, 0);
-                gtx.preConcatenate(dtx);
-            } else {
-                delta = ZERO_DELTA;
-                gtx = new AffineTransform(dtx);
-                gtx.scale(ptSize, ptSize);
-            }
+            ftx = font.getTransform();
+            ftx.scale(ptSize, ptSize);
+
+            AffineTransform gtx = new AffineTransform(dtx);
+            gtx.concatenate(ftx);
+            gtx.setTransform(gtx.getScaleX(), gtx.getShearY(),
+                             gtx.getShearX(), gtx.getScaleY(),
+                             0, 0);
 
             /* Similar logic to that used in SunGraphics2D.checkFontInfo().
              * Whether a grey (AA) strike is needed is size dependent if
@@ -167,8 +158,6 @@ public final class GlyphLayout {
                 (frc.getFractionalMetricsHint());
             sd = new FontStrikeDesc(dtx, gtx, font.getStyle(), aa, fm);
         }
-
-        private static final Point2D.Float ZERO_DELTA = new Point2D.Float();
 
         private static
             SoftReference<WeakHashMap<SDKey, SDCache>> cacheRef;
@@ -189,16 +178,13 @@ public final class GlyphLayout {
             }
 
             public boolean equals(Object o) {
-                try {
-                    SDKey rhs = (SDKey)o;
-                    return
-                        hash == rhs.hash &&
-                        font.equals(rhs.font) &&
-                        frc.equals(rhs.frc);
+                if (o == this) {
+                    return true;
                 }
-                catch (ClassCastException e) {
-                }
-                return false;
+                return o instanceof SDKey rhs &&
+                    hash == rhs.hash &&
+                    font.equals(rhs.font) &&
+                    frc.equals(rhs.frc);
             }
         }
 
@@ -287,12 +273,12 @@ public final class GlyphLayout {
         // use cache now - can we use the strike cache for this?
 
         SDCache txinfo = SDCache.get(font, frc);
-        _mat[0] = (float)txinfo.gtx.getScaleX();
-        _mat[1] = (float)txinfo.gtx.getShearY();
-        _mat[2] = (float)txinfo.gtx.getShearX();
-        _mat[3] = (float)txinfo.gtx.getScaleY();
-        _pt.setLocation(txinfo.delta);
-        ptSize = font.getSize2D();
+        _mat[0] = (float) txinfo.ftx.getScaleX();
+        _mat[1] = (float) txinfo.ftx.getShearY();
+        _mat[2] = (float) txinfo.ftx.getShearX();
+        _mat[3] = (float) txinfo.ftx.getScaleY();
+        _pt.setLocation(txinfo.ftx.getTranslateX(),
+                        txinfo.ftx.getTranslateY());
 
         int lim = offset + count;
 
@@ -313,15 +299,15 @@ public final class GlyphLayout {
         }
 
         Font2D font2D = FontUtilities.getFont2D(font);
-        if (font2D instanceof FontSubstitution) {
-            font2D = ((FontSubstitution)font2D).getCompositeFont2D();
+        if (font2D instanceof FontSubstitution sub) {
+            font2D = sub.getCompositeFont2D();
         }
 
         _textRecord.init(text, offset, lim, min, max);
         int start = offset;
-        if (font2D instanceof CompositeFont) {
+        if (font2D instanceof CompositeFont composite) {
             _scriptRuns.init(text, offset, count); // ??? how to handle 'common' chars
-            _fontRuns.init((CompositeFont)font2D, text, offset, lim);
+            _fontRuns.init(composite, text, offset, lim);
             while (_scriptRuns.next()) {
                 int limit = _scriptRuns.getScriptLimit();
                 int script = _scriptRuns.getScriptCode();
@@ -333,8 +319,8 @@ public final class GlyphLayout {
                      * its consistent with the way NativeFonts delegate
                      * in other cases too.
                      */
-                    if (pfont instanceof NativeFont) {
-                        pfont = ((NativeFont)pfont).getDelegateFont();
+                    if (pfont instanceof NativeFont nf) {
+                        pfont = nf.getDelegateFont();
                     }
                     int gmask = _fontRuns.getGlyphMask();
                     int pos = _fontRuns.getPos();
@@ -576,7 +562,7 @@ public final class GlyphLayout {
         void layout() {
             _textRecord.start = start;
             _textRecord.limit = limit;
-            SunLayoutEngine.layout(font, script, _sd, _mat, ptSize, gmask, start - _offset, _textRecord,
+            SunLayoutEngine.layout(font, script, _sd, _mat, gmask, start - _offset, _textRecord,
                           _typo_flags | eflags, _pt, _gvdata);
         }
     }

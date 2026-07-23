@@ -77,7 +77,7 @@ class AOTMetaspace : AllStatic {
 
   static void dump_static_archive(TRAPS) NOT_CDS_RETURN;
 #ifdef _LP64
-  static void adjust_heap_sizes_for_dumping() NOT_CDS_JAVA_HEAP_RETURN;
+ static void init_heap_settings() NOT_CDS_JAVA_HEAP_RETURN;
 #endif
 
 private:
@@ -187,6 +187,9 @@ public:
   // Can we skip some expensive operations related to modules?
   static bool use_optimized_module_handling() { return NOT_CDS(false) CDS_ONLY(_use_optimized_module_handling); }
   static void disable_optimized_module_handling() { _use_optimized_module_handling = false; }
+
+  // Check if the supplied shared base address can be used as the encoding base.
+  static bool shared_base_valid(char* shared_base);
 
 private:
   static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;

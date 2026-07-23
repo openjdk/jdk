@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -922,9 +922,6 @@ void RelocIterator::print_current_on(outputStream* st) {
       st->print(" | [destination=" INTPTR_FORMAT "]", p2i(dest));
       if (StubRoutines::contains(dest)) {
         StubCodeDesc* desc = StubCodeDesc::desc_for(dest);
-        if (desc == nullptr) {
-          desc = StubCodeDesc::desc_for(dest + frame::pc_return_offset);
-        }
         if (desc != nullptr) {
           st->print(" Stub::%s", desc->name());
         }
