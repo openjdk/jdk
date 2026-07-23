@@ -68,7 +68,7 @@ import com.sun.net.httpserver.*;
  * cache. If not, then it will be closed.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.maxReqHeaders}</b> (default: 200)<br>
- * The maxiumum number of header fields accepted in a request. If this limit is exceeded
+ * The maximum number of header fields accepted in a request. If this limit is exceeded
  * while the headers are being read, then the connection is terminated and the request ignored.
  * If the value is less than or equal to zero, then the default value is used.
  * </li>
