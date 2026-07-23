@@ -601,7 +601,6 @@ bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(Shenandoah
   }
 
   fatal("Cancel GC either for alloc failure GC, or gracefully exiting, or to pause old generation marking");
-  return false;
 }
 
 void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause cause) {
