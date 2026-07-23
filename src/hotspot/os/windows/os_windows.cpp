@@ -5459,8 +5459,8 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
 
 // Map a block of memory.
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
-                        char *addr, size_t bytes, bool allow_exec,
-                        bool read_only) {
+                        char *addr, size_t bytes, bool read_only,
+                        bool allow_exec) {
 
   errno_t err;
   wchar_t* wide_path = wide_abs_unc_path(file_name, err);
