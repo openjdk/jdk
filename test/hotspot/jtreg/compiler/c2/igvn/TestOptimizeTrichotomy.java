@@ -29,7 +29,7 @@
  *          are expected to optimize, and others that should not, because
  *          it would lead to wrong results.
  * @library /test/lib /
- * @run main ${test.main.class}
+ * @run driver ${test.main.class}
  */
 
 /*
@@ -37,7 +37,7 @@
  * @bug 8385157
  * @key randomness
  * @library /test/lib /
- * @run main ${test.main.class} -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,${test.main.class}::test*
+ * @run driver ${test.main.class} -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,${test.main.class}::test*
  */
 
 package compiler.c2.igvn;
@@ -59,9 +59,7 @@ public class TestOptimizeTrichotomy {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
-        TestFramework framework = new TestFramework();
-        framework.addFlags(args);
-        framework.start();
+        TestFramework.runWithFlags(args);
     }
 
     private record IntPair(int x, int y) {
@@ -71,7 +69,7 @@ public class TestOptimizeTrichotomy {
         static IntPair balancedTrichotomy() {
             int a = RANDOM.nextInt();
             int b = RANDOM.nextInt();
-            return switch(RANDOM.nextInt(3)) {
+            return switch (RANDOM.nextInt(3)) {
                 case 0 -> new IntPair(a, a);
                 default -> new IntPair(a, b);
             };
@@ -85,7 +83,7 @@ public class TestOptimizeTrichotomy {
         static LongPair balancedTrichotomy() {
             long a = RANDOM.nextLong();
             long b = RANDOM.nextLong();
-            return switch(RANDOM.nextInt(3)) {
+            return switch (RANDOM.nextInt(3)) {
                 case 0 -> new LongPair(a, a);
                 default -> new LongPair(a, b);
             };
@@ -107,7 +105,7 @@ public class TestOptimizeTrichotomy {
         // ->
         //   n >u a
         // And so this ends up in the same pattern as test1, but
-        // reproduces before started intrinsifying Ingeger.compareUnsigned
+        // reproduces before started intrinsifying Integer.compareUnsigned
         if (a > n || n + Integer.MIN_VALUE > a + Integer.MIN_VALUE) {
             return true;
         }
