@@ -133,6 +133,9 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
     _generation->heuristics()->record_full_gc(cause);
   }
 
+  if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
+    heap->shenandoah_policy()->record_alloc_failure_to_full();
+  }
   heap->shenandoah_policy()->record_success_full();
 
   {
