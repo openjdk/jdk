@@ -219,78 +219,80 @@ class VM_Version : public Abstract_VM_Version {
   //
   // Fields description in `decl`:
   //    declaration name, extension name, bit value from linux, feature string?, mapped flag)
-  #define RV_EXT_FEATURE_FLAGS(decl)                                                                   \
-  /* A Atomic Instructions */                                                                          \
-  decl(a           ,     ('A' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                      \
-  /* C Compressed Instructions */                                                                      \
-  decl(c           ,     ('C' - 'A'),  true ,  UPDATE_DEFAULT(UseRVC))                                 \
-  /* D Single-Precision Floating-Point */                                                              \
-  decl(d           ,     ('D' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                      \
-  /* F Single-Precision Floating-Point */                                                              \
-  decl(f           ,     ('F' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                      \
-  /* H Hypervisor */                                                                                   \
-  decl(h           ,     ('H' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                      \
-  /* I RV64I */                                                                                        \
-  decl(i           ,     ('I' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                      \
-  /* M Integer Multiplication and Division */                                                          \
-  decl(m           ,     ('M' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                      \
-  /* Q Quad-Precision Floating-Point */                                                                \
-  decl(q           ,     ('Q' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                      \
-  /* V Vector */                                                                                       \
-  decl(v           ,     ('V' - 'A'),  true ,  UPDATE_DEFAULT(UseRVV))                                 \
-                                                                                                       \
-  /* ----------------------- Other extensions ----------------------- */                               \
-                                                                                                       \
-  /* Atomic compare-and-swap (CAS) instructions */                                                     \
-  decl(Zacas       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZacas))                               \
-  /* Zba Address generation instructions */                                                            \
-  decl(Zba         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZba))                                 \
-  /* Zbb Basic bit-manipulation */                                                                     \
-  decl(Zbb         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbb))                                 \
-  /* Zbc Carry-less multiplication */                                                                  \
-  decl(Zbc         ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                      \
-  /* Bitmanip instructions for Cryptography */                                                         \
-  decl(Zbkb        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbkb))                                \
-  /* Zbs Single-bit instructions */                                                                    \
-  decl(Zbs         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbs))                                 \
-  /* Zcb Simple code-size saving instructions */                                                       \
-  decl(Zcb         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZcb))                                 \
-  /* Additional Floating-Point instructions */                                                         \
-  decl(Zfa         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfa))                                 \
-  /* Zfh Half-Precision Floating-Point instructions */                                                 \
-  decl(Zfh         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfh))                                 \
-  /* Zfhmin Minimal Half-Precision Floating-Point instructions */                                      \
-  decl(Zfhmin      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfhmin))                              \
-  /* Zicbom Cache Block Management Operations */                                                       \
-  decl(Zicbom      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicbom))                              \
-  /* Zicbop Cache Block Prefetch Operations */                                                         \
-  decl(Zicbop      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicbop))                              \
-  /* Zicboz Cache Block Zero Operations */                                                             \
-  decl(Zicboz      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicboz))                              \
-  /* Base Counters and Timers */                                                                       \
-  decl(Zicntr      ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                      \
-  /* Zicond Conditional operations */                                                                  \
-  decl(Zicond      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicond))                              \
-  /* Zicsr Control and Status Register (CSR) Instructions */                                           \
-  decl(Zicsr       ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                      \
-  /* Zic64b Cache blocks must be 64 bytes in size, naturally aligned in the address space. */          \
-  decl(Zic64b      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZic64b))                              \
-  /* Zifencei Instruction-Fetch Fence */                                                               \
-  decl(Zifencei    ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                      \
-  /* Zihintpause Pause instruction HINT */                                                             \
-  decl(Zihintpause ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZihintpause))                         \
-  /* Total Store Ordering */                                                                           \
-  decl(Ztso        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZtso))                                \
-  /* Vector Basic Bit-manipulation */                                                                  \
-  decl(Zvbb        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvbb, &ext_v, nullptr))           \
-  /* Vector Carryless Multiplication */                                                                \
-  decl(Zvbc        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvbc, &ext_v, nullptr))           \
-  /* Vector Extension for Half-Precision Floating-Point */                                             \
-  decl(Zvfh        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvfh, &ext_v, &ext_Zfh, nullptr)) \
-  /* Shorthand for Zvkned + Zvknhb + Zvkb + Zvkt */                                                    \
-  decl(Zvkn        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvkn, &ext_v, nullptr))           \
-  /* Zvkg crypto extension for ghash and gcm */                                                        \
-  decl(Zvkg        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvkg, &ext_v, nullptr))           \
+  #define RV_EXT_FEATURE_FLAGS(decl)                                                                      \
+  /* A Atomic Instructions */                                                                             \
+  decl(a           ,     ('A' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* C Compressed Instructions */                                                                         \
+  decl(c           ,     ('C' - 'A'),  true ,  UPDATE_DEFAULT(UseRVC))                                    \
+  /* D Single-Precision Floating-Point */                                                                 \
+  decl(d           ,     ('D' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* F Single-Precision Floating-Point */                                                                 \
+  decl(f           ,     ('F' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* H Hypervisor */                                                                                      \
+  decl(h           ,     ('H' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* I RV64I */                                                                                           \
+  decl(i           ,     ('I' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* M Integer Multiplication and Division */                                                             \
+  decl(m           ,     ('M' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* Q Quad-Precision Floating-Point */                                                                   \
+  decl(q           ,     ('Q' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* V Vector */                                                                                          \
+  decl(v           ,     ('V' - 'A'),  true ,  UPDATE_DEFAULT(UseRVV))                                    \
+                                                                                                          \
+  /* ----------------------- Other extensions ----------------------- */                                  \
+                                                                                                          \
+  /* Atomic compare-and-swap (CAS) instructions */                                                        \
+  decl(Zacas       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZacas))                                  \
+  /* Zba Address generation instructions */                                                               \
+  decl(Zba         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZba))                                    \
+  /* Zbb Basic bit-manipulation */                                                                        \
+  decl(Zbb         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbb))                                    \
+  /* Zbc Carry-less multiplication */                                                                     \
+  decl(Zbc         ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* Bitmanip instructions for Cryptography */                                                            \
+  decl(Zbkb        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbkb))                                   \
+  /* Zbs Single-bit instructions */                                                                       \
+  decl(Zbs         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbs))                                    \
+  /* Zcb Simple code-size saving instructions */                                                          \
+  decl(Zcb         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZcb))                                    \
+  /* Additional Floating-Point instructions */                                                            \
+  decl(Zfa         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfa))                                    \
+  /* Zfh Half-Precision Floating-Point instructions */                                                    \
+  decl(Zfh         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfh))                                    \
+  /* Zfhmin Minimal Half-Precision Floating-Point instructions */                                         \
+  decl(Zfhmin      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfhmin))                                 \
+  /* Zicbom Cache Block Management Operations */                                                          \
+  decl(Zicbom      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicbom))                                 \
+  /* Zicbop Cache Block Prefetch Operations */                                                            \
+  decl(Zicbop      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicbop))                                 \
+  /* Zicboz Cache Block Zero Operations */                                                                \
+  decl(Zicboz      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicboz))                                 \
+  /* Base Counters and Timers */                                                                          \
+  decl(Zicntr      ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* Zicond Conditional operations */                                                                     \
+  decl(Zicond      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicond))                                 \
+  /* Zicsr Control and Status Register (CSR) Instructions */                                              \
+  decl(Zicsr       ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* Zic64b Cache blocks must be 64 bytes in size, naturally aligned in the address space. */             \
+  decl(Zic64b      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZic64b))                                 \
+  /* Zifencei Instruction-Fetch Fence */                                                                  \
+  decl(Zifencei    ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
+  /* Zihintpause Pause instruction HINT */                                                                \
+  decl(Zihintpause ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZihintpause))                            \
+  /* Total Store Ordering */                                                                              \
+  decl(Ztso        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZtso))                                   \
+  /* Vector Basic Bit-manipulation */                                                                     \
+  decl(Zvbb        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvbb, &ext_v, nullptr))              \
+  /* Vector Carryless Multiplication */                                                                   \
+  decl(Zvbc        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvbc, &ext_v, nullptr))              \
+  /* Vector Extension for Half-Precision Floating-Point */                                                \
+  decl(Zvfh        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvfh, &ext_v, &ext_Zfhmin, nullptr)) \
+  /* Vector Extension for Minimal Half-Precision Floating-Point */                                        \
+  decl(Zvfhmin     ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvfhmin, &ext_v, nullptr))           \
+  /* Shorthand for Zvkned + Zvknhb + Zvkb + Zvkt */                                                       \
+  decl(Zvkn        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvkn, &ext_v, nullptr))              \
+  /* Zvkg crypto extension for ghash and gcm */                                                           \
+  decl(Zvkg        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvkg, &ext_v, nullptr))              \
 
   #define DECLARE_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF)                             \
   struct ext_##PRETTY##RVExtFeatureValue : public RVExtFeatureValue {                           \
@@ -442,6 +444,8 @@ private:
     RV_ENABLE_EXTENSION(UseZicboz)                  \
     RV_ENABLE_EXTENSION(UseZicond)                  \
     RV_ENABLE_EXTENSION(UseZihintpause)             \
+    RV_ENABLE_EXTENSION(UseZvfhmin)                 \
+    RV_ENABLE_EXTENSION(UseZvbb)                    \
 
   static void useRVA23U64Profile();
 
