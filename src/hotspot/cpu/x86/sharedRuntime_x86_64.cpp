@@ -3452,7 +3452,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
   };
 
   const char* name = SharedRuntime::stub_name(StubId::shared_jfr_write_checkpoint_id);
-  CodeBuffer code(name, 1024, 64);
+  CodeBuffer code(name, 1024 + (UseAPX ? 1024 : 0), 64);
   MacroAssembler* masm = new MacroAssembler(&code);
   address start = __ pc();
 

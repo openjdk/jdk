@@ -2617,28 +2617,31 @@ frame %{
   // stack slot.
   return_addr(REG Z_R14);
 
-  // Location of native (C/C++) and interpreter return values. This
-  // is specified to be the same as Java. In the 32-bit VM, long
-  // values are actually returned from native calls in O0:O1 and
-  // returned to the interpreter in I0:I1. The copying to and from
-  // the register pairs is done by the appropriate call and epilog
-  // opcodes. This simplifies the register allocator.
-  //
-  // Use register pair for c return value.
-  c_return_value %{
-    assert(ideal_reg >= Op_RegI && ideal_reg <= Op_RegL, "only return normal values");
-    static int typeToRegLo[Op_RegL+1] = { 0, 0, Z_R2_num, Z_R2_num, Z_R2_num, Z_F0_num, Z_F0_num, Z_R2_num };
-    static int typeToRegHi[Op_RegL+1] = { 0, 0, OptoReg::Bad, OptoReg::Bad, Z_R2_H_num, OptoReg::Bad, Z_F0_H_num, Z_R2_H_num };
-    return OptoRegPair(typeToRegHi[ideal_reg], typeToRegLo[ideal_reg]);
-  %}
-
   // Use register pair for return value.
   // Location of compiled Java return values. Same as C
   return_value %{
     assert(ideal_reg >= Op_RegI && ideal_reg <= Op_RegL, "only return normal values");
-    static int typeToRegLo[Op_RegL+1] = { 0, 0, Z_R2_num, Z_R2_num, Z_R2_num, Z_F0_num, Z_F0_num, Z_R2_num };
-    static int typeToRegHi[Op_RegL+1] = { 0, 0, OptoReg::Bad, OptoReg::Bad, Z_R2_H_num, OptoReg::Bad, Z_F0_H_num, Z_R2_H_num };
-    return OptoRegPair(typeToRegHi[ideal_reg], typeToRegLo[ideal_reg]);
+    static const int lo[Op_RegL + 1] = {
+      0,
+      0,
+      Z_R2_num,     // Op_RegN
+      Z_R2_num,     // Op_RegI
+      Z_R2_num,     // Op_RegP
+      Z_F0_num,     // Op_RegF
+      Z_F0_num,     // Op_RegD
+      Z_R2_num      // Op_RegL
+    };
+    static const int hi[Op_RegL + 1] = {
+      0,
+      0,
+      OptoReg::Bad, // Op_RegN
+      OptoReg::Bad, // Op_RegI
+      Z_R2_H_num,   // Op_RegP
+      OptoReg::Bad, // Op_RegF
+      Z_F0_H_num,   // Op_RegD
+      Z_R2_H_num    // Op_RegL
+    };
+    return OptoRegPair(hi[ideal_reg], lo[ideal_reg]);
   %}
 %}
 
@@ -4813,17 +4816,15 @@ instruct loadNKlass(iRegN dst, memory mem) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct loadNKlassCompactHeaders(iRegN dst, memory mem, flagsReg cr) %{
+instruct loadNKlassCompactHeaders(iRegN dst, memory mem) %{
   match(Set dst (LoadNKlass mem));
   predicate(UseCompactObjectHeaders);
-  effect(KILL cr);
   ins_cost(MEMORY_REF_COST);
   format %{ "load_narrow_klass_compact $dst,$mem \t# compressed class ptr" %}
-  // TODO: size()
+  // z_lg (6 bytes) + z_srlg (6 bytes); neither instruction modifies the CC.
+  size(12);
   ins_encode %{
-    __ block_comment("load_narrow_klass_compact_c2 {");
     __ load_narrow_klass_compact_c2($dst$$Register, $mem$$Address);
-    __ block_comment("} load_narrow_klass_compact");
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -8783,6 +8784,7 @@ instruct compP_decode_reg_imm0(flagsReg cr, iRegN op1, immP0 op2) %{
 
 instruct compP_reg_mem(iRegP dst, memory src, flagsReg cr)%{
   match(Set cr (CmpP dst (LoadP src)));
+  predicate(n->in(2)->as_Load()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
   format %{ "CLG     $dst, $src\t # ptr" %}

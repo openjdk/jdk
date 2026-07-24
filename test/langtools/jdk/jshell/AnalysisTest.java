@@ -47,6 +47,7 @@ public class AnalysisTest extends KullaTesting {
         assertAnalyze("/*zoo*/int x=3 ;/*test*/", "/*zoo*/int x=3 ;/*test*/", "", true);
         assertAnalyze("int x=3 /*;*/", "int x=3; /*;*/", "", true);
         assertAnalyze("void m5() {} /*hgjghj*/", "void m5() {} /*hgjghj*/", "", true);
+        assertAnalyze("void m5() {} /**hgjghj*/", "void m5() {} /**hgjghj*/", "", true);
         assertAnalyze("int ff; int v /*hgjghj*/", "int ff;", " int v /*hgjghj*/", true);
     }
 
@@ -64,5 +65,13 @@ public class AnalysisTest extends KullaTesting {
         assertAnalyze("/*zoo*/45/*test*/", "/*zoo*/45/*test*/", "", true);
         assertAnalyze("/*zoo*/45;/*test*/", "/*zoo*/45;/*test*/", "", true);
         assertAnalyze("45/*;*/", "45/*;*/", "", true);
+    }
+
+    @Test
+    public void testOnlyComments() {
+        assertAnalyze("/*test*/", "/*test*/", "", false);
+        assertAnalyze("/**test*/", "/**test*/", "", false);
+        assertAnalyze("//test", "//test", "", false);
+        assertAnalyze("///test", "///test", "", false);
     }
 }

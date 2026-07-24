@@ -259,9 +259,7 @@ void ShenandoahHeuristics::record_full_gc(GCCause::Cause cause) {
 }
 
 void ShenandoahHeuristics::record_requested_gc() {
-  // Assume users call System.gc() when external state changes significantly,
-  // which forces us to re-learn the GC timings and allocation rates.
-  _gc_times_learned = 0;
+  // Do nothing.
 }
 
 bool ShenandoahHeuristics::can_unload_classes() {

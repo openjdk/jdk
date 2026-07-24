@@ -58,6 +58,16 @@ class InstanceRefKlass: public InstanceKlass {
  public:
   InstanceRefKlass();
 
+  static InstanceRefKlass* cast(Klass* k) {
+    return const_cast<InstanceRefKlass*>(cast(const_cast<const Klass*>(k)));
+  }
+
+  static const InstanceRefKlass* cast(const Klass* k) {
+    assert(k != nullptr, "k should not be null");
+    assert(k->is_reference_instance_klass(), "cast to InstanceRefKlass");
+    return static_cast<const InstanceRefKlass*>(k);
+  }
+
   // Oop fields (and metadata) iterators
   //
   // The InstanceRefKlass iterators also support reference processing.

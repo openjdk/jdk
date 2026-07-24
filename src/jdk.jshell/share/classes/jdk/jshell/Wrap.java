@@ -87,11 +87,11 @@ abstract class Wrap implements GeneralWrap {
      * @return a Wrap that declares the given variable, potentially with
      *         an initialization method
      */
-    public static Wrap varWrap(String source, Wrap wtype, String brackets,
+    public static Wrap varWrap(String source, Wrap prefix, Wrap wtype, String brackets,
                                Wrap wname, Wrap winit, boolean enhanced,
                                Wrap anonDeclareWrap) {
         List<Object> components = new ArrayList<>();
-        components.add(new VarDeclareWrap(wtype, brackets, wname));
+        components.add(new VarDeclareWrap(prefix, wtype, brackets, wname));
         Wrap wmeth;
 
         if (winit == null) {
@@ -164,9 +164,10 @@ abstract class Wrap implements GeneralWrap {
         return new RangeWrap(source, range);
     }
 
-    public static Wrap classMemberWrap(String source) {
-        Wrap w = new NoWrap(source);
-        return new CompoundWrap("    public static\n    ", w);
+    public static Wrap classMemberWrap(String source, int modifierInsertPos) {
+        Wrap prefix = modifierInsertPos == 0 ? null : new RangeWrap(source, new Range(0, modifierInsertPos));
+        Wrap suffix = new RangeWrap(source, new Range(modifierInsertPos, source.length()));
+        return new CompoundWrap(prefix, " public static ", suffix);
     }
 
     private static int countLines(String s) {
@@ -257,6 +258,8 @@ abstract class Wrap implements GeneralWrap {
                         snlnLast = w.lastSnippetLine();
                     }
                     sb.append(w.wrapped());
+                } else if (o == null) {
+                    //permit missing delegates
                 } else {
                     throw new InternalError("Bad object in CommoundWrap: " + o);
                 }
@@ -558,8 +561,8 @@ abstract class Wrap implements GeneralWrap {
 
     private static class VarDeclareWrap extends CompoundWrap {
 
-        VarDeclareWrap(Wrap wtype, String brackets, Wrap wname) {
-            super("    public static ", wtype, brackets + " ", wname, semi(wname));
+        VarDeclareWrap(Wrap prefix, Wrap wtype, String brackets, Wrap wname) {
+            super(prefix, "    public static ", wtype, brackets + " ", wname, semi(wname));
         }
     }
 
