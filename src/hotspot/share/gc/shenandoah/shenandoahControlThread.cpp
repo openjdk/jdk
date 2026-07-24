@@ -253,14 +253,16 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 
 bool ShenandoahControlThread::check_cancellation() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (heap->cancelled_gc()) {
-    if (heap->cancelled_cause() == GCCause::_shenandoah_stop_vm) {
-      return true;
-    }
-
-    fatal("Unexpected reason for cancellation: %s", GCCause::to_string(heap->cancelled_cause()));
+  const GCCause::Cause cancelled_cause = heap->cancelled_cause();
+  if (cancelled_cause == GCCause::_no_gc) {
+    return false;
   }
-  return false;
+
+  if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
+    return true;
+  }
+
+  fatal("Unexpected reason for cancellation: %s", GCCause::to_string(cancelled_cause));
 }
 
 void ShenandoahControlThread::stop_service() {
@@ -280,9 +282,14 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* ignored) {
   // Although setting gc request is under _controller_lock, the read side (run_service())
   // does not take the lock. We need to enforce following order, so that read side sees
-  // latest requested gc cause when the flag is set.
+  // latest requested gc cause when the flag is set. Do not let a lower priority cause
+  // overwrite a higher priority cause.
   MonitorLocker controller(&_control_lock, Mutex::_no_safepoint_check_flag);
-  _requested_gc_cause = cause;
+  if (ShenandoahCollectorPolicy::is_higher_priority(_requested_gc_cause, cause)) {
+    log_debug(gc, thread)("Not overwriting gc cause %s with %s", GCCause::to_string(_requested_gc_cause), GCCause::to_string(cause));
+  } else {
+    _requested_gc_cause = cause;
+  }
   _gc_requested.set();
   controller.notify();
 }

@@ -107,14 +107,23 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
     case _regular:
     case _pinned:
       return;
-    case _cset:
-      if (has_self_forwards()) {
-        // Only allowed for regions with self-forwarded objects. Otherwise, fall through to illegal transition.
-        set_state(_regular);
-        return;
-      }
     default:
       report_illegal_transition("regular allocation");
+  }
+}
+
+void ShenandoahHeapRegion::make_regular_for_partial_recycling() {
+  shenandoah_assert_heaplocked();
+  assert(has_self_forwards(), "Only for regions holding self forwarded objects");
+  switch (state()) {
+    case _cset:
+      set_state(_regular);
+      return;
+    case _pinned_cset:
+      set_state(_pinned);
+      return;
+    default:
+      report_illegal_transition("partially recycled");
   }
 }
 
@@ -884,11 +893,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
 // self-forwarded and objects that were successfully evacuated to another region. The simplest thing we can do is slide
 // top to the end of the last self forwarded object. This requires no changes on the allocation path.
 //
-// We must also leave this region in a walkable state in case it is visited by a remembered set scan.
-// The non-self forwarded pointers for compact objects are only valid for _this_ cycle. Note that unmarked objects
-// may also exist in this region and their classes may be unloaded at this point, so these too must be cared for.
-// We must, therefore, fill in these spaces (unless and until we have a more sophisticated enhancement for the
-// allocation path).
+// We must also leave old regions in a walkable state because they could be visited by a remembered set scan.
 class ShenandoahReclaimSelfForwarded : ObjectClosure {
 
   // This is a nullptr for young regions. For old regions, we use it to patch up the card table.
@@ -941,7 +946,7 @@ void ShenandoahHeapRegion::partially_recycle() {
   assert(has_self_forwards(), "Region %zu must have self forwarded objects", index());
 
   // This is only allowed for partially evacuated cset regions
-  make_regular_allocation(affiliation());
+  make_regular_for_partial_recycling();
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahScanRemembered* cards = is_old() ? heap->old_generation()->card_scan() : nullptr;

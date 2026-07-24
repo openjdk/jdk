@@ -1208,17 +1208,17 @@ bool needs_acquiring_load_reserved(const Node *n)
 //       from the start of the call to the point where the return address
 //       will point.
 
-int MachCallStaticJavaNode::ret_addr_offset()
+int MachCallStaticJavaNode::ret_addr_offset() const
 {
   return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
 }
 
-int MachCallDynamicJavaNode::ret_addr_offset()
+int MachCallDynamicJavaNode::ret_addr_offset() const
 {
   return NativeMovConstReg::movptr2_instruction_size + (3 * NativeInstruction::instruction_size); // movptr2, auipc + ld + jal
 }
 
-int MachCallRuntimeNode::ret_addr_offset() {
+int MachCallRuntimeNode::ret_addr_offset() const {
   // For address inside the code cache the call will be:
   //   auipc + jalr
   // For real runtime callouts it will be 8 instructions
