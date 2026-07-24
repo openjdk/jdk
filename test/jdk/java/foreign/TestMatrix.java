@@ -35,7 +35,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
@@ -46,7 +46,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
@@ -57,7 +57,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
@@ -68,7 +68,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
@@ -79,7 +79,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   TestDowncallScope
@@ -89,7 +89,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   TestDowncallScope
@@ -99,7 +99,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   TestDowncallStack
@@ -109,7 +109,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   TestDowncallStack
@@ -119,7 +119,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
@@ -130,7 +130,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
@@ -141,7 +141,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
@@ -152,7 +152,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
@@ -163,7 +163,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
@@ -174,7 +174,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
@@ -185,7 +185,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
@@ -196,7 +196,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
@@ -207,7 +207,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
@@ -218,7 +218,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
@@ -229,7 +229,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
@@ -240,7 +240,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
@@ -252,7 +252,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper
  *
- * @run testng/othervm/native/manual
+ * @run junit/othervm/native/manual
  *   --enable-native-access=ALL-UNNAMED
  *   TestVarArgs
  */

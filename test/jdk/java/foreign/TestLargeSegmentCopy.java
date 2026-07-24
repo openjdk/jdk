@@ -26,15 +26,16 @@
  * @test
  * @requires sun.arch.data.model == "64"
  * @bug 8292851
- * @run testng/othervm -Xmx4G TestLargeSegmentCopy
+ * @run junit/othervm -Xmx4G TestLargeSegmentCopy
  */
 
-import org.testng.annotations.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
+
+import org.junit.jupiter.api.Test;
 
 public class TestLargeSegmentCopy {
 

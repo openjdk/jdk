@@ -29,7 +29,7 @@
  * @build TestEnableNativeAccessDynamic
  *        panama_module/*
           NativeAccessDynamicMain
- * @run testng/othervm/timeout=180 TestEnableNativeAccessDynamic
+ * @run junit/othervm/timeout=180 TestEnableNativeAccessDynamic
  * @summary Test for dynamically setting --enable-native-access flag for a module
  */
 
@@ -39,13 +39,13 @@ import java.util.List;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestEnableNativeAccessDynamic extends TestEnableNativeAccessBase {
 
-    @DataProvider(name = "succeedCases")
     public Object[][] succeedCases() {
         return new Object[][] {
                 { "panama_enable_native_access", PANAMA_MAIN, successNoWarning() },
@@ -54,7 +54,6 @@ public class TestEnableNativeAccessDynamic extends TestEnableNativeAccessBase {
         };
     }
 
-    @DataProvider(name = "failureCases")
     public Object[][] failureCases() {
         String errMsg = "Illegal native access from module panama_module";
         return new Object[][] {
@@ -92,13 +91,15 @@ public class TestEnableNativeAccessDynamic extends TestEnableNativeAccessBase {
         return outputAnalyzer;
     }
 
-    @Test(dataProvider = "succeedCases")
+    @ParameterizedTest
+    @MethodSource("succeedCases")
     public void testSucceed(String action, String moduleAndCls,
             Result expectedResult) throws Exception {
         run(action, moduleAndCls, true, expectedResult, false);
     }
 
-    @Test(dataProvider = "failureCases")
+    @ParameterizedTest
+    @MethodSource("failureCases")
     public void testFailures(String action, String moduleAndCls,
             Result expectedResult) throws Exception {
         run(action, moduleAndCls, false, expectedResult, false);
@@ -106,7 +107,8 @@ public class TestEnableNativeAccessDynamic extends TestEnableNativeAccessBase {
 
     // make sure that having a same named module in boot layer with native access
     // does not influence same named dynamic module.
-    @Test(dataProvider = "failureCases")
+    @ParameterizedTest
+    @MethodSource("failureCases")
     public void testFailuresWithPanamaModuleInBootLayer(String action, String moduleAndCls,
             Result expectedResult) throws Exception {
         run(action, moduleAndCls, false, expectedResult, true);

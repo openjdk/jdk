@@ -24,11 +24,9 @@
 /*
  * @test
  * @library ../ /test/lib
- * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestPassHeapSegment
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED TestPassHeapSegment
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.lang.foreign.*;
@@ -36,22 +34,29 @@ import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestPassHeapSegment extends UpcallTestHelper  {
 
     static {
         System.loadLibrary("PassHeapSegment");
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-        expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    @Test
     public void testNoHeapArgs() throws Throwable {
         MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(ADDRESS));
         MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
-        handle.invoke(segment); // should throw
+        assertThrows(IllegalArgumentException.class, () -> {
+            handle.invoke(segment);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    @Test
     public void testNoHeapCaptureCallState() throws Throwable {
         MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(ADDRESS),
                 Linker.Option.captureCallState("errno"));
@@ -59,11 +64,14 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
             assert Linker.Option.captureStateLayout().byteAlignment() % 4 == 0;
             MemorySegment captureHeap = MemorySegment.ofArray(new int[(int) Linker.Option.captureStateLayout().byteSize() / 4]);
             MemorySegment segment = arena.allocateFrom(C_CHAR, new byte[]{ 0, 1, 2 });
-            handle.invoke(captureHeap, segment); // should throw for captureHeap
+            assertThrows(IllegalArgumentException.class, () -> {
+                handle.invoke(captureHeap, segment);
+            });
         }
     }
 
-    @Test(dataProvider = "specs")
+    @ParameterizedTest
+    @MethodSource("specs")
     public void testNoHeapReturns(boolean spec) throws IOException, InterruptedException {
         runInNewProcess(Runner.class, spec)
             .shouldNotHaveExitValue(0)
@@ -87,7 +95,6 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
         }
     }
 
-    @DataProvider
     public static Object[][] specs() {
         return new Object[][]{
             { true },

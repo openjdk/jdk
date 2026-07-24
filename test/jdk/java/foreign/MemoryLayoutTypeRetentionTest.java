@@ -23,16 +23,17 @@
 
 /*
  * @test
- * @run testng/othervm MemoryLayoutTypeRetentionTest
+ * @run junit/othervm MemoryLayoutTypeRetentionTest
  */
 
-import org.testng.annotations.*;
 
 import java.lang.foreign.*;
 import java.nio.ByteOrder;
 
 import static java.lang.foreign.ValueLayout.*;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class MemoryLayoutTypeRetentionTest {
 
@@ -144,12 +145,12 @@ public class MemoryLayoutTypeRetentionTest {
                 .withoutTargetLayout()
                 .withOrder(BYTE_ORDER);
         check(v);
-        assertEquals(v.order(), BYTE_ORDER);
+        assertEquals(BYTE_ORDER, v.order());
 
         assertFalse(v.targetLayout().isPresent());
         AddressLayout v2 = v.withTargetLayout(JAVA_INT);
         assertTrue(v2.targetLayout().isPresent());
-        assertEquals(v2.targetLayout().get(), JAVA_INT);
+        assertEquals(JAVA_INT, v2.targetLayout().get());
         assertTrue(v2.withoutTargetLayout().targetLayout().isEmpty());
     }
 
@@ -197,15 +198,15 @@ public class MemoryLayoutTypeRetentionTest {
 
     public void check(ValueLayout v) {
         check((MemoryLayout) v);
-        assertEquals(v.order(), BYTE_ORDER);
+        assertEquals(BYTE_ORDER, v.order());
     }
 
     public void check(MemoryLayout v) {
         // Check name properties
-        assertEquals(v.name().orElseThrow(), NAME);
+        assertEquals(NAME, v.name().orElseThrow());
         assertTrue(v.withoutName().name().isEmpty());
 
-        assertEquals(v.byteAlignment(), BYTE_ALIGNMENT);
+        assertEquals(BYTE_ALIGNMENT, v.byteAlignment());
     }
 
 }

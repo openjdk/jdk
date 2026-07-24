@@ -32,6 +32,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.TestInstance;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TestUpcallBase extends CallGeneratorHelper {
 
     static FunctionDescriptor function(Ret ret, List<ParamType> params, List<StructFieldType> fields) {

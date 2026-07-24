@@ -27,7 +27,7 @@
  * @compile platform/PlatformLayouts.java
  * @modules java.base/jdk.internal.foreign.abi
  * @modules java.base/jdk.internal.foreign.layout
- * @run testng TestLayoutEquality
+ * @run junit TestLayoutEquality
  */
 
 import java.lang.foreign.AddressLayout;
@@ -35,18 +35,21 @@ import java.lang.foreign.ValueLayout;
 
 import jdk.internal.foreign.layout.ValueLayouts;
 import platform.PlatformLayouts;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestLayoutEquality {
 
-    @Test(dataProvider = "layoutConstants")
+    @ParameterizedTest
+    @MethodSource("layoutConstants")
     public void testReconstructedEquality(ValueLayout layout) {
         ValueLayout newLayout = ValueLayouts.valueLayout(layout.carrier(), layout.order());
         newLayout = newLayout.withByteAlignment(layout.byteAlignment());
@@ -55,15 +58,14 @@ public class TestLayoutEquality {
         }
 
         // properties should be equal
-        assertEquals(newLayout.byteSize(), layout.byteSize());
-        assertEquals(newLayout.byteAlignment(), layout.byteAlignment());
-        assertEquals(newLayout.name(), layout.name());
+        assertEquals(layout.byteSize(), newLayout.byteSize());
+        assertEquals(layout.byteAlignment(), newLayout.byteAlignment());
+        assertEquals(layout.name(), newLayout.name());
 
         // layouts should be equals
-        assertEquals(newLayout, layout);
+        assertEquals(layout, newLayout);
     }
 
-    @DataProvider
     public static Object[][] layoutConstants() throws ReflectiveOperationException {
         List<ValueLayout> testValues = new ArrayList<>();
 

@@ -26,7 +26,7 @@
  * @library ../ /test/lib
  * @requires jdk.foreign.linker != "FALLBACK"
  * @requires vm.compMode != "Xcomp"
- * @run testng/othervm/native/timeout=480
+ * @run junit/othervm/native/timeout=480
  *   --enable-native-access=ALL-UNNAMED
  *   TestStubAllocFailure
  */
@@ -39,9 +39,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
 public class TestStubAllocFailure extends UpcallTestHelper {
 

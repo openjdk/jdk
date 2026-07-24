@@ -23,13 +23,14 @@
 
 /*
  * @test
- * @run testng/othervm -Dos.name=Windows --enable-native-access=ALL-UNNAMED TestFallbackLookup
+ * @run junit/othervm -Dos.name=Windows --enable-native-access=ALL-UNNAMED TestFallbackLookup
  */
 
-import org.testng.annotations.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.foreign.Linker;
+
+import org.junit.jupiter.api.Test;
 
 public class TestFallbackLookup {
     @Test
