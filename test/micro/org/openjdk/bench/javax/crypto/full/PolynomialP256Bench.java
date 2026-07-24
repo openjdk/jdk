@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2026,Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.annotations.Benchmark;
 import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
-import java.util.Random;
 import sun.security.util.math.intpoly.MontgomeryIntegerPolynomialP256;
 import sun.security.util.math.intpoly.IntegerPolynomialP256;
 import sun.security.util.math.MutableIntegerModuloP;
@@ -57,6 +56,10 @@ public class PolynomialP256Bench {
     final ImmutableIntegerModuloP x = residueField.getElement(refx);
     final ImmutableIntegerModuloP X = montField.getElement(refx);
     final ImmutableIntegerModuloP one = montField.get1();
+    @Param({"0"})
+    private int pZero = 0;
+    @Param({"1"})
+    private int pOne = 1;
 
     @Param({"true", "false"})
     private boolean isMontBench;
@@ -95,13 +98,11 @@ public class PolynomialP256Bench {
     public MutableIntegerModuloP benchAssign() {
         MutableIntegerModuloP test1 = X.mutable();
         MutableIntegerModuloP test2 = one.mutable();
-        long seed = 1234567890L;
-        Random rand = new Random(seed);
         for (int i = 0; i< 10000; i++) {
-            test1.conditionalSet(test2, rand.nextInt(2));
-            test1.conditionalSet(test2, rand.nextInt(2));
-            test2.conditionalSet(test1, rand.nextInt(2));
-            test2.conditionalSet(test1, rand.nextInt(2));
+            test1.conditionalSet(test2, vZero);
+            test1.conditionalSet(test2, vOne);
+            test2.conditionalSet(test1, vZero);
+            test2.conditionalSet(test1, vOne);
         }
         return test2;
     }
