@@ -285,7 +285,7 @@ template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
   G1HeapRegionRemSet* rem_set = to->rem_set();
   if (rem_set->is_tracked()) {
     if (to->is_young()) {
-      G1BarrierSet::g1_barrier_set()->write_ref_field_post(p);
+      // Pointers into young regions are already tracked by post-write barriers.
     } else {
       G1HeapRegion* from = _g1h->heap_region_containing(p);
 
