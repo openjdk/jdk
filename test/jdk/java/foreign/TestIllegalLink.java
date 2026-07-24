@@ -46,6 +46,8 @@ import jdk.internal.foreign.CABI;
 import static java.lang.foreign.ValueLayout.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -83,6 +85,7 @@ public class TestIllegalLink extends NativeTestHelper {
     @ParameterizedTest
     @MethodSource("illegalCaptureState")
     public void testIllegalCaptureState(String name) {
+        assumeFalse(IS_WINDOWS);
         assertThrows(IllegalArgumentException.class, () -> {
             Linker.Option.captureCallState(name);
         });
@@ -91,13 +94,10 @@ public class TestIllegalLink extends NativeTestHelper {
     // where
 
     public static Object[][] illegalCaptureState() {
-        if (!IS_WINDOWS) {
-            return new Object[][]{
-                { "GetLastError" },
-                { "WSAGetLastError" },
-            };
-        }
-        return new Object[][]{};
+        return new Object[][]{
+            { "GetLastError" },
+            { "WSAGetLastError" },
+        };
     }
 
     public static Object[][] downcallOnlyOptions() {
