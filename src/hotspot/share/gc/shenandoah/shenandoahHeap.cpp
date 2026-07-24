@@ -1248,13 +1248,17 @@ ShenandoahSelfForwardTask::ShenandoahSelfForwardTask(ShenandoahHeap* heap, Shena
 }
 
 void ShenandoahSelfForwardTask::work(uint worker_id) {
-  ShenandoahParallelWorkerSession worker_session(worker_id);
+  ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahHeapRegion* r;
   while ((r = _cs->claim_next()) != nullptr) {
     ShenandoahSelfForwardClosure cl;
     _heap->marked_object_iterate(r, &cl);
     if (cl.self_forwarded_objects()) {
       r->set_has_self_forwards();
+    }
+
+    if (_heap->check_cancelled_gc_and_yield()) {
+      break;
     }
   }
 }
