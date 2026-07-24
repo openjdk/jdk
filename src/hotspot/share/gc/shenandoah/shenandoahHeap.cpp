@@ -1450,57 +1450,6 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   }
 }
 
-// Clear the self_fwd bit on a live cset object, if set. Runs at a safepoint,
-// so a plain store is sufficient — no concurrent writers to the mark word.
-class ShenandoahUnSelfForwardObjectClosure : public ObjectClosure {
-public:
-  void do_object(oop obj) override {
-    markWord m = obj->mark();
-    if (m.is_self_forwarded()) {
-      obj->set_mark(m.unset_self_forwarded());
-    }
-  }
-};
-
-// Parallel task over flagged cset regions. Iterates the live objects via the
-// mark bitmap (skipping evacuated and never-marked memory), clears self_fwd
-// bits, and resets the region flag once done.
-class ShenandoahUnSelfForwardTask : public WorkerTask {
-private:
-  ShenandoahHeap*          const _heap;
-  ShenandoahCollectionSet* const _cs;
-
-public:
-  ShenandoahUnSelfForwardTask(ShenandoahHeap* heap, ShenandoahCollectionSet* cs) :
-    WorkerTask("Shenandoah Un-Self-Forward"),
-    _heap(heap),
-    _cs(cs) {}
-
-  void work(uint worker_id) override {
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    ShenandoahUnSelfForwardObjectClosure cl;
-    ShenandoahHeapRegion* r;
-    while ((r = _cs->claim_next()) != nullptr) {
-      if (r->has_self_forwards()) {
-        _heap->marked_object_iterate(r, &cl);
-        r->clear_has_self_forwards();
-      }
-    }
-  }
-};
-
-void ShenandoahHeap::un_self_forward_cset_regions() {
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
-  ShenandoahCollectionSet* cs = collection_set();
-  if (cs == nullptr || cs->is_empty()) {
-    return;
-  }
-  cs->clear_current_index();
-  ShenandoahUnSelfForwardTask task(this, cs);
-  workers()->run_task(&task);
-  DEBUG_ONLY(assert_no_self_forwards());
-}
-
 #ifdef ASSERT
 void ShenandoahHeap::assert_no_self_forwards() const {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");

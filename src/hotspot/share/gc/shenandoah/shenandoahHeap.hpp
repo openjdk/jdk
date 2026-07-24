@@ -826,10 +826,6 @@ public:
   // self-forwarded bit on src, flags src's region, and returns src.
   virtual oop evacuate_object(oop src, Thread* thread);
 
-  // Parallel scan of flagged cset regions to clear self-forwarded bits on live
-  // objects. Must be called at a safepoint; intended for full GC entry paths.
-  void un_self_forward_cset_regions();
-
   DEBUG_ONLY(void assert_no_self_forwards() const;)
 
 // ---------- Helper functions
