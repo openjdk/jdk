@@ -178,7 +178,7 @@ bool ShenandoahCollectorPolicy::should_handle_requested_gc(GCCause::Cause cause)
 bool ShenandoahCollectorPolicy::should_abandon_evacuations(ShenandoahHeapRegion* region) {
   if (region->has_self_forwards()) {
     PLAB* gclab = ShenandoahThreadLocalData::gclab(Thread::current());
-    if (gclab->words_remaining() < PLAB::min_size() * HeapWordSize) {
+    if (gclab->words_remaining() < PLAB::min_size() / HeapWordSize) {
       // This region and this thread are lost. This thread has evacuated all it can. If
       // we let it continue on to other regions, it will only fail those as well. We want
       // to let other threads try the regions that this thread could not.
