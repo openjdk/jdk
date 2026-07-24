@@ -251,14 +251,16 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 
 bool ShenandoahControlThread::check_cancellation() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (heap->cancelled_gc()) {
-    if (heap->cancelled_cause() == GCCause::_shenandoah_stop_vm) {
-      return true;
-    }
-
-    fatal("Unexpected reason for cancellation: %s", GCCause::to_string(heap->cancelled_cause()));
+  const GCCause::Cause cancelled_cause = heap->cancelled_cause();
+  if (cancelled_cause == GCCause::_no_gc) {
+    return false;
   }
-  return false;
+
+  if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
+    return true;
+  }
+
+  fatal("Unexpected reason for cancellation: %s", GCCause::to_string(cancelled_cause));
 }
 
 void ShenandoahControlThread::stop_service() {

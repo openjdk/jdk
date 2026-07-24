@@ -886,29 +886,59 @@ int MachNode::compute_padding(int current_offset) const {
   return 0;
 }
 
-int MachCallStaticJavaNode::ret_addr_offset() {
+int MachCallStaticJavaNode::ret_addr_offset() const {
   if (_method) {
-    return 8;
+    return MacroAssembler::call_far_pcrelative_size();
   } else {
     return MacroAssembler::call_far_patchable_ret_addr_offset();
   }
 }
 
-int MachCallDynamicJavaNode::ret_addr_offset() {
+int MachCallDynamicJavaNode::ret_addr_offset() const {
   // Consider size of receiver type profiling (C2 tiers).
-  int profile_receiver_type_size = 0;
 
   int vtable_index = this->_vtable_index;
   if (vtable_index == -4) {
-    return 14 + profile_receiver_type_size;
+    return MacroAssembler::load_const_from_toc_size()
+         + MacroAssembler::call_far_pcrelative_size();
   } else {
     assert(!UseInlineCaches, "expect vtable calls only if not using ICs");
-    return 36 + profile_receiver_type_size;
+    // This should return the size of instructions in vtable dispatch
+    // branch of z_enc_java_dynamic_call
+    int offset = 0;
+
+    //     __ load_klass(Z_method, Z_R2);
+    if (UseCompactObjectHeaders) {
+      // load_narrow_klass_compact (z_lg z_srlg)
+      offset += 6 // z_lg
+              + 6; // z_srlg;
+    } else {
+      offset += 6; // z_llgf
+    }
+    offset += MacroAssembler::instr_size_for_decode_klass_not_null();
+
+    // check if displacement is valid, as it will generate different
+    // instructions:
+    int entry_offset = in_bytes(Klass::vtable_start_offset()) +
+                       vtable_index * vtableEntry::size_in_bytes();
+    int v_off = entry_offset + in_bytes(vtableEntry::method_offset());
+    if (!Displacement::is_validDisp(v_off)) {
+        offset += MacroAssembler::load_const_size(); // emits iihf + iilf
+    }
+    // both generate z_lg
+    offset += 6; // z_lg (z_method, v_off | Address(Z_method, Z_R1_scratch))
+    // common footer
+    offset += 6; // z_lg(Z_R1_scratch, Method::from_compiled_offset())
+    offset += 2; // z_basr
+
+    return offset;
   }
 }
 
-int MachCallRuntimeNode::ret_addr_offset() {
-  return 12 + MacroAssembler::call_far_patchable_ret_addr_offset();
+int MachCallRuntimeNode::ret_addr_offset() const {
+  return 6 // get_PC()  (LARL)
+    + 6 // save_return_pc() (STG)
+    + MacroAssembler::call_far_patchable_ret_addr_offset();
 }
 
 // Compute padding required for nodes which need alignment
@@ -994,7 +1024,6 @@ static inline void z_assert_aligned(C2_MacroAssembler *masm, int disp, Register 
 int emit_call_reloc(C2_MacroAssembler *masm, intptr_t entry_point, relocInfo::relocType rtype,
                     PhaseRegAlloc* ra_, bool is_native_call = false) {
   __ set_inst_mark(); // Used in z_enc_java_static_call() and emit_java_to_interp().
-  address old_mark = __ inst_mark();
   unsigned int start_off = __ offset();
 
   if (is_native_call) {
@@ -1024,7 +1053,6 @@ int emit_call_reloc(C2_MacroAssembler *masm, intptr_t entry_point, relocInfo::re
 
 static int emit_call_reloc(C2_MacroAssembler *masm, intptr_t entry_point, RelocationHolder const& rspec) {
   __ set_inst_mark(); // Used in z_enc_java_static_call() and emit_java_to_interp().
-  address old_mark = __ inst_mark();
   unsigned int start_off = __ offset();
 
   relocInfo::relocType rtype = rspec.type();
@@ -2344,8 +2372,7 @@ encode %{
     // callee doesn't.
     unsigned int start_off = __ offset();
     // Compute size of "larl + stg + call_c_opt".
-    const int size_of_code = 6 + 6 + MacroAssembler::call_far_patchable_size();
-    __ get_PC(Z_R14, size_of_code);
+    __ get_PC(Z_R14, ret_addr_offset());
     __ save_return_pc();
     assert(__ offset() - start_off == 12, "bad prelude len: %d", __ offset() - start_off);
 
@@ -2356,30 +2383,28 @@ encode %{
       return;
     }
 
-#ifdef ASSERT
-    // Plausibility check for size_of_code assumptions.
-    unsigned int actual_ret_off = __ offset();
-    assert(start_off + size_of_code == actual_ret_off, "wrong return_pc");
-#endif
+    assert(__ offset() - start_off == (uint)ret_addr_offset(),
+            "z_enc_java_to_runtime_call return offset mismatch: emitted %d bytes, ret_addr_offset()=%d",
+            __ offset() - start_off, ret_addr_offset());
     __ post_call_nop();
   %}
 
   enc_class z_enc_java_static_call(method meth) %{
+    unsigned int start_off = __ offset();
     // Call to fixup routine. Fixup routine uses ScopeDesc info to determine
     // whom we intended to call.
-    int ret_offset = 0;
 
     if (!_method) {
-      ret_offset = emit_call_reloc(masm, $meth$$method,
-                                   relocInfo::runtime_call_w_cp_type, ra_);
+      emit_call_reloc(masm, $meth$$method,
+                      relocInfo::runtime_call_w_cp_type, ra_);
     } else {
       int method_index = resolved_method_index(masm);
       if (_optimized_virtual) {
-        ret_offset = emit_call_reloc(masm, $meth$$method,
-                                     opt_virtual_call_Relocation::spec(method_index));
+        emit_call_reloc(masm, $meth$$method,
+                        opt_virtual_call_Relocation::spec(method_index));
       } else {
-        ret_offset = emit_call_reloc(masm, $meth$$method,
-                                     static_call_Relocation::spec(method_index));
+        emit_call_reloc(masm, $meth$$method,
+                        static_call_Relocation::spec(method_index));
       }
     }
     assert(__ inst_mark() != nullptr, "emit_call_reloc must set_inst_mark()");
@@ -2394,6 +2419,9 @@ encode %{
     }
 
     __ clear_inst_mark();
+    assert(__ offset() - start_off == (uint)ret_addr_offset(),
+            "z_enc_java_static_call return offset mismatch: emitted %d bytes, ret_addr_offset()=%d",
+            __ offset() - start_off, ret_addr_offset());
     __ post_call_nop();
   %}
 
@@ -2418,9 +2446,8 @@ encode %{
       // to determine who we intended to call.
       int method_index = resolved_method_index(masm);
       __ relocate(virtual_call_Relocation::spec(virtual_call_oop_addr, method_index));
-      unsigned int ret_off = __ offset();
       assert(__ offset() - start_off == 6, "bad prelude len: %d", __ offset() - start_off);
-      ret_off += emit_call_reloc(masm, $meth$$method, relocInfo::none, ra_);
+      emit_call_reloc(masm, $meth$$method, relocInfo::none, ra_);
       __ clear_inst_mark();
       assert(_method, "lazy_constant may be wrong when _method==null");
     } else {
@@ -2449,8 +2476,11 @@ encode %{
       __ z_lg(Z_R1_scratch, Address(Z_method, Method::from_compiled_offset()));
       // Call target. Either compiled code or C2I adapter.
       __ z_basr(Z_R14, Z_R1_scratch);
-      unsigned int ret_off = __ offset();
     }
+    assert(__ offset() - start_off == (uint)ret_addr_offset(),
+            "z_enc_java_dynamic_call return offset mismatch: emitted %d bytes, ret_addr_offset()=%d",
+            __ offset() - start_off, ret_addr_offset());
+
     __ post_call_nop();
   %}
 
