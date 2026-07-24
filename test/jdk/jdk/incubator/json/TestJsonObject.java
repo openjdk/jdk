@@ -169,19 +169,19 @@ public class TestJsonObject {
         }
 
         private static final List<Arguments> INVALID_OBJECTS_MESSAGES = List.of(
-                Arguments.of("{ \"foo\" : ", "Expected a JSON Object, Array, String, Number, Boolean, or Null. Location: line 0, position 10."),
-                Arguments.of("{ \"foo\" ", "Expected a colon after the member name. Location: line 0, position 8."),
-                Arguments.of("{ \"foo\" : \"bar\" ", "JSON Object is not closed with a brace. Location: line 0, position 16."),
-                Arguments.of("{ \"foo\" : \"bar\",  ", "JSON Object is not closed with a brace. Location: line 0, position 18."),
-                Arguments.of("{ \"foo\" : 1, \"foo\" : 1  ", "The duplicate member name: \"foo\" was already parsed. Location: line 0, position 18."),
-                Arguments.of("{ foo : \"bar\" ", "Expecting a JSON Object member name. Location: line 0, position 2."),
-                Arguments.of("{ \"foo : ", "JSON Object member name is not closed with a quotation mark. Location: line 0, position 9."),
-                Arguments.of("{ ", "JSON Object is not closed with a brace. Location: line 0, position 2."),
+                Arguments.of("{ \"foo\" : ", "Expected a JSON Object, Array, String, Number, Boolean, or Null. Path: \"{foo\". Location: line 0, position 10."),
+                Arguments.of("{ \"foo\" ", "Expected a colon after the member name. Path: \"{\". Location: line 0, position 8."),
+                Arguments.of("{ \"foo\" : \"bar\" ", "JSON Object is not closed with a brace. Path: \"{\". Location: line 0, position 16."),
+                Arguments.of("{ \"foo\" : \"bar\",  ", "JSON Object is not closed with a brace. Path: \"{\". Location: line 0, position 18."),
+                Arguments.of("{ \"foo\" : 1, \"foo\" : 1  ", "The duplicate member name: \"foo\" was already parsed. Path: \"{\". Location: line 0, position 18."),
+                Arguments.of("{ foo : \"bar\" ", "Expecting a JSON Object member name. Path: \"{\". Location: line 0, position 2."),
+                Arguments.of("{ \"foo : ", "JSON Object member name is not closed with a quotation mark. Path: \"{\". Location: line 0, position 9."),
+                Arguments.of("{ ", "JSON Object is not closed with a brace. Path: \"{\". Location: line 0, position 2."),
 
                 // Escaped names
-                Arguments.of("{ \"foo\" : null, \"\\u0066oo\" : null ", "The duplicate member name: \"foo\" was already parsed. Location: line 0, position 26."),
-                Arguments.of("{ \"\\u00M\" ", "Invalid Unicode escape sequence. 'M' is not a hex digit. Location: line 0, position 7."),
-                Arguments.of("{ \"foo\\a\" ", "Unrecognized escape sequence: \"\\a\". Location: line 0, position 7."),
+                Arguments.of("{ \"foo\" : null, \"\\u0066oo\" : null ", "The duplicate member name: \"foo\" was already parsed. Path: \"{\". Location: line 0, position 26."),
+                Arguments.of("{ \"\\u00M\" ", "Invalid Unicode escape sequence. 'M' is not a hex digit. Path: \"{\". Location: line 0, position 7."),
+                Arguments.of("{ \"foo\\a\" ", "Unrecognized escape sequence: \"\\a\". Path: \"{\". Location: line 0, position 7."),
 
                 // multi-line duplicate member for error location validation
                 Arguments.of("""
@@ -190,14 +190,23 @@ public class TestJsonObject {
                         "a": [
                         ]
                     }
-                    """, "The duplicate member name: \"a\" was already parsed. Location: line 2, position 7."),
+                    """, "The duplicate member name: \"a\" was already parsed. Path: \"{\". Location: line 2, position 7."),
                 Arguments.of("""
                     {
                         "a": 0,
                         "a"
                             : 1
                     }
-                    """, "The duplicate member name: \"a\" was already parsed. Location: line 2, position 7."));
+                    """, "The duplicate member name: \"a\" was already parsed. Path: \"{\". Location: line 2, position 7."),
+
+                // nested
+                Arguments.of("{ \"l1\": { \"l2\": [ 0, 1, two ] } }",
+                    "Unexpected value. Expected a JSON Object, Array, String, Number, Boolean, or Null. Path: \"{l1{l2[2\". Location: line 0, position 25."),
+                Arguments.of("{\"ba\\\"zz\": [ invalid ]}",
+                    "Unexpected value. Expected a JSON Object, Array, String, Number, Boolean, or Null. Path: \"{ba\\\"zz[0\". Location: line 0, position 13."),
+                Arguments.of("{\"\\u0061\": [ invalid ]}",
+                    "Unexpected value. Expected a JSON Object, Array, String, Number, Boolean, or Null. Path: \"{\\u0061[0\". Location: line 0, position 13.")
+            );
 
         @ParameterizedTest
         @FieldSource("INVALID_OBJECTS_MESSAGES")

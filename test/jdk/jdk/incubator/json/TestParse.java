@@ -139,11 +139,11 @@ public class TestParse {
 
         // General exceptions not particularly tied to a sub-interface of JsonValue
         private static final List<Arguments> INVALID_JSON = List.of(
-                Arguments.of("", "Expected a JSON Object, Array, String, Number, Boolean, or Null. Location: line 0, position 0."),
-                Arguments.of(" ", "Expected a JSON Object, Array, String, Number, Boolean, or Null. Location: line 0, position 1."),
-                Arguments.of("z", "Unexpected value. Expected a JSON Object, Array, String, Number, Boolean, or Null. Location: line 0, position 0."),
-                Arguments.of("null, true", "Additional value(s) were found after the JSON Value. Location: line 0, position 4."),
-                Arguments.of("null 5", "Additional value(s) were found after the JSON Value. Location: line 0, position 5.")
+                Arguments.of("", "Expected a JSON Object, Array, String, Number, Boolean, or Null. Path: \"\". Location: line 0, position 0."),
+                Arguments.of(" ", "Expected a JSON Object, Array, String, Number, Boolean, or Null. Path: \"\". Location: line 0, position 1."),
+                Arguments.of("z", "Unexpected value. Expected a JSON Object, Array, String, Number, Boolean, or Null. Path: \"\". Location: line 0, position 0."),
+                Arguments.of("null, true", "Additional value(s) were found after the JSON Value. Path: \"\". Location: line 0, position 4."),
+                Arguments.of("null 5", "Additional value(s) were found after the JSON Value. Path: \"\". Location: line 0, position 5.")
         );
 
         @ParameterizedTest

@@ -59,13 +59,15 @@ public class TestJsonArray {
         // Some basic malformed JSON arrays and expected error message
         static List<Arguments> BASIC_FAIL = List.of(
                 Arguments.of("[ \"foo\"  ",
-                    "JSON Array is not closed with a bracket. Location: line 0, position 9."),
+                    "JSON Array is not closed with a bracket. Path: \"[\". Location: line 0, position 9."),
                 Arguments.of("[ \"foo\",  ",
-                    "Expected a JSON Object, Array, String, Number, Boolean, or Null. Location: line 0, position 10."),
+                    "Expected a JSON Object, Array, String, Number, Boolean, or Null. Path: \"[1\". Location: line 0, position 10."),
                 Arguments.of("[ ",
-                    "JSON Array is not closed with a bracket. Location: line 0, position 2."),
+                    "JSON Array is not closed with a bracket. Path: \"[\". Location: line 0, position 2."),
                 Arguments.of("null ]",
-                    "Additional value(s) were found after the JSON Value. Location: line 0, position 5."));
+                    "Additional value(s) were found after the JSON Value. Path: \"\". Location: line 0, position 5."),
+                Arguments.of("[ [ [ 0, 1, two ] ] ]",
+                    "Unexpected value. Expected a JSON Object, Array, String, Number, Boolean, or Null. Path: \"[0[0[2\". Location: line 0, position 13."));
 
         @ParameterizedTest
         @FieldSource("BASIC_FAIL")

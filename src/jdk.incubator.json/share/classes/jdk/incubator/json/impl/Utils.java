@@ -105,7 +105,7 @@ public class Utils {
         return composeError(jv, "%s is not a %s.".formatted(actual, expected));
     }
 
-    // This class is responsible for creating the path produced by JAE.
+    // This class is responsible for creating the path produced by JsonValueException.
     // Backtracks from the offset of the offending JSON element to the root.
     private static final class JsonPath {
 

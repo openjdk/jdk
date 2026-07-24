@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import jdk.incubator.json.JsonArray;
 import jdk.incubator.json.JsonObject;
@@ -54,6 +53,8 @@ public final class JsonParser {
     // For exception message on failure
     private int line;
     private int lineStart;
+    // True if the most recently parsed member name contains escape sequences
+    private boolean escapedMemberName;
 
     public JsonParser(char[] doc) {
         this.doc = doc;
@@ -61,9 +62,9 @@ public final class JsonParser {
 
     // Parses the lone JsonValue root
     public JsonValue parseRoot() {
-        JsonValue root = parseValue();
+        JsonValue root = parseValue("");
         if (hasInput()) {
-            throw failure("Additional value(s) were found after the JSON Value");
+            throw failure("Additional value(s) were found after the JSON Value", "");
         }
         return root;
     }
@@ -74,23 +75,23 @@ public final class JsonParser {
      *      JSON-text = ws value ws
      * See https://datatracker.ietf.org/doc/html/rfc8259#section-3
      */
-    private JsonValue parseValue() {
+    private JsonValue parseValue(String path) {
         skipWhitespaces();
         if (!hasInput()) {
-            throw failure("Expected a JSON Object, Array, String, Number, Boolean, or Null");
+            throw failure("Expected a JSON Object, Array, String, Number, Boolean, or Null", path);
         }
         var val = switch (doc[offset]) {
-            case '{' -> parseObject();
-            case '[' -> parseArray();
-            case '"' -> parseString();
-            case 't' -> parseTrue();
-            case 'f' -> parseFalse();
-            case 'n' -> parseNull();
+            case '{' -> parseObject(path + "{");
+            case '[' -> parseArray(path + "[");
+            case '"' -> parseString(path);
+            case 't' -> parseTrue(path);
+            case 'f' -> parseFalse(path);
+            case 'n' -> parseNull(path);
             // While JSON Number does not support leading '+', '.', or 'e'
             // we still accept, so that we can provide a better error message
             case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '+', 'e', '.'
-                    -> parseNumber();
-            default -> throw failure(UNEXPECTED_VAL);
+                    -> parseNumber(path);
+            default -> throw failure(UNEXPECTED_VAL, path);
         };
         skipWhitespaces();
         return val;
@@ -101,7 +102,7 @@ public final class JsonParser {
      * No offsets are required as member values hold their own offsets.
      * See https://datatracker.ietf.org/doc/html/rfc8259#section-4
      */
-    private JsonObject parseObject() {
+    private JsonObject parseObject(String path) {
         var startO = offset++; // Walk past the '{'
         skipWhitespaces();
         // Check for empty case
@@ -110,23 +111,27 @@ public final class JsonParser {
         }
         var members = new LinkedHashMap<String, JsonValue>();
         while (hasInput()) {
+            var nameStart = offset;
             // Get the member name, which should be unescaped
             // Why not parse the name as a JsonString and then return its value()?
-            // Would requires 2 passes; we should build the String as we parse.
-            var name = parseName();
+            // Would require 2 passes; we should build the String as we parse.
+            var name = parseName(path);
             var nameOffset = offset;
             var nameLine = line;
             var nameLineStart = lineStart;
+            var unescaped = escapedMemberName ?
+                new String(doc, nameStart + 1, nameOffset - nameStart - 2) : name;
 
             // Move from name to ':'
             skipWhitespaces();
             if (!charEquals(':')) {
                 throw failure(
-                        "Expected a colon after the member name");
+                        "Expected a colon after the member name", path);
             }
 
-            if (members.putIfAbsent(name, parseValue()) != null) {
-                throw failure(nameOffset, nameLine, nameLineStart, "The duplicate member name: \"%s\" was already parsed".formatted(name));
+            if (members.putIfAbsent(name, parseValue(path + unescaped)) != null) {
+                throw failure(nameOffset, nameLine, nameLineStart,
+                    "The duplicate member name: \"%s\" was already parsed".formatted(name), path);
             }
 
             // Ensure current char is either ',' or '}'
@@ -139,7 +144,7 @@ public final class JsonParser {
                 break;
             }
         }
-        throw failure("JSON Object is not closed with a brace");
+        throw failure("JSON Object is not closed with a brace", path);
     }
 
     /*
@@ -147,13 +152,14 @@ public final class JsonParser {
      * unescaped value.
      * See https://datatracker.ietf.org/doc/html/rfc8259#section-8.3
      */
-    private String parseName() {
+    private String parseName(String path) {
         if (!charEquals('"')) {
-            throw failure("Expecting a JSON Object member name");
+            throw failure("Expecting a JSON Object member name", path);
         }
         var escape = false;
         boolean useBldr = false;
         var start = offset;
+
         for (; hasInput(); offset++) {
             var c = doc[offset];
             if (escape) {
@@ -167,10 +173,10 @@ public final class JsonParser {
                     case 'r' -> c = '\r';
                     case 't' -> c = '\t';
                     case 'u' -> {
-                        c = codeUnit();
+                        c = codeUnit(path);
                         escapeLength = 4;
                     }
-                    default -> throw failure(UNRECOGNIZED_ESCAPE_SEQUENCE.formatted(c));
+                    default -> throw failure(UNRECOGNIZED_ESCAPE_SEQUENCE.formatted(c), path);
                 }
                 if (!useBldr) {
                     // Append everything up to the first escape sequence
@@ -183,6 +189,7 @@ public final class JsonParser {
                 continue;
             } else if (c == '\"') {
                 offset++;
+                escapedMemberName = useBldr;
                 if (useBldr) {
                     var name = sb.get().toString();
                     sb.get().setLength(0);
@@ -191,13 +198,13 @@ public final class JsonParser {
                     return new String(doc, start, offset - start - 1);
                 }
             } else if (c < ' ') {
-                throw failure(UNESCAPED_CONTROL_CODE);
+                throw failure(UNESCAPED_CONTROL_CODE, path);
             }
             if (useBldr) {
                 sb.get().append(c);
             }
         }
-        throw failure(UNCLOSED_STRING.formatted("JSON Object member name"));
+        throw failure(UNCLOSED_STRING.formatted("JSON Object member name"), path);
     }
 
     /*
@@ -205,7 +212,7 @@ public final class JsonParser {
      * elements. No offsets are required as children values hold their own offsets.
      * See https://datatracker.ietf.org/doc/html/rfc8259#section-5
      */
-    private JsonArray parseArray() {
+    private JsonArray parseArray(String path) {
         var startO = offset++; // Walk past the '['
         skipWhitespaces();
         // Check for empty case
@@ -215,7 +222,7 @@ public final class JsonParser {
         var list = new ArrayList<JsonValue>();
         while (hasInput()) {
             // Get the JsonValue
-            list.add(parseValue());
+            list.add(parseValue(path + list.size()));
             // Ensure current char is either ']' or ','
             if (charEquals(']')) {
                 return new JsonArrayImpl(list, startO, doc);
@@ -223,7 +230,7 @@ public final class JsonParser {
                 break;
             }
         }
-        throw failure("JSON Array is not closed with a bracket");
+        throw failure("JSON Array is not closed with a bracket", path);
     }
 
     /*
@@ -234,7 +241,7 @@ public final class JsonParser {
      * either through a Unicode escape sequence or two-char sequence.
      * See https://datatracker.ietf.org/doc/html/rfc8259#section-7
      */
-    private JsonString parseString() {
+    private JsonString parseString(String path) {
         int start = offset++; // Move past the starting quote
         var escape = false;
         boolean hasEscape = false;
@@ -244,8 +251,8 @@ public final class JsonParser {
                 switch (c) {
                     // Allowed JSON escapes
                     case '"', '\\', '/', 'b', 'f', 'n', 'r', 't' -> {}
-                    case 'u' -> codeUnit();
-                    default -> throw failure(UNRECOGNIZED_ESCAPE_SEQUENCE.formatted(c));
+                    case 'u' -> codeUnit(path);
+                    default -> throw failure(UNRECOGNIZED_ESCAPE_SEQUENCE.formatted(c), path);
                 }
                 escape = false;
             } else if (c == '\\') {
@@ -254,35 +261,35 @@ public final class JsonParser {
             } else if (c == '\"') {
                 return new JsonStringImpl(doc, start, ++offset, hasEscape);
             } else if (c < ' ') {
-                throw failure(UNESCAPED_CONTROL_CODE);
+                throw failure(UNESCAPED_CONTROL_CODE, path);
             }
         }
-        throw failure(UNCLOSED_STRING.formatted("JSON String"));
+        throw failure(UNCLOSED_STRING.formatted("JSON String"), path);
     }
 
-    private JsonBooleanImpl parseTrue() {
+    private JsonBooleanImpl parseTrue(String path) {
         var start = offset++;
         if (charEquals('r') && charEquals('u') && charEquals('e')) {
             return new JsonBooleanImpl(true, doc, start);
         }
-        throw failure(UNEXPECTED_VAL);
+        throw failure(UNEXPECTED_VAL, path);
     }
 
-    private JsonBooleanImpl parseFalse() {
+    private JsonBooleanImpl parseFalse(String path) {
         var start = offset++;
         if (charEquals('a') && charEquals('l') && charEquals('s')
                 && charEquals('e')) {
             return new JsonBooleanImpl(false, doc, start);
         }
-        throw failure(UNEXPECTED_VAL);
+        throw failure(UNEXPECTED_VAL, path);
     }
 
-    private JsonNullImpl parseNull() {
+    private JsonNullImpl parseNull(String path) {
         var start = offset++;
         if (charEquals('u') && charEquals('l') && charEquals('l')) {
             return new JsonNullImpl(doc, start);
         }
-        throw failure(UNEXPECTED_VAL);
+        throw failure(UNEXPECTED_VAL, path);
     }
 
     /*
@@ -291,7 +298,7 @@ public final class JsonParser {
      *      number = [ minus ] int [ frac ] [ exp ]
      * See https://datatracker.ietf.org/doc/html/rfc8259#section-6
      */
-    private JsonNumberImpl parseNumber() {
+    private JsonNumberImpl parseNumber(String path) {
         int decOff = -1;
         int expOff = -1;
         boolean sawZero = false;
@@ -305,19 +312,19 @@ public final class JsonParser {
             switch (c) {
                 case '-' -> {
                     if ((offset != start && expOff == -1) || havePart || sawSign) {
-                        throw failure(INVALID_POSITION_IN_NUMBER.formatted(c));
+                        throw failure(INVALID_POSITION_IN_NUMBER.formatted(c), path);
                     }
                     sawSign = true;
                 }
                 case '+' -> {
                     if (expOff == -1 || havePart || sawSign) {
-                        throw failure(INVALID_POSITION_IN_NUMBER.formatted(c));
+                        throw failure(INVALID_POSITION_IN_NUMBER.formatted(c), path);
                     }
                     sawSign = true;
                 }
                 case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
                     if (decOff == -1 && expOff == -1 && sawZero) {
-                        throw failure(INVALID_POSITION_IN_NUMBER.formatted('0'));
+                        throw failure(INVALID_POSITION_IN_NUMBER.formatted('0'), path);
                     }
                     if (doc[offset] == '0' && !havePart) {
                         sawZero = true;
@@ -326,10 +333,10 @@ public final class JsonParser {
                 }
                 case '.' -> {
                     if (decOff != -1) {
-                        throw failure(INVALID_POSITION_IN_NUMBER.formatted(c));
+                        throw failure(INVALID_POSITION_IN_NUMBER.formatted(c), path);
                     } else {
                         if (!havePart) {
-                            throw failure(INVALID_POSITION_IN_NUMBER.formatted(c));
+                            throw failure(INVALID_POSITION_IN_NUMBER.formatted(c), path);
                         }
                         decOff = offset;
                         havePart = false;
@@ -337,10 +344,10 @@ public final class JsonParser {
                 }
                 case 'e', 'E' -> {
                     if (expOff != -1) {
-                        throw failure(INVALID_POSITION_IN_NUMBER.formatted(c));
+                        throw failure(INVALID_POSITION_IN_NUMBER.formatted(c), path);
                     } else {
                         if (!havePart) {
-                            throw failure(INVALID_POSITION_IN_NUMBER.formatted(c));
+                            throw failure(INVALID_POSITION_IN_NUMBER.formatted(c), path);
                         }
                         expOff = offset;
                         havePart = false;
@@ -354,7 +361,7 @@ public final class JsonParser {
             }
         }
         if (!havePart) {
-            throw failure("Input expected after '[.|e|E]'");
+            throw failure("Input expected after '[.|e|E]'", path);
         }
         return new JsonNumberImpl(doc, start, offset, decOff, expOff);
     }
@@ -366,11 +373,11 @@ public final class JsonParser {
     }
 
     // Unescapes the Unicode escape sequence and produces a char
-    private char codeUnit() {
+    private char codeUnit(String path) {
         char val = 0;
         int end = offset + 4;
         if (end >= doc.length) {
-            throw failure("Invalid Unicode escape sequence. Expected four hex digits");
+            throw failure("Invalid Unicode escape sequence. Expected four hex digits", path);
         }
         while (offset < end) {
             char c = doc[++offset];
@@ -381,7 +388,7 @@ public final class JsonParser {
                         case 'a', 'b', 'c', 'd', 'e', 'f' -> c - 'a' + 10;
                         case 'A', 'B', 'C', 'D', 'E', 'F' -> c - 'A' + 10;
                         default -> throw failure(
-                                "Invalid Unicode escape sequence. '%c' is not a hex digit".formatted(c));
+                                "Invalid Unicode escape sequence. '%c' is not a hex digit".formatted(c), path);
                     });
         }
         return val;
@@ -426,15 +433,15 @@ public final class JsonParser {
         return false;
     }
 
-    private JsonParseException failure(String message) {
-        return failure(offset, line, lineStart, message);
+    private JsonParseException failure(String message, String path) {
+        return failure(offset, line, lineStart, message, path);
     }
 
-    private JsonParseException failure(int off, int l, int ls, String message) {
+    private JsonParseException failure(int off, int l, int ls, String message, String path) {
         // Non-revealing message does not produce input source String
         var pos = off - ls;
-        return new JsonParseException("%s. Location: line %d, position %d."
-                .formatted(message, l, pos), l, pos);
+        return new JsonParseException("%s. Path: \"%s\". Location: line %d, position %d."
+                .formatted(message, path, l, pos), l, pos);
     }
 
     // Parsing error messages ----------------------
