@@ -113,6 +113,12 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
         set_state(_regular);
         return;
       }
+    case _pinned_cset:
+      if (has_self_forwards()) {
+        // Only allowed for regions with self-forwarded objects. Maintain pin status though.
+        set_state(_pinned);
+        return;
+      }
     default:
       report_illegal_transition("regular allocation");
   }
