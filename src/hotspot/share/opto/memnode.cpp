@@ -2082,7 +2082,6 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------Ideal------------------------------------------
 // If the load is from Field memory and the pointer is non-null, it might be possible to
 // zero out the control input.
 // If the offset is constant and the base is an object allocation,
@@ -2706,7 +2705,7 @@ Node* LoadNode::find_known_klass(PhaseGVN* phase) {
 
 Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
   Node* x = LoadNode::Identity(phase);
-  if (x != this)  return x;
+  if (x != this)  { return x; }
 
   Node* k = find_known_klass(phase);
   return k == nullptr ? this : k;
@@ -2743,6 +2742,8 @@ Node* LoadNKlassNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     if (p != nullptr) { return p; }
   }
 
+  // To clean up reflective code, simplify k.java_mirror.as_klass to narrow k.
+  // Also feed through the klass in Allocate(...klass...)._klass.
   Node* k = find_known_klass(phase);
   if (k != nullptr) {
     const Type* t = phase->type(k);
