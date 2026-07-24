@@ -4998,9 +4998,23 @@ instruct rearrange_masked(vReg dst, vReg src, vReg shuffle, vRegMask_V0 v0) %{
 
 // ------------------------------ Vector extract ---------------------------------
 
-instruct extract(iRegINoSp dst, vReg src, immI idx, vReg tmp)
+instruct extractUB_index_imm(iRegINoSp dst, vReg src, immI idx, vReg tmp)
 %{
   match(Set dst (ExtractUB src idx));
+  effect(TEMP tmp);
+  format %{ "extractUB_index_imm $dst, $src, $idx\t# KILL $tmp" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    // "idx" is expected to be in range.
+    __ extract_v($dst$$Register, as_VectorRegister($src$$reg), T_BOOLEAN,
+                 (int)($idx$$constant), as_VectorRegister($tmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct extract(iRegINoSp dst, vReg src, immI idx, vReg tmp)
+%{
   match(Set dst (ExtractB src idx));
   match(Set dst (ExtractS src idx));
   match(Set dst (ExtractI src idx));
@@ -5014,12 +5028,15 @@ instruct extract(iRegINoSp dst, vReg src, immI idx, vReg tmp)
   ins_pipe(pipe_slow);
 %}
 
-instruct extractUB_var(iRegINoSp dst, vReg src, iRegI idx, vReg tmp)
+instruct extractUB_index_reg(iRegINoSp dst, vReg src, iRegI idx, vReg tmp)
 %{
   match(Set dst (ExtractUB src idx));
   effect(TEMP tmp);
-  format %{ "extractUB_var $dst, $src, $idx\t# KILL $tmp" %}
+  format %{ "extractUB_index_reg $dst, $src, $idx\t# KILL $tmp" %}
   ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    // "idx" is expected to be in range.
     __ extract_v($dst$$Register, as_VectorRegister($src$$reg), T_BOOLEAN,
                  $idx$$Register, as_VectorRegister($tmp$$reg));
   %}
