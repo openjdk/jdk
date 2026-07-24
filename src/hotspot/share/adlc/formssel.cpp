@@ -1135,8 +1135,8 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   return nullptr;
 }
 
-// Compare the instruction predicates for textual equality
-bool equivalent_predicates( const InstructForm *instr1, const InstructForm *instr2 ) {
+// Compare the instruction predicates for textual equality (for cisc-spill optimzation)
+static bool equivalent_predicates( const InstructForm *instr1, const InstructForm *instr2 ) {
   const Predicate *pred1  = instr1->_predicate;
   const Predicate *pred2  = instr2->_predicate;
   if( pred1 == nullptr && pred2 == nullptr ) {
@@ -1144,17 +1144,22 @@ bool equivalent_predicates( const InstructForm *instr1, const InstructForm *inst
     return true;
   }
 
+  #ifdef AMD64
+  // A replacement instr (instr2) with no predicate handles a superset of the cases that cisc-spillable
+  // instr1 handles. Except when instr1 has "predicate(false)", which shouldn't match anything.
+  // This is safe for x86 which only uses such predicates for instructions that should only be expanded
+  // as part of peephole optimizations. It's unclear if this is safe for s390 due to more complex predicates
+  // like "predicate(false && <more expressions>)". For now only enable for x86 (AMD64)
   #define PREDICATE_FALSE_EXPR "#line 9\nfalse\n#line 9\n"
 
   if( pred2 == nullptr && !ADLParser::equivalent_expressions(pred1->_pred, PREDICATE_FALSE_EXPR) ) {
-    // If the replacement instr (instr2) has no predicate, then it handles a superset of the cases that instr1 handles.
-    // Except for predicate(false) which shouldn't match anything.
     // if ( false ) {
     //   fprintf(stderr, "Instruction %s cisc-spills-to %s\n", instr1->_ident, instr2->_ident);
     //   fprintf(stderr, "   predicate %s\n",  pred1->_pred);
     // }
     return true;
   }
+  #endif /* AMD64 */
 
   if( pred1 != nullptr && pred2 != nullptr ) {
     // compare the predicates
