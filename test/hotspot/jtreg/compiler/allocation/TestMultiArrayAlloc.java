@@ -30,11 +30,10 @@
  */
 
 /*
- * @test id=zgc
+ * @test id=default
  * @bug 8308105
  * @summary Test correctness of inlined 2D array allocation
- * @requires vm.gc.Z
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UseZGC compiler.allocation.TestMultiArrayAlloc
+ * @run main/othervm -Xcomp -XX:-TieredCompilation compiler.allocation.TestMultiArrayAlloc
  */
 
 package compiler.allocation;
