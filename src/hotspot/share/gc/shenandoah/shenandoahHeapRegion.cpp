@@ -890,11 +890,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
 // self-forwarded and objects that were successfully evacuated to another region. The simplest thing we can do is slide
 // top to the end of the last self forwarded object. This requires no changes on the allocation path.
 //
-// We must also leave this region in a walkable state in case it is visited by a remembered set scan.
-// The non-self forwarded pointers for compact objects are only valid for _this_ cycle. Note that unmarked objects
-// may also exist in this region and their classes may be unloaded at this point, so these too must be cared for.
-// We must, therefore, fill in these spaces (unless and until we have a more sophisticated enhancement for the
-// allocation path).
+// We must also leave old regions in a walkable state because they could be visited by a remembered set scan.
 class ShenandoahReclaimSelfForwarded : ObjectClosure {
 
   // This is a nullptr for young regions. For old regions, we use it to patch up the card table.
