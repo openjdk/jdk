@@ -448,66 +448,62 @@ Node* Parse::multianewarray2(ciArrayKlass* array_klass, Node* length1, Node* len
 
   // The actual loop structure:
   //
+  // if (length2 < 0) {
+  //   new T[length2]; // throws NegativeArraySizeException
+  // }
   // if (length1 > 0) {
   //   int index = 0;
   //   do {
   //     multi_array[index] = new T[length2];
   //     index++;
   //   } while (index < length1);
-  // } else if (length2 < 0) {
-  //   new T[length2]; // throws NegativeArraySizeException
   // }
   //
   // The corresponding C2 IR graph:
   //
-  // CmpI(length1, 0) -> Bool(gt) -> If
+  // CmpI(length2, 0) -> Bool(lt)
+  //   IfTrue  => AllocateArray(klass_1, length2) -> halt (never returns)
   //   IfFalse =>
-  //     CmpI(length2, 0) -> Bool(lt) -> If
-  //       IfTrue  => AllocateArray(klass_1, length2) -> halt (never returns)
-  //       IfFalse => skip_ctrl
-  //   IfTrue =>
   //     CastII(length2, POS) -> length2
-  //     LoopNode(IfTrue, back_edge)
-  //       Phi(LoopNode, 0,       next_index) -> index
-  //       Phi(LoopNode, pre_mem, body_mem)
-  //       Phi(LoopNode, pre_io,  body_io)
-  //       AllocateArray(klass_1, length2) -> array
-  //       StoreP(array_element_address(multi_array, index), array)
-  //       AddI(index, 1) -> next_index
-  //       CmpI(next_index, length1) -> Bool(lt) -> If
-  //         IfTrue  => back_edge => LoopNode
-  //         IfFalse => loop_exit
-  // Region(skip_ctrl, loop_exit)
+  //     CmpI(length1, 0) -> Bool(gt)
+  //       IfFalse => zero_trip_ctrl
+  //       IfTrue =>
+  //         LoopNode(IfTrue, back_edge)
+  //           Phi(LoopNode, 0,       next_index) -> index
+  //           Phi(LoopNode, pre_mem, body_mem)
+  //           Phi(LoopNode, pre_io,  body_io)
+  //           AllocateArray(klass_1, length2) -> array
+  //           StoreP(array_element_address(multi_array, index), array)
+  //           AddI(index, 1) -> next_index
+  //           CmpI(next_index, length1) -> Bool(lt)
+  //             IfTrue  => back_edge => LoopNode
+  //             IfFalse => loop_exit
+  // Region(zero_trip_ctrl, loop_exit)
   //   Phi(Region, pre_mem, body_mem)
   //   Phi(Region, pre_io,  body_io)
-
-  Node* i_init = _gvn.intcon(0);
-  Node* cmp_init = _gvn.transform(new CmpINode(length1, i_init));
-  Node* bool_init = _gvn.transform(new BoolNode(cmp_init, BoolTest::gt));
-  IfNode* iff_init = create_and_map_if(control(), bool_init, PROB_FAIR, COUNT_UNKNOWN);
-
-  Node* skip_ctrl = IfFalse(iff_init); // skip if length1 <= 0
 
   // check (length2 < 0) case if length2 is not proved to be positive
   if (!_gvn.type(length2)->higher_equal(TypeInt::POS)) {
     Node* cmp_len2  = _gvn.transform(new CmpINode(length2, intcon(0)));
     Node* bool_len2 = _gvn.transform(new BoolNode(cmp_len2, BoolTest::lt));
-    IfNode* iff_len2 = create_and_map_if(skip_ctrl, bool_len2, PROB_MIN, COUNT_UNKNOWN);
+    IfNode* iff_len2 = create_and_map_if(control(), bool_len2, PROB_MIN, COUNT_UNKNOWN);
     {
       PreserveJVMState pjvms(this);
       set_control(IfTrue(iff_len2));
       new_array(klass_node, length2, false); // throws NegativeArraySizeException
       halt(control(), frameptr(), "Unreachable");
     }
-    skip_ctrl = IfFalse(iff_len2);
-  }
-
-  set_control(IfTrue(iff_init));
-
-  // Narrow length2 to POS so new_array() in the loop body skips its own CastII.
-  if (!_gvn.type(length2)->higher_equal(TypeInt::POS)) {
+    set_control(IfFalse(iff_len2));
     length2 = _gvn.transform(new CastIINode(control(), length2, TypeInt::POS));
   }
+
+  Node* i_init = _gvn.intcon(0);
+  Node* cmp_init = _gvn.transform(new CmpINode(length1, i_init));
+  Node* bool_init = _gvn.transform(new BoolNode(cmp_init, BoolTest::gt));
+  IfNode* iff_init = create_and_map_if(control(), bool_init, PROB_FAIR, COUNT_UNKNOWN);
+
+  Node* zero_trip_ctrl = IfFalse(iff_init); // length1 == 0
+  set_control(IfTrue(iff_init));
 
   Node* pre_mem = merged_memory();
   Node* pre_io  = i_o();
@@ -554,7 +550,7 @@ Node* Parse::multianewarray2(ciArrayKlass* array_klass, Node* length1, Node* len
   io_phi->set_req(2, loop_body_io);
 
   RegionNode* exit_region = new RegionNode(3);
-  exit_region->init_req(1, skip_ctrl);
+  exit_region->init_req(1, zero_trip_ctrl);
   exit_region->init_req(2, IfFalse(iff));
   record_for_igvn(exit_region);
   _gvn.set_type(exit_region, Type::CONTROL);
