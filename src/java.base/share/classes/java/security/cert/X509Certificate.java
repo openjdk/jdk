@@ -188,8 +188,8 @@ public abstract non-sealed class X509Certificate extends Certificate
      * @throws    CertificateNotYetValidException if the certificate is not
      * yet valid with respect to the {@code instant} supplied.
      * @throws    NullPointerException if the supplied instant is {@code null}.
-     * @throws    IllegalArgumentException or instants outside the range 
-     * supported by Date (e.g., Instant.MAX).
+     * @throws    IllegalArgumentException if supplied instant is outside the
+     * range supported by Date (e.g., Instant.MAX).
      *
      * @see #checkValidity()
      * @since 28
