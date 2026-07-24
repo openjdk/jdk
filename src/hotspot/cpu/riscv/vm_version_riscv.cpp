@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -85,11 +85,11 @@ void VM_Version::common_initialize() {
 
   setup_cpu_available_features();
 
-  // check if satp.mode is supported, currently supports up to SV48(RV64)
-  if (satp_mode.value() > VM_SV48 || satp_mode.value() < VM_MBARE) {
+  // check if satp.mode is supported, currently supports up to SV57(RV64)
+  if (satp_mode.value() > VM_SV57 || satp_mode.value() < VM_MBARE) {
     vm_exit_during_initialization(
       err_msg(
-         "Unsupported satp mode: SV%d. Only satp modes up to sv48 are supported for now.",
+         "Unsupported satp mode: SV%d. Only satp modes up to sv57 are supported for now.",
          (int)satp_mode.value()));
   }
 
