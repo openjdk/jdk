@@ -420,7 +420,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
     }
   }
 
-  if (CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_heap() && resolved_references() != nullptr) {
+  if (CDSConfig::is_dumping_heap() && CDSConfig::can_allocate_scratch_oops() && resolved_references() != nullptr) {
     objArrayOop scratch_references = oopFactory::new_objArray(vmClasses::Object_klass(), resolved_references()->length(), CHECK);
     HeapShared::add_scratch_resolved_references(this, scratch_references);
   }

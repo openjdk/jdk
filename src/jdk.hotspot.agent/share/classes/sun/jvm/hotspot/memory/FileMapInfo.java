@@ -91,9 +91,9 @@ public class FileMapInfo {
     Type FileMapHeader_type = db.lookupType("FileMapHeader");
     Type CDSFileMapRegion_type = db.lookupType("CDSFileMapRegion");
 
-    // FileMapInfo * info = FileMapInfo::_current_info;
+    // FileMapInfo * info = FileMapInfo::_static_input_archive;
     // FileMapHeader* header = info->_header
-    Address info = getStatic_AddressField(FileMapInfo_type, "_current_info");
+    Address info = getStatic_AddressField(FileMapInfo_type, "_static_input_archive");
     Address header = get_AddressField(FileMapInfo_type, info, "_header");
     headerObj = VMObjectFactory.newObject(FileMapHeader.class, header);
 

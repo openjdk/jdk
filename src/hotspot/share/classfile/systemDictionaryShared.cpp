@@ -581,11 +581,11 @@ bool SystemDictionaryShared::is_builtin_loader(ClassLoaderData* loader_data) {
 }
 
 bool SystemDictionaryShared::has_platform_or_app_classes() {
-  if (FileMapInfo::current_info()->has_platform_or_app_classes()) {
+  if (FileMapInfo::static_input_archive()->has_platform_or_app_classes()) {
     return true;
   }
   if (DynamicArchive::is_mapped() &&
-      FileMapInfo::dynamic_info()->has_platform_or_app_classes()) {
+      FileMapInfo::dynamic_input_archive()->has_platform_or_app_classes()) {
     return true;
   }
   return false;

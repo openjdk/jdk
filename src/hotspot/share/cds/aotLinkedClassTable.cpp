@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,15 @@
 AOTLinkedClassTable AOTLinkedClassTable::_instance;
 
 void AOTLinkedClassTable::serialize(SerializeClosure* soc) {
+  if (soc->writing() && CDSConfig::is_dumping_preimage_static_archive() && CDSConfig::is_using_archive()) {
+    void* foo = nullptr;
+    soc->do_ptr((void**)&foo);
+    soc->do_ptr((void**)&foo);
+    soc->do_ptr((void**)&foo);
+    soc->do_ptr((void**)&foo);
+    return;
+  }
+
   soc->do_ptr((void**)&_boot1);
   soc->do_ptr((void**)&_boot2);
   soc->do_ptr((void**)&_platform);

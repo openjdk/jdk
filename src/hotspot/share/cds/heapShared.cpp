@@ -307,7 +307,7 @@ bool HeapShared::is_archived_heap_in_use() {
 }
 
 bool HeapShared::can_use_archived_heap() {
-  FileMapInfo* static_mapinfo = FileMapInfo::current_info();
+  FileMapInfo* static_mapinfo = FileMapInfo::static_input_archive();
   if (static_mapinfo == nullptr) {
     return false;
   }
@@ -1759,6 +1759,9 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
       orig_obj = scratch_java_mirror(orig_obj);
       assert(orig_obj != nullptr, "must be archived");
     }
+  } else if (java_lang_Class::is_instance(orig_obj) && subgraph_info == _dump_time_special_subgraph) {
+    orig_obj = scratch_java_mirror(orig_obj);
+    assert(orig_obj != nullptr, "must be archived");
   } else if (java_lang_Class::is_instance(orig_obj) && subgraph_info != _dump_time_special_subgraph) {
     // Without CDSConfig::is_dumping_aot_linked_classes(), we only allow archived objects to
     // point to the mirrors of (1) j.l.Object, (2) primitive classes, and (3) box classes. These are initialized

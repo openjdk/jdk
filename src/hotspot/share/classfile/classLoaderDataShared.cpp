@@ -65,6 +65,13 @@ public:
   }
 
   void serialize(SerializeClosure* f) {
+    if (f->writing() && CDSConfig::is_dumping_preimage_static_archive() && CDSConfig::is_using_archive()) {
+      void* foo = nullptr;
+      f->do_ptr((void**)&foo);
+      f->do_ptr((void**)&foo);
+      f->do_ptr((void**)&foo);
+      return;
+    }
     f->do_ptr(&_packages);
     f->do_ptr(&_modules);
     f->do_ptr(&_unnamed_module);
@@ -245,6 +252,15 @@ void ClassLoaderDataShared::serialize(SerializeClosure* f) {
   _archived_boot_loader_data.serialize(f);
   _archived_platform_loader_data.serialize(f);
   _archived_system_loader_data.serialize(f);
+
+  if (f->writing() && CDSConfig::is_dumping_preimage_static_archive() && CDSConfig::is_using_archive()) {
+    void* foo = nullptr;
+    f->do_ptr((void**)&foo);
+    f->do_ptr((void**)&foo);
+    f->do_ptr((void**)&foo);
+    return;
+  }
+
   f->do_ptr(&_archived_javabase_moduleEntry);
   f->do_int(&_platform_loader_root_index);
   f->do_int(&_system_loader_root_index);

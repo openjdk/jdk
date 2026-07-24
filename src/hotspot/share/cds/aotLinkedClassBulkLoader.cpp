@@ -36,6 +36,7 @@
 #include "classfile/vmClasses.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -139,10 +140,44 @@ void AOTLinkedClassBulkLoader::link_classes(JavaThread* current) {
   }
 }
 
+static void allocate_scratch_oops(Klass* k, TRAPS) {
+#if INCLUDE_CDS_JAVA_HEAP
+  precond(CDSConfig::can_allocate_scratch_oops());
+  if (k->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    ConstantPool* cp = ik->constants();
+    if (cp->cache() != nullptr) {
+      objArrayOop resolved_references = cp->resolved_references();
+      if (resolved_references != nullptr) {
+        objArrayOop scratch_references = oopFactory::new_objArray(vmClasses::Object_klass(), resolved_references->length(), CHECK);
+        HeapShared::add_scratch_resolved_references(cp, scratch_references);
+      }
+    }
+  }
+
+  java_lang_Class::create_scratch_mirror(k, CHECK);
+  for (ArrayKlass* ak = k->array_klass_or_null(); ak != nullptr; ak = ak->higher_dimension()) {
+    java_lang_Class::create_scratch_mirror(ak, CHECK);
+  }
+#endif
+}
+
 void AOTLinkedClassBulkLoader::link_classes_impl(TRAPS) {
   precond(CDSConfig::is_using_aot_linked_classes());
 
   AOTLinkedClassTable* table = AOTLinkedClassTable::get();
+
+  if (CDSConfig::is_dumping_preimage_static_archive() && CDSConfig::is_using_archive()) {
+    allocate_scratch_oops(Universe::fillerArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::boolArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::charArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::floatArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::doubleArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::byteArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::shortArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::intArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::longArrayKlass(), CHECK);
+  }
 
   link_classes_in_table(table->boot1(), CHECK);
   link_classes_in_table(table->boot2(), CHECK);
@@ -170,6 +205,9 @@ void AOTLinkedClassBulkLoader::link_classes_in_table(Array<InstanceKlass*>* clas
       // at this point.
       InstanceKlass* ik = classes->at(i);
       ik->link_class(CHECK);
+      if (CDSConfig::is_dumping_preimage_static_archive() && CDSConfig::is_using_archive()) {
+        allocate_scratch_oops(ik, CHECK);
+      }
     }
   }
 }

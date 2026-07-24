@@ -2906,6 +2906,11 @@ void AdapterHandlerLibrary::dump_aot_adapter_table() {
 }
 
 void AdapterHandlerLibrary::serialize_shared_table_header(SerializeClosure* soc) {
+  if (soc->writing() && CDSConfig::is_dumping_preimage_static_archive() && CDSConfig::is_using_archive()) {
+    ArchivedAdapterTable dummy;
+    dummy.serialize_header(soc);
+    return;
+  }
   _aot_adapter_handler_table.serialize_header(soc);
 }
 

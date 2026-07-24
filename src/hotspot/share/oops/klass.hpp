@@ -374,6 +374,9 @@ protected:
   void set_has_aot_initialized_mirror() {
     CDS_ONLY(_aot_class_flags |= _has_aot_initialized_mirror;)
   }
+  void clear_has_aot_initialized_mirror() {
+    CDS_ONLY(_aot_class_flags &= ~_has_aot_initialized_mirror;)
+  }
   bool has_aot_initialized_mirror() const {
     CDS_ONLY(return (_aot_class_flags & _has_aot_initialized_mirror) != 0;)
     NOT_CDS(return false;)

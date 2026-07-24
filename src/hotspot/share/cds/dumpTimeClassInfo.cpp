@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ bool DumpTimeClassInfo::is_builtin() {
 }
 
 DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
-  assert(CDSConfig::is_dumping_final_static_archive() || !k->in_aot_cache(), "Do not call with shared classes");
+  assert(CDSConfig::is_dumping_final_static_archive() || (CDSConfig::is_dumping_preimage_static_archive() && CDSConfig::is_using_archive()) || !k->in_aot_cache(), "Do not call with shared classes");
   bool created;
   DumpTimeClassInfo* p = put_if_absent(k, &created);
   assert(created, "must not exist in table");
@@ -156,7 +156,7 @@ DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
 }
 
 DumpTimeClassInfo* DumpTimeSharedClassTable::get_info(InstanceKlass* k) {
-  assert(CDSConfig::is_dumping_final_static_archive() || !k->in_aot_cache(), "Do not call with shared classes");
+  assert(CDSConfig::is_dumping_final_static_archive() || (CDSConfig::is_dumping_preimage_static_archive() && CDSConfig::is_using_archive()) || !k->in_aot_cache(), "Do not call with shared classes");
   DumpTimeClassInfo* p = get(k);
   assert(p != nullptr, "we must not see any non-shared InstanceKlass* that's "
          "not stored with SystemDictionaryShared::init_dumptime_info");

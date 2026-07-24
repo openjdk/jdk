@@ -183,6 +183,7 @@ public:
 
   static bool are_vm_options_incompatible_with_dumping_heap() NOT_CDS_JAVA_HEAP_RETURN_(true);
   static void log_reasons_for_not_dumping_heap();
+  static bool can_allocate_scratch_oops()                     NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   static void disable_heap_dumping()                         { CDS_ONLY(_disable_heap_dumping = true); }
   static bool is_dumping_heap()                              NOT_CDS_JAVA_HEAP_RETURN_(false);

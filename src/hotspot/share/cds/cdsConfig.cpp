@@ -80,17 +80,12 @@ DEBUG_ONLY(static bool _cds_ergo_initialize_started = false);
 void CDSConfig::ergo_initialize() {
   DEBUG_ONLY(_cds_ergo_initialize_started = true);
 
-  if (is_dumping_static_archive() && !is_dumping_final_static_archive()) {
-    // Note: -Xshare and -XX:AOTMode flags are mutually exclusive.
+  if (is_dumping_classic_static_archive()) {
     // - Classic workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
-    // - JEP 483 workflow: -XX:AOTMode:record and -XX:AOTMode=on cannot take effect at the same time.
-    // So we can never come to here with RequireSharedSpaces==true.
     assert(!RequireSharedSpaces, "sanity");
 
     // If dumping the classic archive, or making an AOT training run (dumping a preimage archive),
     // for sanity, parse all classes from classfiles.
-    // TODO: in the future, if we want to support re-training on top of an existing AOT cache, this
-    // needs to be changed.
     UseSharedSpaces = false;
   }
 
@@ -565,21 +560,26 @@ void CDSConfig::check_aotmode_record() {
     }
   }
 
-  if (!FLAG_IS_DEFAULT(AOTCache)) {
-    vm_exit_during_initialization("AOTCache must not be specified when using -XX:AOTMode=record");
-  }
-
   substitute_aot_filename(FLAG_MEMBER_ENUM(AOTConfiguration));
 
-  UseSharedSpaces = false;
-  RequireSharedSpaces = false;
+  if (FLAG_IS_DEFAULT(AOTCache)) {
+    UseSharedSpaces = false;
+    RequireSharedSpaces = false;
+    _is_using_optimized_module_handling = false;
+    _is_using_full_module_graph = false;
+  } else {
+    // Re-training -- we must be able to load the specified AOTCache
+    log_info(aot)("re-training: loading AOTCache=%s and writing AOTConfiguration=%s",
+                  AOTCache, AOTConfiguration);
+    UseSharedSpaces = true;
+    RequireSharedSpaces = true;
+  }
+
   _is_dumping_static_archive = true;
   _is_dumping_preimage_static_archive = true;
 
   // At VM exit, the module graph may be contaminated with program states.
   // We will rebuild the module graph when dumping the CDS final image.
-  _is_using_optimized_module_handling = false;
-  _is_using_full_module_graph = false;
   _is_dumping_full_module_graph = false;
 }
 
@@ -631,6 +631,7 @@ void CDSConfig::ergo_init_aot_paths() {
   assert(_cds_ergo_initialize_started, "sanity");
   if (is_dumping_static_archive()) {
     if (is_dumping_preimage_static_archive()) {
+      _input_static_archive_path = AOTCache; // non-null when re-training
       _output_archive_path = AOTConfiguration;
     } else {
       assert(is_dumping_final_static_archive(), "must be");
@@ -745,7 +746,12 @@ void CDSConfig::setup_compiler_args() {
   if (is_dumping_preimage_static_archive() && can_dump_profile_and_compiled_code) {
     // JEP 483 workflow -- training
     FLAG_SET_ERGO_IF_DEFAULT(AOTRecordTraining, true);
-    FLAG_SET_ERGO(AOTReplayTraining, false);
+    if (is_using_archive()) {
+      // Re-training
+      FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
+    } else {
+      FLAG_SET_ERGO(AOTReplayTraining, false);
+    }
     AOTCodeCache::disable_caching(); // No AOT code generation during training run
   } else if (is_dumping_final_static_archive() && can_dump_profile_and_compiled_code) {
     // JEP 483 workflow -- assembly
@@ -856,6 +862,9 @@ bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {
     // The base archive has aot-linked classes that may have AOT-resolved CP references
     // that point to the lambda form invokers in the base archive. Such pointers will
     // be invalid if lambda form invokers are regenerated in the dynamic archive.
+    return false;
+  } else if (CDSConfig::is_dumping_preimage_static_archive() && CDSConfig::is_using_archive()) {
+    // TODO -- explain why we don't do it when re-training
     return false;
   } else {
     return is_dumping_archive();
@@ -985,6 +994,19 @@ bool CDSConfig::is_dumping_heap() {
 
 bool CDSConfig::is_loading_heap() {
   return HeapShared::is_archived_heap_in_use();
+}
+
+bool CDSConfig::can_allocate_scratch_oops() {
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    // AOTLinkedClassBulkLoader::preload_classes() is called before the heap is ready
+    // for allocation. The scratch oops for the preloaded classes will be allocated later
+    // inside AOTLinkedClassBulkLoader::link_classes_impl().
+    return Universe::is_fully_initialized();
+  } else {
+    // When not loading aot-linked classes, we try to allocate scratch oops only when
+    // the the heap is ready for allocation.
+    return true;
+  }
 }
 
 bool CDSConfig::is_dumping_klass_subgraphs() {

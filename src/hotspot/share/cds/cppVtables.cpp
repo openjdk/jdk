@@ -255,7 +255,7 @@ char* CppVtables::_vtables_serialized_base = nullptr;
 void CppVtables::dumptime_init(ArchiveBuilder* builder) {
   assert(CDSConfig::is_dumping_static_archive(), "cpp tables are only dumped into static archive");
 
-  if (CDSConfig::is_dumping_final_static_archive()) {
+  if (CDSConfig::is_dumping_final_static_archive() || (CDSConfig::is_dumping_preimage_static_archive() && CDSConfig::is_using_archive())) {
     // When dumping final archive, _index[kind] at this point is in the preimage.
     // Remember these vtable pointers in _archived_cpp_vtptrs, as _index[kind] will now be rewritten
     // to point to the runtime vtable data.

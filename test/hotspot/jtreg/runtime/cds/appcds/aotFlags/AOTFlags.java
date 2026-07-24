@@ -347,15 +347,15 @@ public class AOTFlags {
         out.shouldNotHaveExitValue(0);
 
         //----------------------------------------------------------------------
-        printTestCase("AOTCache specified with -XX:AOTMode=record");
+        printTestCase("Retrain: Non-existent AOTCache specified with -XX:AOTMode=record");
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
-            "-XX:AOTCache=" + aotCacheFile,
+            "-XX:AOTCache=" + aotCacheFile + "-no-such-file",
             "-cp", appJar, helloClass);
 
-        out = CDSTestUtils.executeAndLog(pb, "neg");
-        out.shouldContain("AOTCache must not be specified when using -XX:AOTMode=record");
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldContain("Unable to use AOT cache.");
         out.shouldNotHaveExitValue(0);
 
         //----------------------------------------------------------------------
