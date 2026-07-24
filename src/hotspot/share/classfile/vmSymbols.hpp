@@ -766,6 +766,7 @@ class SerializeClosure;
   template(runtimeSetup,                                    "runtimeSetup")                                       \
   template(toFileURL_name,                                  "toFileURL")                                          \
   template(toFileURL_signature,                             "(Ljava/lang/String;)Ljava/net/URL;")                 \
+  template(sun_util_locale_BaseLocale,                      "sun/util/locale/BaseLocale")                         \
                                                                                                                   \
   template(java_lang_runtime_ValueObjectMethods,            "java/lang/runtime/ValueObjectMethods")               \
   template(isSubstitutable_name,                            "isSubstitutable")                                    \

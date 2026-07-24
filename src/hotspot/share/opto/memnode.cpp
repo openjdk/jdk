@@ -3802,7 +3802,8 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* value   = in(MemNode::ValueIn);
   // Back-to-back stores to same address?  Fold em up.  Generally
   // unsafe if I have intervening uses...
-  if (phase->C->get_adr_type(phase->C->get_alias_index(adr_type())) != TypeAryPtr::INLINES) {
+  if ((!this->is_StoreVector() || this->Opcode() == Op_StoreVector) &&
+      phase->C->get_adr_type(phase->C->get_alias_index(adr_type())) != TypeAryPtr::INLINES) {
     Node* st = mem;
     // If Store 'st' has more than one use, we cannot fold 'st' away.
     // For example, 'st' might be the final state at a conditional
@@ -3810,15 +3811,14 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // the same time 'st' is live, which might be unschedulable.  So,
     // require exactly ONE user until such time as we clone 'mem' for
     // each of 'mem's uses (thus making the exactly-1-user-rule hold
-    // true).
-    while (st->is_Store() && st->outcnt() == 1) {
+    // true). Further, 'st' must be a contiguous store, otherwise
+    // memory_size does not make sense for measuring overlap.
+    while (st->is_Store() && st->outcnt() == 1 && (!st->is_StoreVector() || st->Opcode() == Op_StoreVector)) {
       // Looking at a dead closed cycle of memory?
       assert(st != st->in(MemNode::Memory), "dead loop in StoreNode::Ideal");
       assert(Opcode() == st->Opcode() ||
              st->Opcode() == Op_StoreVector ||
              Opcode() == Op_StoreVector ||
-             st->Opcode() == Op_StoreVectorScatter ||
-             Opcode() == Op_StoreVectorScatter ||
              phase->C->get_alias_index(adr_type()) == Compile::AliasIdxRaw ||
              (Opcode() == Op_StoreL && st->Opcode() == Op_StoreI) || // expanded ClearArrayNode
              (Opcode() == Op_StoreI && st->Opcode() == Op_StoreL) || // initialization by arraycopy
@@ -3828,6 +3828,11 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
       if (st->in(MemNode::Address)->eqv_uncast(address) &&
           st->as_Store()->memory_size() <= this->memory_size()) {
+        assert(!is_predicated_vector() && !is_StoreVectorMasked() &&
+               !is_StoreVectorScatter() && !is_StoreVectorScatterMasked() &&
+               !st->is_predicated_vector() && !st->is_StoreVectorMasked() &&
+               !st->is_StoreVectorScatter() && !st->is_StoreVectorScatterMasked(),
+               "optimization only correct for full-width stores without holes");
         Node* use = st->raw_out(0);
         if (phase->is_IterGVN()) {
           phase->is_IterGVN()->rehash_node_delayed(use);

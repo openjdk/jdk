@@ -69,6 +69,8 @@ compiler/c2/aarch64/TestStaticCallStub.java 8359963 generic-aarch64
 
 compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch64
 
+compiler/vectorapi/VectorStoreMaskIdentityTest.java 8388281 generic-all
+
 #############################################################################
 
 # :hotspot_gc

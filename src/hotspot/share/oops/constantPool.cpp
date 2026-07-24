@@ -155,9 +155,8 @@ void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_tags, MetaspaceClosure::_writable);
   it->push(&_cache);
   it->push(&_pool_holder);
-  it->push(&bsm_entries().offsets());
-  it->push(&bsm_entries().bootstrap_methods());
   it->push(&_resolved_klasses, MetaspaceClosure::_writable);
+  bsm_entries().metaspace_pointers_do(it);
 
   for (int i = 0; i < length(); i++) {
     // The only MSO's embedded in the CP entries are Symbols:
@@ -2435,4 +2434,9 @@ void BSMAttributeEntries::end_extension(InsertionIterator& iter, ClassLoaderData
   deallocate_contents(loader_data);
   _offsets = new_offsets;
   _bootstrap_methods = new_array;
+}
+
+void BSMAttributeEntries::metaspace_pointers_do(MetaspaceClosure* it) {
+  it->push(&_offsets);
+  it->push(&_bootstrap_methods);
 }

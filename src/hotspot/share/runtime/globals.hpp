@@ -281,9 +281,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, TraceCodeBlobStacks, false,                                 \
           "Trace stack-walk of codeblobs")                                  \
                                                                             \
-  develop(bool, PrintRewrites, false,                                       \
-          "Print methods that are being rewritten")                         \
-                                                                            \
   product(bool, UseInlineCaches, true,                                      \
           "Use Inline Caches for virtual calls ")                           \
                                                                             \

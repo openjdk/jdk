@@ -402,6 +402,9 @@ class InstanceKlass: public Klass {
   bool must_be_atomic() const { return _misc_flags.must_be_atomic(); }
   void set_must_be_atomic()   { _misc_flags.set_must_be_atomic(true); }
 
+  bool fail_over_verified() const { return _misc_flags.fail_over_verified(); }
+  void set_fail_over_verified() { _misc_flags.set_fail_over_verified(true); }
+
   // field sizes
   int nonstatic_field_size() const         { return _nonstatic_field_size; }
   void set_nonstatic_field_size(int size)  { _nonstatic_field_size = size; }

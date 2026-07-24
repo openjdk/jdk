@@ -1141,7 +1141,7 @@ void TemplateTable::aastore() {
   __ cbz(r0, is_null);
 
   // Move array class to r5
-  __ load_klass(r5, r3);
+  __ load_klass(r5, r3, rscratch1);
 
   if (UseArrayFlattening) {
     __ ldrw(r6, Address(r5, Klass::layout_helper_offset()));
@@ -1149,7 +1149,7 @@ void TemplateTable::aastore() {
   }
 
   // Move subklass into r1
-  __ load_klass(r1, r0);
+  __ load_klass(r1, r0, rscratch1);
 
   // Move array element superklass into r0
   __ ldr(r0, Address(r5, ObjArrayKlass::element_klass_offset()));
@@ -1226,7 +1226,7 @@ void TemplateTable::bastore()
 
   // Need to check whether array is boolean or byte
   // since both types share the bastore bytecode.
-  __ load_klass(r2, r3);
+  __ load_klass(r2, r3, rscratch1);
   __ ldrw(r2, Address(r2, Klass::layout_helper_offset()));
   int diffbit_index = exact_log2(Klass::layout_helper_boolean_diffbit());
   Label L_skip;
@@ -2296,7 +2296,7 @@ void TemplateTable::_return(TosState state)
     assert(state == vtos, "only valid state");
 
     __ ldr(c_rarg1, aaddress(0));
-    __ load_klass(r3, c_rarg1);
+    __ load_klass(r3, c_rarg1, rscratch1);
     __ ldrb(r3, Address(r3, Klass::misc_flags_offset()));
     Label skip_register_finalizer;
     __ tbz(r3, exact_log2(KlassFlags::_misc_has_finalizer), skip_register_finalizer);
@@ -3532,8 +3532,8 @@ void TemplateTable::invokevirtual_helper(Register index,
                                          Register recv,
                                          Register flags)
 {
-  // Uses temporary registers r0, r3
-  assert_different_registers(index, recv, r0, r3);
+  // Uses temporary registers r0, r3, rscratch1
+  assert_different_registers(index, recv, r0, r3, rscratch1);
   // Test for an invoke of a final method
   Label notFinal;
   __ tbz(flags, ResolvedMethodEntry::is_vfinal_shift, notFinal);
@@ -3557,7 +3557,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ bind(notFinal);
 
   // get receiver klass
-  __ load_klass(r0, recv);
+  __ load_klass(r0, recv, rscratch1);
 
   // profile this call
   __ profile_virtual_call(r0, rlocals);
@@ -3658,7 +3658,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ tbz(r3, ResolvedMethodEntry::is_vfinal_shift, notVFinal);
 
   // Get receiver klass into r3
-  __ load_klass(r3, r2);
+  __ load_klass(r3, r2, rscratch1);
 
   Label subtype;
   __ check_klass_subtype(r3, r0, r4, subtype);
@@ -3673,7 +3673,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ bind(notVFinal);
 
   // Get receiver klass into r3
-  __ load_klass(r3, r2);
+  __ load_klass(r3, r2, rscratch1);
 
   Label no_such_method;
 
@@ -3884,7 +3884,7 @@ void TemplateTable::_new() {
     }
     if (!UseCompactObjectHeaders) {
       __ store_klass_gap(r0, zr);  // zero klass gap for compressed oops
-      __ store_klass(r0, r4);      // store klass last
+      __ store_klass(r0, r4, rscratch1);      // store klass last
     }
 
     if (DTraceAllocProbes) {
@@ -3965,7 +3965,7 @@ void TemplateTable::checkcast()
   __ load_resolved_klass_at_offset(r2, r19, r0, rscratch1); // r0 = klass
 
   __ bind(resolved);
-  __ load_klass(r19, r3);
+  __ load_klass(r19, r3, rscratch1);
 
   // Generate subtype check.  Blows r2, r5.  Object in r3.
   // Superklass in r0.  Subklass in r19.
@@ -4010,12 +4010,12 @@ void TemplateTable::instanceof() {
   __ get_vm_result_metadata(r0, rthread);
   __ pop(r3); // restore receiver
   __ verify_oop(r3);
-  __ load_klass(r3, r3);
+  __ load_klass(r3, r3, rscratch1);
   __ b(resolved);
 
   // Get superklass in r0 and subklass in r3
   __ bind(quicked);
-  __ load_klass(r3, r0);
+  __ load_klass(r3, r0, rscratch1);
   __ load_resolved_klass_at_offset(r2, r19, r0, rscratch1);
 
   __ bind(resolved);

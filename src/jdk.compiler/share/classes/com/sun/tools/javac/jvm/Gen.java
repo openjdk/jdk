@@ -792,6 +792,11 @@ public class Gen extends JCTree.Visitor {
             code.resolvePending();
 
             LetExpr tree = (LetExpr) inner_tree;
+
+            if (tree.needsLineNumberTableEntry) {
+                code.statBegin(tree.pos);
+            }
+
             int limit = code.nextreg;
             int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);
             try {
@@ -2511,6 +2516,10 @@ public class Gen extends JCTree.Visitor {
 
     public void visitLetExpr(LetExpr tree) {
         code.resolvePending();
+
+        if (tree.needsLineNumberTableEntry) {
+            code.statBegin(tree.pos);
+        }
 
         int limit = code.nextreg;
         int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);

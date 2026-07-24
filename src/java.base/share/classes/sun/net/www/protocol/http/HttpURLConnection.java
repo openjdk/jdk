@@ -571,8 +571,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         throws ProtocolException {
         lock();
         try {
-            if (connecting) {
-                throw new IllegalStateException("connect in progress");
+            if (connected || connecting) {
+                throw new IllegalStateException("Already connected");
             }
             super.setRequestMethod(method);
         } finally {
