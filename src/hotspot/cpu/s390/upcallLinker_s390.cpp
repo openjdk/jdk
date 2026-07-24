@@ -220,8 +220,12 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   __ call(call_target_address); // load taget Method* into Z_method
   __ block_comment("} load_target");
 
+  __ push_cont_fastpath();
+
   __ z_lg(call_target_address, Address(Z_method, in_bytes(Method::from_compiled_offset())));
   __ call(call_target_address);
+
+  __ pop_cont_fastpath();
 
   // return value shuffle
   assert(!needs_return_buffer, "unexpected needs_return_buffer");

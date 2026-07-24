@@ -646,7 +646,6 @@ void PSParallelCompact::post_compact()
   GCTraceTime(Info, gc, phases) tm("Post Compact", &_gc_timer);
   ParCompactionManager::remove_all_shadow_regions();
 
-  CodeCache::on_gc_marking_cycle_finish();
   CodeCache::arm_all_nmethods();
 
   // Need to clear claim bits for the next full-gc (marking and adjust-pointers).
@@ -1218,6 +1217,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
   // This is the point where the entire marking should have completed.
   ParCompactionManager::verify_all_marking_stack_empty();
+  CodeCache::on_gc_marking_cycle_finish();
 
   {
     GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);

@@ -82,8 +82,6 @@
                            char*         buf,
                            int           buflen) const;
 
-  static jint interpreter_frame_expression_stack_direction() { return -1; }
-
   inline address* sender_pc_addr() const;
 
   template <typename RegisterMapT>

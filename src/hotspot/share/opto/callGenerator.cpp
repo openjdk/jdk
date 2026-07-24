@@ -815,80 +815,89 @@ void CallGenerator::do_late_inline_helper() {
       C->inline_printer()->record(method(), jvms, InliningResult::SUCCESS, "late inline succeeded");
     }
 
-    // Capture any exceptional control flow
-    GraphKit kit(new_jvms);
-
-    // Find the result object
-    Node* result = C->top();
-    int   result_size = method()->return_type()->size();
-    if (result_size != 0 && !kit.stopped()) {
-      result = (result_size == 1) ? kit.pop() : kit.pop_pair();
-    }
-
-    if (call->is_CallStaticJava() && call->as_CallStaticJava()->is_boxing_method()
-        && !call->tf()->returns_inline_type_as_fields()) {
-      result = kit.must_be_not_null(result, false);
-    }
-
     if (inline_cg()->is_inline()) {
       C->set_has_loops(C->has_loops() || inline_method->has_loops());
       C->env()->notice_inlined_method(inline_method);
     }
     C->set_inlining_progress(true);
-    C->set_do_cleanup(kit.stopped()); // path is dead; needs cleanup
 
-    // Handle inline type returns
-    InlineTypeNode* vt = result->isa_InlineType();
-    if (vt != nullptr) {
-      if (call->tf()->returns_inline_type_as_fields()) {
-        vt->replace_call_results(&kit, call, C);
-      } else {
-        // Result might still be allocated (for example, if it has been stored to a non-flat field)
-        if (!vt->is_allocated(&kit.gvn())) {
-          assert(buffer_oop != nullptr, "should have allocated a buffer");
-          RegionNode* region = new RegionNode(3);
+    // Find the result object and capture any exceptional control flow.
+    GraphKit kit(new_jvms);
+    Node* result = C->top();
 
-          // Check if result is null
-          Node* null_ctl = kit.top();
-          kit.null_check_common(vt->get_null_marker(), T_INT, false, &null_ctl);
-          region->init_req(1, null_ctl);
-          PhiNode* oop = PhiNode::make(region, kit.gvn().zerocon(T_OBJECT), TypeInstPtr::make(TypePtr::BotPTR, vt->type()->inline_klass()));
-          Node* init_mem = kit.reset_memory();
-          PhiNode* mem = PhiNode::make(region, init_mem, Type::MEMORY, TypePtr::BOTTOM);
-
-          // Not null, initialize the buffer
-          kit.set_all_memory(init_mem);
-
-          Node* payload_ptr = kit.basic_plus_adr(buffer_oop, kit.gvn().type(vt)->inline_klass()->payload_offset());
-          vt->store_flat(&kit, buffer_oop, payload_ptr, false, true, true, IN_HEAP | MO_UNORDERED);
-          // Do not let stores that initialize this buffer be reordered with a subsequent
-          // store that would make this buffer accessible by other threads.
-          AllocateNode* alloc = AllocateNode::Ideal_allocation(buffer_oop);
-          assert(alloc != nullptr, "must have an allocation node");
-          kit.insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress));
-          region->init_req(2, kit.control());
-          oop->init_req(2, buffer_oop);
-          mem->init_req(2, kit.merged_memory());
-
-          // Update oop input to buffer
-          kit.gvn().hash_delete(vt);
-          vt->set_oop(kit.gvn(), kit.gvn().transform(oop));
-          vt->set_is_buffered(kit.gvn());
-          vt = kit.gvn().transform(vt)->as_InlineType();
-
-          kit.set_control(kit.gvn().transform(region));
-          kit.set_all_memory(kit.gvn().transform(mem));
-          kit.record_for_igvn(region);
-          kit.record_for_igvn(oop);
-          kit.record_for_igvn(mem);
-        }
-        result = vt;
-      }
-      DEBUG_ONLY(buffer_oop = nullptr);
+    assert(!C->do_cleanup(), "already set");
+    if (kit.stopped()) {
+      C->set_do_cleanup(true); // path is dead; needs cleanup
     } else {
-      assert(result->is_top() || !call->tf()->returns_inline_type_as_fields() || !call->as_CallJava()->method()->return_type()->is_loaded(), "Unexpected return value");
+      result = kit.pop_node(method()->return_type()->basic_type());
+      if (result != C->top() && !result_not_used) {
+        if (call->is_CallStaticJava() &&
+            call->as_CallStaticJava()->is_boxing_method()) {
+          result = kit.must_be_not_null(result, false);
+        }
+        // Handle inline type returns
+        InlineTypeNode* vt = result->isa_InlineType();
+        if (vt != nullptr) {
+          if (call->tf()->returns_inline_type_as_fields()) {
+            vt->replace_call_results(&kit, call, C);
+          } else {
+            // Result might still be allocated (for example, if it has been stored to a non-flat field)
+            if (!vt->is_allocated(&kit.gvn())) {
+              assert(buffer_oop != nullptr, "should have allocated a buffer");
+              RegionNode* region = new RegionNode(3);
+
+              // Check if result is null
+              Node* null_ctl = kit.top();
+              kit.null_check_common(vt->get_null_marker(), T_INT, false, &null_ctl);
+              region->init_req(1, null_ctl);
+              PhiNode* oop = PhiNode::make(region, kit.gvn().zerocon(T_OBJECT), TypeInstPtr::make(TypePtr::BotPTR, vt->type()->inline_klass()));
+              Node* init_mem = kit.reset_memory();
+              PhiNode* mem = PhiNode::make(region, init_mem, Type::MEMORY, TypePtr::BOTTOM);
+
+              // Not null, initialize the buffer
+              kit.set_all_memory(init_mem);
+
+              Node* payload_ptr = kit.basic_plus_adr(buffer_oop, kit.gvn().type(vt)->inline_klass()->payload_offset());
+              vt->store_flat(&kit, buffer_oop, payload_ptr, false, true, true, IN_HEAP | MO_UNORDERED);
+              // Do not let stores that initialize this buffer be reordered with a subsequent
+              // store that would make this buffer accessible by other threads.
+              AllocateNode* alloc = AllocateNode::Ideal_allocation(buffer_oop);
+              assert(alloc != nullptr, "must have an allocation node");
+              kit.insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress));
+              region->init_req(2, kit.control());
+              oop->init_req(2, buffer_oop);
+              mem->init_req(2, kit.merged_memory());
+
+              // Update oop input to buffer
+              kit.gvn().hash_delete(vt);
+              vt->set_oop(kit.gvn(), kit.gvn().transform(oop));
+              vt->set_is_buffered(kit.gvn());
+              vt = kit.gvn().transform(vt)->as_InlineType();
+
+              kit.set_control(kit.gvn().transform(region));
+              kit.set_all_memory(kit.gvn().transform(mem));
+              kit.record_for_igvn(region);
+              kit.record_for_igvn(oop);
+              kit.record_for_igvn(mem);
+            }
+            result = vt;
+          }
+          DEBUG_ONLY(buffer_oop = nullptr);
+        } else {
+          assert(!call->tf()->returns_inline_type_as_fields() || !call->as_CallJava()->method()->return_type()->is_loaded(), "Unexpected return value");
+        }
+        assert(buffer_oop == nullptr, "unused buffer allocation");
+
+        // Note: scalarized results are guarded per projection
+        if (!call->tf()->returns_inline_type_as_fields()) {
+          assert(callprojs->nb_resproj == 1 && callprojs->resproj[0] != nullptr,
+                 "single result projection expected");
+          // Limit result type propagation until next IGVN cleanup.
+          const Type* result_type = kit.gvn().type(callprojs->resproj[0]);
+          result = kit.gvn().transform(new OpaqueParseNode(C, result, result_type));
+        }
+      }
     }
-    assert(kit.stopped() || buffer_oop == nullptr, "unused buffer allocation");
 
     kit.replace_call(call, result, true, do_asserts);
   }

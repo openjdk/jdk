@@ -2328,6 +2328,8 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
         if (callprojs->resproj[i] != nullptr) {
           Node* new_proj = new_call->proj_out_or_null(TypeFunc::Parms + i);
           assert(new_proj != nullptr, "projection should be available");
+          const Type* result_type = _gvn.type(callprojs->resproj[i]);
+          new_proj = _gvn.transform(new OpaqueParseNode(C, new_proj, result_type));
           C->gvn_replace_by(callprojs->resproj[i], new_proj);
         }
       }

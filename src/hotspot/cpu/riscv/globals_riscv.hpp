@@ -106,7 +106,7 @@ define_pd_global(bool, InlineTypeReturnedAsFields, false);
   product(bool, UseZbb, false, DIAGNOSTIC, "Use Zbb instructions")               \
   product(bool, UseZbkb, false, EXPERIMENTAL, "Use Zbkb instructions")           \
   product(bool, UseZbs, false, DIAGNOSTIC, "Use Zbs instructions")               \
-  product(bool, UseZfa, false, EXPERIMENTAL, "Use Zfa instructions")             \
+  product(bool, UseZfa, false, DIAGNOSTIC, "Use Zfa instructions")               \
   product(bool, UseZfh, false, DIAGNOSTIC, "Use Zfh instructions")               \
   product(bool, UseZfhmin, false, DIAGNOSTIC, "Use Zfhmin instructions")         \
   product(bool, UseZacas, false, EXPERIMENTAL, "Use Zacas instructions")         \

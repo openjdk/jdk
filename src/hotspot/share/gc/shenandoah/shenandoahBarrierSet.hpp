@@ -33,6 +33,7 @@
 class ShenandoahHeap;
 class ShenandoahBarrierSetAssembler;
 class ShenandoahCardTable;
+class ShenandoahMarkingContext;
 
 class ShenandoahBarrierSet: public BarrierSet {
 private:
@@ -126,6 +127,10 @@ public:
 private:
   template <bool IS_GENERATIONAL, class T>
   void arraycopy_marking(T* dst, size_t count);
+
+  template <bool IS_GENERATIONAL, class T>
+  bool is_above_tams(const ShenandoahMarkingContext* ctx, T* dst) const;
+
   template <class T>
   inline void arraycopy_evacuation(T* src, size_t count);
   template <class T>
@@ -134,10 +139,7 @@ private:
   template <bool EVAC>
   inline void clone_work(oop src);
 
-  template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>
-  inline void arraycopy_work(T* src, size_t count);
-
-  inline bool need_bulk_update(HeapWord* dst);
+  inline bool need_bulk_update(HeapWord* dst) const;
 public:
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = ShenandoahBarrierSet>

@@ -689,14 +689,20 @@ Node* PhaseMacroExpand::value_from_mem(Node* origin, Node* ctl, BasicType ft, co
 
 // Search the last value stored into the inline type's fields (for flat arrays).
 Node* PhaseMacroExpand::inline_type_from_mem(ciInlineKlass* vk, const TypeAryPtr* elem_adr_type, int elem_idx, int offset_in_element, bool null_free, AllocateNode* alloc, SafePointNode* sfpt) {
-  auto report_failure = [&](int field_offset_in_element) {
+  auto report_failure = [&](int field_offset_in_element, bool is_forced_failure) {
 #ifndef PRODUCT
     if (PrintEliminateAllocations) {
       ciInlineKlass* elem_klass = elem_adr_type->elem()->inline_klass();
       int offset = field_offset_in_element + elem_klass->payload_offset();
       ciField* flattened_field = elem_klass->get_field_by_offset(offset, false);
       assert(flattened_field != nullptr, "must have a field of type %s at offset %d", elem_klass->name()->as_utf8(), offset);
-      tty->print("=== At SafePoint node %d can't find value of field [%s] of array element [%d]", sfpt->_idx, flattened_field->name()->as_utf8(), elem_idx);
+
+      tty->print("=== At SafePoint node %d ", sfpt->_idx);
+      if (is_forced_failure) {
+        tty->print_raw("forcibly abort elimination");
+      } else {
+        tty->print("can't find value of field [%s] of array element [%d]", flattened_field->name()->as_utf8(), elem_idx);
+      }
       tty->print(", which prevents elimination of: ");
       alloc->dump();
     }
@@ -712,10 +718,12 @@ Node* PhaseMacroExpand::inline_type_from_mem(ciInlineKlass* vk, const TypeAryPtr
     int nm_offset_in_element = offset_in_element + vk->null_marker_offset_in_payload();
     const TypeAryPtr* nm_adr_type = elem_adr_type->with_field_offset(nm_offset_in_element);
     Node* nm_value = value_from_mem(sfpt, sfpt->control(), T_BOOLEAN, TypeInt::BOOL, nm_adr_type, alloc);
-    if (nm_value != nullptr) {
+    bool force_scalarization_failure = StressEliminateAllocations &&
+                                       (C->random() % StressEliminateAllocationsMean == 0);
+    if (nm_value != nullptr && !force_scalarization_failure) {
       vt->set_null_marker(_igvn, nm_value);
     } else {
-      report_failure(nm_offset_in_element);
+      report_failure(nm_offset_in_element, nm_value != nullptr);
       return nullptr;
     }
   }
@@ -738,8 +746,11 @@ Node* PhaseMacroExpand::inline_type_from_mem(ciInlineKlass* vk, const TypeAryPtr
       // Each inline type field has its own memory slice
       const TypeAryPtr* field_adr_type = elem_adr_type->with_field_offset(field_offset_in_element);
       field_value = value_from_mem(sfpt, sfpt->control(), bt, ft, field_adr_type, alloc);
-      if (field_value == nullptr) {
-        report_failure(field_offset_in_element);
+      bool force_scalarization_failure = StressEliminateAllocations &&
+                                         (C->random() % StressEliminateAllocationsMean == 0);
+      if (field_value == nullptr || force_scalarization_failure) {
+        report_failure(field_offset_in_element, field_value != nullptr);
+        return nullptr;
       } else if (ft->isa_narrowoop()) {
         assert(UseCompressedOops, "unexpected narrow oop");
         if (field_value->is_EncodeP()) {
@@ -749,11 +760,8 @@ Node* PhaseMacroExpand::inline_type_from_mem(ciInlineKlass* vk, const TypeAryPtr
         }
       }
     }
-    if (field_value != nullptr) {
-      vt->set_field_value(i, field_value);
-    } else {
-      return nullptr;
-    }
+    assert(field_value != nullptr, "");
+    vt->set_field_value(i, field_value);
   }
   return vt;
 }
@@ -1078,15 +1086,23 @@ bool PhaseMacroExpand::add_array_elems_to_safepoint(AllocateNode* alloc, const T
       elem_val = inline_type_from_mem(elem_klass, elem_adr_type, elem_idx, 0, array_type->is_null_free(), alloc, sfpt);
     } else {
       elem_val = value_from_mem(sfpt, sfpt->control(), basic_elem_type, elem_type, elem_adr_type, alloc);
+    }
+    bool force_scalarization_failure = StressEliminateAllocations &&
+                                       (C->random() % StressEliminateAllocationsMean == 0);
+    if (elem_val == nullptr || force_scalarization_failure) {
 #ifndef PRODUCT
-      if (PrintEliminateAllocations && elem_val == nullptr) {
-        tty->print("=== At SafePoint node %d can't find value of array element [%d]", sfpt->_idx, elem_idx);
+      if (PrintEliminateAllocations) {
+        tty->print("=== At SafePoint node %d ", sfpt->_idx);
+        if (elem_val == nullptr) {
+          tty->print("can't find value of array element [%d]", elem_idx);
+        } else {
+          assert(force_scalarization_failure, "sanity");
+          tty->print_raw("forcibly abort elimination");
+        }
         tty->print(", which prevents elimination of: ");
         alloc->dump();
       }
 #endif // PRODUCT
-    }
-    if (elem_val == nullptr) {
       return false;
     }
 
@@ -1101,16 +1117,21 @@ bool PhaseMacroExpand::add_array_elems_to_safepoint(AllocateNode* alloc, const T
 // payload offset of 'iklass'. If 'base' is of type 'iklass' then 'offset_minus_header' == 0.
 bool PhaseMacroExpand::add_inst_fields_to_safepoint(ciInstanceKlass* iklass, AllocateNode* alloc, Node* base, int offset_minus_header, SafePointNode* sfpt, Unique_Node_List* value_worklist) {
   const TypeInstPtr* base_type = _igvn.type(base)->is_instptr();
-  auto report_failure = [&](int offset) {
+  auto report_failure = [&](int offset, bool is_forced_failure) {
 #ifndef PRODUCT
     if (PrintEliminateAllocations) {
       ciInstanceKlass* base_klass = base_type->instance_klass();
       ciField* flattened_field = base_klass->get_field_by_offset(offset, false);
       assert(flattened_field != nullptr, "must have a field of type %s at offset %d", base_klass->name()->as_utf8(), offset);
-      tty->print("=== At SafePoint node %d can't find value of field: ", sfpt->_idx);
-      flattened_field->print();
-      int field_idx = C->alias_type(flattened_field)->index();
-      tty->print(" (alias_idx=%d)", field_idx);
+      tty->print("=== At SafePoint node %d ", sfpt->_idx);
+      if (is_forced_failure) {
+        tty->print_raw("forcibly abort elimination");
+      } else {
+        tty->print_raw("can't find value of field: ");
+        flattened_field->print();
+        int field_idx = C->alias_type(flattened_field)->index();
+        tty->print(" (alias_idx=%d)", field_idx);
+      }
       tty->print(", which prevents elimination of: ");
       base->dump();
     }
@@ -1131,8 +1152,10 @@ bool PhaseMacroExpand::add_inst_fields_to_safepoint(ciInstanceKlass* iklass, All
       if (!field->is_null_free()) {
         int nm_offset = offset_minus_header + field->null_marker_offset();
         Node* null_marker = value_from_mem(sfpt, sfpt->control(), T_BOOLEAN, TypeInt::BOOL, base_type->with_offset(nm_offset), alloc);
-        if (null_marker == nullptr) {
-          report_failure(nm_offset);
+        bool force_scalarization_failure = StressEliminateAllocations &&
+                                           (C->random() % StressEliminateAllocationsMean == 0);
+        if (null_marker == nullptr || force_scalarization_failure) {
+          report_failure(nm_offset, null_marker != nullptr);
           return false;
         }
         process_field_value_at_safepoint(TypeInt::BOOL, null_marker, sfpt, value_worklist);
@@ -1162,8 +1185,10 @@ bool PhaseMacroExpand::add_inst_fields_to_safepoint(ciInstanceKlass* iklass, All
 
     const TypeInstPtr* field_addr_type = base_type->add_offset(offset)->isa_instptr();
     Node* field_val = value_from_mem(sfpt, sfpt->control(), basic_elem_type, field_type, field_addr_type, alloc);
-    if (field_val == nullptr) {
-      report_failure(offset);
+    bool force_scalarization_failure = StressEliminateAllocations &&
+                                       (C->random() % StressEliminateAllocationsMean == 0);
+    if (field_val == nullptr || force_scalarization_failure) {
+      report_failure(offset, field_val != nullptr);
       return false;
     }
     process_field_value_at_safepoint(field_type, field_val, sfpt, value_worklist);
