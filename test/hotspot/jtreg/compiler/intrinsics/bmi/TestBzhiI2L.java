@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8389111
  * @key randomness
  * @summary Verify that results of computations are the same w/
  *          and w/o usage of BZHI instruction
@@ -58,6 +59,12 @@ public class TestBzhiI2L {
         BMITestRunner.runTests(BzhiI2LCommutativeExpr.class, args,
                                "-XX:+IgnoreUnrecognizedVMOptions",
                                "-XX:+UseBMI2Instructions");
+        BMITestRunner.runTests(BzhiIExpr.class, args,
+                               "-XX:+IgnoreUnrecognizedVMOptions",
+                               "-XX:+UseBMI2Instructions");
+        BMITestRunner.runTests(BzhiICommutativeExpr.class, args,
+                               "-XX:+IgnoreUnrecognizedVMOptions",
+                               "-XX:+UseBMI2Instructions");
     }
 
     public static class BzhiI2LExpr extends Expr.BMIUnaryIntToLongExpr {
@@ -91,6 +98,44 @@ public class TestBzhiI2L {
                 (long)(value & 0x1FFF) ^ (long)(value & 0x3FFF) ^ (long)(value & 0x7FFF) ^ (long)(value & 0xFFFF);
             }
             return returnValue;
+        }
+    }
+
+    public static class BzhiIExpr extends Expr.BMIBinaryIntExpr {
+
+        public int intExpr(int value, int bits) {
+            return value & ((1 << bits) - 1);
+        }
+
+        public int intExpr(int value, Expr.MemI bits) {
+            return value & ((1 << bits.value) - 1);
+        }
+
+        public int intExpr(Expr.MemI value, int bits) {
+            return value.value & ((1 << bits) - 1);
+        }
+
+        public int intExpr(Expr.MemI value, Expr.MemI bits) {
+            return value.value & ((1 << bits.value) - 1);
+        }
+    }
+
+    public static class BzhiICommutativeExpr extends Expr.BMIBinaryIntExpr {
+
+        public int intExpr(int value, int bits) {
+            return ((1 << bits) - 1) & value;
+        }
+
+        public int intExpr(int value, Expr.MemI bits) {
+            return ((1 << bits.value) - 1) & value;
+        }
+
+        public int intExpr(Expr.MemI value, int bits) {
+            return ((1 << bits) - 1) & value.value;
+        }
+
+        public int intExpr(Expr.MemI value, Expr.MemI bits) {
+            return ((1 << bits.value) - 1) & value.value;
         }
     }
 }

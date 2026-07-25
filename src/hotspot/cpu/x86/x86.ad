@@ -12692,6 +12692,26 @@ instruct convI2LAndI_reg_immIbitmask(rRegL dst, rRegI src,  immI_Pow2M1 mask, rR
   ins_pipe(ialu_reg_reg);
 %}
 
+// Generate a low-bits mask with BZHI. The shift count must be masked explicitly
+// because Java shift distances wrap modulo 32 while BZHI treats counts >= 32 as
+// selecting the entire source operand.
+instruct bzhiI_rReg_rReg(rRegI dst, rRegI src, immI_1 one, immI_M1 minus_one,
+                         rFlagsReg cr)
+%{
+  predicate(VM_Version::supports_bmi2());
+  match(Set dst (AndI src (AddI (LShiftI one dst) minus_one)));
+  effect(KILL cr);
+
+  ins_cost(200);
+  format %{ "andl    $dst, 31\n\t"
+            "bzhil   $dst, $src, $dst\t# low bits mask" %}
+  ins_encode %{
+    __ andl($dst$$Register, 31);
+    __ bzhil($dst$$Register, $src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
 // And Register with Immediate
 instruct andI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
 %{

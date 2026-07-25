@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8389111
  * @requires vm.simpleArch == "x64" & vm.flavor == "server"
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
@@ -43,6 +44,46 @@ import compiler.intrinsics.bmi.TestBzhiI2L;
 import java.lang.reflect.Method;
 
 public class BzhiTestI2L extends BmiIntrinsicBase.BmiTestCase_x64 {
+
+    private static class BzhiTestI extends BmiIntrinsicBase.BmiTestCase {
+
+        protected BzhiTestI(Method method) {
+            super(method);
+
+            cpuFlag = "bmi2";
+            vmFlag = "UseBMI2Instructions";
+
+            // From the Intel manual: VEX.LZ.0F38.W0 F5 /r.
+            instrMask = new byte[] {
+                    (byte) 0xFF,
+                    (byte) 0x1F,
+                    (byte) 0x80,
+                    (byte) 0xFF
+            };
+            instrPattern = new byte[] {
+                    (byte) 0xC4,
+                    (byte) 0x02,
+                    (byte) 0x00,
+                    (byte) 0xF5
+            };
+
+            // From the Intel APX specification: EVEX.128.NP.0F38.W0 F5 /r.
+            instrMaskAPX = new byte[] {
+                    (byte) 0xFF,
+                    (byte) 0x07,
+                    (byte) 0x00,
+                    (byte) 0x00,
+                    (byte) 0xFF
+            };
+            instrPatternAPX = new byte[] {
+                    (byte) 0x62,
+                    (byte) 0x02,
+                    (byte) 0x00,
+                    (byte) 0x00,
+                    (byte) 0xF5
+            };
+        }
+    }
 
     protected BzhiTestI2L(Method method) {
         super(method);
@@ -93,5 +134,9 @@ public class BzhiTestI2L extends BmiIntrinsicBase.BmiTestCase_x64 {
     public static void main(String[] args) throws Exception {
         BmiIntrinsicBase.verifyTestCase(BzhiTestI2L::new, TestBzhiI2L.BzhiI2LExpr.class.getDeclaredMethods());
         BmiIntrinsicBase.verifyTestCase(BzhiTestI2L::new, TestBzhiI2L.BzhiI2LCommutativeExpr.class.getDeclaredMethods());
+        BmiIntrinsicBase.verifyTestCase(BzhiTestI::new,
+                TestBzhiI2L.BzhiIExpr.class.getDeclaredMethod("intExpr", int.class, int.class));
+        BmiIntrinsicBase.verifyTestCase(BzhiTestI::new,
+                TestBzhiI2L.BzhiICommutativeExpr.class.getDeclaredMethod("intExpr", int.class, int.class));
     }
 }
