@@ -55,12 +55,6 @@ class SerialFullGC : AllStatic {
   //
   // Inline closure decls
   //
-  class FollowRootClosure: public BasicOopIterateClosure {
-   public:
-    virtual void do_oop(oop* p);
-    virtual void do_oop(narrowOop* p);
-  };
-
   class FollowStackClosure: public VoidClosure {
    public:
     virtual void do_void();
@@ -107,7 +101,6 @@ class SerialFullGC : AllStatic {
 
   // Public closures
   static IsAliveClosure       is_alive;
-  static FollowRootClosure    follow_root_closure;
   static MarkAndPushClosure   mark_and_push_closure;
   static FollowStackClosure   follow_stack_closure;
   static CLDToOopClosure      follow_cld_closure;
@@ -144,12 +137,8 @@ class SerialFullGC : AllStatic {
 
   // Call backs for marking
   static void mark_object(oop obj);
-  // Mark pointer and follow contents.  Empty marking stack afterwards.
-  template <class T> static inline void follow_root(T* p);
 
   static inline void push_objarray(oop obj, size_t index);
-
-  static void follow_object(oop obj);
 
   static void follow_array(objArrayOop array);
 

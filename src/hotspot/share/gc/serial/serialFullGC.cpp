@@ -86,8 +86,6 @@ ReferenceProcessor* SerialFullGC::_ref_processor;
 
 StringDedup::Requests*  SerialFullGC::_string_dedup_requests = nullptr;
 
-SerialFullGC::FollowRootClosure  SerialFullGC::follow_root_closure;
-
 MarkAndPushClosure SerialFullGC::mark_and_push_closure(ClassLoaderData::_claim_stw_fullgc_mark);
 CLDToOopClosure    SerialFullGC::follow_cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_stw_fullgc_mark);
 CLDToOopClosure    SerialFullGC::adjust_cld_closure(&adjust_pointer_closure, ClassLoaderData::_claim_stw_fullgc_adjust);
@@ -390,17 +388,6 @@ void SerialFullGC::follow_array(objArrayOop array) {
   }
 }
 
-void SerialFullGC::follow_object(oop obj) {
-  assert(obj->is_gc_marked(), "should be marked");
-  if (obj->is_objArray()) {
-    // Handle object arrays explicitly to allow them to
-    // be split into chunks if needed.
-    SerialFullGC::follow_array((objArrayOop)obj);
-  } else {
-    obj->oop_iterate(&mark_and_push_closure);
-  }
-}
-
 void SerialFullGC::follow_array_chunk(objArrayOop array, int index) {
   const int len = array->length();
   const int beg_index = index;
@@ -421,7 +408,13 @@ void SerialFullGC::follow_stack() {
     while (!_marking_stack.is_empty()) {
       oop obj = _marking_stack.pop();
       assert (obj->is_gc_marked(), "p must be marked");
-      follow_object(obj);
+      if (obj->is_objArray()) {
+        // Handle object arrays explicitly to allow them to
+        // be split into chunks if needed.
+        follow_array((objArrayOop)obj);
+      } else {
+        obj->oop_iterate(&mark_and_push_closure);
+      }
     }
     // Process ObjArrays one at a time to avoid marking stack bloat.
     if (!_objarray_stack.is_empty()) {
@@ -434,23 +427,6 @@ void SerialFullGC::follow_stack() {
 SerialFullGC::FollowStackClosure SerialFullGC::follow_stack_closure;
 
 void SerialFullGC::FollowStackClosure::do_void() { follow_stack(); }
-
-template <class T> void SerialFullGC::follow_root(T* p) {
-  assert(!Universe::heap()->is_in(p),
-         "roots shouldn't be things within the heap");
-  T heap_oop = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(heap_oop)) {
-    oop obj = CompressedOops::decode_not_null(heap_oop);
-    if (!obj->mark().is_marked()) {
-      mark_object(obj);
-      follow_object(obj);
-    }
-  }
-  follow_stack();
-}
-
-void SerialFullGC::FollowRootClosure::do_oop(oop* p)       { follow_root(p); }
-void SerialFullGC::FollowRootClosure::do_oop(narrowOop* p) { follow_root(p); }
 
 // We preserve the mark which should be replaced at the end and the location
 // that it will go.  Note that the object that this markWord belongs to isn't
@@ -486,17 +462,20 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
     // enabled or not, applying the closure to both strong and weak or only
     // strong CLDs.
     ClassLoaderDataGraph::always_strong_cld_do(&follow_cld_closure);
+    follow_stack();
 
     {
       // 2. Threads stack frames and active nmethods in them.
       NMethodMarkingScope nmethod_marking_scope;
-      MarkingNMethodClosure mark_code_closure(&follow_root_closure);
+      MarkingNMethodClosure mark_code_closure(&mark_and_push_closure);
 
-      Threads::oops_do(&follow_root_closure, &mark_code_closure);
+      Threads::oops_do(&mark_and_push_closure, &mark_code_closure);
+      follow_stack();
     }
 
     // 3. VM internal roots.
-    OopStorageSet::strong_oops_do(&follow_root_closure);
+    OopStorageSet::strong_oops_do(&mark_and_push_closure);
+    follow_stack();
   }
 
   // Process reference objects found during marking
