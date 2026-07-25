@@ -586,30 +586,31 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
 }
 
 bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point) {
-  if (!_heap->cancelled_gc()) {
+  // Only read the cancellation cause once. Other threads may change it.
+  const GCCause::Cause cancelled_cause = _heap->cancelled_cause();
+  if (cancelled_cause == GCCause::_no_gc) {
     return false;
   }
 
-  if (_heap->cancelled_cause() == GCCause::_shenandoah_stop_vm
-    || _heap->cancelled_cause() == GCCause::_shenandoah_concurrent_gc) {
-    log_debug(gc, thread)("Cancellation detected, reason: %s", GCCause::to_string(_heap->cancelled_cause()));
+  if (cancelled_cause == GCCause::_shenandoah_stop_vm
+      || cancelled_cause == GCCause::_shenandoah_concurrent_gc) {
+    log_debug(gc, thread)("Cancellation detected, reason: %s", GCCause::to_string(cancelled_cause));
     return true;
   }
 
-  if (ShenandoahCollectorPolicy::is_allocation_failure(_heap->cancelled_cause())) {
+  if (ShenandoahCollectorPolicy::is_allocation_failure(cancelled_cause)) {
     assert(_degen_point == ShenandoahGC::_degenerated_unset,
            "Should not be set yet: %s", ShenandoahGC::degen_point_to_string(_degen_point));
     MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-    _requested_gc_cause = _heap->cancelled_cause();
+    _requested_gc_cause = cancelled_cause;
     _degen_point = point;
     log_debug(gc, thread)("Cancellation detected:, reason: %s, degen point: %s",
-                          GCCause::to_string(_heap->cancelled_cause()),
+                          GCCause::to_string(cancelled_cause),
                           ShenandoahGC::degen_point_to_string(_degen_point));
     return true;
   }
 
   fatal("Cancel GC either for alloc failure GC, or gracefully exiting, or to pause old generation marking");
-  return false;
 }
 
 void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause cause) {
