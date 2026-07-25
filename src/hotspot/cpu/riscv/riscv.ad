@@ -2711,6 +2711,16 @@ operand immI_31()
   interface(CONST_INTER);
 %}
 
+operand immI_31bits()
+%{
+  predicate(n->get_int() == 0x7fffffff);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immI_63()
 %{
   predicate(n->get_int() == 63);
@@ -7937,6 +7947,25 @@ instruct andI_reg_reg(iRegINoSp dst, iRegI src1, iRegI src2) %{
   %}
 
   ins_pipe(ialu_reg_reg);
+%}
+
+// Clear the sign bit of an int. This pattern is used by, for example,
+// LibraryCallKit::inline_native_hashcode
+instruct andI_31bits(iRegINoSp dst, iRegIorL2I src1, immI_31bits mask) %{
+  match(Set dst (AndI src1 mask));
+
+  ins_cost(ALU_COST * 2);
+  format %{
+    "slli  $dst, $src1, 33\n\t"
+    "srli  $dst, $dst, 33\t#@andI_31bits"
+  %}
+
+  ins_encode %{
+    __ slli(as_Register($dst$$reg), as_Register($src1$$reg), 33);
+    __ srli(as_Register($dst$$reg), as_Register($dst$$reg),  33);
+  %}
+
+  ins_pipe(ialu_reg_shift);
 %}
 
 // Immediate And
