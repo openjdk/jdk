@@ -56,10 +56,14 @@ public class PolynomialP256Bench {
     final ImmutableIntegerModuloP x = residueField.getElement(refx);
     final ImmutableIntegerModuloP X = montField.getElement(refx);
     final ImmutableIntegerModuloP one = montField.get1();
+
+    // Here we assign conditional set arguments as non-constants in order to
+    // prevent constant folding.  Previously, C2 would perform constant
+    // propagation and remove the subsequent dead-code where 0 was input.
     @Param({"0"})
-    private int pZero = 0;
+    private int pZero;
     @Param({"1"})
-    private int pOne = 1;
+    private int pOne;
 
     @Param({"true", "false"})
     private boolean isMontBench;
@@ -73,7 +77,7 @@ public class PolynomialP256Bench {
             test = x.mutable();
         }
 
-        for (int i = 0; i< 10000; i++) {
+        for (int i = 0; i < 10000; i++) {
             test = test.setProduct(test);
         }
         return test;
@@ -88,7 +92,7 @@ public class PolynomialP256Bench {
             test = x.mutable();
         }
 
-        for (int i = 0; i< 10000; i++) {
+        for (int i = 0; i < 10000; i++) {
             test = test.setSquare();
         }
         return test;
@@ -98,11 +102,14 @@ public class PolynomialP256Bench {
     public MutableIntegerModuloP benchAssign() {
         MutableIntegerModuloP test1 = X.mutable();
         MutableIntegerModuloP test2 = one.mutable();
-        for (int i = 0; i< 10000; i++) {
-            test1.conditionalSet(test2, vZero);
-            test1.conditionalSet(test2, vOne);
-            test2.conditionalSet(test1, vZero);
-            test2.conditionalSet(test1, vOne);
+        int lpZero = pZero;
+        int lpOne = pOne;
+
+        for (int i = 0; i < 10000; i++) {
+            test1.conditionalSet(test2, lpZero);
+            test1.conditionalSet(test2, lpOne);
+            test2.conditionalSet(test1, lpZero);
+            test2.conditionalSet(test1, lpOne);
         }
         return test2;
     }
