@@ -5062,6 +5062,195 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Inputs:
+  //   c_rarg0   - long[]  state0
+  //   c_rarg1   - long[]  state1
+  address generate_double_keccak_gpr() {
+    static const uint64_t round_consts[24] = {
+      0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
+      0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
+      0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
+      0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
+      0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
+      0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
+      0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
+      0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
+    };
+
+    // Implements the double_keccak() method of the
+    // sun.secyrity.provider.SHA3Parallel class
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "double_keccak");
+    address start = __ pc();
+    __ align(CodeEntryAlignment);
+
+    Register state0 = c_rarg0;
+    Register state1 = c_rarg1;
+
+    // use r3.r17,r19..r28 to keep a0..a24.
+    // a0..a24 are respective locals from SHA3.java
+    Register a0 = r25,
+             a1 = r26,
+             a2 = r27,
+             a3 = r3,
+             a4 = r4,
+             a5 = r5,
+             a6 = r6,
+             a7 = r7,
+             a8 = rscratch1, // r8
+             a9 = rscratch2, // r9
+             a10 = r10,
+             a11 = r11,
+             a12 = r12,
+             a13 = r13,
+             a14 = r14,
+             a15 = r15,
+             a16 = r16,
+             a17 = r17,
+             a18 = r28,
+             a19 = r19,
+             a20 = r20,
+             a21 = r21,
+             a22 = r22,
+             a23 = r23,
+             a24 = r24;
+
+    Register tmp0 = r0, tmp1 = r1, tmp2 = r2, tmp3 = r30;
+
+    Label rounds24_loop_0, rounds24_loop_1;
+
+    bool can_use_r18 = false;
+#ifndef R18_RESERVED
+    can_use_r18 = true;
+#endif
+    bool can_use_fp = !PreserveFramePointer;
+
+    __ enter();
+
+    // save the state addresses and callee-saved registers
+    __ stp(state0, state1, __ pre(sp, -128));
+    __ stp(r19, r20, Address(sp, 16));
+    __ stp(r21, r22, Address(sp, 32));
+    __ stp(r23, r24, Address(sp, 48));
+    __ stp(r25, r26, Address(sp, 64));
+    __ stp(r27, r28, Address(sp, 80));
+    if (can_use_r18 && can_use_fp) {
+      __ str(r18_tls, Address(sp, 96));
+    }
+
+    // load state0
+    __ ldp(a0, a1, state0);
+    __ ldp(a2, a3, Address(state0, 16));
+    __ ldp(a4, a5, Address(state0, 32));
+    __ ldp(a6, a7, Address(state0, 48));
+    __ ldp(a8, a9, Address(state0, 64));
+    __ ldp(a10, a11, Address(state0, 80));
+    __ ldp(a12, a13, Address(state0, 96));
+    __ ldp(a14, a15, Address(state0, 112));
+    __ ldp(a16, a17, Address(state0, 128));
+    __ ldp(a18, a19, Address(state0, 144));
+    __ ldp(a20, a21, Address(state0, 160));
+    __ ldp(a22, a23, Address(state0, 176));
+    __ ldr(a24, Address(state0, 192));
+
+    // 24 keccak rounds for state0
+    __ fmovs(v0, 24.0); // float loop counter,
+    __ fmovs(v1, 1.0);  // exact representation
+
+    // load round_constants base
+    __ lea(tmp3, ExternalAddress((address) round_consts));
+
+    __ BIND(rounds24_loop_0);
+    keccak_round_gpr(can_use_fp, can_use_r18, tmp3,
+                     a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
+                     a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24,
+                     tmp0, tmp1, tmp2);
+    __ fsubs(v0, v0, v1);
+    __ fcmps(v0, 0.0);
+    __ br(__ NE, rounds24_loop_0);
+
+   // store state0 and load state1
+
+    __ ldp(state0, state1, Address(sp));
+
+    __ stp(a0, a1, Address(state0));
+    __ stp(a2, a3, Address(state0, 16));
+    __ stp(a4, a5, Address(state0, 32));
+    __ stp(a6, a7, Address(state0, 48));
+    __ stp(a8, a9, Address(state0, 64));
+    __ stp(a10, a11, Address(state0, 80));
+    __ stp(a12, a13, Address(state0, 96));
+    __ stp(a14, a15, Address(state0, 112));
+    __ stp(a16, a17, Address(state0, 128));
+    __ stp(a18, a19, Address(state0, 144));
+    __ stp(a20, a21, Address(state0, 160));
+    __ stp(a22, a23, Address(state0, 176));
+    __ str(a24, Address(state0, 192));
+
+    __ ldp(a0, a1, state1);
+    __ ldp(a2, a3, Address(state1, 16));
+    __ ldp(a4, a5, Address(state1, 32));
+    __ ldp(a6, a7, Address(state1, 48));
+    __ ldp(a8, a9, Address(state1, 64));
+    __ ldp(a10, a11, Address(state1, 80));
+    __ ldp(a12, a13, Address(state1, 96));
+    __ ldp(a14, a15, Address(state1, 112));
+    __ ldp(a16, a17, Address(state1, 128));
+    __ ldp(a18, a19, Address(state1, 144));
+    __ ldp(a20, a21, Address(state1, 160));
+    __ ldp(a22, a23, Address(state1, 176));
+    __ ldr(a24, Address(state1, 192));
+
+    // 24 keccak rounds for state1
+    __ fmovs(v0, 24.0); // reset float loop counter,
+
+    // load round_constants base
+    __ lea(tmp3, ExternalAddress((address) round_consts));
+
+    __ BIND(rounds24_loop_1);
+    keccak_round_gpr(can_use_fp, can_use_r18, tmp3,
+                     a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
+                     a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24,
+                     tmp0, tmp1, tmp2);
+    __ fsubs(v0, v0, v1);
+    __ fcmps(v0, 0.0);
+    __ br(__ NE, rounds24_loop_1);
+
+    __ ldr(state1, Address(sp, 8));
+
+   // store state1
+    __ stp(a0, a1, Address(state1));
+    __ stp(a2, a3, Address(state1, 16));
+    __ stp(a4, a5, Address(state1, 32));
+    __ stp(a6, a7, Address(state1, 48));
+    __ stp(a8, a9, Address(state1, 64));
+    __ stp(a10, a11, Address(state1, 80));
+    __ stp(a12, a13, Address(state1, 96));
+    __ stp(a14, a15, Address(state1, 112));
+    __ stp(a16, a17, Address(state1, 128));
+    __ stp(a18, a19, Address(state1, 144));
+    __ stp(a20, a21, Address(state1, 160));
+    __ stp(a22, a23, Address(state1, 176));
+    __ str(a24, Address(state1, 192));
+
+    // restore callee-saved registers
+    __ ldp(r19, r20, Address(sp, 16));
+    __ ldp(r21, r22, Address(sp, 32));
+    __ ldp(r23, r24, Address(sp, 48));
+    __ ldp(r25, r26, Address(sp, 64));
+    __ ldp(r27, r28, Address(sp, 80));
+    if (can_use_fp && can_use_r18) {
+      __ ldr(r18_tls, Address(sp, 96));
+      __ add(rfp, sp, 128); // leave() will copy rfp to sp below
+    } // else no need to recalculate rfp, since it wasn't changed
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
   // ChaCha20 block function.  This version parallelizes the 32-bit
   // state elements on each of 16 vectors, producing 4 blocks of
   // keystream at a time.
@@ -13905,6 +14094,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(StubId::stubgen_sha3_implCompress_id);
       StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(StubId::stubgen_sha3_implCompressMB_id);
     } else if (UseSHA3Intrinsics) {
+      StubRoutines::_double_keccak         = generate_double_keccak_gpr();
       StubRoutines::_sha3_implCompress     = generate_sha3_implCompress_gpr(StubId::stubgen_sha3_implCompress_id);
       StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress_gpr(StubId::stubgen_sha3_implCompressMB_id);
     }
