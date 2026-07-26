@@ -84,7 +84,7 @@ public class Test6505027 {
             try {
                 frame.setSelected(true);
             } catch (PropertyVetoException ex) {
-                throw new Error("could not select internal frame", ex);
+                throw new RuntimeException("could not select internal frame", ex);
             }
             container = frame;
         }
@@ -120,7 +120,7 @@ public class Test6505027 {
         Component component = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
         System.out.println("Component " + component);
         if (!(component instanceof JComboBox)) {
-            throw new Error("unexpected focus owner: " + component);
+            throw new RuntimeException("unexpected focus owner: " + component);
         }
     }
 }
