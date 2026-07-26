@@ -5066,23 +5066,18 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg0   - long[]  state0
   //   c_rarg1   - long[]  state1
   address generate_double_keccak_gpr() {
-    static const uint64_t round_consts[24] = {
-      0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
-      0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
-      0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
-      0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
-      0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
-      0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
-      0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
-      0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
-    };
-
+    StubId stub_id = StubId::stubgen_double_keccak_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     // Implements the double_keccak() method of the
     // sun.secyrity.provider.SHA3Parallel class
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "double_keccak");
-    address start = __ pc();
-    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
 
     Register state0 = c_rarg0;
     Register state1 = c_rarg1;
@@ -5158,7 +5153,7 @@ class StubGenerator: public StubCodeGenerator {
     __ fmovs(v1, 1.0);  // exact representation
 
     // load round_constants base
-    __ lea(tmp3, ExternalAddress((address) round_consts));
+    __ lea(tmp3, ExternalAddress((address) _double_keccak_round_consts));
 
     __ BIND(rounds24_loop_0);
     keccak_round_gpr(can_use_fp, can_use_r18, tmp3,
@@ -5205,7 +5200,7 @@ class StubGenerator: public StubCodeGenerator {
     __ fmovs(v0, 24.0); // reset float loop counter,
 
     // load round_constants base
-    __ lea(tmp3, ExternalAddress((address) round_consts));
+    __ lea(tmp3, ExternalAddress((address) _double_keccak_round_consts));
 
     __ BIND(rounds24_loop_1);
     keccak_round_gpr(can_use_fp, can_use_r18, tmp3,
@@ -5247,6 +5242,9 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ mov(r0, zr); // return 0
     __ ret(lr);
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
