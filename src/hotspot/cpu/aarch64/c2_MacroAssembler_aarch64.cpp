@@ -1506,9 +1506,9 @@ void C2_MacroAssembler::sve_vmask_fromlong(FloatRegister dst, Register src,
   // Expected:  dst = 0x00 01 01 00 00 01 00 01 01 00 00 00 01 01 00 01
 
   // Put long value from general purpose register into the first lane of vector.
+  // The higher lanes are set to zero.
   // vtmp = 0x0000000000000000 | 0x000000000000658D
-  sve_dup(vtmp, B, 0);
-  mov(vtmp, D, 0, src);
+  fmovd(vtmp, src);
 
   // Transform the value in the first lane which is mask in bit now to the mask in
   // byte, which can be done by SVE2's BDEP instruction.

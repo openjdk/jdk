@@ -5051,6 +5051,36 @@ instruct extractD(fRegD dst, vReg src, immI idx, vReg tmp)
   ins_pipe(pipe_slow);
 %}
 
+instruct extractUB_index_imm(iRegINoSp dst, vReg src, immI idx, vReg tmp)
+%{
+  match(Set dst (ExtractUB src idx));
+  effect(TEMP tmp);
+  format %{ "extractUB_index_imm $dst, $src, $idx\t# KILL $tmp" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    // "idx" is expected to be in range.
+    __ extract_v($dst$$Register, as_VectorRegister($src$$reg), T_BOOLEAN,
+                 (int)($idx$$constant), as_VectorRegister($tmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct extractUB_index_reg(iRegINoSp dst, vReg src, iRegI idx, vReg tmp)
+%{
+  match(Set dst (ExtractUB src idx));
+  effect(TEMP tmp);
+  format %{ "extractUB_index_reg $dst, $src, $idx\t# KILL $tmp" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    // "idx" is expected to be in range.
+    __ extract_v($dst$$Register, as_VectorRegister($src$$reg), T_BOOLEAN,
+                 $idx$$Register, as_VectorRegister($tmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ------------------------------ Compress/Expand Operations -------------------
 
 instruct mcompress(vRegMask dst, vRegMask src, vReg tmp) %{
