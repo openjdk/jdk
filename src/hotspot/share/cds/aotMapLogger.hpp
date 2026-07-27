@@ -33,6 +33,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
+class AOTCodeCache;
+class AOTCodeEntry;
 class AOTMappedHeapInfo;
 class AOTStreamedHeapInfo;
 class CompileTrainingData;

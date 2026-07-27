@@ -122,6 +122,12 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
   log_info(aot, map)("[End of AOT cache map]");
 }
 
+
+static void log_embedded_stub(const intptr_t pointer, const uint size, const uint stub_id, const char* stub_name, const uint entry_id) {
+  log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d id=%d blob=%d %s",
+    pointer, "EmbeddedStub", size, stub_id, entry_id, stub_name);
+}
+
 void AOTMapLogger::log_ac_region() {
   ResourceMark rm;
 
@@ -141,12 +147,25 @@ void AOTMapLogger::log_ac_region() {
 
       switch (entry->kind()) {
         case  AOTCodeEntry::Kind::Nmethod:
-          log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d %d %d %s",
+          log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d level=%d id=%d %s",
             p2i(entry), AOTCodeCache::get_kind_name(entry->kind()),
             entry->size(), entry->comp_level(), entry->comp_id(), name);
           break;
-        default:
-          log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d %d %s",
+        case  AOTCodeEntry::Kind::StubGenBlob:
+          {
+            BlobId blob_id = (BlobId) entry->id();
+
+            //First we log the stub blob
+            log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d id=%d %s",
+              p2i(entry), AOTCodeCache::get_kind_name(entry->kind()),
+              entry->size(), entry->id(), StubInfo::name(blob_id));
+
+            //Now we log each stub embedded inside the blob
+            cache->iterate_embedded_stubs(entry,  log_embedded_stub);
+          }
+            break;
+          default:
+          log_debug(aot, map)(PTR_FORMAT ": @@ %-17s %d id=%d %s",
             p2i(entry), AOTCodeCache::get_kind_name(entry->kind()),
             entry->size(), entry->id(), name);
           break;
