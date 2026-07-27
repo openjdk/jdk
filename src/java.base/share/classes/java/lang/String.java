@@ -172,7 +172,8 @@ import sun.nio.cs.UTF_8;
 
 public final class String
     implements java.io.Serializable, Comparable<String>, CharSequence,
-               Constable, ConstantDesc {
+               Constable, ConstantDesc
+{
 
     /**
      * The value is used for character storage.
