@@ -5123,7 +5123,7 @@ class StubGenerator: public StubCodeGenerator {
     __ enter();
 
     // save the state addresses and callee-saved registers
-    __ stp(state0, state1, __ pre(sp, -128));
+    __ stp(state0, state1, __ pre(sp, -112));
     __ stp(r19, r20, Address(sp, 16));
     __ stp(r21, r22, Address(sp, 32));
     __ stp(r23, r24, Address(sp, 48));
@@ -5236,7 +5236,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ldp(r27, r28, Address(sp, 80));
     if (can_use_fp && can_use_r18) {
       __ ldr(r18_tls, Address(sp, 96));
-      __ add(rfp, sp, 128); // leave() will copy rfp to sp below
+      __ add(rfp, sp, 112); // leave() will copy rfp to sp below
     } // else no need to recalculate rfp, since it wasn't changed
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
