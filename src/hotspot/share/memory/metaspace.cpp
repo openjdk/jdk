@@ -593,7 +593,8 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
                                                                                     optimize_for_zero_base));
 
   if (result == nullptr) {
-    // Fallback: reserve anywhere
+    // Fallback: we let the OS decide where to place the area, but align (overallocation-and-cut)
+    // to metaspace reserve alignment (16MB).
     log_debug(metaspace, map)("Trying anywhere...");
     result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), mtClass);
   }

@@ -467,16 +467,16 @@ class MultipleFailOnGood {
 
     @Test
     @IR(failOn = {IRNode.STORE, IRNode.CALL})
-    @IR(applyIfNot = {"TLABRefillWasteFraction", "20"}, failOn = {IRNode.ALLOC})
-    @IR(applyIfNot = {"TLABRefillWasteFraction", "< 100"}, failOn = {IRNode.ALLOC_OF, "Test"})
+    @IR(applyIf = {"TLABRefillWasteFraction", "!= 20"}, failOn = {IRNode.ALLOC})
+    @IR(applyIf = {"TLABRefillWasteFraction", ">= 100"}, failOn = {IRNode.ALLOC_OF, "Test"})
     public void good2() {
         forceInline();
     }
 
     @Test
     @IR(failOn = {IRNode.STORE_OF_CLASS, "Test", IRNode.CALL})
-    @IR(applyIfNot = {"TLABRefillWasteFraction", "20"}, failOn = {IRNode.ALLOC})
-    @IR(applyIfNot = {"TLABRefillWasteFraction", "< 100"}, failOn = {IRNode.ALLOC_OF, "Test"})
+    @IR(applyIf = {"TLABRefillWasteFraction", "!= 20"}, failOn = {IRNode.ALLOC})
+    @IR(applyIf = {"TLABRefillWasteFraction", ">= 100"}, failOn = {IRNode.ALLOC_OF, "Test"})
     public void good3() {
         forceInline();
     }

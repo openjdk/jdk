@@ -257,12 +257,18 @@ class os: AllStatic {
   static void initialize_initial_active_processor_count();
 
   LINUX_ONLY(static void pd_init_container_support();)
+  LINUX_ONLY(static void pd_check_temp_directory();)
 
  public:
   static void init(void);                      // Called before command line parsing
 
   static void init_container_support() {       // Called during command line parsing.
      LINUX_ONLY(pd_init_container_support();)
+  }
+
+  static void check_temp_directory() {
+    // Only applicable on linux.
+    LINUX_ONLY(pd_check_temp_directory();)
   }
 
   static void init_before_ergo(void);          // Called after command line parsing
@@ -496,6 +502,11 @@ class os: AllStatic {
 
   // Returns the lowest address the process is allowed to map against.
   static size_t vm_min_address();
+
+  // Some kernels (e.g. s390x) can dynamically expand the page table. This function returns
+  // the lowest user space address that will expand the page table for the first time.
+  // We typically want to avoid expanding the page table unless it is really necessary.
+  static uintptr_t vm_page_table_expansion_point();
 
   // Returns an upper limit beyond which reserve_memory() calls are guaranteed
   // to fail. It is not guaranteed that reserving less memory than this will

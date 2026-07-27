@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 package jdk.test.lib.security.timestamp;
 
-import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
+import java.security.MessageDigest;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.util.Date;
@@ -33,6 +33,8 @@ import java.util.Objects;
 import jdk.test.lib.hexdump.HexPrinter;
 import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.PKCS7;
+import sun.security.pkcs.PKCS9Attribute;
+import sun.security.pkcs.PKCS9Attributes;
 import sun.security.pkcs.SignerInfo;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
@@ -202,8 +204,11 @@ public class TsaSigner {
             DerOutputStream eContentOut = new DerOutputStream();
             eContentOut.putOctetString(tstInfoSeqData);
 
+            ObjectIdentifier infoOid = respParam.notTimestampOID() == Boolean.TRUE
+                    ? ContentInfo.DATA_OID
+                    : ContentInfo.TIMESTAMP_TOKEN_INFO_OID;
             ContentInfo eContentInfo = new ContentInfo(
-                    ObjectIdentifier.of(KnownOIDs.TimeStampTokenInfo),
+                    infoOid,
                     new DerValue(eContentOut.toByteArray()));
 
             String defaultSigAlgo =  SignatureUtil.getDefaultSigAlgForKey(
@@ -213,16 +218,36 @@ public class TsaSigner {
             System.out.println(
                     "Signature algorithm: " + signature.getAlgorithm());
             signature.initSign(signerEntry.privateKey);
-            signature.update(tstInfoSeqData);
+
+            AlgorithmId digestAlg = SignatureUtil.getDigestAlgInPkcs7SignerInfo(
+                    signature, sigAlgo, signerEntry.privateKey,
+                    signerEntry.cert.getPublicKey(), false);
+
+            PKCS9Attributes authAttrs = null;
+
+            if (respParam.noSignedAttrs() == Boolean.TRUE) {
+                signature.update(tstInfoSeqData);
+            } else {
+                authAttrs = new PKCS9Attributes(new PKCS9Attribute[]{
+                        new PKCS9Attribute(PKCS9Attribute.CONTENT_TYPE_OID,
+                                infoOid),
+                        new PKCS9Attribute(PKCS9Attribute.SIGNING_TIME_OID,
+                                new Date()),
+                        new PKCS9Attribute(PKCS9Attribute.MESSAGE_DIGEST_OID,
+                                MessageDigest.getInstance(digestAlg.getName())
+                                        .digest(tstInfoSeqData))
+                });
+                signature.update(authAttrs.getDerEncoding());
+            }
 
             SignerInfo signerInfo = new SignerInfo(
                     new X500Name(issuerName),
                     signerEntry.cert.getSerialNumber(),
-                    SignatureUtil.getDigestAlgInPkcs7SignerInfo(
-                            signature, sigAlgo, signerEntry.privateKey,
-                            signerEntry.cert.getPublicKey(), false),
+                    digestAlg,
+                    authAttrs,
                     AlgorithmId.get(sigAlgo),
-                    signature.sign());
+                    signature.sign(),
+                    null);
 
             X509Certificate[] signerCertChain = interceptor.getSignerCertChain(
                     signerEntry.certChain, requestParam.certReq());

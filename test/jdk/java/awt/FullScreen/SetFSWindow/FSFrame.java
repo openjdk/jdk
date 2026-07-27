@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @summary verify that isFullScreenSupported and getFullScreenWindow work
  * correctly. Note that the test may fail on older Gnome versions (see bug 6500686).
  * @run main FSFrame
- * @run main/othervm -Dsun.java2d.noddraw=true FSFrame
+ * @run main/othervm -Dsun.java2d.d3d=false FSFrame
  */
 
 import java.awt.Color;
