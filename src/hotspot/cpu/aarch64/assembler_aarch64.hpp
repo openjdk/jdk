@@ -3475,13 +3475,15 @@ private:
 
 public:
 
-// SVE integer arithmetic - predicate
+// SVE Arithmetic - Predicated
 #define INSN(NAME, op1, op2)                                                                            \
   void NAME(FloatRegister Zdn_or_Zd_or_Vd, SIMD_RegVariant T, PRegister Pg, FloatRegister Znm_or_Vn) {  \
-    assert(T != Q, "invalid register variant");                                                         \
+    assert(ALLOWED, "invalid register variant");                                                        \
     sve_predicate_reg_insn(op1, op2, Zdn_or_Zd_or_Vd, T, Pg, Znm_or_Vn);                                \
   }
 
+// SVE Integer Arithmetic - Predicated (B/H/S/D element sizes).
+#define ALLOWED (T != Q)
   INSN(sve_abs,   0b00000100, 0b010110101); // vector abs, unary
   INSN(sve_add,   0b00000100, 0b000000000); // vector add
   INSN(sve_and,   0b00000100, 0b011010000); // vector and
@@ -3511,15 +3513,16 @@ public:
   INSN(sve_umaxv, 0b00000100, 0b001001001); // unsigned maximum reduction to scalar
   INSN(sve_umin,  0b00000100, 0b001011000); // unsigned minimum vectors
   INSN(sve_uminv, 0b00000100, 0b001011001); // unsigned minimum reduction to scalar
-#undef INSN
+#undef ALLOWED
 
-// SVE floating-point arithmetic - predicate
-#define INSN(NAME, op1, op2)                                                                          \
-  void NAME(FloatRegister Zd_or_Zdn_or_Vd, SIMD_RegVariant T, PRegister Pg, FloatRegister Zn_or_Zm) { \
-    assert(T == H || T == S || T == D, "invalid register variant");                                   \
-    sve_predicate_reg_insn(op1, op2, Zd_or_Zdn_or_Vd, T, Pg, Zn_or_Zm);                               \
-  }
+// SVE Integer Binary Arithmetic - Predicated (S/D element sizes).
+#define ALLOWED (T == S || T == D)
+  INSN(sve_sdiv, 0b00000100, 0b010100000); // signed divide
+  INSN(sve_udiv, 0b00000100, 0b010101000); // unsigned divide
+#undef ALLOWED
 
+// SVE Floating-point Arithmetic - Predicated (H/S/D element sizes).
+#define ALLOWED (T == H || T == S || T == D)
   INSN(sve_fabd,   0b01100101, 0b001000100); // floating-point absolute difference
   INSN(sve_fabs,   0b00000100, 0b011100101);
   INSN(sve_fadd,   0b01100101, 0b000000100);
@@ -3537,9 +3540,18 @@ public:
   INSN(sve_frintp, 0b01100101, 0b000001101); // floating-point round to integral value, toward plus infinity
   INSN(sve_fsqrt,  0b01100101, 0b001101101);
   INSN(sve_fsub,   0b01100101, 0b000001100);
+#undef ALLOWED
+
+// SVE2 Signed/Unsigned Saturating Add/Sub - Predicated (B/H/S/D element sizes).
+#define ALLOWED (T != Q)
+  INSN(sve_sqadd, 0b01000100, 0b011000100); // signed saturating add
+  INSN(sve_sqsub, 0b01000100, 0b011010100); // signed saturating sub
+  INSN(sve_uqadd, 0b01000100, 0b011001100); // unsigned saturating add
+  INSN(sve_uqsub, 0b01000100, 0b011011100); // unsigned saturating sub
+#undef ALLOWED
 #undef INSN
 
-  // SVE multiple-add/sub - predicated
+// SVE multiple-add/sub - predicated
 #define INSN(NAME, op0, op1, op2)                                                                     \
   void NAME(FloatRegister Zda, SIMD_RegVariant T, PRegister Pg, FloatRegister Zn, FloatRegister Zm) { \
     starti;                                                                                           \
@@ -4345,20 +4357,6 @@ public:
   INSN(sve_umullt, /* is_unsigned */ true,  /* is_top */ true ); // Unsigned widening multiply of top elements
   INSN(sve_smullb, /* is_unsigned */ false, /* is_top */ false); // Signed widening multiply of bottom elements
   INSN(sve_smullt, /* is_unsigned */ false, /* is_top */ true ); // Signed widening multiply of top elements
-#undef INSN
-
-// SVE2 saturating operations - predicate
-#define INSN(NAME, op1, op2)                                                          \
-  void NAME(FloatRegister Zdn, SIMD_RegVariant T, PRegister Pg, FloatRegister Znm) {  \
-    assert(T != Q, "invalid register variant");                                       \
-    sve_predicate_reg_insn(op1, op2, Zdn, T, Pg, Znm);                                \
-  }
-
-  INSN(sve_sqadd, 0b01000100, 0b011000100); // signed saturating add
-  INSN(sve_sqsub, 0b01000100, 0b011010100); // signed saturating sub
-  INSN(sve_uqadd, 0b01000100, 0b011001100); // unsigned saturating add
-  INSN(sve_uqsub, 0b01000100, 0b011011100); // unsigned saturating sub
-
 #undef INSN
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {

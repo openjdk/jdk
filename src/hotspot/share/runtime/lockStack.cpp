@@ -115,7 +115,6 @@ void LockStack::print_on(outputStream* st) {
   }
 }
 
-OMCache::OMCache(JavaThread* jt) : _entries() {
+OMCache::OMCache(JavaThread* jt) {
   STATIC_ASSERT(std::is_standard_layout<OMCache>::value);
-  STATIC_ASSERT(std::is_standard_layout<OMCache::OMCacheEntry>::value);
 }

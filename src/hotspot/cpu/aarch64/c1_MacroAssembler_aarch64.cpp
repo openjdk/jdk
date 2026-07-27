@@ -105,7 +105,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   } else {
     mov(t1, checked_cast<int32_t>(markWord::prototype().value()));
     str(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
-    encode_klass_not_null(t1, klass); // Take care not to kill klass
+    encode_klass_not_null(t1, klass, t1); // Take care not to kill klass
     strw(t1, Address(obj, oopDesc::klass_offset_in_bytes()));
   }
 
