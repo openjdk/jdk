@@ -38,6 +38,7 @@
 #include "utilities/powerOfTwo.hpp"
 
 class OopMap;
+struct GtestFriendToMacroAssembler;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -46,6 +47,7 @@ class OopMap;
 
 class MacroAssembler: public Assembler {
   friend class LIR_Assembler;
+  friend struct GtestFriendToMacroAssembler;
 
  public:
   using Assembler::mov;
@@ -91,28 +93,31 @@ class MacroAssembler: public Assembler {
 
   void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions = true);
 
+ private:
+
   enum KlassDecodeMode {
     KlassDecodeNone,
     KlassDecodeZero,
     KlassDecodeXor,
-    KlassDecodeMovk
+    KlassDecodeMovk,
+    KlassDecodeFallback
   };
 
-  // Calculate decoding mode based on given parameters, used for checking then ultimately setting.
-  static KlassDecodeMode klass_decode_mode(address base, int shift, const size_t range);
-
- private:
   static KlassDecodeMode _klass_decode_mode;
 
   // Returns above setting with asserts
   static KlassDecodeMode klass_decode_mode();
 
- public:
-  // Checks the decode mode and returns false if not compatible with preferred decoding mode.
-  static bool check_klass_decode_mode(address base, int shift, const size_t range);
+  // Calculate decoding mode based on given parameters, used for checking then ultimately setting.
+  static KlassDecodeMode klass_decode_mode(address base, int shift, const size_t range);
 
-  // Sets the decode mode and returns false if cannot be set.
-  static bool set_klass_decode_mode(address base, int shift, const size_t range);
+  void emit_encode_klass_not_null(Register dst, Register src, Register tmp,
+                                  address base, int shift, KlassDecodeMode decode_mode);
+  void emit_decode_klass_not_null(Register dst, Register src, Register tmp,
+                                  address base, int shift, KlassDecodeMode decode_mode);
+ public:
+  // Determines the decode mode best suited for the given encoding parameters.
+  static void initialize_klass_decode_mode(address base, int shift, const size_t range);
 
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
@@ -308,19 +313,27 @@ class MacroAssembler: public Assembler {
   }
 
   inline void lslw(Register Rd, Register Rn, unsigned imm) {
-    ubfmw(Rd, Rn, ((32 - imm) & 31), (31 - imm));
+    if (imm > 0 || Rd != Rn) {
+      ubfmw(Rd, Rn, ((32 - imm) & 31), (31 - imm));
+    }
   }
 
   inline void lsl(Register Rd, Register Rn, unsigned imm) {
-    ubfm(Rd, Rn, ((64 - imm) & 63), (63 - imm));
+    if (imm > 0 || Rd != Rn) {
+      ubfm(Rd, Rn, ((64 - imm) & 63), (63 - imm));
+    }
   }
 
   inline void lsrw(Register Rd, Register Rn, unsigned imm) {
-    ubfmw(Rd, Rn, imm, 31);
+    if (imm > 0 || Rd != Rn) {
+      ubfmw(Rd, Rn, imm, 31);
+    }
   }
 
   inline void lsr(Register Rd, Register Rn, unsigned imm) {
-    ubfm(Rd, Rn, imm, 63);
+    if (imm > 0 || Rd != Rn) {
+      ubfm(Rd, Rn, imm, 63);
+    }
   }
 
   inline void rorw(Register Rd, Register Rn, unsigned imm) {
@@ -925,9 +938,9 @@ public:
   // oop manipulations
   void load_narrow_klass_compact(Register dst, Register src);
   void load_narrow_klass(Register dst, Register src);
-  void load_klass(Register dst, Register src);
-  void store_klass(Register dst, Register src);
-  void cmp_klass(Register obj, Register klass, Register tmp);
+  void load_klass(Register dst, Register src, Register tmp);
+  void store_klass(Register dst, Register src, Register tmp);
+  void cmp_klass(Register obj, Register klass, Register tmp, Register tmp2);
   void cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2);
 
   void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
@@ -972,12 +985,8 @@ public:
 
   void set_narrow_oop(Register dst, jobject obj);
 
-  void decode_klass_not_null_for_aot(Register dst, Register src);
-  void encode_klass_not_null_for_aot(Register dst, Register src);
-  void encode_klass_not_null(Register r);
-  void decode_klass_not_null(Register r);
-  void encode_klass_not_null(Register dst, Register src);
-  void decode_klass_not_null(Register dst, Register src);
+  void encode_klass_not_null(Register dst, Register src, Register tmp);
+  void decode_klass_not_null(Register dst, Register src, Register tmp);
 
   void set_narrow_klass(Register dst, Klass* k);
 
@@ -1798,6 +1807,8 @@ public:
   SVE_DESTRUCTIVE_BINARY_5(sve_fmul, sve_fsub,  sve_lsl,   sve_lsr,   sve_mul)
   SVE_DESTRUCTIVE_BINARY_5(sve_orr,  sve_smax,  sve_smin,  sve_sqadd, sve_sqsub)
   SVE_DESTRUCTIVE_BINARY_5(sve_sub,  sve_uqadd, sve_uqsub, sve_umax,  sve_umin)
+  SVE_DESTRUCTIVE_BINARY_INS(sve_sdiv);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_udiv);
 
 #undef SVE_DESTRUCTIVE_BINARY_INS
 #undef SVE_DESTRUCTIVE_BINARY_5

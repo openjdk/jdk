@@ -118,8 +118,6 @@ The [@IR](./IR.java) annotation provides two kinds of checks:
 One might also want to restrict the application of certain `@IR` rules depending on the used flags in the Test VM. These could be flags defined by the user or by JTreg. In the latter case, the flags must be whitelisted in `JTREG_WHITELIST_FLAGS` in [TestFramework](./TestFramework.java) (i.e. have no unexpected impact on the IR except if the flag simulates a specific machine setup like `UseAVX={1,2,3}` etc.) to enable an IR verification by the framework. The `@IR` rules thus have an option to restrict their application:
 
 - `applyIf`: Only apply a rule if a flag has the specified value/range of values.
-- `applyIfNot`: Only apply a rule if a flag has **not** a specified value/range of values
-               (inverse of `applyIf`).
 - `applyIfAnd`: Only apply a rule if **all** flags have the specified value/range of values.
 - `applyIfOr`:  Only apply a rule if **at least one** flag has the specified value/range of values.
 

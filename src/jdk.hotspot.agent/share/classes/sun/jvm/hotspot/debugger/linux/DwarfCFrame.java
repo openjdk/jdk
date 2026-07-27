@@ -32,6 +32,7 @@ import sun.jvm.hotspot.debugger.UnmappedAddressException;
 import sun.jvm.hotspot.debugger.cdbg.CFrame;
 import sun.jvm.hotspot.debugger.cdbg.ClosestSymbol;
 import sun.jvm.hotspot.debugger.cdbg.basic.BasicCFrame;
+import sun.jvm.hotspot.debugger.linux.aarch64.AARCH64DwarfParser;
 import sun.jvm.hotspot.runtime.VM;
 
 public class DwarfCFrame extends BasicCFrame {
@@ -53,7 +54,8 @@ public class DwarfCFrame extends BasicCFrame {
     protected static DwarfParser createDwarfParser(LinuxDebugger linuxDbg, Address pc) {
         Address libptr = linuxDbg.findLibPtrByAddress(pc);
         if (libptr != null) {
-            DwarfParser dwarf = new DwarfParser(libptr);
+            DwarfParser dwarf = linuxDbg.getCPU().equals("aarch64") ? new AARCH64DwarfParser(libptr)
+                                                                    : new DwarfParser(libptr);
             dwarf.processDwarf(pc);
             return dwarf;
         }
