@@ -148,6 +148,7 @@ void VM_Version::get_os_cpu_info() {
     DWORD key_type = 0;
     uint64_t value = 0;
     DWORD value_size = sizeof(value);
+    // Read registry value "CP 4000" which maps to MIDR_EL1.
     if ((RegGetValueA(HKEY_LOCAL_MACHINE, "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", "CP 4000",
                       RRF_RT_REG_QWORD, &key_type, &value, &value_size) == ERROR_SUCCESS) && (value_size == sizeof(value))) {
       _cpu = value >> 24 & 0xFF;
