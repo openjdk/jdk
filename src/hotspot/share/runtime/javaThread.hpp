@@ -1238,7 +1238,6 @@ public:
   static ByteSize lock_stack_base_offset() { return lock_stack_offset() + LockStack::base_offset(); }
 
   static ByteSize om_cache_offset()        { return byte_offset_of(JavaThread, _om_cache); }
-  static ByteSize om_cache_oops_offset()   { return om_cache_offset() + OMCache::entries_offset(); }
 
   void om_set_monitor_cache(ObjectMonitor* monitor);
   void om_clear_monitor_cache();
