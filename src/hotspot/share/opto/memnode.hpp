@@ -319,7 +319,7 @@ public:
   // Common methods for LoadKlass and LoadNKlass nodes.
   const Type* klass_value_common(PhaseGVN* phase) const;
   Node* klass_identity_common(PhaseGVN* phase);
-  Node* find_known_klass(PhaseGVN* phase);
+  Node* find_known_klass(PhaseGVN* phase) const;
 
   virtual uint ideal_reg() const;
   virtual const Type *bottom_type() const;

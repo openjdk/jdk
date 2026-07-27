@@ -1952,6 +1952,22 @@ AllocateNode* LoadNode::is_new_object_mark_load() const {
   return nullptr;
 }
 
+// If the load is from Field memory and the pointer is non-null, it might be possible to
+// zero out the control input.
+// If the offset is constant and the base is an object allocation,
+// try to hook me up to the exact initializing store.
+Node* LoadNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (has_pinned_control_dependency()) { return nullptr; }
+  Node* p = Ideal_load_common(phase, can_reshape);
+  if (p == NodeSentinel) { return nullptr; }
+
+  if (p == nullptr && !can_reshape) {
+    phase->record_for_igvn(this);
+  }
+
+  return p;
+}
+
 Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
   Node* p = MemNode::Ideal_common(phase, can_reshape);
   if (p != nullptr) { return p; }
@@ -2080,22 +2096,6 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
   }
 
   return nullptr;
-}
-
-// If the load is from Field memory and the pointer is non-null, it might be possible to
-// zero out the control input.
-// If the offset is constant and the base is an object allocation,
-// try to hook me up to the exact initializing store.
-Node* LoadNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (has_pinned_control_dependency()) { return nullptr; }
-  Node* p = Ideal_load_common(phase, can_reshape);
-  if (p == NodeSentinel) { return nullptr; }
-
-  if (p == nullptr && !can_reshape) {
-    phase->record_for_igvn(this);
-  }
-
-  return p;
 }
 
 // Helper to recognize certain Klass fields which are invariant across
@@ -2638,9 +2638,17 @@ Node* LoadKlassNode::Identity(PhaseGVN* phase) {
   return klass_identity_common(phase);
 }
 
+Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
+  Node* x = LoadNode::Identity(phase);
+  if (x != this) { return x; }
+
+  Node* k = find_known_klass(phase);
+  return k == nullptr ? this : k;
+}
+
 // Find an existing Klass node from a recognized allocation or
 // class-mirror pattern.
-Node* LoadNode::find_known_klass(PhaseGVN* phase) {
+Node* LoadNode::find_known_klass(PhaseGVN* phase) const {
   // Take apart the address into an oop and offset.
   // Return 'nullptr' if we cannot.
   Node* adr = in(MemNode::Address);
@@ -2703,14 +2711,6 @@ Node* LoadNode::find_known_klass(PhaseGVN* phase) {
   return nullptr;
 }
 
-Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
-  Node* x = LoadNode::Identity(phase);
-  if (x != this)  { return x; }
-
-  Node* k = find_known_klass(phase);
-  return k == nullptr ? this : k;
-}
-
 LoadNode* LoadNode::clone_pinned() const {
   LoadNode* ld = clone()->as_Load();
   ld->_control_dependency = UnknownControl;
@@ -2733,7 +2733,6 @@ LoadNode* LoadNode::pin_node_under_control_impl() const {
   return nullptr;
 }
 
-//------------------------------Ideal---------------------------------------
 Node* LoadNKlassNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   bool pinned = has_pinned_control_dependency();
   if (!pinned) {
@@ -2760,7 +2759,6 @@ Node* LoadNKlassNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------Value------------------------------------------
 const Type* LoadNKlassNode::Value(PhaseGVN* phase) const {
   const Type *t = klass_value_common(phase);
   if (t == Type::TOP)
@@ -2769,7 +2767,6 @@ const Type* LoadNKlassNode::Value(PhaseGVN* phase) const {
   return t->make_narrowklass();
 }
 
-//------------------------------Identity---------------------------------------
 Node* LoadNKlassNode::Identity(PhaseGVN* phase) {
   Node* x = klass_identity_common(phase);
   const Type* t = phase->type(x);
