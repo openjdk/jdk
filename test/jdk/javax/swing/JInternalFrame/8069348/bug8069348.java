@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import static sun.awt.OSInfo.*;
  * @author Alexandr Scherbatiy
  * @modules java.desktop/sun.awt
  * @run main/othervm -Dsun.java2d.uiScale=2 bug8069348
- * @run main/othervm -Dsun.java2d.d3d=true -Dsun.java2d.uiScale=2 bug8069348
  */
 public class bug8069348 {
 
@@ -63,10 +62,6 @@ public class bug8069348 {
     private static JInternalFrame internalFrame;
 
     public static void main(String[] args) throws Exception {
-
-        if (!isSupported()) {
-            return;
-        }
 
         try {
 
@@ -118,12 +113,6 @@ public class bug8069348 {
             });
         }
         System.out.println("Test Passed");
-    }
-
-    private static boolean isSupported() {
-        String d3d = System.getProperty("sun.java2d.d3d");
-        System.out.println("d3d " + d3d);
-        return !Boolean.getBoolean(d3d) || getOSType() == OSType.WINDOWS;
     }
 
     private static Rectangle getInternalFrameScreenBounds() throws Exception {
