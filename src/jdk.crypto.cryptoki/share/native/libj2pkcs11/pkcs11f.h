@@ -1,11 +1,12 @@
-/*
- * PKCS #11 Specification Version 3.2
- * OASIS Standard
- * 03 June 2026
- * Copyright (c) OASIS Open 2026. All Rights Reserved.
- * Source: https://docs.oasis-open.org/pkcs11/pkcs11-spec/v3.2/os/include/pkcs11-v3.2/
- * Latest stage of narrative specification: https://docs.oasis-open.org/pkcs11/pkcs11-spec/v3.2/pkcs11-spec-v3.2.html
- * TC IPR Statement: https://www.oasis-open.org/committees/pkcs11/ipr.php
+/* Copyright (c) OASIS Open 2016, 2019, 2024. All Rights Reserved./
+ * /Distributed under the terms of the OASIS IPR Policy,
+ * [http://www.oasis-open.org/policies-guidelines/ipr], AS-IS, WITHOUT ANY
+ * IMPLIED OR EXPRESS WARRANTY; there is no warranty of MERCHANTABILITY, FITNESS FOR A
+ * PARTICULAR PURPOSE or NONINFRINGEMENT of the rights of others.
+ */
+
+/* Latest version of the specification:
+ * http://docs.oasis-open.org/pkcs11/pkcs11-spec/v3.2/pkcs11-spec-v3.2.html
  */
 
 /* This header file contains pretty much everything about all the
