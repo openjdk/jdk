@@ -117,7 +117,7 @@ public:
   virtual bool is_thread_safe() { return false; }
 };
 
-typedef ShenandoahLock                       ShenandoahHeapLock;
+typedef ShenandoahLock ShenandoahHeapLock;
 // ShenandoahHeapLocker implements locker to assure mutually exclusive access to the global heap data structures.
 // Asserts in the implementation detect potential deadlock usage with regards the rebuild lock that is present
 // in ShenandoahFreeSet.  Whenever both locks are acquired, this lock should be acquired before the
@@ -702,6 +702,7 @@ protected:
   inline HeapWord* allocate_from_gclab(Thread* thread, size_t size);
 
 private:
+  template<bool IS_MUTATOR>
   HeapWord* allocate_memory_work(ShenandoahAllocRequest& request, bool& in_new_region);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
@@ -709,8 +710,21 @@ private:
   // We want to retry an unsuccessful attempt at allocation until at least a full gc.
   bool should_retry_allocation(size_t original_full_gc_count) const;
 
+  // Cached PLAB min/max in words; avoids repeated out-of-line PLAB::min_size()
+  // calls on the allocation hot path. Set once in initialize().
+  static size_t _plab_min_size;
+  static size_t _plab_max_size;
+
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);
+
+  static size_t plab_min_size() {
+    return _plab_min_size;
+  }
+  static size_t plab_max_size() {
+    return _plab_max_size;
+  }
+
   HeapWord* mem_allocate(size_t size) override;
   oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) override;
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,

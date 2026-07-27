@@ -29,6 +29,8 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 
+Atomic<uint32_t> ShenandoahThreadLocalData::_next_round_robin_probe{0};
+
 ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _gc_state(0),
   _gc_state_fast_array{},
@@ -39,7 +41,9 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _shenandoah_plab(nullptr),
   _evacuation_stats(new ShenandoahEvacuationStats()),
   _invisible_root(nullptr),
-  _invisible_root_word_size(0) {
+  _invisible_root_word_size(0),
+  _round_robin_probe(0),
+  _round_robin_probe_initialized(false) {
 }
 
 ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {

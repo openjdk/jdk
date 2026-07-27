@@ -50,7 +50,7 @@ bool ShenandoahInPlacePromotionPlanner::is_eligible(const ShenandoahHeapRegion* 
 void ShenandoahInPlacePromotionPlanner::prepare(ShenandoahHeapRegion* r) {
   assert(!r->is_humongous_continuation(), "Should not call for humongous continuations");
   HeapWord* tams = _marking_context->top_at_mark_start(r);
-  HeapWord* original_top = r->top();
+  HeapWord* original_top = r->plain_top();
 
   if (_heap->is_concurrent_mark_in_progress() || tams != original_top) {
     // We do not promote this region (either in place or by copy) because it has received new allocations.
@@ -244,8 +244,8 @@ void ShenandoahInPlacePromoter::promote(ShenandoahHeapRegion* region) const {
     assert(region->used() + pip_pad_bytes + pip_unpadded == region_size_bytes, "invariant");
 
     // The update_watermark was likely established while we had the artificially high value of top.  Make it sane now.
-    assert(update_watermark >= region->top(), "original top cannot exceed preserved update_watermark");
-    region->set_update_watermark(region->top());
+    assert(update_watermark >= region->plain_top(), "original top cannot exceed preserved update_watermark");
+    region->set_update_watermark(region->plain_top());
 
     // Transfer this region from young to old, increasing promoted_reserve if available space exceeds plab_min_size()
     _heap->free_set()->add_promoted_in_place_region_to_old_collector(region);

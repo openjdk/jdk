@@ -93,6 +93,11 @@ private:
   Atomic<HeapWord*> _invisible_root;
   Atomic<size_t> _invisible_root_word_size;
 
+  // Stable per-thread round-robin ticket; consumers mask it into their own range independently.
+  static Atomic<uint32_t> _next_round_robin_probe;
+  uint32_t _round_robin_probe;
+  bool _round_robin_probe_initialized;
+
   ShenandoahThreadLocalData();
   ~ShenandoahThreadLocalData();
 
@@ -167,7 +172,7 @@ public:
 
   static void initialize_gclab(Thread* thread) {
     assert(data(thread)->_gclab == nullptr, "Only initialize once");
-    data(thread)->_gclab = new PLAB(PLAB::min_size());
+    data(thread)->_gclab = new PLAB(ShenandoahHeap::plab_min_size());
     data(thread)->_gclab_size = 0;
 
     if (ShenandoahHeap::heap()->mode()->is_generational()) {
@@ -185,6 +190,17 @@ public:
 
   static void set_gclab_size(Thread* thread, size_t v) {
     data(thread)->_gclab_size = v;
+  }
+
+  // Lazy-assigned stable round-robin ticket. Owner-thread-only, so TLS fields need not be atomic.
+  static uint32_t round_robin_probe(Thread* thread) {
+    assert(thread == Thread::current(), "Only the owner thread may assign its probe");
+    ShenandoahThreadLocalData* d = data(thread);
+    if (!d->_round_robin_probe_initialized) {
+      d->_round_robin_probe = _next_round_robin_probe.fetch_then_add(1u, memory_order_relaxed);
+      d->_round_robin_probe_initialized = true;
+    }
+    return d->_round_robin_probe;
   }
 
   static void begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {

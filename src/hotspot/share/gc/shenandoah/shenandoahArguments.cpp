@@ -190,6 +190,16 @@ void ShenandoahArguments::initialize() {
       err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, ShenandoahMinCardSizeInBytes));
   }
 
+  // Non-zero stripe counts must be a power of 2 (used as bitmask). 0 = derive automatically.
+  if (ShenandoahMutatorAllocRegions != 0 && !is_power_of_2((uint) ShenandoahMutatorAllocRegions)) {
+    vm_exit_during_initialization(
+      "Shenandoah expects ShenandoahMutatorAllocRegions to be a power of 2, check -XX:ShenandoahMutatorAllocRegions=#");
+  }
+  if (ShenandoahCollectorAllocRegions != 0 && !is_power_of_2((uint) ShenandoahCollectorAllocRegions)) {
+    vm_exit_during_initialization(
+      "Shenandoah expects ShenandoahCollectorAllocRegions to be a power of 2, check -XX:ShenandoahCollectorAllocRegions=#");
+  }
+
   // Gen shen does not support any ShenandoahGCHeuristics value except for the default "adaptive"
   if ((strcmp(ShenandoahGCMode, "generational") == 0)
       && strcmp(ShenandoahGCHeuristics, "adaptive") != 0) {

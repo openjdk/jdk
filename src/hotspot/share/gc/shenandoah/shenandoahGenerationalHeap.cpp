@@ -24,6 +24,7 @@
  */
 
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
@@ -65,24 +66,14 @@ protected:
   }
 };
 
-size_t ShenandoahGenerationalHeap::calculate_min_plab() {
-  return PLAB::min_size();
-}
-
-size_t ShenandoahGenerationalHeap::calculate_max_plab() {
-  return ShenandoahHeapRegion::max_tlab_size_words();
-}
-
 // Returns size in bytes
 size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc() const {
-  return MIN2(ShenandoahHeapRegion::max_tlab_size_bytes(), young_generation()->available());
+  return allocator()->unsafe_max_tlab_alloc(Thread::current());
 }
 
 ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy) :
   ShenandoahHeap(policy),
   _age_census(nullptr),
-  _min_plab_size(calculate_min_plab()),
-  _max_plab_size(calculate_max_plab()),
   _regulator_thread(nullptr),
   _young_gen_memory_pool(nullptr),
   _old_gen_memory_pool(nullptr) {
@@ -253,7 +244,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
           if ((copy == nullptr) && (size < ShenandoahThreadLocalData::gclab_size(thread))) {
             // GCLAB allocation failed because we are bumping up against the limit on young evacuation reserve.  Try resetting
             // the desired GCLAB size and retry GCLAB allocation to avoid cascading of shared memory allocations.
-            ShenandoahThreadLocalData::set_gclab_size(thread, PLAB::min_size());
+            ShenandoahThreadLocalData::set_gclab_size(thread, plab_min_size());
             copy = allocate_from_gclab(thread, size);
             // If we still get nullptr, we'll try a shared allocation below.
           }
@@ -292,7 +283,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
 
     if (copy == nullptr) {
       // If we failed to allocate in LAB, we'll try a shared allocation.
-      if (!is_promotion || !has_plab || (size > PLAB::min_size())) {
+      if (!is_promotion || !has_plab || (size > plab_min_size())) {
         ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, TO_GENERATION, is_promotion);
         copy = allocate_memory(req);
         alloc_from_lab = false;
@@ -851,7 +842,7 @@ private:
                                     const ShenandoahHeapRegion* r, HeapWord* start_of_range,
                                     HeapWord* end_of_range) const {
     // In case last object in my range spans boundary of my chunk, I may need to scan all the way to top()
-    ShenandoahObjectToOopBoundedClosure<T> objs(&cl, start_of_range, r->top());
+    ShenandoahObjectToOopBoundedClosure<T> objs(&cl, start_of_range, r->top_relaxed());
 
     // Any object that begins in a previous range is part of a different scanning assignment.  Any object that
     // starts after end_of_range is also not my responsibility.  (Either allocated during evacuation, so does
@@ -968,6 +959,8 @@ public:
     // be promoted.
     if (r->is_young() && r->is_active()) {
       HeapWord *tams = _ctx->top_at_mark_start(r);
+      // Must use top(), not plain_top(): active CAS alloc regions can be
+      // encountered here (final-update-refs safepoint or abbreviated cycles).
       HeapWord *top = r->top();
 
       // Allocations move the watermark when top moves.  However, compacting

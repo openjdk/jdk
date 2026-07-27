@@ -106,6 +106,8 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       continue;
     }
 
+    assert(!region->is_atomic_alloc_region(), "Must not");
+
     size_t garbage = region->garbage();
     total_garbage += garbage;
 

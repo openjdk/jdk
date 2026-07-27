@@ -511,7 +511,9 @@ inline bool ShenandoahHeap::is_concurrent_strong_root_in_progress() const {
 
 template<class T>
 inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, T* cl) {
-  marked_object_iterate(region, cl, region->top());
+  // All callers pass regions that are either in the collection set (never active alloc
+  // regions) or run at a safepoint / Full GC, so plain_top() is safe here.
+  marked_object_iterate(region, cl, region->plain_top());
 }
 
 template<class T>

@@ -576,7 +576,12 @@ bool ShenandoahBarrierSet::is_above_tams(const ShenandoahMarkingContext* ctx, T*
 }
 
 inline bool ShenandoahBarrierSet::need_bulk_update(HeapWord* ary) const {
-  return ary < _heap->heap_region_containing(ary)->get_update_watermark();
+  ShenandoahHeapRegion* r = _heap->heap_region_containing(ary);
+  // Active CAS alloc regions may have writes past the update watermark; always force bulk update.
+  if (r->is_gc_alloc_region()) {
+    return true;
+  }
+  return ary < r->get_update_watermark();
 }
 
 template <class T>
