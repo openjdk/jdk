@@ -12,14 +12,10 @@ import com.sun.tools.javac.util.DefinedBy.Api;
 
 public class Test implements SourcePositions, TaskListener {
     @Override @DefinedBy(Api.COMPILER_TREE)
-    public long getStartPosition(CompilationUnitTree file, Tree tree) {
+    public long getStartPosition(Tree tree) {
         return 0;
     }
-    @Override
-    public long getEndPosition(CompilationUnitTree file, Tree tree) {
-        return 0;
-    }
-    @DefinedBy(Api.COMPILER_TREE)
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public long getEndPosition(Tree tree) {
         return 0;
     }

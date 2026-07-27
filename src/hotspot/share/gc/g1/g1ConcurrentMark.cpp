@@ -24,6 +24,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "code/codeCache.hpp"
 #include "cppstdlib/new.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
@@ -1378,6 +1379,8 @@ void G1ConcurrentMark::remark() {
   if (mark_finished) {
     weak_refs_work();
 
+    CodeCache::on_gc_marking_cycle_finish();
+
     // Unload Klasses, String, Code Cache, etc.
     if (ClassUnloadingWithConcurrentMark) {
       G1CMIsAliveClosure is_alive(this);
@@ -1446,7 +1449,7 @@ void G1ConcurrentMark::remark() {
     // Completely reset the marking state (except bitmaps) since marking completed.
     reset_at_marking_complete();
 
-    G1CollectedHeap::finish_codecache_marking_cycle();
+    CodeCache::arm_all_nmethods();
 
     {
       GCTraceTime(Debug, gc, phases) debug("Report Object Count", _gc_timer_cm);

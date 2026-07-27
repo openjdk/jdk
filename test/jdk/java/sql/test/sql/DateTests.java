@@ -328,6 +328,32 @@ public class DateTests extends BaseTest {
     }
 
     /*
+     * Validate that Date.valueOf and Date.toLocalDate yield the expected results for dates with BC years.
+     * Ensures that the fix for 8272194 has not regressed.
+     */
+    @ParameterizedTest
+    @MethodSource("bcLocalDates")
+    public void test27(LocalDate bcLocalDate) {
+        Date bcDate = Date.valueOf(bcLocalDate);
+        // Previously, getYear() of a LocalDate created from a Date always returned a positive year, even if it was BC.
+        assertTrue(bcDate.toLocalDate().getYear() <= 0, "Expected a BC year.");
+        assertEquals(bcLocalDate, bcDate.toLocalDate(), "The LocalDate created from the Date does not match the original BC LocalDate.");
+        assertEquals(bcDate, Date.valueOf(bcDate.toLocalDate()), "The BC Date did not yield the expected result on a round trip Date / LocalDate conversion.");
+    }
+
+    /*
+     * Ensure that LocalDate conversion of AD dates close to the BC check threshold
+     * behave as expected.
+     */
+    @ParameterizedTest
+    @MethodSource("datesAroundBcCheckThreshold")
+    public void test28(LocalDate localDate) {
+        Date date = Date.valueOf(localDate);
+        assertEquals(localDate, date.toLocalDate(), "The LocalDate created from the Date does not match the original LocalDate.");
+        assertEquals(date, Date.valueOf(date.toLocalDate()), "The Date did not yield the expected result on a round trip Date / LocalDate conversion.");
+    }
+
+    /*
      * DataProvider used to provide Date which are not valid and are used
      * to validate that an IllegalArgumentException will be thrown from the
      * valueOf method
@@ -370,6 +396,35 @@ public class DateTests extends BaseTest {
             Arguments.of("2009-01-8", "2009-01-08"),
             Arguments.of("2009-1-01", "2009-01-01"),
             Arguments.of("2009-1-1", "2009-01-01")
+        );
+    }
+
+    /*
+     * DataProvider used to provide BC LocalDate values, used to validate that
+     * Date.valueOf and Date.toLocalDate yield the expected results for dates
+     * with BC years.
+     */
+    private Stream<LocalDate> bcLocalDates() {
+        return Stream.of(
+            LocalDate.of(0, 1, 1),
+            LocalDate.of(-4, 9, 8),
+            LocalDate.of(-1000, 3, 22)
+        );
+    }
+
+    /*
+     * DataProvider used to provide LocalDate values immediately surrounding
+     * the BC check threshold used internally by Date.toLocalDate().
+     */
+    private Stream<LocalDate> datesAroundBcCheckThreshold() {
+        return Stream.of(
+            LocalDate.of(1, 12, 1),
+            LocalDate.of(1, 12, 30),
+            LocalDate.of(1, 12, 31),
+            LocalDate.of(2, 1, 1),
+            LocalDate.of(2, 1, 2),
+            LocalDate.of(2, 1, 3),
+            LocalDate.of(2, 2, 1)
         );
     }
 }

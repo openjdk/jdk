@@ -125,7 +125,10 @@ public class AOTCodeCompressedOopsTest {
             switch (runMode) {
             case RunMode.ASSEMBLY: {
                     List<String> args = getVMArgsForHeapConfig(zeroBaseInAsmPhase, zeroShiftInAsmPhase);
+                    // By default CDSAppTester adds -XX:+AOTCompatibleOopCompression option,
+                    // which defeats the purpose of this test. So disable this option.
                     args.addAll(List.of("-XX:+UnlockDiagnosticVMOptions",
+                                        "-XX:-AOTCompatibleOopCompression",
                                         "-Xlog:aot=info",
                                         "-Xlog:aot+codecache+init=debug",
                                         "-Xlog:aot+codecache+exit=debug"));
