@@ -476,11 +476,6 @@
           "evacuated.")                                                     \
           range(0, 100)                                                     \
                                                                             \
-  product(intx, ShenandoahMarkScanPrefetch, 32, EXPERIMENTAL,               \
-          "How many objects to prefetch ahead when traversing mark bitmaps."\
-          "Set to 0 to disable prefetching.")                               \
-          range(0, 256)                                                     \
-                                                                            \
   product(uintx, ShenandoahMarkLoopStride, 1000, EXPERIMENTAL,              \
           "How many items to process during one marking iteration before "  \
           "checking for cancellation, yielding, etc. Larger values improve "\

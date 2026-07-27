@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +20,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package compiler.lib.ir_framework.driver.irmatching.visitor;
+package sun.jvm.hotspot.debugger.linux.aarch64;
 
-import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.debugger.linux.DwarfParser;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Consumer;
 
-/**
- * This class invokes {@link MatchResult#accept(MatchResultVisitor)} on all failed match results (i.e. children) inside
- * a {@link MatchResult} object to visit them.
- */
-public class AcceptChildren implements Consumer<MatchResultVisitor> {
-    private final Collection<? extends MatchResult> matchResults;
+public class AARCH64DwarfParser extends DwarfParser {
 
-    public AcceptChildren(List<MatchResult> matchResults) {
-        this.matchResults = matchResults;
+    private static native long createDwarfContext(long lib);
+
+    public AARCH64DwarfParser(Address lib) {
+        super(createDwarfContext(lib.asLongValue()));
     }
 
-    @Override
-    public void accept(MatchResultVisitor visitor) {
-        for (MatchResult result : matchResults) {
-            if (result.fail()) {
-                result.accept(visitor);
-            }
-        }
+    /**
+     * @return true if return address (RA) is signed by PAC.
+     */
+    public boolean isRASigned() {
+        return isRASigned0(p_dwarf_context);
     }
+
+    public native boolean isRASigned0(long inst);
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,23 +85,18 @@ public class FontStrikeDesc {
     }
 
     public boolean equals(Object obj) {
-        try {
-            FontStrikeDesc desc = (FontStrikeDesc)obj;
-            return (desc.valuemask == this.valuemask &&
-                    desc.glyphTx.equals(this.glyphTx) &&
-                    desc.devTx.equals(this.devTx));
-        } catch (Exception e) {
-            /* class cast or NP exceptions should not happen often, if ever,
-             * and I am hoping that this is faster than an instanceof check.
-             */
-            return false;
+        if (obj == this) {
+            return true;
         }
+        return obj instanceof FontStrikeDesc desc &&
+            desc.valuemask == this.valuemask &&
+            desc.glyphTx.equals(this.glyphTx) &&
+            desc.devTx.equals(this.devTx);
     }
 
     FontStrikeDesc() {
         // used with init
     }
-
 
     /* This maps a public text AA hint value into one of the subset of values
      * used to index strikes. For the purpose of the strike cache there are
