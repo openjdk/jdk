@@ -760,8 +760,11 @@ Node* PhaseMacroExpand::inline_type_from_mem(ciInlineKlass* vk, const TypeAryPtr
         }
       }
     }
-    assert(field_value != nullptr, "");
-    vt->set_field_value(i, field_value);
+    if (field_value != nullptr) {
+      vt->set_field_value(i, field_value);
+    } else {
+      return nullptr;
+    }
   }
   return vt;
 }
