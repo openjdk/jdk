@@ -45,19 +45,19 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
-ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation) :
+ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
   ShenandoahGC(generation),
   _degen_point(degen_point),
-  _abbreviated(false) {
+  _abbreviated(false),
+  _do_old_gc_bootstrap(do_old_gc_bootstrap) {
 }
 
 bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
   vmop_degenerated();
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
-    bool is_bootstrap_gc = heap->young_generation()->is_bootstrap_cycle();
     FormatBuffer<32> buf("Degenerated %s GC", _generation->name());
-    const char* msg = is_bootstrap_gc ? "Degenerated Bootstrap Old GC" : buf.buffer();
+    const char* msg = _do_old_gc_bootstrap ? "Degenerated Bootstrap Old GC" : buf.buffer();
     heap->mmu_tracker()->record_degenerated(GCId::current(), msg);
     heap->log_heap_status(FormatBuffer<64>("At end of %s", msg));
   }
@@ -91,6 +91,7 @@ void ShenandoahDegenGC::entry_degenerated() {
 
 void ShenandoahDegenGC::op_degenerated() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  heap->release_injected_pins();
   // Degenerated GC is STW, but it can also fail. Current mechanics communicates
   // GC failure via cancelled_concgc() flag. So, if we detect the failure after
   // some phase, we have to upgrade the Degenerate GC to Full GC.
@@ -331,13 +332,13 @@ void ShenandoahDegenGC::op_degenerated() {
   policy->record_degenerated(_generation->is_young(), _abbreviated, progress);
   if (progress) {
     heap->notify_gc_progress();
-    _generation->heuristics()->record_degenerated();
+    _generation->heuristics()->record_degenerated(heap->mode()->is_generational() && _generation->is_global());
     heap->start_idle_span();
   } else if (policy->should_upgrade_degenerated_gc()) {
     // Upgrade to full GC, register full-GC impact on heuristics.
     op_degenerated_futile();
   } else {
-    _generation->heuristics()->record_degenerated();
+    _generation->heuristics()->record_degenerated(heap->mode()->is_generational() && _generation->is_global());
   }
 }
 

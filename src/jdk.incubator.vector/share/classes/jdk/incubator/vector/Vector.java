@@ -200,11 +200,11 @@ import java.util.Arrays;
  * element type (such as access to element values in lanes, logical operations
  * on values of integral elements types, or transcendental operations on values
  * of floating point element types).
- * There are six abstract subclasses of Vector corresponding to the supported set
+ * There are seven abstract subclasses of Vector corresponding to the supported set
  * of element types, {@link ByteVector}, {@link ShortVector},
- * {@link IntVector}, {@link LongVector}, {@link FloatVector}, and
- * {@link DoubleVector}. Along with type-specific operations these classes
- * support creation of vector values (instances of Vector).
+ * {@link IntVector}, {@link LongVector}, {@link FloatVector},
+ * {@link DoubleVector}, and {@link Float16Vector}. Along with type-specific
+ * operations these classes support creation of vector values (instances of Vector).
  * They expose static constants corresponding to the supported species,
  * and static methods on these types generally take a species as a parameter.
  * For example,
@@ -3825,6 +3825,19 @@ public abstract sealed class Vector<E> extends jdk.internal.vm.vector.VectorSupp
      * @return a {@code LongVector} with the same shape and information content
      */
     public abstract LongVector reinterpretAsLongs();
+
+    /**
+     * Reinterprets this vector as a vector of the same shape
+     * and contents but a lane type of {@code Float16},
+     * where the lanes are assembled from successive bytes
+     * according to little-endian order.
+     * It is a convenience method for the expression
+     * {@code reinterpretShape(species().withLanes(Float16.class))}.
+     * It may be considered an inverse to {@link Vector#reinterpretAsBytes()}.
+     *
+     * @return a {@code Float16Vector} with the same shape and information content
+     */
+    public abstract Float16Vector reinterpretAsFloat16s();
 
     /**
      * Reinterprets this vector as a vector of the same shape

@@ -260,7 +260,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
   allocator()->release_mutator_alloc_regions();
 
   collection_set()->finalize_initial_collection_set(target_pause_time_ms, survivor_regions());
-  evacuation_info->set_collection_set_regions(collection_set()->initial_region_length() +
+  evacuation_info->set_collection_set_regions(collection_set()->num_initial_regions() +
                                               collection_set()->num_optional_regions());
 
   concurrent_mark()->verify_no_collection_set_oops();
@@ -362,13 +362,14 @@ class G1PrepareEvacuationTask : public WorkerTask {
       // There is no difference between scanning cards covering an effectively
       // dead humongous object vs. some other objects in reallocated regions.
       //
-      // TAMSes are only reset after completing the entire mark cycle, during
-      // bitmap clearing. It is worth to not wait until then, and allow reclamation
-      // outside of actual (concurrent) SATB marking.
+      // TAMSes are only reset in the Concurrent Start pause and when they are
+      // reclaimed/freed. It is worth to not wait for TAMS updates until either
+      // of these conditions applies and allow reclamation as much as possible.
       // This also applies to the concurrent start pause - we only set
-      // mark_in_progress() at the end of that GC: no mutator is running that can
+      // is_in_marking() at the end of that GC: no mutator is running that can
       // sneakily install a new reference to the potentially reclaimed humongous
       // object.
+      //
       // During the concurrent start pause the situation described above where we
       // miss a reference can not happen. No mutator is modifying the object
       // graph to install such an overlooked reference.
@@ -376,12 +377,15 @@ class G1PrepareEvacuationTask : public WorkerTask {
       // After the pause, having reclaimed h, obviously the mutator can't fetch
       // the reference from h any more.
       if (!obj->is_typeArray()) {
-        // All regions that were allocated before marking have a TAMS != bottom.
-        bool allocated_before_mark_start = region->bottom() != _g1h->concurrent_mark()->top_at_mark_start(region);
         bool mark_in_progress = _g1h->collector_state()->is_in_marking();
-
-        if (allocated_before_mark_start && mark_in_progress) {
-          return false;
+        // top_at_mark_start() will assert outside of marking, so check first.
+        if (mark_in_progress) {
+          // All regions that were allocated before marking have a TAMS != bottom.
+          G1ConcurrentMark* cm = _g1h->concurrent_mark();
+          bool allocated_before_mark_start = region->bottom() != cm->top_at_mark_start(region);
+          if (allocated_before_mark_start) {
+            return false;
+          }
         }
       }
       return _g1h->is_potential_eager_reclaim_candidate(region);
@@ -1028,7 +1032,7 @@ void G1YoungCollector::enqueue_candidates_as_root_regions() {
 
   G1CollectionSetCandidates* candidates = collection_set()->candidates();
   candidates->iterate_regions([&] (G1HeapRegion* r) {
-    _g1h->concurrent_mark()->add_root_region(r);
+    _g1h->concurrent_mark()->add_root_region_set_bottom(r);
   });
 }
 

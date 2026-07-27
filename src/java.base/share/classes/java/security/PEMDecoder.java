@@ -48,10 +48,10 @@ import java.util.Objects;
  * PEM is a textual encoding used to store and transfer cryptographic
  * objects, such as asymmetric keys, certificates, and certificate revocation
  * lists (CRLs). It is defined in RFC 1421 and RFC 7468. PEM consists of
- * Base64-encoded content enclosed by a type-identifying header
- * and footer.
+ * Base64-encoded content enclosed by a header and footer that identify the
+ * type of the content.
  *
- * <p>The {@link #decode(String)} and {@link #decode(InputStream)} methods
+ * <p> The {@link #decode(String)} and {@link #decode(InputStream)} methods
  * return an instance of a class that matches the PEM type and implements
  * {@link BinaryEncodable}, as follows:
  * <ul>
@@ -70,11 +70,18 @@ import java.util.Objects;
  * </ul>
  *
  * <p> If the PEM type has no corresponding class, {@code decode(String)} and
- * {@code decode(InputStream)} will return a {@code PEM} object.
+ * {@code decode(InputStream)} return a {@code PEM} object.
+ *
+ * <p> If application code switches over the {@code BinaryEncodable} result of
+ * {@link #decode(String)} or {@link #decode(InputStream)}, the {@code switch} cannot
+ * be made exhaustive simply by providing a {@code case} label for every permitted
+ * subtype listed for {@code BinaryEncodable}; there also must be a {@code default}
+ * or {@code case BinaryEncodable} label to handle additional subtypes that
+ * might be added in the future.
  *
  * <p> The {@link #decode(String, Class)} and {@link #decode(InputStream, Class)}
- * methods accept a class parameter specifying the desired {@code BinaryEncodable}
- * type. These methods avoid the need for casting and are useful when multiple
+ * methods accept a parameter specifying the desired {@code BinaryEncodable}
+ * result. These methods avoid the need for casting and are useful when multiple
  * representations are possible. For example, if the PEM contains both public and
  * private keys, specifying {@code PrivateKey.class} returns only the private key.
  * If {@code X509EncodedKeySpec.class} is provided, the public key encoding is
@@ -109,11 +116,6 @@ import java.util.Objects;
  * for decryption, an {@link EncryptedPrivateKeyInfo} is returned.
  * A {@code PEMDecoder} configured for decryption can also decode unencrypted PEM.
  *
- * <p> The {@code BinaryEncodable} interface may evolve. When using a decode method
- * with {@code switch}, always include a {@code default} case rather than
- * relying on the classes specified in the permits clause to remain fixed.
- * An exhaustive {@code switch} may result in a {@link MatchException}.
- *
  * <p> This class is immutable and thread-safe.
  *
  * <p> Example: decode a private key:
@@ -136,6 +138,7 @@ import java.util.Objects;
  * @see PEMEncoder
  * @see PEM
  * @see EncryptedPrivateKeyInfo
+ * @see BinaryEncodable
  *
  * @spec https://www.rfc-editor.org/info/rfc1421
  *       RFC 1421: Privacy Enhancement for Internet Electronic Mail

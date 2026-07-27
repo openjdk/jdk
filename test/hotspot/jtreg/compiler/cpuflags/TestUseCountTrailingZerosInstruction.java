@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,30 +21,33 @@
  * questions.
  */
 
-package sun.security.util;
-
-import java.security.spec.KeySpec;
+/**
+ * @test
+ * @bug 8386656
+ * @summary Verify no assertions when running with -XX:-UseCountTrailingZerosInstruction
+ * @requires os.simpleArch == "x64"
+ * @run main/othervm -Xbatch -XX:-UseCountTrailingZerosInstruction ${test.main.class}
+ */
 
 /**
- * This is a KeySpec that is used to specify a key by its byte array implementation.
- * It is intended to be used in testing algorithms where the algorithm specification
- * describes the key in this form.
+ * @test
+ * @bug 8386656
+ * @summary Verify no assertions when running with -XX:+UseCountTrailingZerosInstruction
+ * @requires os.simpleArch == "x64"
+ * @run main/othervm -Xbatch -XX:+UseCountTrailingZerosInstruction ${test.main.class}
  */
-public class RawKeySpec implements KeySpec {
-    private final byte[] keyArr;
-    /**
-     * The sole constructor.
-     * @param key contains the key as a byte array
-     */
-    public RawKeySpec(byte[] key) {
-        keyArr = key.clone();
-    }
 
-    /**
-     * Getter function.
-     * @return a copy of the key bits
-     */
-    public byte[] getKeyArr() {
-        return keyArr.clone();
+package compiler.cpuflags;
+
+import java.util.Arrays;
+
+public class TestUseCountTrailingZerosInstruction {
+    public static void main(String[] args) {
+        byte[] a = new byte[32];
+        byte[] b = new byte[32];
+        for (int i = 0; i < 20_000; i++) {
+            Arrays.mismatch(a, b);
+        }
     }
 }
+

@@ -1,7 +1,7 @@
 
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,16 +132,18 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues)
 
 void ShenandoahOldGeneration::set_promoted_reserve(size_t new_val) {
   shenandoah_assert_heaplocked_or_safepoint();
-  _promoted_reserve = new_val;
+  _promoted_reserve.store_relaxed(new_val);
 }
 
 size_t ShenandoahOldGeneration::get_promoted_reserve() const {
-  return _promoted_reserve;
+  return _promoted_reserve.load_relaxed();
 }
 
 void ShenandoahOldGeneration::augment_promoted_reserve(size_t increment) {
   shenandoah_assert_heaplocked_or_safepoint();
-  _promoted_reserve += increment;
+  // Writers are serialized by the heap lock, so relaxed ordering is sufficient; the atomic RMW
+  // only guards against tearing the concurrent lock-free reader (get_promoted_reserve).
+  _promoted_reserve.fetch_then_add(increment, memory_order_relaxed);
 }
 
 void ShenandoahOldGeneration::reset_promoted_expended() {
@@ -193,10 +195,19 @@ void ShenandoahOldGeneration::maybe_log_promotion_failure_stats(bool concurrent)
   }
 }
 
-size_t ShenandoahOldGeneration::expend_promoted(size_t increment) {
-  shenandoah_assert_heaplocked_or_safepoint();
-  assert(get_promoted_expended() + increment <= get_promoted_reserve(), "Do not expend more promotion than budgeted");
-  return _promoted_expended.add_then_fetch(increment);
+bool ShenandoahOldGeneration::try_expend_promoted(size_t increment) {
+  // The promote reserve rarely changes during evacuation(only when there is PIP region), so snapshot it once;
+  // only _promoted_expended is contended and re-read on CAS failure.
+  const size_t reserve = get_promoted_reserve();
+  size_t cur = _promoted_expended.load_relaxed();
+  while (cur + increment <= reserve) {
+    size_t prev = _promoted_expended.compare_exchange(cur, cur + increment);
+    if (prev == cur) {
+      return true;
+    }
+    cur = prev;
+  }
+  return false;
 }
 
 size_t ShenandoahOldGeneration::unexpend_promoted(size_t decrement) {
@@ -245,12 +256,11 @@ ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAlloc
 
   // The actual size of the allocation may be larger than the requested bytes (due to alignment on card boundaries).
   // If this puts us over our promotion budget, we need to disable future PLAB promotions for this thread.
-  if (can_promote(actual_size)) {
+  if (try_expend_promoted(actual_size)) {
     // Assume the entirety of this PLAB will be used for promotion.  This prevents promotion from overreach.
     // When we retire this plab, we'll unexpend what we don't really use.
     log_debug(gc, plab)("Thread can promote using PLAB of %zu bytes. Expended: %zu, available: %zu",
                         actual_size, get_promoted_expended(), get_promoted_reserve());
-    expend_promoted(actual_size);
     shenandoah_plab->enable_promotions();
     shenandoah_plab->set_actual_size(actual_size);
   } else {
@@ -481,7 +491,10 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     size_t allocation_runway =
       gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trash_regions);
-    gen_heap->compute_old_generation_balance(allocation_runway, old_trash_regions, young_trash_regions);
+    size_t max_transfer = MIN2(allocation_runway,
+                               (gen_heap->young_generation()->free_unaffiliated_regions() + young_trash_regions) *
+                               ShenandoahHeapRegion::region_size_bytes());
+    gen_heap->compute_old_generation_balance(max_transfer, old_trash_regions, young_trash_regions);
     heap->free_set()->finish_rebuild(young_trash_regions, old_trash_regions, num_old);
   }
 }
@@ -596,7 +609,7 @@ bool ShenandoahOldGeneration::validate_idle() {
   assert(!heap->is_concurrent_old_mark_in_progress(), "Cannot be idle during old mark.");
   assert(heap->young_generation()->old_gen_task_queues() == nullptr, "Cannot be idle when still setup for bootstrapping.");
   assert(!is_concurrent_mark_in_progress(), "Cannot be marking in IDLE");
-  assert(!heap->young_generation()->is_bootstrap_cycle(), "Cannot have old mark queues if IDLE");
+  assert(!heap->young_generation()->is_old_marking_active(), "Cannot have old mark queues if IDLE");
   assert(!_old_heuristics->has_coalesce_and_fill_candidates(), "Cannot have coalesce and fill candidates in IDLE");
   assert(_old_heuristics->unprocessed_old_collection_candidates() == 0, "Cannot have mixed collection candidates in IDLE");
   return true;

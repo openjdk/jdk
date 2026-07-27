@@ -1062,17 +1062,26 @@ TEST_VM(os, is_first_C_frame) {
 TEST_VM(os, trim_native_heap) {
   EXPECT_TRUE(os::can_trim_native_heap());
   os::size_change_t sc;
-  sc.before = sc.after = (size_t)-1;
-  EXPECT_TRUE(os::trim_native_heap(&sc));
-  tty->print_cr("%zu->%zu", sc.before, sc.after);
-  // Regardless of whether we freed memory, both before and after
-  // should be somewhat believable numbers (RSS).
-  const size_t min = 5 * M;
-  const size_t max = LP64_ONLY(20 * G) NOT_LP64(3 * G);
-  ASSERT_LE(min, sc.before);
-  ASSERT_GT(max, sc.before);
-  ASSERT_LE(min, sc.after);
-  ASSERT_GT(max, sc.after);
+  os::Linux::accurate_meminfo_t info1;
+  os::Linux::accurate_meminfo_t info2;
+  bool have_info1 = os::Linux::query_accurate_process_memory_info(&info1);
+  EXPECT_TRUE(os::trim_native_heap(nullptr));
+  bool have_info2 = os::Linux::query_accurate_process_memory_info(&info2);
+
+  if (have_info1 && have_info2) {
+    sc.before = (info1.rss + info1.swap) * K;
+    sc.after = (info2.rss + info2.swap) * K;
+    tty->print_cr("%zu->%zu", sc.before, sc.after);
+
+    // Regardless of whether we freed memory, both before and after
+    // should be somewhat believable numbers (RSS).
+    const size_t min = 5 * M;
+    const size_t max = LP64_ONLY(20 * G) NOT_LP64(3 * G);
+    ASSERT_LE(min, sc.before);
+    ASSERT_GT(max, sc.before);
+    ASSERT_LE(min, sc.after);
+    ASSERT_GT(max, sc.after);
+  }
   // Should also work
   EXPECT_TRUE(os::trim_native_heap());
 }
@@ -1105,7 +1114,7 @@ TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
     const size_t lpsz = os::large_page_size();
     char* p1 = os::reserve_memory_aligned(lpsz, lpsz, mtTest);
     ASSERT_NE(p1, nullptr);
-    char* p2 = os::reserve_memory_special(lpsz, lpsz, lpsz, p1, false);
+    char* p2 = os::reserve_memory_special(lpsz, lpsz, lpsz, p1, mtTest, false);
     ASSERT_EQ(p2, nullptr); // should have failed
     os::release_memory(p1, M);
   } else {
