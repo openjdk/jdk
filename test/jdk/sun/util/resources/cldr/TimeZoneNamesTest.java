@@ -26,15 +26,11 @@
  * @bug 8181157 8202537 8234347 8236548 8261279 8322647 8174269 8346948
  *      8354548 8381379 8382020 8384043 8371842
  * @modules jdk.localedata
- *      java.base/sun.util.calendar
  * @summary Checks CLDR time zone names are generated correctly at
  * either build or runtime
  * @run junit TimeZoneNamesTest
  */
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
@@ -43,15 +39,11 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Stream;
-import sun.util.calendar.ZoneInfoFile;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -60,32 +52,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class TimeZoneNamesTest {
-    private static Set<String> EXPLICIT_OFFSET_ZONES;
-
-    @BeforeAll
-    static void findExplictOffsetZones() throws IOException {
-        EXPLICIT_OFFSET_ZONES = new HashSet<>();
-        var lines = Files.readAllLines(Paths.get(System.getProperty("test.root"),
-            "../../make/data/cldr/common/supplemental/metaZones.xml"));
-        String zone = null;
-        for (var line : lines) {
-            line = line.trim();
-            if (line.startsWith("<timezone ")) {
-                zone = line.replaceFirst(".*type=\"", "").replaceFirst("\">$", "");
-            } else if (line.startsWith("<usesMetazone") &&
-                line.contains("dstOffset=") &&
-                !line.contains("to=")) {
-                EXPLICIT_OFFSET_ZONES.add(zone);
-            }
-        }
-    }
 
     private static Object[][] sampleTZs() {
         return new Object[][] {
             // tzid, locale, style, expected
 
-            // This list is as of CLDR version specified above, and should be examined
-            // on the CLDR data upgrade.
+            // This list is current as of CLDR 48.2 and should be reviewed
+            // whenever the CLDR data is upgraded.
 
             // no "metazone" zones (some of them were assigned metazones
             // over time, thus they are not "generated" per se
@@ -332,21 +305,10 @@ public class TimeZoneNamesTest {
             Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Europe/Dublin")), "Greenwich Mean Time", "GMT"),
             Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("Eire")), "Irish Standard Time", "IST"),
             Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("Eire")), "Greenwich Mean Time", "GMT"),
-            // CLDR v48.2 & tz2026b. British Columbia switched to permanent DST
+            // CLDR v48.2 & tz2026b. America/Vancouver switched to permanent DST
             Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), "Pacific Daylight Time", "PDT"),
-            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), "Pacific Daylight Time", "PDT"),
-            // CLDR v49 & tz2026c. Alberta switched to permanent DST
-            Arguments.of(ZonedDateTime.of(2026, 4, 5, 0, 0, 0, 0, ZoneId.of("America/Edmonton")), "Mountain Daylight Time", "MDT"),
-            checkVer("2026c", 49, 0) ?
-                Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Edmonton")), "Mountain Daylight Time", "MDT") :
-                Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Edmonton")), "Mountain Standard Time", "MST")
+            Arguments.of(ZonedDateTime.of(2026, 12, 5, 0, 0, 0, 0, ZoneId.of("America/Vancouver")), "Pacific Daylight Time", "PDT")
         );
-    }
-
-    // Explicit dstOffset is enabled in two steps. First step is the IANA TZ Database rule update, and the second
-    // step is CLDR metazone update with explicit offsets. This method checks the required tzdb & CLDR versions
-    private static boolean checkVer(String requiredTZVer, int requiredCLDRMajor, int requiredCLDRMMinor) {
-        return ZoneInfoFile.getVersion().compareTo(requiredTZVer) >= 0;
     }
 
     @ParameterizedTest
@@ -380,7 +342,10 @@ public class TimeZoneNamesTest {
             "getZoneStrings() returned array containing non-empty string element(s)");
     }
 
-    // Explicit metazone dst offset test.
+    // Explicit metazone DST offset test. This attribute is used for Europe/Dublin
+    // to support the negative DST. Also, it is used to support permanent DST names,
+    // such as with America/Vancouver. For the latter case, both CLDR data and corresponding
+    // updated TZDB data are required (e.g., tz2026b for America/Vancouver).
     @ParameterizedTest
     @MethodSource("explicitDstOffsets")
     public void test_ExplicitMetazoneOffsets(ZonedDateTime zdt, String expectedLong, String expectedShort) {
